@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
+import type { Combatant } from '@/types';
 
 const props = defineProps<{
   encounterId: string;
@@ -17,7 +18,7 @@ const encounter = computed(() => {
 });
 
 const currentCombatant = computed(() => {
-  if (encounter.value && encounter.value.combatants.length > 0) {
+  if (encounter.value && encounter.value.combatants?.length > 0) {
     return encounter.value.combatants[encounter.value.currentTurn];
   }
   return null;
@@ -38,8 +39,8 @@ const endEncounter = () => {
 const updateHitPoints = (combatantId: string, value: number) => {
   const combatant = encounter.value?.combatants.find(c => c.id === combatantId);
   if (combatant) {
-    const newHP = combatant.currentHitPoints + value;
-    combatant.currentHitPoints = Math.max(0, Math.min(newHP, combatant.hitPoints));
+    const newHP = combatant.hitPoints.current + value;
+    combatant.hitPoints.current = Math.max(0, Math.min(newHP, combatant.hitPoints.maximum));
     encounterStore.saveEncounters();
   }
 };
@@ -48,12 +49,10 @@ const updateHitPoints = (combatantId: string, value: number) => {
 const combatantDetails = (combatant: Combatant) => {
   if (combatant.type === 'monster' && combatant.referenceId) {
     return monsterStore.monsters.find(m => m.id === combatant.referenceId);
-  } else if (combatant.type === 'player' && combatant.referenceId) {
-    if (encounter.value) {
-      const party = partyStore.parties.find(p => p.id === encounter.value.partyId);
-      if (party) {
-        return party.characters.find(c => c.id === combatant.referenceId);
-      }
+  } else if (combatant.type === 'player' && combatant.referenceId && encounter.value) {
+    const party = partyStore.parties.find(p => p.id === encounter.value.partyId);
+    if (party && Array.isArray(party.characters)) {
+      return party.characters.find(c => c === combatant.referenceId);
     }
   }
   return null;
@@ -93,7 +92,7 @@ const removeCondition = (combatantId: string, condition: string) => {
       <h3>Current Turn: {{ currentCombatant.name }}</h3>
       <div class="combatant-details">
         <p>Type: {{ currentCombatant.type }}</p>
-        <p>HP: {{ currentCombatant.currentHitPoints }}/{{ currentCombatant.hitPoints }}</p>
+        <p>HP: {{ currentCombatant.hitPoints.current }}/{{ currentCombatant.hitPoints.maximum }}</p>
         <p>AC: {{ currentCombatant.armorClass }}</p>
 
         <div class="hp-controls">
@@ -138,13 +137,12 @@ const removeCondition = (combatantId: string, condition: string) => {
            :class="{ 
              'current': index === encounter.currentTurn,
              'player': combatant.type === 'player',
-             'monster': combatant.type === 'monster',
-             'npc': combatant.type === 'npc'
+             'monster': combatant.type === 'monster'
            }">
         <span class="order">{{ index + 1 }}.</span>
         <span class="name">{{ combatant.name }}</span>
         <span class="initiative">{{ combatant.initiative }}</span>
-        <span class="hp">{{ combatant.currentHitPoints }}/{{ combatant.hitPoints }}</span>
+        <span class="hp">{{ combatant.hitPoints.current }}/{{ combatant.hitPoints.maximum }}</span>
         <span class="ac">AC: {{ combatant.armorClass }}</span>
         <span class="conditions">
           <span v-for="condition in combatant.conditions" :key="condition" class="condition-tag">
@@ -216,7 +214,6 @@ const removeCondition = (combatantId: string, condition: string) => {
 
 .player { background-color: #e8f5e9; }
 .monster { background-color: #ffebee; }
-.npc { background-color: #e3f2fd; }
 
 .order { width: 30px; }
 .name { flex: 2; }

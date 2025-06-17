@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import type { Encounter } from '@/types';
 import BaseCard from './BaseCard.vue';
+import { useRouter } from 'vue-router';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete']);
+const router = useRouter();
 
 function handleView() { emit('view', props.encounter); }
 function handleEdit() { emit('edit', props.encounter); }
 function handleDelete() { emit('delete', props.encounter); }
+function handleRunCombat() {
+  router.push(`/encounters/${props.encounter.id}/combat`);
+}
 </script>
 <template>
   <BaseCard showEdit showDelete showView @view="handleView" @edit="handleEdit" @delete="handleDelete">
@@ -25,6 +30,11 @@ function handleDelete() { emit('delete', props.encounter); }
       <span class="label">Monsters:</span>
       <span class="value">{{ encounter.monsters?.length }}</span>
     </div>
+    <template #actions>
+      <button @click="handleRunCombat" class="run-combat-btn" title="Run Combat">
+        ⚔️
+      </button>
+    </template>
   </BaseCard>
 </template>
 <style scoped>
@@ -59,5 +69,23 @@ function handleDelete() { emit('delete', props.encounter); }
 }
 .monsters-summary {
   margin-top: 0.5rem;
+}
+
+.run-combat-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.run-combat-btn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 </style> 

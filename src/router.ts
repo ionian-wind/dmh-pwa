@@ -10,6 +10,7 @@ import CharactersView from '@/views/CharactersView.vue';
 import CharacterView from '@/views/CharacterView.vue';
 import EncountersView from '@/views/EncountersView.vue';
 import EncounterView from '@/views/EncounterView.vue';
+import RunCombat from '@/components/RunCombat.vue';
 import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import ConfigurationView from '@/views/ConfigurationView.vue';
@@ -83,6 +84,11 @@ const router = createRouter({
       path: '/encounters/:id',
       name: 'encounter-detail',
       component: EncounterView
+    },
+    {
+      path: '/encounters/:id/combat',
+      name: 'run-combat',
+      component: RunCombat
     },
     // Modules routes
     {

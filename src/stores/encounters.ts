@@ -138,6 +138,74 @@ export const useEncounterStore = defineStore('encounters', () => {
     encounter.updatedAt = Date.now();
   };
 
+  const nextTurn = (encounterId: string) => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter || !encounter.combatants) return;
+
+    encounter.currentTurn++;
+    if (encounter.currentTurn >= encounter.combatants.length) {
+      encounter.currentTurn = 0;
+      encounter.currentRound++;
+    }
+    encounter.updatedAt = Date.now();
+  };
+
+  const previousTurn = (encounterId: string) => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter || !encounter.combatants) return;
+
+    encounter.currentTurn--;
+    if (encounter.currentTurn < 0) {
+      if (encounter.currentRound > 1) {
+        encounter.currentRound--;
+        encounter.currentTurn = encounter.combatants.length - 1;
+      } else {
+        encounter.currentTurn = 0;
+      }
+    }
+    encounter.updatedAt = Date.now();
+  };
+
+  const endEncounter = (encounterId: string) => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter) return;
+
+    encounter.status = 'completed';
+    encounter.updatedAt = Date.now();
+  };
+
+  const saveEncounters = () => {
+    // This method is called to ensure encounters are saved to storage
+    // The useStorage hook automatically handles persistence
+    encounters.value = [...encounters.value];
+  };
+
+  const startCombat = (encounterId: string) => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter) return;
+
+    encounter.status = 'active';
+    encounter.currentRound = 1;
+    encounter.currentTurn = 0;
+    encounter.updatedAt = Date.now();
+  };
+
+  const resetCombat = (encounterId: string) => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter || !encounter.combatants) return;
+
+    encounter.status = 'preparing';
+    encounter.currentRound = 0;
+    encounter.currentTurn = 0;
+    // Reset all combatant HP to maximum
+    encounter.combatants.forEach(combatant => {
+      combatant.hitPoints.current = combatant.hitPoints.maximum;
+      combatant.hitPoints.temporary = 0;
+      combatant.conditions = [];
+    });
+    encounter.updatedAt = Date.now();
+  };
+
   const loadEncounters = async () => {
     // Encounters are automatically loaded by useStorage
     return encounters.value;
@@ -160,6 +228,12 @@ export const useEncounterStore = defineStore('encounters', () => {
     removeCombatant,
     updateEncounterStatus,
     updateTurn,
+    nextTurn,
+    previousTurn,
+    endEncounter,
+    saveEncounters,
+    startCombat,
+    resetCombat,
     loadEncounters
   };
 });
