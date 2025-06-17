@@ -4,6 +4,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import type { Monster } from '@/types';
 import ModuleSelector from "@/components/ModuleSelector.vue";
+import BaseEditorModal from './BaseEditorModal.vue';
 
 const props = defineProps<{
   monster: Monster | null;
@@ -138,95 +139,82 @@ const closeEditor = () => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="editor-modal">
-    <div class="editor-content">
-      <h2>{{ isEditing ? 'Edit Monster' : 'Add Monster' }}</h2>
-
+  <BaseEditorModal
+    :isOpen="isOpen"
+    :title="isEditing ? 'Edit Monster' : 'Add Monster'"
+    submitLabel="Save Monster"
+    cancelLabel="Cancel"
+    @submit="saveMonster"
+    @cancel="closeEditor"
+  >
+    <div class="form-section">
+      <label>Module</label>
+      <ModuleSelector
+        v-model="editedMonster.moduleId"
+        placeholder="No Module"
+      />
+    </div>
+    <div class="form-section">
+      <label>Name</label>
+      <input v-model="editedMonster.name" type="text" required />
+    </div>
+    <div class="form-section">
+      <label>Type</label>
+      <input v-model="editedMonster.type" type="text" required />
+    </div>
+    <div class="form-section">
+      <label>Size</label>
+      <select v-model="editedMonster.size">
+        <option value="Tiny">Tiny</option>
+        <option value="Small">Small</option>
+        <option value="Medium">Medium</option>
+        <option value="Large">Large</option>
+        <option value="Huge">Huge</option>
+        <option value="Gargantuan">Gargantuan</option>
+      </select>
+    </div>
+    <div class="form-section">
+      <label>Alignment</label>
+      <select v-model="editedMonster.alignment">
+        <option value="Lawful Good">Lawful Good</option>
+        <option value="Neutral Good">Neutral Good</option>
+        <option value="Chaotic Good">Chaotic Good</option>
+        <option value="Lawful Neutral">Lawful Neutral</option>
+        <option value="Neutral">Neutral</option>
+        <option value="Chaotic Neutral">Chaotic Neutral</option>
+        <option value="Lawful Evil">Lawful Evil</option>
+        <option value="Neutral Evil">Neutral Evil</option>
+        <option value="Chaotic Evil">Chaotic Evil</option>
+        <option value="Unaligned">Unaligned</option>
+      </select>
+    </div>
+    <div class="form-row">
       <div class="form-section">
-        <label>Module</label>
-        <ModuleSelector
-          v-model="editedMonster.moduleId"
-          placeholder="No Module"
-        />
+        <label>Armor Class</label>
+        <input v-model.number="editedMonster.armorClass" type="number" min="0" />
       </div>
-      
       <div class="form-section">
-        <label>Name</label>
-        <input v-model="editedMonster.name" type="text" required />
-      </div>
-
-      <div class="form-section">
-        <label>Type</label>
-        <input v-model="editedMonster.type" type="text" required />
-      </div>
-
-      <div class="form-section">
-        <label>Size</label>
-        <select v-model="editedMonster.size">
-          <option value="Tiny">Tiny</option>
-          <option value="Small">Small</option>
-          <option value="Medium">Medium</option>
-          <option value="Large">Large</option>
-          <option value="Huge">Huge</option>
-          <option value="Gargantuan">Gargantuan</option>
-        </select>
-      </div>
-
-      <div class="form-section">
-        <label>Alignment</label>
-        <select v-model="editedMonster.alignment">
-          <option value="Lawful Good">Lawful Good</option>
-          <option value="Neutral Good">Neutral Good</option>
-          <option value="Chaotic Good">Chaotic Good</option>
-          <option value="Lawful Neutral">Lawful Neutral</option>
-          <option value="Neutral">Neutral</option>
-          <option value="Chaotic Neutral">Chaotic Neutral</option>
-          <option value="Lawful Evil">Lawful Evil</option>
-          <option value="Neutral Evil">Neutral Evil</option>
-          <option value="Chaotic Evil">Chaotic Evil</option>
-          <option value="Unaligned">Unaligned</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <div class="form-section">
-          <label>Armor Class</label>
-          <input v-model.number="editedMonster.armorClass" type="number" min="0" />
-        </div>
-
-        <div class="form-section">
-          <label>Hit Points</label>
-          <input v-model.number="editedMonster.hitPoints" type="number" min="1" />
-        </div>
-      </div>
-
-      <div class="form-section">
-        <label>Challenge Rating</label>
-        <input v-model="editedMonster.challengeRating" type="text" />
-      </div>
-
-      <div class="form-section">
-        <label>Description</label>
-        <textarea v-model="editedMonster.description" rows="3"></textarea>
-      </div>
-
-      <div class="form-section">
-        <label>Abilities</label>
-        <textarea v-model="editedMonster.abilities" rows="3"></textarea>
-      </div>
-
-      <div class="form-section">
-        <label>Languages</label>
-        <input v-model="editedMonster.languages" type="text" placeholder="Comma-separated list" />
-      </div>
-      
-
-      <div class="form-actions">
-        <button @click="closeEditor" class="cancel-btn">Cancel</button>
-        <button @click="saveMonster" class="save-btn">Save Monster</button>
+        <label>Hit Points</label>
+        <input v-model.number="editedMonster.hitPoints" type="number" min="1" />
       </div>
     </div>
-  </div>
+    <div class="form-section">
+      <label>Challenge Rating</label>
+      <input v-model="editedMonster.challengeRating" type="text" />
+    </div>
+    <div class="form-section">
+      <label>Description</label>
+      <textarea v-model="editedMonster.description" rows="3"></textarea>
+    </div>
+    <div class="form-section">
+      <label>Abilities</label>
+      <textarea v-model="editedMonster.abilities" rows="3"></textarea>
+    </div>
+    <div class="form-section">
+      <label>Languages</label>
+      <input v-model="editedMonster.languages" type="text" placeholder="Comma-separated list" />
+    </div>
+  </BaseEditorModal>
 </template>
 
 <style scoped>

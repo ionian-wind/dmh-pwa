@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import type { Module } from '@/types';
+import BaseEditorModal from './BaseEditorModal.vue';
 
 const props = defineProps<{
   module: Module | null;
@@ -42,50 +43,39 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="module-editor">
-    <div class="editor-content">
-      <div class="editor-header">
-        <h2>{{ module ? 'Edit Module' : 'Create Module' }}</h2>
+  <BaseEditorModal
+    :isOpen="isOpen"
+    :title="module ? 'Edit Module' : 'Create Module'"
+    submitLabel="Save Module"
+    cancelLabel="Cancel"
+    @submit="handleSubmit"
+    @cancel="handleCancel"
+  >
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input
+            id="name"
+            v-model="editedModule.name"
+            type="text"
+            required
+            placeholder="Module name"
+          >
+        </div>
       </div>
-
-      <form @submit.prevent="handleSubmit" class="editor-form">
-        <div class="form-section">
-          <h3>Basic Information</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="name">Name</label>
-              <input
-                id="name"
-                v-model="editedModule.name"
-                type="text"
-                required
-                placeholder="Module name"
-              >
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea
-              id="description"
-              v-model="editedModule.description"
-              rows="3"
-              placeholder="Module description"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="submit-btn">
-            {{ module ? 'Save Changes' : 'Create Module' }}
-          </button>
-          <button type="button" class="cancel-btn" @click="handleCancel">
-            Cancel
-          </button>
-        </div>
-      </form>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          v-model="editedModule.description"
+          rows="3"
+          placeholder="Module description"
+        ></textarea>
+      </div>
     </div>
-  </div>
+  </BaseEditorModal>
 </template>
 
 <style scoped>

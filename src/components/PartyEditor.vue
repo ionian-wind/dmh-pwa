@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import type { Party } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
+import BaseEditorModal from './BaseEditorModal.vue';
 
 const props = defineProps<{
   party: Party | null;
@@ -19,7 +20,6 @@ const moduleStore = useModuleStore();
 const editedParty = ref<Party>({
   name: '',
   description: '',
-  size: 4,
   notes: '',
   moduleId: null
 });
@@ -53,69 +53,56 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="party-editor">
-    <div class="editor-content">
-      <div class="editor-header">
-        <h2>{{ party ? 'Edit Party' : 'Create Party' }}</h2>
+  <BaseEditorModal
+    :isOpen="isOpen"
+    :title="party ? 'Edit Party' : 'Create Party'"
+    submitLabel="Save Party"
+    cancelLabel="Cancel"
+    @submit="handleSubmit"
+    @cancel="handleCancel"
+  >
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input
+            id="name"
+            v-model="editedParty.name"
+            type="text"
+            required
+            placeholder="Party name"
+          >
+        </div>
+        <div class="form-group">
+          <label for="module">Module</label>
+          <ModuleSelector
+            v-model="editedParty.moduleId"
+            placeholder="No Module"
+          />
+        </div>
       </div>
-
-      <form @submit.prevent="handleSubmit" class="editor-form">
-        <div class="form-section">
-          <h3>Basic Information</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="name">Name</label>
-              <input
-                id="name"
-                v-model="editedParty.name"
-                type="text"
-                required
-                placeholder="Party name"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="module">Module</label>
-              <ModuleSelector
-                v-model="editedParty.moduleId"
-                placeholder="No Module"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea
-              id="description"
-              v-model="editedParty.description"
-              rows="3"
-              placeholder="Party description"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Notes</h3>
-          <div class="form-group">
-            <textarea
-              v-model="editedParty.notes"
-              rows="3"
-              placeholder="Additional notes about the party"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="submit-btn">
-            {{ party ? 'Save Changes' : 'Create Party' }}
-          </button>
-          <button type="button" class="cancel-btn" @click="handleCancel">
-            Cancel
-          </button>
-        </div>
-      </form>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          v-model="editedParty.description"
+          rows="3"
+          placeholder="Party description"
+        ></textarea>
+      </div>
     </div>
-  </div>
+    <div class="form-section">
+      <h3>Notes</h3>
+      <div class="form-group">
+        <textarea
+          v-model="editedParty.notes"
+          rows="3"
+          placeholder="Additional notes about the party"
+        ></textarea>
+      </div>
+    </div>
+  </BaseEditorModal>
 </template>
 
 <style scoped>

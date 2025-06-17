@@ -5,6 +5,7 @@ import ModuleSelector from './ModuleSelector.vue';
 import TagSelector from './TagSelector.vue';
 import EntityAutosuggest from './EntityAutosuggest.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
+import BaseEditorModal from './BaseEditorModal.vue';
 
 const props = defineProps<{
   note: Note | null;
@@ -115,107 +116,92 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="note-editor">
-    <div class="editor-content">
-      <div class="editor-header">
-        <h2>{{ note ? 'Edit Note' : 'Create Note' }}</h2>
+  <BaseEditorModal
+    :isOpen="isOpen"
+    :title="note ? 'Edit Note' : 'Create Note'"
+    submitLabel="Save Note"
+    cancelLabel="Cancel"
+    @submit="handleSubmit"
+    @cancel="handleCancel"
+  >
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input
+            id="title"
+            v-model="editedNote.title"
+            type="text"
+            required
+            placeholder="Note title"
+          >
+        </div>
+        <div class="form-group">
+          <label for="module">Module</label>
+          <ModuleSelector
+            v-model="editedNote.moduleId"
+            placeholder="No Module"
+          />
+        </div>
       </div>
-
-      <form @submit.prevent="handleSubmit" class="editor-form">
-        <div class="form-section">
-          <h3>Basic Information</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="title">Title</label>
-              <input
-                id="title"
-                v-model="editedNote.title"
-                type="text"
-                required
-                placeholder="Note title"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="module">Module</label>
-              <ModuleSelector
-                v-model="editedNote.moduleId"
-                placeholder="No Module"
-              />
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="type">Type</label>
-              <NoteTypeSelector
-                v-model="editedNote.typeId"
-                placeholder="No Type"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="tags">Tags</label>
-              <TagSelector
-                v-model="editedNote.tags"
-                placeholder="Add tags..."
-              />
-            </div>
-          </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="type">Type</label>
+          <NoteTypeSelector
+            v-model="editedNote.typeId"
+            placeholder="No Type"
+          />
         </div>
-
-        <div class="form-section">
-          <h3>Content</h3>
-          <div class="form-group">
-            <textarea
-              v-model="editedNote.content"
-              @input="handleContentInput"
-              rows="10"
-              placeholder="Write your note here... Use [[type:]] to link entities"
-              class="content-editor"
-            ></textarea>
-            <div class="formatting-help">
-              <h4>Formatting Help</h4>
-              <div class="help-grid">
-                <div class="help-item">
-                  <span class="help-title">Internal Links</span>
-                  <code>[[type:id]]</code>
-                  <p>Link to other entities in your campaign:</p>
-                  <ul>
-                    <li><code>[[note:123]]</code> - Link to a note</li>
-                    <li><code>[[module:123]]</code> - Link to a module</li>
-                    <li><code>[[party:123]]</code> - Link to a party</li>
-                    <li><code>[[monster:123]]</code> - Link to a monster</li>
-                    <li><code>[[encounter:123]]</code> - Link to an encounter</li>
-                  </ul>
-                </div>
-                <div class="help-item">
-                  <span class="help-title">Markdown</span>
-                  <p>Basic markdown formatting:</p>
-                  <ul>
-                    <li><code>**bold**</code> - <strong>Bold text</strong></li>
-                    <li><code>*italic*</code> - <em>Italic text</em></li>
-                    <li><code># Heading</code> - Section heading</li>
-                    <li><code>- item</code> - Bullet list</li>
-                    <li><code>1. item</code> - Numbered list</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="form-group">
+          <label for="tags">Tags</label>
+          <TagSelector
+            v-model="editedNote.tags"
+            placeholder="Add tags..."
+          />
         </div>
-
-        <div class="form-actions">
-          <button type="submit" class="submit-btn">
-            {{ note ? 'Save Changes' : 'Create Note' }}
-          </button>
-          <button type="button" class="cancel-btn" @click="handleCancel">
-            Cancel
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
-
+    <div class="form-section">
+      <h3>Content</h3>
+      <div class="form-group">
+        <textarea
+          v-model="editedNote.content"
+          @input="handleContentInput"
+          rows="10"
+          placeholder="Write your note here... Use [[type:]] to link entities"
+          class="content-editor"
+        ></textarea>
+        <div class="formatting-help">
+          <h4>Formatting Help</h4>
+          <div class="help-grid">
+            <div class="help-item">
+              <span class="help-title">Internal Links</span>
+              <code>[[type:id]]</code>
+              <p>Link to other entities in your campaign:</p>
+              <ul>
+                <li><code>[[note:123]]</code> - Link to a note</li>
+                <li><code>[[module:123]]</code> - Link to a module</li>
+                <li><code>[[party:123]]</code> - Link to a party</li>
+                <li><code>[[monster:123]]</code> - Link to a monster</li>
+                <li><code>[[encounter:123]]</code> - Link to an encounter</li>
+              </ul>
+            </div>
+            <div class="help-item">
+              <span class="help-title">Markdown</span>
+              <p>Basic markdown formatting:</p>
+              <ul>
+                <li><code>**bold**</code> - <strong>Bold text</strong></li>
+                <li><code>*italic*</code> - <em>Italic text</em></li>
+                <li><code># Heading</code> - Section heading</li>
+                <li><code>- item</code> - Bullet list</li>
+                <li><code>1. item</code> - Numbered list</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <EntityAutosuggest
       v-if="showAutosuggest"
       :position="autosuggestPosition"
@@ -224,7 +210,7 @@ const handleCancel = () => {
       @select="insertSuggestion"
       @cancel="showAutosuggest = false"
     />
-  </div>
+  </BaseEditorModal>
 </template>
 
 <style scoped>

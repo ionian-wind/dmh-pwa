@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import type { PlayerCharacter, UUID } from '@/types';
+import BaseEditorModal from './BaseEditorModal.vue';
 
 const props = withDefaults(defineProps<{
   character?: PlayerCharacter | null;
@@ -118,112 +119,108 @@ const featuresString = computed({
 </script>
 
 <template>
-  <div v-if="isOpen" class="editor-modal">
-    <div class="editor-content">
-      <div class="editor-header">
-        <h2>{{ isEditing ? 'Edit Character' : 'Create Character' }}</h2>
+  <BaseEditorModal
+    :isOpen="isOpen"
+    :title="isEditing ? 'Edit Character' : 'Create Character'"
+    submitLabel="Save Character"
+    cancelLabel="Cancel"
+    @submit="handleSubmit"
+    @cancel="handleCancel"
+  >
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Name</label>
+          <input v-model="editedCharacter.name" type="text" required />
+        </div>
+        <div class="form-group">
+          <label>Level</label>
+          <input v-model.number="editedCharacter.level" type="number" min="1" max="20" />
+        </div>
+        <div class="form-group">
+          <label>Class</label>
+          <input v-model="editedCharacter.class" type="text" required />
+        </div>
+        <div class="form-group">
+          <label>Race</label>
+          <input v-model="editedCharacter.race" type="text" required />
+        </div>
+        <div class="form-group">
+          <label>Player Name</label>
+          <input v-model="editedCharacter.playerName" type="text" />
+        </div>
       </div>
-      <form @submit.prevent="handleSubmit" class="editor-form">
-        <div class="form-section">
-          <h3>Basic Information</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Name</label>
-              <input v-model="editedCharacter.name" type="text" required />
-            </div>
-            <div class="form-group">
-              <label>Level</label>
-              <input v-model.number="editedCharacter.level" type="number" min="1" max="20" />
-            </div>
-            <div class="form-group">
-              <label>Class</label>
-              <input v-model="editedCharacter.class" type="text" required />
-            </div>
-            <div class="form-group">
-              <label>Race</label>
-              <input v-model="editedCharacter.race" type="text" required />
-            </div>
-            <div class="form-group">
-              <label>Player Name</label>
-              <input v-model="editedCharacter.playerName" type="text" />
-            </div>
-          </div>
-        </div>
-        <div class="form-section">
-          <h3>Combat & Stats</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Hit Points (Current/Max/Temp)</label>
-              <div class="hp-row">
-                <input v-model.number="editedCharacter.hitPoints.current" type="number" min="0" placeholder="Current" /> /
-                <input v-model.number="editedCharacter.hitPoints.maximum" type="number" min="1" placeholder="Max" /> /
-                <input v-model.number="editedCharacter.hitPoints.temporary" type="number" min="0" placeholder="Temp" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Armor Class</label>
-              <input v-model.number="editedCharacter.armorClass" type="number" min="0" />
-            </div>
-            <div class="form-group">
-              <label>Initiative</label>
-              <input v-model.number="editedCharacter.initiative" type="number" />
-            </div>
-            <div class="form-group">
-              <label>Speed</label>
-              <input v-model.number="editedCharacter.speed" type="number" min="0" />
-            </div>
-          </div>
-          <div class="stats-section">
-            <h3>Ability Scores</h3>
-            <div class="stats-grid">
-              <div v-for="stat in statKeys" :key="stat" class="stat-input">
-                <label>{{ stat.charAt(0).toUpperCase() + stat.slice(1) }}</label>
-                <input v-model.number="editedCharacter.stats[stat]" type="number" min="1" max="20" />
-                <span class="modifier">{{ formatModifier(abilityModifier(editedCharacter.stats[stat])) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="form-section">
-          <h3>Background & Details</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Alignment</label>
-              <input v-model="editedCharacter.alignment" type="text" />
-            </div>
-            <div class="form-group">
-              <label>Background</label>
-              <input v-model="editedCharacter.background" type="text" />
-            </div>
-            <div class="form-group">
-              <label>Proficiencies (comma separated)</label>
-              <input v-model="editedCharacter.proficiencies" type="text" @blur="editedCharacter.proficiencies = editedCharacter.proficiencies.toString().split(',').map(s => s.trim()).filter(Boolean)" />
-            </div>
-            <div class="form-group">
-              <label>Equipment (comma separated)</label>
-              <input v-model="editedCharacter.equipment" type="text" @blur="editedCharacter.equipment = editedCharacter.equipment.toString().split(',').map(s => s.trim()).filter(Boolean)" />
-            </div>
-            <div class="form-group">
-              <label>Spells (comma separated)</label>
-              <input v-model="spellsString" type="text" />
-            </div>
-            <div class="form-group">
-              <label>Features (comma separated)</label>
-              <input v-model="featuresString" type="text" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea v-model="editedCharacter.notes" rows="3" />
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="button" @click="handleCancel" class="cancel-btn">Cancel</button>
-          <button type="submit" class="submit-btn">Save Character</button>
-        </div>
-      </form>
     </div>
-  </div>
+    <div class="form-section">
+      <h3>Combat & Stats</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Hit Points (Current/Max/Temp)</label>
+          <div class="hp-row">
+            <input v-model.number="editedCharacter.hitPoints.current" type="number" min="0" placeholder="Current" /> /
+            <input v-model.number="editedCharacter.hitPoints.maximum" type="number" min="1" placeholder="Max" /> /
+            <input v-model.number="editedCharacter.hitPoints.temporary" type="number" min="0" placeholder="Temp" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Armor Class</label>
+          <input v-model.number="editedCharacter.armorClass" type="number" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Initiative</label>
+          <input v-model.number="editedCharacter.initiative" type="number" />
+        </div>
+        <div class="form-group">
+          <label>Speed</label>
+          <input v-model.number="editedCharacter.speed" type="number" min="0" />
+        </div>
+      </div>
+      <div class="stats-section">
+        <h3>Ability Scores</h3>
+        <div class="stats-grid">
+          <div v-for="stat in statKeys" :key="stat" class="stat-input">
+            <label>{{ stat.charAt(0).toUpperCase() + stat.slice(1) }}</label>
+            <input v-model.number="editedCharacter.stats[stat]" type="number" min="1" max="20" />
+            <span class="modifier">{{ formatModifier(abilityModifier(editedCharacter.stats[stat])) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Background & Details</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Alignment</label>
+          <input v-model="editedCharacter.alignment" type="text" />
+        </div>
+        <div class="form-group">
+          <label>Background</label>
+          <input v-model="editedCharacter.background" type="text" />
+        </div>
+        <div class="form-group">
+          <label>Proficiencies (comma separated)</label>
+          <input v-model="editedCharacter.proficiencies" type="text" @blur="editedCharacter.proficiencies = editedCharacter.proficiencies.toString().split(',').map(s => s.trim()).filter(Boolean)" />
+        </div>
+        <div class="form-group">
+          <label>Equipment (comma separated)</label>
+          <input v-model="editedCharacter.equipment" type="text" @blur="editedCharacter.equipment = editedCharacter.equipment.toString().split(',').map(s => s.trim()).filter(Boolean)" />
+        </div>
+        <div class="form-group">
+          <label>Spells (comma separated)</label>
+          <input v-model="spellsString" type="text" />
+        </div>
+        <div class="form-group">
+          <label>Features (comma separated)</label>
+          <input v-model="featuresString" type="text" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea v-model="editedCharacter.notes" rows="3" />
+      </div>
+    </div>
+  </BaseEditorModal>
 </template>
 
 <style scoped>

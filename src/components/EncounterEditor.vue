@@ -5,6 +5,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { Encounter, Combatant, Monster } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
+import BaseEditorModal from './BaseEditorModal.vue';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -153,133 +154,124 @@ defineExpose({
 </script>
 
 <template>
-  <div class="encounter-editor">
-    <div v-if="isOpen" class="editor-modal">
-      <div class="editor-content">
-        <h2>{{ isEditing ? 'Edit Encounter' : 'Add Encounter' }}</h2>
-
-        <div class="form-section">
-          <label>Name</label>
-          <input v-model="editedEncounter.name" required>
-        </div>
-
-        <div class="form-section">
-          <label>Description</label>
-          <textarea 
-            v-model="editedEncounter.description" 
-            placeholder="Description"
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div class="form-section">
-          <label>Module</label>
-          <ModuleSelector
-            v-model="editedEncounter.moduleId"
-            placeholder="No Module"
-          />
-        </div>
-
-        <div class="form-section">
-          <label>Party</label>
-          <select v-model="editedEncounter.partyId">
-            <option value="">Select Party</option>
-            <option v-for="party in partyStore.parties" :key="party.id" :value="party.id">
-              {{ party.name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-section">
-          <label>Difficulty</label>
-          <select v-model="editedEncounter.difficulty">
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-            <option value="deadly">Deadly</option>
-          </select>
-        </div>
-
-        <div class="form-section">
-          <h4>Monsters</h4>
-          
-          <div class="monsters-list">
-            <div
-              v-for="monster in editedEncounter.monsters"
-              :key="monster.id"
-              class="monster-item"
+  <BaseEditorModal
+    :isOpen="isOpen"
+    :title="isEditing ? 'Edit Encounter' : 'Add Encounter'"
+    submitLabel="Save Encounter"
+    cancelLabel="Cancel"
+    @submit="handleSubmit"
+    @cancel="closeEditor"
+  >
+    <div class="form-section">
+      <label>Name</label>
+      <input v-model="editedEncounter.name" required>
+    </div>
+    <div class="form-section">
+      <label>Description</label>
+      <textarea 
+        v-model="editedEncounter.description" 
+        placeholder="Description"
+        rows="3"
+      ></textarea>
+    </div>
+    <div class="form-section">
+      <label>Module</label>
+      <ModuleSelector
+        v-model="editedEncounter.moduleId"
+        placeholder="No Module"
+      />
+    </div>
+    <div class="form-section">
+      <label>Party</label>
+      <select v-model="editedEncounter.partyId">
+        <option value="">Select Party</option>
+        <option v-for="party in partyStore.parties" :key="party.id" :value="party.id">
+          {{ party.name }}
+        </option>
+      </select>
+    </div>
+    <div class="form-section">
+      <label>Difficulty</label>
+      <select v-model="editedEncounter.difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+        <option value="deadly">Deadly</option>
+      </select>
+    </div>
+    <div class="form-section">
+      <h4>Monsters</h4>
+      
+      <div class="monsters-list">
+        <div
+          v-for="monster in editedEncounter.monsters"
+          :key="monster.id"
+          class="monster-item"
+        >
+          <div class="monster-info">
+            <span class="monster-name">{{ getMonsterDetails(monster.id)?.name || 'Unknown Monster' }}</span>
+            <span class="monster-type">{{ getMonsterDetails(monster.id)?.type || 'Unknown' }}</span>
+            <span class="monster-cr">CR {{ getMonsterDetails(monster.id)?.challengeRating || 'Unknown' }}</span>
+          </div>
+          <div class="monster-quantity">
+            <button
+              type="button"
+              class="quantity-btn"
+              @click="removeMonster(monster.id)"
             >
-              <div class="monster-info">
-                <span class="monster-name">{{ getMonsterDetails(monster.id)?.name || 'Unknown Monster' }}</span>
-                <span class="monster-type">{{ getMonsterDetails(monster.id)?.type || 'Unknown' }}</span>
-                <span class="monster-cr">CR {{ getMonsterDetails(monster.id)?.challengeRating || 'Unknown' }}</span>
-              </div>
-              <div class="monster-quantity">
-                <button
-                  type="button"
-                  class="quantity-btn"
-                  @click="removeMonster(monster.id)"
-                >
-                  -
-                </button>
-                <span class="quantity">{{ monster.quantity }}</span>
-                <button
-                  type="button"
-                  class="quantity-btn"
-                  @click="addMonster(getMonsterDetails(monster.id)!)"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="monster-selector">
-            <select
-              v-model="selectedMonster"
-              @change="addMonster($event.target.value)"
+              -
+            </button>
+            <span class="quantity">{{ monster.quantity }}</span>
+            <button
+              type="button"
+              class="quantity-btn"
+              @click="addMonster(getMonsterDetails(monster.id)!)"
             >
-              <option value="">Add a monster...</option>
-              <option
-                v-for="monster in monsterStore.monsters"
-                :key="monster.id"
-                :value="monster"
-              >
-                {{ monster.name }} (CR {{ monster.challengeRating }})
-              </option>
-            </select>
-          </div>
-
-          <div class="encounter-summary">
-            <div class="summary-item">
-              <span class="label">Total XP:</span>
-              <span class="value">{{ editedEncounter.xp }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="label">Difficulty:</span>
-              <span class="value">{{ editedEncounter.difficulty }}</span>
-            </div>
+              +
+            </button>
           </div>
         </div>
+      </div>
 
-        <div class="form-section">
-          <h3>Notes</h3>
-          <div class="form-group">
-            <textarea
-              v-model="editedEncounter.notes"
-              rows="3"
-              placeholder="Additional notes about the encounter"
-            ></textarea>
-          </div>
+      <div class="monster-selector">
+        <select
+          v-model="selectedMonster"
+          @change="addMonster($event.target.value)"
+        >
+          <option value="">Add a monster...</option>
+          <option
+            v-for="monster in monsterStore.monsters"
+            :key="monster.id"
+            :value="monster"
+          >
+            {{ monster.name }} (CR {{ monster.challengeRating }})
+          </option>
+        </select>
+      </div>
+
+      <div class="encounter-summary">
+        <div class="summary-item">
+          <span class="label">Total XP:</span>
+          <span class="value">{{ editedEncounter.xp }}</span>
         </div>
-
-        <div class="form-actions">
-          <button @click="closeEditor" class="cancel-btn">Cancel</button>
-          <button @click="handleSubmit" class="save-btn">Save Encounter</button>
+        <div class="summary-item">
+          <span class="label">Difficulty:</span>
+          <span class="value">{{ editedEncounter.difficulty }}</span>
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="form-section">
+      <h3>Notes</h3>
+      <div class="form-group">
+        <textarea
+          v-model="editedEncounter.notes"
+          rows="3"
+          placeholder="Additional notes about the encounter"
+        ></textarea>
+      </div>
+    </div>
+  </BaseEditorModal>
 </template>
 
 <style scoped>
