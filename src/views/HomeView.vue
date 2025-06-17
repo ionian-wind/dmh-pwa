@@ -7,7 +7,6 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
-import GlobalMenu from '@/components/GlobalMenu.vue';
 
 const router = useRouter();
 const noteStore = useNoteStore();

@@ -5,7 +5,7 @@ import { useModuleStore } from '@/stores/modules';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import ModuleCard from '@/components/ModuleCard.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const router = useRouter();
 const moduleStore = useModuleStore();

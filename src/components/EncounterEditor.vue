@@ -3,8 +3,8 @@ import { ref, watch, computed, onMounted } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import { Encounter } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
-import BaseModal from './BaseModal.vue';
-import Button from './Button.vue';
+import BaseModal from '@/components/common/BaseModal.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -26,7 +26,7 @@ const editedEncounter = ref<EncounterFormData>({
   difficulty: 'easy',
   level: 1,
   xp: 0,
-  monsters: [],
+  monsters: {},
   currentRound: 0,
   currentTurn: 0,
   moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
@@ -46,7 +46,7 @@ watch(() => props.encounter, (newEncounter) => {
       difficulty: 'easy',
       level: 1,
       xp: 0,
-      monsters: [],
+      monsters: {},
       currentRound: 0,
       currentTurn: 0,
       moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
@@ -62,7 +62,7 @@ const resetForm = () => {
     difficulty: 'easy',
     level: 1,
     xp: 0,
-    monsters: [],
+    monsters: {},
     currentRound: 0,
     currentTurn: 0,
     moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),

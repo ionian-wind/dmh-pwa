@@ -6,7 +6,7 @@ import { useModuleStore } from '@/stores/modules';
 import type { Encounter, Combat } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 import PartySelector from '@/components/PartySelector.vue';
 
 const router = useRouter();

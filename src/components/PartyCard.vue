@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import type { Party } from '@/types';
 import { useModuleStore } from '@/stores/modules';
-import BaseCard from './BaseCard.vue';
-import Button from './Button.vue';
+import BaseCard from '@/components/common/BaseCard.vue';;
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view']);

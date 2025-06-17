@@ -148,7 +148,7 @@ import { useRoute } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/components/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
-import BaseEntityView from '@/components/BaseEntityView.vue';
+import BaseEntityView from '@/components/common/BaseEntityView.vue';
 
 const route = useRoute();
 const characterStore = useCharacterStore();

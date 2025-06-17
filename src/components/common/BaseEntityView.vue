@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import Button from '@/components/Button.vue';
+import Button from './Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 
 interface Props {
@@ -9,8 +8,8 @@ interface Props {
   entityName: string;
   listRoute: string;
   onDelete: () => Promise<void>;
-  onEdit: () => void;
-  isEditing: boolean;
+  onEdit?: () => void;
+  isEditing?: boolean;
   title: string;
   subtitle?: string;
   loading?: boolean;
@@ -20,7 +19,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   subtitle: '',
   loading: false,
-  notFound: false
+  notFound: false,
+  isEditing: false
 });
 
 const emit = defineEmits<{
@@ -32,7 +32,9 @@ const route = useRoute();
 const router = useRouter();
 
 const handleEdit = () => {
-  props.onEdit();
+  if (props.onEdit) {
+    props.onEdit();
+  }
 };
 
 const handleDelete = async () => {
@@ -60,15 +62,8 @@ const handleGoBack = () => {
           </div>
         </div>
         <div class="header-actions">
-          <Button @click="handleEdit" :disabled="isEditing">
-            Edit {{ entityName }}
-          </Button>
-          <Button variant="danger" @click="handleDelete">
-            Delete {{ entityName }}
-          </Button>
-          <Button variant="secondary" @click="handleGoBack">
-            Back to {{ entityName }}s
-          </Button>
+          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">✏️</Button>
+          <Button variant="danger" @click="handleDelete" title="Delete">🗑️</Button>
         </div>
       </div>
 

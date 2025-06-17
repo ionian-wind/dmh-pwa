@@ -6,9 +6,9 @@ import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import type { Combat } from '@/types';
-import BaseEntityView from '@/components/BaseEntityView.vue';
+import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CombatTracker from '@/components/CombatTracker.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const route = useRoute();
 const router = useRouter();

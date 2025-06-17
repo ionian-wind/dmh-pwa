@@ -125,7 +125,7 @@ const router = createRouter({
   ]
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const navigationStore = useNavigationStore();
   
   // Don't update last opened page for detail views

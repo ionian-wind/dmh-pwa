@@ -36,11 +36,13 @@
       "description": "Experience points for the encounter"
     },
     "monsters": {
-      "type": "array",
-      "items": {
-        "type": "string"
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 20
       },
-      "description": "Array of monster IDs in this encounter"
+      "description": "Object mapping monster IDs to their counts in this encounter"
     },
     "currentRound": {
       "type": "number",

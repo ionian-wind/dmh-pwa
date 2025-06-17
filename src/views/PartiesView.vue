@@ -5,7 +5,7 @@ import { usePartyStore } from '@/stores/parties';
 import type { Party } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
 import PartyCard from '@/components/PartyCard.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const router = useRouter();
 const partyStore = usePartyStore();

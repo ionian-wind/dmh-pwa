@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getStorageInfo, clearStorage } from '@/utils/storage';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const storageInfo = ref({ size: 0, itemCount: 0 });
 const showConfirmDialog = ref(false);

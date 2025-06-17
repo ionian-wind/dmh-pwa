@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { withDefaults } from 'vue';
-import Button from './Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = withDefaults(defineProps<{
   modelValue: string[];

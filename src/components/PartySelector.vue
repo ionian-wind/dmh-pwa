@@ -6,8 +6,8 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useMonsterStore } from '@/stores/monsters';
 import { useCharacterStore } from '@/stores/characters';
 import { Combat, Combatant, Encounter, Monster, PlayerCharacter } from '@/types';
-import BaseModal from './BaseModal.vue';
-import Button from './Button.vue';
+import BaseModal from '@/components/common/BaseModal.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -50,8 +50,9 @@ const handleCreateCombat = () => {
   const partyCharacters = characterStore.all.filter(c => c.partyId === selectedPartyId.value);
   
   // Get encounter monsters
+  const encounterMonsterIds = Object.keys(props.encounter!.monsters || {});
   const encounterMonsters = monsterStore.monsters.filter(m => 
-    props.encounter!.monsters.includes(m.id)
+    encounterMonsterIds.includes(m.id)
   );
 
   // Create combatants from characters
@@ -73,24 +74,30 @@ const handleCreateCombat = () => {
     updatedAt: Date.now()
   }));
 
-  // Create combatants from monsters
-  const monsterCombatants: Combatant[] = encounterMonsters.map(monster => ({
-    id: generateId(),
-    name: monster.name,
-    type: 'monster',
-    initiative: 0, // Will be rolled
-    armorClass: monster.armorClass,
-    hitPoints: {
-      maximum: monster.hitPoints,
-      current: monster.hitPoints,
-      temporary: 0
-    },
-    conditions: [],
-    referenceId: monster.id,
-    notes: '',
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  }));
+  // Create combatants from monsters with counts
+  const monsterCombatants: Combatant[] = [];
+  encounterMonsters.forEach(monster => {
+    const count = props.encounter!.monsters[monster.id] || 1;
+    for (let i = 0; i < count; i++) {
+      monsterCombatants.push({
+        id: generateId(),
+        name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
+        type: 'monster',
+        initiative: 0, // Will be rolled
+        armorClass: monster.armorClass,
+        hitPoints: {
+          maximum: monster.hitPoints,
+          current: monster.hitPoints,
+          temporary: 0
+        },
+        conditions: [],
+        referenceId: monster.id,
+        notes: '',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+    }
+  });
 
   // Combine all combatants
   const allCombatants = [...characterCombatants, ...monsterCombatants];
@@ -149,7 +156,7 @@ const generateId = () => {
         <div class="party-details">
           <p><strong>Party:</strong> {{ partyStore.getPartyById(selectedPartyId)?.name }}</p>
           <p><strong>Characters:</strong> {{ characterStore.all.filter(c => c.partyId === selectedPartyId).length }}</p>
-          <p><strong>Monsters:</strong> {{ encounter?.monsters?.length || 0 }}</p>
+          <p><strong>Monsters:</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
         </div>
       </div>
 

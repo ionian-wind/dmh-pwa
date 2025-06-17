@@ -5,7 +5,7 @@ import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import Button from './Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   position: { top: number; left: number };

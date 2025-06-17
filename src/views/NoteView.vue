@@ -6,7 +6,7 @@ import { useModuleStore } from '@/stores/modules';
 import type { Note } from '@/types';
 import NoteEditor from '@/components/NoteEditor.vue';
 import { parseMarkdown } from '@/utils/markdownParser';
-import BaseEntityView from '@/components/BaseEntityView.vue';
+import BaseEntityView from '@/components/common/BaseEntityView.vue';
 
 const route = useRoute();
 const noteStore = useNoteStore();

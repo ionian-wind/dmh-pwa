@@ -7,7 +7,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
 import NoteCard from '@/components/NoteCard.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 import type { Note } from '@/types';
 
 const noteStore = useNoteStore();

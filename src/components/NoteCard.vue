@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Note } from '@/types';
-import BaseCard from './BaseCard.vue';
+import BaseCard from '@/components/common/BaseCard.vue';;
 import { defineProps, defineEmits } from 'vue';
-import Button from './Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
 const emit = defineEmits(['edit', 'delete', 'view']);

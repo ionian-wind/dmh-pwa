@@ -6,10 +6,10 @@ import { useModuleStore } from '@/stores/modules';
 import { useCharacterStore } from '@/stores/characters';
 import { Party, PlayerCharacter } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
-import BaseModal from '@/components/BaseModal.vue';
-import ToggleSwitch from '@/components/ToggleSwitch.vue';
-import BaseEntityView from '@/components/BaseEntityView.vue';
-import Button from '@/components/Button.vue';
+import BaseModal from '@/components/common/BaseModal.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import Button from '@/components/common/Button.vue';
 
 const route = useRoute();
 const partyStore = usePartyStore();

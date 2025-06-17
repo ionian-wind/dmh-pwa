@@ -38,7 +38,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import CharacterCard from '@/components/CharacterCard.vue';
 import CharacterEditor from '@/components/CharacterEditor.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 import type { PlayerCharacter } from '@/types';
 
 const router = useRouter();

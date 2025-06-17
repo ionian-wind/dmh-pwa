@@ -5,7 +5,8 @@ import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Combatant } from '@/types';
-import Button from './Button.vue';
+import Button from '@/components/common/Button.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';;
 
 const props = defineProps<{
   encounterId: string;
@@ -31,6 +32,24 @@ const currentCombatant = computed(() => {
   return null;
 });
 
+// Combat log functionality
+const combatLog = ref<Array<{ id: string; timestamp: number; message: string; type: 'info' | 'action' | 'damage' | 'heal' }>>([]);
+const autoAdvance = ref(false);
+
+const addLogEntry = (message: string, type: 'info' | 'action' | 'damage' | 'heal' = 'info') => {
+  combatLog.value.unshift({
+    id: Date.now().toString(),
+    timestamp: Date.now(),
+    message,
+    type
+  });
+  
+  // Keep only last 50 entries
+  if (combatLog.value.length > 50) {
+    combatLog.value = combatLog.value.slice(0, 50);
+  }
+};
+
 const nextTurn = () => {
   if (combat.value) {
     combatStore.nextTurn(combat.value.id);
@@ -46,6 +65,7 @@ const previousTurn = () => {
 const endCombat = () => {
   if (combat.value) {
     combatStore.endCombat(combat.value.id);
+    addLogEntry('Combat ended', 'info');
   }
 };
 
@@ -54,10 +74,86 @@ const updateHitPoints = (combatantId: string, value: number) => {
   
   const combatant = combat.value.combatants.find(c => c.id === combatantId);
   if (combatant) {
+    const oldHP = combatant.hitPoints.current;
     const newHP = combatant.hitPoints.current + value;
     combatant.hitPoints.current = Math.max(0, Math.min(newHP, combatant.hitPoints.maximum));
     combatStore.updateCombatant(combat.value.id, combatantId, { hitPoints: combatant.hitPoints });
+    
+    const change = combatant.hitPoints.current - oldHP;
+    if (change !== 0) {
+      const type = change > 0 ? 'heal' : 'damage';
+      addLogEntry(`${combatant.name} ${change > 0 ? 'healed' : 'took damage'} for ${Math.abs(change)} HP`, type);
+    }
   }
+};
+
+// Quick actions functionality
+const rollInitiative = () => {
+  if (!combat.value) return;
+  
+  combat.value.combatants.forEach(combatant => {
+    const roll = Math.floor(Math.random() * 20) + 1;
+    const modifier = Math.floor((combatant.initiative - 10) / 2);
+    const total = roll + modifier;
+    combatant.initiative = total;
+    addLogEntry(`${combatant.name} rolled initiative: ${roll} + ${modifier} = ${total}`, 'action');
+  });
+  
+  // Sort combatants by initiative (highest first)
+  combat.value.combatants.sort((a, b) => b.initiative - a.initiative);
+  
+  // Update each combatant's initiative
+  combat.value.combatants.forEach(combatant => {
+    combatStore.updateCombatant(combat.value!.id, combatant.id, { initiative: combatant.initiative });
+  });
+  
+  addLogEntry('Initiative order updated', 'info');
+};
+
+const healAll = () => {
+  if (!combat.value) return;
+  
+  combat.value.combatants.forEach(combatant => {
+    const healed = combatant.hitPoints.maximum - combatant.hitPoints.current;
+    combatant.hitPoints.current = combatant.hitPoints.maximum;
+    combatant.hitPoints.temporary = 0;
+    if (healed > 0) {
+      addLogEntry(`${combatant.name} healed for ${healed} HP`, 'heal');
+    }
+    combatStore.updateCombatant(combat.value!.id, combatant.id, { 
+      hitPoints: combatant.hitPoints 
+    });
+  });
+  
+  addLogEntry('All combatants healed to full HP', 'heal');
+};
+
+const clearConditions = () => {
+  if (!combat.value) return;
+  
+  combat.value.combatants.forEach(combatant => {
+    if (combatant.conditions.length > 0) {
+      addLogEntry(`Cleared conditions from ${combatant.name}: ${combatant.conditions.join(', ')}`, 'action');
+      combatant.conditions = [];
+      combatStore.updateCombatant(combat.value!.id, combatant.id, { conditions: [] });
+    }
+  });
+  
+  addLogEntry('All conditions cleared', 'action');
+};
+
+const toggleAutoAdvance = () => {
+  autoAdvance.value = !autoAdvance.value;
+  addLogEntry(`Auto advance ${autoAdvance.value ? 'enabled' : 'disabled'}`, 'info');
+};
+
+const clearLog = () => {
+  combatLog.value = [];
+};
+
+const formatTime = (timestamp: number) => {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString();
 };
 
 // Функция для получения деталей комбатанта
@@ -75,6 +171,16 @@ const combatantDetails = (combatant: Combatant) => {
 
 const newCondition = ref('');
 
+// Available conditions for the grid
+const availableConditions = [
+  'blinded', 'charmed', 'deafened', 'exhaustion', 'frightened', 
+  'grappled', 'incapacitated', 'invisible', 'paralyzed', 'petrified', 
+  'poisoned', 'prone', 'restrained', 'stunned', 'unconscious'
+];
+
+// Track selected conditions for the current combatant
+const selectedConditions = ref<Record<string, boolean>>({});
+
 const addCondition = (combatantId: string, condition: string) => {
   if (!combat.value) return;
   
@@ -82,6 +188,7 @@ const addCondition = (combatantId: string, condition: string) => {
   if (combatant && !combatant.conditions.includes(condition)) {
     const updatedConditions = [...combatant.conditions, condition];
     combatStore.updateCombatant(combat.value.id, combatantId, { conditions: updatedConditions });
+    addLogEntry(`Added ${condition} condition to ${combatant.name}`, 'action');
   }
 };
 
@@ -92,8 +199,62 @@ const removeCondition = (combatantId: string, condition: string) => {
   if (combatant) {
     const updatedConditions = combatant.conditions.filter(c => c !== condition);
     combatStore.updateCombatant(combat.value.id, combatantId, { conditions: updatedConditions });
+    addLogEntry(`Removed ${condition} condition from ${combatant.name}`, 'action');
   }
 };
+
+const handleConditionToggle = (combatantId: string, condition: string, isSelected: boolean) => {
+  if (isSelected) {
+    addCondition(combatantId, condition);
+  } else {
+    removeCondition(combatantId, condition);
+  }
+};
+
+const updateSelectedConditions = (combatantId: string) => {
+  if (!combat.value) return;
+  
+  const combatant = combat.value.combatants.find(c => c.id === combatantId);
+  if (combatant) {
+    selectedConditions.value = availableConditions.reduce((acc, condition) => {
+      acc[condition] = combatant.conditions.includes(condition);
+      return acc;
+    }, {} as Record<string, boolean>);
+  }
+};
+
+// Watch for combat state changes
+watch(() => combat.value?.currentTurn, (newTurn, oldTurn) => {
+  if (newTurn !== undefined && oldTurn !== undefined && combat.value) {
+    const combatant = combat.value.combatants[newTurn];
+    if (combatant) {
+      addLogEntry(`${combatant.name}'s turn`, 'action');
+      updateSelectedConditions(combatant.id);
+    }
+  }
+});
+
+watch(() => combat.value?.currentRound, (newRound, oldRound) => {
+  if (newRound !== undefined && oldRound !== undefined && newRound !== oldRound) {
+    addLogEntry(`Round ${newRound} begins!`, 'info');
+  }
+});
+
+// Watch for current combatant changes to update selected conditions
+watch(currentCombatant, (newCombatant) => {
+  if (newCombatant) {
+    updateSelectedConditions(newCombatant.id);
+  }
+});
+
+onMounted(() => {
+  if (combat.value) {
+    addLogEntry(`Loaded combat for encounter: ${encounter.value?.name}`, 'info');
+    if (currentCombatant.value) {
+      updateSelectedConditions(currentCombatant.value.id);
+    }
+  }
+});
 </script>
 
 <template>
@@ -123,27 +284,14 @@ const removeCondition = (combatantId: string, condition: string) => {
 
         <div class="conditions">
           <h4>Conditions:</h4>
-          <div v-if="currentCombatant.conditions.length">
-            <span v-for="condition in currentCombatant.conditions" :key="condition" class="condition-tag">
-              {{ condition }}
-              <Button size="small" variant="danger" @click="removeCondition(currentCombatant.id, condition)">×</Button>
-            </span>
-          </div>
-          <p v-else>No conditions</p>
-          <div class="add-condition">
-            <select v-model="newCondition">
-              <option value="blinded">Blinded</option>
-              <option value="charmed">Charmed</option>
-              <option value="frightened">Frightened</option>
-              <option value="grappled">Grappled</option>
-              <option value="paralyzed">Paralyzed</option>
-              <option value="poisoned">Poisoned</option>
-              <option value="prone">Prone</option>
-              <option value="restrained">Restrained</option>
-              <option value="stunned">Stunned</option>
-              <option value="unconscious">Unconscious</option>
-            </select>
-            <Button size="small" @click="addCondition(currentCombatant.id, newCondition)">Add</Button>
+          <div class="conditions-grid">
+            <div v-for="condition in availableConditions" :key="condition" class="condition-item">
+              <ToggleSwitch
+                :model-value="selectedConditions[condition] || false"
+                @update:model-value="(value) => handleConditionToggle(currentCombatant!.id, condition, value)"
+              />
+              <span class="condition-label">{{ condition }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -169,6 +317,64 @@ const removeCondition = (combatantId: string, condition: string) => {
           </span>
         </span>
       </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions" v-if="combat.status === 'active'">
+      <h3>Quick Actions</h3>
+      <div class="action-buttons">
+        <Button 
+          variant="secondary"
+          size="small"
+          @click="rollInitiative"
+        >
+          🎲 Roll Initiative
+        </Button>
+        <Button 
+          variant="success"
+          size="small"
+          @click="healAll"
+        >
+          💚 Heal All
+        </Button>
+        <Button 
+          variant="secondary"
+          size="small"
+          @click="clearConditions"
+        >
+          🧹 Clear All Conditions
+        </Button>
+        <Button 
+          :variant="autoAdvance ? 'primary' : 'secondary'"
+          size="small"
+          @click="toggleAutoAdvance"
+        >
+          {{ autoAdvance ? '⏸️' : '▶️' }} Auto Advance
+        </Button>
+      </div>
+    </div>
+
+    <!-- Combat Log -->
+    <div class="combat-log" v-if="combatLog.length > 0">
+      <h3>Combat Log</h3>
+      <div class="log-entries">
+        <div 
+          v-for="entry in combatLog" 
+          :key="entry.id" 
+          class="log-entry"
+          :class="entry.type"
+        >
+          <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
+          <span class="log-message">{{ entry.message }}</span>
+        </div>
+      </div>
+      <Button 
+        variant="secondary"
+        size="small"
+        @click="clearLog"
+      >
+        Clear Log
+      </Button>
     </div>
   </div>
   <div v-else class="no-combat">
@@ -217,6 +423,28 @@ const removeCondition = (combatantId: string, condition: string) => {
   margin-top: 0.5rem;
 }
 
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.condition-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  border-radius: var(--border-radius);
+  background: var(--color-background);
+}
+
+.condition-label {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
 .initiative-item {
   display: flex;
   padding: 8px;
@@ -236,4 +464,80 @@ const removeCondition = (combatantId: string, condition: string) => {
 .name { flex: 2; }
 .initiative, .hp, .ac { flex: 1; }
 .conditions { flex: 2; }
+
+.quick-actions {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.quick-actions h3 {
+  margin: 0 0 1rem 0;
+  color: var(--color-text);
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.combat-log {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.combat-log h3 {
+  margin: 0 0 1rem 0;
+  color: var(--color-text);
+}
+
+.log-entries {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.log-entry {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.log-entry.info {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.log-entry.action {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.log-entry.damage {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.log-entry.heal {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.log-time {
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.log-message {
+  flex: 1;
+}
 </style>

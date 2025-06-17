@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useNoteTypeStore } from '@/stores/noteTypes';
 import type { NoteType } from '@/types';
-import Button from './Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   modelValue: string | null;

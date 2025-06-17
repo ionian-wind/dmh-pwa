@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
-import BaseEntityView from '@/components/BaseEntityView.vue';
+import BaseEntityView from '@/components/common/BaseEntityView.vue';
 
 const route = useRoute();
 const monsterStore = useMonsterStore();

@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import { useRouter } from 'vue-router';
 import { Section } from '@/types';
-import Button from './Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const moduleStore = useModuleStore();
 const router = useRouter();

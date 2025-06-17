@@ -5,7 +5,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
 import MonsterCard from '@/components/MonsterCard.vue';
-import Button from '@/components/Button.vue';
+import Button from '@/components/common/Button.vue';
 
 const router = useRouter();
 const monsterStore = useMonsterStore();

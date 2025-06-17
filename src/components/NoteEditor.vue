@@ -5,8 +5,8 @@ import ModuleSelector from './ModuleSelector.vue';
 import TagSelector from './TagSelector.vue';
 import EntityAutosuggest from './EntityAutosuggest.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
-import BaseModal from './BaseModal.vue';
-import Button from './Button.vue';
+import BaseModal from '@/components/common/BaseModal.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   note: Note | null;

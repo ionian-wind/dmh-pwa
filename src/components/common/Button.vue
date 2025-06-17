@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'link';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
@@ -134,6 +134,22 @@ function handleClick(event: MouseEvent) {
   background: var(--color-warning-dark);
 }
 
+.btn--link {
+  background: transparent;
+  color: var(--color-primary);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.btn--link:hover:not(.btn--disabled) {
+  background: var(--color-primary-alpha);
+  text-decoration-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
 /* Disabled state */
 .btn--disabled {
   opacity: 0.6;
@@ -177,5 +193,9 @@ function handleClick(event: MouseEvent) {
 
 .btn--warning:focus-visible {
   outline-color: var(--color-warning);
+}
+
+.btn--link:focus-visible {
+  outline-color: var(--color-primary);
 }
 </style> 

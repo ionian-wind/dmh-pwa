@@ -163,7 +163,7 @@ export interface Encounter extends WithMetadata {
   description?: string;
   difficulty: 'easy' | 'medium' | 'hard' | 'deadly';
   level: number;
-  monsters: UUID[];
+  monsters: Record<UUID, number>;
   currentRound: number;
   currentTurn: number;
   moduleId: UUID;

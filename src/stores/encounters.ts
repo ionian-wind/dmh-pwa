@@ -12,7 +12,7 @@ const isEncounter = (value: unknown): value is Encounter => {
   return typeof value === 'object' && value !== null &&
     typeof (value as any).name === 'string' &&
     typeof (value as any).difficulty === 'string' &&
-    Array.isArray((value as any).monsters) &&
+    typeof (value as any).monsters === 'object' &&
     typeof (value as any).currentRound === 'number' &&
     typeof (value as any).currentTurn === 'number' &&
     typeof (value as any).moduleId === 'string';
@@ -93,16 +93,16 @@ export const useEncounterStore = defineStore('encounters', () => {
     return encounters.value.filter(e => moduleStore.matchesModuleFilter(e.moduleId));
   });
 
-  const addMonster = (encounterId: string, monsterId: string) => {
+  const addMonster = (encounterId: string, monsterId: string, count: number = 1) => {
     const encounter = encounters.value.find(e => e.id === encounterId);
     if (!encounter) return;
 
     if (!encounter.monsters) {
-      encounter.monsters = [];
+      encounter.monsters = {};
     }
 
-    if (!encounter.monsters.includes(monsterId)) {
-      encounter.monsters.push(monsterId);
+    if (!encounter.monsters[monsterId]) {
+      encounter.monsters[monsterId] = count;
       encounter.updatedAt = Date.now();
     }
   };
@@ -112,11 +112,33 @@ export const useEncounterStore = defineStore('encounters', () => {
     if (!encounter) return;
 
     if (!encounter.monsters) {
-      encounter.monsters = [];
+      encounter.monsters = {};
     }
 
-    encounter.monsters = encounter.monsters.filter(m => m !== monsterId);
+    encounter.monsters = Object.fromEntries(Object.entries(encounter.monsters).filter(([key]) => key !== monsterId));
     encounter.updatedAt = Date.now();
+  };
+
+  const setMonsterCount = (encounterId: string, monsterId: string, count: number) => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter) return;
+
+    if (!encounter.monsters) {
+      encounter.monsters = {};
+    }
+
+    if (count <= 0) {
+      removeMonster(encounterId, monsterId);
+    } else {
+      encounter.monsters[monsterId] = Math.min(count, 20); // Cap at 20
+      encounter.updatedAt = Date.now();
+    }
+  };
+
+  const getMonsterCount = (encounterId: string, monsterId: string): number => {
+    const encounter = encounters.value.find(e => e.id === encounterId);
+    if (!encounter || !encounter.monsters) return 0;
+    return encounter.monsters[monsterId] || 0;
   };
 
   const updateTurn = (encounterId: string, round: number, turn: number) => {
@@ -133,7 +155,7 @@ export const useEncounterStore = defineStore('encounters', () => {
     if (!encounter || !encounter.monsters) return;
 
     encounter.currentTurn++;
-    if (encounter.currentTurn >= encounter.monsters.length) {
+    if (encounter.currentTurn >= Object.keys(encounter.monsters).length) {
       encounter.currentTurn = 0;
       encounter.currentRound++;
     }
@@ -148,7 +170,7 @@ export const useEncounterStore = defineStore('encounters', () => {
     if (encounter.currentTurn < 0) {
       if (encounter.currentRound > 1) {
         encounter.currentRound--;
-        encounter.currentTurn = encounter.monsters.length - 1;
+        encounter.currentTurn = Object.keys(encounter.monsters).length - 1;
       } else {
         encounter.currentTurn = 0;
       }
@@ -181,6 +203,8 @@ export const useEncounterStore = defineStore('encounters', () => {
     getEncounterById,
     addMonster,
     removeMonster,
+    setMonsterCount,
+    getMonsterCount,
     updateTurn,
     nextTurn,
     previousTurn,

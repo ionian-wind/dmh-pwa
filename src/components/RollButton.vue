@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FloatActionButton from './FloatActionButton.vue';
+import FloatActionButton from '@/components/common/FloatActionButton.vue';;
 
 interface Props {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';

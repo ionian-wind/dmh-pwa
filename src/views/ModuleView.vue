@@ -90,7 +90,7 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
-import BaseEntityView from '@/components/BaseEntityView.vue';
+import BaseEntityView from '@/components/common/BaseEntityView.vue';
 
 const route = useRoute();
 const moduleStore = useModuleStore();

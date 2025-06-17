@@ -1,13 +1,42 @@
 <script setup lang="ts">
 import type { Encounter } from '@/types';
-import BaseCard from './BaseCard.vue';
+import BaseCard from '@/components/common/BaseCard.vue';;
 import { useRouter } from 'vue-router';
-import { defineProps, defineEmits } from 'vue';
-import Button from './Button.vue';
+import { defineProps, defineEmits, computed } from 'vue';
+import Button from '@/components/common/Button.vue';
+import { useModuleStore } from '@/stores/modules';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat']);
 const router = useRouter();
+const moduleStore = useModuleStore();
+
+const moduleName = computed(() => {
+  if (!props.encounter.moduleId) return 'No Module';
+  const module = moduleStore.modules.find(m => m.id === props.encounter.moduleId);
+  return module ? module.name : 'Unknown Module';
+});
+
+const monstersCount = computed(() => {
+  const monsters = props.encounter.monsters || {};
+  
+  // Handle different possible data structures
+  let kinds = 0;
+  let total = 0;
+  
+  if (typeof monsters === 'object' && monsters !== null) {
+    const keys = Object.keys(monsters);
+    kinds = keys.length;
+    
+    // Sum up all the values, ensuring they're numbers
+    total = Object.values(monsters).reduce((sum, value) => {
+      const count = typeof value === 'number' ? value : 0;
+      return sum + count;
+    }, 0);
+  }
+  
+  return `${kinds} (${total})`;
+});
 
 function handleView() { emit('view', props.encounter); }
 function handleEdit() { emit('edit', props.encounter); }
@@ -25,15 +54,15 @@ function handleRunCombat() {
       <span class="meta-item"><span class="label">Level:</span> <span class="value">{{ encounter.level }}</span></span>
       <span class="meta-item"><span class="label">Difficulty:</span> <span class="value">{{ encounter.difficulty }}</span></span>
       <span class="meta-item"><span class="label">XP:</span> <span class="value">{{ encounter.xp }}</span></span>
-      <span class="meta-item"><span class="label">Module:</span> <span class="value">{{ encounter.moduleId }}</span></span>
+      <span class="meta-item"><span class="label">Module:</span> <span class="value">{{ moduleName }}</span></span>
     </div>
     <p v-if="encounter.description" class="description">{{ encounter.description }}</p>
     <div class="monsters-summary">
       <span class="label">Monsters:</span>
-      <span class="value">{{ encounter.monsters?.length }}</span>
+      <span class="value">{{ monstersCount }}</span>
     </div>
     <template #actions>
-      <Button size="small" variant="primary" @click="handleRunCombat" title="Run Combat">⚔️</Button>
+      <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">⚔️</Button>
     </template>
   </BaseCard>
 </template>

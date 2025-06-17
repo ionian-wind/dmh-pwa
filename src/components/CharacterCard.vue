@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { PlayerCharacter } from '@/types';
-import BaseCard from './BaseCard.vue';
-import Button from './Button.vue';
+import BaseCard from '@/components/common/BaseCard.vue';;
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   character: PlayerCharacter;

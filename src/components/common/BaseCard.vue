@@ -7,8 +7,8 @@
       <slot />
     </div>
     <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
-      <Button v-if="showView" variant="secondary" size="small" @click="$emit('view')">View Details</Button>
-      <Button v-if="showEdit" variant="secondary" size="small" @click="$emit('edit')" title="Edit">✏️</Button>
+      <Button v-if="showView" variant="link" size="small" @click="$emit('view')">View Details</Button>
+      <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">✏️</Button>
       <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">🗑️</Button>
       <slot name="actions" />
     </div>

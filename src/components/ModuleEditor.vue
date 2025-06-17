@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 import type { Module } from '@/types';
-import BaseModal from './BaseModal.vue';
-import Button from './Button.vue';
+import BaseModal from '@/components/common/BaseModal.vue';
+import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   module: Module | null;
