@@ -2,6 +2,8 @@
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import RollButton from '@/components/RollButton.vue'
+import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
+import PWAStatus from '@/components/PWAStatus.vue'
 
 const handleRollClick = (event: MouseEvent) => {
   // TODO: Implement dice rolling functionality
@@ -24,14 +26,14 @@ const handleRollClick = (event: MouseEvent) => {
         <p>© 2024 D&D Notes Manager</p>
         <p class="version">Version 1.0.0</p>
       </div>
-      <div class="footer-content">
-        <p>© 2024 D&D Notes Manager</p>
-        <p class="version">Version 1.0.0</p>
-      </div>
     </footer>
     
     <!-- Floating Action Button -->
     <RollButton @click="handleRollClick" />
+    
+    <!-- PWA Components -->
+    <PWAInstallPrompt />
+    <PWAStatus />
   </div>
 </template>
 
