@@ -163,13 +163,11 @@ export interface Encounter extends WithMetadata {
   description?: string;
   difficulty: 'easy' | 'medium' | 'hard' | 'deadly';
   level: number;
-  combatants: Combatant[];
+  monsters: UUID[];
   status: 'preparing' | 'active' | 'completed';
   currentRound: number;
   currentTurn: number;
   moduleId: UUID;
-  partyId: UUID;
   notes?: string;
   xp: number;
-  monsters?: [];
 }

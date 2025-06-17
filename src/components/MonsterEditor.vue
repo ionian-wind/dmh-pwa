@@ -120,16 +120,13 @@ const saveMonster = async () => {
     return;
   }
 
-  if (isEditing.value) {
-    const { id, ...monsterData } = editedMonster.value;
-    await monsterStore.updateMonster(id, monsterData);
-  } else {
-    await monsterStore.addMonster({
-      ...editedMonster.value,
-      moduleId: moduleStore.currentModuleId
-    } as Monster);
-  }
-  emit('submit', editedMonster.value);
+  // Prepare the monster data with the correct moduleId
+  const monsterData = {
+    ...editedMonster.value,
+    moduleId: moduleStore.currentModule?.id || ''
+  };
+
+  emit('submit', monsterData);
   closeEditor();
 };
 

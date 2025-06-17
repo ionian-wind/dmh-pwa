@@ -3,8 +3,8 @@
   "title": "Encounter",
   "type": "object",
   "required": [
-    "id", "name", "difficulty", "combatants", "status", "currentRound",
-    "currentTurn", "moduleId", "partyId", "createdAt", "updatedAt"
+    "id", "name", "difficulty", "monsters", "status", "currentRound",
+    "currentTurn", "moduleId", "createdAt", "updatedAt"
   ],
   "properties": {
     "id": {
@@ -15,48 +15,55 @@
       "type": "string",
       "description": "Name of the encounter"
     },
+    "description": {
+      "type": "string",
+      "description": "Description of the encounter"
+    },
     "difficulty": {
       "type": "string",
+      "enum": ["easy", "medium", "hard", "deadly"],
       "description": "Difficulty level of the encounter"
     },
-    "combatants": {
+    "level": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 20,
+      "description": "Level of the encounter"
+    },
+    "xp": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Experience points for the encounter"
+    },
+    "monsters": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": ["id", "name", "type", "initiative", "hp", "maxHp"],
-        "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "initiative": { "type": "number" },
-          "hp": { "type": "number" },
-          "maxHp": { "type": "number" },
-          "conditions": {
-            "type": "array",
-            "items": { "type": "string" }
-          }
-        }
-      }
+        "type": "string"
+      },
+      "description": "Array of monster IDs in this encounter"
     },
     "status": {
       "type": "string",
+      "enum": ["preparing", "active", "completed"],
       "description": "Current status of the encounter"
     },
     "currentRound": {
       "type": "number",
+      "minimum": 0,
       "description": "Current round number"
     },
     "currentTurn": {
       "type": "number",
+      "minimum": 0,
       "description": "Current turn number"
     },
     "moduleId": {
       "type": "string",
       "description": "ID of the module this encounter belongs to"
     },
-    "partyId": {
+    "notes": {
       "type": "string",
-      "description": "ID of the party involved in this encounter"
+      "description": "Additional notes about the encounter"
     },
     "createdAt": {
       "type": "number",

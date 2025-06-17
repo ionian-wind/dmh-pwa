@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { Encounter, Combatant, Monster } from '@/types';
+import { Encounter } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import BaseModal from './BaseModal.vue';
 import Button from './Button.vue';
@@ -19,8 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const moduleStore = useModuleStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
 
 type EncounterFormData = Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -30,12 +26,11 @@ const editedEncounter = ref<EncounterFormData>({
   difficulty: 'easy',
   level: 1,
   xp: 0,
-  combatants: [],
+  monsters: [],
   status: 'preparing',
   currentRound: 0,
   currentTurn: 0,
   moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
-  partyId: '',
   notes: ''
 });
 
@@ -52,12 +47,11 @@ watch(() => props.encounter, (newEncounter) => {
       difficulty: 'easy',
       level: 1,
       xp: 0,
-      combatants: [],
+      monsters: [],
       status: 'preparing',
       currentRound: 0,
       currentTurn: 0,
       moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
-      partyId: '',
       notes: ''
     };
   }
@@ -70,12 +64,11 @@ const resetForm = () => {
     difficulty: 'easy',
     level: 1,
     xp: 0,
-    combatants: [],
+    monsters: [],
     status: 'preparing',
     currentRound: 0,
     currentTurn: 0,
     moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
-    partyId: '',
     notes: ''
   };
 };
@@ -148,15 +141,6 @@ defineExpose({
       />
     </div>
     <div class="form-section">
-      <label>Party</label>
-      <select v-model="editedEncounter.partyId">
-        <option value="">Select Party</option>
-        <option v-for="party in partyStore.filteredParties" :key="party.id" :value="party.id">
-          {{ party.name }}
-        </option>
-      </select>
-    </div>
-    <div class="form-section">
       <label>Difficulty</label>
       <select v-model="editedEncounter.difficulty">
         <option value="easy">Easy</option>
@@ -205,5 +189,82 @@ defineExpose({
   border-radius: var(--border-radius);
   background: var(--color-background-soft);
   color: var(--color-text);
+}
+
+.monsters-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.available-monsters,
+.selected-monsters {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+}
+
+.available-monsters h4,
+.selected-monsters h4 {
+  margin: 0 0 1rem 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.monsters-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.monster-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.monster-item:hover {
+  background: var(--color-background-mute);
+}
+
+.monster-item.selected {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.monster-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.monster-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s;
+}
+
+.remove-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>

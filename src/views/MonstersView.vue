@@ -39,9 +39,10 @@ const handleCancel = () => {
   showEditor.value = false;
 };
 
-const deleteMonster = async (monster: Monster) => {
-  if (confirm(`Are you sure you want to delete the monster "${monster.name}"?`)) {
-    await monsterStore.deleteMonster(monster.id);
+const deleteMonster = async (monsterId: string) => {
+  const monster = monsterStore.getMonsterById(monsterId);
+  if (monster && confirm(`Are you sure you want to delete the monster "${monster.name}"?`)) {
+    await monsterStore.deleteMonster(monsterId);
   }
 };
 </script>
