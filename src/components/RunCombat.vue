@@ -10,27 +10,30 @@
         </div>
       </div>
       <div class="combat-controls">
-        <button 
-          v-if="encounter.status === 'preparing'" 
-          @click="startCombat" 
+        <Button 
+          v-if="encounter.status === 'preparing'"
+          variant="primary"
+          @click="startCombat"
           class="start-btn"
         >
-          🚀 Start Combat
-        </button>
-        <button 
-          v-if="encounter.status === 'active'" 
-          @click="resetCombat" 
+        🚀 Start Combat
+        </Button>
+        <Button 
+          v-if="encounter.status === 'active'"
+          variant="warning"
+          @click="resetCombat"
           class="reset-btn"
         >
-          🔄 Reset Combat
-        </button>
-        <button 
-          v-if="encounter.status === 'active'" 
-          @click="endCombat" 
+        🔄 Reset Combat
+        </Button>
+        <Button 
+          v-if="encounter.status === 'active'"
+          variant="danger"
+          @click="endCombat"
           class="end-btn"
         >
-          🏁 End Combat
-        </button>
+        🏁 End Combat
+        </Button>
       </div>
     </div>
 
@@ -85,18 +88,34 @@
     <div class="quick-actions" v-if="encounter.status === 'active'">
       <h3>Quick Actions</h3>
       <div class="action-buttons">
-        <button @click="rollInitiative" class="action-btn">
+        <Button 
+          variant="secondary"
+          size="small"
+          @click="rollInitiative"
+        >
           🎲 Roll Initiative
-        </button>
-        <button @click="healAll" class="action-btn">
+        </Button>
+        <Button 
+          variant="success"
+          size="small"
+          @click="healAll"
+        >
           💚 Heal All
-        </button>
-        <button @click="clearConditions" class="action-btn">
+        </Button>
+        <Button 
+          variant="secondary"
+          size="small"
+          @click="clearConditions"
+        >
           🧹 Clear All Conditions
-        </button>
-        <button @click="toggleAutoAdvance" class="action-btn" :class="{ active: autoAdvance }">
+        </Button>
+        <Button 
+          :variant="autoAdvance ? 'primary' : 'secondary'"
+          size="small"
+          @click="toggleAutoAdvance"
+        >
           {{ autoAdvance ? '⏸️' : '▶️' }} Auto Advance
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -114,7 +133,13 @@
           <span class="log-message">{{ entry.message }}</span>
         </div>
       </div>
-      <button @click="clearLog" class="clear-log-btn">Clear Log</button>
+      <Button 
+        variant="secondary"
+        size="small"
+        @click="clearLog"
+      >
+        Clear Log
+      </Button>
     </div>
   </div>
   <div v-else class="no-encounter">
@@ -308,36 +333,6 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.start-btn, .reset-btn, .end-btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.start-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.reset-btn {
-  background: var(--color-warning);
-  color: white;
-}
-
-.end-btn {
-  background: var(--color-danger);
-  color: white;
-}
-
-.start-btn:hover, .reset-btn:hover, .end-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
 .combat-status {
   margin-bottom: 2rem;
 }
@@ -427,28 +422,6 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.action-btn {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  background: var(--color-background-soft);
-  transform: translateY(-1px);
-}
-
-.action-btn.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
 .combat-log {
   background: var(--color-background-soft);
   border: 1px solid var(--color-border);
@@ -503,20 +476,6 @@ onMounted(() => {
 
 .log-message {
   flex: 1;
-}
-
-.clear-log-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.clear-log-btn:hover {
-  background: var(--color-background-soft);
 }
 
 .no-encounter {

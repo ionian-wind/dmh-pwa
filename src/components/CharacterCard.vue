@@ -71,10 +71,6 @@ function handleDelete() { emit('delete', props.character); }
         <span class="detail-value">{{ character.speed }}ft</span>
       </div>
     </div>
-    <template #actions>
-      <Button size="small" @click="$emit('edit', character)">Edit</Button>
-      <Button size="small" variant="danger" @click="$emit('delete', character.id)">Delete</Button>
-    </template>
   </BaseCard>
 </template>
 

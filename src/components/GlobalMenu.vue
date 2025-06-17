@@ -37,26 +37,34 @@ const isActive = (item: { section: Section, path: string }) => {
 <template>
   <nav class="global-menu">
     <div class="module-selector">
-      <select v-model="moduleStore.currentModuleId" @change="setCurrentModule($event.target.value)">
+      <select v-model="moduleStore.currentModuleId" @change="setCurrentModule(($event.target as HTMLSelectElement)?.value || null)">
 <!--        <option :value="null">All Modules</option>-->
-        <option v-for="module in modulesSelect" :key="module.id" :value="module.value">
+        <option v-for="module in modulesSelect" :key="module.id || 'null'" :value="module.value">
           {{ module.name }}
         </option>
       </select>
     </div>
     <div v-if="currentModule" class="current-module">
       <span>Current Module: {{ currentModule.name }}</span>
-      <button @click="setCurrentModule('-')" class="clear-btn">Clear</button>
+      <Button 
+        variant="danger"
+        size="small"
+        @click="setCurrentModule('-')"
+      >
+        Clear
+      </Button>
     </div>
     <div class="menu-items">
-      <button
+      <Button
         v-for="item in sections"
         :key="item.section"
+        variant="secondary"
+        size="small"
         @click="navigateTo(item.path)"
         :class="{ active: isActive(item) }"
       >
         {{ item.label }}
-      </button>
+      </Button>
     </div>
   </nav>
 </template>
@@ -89,21 +97,17 @@ const isActive = (item: { section: Section, path: string }) => {
   gap: 1rem;
 }
 
-.menu-items button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
+.menu-items .btn {
   background: #2d2d44;
   color: white;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  border: none;
 }
 
-.menu-items button:hover {
+.menu-items .btn:hover {
   background: #3d3d54;
 }
 
-.menu-items button.active {
+.menu-items .btn.active {
   background: #4caf50;
 }
 
@@ -115,18 +119,5 @@ const isActive = (item: { section: Section, path: string }) => {
   background: #2d2d44;
   border-radius: 4px;
   margin-bottom: 1rem;
-}
-
-.clear-btn {
-  padding: 0.25rem 0.5rem;
-  border: none;
-  border-radius: 4px;
-  background: #f44336;
-  color: white;
-  cursor: pointer;
-}
-
-.clear-btn:hover {
-  background: #d32f2f;
 }
 </style> 

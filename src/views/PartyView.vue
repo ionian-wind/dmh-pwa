@@ -90,7 +90,7 @@ const handleRemoveCharacter = (character: PlayerCharacter) => {
 const handleToggleCharacter = (character: PlayerCharacter, isLinked: boolean) => {
   if (!party.value) return;
   if (isLinked) {
-    characterStore.setParty(character.id, party.value.id);
+  characterStore.setParty(character.id, party.value.id);
   } else {
     characterStore.setParty(character.id, null);
   }

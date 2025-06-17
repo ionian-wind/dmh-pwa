@@ -49,30 +49,31 @@
         <div v-if="showConfirmDialog" class="confirm-dialog">
           <p>Are you sure you want to clear all data? This action cannot be undone.</p>
           <div class="confirm-actions">
-            <button 
+            <Button 
+              variant="danger"
               @click="handleClearStorage" 
               :disabled="isClearing"
-              class="confirm-btn"
+              :loading="isClearing"
             >
               {{ isClearing ? 'Clearing...' : 'Yes, Clear All Data' }}
-            </button>
-            <button 
+            </Button>
+            <Button 
+              variant="secondary"
               @click="showConfirmDialog = false" 
               :disabled="isClearing"
-              class="cancel-btn"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
         
-        <button 
+        <Button 
           v-else
+          variant="danger"
           @click="handleClearStorage" 
-          class="clear-btn"
         >
           Clear All Data
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -283,44 +284,5 @@ th {
   display: flex;
   gap: 10px;
   margin-top: 10px;
-}
-
-.clear-btn {
-  background: #d32f2f;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
-}
-
-.clear-btn:hover:not(:disabled) {
-  background: #b71c1c;
-}
-
-.clear-btn:disabled {
-  background: #ffcdd2;
-  cursor: not-allowed;
-}
-
-.confirm-btn {
-  background: #d32f2f;
-  color: white;
-}
-
-.confirm-btn:hover:not(:disabled) {
-  background: #b71c1c;
-}
-
-.cancel-btn {
-  background: #fff3f3;
-  color: #d32f2f;
-  border: 1px solid #ffcdd2;
-}
-
-.cancel-btn:hover:not(:disabled) {
-  background: #fff3f3;
 }
 </style> 

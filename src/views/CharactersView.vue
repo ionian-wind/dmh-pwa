@@ -11,12 +11,12 @@
 
     <div v-else class="characters-grid">
       <div v-for="character in characterStore.all" :key="character.id" class="character-card">
-        <CharacterCard
-          :character="character"
+      <CharacterCard
+        :character="character"
           @view="character => $router.push(`/characters/${character.id}`)"
           @edit="() => handleEditClick(character)"
           @delete="() => deleteCharacter(character)"
-        />
+      />
       </div>
     </div>
 
@@ -81,7 +81,7 @@ const handleCancel = () => {
 const deleteCharacter = async (character: PlayerCharacter) => {
   if (confirm(`Are you sure you want to delete the character "${character.name}"?`)) {
     await characterStore.remove(character.id);
-  }
+}
 };
 </script>
 

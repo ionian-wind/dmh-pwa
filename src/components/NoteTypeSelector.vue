@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useNoteTypeStore } from '@/stores/noteTypes';
-import type { NoteTypeDefinition } from '@/types';
+import type { NoteType } from '@/types';
 import Button from './Button.vue';
 
 const props = defineProps<{
@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 const noteTypeStore = useNoteTypeStore();
 const showTypeEditor = ref(false);
-const newType = ref<Omit<NoteTypeDefinition, 'id'>>({
+const newType = ref<Partial<NoteType>>({
   name: '',
   description: '',
   color: '#4a90e2',
@@ -28,9 +28,9 @@ onMounted(async () => {
 });
 
 const addType = async () => {
-  if (newType.value.name.trim()) {
+  if (newType.value.name?.trim()) {
     try {
-      await noteTypeStore.addNoteType(newType.value);
+      await noteTypeStore.addNoteType(newType.value as Omit<NoteType, 'id'>);
       newType.value = {
         name: '',
         description: '',
@@ -147,21 +147,6 @@ const removeType = async (id: string) => {
   font-size: 1rem;
 }
 
-.add-type-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  background: var(--color-primary);
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.add-type-btn:hover {
-  background: var(--color-primary-dark);
-}
-
 .type-editor {
   display: flex;
   flex-direction: column;
@@ -204,29 +189,6 @@ const removeType = async (id: string) => {
   margin-top: 0.5rem;
 }
 
-.type-editor-actions button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.type-editor-actions button:first-child {
-  background: var(--color-primary);
-  color: white;
-}
-
-.type-editor-actions button:last-child {
-  background: var(--color-background-soft);
-  color: var(--color-text);
-}
-
-.type-editor-actions button:hover {
-  opacity: 0.9;
-}
-
 .type-list {
   display: flex;
   flex-wrap: wrap;
@@ -261,20 +223,5 @@ const removeType = async (id: string) => {
 
 .type-name {
   font-weight: 500;
-}
-
-.remove-type-btn {
-  background: none;
-  border: none;
-  color: var(--color-text-light);
-  cursor: pointer;
-  font-size: 1.2rem;
-  line-height: 1;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.remove-type-btn:hover {
-  color: var(--color-danger);
 }
 </style> 

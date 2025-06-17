@@ -1,7 +1,7 @@
 <template>
     <div class="character-view" v-if="character">
       <div class="character-header">
-        <h1>{{ character.name }}</h1>
+      <h1>{{ character.name }}</h1>
         <div class="character-subtitle">
           <span>{{ character.level }} {{ character.class }}</span>
           <span>{{ character.race }}</span>
