@@ -6,6 +6,7 @@ import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
+import { useCharacterStore } from '@/stores/characters';
 import GlobalMenu from '@/components/GlobalMenu.vue';
 
 const router = useRouter();
@@ -14,6 +15,7 @@ const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
+const characterStore = useCharacterStore();
 
 const stats = computed(() => {
   const moduleId = moduleStore.currentModuleId;
@@ -21,7 +23,9 @@ const stats = computed(() => {
     notes: moduleId ? noteStore.notes.filter(note => note.moduleId === moduleId).length : noteStore.notes.length,
     parties: moduleId ? partyStore.parties.filter(party => party.moduleId === moduleId).length : partyStore.parties.length,
     monsters: moduleId ? monsterStore.monsters.filter(monster => monster.moduleId === moduleId).length : monsterStore.monsters.length,
-    encounters: moduleId ? encounterStore.encounters.filter(encounter => encounter.moduleId === moduleId).length : encounterStore.encounters.length
+    encounters: moduleId ? encounterStore.encounters.filter(encounter => encounter.moduleId === moduleId).length : encounterStore.encounters.length,
+    characters: moduleId ? characterStore.all.filter(character => character.moduleId === moduleId).length : characterStore.all.length,
+    modules: moduleStore.modules.length
   };
 });
 
@@ -41,7 +45,7 @@ onMounted(async () => {
     <div class="content">
       <div class="stats-grid">
         <router-link to="/notes" class="stat-card" exact>
-          <div class="stat-icon">📝</div>
+          <div class="stat-icon">📜</div>
           <div class="stat-content">
             <h3>Notes</h3>
             <p>{{ stats.notes }} notes</p>
@@ -69,6 +73,22 @@ onMounted(async () => {
           <div class="stat-content">
             <h3>Encounters</h3>
             <p>{{ stats.encounters }} encounters</p>
+          </div>
+        </router-link>
+
+        <router-link to="/characters" class="stat-card" exact>
+          <div class="stat-icon">🧙🏻‍♂️</div>
+          <div class="stat-content">
+            <h3>Characters</h3>
+            <p>{{ stats.characters }} characters</p>
+          </div>
+        </router-link>
+
+        <router-link to="/modules" class="stat-card" exact>
+          <div class="stat-icon">📖</div>
+          <div class="stat-content">
+            <h3>Modules</h3>
+            <p>{{ stats.modules }} modules</p>
           </div>
         </router-link>
       </div>
