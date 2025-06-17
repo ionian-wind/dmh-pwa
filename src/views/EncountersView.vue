@@ -4,6 +4,7 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useModuleStore } from '@/stores/modules';
 import type { Encounter } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
+import EncounterCard from '@/components/EncounterCard.vue';
 
 const encounterStore = useEncounterStore();
 const moduleStore = useModuleStore();
@@ -62,49 +63,14 @@ const getModuleName = (moduleId: string | null) => {
     </div>
 
     <div class="encounters-grid">
-      <div
+      <EncounterCard
         v-for="encounter in encounterStore.encounters"
         :key="encounter.id"
-        class="encounter-card"
-      >
-        <div class="card-header">
-          <h2>{{ encounter.name }}</h2>
-          <div class="card-actions">
-            <button @click="handleEdit(encounter)" class="edit-btn">Edit</button>
-            <button @click="handleDelete(encounter)" class="delete-btn">Delete</button>
-          </div>
-        </div>
-
-        <div class="card-content">
-          <div class="encounter-meta">
-            <span class="meta-item">
-              <span class="label">Level:</span>
-              <span class="value">{{ encounter.level }}</span>
-            </span>
-            <span class="meta-item">
-              <span class="label">Difficulty:</span>
-              <span class="value">{{ encounter.difficulty }}</span>
-            </span>
-            <span class="meta-item">
-              <span class="label">XP:</span>
-              <span class="value">{{ encounter.xp }}</span>
-            </span>
-            <span class="meta-item">
-              <span class="label">Module:</span>
-              <span class="value">{{ getModuleName(encounter.moduleId) }}</span>
-            </span>
-          </div>
-
-          <p v-if="encounter.description" class="description">
-            {{ encounter.description }}
-          </p>
-
-          <div class="monsters-summary">
-            <span class="label">Monsters:</span>
-            <span class="value">{{ encounter.monsters?.length }}</span>
-          </div>
-        </div>
-      </div>
+        :encounter="encounter"
+        @view="encounter => $router.push(`/encounters/${encounter.id}`)"
+        @edit="handleEdit"
+        @delete="handleDelete"
+      />
     </div>
 
     <EncounterEditor

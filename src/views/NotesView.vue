@@ -5,6 +5,7 @@ import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
+import NoteCard from '@/components/NoteCard.vue';
 import type { Note } from '@/types';
 
 const noteStore = useNoteStore();
@@ -13,7 +14,18 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 
 const showEditor = ref(false);
-const editingNote = ref<Partial<Note> | null>(null);
+const editingNote = ref<Note>({
+  id: '',
+  title: '',
+  content: '',
+  typeId: null,
+  tags: [],
+  moduleId: null,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  parentId: undefined,
+  metadata: undefined
+});
 const notes = ref<Note[]>([]);
 const searchQuery = ref('');
 
@@ -40,28 +52,56 @@ onMounted(async () => {
 
 const addNote = () => {
   editingNote.value = {
+    id: '',
     title: '',
     content: '',
+    typeId: null,
+    tags: [],
     moduleId: moduleStore.currentModuleId,
-    tags: []
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    parentId: undefined,
+    metadata: undefined
   };
   showEditor.value = true;
 };
 
 const saveNote = async (note: Note) => {
-  if (editingNote.value?.id) {
+  if (editingNote.value.id) {
     await noteStore.updateNote(note.id, note);
   } else {
     await noteStore.createNote(note);
   }
   notes.value = noteStore.notes;
   showEditor.value = false;
-  editingNote.value = null;
+  editingNote.value = {
+    id: '',
+    title: '',
+    content: '',
+    typeId: null,
+    tags: [],
+    moduleId: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    parentId: undefined,
+    metadata: undefined
+  };
 };
 
 const cancelEdit = () => {
   showEditor.value = false;
-  editingNote.value = null;
+  editingNote.value = {
+    id: '',
+    title: '',
+    content: '',
+    typeId: null,
+    tags: [],
+    moduleId: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    parentId: undefined,
+    metadata: undefined
+  };
 };
 
 const handleDelete = async (note: Note) => {
@@ -100,48 +140,15 @@ const handleDelete = async (note: Note) => {
       </div>
 
       <div class="notes-grid">
-        <div
+        <NoteCard
           v-for="note in filteredNotes"
           :key="note.id"
-          class="note-card"
-        >
-          <div class="note-card-header">
-            <h3>{{ note.title }}</h3>
-            <button
-              class="delete-btn"
-              @click="handleDelete(note)"
-              title="Delete note"
-            >
-              ×
-            </button>
-          </div>
-
-          <div class="note-card-content">
-            <p>{{ note.content }}</p>
-          </div>
-
-          <div class="note-card-footer">
-            <span v-if="note.moduleId" class="module-badge">
-              {{ moduleStore.modules.find(m => m.id === note.moduleId)?.name }}
-            </span>
-            <div class="tags">
-              <span
-                v-for="tag in note.tags"
-                :key="tag"
-                class="tag"
-              >
-                {{ tag }}
-              </span>
-            </div>
-          </div>
-
-          <router-link
-            :to="`/notes/${note.id}`"
-            class="view-link"
-          >
-            View Details
-          </router-link>
-        </div>
+          :note="note"
+          :module-name="note.moduleId ? moduleStore.modules.find(m => m.id === note.moduleId)?.name : undefined"
+          @delete="handleDelete"
+          @view="note => $router.push(`/notes/${note.id}`)"
+          @edit="note => { editingNote = note as Note; showEditor = true; }"
+        />
       </div>
     </div>
 

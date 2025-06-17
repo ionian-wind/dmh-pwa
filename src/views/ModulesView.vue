@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
+import ModuleCard from '@/components/ModuleCard.vue';
 
 const router = useRouter();
 const moduleStore = useModuleStore();
@@ -56,17 +57,14 @@ const deleteModule = async (module: Module) => {
     </div>
 
     <div v-else class="modules-grid">
-      <div v-for="module in moduleStore.modules" :key="module.id" class="module-card">
-        <div class="card-content">
-          <h2>{{ module.name }}</h2>
-          <p class="description">{{ module.description }}</p>
-        </div>
-        <div class="card-actions">
-          <button @click="() => router.push(`/modules/${module.id}`)" class="view-btn">View Details</button>
-          <button @click="() => handleEditClick(module)" class="edit-btn">Edit</button>
-          <button @click="() => deleteModule(module)" class="delete-btn">Delete</button>
-        </div>
-      </div>
+      <ModuleCard
+        v-for="module in moduleStore.modules"
+        :key="module.id"
+        :module="module"
+        @view="() => router.push(`/modules/${module.id}`)"
+        @edit="handleEditClick"
+        @delete="deleteModule"
+      />
     </div>
 
     <ModuleEditor

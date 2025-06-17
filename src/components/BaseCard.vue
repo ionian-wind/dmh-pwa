@@ -1,0 +1,62 @@
+<template>
+  <div class="base-card">
+    <div v-if="$slots.header" class="base-card-header">
+      <slot name="header" />
+    </div>
+    <div class="base-card-content">
+      <slot />
+    </div>
+    <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
+      <button v-if="showView" @click="$emit('view')">View Details</button>
+      <button v-if="showEdit" @click="$emit('edit')" title="Edit">✏️</button>
+      <button v-if="showDelete" @click="$emit('delete')" title="Delete">🗑️</button>
+      <slot name="actions" />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { defineProps, defineEmits } from 'vue';
+
+const props = defineProps({
+  showView: { type: Boolean, default: false },
+  showEdit: { type: Boolean, default: false },
+  showDelete: { type: Boolean, default: false },
+});
+
+const emit = defineEmits(['view', 'edit', 'delete']);
+</script>
+
+<style scoped>
+.base-card {
+  background: var(--color-background, #fff);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: var(--border-radius, 8px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+.base-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.10);
+}
+.base-card-header {
+  padding: 1rem 1rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-border, #eee);
+}
+.base-card-content {
+  padding: 1rem;
+  flex: 1;
+}
+.base-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-border, #eee);
+  background: var(--color-background, #fff);
+}
+</style> 

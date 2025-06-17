@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { PlayerCharacter } from '@/types';
+import BaseCard from './BaseCard.vue';
 
 const props = defineProps<{
   character: PlayerCharacter;
 }>();
 
 const emit = defineEmits<{
+  (e: 'view', character: PlayerCharacter): void;
   (e: 'edit', character: PlayerCharacter): void;
   (e: 'delete', character: PlayerCharacter): void;
 }>();
@@ -27,18 +29,23 @@ const stats = computed(() => [
   { name: 'WIS', value: props.character.stats.wisdom },
   { name: 'CHA', value: props.character.stats.charisma }
 ]);
+
+function handleView() { emit('view', props.character); }
+function handleEdit() { emit('edit', props.character); }
+function handleDelete() { emit('delete', props.character); }
 </script>
 
 <template>
-  <div class="character-card">
-    <div class="character-header">
-      <h3>{{ character.name }}</h3>
-      <div class="character-subtitle">
-        <span>{{ character.level }} {{ character.class }}</span>
-        <span>{{ character.race }}</span>
+  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
+    <template #header>
+      <div class="character-header">
+        <h3>{{ character.name }}</h3>
+        <div class="character-subtitle">
+          <span>{{ character.level }} {{ character.class }}</span>
+          <span>{{ character.race }}</span>
+        </div>
       </div>
-    </div>
-
+    </template>
     <div class="character-stats">
       <div v-for="stat in stats" :key="stat.name" class="stat-block">
         <div class="stat-name">{{ stat.name }}</div>
@@ -46,7 +53,6 @@ const stats = computed(() => [
         <div class="stat-modifier">{{ formatModifier(abilityModifier(stat.value)) }}</div>
       </div>
     </div>
-
     <div class="character-details">
       <div class="detail-item">
         <span class="detail-label">HP:</span>
@@ -61,33 +67,18 @@ const stats = computed(() => [
         <span class="detail-value">{{ character.speed }}ft</span>
       </div>
     </div>
-
-    <div class="character-actions">
-      <button @click="emit('edit', character)" class="edit-btn">Edit</button>
-      <button @click="emit('delete', character)" class="delete-btn">Delete</button>
-    </div>
-  </div>
+  </BaseCard>
 </template>
 
 <style scoped>
-.character-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 .character-header {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
-
 .character-header h3 {
   margin: 0;
   color: #333;
   font-size: 1.2rem;
 }
-
 .character-subtitle {
   display: flex;
   gap: 1rem;
@@ -95,7 +86,6 @@ const stats = computed(() => [
   font-size: 0.9rem;
   margin-top: 0.25rem;
 }
-
 .character-stats {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -105,28 +95,23 @@ const stats = computed(() => [
   padding: 0.5rem;
   border-radius: 4px;
 }
-
 .stat-block {
   text-align: center;
 }
-
 .stat-name {
   font-size: 0.8rem;
   color: #666;
   margin-bottom: 0.25rem;
 }
-
 .stat-value {
   font-size: 1.2rem;
   font-weight: bold;
   color: #333;
 }
-
 .stat-modifier {
   font-size: 0.8rem;
   color: #666;
 }
-
 .character-details {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -136,30 +121,20 @@ const stats = computed(() => [
   background: #f8f9fa;
   border-radius: 4px;
 }
-
 .detail-item {
   text-align: center;
 }
-
 .detail-label {
   display: block;
   font-size: 0.8rem;
   color: #666;
   margin-bottom: 0.25rem;
 }
-
 .detail-value {
   font-size: 1rem;
   font-weight: bold;
   color: #333;
 }
-
-.character-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
 .edit-btn,
 .delete-btn {
   padding: 0.25rem 0.5rem;
@@ -168,21 +143,17 @@ const stats = computed(() => [
   cursor: pointer;
   border: none;
 }
-
 .edit-btn {
   background: #2196f3;
   color: white;
 }
-
 .edit-btn:hover {
   background: #1976d2;
 }
-
 .delete-btn {
   background: #f44336;
   color: white;
 }
-
 .delete-btn:hover {
   background: #d32f2f;
 }

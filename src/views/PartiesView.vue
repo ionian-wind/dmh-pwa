@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import type { Party } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
+import PartyCard from '@/components/PartyCard.vue';
 
 const router = useRouter();
 const partyStore = usePartyStore();
@@ -56,20 +57,14 @@ const deleteParty = async (party: Party) => {
     </div>
 
     <div v-else class="parties-grid">
-      <div v-for="party in partyStore.parties" :key="party.id" class="party-card">
-        <div class="card-content">
-          <h2>{{ party.name }}</h2>
-          <p class="description">{{ party.description }}</p>
-          <!--div class="party-meta">
-            <span class="character-count">{{ party.characters.length }} characters</span>
-          </div-->
-        </div>
-        <div class="card-actions">
-          <button @click="() => router.push(`/parties/${party.id}`)" class="view-btn">View Details</button>
-          <button @click="() => handleEditClick(party)" class="edit-btn">Edit</button>
-          <button @click="() => deleteParty(party)" class="delete-btn">Delete</button>
-        </div>
-      </div>
+      <PartyCard
+        v-for="party in partyStore.parties"
+        :key="party.id"
+        :party="party"
+        @view="() => router.push(`/parties/${party.id}`)"
+        @edit="handleEditClick"
+        @delete="deleteParty"
+      />
     </div>
 
     <PartyEditor

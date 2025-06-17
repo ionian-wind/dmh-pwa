@@ -13,6 +13,7 @@
       <div v-for="character in characterStore.all" :key="character.id" class="character-card">
         <CharacterCard
           :character="character"
+          @view="character => $router.push(`/characters/${character.id}`)"
           @edit="() => handleEditClick(character)"
           @delete="() => deleteCharacter(character)"
         />
