@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Monster",
+  "type": "object",
+  "required": [
+    "id", "name", "type", "size", "alignment", "armorClass", "hitPoints",
+    "speed", "stats", "senses", "languages", "challengeRating", "xp",
+    "actions", "moduleId", "createdAt", "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the monster"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the monster"
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of the monster"
+    },
+    "size": {
+      "type": "string",
+      "description": "Size category of the monster"
+    },
+    "alignment": {
+      "type": "string",
+      "description": "Alignment of the monster"
+    },
+    "armorClass": {
+      "type": "number",
+      "description": "Monster's armor class"
+    },
+    "hitPoints": {
+      "type": "number",
+      "description": "Monster's hit points"
+    },
+    "speed": {
+      "type": "object",
+      "required": ["walk"],
+      "properties": {
+        "walk": { "type": "number" },
+        "fly": { "type": "number" },
+        "swim": { "type": "number" },
+        "burrow": { "type": "number" },
+        "climb": { "type": "number" }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"],
+      "properties": {
+        "strength": { "type": "number" },
+        "dexterity": { "type": "number" },
+        "constitution": { "type": "number" },
+        "intelligence": { "type": "number" },
+        "wisdom": { "type": "number" },
+        "charisma": { "type": "number" }
+      }
+    },
+    "senses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of monster's senses"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of languages the monster knows"
+    },
+    "challengeRating": {
+      "type": "number",
+      "description": "Monster's challenge rating"
+    },
+    "xp": {
+      "type": "number",
+      "description": "Experience points awarded for defeating the monster"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "moduleId": {
+      "type": "string",
+      "description": "ID of the module this monster belongs to"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the monster was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the monster was last updated"
+    }
+  }
+} 

@@ -1,0 +1,56 @@
+# compiled output
+/dist
+/node_modules
+/develop_data
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/test/coverage
+/.nyc_output
+
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Local files folders
+.docker
+*.env
+*.env.*
+!*.env.template
+!*.env.*.template
+queries
+/upload
+/tmp
+/data
+/data/postgresql
+/data/elasticsearch
+
+# Db dumps
+/tools/build/postgres/dumps

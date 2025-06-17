@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Party",
+  "type": "object",
+  "required": ["id", "name", "characters", "moduleId", "createdAt", "updatedAt"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the party"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the party"
+    },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of character IDs in the party"
+    },
+    "moduleId": {
+      "type": "string",
+      "description": "ID of the module this party belongs to"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the party was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the party was last updated"
+    }
+  }
+} 

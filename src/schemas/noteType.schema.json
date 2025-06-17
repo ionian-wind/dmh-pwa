@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NoteType",
+  "type": "object",
+  "required": ["id", "name", "createdAt", "updatedAt"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the note type"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the note type"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the note type was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the note type was last updated"
+    }
+  }
+} 

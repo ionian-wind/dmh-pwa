@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Encounter",
+  "type": "object",
+  "required": [
+    "id", "name", "difficulty", "combatants", "status", "currentRound",
+    "currentTurn", "moduleId", "partyId", "createdAt", "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the encounter"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the encounter"
+    },
+    "difficulty": {
+      "type": "string",
+      "description": "Difficulty level of the encounter"
+    },
+    "combatants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "initiative", "hp", "maxHp"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "initiative": { "type": "number" },
+          "hp": { "type": "number" },
+          "maxHp": { "type": "number" },
+          "conditions": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the encounter"
+    },
+    "currentRound": {
+      "type": "number",
+      "description": "Current round number"
+    },
+    "currentTurn": {
+      "type": "number",
+      "description": "Current turn number"
+    },
+    "moduleId": {
+      "type": "string",
+      "description": "ID of the module this encounter belongs to"
+    },
+    "partyId": {
+      "type": "string",
+      "description": "ID of the party involved in this encounter"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the encounter was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the encounter was last updated"
+    }
+  }
+} 

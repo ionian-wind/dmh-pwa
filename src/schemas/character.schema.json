@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PlayerCharacter",
+  "type": "object",
+  "required": [
+    "id", "name", "level", "class", "race", "stats", "hitPoints",
+    "armorClass", "initiative", "speed", "proficiencies", "equipment",
+    "createdAt", "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the character"
+    },
+    "name": {
+      "type": "string",
+      "description": "Character's name"
+    },
+    "playerName": {
+      "type": "string",
+      "description": "Player's name"
+    },
+    "level": {
+      "type": "number",
+      "description": "Character's level"
+    },
+    "class": {
+      "type": "string",
+      "description": "Character's class"
+    },
+    "race": {
+      "type": "string",
+      "description": "Character's race"
+    },
+    "stats": {
+      "type": "object",
+      "required": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"],
+      "properties": {
+        "strength": { "type": "number" },
+        "dexterity": { "type": "number" },
+        "constitution": { "type": "number" },
+        "intelligence": { "type": "number" },
+        "wisdom": { "type": "number" },
+        "charisma": { "type": "number" }
+      }
+    },
+    "hitPoints": {
+      "type": "object",
+      "required": ["maximum", "current"],
+      "properties": {
+        "maximum": { "type": "number" },
+        "current": { "type": "number" }
+      }
+    },
+    "armorClass": {
+      "type": "number",
+      "description": "Character's armor class"
+    },
+    "initiative": {
+      "type": "number",
+      "description": "Character's initiative modifier"
+    },
+    "speed": {
+      "type": "number",
+      "description": "Character's movement speed"
+    },
+    "proficiencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of proficiencies"
+    },
+    "equipment": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of equipment items"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the character was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the character was last updated"
+    }
+  }
+} 
