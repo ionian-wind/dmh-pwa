@@ -6,8 +6,6 @@ import { useModuleStore } from '@/stores/modules';
 import { useCharacterStore } from '@/stores/characters';
 import { Party, PlayerCharacter } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
-import CharacterCard from '@/components/CharacterCard.vue';
-import CharacterEditor from '@/components/CharacterEditor.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,14 +15,15 @@ const characterStore = useCharacterStore();
 
 const showEditor = ref(false);
 const party = ref<Party | null>(null);
-const showCharacterEditor = ref(false);
-const editingCharacter = ref<PlayerCharacter | undefined>();
 
 const partyId = route.params.id as string;
 
-const module = computed(() => {
-  if (!party.value) return null;
-  return moduleStore.getModuleById(party.value.moduleId);
+const modules = computed(() => {
+  if (!party.value) return [];
+  const moduleIds = party.value.moduleIds || [];
+  return moduleIds
+    .map(id => moduleStore.getModuleById(id))
+    .filter(m => m !== null);
 });
 
 const allCharacters = computed(() => characterStore.all);
@@ -33,6 +32,7 @@ const partyCharacters = computed(() => {
   if (!p) return [];
   return allCharacters.value.filter(c => c.partyId === p.id);
 });
+
 const availableCharacters = computed(() => {
   const p = party.value;
   if (!p) return [];
@@ -56,17 +56,18 @@ const handleDeleteParty = async () => {
   }
 };
 
-const handleAddCharacter = () => {
-  editingCharacter.value = undefined;
-  showCharacterEditor.value = true;
+const handlePartySubmit = async (updatedParty: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
+  if (!party.value) return;
+  await partyStore.updateParty(party.value.id, updatedParty);
+  party.value = await partyStore.getPartyById(party.value.id);
+  showEditor.value = false;
 };
 
-const handleEditCharacter = (character: PlayerCharacter) => {
-  editingCharacter.value = { ...character };
-  showCharacterEditor.value = true;
+const handlePartyCancel = () => {
+  showEditor.value = false;
 };
 
-const handleDeleteCharacter = (character: PlayerCharacter) => {
+const handleRemoveCharacter = (character: PlayerCharacter) => {
   if (confirm(`Remove character "${character.name}" from this party?`)) {
     characterStore.setParty(character.id, null);
   }
@@ -76,23 +77,6 @@ const handleLinkCharacter = (character: PlayerCharacter) => {
   if (!party.value) return;
   characterStore.setParty(character.id, party.value.id);
 };
-
-const handleCharacterSubmit = (character: PlayerCharacter) => {
-  if (!party.value) return;
-  if (editingCharacter.value && editingCharacter.value.id) {
-    characterStore.update(editingCharacter.value.id, character);
-  } else {
-    const newChar = characterStore.add({ ...character, partyId: party.value.id });
-    characterStore.setParty(newChar.id, party.value.id);
-  }
-  showCharacterEditor.value = false;
-  editingCharacter.value = undefined;
-};
-
-const handleCharacterCancel = () => {
-  showCharacterEditor.value = false;
-  editingCharacter.value = undefined;
-};
 </script>
 
 <template>
@@ -101,7 +85,7 @@ const handleCharacterCancel = () => {
       <div class="header">
         <h1>{{ party.name }}</h1>
         <div class="meta">
-          <span v-if="module">Module: {{ module.name }}</span>
+          <span v-if="modules.length > 0">Modules: {{ modules.map(m => m.name).join(', ') }}</span>
           <span class="character-count">{{ partyCharacters.length }} characters</span>
         </div>
         <div class="actions">
@@ -112,46 +96,65 @@ const handleCharacterCancel = () => {
       <PartyEditor
         :party="party"
         :isOpen="showEditor"
-        @submit="(updatedParty) => { partyStore.updateParty(updatedParty.id, updatedParty); party.value = updatedParty; showEditor.value = false; }"
-        @cancel="showEditor.value = false"
+        @submit="handlePartySubmit"
+        @cancel="handlePartyCancel"
       />
       <section class="content-section">
         <h2>Characters</h2>
-        <button @click="handleAddCharacter" class="add-btn">Add Character</button>
         <div v-if="partyCharacters.length === 0" class="empty-state">
           <p>No characters in this party yet</p>
         </div>
         <div v-else class="characters-grid">
-          <CharacterCard
-            v-for="character in partyCharacters"
-            :key="character.id"
-            :character="character"
-            @edit="handleEditCharacter"
-            @delete="handleDeleteCharacter"
-          />
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Class</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="character in partyCharacters" :key="character.id">
+                <td>{{ character.name }}</td>
+                <td>{{ character.level }}</td>
+                <td>{{ character.class }}</td>
+                <td>
+                  <button @click="handleRemoveCharacter(character)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="link-characters">
-          <h3>Link Existing Character</h3>
-          <div v-if="availableCharacters.length === 0" class="empty-state">
-            <p>No available characters to link.</p>
-          </div>
-          <div v-else class="available-characters-grid">
-            <CharacterCard
-              v-for="character in availableCharacters"
-              :key="character.id"
-              :character="character"
-              @edit="handleEditCharacter"
-              @delete="() => handleLinkCharacter(character)"
-            />
-          </div>
+      </section>
+
+      <section class="content-section">
+        <h2>Link Available Characters</h2>
+        <div v-if="availableCharacters.length === 0" class="empty-state">
+          <p>No available characters to link</p>
         </div>
-        <CharacterEditor
-          :isOpen="showCharacterEditor"
-          :character="editingCharacter"
-          :party-id="party.id"
-          @submit="handleCharacterSubmit"
-          @cancel="handleCharacterCancel"
-        />
+        <div v-else class="characters-grid">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Class</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="character in availableCharacters" :key="character.id">
+                <td>{{ character.name }}</td>
+                <td>{{ character.level }}</td>
+                <td>{{ character.class }}</td>
+                <td>
+                  <button @click="handleLinkCharacter(character)" class="link-btn">Link</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   </div>
@@ -197,31 +200,61 @@ const handleCharacterCancel = () => {
 .content-section {
   margin-top: 2rem;
 }
-.add-btn {
-  background: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  margin-bottom: 1rem;
-}
-.add-btn:hover {
-  background: #1976d2;
-}
 .characters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-}
-.link-characters {
   margin-top: 2rem;
 }
-.available-characters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-background-soft);
+  border-radius: var(--border-radius);
+  overflow: hidden;
 }
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+th {
+  background: var(--color-background);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+td {
+  color: var(--color-text);
+}
+
+tr:hover {
+  background: var(--color-background);
+}
+
+button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+.link-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 .empty-state {
   color: #888;
   text-align: center;

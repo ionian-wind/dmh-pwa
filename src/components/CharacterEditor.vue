@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import type { PlayerCharacter, UUID } from '@/types';
-import BaseEditorModal from './BaseEditorModal.vue';
+import BaseModal from './BaseModal.vue';
 
 const props = withDefaults(defineProps<{
   character?: PlayerCharacter | null;
@@ -119,14 +119,24 @@ const featuresString = computed({
 </script>
 
 <template>
-  <BaseEditorModal
+  <BaseModal
     :isOpen="isOpen"
     :title="isEditing ? 'Edit Character' : 'Create Character'"
+    :showSubmit="true"
+    :showCancel="true"
     submitLabel="Save Character"
     cancelLabel="Cancel"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
+    <div class="form-section">
+      <h3>Player Name</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <input v-model="editedCharacter.playerName" type="text" />
+        </div>
+      </div>
+    </div>
     <div class="form-section">
       <h3>Basic Information</h3>
       <div class="form-grid">
@@ -146,34 +156,32 @@ const featuresString = computed({
           <label>Race</label>
           <input v-model="editedCharacter.race" type="text" required />
         </div>
-        <div class="form-group">
-          <label>Player Name</label>
-          <input v-model="editedCharacter.playerName" type="text" />
-        </div>
       </div>
     </div>
     <div class="form-section">
       <h3>Combat & Stats</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Hit Points (Current/Max/Temp)</label>
-          <div class="hp-row">
-            <input v-model.number="editedCharacter.hitPoints.current" type="number" min="0" placeholder="Current" /> /
-            <input v-model.number="editedCharacter.hitPoints.maximum" type="number" min="1" placeholder="Max" /> /
-            <input v-model.number="editedCharacter.hitPoints.temporary" type="number" min="0" placeholder="Temp" />
-          </div>
-        </div>
-        <div class="form-group">
+      <div class="combat-grid">
+        <div class="combat-stat">
           <label>Armor Class</label>
           <input v-model.number="editedCharacter.armorClass" type="number" min="0" />
         </div>
-        <div class="form-group">
+        <div class="combat-stat">
           <label>Initiative</label>
           <input v-model.number="editedCharacter.initiative" type="number" />
         </div>
-        <div class="form-group">
+        <div class="combat-stat">
           <label>Speed</label>
           <input v-model.number="editedCharacter.speed" type="number" min="0" />
+        </div>
+      </div>
+      <div class="hit-points">
+        <h4>Hit Points</h4>
+        <div class="hp-row">
+          <input v-model.number="editedCharacter.hitPoints.current" type="number" min="0" placeholder="Current" />
+          <span class="hp-separator">/</span>
+          <input v-model.number="editedCharacter.hitPoints.maximum" type="number" min="1" placeholder="Max" />
+          <span class="hp-separator">/</span>
+          <input v-model.number="editedCharacter.hitPoints.temporary" type="number" min="0" placeholder="Temp" />
         </div>
       </div>
       <div class="stats-section">
@@ -220,67 +228,39 @@ const featuresString = computed({
         <textarea v-model="editedCharacter.notes" rows="3" />
       </div>
     </div>
-  </BaseEditorModal>
+  </BaseModal>
 </template>
 
 <style scoped>
-.editor-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-.editor-content {
-  background: var(--color-background);
-  border-radius: var(--border-radius);
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 2rem;
-}
-.editor-header {
-  margin-bottom: 2rem;
-}
-.editor-header h2 {
-  margin: 0;
-  color: var(--color-text);
-}
-.editor-form {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
 .form-section {
   background: var(--color-background-soft);
   padding: 1.5rem;
   border-radius: var(--border-radius);
 }
+
 .form-section h3 {
   margin: 0 0 1rem 0;
   color: var(--color-text);
 }
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
 }
+
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
+
 .form-group label {
   color: var(--color-text);
   font-size: 0.9rem;
 }
+
 .form-group input,
 .form-group textarea {
   padding: 0.5rem;
@@ -290,70 +270,123 @@ const featuresString = computed({
   color: var(--color-text);
   font-size: 1rem;
 }
+
 .form-group textarea {
   resize: vertical;
   min-height: 100px;
 }
+
+.combat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.combat-stat {
+  text-align: center;
+  background: var(--color-background);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+}
+
+.combat-stat label {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.combat-stat input {
+  width: 60px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.hit-points {
+  text-align: center;
+  background: var(--color-background);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.hit-points h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+
+.hp-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.hp-row input {
+  width: 80px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+.hp-separator {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-text-light);
+}
+
 .stats-section {
   margin: 2rem 0 0 0;
 }
+
 .stats-section h3 {
   margin: 0 0 1rem 0;
   color: var(--color-text);
 }
+
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  background: var(--color-background-soft);
-  padding: 1rem;
-  border-radius: var(--border-radius);
 }
+
 .stat-input {
   text-align: center;
+  background: var(--color-background);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
 }
+
 .stat-input label {
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.9rem;
+  color: var(--color-text-light);
   margin-bottom: 0.25rem;
+  display: block;
 }
+
 .stat-input input {
   width: 60px;
   text-align: center;
-}
-.modifier {
-  font-size: 0.8rem;
-  color: #666;
-  display: block;
-  margin-top: 0.25rem;
-}
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-.submit-btn,
-.cancel-btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-.submit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-.cancel-btn {
-  background: var(--color-background-soft);
+  font-size: 1.5rem;
+  font-weight: bold;
   color: var(--color-text);
+  margin-bottom: 0.25rem;
 }
-.submit-btn:hover {
-  background: var(--color-primary-dark);
-}
-.cancel-btn:hover {
-  background: var(--color-background-mute);
+
+.modifier {
+  font-size: 1rem;
+  color: var(--color-text-light);
+  display: block;
 }
 </style> 

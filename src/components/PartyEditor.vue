@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useModuleStore } from '@/stores/modules';
-import type { Party } from '@/types';
-import ModuleSelector from './ModuleSelector.vue';
-import BaseEditorModal from './BaseEditorModal.vue';
+import type { Party, UUID } from '@/types';
+import BaseModal from './BaseModal.vue';
 
 const props = defineProps<{
   party: Party | null;
@@ -11,30 +10,33 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'submit', party: Party): void;
+  (e: 'submit', party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>): void;
   (e: 'cancel'): void;
 }>();
 
 const moduleStore = useModuleStore();
 
-const editedParty = ref<Party>({
+type PartyForm = Omit<Party, 'id' | 'createdAt' | 'updatedAt'>;
+
+const editedParty = ref<PartyForm>({
   name: '',
   description: '',
   notes: '',
-  moduleId: null
+  characters: [],
+  moduleIds: []
 });
 
 watch(() => props.party, (newParty) => {
   if (newParty) {
-    editedParty.value = { ...newParty };
+    const { id, createdAt, updatedAt, ...partyData } = newParty;
+    editedParty.value = { ...partyData };
   } else {
     editedParty.value = {
       name: '',
       description: '',
-      level: 1,
-      size: 4,
       notes: '',
-      moduleId: null
+      characters: [],
+      moduleIds: []
     };
   }
 }, { immediate: true });
@@ -53,9 +55,11 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <BaseEditorModal
+  <BaseModal
     :isOpen="isOpen"
     :title="party ? 'Edit Party' : 'Create Party'"
+    :showSubmit="true"
+    :showCancel="true"
     submitLabel="Save Party"
     cancelLabel="Cancel"
     @submit="handleSubmit"
@@ -76,10 +80,13 @@ const handleCancel = () => {
         </div>
         <div class="form-group">
           <label for="module">Module</label>
-          <ModuleSelector
-            v-model="editedParty.moduleId"
-            placeholder="No Module"
-          />
+          <select
+            id="module"
+            v-model="editedParty.moduleIds"
+            multiple
+          >
+            <option v-for="module in moduleStore.modules" :key="module.id" :value="module.id">{{ module.name }}</option>
+          </select>
         </div>
       </div>
       <div class="form-group">
@@ -102,48 +109,10 @@ const handleCancel = () => {
         ></textarea>
       </div>
     </div>
-  </BaseEditorModal>
+  </BaseModal>
 </template>
 
 <style scoped>
-.party-editor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.editor-content {
-  background: var(--color-background);
-  border-radius: var(--border-radius);
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
-.editor-header {
-  margin-bottom: 2rem;
-}
-
-.editor-header h2 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.editor-form {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
 .form-section {
   background: var(--color-background-soft);
   padding: 1.5rem;
@@ -186,40 +155,5 @@ const handleCancel = () => {
 .form-group textarea {
   resize: vertical;
   min-height: 100px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-.submit-btn,
-.cancel-btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.submit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.cancel-btn {
-  background: var(--color-background-soft);
-  color: var(--color-text);
-}
-
-.submit-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.cancel-btn:hover {
-  background: var(--color-background-mute);
 }
 </style> 

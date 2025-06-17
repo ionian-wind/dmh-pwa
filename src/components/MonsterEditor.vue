@@ -4,7 +4,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import type { Monster } from '@/types';
 import ModuleSelector from "@/components/ModuleSelector.vue";
-import BaseEditorModal from './BaseEditorModal.vue';
+import BaseModal from './BaseModal.vue';
 
 const props = defineProps<{
   monster: Monster | null;
@@ -20,7 +20,6 @@ const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
 
 const editedMonster = ref<Monster>({
-  specialAbilities: [],
   id: '',
   name: '',
   type: '',
@@ -50,19 +49,17 @@ const editedMonster = ref<Monster>({
   damageImmunities: [],
   conditionImmunities: [],
   senses: [],
-  languages: [],
-  challengeRating: '1',
-  xp: 0,
-  traits: [],
+  languages: ['Common'],
+  challengeRating: '1/4',
+  xp: 50,
+  specialAbilities: [],
   actions: [],
   legendaryActions: [],
-  moduleId: '',
   description: '',
+  moduleId: '',
   createdAt: Date.now(),
   updatedAt: Date.now()
 });
-
-const newStat = ref<MonsterStat>({ name: '', value: '' });
 
 const isEditing = computed(() => !!editedMonster.value.id);
 
@@ -74,7 +71,6 @@ watch(() => props.monster, (newMonster) => {
 
 const resetForm = () => {
   editedMonster.value = {
-    createdAt: "", moduleId: "", updatedAt: "",
     id: '',
     name: '',
     type: '',
@@ -110,7 +106,10 @@ const resetForm = () => {
     specialAbilities: [],
     actions: [],
     legendaryActions: [],
-    description: ''
+    description: '',
+    moduleId: '',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   };
 };
 
@@ -121,7 +120,8 @@ const saveMonster = async () => {
   }
 
   if (isEditing.value) {
-    await monsterStore.updateMonster(editedMonster.value as Monster);
+    const { id, ...monsterData } = editedMonster.value;
+    await monsterStore.updateMonster(id, monsterData);
   } else {
     await monsterStore.addMonster({
       ...editedMonster.value,
@@ -139,9 +139,11 @@ const closeEditor = () => {
 </script>
 
 <template>
-  <BaseEditorModal
+  <BaseModal
     :isOpen="isOpen"
     :title="isEditing ? 'Edit Monster' : 'Add Monster'"
+    :showSubmit="true"
+    :showCancel="true"
     submitLabel="Save Monster"
     cancelLabel="Cancel"
     @submit="saveMonster"
@@ -207,45 +209,13 @@ const closeEditor = () => {
       <textarea v-model="editedMonster.description" rows="3"></textarea>
     </div>
     <div class="form-section">
-      <label>Abilities</label>
-      <textarea v-model="editedMonster.abilities" rows="3"></textarea>
-    </div>
-    <div class="form-section">
       <label>Languages</label>
       <input v-model="editedMonster.languages" type="text" placeholder="Comma-separated list" />
     </div>
-  </BaseEditorModal>
+  </BaseModal>
 </template>
 
 <style scoped>
-.editor-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.editor-content {
-  background: var(--color-background);
-  padding: 2rem;
-  border-radius: var(--border-radius);
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.editor-content h2 {
-  margin: 0 0 1.5rem 0;
-  color: var(--color-text);
-}
-
 .form-section {
   margin-bottom: 1rem;
 }
@@ -271,39 +241,5 @@ const closeEditor = () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.cancel-btn,
-.save-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.cancel-btn {
-  background: var(--color-background-soft);
-  color: var(--color-text);
-}
-
-.save-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.cancel-btn:hover {
-  background: var(--color-background-mute);
-}
-
-.save-btn:hover {
-  background: var(--color-primary-dark);
 }
 </style> 

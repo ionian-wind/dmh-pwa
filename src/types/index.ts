@@ -91,7 +91,7 @@ export interface Party extends WithMetadata {
   description?: string;
   characters: UUID[];
   notes?: string;
-  moduleId: UUID | null;
+  moduleIds: UUID[];
 }
 
 export interface Monster extends WithMetadata {

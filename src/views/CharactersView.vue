@@ -132,16 +132,4 @@ const deleteCharacter = async (character: PlayerCharacter) => {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
-
-.character-card {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  overflow: hidden;
-  transition: transform 0.2s;
-}
-
-.character-card:hover {
-  transform: translateY(-2px);
-}
 </style> 

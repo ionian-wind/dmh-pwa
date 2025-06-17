@@ -56,7 +56,10 @@ function handleDelete() { emit('delete', props.character); }
     <div class="character-details">
       <div class="detail-item">
         <span class="detail-label">HP:</span>
-        <span class="detail-value">{{ character.hitPoints }}</span>
+        <span class="detail-value">
+          {{ character.hitPoints.current }}/{{ character.hitPoints.maximum }}
+          <span v-if="character.hitPoints.temporary" class="temp-hp">+{{ character.hitPoints.temporary }} temp</span>
+        </span>
       </div>
       <div class="detail-item">
         <span class="detail-label">AC:</span>
@@ -135,26 +138,10 @@ function handleDelete() { emit('delete', props.character); }
   font-weight: bold;
   color: #333;
 }
-.edit-btn,
-.delete-btn {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+.temp-hp {
   font-size: 0.8rem;
-  cursor: pointer;
-  border: none;
-}
-.edit-btn {
-  background: #2196f3;
-  color: white;
-}
-.edit-btn:hover {
-  background: #1976d2;
-}
-.delete-btn {
-  background: #f44336;
-  color: white;
-}
-.delete-btn:hover {
-  background: #d32f2f;
+  color: #666;
+  font-weight: normal;
+  margin-left: 0.25rem;
 }
 </style>

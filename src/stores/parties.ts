@@ -4,6 +4,7 @@ import { Party, PlayerCharacter } from '@/types';
 import { generateId, useStorage } from '@/utils/storage';
 import partySchema from "@/schemas/party.schema.json";
 import {registerValidationSchema} from "@/utils/schemaValidator";
+import { useModuleStore } from '@/stores/modules';
 
 registerValidationSchema('party', partySchema);
 
@@ -32,6 +33,15 @@ export const usePartyStore = defineStore('parties', () => {
     return getPartyById(currentPartyId.value);
   });
 
+  const filteredParties = computed(() => {
+    const moduleStore = useModuleStore();
+    if (!moduleStore.currentModuleId) return parties.value;
+    return parties.value.filter(party => {
+      const moduleIds = party.moduleIds || [];
+      return moduleIds.includes(moduleStore.currentModuleId!);
+    });
+  });
+
   const loadParties = async () => {
     // Parties are automatically loaded by useStorage
     return parties.value;
@@ -42,7 +52,7 @@ export const usePartyStore = defineStore('parties', () => {
     return characters.value;
   };
 
-  const addParty = (party: Omit<Party, 'id'>) => {
+  const addParty = (party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newParty: Party = {
       ...party,
       id: generateId(),
@@ -56,7 +66,7 @@ export const usePartyStore = defineStore('parties', () => {
   // Alias for addParty to maintain compatibility
   const createParty = addParty;
 
-  const updateParty = (id: string, party: Omit<Party, 'id'>) => {
+  const updateParty = (id: string, party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
     const index = parties.value.findIndex(p => p.id === id);
     if (index !== -1) {
       parties.value[index] = {
@@ -166,6 +176,7 @@ export const usePartyStore = defineStore('parties', () => {
     loadParties,
     loadCharacters,
     addCharacterToParty,
-    removeCharacterFromParty
+    removeCharacterFromParty,
+    filteredParties
   };
 }); 

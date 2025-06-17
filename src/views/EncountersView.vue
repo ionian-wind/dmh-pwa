@@ -35,9 +35,9 @@ const handleDelete = async (encounter: Encounter) => {
   }
 };
 
-const handleSubmit = async (encounter: Encounter) => {
-  if (selectedEncounter.value) {
-    await encounterStore.updateEncounter(encounter.id, encounter);
+const handleSubmit = async (encounter: Omit<Encounter, 'id'>) => {
+  if (selectedEncounter.value?.id) {
+    await encounterStore.updateEncounter(selectedEncounter.value.id, encounter);
   } else {
     await encounterStore.createEncounter(encounter);
   }
@@ -120,116 +120,5 @@ const getModuleName = (moduleId: string | null) => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.5rem;
-}
-
-.encounter-card {
-  background: var(--color-background-soft);
-  border-radius: var(--border-radius);
-  overflow: hidden;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.card-header h2 {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 1.2rem;
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.edit-btn,
-.delete-btn {
-  padding: 0.25rem 0.5rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.edit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.delete-btn {
-  background: var(--color-danger);
-  color: white;
-}
-
-.edit-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.delete-btn:hover {
-  background: var(--color-danger-dark);
-}
-
-.card-content {
-  padding: 1rem;
-}
-
-.encounter-meta {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.meta-item .label {
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.meta-item .value {
-  color: var(--color-text);
-  font-weight: 500;
-}
-
-.description {
-  color: var(--color-text);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin: 0 0 1rem 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.monsters-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: var(--color-background);
-  border-radius: var(--border-radius);
-}
-
-.monsters-summary .label {
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.monsters-summary .value {
-  color: var(--color-text);
-  font-weight: 500;
 }
 </style> 

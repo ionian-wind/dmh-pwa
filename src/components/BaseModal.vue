@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { watch, onMounted, onUnmounted } from 'vue';
+
 const props = defineProps<{
   isOpen: boolean;
   title: string;
+  showSubmit?: boolean;
+  showCancel?: boolean;
   submitLabel?: string;
   cancelLabel?: string;
 }>();
@@ -28,7 +31,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 function handleClickOutside(e: MouseEvent) {
   if (!props.isOpen) return;
-  const dialog = document.querySelector('.editor-dialog');
+  const dialog = document.querySelector('.modal-dialog');
   if (dialog && !dialog.contains(e.target as Node)) {
     emit('cancel');
   }
@@ -73,6 +76,7 @@ onMounted(() => {
     window.addEventListener('popstate', popStateHandler);
   }
 });
+
 onUnmounted(() => {
   setBodyScroll(false);
   window.removeEventListener('keydown', handleKeydown);
@@ -85,22 +89,23 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="editor-modal">
-    <div class="editor-dialog">
-      <div class="editor-header">
+  <div v-if="isOpen" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
         <h2>{{ title }}</h2>
       </div>
-      <form @submit.prevent="emit('submit')" class="editor-form">
-        <div class="editor-scrollable">
+      <form @submit.prevent="emit('submit')" class="modal-form">
+        <div class="modal-scrollable">
           <slot />
         </div>
-        <div class="form-actions">
-          <button type="button" class="cancel-btn" @click="emit('cancel')">
+        <div v-if="$slots.actions || showSubmit || showCancel" class="modal-actions">
+          <button v-if="showCancel" type="button" class="cancel-btn" @click="emit('cancel')">
             {{ cancelLabel || 'Cancel' }}
           </button>
-          <button type="submit" class="submit-btn">
+          <button v-if="showSubmit" type="submit" class="submit-btn">
             {{ submitLabel || 'Save' }}
           </button>
+          <slot name="actions" />
         </div>
       </form>
     </div>
@@ -108,7 +113,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.editor-modal {
+.modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -120,7 +125,8 @@ onUnmounted(() => {
   align-items: center;
   z-index: 1000;
 }
-.editor-dialog {
+
+.modal-dialog {
   background: var(--color-background);
   border-radius: var(--border-radius);
   width: 90%;
@@ -130,7 +136,8 @@ onUnmounted(() => {
   flex-direction: column;
   box-shadow: 0 4px 32px rgba(0,0,0,0.15);
 }
-.editor-header {
+
+.modal-header {
   flex: 0 0 auto;
   padding: 2rem 2rem 0 2rem;
   margin-bottom: 0.5rem;
@@ -139,25 +146,29 @@ onUnmounted(() => {
   border-top-right-radius: var(--border-radius);
   z-index: 2;
 }
-.editor-header h2 {
+
+.modal-header h2 {
   margin: 0;
   color: var(--color-text);
 }
-.editor-form {
+
+.modal-form {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
   flex: 1 1 auto;
 }
-.editor-scrollable {
+
+.modal-scrollable {
   overflow-y: auto;
   padding: 0 2rem 0 2rem;
   flex: 1 1 auto;
   min-height: 0;
   max-height: 60vh;
 }
-.form-actions {
+
+.modal-actions {
   flex: 0 0 auto;
   display: flex;
   gap: 1rem;
@@ -169,6 +180,7 @@ onUnmounted(() => {
   border-bottom-right-radius: var(--border-radius);
   z-index: 2;
 }
+
 .submit-btn,
 .cancel-btn {
   padding: 0.75rem 1.5rem;
@@ -178,17 +190,21 @@ onUnmounted(() => {
   font-size: 1rem;
   transition: background-color 0.2s;
 }
+
 .submit-btn {
   background: var(--color-primary);
   color: white;
 }
+
 .cancel-btn {
   background: var(--color-background-soft);
   color: var(--color-text);
 }
+
 .submit-btn:hover {
   background: var(--color-primary-dark);
 }
+
 .cancel-btn:hover {
   background: var(--color-background-mute);
 }

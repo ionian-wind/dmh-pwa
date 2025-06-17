@@ -66,18 +66,22 @@ const moduleName = computed(() => {
   align-items: center;
   margin-bottom: 0.5rem;
 }
+
 .monster-type {
   font-style: italic;
 }
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
 }
+
 .stat-item {
   display: flex;
   justify-content: space-between;
 }
+
 .monster-details {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -85,45 +89,38 @@ const moduleName = computed(() => {
   margin-bottom: 1rem;
   padding: 0.5rem 0;
 }
+
 .detail-item {
   text-align: left;
 }
+
 .detail-label {
   font-size: 0.8rem;
   color: #666;
   margin-right: 0.25rem;
 }
+
 .detail-value {
   font-size: 1rem;
   font-weight: bold;
   color: #333;
 }
+
 .monster-abilities {
   margin-top: 0.5rem;
 }
+
 .monster-abilities h4 {
   margin: 0 0 0.25rem 0;
 }
+
 .monster-abilities ul {
   margin: 0;
   padding-left: 1.2em;
 }
+
 .monster-abilities li {
   font-size: 0.95em;
   color: #444;
-}
-.monster-actions button {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  border: none;
-}
-.monster-actions button {
-  background: #2196f3;
-  color: white;
-}
-.monster-actions button:hover {
-  background: #1976d2;
 }
 </style>

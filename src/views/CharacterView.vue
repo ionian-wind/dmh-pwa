@@ -14,14 +14,20 @@
       </div>
 
       <div class="character-sheet">
+        <!-- Player Information -->
+        <section class="sheet-section player-info">
+          <h2>Player Name</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span>{{ character.playerName || 'N/A' }}</span>
+            </div>
+          </div>
+        </section>
+
         <!-- Basic Information -->
         <section class="sheet-section basic-info">
           <h2>Basic Information</h2>
           <div class="info-grid">
-            <div class="info-item">
-              <label>Player Name:</label>
-              <span>{{ character.playerName || 'N/A' }}</span>
-            </div>
             <div class="info-item">
               <label>Background:</label>
               <span>{{ character.background || 'N/A' }}</span>

@@ -44,6 +44,11 @@ export const useEncounterStore = defineStore('encounters', () => {
   });
 
   const addEncounter = (encounter: Omit<Encounter, 'id'>) => {
+    // Ensure encounter has a moduleId
+    if (!encounter.moduleId) {
+      throw new Error('Encounter must be associated with a module');
+    }
+    
     const newEncounter: Encounter = {
       ...encounter,
       id: generateId(),
