@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useNoteTypeStore } from '@/stores/noteTypes';
 import type { NoteTypeDefinition } from '@/types';
+import Button from './Button.vue';
 
 const props = defineProps<{
   modelValue: string | null;
@@ -67,9 +68,7 @@ const removeType = async (id: string) => {
           {{ type.name }}
         </option>
       </select>
-      <button type="button" class="add-type-btn" @click="showTypeEditor = true">
-        +
-      </button>
+      <Button size="small" class="add-type-btn" @click="showTypeEditor = true">+</Button>
     </div>
 
     <div v-if="showTypeEditor" class="type-editor">
@@ -110,8 +109,8 @@ const removeType = async (id: string) => {
         >
       </div>
       <div class="type-editor-actions">
-        <button type="button" @click="addType">Add</button>
-        <button type="button" @click="showTypeEditor = false">Cancel</button>
+        <Button size="small" @click="addType">Add</Button>
+        <Button size="small" variant="secondary" @click="showTypeEditor = false">Cancel</Button>
       </div>
     </div>
 
@@ -120,9 +119,7 @@ const removeType = async (id: string) => {
         <span v-if="type.icon" class="type-icon" :class="type.icon"></span>
         <span v-else class="type-color" :style="{ backgroundColor: type.color }"></span>
         <span class="type-name">{{ type.name }}</span>
-        <button type="button" class="remove-type-btn" @click="removeType(type.id)">
-          ×
-        </button>
+        <Button size="small" variant="danger" class="remove-type-btn" @click="removeType(type.id)">×</Button>
       </div>
     </div>
   </div>

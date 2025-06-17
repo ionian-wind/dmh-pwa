@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import type { Monster } from '@/types';
 import ModuleSelector from "@/components/ModuleSelector.vue";
 import BaseModal from './BaseModal.vue';
+import Button from './Button.vue';
 
 const props = defineProps<{
   monster: Monster | null;

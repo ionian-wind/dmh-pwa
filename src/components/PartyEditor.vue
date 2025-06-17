@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import type { Party, UUID } from '@/types';
 import BaseModal from './BaseModal.vue';
+import Button from './Button.vue';
 
 const props = defineProps<{
   party: Party | null;

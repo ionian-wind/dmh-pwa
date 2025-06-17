@@ -6,8 +6,8 @@
         <p class="module-description">{{ module.description }}</p>
       </div>
       <div class="header-actions">
-        <button @click="showEditor = true" class="edit-btn">Edit Module</button>
-        <button @click="deleteModule" class="delete-btn">Delete Module</button>
+        <Button class="edit-btn" @click="showEditor = true">Edit Module</Button>
+        <Button variant="danger" class="delete-btn" @click="deleteModule">Delete Module</Button>
       </div>
     </div>
 
@@ -85,6 +85,7 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
+import Button from '@/components/Button.vue';
 
 const route = useRoute();
 const router = useRouter();

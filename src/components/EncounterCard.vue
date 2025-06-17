@@ -2,6 +2,8 @@
 import type { Encounter } from '@/types';
 import BaseCard from './BaseCard.vue';
 import { useRouter } from 'vue-router';
+import { defineProps, defineEmits } from 'vue';
+import Button from './Button.vue';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete']);
@@ -31,9 +33,7 @@ function handleRunCombat() {
       <span class="value">{{ encounter.monsters?.length }}</span>
     </div>
     <template #actions>
-      <button @click="handleRunCombat" class="run-combat-btn" title="Run Combat">
-        ⚔️
-      </button>
+      <Button size="small" variant="primary" @click="handleRunCombat" title="Run Combat">⚔️</Button>
     </template>
   </BaseCard>
 </template>

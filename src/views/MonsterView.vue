@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
+import Button from '@/components/Button.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -59,8 +60,8 @@ const deleteMonster = async () => {
         </div>
       </div>
       <div class="header-actions">
-        <button @click="handleEditClick" class="edit-btn">Edit</button>
-        <button @click="deleteMonster" class="delete-btn">Delete</button>
+        <Button class="edit-btn" @click="handleEditClick">Edit</Button>
+        <Button variant="danger" class="delete-btn" @click="deleteMonster">Delete</Button>
       </div>
     </div>
 

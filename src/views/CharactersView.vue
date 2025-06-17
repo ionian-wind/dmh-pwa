@@ -2,7 +2,7 @@
   <div class="characters-view">
     <div class="view-header">
       <h1>Characters</h1>
-      <button @click="handleCreateClick" class="create-btn">Create Character</button>
+      <Button @click="handleCreateClick">Create Character</Button>
     </div>
 
     <div v-if="characterStore.all.length === 0" class="empty-state">
@@ -38,6 +38,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import CharacterCard from '@/components/CharacterCard.vue';
 import CharacterEditor from '@/components/CharacterEditor.vue';
+import Button from '@/components/Button.vue';
 import type { PlayerCharacter } from '@/types';
 
 const router = useRouter();

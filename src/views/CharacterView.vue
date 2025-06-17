@@ -8,8 +8,8 @@
           <span v-if="character.alignment">{{ character.alignment }}</span>
         </div>
         <div class="header-actions">
-          <button @click="editCharacter" class="edit-btn">Edit Character</button>
-          <button @click="deleteCharacter" class="delete-btn">Delete Character</button>
+          <Button @click="editCharacter">Edit Character</Button>
+          <Button variant="danger" @click="deleteCharacter">Delete Character</Button>
         </div>
       </div>
 
@@ -148,6 +148,7 @@
   import { useCharacterStore } from '@/stores/characters';
   import CharacterEditor from '@/components/CharacterEditor.vue';
   import type { PlayerCharacter } from '@/types';
+  import Button from '@/components/Button.vue';
   
   const route = useRoute();
   const router = useRouter();

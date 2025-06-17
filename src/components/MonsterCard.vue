@@ -9,17 +9,28 @@ const props = defineProps<{
   showActions?: boolean;
 }>();
 
-const emit = defineEmits(['edit', 'delete', 'link-note', 'add-to-encounter']);
+const emit = defineEmits(['view', 'edit', 'delete', 'add-to-encounter']);
 
 const moduleStore = useModuleStore();
 
 const moduleName = computed(() => {
   return moduleStore.getModuleName?.(props.monster.moduleId) || 'Unknown Module';
 });
+
+const handleView = () => emit('view', props.monster);
+const handleEdit = () => emit('edit', props.monster);
+const handleDelete = () => emit('delete', props.monster.id);
 </script>
 
 <template>
-  <BaseCard>
+  <BaseCard
+    :show-view="showActions"
+    :show-edit="showActions"
+    :show-delete="showActions"
+    @view="handleView"
+    @edit="handleEdit"
+    @delete="handleDelete"
+  >
     <template #header>
       <div class="monster-header">
         <h3>{{ monster.name }}</h3>
@@ -51,11 +62,6 @@ const moduleName = computed(() => {
         <li v-for="(ability, idx) in monster.specialAbilities" :key="idx">{{ ability }}</li>
       </ul>
     </div>
-    <template #actions v-if="showActions">
-      <button @click="$emit('edit', monster)">Edit</button>
-      <button @click="$emit('delete', monster.id)">Delete</button>
-      <button @click="$emit('add-to-encounter', monster)">Add to Encounter</button>
-    </template>
   </BaseCard>
 </template>
 

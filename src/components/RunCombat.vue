@@ -126,7 +126,10 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useEncounterStore } from '@/stores/encounters';
+import { useCharacterStore } from '@/stores/characters';
+import { useMonsterStore } from '@/stores/monsters';
 import CombatTracker from '@/components/CombatTracker.vue';
+import Button from './Button.vue';
 import type { Encounter } from '@/types';
 
 const route = useRoute();

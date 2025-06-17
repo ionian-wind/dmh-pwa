@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { withDefaults } from 'vue';
+import Button from './Button.vue';
 
 const props = withDefaults(defineProps<{
   modelValue: string[];
@@ -39,13 +40,13 @@ const removeTag = (index: number) => {
         :placeholder="placeholder || 'Add tag'"
         @keydown.enter.prevent="addTag"
       >
-      <button @click.prevent="addTag">+</button>
+      <Button size="small" @click.prevent="addTag">+</Button>
     </div>
 
     <div class="tags-list">
       <span v-for="(tag, index) in modelValue" :key="index" class="tag">
         {{ tag }}
-        <button @click="removeTag(index)">×</button>
+        <Button size="small" variant="danger" @click="removeTag(index)">×</Button>
       </span>
     </div>
   </div>

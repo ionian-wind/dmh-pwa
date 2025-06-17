@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { PlayerCharacter } from '@/types';
 import BaseCard from './BaseCard.vue';
+import Button from './Button.vue';
 
 const props = defineProps<{
   character: PlayerCharacter;
@@ -70,6 +71,10 @@ function handleDelete() { emit('delete', props.character); }
         <span class="detail-value">{{ character.speed }}ft</span>
       </div>
     </div>
+    <template #actions>
+      <Button size="small" @click="$emit('edit', character)">Edit</Button>
+      <Button size="small" variant="danger" @click="$emit('delete', character.id)">Delete</Button>
+    </template>
   </BaseCard>
 </template>
 
@@ -143,5 +148,10 @@ function handleDelete() { emit('delete', props.character); }
   color: #666;
   font-weight: normal;
   margin-left: 0.25rem;
+}
+.character-card-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
 }
 </style>

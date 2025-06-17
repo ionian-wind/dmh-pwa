@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useEncounterStore } from '@/stores/encounters';
 import { useModuleStore } from '@/stores/modules';
 import type { Encounter } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
+import Button from '@/components/Button.vue';
 
 const encounterStore = useEncounterStore();
 const moduleStore = useModuleStore();
@@ -59,7 +61,7 @@ const getModuleName = (moduleId: string | null) => {
   <div class="encounters-view">
     <div class="view-header">
       <h1>Encounters</h1>
-      <button @click="handleCreate" class="create-btn">Create Encounter</button>
+      <Button @click="handleCreate">Create Encounter</Button>
     </div>
 
     <div class="encounters-grid">
@@ -99,21 +101,6 @@ const getModuleName = (moduleId: string | null) => {
 .view-header h1 {
   margin: 0;
   color: var(--color-text);
-}
-
-.create-btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: var(--border-radius);
-  background: var(--color-primary);
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.create-btn:hover {
-  background: var(--color-primary-dark);
 }
 
 .encounters-grid {

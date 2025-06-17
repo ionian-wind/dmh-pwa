@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import { useRouter } from 'vue-router';
 import { Section } from '@/types';
+import Button from './Button.vue';
 
 const moduleStore = useModuleStore();
 const router = useRouter();

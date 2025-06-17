@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
 import NoteCard from '@/components/NoteCard.vue';
+import Button from '@/components/Button.vue';
 import type { Note } from '@/types';
 
 const noteStore = useNoteStore();
@@ -117,9 +119,7 @@ const handleDelete = async (note: Note) => {
   <div class="notes-view">
     <div class="header">
       <h1>Notes</h1>
-      <button @click="addNote" class="add-btn">
-        Create Note
-      </button>
+      <Button class="add-btn" @click="addNote">Add Note</Button>
     </div>
 
     <div v-if="filteredNotes.length === 0" class="empty-state">

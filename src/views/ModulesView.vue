@@ -5,6 +5,7 @@ import { useModuleStore } from '@/stores/modules';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import ModuleCard from '@/components/ModuleCard.vue';
+import Button from '@/components/Button.vue';
 
 const router = useRouter();
 const moduleStore = useModuleStore();
@@ -49,7 +50,7 @@ const deleteModule = async (module: Module) => {
   <div class="modules-view">
     <div class="view-header">
       <h1>Modules</h1>
-      <button @click="handleCreateClick" class="create-btn">Create Module</button>
+      <Button @click="handleCreateClick">Create Module</Button>
     </div>
 
     <div v-if="moduleStore.modules.length === 0" class="empty-state">

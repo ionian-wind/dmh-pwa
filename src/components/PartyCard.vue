@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { Party } from '@/types';
 import { useModuleStore } from '@/stores/modules';
 import BaseCard from './BaseCard.vue';
+import Button from './Button.vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view']);
@@ -60,5 +61,12 @@ const partyModules = computed(() => {
 
 .modules {
   font-style: italic;
+}
+
+.party-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 </style> 

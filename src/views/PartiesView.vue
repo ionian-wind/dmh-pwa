@@ -5,6 +5,7 @@ import { usePartyStore } from '@/stores/parties';
 import type { Party } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
 import PartyCard from '@/components/PartyCard.vue';
+import Button from '@/components/Button.vue';
 
 const router = useRouter();
 const partyStore = usePartyStore();
@@ -49,7 +50,7 @@ const deleteParty = async (party: Party) => {
   <div class="parties-view">
     <div class="view-header">
       <h1>Parties</h1>
-      <button @click="handleCreateClick" class="create-btn">Create Party</button>
+      <Button @click="handleCreateClick">Create Party</Button>
     </div>
 
     <div v-if="partyStore.filteredParties.length === 0" class="empty-state">

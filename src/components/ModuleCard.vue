@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Module } from '@/types';
 import BaseCard from './BaseCard.vue';
+import { defineProps, defineEmits } from 'vue';
+import Button from './Button.vue';
 
 const props = defineProps<{ module: Module }>();
 const emit = defineEmits(['edit', 'delete', 'view']);
@@ -15,6 +17,10 @@ function handleDelete() { emit('delete', props.module); }
       <h3>{{ module.name }}</h3>
     </template>
     <p class="description">{{ module.description }}</p>
+    <template #actions>
+      <Button size="small" @click="$emit('edit', module)">Edit</Button>
+      <Button size="small" variant="danger" @click="$emit('delete', module.id)">Delete</Button>
+    </template>
   </BaseCard>
 </template>
 <style scoped>

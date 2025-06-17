@@ -6,6 +6,7 @@ import { useModuleStore } from '@/stores/modules';
 import type { Note } from '@/types';
 import NoteEditor from '@/components/NoteEditor.vue';
 import { parseMarkdown } from '@/utils/markdownParser';
+import Button from '@/components/Button.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -76,12 +77,8 @@ const handleCancel = () => {
           </div>
         </div>
         <div class="note-actions">
-          <button class="edit-btn" @click="handleEdit">
-            Edit
-          </button>
-          <button class="delete-btn" @click="handleDelete">
-            Delete
-          </button>
+          <Button class="edit-btn" @click="handleEdit">Edit</Button>
+          <Button variant="danger" class="delete-btn" @click="handleDelete">Delete</Button>
         </div>
       </div>
 

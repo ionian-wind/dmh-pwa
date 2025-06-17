@@ -6,6 +6,8 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import type { Encounter } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
+import RunCombat from '@/components/RunCombat.vue';
+import Button from '@/components/Button.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -70,8 +72,8 @@ const getModuleName = (moduleId: string | null) => {
       <div class="header-content">
         <h1>{{ encounter.name }}</h1>
         <div class="header-actions">
-          <button @click="handleEdit" class="edit-btn">Edit</button>
-          <button @click="handleDelete" class="delete-btn">Delete</button>
+          <Button class="edit-btn" @click="handleEdit">Edit</Button>
+          <Button variant="danger" class="delete-btn" @click="handleDelete">Delete</Button>
         </div>
       </div>
       <div class="encounter-meta">

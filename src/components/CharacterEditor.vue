@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import type { PlayerCharacter, UUID } from '@/types';
 import BaseModal from './BaseModal.vue';
+import Button from './Button.vue';
 
 const props = withDefaults(defineProps<{
   character?: PlayerCharacter | null;

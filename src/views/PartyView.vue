@@ -8,6 +8,7 @@ import { Party, PlayerCharacter } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
 import BaseModal from '@/components/BaseModal.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
+import Button from '@/components/Button.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -110,9 +111,9 @@ const isCharacterLinked = (characterId: string) => {
           <span class="character-count">{{ partyCharacters.length }} characters</span>
         </div>
         <div class="actions">
-          <button @click="showEditor = true">Edit Party</button>
-          <button @click="showLinkModal = true">Link Characters</button>
-          <button @click="handleDeleteParty" class="delete-btn">Delete Party</button>
+          <Button @click="showEditor = true">Edit Party</Button>
+          <Button @click="showLinkModal = true">Link Characters</Button>
+          <Button variant="danger" @click="handleDeleteParty">Delete Party</Button>
         </div>
       </div>
       <PartyEditor
@@ -179,7 +180,7 @@ const isCharacterLinked = (characterId: string) => {
                 <td>{{ character.level }}</td>
                 <td>{{ character.class }}</td>
                 <td>
-                  <button @click="handleToggleCharacter(character, false)">Unlink</button>
+                  <Button variant="danger" size="small" @click="handleToggleCharacter(character, false)">Unlink</Button>
                 </td>
               </tr>
             </tbody>

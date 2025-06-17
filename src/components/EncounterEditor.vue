@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { Encounter, Combatant, Monster } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import BaseModal from './BaseModal.vue';
+import Button from './Button.vue';
 
 const props = defineProps<{
   encounter: Encounter | null;
