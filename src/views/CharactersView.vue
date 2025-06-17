@@ -1,42 +1,37 @@
 <template>
   <div class="characters-view">
-    <h1>Player Characters</h1>
-    <div class="toolbar">
-      <label>Filter by Party:</label>
-      <select v-model="selectedPartyId">
-        <option value="">All</option>
-        <option v-for="party in parties" :key="party.id" :value="party.id">{{ party.name }}</option>
-      </select>
-      <label>Filter by Module:</label>
-      <select v-model="selectedModuleId">
-        <option value="">All</option>
-        <option v-for="module in modules" :key="module.id" :value="module.id">{{ module.name }}</option>
-      </select>
-      <button @click="showEditor = true">Add Character</button>
+    <div class="view-header">
+      <h1>Characters</h1>
+      <button @click="handleCreateClick" class="create-btn">Create Character</button>
     </div>
-    <div v-if="filteredCharacters.length === 0" class="empty-state">
-      <p>No characters found.</p>
+
+    <div v-if="characterStore.all.length === 0" class="empty-state">
+      <p>No characters yet. Create your first character to get started!</p>
     </div>
-    <div class="characters-grid">
-      <CharacterCard
-        v-for="character in filteredCharacters"
-        :key="character.id"
-        :character="character"
-        @edit="editCharacter"
-        @delete="deleteCharacter"
-      />
+
+    <div v-else class="characters-grid">
+      <div v-for="character in characterStore.all" :key="character.id" class="character-card">
+        <CharacterCard
+          :character="character"
+          @edit="() => handleEditClick(character)"
+          @delete="() => deleteCharacter(character)"
+        />
+      </div>
     </div>
+
     <CharacterEditor
-      :isOpen="showEditor"
+      v-if="showEditor"
       :character="editingCharacter"
-      @submit="handleSave"
-      @cancel="closeEditor"
+      :is-open="showEditor"
+      @submit="handleSubmit"
+      @cancel="handleCancel"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, Ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
@@ -44,76 +39,108 @@ import CharacterCard from '@/components/CharacterCard.vue';
 import CharacterEditor from '@/components/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 
+const router = useRouter();
 const characterStore = useCharacterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
-
 const showEditor = ref(false);
-const editingCharacter: Ref<PlayerCharacter | undefined> = ref();
-const selectedPartyId = ref('');
-const selectedModuleId = ref('');
+const editingCharacter = ref<PlayerCharacter | null>(null);
 
-const parties = computed(() => partyStore.parties);
-const modules = computed(() => moduleStore.modules);
-
-const filteredCharacters = computed(() => {
-  let chars = characterStore.all;
-  if (selectedPartyId.value) {
-    chars = chars.filter((c: PlayerCharacter) => c.partyId === selectedPartyId.value);
-  }
-  if (selectedModuleId.value) {
-    chars = chars.filter((c: PlayerCharacter) => c.moduleId === selectedModuleId.value);
-  }
-  return chars;
+onMounted(async () => {
+  await Promise.all([
+    partyStore.loadParties?.(),
+    moduleStore.loadModules?.()
+  ]);
 });
 
-function editCharacter(character: PlayerCharacter) {
-  editingCharacter.value = { ...character };
+const handleCreateClick = () => {
+  editingCharacter.value = null;
   showEditor.value = true;
-}
+};
 
-function deleteCharacter(character: PlayerCharacter) {
-  if (confirm(`Delete character "${character.name}"?`)) {
-    characterStore.remove(character.id);
-  }
-}
+const handleEditClick = (character: PlayerCharacter) => {
+  editingCharacter.value = character;
+  showEditor.value = true;
+};
 
-function handleSave(character: PlayerCharacter) {
-  if (editingCharacter.value && editingCharacter.value.id) {
-    characterStore.update(editingCharacter.value.id, character);
+const handleSubmit = async (character: PlayerCharacter) => {
+  if (character.id) {
+    await characterStore.update(character.id, character);
   } else {
-    characterStore.add(character);
+    await characterStore.add(character);
   }
   showEditor.value = false;
-  editingCharacter.value = undefined;
-}
+};
 
-function closeEditor() {
+const handleCancel = () => {
   showEditor.value = false;
-  editingCharacter.value = undefined;
-}
+};
+
+const deleteCharacter = async (character: PlayerCharacter) => {
+  if (confirm(`Are you sure you want to delete the character "${character.name}"?`)) {
+    await characterStore.remove(character.id);
+  }
+};
 </script>
 
 <style scoped>
 .characters-view {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
 }
-.toolbar {
+
+.view-header {
   display: flex;
-  gap: 1rem;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
+
+.view-header h1 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.create-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.create-btn:hover {
+  background: var(--color-primary-dark);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  color: var(--color-text-light);
+}
+
 .characters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
-.empty-state {
-  color: #888;
-  text-align: center;
-  margin: 2rem 0;
+
+.character-card {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.character-card:hover {
+  transform: translateY(-2px);
 }
 </style> 
