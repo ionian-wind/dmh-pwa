@@ -129,6 +129,22 @@ export const usePartyStore = defineStore('parties', () => {
       .filter((c): c is PlayerCharacter => c !== undefined);
   };
 
+  const addCharacterToParty = (partyId: string, characterId: string) => {
+    const party = parties.value.find(p => p.id === partyId);
+    if (party && !party.characters.includes(characterId)) {
+      party.characters.push(characterId);
+      party.updatedAt = Date.now();
+    }
+  };
+
+  const removeCharacterFromParty = (partyId: string, characterId: string) => {
+    const party = parties.value.find(p => p.id === partyId);
+    if (party) {
+      party.characters = party.characters.filter(id => id !== characterId);
+      party.updatedAt = Date.now();
+    }
+  };
+
   return {
     parties,
     characters,
@@ -148,6 +164,8 @@ export const usePartyStore = defineStore('parties', () => {
     getCharacterById,
     getPartyCharacters,
     loadParties,
-    loadCharacters
+    loadCharacters,
+    addCharacterToParty,
+    removeCharacterFromParty
   };
 }); 

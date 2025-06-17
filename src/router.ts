@@ -6,6 +6,8 @@ import PartiesView from '@/views/PartiesView.vue';
 import PartyView from '@/views/PartyView.vue';
 import MonstersView from '@/views/MonstersView.vue';
 import MonsterView from '@/views/MonsterView.vue';
+import CharactersView from '@/views/CharactersView.vue';
+import CharacterView from '@/views/CharacterView.vue';
 import EncountersView from '@/views/EncountersView.vue';
 import EncounterView from '@/views/EncounterView.vue';
 import ModulesView from '@/views/ModulesView.vue';
@@ -57,6 +59,18 @@ const router = createRouter({
       path: '/monsters/:id',
       name: 'monster-detail',
       component: MonsterView
+    },
+    // Characters routes
+    {
+      path: '/characters',
+      name: 'characters',
+      component: CharactersView,
+      meta: { exact: true }
+    },
+    {
+      path: '/characters/:id',
+      name: 'character-detail',
+      component: CharacterView
     },
     // Encounters routes
     {

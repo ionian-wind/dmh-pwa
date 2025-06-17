@@ -28,6 +28,10 @@
       "type": "string",
       "description": "Character's class"
     },
+    "partyId": {
+      "type": "string",
+      "description": "ID of party"
+    },
     "race": {
       "type": "string",
       "description": "Character's race"

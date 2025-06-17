@@ -1,224 +1,230 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
-import type { Party } from '@/types';
+import { useCharacterStore } from '@/stores/characters';
+import { Party, PlayerCharacter } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
+import CharacterCard from '@/components/CharacterCard.vue';
+import CharacterEditor from '@/components/CharacterEditor.vue';
 
 const route = useRoute();
 const router = useRouter();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
+const characterStore = useCharacterStore();
 
 const showEditor = ref(false);
 const party = ref<Party | null>(null);
+const showCharacterEditor = ref(false);
+const editingCharacter = ref<PlayerCharacter | undefined>();
+
+const partyId = route.params.id as string;
 
 const module = computed(() => {
   if (!party.value) return null;
   return moduleStore.getModuleById(party.value.moduleId);
 });
 
-onMounted(async () => {
-  const partyId = route.params.id as string;
-  await Promise.all([
-    partyStore.loadParties(),
-    moduleStore.loadModules()
-  ]);
-  
-  party.value = partyStore.getPartyById(partyId);
-  if (!party.value) {
-    router.push('/parties');
-  }
+const allCharacters = computed(() => characterStore.all);
+const partyCharacters = computed(() => {
+  const p = party.value;
+  if (!p) return [];
+  return allCharacters.value.filter(c => c.partyId === p.id);
+});
+const availableCharacters = computed(() => {
+  const p = party.value;
+  if (!p) return [];
+  return allCharacters.value.filter(c => !c.partyId || c.partyId !== p.id);
 });
 
-const handleSubmit = async (updatedParty: Party) => {
-  await partyStore.updateParty(updatedParty.id, updatedParty);
-  party.value = updatedParty;
-  showEditor.value = false;
-};
-
-const handleCancel = () => {
-  showEditor.value = false;
-};
-
-const deleteParty = async () => {
-  if (!party.value) return;
-  
-  if (confirm(`Are you sure you want to delete the party "${party.value.name}"?`)) {
-    await partyStore.deleteParty(party.value.id);
-    router.push('/parties');
+onMounted(async () => {
+  const foundParty = partyStore.getPartyById(partyId);
+  if (!foundParty) {
+    await router.push('/parties');
+    return;
   }
+  party.value = foundParty;
+});
+
+const handleDeleteParty = async () => {
+  if (!party.value) return;
+  if (confirm(`Are you sure you want to delete the party "${party.value.name}"?`)) {
+    partyStore.deleteParty(party.value.id);
+    await router.push('/parties');
+  }
+};
+
+const handleAddCharacter = () => {
+  editingCharacter.value = undefined;
+  showCharacterEditor.value = true;
+};
+
+const handleEditCharacter = (character: PlayerCharacter) => {
+  editingCharacter.value = { ...character };
+  showCharacterEditor.value = true;
+};
+
+const handleDeleteCharacter = (character: PlayerCharacter) => {
+  if (confirm(`Remove character "${character.name}" from this party?`)) {
+    characterStore.setParty(character.id, null);
+  }
+};
+
+const handleLinkCharacter = (character: PlayerCharacter) => {
+  if (!party.value) return;
+  characterStore.setParty(character.id, party.value.id);
+};
+
+const handleCharacterSubmit = (character: PlayerCharacter) => {
+  if (!party.value) return;
+  if (editingCharacter.value && editingCharacter.value.id) {
+    characterStore.update(editingCharacter.value.id, character);
+  } else {
+    const newChar = characterStore.add({ ...character, partyId: party.value.id });
+    characterStore.setParty(newChar.id, party.value.id);
+  }
+  showCharacterEditor.value = false;
+  editingCharacter.value = undefined;
+};
+
+const handleCharacterCancel = () => {
+  showCharacterEditor.value = false;
+  editingCharacter.value = undefined;
 };
 </script>
 
 <template>
-  <div v-if="party" class="party-view">
-    <div class="view-header">
-      <div class="header-content">
+  <div v-if="party">
+    <div class="party-view">
+      <div class="header">
         <h1>{{ party.name }}</h1>
-        <p class="party-description">{{ party.description }}</p>
-        <div class="party-meta">
-          <span v-if="module" class="module-badge">
-            Module: {{ module.name }}
-          </span>
-          <!--span class="character-count">{{ party.characters.length }} characters</span-->
+        <div class="meta">
+          <span v-if="module">Module: {{ module.name }}</span>
+          <span class="character-count">{{ partyCharacters.length }} characters</span>
+        </div>
+        <div class="actions">
+          <button @click="showEditor = true">Edit Party</button>
+          <button @click="handleDeleteParty" class="delete-btn">Delete Party</button>
         </div>
       </div>
-      <div class="header-actions">
-        <button @click="showEditor = true" class="edit-btn">Edit Party</button>
-        <button @click="deleteParty" class="delete-btn">Delete Party</button>
-      </div>
-    </div>
-
-    <!--div class="party-content">
+      <PartyEditor
+        :party="party"
+        :isOpen="showEditor"
+        @submit="(updatedParty) => { partyStore.updateParty(updatedParty.id, updatedParty); party.value = updatedParty; showEditor.value = false; }"
+        @cancel="showEditor.value = false"
+      />
       <section class="content-section">
         <h2>Characters</h2>
-        <div v-if="party.characters.length === 0" class="empty-state">
+        <button @click="handleAddCharacter" class="add-btn">Add Character</button>
+        <div v-if="partyCharacters.length === 0" class="empty-state">
           <p>No characters in this party yet</p>
         </div>
         <div v-else class="characters-grid">
-          <div v-for="character in party.characters" :key="character.id" class="character-card">
-            <h3>{{ character.name }}</h3>
-            <p>{{ character.race }} {{ character.class }}</p>
-            <p>Level {{ character.level }}</p>
+          <CharacterCard
+            v-for="character in partyCharacters"
+            :key="character.id"
+            :character="character"
+            @edit="handleEditCharacter"
+            @delete="handleDeleteCharacter"
+          />
+        </div>
+        <div class="link-characters">
+          <h3>Link Existing Character</h3>
+          <div v-if="availableCharacters.length === 0" class="empty-state">
+            <p>No available characters to link.</p>
+          </div>
+          <div v-else class="available-characters-grid">
+            <CharacterCard
+              v-for="character in availableCharacters"
+              :key="character.id"
+              :character="character"
+              @edit="handleEditCharacter"
+              @delete="() => handleLinkCharacter(character)"
+            />
           </div>
         </div>
+        <CharacterEditor
+          :isOpen="showCharacterEditor"
+          :character="editingCharacter"
+          :party-id="party.id"
+          @submit="handleCharacterSubmit"
+          @cancel="handleCharacterCancel"
+        />
       </section>
-    </div-->
-
-    <PartyEditor
-      v-if="showEditor"
-      :party="party"
-      :is-open="showEditor"
-      @submit="handleSubmit"
-      @cancel="handleCancel"
-    />
+    </div>
   </div>
 </template>
 
 <style scoped>
 .party-view {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 2rem;
 }
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.header-content h1 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-}
-
-.party-description {
-  color: var(--color-text-light);
-  margin: 0 0 1rem 0;
-}
-
-.party-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: var(--color-text-light);
-}
-
-.module-badge {
-  background: var(--color-background-soft);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--border-radius);
-}
-
-.character-count {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.edit-btn,
-.delete-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.edit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.delete-btn {
-  background: var(--color-danger);
-  color: white;
-}
-
-.edit-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.delete-btn:hover {
-  background: var(--color-danger-dark);
-}
-
-.party-content {
+.header {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
-
+.meta {
+  display: flex;
+  gap: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+.character-count {
+  font-weight: bold;
+}
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.delete-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+.delete-btn:hover {
+  background: #d32f2f;
+}
 .content-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
+  margin-top: 2rem;
 }
-
-.content-section h2 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
+.add-btn {
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
 }
-
-.empty-state {
-  text-align: center;
-  padding: 1rem;
-  color: var(--color-text-light);
+.add-btn:hover {
+  background: #1976d2;
 }
-
 .characters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
 }
-
-.character-card {
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1rem;
+.link-characters {
+  margin-top: 2rem;
 }
-
-.character-card h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
+.available-characters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
 }
-
-.character-card p {
-  margin: 0;
-  color: var(--color-text-light);
-  font-size: 0.9rem;
+.empty-state {
+  color: #888;
+  text-align: center;
+  margin: 2rem 0;
 }
 </style>

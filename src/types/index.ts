@@ -15,6 +15,7 @@ export enum Section {
   NOTES = 'notes',
   PARTIES = 'parties',
   MONSTERS = 'monsters',
+  CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
   MODULES = 'modules'
 }
@@ -81,6 +82,8 @@ export interface PlayerCharacter extends WithMetadata {
   spells?: string[];
   features?: string[];
   notes?: string;
+  moduleId?: UUID | null;
+  partyId?: UUID | null;
 }
 
 export interface Party extends WithMetadata {

@@ -22,6 +22,7 @@ const sections = [
   { section: Section.PARTIES, label: 'Parties', path: '/parties' },
   { section: Section.MONSTERS, label: 'Monsters', path: '/monsters' },
   { section: Section.ENCOUNTERS, label: 'Encounters', path: '/encounters' },
+  { section: Section.CHARACTERS, label: 'Characters', path: '/characters' },
   { section: Section.MODULES, label: 'Modules', path: '/modules' }
 ];
 

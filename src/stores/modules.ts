@@ -65,7 +65,7 @@ export const useModuleStore = defineStore('modules', () => {
     return module?.name || 'Unknown Module';
   };
 
-  const getModuleById = (id: string) => {
+  const getModuleById = (id: string | null) => {
     return modules.value.find(m => m.id === id) || null;
   };
   
