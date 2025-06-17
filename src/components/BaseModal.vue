@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onMounted, onUnmounted } from 'vue';
 import Button from './Button.vue';
+import { useModalState } from '@/composables/useModalState';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -9,12 +10,15 @@ const props = defineProps<{
   showCancel?: boolean;
   submitLabel?: string;
   cancelLabel?: string;
+  modalId?: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'submit'): void;
   (e: 'cancel'): void;
 }>();
+
+const { openModal, closeModal } = useModalState();
 
 function setBodyScroll(disabled: boolean) {
   if (disabled) {
@@ -43,6 +47,9 @@ let popStateHandler: (() => void) | null = null;
 watch(() => props.isOpen, (open) => {
   setBodyScroll(open);
   if (open) {
+    // Notify global modal state
+    openModal(props.modalId);
+    
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('mousedown', handleClickOutside);
     // Push a new state to the history stack
@@ -52,6 +59,9 @@ watch(() => props.isOpen, (open) => {
     };
     window.addEventListener('popstate', popStateHandler);
   } else {
+    // Notify global modal state
+    closeModal(props.modalId);
+    
     window.removeEventListener('keydown', handleKeydown);
     window.removeEventListener('mousedown', handleClickOutside);
     if (popStateHandler) {
@@ -67,6 +77,7 @@ watch(() => props.isOpen, (open) => {
 
 onMounted(() => {
   if (props.isOpen) {
+    openModal(props.modalId);
     setBodyScroll(true);
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('mousedown', handleClickOutside);
@@ -79,6 +90,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  closeModal(props.modalId);
   setBodyScroll(false);
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('mousedown', handleClickOutside);

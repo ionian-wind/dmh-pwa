@@ -126,6 +126,7 @@ const featuresString = computed({
     :showCancel="true"
     submitLabel="Save Character"
     cancelLabel="Cancel"
+    modalId="character-editor"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >

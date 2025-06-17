@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
+import RollButton from '@/components/RollButton.vue'
+
+const handleRollClick = (event: MouseEvent) => {
+  // TODO: Implement dice rolling functionality
+  console.log('Roll button clicked!', event);
+};
 </script>
 
 <template>
@@ -18,7 +24,14 @@ import AppHeader from '@/components/AppHeader.vue'
         <p>© 2024 D&D Notes Manager</p>
         <p class="version">Version 1.0.0</p>
       </div>
+      <div class="footer-content">
+        <p>© 2024 D&D Notes Manager</p>
+        <p class="version">Version 1.0.0</p>
+      </div>
     </footer>
+    
+    <!-- Floating Action Button -->
+    <RollButton @click="handleRollClick" />
   </div>
 </template>
 

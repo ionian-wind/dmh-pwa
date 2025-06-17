@@ -32,10 +32,10 @@ const handleDelete = () => emit('delete', props.monster.id);
     @delete="handleDelete"
   >
     <template #header>
-      <div class="monster-header">
-        <h3>{{ monster.name }}</h3>
-        <span class="monster-type">{{ monster.type }}, CR: {{ monster.challengeRating }}</span>
-      </div>
+    <div class="monster-header">
+      <h3>{{ monster.name }}</h3>
+      <span class="monster-type">{{ monster.type }}, CR: {{ monster.challengeRating }}</span>
+    </div>
     </template>
     <div class="monster-stats">
       <div class="stat-group">
@@ -58,9 +58,9 @@ const handleDelete = () => emit('delete', props.monster.id);
     </div>
     <div class="monster-abilities" v-if="monster.specialAbilities?.length">
       <h4>Special Abilities</h4>
-      <ul>
+        <ul>
         <li v-for="(ability, idx) in monster.specialAbilities" :key="idx">{{ ability }}</li>
-      </ul>
+        </ul>
     </div>
   </BaseCard>
 </template>

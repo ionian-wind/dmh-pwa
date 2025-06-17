@@ -84,7 +84,6 @@ const isActive = (item: { section: Section, path: string }) => {
   background: #1e1e2e;
   color: white;
   padding: 1rem;
-  margin-bottom: 2rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
