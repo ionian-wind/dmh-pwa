@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { watch, onMounted, onUnmounted } from 'vue';
+import Button from './Button.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -99,12 +100,12 @@ onUnmounted(() => {
           <slot />
         </div>
         <div v-if="$slots.actions || showSubmit || showCancel" class="modal-actions">
-          <button v-if="showCancel" type="button" class="cancel-btn" @click="emit('cancel')">
+          <Button v-if="showCancel" variant="secondary" @click="emit('cancel')">
             {{ cancelLabel || 'Cancel' }}
-          </button>
-          <button v-if="showSubmit" type="submit" class="submit-btn">
+          </Button>
+          <Button v-if="showSubmit" variant="primary" type="submit">
             {{ submitLabel || 'Save' }}
-          </button>
+          </Button>
           <slot name="actions" />
         </div>
       </form>

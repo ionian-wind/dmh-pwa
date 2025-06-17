@@ -7,9 +7,9 @@
       <slot />
     </div>
     <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
-      <button v-if="showView" @click="$emit('view')">View Details</button>
-      <button v-if="showEdit" @click="$emit('edit')" title="Edit">✏️</button>
-      <button v-if="showDelete" @click="$emit('delete')" title="Delete">🗑️</button>
+      <Button v-if="showView" variant="secondary" size="small" @click="$emit('view')">View Details</Button>
+      <Button v-if="showEdit" variant="secondary" size="small" @click="$emit('edit')" title="Edit">✏️</Button>
+      <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">🗑️</Button>
       <slot name="actions" />
     </div>
   </div>
@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
+import Button from './Button.vue';
 
 const props = defineProps({
   showView: { type: Boolean, default: false },
