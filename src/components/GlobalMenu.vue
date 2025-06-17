@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import { useRouter } from 'vue-router';
 import { Section } from '@/types';
 import Button from '@/components/common/Button.vue';
 
+const { t } = useI18n();
 const moduleStore = useModuleStore();
 const router = useRouter();
 
 const currentModule = computed(() => moduleStore.currentModule);
 const modulesSelect = computed(() => [
-  { id: 'any', value: 'any', name: 'Any module' },
-  { id: 'none', value: 'none', name: 'No module' },
+  { id: 'any', value: 'any', name: t('common.anyModule') },
+  { id: 'none', value: 'none', name: t('common.noModule') },
   ...moduleStore.modules.map(({ id, name }) => ({ id, name, value: id }))
 ]);
 
@@ -30,12 +32,12 @@ const navigateTo = (path: string) => {
 };
 
 const sections = [
-  { section: Section.NOTES, label: 'Notes', path: '/notes' },
-  { section: Section.PARTIES, label: 'Parties', path: '/parties' },
-  { section: Section.MONSTERS, label: 'Monsters', path: '/monsters' },
-  { section: Section.ENCOUNTERS, label: 'Encounters', path: '/encounters' },
-  { section: Section.CHARACTERS, label: 'Characters', path: '/characters' },
-  { section: Section.MODULES, label: 'Modules', path: '/modules' }
+  { section: Section.NOTES, label: t('navigation.notes'), path: '/notes' },
+  { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties' },
+  { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters' },
+  { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters' },
+  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters' },
+  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules' }
 ];
 
 const isActive = (item: { section: Section, path: string }) => {
@@ -55,13 +57,13 @@ const isActive = (item: { section: Section, path: string }) => {
       </select>
     </div>
     <div v-if="currentModule" class="current-module">
-      <span>Current Module: {{ currentModule.name }}</span>
+      <span>{{ t('common.currentModule') }}: {{ currentModule.name }}</span>
       <Button 
         variant="danger"
         size="small"
         @click="setCurrentModuleFilter('any')"
       >
-        Clear
+        {{ t('app.clear') }}
       </Button>
     </div>
     <div class="menu-items">

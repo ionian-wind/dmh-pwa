@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import GlobalMenu from '@/components/GlobalMenu.vue';
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 </script>
 
 <template>
   <header class="app-header">
     <div class="header-content">
       <nav><router-link to="/configuration" class="config-button">⚙️</router-link></nav>
-      <GlobalMenu />
+      <div class="header-right">
+        <LanguageSwitcher />
+        <GlobalMenu />
+      </div>
     </div>
   </header>
 </template>
@@ -27,5 +31,11 @@ import GlobalMenu from '@/components/GlobalMenu.vue';
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 </style> 

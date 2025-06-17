@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -9,6 +10,7 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
 
 const router = useRouter();
+const { t, locale } = useI18n();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
@@ -41,52 +43,61 @@ onMounted(async () => {
 <template>
   <div class="home-view">    
     <div class="content">
+      <!-- i18n Test Section -->
+      <div class="i18n-test">
+        <h3>i18n Test</h3>
+        <p>Current locale: {{ locale }}</p>
+        <p>App title: {{ t('app.title') }}</p>
+        <p>Navigation home: {{ t('navigation.home') }}</p>
+        <p>Common empty: {{ t('common.empty') }}</p>
+      </div>
+      
       <div class="stats-grid">
         <router-link to="/notes" class="stat-card" exact>
           <div class="stat-icon">📜</div>
           <div class="stat-content">
-            <h3>Notes</h3>
-            <p>{{ stats.notes }} notes</p>
+            <h3>{{ t('home.stats.notes') }}</h3>
+            <p>{{ stats.notes }} {{ t('home.stats.notes').toLowerCase() }}</p>
           </div>
         </router-link>
 
         <router-link to="/parties" class="stat-card" exact>
           <div class="stat-icon">👥</div>
           <div class="stat-content">
-            <h3>Parties</h3>
-            <p>{{ stats.parties }} parties</p>
+            <h3>{{ t('home.stats.parties') }}</h3>
+            <p>{{ stats.parties }} {{ t('home.stats.parties').toLowerCase() }}</p>
           </div>
         </router-link>
 
         <router-link to="/monsters" class="stat-card" exact>
           <div class="stat-icon">🐉</div>
           <div class="stat-content">
-            <h3>Monsters</h3>
-            <p>{{ stats.monsters }} monsters</p>
+            <h3>{{ t('home.stats.monsters') }}</h3>
+            <p>{{ stats.monsters }} {{ t('home.stats.monsters').toLowerCase() }}</p>
           </div>
         </router-link>
 
         <router-link to="/encounters" class="stat-card" exact>
           <div class="stat-icon">⚔️</div>
           <div class="stat-content">
-            <h3>Encounters</h3>
-            <p>{{ stats.encounters }} encounters</p>
+            <h3>{{ t('home.stats.encounters') }}</h3>
+            <p>{{ stats.encounters }} {{ t('home.stats.encounters').toLowerCase() }}</p>
           </div>
         </router-link>
 
         <router-link to="/characters" class="stat-card" exact>
           <div class="stat-icon">🧙🏻‍♂️</div>
           <div class="stat-content">
-            <h3>Characters</h3>
-            <p>{{ stats.characters }} characters</p>
+            <h3>{{ t('home.stats.characters') }}</h3>
+            <p>{{ stats.characters }} {{ t('home.stats.characters').toLowerCase() }}</p>
           </div>
         </router-link>
 
         <router-link to="/modules" class="stat-card" exact>
           <div class="stat-icon">📖</div>
           <div class="stat-content">
-            <h3>Modules</h3>
-            <p>{{ stats.modules }} modules</p>
+            <h3>{{ t('home.stats.modules') }}</h3>
+            <p>{{ stats.modules }} {{ t('home.stats.modules').toLowerCase() }}</p>
           </div>
         </router-link>
       </div>

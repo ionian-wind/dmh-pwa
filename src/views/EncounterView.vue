@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
 import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
@@ -17,6 +18,7 @@ import TabGroup from '@/components/common/TabGroup.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
@@ -71,9 +73,9 @@ const getMonsterDetails = (monsterId: string) => {
 };
 
 const getModuleName = (moduleId: string | null) => {
-  if (!moduleId) return 'No Module';
+  if (!moduleId) return t('common.noModule');
   const module = moduleStore.modules.find(m => m.id === moduleId);
-  return module ? module.name : 'Unknown Module';
+  return module ? module.name : t('common.unknownModule');
 };
 
 // Computed properties for monster linking
@@ -201,7 +203,7 @@ const encounterCombats = computed(() => {
 
 const getPartyName = (partyId: string) => {
   const party = partyStore.getPartyById(partyId);
-  return party ? party.name : 'Unknown Party';
+  return party ? party.name : t('common.unknownParty');
 };
 
 const formatDate = (timestamp: number) => {
@@ -225,19 +227,19 @@ const handleViewCombat = (combat: Combat) => {
 const tabs = computed(() => [
   {
     id: 'information',
-    label: 'Information',
+    label: t('encounters.tabs.information'),
     icon: '📋',
     badge: undefined
   },
   {
     id: 'monsters',
-    label: 'Monsters',
+    label: t('encounters.tabs.monsters'),
     icon: '👹',
     badge: encounterMonsters.value.length
   },
   {
     id: 'combats',
-    label: 'Combats',
+    label: t('encounters.tabs.combats'),
     icon: '⚔️',
     badge: encounterCombats.value.length
   }
@@ -269,42 +271,42 @@ const tabs = computed(() => [
           <template v-if="activeTab === 'information'">
             <div class="tab-content-section">
               <div class="content-section">
-                <h2>Description</h2>
-                <p class="description">{{ encounter.description || 'No description provided.' }}</p>
+                <h2>{{ t('common.description') }}</h2>
+                <p class="description">{{ encounter.description || t('common.noDescription') }}</p>
               </div>
 
               <div class="content-section">
-                <h2>Statistics</h2>
+                <h2>{{ t('common.statistics') }}</h2>
                 <div class="stats-grid">
                   <div class="stat-item">
-                    <span class="stat-label">Level:</span>
+                    <span class="stat-label">{{ t('encounters.fields.level') }}:</span>
                     <span class="stat-value">{{ encounter.level }}</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">Difficulty:</span>
+                    <span class="stat-label">{{ t('encounters.fields.difficulty') }}:</span>
                     <span class="stat-value">{{ encounter.difficulty }}</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">XP:</span>
+                    <span class="stat-label">{{ t('encounters.fields.xp') }}:</span>
                     <span class="stat-value">{{ encounter.xp }}</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">Module:</span>
+                    <span class="stat-label">{{ t('encounters.fields.module') }}:</span>
                     <span class="stat-value">{{ getModuleName(encounter.moduleId) }}</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">Monsters:</span>
+                    <span class="stat-label">{{ t('encounters.fields.monsters') }}:</span>
                     <span class="stat-value">{{ encounterMonsters.length }}</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">Combats:</span>
+                    <span class="stat-label">{{ t('combats.title') }}:</span>
                     <span class="stat-value">{{ encounterCombats.length }}</span>
                   </div>
                 </div>
               </div>
 
               <div v-if="encounter.notes" class="content-section">
-                <h2>Notes</h2>
+                <h2>{{ t('common.notes') }}</h2>
                 <p class="notes">{{ encounter.notes }}</p>
               </div>
             </div>
@@ -315,27 +317,27 @@ const tabs = computed(() => [
             <div class="tab-content-section">
               <div class="content-section">
                 <div class="section-header">
-                  <h2>Monsters</h2>
+                  <h2>{{ t('monsters.title') }}</h2>
                   <div class="section-actions">
                     <Button @click="showLinkModal = true" class="link-btn">
-                      Link Monsters
+                      {{ t('encounters.linkMonsters') }}
                     </Button>
                   </div>
                 </div>
                 <div v-if="encounterMonsters.length === 0" class="empty-state">
-                  <p>No monsters in this encounter yet</p>
+                  <p>{{ t('encounters.noMonstersYet') }}</p>
                 </div>
                 <div v-else class="monsters-grid">
                   <table>
                     <thead>
                       <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>CR</th>
-                        <th>HP</th>
-                        <th>AC</th>
-                        <th>Count</th>
-                        <th>Actions</th>
+                        <th>{{ t('monsters.fields.name') }}</th>
+                        <th>{{ t('monsters.fields.type') }}</th>
+                        <th>{{ t('monsters.fields.challengeRating') }}</th>
+                        <th>{{ t('monsters.fields.hitPoints') }}</th>
+                        <th>{{ t('monsters.fields.armorClass') }}</th>
+                        <th>{{ t('encounters.count') }}</th>
+                        <th>{{ t('common.actions') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -360,7 +362,7 @@ const tabs = computed(() => [
                           </div>
                         </td>
                         <td>
-                          <button class="unlink-btn" @click="handleToggleMonster(monster, false)">Unlink</button>
+                          <button class="unlink-btn" @click="handleToggleMonster(monster, false)">{{ t('encounters.unlink') }}</button>
                         </td>
                       </tr>
                     </tbody>
@@ -375,25 +377,25 @@ const tabs = computed(() => [
             <div class="tab-content-section">
               <div class="content-section">
                 <div class="section-header">
-                  <h2>Combats</h2>
+                  <h2>{{ t('combats.title') }}</h2>
                   <div class="section-actions">
-                    <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">⚔️</Button>
+                    <Button size="small" variant="success" @click="handleRunCombat" :title="t('encounters.runCombat')">⚔️</Button>
                   </div>
                 </div>
                 <div v-if="encounterCombats.length === 0" class="empty-state">
-                  <p>No combats for this encounter yet</p>
+                  <p>{{ t('encounters.noCombatsYet') }}</p>
                 </div>
                 <div v-else class="combats-grid">
                   <table>
                     <thead>
                       <tr>
-                        <th>Party</th>
-                        <th>Status</th>
-                        <th>Round</th>
-                        <th>Turn</th>
-                        <th>Combatants</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th>{{ t('combats.fields.party') }}</th>
+                        <th>{{ t('combats.fields.status') }}</th>
+                        <th>{{ t('combats.fields.round') }}</th>
+                        <th>{{ t('combats.fields.turn') }}</th>
+                        <th>{{ t('combats.fields.combatants') }}</th>
+                        <th>{{ t('common.created') }}</th>
+                        <th>{{ t('common.actions') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -401,7 +403,7 @@ const tabs = computed(() => [
                         <td>{{ getPartyName(combat.partyId) }}</td>
                         <td>
                           <span class="status-badge" :class="getStatusBadgeClass(combat.status)">
-                            {{ combat.status }}
+                            {{ t(`combats.status.${combat.status}`) }}
                           </span>
                         </td>
                         <td>{{ combat.currentRound }}</td>
@@ -410,7 +412,7 @@ const tabs = computed(() => [
                         <td>{{ formatDate(combat.createdAt) }}</td>
                         <td>
                           <Button size="small" variant="primary" @click="handleViewCombat(combat)">
-                            View
+                            {{ t('app.view') }}
                           </Button>
                         </td>
                       </tr>

@@ -1,0 +1,238 @@
+{
+  "app": {
+    "title": "Ayudante del Maestro de D&D",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "clear": "Limpiar",
+    "add": "Agregar",
+    "remove": "Quitar",
+    "update": "Actualizar",
+    "create": "Crear",
+    "submit": "Enviar",
+    "reset": "Restablecer",
+    "refresh": "Actualizar",
+    "download": "Descargar",
+    "upload": "Subir",
+    "export": "Exportar",
+    "import": "Importar"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "notes": "Notas",
+    "parties": "Grupos",
+    "monsters": "Monstruos",
+    "characters": "Personajes",
+    "encounters": "Encuentros",
+    "combats": "Combates",
+    "modules": "Módulos",
+    "configuration": "Configuración"
+  },
+  "home": {
+    "title": "Bienvenido al Ayudante del Maestro de D&D",
+    "subtitle": "Tu herramienta integral para gestionar campañas de D&D",
+    "stats": {
+      "notes": "Notas",
+      "parties": "Grupos",
+      "monsters": "Monstruos",
+      "characters": "Personajes",
+      "encounters": "Encuentros",
+      "modules": "Módulos"
+    }
+  },
+  "notes": {
+    "title": "Notas",
+    "create": "Crear Nota",
+    "edit": "Editar Nota",
+    "delete": "Eliminar Nota",
+    "fields": {
+      "title": "Título",
+      "content": "Contenido",
+      "type": "Tipo",
+      "tags": "Etiquetas",
+      "module": "Módulo"
+    },
+    "types": {
+      "general": "General",
+      "quest": "Misión",
+      "npc": "PNJ",
+      "location": "Ubicación",
+      "item": "Objeto"
+    }
+  },
+  "parties": {
+    "title": "Grupos",
+    "create": "Crear Grupo",
+    "edit": "Editar Grupo",
+    "delete": "Eliminar Grupo",
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "characters": "Personajes",
+      "modules": "Módulos"
+    }
+  },
+  "monsters": {
+    "title": "Monstruos",
+    "create": "Crear Monstruo",
+    "edit": "Editar Monstruo",
+    "delete": "Eliminar Monstruo",
+    "fields": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "description": "Descripción",
+      "size": "Tamaño",
+      "alignment": "Alineamiento",
+      "armorClass": "Clase de Armadura",
+      "hitPoints": "Puntos de Vida",
+      "speed": "Velocidad",
+      "challengeRating": "Clase de Dificultad",
+      "xp": "PX",
+      "module": "Módulo"
+    },
+    "sizes": {
+      "tiny": "Diminuto",
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande",
+      "huge": "Enorme",
+      "gargantuan": "Gargantuesco"
+    },
+    "alignments": {
+      "lawful_good": "Legal Bueno",
+      "neutral_good": "Neutral Bueno",
+      "chaotic_good": "Caótico Bueno",
+      "lawful_neutral": "Legal Neutral",
+      "neutral": "Neutral",
+      "chaotic_neutral": "Caótico Neutral",
+      "lawful_evil": "Legal Malvado",
+      "neutral_evil": "Neutral Malvado",
+      "chaotic_evil": "Caótico Malvado"
+    }
+  },
+  "characters": {
+    "title": "Personajes",
+    "create": "Crear Personaje",
+    "edit": "Editar Personaje",
+    "delete": "Eliminar Personaje",
+    "fields": {
+      "name": "Nombre",
+      "level": "Nivel",
+      "class": "Clase",
+      "race": "Raza",
+      "playerName": "Nombre del Jugador",
+      "alignment": "Alineamiento",
+      "background": "Trasfondo",
+      "hitPoints": "Puntos de Vida",
+      "armorClass": "Clase de Armadura",
+      "speed": "Velocidad",
+      "module": "Módulo",
+      "party": "Grupo"
+    },
+    "stats": {
+      "strength": "Fuerza",
+      "dexterity": "Destreza",
+      "constitution": "Constitución",
+      "intelligence": "Inteligencia",
+      "wisdom": "Sabiduría",
+      "charisma": "Carisma"
+    }
+  },
+  "encounters": {
+    "title": "Encuentros",
+    "create": "Crear Encuentro",
+    "edit": "Editar Encuentro",
+    "delete": "Eliminar Encuentro",
+    "runCombat": "Iniciar Combate",
+    "linkMonsters": "Vincular Monstruos",
+    "unlink": "Desvincular",
+    "count": "Cantidad",
+    "noMonstersYet": "Aún no hay monstruos en este encuentro",
+    "noCombatsYet": "Aún no hay combates para este encuentro",
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "difficulty": "Dificultad",
+      "level": "Nivel",
+      "monsters": "Monstruos",
+      "xp": "PX",
+      "module": "Módulo"
+    },
+    "difficulties": {
+      "easy": "Fácil",
+      "medium": "Medio",
+      "hard": "Difícil",
+      "deadly": "Mortal"
+    },
+    "tabs": {
+      "information": "Información",
+      "monsters": "Monstruos",
+      "combats": "Combates"
+    }
+  },
+  "combats": {
+    "title": "Combates",
+    "status": {
+      "preparing": "Preparando",
+      "active": "Activo",
+      "completed": "Completado"
+    },
+    "fields": {
+      "encounter": "Encuentro",
+      "party": "Grupo",
+      "round": "Ronda",
+      "turn": "Turno",
+      "combatants": "Combatientes"
+    }
+  },
+  "modules": {
+    "title": "Módulos",
+    "create": "Crear Módulo",
+    "edit": "Editar Módulo",
+    "delete": "Eliminar Módulo",
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción"
+    }
+  },
+  "common": {
+    "empty": "No se encontraron elementos",
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Operación completada exitosamente",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento?",
+    "noModule": "Sin Módulo",
+    "unknownModule": "Módulo Desconocido",
+    "anyModule": "Cualquier Módulo",
+    "currentModule": "Módulo Actual",
+    "unknownParty": "Grupo Desconocido",
+    "noDescription": "Sin descripción",
+    "created": "Creado",
+    "actions": "Acciones",
+    "details": "Detalles",
+    "information": "Información",
+    "statistics": "Estadísticas",
+    "description": "Descripción",
+    "notes": "Notas"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "minLength": "La longitud mínima es de {min} caracteres",
+    "maxLength": "La longitud máxima es de {max} caracteres",
+    "email": "Por favor ingresa una dirección de correo válida",
+    "number": "Por favor ingresa un número válido",
+    "positive": "Por favor ingresa un número positivo"
+  }
+} 
