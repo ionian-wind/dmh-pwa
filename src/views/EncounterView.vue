@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useEncounterStore } from '@/stores/encounters';
 import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import type { Encounter } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
 import RunCombat from '@/components/RunCombat.vue';
-import Button from '@/components/Button.vue';
-import NotFoundView from '@/views/NotFoundView.vue';
+import BaseEntityView from '@/components/BaseEntityView.vue';
 
 const route = useRoute();
-const router = useRouter();
 const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
@@ -40,16 +38,13 @@ const handleEdit = () => {
 
 const handleDelete = async () => {
   if (!encounter.value) return;
-  
-  if (confirm(`Are you sure you want to delete the encounter "${encounter.value.name}"?`)) {
-    await encounterStore.deleteEncounter(encounter.value.id);
-    router.push('/encounters');
-  }
+  await encounterStore.deleteEncounter(encounter.value.id);
 };
 
-const handleSubmit = async (updatedEncounter: Encounter) => {
-  await encounterStore.updateEncounter(updatedEncounter);
-  encounter.value = updatedEncounter;
+const handleSubmit = async (updatedEncounter: Omit<Encounter, 'id'>) => {
+  if (!encounter.value) return;
+  await encounterStore.updateEncounter(encounter.value.id, updatedEncounter);
+  encounter.value = encounterStore.getEncounterById(encounter.value.id);
   isEditorOpen.value = false;
 };
 
@@ -66,238 +61,173 @@ const getModuleName = (moduleId: string | null) => {
   const module = moduleStore.modules.find(m => m.id === moduleId);
   return module ? module.name : 'Unknown Module';
 };
+
+// Computed properties for BaseEntityView
+const encounterTitle = computed(() => encounter.value?.name || '');
+const encounterSubtitle = computed(() => {
+  if (!encounter.value) return '';
+  
+  const parts = [
+    `Level ${encounter.value.level}`,
+    encounter.value.difficulty,
+    `${encounter.value.xp} XP`,
+    getModuleName(encounter.value.moduleId)
+  ];
+  
+  return parts.join(' • ');
+});
 </script>
 
 <template>
-  <NotFoundView v-if="notFound" />
-  <div v-else-if="encounter" class="encounter-view">
-    <div class="view-header">
-      <div class="header-content">
-        <h1>{{ encounter.name }}</h1>
-        <div class="header-actions">
-          <Button class="edit-btn" @click="handleEdit">Edit</Button>
-          <Button variant="danger" class="delete-btn" @click="handleDelete">Delete</Button>
+  <div class="encounter-view-container">
+    <BaseEntityView
+      :entity="encounter"
+      entity-name="Encounter"
+      list-route="/encounters"
+      :on-delete="handleDelete"
+      :on-edit="handleEdit"
+      :is-editing="isEditorOpen"
+      :title="encounterTitle"
+      :subtitle="encounterSubtitle"
+      :not-found="notFound"
+    >
+      <!-- Encounter Content -->
+      <div v-if="encounter" class="encounter-content">
+        <div class="content-section">
+          <h2>Description</h2>
+          <p class="description">{{ encounter.description || 'No description provided.' }}</p>
         </div>
-      </div>
-      <div class="encounter-meta">
-        <span class="meta-item">
-          <span class="label">Level:</span>
-          <span class="value">{{ encounter.level }}</span>
-        </span>
-        <span class="meta-item">
-          <span class="label">Difficulty:</span>
-          <span class="value">{{ encounter.difficulty }}</span>
-        </span>
-        <span class="meta-item">
-          <span class="label">XP:</span>
-          <span class="value">{{ encounter.xp }}</span>
-        </span>
-        <span class="meta-item">
-          <span class="label">Module:</span>
-          <span class="value">{{ getModuleName(encounter.moduleId) }}</span>
-        </span>
-      </div>
-    </div>
 
-    <div class="view-content">
-      <div class="content-section">
-        <h2>Description</h2>
-        <p class="description">{{ encounter.description || 'No description provided.' }}</p>
-      </div>
-
-      <div class="content-section">
-        <h2>Monsters</h2>
-        <div class="monsters-list">
-          <div v-for="monster in encounter.monsters" :key="monster.id" class="monster-card">
-            <div class="monster-header">
-              <h3>{{ getMonsterDetails(monster.id)?.name || 'Unknown Monster' }}</h3>
-              <span class="quantity">×{{ monster.quantity }}</span>
+        <div class="content-section">
+          <h2>Combatants</h2>
+          <div class="monsters-list">
+            <div v-if="!encounter.combatants || encounter.combatants.length === 0" class="empty-state">
+              <p>No combatants in this encounter</p>
             </div>
-            <div class="monster-details">
-              <span class="detail-item">
-                <span class="label">Type:</span>
-                <span class="value">{{ getMonsterDetails(monster.id)?.type || 'Unknown' }}</span>
-              </span>
-              <span class="detail-item">
-                <span class="label">CR:</span>
-                <span class="value">{{ getMonsterDetails(monster.id)?.challengeRating || 'Unknown' }}</span>
-              </span>
-              <span class="detail-item">
-                <span class="label">XP:</span>
-                <span class="value">{{ (getMonsterDetails(monster.id)?.xp || 0) * monster.quantity }}</span>
-              </span>
+            <div v-else v-for="combatant in encounter.combatants" :key="combatant.id" class="monster-card">
+              <div class="monster-header">
+                <h3>{{ combatant.name }}</h3>
+                <span class="quantity">{{ combatant.type }}</span>
+              </div>
+              <div class="monster-details">
+                <span class="detail-item">
+                  <span class="label">Type:</span>
+                  <span class="value">{{ combatant.type }}</span>
+                </span>
+                <span class="detail-item">
+                  <span class="label">AC:</span>
+                  <span class="value">{{ combatant.armorClass }}</span>
+                </span>
+                <span class="detail-item">
+                  <span class="label">HP:</span>
+                  <span class="value">{{ combatant.hitPoints.current }}/{{ combatant.hitPoints.maximum }}</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
+
+        <div v-if="encounter.notes" class="content-section">
+          <h2>Notes</h2>
+          <p class="notes">{{ encounter.notes }}</p>
+        </div>
       </div>
 
-      <div v-if="encounter.notes" class="content-section">
-        <h2>Notes</h2>
-        <p class="notes">{{ encounter.notes }}</p>
-      </div>
-    </div>
-
-    <EncounterEditor
-      :encounter="encounter"
-      :is-open="isEditorOpen"
-      @submit="handleSubmit"
-      @cancel="handleCancel"
-    />
+      <!-- Editor Modal -->
+      <template #editor>
+        <EncounterEditor
+          :encounter="encounter"
+          :is-open="isEditorOpen"
+          @submit="handleSubmit"
+          @cancel="handleCancel"
+        />
+      </template>
+    </BaseEntityView>
   </div>
 </template>
 
 <style scoped>
-.encounter-view {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.view-header {
-  margin-bottom: 2rem;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.header-content h1 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.edit-btn,
-.delete-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.edit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.delete-btn {
-  background: var(--color-danger);
-  color: white;
-}
-
-.edit-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.delete-btn:hover {
-  background: var(--color-danger-dark);
-}
-
-.encounter-meta {
-  display: flex;
-  gap: 2rem;
-  padding: 1rem;
-  background: var(--color-background-soft);
-  border-radius: var(--border-radius);
-}
-
-.meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.meta-item .label {
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.meta-item .value {
-  color: var(--color-text);
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.view-content {
-  display: flex;
-  flex-direction: column;
+.encounter-content {
+  display: grid;
   gap: 2rem;
 }
 
 .content-section {
   background: var(--color-background-soft);
-  padding: 1.5rem;
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
+  padding: 1.5rem;
 }
 
 .content-section h2 {
   margin: 0 0 1rem 0;
   color: var(--color-text);
+  font-size: 1.3rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
 }
 
 .description,
 .notes {
   color: var(--color-text);
   line-height: 1.6;
-  white-space: pre-wrap;
+  margin: 0;
 }
 
 .monsters-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
 }
 
 .monster-card {
   background: var(--color-background);
-  padding: 1rem;
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
+  padding: 1rem;
 }
 
 .monster-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .monster-header h3 {
   margin: 0;
   color: var(--color-text);
+  font-size: 1.1rem;
 }
 
 .quantity {
-  background: var(--color-background-soft);
+  background: var(--color-primary);
+  color: white;
   padding: 0.25rem 0.5rem;
   border-radius: var(--border-radius);
-  color: var(--color-text);
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
 
 .monster-details {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .detail-item {
   display: flex;
-  justify-content: space-between;
-  color: var(--color-text-light);
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.detail-item .label {
+  font-weight: 500;
+  color: var(--color-text);
   font-size: 0.9rem;
 }
 
 .detail-item .value {
-  color: var(--color-text);
-  font-weight: 500;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
 }
 </style>

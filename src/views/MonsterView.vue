@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
-import Button from '@/components/Button.vue';
-import NotFoundView from '@/views/NotFoundView.vue';
+import BaseEntityView from '@/components/BaseEntityView.vue';
 
 const route = useRoute();
-const router = useRouter();
 const monsterStore = useMonsterStore();
 const showEditor = ref(false);
-const notFound = ref(false);
-
 const monster = ref<Monster | null>(null);
+const notFound = ref(false);
 
 onMounted(async () => {
   const monsterId = route.params.id as string;
@@ -49,233 +46,211 @@ const handleCancel = () => {
   showEditor.value = false;
 };
 
-const deleteMonster = async () => {
+const handleDelete = async () => {
   if (!monster.value) return;
-  
-  if (confirm(`Are you sure you want to delete the monster "${monster.value.name}"?`)) {
-    await monsterStore.deleteMonster(monster.value.id);
-    router.push('/monsters');
-  }
+  await monsterStore.deleteMonster(monster.value.id);
 };
+
+// Computed properties for BaseEntityView
+const monsterTitle = computed(() => monster.value?.name || '');
+const monsterSubtitle = computed(() => {
+  if (!monster.value) return '';
+  
+  const parts = [
+    monster.value.type,
+    monster.value.size,
+    monster.value.alignment,
+    `CR ${monster.value.challengeRating}`
+  ].filter(Boolean);
+  
+  return parts.join(' • ');
+});
 </script>
 
 <template>
-  <NotFoundView v-if="notFound" />
-  <div v-else-if="monster" class="monster-view">
-    <div class="monster-header">
-      <h1>{{ monster.name }}</h1>
-      <div class="monster-subtitle">
-        <span>{{ monster.type }}</span>
-        <span>{{ monster.size }}</span>
-        <span v-if="monster.alignment">{{ monster.alignment }}</span>
-        <span>CR {{ monster.challengeRating }}</span>
-      </div>
-      <div class="header-actions">
-        <Button @click="handleEditClick">Edit Monster</Button>
-        <Button variant="danger" @click="deleteMonster">Delete Monster</Button>
-      </div>
-    </div>
+  <div class="monster-view-container">
+    <BaseEntityView
+      :entity="monster"
+      entity-name="Monster"
+      list-route="/monsters"
+      :on-delete="handleDelete"
+      :on-edit="handleEditClick"
+      :is-editing="showEditor"
+      :title="monsterTitle"
+      :subtitle="monsterSubtitle"
+      :not-found="notFound"
+    >
+      <!-- Monster Content -->
+      <div v-if="monster" class="monster-sheet">
+        <!-- Basic Information -->
+        <section class="sheet-section basic-info">
+          <h2>Basic Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Type:</label>
+              <span>{{ monster.type }}</span>
+            </div>
+            <div class="info-item">
+              <label>Size:</label>
+              <span>{{ monster.size }}</span>
+            </div>
+            <div class="info-item">
+              <label>Alignment:</label>
+              <span>{{ monster.alignment || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Challenge Rating:</label>
+              <span>{{ monster.challengeRating }}</span>
+            </div>
+          </div>
+        </section>
 
-    <div class="monster-sheet">
-      <!-- Basic Information -->
-      <section class="sheet-section basic-info">
-        <h2>Basic Information</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <label>Type:</label>
-            <span>{{ monster.type }}</span>
+        <!-- Ability Scores -->
+        <section class="sheet-section ability-scores">
+          <h2>Ability Scores</h2>
+          <div class="ability-grid">
+            <div v-for="(score, ability) in monster.abilities" :key="ability" class="ability-score">
+              <div class="ability-name">{{ ability.charAt(0).toUpperCase() + ability.slice(1) }}</div>
+              <div class="ability-value">{{ score }}</div>
+              <div class="ability-modifier">{{ formatModifier(abilityModifier(score)) }}</div>
+            </div>
           </div>
-          <div class="info-item">
-            <label>Size:</label>
-            <span>{{ monster.size }}</span>
-          </div>
-          <div class="info-item">
-            <label>Alignment:</label>
-            <span>{{ monster.alignment || 'N/A' }}</span>
-          </div>
-          <div class="info-item">
-            <label>Challenge Rating:</label>
-            <span>{{ monster.challengeRating }}</span>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Ability Scores -->
-      <section class="sheet-section ability-scores">
-        <h2>Ability Scores</h2>
-        <div class="ability-grid">
-          <div v-for="(score, ability) in monster.abilities" :key="ability" class="ability-score">
-            <div class="ability-name">{{ ability.charAt(0).toUpperCase() + ability.slice(1) }}</div>
-            <div class="ability-value">{{ score }}</div>
-            <div class="ability-modifier">{{ formatModifier(abilityModifier(score)) }}</div>
+        <!-- Combat -->
+        <section class="sheet-section combat">
+          <h2>Combat</h2>
+          <div class="combat-grid">
+            <div class="combat-stat">
+              <label>Armor Class:</label>
+              <span class="stat-value">{{ monster.armorClass }}</span>
+            </div>
+            <div class="combat-stat">
+              <label>Hit Points:</label>
+              <span class="stat-value">{{ monster.hitPoints }}</span>
+            </div>
+            <div class="combat-stat">
+              <label>Speed:</label>
+              <span class="stat-value">
+                <template v-for="(value, type) in monster.speed" :key="type">
+                  {{ type }} {{ value }}ft
+                </template>
+              </span>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Combat -->
-      <section class="sheet-section combat">
-        <h2>Combat</h2>
-        <div class="combat-grid">
-          <div class="combat-stat">
-            <label>Armor Class:</label>
-            <span class="stat-value">{{ monster.armorClass }}</span>
-          </div>
-          <div class="combat-stat">
-            <label>Hit Points:</label>
-            <span class="stat-value">{{ monster.hitPoints }}</span>
-          </div>
-          <div class="combat-stat">
-            <label>Speed:</label>
-            <span class="stat-value">
-              <template v-for="(value, type) in monster.speed" :key="type">
-                {{ type }} {{ value }}ft
-              </template>
+        <!-- Saving Throws & Skills -->
+        <section v-if="monster.savingThrows && Object.keys(monster.savingThrows).length > 0" class="sheet-section saving-throws">
+          <h2>Saving Throws</h2>
+          <div class="proficiency-list">
+            <span v-for="(value, ability) in monster.savingThrows" :key="ability" class="proficiency-tag">
+              {{ ability.charAt(0).toUpperCase() + ability.slice(1) }} +{{ value }}
             </span>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Saving Throws & Skills -->
-      <section v-if="monster.savingThrows && Object.keys(monster.savingThrows).length > 0" class="sheet-section saving-throws">
-        <h2>Saving Throws</h2>
-        <div class="proficiency-list">
-          <span v-for="(value, ability) in monster.savingThrows" :key="ability" class="proficiency-tag">
-            {{ ability.charAt(0).toUpperCase() + ability.slice(1) }} +{{ value }}
-          </span>
-        </div>
-      </section>
+        <section v-if="monster.skills && Object.keys(monster.skills).length > 0" class="sheet-section skills">
+          <h2>Skills</h2>
+          <div class="proficiency-list">
+            <span v-for="(value, skill) in monster.skills" :key="skill" class="proficiency-tag">
+              {{ skill }} +{{ value }}
+            </span>
+          </div>
+        </section>
 
-      <section v-if="monster.skills && Object.keys(monster.skills).length > 0" class="sheet-section skills">
-        <h2>Skills</h2>
-        <div class="proficiency-list">
-          <span v-for="(value, skill) in monster.skills" :key="skill" class="proficiency-tag">
-            {{ skill }} +{{ value }}
-          </span>
-        </div>
-      </section>
+        <!-- Damage & Condition Info -->
+        <section v-if="monster.damageVulnerabilities?.length || monster.damageResistances?.length || monster.damageImmunities?.length || monster.conditionImmunities?.length" class="sheet-section resistances">
+          <h2>Damage & Conditions</h2>
+          <div class="info-grid">
+            <div v-if="monster.damageVulnerabilities?.length" class="info-item">
+              <label>Damage Vulnerabilities:</label>
+              <span>{{ monster.damageVulnerabilities.join(', ') }}</span>
+            </div>
+            <div v-if="monster.damageResistances?.length" class="info-item">
+              <label>Damage Resistant:</label>
+              <span>{{ monster.damageResistances.join(', ') }}</span>
+            </div>
+            <div v-if="monster.damageImmunities?.length" class="info-item">
+              <label>Damage Immunities:</label>
+              <span>{{ monster.damageImmunities.join(', ') }}</span>
+            </div>
+            <div v-if="monster.conditionImmunities?.length" class="info-item">
+              <label>Condition Immunities:</label>
+              <span>{{ monster.conditionImmunities.join(', ') }}</span>
+            </div>
+          </div>
+        </section>
 
-      <!-- Damage & Condition Info -->
-      <section v-if="monster.damageVulnerabilities?.length || monster.damageResistances?.length || monster.damageImmunities?.length || monster.conditionImmunities?.length" class="sheet-section resistances">
-        <h2>Damage & Conditions</h2>
-        <div class="info-grid">
-          <div v-if="monster.damageVulnerabilities?.length" class="info-item">
-            <label>Damage Vulnerabilities:</label>
-            <span>{{ monster.damageVulnerabilities.join(', ') }}</span>
+        <!-- Senses & Languages -->
+        <section class="sheet-section senses">
+          <h2>Senses & Languages</h2>
+          <div class="info-grid">
+            <div v-if="monster.senses?.length" class="info-item">
+              <label>Senses:</label>
+              <span>{{ monster.senses.join(', ') }}</span>
+            </div>
+            <div v-if="monster.languages?.length" class="info-item">
+              <label>Languages:</label>
+              <span>{{ monster.languages.join(', ') }}</span>
+            </div>
           </div>
-          <div v-if="monster.damageResistances?.length" class="info-item">
-            <label>Damage Resistant:</label>
-            <span>{{ monster.damageResistances.join(', ') }}</span>
-          </div>
-          <div v-if="monster.damageImmunities?.length" class="info-item">
-            <label>Damage Immunities:</label>
-            <span>{{ monster.damageImmunities.join(', ') }}</span>
-          </div>
-          <div v-if="monster.conditionImmunities?.length" class="info-item">
-            <label>Condition Immunities:</label>
-            <span>{{ monster.conditionImmunities.join(', ') }}</span>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Senses & Languages -->
-      <section class="sheet-section senses">
-        <h2>Senses & Languages</h2>
-        <div class="info-grid">
-          <div v-if="monster.senses?.length" class="info-item">
-            <label>Senses:</label>
-            <span>{{ monster.senses.join(', ') }}</span>
+        <!-- Special Abilities -->
+        <section v-if="monster.specialAbilities?.length" class="sheet-section abilities">
+          <h2>Special Abilities</h2>
+          <div class="ability-list">
+            <div v-for="ability in monster.specialAbilities" :key="ability" class="ability-item">
+              <p>{{ ability }}</p>
+            </div>
           </div>
-          <div v-if="monster.languages?.length" class="info-item">
-            <label>Languages:</label>
-            <span>{{ monster.languages.join(', ') }}</span>
+        </section>
+
+        <!-- Actions -->
+        <section v-if="monster.actions?.length" class="sheet-section actions">
+          <h2>Actions</h2>
+          <div class="action-list">
+            <div v-for="action in monster.actions" :key="action" class="action-item">
+              <p>{{ action }}</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Special Abilities -->
-      <section v-if="monster.specialAbilities?.length" class="sheet-section abilities">
-        <h2>Special Abilities</h2>
-        <div class="ability-list">
-          <div v-for="ability in monster.specialAbilities" :key="ability" class="ability-item">
-            <p>{{ ability }}</p>
+        <!-- Legendary Actions -->
+        <section v-if="monster.legendaryActions?.length" class="sheet-section legendary-actions">
+          <h2>Legendary Actions</h2>
+          <div class="action-list">
+            <div v-for="action in monster.legendaryActions" :key="action" class="action-item">
+              <p>{{ action }}</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Actions -->
-      <section v-if="monster.actions?.length" class="sheet-section actions">
-        <h2>Actions</h2>
-        <div class="action-list">
-          <div v-for="action in monster.actions" :key="action" class="action-item">
-            <p>{{ action }}</p>
+        <!-- Notes -->
+        <section v-if="monster.notes" class="sheet-section notes">
+          <h2>Notes</h2>
+          <div class="notes-content">
+            <p>{{ monster.notes }}</p>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <!-- Legendary Actions -->
-      <section v-if="monster.legendaryActions?.length" class="sheet-section legendary-actions">
-        <h2>Legendary Actions</h2>
-        <div class="action-list">
-          <div v-for="action in monster.legendaryActions" :key="action" class="action-item">
-            <p>{{ action }}</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Notes -->
-      <section v-if="monster.notes" class="sheet-section notes">
-        <h2>Notes</h2>
-        <div class="notes-content">
-          <p>{{ monster.notes }}</p>
-        </div>
-      </section>
-    </div>
-
-    <MonsterEditor
-      v-if="showEditor"
-      :monster="monster"
-      :is-open="showEditor"
-      @submit="handleSubmit"
-      @cancel="handleCancel"
-    />
+      <!-- Editor Modal -->
+      <template #editor>
+        <MonsterEditor
+          v-if="showEditor"
+          :monster="monster"
+          :is-open="showEditor"
+          @submit="handleSubmit"
+          @cancel="handleCancel"
+        />
+      </template>
+    </BaseEntityView>
   </div>
 </template>
 
 <style scoped>
-.monster-view {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.monster-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.monster-header h1 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-  font-size: 2.5rem;
-}
-
-.monster-subtitle {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  color: var(--color-text-light);
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-}
-
-.header-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
 .monster-sheet {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -430,9 +405,10 @@ const deleteMonster = async () => {
   line-height: 1.6;
 }
 
-.empty-state {
-  color: #888;
-  text-align: center;
-  margin: 2rem 0;
+/* Notes */
+.notes-content {
+  color: var(--color-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 </style>

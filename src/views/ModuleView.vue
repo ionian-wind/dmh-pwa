@@ -1,84 +1,88 @@
 <template>
-  <NotFoundView v-if="notFound" />
-  <div v-else-if="module" class="module-view">
-    <div class="view-header">
-      <div class="header-content">
-        <h1>{{ module.name }}</h1>
-        <p class="module-description">{{ module.description }}</p>
+  <div class="module-view-container">
+    <BaseEntityView
+      :entity="module"
+      entity-name="Module"
+      list-route="/modules"
+      :on-delete="handleDelete"
+      :on-edit="() => showEditor = true"
+      :is-editing="showEditor"
+      :title="moduleTitle"
+      :subtitle="moduleSubtitle"
+      :not-found="notFound"
+    >
+      <!-- Module Content -->
+      <div v-if="module" class="module-content">
+        <section class="content-section">
+          <h2>Parties</h2>
+          <div v-if="moduleParties.length === 0" class="empty-state">
+            <p>No parties in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <div v-for="party in moduleParties" :key="party.id" class="content-card">
+              <h3>{{ party.name }}</h3>
+              <p>{{ party.description }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-section">
+          <h2>Monsters</h2>
+          <div v-if="moduleMonsters.length === 0" class="empty-state">
+            <p>No monsters in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <div v-for="monster in moduleMonsters" :key="monster.id" class="content-card">
+              <h3>{{ monster.name }}</h3>
+              <p>{{ monster.type }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-section">
+          <h2>Encounters</h2>
+          <div v-if="moduleEncounters.length === 0" class="empty-state">
+            <p>No encounters in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <div v-for="encounter in moduleEncounters" :key="encounter.id" class="content-card">
+              <h3>{{ encounter.name }}</h3>
+              <p>{{ encounter.description }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-section">
+          <h2>Notes</h2>
+          <div v-if="moduleNotes.length === 0" class="empty-state">
+            <p>No notes in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <div v-for="note in moduleNotes" :key="note.id" class="content-card">
+              <h3>{{ note.title }}</h3>
+              <p>{{ note.content }}</p>
+            </div>
+          </div>
+        </section>
       </div>
-      <div class="header-actions">
-        <Button class="edit-btn" @click="showEditor = true">Edit Module</Button>
-        <Button variant="danger" class="delete-btn" @click="deleteModule">Delete Module</Button>
-      </div>
-    </div>
 
-    <div class="module-content">
-      <section class="content-section">
-        <h2>Parties</h2>
-        <div v-if="moduleParties.length === 0" class="empty-state">
-          <p>No parties in this module</p>
-        </div>
-        <div v-else class="content-grid">
-          <div v-for="party in moduleParties" :key="party.id" class="content-card">
-            <h3>{{ party.name }}</h3>
-            <p>{{ party.description }}</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="content-section">
-        <h2>Monsters</h2>
-        <div v-if="moduleMonsters.length === 0" class="empty-state">
-          <p>No monsters in this module</p>
-        </div>
-        <div v-else class="content-grid">
-          <div v-for="monster in moduleMonsters" :key="monster.id" class="content-card">
-            <h3>{{ monster.name }}</h3>
-            <p>{{ monster.type }}</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="content-section">
-        <h2>Encounters</h2>
-        <div v-if="moduleEncounters.length === 0" class="empty-state">
-          <p>No encounters in this module</p>
-        </div>
-        <div v-else class="content-grid">
-          <div v-for="encounter in moduleEncounters" :key="encounter.id" class="content-card">
-            <h3>{{ encounter.name }}</h3>
-            <p>{{ encounter.description }}</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="content-section">
-        <h2>Notes</h2>
-        <div v-if="moduleNotes.length === 0" class="empty-state">
-          <p>No notes in this module</p>
-        </div>
-        <div v-else class="content-grid">
-          <div v-for="note in moduleNotes" :key="note.id" class="content-card">
-            <h3>{{ note.title }}</h3>
-            <p>{{ note.content }}</p>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <ModuleEditor
-      v-if="showEditor"
-      :module="module"
-      :is-open="showEditor"
-      @submit="handleSubmit"
-      @cancel="handleCancel"
-    />
+      <!-- Editor Modal -->
+      <template #editor>
+        <ModuleEditor
+          v-if="showEditor"
+          :module="module"
+          :is-open="showEditor"
+          @submit="handleSubmit"
+          @cancel="handleCancel"
+        />
+      </template>
+    </BaseEntityView>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
@@ -86,11 +90,9 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
-import Button from '@/components/Button.vue';
-import NotFoundView from '@/views/NotFoundView.vue';
+import BaseEntityView from '@/components/BaseEntityView.vue';
 
 const route = useRoute();
-const router = useRouter();
 const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
@@ -133,9 +135,10 @@ onMounted(async () => {
   }
 });
 
-const handleSubmit = async (updatedModule: Module) => {
-  await moduleStore.updateModule(updatedModule);
-  module.value = updatedModule;
+const handleSubmit = async (updatedModule: Omit<Module, 'id'>) => {
+  if (!module.value) return;
+  await moduleStore.updateModule(module.value.id, updatedModule);
+  module.value = moduleStore.getModuleById(module.value.id);
   showEditor.value = false;
 };
 
@@ -143,75 +146,19 @@ const handleCancel = () => {
   showEditor.value = false;
 };
 
-const deleteModule = async () => {
+const handleDelete = async () => {
   if (!module.value) return;
-  
-  if (confirm(`Are you sure you want to delete the module "${module.value.name}"? This will also remove all associated content.`)) {
-    await moduleStore.deleteModule(module.value.id);
-    router.push('/modules');
-  }
+  await moduleStore.deleteModule(module.value.id);
 };
+
+// Computed properties for BaseEntityView
+const moduleTitle = computed(() => module.value?.name || '');
+const moduleSubtitle = computed(() => module.value?.description || '');
 </script>
 
 <style scoped>
-.module-view {
-  padding: 1rem;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.header-content h1 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-}
-
-.module-description {
-  color: var(--color-text-light);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.edit-btn,
-.delete-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.edit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.delete-btn {
-  background: var(--color-danger);
-  color: white;
-}
-
-.edit-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.delete-btn:hover {
-  background: var(--color-danger-dark);
-}
-
 .module-content {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 2rem;
 }
 
@@ -225,12 +172,9 @@ const deleteModule = async () => {
 .content-section h2 {
   margin: 0 0 1rem 0;
   color: var(--color-text);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 1rem;
-  color: var(--color-text-light);
+  font-size: 1.3rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
 }
 
 .content-grid {
@@ -249,11 +193,20 @@ const deleteModule = async () => {
 .content-card h3 {
   margin: 0 0 0.5rem 0;
   color: var(--color-text);
+  font-size: 1.1rem;
 }
 
 .content-card p {
   margin: 0;
   color: var(--color-text-light);
   font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.empty-state {
+  color: var(--color-text-light);
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
 }
 </style> 
