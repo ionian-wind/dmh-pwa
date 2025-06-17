@@ -9,6 +9,7 @@ import PartyEditor from '@/components/PartyEditor.vue';
 import BaseModal from '@/components/BaseModal.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import Button from '@/components/Button.vue';
+import NotFoundView from '@/views/NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +20,7 @@ const characterStore = useCharacterStore();
 const showEditor = ref(false);
 const showLinkModal = ref(false);
 const party = ref<Party | null>(null);
+const notFound = ref(false);
 
 const partyId = route.params.id as string;
 
@@ -56,7 +58,7 @@ const linkedCharacters = computed(() => {
 onMounted(async () => {
   const foundParty = partyStore.getPartyById(partyId);
   if (!foundParty) {
-    await router.push('/parties');
+    notFound.value = true;
     return;
   }
   party.value = foundParty;
@@ -102,92 +104,91 @@ const isCharacterLinked = (characterId: string) => {
 </script>
 
 <template>
-  <div v-if="party">
-    <div class="party-view">
-      <div class="header">
-        <h1>{{ party.name }}</h1>
-        <div class="meta">
-          <span v-if="modules.length > 0">Modules: {{ modules.map(m => m.name).join(', ') }}</span>
-          <span class="character-count">{{ partyCharacters.length }} characters</span>
-        </div>
-        <div class="actions">
-          <Button @click="showEditor = true">Edit Party</Button>
-          <Button @click="showLinkModal = true">Link Characters</Button>
-          <Button variant="danger" @click="handleDeleteParty">Delete Party</Button>
-        </div>
+  <NotFoundView v-if="notFound" />
+  <div v-else-if="party" class="party-view">
+    <div class="header">
+      <h1>{{ party.name }}</h1>
+      <div class="meta">
+        <span v-if="modules.length > 0">Modules: {{ modules.map(m => m.name).join(', ') }}</span>
+        <span class="character-count">{{ partyCharacters.length }} characters</span>
       </div>
-      <PartyEditor
-        :party="party"
-        :isOpen="showEditor"
-        @submit="handlePartySubmit"
-        @cancel="handlePartyCancel"
-      />
-      <BaseModal
-        :isOpen="showLinkModal"
-        title="Link Characters"
-        :showCancel="true"
-        :showSubmit="false"
-        cancelLabel="Close"
-        @cancel="showLinkModal = false"
-      >
-        <div v-if="allCharacters.length === 0" class="empty-state">
-          <p>No characters available</p>
-        </div>
-        <div v-else class="characters-grid">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Level</th>
-                <th>Class</th>
-                <th>Linked</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="character in allCharacters" :key="character.id">
-                <td>{{ character.name }}</td>
-                <td>{{ character.level }}</td>
-                <td>{{ character.class }}</td>
-                <td>
-                  <ToggleSwitch
-                    v-model="linkedCharacters[character.id]"
-                    @update:modelValue="(value) => handleToggleCharacter(character, value)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </BaseModal>
-      <section class="content-section">
-        <h2>Characters</h2>
-        <div v-if="partyCharacters.length === 0" class="empty-state">
-          <p>No characters in this party yet</p>
-        </div>
-        <div v-else class="characters-grid">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Level</th>
-                <th>Class</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="character in partyCharacters" :key="character.id">
-                <td>{{ character.name }}</td>
-                <td>{{ character.level }}</td>
-                <td>{{ character.class }}</td>
-                <td>
-                  <Button variant="danger" size="small" @click="handleToggleCharacter(character, false)">Unlink</Button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div class="actions">
+        <Button @click="showEditor = true">Edit Party</Button>
+        <Button @click="showLinkModal = true">Link Characters</Button>
+        <Button variant="danger" @click="handleDeleteParty">Delete Party</Button>
+      </div>
     </div>
+    <PartyEditor
+      :party="party"
+      :isOpen="showEditor"
+      @submit="handlePartySubmit"
+      @cancel="handlePartyCancel"
+    />
+    <BaseModal
+      :isOpen="showLinkModal"
+      title="Link Characters"
+      :showCancel="true"
+      :showSubmit="false"
+      cancelLabel="Close"
+      @cancel="showLinkModal = false"
+    >
+      <div v-if="allCharacters.length === 0" class="empty-state">
+        <p>No characters available</p>
+      </div>
+      <div v-else class="characters-grid">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Level</th>
+              <th>Class</th>
+              <th>Linked</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="character in allCharacters" :key="character.id">
+              <td>{{ character.name }}</td>
+              <td>{{ character.level }}</td>
+              <td>{{ character.class }}</td>
+              <td>
+                <ToggleSwitch
+                  v-model="linkedCharacters[character.id]"
+                  @update:modelValue="(value) => handleToggleCharacter(character, value)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </BaseModal>
+    <section class="content-section">
+      <h2>Characters</h2>
+      <div v-if="partyCharacters.length === 0" class="empty-state">
+        <p>No characters in this party yet</p>
+      </div>
+      <div v-else class="characters-grid">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Level</th>
+              <th>Class</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="character in partyCharacters" :key="character.id">
+              <td>{{ character.name }}</td>
+              <td>{{ character.level }}</td>
+              <td>{{ character.class }}</td>
+              <td>
+                <Button variant="danger" size="small" @click="handleToggleCharacter(character, false)">Unlink</Button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -216,17 +217,6 @@ const isCharacterLinked = (characterId: string) => {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
-}
-.delete-btn {
-  background: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-}
-.delete-btn:hover {
-  background: #d32f2f;
 }
 .content-section {
   margin-top: 2rem;
@@ -261,29 +251,6 @@ td {
 
 tr:hover {
   background: var(--color-background);
-}
-
-button {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.2s;
-}
-
-button:hover {
-  background: var(--color-danger);
-  color: white;
-  border-color: var(--color-danger);
-}
-
-.link-btn:hover {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
 }
 
 .empty-state {

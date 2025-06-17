@@ -5,11 +5,13 @@ import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
 import Button from '@/components/Button.vue';
+import NotFoundView from '@/views/NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
 const monsterStore = useMonsterStore();
 const showEditor = ref(false);
+const notFound = ref(false);
 
 const monster = ref<Monster | null>(null);
 
@@ -19,7 +21,7 @@ onMounted(async () => {
   monster.value = monsterStore.monsters.find(m => m.id === monsterId) || null;
   
   if (!monster.value) {
-    router.push('/monsters');
+    notFound.value = true;
   }
 });
 
@@ -58,7 +60,8 @@ const deleteMonster = async () => {
 </script>
 
 <template>
-  <div v-if="monster" class="monster-view">
+  <NotFoundView v-if="notFound" />
+  <div v-else-if="monster" class="monster-view">
     <div class="monster-header">
       <h1>{{ monster.name }}</h1>
       <div class="monster-subtitle">
@@ -160,7 +163,7 @@ const deleteMonster = async () => {
             <span>{{ monster.damageVulnerabilities.join(', ') }}</span>
           </div>
           <div v-if="monster.damageResistances?.length" class="info-item">
-            <label>Damage Resistances:</label>
+            <label>Damage Resistant:</label>
             <span>{{ monster.damageResistances.join(', ') }}</span>
           </div>
           <div v-if="monster.damageImmunities?.length" class="info-item">
@@ -218,6 +221,14 @@ const deleteMonster = async () => {
           </div>
         </div>
       </section>
+
+      <!-- Notes -->
+      <section v-if="monster.notes" class="sheet-section notes">
+        <h2>Notes</h2>
+        <div class="notes-content">
+          <p>{{ monster.notes }}</p>
+        </div>
+      </section>
     </div>
 
     <MonsterEditor
@@ -227,9 +238,6 @@ const deleteMonster = async () => {
       @submit="handleSubmit"
       @cancel="handleCancel"
     />
-  </div>
-  <div v-else class="empty-state">
-    <p>Monster not found.</p>
   </div>
 </template>
 

@@ -8,6 +8,7 @@ import type { Encounter } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
 import RunCombat from '@/components/RunCombat.vue';
 import Button from '@/components/Button.vue';
+import NotFoundView from '@/views/NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,6 +18,7 @@ const moduleStore = useModuleStore();
 
 const encounter = ref<Encounter | null>(null);
 const isEditorOpen = ref(false);
+const notFound = ref(false);
 
 onMounted(async () => {
   const encounterId = route.params.id as string;
@@ -28,7 +30,7 @@ onMounted(async () => {
   
   encounter.value = encounterStore.getEncounterById(encounterId);
   if (!encounter.value) {
-    router.push('/encounters');
+    notFound.value = true;
   }
 });
 
@@ -67,7 +69,8 @@ const getModuleName = (moduleId: string | null) => {
 </script>
 
 <template>
-  <div v-if="encounter" class="encounter-view">
+  <NotFoundView v-if="notFound" />
+  <div v-else-if="encounter" class="encounter-view">
     <div class="view-header">
       <div class="header-content">
         <h1>{{ encounter.name }}</h1>

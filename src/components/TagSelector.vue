@@ -73,21 +73,6 @@ const removeTag = (index: number) => {
   font-size: 1rem;
 }
 
-.tag-input button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: var(--border-radius);
-  background: var(--color-primary);
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.tag-input button:hover {
-  background: var(--color-primary-dark);
-}
-
 .tags-list {
   display: flex;
   flex-wrap: wrap;
@@ -103,20 +88,5 @@ const removeTag = (index: number) => {
   gap: 0.5rem;
   color: var(--color-text);
   font-size: 0.9rem;
-}
-
-.tag button {
-  background: none;
-  border: none;
-  color: var(--color-text-light);
-  cursor: pointer;
-  font-size: 1.2rem;
-  line-height: 1;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.tag button:hover {
-  color: var(--color-danger);
 }
 </style>

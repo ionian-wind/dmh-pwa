@@ -1,5 +1,6 @@
 <template>
-  <div v-if="module" class="module-view">
+  <NotFoundView v-if="notFound" />
+  <div v-else-if="module" class="module-view">
     <div class="view-header">
       <div class="header-content">
         <h1>{{ module.name }}</h1>
@@ -86,6 +87,7 @@ import { useNoteStore } from '@/stores/notes';
 import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import Button from '@/components/Button.vue';
+import NotFoundView from '@/views/NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -97,9 +99,10 @@ const noteStore = useNoteStore();
 
 const showEditor = ref(false);
 const module = ref<Module | null>(null);
+const notFound = ref(false);
 
 const moduleParties = computed(() => 
-  partyStore.parties.filter(party => party.moduleId === route.params.id)
+  partyStore.parties.filter(party => party.moduleIds?.includes(route.params.id as string))
 );
 
 const moduleMonsters = computed(() => 
@@ -126,7 +129,7 @@ onMounted(async () => {
   
   module.value = moduleStore.getModuleById(moduleId);
   if (!module.value) {
-    router.push('/modules');
+    notFound.value = true;
   }
 });
 

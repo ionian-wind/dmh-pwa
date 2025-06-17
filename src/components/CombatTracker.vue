@@ -34,7 +34,9 @@ const previousTurn = () => {
 };
 
 const endEncounter = () => {
-  encounterStore.endEncounter(props.encounterId);
+  if (encounter.value) {
+    encounterStore.endEncounter(encounter.value.id);
+  }
 };
 
 const updateHitPoints = (combatantId: string, value: number) => {
@@ -83,9 +85,9 @@ const removeCondition = (combatantId: string, condition: string) => {
     <div class="header">
       <h2>{{ encounter.name }} - Round {{ encounter.currentRound }}</h2>
       <div class="controls">
-        <button @click="previousTurn">Previous</button>
-        <button @click="nextTurn">Next</button>
-        <button @click="endEncounter">End Encounter</button>
+        <Button size="small" variant="secondary" @click="previousTurn">Previous</Button>
+        <Button size="small" variant="secondary" @click="nextTurn">Next</Button>
+        <Button size="small" variant="danger" @click="endEncounter">End Encounter</Button>
       </div>
     </div>
 
@@ -97,10 +99,10 @@ const removeCondition = (combatantId: string, condition: string) => {
         <p>AC: {{ currentCombatant.armorClass }}</p>
 
         <div class="hp-controls">
-          <button @click="updateHitPoints(currentCombatant.id, -1)">-1</button>
-          <button @click="updateHitPoints(currentCombatant.id, -5)">-5</button>
-          <button @click="updateHitPoints(currentCombatant.id, 1)">+1</button>
-          <button @click="updateHitPoints(currentCombatant.id, 5)">+5</button>
+          <Button size="small" variant="danger" @click="updateHitPoints(currentCombatant.id, -1)">-1</Button>
+          <Button size="small" variant="danger" @click="updateHitPoints(currentCombatant.id, -5)">-5</Button>
+          <Button size="small" variant="success" @click="updateHitPoints(currentCombatant.id, 1)">+1</Button>
+          <Button size="small" variant="success" @click="updateHitPoints(currentCombatant.id, 5)">+5</Button>
         </div>
 
         <div class="conditions">
@@ -108,7 +110,7 @@ const removeCondition = (combatantId: string, condition: string) => {
           <div v-if="currentCombatant.conditions.length">
             <span v-for="condition in currentCombatant.conditions" :key="condition" class="condition-tag">
               {{ condition }}
-              <button @click="removeCondition(currentCombatant.id, condition)">×</button>
+              <Button size="small" variant="danger" @click="removeCondition(currentCombatant.id, condition)">×</Button>
             </span>
           </div>
           <p v-else>No conditions</p>
@@ -125,7 +127,7 @@ const removeCondition = (combatantId: string, condition: string) => {
               <option value="stunned">Stunned</option>
               <option value="unconscious">Unconscious</option>
             </select>
-            <button @click="addCondition(currentCombatant.id, newCondition)">Add</button>
+            <Button size="small" @click="addCondition(currentCombatant.id, newCondition)">Add</Button>
           </div>
         </div>
       </div>
@@ -181,11 +183,6 @@ const removeCondition = (combatantId: string, condition: string) => {
   margin: 0.5rem 0;
 }
 
-.hp-controls button {
-  margin: 0 4px;
-  padding: 4px 8px;
-}
-
 .condition-tag {
   display: inline-block;
   background: #e0e0e0;
@@ -220,18 +217,4 @@ const removeCondition = (combatantId: string, condition: string) => {
 .name { flex: 2; }
 .initiative, .hp, .ac { flex: 1; }
 .conditions { flex: 2; }
-
-.condition-tag {
-  display: inline-block;
-  background: #e0e0e0;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-right: 4px;
-  font-size: 0.8em;
-}
-
-.hp-controls button {
-  margin: 0 4px;
-  padding: 4px 8px;
-}
 </style>

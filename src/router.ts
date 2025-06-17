@@ -14,6 +14,7 @@ import RunCombat from '@/components/RunCombat.vue';
 import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import ConfigurationView from '@/views/ConfigurationView.vue';
+import NotFoundView from '@/views/NotFoundView.vue';
 import { useNavigationStore } from '@/stores/navigation';
 
 const router = createRouter({
@@ -108,6 +109,17 @@ const router = createRouter({
       name: 'configuration',
       component: ConfigurationView,
       meta: { exact: true }
+    },
+    // 404 route
+    {
+      path: '/404',
+      name: 'not-found',
+      component: NotFoundView
+    },
+    // NotFound route
+    {
+      path: '/:catchAll(.*)',
+      component: NotFoundView
     }
   ]
 });

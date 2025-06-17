@@ -7,6 +7,7 @@ import type { Note } from '@/types';
 import NoteEditor from '@/components/NoteEditor.vue';
 import { parseMarkdown } from '@/utils/markdownParser';
 import Button from '@/components/Button.vue';
+import NotFoundView from '@/views/NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -16,6 +17,7 @@ const moduleStore = useModuleStore();
 const note = ref<Note | null>(null);
 const isEditing = ref(false);
 const parsedContent = ref('');
+const notFound = ref(false);
 
 onMounted(async () => {
   const noteId = route.params.id as string;
@@ -26,7 +28,7 @@ onMounted(async () => {
   
   note.value = noteStore.getNoteById(noteId);
   if (!note.value) {
-    router.push('/notes');
+    notFound.value = true;
   } else {
     parsedContent.value = parseMarkdown(note.value.content);
   }
@@ -60,7 +62,8 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <div class="note-view">
+  <NotFoundView v-if="notFound" />
+  <div v-else class="note-view">
     <div v-if="note" class="note-content">
       <div class="note-header">
         <div class="note-title">
