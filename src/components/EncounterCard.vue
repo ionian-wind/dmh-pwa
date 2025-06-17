@@ -6,14 +6,14 @@ import { defineProps, defineEmits } from 'vue';
 import Button from './Button.vue';
 
 const props = defineProps<{ encounter: Encounter }>();
-const emit = defineEmits(['view', 'edit', 'delete']);
+const emit = defineEmits(['view', 'edit', 'delete', 'run-combat']);
 const router = useRouter();
 
 function handleView() { emit('view', props.encounter); }
 function handleEdit() { emit('edit', props.encounter); }
 function handleDelete() { emit('delete', props.encounter); }
 function handleRunCombat() {
-  router.push(`/encounters/${props.encounter.id}/combat`);
+  emit('run-combat', props.encounter);
 }
 </script>
 <template>

@@ -1,25 +1,31 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useEncounterStore } from '@/stores/encounters';
 import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
-import type { Encounter, Monster } from '@/types';
+import { useCombatStore } from '@/stores/combats';
+import { usePartyStore } from '@/stores/parties';
+import type { Encounter, Monster, Combat } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
-import RunCombat from '@/components/RunCombat.vue';
 import BaseEntityView from '@/components/BaseEntityView.vue';
 import BaseModal from '@/components/BaseModal.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import Button from '@/components/Button.vue';
+import PartySelector from '@/components/PartySelector.vue';
 
 const route = useRoute();
+const router = useRouter();
 const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
+const combatStore = useCombatStore();
+const partyStore = usePartyStore();
 
 const encounter = ref<Encounter | null>(null);
 const isEditorOpen = ref(false);
 const showLinkModal = ref(false);
+const showPartySelector = ref(false);
 const notFound = ref(false);
 
 onMounted(async () => {
@@ -27,7 +33,9 @@ onMounted(async () => {
   await Promise.all([
     encounterStore.loadEncounters(),
     monsterStore.loadMonsters(),
-    moduleStore.loadModules()
+    moduleStore.loadModules(),
+    combatStore.loadCombats(),
+    partyStore.loadParties()
   ]);
   
   encounter.value = encounterStore.getEncounterById(encounterId);
@@ -106,6 +114,20 @@ const isMonsterLinked = (monsterId: string) => {
   return linkedMonsters.value[monsterId];
 };
 
+const handleRunCombat = () => {
+  showPartySelector.value = true;
+};
+
+const handleCombatCreated = (combat: Combat) => {
+  showPartySelector.value = false;
+  // Navigate to the combat view
+  router.push(`/combats/${combat.id}`);
+};
+
+const handlePartySelectorCancel = () => {
+  showPartySelector.value = false;
+};
+
 // Computed properties for BaseEntityView
 const encounterTitle = computed(() => encounter.value?.name || '');
 const encounterSubtitle = computed(() => {
@@ -121,6 +143,34 @@ const encounterSubtitle = computed(() => {
   
   return parts.join(' • ');
 });
+
+// Computed property for combats associated with this encounter
+const encounterCombats = computed(() => {
+  if (!encounter.value) return [];
+  return combatStore.combats.filter(combat => combat.encounterId === encounter.value!.id);
+});
+
+const getPartyName = (partyId: string) => {
+  const party = partyStore.getPartyById(partyId);
+  return party ? party.name : 'Unknown Party';
+};
+
+const formatDate = (timestamp: number) => {
+  return new Date(timestamp).toLocaleDateString();
+};
+
+const getStatusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'preparing': return 'status-preparing';
+    case 'active': return 'status-active';
+    case 'completed': return 'status-completed';
+    default: return 'status-unknown';
+  }
+};
+
+const handleViewCombat = (combat: Combat) => {
+  router.push(`/combats/${combat.id}`);
+};
 </script>
 
 <template>
@@ -146,9 +196,14 @@ const encounterSubtitle = computed(() => {
         <div class="content-section">
           <div class="section-header">
             <h2>Monsters</h2>
-            <Button @click="showLinkModal = true" class="link-btn">
-              Link Monsters
-            </Button>
+            <div class="section-actions">
+              <Button @click="showLinkModal = true" class="link-btn">
+                Link Monsters
+              </Button>
+              <Button @click="handleRunCombat" class="run-combat-btn">
+                Run Combat
+              </Button>
+            </div>
           </div>
           <div v-if="encounterMonsters.length === 0" class="empty-state">
             <p>No monsters in this encounter yet</p>
@@ -174,6 +229,54 @@ const encounterSubtitle = computed(() => {
                   <td>{{ monster.armorClass }}</td>
                   <td>
                     <button class="unlink-btn" @click="handleToggleMonster(monster, false)">Unlink</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2>Combats</h2>
+            <div class="section-actions">
+              <Button @click="handleRunCombat" class="run-combat-btn">
+                Run New Combat
+              </Button>
+            </div>
+          </div>
+          <div v-if="encounterCombats.length === 0" class="empty-state">
+            <p>No combats for this encounter yet</p>
+          </div>
+          <div v-else class="combats-grid">
+            <table>
+              <thead>
+                <tr>
+                  <th>Party</th>
+                  <th>Status</th>
+                  <th>Round</th>
+                  <th>Turn</th>
+                  <th>Combatants</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="combat in encounterCombats" :key="combat.id">
+                  <td>{{ getPartyName(combat.partyId) }}</td>
+                  <td>
+                    <span class="status-badge" :class="getStatusBadgeClass(combat.status)">
+                      {{ combat.status }}
+                    </span>
+                  </td>
+                  <td>{{ combat.currentRound }}</td>
+                  <td>{{ combat.currentTurn + 1 }} of {{ combat.combatants.length }}</td>
+                  <td>{{ combat.combatants.length }}</td>
+                  <td>{{ formatDate(combat.createdAt) }}</td>
+                  <td>
+                    <Button size="small" variant="primary" @click="handleViewCombat(combat)">
+                      View
+                    </Button>
                   </td>
                 </tr>
               </tbody>
@@ -236,6 +339,14 @@ const encounterSubtitle = computed(() => {
         </table>
       </div>
     </BaseModal>
+
+    <!-- Party Selector Modal -->
+    <PartySelector
+      :is-open="showPartySelector"
+      :encounter="encounter"
+      @cancel="handlePartySelectorCancel"
+      @combat-created="handleCombatCreated"
+    />
   </div>
 </template>
 
@@ -273,6 +384,11 @@ const encounterSubtitle = computed(() => {
   margin: 0;
   border-bottom: none;
   padding-bottom: 0;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .description,
@@ -341,5 +457,74 @@ const encounterSubtitle = computed(() => {
 
 .link-btn:hover {
   background: var(--color-primary-dark);
+}
+
+.run-combat-btn {
+  background: var(--color-success);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.run-combat-btn:hover {
+  background: var(--color-success-dark);
+}
+
+.combats-grid {
+  overflow-x: auto;
+}
+
+.combats-grid table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.combats-grid th,
+.combats-grid td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.combats-grid th {
+  background: var(--color-background);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.combats-grid td {
+  color: var(--color-text-light);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-preparing {
+  background: var(--color-warning);
+  color: white;
+}
+
+.status-active {
+  background: var(--color-success);
+  color: white;
+}
+
+.status-completed {
+  background: var(--color-primary);
+  color: white;
+}
+
+.status-unknown {
+  background: var(--color-text-light);
+  color: white;
 }
 </style>

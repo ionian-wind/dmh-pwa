@@ -3,7 +3,7 @@
   "title": "Encounter",
   "type": "object",
   "required": [
-    "id", "name", "difficulty", "monsters", "status", "currentRound",
+    "id", "name", "difficulty", "monsters", "currentRound",
     "currentTurn", "moduleId", "createdAt", "updatedAt"
   ],
   "properties": {
@@ -41,11 +41,6 @@
         "type": "string"
       },
       "description": "Array of monster IDs in this encounter"
-    },
-    "status": {
-      "type": "string",
-      "enum": ["preparing", "active", "completed"],
-      "description": "Current status of the encounter"
     },
     "currentRound": {
       "type": "number",

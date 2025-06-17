@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Combat",
+  "type": "object",
+  "required": [
+    "id", "encounterId", "partyId", "status", "currentRound",
+    "currentTurn", "combatants", "createdAt", "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the combat"
+    },
+    "encounterId": {
+      "type": "string",
+      "description": "ID of the encounter this combat is based on"
+    },
+    "partyId": {
+      "type": "string",
+      "description": "ID of the party involved in this combat"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["preparing", "active", "completed"],
+      "description": "Current status of the combat"
+    },
+    "currentRound": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Current round number"
+    },
+    "currentTurn": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Current turn number"
+    },
+    "combatants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "initiative", "armorClass", "hitPoints"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "initiative": { "type": "number" },
+          "armorClass": { "type": "number" },
+          "hitPoints": {
+            "type": "object",
+            "required": ["maximum", "current"],
+            "properties": {
+              "maximum": { "type": "number" },
+              "current": { "type": "number" },
+              "temporary": { "type": "number" }
+            }
+          },
+          "conditions": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "referenceId": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      },
+      "description": "Array of combatants in this combat"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about the combat"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the combat was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the combat was last updated"
+    }
+  }
+} 

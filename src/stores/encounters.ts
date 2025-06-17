@@ -13,7 +13,6 @@ const isEncounter = (value: unknown): value is Encounter => {
     typeof (value as any).name === 'string' &&
     typeof (value as any).difficulty === 'string' &&
     Array.isArray((value as any).monsters) &&
-    typeof (value as any).status === 'string' &&
     typeof (value as any).currentRound === 'number' &&
     typeof (value as any).currentTurn === 'number' &&
     typeof (value as any).moduleId === 'string';
@@ -26,7 +25,7 @@ export const useEncounterStore = defineStore('encounters', () => {
     validate: (data): data is Encounter[] => 
       isArray(data) && data.every(encounter => 
         isEncounter(encounter) && hasRequiredFields(encounter as Encounter, [
-          'id', 'name', 'difficulty', 'monsters', 'status', 'currentRound',
+          'id', 'name', 'difficulty', 'monsters', 'currentRound',
           'currentTurn', 'moduleId', 'createdAt', 'updatedAt'
         ])
       )
@@ -120,14 +119,6 @@ export const useEncounterStore = defineStore('encounters', () => {
     encounter.updatedAt = Date.now();
   };
 
-  const updateEncounterStatus = (encounterId: string, status: Encounter['status']) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
-    if (!encounter) return;
-
-    encounter.status = status;
-    encounter.updatedAt = Date.now();
-  };
-
   const updateTurn = (encounterId: string, round: number, turn: number) => {
     const encounter = encounters.value.find(e => e.id === encounterId);
     if (!encounter) return;
@@ -165,38 +156,10 @@ export const useEncounterStore = defineStore('encounters', () => {
     encounter.updatedAt = Date.now();
   };
 
-  const endEncounter = (encounterId: string) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
-    if (!encounter) return;
-
-    encounter.status = 'completed';
-    encounter.updatedAt = Date.now();
-  };
-
   const saveEncounters = () => {
     // This method is called to ensure encounters are saved to storage
     // The useStorage hook automatically handles persistence
     encounters.value = [...encounters.value];
-  };
-
-  const startCombat = (encounterId: string) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
-    if (!encounter) return;
-
-    encounter.status = 'active';
-    encounter.currentRound = 1;
-    encounter.currentTurn = 0;
-    encounter.updatedAt = Date.now();
-  };
-
-  const resetCombat = (encounterId: string) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
-    if (!encounter || !encounter.monsters) return;
-
-    encounter.status = 'preparing';
-    encounter.currentRound = 0;
-    encounter.currentTurn = 0;
-    encounter.updatedAt = Date.now();
   };
 
   const loadEncounters = async () => {
@@ -218,14 +181,10 @@ export const useEncounterStore = defineStore('encounters', () => {
     getEncounterById,
     addMonster,
     removeMonster,
-    updateEncounterStatus,
     updateTurn,
     nextTurn,
     previousTurn,
-    endEncounter,
     saveEncounters,
-    startCombat,
-    resetCombat,
     loadEncounters
   };
 });

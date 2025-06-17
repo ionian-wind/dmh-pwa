@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue';
+import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
@@ -10,6 +11,7 @@ const props = defineProps<{
   encounterId: string;
 }>();
 
+const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
@@ -18,33 +20,43 @@ const encounter = computed(() => {
   return encounterStore.encounters.find(e => e.id === props.encounterId);
 });
 
+const combat = computed(() => {
+  return combatStore.getCombatByEncounter(props.encounterId);
+});
+
 const currentCombatant = computed(() => {
-  if (encounter.value && encounter.value.combatants?.length > 0) {
-    return encounter.value.combatants[encounter.value.currentTurn];
+  if (combat.value && combat.value.combatants?.length > 0) {
+    return combat.value.combatants[combat.value.currentTurn];
   }
   return null;
 });
 
 const nextTurn = () => {
-  encounterStore.nextTurn(props.encounterId);
+  if (combat.value) {
+    combatStore.nextTurn(combat.value.id);
+  }
 };
 
 const previousTurn = () => {
-  encounterStore.previousTurn(props.encounterId);
+  if (combat.value) {
+    combatStore.previousTurn(combat.value.id);
+  }
 };
 
-const endEncounter = () => {
-  if (encounter.value) {
-    encounterStore.endEncounter(encounter.value.id);
+const endCombat = () => {
+  if (combat.value) {
+    combatStore.endCombat(combat.value.id);
   }
 };
 
 const updateHitPoints = (combatantId: string, value: number) => {
-  const combatant = encounter.value?.combatants.find(c => c.id === combatantId);
+  if (!combat.value) return;
+  
+  const combatant = combat.value.combatants.find(c => c.id === combatantId);
   if (combatant) {
     const newHP = combatant.hitPoints.current + value;
     combatant.hitPoints.current = Math.max(0, Math.min(newHP, combatant.hitPoints.maximum));
-    encounterStore.saveEncounters();
+    combatStore.updateCombatant(combat.value.id, combatantId, { hitPoints: combatant.hitPoints });
   }
 };
 
@@ -52,8 +64,8 @@ const updateHitPoints = (combatantId: string, value: number) => {
 const combatantDetails = (combatant: Combatant) => {
   if (combatant.type === 'monster' && combatant.referenceId) {
     return monsterStore.monsters.find(m => m.id === combatant.referenceId);
-  } else if (combatant.type === 'player' && combatant.referenceId && encounter.value) {
-    const party = partyStore.parties.find(p => p.id === encounter.value.partyId);
+  } else if (combatant.type === 'player' && combatant.referenceId && combat.value) {
+    const party = partyStore.parties.find(p => p.id === combat.value!.partyId);
     if (party && Array.isArray(party.characters)) {
       return party.characters.find(c => c === combatant.referenceId);
     }
@@ -64,30 +76,34 @@ const combatantDetails = (combatant: Combatant) => {
 const newCondition = ref('');
 
 const addCondition = (combatantId: string, condition: string) => {
-  const combatant = encounter.value?.combatants.find(c => c.id === combatantId);
+  if (!combat.value) return;
+  
+  const combatant = combat.value.combatants.find(c => c.id === combatantId);
   if (combatant && !combatant.conditions.includes(condition)) {
-    combatant.conditions.push(condition);
-    encounterStore.saveEncounters();
+    const updatedConditions = [...combatant.conditions, condition];
+    combatStore.updateCombatant(combat.value.id, combatantId, { conditions: updatedConditions });
   }
 };
 
 const removeCondition = (combatantId: string, condition: string) => {
-  const combatant = encounter.value?.combatants.find(c => c.id === combatantId);
+  if (!combat.value) return;
+  
+  const combatant = combat.value.combatants.find(c => c.id === combatantId);
   if (combatant) {
-    combatant.conditions = combatant.conditions.filter(c => c !== condition);
-    encounterStore.saveEncounters();
+    const updatedConditions = combatant.conditions.filter(c => c !== condition);
+    combatStore.updateCombatant(combat.value.id, combatantId, { conditions: updatedConditions });
   }
 };
 </script>
 
 <template>
-  <div v-if="encounter" class="combat-tracker">
+  <div v-if="encounter && combat" class="combat-tracker">
     <div class="header">
-      <h2>{{ encounter.name }} - Round {{ encounter.currentRound }}</h2>
+      <h2>{{ encounter.name }} - Round {{ combat.currentRound }}</h2>
       <div class="controls">
         <Button size="small" variant="secondary" @click="previousTurn">Previous</Button>
         <Button size="small" variant="secondary" @click="nextTurn">Next</Button>
-        <Button size="small" variant="danger" @click="endEncounter">End Encounter</Button>
+        <Button size="small" variant="danger" @click="endCombat">End Combat</Button>
       </div>
     </div>
 
@@ -134,11 +150,11 @@ const removeCondition = (combatantId: string, condition: string) => {
     </div>
 
     <div class="initiative-list">
-      <div v-for="(combatant, index) in encounter.combatants"
+      <div v-for="(combatant, index) in combat.combatants"
            :key="combatant.id"
            class="initiative-item"
            :class="{ 
-             'current': index === encounter.currentTurn,
+             'current': index === combat.currentTurn,
              'player': combatant.type === 'player',
              'monster': combatant.type === 'monster'
            }">
@@ -154,6 +170,9 @@ const removeCondition = (combatantId: string, condition: string) => {
         </span>
       </div>
     </div>
+  </div>
+  <div v-else class="no-combat">
+    <p>No active combat found for this encounter.</p>
   </div>
 </template>
 
