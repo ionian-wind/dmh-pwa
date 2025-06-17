@@ -64,7 +64,6 @@ const blankCharacter = (): PlayerCharacter => ({
   notes: '',
   createdAt: Date.now(),
   updatedAt: Date.now(),
-  moduleId: undefined,
   partyId: props.partyId ?? undefined,
 });
 

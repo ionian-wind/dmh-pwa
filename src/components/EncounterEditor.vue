@@ -34,7 +34,7 @@ const editedEncounter = ref<EncounterFormData>({
   status: 'preparing',
   currentRound: 0,
   currentTurn: 0,
-  moduleId: moduleStore.currentModuleId || '',
+  moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
   partyId: '',
   notes: ''
 });
@@ -56,7 +56,7 @@ watch(() => props.encounter, (newEncounter) => {
       status: 'preparing',
       currentRound: 0,
       currentTurn: 0,
-      moduleId: moduleStore.currentModuleId || '',
+      moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
       partyId: '',
       notes: ''
     };
@@ -74,7 +74,7 @@ const resetForm = () => {
     status: 'preparing',
     currentRound: 0,
     currentTurn: 0,
-    moduleId: moduleStore.currentModuleId || '',
+    moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? '' : (moduleStore.currentModuleFilter as string),
     partyId: '',
     notes: ''
   };
@@ -151,7 +151,7 @@ defineExpose({
       <label>Party</label>
       <select v-model="editedEncounter.partyId">
         <option value="">Select Party</option>
-        <option v-for="party in partyStore.parties" :key="party.id" :value="party.id">
+        <option v-for="party in partyStore.filteredParties" :key="party.id" :value="party.id">
           {{ party.name }}
         </option>
       </select>

@@ -53,13 +53,13 @@ const deleteMonster = async (monster: Monster) => {
       <Button @click="handleCreateClick">Create Monster</Button>
     </div>
 
-    <div v-if="monsterStore.monsters.length === 0" class="empty-state">
+    <div v-if="monsterStore.filteredMonsters.length === 0" class="empty-state">
       <p>No monsters yet. Create your first monster to get started!</p>
     </div>
 
     <div v-else class="monsters-grid">
       <MonsterCard
-        v-for="monster in monsterStore.monsters"
+        v-for="monster in monsterStore.filteredMonsters"
         :key="monster.id"
         :monster="monster"
         :show-actions="true"

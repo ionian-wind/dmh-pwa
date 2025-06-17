@@ -23,18 +23,14 @@ export const useCharacterStore = defineStore('characters', () => {
   // Get characters by party
   const getByParty = (partyId: UUID) => characters.value.filter(c => c.partyId === partyId);
 
-  // Get characters by module
-  const getByModule = (moduleId: UUID) => characters.value.filter(c => c.moduleId === moduleId);
-
   // Add character
-  const add = (character: Omit<PlayerCharacter, 'id' | 'createdAt' | 'updatedAt'> & { partyId?: UUID | null; moduleId?: UUID | null }) => {
+  const add = (character: Omit<PlayerCharacter, 'id' | 'createdAt' | 'updatedAt'> & { partyId?: UUID | null }) => {
     const newChar: PlayerCharacter = {
       ...character,
       id: generateId(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       partyId: character.partyId ?? null,
-      moduleId: character.moduleId ?? null,
     };
     characters.value.push(newChar);
     return newChar;
@@ -67,7 +63,6 @@ export const useCharacterStore = defineStore('characters', () => {
     all,
     getById,
     getByParty,
-    getByModule,
     add,
     update,
     remove,

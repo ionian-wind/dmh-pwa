@@ -18,13 +18,12 @@ const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
 
 const stats = computed(() => {
-  const moduleId = moduleStore.currentModuleId;
   return {
-    notes: moduleId ? noteStore.notes.filter(note => note.moduleId === moduleId).length : noteStore.notes.length,
-    parties: moduleId ? partyStore.parties.filter(party => party.moduleId === moduleId).length : partyStore.parties.length,
-    monsters: moduleId ? monsterStore.monsters.filter(monster => monster.moduleId === moduleId).length : monsterStore.monsters.length,
-    encounters: moduleId ? encounterStore.encounters.filter(encounter => encounter.moduleId === moduleId).length : encounterStore.encounters.length,
-    characters: moduleId ? characterStore.all.filter(character => character.moduleId === moduleId).length : characterStore.all.length,
+    notes: noteStore.filteredNotes.length,
+    parties: partyStore.filteredParties.length,
+    monsters: monsterStore.filteredMonsters.length,
+    encounters: encounterStore.filteredEncounters.length,
+    characters: characterStore.all.length,
     modules: moduleStore.modules.length
   };
 });

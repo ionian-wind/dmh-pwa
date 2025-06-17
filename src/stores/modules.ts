@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Module } from '@/types';
 import { generateId, useStorage } from '@/utils/storage';
 import moduleSchema from '../schemas/module.schema.json';
 import {registerValidationSchema} from "@/utils/schemaValidator";
 
 registerValidationSchema('module', moduleSchema);
+
+// Define module filter types
+export type ModuleFilter = 'any' | 'none' | string | null;
 
 export const useModuleStore = defineStore('modules', () => {
   const modules = useStorage<Module[]>({
@@ -14,15 +17,48 @@ export const useModuleStore = defineStore('modules', () => {
     schema: 'module'
   });
 
-  const currentModuleId = useStorage<string | null>({
-    key: 'dnd-current-module',
-    defaultValue: null
-  });
+  // Use simple localStorage for the module filter since it's just a string
+  const getStoredModuleFilter = (): ModuleFilter => {
+    try {
+      const stored = localStorage.getItem('dnd-current-module-filter');
+      if (stored === null) return 'any';
+      return stored as ModuleFilter;
+    } catch (e) {
+      console.error('Error reading module filter from storage:', e);
+      return 'any';
+    }
+  };
+
+  const setStoredModuleFilter = (filter: ModuleFilter) => {
+    try {
+      localStorage.setItem('dnd-current-module-filter', filter || 'any');
+    } catch (e) {
+      console.error('Error saving module filter to storage:', e);
+    }
+  };
+
+  const currentModuleFilter = ref<ModuleFilter>(getStoredModuleFilter());
   
   const currentModule = computed(() => {
-    if (!currentModuleId.value) return null;
-    return modules.value.find(m => m.id === currentModuleId.value) || null;
+    if (!currentModuleFilter.value || currentModuleFilter.value === 'any' || currentModuleFilter.value === 'none') return null;
+    return modules.value.find(m => m.id === currentModuleFilter.value) || null;
   });
+
+  // Helper function to check if an entity matches the current filter
+  const matchesModuleFilter = (entityModuleId: string | null): boolean => {
+    if (currentModuleFilter.value === 'any') return true;
+    if (currentModuleFilter.value === 'none') return !entityModuleId;
+    if (currentModuleFilter.value === null) return !entityModuleId;
+    return entityModuleId === currentModuleFilter.value;
+  };
+
+  // Helper function to check if an entity with multiple modules matches the current filter
+  const matchesModuleFilterMultiple = (entityModuleIds: string[] | null | undefined): boolean => {
+    if (currentModuleFilter.value === 'any') return true;
+    if (currentModuleFilter.value === 'none') return !entityModuleIds || entityModuleIds.length === 0;
+    if (currentModuleFilter.value === null) return !entityModuleIds || entityModuleIds.length === 0;
+    return entityModuleIds?.includes(currentModuleFilter.value) || false;
+  };
 
   const addModule = (module: Omit<Module, 'id'>) => {
     const newModule: Module = {
@@ -51,13 +87,24 @@ export const useModuleStore = defineStore('modules', () => {
 
   const deleteModule = (id: string) => {
     modules.value = modules.value.filter(m => m.id !== id);
-    if (currentModuleId.value === id) {
-      currentModuleId.value = null;
+    if (currentModuleFilter.value === id) {
+      currentModuleFilter.value = 'any';
+      setStoredModuleFilter('any');
     }
   };
 
+  const setCurrentModuleFilter = (filter: ModuleFilter) => {
+    currentModuleFilter.value = filter;
+    setStoredModuleFilter(filter);
+  };
+
+  // Legacy function for backward compatibility
   const setCurrentModule = (id: string | null) => {
-    currentModuleId.value = id;
+    if (id === null) {
+      setCurrentModuleFilter('any');
+    } else {
+      setCurrentModuleFilter(id);
+    }
   };
 
   const getModuleName = (id: string) => {
@@ -77,12 +124,15 @@ export const useModuleStore = defineStore('modules', () => {
 
   return {
     modules,
-    currentModuleId,
+    currentModuleFilter,
     currentModule,
+    matchesModuleFilter,
+    matchesModuleFilterMultiple,
     addModule,
     createModule,
     updateModule,
     deleteModule,
+    setCurrentModuleFilter,
     setCurrentModule,
     getModuleName,
     getModuleById,

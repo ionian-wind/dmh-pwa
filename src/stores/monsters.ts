@@ -101,8 +101,7 @@ export const useMonsterStore = defineStore('monsters', () => {
 
   const filteredMonsters = computed(() => {
     const moduleStore = useModuleStore();
-    if (!moduleStore.currentModuleId) return monsters.value;
-    return monsters.value.filter(m => m.moduleId === moduleStore.currentModuleId);
+    return monsters.value.filter(m => moduleStore.matchesModuleFilter(m.moduleId));
   });
 
   return {

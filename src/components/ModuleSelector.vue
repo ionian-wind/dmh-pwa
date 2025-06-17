@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useModuleStore } from '@/stores/modules';
+import { computed } from 'vue';
 
 const props = withDefaults(defineProps<{
   modelValue: string | null;
@@ -20,6 +21,14 @@ const updateValue = (event: Event) => {
   const value = select.value === '' ? null : select.value;
   emit('update:modelValue', value);
 };
+
+const moduleOptions = computed(() => [
+  { value: '', label: props.placeholder || 'No Module' },
+  ...moduleStore.modules.map(module => ({
+    value: module.id,
+    label: module.name
+  }))
+]);
 </script>
 
 <template>
@@ -28,13 +37,12 @@ const updateValue = (event: Event) => {
     @input="updateValue"
     class="module-selector"
   >
-    <option value="">{{ placeholder || 'No Module' }}</option>
     <option
-      v-for="module in moduleStore.modules"
-      :key="module.id"
-      :value="module.id"
+      v-for="option in moduleOptions"
+      :key="option.value"
+      :value="option.value"
     >
-      {{ module.name }}
+      {{ option.label }}
     </option>
   </select>
 </template>

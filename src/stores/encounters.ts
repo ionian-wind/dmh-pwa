@@ -92,8 +92,7 @@ export const useEncounterStore = defineStore('encounters', () => {
 
   const filteredEncounters = computed(() => {
     const moduleStore = useModuleStore();
-    if (!moduleStore.currentModuleId) return encounters.value;
-    return encounters.value.filter(e => e.moduleId === moduleStore.currentModuleId);
+    return encounters.value.filter(e => moduleStore.matchesModuleFilter(e.moduleId));
   });
 
   const updateCombatant = (encounterId: string, combatantId: string, updates: Partial<Encounter['combatants'][0]>) => {

@@ -8,15 +8,26 @@ import Button from './Button.vue';
 const moduleStore = useModuleStore();
 const router = useRouter();
 
-const currentModule = computed(() => moduleStore.modules.find(m => m.id === moduleStore.currentModuleId));
-const modulesSelect = computed(() => [{id: null, value: '-', name: 'Module not specified' }, ...moduleStore.modules.map(({ id, name }) => ({ id, name, value: id }))]);
+const currentModule = computed(() => moduleStore.currentModule);
+const modulesSelect = computed(() => [
+  { id: 'any', value: 'any', name: 'Any module' },
+  { id: 'none', value: 'none', name: 'No module' },
+  ...moduleStore.modules.map(({ id, name }) => ({ id, name, value: id }))
+]);
 
-const setCurrentModule = (moduleId: string | null) => moduleStore.setCurrentModule(moduleId === '-' ? null : moduleId);
+const setCurrentModuleFilter = (filterValue: string) => {
+  if (filterValue === 'any') {
+    moduleStore.setCurrentModuleFilter('any');
+  } else if (filterValue === 'none') {
+    moduleStore.setCurrentModuleFilter('none');
+  } else {
+    moduleStore.setCurrentModuleFilter(filterValue);
+  }
+};
 
 const navigateTo = (path: string) => {
   router.push(path);
 };
-
 
 const sections = [
   { section: Section.NOTES, label: 'Notes', path: '/notes' },
@@ -37,9 +48,8 @@ const isActive = (item: { section: Section, path: string }) => {
 <template>
   <nav class="global-menu">
     <div class="module-selector">
-      <select v-model="moduleStore.currentModuleId" @change="setCurrentModule(($event.target as HTMLSelectElement)?.value || null)">
-<!--        <option :value="null">All Modules</option>-->
-        <option v-for="module in modulesSelect" :key="module.id || 'null'" :value="module.value">
+      <select v-model="moduleStore.currentModuleFilter" @change="setCurrentModuleFilter(($event.target as HTMLSelectElement)?.value || 'any')">
+        <option v-for="module in modulesSelect" :key="module.id" :value="module.value">
           {{ module.name }}
         </option>
       </select>
@@ -49,7 +59,7 @@ const isActive = (item: { section: Section, path: string }) => {
       <Button 
         variant="danger"
         size="small"
-        @click="setCurrentModule('-')"
+        @click="setCurrentModuleFilter('any')"
       >
         Clear
       </Button>

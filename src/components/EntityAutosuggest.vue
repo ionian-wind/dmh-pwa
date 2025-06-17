@@ -46,7 +46,7 @@ const suggestions = computed(() => {
 
   switch (type) {
     case 'note':
-      return noteStore.notes
+      return noteStore.filteredNotes
         .filter(note => note.title.toLowerCase().includes(searchLower))
         .map(note => ({
           id: note.id,
@@ -62,7 +62,7 @@ const suggestions = computed(() => {
           type: 'Module'
         }));
     case 'party':
-      return partyStore.parties
+      return partyStore.filteredParties
         .filter(party => party.name.toLowerCase().includes(searchLower))
         .map(party => ({
           id: party.id,
@@ -70,7 +70,7 @@ const suggestions = computed(() => {
           type: 'Party'
         }));
     case 'monster':
-      return monsterStore.monsters
+      return monsterStore.filteredMonsters
         .filter(monster => monster.name.toLowerCase().includes(searchLower))
         .map(monster => ({
           id: monster.id,
@@ -78,7 +78,7 @@ const suggestions = computed(() => {
           type: 'Monster'
         }));
     case 'encounter':
-      return encounterStore.encounters
+      return encounterStore.filteredEncounters
         .filter(encounter => encounter.name.toLowerCase().includes(searchLower))
         .map(encounter => ({
           id: encounter.id,

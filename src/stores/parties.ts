@@ -35,11 +35,7 @@ export const usePartyStore = defineStore('parties', () => {
 
   const filteredParties = computed(() => {
     const moduleStore = useModuleStore();
-    if (!moduleStore.currentModuleId) return parties.value;
-    return parties.value.filter(party => {
-      const moduleIds = party.moduleIds || [];
-      return moduleIds.includes(moduleStore.currentModuleId!);
-    });
+    return parties.value.filter(party => moduleStore.matchesModuleFilterMultiple(party.moduleIds));
   });
 
   const loadParties = async () => {

@@ -67,21 +67,22 @@ export const useNoteStore = defineStore('notes', () => {
   };
 
   const filteredNotes = computed(() => {
-    if (!searchQuery.value) return notes.value;
     const moduleStore = useModuleStore();
     
-    const query = searchQuery.value.toLowerCase();
-    
-    let result = notes.value.filter(note =>
-      note.title.toLowerCase().includes(query) ||
-      note.content.toLowerCase().includes(query) ||
-      note.tags.some(tag => tag.toLowerCase().includes(query))
-    );
+    let result = notes.value;
 
-    // Filter by current module
-    if (moduleStore.currentModuleId) {
-      result = result.filter(note => note.moduleId === moduleStore.currentModuleId);
+    // Apply search filter if there's a search query
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      result = result.filter(note =>
+        note.title.toLowerCase().includes(query) ||
+        note.content.toLowerCase().includes(query) ||
+        note.tags.some(tag => tag.toLowerCase().includes(query))
+      );
     }
+
+    // Always filter by current module filter
+    result = result.filter(note => moduleStore.matchesModuleFilter(note.moduleId));
     
     return result;
   });

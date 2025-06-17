@@ -64,9 +64,13 @@ const getModuleName = (moduleId: string | null) => {
       <Button @click="handleCreate">Create Encounter</Button>
     </div>
 
-    <div class="encounters-grid">
+    <div v-if="encounterStore.filteredEncounters.length === 0" class="empty-state">
+      <p>No encounters yet. Create your first encounter to get started!</p>
+    </div>
+
+    <div v-else class="encounters-grid">
       <EncounterCard
-        v-for="encounter in encounterStore.encounters"
+        v-for="encounter in encounterStore.filteredEncounters"
         :key="encounter.id"
         :encounter="encounter"
         @view="encounter => $router.push(`/encounters/${encounter.id}`)"

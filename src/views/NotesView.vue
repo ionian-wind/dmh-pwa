@@ -32,13 +32,11 @@ const notes = ref<Note[]>([]);
 const searchQuery = ref('');
 
 const filteredNotes = computed(() => {
-  return notes.value.filter(note => {
+  return noteStore.filteredNotes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
                          note.content.toLowerCase().includes(searchQuery.value.toLowerCase());
     
-    const matchesModule = !moduleStore.currentModuleId || note.moduleId === moduleStore.currentModuleId;
-    
-    return matchesSearch && matchesModule;
+    return matchesSearch;
   });
 });
 
@@ -59,7 +57,7 @@ const addNote = () => {
     content: '',
     typeId: null,
     tags: [],
-    moduleId: moduleStore.currentModuleId,
+    moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? null : (moduleStore.currentModuleFilter as string),
     createdAt: Date.now(),
     updatedAt: Date.now(),
     parentId: undefined,
@@ -124,7 +122,7 @@ const handleDelete = async (note: Note) => {
 
     <div v-if="filteredNotes.length === 0" class="empty-state">
       <p>No notes found.</p>
-      <p v-if="moduleStore.currentModuleId">Try changing the module filter or create a new note.</p>
+      <p v-if="moduleStore.currentModuleFilter !== 'any'">Try changing the module filter or create a new note.</p>
     </div>
 
     <div v-else class="notes-container">
