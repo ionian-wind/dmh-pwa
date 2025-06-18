@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Note } from '@/types';
 import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/storage';
 import { useModuleStore } from "./modules";
 import noteSchema from "@/schemas/note.schema.json";
 import {registerValidationSchema} from "@/utils/schemaValidator";
+
+registerValidationSchema('note', noteSchema);
 
 const isNote = (value: unknown): value is Note => {
   return typeof value === 'object' && value !== null &&
@@ -15,10 +17,9 @@ const isNote = (value: unknown): value is Note => {
     typeof (value as any).moduleId === 'string';
 };
 
-registerValidationSchema('note', noteSchema);
-
 export const useNoteStore = defineStore('notes', () => {
-  const notes = useStorage<Note[]>({
+  // State
+  const items = useStorage<Note[]>({
     key: 'dnd-notes',
     defaultValue: [],
     validate: (data): data is Note[] => 
@@ -26,52 +27,20 @@ export const useNoteStore = defineStore('notes', () => {
         isNote(note) && hasRequiredFields(note as Note, ['id', 'title', 'content', 'typeId', 'tags', 'moduleId', 'createdAt', 'updatedAt'])
       )
   });
-
+  const currentNoteId = ref<string | null>(null);
   const searchQuery = useStorage<string>({
     key: 'dnd-notes-search',
     defaultValue: ''
   });
 
-  const loadNotes = async () => {
-    // Notes are automatically loaded by useStorage
-    return notes.value;
-  };
-
-  const createNote = (note: Omit<Note, 'id'>) => {
-    const newNote: Note = {
-      ...note,
-      id: generateId(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    notes.value.push(newNote);
-    return newNote;
-  };
-
-  const updateNote = (id: string, note: Omit<Note, 'id'>) => {
-    const noteFound = getNoteById(id);
-    
-    if (noteFound) {
-      const index = notes.value.indexOf(noteFound);
-      
-      notes.value[index] = {
-        ...note,
-        id,
-        updatedAt: Date.now()
-      };
-    }
-  };
-
-  const deleteNote = (id: string) => {
-    notes.value = notes.value.filter(note => note.id !== id);
-  };
-
+  // Computed
+  const currentNote = computed(() => {
+    if (!currentNoteId.value) return null;
+    return items.value.find(n => n.id === currentNoteId.value) || null;
+  });
   const filteredNotes = computed(() => {
     const moduleStore = useModuleStore();
-    
-    let result = notes.value;
-
-    // Apply search filter if there's a search query
+    let result = items.value;
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
       result = result.filter(note =>
@@ -80,27 +49,53 @@ export const useNoteStore = defineStore('notes', () => {
         note.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
-
-    // Always filter by current module filter
     result = result.filter(note => moduleStore.matchesModuleFilter(note.moduleId));
-    
     return result;
   });
-
   const allTags = computed(() => {
     const tags = new Set<string>();
-    notes.value.forEach(note =>
+    items.value.forEach(note =>
       note.tags.forEach(tag => tags.add(tag))
     );
     return Array.from(tags);
   });
 
-  const getNoteById = (id: string) => {
-    return notes.value.find(n => n.id === id) || null;
+  // CRUD
+  const createNote = (note: Omit<Note, 'id'>) => {
+    const newNote: Note = {
+      ...note,
+      id: generateId(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    items.value.push(newNote);
+    return newNote;
   };
+  const updateNote = (id: string, note: Omit<Note, 'id'>) => {
+    const noteFound = getNoteById(id);
+    if (noteFound) {
+      const index = items.value.indexOf(noteFound);
+      items.value[index] = {
+        ...note,
+        id,
+        updatedAt: Date.now()
+      };
+    }
+  };
+  const deleteNote = (id: string) => {
+    items.value = items.value.filter(note => note.id !== id);
+    if (currentNoteId.value === id) currentNoteId.value = null;
+  };
+  const getNoteById = (id: string) => items.value.find(n => n.id === id) || null;
+  const loadNotes = async () => items.value;
+
+  // Legacy aliases
+  const notes = items;
 
   return {
-    notes,
+    items,
+    currentNoteId,
+    currentNote,
     searchQuery,
     filteredNotes,
     allTags,
@@ -108,6 +103,8 @@ export const useNoteStore = defineStore('notes', () => {
     updateNote,
     deleteNote,
     getNoteById,
-    loadNotes
+    loadNotes,
+    // Legacy aliases
+    notes,
   };
 });

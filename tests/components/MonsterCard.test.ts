@@ -13,7 +13,7 @@ describe('MonsterCard', () => {
     challengeRating: 1,
     size: 'Small',
     alignment: 'Chaotic Evil',
-    abilities: {
+    stats: {
       strength: 8,
       dexterity: 14,
       constitution: 10,

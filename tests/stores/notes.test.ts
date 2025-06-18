@@ -27,7 +27,7 @@ describe('Note Store', () => {
     };
     const result = store.createNote(note);
     expect(result.id).toBe('test-uuid-999');
-    expect(store.notes.value).toContainEqual(result);
+    expect(store.items.value).toContainEqual(result);
   });
 
   it('updates a note', () => {
@@ -42,8 +42,8 @@ describe('Note Store', () => {
       updatedAt: 0
     });
     store.updateNote(note.id, { ...note, title: 'New', content: 'New content' });
-    expect(store.notes.value[0].title).toBe('New');
-    expect(store.notes.value[0].content).toBe('New content');
+    expect(store.items.value[0].title).toBe('New');
+    expect(store.items.value[0].content).toBe('New content');
   });
 
   it('deletes a note', () => {
@@ -58,7 +58,7 @@ describe('Note Store', () => {
       updatedAt: 0
     });
     store.deleteNote(note.id);
-    expect(store.notes.value).not.toContainEqual(note);
+    expect(store.items.value).not.toContainEqual(note);
   });
 
   it('gets a note by id', () => {
@@ -85,7 +85,7 @@ describe('Note Store', () => {
     const store = useNoteStore();
     store.createNote({
       title: 'A', content: 'A', typeId: 't', tags: [], moduleId: 'm', createdAt: 0, updatedAt: 0 });
-    expect(store.filteredNotes.value.length).toBe(store.notes.value.length);
+    expect(store.filteredNotes.value.length).toBe(store.items.value.length);
   });
 
   it('allTags returns all unique tags', () => {

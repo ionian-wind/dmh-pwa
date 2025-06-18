@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Encounter } from '@/types';
 import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/storage';
 import { useModuleStore } from './modules';
@@ -19,7 +19,8 @@ const isEncounter = (value: unknown): value is Encounter => {
 };
 
 export const useEncounterStore = defineStore('encounters', () => {
-  const encounters = useStorage<Encounter[]>({
+  // State
+  const items = useStorage<Encounter[]>({
     key: 'dnd-encounters',
     defaultValue: [],
     validate: (data): data is Encounter[] => 
@@ -30,130 +31,99 @@ export const useEncounterStore = defineStore('encounters', () => {
         ])
       )
   });
+  const currentEncounterId = ref<string | null>(null);
 
-  const currentEncounterId = useStorage<string | null>({
-    key: 'dnd-current-encounter',
-    defaultValue: null
-  });
-
+  // Computed
   const currentEncounter = computed(() => {
     if (!currentEncounterId.value) return null;
-    return encounters.value.find(e => e.id === currentEncounterId.value) || null;
+    return items.value.find(e => e.id === currentEncounterId.value) || null;
+  });
+  const filteredEncounters = computed(() => {
+    const moduleStore = useModuleStore();
+    return items.value.filter(e => moduleStore.matchesModuleFilter(e.moduleId));
   });
 
-  const addEncounter = (encounter: Omit<Encounter, 'id'>) => {
-    // Ensure encounter has a moduleId
+  // CRUD
+  const createEncounter = (encounter: Omit<Encounter, 'id'>) => {
     if (!encounter.moduleId) {
       throw new Error('Encounter must be associated with a module');
     }
-    
     const newEncounter: Encounter = {
       ...encounter,
       id: generateId(),
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-    encounters.value.push(newEncounter);
+    items.value.push(newEncounter);
     return newEncounter;
   };
-
-  const createEncounter = addEncounter;
-
   const updateEncounter = (id: string, encounter: Omit<Encounter, 'id'>) => {
-    const index = encounters.value.findIndex(e => e.id === id);
+    const index = items.value.findIndex(e => e.id === id);
     if (index !== -1) {
-      encounters.value[index] = {
+      items.value[index] = {
         ...encounter,
         id,
-        createdAt: encounters.value[index].createdAt,
+        createdAt: items.value[index].createdAt,
         updatedAt: Date.now()
       };
     }
   };
-
   const deleteEncounter = (id: string) => {
-    encounters.value = encounters.value.filter(e => e.id !== id);
-    if (currentEncounterId.value === id) {
-      currentEncounterId.value = null;
-    }
+    items.value = items.value.filter(e => e.id !== id);
+    if (currentEncounterId.value === id) currentEncounterId.value = null;
   };
+  const getEncounterById = (id: string) => items.value.find(e => e.id === id) || null;
+  const loadEncounters = async () => items.value;
 
-  const setCurrentEncounter = (id: string | null) => {
-    currentEncounterId.value = id;
-  };
-
-  const getEncounter = (id: string) => {
-    return encounters.value.find(e => e.id === id) || null;
-  };
-
-  const getEncounterById = getEncounter;
-
-  const filteredEncounters = computed(() => {
-    const moduleStore = useModuleStore();
-    return encounters.value.filter(e => moduleStore.matchesModuleFilter(e.moduleId));
-  });
-
+  // Monster/turn helpers (legacy)
   const addMonster = (encounterId: string, monsterId: string, count: number = 1) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter) return;
-
     if (!encounter.monsters) {
       encounter.monsters = {};
     }
-
     if (!encounter.monsters[monsterId]) {
       encounter.monsters[monsterId] = count;
       encounter.updatedAt = Date.now();
     }
   };
-
   const removeMonster = (encounterId: string, monsterId: string) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter) return;
-
     if (!encounter.monsters) {
       encounter.monsters = {};
     }
-
     encounter.monsters = Object.fromEntries(Object.entries(encounter.monsters).filter(([key]) => key !== monsterId));
     encounter.updatedAt = Date.now();
   };
-
   const setMonsterCount = (encounterId: string, monsterId: string, count: number) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter) return;
-
     if (!encounter.monsters) {
       encounter.monsters = {};
     }
-
     if (count <= 0) {
       removeMonster(encounterId, monsterId);
     } else {
-      encounter.monsters[monsterId] = Math.min(count, 20); // Cap at 20
+      encounter.monsters[monsterId] = Math.min(count, 20);
       encounter.updatedAt = Date.now();
     }
   };
-
   const getMonsterCount = (encounterId: string, monsterId: string): number => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter || !encounter.monsters) return 0;
     return encounter.monsters[monsterId] || 0;
   };
-
   const updateTurn = (encounterId: string, round: number, turn: number) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter) return;
-
     encounter.currentRound = round;
     encounter.currentTurn = turn;
     encounter.updatedAt = Date.now();
   };
-
   const nextTurn = (encounterId: string) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter || !encounter.monsters) return;
-
     encounter.currentTurn++;
     if (encounter.currentTurn >= Object.keys(encounter.monsters).length) {
       encounter.currentTurn = 0;
@@ -161,11 +131,9 @@ export const useEncounterStore = defineStore('encounters', () => {
     }
     encounter.updatedAt = Date.now();
   };
-
   const previousTurn = (encounterId: string) => {
-    const encounter = encounters.value.find(e => e.id === encounterId);
+    const encounter = items.value.find(e => e.id === encounterId);
     if (!encounter || !encounter.monsters) return;
-
     encounter.currentTurn--;
     if (encounter.currentTurn < 0) {
       if (encounter.currentRound > 1) {
@@ -177,30 +145,26 @@ export const useEncounterStore = defineStore('encounters', () => {
     }
     encounter.updatedAt = Date.now();
   };
-
   const saveEncounters = () => {
-    // This method is called to ensure encounters are saved to storage
-    // The useStorage hook automatically handles persistence
-    encounters.value = [...encounters.value];
+    items.value = [...items.value];
   };
 
-  const loadEncounters = async () => {
-    // Encounters are automatically loaded by useStorage
-    return encounters.value;
-  };
+  // Legacy aliases
+  const encounters = items;
+  const addEncounter = createEncounter;
+  const getEncounter = getEncounterById;
 
   return {
-    encounters,
+    items,
     currentEncounterId,
     currentEncounter,
     filteredEncounters,
-    addEncounter,
     createEncounter,
     updateEncounter,
     deleteEncounter,
-    setCurrentEncounter,
-    getEncounter,
     getEncounterById,
+    loadEncounters,
+    // Monster/turn helpers
     addMonster,
     removeMonster,
     setMonsterCount,
@@ -209,6 +173,9 @@ export const useEncounterStore = defineStore('encounters', () => {
     nextTurn,
     previousTurn,
     saveEncounters,
-    loadEncounters
+    // Legacy aliases
+    encounters,
+    addEncounter,
+    getEncounter,
   };
 });

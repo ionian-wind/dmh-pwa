@@ -1,5 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia';
-import { useEncounterStore } from '@/stores/encounters';
+import { useEncounterStore } from '../../src/stores/encounters';
 jest.mock('@/utils/storage', () => ({
   useStorage: jest.fn(() => ({ value: [] })),
   generateId: jest.fn(() => 'test-uuid-enc')
@@ -91,5 +91,39 @@ describe('Encounter Store', () => {
     store.previousTurn(enc.id);
     expect(store.getEncounterById(enc.id)?.currentTurn).toBe(1);
     expect(store.getEncounterById(enc.id)?.currentRound).toBe(2);
+  });
+
+  it('currentEncounterId and currentEncounter work as expected', () => {
+    const store = useEncounterStore();
+    const enc = store.addEncounter({ name: 'Cur', difficulty: 'Easy', monsters: {}, level: 1, xp: 0, moduleId: 'mod-1', currentRound: 1, currentTurn: 0, description: '', createdAt: 0, updatedAt: 0 });
+    store.currentEncounterId = enc.id;
+    expect(store.currentEncounterId).toBe(enc.id);
+    expect(store.currentEncounter).toBe(null); // Because useStorage is mocked as empty
+    store.currentEncounterId = null;
+    expect(store.currentEncounter).toBe(null);
+  });
+
+  it('loadEncounters returns items', async () => {
+    const store = useEncounterStore();
+    const enc = store.addEncounter({ name: 'Load', difficulty: 'Easy', monsters: {}, level: 1, xp: 0, moduleId: 'mod-1', currentRound: 1, currentTurn: 0, description: '', createdAt: 0, updatedAt: 0 });
+    const encounters = await store.loadEncounters();
+    expect(encounters).toContainEqual(enc);
+  });
+
+  it('saveEncounters triggers shallow copy', () => {
+    const store = useEncounterStore();
+    const enc = store.addEncounter({ name: 'Save', difficulty: 'Easy', monsters: {}, level: 1, xp: 0, moduleId: 'mod-1', currentRound: 1, currentTurn: 0, description: '', createdAt: 0, updatedAt: 0 });
+    const oldArray = store.encounters.value;
+    store.saveEncounters();
+    expect(store.encounters.value).not.toBe(oldArray); // Should be a new array instance
+    expect(store.encounters.value).toContainEqual(enc);
+  });
+
+  it('deleting the currently selected encounter resets currentEncounterId to null', () => {
+    const store = useEncounterStore();
+    const enc = store.addEncounter({ name: 'DelCur', difficulty: 'Easy', monsters: {}, level: 1, xp: 0, moduleId: 'mod-1', currentRound: 1, currentTurn: 0, description: '', createdAt: 0, updatedAt: 0 });
+    store.currentEncounterId = enc.id;
+    store.deleteEncounter(enc.id);
+    expect(store.currentEncounterId).toBe(null);
   });
 }); 

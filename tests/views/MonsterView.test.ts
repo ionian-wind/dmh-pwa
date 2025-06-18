@@ -13,7 +13,7 @@ jest.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({
     loadMonsters: jest.fn(),
     monsters: [
-      { id: 'm1', name: 'Goblin', type: 'Humanoid', size: 'Small', alignment: 'Chaotic Evil', challengeRating: 1, armorClass: 13, hitPoints: 7, speed: { walk: 30 }, abilities: { strength: 8, dexterity: 14, constitution: 10, intelligence: 10, wisdom: 8, charisma: 8 }, savingThrows: {}, skills: {}, damageVulnerabilities: [], damageResistances: [], damageImmunities: [], conditionImmunities: [], senses: [], languages: ['Common'], xp: 50, specialAbilities: [], actions: [], legendaryActions: [], description: '', moduleId: 'mod-1', createdAt: 0, updatedAt: 0 }
+      { id: 'm1', name: 'Goblin', type: 'Humanoid', size: 'Small', alignment: 'Chaotic Evil', challengeRating: 1, armorClass: 13, hitPoints: 7, speed: { walk: 30 }, stats: { strength: 8, dexterity: 14, constitution: 10, intelligence: 10, wisdom: 8, charisma: 8 }, savingThrows: {}, skills: {}, damageVulnerabilities: [], damageResistances: [], damageImmunities: [], conditionImmunities: [], senses: [], languages: ['Common'], xp: 50, specialAbilities: [], actions: [], legendaryActions: [], description: '', moduleId: 'mod-1', createdAt: 0, updatedAt: 0 }
     ],
     updateMonster: jest.fn(),
     deleteMonster: jest.fn()

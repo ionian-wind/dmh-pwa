@@ -30,7 +30,7 @@ onMounted(async () => {
 const addType = async () => {
   if (newType.value.name?.trim()) {
     try {
-      await noteTypeStore.addNoteType(newType.value as Omit<NoteType, 'id'>);
+      await noteTypeStore.createNoteType(newType.value as Omit<NoteType, 'id'>);
       newType.value = {
         name: '',
         description: '',
@@ -68,7 +68,7 @@ const removeType = async (id: string) => {
           {{ type.name }}
         </option>
       </select>
-      <Button size="small" class="add-type-btn" @click="showTypeEditor = true">+</Button>
+      <Button size="small" variant="link" @click="showTypeEditor = true">+</Button>
     </div>
 
     <div v-if="showTypeEditor" class="type-editor">

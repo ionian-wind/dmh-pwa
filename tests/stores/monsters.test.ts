@@ -42,28 +42,28 @@ describe('Monster Store', () => {
 
   it('creates a monster', () => {
     const store = useMonsterStore();
-    const result = store.addMonster(baseMonster);
+    const result = store.createMonster(baseMonster);
     expect(result.id).toBe('test-uuid-monster');
-    expect(store.monsters.value).toContainEqual(result);
+    expect(store.items.value).toContainEqual(result);
   });
 
   it('updates a monster', () => {
     const store = useMonsterStore();
-    const monster = store.addMonster(baseMonster);
+    const monster = store.createMonster(baseMonster);
     store.updateMonster(monster.id, { ...baseMonster, name: 'Orc' });
-    expect(store.monsters.value[0].name).toBe('Orc');
+    expect(store.items.value[0].name).toBe('Orc');
   });
 
   it('deletes a monster', () => {
     const store = useMonsterStore();
-    const monster = store.addMonster(baseMonster);
+    const monster = store.createMonster(baseMonster);
     store.deleteMonster(monster.id);
-    expect(store.monsters.value).not.toContainEqual(monster);
+    expect(store.items.value).not.toContainEqual(monster);
   });
 
   it('gets monster by id', () => {
     const store = useMonsterStore();
-    const monster = store.addMonster(baseMonster);
+    const monster = store.createMonster(baseMonster);
     expect(store.getMonsterById(monster.id)).toEqual(monster);
   });
 
@@ -74,7 +74,7 @@ describe('Monster Store', () => {
 
   it('filteredMonsters returns all if filter always true', () => {
     const store = useMonsterStore();
-    store.addMonster(baseMonster);
-    expect(store.filteredMonsters.value.length).toBe(store.monsters.value.length);
+    store.createMonster(baseMonster);
+    expect(store.filteredMonsters.value.length).toBe(store.items.value.length);
   });
 }); 

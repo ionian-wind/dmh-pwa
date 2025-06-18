@@ -20,7 +20,7 @@ describe('Character Store', () => {
     setActivePinia(createPinia());
   });
 
-  it('adds a character', () => {
+  it('creates a character', () => {
     const store = useCharacterStore();
     const character = {
       name: 'Alice',
@@ -36,14 +36,14 @@ describe('Character Store', () => {
       proficiencies: [],
       equipment: []
     };
-    const result = store.add(character);
+    const result = store.createCharacter(character);
     expect(result.id).toBe('test-uuid-789');
-    expect(store.characters.value).toContainEqual(result);
+    expect(store.items.value).toContainEqual(result);
   });
 
   it('updates a character', () => {
     const store = useCharacterStore();
-    const char = store.add({
+    const char = store.createCharacter({
       name: 'Bob',
       level: 1,
       class: 'Fighter',
@@ -57,14 +57,14 @@ describe('Character Store', () => {
       proficiencies: [],
       equipment: []
     });
-    store.update(char.id, { name: 'Bob the Brave', level: 2 });
-    expect(store.characters.value[0].name).toBe('Bob the Brave');
-    expect(store.characters.value[0].level).toBe(2);
+    store.updateCharacter(char.id, { name: 'Bob the Brave', level: 2 });
+    expect(store.items.value[0].name).toBe('Bob the Brave');
+    expect(store.items.value[0].level).toBe(2);
   });
 
-  it('removes a character', () => {
+  it('deletes a character', () => {
     const store = useCharacterStore();
-    const char = store.add({
+    const char = store.createCharacter({
       name: 'Charlie',
       level: 1,
       class: 'Cleric',
@@ -78,13 +78,13 @@ describe('Character Store', () => {
       proficiencies: [],
       equipment: []
     });
-    store.remove(char.id);
-    expect(store.characters.value).not.toContainEqual(char);
+    store.deleteCharacter(char.id);
+    expect(store.items.value).not.toContainEqual(char);
   });
 
   it('gets a character by id', () => {
     const store = useCharacterStore();
-    const char = store.add({
+    const char = store.createCharacter({
       name: 'Dana',
       level: 3,
       class: 'Wizard',
@@ -98,18 +98,18 @@ describe('Character Store', () => {
       proficiencies: [],
       equipment: []
     });
-    const found = store.getById(char.id);
+    const found = store.getCharacterById(char.id);
     expect(found).toEqual(char);
   });
 
   it('returns null for non-existent character', () => {
     const store = useCharacterStore();
-    expect(store.getById('non-existent')).toBeNull();
+    expect(store.getCharacterById('non-existent')).toBeNull();
   });
 
   it('gets characters by party', () => {
     const store = useCharacterStore();
-    const char1 = store.add({
+    const char1 = store.createCharacter({
       name: 'Eve',
       level: 1,
       class: 'Bard',
@@ -124,7 +124,7 @@ describe('Character Store', () => {
       proficiencies: [],
       equipment: []
     });
-    const char2 = store.add({
+    const char2 = store.createCharacter({
       name: 'Frank',
       level: 1,
       class: 'Paladin',
@@ -139,14 +139,14 @@ describe('Character Store', () => {
       proficiencies: [],
       equipment: []
     });
-    const result = store.getByParty('party-1');
+    const result = store.filteredCharacters('party-1').value;
     expect(result).toContainEqual(char1);
     expect(result).toContainEqual(char2);
   });
 
   it('setParty updates partyId', () => {
     const store = useCharacterStore();
-    const char = store.add({
+    const char = store.createCharacter({
       name: 'Gina',
       level: 1,
       class: 'Druid',
@@ -161,6 +161,6 @@ describe('Character Store', () => {
       equipment: []
     });
     store.setParty(char.id, 'party-2');
-    expect(store.getById(char.id)?.partyId).toBe('party-2');
+    expect(store.getCharacterById(char.id)?.partyId).toBe('party-2');
   });
 }); 

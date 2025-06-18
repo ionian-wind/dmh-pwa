@@ -30,7 +30,7 @@ describe('MonsterEditor', () => {
     armorClass: 13,
     hitPoints: 7,
     speed: { walk: 30 },
-    abilities: {
+    stats: {
       strength: 8,
       dexterity: 14,
       constitution: 10,

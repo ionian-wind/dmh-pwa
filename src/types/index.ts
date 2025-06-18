@@ -53,39 +53,6 @@ export interface NoteTypeField {
   defaultValue?: unknown;
 }
 
-export interface PlayerCharacter extends WithMetadata {
-  name: string;
-  level: number;
-  class: string;
-  race: string;
-  playerName: string;
-  alignment?: string;
-  background?: string;
-  stats: {
-    strength: number;
-    dexterity: number;
-    constitution: number;
-    intelligence: number;
-    wisdom: number;
-    charisma: number;
-  };
-  hitPoints: {
-    maximum: number;
-    current: number;
-    temporary?: number;
-  };
-  armorClass: number;
-  initiative: number;
-  speed: number;
-  proficiencies: string[];
-  equipment: string[];
-  spells?: string[];
-  features?: string[];
-  notes?: string;
-  moduleId?: UUID | null;
-  partyId?: UUID | null;
-}
-
 export interface Party extends WithMetadata {
   name: string;
   description?: string;
@@ -94,13 +61,47 @@ export interface Party extends WithMetadata {
   moduleIds: UUID[];
 }
 
-export interface Monster extends WithMetadata {
+// Common base for PlayerCharacter and Monster
+export interface Character extends WithMetadata {
   name: string;
+  alignment?: string;
+  armorClass: number;
+  notes?: string;
+  stats: {
+    strength: number;
+    dexterity: number;
+    constitution: number;
+    intelligence: number;
+    wisdom: number;
+    charisma: number;
+  };
+}
+
+export interface PlayerCharacter extends Character {
+  level: number;
+  class: string;
+  race: string;
+  playerName: string;
+  background?: string;
+  hitPoints: {
+    maximum: number;
+    current: number;
+    temporary?: number;
+  };
+  initiative: number;
+  speed: number;
+  proficiencies: string[];
+  equipment: string[];
+  spells?: string[];
+  features?: string[];
+  partyId?: UUID | null;
+}
+
+export interface Monster extends Character {
   type: string;
   description: string;
   size: string;
   alignment: string;
-  armorClass: number;
   hitPoints: number;
   speed: {
     walk?: number;
@@ -130,17 +131,15 @@ export interface Monster extends WithMetadata {
   traits?: string[];
   actions: string[];
   legendaryActions?: string[];
-  notes?: string;
-  moduleId: UUID;
-
-  abilities: {
+  moduleIds?: UUID[];
+  stats: {
     strength: number;
     dexterity: number;
     constitution: number;
     intelligence: number;
     wisdom: number;
-    charisma: number;  
-    },
+    charisma: number;
+  };
 }
 
 export interface Combatant extends WithMetadata {

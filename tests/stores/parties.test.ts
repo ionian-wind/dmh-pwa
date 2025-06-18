@@ -22,30 +22,30 @@ describe('Party Store', () => {
       createdAt: 0,
       updatedAt: 0
     };
-    const result = store.addParty(party);
+    const result = store.createParty(party);
     expect(result.id).toBe('test-uuid-555');
-    expect(store.parties.value).toContainEqual(result);
+    expect(store.items.value).toContainEqual(result);
   });
 
   it('updates a party', () => {
     const store = usePartyStore();
-    const party = store.addParty({
+    const party = store.createParty({
       name: 'Old', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
     store.updateParty(party.id, { name: 'New', description: 'Desc', characters: [], moduleIds: [] });
-    expect(store.parties.value[0].name).toBe('New');
-    expect(store.parties.value[0].description).toBe('Desc');
+    expect(store.items.value[0].name).toBe('New');
+    expect(store.items.value[0].description).toBe('Desc');
   });
 
   it('deletes a party', () => {
     const store = usePartyStore();
-    const party = store.addParty({ name: 'Delete', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
+    const party = store.createParty({ name: 'Delete', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
     store.deleteParty(party.id);
-    expect(store.parties.value).not.toContainEqual(party);
+    expect(store.items.value).not.toContainEqual(party);
   });
 
   it('gets a party by id', () => {
     const store = usePartyStore();
-    const party = store.addParty({ name: 'Find', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
+    const party = store.createParty({ name: 'Find', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
     const found = store.getPartyById(party.id);
     expect(found).toEqual(party);
   });
@@ -57,13 +57,13 @@ describe('Party Store', () => {
 
   it('filteredParties returns all if filter always true', () => {
     const store = usePartyStore();
-    store.addParty({ name: 'A', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
-    expect(store.filteredParties.value.length).toBe(store.parties.value.length);
+    store.createParty({ name: 'A', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
+    expect(store.filteredParties.value.length).toBe(store.items.value.length);
   });
 
   it('addCharacterToParty and removeCharacterFromParty work', () => {
     const store = usePartyStore();
-    const party = store.addParty({ name: 'P', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
+    const party = store.createParty({ name: 'P', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
     store.addCharacterToParty(party.id, 'char-1');
     expect(store.getPartyById(party.id)?.characters).toContain('char-1');
     store.removeCharacterFromParty(party.id, 'char-1');

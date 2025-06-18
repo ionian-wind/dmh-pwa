@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import type { Monster } from '@/types';
-import ModuleSelector from "@/components/ModuleSelector.vue";
+import ModuleMultipleSelector from "@/components/ModuleMultipleSelector.vue";
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
 
@@ -35,7 +35,7 @@ const editedMonster = ref<Monster>({
     burrow: 0,
     climb: 0
   },
-  abilities: {
+  stats: {
     strength: 10,
     dexterity: 10,
     constitution: 10,
@@ -57,7 +57,7 @@ const editedMonster = ref<Monster>({
   actions: [],
   legendaryActions: [],
   description: '',
-  moduleId: '',
+  moduleIds: [],
   createdAt: Date.now(),
   updatedAt: Date.now()
 });
@@ -86,7 +86,7 @@ const resetForm = () => {
       burrow: 0,
       climb: 0
     },
-    abilities: {
+    stats: {
       strength: 10,
       dexterity: 10,
       constitution: 10,
@@ -108,7 +108,7 @@ const resetForm = () => {
     actions: [],
     legendaryActions: [],
     description: '',
-    moduleId: '',
+    moduleIds: [],
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -120,13 +120,7 @@ const saveMonster = async () => {
     return;
   }
 
-  // Prepare the monster data with the correct moduleId
-  const monsterData = {
-    ...editedMonster.value,
-    moduleId: moduleStore.currentModule?.id || ''
-  };
-
-  emit('submit', monsterData);
+  emit('submit', { ...editedMonster.value });
   closeEditor();
 };
 
@@ -134,6 +128,15 @@ const closeEditor = () => {
   resetForm();
   emit('cancel');
 };
+
+const moduleIdsProxy = computed<string[]>({
+  get() {
+    return editedMonster.value.moduleIds ?? [];
+  },
+  set(val) {
+    editedMonster.value.moduleIds = val;
+  }
+});
 </script>
 
 <template>
@@ -148,10 +151,10 @@ const closeEditor = () => {
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <label>Module</label>
-      <ModuleSelector
-        v-model="editedMonster.moduleId"
-        placeholder="No Module"
+      <label>Modules</label>
+      <ModuleMultipleSelector
+        v-model="moduleIdsProxy"
+        placeholder="No Modules"
       />
     </div>
     <div class="form-section">

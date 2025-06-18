@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { withDefaults } from 'vue';
 import Button from '@/components/common/Button.vue';
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   modelValue: string[];
   placeholder?: string;
-}>(), {
-  modelValue: () => [],
-  placeholder: 'Add tag'
-});
+}>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string[]): void;
@@ -40,13 +36,13 @@ const removeTag = (index: number) => {
         :placeholder="placeholder || 'Add tag'"
         @keydown.enter.prevent="addTag"
       >
-      <Button size="small" @click.prevent="addTag">+</Button>
+      <Button size="small" variant="link" @click.prevent="addTag">+</Button>
     </div>
 
     <div class="tags-list">
       <span v-for="(tag, index) in modelValue" :key="index" class="tag">
         {{ tag }}
-        <Button size="small" variant="danger" @click="removeTag(index)">×</Button>
+        <Button size="small" variant="link" @click="removeTag(index)">×</Button>
       </span>
     </div>
   </div>

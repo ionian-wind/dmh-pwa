@@ -102,27 +102,29 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="isOpen" class="modal">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h2>{{ title }}</h2>
+  <Transition name="modal-fade">
+    <div v-if="isOpen" class="modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2>{{ title }}</h2>
+        </div>
+        <form @submit.prevent="emit('submit')" class="modal-form">
+          <div class="modal-scrollable">
+            <slot />
+          </div>
+          <div v-if="$slots.actions || showSubmit || showCancel" class="modal-actions">
+            <Button v-if="showCancel" variant="secondary" @click="emit('cancel')">
+              {{ cancelLabel || 'Cancel' }}
+            </Button>
+            <Button v-if="showSubmit" variant="primary" type="submit">
+              {{ submitLabel || 'Save' }}
+            </Button>
+            <slot name="actions" />
+          </div>
+        </form>
       </div>
-      <form @submit.prevent="emit('submit')" class="modal-form">
-        <div class="modal-scrollable">
-          <slot />
-        </div>
-        <div v-if="$slots.actions || showSubmit || showCancel" class="modal-actions">
-          <Button v-if="showCancel" variant="secondary" @click="emit('cancel')">
-            {{ cancelLabel || 'Cancel' }}
-          </Button>
-          <Button v-if="showSubmit" variant="primary" type="submit">
-            {{ submitLabel || 'Save' }}
-          </Button>
-          <slot name="actions" />
-        </div>
-      </form>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -186,7 +188,7 @@ onUnmounted(() => {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  margin-top: 2rem;
+  margin-top: 0.5rem;
   padding: 1.5rem 2rem 2rem 2rem;
   background: var(--color-background);
   border-bottom-left-radius: var(--border-radius);
@@ -220,5 +222,40 @@ onUnmounted(() => {
 
 .cancel-btn:hover {
   background: var(--color-background-mute);
+}
+
+/* Modal open/close animation */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+.modal-fade-enter-to,
+.modal-fade-leave-from {
+  opacity: 1;
+}
+
+.modal-fade-enter-active .modal-dialog,
+.modal-fade-leave-active .modal-dialog {
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), opacity 0.25s cubic-bezier(.4,0,.2,1);
+}
+.modal-fade-enter-from .modal-dialog {
+  transform: scale(0.96);
+  opacity: 0;
+}
+.modal-fade-enter-to .modal-dialog {
+  transform: scale(1);
+  opacity: 1;
+}
+.modal-fade-leave-from .modal-dialog {
+  transform: scale(1);
+  opacity: 1;
+}
+.modal-fade-leave-to .modal-dialog {
+  transform: scale(0.96);
+  opacity: 0;
 }
 </style> 

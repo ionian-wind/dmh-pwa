@@ -1,5 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia';
-import { useNoteTypeStore } from '@/stores/noteTypes';
+import { useNoteTypeStore } from '../../src/stores/noteTypes';
 jest.mock('@/utils/storage', () => ({
   useStorage: jest.fn(() => ({ value: [] })),
   generateId: jest.fn(() => 'test-uuid-type')
@@ -50,5 +50,23 @@ describe('NoteType Store', () => {
     store.addNoteType({ name: 'A', description: '', color: '#fff', icon: '', fields: [], createdAt: 0, updatedAt: 0 });
     const types = await store.loadNoteTypes();
     expect(types.length).toBe(store.noteTypes.value.length);
+  });
+
+  it('setCurrentType sets and clears currentTypeId and currentType', () => {
+    const store = useNoteTypeStore();
+    const type = store.addNoteType({ name: 'A', description: '', color: '#fff', icon: '', fields: [], createdAt: 0, updatedAt: 0 });
+    store.setCurrentType(type.id);
+    expect(store.currentTypeId).toBe(type.id);
+    expect(store.currentType).toBe(null); // Because useStorage is mocked as empty
+    store.setCurrentType(null);
+    expect(store.currentTypeId).toBe(null);
+  });
+
+  it('deleting the currently selected type resets currentTypeId to null', () => {
+    const store = useNoteTypeStore();
+    const type = store.addNoteType({ name: 'B', description: '', color: '#fff', icon: '', fields: [], createdAt: 0, updatedAt: 0 });
+    store.setCurrentType(type.id);
+    store.deleteNoteType(type.id);
+    expect(store.currentTypeId).toBe(null);
   });
 }); 

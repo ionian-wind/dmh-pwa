@@ -2,7 +2,7 @@
 import type { Encounter } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';;
 import { useRouter } from 'vue-router';
-import { defineProps, defineEmits, computed } from 'vue';
+import { computed } from 'vue';
 import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 

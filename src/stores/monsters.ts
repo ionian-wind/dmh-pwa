@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Monster } from '@/types';
 import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/storage';
 import { useModuleStore } from './modules';
@@ -9,7 +9,8 @@ import {registerValidationSchema} from "@/utils/schemaValidator";
 registerValidationSchema('monster', monsterSchema);
 
 const isMonster = (value: unknown): value is Monster => {
-  return typeof value === 'object' && value !== null &&
+  return (
+    typeof value === 'object' && value !== null &&
     typeof (value as any).name === 'string' &&
     typeof (value as any).type === 'string' &&
     typeof (value as any).size === 'string' &&
@@ -17,105 +18,95 @@ const isMonster = (value: unknown): value is Monster => {
     typeof (value as any).armorClass === 'number' &&
     typeof (value as any).hitPoints === 'number' &&
     typeof (value as any).speed === 'object' &&
-    typeof (value as any).abilities === 'object' &&
+    typeof (value as any).stats === 'object' &&
     Array.isArray((value as any).senses) &&
     Array.isArray((value as any).languages) &&
     typeof (value as any).challengeRating === 'number' &&
     typeof (value as any).xp === 'number' &&
     Array.isArray((value as any).actions) &&
-    typeof (value as any).moduleId === 'string';
+    (typeof (value as any).moduleId === 'string' || typeof (value as any).moduleId === 'undefined' || (value as any).moduleId === null)
+  );
 };
 
 export const useMonsterStore = defineStore('monsters', () => {
-  const monsters = useStorage<Monster[]>({
+  // State
+  const items = useStorage<Monster[]>({
     key: 'dnd-monsters',
     defaultValue: [],
     validate: (data): data is Monster[] => 
       isArray(data) && data.every(monster => 
         isMonster(monster) && hasRequiredFields(monster as Monster, [
           'id', 'name', 'type', 'size', 'alignment', 'armorClass', 'hitPoints',
-          'speed', 'abilities', 'senses', 'languages', 'challengeRating', 'xp',
-          'actions', 'moduleId', 'createdAt', 'updatedAt'
+          'speed', 'stats', 'senses', 'languages', 'challengeRating', 'xp',
+          'actions', 'createdAt', 'updatedAt'
         ])
       )
   });
+  const currentMonsterId = ref<string | null>(null);
 
-  const currentMonsterId = useStorage<string | null>({
-    key: 'dnd-current-monster',
-    defaultValue: null
-  });
-
+  // Computed
   const currentMonster = computed(() => {
     if (!currentMonsterId.value) return null;
-    return monsters.value.find(m => m.id === currentMonsterId.value) || null;
+    return items.value.find(m => m.id === currentMonsterId.value) || null;
+  });
+  const filteredMonsters = computed(() => {
+    const moduleStore = useModuleStore();
+    return items.value.filter(m => moduleStore.matchesModuleFilterMultiple(m.moduleIds));
   });
 
-  const addMonster = (monster: Omit<Monster, 'id'>) => {
+  // CRUD
+  const createMonster = (monster: Omit<Monster, 'id'>) => {
     const newMonster: Monster = {
       ...monster,
       id: generateId(),
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-    monsters.value.push(newMonster);
+    items.value.push(newMonster);
     return newMonster;
   };
-
-  // Alias for addMonster to maintain compatibility
-  const createMonster = addMonster;
-
   const updateMonster = (id: string, monster: Omit<Monster, 'id'>) => {
-    const index = monsters.value.findIndex(m => m.id === id);
+    const index = items.value.findIndex(m => m.id === id);
     if (index !== -1) {
-      monsters.value[index] = {
+      items.value[index] = {
         ...monster,
         id,
-        createdAt: monsters.value[index].createdAt,
+        createdAt: items.value[index].createdAt,
         updatedAt: Date.now()
       };
     }
   };
-
   const deleteMonster = (id: string) => {
-    monsters.value = monsters.value.filter(m => m.id !== id);
-    if (currentMonsterId.value === id) {
-      currentMonsterId.value = null;
-    }
+    items.value = items.value.filter(m => m.id !== id);
+    if (currentMonsterId.value === id) currentMonsterId.value = null;
   };
+  const getMonsterById = (id: string) => items.value.find(m => m.id === id) || null;
+  const loadMonsters = async () => items.value;
 
+  // Helpers
   const setCurrentMonster = (id: string | null) => {
     currentMonsterId.value = id;
   };
 
-  const getMonster = (id: string) => {
-    return monsters.value.find(m => m.id === id) || null;
-  };
-
-  // Alias for getMonster to maintain compatibility
-  const getMonsterById = getMonster;
-
-  const loadMonsters = async () => {
-    // Monsters are automatically loaded by useStorage
-    return monsters.value;
-  };
-
-  const filteredMonsters = computed(() => {
-    const moduleStore = useModuleStore();
-    return monsters.value.filter(m => moduleStore.matchesModuleFilter(m.moduleId));
-  });
+  // Legacy aliases
+  const monsters = items;
+  const addMonster = createMonster;
+  const getMonster = getMonsterById;
 
   return {
-    monsters,
+    items,
     currentMonsterId,
     currentMonster,
     filteredMonsters,
-    addMonster,
     createMonster,
     updateMonster,
     deleteMonster,
-    setCurrentMonster,
-    getMonster,
     getMonsterById,
-    loadMonsters
+    loadMonsters,
+    setCurrentMonster,
+    // Legacy aliases
+    monsters,
+    addMonster,
+    getMonster,
   };
 });

@@ -11,12 +11,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['view', 'edit', 'delete', 'add-to-encounter']);
 
-const moduleStore = useModuleStore();
-
-const moduleName = computed(() => {
-  return moduleStore.getModuleName?.(props.monster.moduleId) || 'Unknown Module';
-});
-
 const abilityModifier = (score: number) => {
   return Math.floor((score - 10) / 2);
 };
@@ -26,12 +20,12 @@ const formatModifier = (modifier: number) => {
 };
 
 const stats = computed(() => [
-  { name: 'STR', value: props.monster.abilities.strength },
-  { name: 'DEX', value: props.monster.abilities.dexterity },
-  { name: 'CON', value: props.monster.abilities.constitution },
-  { name: 'INT', value: props.monster.abilities.intelligence },
-  { name: 'WIS', value: props.monster.abilities.wisdom },
-  { name: 'CHA', value: props.monster.abilities.charisma }
+  { name: 'STR', value: props.monster.stats.strength },
+  { name: 'DEX', value: props.monster.stats.dexterity },
+  { name: 'CON', value: props.monster.stats.constitution },
+  { name: 'INT', value: props.monster.stats.intelligence },
+  { name: 'WIS', value: props.monster.stats.wisdom },
+  { name: 'CHA', value: props.monster.stats.charisma }
 ]);
 
 const handleView = () => emit('view', props.monster);
@@ -81,10 +75,6 @@ const handleDelete = () => emit('delete', props.monster.id);
         <span class="detail-label">XP:</span>
         <span class="detail-value">{{ monster.xp }}</span>
       </div>
-    </div>
-    <div class="monster-module">
-      <span class="module-label">Module:</span>
-      <span class="module-value">{{ moduleName }}</span>
     </div>
   </BaseCard>
 </template>
@@ -150,20 +140,6 @@ const handleDelete = () => emit('delete', props.monster.id);
   margin-bottom: 0.25rem;
 }
 .detail-value {
-  font-size: 1rem;
-  font-weight: bold;
-  color: #333;
-}
-.monster-module {
-  text-align: center;
-  margin-top: 1rem;
-}
-.module-label {
-  font-size: 0.8rem;
-  color: #666;
-  margin-right: 0.5rem;
-}
-.module-value {
   font-size: 1rem;
   font-weight: bold;
   color: #333;

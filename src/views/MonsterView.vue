@@ -109,7 +109,7 @@ const monsterSubtitle = computed(() => {
         <section class="sheet-section ability-scores">
           <h2>Ability Scores</h2>
           <div class="ability-grid">
-            <div v-for="(score, ability) in monster.abilities" :key="ability" class="ability-score">
+            <div v-for="(score, ability) in monster.stats" :key="ability" class="ability-score">
               <div class="ability-name">{{ ability.charAt(0).toUpperCase() + ability.slice(1) }}</div>
               <div class="ability-value">{{ score }}</div>
               <div class="ability-modifier">{{ formatModifier(abilityModifier(score)) }}</div>

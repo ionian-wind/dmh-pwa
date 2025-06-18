@@ -1,5 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia';
-import { useCombatStore } from '@/stores/combats';
+import { useCombatStore } from '../../src/stores/combats';
 jest.mock('@/utils/storage', () => ({
   useStorage: jest.fn(() => ({ value: [] })),
   generateId: jest.fn(() => 'test-uuid-combat')
@@ -103,5 +103,37 @@ describe('Combat Store', () => {
     expect(store.getCombatById(combat.id)?.currentTurn).toBe(0);
     expect(store.getCombatById(combat.id)?.combatants[0].hitPoints.current).toBe(10);
     expect(store.getCombatById(combat.id)?.combatants[0].conditions).toEqual([]);
+  });
+
+  it('currentCombatId and currentCombat work as expected', () => {
+    const store = useCombatStore();
+    const combat = store.addCombat({ encounterId: 'e2', partyId: 'p2', status: 'preparing', currentRound: 0, currentTurn: 0, combatants: [], createdAt: 0, updatedAt: 0 });
+    store.currentCombatId = combat.id;
+    expect(store.currentCombatId).toBe(combat.id);
+    expect(store.currentCombat).toBe(null); // Because useStorage is mocked as empty
+    store.currentCombatId = null;
+    expect(store.currentCombat).toBe(null);
+  });
+
+  it('loadCombats returns items', async () => {
+    const store = useCombatStore();
+    const combat = store.addCombat({ encounterId: 'e3', partyId: 'p3', status: 'preparing', currentRound: 0, currentTurn: 0, combatants: [], createdAt: 0, updatedAt: 0 });
+    const combats = await store.loadCombats();
+    expect(combats).toContainEqual(combat);
+  });
+
+  it('updateCombatStatus updates status directly', () => {
+    const store = useCombatStore();
+    const combat = store.addCombat({ encounterId: 'e4', partyId: 'p4', status: 'preparing', currentRound: 0, currentTurn: 0, combatants: [], createdAt: 0, updatedAt: 0 });
+    store.updateCombatStatus(combat.id, 'active');
+    expect(store.getCombatById(combat.id)?.status).toBe('active');
+  });
+
+  it('deleting the currently selected combat resets currentCombatId to null', () => {
+    const store = useCombatStore();
+    const combat = store.addCombat({ encounterId: 'e5', partyId: 'p5', status: 'preparing', currentRound: 0, currentTurn: 0, combatants: [], createdAt: 0, updatedAt: 0 });
+    store.currentCombatId = combat.id;
+    store.deleteCombat(combat.id);
+    expect(store.currentCombatId).toBe(null);
   });
 }); 

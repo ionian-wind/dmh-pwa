@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { PlayerCharacter, UUID } from '@/types';
 import { generateId, useStorage } from '@/utils/storage';
 import characterSchema from '@/schemas/character.schema.json';
@@ -8,23 +8,23 @@ import { registerValidationSchema } from '@/utils/schemaValidator';
 registerValidationSchema('character', characterSchema);
 
 export const useCharacterStore = defineStore('characters', () => {
-  const characters = useStorage<PlayerCharacter[]>({
+  // State
+  const items = useStorage<PlayerCharacter[]>({
     key: 'dnd-characters',
     defaultValue: [],
     schema: 'character',
   });
+  const currentCharacterId = ref<UUID | null>(null);
 
-  // List all characters
-  const all = computed(() => characters.value);
+  // Computed
+  const currentCharacter = computed(() => {
+    if (!currentCharacterId.value) return null;
+    return items.value.find(c => c.id === currentCharacterId.value) || null;
+  });
+  const filteredCharacters = (partyId: UUID) => computed(() => items.value.filter(c => c.partyId === partyId));
 
-  // Get character by id
-  const getById = (id: UUID) => characters.value.find(c => c.id === id) || null;
-
-  // Get characters by party
-  const getByParty = (partyId: UUID) => characters.value.filter(c => c.partyId === partyId);
-
-  // Add character
-  const add = (character: Omit<PlayerCharacter, 'id' | 'createdAt' | 'updatedAt'> & { partyId?: UUID | null }) => {
+  // CRUD
+  const createCharacter = (character: Omit<PlayerCharacter, 'id' | 'createdAt' | 'updatedAt'> & { partyId?: UUID | null }) => {
     const newChar: PlayerCharacter = {
       ...character,
       id: generateId(),
@@ -32,40 +32,56 @@ export const useCharacterStore = defineStore('characters', () => {
       updatedAt: Date.now(),
       partyId: character.partyId ?? null,
     };
-    characters.value.push(newChar);
+    items.value.push(newChar);
     return newChar;
   };
-
-  // Update character
-  const update = (id: UUID, character: Partial<PlayerCharacter>) => {
-    const idx = characters.value.findIndex(c => c.id === id);
+  const updateCharacter = (id: UUID, character: Partial<PlayerCharacter>) => {
+    const idx = items.value.findIndex(c => c.id === id);
     if (idx !== -1) {
-      characters.value[idx] = {
-        ...characters.value[idx],
+      items.value[idx] = {
+        ...items.value[idx],
         ...character,
         updatedAt: Date.now(),
       };
     }
   };
-
-  // Delete character
-  const remove = (id: UUID) => {
-    characters.value = characters.value.filter(c => c.id !== id);
+  const deleteCharacter = (id: UUID) => {
+    items.value = items.value.filter(c => c.id !== id);
+    if (currentCharacterId.value === id) currentCharacterId.value = null;
   };
+  const getCharacterById = (id: UUID) => items.value.find(c => c.id === id) || null;
+  const loadCharacters = async () => items.value;
 
-  // Link character to party
+  // Helpers
   const setParty = (id: UUID, partyId: UUID | null) => {
-    update(id, { partyId });
+    updateCharacter(id, { partyId });
   };
+
+  // Legacy aliases
+  const all = computed(() => items.value);
+  const getById = getCharacterById;
+  const getByParty = (partyId: UUID) => items.value.filter(c => c.partyId === partyId);
+  const add = createCharacter;
+  const update = updateCharacter;
+  const remove = deleteCharacter;
 
   return {
-    characters,
+    items,
+    currentCharacterId,
+    currentCharacter,
+    filteredCharacters,
+    createCharacter,
+    updateCharacter,
+    deleteCharacter,
+    getCharacterById,
+    loadCharacters,
+    setParty,
+    // Legacy aliases
     all,
     getById,
     getByParty,
     add,
     update,
     remove,
-    setParty,
   };
 });

@@ -1,5 +1,5 @@
 import { setActivePinia, createPinia } from 'pinia';
-import { useModuleStore } from '@/stores/modules';
+import { useModuleStore } from '../../src/stores/modules';
 jest.mock('@/utils/storage', () => ({
   useStorage: jest.fn(() => ({ value: [] })),
   generateId: jest.fn(() => 'test-uuid-123')
@@ -66,5 +66,42 @@ describe('Module Store', () => {
     expect(store.matchesModuleFilter('baz')).toBe(false);
     expect(store.matchesModuleFilterMultiple(['bar'])).toBe(true);
     expect(store.matchesModuleFilterMultiple(['baz'])).toBe(false);
+  });
+
+  it('setCurrentModule sets filter by id and resets to any when null', () => {
+    const store = useModuleStore();
+    const mod = store.addModule({ name: 'A', description: '', createdAt: 0, updatedAt: 0 });
+    store.setCurrentModule(mod.id);
+    expect(store.currentModuleFilter).toBe(mod.id);
+    expect(store.currentModule).toBe(null); // Because useStorage is mocked as empty
+    store.setCurrentModule(null);
+    expect(store.currentModuleFilter).toBe('any');
+  });
+
+  it('loadModules returns items', async () => {
+    const store = useModuleStore();
+    const mod = store.addModule({ name: 'B', description: '', createdAt: 0, updatedAt: 0 });
+    const modules = await store.loadModules();
+    expect(modules).toContainEqual(mod);
+  });
+
+  it('deleting the currently selected module resets filter to any and persists', () => {
+    const store = useModuleStore();
+    const mod = store.addModule({ name: 'C', description: '', createdAt: 0, updatedAt: 0 });
+    store.setCurrentModuleFilter(mod.id);
+    // Spy on localStorage.setItem
+    const setItemSpy = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    store.deleteModule(mod.id);
+    expect(store.currentModuleFilter).toBe('any');
+    expect(setItemSpy).toHaveBeenCalledWith('dnd-current-module-filter', 'any');
+    setItemSpy.mockRestore();
+  });
+
+  it('persists and restores module filter from localStorage', () => {
+    localStorage.setItem('dnd-current-module-filter', 'persisted-id');
+    const store = useModuleStore();
+    expect(store.currentModuleFilter).toBe('persisted-id');
+    store.setCurrentModuleFilter('new-id');
+    expect(localStorage.getItem('dnd-current-module-filter')).toBe('new-id');
   });
 }); 
