@@ -66,36 +66,14 @@ export const useModuleStore = defineStore('modules', () => {
     items.value = items.value.filter(m => m.id !== id);
     if (currentModuleFilter.value === id) {
       currentModuleFilter.value = 'any';
-      setStoredModuleFilter('any');
     }
   };
   const getModuleById = (id: string | null) => items.value.find(m => m.id === id) || null;
   const loadModules = async () => items.value;
 
-  // Module filter persistence
-  const getStoredModuleFilter = (): ModuleFilter => {
-    try {
-      const stored = localStorage.getItem('dnd-current-module-filter');
-      if (stored === null) return 'any';
-      return stored as ModuleFilter;
-    } catch (e) {
-      console.error('Error reading module filter from storage:', e);
-      return 'any';
-    }
-  };
-  const setStoredModuleFilter = (filter: ModuleFilter) => {
-    try {
-      localStorage.setItem('dnd-current-module-filter', filter || 'any');
-    } catch (e) {
-      console.error('Error saving module filter to storage:', e);
-    }
-  };
-  // Sync with localStorage
-  currentModuleFilter.value = getStoredModuleFilter();
-
+  // No persistence for module filter
   const setCurrentModuleFilter = (filter: ModuleFilter) => {
     currentModuleFilter.value = filter;
-    setStoredModuleFilter(filter);
   };
   const setCurrentModule = (id: string | null) => {
     if (id === null) {

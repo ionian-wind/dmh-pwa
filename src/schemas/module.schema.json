@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Module",
   "type": "object",
-  "required": ["id", "name", "type", "createdAt", "updatedAt"],
+  "required": ["id", "name", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
@@ -11,10 +11,6 @@
     "name": {
       "type": "string",
       "description": "Name of the module"
-    },
-    "type": {
-      "type": "string",
-      "description": "Type of the module"
     },
     "createdAt": {
       "type": "number",

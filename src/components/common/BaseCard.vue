@@ -3,7 +3,7 @@
     <div v-if="$slots.header" class="base-card-header">
       <slot name="header" />
     </div>
-    <div class="base-card-content">
+    <div v-if="hasContent" class="base-card-content">
       <slot />
     </div>
     <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 import Button from './Button.vue';
+import { computed, useSlots, Fragment, Comment } from 'vue';
 
 const props = defineProps({
   showView: { type: Boolean, default: false },
@@ -29,6 +30,25 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['view', 'edit', 'delete']);
+
+const slots = useSlots();
+
+function isVNodeContent(vnode: any): boolean {
+  if (vnode.type === Comment) return false;
+  if (typeof vnode.children === 'string') {
+    return vnode.children.trim().length > 0;
+  }
+  if (vnode.type === Fragment && Array.isArray(vnode.children)) {
+    return vnode.children.some(isVNodeContent);
+  }
+  // For other nodes (elements/components), treat as content
+  return true;
+}
+
+const hasContent = computed(() => {
+  const vnodes = slots.default ? slots.default() : [];
+  return vnodes.some(isVNodeContent);
+});
 </script>
 
 <style scoped>

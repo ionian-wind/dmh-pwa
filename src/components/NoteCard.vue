@@ -34,20 +34,22 @@ function toggleExpand() { expanded.value = !expanded.value; }
 <template>
   <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
     <template #header>
-        <h3>{{ note.title }}</h3>
-    </template>
-    <div :class="['note-card-content', { clamped: clamped && !expanded }]">
-      <div class="note-content" ref="contentRef" v-html="parseMarkdown(note.content)"></div>
-    </div>
-    <div class="note-card-footer">
+      <h3>{{ note.title }}</h3>
       <span v-if="moduleName" class="module-badge">{{ moduleName }}</span>
-      <div class="tags">
-        <span
-          v-for="tag in note.tags"
-          :key="tag"
-          class="tag clickable"
-          @click.stop="emit('tag-click', tag)"
-        >#{{ tag }}</span>
+    </template>
+    <div v-if="note.content?.length > 0 || note.tags?.length > 0">
+      <div :class="['note-card-content', { clamped: clamped && !expanded }]">
+        <div class="note-content" ref="contentRef" v-html="parseMarkdown(note.content)"></div>
+      </div>
+      <div class="note-card-footer">
+        <div class="tags">
+          <span
+            v-for="tag in note.tags"
+            :key="tag"
+            class="tag clickable"
+            @click.stop="emit('tag-click', tag)"
+          >#{{ tag }}</span>
+        </div>
       </div>
     </div>
     <template #actions>

@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getStorageInfo, clearStorage } from '@/utils/storage';
+import { getStorageInfo, clearStorage, getStorageKeys } from '@/utils/storage';
 import Button from '@/components/common/Button.vue';
 
 const storageInfo = ref({ size: 0, itemCount: 0 });
@@ -90,39 +90,49 @@ const isClearing = ref(false);
 const error = ref<string | null>(null);
 const storageContents = ref<Array<{ key: string; value: string; size: number }>>([]);
 
-const updateStorageInfo = () => {
-  try {
-    storageInfo.value = getStorageInfo();
-    error.value = null;
-    
-    // Get storage contents
-    storageContents.value = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          try {
-            // Try to format the JSON for better readability
-            const parsed = JSON.parse(value);
-            storageContents.value.push({
-              key,
-              value: JSON.stringify(parsed, null, 2),
-              size: value.length
-            });
-          } catch {
-            // If not valid JSON, store as is
-            storageContents.value.push({
-              key,
-              value,
-              size: value.length
-            });
-          }
-        }
+// Import idbGet from storage util (not exported, so redefine here)
+const DB_NAME = 'dmh-db';
+const STORE_NAME = 'keyval';
+async function idbGet<T>(key: string): Promise<T | undefined> {
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
       }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+const updateStorageInfo = async () => {
+  try {
+    storageInfo.value = await getStorageInfo();
+    error.value = null;
+    storageContents.value = [];
+    const keys = await getStorageKeys();
+    for (const key of keys) {
+      const value = await idbGet(key);
+      let strValue = '';
+      let size = 0;
+      try {
+        strValue = JSON.stringify(value, null, 2);
+        size = strValue.length;
+      } catch {
+        strValue = String(value);
+        size = strValue.length;
+      }
+      storageContents.value.push({ key, value: strValue, size });
     }
-    
-    // Sort by key name
     storageContents.value.sort((a, b) => a.key.localeCompare(b.key));
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to get storage info';
@@ -134,11 +144,10 @@ const handleClearStorage = async () => {
     showConfirmDialog.value = true;
     return;
   }
-
   try {
     isClearing.value = true;
     error.value = null;
-    clearStorage();
+    await clearStorage();
     await updateStorageInfo();
     showConfirmDialog.value = false;
   } catch (err) {

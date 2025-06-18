@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue';
 import type { Ref, UnwrapRef } from 'vue';
-import { validateArray, getArrayValidationErrors } from './schemaValidator';
+import * as schemaValidator from './schemaValidator';
 
 export class StorageError extends Error {
   constructor(
@@ -25,13 +25,69 @@ export function hasRequiredFields<T extends object>(obj: T, fields: (keyof T)[])
   return fields.every(field => field in obj);
 }
 
-export function isStorageAvailable(): boolean {
+// --- IndexedDB Helper ---
+const DB_NAME = 'dmh-db';
+const STORE_NAME = 'keyval';
+const DB_VERSION = 1;
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function idbGet<T>(key: string): Promise<T | undefined> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSet<T>(key: string, value: T): Promise<void> {
+  const db = await openDB();
+  // Serialize to plain data to avoid DataCloneError
+  let plain: T;
   try {
-    const test = '__storage_test__';
-    localStorage.setItem(test, test);
-    localStorage.removeItem(test);
-    return true;
+    plain = JSON.parse(JSON.stringify(value));
   } catch (e) {
+    throw new Error('Failed to serialize data for IndexedDB: ' + (e instanceof Error ? e.message : String(e)));
+  }
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.put(plain, key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbRemove(key: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function isIndexedDBAvailable(): boolean {
+  try {
+    return typeof indexedDB !== 'undefined';
+  } catch {
     return false;
   }
 }
@@ -45,132 +101,162 @@ interface StorageOptions<T> {
   onError?: (error: Error) => void;
 }
 
-export function useStorage<T>({ key, defaultValue, schema, sync = true, validate, onError }: StorageOptions<T>): Ref<UnwrapRef<T>> {
-  const stored = localStorage.getItem(key);
-  let initialValue: T;
+// --- Cross-tab/window sync ---
+const STORAGE_CHANNEL = 'dmh-sync';
+const SYNC_KEY = '__dmh_sync__';
+const broadcast = typeof window !== 'undefined' && 'BroadcastChannel' in window
+  ? new BroadcastChannel(STORAGE_CHANNEL)
+  : null;
 
-  if (!isStorageAvailable()) {
-    console.warn('localStorage is not available. Using in-memory storage only.');
-  }
-  
-  console.log(`[Storage] Initializing storage for key: ${key}`);
-  
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      if (schema) {
-        if (Array.isArray(parsed)) {
-          if (!validateArray(schema, parsed)) {
-            console.error(`Invalid data in storage for key "${key}":`, getArrayValidationErrors(schema, parsed));
-            initialValue = defaultValue;
+function debounce(fn: (...args: any[]) => void, delay: number) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return (...args: any[]) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+export function useStorage<T>({ key, defaultValue, schema, sync = true, validate, onError }: StorageOptions<T>): Ref<UnwrapRef<T>> {
+  const data = ref<T>(defaultValue);
+  let loaded = false;
+  const useIDB = isIndexedDBAvailable();
+
+  // Initial load from IndexedDB
+  (async () => {
+    if (useIDB) {
+      try {
+        const stored = await idbGet<T>(key);
+        if (stored !== undefined) {
+          if (schema) {
+            let valid = false;
+            let errors: string[] = [];
+            if (Array.isArray(stored)) {
+              valid = await schemaValidator.validateArray(schema, stored);
+              if (!valid) errors = await schemaValidator.getArrayValidationErrors(schema, stored);
+            } else {
+              valid = await schemaValidator.validateSchema(schema, stored);
+              if (!valid) errors = await schemaValidator.getValidationErrors(schema, stored);
+            }
+            if (!valid) {
+              console.error(`Invalid data in storage for key "${key}":`, errors);
+              data.value = defaultValue;
+            } else {
+              data.value = stored as T;
+            }
           } else {
-            initialValue = parsed as unknown as T;
+            data.value = stored as T;
           }
-        } else {
-          console.error(`Expected array data for key "${key}"`);
-          initialValue = defaultValue;
         }
-      } else {
-        initialValue = parsed as T;
+      } catch (e) {
+        console.error(`[Storage] Error loading from IndexedDB for key "${key}":`, e);
+        data.value = defaultValue;
       }
-    } catch (e) {
-      console.error(`Error parsing stored data for key "${key}":`, e);
-      initialValue = defaultValue;
+    } else {
+      // fallback: do nothing, already defaultValue
+      console.warn('IndexedDB is not available. Using in-memory storage only.');
     }
-  } else {
-    console.log(`[Storage] No stored data found for key: ${key}, using default value`);
-    initialValue = defaultValue;
-  }
-  
-  const data = ref<T>(initialValue);
-  
-  watch(data, (newValue) => {
-    if (schema && Array.isArray(newValue)) {
-      if (!validateArray(schema, newValue)) {
-        console.error(`Invalid data being stored for key "${key}":`, getArrayValidationErrors(schema, newValue));
-        return;
+    loaded = true;
+  })();
+
+  // Cross-tab/window sync: reload value if notified
+  const reloadFromIDB = debounce(async () => {
+    if (useIDB) {
+      try {
+        const stored = await idbGet<T>(key);
+        if (stored !== undefined) {
+          if (schema) {
+            let valid = false;
+            let errors: string[] = [];
+            if (Array.isArray(stored)) {
+              valid = await schemaValidator.validateArray(schema, stored);
+              if (!valid) errors = await schemaValidator.getArrayValidationErrors(schema, stored);
+            } else {
+              valid = await schemaValidator.validateSchema(schema, stored);
+              if (!valid) errors = await schemaValidator.getValidationErrors(schema, stored);
+            }
+            if (!valid) {
+              console.error(`Invalid data in storage for key "${key}":`, errors);
+              data.value = defaultValue;
+            } else {
+              data.value = stored as T;
+            }
+          } else {
+            data.value = stored as T;
+          }
+        }
+      } catch (e) {
+        console.error(`[Storage] Error loading from IndexedDB for key "${key}":`, e);
+        data.value = defaultValue;
       }
+    } else {
+      // fallback: do nothing, already defaultValue
+      console.warn('IndexedDB is not available. Using in-memory storage only.');
     }
-    try {
-      console.log(`[Storage] Saving data for key: ${key}`);
-      console.log(`[Storage] Data size: ${JSON.stringify(newValue).length} bytes`);
-      
-      const dataInfo = {
-        type: typeof newValue,
-        isArray: Array.isArray(newValue),
-        keys: Object.keys(newValue as object),
-        hasMetadata: 'createdAt' in (newValue as object) && 'updatedAt' in (newValue as object)
-      };
-      console.log(`[Storage] Data structure:`, dataInfo);
-      
-      const serialized = JSON.stringify(newValue);
-      localStorage.setItem(key, serialized);
-      
-      console.log(`[Storage] Successfully saved data for key: ${key}`);
-      console.log(`[Storage] Current storage size: ${getStorageSize()} bytes`);
-      console.log(`[Storage] Total items in storage: ${localStorage.length}`);
-    } catch (error) {
-      console.error(`[Storage] Error saving data for key: ${key}:`, error);
-      if (error instanceof Error) {
-        console.error(`[Storage] Error details:`, {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
-      }
-      const storageError = new StorageError(
-        `Failed to save data for key "${key}". The data might be too large or contain circular references.`,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      throw storageError;
-    }
-  }, { deep: true });
-  
+    loaded = true;
+  }, 100);
+
   if (sync) {
-    window.addEventListener('storage', (event) => {
-      if (event.key === key && event.newValue) {
-        try {
-          console.log(`[Storage] Found storage event for key: ${key}`);
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(event.newValue);
-          } catch (parseError) {
-            throw new StorageError(
-              `Failed to parse JSON data from storage event for key "${key}". The data might be corrupted.`,
-              key,
-              parseError
-            );
-          }
-          
-          if (validate && !validate(parsed)) {
-            console.log(`[Storage] Invalid data format for key: ${key}, using default value`);
-            const validationErrors = getValidationErrors(parsed);
-            console.error(`[Storage] Validation errors:`, validationErrors);
-            throw new StorageError(
-              `Data validation failed for key "${key}" in storage event:\n${validationErrors.join('\n')}`,
-              key,
-              parsed
-            );
-          }
-          
-          data.value = parsed as T;
-        } catch (error) {
-          console.error(`[Storage] Error processing storage event (${key}):`, error);
-          const storageError = error instanceof StorageError 
-            ? error 
-            : new StorageError(
-                `Unexpected error processing storage event for key "${key}".`,
-                key,
-                error
-              );
-          
-          console.error(`Error processing storage event (${key}):`, storageError);
-          onError?.(storageError);
+    // BroadcastChannel
+    if (broadcast) {
+      broadcast.addEventListener('message', (event) => {
+        if (event.data && event.data.key === key) {
+          reloadFromIDB();
         }
+      });
+    }
+    // localStorage fallback
+    window.addEventListener('storage', (event) => {
+      if (event.key === SYNC_KEY && event.newValue) {
+        try {
+          const msg = JSON.parse(event.newValue);
+          if (msg.key === key) {
+            reloadFromIDB();
+          }
+        } catch {}
       }
     });
   }
-  
+
+  watch(data, async (newValue) => {
+    if (!loaded) return; // Don't save until initial load
+    if (schema) {
+      let valid = false;
+      let errors: string[] = [];
+      if (Array.isArray(newValue)) {
+        valid = await schemaValidator.validateArray(schema, newValue);
+        if (!valid) errors = await schemaValidator.getArrayValidationErrors(schema, newValue);
+      } else {
+        valid = await schemaValidator.validateSchema(schema, newValue);
+        if (!valid) errors = await schemaValidator.getValidationErrors(schema, newValue);
+      }
+      if (!valid) {
+        console.error(`Invalid data being stored for key "${key}":`, errors);
+        return;
+      }
+    }
+    if (useIDB) {
+      try {
+        await idbSet(key, newValue);
+        // Broadcast change
+        if (sync) {
+          if (broadcast) {
+            broadcast.postMessage({ key });
+          } else {
+            // Fallback: update dummy localStorage key to trigger storage event
+            try {
+              localStorage.setItem(SYNC_KEY, JSON.stringify({ key, t: Date.now() }));
+            } catch {}
+          }
+        }
+      } catch (error) {
+        console.error(`[Storage] Error saving data for key: ${key}:`, error);
+        onError?.(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+  }, { deep: true });
+
+  // No sync event for IndexedDB, so skip that part
+
   return data as Ref<UnwrapRef<T>>;
 }
 
@@ -277,47 +363,78 @@ export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-// Storage management
-export function clearStorage(key?: string): void {
-  console.log(`[Storage] Clearing storage${key ? ` for key: ${key}` : ''}`);
-  try {
+// IndexedDB-based storage management
+export async function clearStorage(key?: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
     if (key) {
-      localStorage.removeItem(key);
+      const req = store.delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
     } else {
-      localStorage.clear();
+      const req = store.clear();
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
     }
-    console.log(`[Storage] Successfully cleared storage${key ? ` for key: ${key}` : ''}`);
-  } catch (error) {
-    console.error(`[Storage] Error clearing storage:`, error);
-  }
+  });
 }
 
-export function getStorageKeys(): string[] {
-  console.log('[Storage] Getting storage keys');
-  try {
-    return Object.keys(localStorage);
-  } catch (error) {
-    console.error('Error getting storage keys:', error);
-    return [];
-  }
+export async function getStorageKeys(): Promise<string[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.getAllKeys();
+    req.onsuccess = () => resolve(req.result as string[]);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-export function getStorageSize(): number {
-  console.log('[Storage] Getting storage size');
-  try {
-    let size = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        size += localStorage.getItem(key)?.length || 0;
+export async function getStorageSize(): Promise<number> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.getAll();
+    req.onsuccess = () => {
+      const all = req.result;
+      let size = 0;
+      for (const value of all) {
+        try {
+          size += JSON.stringify(value).length;
+        } catch {
+          // ignore
+        }
       }
-    }
-    console.log(`[Storage] Storage size: ${size} bytes`);
-    return size;
-  } catch (error) {
-    console.error('Error getting storage size:', error);
-    return 0;
-  }
+      resolve(size);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getStorageInfo(): Promise<{ size: number; itemCount: number }> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.getAll();
+    req.onsuccess = () => {
+      const all = req.result;
+      let totalSize = 0;
+      let itemCount = all.length;
+      for (const value of all) {
+        try {
+          totalSize += JSON.stringify(value).length;
+        } catch {
+          // ignore
+        }
+      }
+      resolve({ size: totalSize, itemCount });
+    };
+    req.onerror = () => reject(req.error);
+  });
 }
 
 export function isStorageQuotaExceeded(error: unknown): boolean {
@@ -325,29 +442,4 @@ export function isStorageQuotaExceeded(error: unknown): boolean {
     error.name === 'QuotaExceededError' ||
     error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
   );
-}
-
-export function getStorageInfo(): { size: number; itemCount: number } {
-  console.log('[Storage] Getting storage info');
-  try {
-    let totalSize = 0;
-    let itemCount = 0;
-    
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          totalSize += value.length;
-          itemCount++;
-        }
-      }
-    }
-    
-    console.log(`[Storage] Storage info - Size: ${totalSize} bytes, Items: ${itemCount}`);
-    return { size: totalSize, itemCount };
-  } catch (error) {
-    console.error('[Storage] Error getting storage info:', error);
-    return { size: 0, itemCount: 0 };
-  }
 }
