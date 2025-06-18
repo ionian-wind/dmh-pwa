@@ -31,10 +31,18 @@ export interface Note extends WithMetadata {
   metadata?: Record<string, unknown>;
 }
 
+export interface ModuleTreeNode {
+  id: UUID;
+  title?: string;
+  notes: UUID[]; // ordered list of note IDs
+  children?: ModuleTreeNode[];
+}
+
 export interface Module extends WithMetadata {
   name: string;
   description?: string;
   settings?: Record<string, unknown>;
+  noteTree?: ModuleTreeNode[];
 }
 
 export interface NoteType extends WithMetadata {

@@ -42,6 +42,7 @@ export const usePartyStore = defineStore('parties', () => {
       updatedAt: Date.now()
     };
     items.value.push(newParty);
+    items.value = [...items.value];
     return newParty;
   };
   const updateParty = (id: string, party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -53,10 +54,12 @@ export const usePartyStore = defineStore('parties', () => {
         createdAt: items.value[index].createdAt,
         updatedAt: Date.now()
       };
+      items.value = [...items.value];
     }
   };
   const deleteParty = (id: string) => {
     items.value = items.value.filter(p => p.id !== id);
+    items.value = [...items.value];
     if (currentPartyId.value === id) currentPartyId.value = null;
   };
   const getPartyById = (id: string) => items.value.find(p => p.id === id) || null;
@@ -102,8 +105,9 @@ export const usePartyStore = defineStore('parties', () => {
   const addCharacterToParty = (partyId: string, characterId: string) => {
     const party = items.value.find(p => p.id === partyId);
     if (party && !party.characters.includes(characterId)) {
-      party.characters.push(characterId);
+      party.characters = [...party.characters, characterId];
       party.updatedAt = Date.now();
+      items.value = [...items.value];
     }
   };
   const removeCharacterFromParty = (partyId: string, characterId: string) => {
@@ -111,6 +115,7 @@ export const usePartyStore = defineStore('parties', () => {
     if (party) {
       party.characters = party.characters.filter(id => id !== characterId);
       party.updatedAt = Date.now();
+      items.value = [...items.value];
     }
   };
   const loadCharacters = async () => characters.value;

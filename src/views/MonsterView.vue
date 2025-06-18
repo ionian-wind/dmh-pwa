@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
@@ -17,15 +17,18 @@ const notFound = ref(false);
 // Monster mention indexation store
 const mentionsStore = useMentionsStore();
 
-onMounted(async () => {
+function updateMonsterFromStore() {
   const monsterId = route.params.id as string;
-  await monsterStore.loadMonsters();
-  monster.value = monsterStore.monsters.find(m => m.id === monsterId) || null;
-  
-  if (!monster.value) {
-    notFound.value = true;
-  }
-});
+  const found = monsterStore.monsters.find(m => m.id === monsterId) || null;
+  monster.value = found;
+  notFound.value = !found;
+}
+
+// Watch for both route changes and monsters changes
+watch([
+  () => route.params.id,
+  () => monsterStore.monsters
+], updateMonsterFromStore, { immediate: true });
 
 function abilityModifier(score: number) {
   return Math.floor((score - 10) / 2);
@@ -263,7 +266,7 @@ const mentionedInEntities = computed(() => {
         </template>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>

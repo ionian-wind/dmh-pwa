@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
@@ -23,7 +23,18 @@ const showLinkModal = ref(false);
 const party = ref<Party | null>(null);
 const notFound = ref(false);
 
-const partyId = route.params.id as string;
+function updatePartyFromStore() {
+  const partyId = route.params.id as string;
+  const found = partyStore.getPartyById(partyId);
+  party.value = found;
+  notFound.value = !found;
+}
+
+// Watch for both route changes and items changes
+watch([
+  () => route.params.id,
+  () => partyStore.items
+], updatePartyFromStore, { immediate: true });
 
 const modules = computed(() => {
   if (!party.value) return [];
@@ -65,15 +76,6 @@ const mentionedEntities = computed(() => {
 const mentionedInEntities = computed(() => {
   if (!party.value) return [];
   return mentionsStore.getBacklinks({ kind: 'party', id: party.value.id });
-});
-
-onMounted(async () => {
-  const foundParty = partyStore.getPartyById(partyId);
-  if (foundParty) {
-    party.value = foundParty;
-  } else {
-    notFound.value = true;
-  }
 });
 
 const handleDeleteParty = async () => {
@@ -188,7 +190,7 @@ const partySubtitle = computed(() => {
         </template>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>

@@ -19,6 +19,32 @@
     "updatedAt": {
       "type": "number",
       "description": "Timestamp when the module was last updated"
+    },
+    "noteTree": {
+      "type": "array",
+      "description": "Tree structure for organizing notes",
+      "items": { "$ref": "#/definitions/ModuleTreeNode" },
+      "default": []
+    }
+  },
+  "definitions": {
+    "ModuleTreeNode": {
+      "type": "object",
+      "required": ["id", "notes"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordered list of note IDs"
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ModuleTreeNode" },
+          "description": "Child nodes"
+        }
+      }
     }
   }
 } 

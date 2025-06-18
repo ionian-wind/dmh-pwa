@@ -63,6 +63,14 @@
                   </div>
                 </div>
               </section>
+              <section v-else-if="activeTab === 'noteTree'" class="content-section">
+                <h2>Note Tree</h2>
+                <ModuleNoteTreeManager
+                  :module="module"
+                  :notes="moduleNotes"
+                  @save="handleSaveNoteTree"
+                />
+              </section>
             </template>
           </TabGroup>
         </div>
@@ -78,7 +86,7 @@
         </template>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>
@@ -86,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -99,6 +107,7 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
 import TabGroup from '@/components/common/TabGroup.vue';
+import ModuleNoteTreeManager from '@/components/ModuleNoteTreeManager.vue';
 
 const route = useRoute();
 const moduleStore = useModuleStore();
@@ -143,24 +152,22 @@ const entityTabs = [
   { id: 'monsters', label: 'Monsters' },
   { id: 'encounters', label: 'Encounters' },
   { id: 'notes', label: 'Notes' },
+  { id: 'noteTree', label: 'Note Tree' },
 ];
 const activeTab = ref('parties');
 
-onMounted(async () => {
+function updateModuleFromStore() {
   const moduleId = route.params.id as string;
-  await Promise.all([
-    moduleStore.loadModules(),
-    partyStore.loadParties(),
-    monsterStore.loadMonsters(),
-    encounterStore.loadEncounters(),
-    noteStore.loadNotes()
-  ]);
-  
-  module.value = moduleStore.getModuleById(moduleId);
-  if (!module.value) {
-    notFound.value = true;
-  }
-});
+  const found = moduleStore.getModuleById(moduleId);
+  module.value = found;
+  notFound.value = !found;
+}
+
+// Watch for both route changes and items changes
+watch([
+  () => route.params.id,
+  () => moduleStore.items
+], updateModuleFromStore, { immediate: true });
 
 const handleSubmit = async (updatedModule: Omit<Module, 'id'>) => {
   if (!module.value) return;
@@ -181,6 +188,12 @@ const handleDelete = async () => {
 // Computed properties for BaseEntityView
 const moduleTitle = computed(() => module.value?.name || '');
 const moduleSubtitle = computed(() => module.value?.description || '');
+
+function handleSaveNoteTree(newTree) {
+  if (!module.value) return;
+  moduleStore.updateModule(module.value.id, { ...module.value, noteTree: newTree });
+  module.value = moduleStore.getModuleById(module.value.id);
+}
 </script>
 
 <style scoped>

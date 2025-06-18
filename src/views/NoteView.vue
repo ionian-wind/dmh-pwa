@@ -4,9 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { useMentionsStore } from '@/stores/createIndexationStore';
+import { usePartyStore } from '@/stores/parties';
+import { useMonsterStore } from '@/stores/monsters';
+import { useEncounterStore } from '@/stores/encounters';
 import type { Note } from '@/types';
 import NoteEditor from '@/components/NoteEditor.vue';
-import { parseMarkdown } from '@/utils/markdownParser';
+import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 
@@ -15,36 +18,28 @@ const router = useRouter();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
+const partyStore = usePartyStore();
+const monsterStore = useMonsterStore();
+const encounterStore = useEncounterStore();
 
 const note = ref<Note | null>(null);
 const isEditing = ref(false);
 const parsedContent = computed(() => note.value ? parseMarkdown(note.value.content) : '');
 const notFound = ref(false);
+const validationError = ref<string | null>(null);
 
-onMounted(async () => {
-  await loadNoteFromRoute();
-});
-
-// Watch for route changes to reload the note
-watch(() => route.params.id, async (newId, oldId) => {
-  if (newId !== oldId) {
-    await loadNoteFromRoute();
-  }
-});
-
-async function loadNoteFromRoute() {
+function updateNoteFromStore() {
   const noteId = route.params.id as string;
-  await Promise.all([
-    noteStore.loadNotes(),
-    moduleStore.loadModules()
-  ]);
-  note.value = noteStore.getNoteById(noteId);
-  if (note.value) {
-    notFound.value = false;
-  } else {
-    notFound.value = true;
-  }
+  const found = noteStore.getNoteById(noteId);
+  note.value = found;
+  notFound.value = !found;
 }
+
+// Watch for both route changes and items changes
+watch([
+  () => route.params.id,
+  () => noteStore.items
+], updateNoteFromStore, { immediate: true });
 
 const handleEdit = () => {
   isEditing.value = true;
@@ -56,6 +51,39 @@ const handleDelete = async () => {
 };
 
 const handleSubmit = async (editedNote: Note) => {
+  // Validate mentions
+  const mentions = extractMentionedEntities(editedNote.content);
+  const missing: string[] = [];
+  for (const mention of mentions) {
+    let exists = false;
+    switch (mention.kind) {
+      case 'note':
+        exists = !!noteStore.getNoteById(mention.id);
+        break;
+      case 'module':
+        exists = !!moduleStore.getModuleById(mention.id);
+        break;
+      case 'party':
+        exists = !!partyStore.getPartyById(mention.id);
+        break;
+      case 'monster':
+        exists = !!monsterStore.getMonsterById(mention.id);
+        break;
+      case 'encounter':
+        exists = !!encounterStore.getEncounterById(mention.id);
+        break;
+      default:
+        exists = true; // ignore unknown kinds
+    }
+    if (!exists) {
+      missing.push(`${mention.kind}:${mention.id}`);
+    }
+  }
+  if (missing.length > 0) {
+    validationError.value = `Cannot save: the following mentioned entities do not exist: ${missing.join(', ')}`;
+    return;
+  }
+  validationError.value = null;
   if (!note.value) return;
   await noteStore.updateNote(note.value.id, editedNote);
   note.value = editedNote;
@@ -139,13 +167,14 @@ function handleTagClick(tag: string) {
             v-if="isEditing"
             :note="note"
             :is-open="isEditing"
+            :validation-error="validationError"
             @submit="handleSubmit"
             @cancel="handleCancel"
           />
         </template>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id }))" />
     </aside>

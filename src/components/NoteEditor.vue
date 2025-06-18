@@ -12,6 +12,7 @@ import { useModuleStore } from '@/stores/modules';
 const props = defineProps<{
   note: Note | null;
   isOpen: boolean;
+  validationError?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -136,6 +137,7 @@ const handleCancel = () => {
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
+    <div v-if="validationError" class="validation-error">{{ validationError }}</div>
     <div class="form-section">
       <h3>Basic Information</h3>
       <div class="form-grid">
@@ -228,4 +230,13 @@ const handleCancel = () => {
 
 <style scoped>
 /* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
+.validation-error {
+  color: var(--color-danger, #c00);
+  background: var(--color-background-soft, #fff0f0);
+  border: 1px solid var(--color-danger, #c00);
+  border-radius: 4px;
+  padding: 0.75em 1em;
+  margin-bottom: 1em;
+  font-weight: 500;
+}
 </style>

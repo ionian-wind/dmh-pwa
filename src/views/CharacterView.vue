@@ -141,7 +141,7 @@
         </template>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>
@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/components/CharacterEditor.vue';
@@ -166,14 +166,18 @@ const notFound = ref(false);
 
 const mentionsStore = useMentionsStore();
 
-onMounted(() => {
+function updateCharacterFromStore() {
   const id = route.params.id as string;
-  character.value = characterStore.getById(id);
-  
-  if (!character.value) {
-    notFound.value = true;
-  }
-});
+  const found = characterStore.getById(id);
+  character.value = found;
+  notFound.value = !found;
+}
+
+// Watch for both route changes and all characters changes
+watch([
+  () => route.params.id,
+  () => characterStore.all
+], updateCharacterFromStore, { immediate: true });
 
 function abilityModifier(score: number) {
   return Math.floor((score - 10) / 2);

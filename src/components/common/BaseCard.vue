@@ -1,6 +1,10 @@
 <template>
   <div class="base-card">
-    <div v-if="$slots.header" class="base-card-header">
+    <div
+      v-if="$slots.header"
+      class="base-card-header"
+      :class="{ 'no-border': noBorderAfterHeader }"
+    >
       <slot name="header" />
     </div>
     <div v-if="hasContent" class="base-card-content">
@@ -21,7 +25,7 @@
 
 <script setup lang="ts">
 import Button from './Button.vue';
-import { computed, useSlots, Fragment, Comment } from 'vue';
+import { computed, useSlots, Fragment, Comment, getCurrentInstance } from 'vue';
 
 const props = defineProps({
   showView: { type: Boolean, default: false },
@@ -49,6 +53,14 @@ const hasContent = computed(() => {
   const vnodes = slots.default ? slots.default() : [];
   return vnodes.some(isVNodeContent);
 });
+
+// Fallback: check if actions slot or built-in actions are present
+const noBorderAfterHeader = computed(() => {
+  // If there is no header, don't care
+  if (!slots.header) return false;
+  // If there are actions or built-in actions, header is followed by actions
+  return !!(slots.actions || props.showView || props.showEdit || props.showDelete);
+});
 </script>
 
 <style scoped>
@@ -71,6 +83,19 @@ const hasContent = computed(() => {
   padding: 1rem 1rem 0.5rem 1rem;
   border-bottom: 1px solid var(--color-border, #eee);
 }
+
+/* Remove bottom border if actions follow header */
+.base-card-header:has(+ .base-card-actions) {
+  border-bottom: none;
+}
+
+/* Fallback for browsers without :has() support */
+@supports not (selector(:has(*))) {
+  .base-card-header.no-border {
+    border-bottom: none !important;
+  }
+}
+
 .base-card-content {
   padding: 1rem;
 }

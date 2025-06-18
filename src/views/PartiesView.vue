@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
@@ -14,8 +14,11 @@ const moduleStore = useModuleStore();
 const showEditor = ref(false);
 const editingParty = ref<Party | null>(null);
 
-onMounted(async () => {
-  await partyStore.loadParties();
+// Ensure parties are loaded (async/cross-tab safe)
+watchEffect(() => {
+  if (!partyStore.items || partyStore.items.length === 0) {
+    partyStore.loadParties();
+  }
 });
 
 const handleCreateClick = () => {

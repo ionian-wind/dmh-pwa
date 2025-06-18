@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Party",
   "type": "object",
-  "required": ["id", "name", "characters", "moduleId", "createdAt", "updatedAt"],
+  "required": ["id", "name", "characters", "moduleIds", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
@@ -19,9 +19,12 @@
       },
       "description": "Array of character IDs in the party"
     },
-    "moduleId": {
-      "type": "string",
-      "description": "ID of the module this party belongs to"
+    "moduleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of module IDs this party belongs to"
     },
     "createdAt": {
       "type": "number",

@@ -36,21 +36,18 @@ const activeTab = ref('information');
 
 const mentionsStore = useMentionsStore();
 
-onMounted(async () => {
+function updateEncounterFromStore() {
   const encounterId = route.params.id as string;
-  await Promise.all([
-    encounterStore.loadEncounters(),
-    monsterStore.loadMonsters(),
-    moduleStore.loadModules(),
-    combatStore.loadCombats(),
-    partyStore.loadParties()
-  ]);
-  
-  encounter.value = encounterStore.getEncounterById(encounterId);
-  if (!encounter.value) {
-    notFound.value = true;
-  }
-});
+  const found = encounterStore.getEncounterById(encounterId);
+  encounter.value = found;
+  notFound.value = !found;
+}
+
+// Watch for both route changes and encounters changes
+watch([
+  () => route.params.id,
+  () => encounterStore.encounters
+], updateEncounterFromStore, { immediate: true });
 
 const handleEdit = () => {
   isEditorOpen.value = true;
@@ -445,7 +442,7 @@ const mentionedInEntities = computed(() => {
         </template>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>
