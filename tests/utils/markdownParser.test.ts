@@ -96,7 +96,7 @@ describe('Markdown Parser', () => {
       const input = 'Check this [[note:note-1]] for more info';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<a href="/note/note-1" class="internal-link note-link">');
+      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
       expect(result).toContain('Check this');
     });
 
@@ -104,7 +104,7 @@ describe('Markdown Parser', () => {
       const input = 'See [[module:module-1]] for details';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<a href="/module/module-1" class="internal-link module-link">');
+      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
       expect(result).toContain('See');
     });
 
@@ -112,7 +112,7 @@ describe('Markdown Parser', () => {
       const input = 'The [[party:party-1]] is ready';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<a href="/party/party-1" class="internal-link party-link">');
+      expect(result).toContain('<a href="/parties/party-1" class="internal-link party-link">');
       expect(result).toContain('The');
     });
 
@@ -120,7 +120,7 @@ describe('Markdown Parser', () => {
       const input = 'Fight the [[monster:monster-1]]';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<a href="/monster/monster-1" class="internal-link monster-link">');
+      expect(result).toContain('<a href="/monsters/monster-1" class="internal-link monster-link">');
       expect(result).toContain('Fight the');
     });
 
@@ -128,7 +128,7 @@ describe('Markdown Parser', () => {
       const input = 'Start [[encounter:encounter-1]]';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<a href="/encounter/encounter-1" class="internal-link encounter-link">');
+      expect(result).toContain('<a href="/encounters/encounter-1" class="internal-link encounter-link">');
       expect(result).toContain('Start');
     });
 
@@ -138,7 +138,7 @@ describe('Markdown Parser', () => {
       
       // Should return the original text without creating a link
       expect(result).toContain('Check');
-      expect(result).not.toContain('<a href="/note/non-existent"');
+      expect(result).not.toContain('<a href="/notes/non-existent"');
     });
 
     it('should handle malformed internal links', () => {
@@ -174,17 +174,17 @@ describe('Markdown Parser', () => {
       const result = parseMarkdown(input);
       
       expect(result).toContain('<strong>Important</strong>');
-      expect(result).toContain('<a href="/note/note-1" class="internal-link note-link">');
-      expect(result).toContain('<a href="/monster/monster-1" class="internal-link monster-link">');
+      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
+      expect(result).toContain('<a href="/monsters/monster-1" class="internal-link monster-link">');
     });
 
     it('should handle multiple links in one line', () => {
       const input = '[[note:note-1]] and [[module:module-1]] and [[party:party-1]]';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<a href="/note/note-1" class="internal-link note-link">');
-      expect(result).toContain('<a href="/module/module-1" class="internal-link module-link">');
-      expect(result).toContain('<a href="/party/party-1" class="internal-link party-link">');
+      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
+      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
+      expect(result).toContain('<a href="/parties/party-1" class="internal-link party-link">');
     });
 
     it('should handle links within lists', () => {
@@ -192,8 +192,8 @@ describe('Markdown Parser', () => {
       const result = parseMarkdown(input);
       
       expect(result).toContain('<ul>');
-      expect(result).toContain('<a href="/note/note-1" class="internal-link note-link">');
-      expect(result).toContain('<a href="/module/module-1" class="internal-link module-link">');
+      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
+      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
     });
   });
 
@@ -220,7 +220,7 @@ describe('Markdown Parser', () => {
       const result = parseMarkdown(input);
       
       expect(result).toContain('Check [[note:');
-      expect(result).toContain('<a href="/module/module-1" class="internal-link module-link">');
+      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
     });
   });
 }); 

@@ -33,11 +33,11 @@ const navigateTo = (path: string) => {
 
 const sections = [
   { section: Section.NOTES, label: t('navigation.notes'), path: '/notes' },
+  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters' },
   { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties' },
+  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules' },
   { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters' },
   { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters' },
-  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters' },
-  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules' }
 ];
 
 const isActive = (item: { section: Section, path: string }) => {

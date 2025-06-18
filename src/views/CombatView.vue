@@ -9,6 +9,8 @@ import type { Combat } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
+import Mentions from '@/components/common/Mentions.vue';
+import { createIndexationStore } from '@/stores/createIndexationStore';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +21,10 @@ const moduleStore = useModuleStore();
 
 const combat = ref<Combat | null>(null);
 const notFound = ref(false);
+
+// Combat mention indexation store
+const useCombatEntityIndexationStore = createIndexationStore('combatEntityIndexation');
+const combatEntityIndexation = useCombatEntityIndexationStore();
 
 onMounted(async () => {
   const combatId = route.params.id as string;
@@ -92,100 +98,111 @@ const resetCombat = () => {
   if (!combat.value) return;
   combatStore.resetCombat(combat.value.id);
 };
+
+const mentionedEntities = computed(() => {
+  if (!combat.value) return [];
+  return combatEntityIndexation.getLinks({ kind: 'combat', id: combat.value.id });
+});
+const mentionedInEntities = computed(() => {
+  if (!combat.value) return [];
+  return combatEntityIndexation.getBacklinks({ kind: 'combat', id: combat.value.id });
+});
 </script>
 
 <template>
-  <div class="combat-view-container">
-    <BaseEntityView
-      :entity="combat"
-      entity-name="Combat"
-      list-route="/encounters"
-      :on-delete="handleDelete"
-      :title="combatTitle"
-      :subtitle="combatSubtitle"
-      :not-found="notFound"
-    >
-      <!-- Combat Content -->
-      <div v-if="combat" class="combat-content">
-        <div class="combat-header">
-          <div class="combat-info">
-            <div class="info-section">
-              <h3>Encounter</h3>
-              <p>{{ getEncounterName(combat.encounterId) }}</p>
+  <div class="combat-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
+    <div style="flex: 2 1 0; min-width: 0;">
+      <BaseEntityView
+        :entity="combat"
+        entity-name="Combat"
+        list-route="/encounters"
+        :on-delete="handleDelete"
+        :title="combatTitle"
+        :subtitle="combatSubtitle"
+        :not-found="notFound"
+      >
+        <!-- Combat Content -->
+        <div v-if="combat" class="combat-content">
+          <div class="combat-header">
+            <div class="combat-info">
+              <div class="info-section">
+                <h3>Encounter</h3>
+                <p>{{ getEncounterName(combat.encounterId) }}</p>
+              </div>
+              <div class="info-section">
+                <h3>Party</h3>
+                <p>{{ getPartyName(combat.partyId) }}</p>
+              </div>
+              <div class="info-section">
+                <h3>Status</h3>
+                <span class="status-badge" :class="combat.status">{{ combat.status }}</span>
+              </div>
             </div>
-            <div class="info-section">
-              <h3>Party</h3>
-              <p>{{ getPartyName(combat.partyId) }}</p>
-            </div>
-            <div class="info-section">
-              <h3>Status</h3>
-              <span class="status-badge" :class="combat.status">{{ combat.status }}</span>
-            </div>
-          </div>
-          
-          <div class="combat-controls">
-            <Button 
-              v-if="combat.status === 'preparing'"
-              variant="primary"
-              @click="startCombat"
-              class="start-btn"
-            >
-              🚀 Start Combat
-            </Button>
-            <Button 
-              v-if="combat.status === 'active'"
-              variant="warning"
-              @click="resetCombat"
-              class="reset-btn"
-            >
-              🔄 Reset Combat
-            </Button>
-            <Button 
-              v-if="combat.status === 'active'"
-              variant="danger"
-              @click="endCombat"
-              class="end-btn"
-            >
-              🏁 End Combat
-            </Button>
-          </div>
-        </div>
-
-        <!-- Combat Tracker -->
-        <div class="combat-tracker-section">
-          <h3>Combat Tracker</h3>
-          <CombatTracker :encounterId="combat.encounterId" />
-        </div>
-
-        <!-- Combat Summary -->
-        <div class="combat-summary" v-if="combat.status === 'active'">
-          <h3>Combat Summary</h3>
-          <div class="summary-grid">
-            <div class="summary-item">
-              <label>Round:</label>
-              <span class="summary-value">{{ combat.currentRound }}</span>
-            </div>
-            <div class="summary-item">
-              <label>Turn:</label>
-              <span class="summary-value">{{ combat.currentTurn + 1 }} of {{ combat.combatants.length }}</span>
-            </div>
-            <div class="summary-item">
-              <label>Active Combatants:</label>
-              <span class="summary-value">{{ combat.combatants.filter(c => c.hitPoints.current > 0).length }}</span>
-            </div>
-            <div class="summary-item">
-              <label>Downed Combatants:</label>
-              <span class="summary-value">{{ combat.combatants.filter(c => c.hitPoints.current <= 0).length }}</span>
+            <div class="combat-controls">
+              <Button 
+                v-if="combat.status === 'preparing'"
+                variant="primary"
+                @click="startCombat"
+                class="start-btn"
+              >
+                🚀 Start Combat
+              </Button>
+              <Button 
+                v-if="combat.status === 'active'"
+                variant="warning"
+                @click="resetCombat"
+                class="reset-btn"
+              >
+                🔄 Reset Combat
+              </Button>
+              <Button 
+                v-if="combat.status === 'active'"
+                variant="danger"
+                @click="endCombat"
+                class="end-btn"
+              >
+                🏁 End Combat
+              </Button>
             </div>
           </div>
+          <!-- Combat Tracker -->
+          <div class="combat-tracker-section">
+            <h3>Combat Tracker</h3>
+            <CombatTracker :encounterId="combat.encounterId" />
+          </div>
+          <!-- Combat Summary -->
+          <div class="combat-summary" v-if="combat.status === 'active'">
+            <h3>Combat Summary</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <label>Round:</label>
+                <span class="summary-value">{{ combat.currentRound }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Turn:</label>
+                <span class="summary-value">{{ combat.currentTurn + 1 }} of {{ combat.combatants.length }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Active Combatants:</label>
+                <span class="summary-value">{{ combat.combatants.filter(c => c.hitPoints.current > 0).length }}</span>
+              </div>
+              <div class="summary-item">
+                <label>Downed Combatants:</label>
+                <span class="summary-value">{{ combat.combatants.filter(c => c.hitPoints.current <= 0).length }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="combat.notes" class="content-section">
+            <h3>Notes</h3>
+            <p class="notes">{{ combat.notes }}</p>
+          </div>
         </div>
-
-        <div v-if="combat.notes" class="content-section">
-          <h3>Notes</h3>
-          <p class="notes">{{ combat.notes }}</p>
-        </div>
-      </div>
-    </BaseEntityView>
+      </BaseEntityView>
+    </div>
+    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+      <Mentions title="Mentions" :entities="mentionedEntities" />
+      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+    </aside>
   </div>
 </template>
 

@@ -5,6 +5,7 @@ import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/stor
 import { useModuleStore } from './modules';
 import combatSchema from "@/schemas/combat.schema.json";
 import {registerValidationSchema} from "@/utils/schemaValidator";
+import { extractMentionedEntities } from '@/utils/markdownParser';
 
 registerValidationSchema('combat', combatSchema);
 

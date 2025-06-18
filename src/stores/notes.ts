@@ -5,6 +5,8 @@ import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/stor
 import { useModuleStore } from "./modules";
 import noteSchema from "@/schemas/note.schema.json";
 import {registerValidationSchema} from "@/utils/schemaValidator";
+import { extractMentionedEntities } from '@/utils/markdownParser';
+import { useMentionsStore } from './createIndexationStore';
 
 registerValidationSchema('note', noteSchema);
 
@@ -69,6 +71,10 @@ export const useNoteStore = defineStore('notes', () => {
       updatedAt: Date.now(),
     };
     items.value.push(newNote);
+    const indexation = useMentionsStore();
+    const from = { kind: 'note', id: newNote.id };
+    const mentioned = extractMentionedEntities(newNote.content);
+    indexation.setLinks(from, mentioned);
     return newNote;
   };
   const updateNote = (id: string, note: Omit<Note, 'id'>) => {
@@ -80,11 +86,18 @@ export const useNoteStore = defineStore('notes', () => {
         id,
         updatedAt: Date.now()
       };
+      const indexation = useMentionsStore();
+      const from = { kind: 'note', id };
+      const mentioned = extractMentionedEntities(note.content);
+      indexation.setLinks(from, mentioned);
     }
   };
   const deleteNote = (id: string) => {
     items.value = items.value.filter(note => note.id !== id);
     if (currentNoteId.value === id) currentNoteId.value = null;
+    const indexation = useMentionsStore();
+    const from = { kind: 'note', id };
+    indexation.clearLinks(from);
   };
   const getNoteById = (id: string) => items.value.find(n => n.id === id) || null;
   const loadNotes = async () => items.value;

@@ -11,6 +11,7 @@ const props = defineProps<{
   position: { top: number; left: number };
   text: string;
   cursorPosition: number;
+  currentId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -47,7 +48,7 @@ const suggestions = computed(() => {
   switch (type) {
     case 'note':
       return noteStore.filteredNotes
-        .filter(note => note.title.toLowerCase().includes(searchLower))
+        .filter(note => note.title.toLowerCase().includes(searchLower) && note.id !== props.currentId)
         .map(note => ({
           id: note.id,
           title: note.title,
@@ -55,7 +56,7 @@ const suggestions = computed(() => {
         }));
     case 'module':
       return moduleStore.modules
-        .filter(module => module.name.toLowerCase().includes(searchLower))
+        .filter(module => module.name.toLowerCase().includes(searchLower) && module.id !== props.currentId)
         .map(module => ({
           id: module.id,
           title: module.name,
@@ -63,7 +64,7 @@ const suggestions = computed(() => {
         }));
     case 'party':
       return partyStore.filteredParties
-        .filter(party => party.name.toLowerCase().includes(searchLower))
+        .filter(party => party.name.toLowerCase().includes(searchLower) && party.id !== props.currentId)
         .map(party => ({
           id: party.id,
           title: party.name,
@@ -71,7 +72,7 @@ const suggestions = computed(() => {
         }));
     case 'monster':
       return monsterStore.filteredMonsters
-        .filter(monster => monster.name.toLowerCase().includes(searchLower))
+        .filter(monster => monster.name.toLowerCase().includes(searchLower) && monster.id !== props.currentId)
         .map(monster => ({
           id: monster.id,
           title: monster.name,
@@ -79,7 +80,7 @@ const suggestions = computed(() => {
         }));
     case 'encounter':
       return encounterStore.filteredEncounters
-        .filter(encounter => encounter.name.toLowerCase().includes(searchLower))
+        .filter(encounter => encounter.name.toLowerCase().includes(searchLower) && encounter.id !== props.currentId)
         .map(encounter => ({
           id: encounter.id,
           title: encounter.name,
@@ -156,6 +157,7 @@ onUnmounted(() => {
           :key="suggestion.id"
           class="entity-autosuggest__item"
           :class="{ 'entity-autosuggest__item--selected': index === selectedIndex }"
+          @mousedown.stop
           @click="selectSuggestion(suggestion)"
         >
           <span class="entity-autosuggest__item-title">{{ suggestion.title }}</span>

@@ -10,6 +10,8 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/common/Button.vue';
+import Mentions from '@/components/common/Mentions.vue';
+import { useMentionsStore } from '@/stores/createIndexationStore';
 
 const route = useRoute();
 const partyStore = usePartyStore();
@@ -52,6 +54,17 @@ const linkedCharacters = computed(() => {
     acc[character.id] = linked.includes(character.id);
     return acc;
   }, {} as Record<string, boolean>);
+});
+
+const mentionsStore = useMentionsStore();
+
+const mentionedEntities = computed(() => {
+  if (!party.value) return [];
+  return mentionsStore.getLinks({ kind: 'party', id: party.value.id });
+});
+const mentionedInEntities = computed(() => {
+  if (!party.value) return [];
+  return mentionsStore.getBacklinks({ kind: 'party', id: party.value.id });
 });
 
 onMounted(async () => {
@@ -114,66 +127,71 @@ const partySubtitle = computed(() => {
 </script>
 
 <template>
-  <div class="party-view-container">
-    <BaseEntityView
-      :entity="party"
-      entity-name="Party"
-      list-route="/parties"
-      :on-delete="handleDeleteParty"
-      :on-edit="() => showEditor = true"
-      :is-editing="showEditor"
-      :title="partyTitle"
-      :subtitle="partySubtitle"
-      :not-found="notFound"
-    >
-      <!-- Party Content -->
-      <div v-if="party" class="party-content">
-        <section class="content-section">
-          <div class="section-header">
-            <h2>Characters</h2>
-            <Button @click="showLinkModal = true" class="link-btn">
-              Link Characters
-            </Button>
-          </div>
-          <div v-if="partyCharacters.length === 0" class="empty-state">
-            <p>No characters in this party yet</p>
-          </div>
-          <div v-else class="characters-grid">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Level</th>
-                  <th>Class</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="character in partyCharacters" :key="character.id">
-                  <td>{{ character.name }}</td>
-                  <td>{{ character.level }}</td>
-                  <td>{{ character.class }}</td>
-                  <td>
-                    <button class="unlink-btn" @click="handleToggleCharacter(character, false)">Unlink</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
+  <div class="party-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
+    <div style="flex: 2 1 0; min-width: 0;">
+      <BaseEntityView
+        :entity="party"
+        entity-name="Party"
+        list-route="/parties"
+        :on-delete="handleDeleteParty"
+        :on-edit="() => showEditor = true"
+        :is-editing="showEditor"
+        :title="partyTitle"
+        :subtitle="partySubtitle"
+        :not-found="notFound"
+      >
+        <!-- Party Content -->
+        <div v-if="party" class="party-content">
+          <section class="content-section">
+            <div class="section-header">
+              <h2>Characters</h2>
+              <Button @click="showLinkModal = true" class="link-btn">
+                Link Characters
+              </Button>
+            </div>
+            <div v-if="partyCharacters.length === 0" class="empty-state">
+              <p>No characters in this party yet</p>
+            </div>
+            <div v-else class="characters-grid">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Level</th>
+                    <th>Class</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="character in partyCharacters" :key="character.id">
+                    <td>{{ character.name }}</td>
+                    <td>{{ character.level }}</td>
+                    <td>{{ character.class }}</td>
+                    <td>
+                      <button class="unlink-btn" @click="handleToggleCharacter(character, false)">Unlink</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
 
-      <!-- Editor Modal -->
-      <template #editor>
-        <PartyEditor
-          :party="party"
-          :isOpen="showEditor"
-          @submit="handlePartySubmit"
-          @cancel="handlePartyCancel"
-        />
-      </template>
-    </BaseEntityView>
-
+        <!-- Editor Modal -->
+        <template #editor>
+          <PartyEditor
+            :party="party"
+            :isOpen="showEditor"
+            @submit="handlePartySubmit"
+            @cancel="handlePartyCancel"
+          />
+        </template>
+      </BaseEntityView>
+    </div>
+    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+      <Mentions title="Mentions" :entities="mentionedEntities" />
+      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+    </aside>
     <!-- Link Characters Modal -->
     <BaseModal
       :isOpen="showLinkModal"

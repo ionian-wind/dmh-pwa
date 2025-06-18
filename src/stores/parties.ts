@@ -5,6 +5,7 @@ import { generateId, useStorage } from '@/utils/storage';
 import partySchema from "@/schemas/party.schema.json";
 import {registerValidationSchema} from "@/utils/schemaValidator";
 import { useModuleStore } from '@/stores/modules';
+import { extractMentionedEntities } from '@/utils/markdownParser';
 
 registerValidationSchema('party', partySchema);
 

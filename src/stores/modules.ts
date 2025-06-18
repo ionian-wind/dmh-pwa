@@ -4,6 +4,7 @@ import { Module } from '@/types';
 import { generateId, useStorage } from '@/utils/storage';
 import moduleSchema from '../schemas/module.schema.json';
 import {registerValidationSchema} from "@/utils/schemaValidator";
+import { extractMentionedEntities } from '@/utils/markdownParser';
 
 registerValidationSchema('module', moduleSchema);
 

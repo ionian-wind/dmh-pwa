@@ -219,6 +219,7 @@ const handleCancel = () => {
       :position="autosuggestPosition"
       :text="editedNote.content"
       :cursor-position="cursorPosition"
+      :current-id="editedNote.id"
       @select="insertSuggestion"
       @cancel="showAutosuggest = false"
     />

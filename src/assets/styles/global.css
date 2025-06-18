@@ -489,3 +489,37 @@ select {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
+
+.internal-link {
+  color: #1976d2;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.internal-link:hover {
+  color: #0d47a1;
+}
+
+.external-link {
+  color: #388e3c;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  position: relative;
+  padding-right: 1em;
+  transition: color 0.2s;
+}
+.external-link:hover {
+  color: #1b5e20;
+}
+.external-link::after {
+  content: '\2197'; /* Unicode for ↗ */
+  font-size: 0.8em;
+  position: absolute;
+  right: 0.1em;
+  top: 0.1em;
+  color: #388e3c;
+  opacity: 0.7;
+  pointer-events: none;
+}

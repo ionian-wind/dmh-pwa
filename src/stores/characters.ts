@@ -4,6 +4,7 @@ import { PlayerCharacter, UUID } from '@/types';
 import { generateId, useStorage } from '@/utils/storage';
 import characterSchema from '@/schemas/character.schema.json';
 import { registerValidationSchema } from '@/utils/schemaValidator';
+import { extractMentionedEntities } from '@/utils/markdownParser';
 
 registerValidationSchema('character', characterSchema);
 

@@ -1,144 +1,150 @@
 <template>
-  <div class="character-view-container">
-    <BaseEntityView
-      :entity="character"
-      entity-name="Character"
-      list-route="/characters"
-      :on-delete="handleDelete"
-      :on-edit="editCharacter"
-      :is-editing="showEditor"
-      :title="characterTitle"
-      :subtitle="characterSubtitle"
-      :not-found="notFound"
-    >
-      <!-- Character Content -->
-      <div v-if="character" class="character-sheet">
-        <!-- Player Information -->
-        <section class="sheet-section player-info">
-          <h2>Player Name</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span>{{ character.playerName || 'N/A' }}</span>
+  <div class="character-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
+    <div style="flex: 2 1 0; min-width: 0;">
+      <BaseEntityView
+        :entity="character"
+        entity-name="Character"
+        list-route="/characters"
+        :on-delete="handleDelete"
+        :on-edit="editCharacter"
+        :is-editing="showEditor"
+        :title="characterTitle"
+        :subtitle="characterSubtitle"
+        :not-found="notFound"
+      >
+        <!-- Character Content -->
+        <div v-if="character" class="character-sheet">
+          <!-- Player Information -->
+          <section class="sheet-section player-info">
+            <h2>Player Name</h2>
+            <div class="info-grid">
+              <div class="info-item">
+                <span>{{ character.playerName || 'N/A' }}</span>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Basic Information -->
-        <section class="sheet-section basic-info">
-          <h2>Basic Information</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Background:</label>
-              <span>{{ character.background || 'N/A' }}</span>
+          <!-- Basic Information -->
+          <section class="sheet-section basic-info">
+            <h2>Basic Information</h2>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Background:</label>
+                <span>{{ character.background || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Experience Points:</label>
+                <span>{{ (character.level - 1) * 300 }} XP</span>
+              </div>
             </div>
-            <div class="info-item">
-              <label>Experience Points:</label>
-              <span>{{ (character.level - 1) * 300 }} XP</span>
+          </section>
+
+          <!-- Ability Scores -->
+          <section class="sheet-section ability-scores">
+            <h2>Ability Scores</h2>
+            <div class="ability-grid">
+              <div v-for="(score, ability) in character.stats" :key="ability" class="ability-score">
+                <div class="ability-name">{{ ability.charAt(0).toUpperCase() + ability.slice(1) }}</div>
+                <div class="ability-value">{{ score }}</div>
+                <div class="ability-modifier">{{ formatModifier(abilityModifier(score)) }}</div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Ability Scores -->
-        <section class="sheet-section ability-scores">
-          <h2>Ability Scores</h2>
-          <div class="ability-grid">
-            <div v-for="(score, ability) in character.stats" :key="ability" class="ability-score">
-              <div class="ability-name">{{ ability.charAt(0).toUpperCase() + ability.slice(1) }}</div>
-              <div class="ability-value">{{ score }}</div>
-              <div class="ability-modifier">{{ formatModifier(abilityModifier(score)) }}</div>
+          <!-- Combat -->
+          <section class="sheet-section combat">
+            <h2>Combat</h2>
+            <div class="combat-grid">
+              <div class="combat-stat">
+                <label>Armor Class:</label>
+                <span class="stat-value">{{ character.armorClass }}</span>
+              </div>
+              <div class="combat-stat">
+                <label>Initiative:</label>
+                <span class="stat-value">{{ formatModifier(abilityModifier(character.stats.dexterity)) }}</span>
+              </div>
+              <div class="combat-stat">
+                <label>Speed:</label>
+                <span class="stat-value">{{ character.speed }} ft</span>
+              </div>
             </div>
-          </div>
-        </section>
-
-        <!-- Combat -->
-        <section class="sheet-section combat">
-          <h2>Combat</h2>
-          <div class="combat-grid">
-            <div class="combat-stat">
-              <label>Armor Class:</label>
-              <span class="stat-value">{{ character.armorClass }}</span>
+            <div class="hit-points">
+              <h3>Hit Points</h3>
+              <div class="hp-display">
+                <div class="hp-current">{{ character.hitPoints.current }}</div>
+                <div class="hp-separator">/</div>
+                <div class="hp-maximum">{{ character.hitPoints.maximum }}</div>
+                <div v-if="character.hitPoints.temporary" class="hp-temp">+{{ character.hitPoints.temporary }} temp</div>
+              </div>
             </div>
-            <div class="combat-stat">
-              <label>Initiative:</label>
-              <span class="stat-value">{{ formatModifier(abilityModifier(character.stats.dexterity)) }}</span>
+          </section>
+
+          <!-- Skills & Proficiencies -->
+          <section class="sheet-section skills">
+            <h2>Skills & Proficiencies</h2>
+            <div v-if="character.proficiencies?.length" class="proficiencies">
+              <h3>Proficiencies</h3>
+              <div class="proficiency-list">
+                <span v-for="prof in character.proficiencies" :key="prof" class="proficiency-tag">{{ prof }}</span>
+              </div>
             </div>
-            <div class="combat-stat">
-              <label>Speed:</label>
-              <span class="stat-value">{{ character.speed }} ft</span>
+          </section>
+
+          <!-- Equipment -->
+          <section class="sheet-section equipment">
+            <h2>Equipment</h2>
+            <div v-if="character.equipment?.length" class="equipment-list">
+              <ul>
+                <li v-for="item in character.equipment" :key="item">{{ item }}</li>
+              </ul>
             </div>
-          </div>
-          <div class="hit-points">
-            <h3>Hit Points</h3>
-            <div class="hp-display">
-              <div class="hp-current">{{ character.hitPoints.current }}</div>
-              <div class="hp-separator">/</div>
-              <div class="hp-maximum">{{ character.hitPoints.maximum }}</div>
-              <div v-if="character.hitPoints.temporary" class="hp-temp">+{{ character.hitPoints.temporary }} temp</div>
+            <div v-else class="empty-list">No equipment listed</div>
+          </section>
+
+          <!-- Spells -->
+          <section v-if="character.spells?.length" class="sheet-section spells">
+            <h2>Spells</h2>
+            <div class="spells-list">
+              <ul>
+                <li v-for="spell in character.spells" :key="spell">{{ spell }}</li>
+              </ul>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Skills & Proficiencies -->
-        <section class="sheet-section skills">
-          <h2>Skills & Proficiencies</h2>
-          <div v-if="character.proficiencies?.length" class="proficiencies">
-            <h3>Proficiencies</h3>
-            <div class="proficiency-list">
-              <span v-for="prof in character.proficiencies" :key="prof" class="proficiency-tag">{{ prof }}</span>
+          <!-- Features -->
+          <section v-if="character.features?.length" class="sheet-section features">
+            <h2>Features & Traits</h2>
+            <div class="features-list">
+              <ul>
+                <li v-for="feature in character.features" :key="feature">{{ feature }}</li>
+              </ul>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Equipment -->
-        <section class="sheet-section equipment">
-          <h2>Equipment</h2>
-          <div v-if="character.equipment?.length" class="equipment-list">
-            <ul>
-              <li v-for="item in character.equipment" :key="item">{{ item }}</li>
-            </ul>
-          </div>
-          <div v-else class="empty-list">No equipment listed</div>
-        </section>
+          <!-- Notes -->
+          <section v-if="character.notes" class="sheet-section notes">
+            <h2>Notes</h2>
+            <div class="notes-content">
+              <p>{{ character.notes }}</p>
+            </div>
+          </section>
+        </div>
 
-        <!-- Spells -->
-        <section v-if="character.spells?.length" class="sheet-section spells">
-          <h2>Spells</h2>
-          <div class="spells-list">
-            <ul>
-              <li v-for="spell in character.spells" :key="spell">{{ spell }}</li>
-            </ul>
-          </div>
-        </section>
-
-        <!-- Features -->
-        <section v-if="character.features?.length" class="sheet-section features">
-          <h2>Features & Traits</h2>
-          <div class="features-list">
-            <ul>
-              <li v-for="feature in character.features" :key="feature">{{ feature }}</li>
-            </ul>
-          </div>
-        </section>
-
-        <!-- Notes -->
-        <section v-if="character.notes" class="sheet-section notes">
-          <h2>Notes</h2>
-          <div class="notes-content">
-            <p>{{ character.notes }}</p>
-          </div>
-        </section>
-      </div>
-
-      <!-- Editor Modal -->
-      <template #editor>
-        <CharacterEditor
-          :isOpen="showEditor"
-          :character="character"
-          @submit="handleSave"
-          @cancel="closeEditor"
-        />
-      </template>
-    </BaseEntityView>
+        <!-- Editor Modal -->
+        <template #editor>
+          <CharacterEditor
+            :isOpen="showEditor"
+            :character="character"
+            @submit="handleSave"
+            @cancel="closeEditor"
+          />
+        </template>
+      </BaseEntityView>
+    </div>
+    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+      <Mentions title="Mentions" :entities="mentionedEntities" />
+      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+    </aside>
   </div>
 </template>
 
@@ -149,12 +155,16 @@ import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/components/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import Mentions from '@/components/common/Mentions.vue';
+import { useMentionsStore } from '@/stores/createIndexationStore';
 
 const route = useRoute();
 const characterStore = useCharacterStore();
 const showEditor = ref(false);
 const character = ref<PlayerCharacter | null>(null);
 const notFound = ref(false);
+
+const mentionsStore = useMentionsStore();
 
 onMounted(() => {
   const id = route.params.id as string;
@@ -207,6 +217,15 @@ const characterSubtitle = computed(() => {
   ].filter(Boolean);
   
   return parts.join(' • ');
+});
+
+const mentionedEntities = computed(() => {
+  if (!character.value) return [];
+  return mentionsStore.getLinks({ kind: 'character', id: character.value.id });
+});
+const mentionedInEntities = computed(() => {
+  if (!character.value) return [];
+  return mentionsStore.getBacklinks({ kind: 'character', id: character.value.id });
 });
 </script>
 
