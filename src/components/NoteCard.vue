@@ -6,7 +6,7 @@ import { parseMarkdown } from '@/utils/markdownParser';
 import { ref, onMounted, nextTick, watch } from 'vue';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
-const emit = defineEmits(['edit', 'delete', 'view']);
+const emit = defineEmits(['edit', 'delete', 'view', 'tag-click']);
 
 const contentRef = ref<HTMLElement | null>(null);
 const clamped = ref(false);
@@ -42,7 +42,12 @@ function toggleExpand() { expanded.value = !expanded.value; }
     <div class="note-card-footer">
       <span v-if="moduleName" class="module-badge">{{ moduleName }}</span>
       <div class="tags">
-        <span v-for="tag in note.tags" :key="tag" class="tag">{{ tag }}</span>
+        <span
+          v-for="tag in note.tags"
+          :key="tag"
+          class="tag clickable"
+          @click.stop="emit('tag-click', tag)"
+        >#{{ tag }}</span>
       </div>
     </div>
     <template #actions>
@@ -102,17 +107,12 @@ function toggleExpand() { expanded.value = !expanded.value; }
   color: var(--color-text);
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.tag.clickable {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  transition: color 0.15s;
 }
-
-.tag {
-  background: var(--color-background-soft);
-  padding: 0.2em 0.7em;
-  border-radius: var(--border-radius);
-  font-size: 0.85em;
-  color: var(--color-text-light);
+.tag.clickable:hover {
+  color: var(--color-primary);
 }
 </style> 

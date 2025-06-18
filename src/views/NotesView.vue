@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -31,11 +31,28 @@ const editingNote = ref<Note>({
 const notes = ref<Note[]>([]);
 const searchQuery = ref('');
 
+const route = useRoute();
+const router = useRouter();
+
+const tagFilter = ref<string | null>(null);
+
+// Watch for query param changes
+watch(
+  () => route.query.tag,
+  (newTag) => {
+    tagFilter.value = typeof newTag === 'string' ? newTag : null;
+  },
+  { immediate: true }
+);
+
 const filteredNotes = computed(() => {
-  return noteStore.filteredNotes.filter(note => {
+  let notes = noteStore.filteredNotes;
+  if (tagFilter.value) {
+    notes = notes.filter(note => note.tags.includes(tagFilter.value!));
+  }
+  return notes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
                          note.content.toLowerCase().includes(searchQuery.value.toLowerCase());
-    
     return matchesSearch;
   });
 });
@@ -111,6 +128,10 @@ const handleDelete = async (note: Note) => {
   }
 };
 
+function handleTagClick(tag: string) {
+  router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
+}
+
 </script>
 
 <template>
@@ -127,12 +148,18 @@ const handleDelete = async (note: Note) => {
     <div v-else class="notes-container">
       <div class="notes-filters">
         <div class="search-box">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search notes..."
-            class="search-input"
-          >
+          <div class="search-input-wrapper">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search notes..."
+              class="search-input"
+            >
+            <span v-if="tagFilter" class="tag-chip">
+              #{{ tagFilter }}
+              <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">&times;</button>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -145,6 +172,7 @@ const handleDelete = async (note: Note) => {
           @view="note => $router.push(`/notes/${note.id}`)"
           @edit="note => { editingNote = note as Note; showEditor = true; }"
           @delete="handleDelete"
+          @tag-click="handleTagClick"
         />
       </div>
     </div>
@@ -170,6 +198,13 @@ const handleDelete = async (note: Note) => {
   flex: 1;
 }
 
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .search-input {
   width: 100%;
   padding: 0.75rem;
@@ -178,5 +213,33 @@ const handleDelete = async (note: Note) => {
   font-size: 1rem;
   background: var(--color-background);
   color: var(--color-text);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-background-soft);
+  color: var(--color-primary);
+  border-radius: 16px;
+  padding: 0.2em 0.75em 0.2em 0.5em;
+  font-size: 0.95em;
+  margin-left: 0.5em;
+  border: 1px solid var(--color-primary);
+  gap: 0.25em;
+}
+
+.remove-tag {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 1.1em;
+  margin-left: 0.25em;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.remove-tag:hover {
+  color: var(--color-danger, #c00);
 }
 </style> 

@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { useMentionsStore } from '@/stores/createIndexationStore';
 import type { Note } from '@/types';
 import NoteEditor from '@/components/NoteEditor.vue';
-import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser';
+import { parseMarkdown } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 
 const route = useRoute();
+const router = useRouter();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
@@ -67,18 +68,6 @@ const handleCancel = () => {
 
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title || '');
-const noteSubtitle = computed(() => {
-  if (!note.value) return '';
-  
-  const parts = [];
-  if (note.value.moduleId) {
-    parts.push(moduleStore.getModuleName(note.value.moduleId));
-  }
-  if (note.value.tags?.length) {
-    parts.push(note.value.tags.join(', '));
-  }
-  return parts.join(' • ');
-});
 
 const mentions = computed(() => {
   if (!note.value) return [];
@@ -110,6 +99,10 @@ function getEntityRoute(entity: { kind: string; id: string }) {
 function getEntityLabel(entity: { kind: string; id: string }) {
   return entity.kind.charAt(0).toUpperCase() + entity.kind.slice(1);
 }
+
+function handleTagClick(tag: string) {
+  router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
+}
 </script>
 
 <template>
@@ -123,12 +116,23 @@ function getEntityLabel(entity: { kind: string; id: string }) {
         :on-edit="handleEdit"
         :is-editing="isEditing"
         :title="noteTitle"
-        :subtitle="noteSubtitle"
         :not-found="notFound"
       >
         <!-- Note Content -->
-        <div v-if="note" class="note-body markdown-content" v-html="parsedContent"></div>
+        <div v-if="note">
+          <div class="note-body markdown-content" v-html="parsedContent"></div>
+        </div>
 
+        <template #sub>
+          <div class="tags" v-if="note!.tags && note!.tags.length">
+            <span
+              v-for="tag in note!.tags"
+              :key="tag"
+              class="tag clickable"
+              @click.stop="handleTagClick(tag)"
+            >#{{ tag }}</span>
+          </div>
+        </template>
         <!-- Editor Modal -->
         <template #editor>
           <NoteEditor
@@ -237,5 +241,14 @@ function getEntityLabel(entity: { kind: string; id: string }) {
     max-width: 100%;
     margin-top: 1rem;
   }
+}
+
+.tag.clickable {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  transition: color 0.15s;
+}
+.tag.clickable:hover {
+  color: var(--color-primary);
 }
 </style>

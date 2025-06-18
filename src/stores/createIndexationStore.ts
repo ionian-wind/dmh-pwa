@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
 import { useStorage } from '@/utils/storage';
 
 export interface EntityRef {

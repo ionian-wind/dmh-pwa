@@ -122,7 +122,10 @@ const router = createRouter({
       path: '/:catchAll(.*)',
       component: NotFoundView
     }
-  ]
+  ],
+  scrollBehavior() {
+    return { left: 0, top: 0 };
+  },
 });
 
 router.beforeEach((to, _from, next) => {

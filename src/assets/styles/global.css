@@ -556,3 +556,18 @@ select {
   padding: 0.1em 0.3em;
   border-radius: 4px;
 }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  background: none;
+  color: #2196f3;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.95em;
+  font-weight: 500;
+}

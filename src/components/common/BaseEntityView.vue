@@ -60,6 +60,7 @@ const handleGoBack = () => {
           <div v-if="subtitle" class="entity-subtitle">
             {{ subtitle }}
           </div>
+          <slot name="sub" />
         </div>
         <div class="header-actions">
           <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">✏️</Button>
