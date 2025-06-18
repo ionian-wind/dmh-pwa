@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import { useRouter } from 'vue-router';
@@ -12,16 +12,16 @@ const router = useRouter();
 
 const currentModule = computed(() => moduleStore.currentModule);
 const modulesSelect = computed(() => [
-  { id: 'any', value: 'any', name: t('common.anyModule') },
   { id: 'none', value: 'none', name: t('common.noModule') },
+  { id: 'any', value: 'any', name: t('common.anyModule') },
   ...moduleStore.modules.map(({ id, name }) => ({ id, name, value: id }))
 ]);
 
 const setCurrentModuleFilter = (filterValue: string) => {
-  if (filterValue === 'any') {
-    moduleStore.setCurrentModuleFilter('any');
-  } else if (filterValue === 'none') {
+  if (filterValue === 'none') {
     moduleStore.setCurrentModuleFilter('none');
+  } else if (filterValue === 'any') {
+    moduleStore.setCurrentModuleFilter('any');
   } else {
     moduleStore.setCurrentModuleFilter(filterValue);
   }
@@ -45,6 +45,12 @@ const isActive = (item: { section: Section, path: string }) => {
 
   return sections.some((mod) => mod.section === item.section && currentPath.startsWith(mod.path)) ?? currentPath.startsWith(item.path);
 };
+
+onMounted(() => {
+  if (!moduleStore.currentModuleFilter || moduleStore.currentModuleFilter === 'any') {
+    moduleStore.setCurrentModuleFilter('none');
+  }
+});
 </script>
 
 <template>
@@ -61,8 +67,8 @@ const isActive = (item: { section: Section, path: string }) => {
         variant="danger"
         size="small"
         class="clear-module-btn"
-        @click="setCurrentModuleFilter('any')"
-        v-if="moduleStore.currentModuleFilter !== 'any'"
+        @click="setCurrentModuleFilter('none')"
+        v-if="moduleStore.currentModuleFilter !== 'none'"
       >
         {{ t('app.clear') }}
       </Button>

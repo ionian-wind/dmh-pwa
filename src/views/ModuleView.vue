@@ -12,61 +12,60 @@
         :subtitle="moduleSubtitle"
         :not-found="notFound"
       >
-        <!-- Module Content -->
         <div v-if="module" class="module-content">
-          <section class="content-section">
-            <h2>Parties</h2>
-            <div v-if="moduleParties.length === 0" class="empty-state">
-              <p>No parties in this module</p>
-            </div>
-            <div v-else class="content-grid">
-              <div v-for="party in moduleParties" :key="party.id" class="content-card">
-                <h3>{{ party.name }}</h3>
-                <p>{{ party.description }}</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="content-section">
-            <h2>Monsters</h2>
-            <div v-if="moduleMonsters.length === 0" class="empty-state">
-              <p>No monsters in this module</p>
-            </div>
-            <div v-else class="content-grid">
-              <div v-for="monster in moduleMonsters" :key="monster.id" class="content-card">
-                <h3>{{ monster.name }}</h3>
-                <p>{{ monster.type }}</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="content-section">
-            <h2>Encounters</h2>
-            <div v-if="moduleEncounters.length === 0" class="empty-state">
-              <p>No encounters in this module</p>
-            </div>
-            <div v-else class="content-grid">
-              <div v-for="encounter in moduleEncounters" :key="encounter.id" class="content-card">
-                <h3>{{ encounter.name }}</h3>
-                <p>{{ encounter.description }}</p>
-              </div>
-            </div>
-          </section>
-
-          <section class="content-section">
-            <h2>Notes</h2>
-            <div v-if="moduleNotes.length === 0" class="empty-state">
-              <p>No notes in this module</p>
-            </div>
-            <div v-else class="content-grid">
-              <div v-for="note in moduleNotes" :key="note.id" class="content-card">
-                <h3>{{ note.title }}</h3>
-                <p>{{ note.content }}</p>
-              </div>
-            </div>
-          </section>
+          <TabGroup :tabs="entityTabs" v-model="activeTab">
+            <template #default="{ activeTab }">
+              <section v-if="activeTab === 'parties'" class="content-section">
+                <h2>Parties</h2>
+                <div v-if="moduleParties.length === 0" class="empty-state">
+                  <p>No parties in this module</p>
+                </div>
+                <div v-else class="content-grid">
+                  <div v-for="party in moduleParties" :key="party.id" class="content-card">
+                    <h3>{{ party.name }}</h3>
+                    <p>{{ party.description }}</p>
+                  </div>
+                </div>
+              </section>
+              <section v-else-if="activeTab === 'monsters'" class="content-section">
+                <h2>Monsters</h2>
+                <div v-if="moduleMonsters.length === 0" class="empty-state">
+                  <p>No monsters in this module</p>
+                </div>
+                <div v-else class="content-grid">
+                  <div v-for="monster in moduleMonsters" :key="monster.id" class="content-card">
+                    <h3>{{ monster.name }}</h3>
+                    <p>{{ monster.type }}</p>
+                  </div>
+                </div>
+              </section>
+              <section v-else-if="activeTab === 'encounters'" class="content-section">
+                <h2>Encounters</h2>
+                <div v-if="moduleEncounters.length === 0" class="empty-state">
+                  <p>No encounters in this module</p>
+                </div>
+                <div v-else class="content-grid">
+                  <div v-for="encounter in moduleEncounters" :key="encounter.id" class="content-card">
+                    <h3>{{ encounter.name }}</h3>
+                    <p>{{ encounter.description }}</p>
+                  </div>
+                </div>
+              </section>
+              <section v-else-if="activeTab === 'notes'" class="content-section">
+                <h2>Notes</h2>
+                <div v-if="moduleNotes.length === 0" class="empty-state">
+                  <p>No notes in this module</p>
+                </div>
+                <div v-else class="content-grid">
+                  <div v-for="note in moduleNotes" :key="note.id" class="content-card">
+                    <h3>{{ note.title }}</h3>
+                    <p>{{ note.content }}</p>
+                  </div>
+                </div>
+              </section>
+            </template>
+          </TabGroup>
         </div>
-
         <!-- Editor Modal -->
         <template #editor>
           <ModuleEditor
@@ -99,6 +98,7 @@ import ModuleEditor from '@/components/ModuleEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
+import TabGroup from '@/components/common/TabGroup.vue';
 
 const route = useRoute();
 const moduleStore = useModuleStore();
@@ -137,6 +137,14 @@ const mentionedInEntities = computed(() => {
   if (!module.value) return [];
   return mentionsStore.getBacklinks({ kind: 'module', id: module.value.id });
 });
+
+const entityTabs = [
+  { id: 'parties', label: 'Parties' },
+  { id: 'monsters', label: 'Monsters' },
+  { id: 'encounters', label: 'Encounters' },
+  { id: 'notes', label: 'Notes' },
+];
+const activeTab = ref('parties');
 
 onMounted(async () => {
   const moduleId = route.params.id as string;

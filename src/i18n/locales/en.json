@@ -213,7 +213,7 @@
     "error": "An error occurred",
     "success": "Operation completed successfully",
     "confirmDelete": "Are you sure you want to delete this item?",
-    "noModule": "No Module",
+    "noModule": "Without Module",
     "unknownModule": "Unknown Module",
     "anyModule": "Any Module",
     "currentModule": "Current Module",
