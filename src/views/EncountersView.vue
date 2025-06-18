@@ -71,25 +71,19 @@ const handlePartySelectorCancel = () => {
   selectedEncounterForCombat.value = null;
 };
 
-const getModuleName = (moduleId: string | null) => {
-  if (!moduleId) return 'No Module';
-  const module = moduleStore.modules.find(m => m.id === moduleId);
-  return module ? module.name : 'Unknown Module';
-};
 </script>
 
 <template>
-  <div class="encounters-view">
+  <div class="view-list">
     <div class="view-header">
-      <h1>Encounters</h1>
-      <Button @click="handleCreate">Create Encounter</Button>
+      <Button @click="handleCreate">+</Button>
     </div>
 
-    <div v-if="encounterStore.filteredEncounters.length === 0" class="empty-state">
+    <div v-if="encounterStore.filteredEncounters.length === 0" class="view-empty">
       <p>No encounters yet. Create your first encounter to get started!</p>
     </div>
 
-    <div v-else class="encounters-grid">
+    <div v-else class="view-grid">
       <EncounterCard
         v-for="encounter in encounterStore.filteredEncounters"
         :key="encounter.id"
@@ -117,29 +111,3 @@ const getModuleName = (moduleId: string | null) => {
     />
   </div>
 </template>
-
-<style scoped>
-.encounters-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.view-header h1 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.encounters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-}
-</style> 

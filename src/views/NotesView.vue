@@ -114,15 +114,14 @@ const handleDelete = async (note: Note) => {
 </script>
 
 <template>
-  <div class="notes-view">
-    <div class="header">
-      <h1>Notes</h1>
-      <Button class="add-btn" @click="addNote">Add Note</Button>
+  <div class="view-list">
+    <div class="view-header">
+      <Button @click="addNote">+</Button>
     </div>
 
-    <div v-if="filteredNotes.length === 0" class="empty-state">
+    <div v-if="filteredNotes.length === 0" class="view-empty">
       <p>No notes found.</p>
-      <p v-if="moduleStore.currentModuleFilter !== 'any'">Try changing the module filter or create a new note.</p>
+      <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
     </div>
 
     <div v-else class="notes-container">
@@ -137,15 +136,15 @@ const handleDelete = async (note: Note) => {
         </div>
       </div>
 
-      <div class="notes-grid">
+      <div class="view-grid">
         <NoteCard
           v-for="note in filteredNotes"
           :key="note.id"
           :note="note"
           :module-name="note.moduleId ? moduleStore.modules.find(m => m.id === note.moduleId)?.name : undefined"
-          @delete="handleDelete"
           @view="note => $router.push(`/notes/${note.id}`)"
           @edit="note => { editingNote = note as Note; showEditor = true; }"
+          @delete="handleDelete"
         />
       </div>
     </div>
@@ -161,48 +160,6 @@ const handleDelete = async (note: Note) => {
 </template>
 
 <style scoped>
-.notes-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.header h1 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.add-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text-light);
-}
-
-.notes-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
 .notes-filters {
   display: flex;
   gap: 1rem;
@@ -221,11 +178,5 @@ const handleDelete = async (note: Note) => {
   font-size: 1rem;
   background: var(--color-background);
   color: var(--color-text);
-}
-
-.notes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
 }
 </style> 

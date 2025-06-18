@@ -48,17 +48,16 @@ const deleteMonster = async (monsterId: string) => {
 </script>
 
 <template>
-  <div class="monsters-view">
+  <div class="view-list">
     <div class="view-header">
-      <h1>Monsters</h1>
-      <Button @click="handleCreateClick">Create Monster</Button>
+      <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="monsterStore.filteredMonsters.length === 0" class="empty-state">
+    <div v-if="monsterStore.filteredMonsters.length === 0" class="view-empty">
       <p>No monsters yet. Create your first monster to get started!</p>
     </div>
 
-    <div v-else class="monsters-grid">
+    <div v-else class="view-grid">
       <MonsterCard
         v-for="monster in monsterStore.filteredMonsters"
         :key="monster.id"
@@ -80,38 +79,3 @@ const deleteMonster = async (monsterId: string) => {
     />
   </div>
 </template>
-
-<style scoped>
-.monsters-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.view-header h1 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text-light);
-}
-
-.monsters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-</style> 

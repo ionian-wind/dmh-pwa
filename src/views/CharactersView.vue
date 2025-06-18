@@ -1,15 +1,14 @@
 <template>
-  <div class="characters-view">
+  <div class="view-list">
     <div class="view-header">
-      <h1>Characters</h1>
-      <Button @click="handleCreateClick">Create Character</Button>
+      <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="characterStore.all.length === 0" class="empty-state">
+    <div v-if="characterStore.all.length === 0" class="view-empty">
       <p>No characters yet. Create your first character to get started!</p>
     </div>
 
-    <div v-else class="characters-grid">
+    <div v-else class="view-grid">
       <div v-for="character in characterStore.all" :key="character.id" class="character-card">
       <CharacterCard
         :character="character"
@@ -84,53 +83,3 @@ const deleteCharacter = async (character: PlayerCharacter) => {
 }
 };
 </script>
-
-<style scoped>
-.characters-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.view-header h1 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.create-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.create-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text-light);
-}
-
-.characters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-</style> 

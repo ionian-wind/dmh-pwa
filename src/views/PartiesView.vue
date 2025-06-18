@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
+import { useModuleStore } from '@/stores/modules';
 import type { Party } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
 import PartyCard from '@/components/PartyCard.vue';
@@ -9,6 +10,7 @@ import Button from '@/components/common/Button.vue';
 
 const router = useRouter();
 const partyStore = usePartyStore();
+const moduleStore = useModuleStore();
 const showEditor = ref(false);
 const editingParty = ref<Party | null>(null);
 
@@ -47,17 +49,17 @@ const deleteParty = async (party: Party) => {
 </script>
 
 <template>
-  <div class="parties-view">
+  <div class="view-list">
     <div class="view-header">
-      <h1>Parties</h1>
-      <Button @click="handleCreateClick">Create Party</Button>
+      <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="partyStore.filteredParties.length === 0" class="empty-state">
-      <p>No parties yet. Create your first party to get started!</p>
+    <div v-if="partyStore.filteredParties.length === 0" class="view-empty">
+      <p>No parties yet.</p>
+      <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
     </div>
 
-    <div v-else class="parties-grid">
+    <div v-else class="view-grid">
       <PartyCard
         v-for="party in partyStore.filteredParties"
         :key="party.id"
@@ -78,52 +80,3 @@ const deleteParty = async (party: Party) => {
   </div>
 </template>
 
-<style scoped>
-.parties-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.view-header h1 {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.create-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.create-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text-light);
-}
-
-.parties-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-</style> 
