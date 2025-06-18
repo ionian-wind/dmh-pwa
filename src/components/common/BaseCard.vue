@@ -7,10 +7,14 @@
       <slot />
     </div>
     <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
-      <Button v-if="showView" variant="link" size="small" @click="$emit('view')">View Details</Button>
-      <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">✏️</Button>
-      <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">🗑️</Button>
-      <slot name="actions" />
+      <div class="base-card-actions-left">
+        <slot name="actions" />
+      </div>
+      <div class="base-card-actions-right">
+        <Button v-if="showView" variant="link" size="small" @click="$emit('view')">View Details</Button>
+        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">✏️</Button>
+        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">🗑️</Button>
+      </div>
     </div>
   </div>
 </template>
@@ -49,14 +53,25 @@ const emit = defineEmits(['view', 'edit', 'delete']);
 }
 .base-card-content {
   padding: 1rem;
-  flex: 1;
 }
 .base-card-actions {
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--color-border, #eee);
   background: var(--color-background, #fff);
+}
+.base-card-actions-left {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.base-card-actions-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
 }
 </style> 
