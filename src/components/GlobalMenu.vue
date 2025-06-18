@@ -49,19 +49,20 @@ const isActive = (item: { section: Section, path: string }) => {
 
 <template>
   <nav class="global-menu">
-    <div class="module-selector">
-      <select v-model="moduleStore.currentModuleFilter" @change="setCurrentModuleFilter(($event.target as HTMLSelectElement)?.value || 'any')">
-        <option v-for="module in modulesSelect" :key="module.id" :value="module.value">
-          {{ module.name }}
-        </option>
-      </select>
-    </div>
-    <div v-if="currentModule" class="current-module">
-      <span>{{ t('common.currentModule') }}: {{ currentModule.name }}</span>
+    <div class="module-selector-row">
+      <div class="module-selector">
+        <select v-model="moduleStore.currentModuleFilter" @change="setCurrentModuleFilter(($event.target as HTMLSelectElement)?.value || 'any')">
+          <option v-for="module in modulesSelect" :key="module.id" :value="module.value">
+            {{ module.name }}
+          </option>
+        </select>
+      </div>
       <Button 
         variant="danger"
         size="small"
+        class="clear-module-btn"
         @click="setCurrentModuleFilter('any')"
+        v-if="moduleStore.currentModuleFilter !== 'any'"
       >
         {{ t('app.clear') }}
       </Button>
@@ -90,8 +91,15 @@ const isActive = (item: { section: Section, path: string }) => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.module-selector {
+.module-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 1rem;
+}
+
+.module-selector {
+  flex: 1;
 }
 
 .module-selector select {
@@ -101,6 +109,10 @@ const isActive = (item: { section: Section, path: string }) => {
   border: 1px solid #ddd;
   background: white;
   color: #333;
+}
+
+.clear-module-btn {
+  margin-left: 0.5rem;
 }
 
 .menu-items {
@@ -120,15 +132,5 @@ const isActive = (item: { section: Section, path: string }) => {
 
 .menu-items .btn.active {
   background: #4caf50;
-}
-
-.current-module {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: #2d2d44;
-  border-radius: 4px;
-  margin-bottom: 1rem;
 }
 </style> 

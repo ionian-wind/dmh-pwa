@@ -7,6 +7,7 @@ import EntityAutosuggest from './EntityAutosuggest.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
+import { useModuleStore } from '@/stores/modules';
 
 const props = defineProps<{
   note: Note | null;
@@ -17,6 +18,8 @@ const emit = defineEmits<{
   (e: 'submit', note: Note): void;
   (e: 'cancel'): void;
 }>();
+
+const moduleStore = useModuleStore();
 
 const showAutosuggest = ref(false);
 const autosuggestPosition = ref({ top: 0, left: 0 });
@@ -29,7 +32,7 @@ const editedNote = ref<Note>({
   title: '',
   content: '',
   tags: [],
-  moduleId: null,
+  moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : null,
   typeId: null
 });
 
@@ -48,11 +51,17 @@ watch(() => props.note, (newNote) => {
       title: '',
       content: '',
       tags: [],
-      moduleId: null,
+      moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : null,
       typeId: null
     };
   }
 }, { immediate: true });
+
+watch(() => moduleStore.currentModuleFilter, (newFilter) => {
+  if (!props.note && props.isOpen) {
+    editedNote.value.moduleId = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? newFilter : null;
+  }
+});
 
 const handleContentInput = (event: Event) => {
   const textarea = event.target as HTMLTextAreaElement;
@@ -217,110 +226,5 @@ const handleCancel = () => {
 </template>
 
 <style scoped>
-.form-section {
-  background: var(--color-background-soft);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-}
-
-.form-section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  color: var(--color-text);
-  font-size: 0.9rem;
-}
-
-.form-group input,
-.form-group textarea {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.content-editor {
-  resize: vertical;
-  min-height: 200px;
-  font-family: monospace;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-.formatting-help {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: var(--color-background-soft);
-  border-radius: var(--border-radius);
-  font-size: 0.9rem;
-}
-
-.formatting-help h4 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.help-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-
-.help-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.help-title {
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.help-item code {
-  background: var(--color-background);
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  font-family: monospace;
-  font-size: 0.9rem;
-  color: var(--color-text);
-}
-
-.help-item p {
-  margin: 0;
-  color: var(--color-text-light);
-}
-
-.help-item ul {
-  margin: 0;
-  padding-left: 1.5rem;
-  color: var(--color-text-light);
-}
-
-.help-item li {
-  margin: 0.25rem 0;
-}
-
-.help-item li code {
-  padding: 0.1rem 0.3rem;
-  font-size: 0.85rem;
-}
+/* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
 </style>

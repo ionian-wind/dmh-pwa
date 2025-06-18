@@ -24,7 +24,7 @@ const editedParty = ref<PartyForm>({
   description: '',
   notes: '',
   characters: [],
-  moduleIds: []
+  moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : []
 });
 
 watch(() => props.party, (newParty) => {
@@ -37,10 +37,16 @@ watch(() => props.party, (newParty) => {
       description: '',
       notes: '',
       characters: [],
-      moduleIds: []
+      moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : []
     };
   }
 }, { immediate: true });
+
+watch(() => moduleStore.currentModuleFilter, (newFilter) => {
+  if (!props.party && props.isOpen) {
+    editedParty.value.moduleIds = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? [newFilter] : [];
+  }
+});
 
 const handleSubmit = () => {
   if (!editedParty.value.name) {
@@ -114,47 +120,5 @@ const handleCancel = () => {
 </template>
 
 <style scoped>
-.form-section {
-  background: var(--color-background-soft);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-}
-
-.form-section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  color: var(--color-text);
-  font-size: 0.9rem;
-}
-
-.form-group input,
-.form-group textarea {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
-}
+/* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
 </style> 

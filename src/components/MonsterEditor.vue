@@ -57,7 +57,7 @@ const editedMonster = ref<Monster>({
   actions: [],
   legendaryActions: [],
   description: '',
-  moduleIds: [],
+  moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : [],
   createdAt: Date.now(),
   updatedAt: Date.now()
 });
@@ -69,6 +69,12 @@ watch(() => props.monster, (newMonster) => {
     editedMonster.value = { ...newMonster };
   }
 }, { immediate: true });
+
+watch(() => moduleStore.currentModuleFilter, (newFilter) => {
+  if (!props.monster && props.isOpen) {
+    editedMonster.value.moduleIds = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? [newFilter] : [];
+  }
+});
 
 const resetForm = () => {
   editedMonster.value = {
@@ -108,7 +114,7 @@ const resetForm = () => {
     actions: [],
     legendaryActions: [],
     description: '',
-    moduleIds: [],
+    moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : [],
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -151,96 +157,89 @@ const moduleIdsProxy = computed<string[]>({
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <label>Modules</label>
-      <ModuleMultipleSelector
-        v-model="moduleIdsProxy"
-        placeholder="No Modules"
-      />
-    </div>
-    <div class="form-section">
-      <label>Name</label>
-      <input v-model="editedMonster.name" type="text" required />
-    </div>
-    <div class="form-section">
-      <label>Type</label>
-      <input v-model="editedMonster.type" type="text" required />
-    </div>
-    <div class="form-section">
-      <label>Size</label>
-      <select v-model="editedMonster.size">
-        <option value="Tiny">Tiny</option>
-        <option value="Small">Small</option>
-        <option value="Medium">Medium</option>
-        <option value="Large">Large</option>
-        <option value="Huge">Huge</option>
-        <option value="Gargantuan">Gargantuan</option>
-      </select>
-    </div>
-    <div class="form-section">
-      <label>Alignment</label>
-      <select v-model="editedMonster.alignment">
-        <option value="Lawful Good">Lawful Good</option>
-        <option value="Neutral Good">Neutral Good</option>
-        <option value="Chaotic Good">Chaotic Good</option>
-        <option value="Lawful Neutral">Lawful Neutral</option>
-        <option value="Neutral">Neutral</option>
-        <option value="Chaotic Neutral">Chaotic Neutral</option>
-        <option value="Lawful Evil">Lawful Evil</option>
-        <option value="Neutral Evil">Neutral Evil</option>
-        <option value="Chaotic Evil">Chaotic Evil</option>
-        <option value="Unaligned">Unaligned</option>
-      </select>
-    </div>
-    <div class="form-row">
-      <div class="form-section">
-        <label>Armor Class</label>
-        <input v-model.number="editedMonster.armorClass" type="number" min="0" />
-      </div>
-      <div class="form-section">
-        <label>Hit Points</label>
-        <input v-model.number="editedMonster.hitPoints" type="number" min="1" />
+      <h3>Basic Information</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="monster-name">Name</label>
+          <input id="monster-name" v-model="editedMonster.name" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="monster-type">Type</label>
+          <input id="monster-type" v-model="editedMonster.type" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="monster-size">Size</label>
+          <select id="monster-size" v-model="editedMonster.size">
+            <option value="Tiny">Tiny</option>
+            <option value="Small">Small</option>
+            <option value="Medium">Medium</option>
+            <option value="Large">Large</option>
+            <option value="Huge">Huge</option>
+            <option value="Gargantuan">Gargantuan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="monster-alignment">Alignment</label>
+          <select id="monster-alignment" v-model="editedMonster.alignment">
+            <option value="Lawful Good">Lawful Good</option>
+            <option value="Neutral Good">Neutral Good</option>
+            <option value="Chaotic Good">Chaotic Good</option>
+            <option value="Lawful Neutral">Lawful Neutral</option>
+            <option value="Neutral">Neutral</option>
+            <option value="Chaotic Neutral">Chaotic Neutral</option>
+            <option value="Lawful Evil">Lawful Evil</option>
+            <option value="Neutral Evil">Neutral Evil</option>
+            <option value="Chaotic Evil">Chaotic Evil</option>
+            <option value="Unaligned">Unaligned</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="form-section">
-      <label>Challenge Rating</label>
-      <input v-model="editedMonster.challengeRating" type="text" />
+      <h3>Stats</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="monster-ac">Armor Class</label>
+          <input id="monster-ac" v-model.number="editedMonster.armorClass" type="number" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="monster-hp">Hit Points</label>
+          <input id="monster-hp" v-model.number="editedMonster.hitPoints" type="number" min="1" />
+        </div>
+        <div class="form-group">
+          <label for="monster-cr">Challenge Rating</label>
+          <input id="monster-cr" v-model="editedMonster.challengeRating" type="text" />
+        </div>
+      </div>
     </div>
     <div class="form-section">
-      <label>Description</label>
-      <textarea v-model="editedMonster.description" rows="3"></textarea>
+      <h3>Modules</h3>
+      <div class="form-group">
+        <label for="monster-modules">Modules</label>
+        <ModuleMultipleSelector
+          id="monster-modules"
+          v-model="moduleIdsProxy"
+          placeholder="No Modules"
+        />
+      </div>
     </div>
     <div class="form-section">
-      <label>Languages</label>
-      <input v-model="editedMonster.languages" type="text" placeholder="Comma-separated list" />
+      <h3>Description</h3>
+      <div class="form-group">
+        <label for="monster-description">Description</label>
+        <textarea id="monster-description" v-model="editedMonster.description" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Languages</h3>
+      <div class="form-group">
+        <label for="monster-languages">Languages</label>
+        <input id="monster-languages" v-model="editedMonster.languages" type="text" placeholder="Comma-separated list" />
+      </div>
     </div>
   </BaseModal>
 </template>
 
 <style scoped>
-.form-section {
-  margin-bottom: 1rem;
-}
-
-.form-section label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--color-text);
-}
-
-.form-section input,
-.form-section select,
-.form-section textarea {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background-soft);
-  color: var(--color-text);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
+/* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
 </style> 
