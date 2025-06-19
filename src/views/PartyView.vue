@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import { useCharacterStore } from '@/stores/characters';
@@ -15,6 +15,7 @@ import { useMentionsStore } from '@/stores/createIndexationStore';
 import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
+const router = useRouter();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const characterStore = useCharacterStore();
@@ -23,16 +24,14 @@ const showEditor = ref(false);
 const showLinkModal = ref(false);
 
 const isLoaded = computed(() => partyStore.isLoaded);
-const party = computed(() => partyStore.getPartyById(route.params.id as string));
+const party = computed(() => partyStore.getById(route.params.id as string));
 const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !party.value);
 
 const modules = computed(() => {
-  if (!party.value) return [];
-  const moduleIds = party.value.moduleIds || [];
-  return moduleIds
-    .map(id => moduleStore.getModuleById(id))
-    .filter(m => m !== null);
+  return party.value?.moduleIds
+    .map(id => moduleStore.getById(id))
+    .filter(Boolean);
 });
 
 const allCharacters = computed(() => characterStore.all);
@@ -70,14 +69,14 @@ const mentionedInEntities = computed(() => {
 });
 
 const handleDeleteParty = async () => {
-  if (!party.value) return;
-  partyStore.deleteParty(party.value.id);
+  if (confirm(`Are you sure you want to delete ${party.value?.name}?`)) {
+    partyStore.remove(party.value.id);
+    router.push('/parties');
+  }
 };
 
-const handlePartySubmit = async (updatedParty: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
-  if (!party.value) return;
-  await partyStore.updateParty(party.value.id, updatedParty);
-  party.value = await partyStore.getPartyById(party.value.id);
+const handleSaveParty = async (updatedParty: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
+  await partyStore.update(party.value.id, updatedParty);
   showEditor.value = false;
 };
 
@@ -118,8 +117,8 @@ const partySubtitle = computed(() => {
   return parts.join(' • ');
 });
 
-onMounted(() => {
-  partyStore.loadParties();
+onMounted(async () => {
+  partyStore.load();
 });
 </script>
 
@@ -182,7 +181,7 @@ onMounted(() => {
           <PartyEditor
             :party="party"
             :isOpen="showEditor"
-            @submit="handlePartySubmit"
+            @submit="handleSaveParty"
             @cancel="handlePartyCancel"
           />
         </template>

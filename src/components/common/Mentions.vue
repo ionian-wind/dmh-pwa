@@ -39,32 +39,32 @@ function getEntityDisplay(entity: EntityRef) {
   let label = '';
   switch (entity.kind) {
     case 'note': {
-      const n = noteStore.getNoteById(entity.id);
+      const n = noteStore.getById(entity.id);
       label = n ? n.title || n.id : entity.id;
       break;
     }
     case 'module': {
-      const m = moduleStore.modules.find(m => m.id === entity.id);
+      const m = moduleStore.items.find(m => m.id === entity.id);
       label = m ? m.name || m.id : entity.id;
       break;
     }
     case 'party': {
-      const p = partyStore.parties.find(p => p.id === entity.id);
+      const p = partyStore.items.find(p => p.id === entity.id);
       label = p ? p.name || p.id : entity.id;
       break;
     }
     case 'monster': {
-      const m = monsterStore.monsters.find(m => m.id === entity.id);
+      const m = monsterStore.items.find(m => m.id === entity.id);
       label = m ? m.name || m.id : entity.id;
       break;
     }
     case 'encounter': {
-      const e = encounterStore.encounters.find(e => e.id === entity.id);
+      const e = encounterStore.items.find(e => e.id === entity.id);
       label = e ? e.name || e.id : entity.id;
       break;
     }
     default:
-      label = getEntityLabel(entity) + ': ' + entity.id;
+      label = entity.id;
   }
   if (label.length > 25) {
     return label.slice(0, 25) + '…';

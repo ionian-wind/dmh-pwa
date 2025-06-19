@@ -13,7 +13,7 @@ const showEditor = ref(false);
 const editingMonster = ref<Monster | null>(null);
 
 onMounted(async () => {
-  await monsterStore.loadMonsters();
+  await monsterStore.load();
 });
 
 const handleCreateClick = () => {
@@ -26,13 +26,40 @@ const handleEditClick = (monster: Monster) => {
   showEditor.value = true;
 };
 
-const handleSubmit = async (monster: Monster) => {
+const handleSave = async (monster: Monster) => {
   if (monster.id) {
-    await monsterStore.updateMonster(monster.id, monster);
+    await monsterStore.update(monster.id, monster);
   } else {
-    await monsterStore.createMonster(monster);
+    await monsterStore.create(monster);
   }
   showEditor.value = false;
+  editingMonster.value = {
+    id: '',
+    name: '',
+    type: '',
+    description: '',
+    size: '',
+    alignment: '',
+    armorClass: 0,
+    hitPoints: 0,
+    speed: {},
+    stats: {
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10
+    },
+    senses: [],
+    languages: [],
+    specialAbilities: [],
+    challengeRating: '0',
+    xp: 0,
+    actions: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
 };
 
 const handleCancel = () => {
@@ -40,9 +67,8 @@ const handleCancel = () => {
 };
 
 const deleteMonster = async (monsterId: string) => {
-  const monster = monsterStore.getMonsterById(monsterId);
-  if (monster && confirm(`Are you sure you want to delete the monster "${monster.name}"?`)) {
-    await monsterStore.deleteMonster(monsterId);
+  if (confirm('Are you sure you want to delete this monster?')) {
+    await monsterStore.remove(monsterId);
   }
 };
 </script>
@@ -53,20 +79,18 @@ const deleteMonster = async (monsterId: string) => {
       <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="monsterStore.filteredMonsters.length === 0" class="view-empty">
-      <p>No monsters yet. Create your first monster to get started!</p>
+    <div v-if="monsterStore.filtered.length === 0" class="view-empty">
+      <p>No monsters found.</p>
     </div>
 
-    <div v-else class="view-grid">
+    <div class="monsters-grid">
       <MonsterCard
-        v-for="monster in monsterStore.filteredMonsters"
+        v-for="monster in monsterStore.filtered"
         :key="monster.id"
         :monster="monster"
-        :show-actions="true"
         @view="() => router.push(`/monsters/${monster.id}`)"
-        @edit="handleEditClick"
+        @edit="() => { editingMonster = monster; showEditor = true; }"
         @delete="deleteMonster"
-        @add-to-encounter="() => {}"
       />
     </div>
 
@@ -74,7 +98,7 @@ const deleteMonster = async (monsterId: string) => {
       v-if="showEditor"
       :monster="editingMonster"
       :is-open="showEditor"
-      @submit="handleSubmit"
+      @submit="handleSave"
       @cancel="handleCancel"
     />
   </div>

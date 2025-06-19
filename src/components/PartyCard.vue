@@ -13,13 +13,11 @@ function handleView() { emit('view', props.party); }
 function handleEdit() { emit('edit', props.party); }
 function handleDelete() { emit('delete', props.party); }
 
-const partyModules = computed(() => {
-  const moduleIds = props.party.moduleIds || [];
-  return moduleIds
-    .map(id => moduleStore.modules.find(m => m.id === id))
-    .filter(m => m !== undefined)
-    .map(m => m!.name);
-});
+const modules = computed(() => 
+  props.party.moduleIds
+    .map(id => moduleStore.items.find(m => m.id === id))
+    .filter(Boolean)
+);
 </script>
 <template>
   <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
@@ -29,8 +27,8 @@ const partyModules = computed(() => {
     <p v-if="party.description" class="description">{{ party.description }}</p>
     <div class="party-meta">
       <span class="character-count">{{ (party.characters || []).length }} characters</span>
-      <span v-if="partyModules.length > 0" class="modules">
-        {{ partyModules.join(', ') }}
+      <span v-if="modules.length > 0" class="modules">
+        {{ modules.map(m => m!.name).join(', ') }}
       </span>
     </div>
   </BaseCard>

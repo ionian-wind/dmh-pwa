@@ -24,51 +24,47 @@ const moduleStore = useModuleStore();
 const useCombatEntityIndexationStore = createIndexationStore('combatEntityIndexation');
 const combatEntityIndexation = useCombatEntityIndexationStore();
 
-onMounted(() => {
-  combatStore.loadCombats();
-});
+const combat = ref<Combat | null>(null);
+const loading = computed(() => !combatStore.isLoaded);
+const notFound = computed(() => combatStore.isLoaded && !combat.value);
 
 function updateCombatFromStore() {
   if (!combatStore.isLoaded) {
     return;
   }
   const combatId = route.params.id as string;
-  const found = combatStore.getCombatById(combatId);
+  const found = combatStore.getById(combatId);
   if (found) {
-    combatEntityIndexation.addLink({ kind: 'combat', id: found.id });
+    combat.value = found;
   } else {
-    combatEntityIndexation.removeLink({ kind: 'combat', id: combatId });
+    router.push('/combats');
   }
 }
 
-// Watch for both route changes, items changes, and isLoaded
 watch([
-  () => route.params.id,
-  () => combatStore.combats,
+  () => combatStore.items,
   () => combatStore.isLoaded
 ], updateCombatFromStore, { immediate: true });
 
 const handleDelete = async () => {
   if (!combat.value) return;
-  if (confirm(`Are you sure you want to delete this combat?`)) {
-    await combatStore.deleteCombat(combat.value.id);
-    router.push('/encounters');
-  }
+  await combatStore.remove(combat.value.id);
+  router.push('/combats');
 };
 
 const getEncounterName = (encounterId: string) => {
-  const encounter = encounterStore.getEncounterById(encounterId);
+  const encounter = encounterStore.getById(encounterId);
   return encounter ? encounter.name : 'Unknown Encounter';
 };
 
 const getPartyName = (partyId: string) => {
-  const party = partyStore.getPartyById(partyId);
+  const party = partyStore.getById(partyId);
   return party ? party.name : 'Unknown Party';
 };
 
 const getModuleName = (moduleId: string | null) => {
   if (!moduleId) return 'No Module';
-  const module = moduleStore.modules.find(m => m.id === moduleId);
+  const module = moduleStore.items.find(m => m.id === moduleId);
   return module ? module.name : 'Unknown Module';
 };
 
@@ -115,10 +111,9 @@ const mentionedInEntities = computed(() => {
   return combatEntityIndexation.getBacklinks({ kind: 'combat', id: combat.value.id });
 });
 
-const isLoaded = computed(() => combatStore.isLoaded);
-const combat = computed(() => combatStore.getCombatById(route.params.id as string));
-const loading = computed(() => !isLoaded.value);
-const notFound = computed(() => isLoaded.value && !combat.value);
+onMounted(async () => {
+  combatStore.load();
+});
 </script>
 
 <template>

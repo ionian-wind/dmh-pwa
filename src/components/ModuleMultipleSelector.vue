@@ -22,12 +22,15 @@ const updateValue = (event: Event) => {
   emit('update:modelValue', selected);
 };
 
-const moduleOptions = computed(() =>
-  moduleStore.modules.map(module => ({
-    value: module.id,
-    label: module.name
+const moduleOptions = computed(() => [
+  { id: 'any', name: 'Any Module', value: 'any' },
+  { id: 'none', name: 'No Module', value: 'none' },
+  ...moduleStore.items.map(module => ({
+    id: module.id,
+    name: module.name,
+    value: module.id
   }))
-);
+]);
 </script>
 
 <template>
@@ -42,7 +45,7 @@ const moduleOptions = computed(() =>
       :key="option.value"
       :value="option.value"
     >
-      {{ option.label }}
+      {{ option.name }}
     </option>
   </select>
 </template>

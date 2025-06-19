@@ -72,20 +72,21 @@ describe('Note Store', () => {
       createdAt: 0,
       updatedAt: 0
     });
-    const found = store.getNoteById(note.id);
+    const found = store.getById(note.id);
     expect(found).toEqual(note);
   });
 
   it('returns null for non-existent note', () => {
     const store = useNoteStore();
-    expect(store.getNoteById('non-existent')).toBeNull();
+    expect(store.getById('non-existent')).toBeNull();
   });
 
-  it('filteredNotes returns all if filter always true', () => {
+  it('filtered returns all if filter always true', () => {
     const store = useNoteStore();
-    store.createNote({
-      title: 'A', content: 'A', typeId: 't', tags: [], moduleId: 'm', createdAt: 0, updatedAt: 0 });
-    expect(store.filteredNotes.value.length).toBe(store.items.value.length);
+    const note1 = { title: 'A', content: 'A', typeId: 't', tags: [], moduleId: 'm', createdAt: 0, updatedAt: 0 };
+    const note2 = { title: 'B', content: 'B', typeId: 't', tags: ['x', 'y'], moduleId: 'm', createdAt: 0, updatedAt: 0 };
+    store.items.value = [note1, note2];
+    expect(store.filtered.value.length).toBe(store.items.value.length);
   });
 
   it('allTags returns all unique tags', () => {

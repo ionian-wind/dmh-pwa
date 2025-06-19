@@ -22,14 +22,12 @@ const encounter = computed(() => {
 });
 
 const combat = computed(() => {
-  return combatStore.getCombatByEncounter(props.encounterId);
+  return combatStore.items.find(c => c.encounterId === props.encounterId);
 });
 
 const currentCombatant = computed(() => {
-  if (combat.value && combat.value.combatants?.length > 0) {
+  if (!combat.value || combat.value.combatants.length === 0) return null;
     return combat.value.combatants[combat.value.currentTurn];
-  }
-  return null;
 });
 
 // Combat log functionality
@@ -51,40 +49,32 @@ const addLogEntry = (message: string, type: 'info' | 'action' | 'damage' | 'heal
 };
 
 const nextTurn = () => {
-  if (combat.value) {
+  if (!combat.value) return;
     combatStore.nextTurn(combat.value.id);
-  }
 };
 
 const previousTurn = () => {
-  if (combat.value) {
+  if (!combat.value) return;
     combatStore.previousTurn(combat.value.id);
-  }
 };
 
 const endCombat = () => {
-  if (combat.value) {
+  if (!combat.value) return;
     combatStore.endCombat(combat.value.id);
-    addLogEntry('Combat ended', 'info');
-  }
 };
 
-const updateHitPoints = (combatantId: string, value: number) => {
+const updateHitPoints = (combatantId: string, change: number) => {
   if (!combat.value) return;
-  
   const combatant = combat.value.combatants.find(c => c.id === combatantId);
-  if (combatant) {
-    const oldHP = combatant.hitPoints.current;
-    const newHP = combatant.hitPoints.current + value;
-    combatant.hitPoints.current = Math.max(0, Math.min(newHP, combatant.hitPoints.maximum));
-    combatStore.updateCombatant(combat.value.id, combatantId, { hitPoints: combatant.hitPoints });
-    
-    const change = combatant.hitPoints.current - oldHP;
-    if (change !== 0) {
-      const type = change > 0 ? 'heal' : 'damage';
-      addLogEntry(`${combatant.name} ${change > 0 ? 'healed' : 'took damage'} for ${Math.abs(change)} HP`, type);
-    }
-  }
+  if (!combatant) return;
+  
+  const newCurrent = Math.max(0, combatant.hitPoints.current + change);
+  combatStore.updateCombatant(combat.value.id, combatantId, { 
+    hitPoints: { 
+      ...combatant.hitPoints, 
+      current: newCurrent 
+    } 
+  });
 };
 
 // Quick actions functionality
@@ -128,18 +118,9 @@ const healAll = () => {
   addLogEntry('All combatants healed to full HP', 'heal');
 };
 
-const clearConditions = () => {
+const clearConditions = (combatantId: string) => {
   if (!combat.value) return;
-  
-  combat.value.combatants.forEach(combatant => {
-    if (combatant.conditions.length > 0) {
-      addLogEntry(`Cleared conditions from ${combatant.name}: ${combatant.conditions.join(', ')}`, 'action');
-      combatant.conditions = [];
-      combatStore.updateCombatant(combat.value!.id, combatant.id, { conditions: [] });
-    }
-  });
-  
-  addLogEntry('All conditions cleared', 'action');
+  combatStore.updateCombatant(combat.value.id, combatantId, { conditions: [] });
 };
 
 const toggleAutoAdvance = () => {
@@ -183,24 +164,20 @@ const selectedConditions = ref<Record<string, boolean>>({});
 
 const addCondition = (combatantId: string, condition: string) => {
   if (!combat.value) return;
-  
   const combatant = combat.value.combatants.find(c => c.id === combatantId);
-  if (combatant && !combatant.conditions.includes(condition)) {
+  if (!combatant) return;
+  
     const updatedConditions = [...combatant.conditions, condition];
     combatStore.updateCombatant(combat.value.id, combatantId, { conditions: updatedConditions });
-    addLogEntry(`Added ${condition} condition to ${combatant.name}`, 'action');
-  }
 };
 
 const removeCondition = (combatantId: string, condition: string) => {
   if (!combat.value) return;
-  
   const combatant = combat.value.combatants.find(c => c.id === combatantId);
-  if (combatant) {
+  if (!combatant) return;
+  
     const updatedConditions = combatant.conditions.filter(c => c !== condition);
     combatStore.updateCombatant(combat.value.id, combatantId, { conditions: updatedConditions });
-    addLogEntry(`Removed ${condition} condition from ${combatant.name}`, 'action');
-  }
 };
 
 const handleConditionToggle = (combatantId: string, condition: string, isSelected: boolean) => {
@@ -255,6 +232,20 @@ onMounted(() => {
     }
   }
 });
+
+const getCombatantName = (combatantId: string) => {
+  if (combatant.type === 'monster') {
+    const monster = monsterStore.items.find(m => m.id === combatant.referenceId);
+    return monster ? monster.name : combatant.name;
+  } else {
+    const party = partyStore.items.find(p => p.id === combat.value!.partyId);
+    if (party) {
+      const character = party.characters.find(c => c === combatant.referenceId);
+      return character ? character : combatant.name;
+    }
+    return combatant.name;
+  }
+};
 </script>
 
 <template>
@@ -340,7 +331,7 @@ onMounted(() => {
         <Button 
           variant="secondary"
           size="small"
-          @click="clearConditions"
+          @click="clearConditions(currentCombatant!.id)"
         >
           🧹 Clear All Conditions
         </Button>

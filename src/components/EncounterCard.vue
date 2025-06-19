@@ -13,7 +13,7 @@ const moduleStore = useModuleStore();
 
 const moduleName = computed(() => {
   if (!props.encounter.moduleId) return 'No Module';
-  const module = moduleStore.modules.find(m => m.id === props.encounter.moduleId);
+  const module = moduleStore.items.find(m => m.id === props.encounter.moduleId);
   return module ? module.name : 'Unknown Module';
 });
 

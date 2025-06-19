@@ -13,7 +13,7 @@ const showEditor = ref(false);
 const editingModule = ref<Module | null>(null);
 
 onMounted(async () => {
-  await moduleStore.loadModules();
+  await moduleStore.load();
 });
 
 const handleCreateClick = () => {
@@ -26,13 +26,22 @@ const handleEditClick = (module: Module) => {
   showEditor.value = true;
 };
 
-const handleSubmit = async (module: Omit<Module, 'id'>) => {
+const handleSave = async (module: Omit<Module, 'id' | 'createdAt' | 'updatedAt'>) => {
   if (editingModule.value?.id) {
-    await moduleStore.updateModule(editingModule.value.id, module);
+    await moduleStore.update(editingModule.value.id, module);
   } else {
-    await moduleStore.createModule(module);
+    await moduleStore.create(module);
   }
   showEditor.value = false;
+  editingModule.value = {
+    id: '',
+    name: '',
+    description: '',
+    settings: {},
+    noteTree: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
 };
 
 const handleCancel = () => {
@@ -40,8 +49,8 @@ const handleCancel = () => {
 };
 
 const deleteModule = async (module: Module) => {
-  if (confirm(`Are you sure you want to delete the module "${module.name}"? This will also remove all associated content.`)) {
-    await moduleStore.deleteModule(module.id);
+  if (confirm(`Are you sure you want to delete ${module.name}?`)) {
+    await moduleStore.remove(module.id);
   }
 };
 </script>
@@ -52,17 +61,17 @@ const deleteModule = async (module: Module) => {
       <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="moduleStore.modules.length === 0" class="view-empty">
+    <div v-if="moduleStore.items.length === 0" class="view-empty">
       <p>No modules yet. Create your first module to get started!</p>
     </div>
 
     <div v-else class="view-grid">
       <ModuleCard
-        v-for="module in moduleStore.modules"
+        v-for="module in moduleStore.items"
         :key="module.id"
         :module="module"
         @view="() => router.push(`/modules/${module.id}`)"
-        @edit="handleEditClick"
+        @edit="() => { editingModule = module; showEditor = true; }"
         @delete="deleteModule"
       />
     </div>
@@ -71,7 +80,7 @@ const deleteModule = async (module: Module) => {
       v-if="showEditor"
       :module="editingModule"
       :is-open="showEditor"
-      @submit="handleSubmit"
+      @submit="handleSave"
       @cancel="handleCancel"
     />
   </div>

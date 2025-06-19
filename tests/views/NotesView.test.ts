@@ -28,25 +28,31 @@ jest.mock('@/components/NoteEditor.vue', () => ({
 }));
 
 // Mock stores
-jest.mock('@/stores/notes', () => {
-  const notes = [
-    { id: '1', title: 'Note 1', content: 'Content 1', typeId: 't1', tags: ['a'], moduleId: 'm1', createdAt: 0, updatedAt: 0 },
-    { id: '2', title: 'Note 2', content: 'Content 2', typeId: 't2', tags: ['b'], moduleId: 'm2', createdAt: 0, updatedAt: 0 }
-  ];
-  return {
-    useNoteStore: () => ({
-      notes,
-      filteredNotes: notes,
-      createNote: jest.fn(),
-      updateNote: jest.fn(),
-      deleteNote: jest.fn(),
-      loadNotes: jest.fn()
-    })
-  };
-});
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ modules: [], currentModuleFilter: 'any', loadModules: jest.fn() }) }));
-jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ loadParties: jest.fn() }) }));
-jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ loadMonsters: jest.fn() }) }));
+jest.mock('@/stores/notes', () => ({ useNoteStore: () => ({ 
+  items: [], 
+  filtered: [
+    { id: 'n1', title: 'Note One', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 },
+    { id: 'n2', title: 'Note Two', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 }
+  ], 
+  create: jest.fn(), 
+  update: jest.fn(), 
+  remove: jest.fn(), 
+  load: jest.fn() 
+}) }));
+
+jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ 
+  items: [], 
+  currentModuleFilter: 'any', 
+  load: jest.fn() 
+}) }));
+
+jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ 
+  load: jest.fn() 
+}) }));
+
+jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ 
+  load: jest.fn() 
+}) }));
 
 describe('NotesView', () => {
   beforeEach(() => {
@@ -62,7 +68,7 @@ describe('NotesView', () => {
 
   it('shows empty state if no notes', async () => {
     jest.doMock('@/stores/notes', () => ({
-      useNoteStore: () => ({ notes: [], filteredNotes: [], createNote: jest.fn(), updateNote: jest.fn(), deleteNote: jest.fn(), loadNotes: jest.fn() })
+      useNoteStore: () => ({ items: [], filtered: [], create: jest.fn(), update: jest.fn(), remove: jest.fn(), load: jest.fn() })
     }));
     const wrapper = mount(NotesView);
     await flushPromises();
@@ -102,7 +108,7 @@ describe('NotesView', () => {
     await wrapper.findComponent({ name: 'Button' }).trigger('click');
     const store = require('@/stores/notes').useNoteStore();
     await wrapper.findComponent({ name: 'NoteEditor' }).vm.$emit('submit', { title: 'New', id: undefined });
-    expect(store.createNote).toHaveBeenCalled();
+    expect(store.create).toHaveBeenCalled();
   });
 
   it('calls store updateNote on submit if id exists', async () => {
@@ -110,7 +116,7 @@ describe('NotesView', () => {
     await wrapper.findComponent({ name: 'Button' }).trigger('click');
     const store = require('@/stores/notes').useNoteStore();
     await wrapper.findComponent({ name: 'NoteEditor' }).vm.$emit('submit', { title: 'Edit', id: '1' });
-    expect(store.updateNote).toHaveBeenCalled();
+    expect(store.update).toHaveBeenCalled();
   });
 
   it('calls store deleteNote on delete event', async () => {
@@ -118,7 +124,7 @@ describe('NotesView', () => {
     const wrapper = mount(NotesView);
     const store = require('@/stores/notes').useNoteStore();
     await wrapper.findAllComponents({ name: 'NoteCard' })[0].vm.$emit('delete', { id: '1', title: 'Note 1' });
-    expect(store.deleteNote).toHaveBeenCalledWith('1');
+    expect(store.remove).toHaveBeenCalledWith('1');
   });
 
   it('filters notes by search query', async () => {

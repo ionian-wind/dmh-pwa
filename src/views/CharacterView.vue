@@ -169,7 +169,7 @@ const showEditor = ref(false);
 const mentionsStore = useMentionsStore();
 
 const isLoaded = computed(() => characterStore.isLoaded);
-const character = computed(() => characterStore.getCharacterById(route.params.id as string));
+const character = computed(() => characterStore.getById(route.params.id as string));
 const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !character.value);
 
@@ -226,8 +226,8 @@ const mentionedInEntities = computed(() => {
   return mentionsStore.getBacklinks({ kind: 'character', id: character.value.id });
 });
 
-onMounted(() => {
-  characterStore.loadCharacters();
+onMounted(async () => {
+  characterStore.load();
 });
 </script>
 

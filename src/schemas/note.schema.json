@@ -17,8 +17,17 @@
       "description": "Content of the note in markdown format"
     },
     "typeId": {
-      "type": "string",
-      "description": "ID of the note type"
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "ID of the note type"
+        },
+        {
+          "type": "null",
+          "description": "No note type assigned"
+        }
+      ],
+      "description": "ID of the note type or null if no type assigned"
     },
     "tags": {
       "type": "array",
@@ -28,8 +37,17 @@
       "description": "Array of tags associated with the note"
     },
     "moduleId": {
-      "type": "string",
-      "description": "ID of the module this note belongs to"
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "ID of the module this note belongs to"
+        },
+        {
+          "type": "null",
+          "description": "No module assigned"
+        }
+      ],
+      "description": "ID of the module this note belongs to or null if no module assigned"
     },
     "createdAt": {
       "type": "number",

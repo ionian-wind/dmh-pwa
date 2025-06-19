@@ -35,26 +35,24 @@ const activeTab = ref('information');
 
 const mentionsStore = useMentionsStore();
 
-const isLoaded = computed(() => encounterStore.isLoaded);
-const encounter = computed(() => encounterStore.getEncounterById(route.params.id as string));
-const loading = computed(() => !isLoaded.value);
-const notFound = computed(() => isLoaded.value && !encounter.value);
+const encounter = ref<Encounter | null>(null);
+const loading = computed(() => !encounterStore.isLoaded);
+const notFound = computed(() => encounterStore.isLoaded && !encounter.value);
 
 function updateEncounterFromStore() {
   if (!encounterStore.isLoaded) {
     return;
   }
-  const encounterId = route.params.id as string;
-  const found = encounterStore.getEncounterById(encounterId);
-  if (!found) {
-    notFound.value = true;
+  const found = encounterStore.getById(route.params.id as string);
+  if (found) {
+    encounter.value = found;
+  } else {
+    router.push('/encounters');
   }
 }
 
-// Watch for both route changes, items changes, and isLoaded
 watch([
-  () => route.params.id,
-  () => encounterStore.encounters,
+  () => encounterStore.items,
   () => encounterStore.isLoaded
 ], updateEncounterFromStore, { immediate: true });
 
@@ -64,13 +62,12 @@ const handleEdit = () => {
 
 const handleDelete = async () => {
   if (!encounter.value) return;
-  await encounterStore.deleteEncounter(encounter.value.id);
+  await encounterStore.remove(encounter.value.id);
+  router.push('/encounters');
 };
 
-const handleSubmit = async (updatedEncounter: Omit<Encounter, 'id'>) => {
-  if (!encounter.value) return;
-  await encounterStore.updateEncounter(encounter.value.id, updatedEncounter);
-  encounter.value = encounterStore.getEncounterById(encounter.value.id);
+const handleSave = async (updatedEncounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>) => {
+  await encounterStore.update(encounter.value.id, updatedEncounter);
   isEditorOpen.value = false;
 };
 
@@ -78,18 +75,18 @@ const handleCancel = () => {
   isEditorOpen.value = false;
 };
 
-const getMonsterDetails = (monsterId: string) => {
-  return monsterStore.monsters.find(m => m.id === monsterId);
+const getMonsterName = (monsterId: string) => {
+  return monsterStore.items.find(m => m.id === monsterId);
 };
 
 const getModuleName = (moduleId: string | null) => {
-  if (!moduleId) return t('common.noModule');
-  const module = moduleStore.modules.find(m => m.id === moduleId);
-  return module ? module.name : t('common.unknownModule');
+  if (!moduleId) return 'No Module';
+  const module = moduleStore.items.find(m => m.id === moduleId);
+  return module ? module.name : 'Unknown Module';
 };
 
 // Computed properties for monster linking
-const allMonsters = computed(() => monsterStore.filteredMonsters);
+const allMonsters = computed(() => monsterStore.filtered);
 const encounterMonsters = computed(() => {
   if (!encounter.value || !encounter.value.monsters) return [];
   return allMonsters.value.filter(monster => 
@@ -109,7 +106,7 @@ const setMonsterCount = (monsterId: string, count: number) => {
   if (count > 20) count = 20; // Reasonable limit
   encounterStore.setMonsterCount(encounter.value.id, monsterId, count);
   // Force a reactive update by reassigning the encounter
-  encounter.value = encounterStore.getEncounterById(encounter.value.id);
+  encounter.value = encounterStore.getById(encounter.value.id);
 };
 
 const incrementMonsterCount = (monsterId: string) => {
@@ -168,7 +165,7 @@ const handleToggleMonster = (monster: Monster, isLinked: boolean) => {
     encounterStore.removeMonster(encounter.value.id, monster.id);
   }
   // Force a reactive update by reassigning the encounter
-  encounter.value = encounterStore.getEncounterById(encounter.value.id);
+  encounter.value = encounterStore.getById(encounter.value.id);
 };
 
 const isMonsterLinked = (monsterId: string) => {
@@ -207,12 +204,11 @@ const encounterSubtitle = computed(() => {
 
 // Computed property for combats associated with this encounter
 const encounterCombats = computed(() => {
-  if (!encounter.value) return [];
-  return combatStore.combats.filter(combat => combat.encounterId === encounter.value!.id);
+  return combatStore.items.filter(combat => combat.encounterId === encounter.value!.id);
 });
 
 const getPartyName = (partyId: string) => {
-  const party = partyStore.getPartyById(partyId);
+  const party = partyStore.getById(partyId);
   return party ? party.name : t('common.unknownParty');
 };
 
@@ -264,8 +260,8 @@ const mentionedInEntities = computed(() => {
   return mentionsStore.getBacklinks({ kind: 'encounter', id: encounter.value.id });
 });
 
-onMounted(() => {
-  encounterStore.loadEncounters();
+onMounted(async () => {
+  encounterStore.load();
 });
 </script>
 
@@ -452,7 +448,7 @@ onMounted(() => {
           <EncounterEditor
             :encounter="encounter"
             :is-open="isEditorOpen"
-            @submit="handleSubmit"
+            @submit="handleSave"
             @cancel="handleCancel"
           />
         </template>

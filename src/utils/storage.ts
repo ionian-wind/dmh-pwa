@@ -1,6 +1,7 @@
 import { ref, watch } from 'vue';
 import type { Ref, UnwrapRef } from 'vue';
 import * as schemaValidator from './schemaValidator';
+import { nanoid } from 'nanoid';
 
 export class StorageError extends Error {
   constructor(
@@ -14,7 +15,7 @@ export class StorageError extends Error {
 }
 
 export function generateId(): string {
-  return self.crypto.randomUUID();
+  return nanoid(10);
 }
 
 export function isArray(value: unknown): value is unknown[] {
@@ -99,6 +100,7 @@ interface StorageOptions<T> {
   sync?: boolean;
   validate?: (value: unknown) => boolean;
   onError?: (error: Error) => void;
+  migrate?: MigrationFunction<T>;
 }
 
 // --- Cross-tab/window sync ---
@@ -116,7 +118,7 @@ function debounce(fn: (...args: any[]) => void, delay: number) {
   };
 }
 
-export function useStorage<T>({ key, defaultValue, schema, sync = true, validate, onError }: StorageOptions<T>): [Ref<UnwrapRef<T>>, Ref<boolean>] {
+export function useStorage<T>({ key, defaultValue, schema, sync = true, validate, onError, migrate }: StorageOptions<T>): [Ref<UnwrapRef<T>>, Ref<boolean>] {
   const data = ref<T>(defaultValue);
   const loaded = ref(false);
   const useIDB = isIndexedDBAvailable();
@@ -127,24 +129,37 @@ export function useStorage<T>({ key, defaultValue, schema, sync = true, validate
       try {
         const stored = await idbGet<T>(key);
         if (stored !== undefined) {
+          let processedData = stored;
+          
+          // Apply migration if provided
+          if (migrate) {
+            try {
+              processedData = migrate(stored) as T;
+              console.log(`[Storage] Migrated data for key "${key}"`);
+            } catch (e) {
+              console.warn(`[Storage] Migration failed for key "${key}":`, e);
+              processedData = defaultValue;
+            }
+          }
+          
           if (schema) {
             let valid = false;
             let errors: string[] = [];
-            if (Array.isArray(stored)) {
-              valid = await schemaValidator.validateArray(schema, stored);
-              if (!valid) errors = await schemaValidator.getArrayValidationErrors(schema, stored);
+            if (Array.isArray(processedData)) {
+              valid = await schemaValidator.validateArray(schema, processedData);
+              if (!valid) errors = await schemaValidator.getArrayValidationErrors(schema, processedData);
             } else {
-              valid = await schemaValidator.validateSchema(schema, stored);
-              if (!valid) errors = await schemaValidator.getValidationErrors(schema, stored);
+              valid = await schemaValidator.validateSchema(schema, processedData);
+              if (!valid) errors = await schemaValidator.getValidationErrors(schema, processedData);
             }
             if (!valid) {
               console.error(`Invalid data in storage for key "${key}":`, errors);
               data.value = defaultValue;
             } else {
-              data.value = stored as T;
+              data.value = processedData as unknown as T;
             }
           } else {
-            data.value = stored as T;
+            data.value = processedData as unknown as T;
           }
         }
       } catch (e) {
@@ -178,10 +193,10 @@ export function useStorage<T>({ key, defaultValue, schema, sync = true, validate
               console.error(`Invalid data in storage for key "${key}":`, errors);
               data.value = defaultValue;
             } else {
-              data.value = stored as T;
+              data.value = stored as unknown as T;
             }
           } else {
-            data.value = stored as T;
+            data.value = stored as unknown as T;
           }
         }
       } catch (e) {
@@ -438,8 +453,315 @@ export async function getStorageInfo(): Promise<{ size: number; itemCount: numbe
 }
 
 export function isStorageQuotaExceeded(error: unknown): boolean {
-  return error instanceof DOMException && (
+  return error instanceof Error && (
     error.name === 'QuotaExceededError' ||
-    error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    error.message.includes('quota') ||
+    error.message.includes('QuotaExceeded')
   );
+}
+
+// Migration utilities for backward compatibility
+export interface MigrationFunction<T> {
+  (data: unknown): T;
+}
+
+export async function migrateStorageData<T>(
+  key: string,
+  migrationFn: MigrationFunction<T>,
+  defaultValue: T
+): Promise<T> {
+  try {
+    const stored = await idbGet<unknown>(key);
+    if (stored !== undefined) {
+      try {
+        return migrationFn(stored);
+      } catch (e) {
+        console.warn(`[Storage] Migration failed for key "${key}":`, e);
+        return defaultValue;
+      }
+    }
+  } catch (e) {
+    console.warn(`[Storage] Error reading data for migration from key "${key}":`, e);
+  }
+  return defaultValue;
+}
+
+// Common migration functions
+export function migrateNoteData(data: unknown): any[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected array of notes');
+  }
+  
+  return data.map(note => {
+    if (typeof note !== 'object' || note === null) {
+      throw new Error('Invalid note object');
+    }
+    
+    const migratedNote = { ...note };
+    
+    // Ensure typeId is either string or null
+    if (migratedNote.typeId === undefined) {
+      migratedNote.typeId = null;
+    }
+    
+    // Ensure moduleId is either string or null
+    if (migratedNote.moduleId === undefined) {
+      migratedNote.moduleId = null;
+    }
+    
+    // Ensure tags is an array
+    if (!Array.isArray(migratedNote.tags)) {
+      migratedNote.tags = [];
+    }
+    
+    // Ensure required fields exist
+    if (!migratedNote.id) {
+      migratedNote.id = generateId();
+    }
+    if (!migratedNote.createdAt) {
+      migratedNote.createdAt = Date.now();
+    }
+    if (!migratedNote.updatedAt) {
+      migratedNote.updatedAt = Date.now();
+    }
+    
+    return migratedNote;
+  });
+}
+
+export function migrateMonsterData(data: unknown): any[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected array of monsters');
+  }
+  
+  return data.map(monster => {
+    if (typeof monster !== 'object' || monster === null) {
+      throw new Error('Invalid monster object');
+    }
+    
+    const migratedMonster = { ...monster };
+    
+    // Ensure moduleId is either string or null
+    if (migratedMonster.moduleId === undefined) {
+      migratedMonster.moduleId = null;
+    }
+    
+    // Ensure moduleIds is an array
+    if (!Array.isArray(migratedMonster.moduleIds)) {
+      migratedMonster.moduleIds = migratedMonster.moduleId ? [migratedMonster.moduleId] : [];
+    }
+    
+    // Convert challengeRating to number if it's a string
+    if (typeof migratedMonster.challengeRating === 'string') {
+      const cr = parseFloat(migratedMonster.challengeRating);
+      migratedMonster.challengeRating = isNaN(cr) ? 0 : cr;
+    }
+    
+    // Ensure challengeRating is a number
+    if (typeof migratedMonster.challengeRating !== 'number') {
+      migratedMonster.challengeRating = 0;
+    }
+    
+    // Ensure stats are numbers
+    if (migratedMonster.stats) {
+      const statNames = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+      statNames.forEach(stat => {
+        if (typeof migratedMonster.stats[stat] === 'string') {
+          const value = parseInt(migratedMonster.stats[stat]);
+          migratedMonster.stats[stat] = isNaN(value) ? 10 : value;
+        }
+        if (typeof migratedMonster.stats[stat] !== 'number') {
+          migratedMonster.stats[stat] = 10;
+        }
+      });
+    }
+    
+    // Ensure arrays are arrays
+    if (!Array.isArray(migratedMonster.senses)) {
+      migratedMonster.senses = [];
+    }
+    if (!Array.isArray(migratedMonster.languages)) {
+      migratedMonster.languages = [];
+    }
+    if (!Array.isArray(migratedMonster.actions)) {
+      migratedMonster.actions = [];
+    }
+    
+    // Ensure required fields exist
+    if (!migratedMonster.id) {
+      migratedMonster.id = generateId();
+    }
+    if (!migratedMonster.createdAt) {
+      migratedMonster.createdAt = Date.now();
+    }
+    if (!migratedMonster.updatedAt) {
+      migratedMonster.updatedAt = Date.now();
+    }
+    
+    return migratedMonster;
+  });
+}
+
+export function migrateCharacterData(data: unknown): any[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected array of characters');
+  }
+  
+  return data.map(character => {
+    if (typeof character !== 'object' || character === null) {
+      throw new Error('Invalid character object');
+    }
+    
+    const migratedCharacter = { ...character };
+    
+    // Ensure partyId is either string or null
+    if (migratedCharacter.partyId === undefined) {
+      migratedCharacter.partyId = null;
+    }
+    
+    // Ensure arrays are arrays
+    if (!Array.isArray(migratedCharacter.tags)) {
+      migratedCharacter.tags = [];
+    }
+    
+    // Ensure required fields exist
+    if (!migratedCharacter.id) {
+      migratedCharacter.id = generateId();
+    }
+    if (!migratedCharacter.createdAt) {
+      migratedCharacter.createdAt = Date.now();
+    }
+    if (!migratedCharacter.updatedAt) {
+      migratedCharacter.updatedAt = Date.now();
+    }
+    
+    return migratedCharacter;
+  });
+}
+
+export function migratePartyData(data: unknown): any[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected array of parties');
+  }
+  
+  return data.map(party => {
+    if (typeof party !== 'object' || party === null) {
+      throw new Error('Invalid party object');
+    }
+    
+    const migratedParty = { ...party };
+    
+    // Ensure moduleIds is an array
+    if (!Array.isArray(migratedParty.moduleIds)) {
+      migratedParty.moduleIds = migratedParty.moduleId ? [migratedParty.moduleId] : [];
+    }
+    
+    // Ensure characters is an array
+    if (!Array.isArray(migratedParty.characters)) {
+      migratedParty.characters = [];
+    }
+    
+    // Ensure arrays are arrays
+    if (!Array.isArray(migratedParty.tags)) {
+      migratedParty.tags = [];
+    }
+    
+    // Ensure required fields exist
+    if (!migratedParty.id) {
+      migratedParty.id = generateId();
+    }
+    if (!migratedParty.createdAt) {
+      migratedParty.createdAt = Date.now();
+    }
+    if (!migratedParty.updatedAt) {
+      migratedParty.updatedAt = Date.now();
+    }
+    
+    return migratedParty;
+  });
+}
+
+export function migrateEncounterData(data: unknown): any[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected array of encounters');
+  }
+  
+  return data.map(encounter => {
+    if (typeof encounter !== 'object' || encounter === null) {
+      throw new Error('Invalid encounter object');
+    }
+    
+    const migratedEncounter = { ...encounter };
+    
+    // Ensure moduleId is either string or null
+    if (migratedEncounter.moduleId === undefined) {
+      migratedEncounter.moduleId = null;
+    }
+    
+    // Ensure monsters is an object
+    if (typeof migratedEncounter.monsters !== 'object' || migratedEncounter.monsters === null) {
+      migratedEncounter.monsters = {};
+    }
+    
+    // Ensure numbers are numbers
+    if (typeof migratedEncounter.currentRound !== 'number') {
+      migratedEncounter.currentRound = 0;
+    }
+    if (typeof migratedEncounter.currentTurn !== 'number') {
+      migratedEncounter.currentTurn = 0;
+    }
+    
+    // Ensure required fields exist
+    if (!migratedEncounter.id) {
+      migratedEncounter.id = generateId();
+    }
+    if (!migratedEncounter.createdAt) {
+      migratedEncounter.createdAt = Date.now();
+    }
+    if (!migratedEncounter.updatedAt) {
+      migratedEncounter.updatedAt = Date.now();
+    }
+    
+    return migratedEncounter;
+  });
+}
+
+export function migrateCombatData(data: unknown): any[] {
+  if (!Array.isArray(data)) {
+    throw new Error('Expected array of combats');
+  }
+  
+  return data.map(combat => {
+    if (typeof combat !== 'object' || combat === null) {
+      throw new Error('Invalid combat object');
+    }
+    
+    const migratedCombat = { ...combat };
+    
+    // Ensure combatants is an array
+    if (!Array.isArray(migratedCombat.combatants)) {
+      migratedCombat.combatants = [];
+    }
+    
+    // Ensure numbers are numbers
+    if (typeof migratedCombat.currentRound !== 'number') {
+      migratedCombat.currentRound = 0;
+    }
+    if (typeof migratedCombat.currentTurn !== 'number') {
+      migratedCombat.currentTurn = 0;
+    }
+    
+    // Ensure required fields exist
+    if (!migratedCombat.id) {
+      migratedCombat.id = generateId();
+    }
+    if (!migratedCombat.createdAt) {
+      migratedCombat.createdAt = Date.now();
+    }
+    if (!migratedCombat.updatedAt) {
+      migratedCombat.updatedAt = Date.now();
+    }
+    
+    return migratedCombat;
+  });
 }

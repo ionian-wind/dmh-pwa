@@ -18,24 +18,23 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
 
-const stats = computed(() => {
-  return {
-    notes: noteStore.filteredNotes.length,
-    parties: partyStore.filteredParties.length,
-    monsters: monsterStore.filteredMonsters.length,
-    encounters: encounterStore.filteredEncounters.length,
-    characters: characterStore.all.length,
-    modules: moduleStore.modules.length
-  };
-});
+const stats = computed(() => ({
+  notes: noteStore.filtered.length,
+  characters: characterStore.items.length,
+  parties: partyStore.filtered.length,
+  monsters: monsterStore.filtered.length,
+  encounters: encounterStore.filtered.length,
+  modules: moduleStore.items.length
+}));
 
 onMounted(async () => {
   await Promise.all([
-    noteStore.loadNotes(),
-    partyStore.loadParties(),
-    monsterStore.loadMonsters(),
-    encounterStore.loadEncounters(),
-    moduleStore.loadModules()
+    noteStore.load(),
+    characterStore.load(),
+    partyStore.load(),
+    monsterStore.load(),
+    encounterStore.load(),
+    moduleStore.load()
   ]);
 });
 </script>

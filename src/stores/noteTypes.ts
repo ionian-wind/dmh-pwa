@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { NoteType } from '@/types';
-import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/storage';
-import {registerValidationSchema} from "@/utils/schemaValidator";
+import type { NoteType } from '@/types';
+import { isArray, hasRequiredFields } from '@/utils/storage';
+import { registerValidationSchema } from "@/utils/schemaValidator";
 import noteTypeSchema from "@/schemas/noteType.schema.json";
+import { createBaseStore, type StandardizedStore } from './createBaseStore';
 
 registerValidationSchema('noteType', noteTypeSchema);
 
@@ -12,72 +13,81 @@ const isNoteType = (value: unknown): value is NoteType => {
     typeof (value as any).name === 'string';
 };
 
-export const useNoteTypeStore = defineStore('noteTypes', () => {
-  // State
-  const items = useStorage<NoteType[]>({
-    key: 'dnd-note-types',
-    defaultValue: [],
-    validate: (data): data is NoteType[] => 
-      isArray(data) && data.every(type => 
-        isNoteType(type) && hasRequiredFields(type as NoteType, ['id', 'name', 'createdAt', 'updatedAt'])
-      )
-  });
-  const currentTypeId = ref<string | null>(null);
+const baseStore = createBaseStore<NoteType>({
+  storageKey: 'dnd-note-types',
+  validate: (data): data is NoteType[] => 
+    isArray(data) && data.every(type => 
+      isNoteType(type) && hasRequiredFields(type as NoteType, ['id', 'name', 'createdAt', 'updatedAt'])
+    ),
+  schema: 'noteType'
+});
+
+export const useNoteTypeStore = defineStore('noteTypes', (): StandardizedStore<NoteType> => {
+  const base = baseStore();
+  const currentId = ref<string | null>(null);
+  const searchQuery = ref('');
 
   // Computed
-  const currentType = computed(() => {
-    if (!currentTypeId.value) return null;
-    return items.value.find(t => t.id === currentTypeId.value) || null;
+  const current = computed(() => {
+    if (!currentId.value) return null;
+    return base.getById(currentId.value) || null;
   });
 
-  // CRUD
-  const createNoteType = (type: Omit<NoteType, 'id'>) => {
-    const newType: NoteType = {
-      ...type,
-      id: generateId(),
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    items.value.push(newType);
+  const filtered = computed(() => {
+    if (searchQuery.value === '') return base.items.value;
+    return base.items.value.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+  });
+
+  // Extended CRUD operations with standardized names
+  const create = async (type: Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newType = await base.create(type);
     return newType;
   };
-  const updateNoteType = (id: string, type: Omit<NoteType, 'id'>) => {
-    const index = items.value.findIndex(t => t.id === id);
-    if (index !== -1) {
-      items.value[index] = {
-        ...type,
-        id,
-        createdAt: items.value[index].createdAt,
-        updatedAt: Date.now()
-      };
-    }
+
+  const update = async (id: string, type: Partial<Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    const updatedType = await base.update(id, type);
+    return updatedType;
   };
-  const deleteNoteType = (id: string) => {
-    items.value = items.value.filter(t => t.id !== id);
-    if (currentTypeId.value === id) currentTypeId.value = null;
+
+  const remove = async (id: string) => {
+    await base.remove(id);
+    if (currentId.value === id) currentId.value = null;
   };
-  const getNoteTypeById = (id: string) => items.value.find(t => t.id === id) || null;
-  const loadNoteTypes = async () => items.value;
+
+  const load = async () => {
+    return base.load();
+  };
 
   // Helpers
   const setCurrentType = (id: string | null) => {
-    currentTypeId.value = id;
+    currentId.value = id;
   };
 
-  // Legacy aliases
-  const noteTypes = items;
-
   return {
-    items,
-    currentTypeId,
-    currentType,
-    createNoteType,
-    updateNoteType,
-    deleteNoteType,
-    getNoteTypeById,
-    loadNoteTypes,
-    setCurrentType,
-    // Legacy aliases
-    noteTypes,
+    // State
+    items: base.items,
+    filtered,
+    sortedItems: base.sortedItems,
+    currentId,
+    current,
+    isLoading: base.isLoading,
+    error: base.error,
+    isLoaded: base.isLoaded,
+
+    // Actions
+    load,
+    create,
+    update,
+    remove,
+    getById: base.getById,
+    setCurrentId: (id: string | null) => { currentId.value = id; },
+    clearCurrent: () => { currentId.value = null; },
+    setFilter: (query: string) => { searchQuery.value = query; },
+    clearFilter: () => { searchQuery.value = ''; },
+
+    // Additional computed properties
+    searchQuery,
   };
 }); 

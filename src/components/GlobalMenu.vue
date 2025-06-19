@@ -11,10 +11,10 @@ const moduleStore = useModuleStore();
 const router = useRouter();
 
 const currentModule = computed(() => moduleStore.currentModule);
-const modulesSelect = computed(() => [
-  { id: 'none', value: 'none', name: t('common.noModule') },
-  { id: 'any', value: 'any', name: t('common.anyModule') },
-  ...moduleStore.modules.map(({ id, name }) => ({ id, name, value: id }))
+const moduleOptions = computed(() => [
+  { id: 'any', name: 'Any Module', value: 'any' },
+  { id: 'none', name: 'No Module', value: 'none' },
+  ...moduleStore.items.map(({ id, name }) => ({ id, name, value: id }))
 ]);
 
 const setCurrentModuleFilter = (filterValue: string) => {
@@ -58,7 +58,7 @@ onMounted(() => {
     <div class="module-selector-row">
       <div class="module-selector">
         <select v-model="moduleStore.currentModuleFilter" @change="setCurrentModuleFilter(($event.target as HTMLSelectElement)?.value || 'any')">
-          <option v-for="module in modulesSelect" :key="module.id" :value="module.value">
+          <option v-for="module in moduleOptions" :key="module.id" :value="module.value">
             {{ module.name }}
           </option>
         </select>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
@@ -10,16 +10,33 @@ import { useMentionsStore } from '@/stores/createIndexationStore';
 import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
+const router = useRouter();
 const monsterStore = useMonsterStore();
 const showEditor = ref(false);
 
 // Monster mention indexation store
 const mentionsStore = useMentionsStore();
 
-const isLoaded = computed(() => monsterStore.isLoaded);
-const monster = computed(() => monsterStore.getMonsterById(route.params.id as string));
-const loading = computed(() => !isLoaded.value);
-const notFound = computed(() => isLoaded.value && !monster.value);
+const monster = ref<Monster | null>(null);
+const loading = computed(() => !monsterStore.isLoaded);
+const notFound = computed(() => monsterStore.isLoaded && !monster.value);
+
+function updateMonsterFromStore() {
+  if (!monsterStore.isLoaded) {
+    return;
+  }
+  const found = monsterStore.getById(route.params.id as string);
+  if (found) {
+    monster.value = found;
+  } else {
+    router.push('/monsters');
+  }
+}
+
+watch([
+  () => monsterStore.items,
+  () => monsterStore.isLoaded
+], updateMonsterFromStore, { immediate: true });
 
 function abilityModifier(score: number) {
   return Math.floor((score - 10) / 2);
@@ -33,11 +50,25 @@ const handleEditClick = () => {
   showEditor.value = true;
 };
 
-const handleSubmit = async (updatedMonster: Monster) => {
-  if (monster.value) {
-    await monsterStore.updateMonster(monster.value.id, updatedMonster);
-    monster.value = monsterStore.monsters.find(m => m.id === monster.value!.id) || null;
-  }
+const handleSave = async () => {
+  if (!monster.value) return;
+  const updatedMonster = {
+    name: monster.value.name,
+    type: monster.value.type,
+    size: monster.value.size,
+    alignment: monster.value.alignment,
+    armorClass: monster.value.armorClass,
+    hitPoints: monster.value.hitPoints,
+    speed: monster.value.speed,
+    stats: monster.value.stats,
+    senses: monster.value.senses,
+    languages: monster.value.languages,
+    challengeRating: monster.value.challengeRating,
+    xp: monster.value.xp,
+    actions: monster.value.actions,
+    moduleIds: monster.value.moduleIds
+  };
+  await monsterStore.update(monster.value.id, updatedMonster);
   showEditor.value = false;
 };
 
@@ -47,7 +78,8 @@ const handleCancel = () => {
 
 const handleDelete = async () => {
   if (!monster.value) return;
-  await monsterStore.deleteMonster(monster.value.id);
+  await monsterStore.remove(monster.value.id);
+  router.push('/monsters');
 };
 
 // Computed properties for BaseEntityView
@@ -74,8 +106,8 @@ const mentionedInEntities = computed(() => {
   return mentionsStore.getBacklinks({ kind: 'monster', id: monster.value.id });
 });
 
-onMounted(() => {
-  monsterStore.loadMonsters();
+onMounted(async () => {
+  monsterStore.load();
 });
 </script>
 
@@ -258,7 +290,7 @@ onMounted(() => {
             v-if="showEditor"
             :monster="monster"
             :is-open="showEditor"
-            @submit="handleSubmit"
+            @submit="handleSave"
             @cancel="handleCancel"
           />
         </template>

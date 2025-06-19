@@ -124,15 +124,18 @@ const availableNotes = computed(() => {
 function handleCreateNote(node: ModuleTreeNode) {
   editingNote.value = {
     id: '',
-    title: '',
+    title: `Note in ${node.title || node.id}`,
     content: '',
     typeId: null,
     tags: [],
     moduleId: props.module.id,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    parentId: undefined,
-    metadata: undefined
+    parentId: node.id,
+    metadata: {
+      nodeId: node.id,
+      nodePath: node.id // Using id as path since path doesn't exist
+    }
   };
   editingNode.value = node;
   showNoteEditor.value = true;
@@ -145,24 +148,28 @@ function handleEditNote(noteId: string) {
     showNoteEditor.value = true;
   }
 }
-async function handleNoteEditorSubmit(note: Note) {
+const handleSaveNote = async (note: Note) => {
   let savedNote: Note;
   if (note.id) {
-    await noteStore.updateNote(note.id, note);
-    savedNote = { ...note };
+    savedNote = await noteStore.update(note.id, note);
   } else {
-    savedNote = await noteStore.createNote(note);
-    // Add to node if creating
-    if (editingNode.value) {
-      editingNode.value.notes.push(savedNote.id);
-    }
+    savedNote = await noteStore.create(note);
   }
   showNoteEditor.value = false;
-  editingNote.value = null;
-  editingNode.value = null;
-  // Optionally, emit save to refresh parent
-  emit('save', JSON.parse(JSON.stringify(tree.value)));
-}
+  editingNote.value = {
+    id: '',
+    title: '',
+    content: '',
+    typeId: null,
+    tags: [],
+    moduleId: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    parentId: undefined,
+    metadata: undefined
+  };
+  return savedNote;
+};
 function handleNoteEditorCancel() {
   showNoteEditor.value = false;
   editingNote.value = null;
@@ -349,7 +356,7 @@ function onRootNodeMove(evt: any) {
       v-if="showNoteEditor"
       :note="editingNote"
       :is-open="showNoteEditor"
-      @submit="handleNoteEditorSubmit"
+      @submit="handleSaveNote"
       @cancel="handleNoteEditorCancel"
     />
   </div>

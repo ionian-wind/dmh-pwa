@@ -5,55 +5,45 @@ import { setActivePinia, createPinia } from 'pinia';
 import HomeView from '@/views/HomeView.vue';
 
 // Mock the stores
-jest.mock('@/stores/notes', () => ({
-  useNoteStore: () => ({
-    filteredNotes: [
-      { id: 'note-1', title: 'Note 1' },
-      { id: 'note-2', title: 'Note 2' }
-    ],
-    loadNotes: jest.fn()
-  })
-}));
+jest.mock('@/stores/notes', () => ({ useNoteStore: () => ({ 
+  filtered: [
+    { id: 'n1', title: 'Note One', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 },
+    { id: 'n2', title: 'Note Two', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 }
+  ], 
+  load: jest.fn() 
+}) }));
 
-jest.mock('@/stores/modules', () => ({
-  useModuleStore: () => ({
-    modules: [
-      { id: 'module-1', name: 'Module 1' },
-      { id: 'module-2', name: 'Module 2' }
-    ],
-    loadModules: jest.fn()
-  })
-}));
+jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ 
+  items: [
+    { id: 'm1', name: 'Module One', description: 'Desc', createdAt: 0, updatedAt: 0 },
+    { id: 'm2', name: 'Module Two', description: 'Desc', createdAt: 0, updatedAt: 0 }
+  ], 
+  load: jest.fn() 
+}) }));
 
-jest.mock('@/stores/parties', () => ({
-  usePartyStore: () => ({
-    filteredParties: [
-      { id: 'party-1', name: 'Party 1' },
-      { id: 'party-2', name: 'Party 2' }
-    ],
-    loadParties: jest.fn()
-  })
-}));
+jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ 
+  filtered: [
+    { id: 'p1', name: 'Party One', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 },
+    { id: 'p2', name: 'Party Two', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 }
+  ], 
+  load: jest.fn() 
+}) }));
 
-jest.mock('@/stores/monsters', () => ({
-  useMonsterStore: () => ({
-    filteredMonsters: [
-      { id: 'monster-1', name: 'Monster 1' },
-      { id: 'monster-2', name: 'Monster 2' },
-      { id: 'monster-3', name: 'Monster 3' }
-    ],
-    loadMonsters: jest.fn()
-  })
-}));
+jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ 
+  filtered: [
+    { id: 'mo1', name: 'Goblin', type: 'humanoid', size: 'small', alignment: 'neutral evil', armorClass: 15, hitPoints: 7, speed: { walk: 30 }, stats: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 }, senses: [], languages: ['Common', 'Goblin'], challengeRating: 0.25, xp: 50, actions: [], moduleIds: [], createdAt: 0, updatedAt: 0 },
+    { id: 'mo2', name: 'Orc', type: 'humanoid', size: 'medium', alignment: 'chaotic evil', armorClass: 13, hitPoints: 15, speed: { walk: 30 }, stats: { str: 16, dex: 12, con: 16, int: 7, wis: 11, cha: 10 }, senses: [], languages: ['Common', 'Orc'], challengeRating: 0.5, xp: 100, actions: [], moduleIds: [], createdAt: 0, updatedAt: 0 }
+  ], 
+  load: jest.fn() 
+}) }));
 
-jest.mock('@/stores/encounters', () => ({
-  useEncounterStore: () => ({
-    filteredEncounters: [
-      { id: 'encounter-1', name: 'Encounter 1' }
-    ],
-    loadEncounters: jest.fn()
-  })
-}));
+jest.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ 
+  filtered: [
+    { id: 'e1', name: 'Encounter One', difficulty: 'Easy', monsters: {}, currentRound: 0, currentTurn: 0, moduleId: 'm1', createdAt: 0, updatedAt: 0 },
+    { id: 'e2', name: 'Encounter Two', difficulty: 'Medium', monsters: {}, currentRound: 0, currentTurn: 0, moduleId: 'm2', createdAt: 0, updatedAt: 0 }
+  ], 
+  load: jest.fn() 
+}) }));
 
 jest.mock('@/stores/characters', () => ({
   useCharacterStore: () => ({
@@ -200,7 +190,7 @@ describe('HomeView', () => {
       const monstersCard = wrapper.findAll('.stat-card')[2];
       expect(monstersCard.find('.stat-icon').text()).toBe('🐉');
       expect(monstersCard.find('h3').text()).toBe('Monsters');
-      expect(monstersCard.find('p').text()).toBe('3 monsters');
+      expect(monstersCard.find('p').text()).toBe('2 monsters');
       expect(monstersCard.attributes('href')).toBe('/monsters');
     });
 
@@ -214,7 +204,7 @@ describe('HomeView', () => {
       const encountersCard = wrapper.findAll('.stat-card')[3];
       expect(encountersCard.find('.stat-icon').text()).toBe('⚔️');
       expect(encountersCard.find('h3').text()).toBe('Encounters');
-      expect(encountersCard.find('p').text()).toBe('1 encounters');
+      expect(encountersCard.find('p').text()).toBe('2 encounters');
       expect(encountersCard.attributes('href')).toBe('/encounters');
     });
 
@@ -306,11 +296,11 @@ describe('HomeView', () => {
       // Wait for next tick to ensure onMounted has run
       await new Promise(resolve => setTimeout(resolve, 0));
 
-      expect(useNoteStore().loadNotes).toHaveBeenCalled();
-      expect(useModuleStore().loadModules).toHaveBeenCalled();
-      expect(usePartyStore().loadParties).toHaveBeenCalled();
-      expect(useMonsterStore().loadMonsters).toHaveBeenCalled();
-      expect(useEncounterStore().loadEncounters).toHaveBeenCalled();
+      expect(useNoteStore().load).toHaveBeenCalled();
+      expect(useModuleStore().load).toHaveBeenCalled();
+      expect(usePartyStore().load).toHaveBeenCalled();
+      expect(useMonsterStore().load).toHaveBeenCalled();
+      expect(useEncounterStore().load).toHaveBeenCalled();
     });
   });
 
@@ -325,8 +315,8 @@ describe('HomeView', () => {
       // The stats are computed from the mocked store data
       expect(wrapper.text()).toContain('2 notes');
       expect(wrapper.text()).toContain('2 parties');
-      expect(wrapper.text()).toContain('3 monsters');
-      expect(wrapper.text()).toContain('1 encounters');
+      expect(wrapper.text()).toContain('2 monsters');
+      expect(wrapper.text()).toContain('2 encounters');
       expect(wrapper.text()).toContain('4 characters');
       expect(wrapper.text()).toContain('2 modules');
     });
@@ -390,15 +380,15 @@ describe('HomeView', () => {
       // Mock empty stores
       jest.doMock('@/stores/notes', () => ({
         useNoteStore: () => ({
-          filteredNotes: [],
-          loadNotes: jest.fn()
+          filtered: [],
+          load: jest.fn()
         })
       }));
 
       jest.doMock('@/stores/parties', () => ({
         usePartyStore: () => ({
-          filteredParties: [],
-          loadParties: jest.fn()
+          filtered: [],
+          load: jest.fn()
         })
       }));
 

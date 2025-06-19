@@ -8,6 +8,7 @@ import { useCharacterStore } from '@/stores/characters';
 import { Combat, Combatant, Encounter, Monster, PlayerCharacter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
+import { useRouter } from 'vue-router';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -24,35 +25,35 @@ const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
 const characterStore = useCharacterStore();
+const router = useRouter();
 
 const selectedPartyId = ref<string>('');
 
 onMounted(async () => {
   await Promise.all([
-    partyStore.loadParties(),
-    monsterStore.loadMonsters()
+    partyStore.load(),
+    monsterStore.load()
   ]);
 });
 
-const handleCreateCombat = () => {
+const handleCreateCombat = async () => {
   if (!props.encounter || !selectedPartyId.value) {
     alert('Please select a party');
     return;
   }
 
-  const selectedParty = partyStore.getPartyById(selectedPartyId.value);
+  const selectedParty = partyStore.getById(selectedPartyId.value);
   if (!selectedParty) {
     alert('Selected party not found');
     return;
   }
 
   // Get party characters
-  const partyCharacters = characterStore.all.filter(c => c.partyId === selectedPartyId.value);
+  const partyCharacters = characterStore.items.filter(c => c.partyId === selectedPartyId.value);
   
   // Get encounter monsters
-  const encounterMonsterIds = Object.keys(props.encounter!.monsters || {});
-  const encounterMonsters = monsterStore.monsters.filter(m => 
-    encounterMonsterIds.includes(m.id)
+  const encounterMonsters = monsterStore.items.filter(m =>
+    Object.keys(props.encounter!.monsters || {}).includes(m.id)
   );
 
   // Create combatants from characters
@@ -103,20 +104,17 @@ const handleCreateCombat = () => {
   const allCombatants = [...characterCombatants, ...monsterCombatants];
 
   // Create the combat
-  const newCombat: Omit<Combat, 'id'> = {
+  const newCombat: Omit<Combat, 'id' | 'createdAt' | 'updatedAt'> = {
     encounterId: props.encounter.id,
     partyId: selectedPartyId.value,
     status: 'preparing',
     currentRound: 0,
     currentTurn: 0,
-    combatants: allCombatants,
-    notes: '',
-    createdAt: Date.now(),
-    updatedAt: Date.now()
+    combatants: allCombatants
   };
 
-  const createdCombat = combatStore.createCombat(newCombat);
-  emit('combat-created', createdCombat);
+  const createdCombat = await combatStore.create(newCombat);
+  router.push(`/combats/${createdCombat.id}`);
 };
 
 const handleCancel = () => {
@@ -146,8 +144,8 @@ const generateId = () => {
         <label>Select Party</label>
         <select v-model="selectedPartyId" required>
           <option value="">Choose a party...</option>
-          <option v-for="party in partyStore.filteredParties" :key="party.id" :value="party.id">
-            {{ party.name }} ({{ party.characters.length }} characters)
+          <option v-for="party in partyStore.filtered" :key="party.id" :value="party.id">
+            {{ party.name }}
           </option>
         </select>
       </div>
@@ -155,8 +153,8 @@ const generateId = () => {
       <div v-if="selectedPartyId" class="party-info">
         <h4>Party Information</h4>
         <div class="party-details">
-          <p><strong>Party:</strong> {{ partyStore.getPartyById(selectedPartyId)?.name }}</p>
-          <p><strong>Characters:</strong> {{ characterStore.all.filter(c => c.partyId === selectedPartyId).length }}</p>
+          <p><strong>Party:</strong> {{ partyStore.getById(selectedPartyId)?.name }}</p>
+          <p><strong>Characters:</strong> {{ characterStore.items.filter(c => c.partyId === selectedPartyId).length }}</p>
           <p><strong>Monsters:</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
         </div>
       </div>

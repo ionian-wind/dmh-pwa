@@ -1,93 +1,99 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { PlayerCharacter, UUID } from '@/types';
-import { generateId, useStorage } from '@/utils/storage';
+import type { PlayerCharacter, UUID } from '@/types';
 import characterSchema from '@/schemas/character.schema.json';
 import { registerValidationSchema } from '@/utils/schemaValidator';
 import { extractMentionedEntities } from '@/utils/markdownParser';
+import { createBaseStore, type StandardizedStore } from './createBaseStore';
+import { migrateStorageData, migrateCharacterData } from '@/utils/storage';
 
 registerValidationSchema('character', characterSchema);
 
-export const useCharacterStore = defineStore('characters', () => {
-  // State
-  const [items, loaded] = useStorage<PlayerCharacter[]>({
-    key: 'dnd-characters',
-    defaultValue: [],
-    schema: 'character',
-  });
-  const currentCharacterId = ref<UUID | null>(null);
-  const isLoaded = loaded;
+const baseStore = createBaseStore<PlayerCharacter>({
+  storageKey: 'dnd-characters',
+  schema: 'character'
+});
+
+export const useCharacterStore = defineStore('characters', (): StandardizedStore<PlayerCharacter> => {
+  const base = baseStore();
+  const currentId = ref<UUID | null>(null);
 
   // Computed
-  const currentCharacter = computed(() => {
-    if (!currentCharacterId.value) return null;
-    return items.value.find(c => c.id === currentCharacterId.value) || null;
+  const current = computed(() => {
+    if (!currentId.value) return null;
+    return base.getById(currentId.value) || null;
   });
-  const filteredCharacters = (partyId: UUID) => computed(() => items.value.filter(c => c.partyId === partyId));
 
-  // CRUD
-  const createCharacter = (character: Omit<PlayerCharacter, 'id' | 'createdAt' | 'updatedAt'> & { partyId?: UUID | null }) => {
-    const newChar: PlayerCharacter = {
+  const filteredCharacters = (partyId: UUID) => computed(() => 
+    base.items.value.filter(c => c.partyId === partyId)
+  );
+
+  const filtered = computed(() => base.items.value);
+
+  // Extended CRUD operations with standardized names
+  const create = async (character: Omit<PlayerCharacter, 'id' | 'createdAt' | 'updatedAt'> & { partyId?: UUID | null }) => {
+    const newChar = await base.create({
       ...character,
-      id: generateId(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
       partyId: character.partyId ?? null,
-    };
-    items.value.push(newChar);
+    });
     return newChar;
   };
-  const updateCharacter = (id: UUID, character: Partial<PlayerCharacter>) => {
-    const idx = items.value.findIndex(c => c.id === id);
-    if (idx !== -1) {
-      items.value[idx] = {
-        ...items.value[idx],
-        ...character,
-        updatedAt: Date.now(),
-      };
+
+  const update = async (id: UUID, character: Partial<PlayerCharacter>) => {
+    const updatedChar = await base.update(id, character);
+    return updatedChar;
+  };
+
+  const remove = async (id: UUID) => {
+    await base.remove(id);
+    if (currentId.value === id) currentId.value = null;
+  };
+
+  const load = async () => {
+    // Run migration first if data exists but validation fails
+    try {
+      const migratedData = await migrateStorageData('dnd-characters', migrateCharacterData, []);
+      if (migratedData.length > 0 && base.items.value.length === 0) {
+        // Only update if we have migrated data and no current data
+        base.items.value = migratedData;
+        console.log(`[Characters] Migrated ${migratedData.length} characters`);
+      }
+    } catch (e) {
+      console.warn('[Characters] Migration failed:', e);
     }
-  };
-  const deleteCharacter = (id: UUID) => {
-    items.value = items.value.filter(c => c.id !== id);
-    if (currentCharacterId.value === id) currentCharacterId.value = null;
-  };
-  const getCharacterById = (id: UUID) => items.value.find(c => c.id === id) || null;
-  const loadCharacters = async () => {
-    // (simulate async load, but use items.value for now)
-    return items.value;
+    
+    // Then load normally
+    return base.load();
   };
 
   // Helpers
-  const setParty = (id: UUID, partyId: UUID | null) => {
-    updateCharacter(id, { partyId });
+  const setParty = async (id: UUID, partyId: UUID | null) => {
+    await update(id, { partyId });
   };
 
-  // Legacy aliases
-  const all = computed(() => items.value);
-  const getById = getCharacterById;
-  const getByParty = (partyId: UUID) => items.value.filter(c => c.partyId === partyId);
-  const add = createCharacter;
-  const update = updateCharacter;
-  const remove = deleteCharacter;
+  const getByParty = (partyId: UUID) => base.items.value.filter(c => c.partyId === partyId);
 
   return {
-    items,
-    currentCharacterId,
-    currentCharacter,
-    filteredCharacters,
-    createCharacter,
-    updateCharacter,
-    deleteCharacter,
-    getCharacterById,
-    loadCharacters,
-    setParty,
-    // Legacy aliases
-    all,
-    getById,
-    getByParty,
-    add,
+    // State
+    items: base.items,
+    filtered,
+    sortedItems: base.sortedItems,
+    currentId,
+    current,
+    isLoading: base.isLoading,
+    isLoaded: base.isLoaded,
+    error: base.error,
+
+    // Actions
+    create,
     update,
     remove,
-    isLoaded,
+    getById: base.getById,
+    load,
+
+    // Additional helpers
+    filteredCharacters,
+    setParty,
+    getByParty,
   };
 });

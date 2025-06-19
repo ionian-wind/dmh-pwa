@@ -26,7 +26,7 @@ const encounterStore = useEncounterStore();
 
 const isEditing = ref(false);
 const isLoaded = computed(() => noteStore.isLoaded);
-const note = computed(() => noteStore.getNoteById(route.params.id as string));
+const note = ref<Note | null>(null);
 const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !note.value);
 const parsedContent = computed(() => note.value ? parseMarkdown(note.value.content) : '');
@@ -36,12 +36,16 @@ function updateNoteFromStore() {
   if (!noteStore.isLoaded) {
     return;
   }
+  const found = noteStore.getById(route.params.id as string);
+  if (found) {
+    note.value = found;
+  } else {
+    router.push('/notes');
+  }
 }
 
-// Watch for both route changes, items changes, and isLoaded
 watch([
-  () => route.params.id,
-  () => noteStore.notes,
+  () => noteStore.items,
   () => noteStore.isLoaded
 ], updateNoteFromStore, { immediate: true });
 
@@ -51,7 +55,8 @@ const handleEdit = () => {
 
 const handleDelete = async () => {
   if (!note.value) return;
-  await noteStore.deleteNote(note.value.id);
+  await noteStore.remove(note.value.id);
+  router.push('/notes');
 };
 
 const handleSubmit = async (editedNote: Note) => {
@@ -62,19 +67,19 @@ const handleSubmit = async (editedNote: Note) => {
     let exists = false;
     switch (mention.kind) {
       case 'note':
-        exists = !!noteStore.getNoteById(mention.id);
+        exists = !!noteStore.getById(mention.id);
         break;
       case 'module':
-        exists = !!moduleStore.getModuleById(mention.id);
+        exists = !!moduleStore.getById(mention.id);
         break;
       case 'party':
-        exists = !!partyStore.getPartyById(mention.id);
+        exists = !!partyStore.getById(mention.id);
         break;
       case 'monster':
-        exists = !!monsterStore.getMonsterById(mention.id);
+        exists = !!monsterStore.getById(mention.id);
         break;
       case 'encounter':
-        exists = !!encounterStore.getEncounterById(mention.id);
+        exists = !!encounterStore.getById(mention.id);
         break;
       default:
         exists = true; // ignore unknown kinds
@@ -89,7 +94,7 @@ const handleSubmit = async (editedNote: Note) => {
   }
   validationError.value = null;
   if (!note.value) return;
-  await noteStore.updateNote(note.value.id, editedNote);
+  await noteStore.update(note.value.id, editedNote);
   isEditing.value = false;
 };
 
@@ -112,7 +117,7 @@ const mentionedInNotes = computed(() => {
   // Only include notes that exist (not null)
   return backlinks
     .filter(ref => ref.kind === 'note' && ref.id !== note.value?.id)
-    .map(ref => noteStore.getNoteById(ref.id))
+    .map(ref => noteStore.getById(ref.id))
     .filter((n): n is Note => !!n);
 });
 
@@ -135,8 +140,8 @@ function handleTagClick(tag: string) {
   router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
 }
 
-onMounted(() => {
-  noteStore.loadNotes();
+onMounted(async () => {
+  noteStore.load();
 });
 </script>
 

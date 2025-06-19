@@ -18,7 +18,7 @@ const emit = defineEmits<{
   (e: 'cancel-edit-node'): void;
   (e: 'add-note-to-node', nodeId: string, noteId: string): void;
   (e: 'remove-note-from-node', node: ModuleTreeNode, noteId: string): void;
-  (e: 'handle-create-note', node: ModuleTreeNode): void;
+  (e: 'create-note', node: ModuleTreeNode): void;
   (e: 'handle-edit-note', noteId: string): void;
   (e: 'move-node', payload: { nodeId: string, newParentId: string | null, newIndex: number }): void;
   (e: 'move-note', payload: { noteId: string, fromNodeId: string, toNodeId: string, newIndex: number }): void;
@@ -65,7 +65,7 @@ function onRemoveNoteFromNode(noteId: string) {
   emit('remove-note-from-node', props.node, noteId);
 }
 function onCreateNote() {
-  emit('handle-create-note', props.node);
+  emit('create-note', props.node);
 }
 function onEditNote(noteId: string) {
   emit('handle-edit-note', noteId);
@@ -300,7 +300,7 @@ function cropTitle(title: string, max = 25) {
               @cancel-edit-node="$emit('cancel-edit-node')"
               @add-note-to-node="(nodeId, noteId) => $emit('add-note-to-node', nodeId, noteId)"
               @remove-note-from-node="(...args) => $emit('remove-note-from-node', ...args)"
-              @handle-create-note="$emit('handle-create-note', $event)"
+              @create-note="$emit('create-note', $event)"
               @handle-edit-note="$emit('handle-edit-note', $event)"
               @move-node="$emit('move-node', $event)"
               @move-note="$emit('move-note', $event)"

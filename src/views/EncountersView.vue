@@ -20,8 +20,8 @@ const selectedEncounterForCombat = ref<Encounter | null>(null);
 
 onMounted(async () => {
   await Promise.all([
-    encounterStore.loadEncounters(),
-    moduleStore.loadModules()
+    encounterStore.load(),
+    moduleStore.load()
   ]);
 });
 
@@ -36,18 +36,33 @@ const handleEdit = (encounter: Encounter) => {
 };
 
 const handleDelete = async (encounter: Encounter) => {
-  if (confirm(`Are you sure you want to delete the encounter "${encounter.name}"?`)) {
-    await encounterStore.deleteEncounter(encounter.id);
+  if (confirm(`Are you sure you want to delete ${encounter.name}?`)) {
+    await encounterStore.remove(encounter.id);
   }
 };
 
-const handleSubmit = async (encounter: Omit<Encounter, 'id'>) => {
+const handleSave = async (encounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>) => {
   if (selectedEncounter.value?.id) {
-    await encounterStore.updateEncounter(selectedEncounter.value.id, encounter);
+    await encounterStore.update(selectedEncounter.value.id, encounter);
   } else {
-    await encounterStore.createEncounter(encounter);
+    await encounterStore.create(encounter);
   }
   isEditorOpen.value = false;
+  selectedEncounter.value = {
+    id: '',
+    name: '',
+    description: '',
+    difficulty: 'medium',
+    level: 1,
+    monsters: {},
+    currentRound: 0,
+    currentTurn: 0,
+    moduleId: '',
+    notes: '',
+    xp: 0,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
 };
 
 const handleCancel = () => {
@@ -79,17 +94,17 @@ const handlePartySelectorCancel = () => {
       <Button @click="handleCreate">+</Button>
     </div>
 
-    <div v-if="encounterStore.filteredEncounters.length === 0" class="view-empty">
+    <div v-if="encounterStore.filtered.length === 0" class="view-empty">
       <p>No encounters yet. Create your first encounter to get started!</p>
     </div>
 
     <div v-else class="view-grid">
       <EncounterCard
-        v-for="encounter in encounterStore.filteredEncounters"
+        v-for="encounter in encounterStore.filtered"
         :key="encounter.id"
         :encounter="encounter"
-        @view="encounter => $router.push(`/encounters/${encounter.id}`)"
-        @edit="handleEdit"
+        @view="() => router.push(`/encounters/${encounter.id}`)"
+        @edit="() => { selectedEncounter = encounter; isEditorOpen = true; }"
         @delete="handleDelete"
         @run-combat="handleRunCombat"
       />
@@ -98,7 +113,7 @@ const handlePartySelectorCancel = () => {
     <EncounterEditor
       :encounter="selectedEncounter"
       :is-open="isEditorOpen"
-      @submit="handleSubmit"
+      @submit="handleSave"
       @cancel="handleCancel"
     />
 

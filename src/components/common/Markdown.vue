@@ -24,11 +24,11 @@ const encounterStore = useEncounterStore();
 
 function getEntity(kind: string, id: string) {
   switch (kind) {
-    case 'note': return noteStore.getNoteById(id);
-    case 'module': return moduleStore.getModuleById(id);
-    case 'party': return partyStore.getPartyById(id);
-    case 'monster': return monsterStore.getMonsterById(id);
-    case 'encounter': return encounterStore.getEncounterById(id);
+    case 'note': return noteStore.getById(id);
+    case 'module': return moduleStore.getById(id);
+    case 'party': return partyStore.getById(id);
+    case 'monster': return monsterStore.getById(id);
+    case 'encounter': return encounterStore.getById(id);
     default: return null;
   }
 }

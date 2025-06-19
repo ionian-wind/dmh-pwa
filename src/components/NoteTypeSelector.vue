@@ -24,34 +24,19 @@ const newType = ref<Partial<NoteType>>({
 });
 
 onMounted(async () => {
-  await noteTypeStore.loadNoteTypes();
+  await noteTypeStore.load();
 });
 
-const addType = async () => {
+const handleCreateType = async () => {
   if (newType.value.name?.trim()) {
-    try {
-      await noteTypeStore.createNoteType(newType.value as Omit<NoteType, 'id'>);
-      newType.value = {
-        name: '',
-        description: '',
-        color: '#4a90e2',
-        icon: undefined,
-        fields: []
-      };
-      showTypeEditor.value = false;
-    } catch (error) {
-      console.error('Failed to add note type:', error);
-    }
+    await noteTypeStore.create(newType.value as Omit<NoteType, 'id'>);
+    newType.value.name = '';
   }
 };
 
-const removeType = async (id: string) => {
-  if (confirm('Are you sure you want to remove this note type?')) {
-    try {
-      await noteTypeStore.deleteNoteType(id);
-    } catch (error) {
-      console.error('Failed to remove note type:', error);
-    }
+const handleDeleteType = async (id: string) => {
+  if (confirm('Are you sure you want to delete this note type?')) {
+    await noteTypeStore.remove(id);
   }
 };
 </script>
@@ -64,7 +49,7 @@ const removeType = async (id: string) => {
         @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value || null)"
       >
         <option value="" disabled>{{ placeholder || 'Select note type' }}</option>
-        <option v-for="type in noteTypeStore.noteTypes" :key="type.id" :value="type.id">
+        <option v-for="type in noteTypeStore.items" :key="type.id" :value="type.id">
           {{ type.name }}
         </option>
       </select>
@@ -79,7 +64,7 @@ const removeType = async (id: string) => {
           v-model="newType.name"
           type="text"
           placeholder="Type name"
-          @keydown.enter.prevent="addType"
+          @keydown.enter.prevent="handleCreateType"
         >
       </div>
       <div class="form-group">
@@ -109,17 +94,17 @@ const removeType = async (id: string) => {
         >
       </div>
       <div class="type-editor-actions">
-        <Button size="small" @click="addType">Add</Button>
+        <Button size="small" @click="handleCreateType">Add</Button>
         <Button size="small" variant="secondary" @click="showTypeEditor = false">Cancel</Button>
       </div>
     </div>
 
-    <div v-if="noteTypeStore.noteTypes.length > 0" class="type-list">
-      <div v-for="type in noteTypeStore.noteTypes" :key="type.id" class="type-item">
+    <div v-if="noteTypeStore.items.length > 0" class="type-list">
+      <div v-for="type in noteTypeStore.items" :key="type.id" class="type-item">
         <span v-if="type.icon" class="type-icon" :class="type.icon"></span>
         <span v-else class="type-color" :style="{ backgroundColor: type.color }"></span>
         <span class="type-name">{{ type.name }}</span>
-        <Button size="small" variant="danger" class="remove-type-btn" @click="removeType(type.id)">×</Button>
+        <Button size="small" variant="danger" class="remove-type-btn" @click="handleDeleteType(type.id)">×</Button>
       </div>
     </div>
   </div>

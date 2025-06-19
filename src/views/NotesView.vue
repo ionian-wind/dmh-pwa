@@ -8,7 +8,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
 import NoteCard from '@/components/NoteCard.vue';
 import Button from '@/components/common/Button.vue';
-import type { Note } from '@/types';
+import type { Note, Module } from '@/types';
 
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
@@ -28,7 +28,6 @@ const editingNote = ref<Note>({
   parentId: undefined,
   metadata: undefined
 });
-const notes = ref<Note[]>([]);
 const searchQuery = ref('');
 
 const route = useRoute();
@@ -45,26 +44,31 @@ watch(
   { immediate: true }
 );
 
+// Watch for search query changes
+watch(searchQuery, (newQuery) => {
+  noteStore.searchQuery = newQuery;
+});
+
 const filteredNotes = computed(() => {
-  let notes = noteStore.filteredNotes;
-  if (tagFilter.value) {
-    notes = notes.filter(note => note.tags.includes(tagFilter.value!));
+  let notes = noteStore.filtered;
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    notes = notes.filter((note: Note) =>
+      note.title.toLowerCase().includes(query) ||
+      note.content.toLowerCase().includes(query) ||
+      note.tags.some((tag: string) => tag.toLowerCase().includes(query))
+    );
   }
-  return notes.filter(note => {
-    const matchesSearch = note.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                         note.content.toLowerCase().includes(searchQuery.value.toLowerCase());
-    return matchesSearch;
-  });
+  return notes;
 });
 
 onMounted(async () => {
   await Promise.all([
-    noteStore.loadNotes(),
-    moduleStore.loadModules(),
-    partyStore.loadParties(),
-    monsterStore.loadMonsters()
+    noteStore.load(),
+    partyStore.load(),
+    monsterStore.load(),
+    moduleStore.load()
   ]);
-  notes.value = noteStore.notes;
 });
 
 const addNote = () => {
@@ -83,26 +87,19 @@ const addNote = () => {
   showEditor.value = true;
 };
 
-const saveNote = async (note: Note) => {
-  if (editingNote.value.id) {
-    await noteStore.updateNote(note.id, note);
+const handleSave = async (note: Note) => {
+  if (note.id) {
+    await noteStore.update(note.id, note);
   } else {
-    await noteStore.createNote(note);
+    await noteStore.create(note);
   }
-  notes.value = noteStore.notes;
   showEditor.value = false;
-  editingNote.value = {
-    id: '',
-    title: '',
-    content: '',
-    typeId: null,
-    tags: [],
-    moduleId: null,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    parentId: undefined,
-    metadata: undefined
-  };
+};
+
+const handleDelete = async (note: Note) => {
+  if (note.id) {
+    await noteStore.remove(note.id);
+  }
 };
 
 const cancelEdit = () => {
@@ -119,13 +116,6 @@ const cancelEdit = () => {
     parentId: undefined,
     metadata: undefined
   };
-};
-
-const handleDelete = async (note: Note) => {
-  if (confirm(`Are you sure you want to delete the note "${note.title}"?`)) {
-    await noteStore.deleteNote(note.id);
-    notes.value = noteStore.notes;
-  }
 };
 
 function handleTagClick(tag: string) {
@@ -153,8 +143,8 @@ function handleTagClick(tag: string) {
     </div>
 
     <div v-if="filteredNotes.length === 0" class="view-empty">
-      <p>No notes found.</p>
       <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
+      <p v-else>No notes yet. Create your first note to get started!</p>
     </div>
 
     <div v-else class="notes-container">
@@ -163,7 +153,7 @@ function handleTagClick(tag: string) {
           v-for="note in filteredNotes"
           :key="note.id"
           :note="note"
-          :module-name="note.moduleId ? moduleStore.modules.find(m => m.id === note.moduleId)?.name : undefined"
+          :module-name="note.moduleId ? moduleStore.items.find((m: Module) => m.id === note.moduleId)?.name : undefined"
           @view="note => $router.push(`/notes/${note.id}`)"
           @edit="note => { editingNote = note as Note; showEditor = true; }"
           @delete="handleDelete"
@@ -176,7 +166,7 @@ function handleTagClick(tag: string) {
       v-if="showEditor"
       :note="editingNote"
       :is-open="showEditor"
-      @submit="saveNote"
+      @submit="handleSave"
       @cancel="cancelEdit"
     />
   </div>

@@ -5,7 +5,7 @@
   "required": [
     "id", "name", "type", "size", "alignment", "armorClass", "hitPoints",
     "speed", "stats", "senses", "languages", "challengeRating", "xp",
-    "actions", "moduleId", "createdAt", "updatedAt"
+    "actions", "createdAt", "updatedAt"
   ],
   "properties": {
     "id": {
@@ -74,7 +74,16 @@
       "description": "Array of languages the monster knows"
     },
     "challengeRating": {
+      "oneOf": [
+        {
       "type": "number",
+          "description": "Monster's challenge rating as number"
+        },
+        {
+          "type": "string",
+          "description": "Monster's challenge rating as string (will be converted to number)"
+        }
+      ],
       "description": "Monster's challenge rating"
     },
     "xp": {
@@ -93,8 +102,24 @@
       }
     },
     "moduleId": {
+      "oneOf": [
+        {
       "type": "string",
       "description": "ID of the module this monster belongs to"
+        },
+        {
+          "type": "null",
+          "description": "No module assigned"
+        }
+      ],
+      "description": "ID of the module this monster belongs to or null if no module assigned"
+    },
+    "moduleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of module IDs this monster belongs to"
     },
     "createdAt": {
       "type": "number",

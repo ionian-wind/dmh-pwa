@@ -42,39 +42,43 @@ const mentionPlugin: PluginSimple = (md: MarkdownItType) => {
     const encounterStore = useEncounterStore();
     const linkText = alias || null;
     const dataAttrs = `data-kind="${kind}" data-id="${id}"`;
+
+    const { useStore } = getMentionableEntities(kind)
+    
+    
     switch (kind) {
       case 'note': {
-        const note = noteStore.getNoteById(id);
+        const note = noteStore.getById(id);
         if (note) {
-          return `<a href="/notes/${note.id}" class="internal-link note-link" ${dataAttrs}>${linkText || note.title || kind + ':' + id}</a>`;
+          return `<a href="/notes/${id}" class="internal-link note-link" ${dataAttrs}>${linkText || note.title || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'module': {
-        const module = moduleStore.getModuleById(id);
+        const module = moduleStore.getById(id);
         if (module) {
-          return `<a href="/modules/${module.id}" class="internal-link module-link" ${dataAttrs}>${linkText || module.name || kind + ':' + id}</a>`;
+          return `<a href="/modules/${id}" class="internal-link module-link" ${dataAttrs}>${linkText || module.name || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'party': {
-        const party = partyStore.getPartyById(id);
+        const party = partyStore.getById(id);
         if (party) {
-          return `<a href="/parties/${party.id}" class="internal-link party-link" ${dataAttrs}>${linkText || party.name || kind + ':' + id}</a>`;
+          return `<a href="/parties/${id}" class="internal-link party-link" ${dataAttrs}>${linkText || party.name || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'monster': {
-        const monster = monsterStore.getMonsterById(id);
+        const monster = monsterStore.getById(id);
         if (monster) {
-          return `<a href="/monsters/${monster.id}" class="internal-link monster-link" ${dataAttrs}>${linkText || monster.name || kind + ':' + id}</a>`;
+          return `<a href="/monsters/${id}" class="internal-link monster-link" ${dataAttrs}>${linkText || monster.name || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'encounter': {
-        const encounter = encounterStore.getEncounterById(id);
+        const encounter = encounterStore.getById(id);
         if (encounter) {
-          return `<a href="/encounters/${encounter.id}" class="internal-link encounter-link" ${dataAttrs}>${linkText || encounter.name || kind + ':' + id}</a>`;
+          return `<a href="/encounters/${id}" class="internal-link encounter-link" ${dataAttrs}>${linkText || encounter.name || kind + ':' + id}</a>`;
         }
         break;
       }
@@ -139,37 +143,42 @@ export function extractMentionedEntities(text: string): EntityRef[] {
 }
 
 // --- Mentionable Entities Map ---
-export function getMentionableEntities() {
+export function getMentionableEntities(kind: string) {
   return {
     note: {
       useStore: useNoteStore,
       titleKey: 'title',
       idKey: 'id',
       type: 'Note',
+      target: 'notes'
     },
     module: {
       useStore: useModuleStore,
       titleKey: 'name',
       idKey: 'id',
       type: 'Module',
+      target: 'modules',
     },
     party: {
       useStore: usePartyStore,
       titleKey: 'name',
       idKey: 'id',
       type: 'Party',
+      target: 'parties',
     },
     monster: {
       useStore: useMonsterStore,
       titleKey: 'name',
       idKey: 'id',
       type: 'Monster',
+      target: 'monsters',
     },
     encounter: {
       useStore: useEncounterStore,
       titleKey: 'name',
       idKey: 'id',
       type: 'Encounter',
+      target: 'encounters',
     },
-  };
+  }[kind];
 }

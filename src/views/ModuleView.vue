@@ -120,24 +120,24 @@ const noteStore = useNoteStore();
 
 const showEditor = ref(false);
 const isLoaded = computed(() => moduleStore.isLoaded);
-const module = computed(() => moduleStore.getModuleById(route.params.id as string));
+const module = computed(() => moduleStore.getById(route.params.id as string));
 const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !module.value);
 
 const moduleParties = computed(() => 
-  partyStore.parties.filter(party => party.moduleIds?.includes(route.params.id as string))
+  partyStore.items.filter(party => party.moduleIds?.includes(route.params.id as string))
 );
 
 const moduleMonsters = computed(() => 
-  monsterStore.monsters.filter(monster => monster.moduleIds?.includes(route.params.id as string))
+  monsterStore.items.filter(monster => monster.moduleIds?.includes(route.params.id as string))
 );
 
 const moduleEncounters = computed(() => 
-  encounterStore.encounters.filter(encounter => encounter.moduleId === route.params.id)
+  encounterStore.items.filter(encounter => encounter.moduleId === route.params.id)
 );
 
 const moduleNotes = computed(() => 
-  noteStore.notes.filter(note => note.moduleId === route.params.id)
+  noteStore.items.filter(note => note.moduleId === route.params.id)
 );
 
 const mentionsStore = useMentionsStore();
@@ -162,11 +162,9 @@ const entityTabs = [
 
 const activeTab = ref('document');
 
-onMounted(() => {
-  moduleStore.loadModules();
-  
+onMounted(async () => {
+  moduleStore.load();
 });
-
 
 function updateModuleFromStore() {
   // No assignments to computed properties! Let them update automatically.
@@ -179,9 +177,9 @@ watch([
   () => moduleStore.isLoaded
 ], updateModuleFromStore, { immediate: true });
 
-const handleSubmit = async (updatedModule: Omit<Module, 'id'>) => {
+const handleSubmit = async (updatedModule: Omit<Module, 'id' | 'createdAt' | 'updatedAt'>) => {
   if (!module.value) return;
-  await moduleStore.updateModule(module.value.id, updatedModule);
+  await moduleStore.update(module.value.id, updatedModule);
   showEditor.value = false;
 };
 
@@ -191,7 +189,7 @@ const handleCancel = () => {
 
 const handleDelete = async () => {
   if (!module.value) return;
-  await moduleStore.deleteModule(module.value.id);
+  await moduleStore.remove(module.value.id);
 };
 
 // Computed properties for BaseEntityView
@@ -200,7 +198,7 @@ const moduleSubtitle = computed(() => module.value?.description || '');
 
 function handleSaveNoteTree(newTree: any) {
   if (!module.value) return;
-  moduleStore.updateModule(module.value.id, { ...module.value, noteTree: newTree });
+  moduleStore.update(module.value.id, { ...module.value, noteTree: newTree });
 }
 </script>
 

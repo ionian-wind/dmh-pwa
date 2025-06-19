@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { Monster } from '@/types';
-import { generateId, useStorage, isArray, hasRequiredFields } from '@/utils/storage';
+import type { Monster } from '@/types';
+import { isArray, hasRequiredFields, migrateStorageData, migrateMonsterData } from '@/utils/storage';
 import { useModuleStore } from './modules';
 import monsterSchema from "@/schemas/monster.schema.json";
-import {registerValidationSchema} from "@/utils/schemaValidator";
+import { registerValidationSchema } from "@/utils/schemaValidator";
 import { extractMentionedEntities } from '@/utils/markdownParser';
+import { createBaseStore, type StandardizedStore } from './createBaseStore';
 
 registerValidationSchema('monster', monsterSchema);
 
@@ -29,11 +30,8 @@ const isMonster = (value: unknown): value is Monster => {
   );
 };
 
-export const useMonsterStore = defineStore('monsters', () => {
-  // State
-  const [items, loaded] = useStorage<Monster[]>({
-    key: 'dnd-monsters',
-    defaultValue: [],
+const baseStore = createBaseStore<Monster>({
+  storageKey: 'dnd-monsters',
     validate: (data): data is Monster[] => 
       isArray(data) && data.every(monster => 
         isMonster(monster) && hasRequiredFields(monster as Monster, [
@@ -41,78 +39,98 @@ export const useMonsterStore = defineStore('monsters', () => {
           'speed', 'stats', 'senses', 'languages', 'challengeRating', 'xp',
           'actions', 'createdAt', 'updatedAt'
         ])
-      )
+    ),
+  schema: 'monster'
   });
-  const currentMonsterId = ref<string | null>(null);
-  const isLoaded = loaded;
+
+export const useMonsterStore = defineStore('monsters', (): StandardizedStore<Monster> => {
+  const base = baseStore();
+  const currentId = ref<string | null>(null);
+  const searchQuery = ref('');
 
   // Computed
-  const currentMonster = computed(() => {
-    if (!currentMonsterId.value) return null;
-    return items.value.find(m => m.id === currentMonsterId.value) || null;
-  });
-  const filteredMonsters = computed(() => {
-    const moduleStore = useModuleStore();
-    return items.value.filter(m => moduleStore.matchesModuleFilterMultiple(m.moduleIds));
+  const current = computed(() => {
+    if (!currentId.value) return null;
+    return base.getById(currentId.value) || null;
   });
 
-  // CRUD
-  const createMonster = (monster: Omit<Monster, 'id'>) => {
-    const newMonster: Monster = {
-      ...monster,
-      id: generateId(),
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    items.value.push(newMonster);
+  const filtered = computed(() => {
+    const moduleStore = useModuleStore();
+    let result = base.items.value.filter(m => moduleStore.matchesModuleFilterMultiple(m.moduleIds));
+    
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      result = result.filter(monster =>
+        monster.name.toLowerCase().includes(query) ||
+        monster.type.toLowerCase().includes(query) ||
+        monster.description.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  });
+
+  // Extended CRUD operations with standardized names
+  const create = async (monster: Omit<Monster, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newMonster = await base.create(monster);
     return newMonster;
   };
-  const updateMonster = (id: string, monster: Omit<Monster, 'id'>) => {
-    const index = items.value.findIndex(m => m.id === id);
-    if (index !== -1) {
-      items.value[index] = {
-        ...monster,
-        id,
-        createdAt: items.value[index].createdAt,
-        updatedAt: Date.now()
-      };
+
+  const update = async (id: string, monster: Partial<Omit<Monster, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    const updatedMonster = await base.update(id, monster);
+    return updatedMonster;
+  };
+
+  const remove = async (id: string) => {
+    await base.remove(id);
+    if (currentId.value === id) currentId.value = null;
+  };
+
+  const load = async () => {
+    // Run migration first if data exists but validation fails
+    try {
+      const migratedData = await migrateStorageData('dnd-monsters', migrateMonsterData, []);
+      if (migratedData.length > 0 && base.items.value.length === 0) {
+        // Only update if we have migrated data and no current data
+        base.items.value = migratedData;
+        console.log(`[Monsters] Migrated ${migratedData.length} monsters`);
+      }
+    } catch (e) {
+      console.warn('[Monsters] Migration failed:', e);
     }
-  };
-  const deleteMonster = (id: string) => {
-    items.value = items.value.filter(m => m.id !== id);
-    if (currentMonsterId.value === id) currentMonsterId.value = null;
-  };
-  const getMonsterById = (id: string) => items.value.find(m => m.id === id) || null;
-  const loadMonsters = async () => {
-    // (simulate async load, but use items.value for now)
-    return items.value;
+    
+    // Then load normally
+    return base.load();
   };
 
   // Helpers
   const setCurrentMonster = (id: string | null) => {
-    currentMonsterId.value = id;
+    currentId.value = id;
   };
 
-  // Legacy aliases
-  const monsters = items;
-  const addMonster = createMonster;
-  const getMonster = getMonsterById;
-
   return {
-    items,
-    currentMonsterId,
-    currentMonster,
-    filteredMonsters,
-    createMonster,
-    updateMonster,
-    deleteMonster,
-    getMonsterById,
-    loadMonsters,
-    isLoaded,
-    setCurrentMonster,
-    // Legacy aliases
-    monsters,
-    addMonster,
-    getMonster,
+    // State
+    items: base.items,
+    filtered,
+    sortedItems: base.sortedItems,
+    currentId,
+    current,
+    isLoading: base.isLoading,
+    error: base.error,
+    isLoaded: base.isLoaded,
+
+    // Actions
+    load,
+    create,
+    update,
+    remove,
+    getById: base.getById,
+    setCurrentId: (id: string | null) => { currentId.value = id; },
+    clearCurrent: () => { currentId.value = null; },
+    setFilter: (query: string) => { searchQuery.value = query; },
+    clearFilter: () => { searchQuery.value = ''; },
+
+    // Additional computed properties
+    searchQuery,
   };
 });

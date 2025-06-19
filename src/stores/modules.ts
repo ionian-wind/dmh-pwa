@@ -1,31 +1,32 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { Module } from '@/types';
-import { generateId, useStorage } from '@/utils/storage';
+import type { Module } from '@/types';
 import moduleSchema from '../schemas/module.schema.json';
-import {registerValidationSchema} from "@/utils/schemaValidator";
+import { registerValidationSchema } from "@/utils/schemaValidator";
 import { extractMentionedEntities } from '@/utils/markdownParser';
+import { createBaseStore, type StandardizedStore } from './createBaseStore';
 
 registerValidationSchema('module', moduleSchema);
 
 // Define module filter types
 export type ModuleFilter = 'any' | 'none' | string | null;
 
-export const useModuleStore = defineStore('modules', () => {
-  // State
-  const [items, loaded] = useStorage<Module[]>({
-    key: 'dnd-modules',
-    defaultValue: [],
+const baseStore = createBaseStore<Module>({
+  storageKey: 'dnd-modules',
     schema: 'module'
   });
+
+export const useModuleStore = defineStore('modules', (): StandardizedStore<Module> => {
+  const base = baseStore();
   const currentModuleFilter = ref<ModuleFilter>('any');
-  const isLoaded = loaded;
 
   // Computed
-  const currentModule = computed(() => {
+  const current = computed(() => {
     if (!currentModuleFilter.value || currentModuleFilter.value === 'any' || currentModuleFilter.value === 'none') return null;
-    return items.value.find(m => m.id === currentModuleFilter.value) || null;
+    return base.getById(currentModuleFilter.value) || null;
   });
+
+  const filtered = computed(() => base.items.value);
 
   // Filtering helpers
   const matchesModuleFilter = (entityModuleId: string | null): boolean => {
@@ -34,6 +35,7 @@ export const useModuleStore = defineStore('modules', () => {
     if (currentModuleFilter.value === null) return !entityModuleId;
     return entityModuleId === currentModuleFilter.value;
   };
+
   const matchesModuleFilterMultiple = (entityModuleIds: string[] | null | undefined): boolean => {
     if (currentModuleFilter.value === 'any') return true;
     if (currentModuleFilter.value === 'none') return !entityModuleIds || entityModuleIds.length === 0;
@@ -41,43 +43,33 @@ export const useModuleStore = defineStore('modules', () => {
     return entityModuleIds?.includes(currentModuleFilter.value) || false;
   };
 
-  // CRUD
-  const createModule = (module: Omit<Module, 'id'>) => {
-    const newModule: Module = {
-      ...module,
-      id: generateId(),
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    items.value.push(newModule);
+  // Extended CRUD operations with standardized names
+  const create = async (module: Omit<Module, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newModule = await base.create(module);
     return newModule;
   };
-  const updateModule = (id: string, module: Omit<Module, 'id'>) => {
-    const index = items.value.findIndex(m => m.id === id);
-    if (index !== -1) {
-      items.value[index] = {
-        ...module,
-        id,
-        createdAt: items.value[index].createdAt,
-        updatedAt: Date.now()
-      };
-    }
+
+  const update = async (id: string, module: Partial<Omit<Module, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    const updatedModule = await base.update(id, module);
+    return updatedModule;
   };
-  const deleteModule = (id: string) => {
-    items.value = items.value.filter(m => m.id !== id);
+
+  const remove = async (id: string) => {
+    await base.remove(id);
     if (currentModuleFilter.value === id) {
       currentModuleFilter.value = 'any';
     }
   };
-  const getModuleById = (id: string | null) => items.value.find(m => m.id === id) || null;
-  const loadModules = async () => {
-    return items.value;
+
+  const load = async () => {
+    return base.load();
   };
 
   // No persistence for module filter
   const setCurrentModuleFilter = (filter: ModuleFilter) => {
     currentModuleFilter.value = filter;
   };
+
   const setCurrentModule = (id: string | null) => {
     if (id === null) {
       setCurrentModuleFilter('any');
@@ -85,31 +77,41 @@ export const useModuleStore = defineStore('modules', () => {
       setCurrentModuleFilter(id);
     }
   };
+
   const getModuleName = (id: string | null | undefined) => {
     if (!id) return 'Unknown Module';
-    const module = items.value.find(m => m.id === id);
+    const module = base.getById(id);
     return module?.name || 'Unknown Module';
   };
 
-  // Legacy aliases
-  const modules = items;
-
   return {
-    items,
+    // State
+    items: base.items,
+    filtered,
+    sortedItems: base.sortedItems,
+    currentId: ref<string | null>(null),
+    current,
+    isLoading: base.isLoading,
+    error: base.error,
+    isLoaded: base.isLoaded,
+
+    // Actions
+    load,
+    create,
+    update,
+    remove,
+    getById: base.getById,
+    setCurrentId: (id: string | null) => { /* No currentId in modules */ },
+    clearCurrent: () => { /* No currentId in modules */ },
+    setFilter: (query: string) => { /* No search in modules */ },
+    clearFilter: () => { /* No search in modules */ },
+
+    // Additional computed properties
+    searchQuery: ref(''),
     currentModuleFilter,
-    currentModule,
+    setCurrentModuleFilter,
     matchesModuleFilter,
     matchesModuleFilterMultiple,
-    createModule,
-    updateModule,
-    deleteModule,
-    getModuleById,
-    loadModules,
-    isLoaded,
-    setCurrentModuleFilter,
-    setCurrentModule,
     getModuleName,
-    // Legacy aliases
-    modules,
   };
 });

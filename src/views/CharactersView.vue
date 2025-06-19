@@ -4,18 +4,18 @@
       <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="characterStore.all.length === 0" class="view-empty">
+    <div v-if="characterStore.items.length === 0" class="view-empty">
       <p>No characters yet. Create your first character to get started!</p>
     </div>
 
     <div v-else class="view-grid">
-      <div v-for="character in characterStore.all" :key="character.id" class="character-card">
-      <CharacterCard
-        :character="character"
+      <div v-for="character in characterStore.items" :key="character.id" class="character-card">
+        <CharacterCard
+          :character="character"
           @view="character => $router.push(`/characters/${character.id}`)"
           @edit="() => handleEditClick(character)"
           @delete="() => deleteCharacter(character)"
-      />
+        />
       </div>
     </div>
 
@@ -49,8 +49,9 @@ const editingCharacter = ref<PlayerCharacter | null>(null);
 
 onMounted(async () => {
   await Promise.all([
-    partyStore.loadParties?.(),
-    moduleStore.loadModules?.()
+    characterStore.load(),
+    partyStore.load?.(),
+    moduleStore.load?.()
   ]);
 });
 
@@ -68,7 +69,7 @@ const handleSubmit = async (character: PlayerCharacter) => {
   if (character.id) {
     await characterStore.update(character.id, character);
   } else {
-    await characterStore.add(character);
+    await characterStore.create(character);
   }
   showEditor.value = false;
 };
@@ -78,8 +79,8 @@ const handleCancel = () => {
 };
 
 const deleteCharacter = async (character: PlayerCharacter) => {
-  if (confirm(`Are you sure you want to delete the character "${character.name}"?`)) {
+  if (confirm(`Are you sure you want to delete ${character.name}?`)) {
     await characterStore.remove(character.id);
-}
+  }
 };
 </script>

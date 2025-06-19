@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
@@ -14,11 +14,8 @@ const moduleStore = useModuleStore();
 const showEditor = ref(false);
 const editingParty = ref<Party | null>(null);
 
-// Ensure parties are loaded (async/cross-tab safe)
-watchEffect(() => {
-  if (!partyStore.items || partyStore.items.length === 0) {
-    partyStore.loadParties();
-  }
+onMounted(async () => {
+  await partyStore.load();
 });
 
 const handleCreateClick = () => {
@@ -31,13 +28,23 @@ const handleEditClick = (party: Party) => {
   showEditor.value = true;
 };
 
-const handleSubmit = async (party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
+const handleSave = async (party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
   if (editingParty.value?.id) {
-    await partyStore.updateParty(editingParty.value.id, party);
+    await partyStore.update(editingParty.value.id, party);
   } else {
-    await partyStore.createParty(party);
+    await partyStore.create(party);
   }
   showEditor.value = false;
+  editingParty.value = {
+    id: '',
+    name: '',
+    description: '',
+    characters: [],
+    notes: '',
+    moduleIds: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
 };
 
 const handleCancel = () => {
@@ -45,8 +52,8 @@ const handleCancel = () => {
 };
 
 const deleteParty = async (party: Party) => {
-  if (confirm(`Are you sure you want to delete the party "${party.name}"?`)) {
-    await partyStore.deleteParty(party.id);
+  if (confirm(`Are you sure you want to delete ${party.name}?`)) {
+    await partyStore.remove(party.id);
   }
 };
 </script>
@@ -57,18 +64,18 @@ const deleteParty = async (party: Party) => {
       <Button @click="handleCreateClick">+</Button>
     </div>
 
-    <div v-if="partyStore.filteredParties.length === 0" class="view-empty">
-      <p>No parties yet.</p>
+    <div v-if="partyStore.filtered.length === 0" class="view-empty">
       <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
+      <p v-else>No parties yet. Create your first party to get started!</p>
     </div>
 
-    <div v-else class="view-grid">
+    <div class="parties-grid">
       <PartyCard
-        v-for="party in partyStore.filteredParties"
+        v-for="party in partyStore.filtered"
         :key="party.id"
         :party="party"
         @view="() => router.push(`/parties/${party.id}`)"
-        @edit="handleEditClick"
+        @edit="() => { editingParty = party; showEditor = true; }"
         @delete="deleteParty"
       />
     </div>
@@ -77,7 +84,7 @@ const deleteParty = async (party: Party) => {
       v-if="showEditor"
       :party="editingParty"
       :is-open="showEditor"
-      @submit="handleSubmit"
+      @submit="handleSave"
       @cancel="handleCancel"
     />
   </div>
