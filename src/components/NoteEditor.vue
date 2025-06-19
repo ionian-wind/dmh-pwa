@@ -3,7 +3,6 @@ import { ref, watch, computed, onMounted } from 'vue';
 import type { Note } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import TagSelector from './TagSelector.vue';
-import EntityAutosuggest from './EntityAutosuggest.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
@@ -37,14 +36,17 @@ const editedNote = ref<Note>({
   typeId: null
 });
 
+const lastNoteId = ref<string | null>(null);
+
 watch(() => props.note, (newNote) => {
-  if (newNote) {
-    editedNote.value = { 
+  if (newNote && newNote.id !== lastNoteId.value) {
+    editedNote.value = {
       ...newNote,
       moduleId: newNote.moduleId ?? null,
       typeId: newNote.typeId ?? null
     };
-  } else {
+    lastNoteId.value = newNote.id;
+  } else if (!newNote && lastNoteId.value !== null) {
     editedNote.value = {
       createdAt: 0,
       updatedAt: 0,
@@ -55,6 +57,7 @@ watch(() => props.note, (newNote) => {
       moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : null,
       typeId: null
     };
+    lastNoteId.value = null;
   }
 }, { immediate: true });
 
@@ -124,6 +127,13 @@ const handleSubmit = () => {
 const handleCancel = () => {
   emit('cancel');
 };
+
+watch([
+  () => showAutosuggest,
+  () => autosuggestPosition
+], ([show, pos]) => {
+  console.log('NoteEditor: showAutosuggest', show, 'autosuggestPosition', pos)
+})
 </script>
 
 <template>
@@ -182,6 +192,7 @@ const handleCancel = () => {
         <textarea
           v-model="editedNote.content"
           @input="handleContentInput"
+          @keyup="handleContentInput"
           rows="10"
           placeholder="Write your note here... Use [[type:]] to link entities"
           class="content-editor"
@@ -216,15 +227,6 @@ const handleCancel = () => {
         </div>
       </div>
     </div>
-    <EntityAutosuggest
-      v-if="showAutosuggest"
-      :position="autosuggestPosition"
-      :text="editedNote.content"
-      :cursor-position="cursorPosition"
-      :current-id="editedNote.id"
-      @select="insertSuggestion"
-      @cancel="showAutosuggest = false"
-    />
   </BaseModal>
 </template>
 

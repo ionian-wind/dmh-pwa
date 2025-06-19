@@ -22,6 +22,7 @@ export const usePartyStore = defineStore('parties', () => {
     defaultValue: [],
     schema: 'character'
   });
+  const isLoaded = ref(false);
 
   // Computed
   const currentParty = computed(() => {
@@ -63,7 +64,12 @@ export const usePartyStore = defineStore('parties', () => {
     if (currentPartyId.value === id) currentPartyId.value = null;
   };
   const getPartyById = (id: string) => items.value.find(p => p.id === id) || null;
-  const loadParties = async () => items.value;
+  const loadParties = async () => {
+    isLoaded.value = false;
+    // (simulate async load, but use items.value for now)
+    isLoaded.value = true;
+    return items.value;
+  };
 
   // Character helpers (legacy)
   const addCharacter = (character: Omit<PlayerCharacter, 'id'>) => {
@@ -133,6 +139,7 @@ export const usePartyStore = defineStore('parties', () => {
     deleteParty,
     getPartyById,
     loadParties,
+    isLoaded,
     // Character helpers
     characters,
     addCharacter,

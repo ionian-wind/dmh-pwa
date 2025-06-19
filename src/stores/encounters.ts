@@ -33,6 +33,7 @@ export const useEncounterStore = defineStore('encounters', () => {
       )
   });
   const currentEncounterId = ref<string | null>(null);
+  const isLoaded = ref(false);
 
   // Computed
   const currentEncounter = computed(() => {
@@ -74,7 +75,12 @@ export const useEncounterStore = defineStore('encounters', () => {
     if (currentEncounterId.value === id) currentEncounterId.value = null;
   };
   const getEncounterById = (id: string) => items.value.find(e => e.id === id) || null;
-  const loadEncounters = async () => items.value;
+  const loadEncounters = async () => {
+    isLoaded.value = false;
+    // (simulate async load, but use items.value for now)
+    isLoaded.value = true;
+    return items.value;
+  };
 
   // Monster/turn helpers (legacy)
   const addMonster = (encounterId: string, monsterId: string, count: number = 1) => {
@@ -165,6 +171,7 @@ export const useEncounterStore = defineStore('encounters', () => {
     deleteEncounter,
     getEncounterById,
     loadEncounters,
+    isLoaded,
     // Monster/turn helpers
     addMonster,
     removeMonster,

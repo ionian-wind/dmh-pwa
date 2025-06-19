@@ -15,8 +15,17 @@
         <div v-if="module" class="module-content">
           <TabGroup :tabs="entityTabs" v-model="activeTab">
             <template #default="{ activeTab }">
-              <section v-if="activeTab === 'parties'" class="content-section">
-                <h2>Parties</h2>
+              <section v-if="activeTab === 'document'">
+                <ModuleDocumentView
+                  v-if="module && module.noteTree && module.noteTree.length > 0"
+                  :noteTree="module.noteTree"
+                  :notes="moduleNotes"
+                />
+                <div v-else class="empty-state">
+                  <p>No document structure defined for this module.</p>
+                </div>
+              </section>
+              <section v-else-if="activeTab === 'parties'" class="content-section">
                 <div v-if="moduleParties.length === 0" class="empty-state">
                   <p>No parties in this module</p>
                 </div>
@@ -28,7 +37,6 @@
                 </div>
               </section>
               <section v-else-if="activeTab === 'monsters'" class="content-section">
-                <h2>Monsters</h2>
                 <div v-if="moduleMonsters.length === 0" class="empty-state">
                   <p>No monsters in this module</p>
                 </div>
@@ -40,7 +48,6 @@
                 </div>
               </section>
               <section v-else-if="activeTab === 'encounters'" class="content-section">
-                <h2>Encounters</h2>
                 <div v-if="moduleEncounters.length === 0" class="empty-state">
                   <p>No encounters in this module</p>
                 </div>
@@ -52,7 +59,6 @@
                 </div>
               </section>
               <section v-else-if="activeTab === 'notes'" class="content-section">
-                <h2>Notes</h2>
                 <div v-if="moduleNotes.length === 0" class="empty-state">
                   <p>No notes in this module</p>
                 </div>
@@ -64,7 +70,6 @@
                 </div>
               </section>
               <section v-else-if="activeTab === 'noteTree'" class="content-section">
-                <h2>Note Tree</h2>
                 <ModuleNoteTreeManager
                   :module="module"
                   :notes="moduleNotes"
@@ -94,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -108,6 +113,7 @@ import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
 import TabGroup from '@/components/common/TabGroup.vue';
 import ModuleNoteTreeManager from '@/components/ModuleNoteTreeManager.vue';
+import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
 
 const route = useRoute();
 const moduleStore = useModuleStore();
@@ -152,9 +158,41 @@ const entityTabs = [
   { id: 'monsters', label: 'Monsters' },
   { id: 'encounters', label: 'Encounters' },
   { id: 'notes', label: 'Notes' },
-  { id: 'noteTree', label: 'Note Tree' },
+  { id: 'document', label: 'Book' },
+  { id: 'noteTree', label: 'Book Tree' },
 ];
-const activeTab = ref('parties');
+
+const getInitialTab = () => {
+  const hash = window.location.hash;
+  if (hash && (hash.startsWith('#section-') || hash.startsWith('#note-'))) {
+    return 'document';
+  }
+  return 'parties';
+};
+
+const activeTab = ref(getInitialTab());
+
+function scrollToAnchorIfNeeded() {
+  const hash = window.location.hash;
+  if (hash && (hash.startsWith('#section-') || hash.startsWith('#note-'))) {
+    nextTick(() => {
+      const el = document.getElementById(hash.substring(1));
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+}
+
+onMounted(() => {
+  scrollToAnchorIfNeeded();
+  window.addEventListener('hashchange', scrollToAnchorIfNeeded);
+});
+
+import { onUnmounted } from 'vue';
+onUnmounted(() => {
+  window.removeEventListener('hashchange', scrollToAnchorIfNeeded);
+});
 
 function updateModuleFromStore() {
   const moduleId = route.params.id as string;

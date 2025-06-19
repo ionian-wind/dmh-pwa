@@ -14,9 +14,9 @@ const isNote = (value: unknown): value is Note => {
   return typeof value === 'object' && value !== null &&
     typeof (value as any).title === 'string' &&
     typeof (value as any).content === 'string' &&
-    typeof (value as any).typeId === 'string' &&
+    (typeof (value as any).typeId === 'string' || (value as any).typeId === null) &&
     Array.isArray((value as any).tags) &&
-    typeof (value as any).moduleId === 'string';
+    (typeof (value as any).moduleId === 'string' || (value as any).moduleId === null);
 };
 
 export const useNoteStore = defineStore('notes', () => {
@@ -34,6 +34,7 @@ export const useNoteStore = defineStore('notes', () => {
     key: 'dnd-notes-search',
     defaultValue: ''
   });
+  const isLoaded = ref(false);
 
   // Computed
   const currentNote = computed(() => {
@@ -100,7 +101,12 @@ export const useNoteStore = defineStore('notes', () => {
     indexation.clearLinks(from);
   };
   const getNoteById = (id: string) => items.value.find(n => n.id === id) || null;
-  const loadNotes = async () => items.value;
+  const loadNotes = async () => {
+    isLoaded.value = false;
+    // (simulate async load, but use items.value for now)
+    isLoaded.value = true;
+    return items.value;
+  };
 
   // Legacy aliases
   const notes = items;
@@ -117,6 +123,7 @@ export const useNoteStore = defineStore('notes', () => {
     deleteNote,
     getNoteById,
     loadNotes,
+    isLoaded,
     // Legacy aliases
     notes,
   };

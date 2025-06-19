@@ -42,35 +42,35 @@ const mentionExtension = {
     const linkText = alias || null;
     switch (kind) {
       case 'note': {
-        const note = noteStore.notes.find(n => n.id === id);
+        const note = noteStore.getNoteById(id);
         if (note) {
           return `<a href="/notes/${note.id}" class="internal-link note-link">${linkText || note.title || text}</a>`;
         }
         break;
       }
       case 'module': {
-        const module = moduleStore.modules.find(m => m.id === id);
+        const module = moduleStore.getModuleById(id);
         if (module) {
           return `<a href="/modules/${module.id}" class="internal-link module-link">${linkText || module.name || text}</a>`;
         }
         break;
       }
       case 'party': {
-        const party = partyStore.parties.find(p => p.id === id);
+        const party = partyStore.getPartyById(id);
         if (party) {
           return `<a href="/parties/${party.id}" class="internal-link party-link">${linkText || party.name || text}</a>`;
         }
         break;
       }
       case 'monster': {
-        const monster = monsterStore.monsters.find(m => m.id === id);
+        const monster = monsterStore.getMonsterById(id);
         if (monster) {
           return `<a href="/monsters/${monster.id}" class="internal-link monster-link">${linkText || monster.name || text}</a>`;
         }
         break;
       }
       case 'encounter': {
-        const encounter = encounterStore.encounters.find(e => e.id === id);
+        const encounter = encounterStore.getEncounterById(id);
         if (encounter) {
           return `<a href="/encounters/${encounter.id}" class="internal-link encounter-link">${linkText || encounter.name || text}</a>`;
         }
@@ -118,4 +118,41 @@ export function extractMentionedEntities(text: string): EntityRef[] {
     results.push({ kind: match[1], id: match[2] });
   }
   return results;
+}
+
+// --- Mentionable Entities Map ---
+// Maps mention kind to { store, titleKey, idKey, type }
+export function getMentionableEntities() {
+  return {
+    note: {
+      useStore: useNoteStore,
+      titleKey: 'title',
+      idKey: 'id',
+      type: 'Note',
+    },
+    module: {
+      useStore: useModuleStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Module',
+    },
+    party: {
+      useStore: usePartyStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Party',
+    },
+    monster: {
+      useStore: useMonsterStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Monster',
+    },
+    encounter: {
+      useStore: useEncounterStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Encounter',
+    },
+  };
 }

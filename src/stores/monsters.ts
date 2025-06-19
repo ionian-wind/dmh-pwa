@@ -44,6 +44,7 @@ export const useMonsterStore = defineStore('monsters', () => {
       )
   });
   const currentMonsterId = ref<string | null>(null);
+  const isLoaded = ref(false);
 
   // Computed
   const currentMonster = computed(() => {
@@ -82,7 +83,12 @@ export const useMonsterStore = defineStore('monsters', () => {
     if (currentMonsterId.value === id) currentMonsterId.value = null;
   };
   const getMonsterById = (id: string) => items.value.find(m => m.id === id) || null;
-  const loadMonsters = async () => items.value;
+  const loadMonsters = async () => {
+    isLoaded.value = false;
+    // (simulate async load, but use items.value for now)
+    isLoaded.value = true;
+    return items.value;
+  };
 
   // Helpers
   const setCurrentMonster = (id: string | null) => {
@@ -104,6 +110,7 @@ export const useMonsterStore = defineStore('monsters', () => {
     deleteMonster,
     getMonsterById,
     loadMonsters,
+    isLoaded,
     setCurrentMonster,
     // Legacy aliases
     monsters,

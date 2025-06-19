@@ -11,6 +11,7 @@ const props = defineProps<{
   submitLabel?: string;
   cancelLabel?: string;
   modalId?: string;
+  showClose?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -107,6 +108,7 @@ onUnmounted(() => {
       <div class="modal-dialog">
         <div class="modal-header">
           <h2>{{ title }}</h2>
+          <Button v-if="showClose" variant="link" @click="$emit('cancel')" aria-label="Close">&times;</button>
         </div>
         <form @submit.prevent="emit('submit')" class="modal-form">
           <div class="modal-scrollable">
@@ -160,12 +162,16 @@ onUnmounted(() => {
   border-top-left-radius: var(--border-radius);
   border-top-right-radius: var(--border-radius);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .modal-header h2 {
   margin: 0;
   color: var(--color-text);
 }
+
 
 .modal-form {
   display: flex;

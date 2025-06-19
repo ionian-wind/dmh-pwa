@@ -19,6 +19,7 @@ export const useModuleStore = defineStore('modules', () => {
     schema: 'module'
   });
   const currentModuleFilter = ref<ModuleFilter>('any');
+  const isLoaded = ref(false);
 
   // Computed
   const currentModule = computed(() => {
@@ -69,7 +70,12 @@ export const useModuleStore = defineStore('modules', () => {
     }
   };
   const getModuleById = (id: string | null) => items.value.find(m => m.id === id) || null;
-  const loadModules = async () => items.value;
+  const loadModules = async () => {
+    isLoaded.value = false;
+    // (simulate async load, but use items.value for now)
+    isLoaded.value = true;
+    return items.value;
+  };
 
   // No persistence for module filter
   const setCurrentModuleFilter = (filter: ModuleFilter) => {
@@ -102,6 +108,7 @@ export const useModuleStore = defineStore('modules', () => {
     deleteModule,
     getModuleById,
     loadModules,
+    isLoaded,
     setCurrentModuleFilter,
     setCurrentModule,
     getModuleName,
