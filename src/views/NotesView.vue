@@ -136,8 +136,20 @@ function handleTagClick(tag: string) {
 
 <template>
   <div class="view-list">
-    <div class="view-header">
+    <div class="view-header notes-header-row">
       <Button @click="addNote">+</Button>
+      <div class="search-input-wrapper">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search notes..."
+          class="search-input"
+        >
+        <span v-if="tagFilter" class="tag-chip">
+          #{{ tagFilter }}
+          <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">&times;</button>
+        </span>
+      </div>
     </div>
 
     <div v-if="filteredNotes.length === 0" class="view-empty">
@@ -146,23 +158,6 @@ function handleTagClick(tag: string) {
     </div>
 
     <div v-else class="notes-container">
-      <div class="notes-filters">
-        <div class="search-box">
-          <div class="search-input-wrapper">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search notes..."
-              class="search-input"
-            >
-            <span v-if="tagFilter" class="tag-chip">
-              #{{ tagFilter }}
-              <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">&times;</button>
-            </span>
-          </div>
-        </div>
-      </div>
-
       <div class="view-grid">
         <NoteCard
           v-for="note in filteredNotes"
@@ -188,14 +183,11 @@ function handleTagClick(tag: string) {
 </template>
 
 <style scoped>
-.notes-filters {
+.notes-header-row {
   display: flex;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
-}
-
-.search-box {
-  flex: 1;
 }
 
 .search-input-wrapper {
@@ -203,6 +195,7 @@ function handleTagClick(tag: string) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1;
 }
 
 .search-input {
