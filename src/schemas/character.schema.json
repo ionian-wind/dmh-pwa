@@ -29,7 +29,7 @@
       "description": "Character's class"
     },
     "partyId": {
-      "type": "string",
+      "type": ["string", "null"],
       "description": "ID of party"
     },
     "race": {

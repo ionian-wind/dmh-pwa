@@ -21,7 +21,7 @@ const isEncounter = (value: unknown): value is Encounter => {
 
 export const useEncounterStore = defineStore('encounters', () => {
   // State
-  const items = useStorage<Encounter[]>({
+  const [items, loaded] = useStorage<Encounter[]>({
     key: 'dnd-encounters',
     defaultValue: [],
     validate: (data): data is Encounter[] => 
@@ -33,7 +33,7 @@ export const useEncounterStore = defineStore('encounters', () => {
       )
   });
   const currentEncounterId = ref<string | null>(null);
-  const isLoaded = ref(false);
+  const isLoaded = loaded;
 
   // Computed
   const currentEncounter = computed(() => {
@@ -76,9 +76,7 @@ export const useEncounterStore = defineStore('encounters', () => {
   };
   const getEncounterById = (id: string) => items.value.find(e => e.id === id) || null;
   const loadEncounters = async () => {
-    isLoaded.value = false;
     // (simulate async load, but use items.value for now)
-    isLoaded.value = true;
     return items.value;
   };
 

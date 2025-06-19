@@ -51,7 +51,8 @@ const handleGoBack = () => {
 
 <template>
   <div class="base-entity-container">
-    <NotFoundView v-if="notFound" />
+    <div v-if="loading" class="loading-state">Loading...</div>
+    <NotFoundView v-else-if="notFound" />
     <div v-else-if="entity" class="base-entity-view">
       <!-- Header -->
       <div class="entity-header">

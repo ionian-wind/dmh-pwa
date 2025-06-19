@@ -12,6 +12,7 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/common/Button.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
+import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const partyStore = usePartyStore();
@@ -20,21 +21,11 @@ const characterStore = useCharacterStore();
 
 const showEditor = ref(false);
 const showLinkModal = ref(false);
-const party = ref<Party | null>(null);
-const notFound = ref(false);
 
-function updatePartyFromStore() {
-  const partyId = route.params.id as string;
-  const found = partyStore.getPartyById(partyId);
-  party.value = found;
-  notFound.value = !found;
-}
-
-// Watch for both route changes and items changes
-watch([
-  () => route.params.id,
-  () => partyStore.items
-], updatePartyFromStore, { immediate: true });
+const isLoaded = computed(() => partyStore.isLoaded);
+const party = computed(() => partyStore.getPartyById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !party.value);
 
 const modules = computed(() => {
   if (!party.value) return [];
@@ -126,12 +117,19 @@ const partySubtitle = computed(() => {
   
   return parts.join(' • ');
 });
+
+onMounted(() => {
+  partyStore.loadParties();
+});
 </script>
 
 <template>
   <div class="party-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="party"
         entity-name="Party"
         list-route="/parties"
@@ -190,7 +188,7 @@ const partySubtitle = computed(() => {
         </template>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>

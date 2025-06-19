@@ -1,7 +1,10 @@
 <template>
   <div class="module-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="module"
         entity-name="Module"
         list-route="/modules"
@@ -30,10 +33,7 @@
                   <p>No parties in this module</p>
                 </div>
                 <div v-else class="content-grid">
-                  <div v-for="party in moduleParties" :key="party.id" class="content-card">
-                    <h3>{{ party.name }}</h3>
-                    <p>{{ party.description }}</p>
-                  </div>
+                  <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
                 </div>
               </section>
               <section v-else-if="activeTab === 'monsters'" class="content-section">
@@ -41,10 +41,7 @@
                   <p>No monsters in this module</p>
                 </div>
                 <div v-else class="content-grid">
-                  <div v-for="monster in moduleMonsters" :key="monster.id" class="content-card">
-                    <h3>{{ monster.name }}</h3>
-                    <p>{{ monster.type }}</p>
-                  </div>
+                  <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
                 </div>
               </section>
               <section v-else-if="activeTab === 'encounters'" class="content-section">
@@ -52,10 +49,7 @@
                   <p>No encounters in this module</p>
                 </div>
                 <div v-else class="content-grid">
-                  <div v-for="encounter in moduleEncounters" :key="encounter.id" class="content-card">
-                    <h3>{{ encounter.name }}</h3>
-                    <p>{{ encounter.description }}</p>
-                  </div>
+                  <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
                 </div>
               </section>
               <section v-else-if="activeTab === 'notes'" class="content-section">
@@ -63,10 +57,7 @@
                   <p>No notes in this module</p>
                 </div>
                 <div v-else class="content-grid">
-                  <div v-for="note in moduleNotes" :key="note.id" class="content-card">
-                    <h3>{{ note.title }}</h3>
-                    <p>{{ note.content }}</p>
-                  </div>
+                  <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
                 </div>
               </section>
               <section v-else-if="activeTab === 'noteTree'" class="content-section">
@@ -91,7 +82,7 @@
         </template>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading && activeTab !== 'document'" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>
@@ -114,6 +105,11 @@ import { useMentionsStore } from '@/stores/createIndexationStore';
 import TabGroup from '@/components/common/TabGroup.vue';
 import ModuleNoteTreeManager from '@/components/ModuleNoteTreeManager.vue';
 import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
+import PartyCard from '@/components/PartyCard.vue';
+import MonsterCard from '@/components/MonsterCard.vue';
+import EncounterCard from '@/components/EncounterCard.vue';
+import NoteCard from '@/components/NoteCard.vue';
+import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const moduleStore = useModuleStore();
@@ -123,8 +119,10 @@ const encounterStore = useEncounterStore();
 const noteStore = useNoteStore();
 
 const showEditor = ref(false);
-const module = ref<Module | null>(null);
-const notFound = ref(false);
+const isLoaded = computed(() => moduleStore.isLoaded);
+const module = computed(() => moduleStore.getModuleById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !module.value);
 
 const moduleParties = computed(() => 
   partyStore.parties.filter(party => party.moduleIds?.includes(route.params.id as string))
@@ -154,53 +152,36 @@ const mentionedInEntities = computed(() => {
 });
 
 const entityTabs = [
+  { id: 'document', label: 'Book' },
   { id: 'parties', label: 'Parties' },
   { id: 'monsters', label: 'Monsters' },
   { id: 'encounters', label: 'Encounters' },
   { id: 'notes', label: 'Notes' },
-  { id: 'document', label: 'Book' },
   { id: 'noteTree', label: 'Book Tree' },
 ];
 
 const activeTab = ref('document');
 
-function scrollToAnchorIfNeeded() {
-  const hash = window.location.hash;
-  if (hash && (hash.startsWith('#section-') || hash.startsWith('#note-'))) {
-    nextTick(() => {
-      const el = document.getElementById(hash.substring(1));
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }
-}
-
 onMounted(() => {
-  window.addEventListener('hashchange', scrollToAnchorIfNeeded);
+  moduleStore.loadModules();
+  
 });
 
-onUnmounted(() => {
-  window.removeEventListener('hashchange', scrollToAnchorIfNeeded);
-});
 
 function updateModuleFromStore() {
-  const moduleId = route.params.id as string;
-  const found = moduleStore.getModuleById(moduleId);
-  module.value = found;
-  notFound.value = !found;
+  // No assignments to computed properties! Let them update automatically.
 }
 
-// Watch for both route changes and items changes
+// Watch for both route changes, items changes, and isLoaded
 watch([
   () => route.params.id,
-  () => moduleStore.items
+  () => moduleStore.items,
+  () => moduleStore.isLoaded
 ], updateModuleFromStore, { immediate: true });
 
 const handleSubmit = async (updatedModule: Omit<Module, 'id'>) => {
   if (!module.value) return;
   await moduleStore.updateModule(module.value.id, updatedModule);
-  module.value = moduleStore.getModuleById(module.value.id);
   showEditor.value = false;
 };
 
@@ -217,10 +198,9 @@ const handleDelete = async () => {
 const moduleTitle = computed(() => module.value?.name || '');
 const moduleSubtitle = computed(() => module.value?.description || '');
 
-function handleSaveNoteTree(newTree) {
+function handleSaveNoteTree(newTree: any) {
   if (!module.value) return;
   moduleStore.updateModule(module.value.id, { ...module.value, noteTree: newTree });
-  module.value = moduleStore.getModuleById(module.value.id);
 }
 </script>
 

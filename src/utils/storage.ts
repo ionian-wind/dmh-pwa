@@ -116,9 +116,9 @@ function debounce(fn: (...args: any[]) => void, delay: number) {
   };
 }
 
-export function useStorage<T>({ key, defaultValue, schema, sync = true, validate, onError }: StorageOptions<T>): Ref<UnwrapRef<T>> {
+export function useStorage<T>({ key, defaultValue, schema, sync = true, validate, onError }: StorageOptions<T>): [Ref<UnwrapRef<T>>, Ref<boolean>] {
   const data = ref<T>(defaultValue);
-  let loaded = false;
+  const loaded = ref(false);
   const useIDB = isIndexedDBAvailable();
 
   // Initial load from IndexedDB
@@ -155,7 +155,7 @@ export function useStorage<T>({ key, defaultValue, schema, sync = true, validate
       // fallback: do nothing, already defaultValue
       console.warn('IndexedDB is not available. Using in-memory storage only.');
     }
-    loaded = true;
+    loaded.value = true;
   })();
 
   // Cross-tab/window sync: reload value if notified
@@ -192,7 +192,7 @@ export function useStorage<T>({ key, defaultValue, schema, sync = true, validate
       // fallback: do nothing, already defaultValue
       console.warn('IndexedDB is not available. Using in-memory storage only.');
     }
-    loaded = true;
+    loaded.value = true;
   }, 100);
 
   if (sync) {
@@ -218,7 +218,7 @@ export function useStorage<T>({ key, defaultValue, schema, sync = true, validate
   }
 
   watch(data, async (newValue) => {
-    if (!loaded) return; // Don't save until initial load
+    if (!loaded.value) return; // Don't save until initial load
     if (schema) {
       let valid = false;
       let errors: string[] = [];
@@ -257,7 +257,7 @@ export function useStorage<T>({ key, defaultValue, schema, sync = true, validate
 
   // No sync event for IndexedDB, so skip that part
 
-  return data as Ref<UnwrapRef<T>>;
+  return [data, loaded];
 }
 
 // Validation error helpers

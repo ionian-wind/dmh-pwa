@@ -12,6 +12,8 @@ import NoteEditor from '@/components/NoteEditor.vue';
 import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
+import NotFoundView from './NotFoundView.vue';
+import Markdown from '@/components/common/Markdown.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,23 +24,25 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 
-const note = ref<Note | null>(null);
 const isEditing = ref(false);
+const isLoaded = computed(() => noteStore.isLoaded);
+const note = computed(() => noteStore.getNoteById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !note.value);
 const parsedContent = computed(() => note.value ? parseMarkdown(note.value.content) : '');
-const notFound = ref(false);
 const validationError = ref<string | null>(null);
 
 function updateNoteFromStore() {
-  const noteId = route.params.id as string;
-  const found = noteStore.getNoteById(noteId);
-  note.value = found;
-  notFound.value = !found;
+  if (!noteStore.isLoaded) {
+    return;
+  }
 }
 
-// Watch for both route changes and items changes
+// Watch for both route changes, items changes, and isLoaded
 watch([
   () => route.params.id,
-  () => noteStore.items
+  () => noteStore.notes,
+  () => noteStore.isLoaded
 ], updateNoteFromStore, { immediate: true });
 
 const handleEdit = () => {
@@ -86,7 +90,6 @@ const handleSubmit = async (editedNote: Note) => {
   validationError.value = null;
   if (!note.value) return;
   await noteStore.updateNote(note.value.id, editedNote);
-  note.value = editedNote;
   isEditing.value = false;
 };
 
@@ -131,12 +134,19 @@ function getEntityLabel(entity: { kind: string; id: string }) {
 function handleTagClick(tag: string) {
   router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
 }
+
+onMounted(() => {
+  noteStore.loadNotes();
+});
 </script>
 
 <template>
   <div class="note-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="note"
         entity-name="Note"
         list-route="/notes"
@@ -148,7 +158,7 @@ function handleTagClick(tag: string) {
       >
         <!-- Note Content -->
         <div v-if="note">
-          <div class="note-body markdown-content" v-html="parsedContent"></div>
+          <Markdown :content="note?.content || ''" />
         </div>
 
         <template #sub>
@@ -174,7 +184,7 @@ function handleTagClick(tag: string) {
         </template>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id }))" />
     </aside>

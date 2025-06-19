@@ -10,12 +10,13 @@ registerValidationSchema('character', characterSchema);
 
 export const useCharacterStore = defineStore('characters', () => {
   // State
-  const items = useStorage<PlayerCharacter[]>({
+  const [items, loaded] = useStorage<PlayerCharacter[]>({
     key: 'dnd-characters',
     defaultValue: [],
     schema: 'character',
   });
   const currentCharacterId = ref<UUID | null>(null);
+  const isLoaded = loaded;
 
   // Computed
   const currentCharacter = computed(() => {
@@ -51,7 +52,10 @@ export const useCharacterStore = defineStore('characters', () => {
     if (currentCharacterId.value === id) currentCharacterId.value = null;
   };
   const getCharacterById = (id: UUID) => items.value.find(c => c.id === id) || null;
-  const loadCharacters = async () => items.value;
+  const loadCharacters = async () => {
+    // (simulate async load, but use items.value for now)
+    return items.value;
+  };
 
   // Helpers
   const setParty = (id: UUID, partyId: UUID | null) => {
@@ -84,5 +88,6 @@ export const useCharacterStore = defineStore('characters', () => {
     add,
     update,
     remove,
+    isLoaded,
   };
 });

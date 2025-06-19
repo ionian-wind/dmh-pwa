@@ -4,6 +4,7 @@ import BaseCard from '@/components/common/BaseCard.vue';;
 import Button from '@/components/common/Button.vue';
 import { parseMarkdown } from '@/utils/markdownParser';
 import { ref, onMounted, nextTick, watch } from 'vue';
+import Markdown from '@/components/common/Markdown.vue';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'tag-click']);
@@ -39,7 +40,7 @@ function toggleExpand() { expanded.value = !expanded.value; }
     </template>
     <div v-if="note.content?.length > 0 || note.tags?.length > 0">
       <div :class="['note-card-content', { clamped: clamped && !expanded }]">
-        <div class="note-content" ref="contentRef" v-html="parseMarkdown(note.content)"></div>
+        <Markdown :content="note.content" />
       </div>
       <div class="note-card-footer">
         <div class="tags">

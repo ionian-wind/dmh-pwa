@@ -1,7 +1,10 @@
 <template>
   <div class="character-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="character"
         entity-name="Character"
         list-route="/characters"
@@ -141,7 +144,7 @@
         </template>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>
@@ -149,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/components/CharacterEditor.vue';
@@ -157,27 +160,18 @@ import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
+import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const characterStore = useCharacterStore();
 const showEditor = ref(false);
-const character = ref<PlayerCharacter | null>(null);
-const notFound = ref(false);
 
 const mentionsStore = useMentionsStore();
 
-function updateCharacterFromStore() {
-  const id = route.params.id as string;
-  const found = characterStore.getById(id);
-  character.value = found;
-  notFound.value = !found;
-}
-
-// Watch for both route changes and all characters changes
-watch([
-  () => route.params.id,
-  () => characterStore.all
-], updateCharacterFromStore, { immediate: true });
+const isLoaded = computed(() => characterStore.isLoaded);
+const character = computed(() => characterStore.getCharacterById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !character.value);
 
 function abilityModifier(score: number) {
   return Math.floor((score - 10) / 2);
@@ -200,7 +194,7 @@ function handleDelete() {
 function handleSave(updated: PlayerCharacter) {
   if (character.value) {
     characterStore.update(character.value.id, updated);
-    character.value = characterStore.getById(character.value.id);
+    characterStore.getById(character.value.id);
   }
   showEditor.value = false;
 }
@@ -230,6 +224,10 @@ const mentionedEntities = computed(() => {
 const mentionedInEntities = computed(() => {
   if (!character.value) return [];
   return mentionsStore.getBacklinks({ kind: 'character', id: character.value.id });
+});
+
+onMounted(() => {
+  characterStore.loadCharacters();
 });
 </script>
 

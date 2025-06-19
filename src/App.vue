@@ -4,6 +4,7 @@ import AppHeader from '@/components/AppHeader.vue'
 import RollButton from '@/components/RollButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'
+import MentionModalStack from '@/components/common/MentionModalStack.vue'
 
 const handleRollClick = (event: MouseEvent) => {
   // TODO: Implement dice rolling functionality
@@ -34,6 +35,9 @@ const handleRollClick = (event: MouseEvent) => {
     <!-- PWA Components -->
     <PWAInstallPrompt />
     <PWAStatus />
+
+    <!-- Global Mention Modal Stack -->
+    <MentionModalStack />
   </div>
 </template>
 

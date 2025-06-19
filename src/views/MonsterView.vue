@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
@@ -7,28 +7,19 @@ import MonsterEditor from '@/components/MonsterEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
+import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const monsterStore = useMonsterStore();
 const showEditor = ref(false);
-const monster = ref<Monster | null>(null);
-const notFound = ref(false);
 
 // Monster mention indexation store
 const mentionsStore = useMentionsStore();
 
-function updateMonsterFromStore() {
-  const monsterId = route.params.id as string;
-  const found = monsterStore.monsters.find(m => m.id === monsterId) || null;
-  monster.value = found;
-  notFound.value = !found;
-}
-
-// Watch for both route changes and monsters changes
-watch([
-  () => route.params.id,
-  () => monsterStore.monsters
-], updateMonsterFromStore, { immediate: true });
+const isLoaded = computed(() => monsterStore.isLoaded);
+const monster = computed(() => monsterStore.getMonsterById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !monster.value);
 
 function abilityModifier(score: number) {
   return Math.floor((score - 10) / 2);
@@ -82,12 +73,19 @@ const mentionedInEntities = computed(() => {
   if (!monster.value) return [];
   return mentionsStore.getBacklinks({ kind: 'monster', id: monster.value.id });
 });
+
+onMounted(() => {
+  monsterStore.loadMonsters();
+});
 </script>
 
 <template>
   <div class="monster-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="monster"
         entity-name="Monster"
         list-route="/monsters"
@@ -266,7 +264,7 @@ const mentionedInEntities = computed(() => {
         </template>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>

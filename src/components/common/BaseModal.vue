@@ -10,8 +10,8 @@ const props = defineProps<{
   showCancel?: boolean;
   submitLabel?: string;
   cancelLabel?: string;
-  modalId?: string;
   showClose?: boolean;
+  modalId: string;
 }>();
 
 const emit = defineEmits<{
@@ -21,13 +21,8 @@ const emit = defineEmits<{
 
 const { openModal, closeModal, currentModalId } = useModalState();
 
-// Only show modal if it's the top of the stack (or no modalId is provided)
-const actuallyOpen = computed(() => {
-  if (props.modalId) {
-    return props.isOpen && currentModalId.value === props.modalId;
-  }
-  return props.isOpen;
-});
+// Only show modal if it's open and is the top of the stack
+const actuallyOpen = computed(() => props.isOpen && currentModalId.value === props.modalId);
 
 function setBodyScroll(disabled: boolean) {
   if (disabled) {
@@ -38,13 +33,13 @@ function setBodyScroll(disabled: boolean) {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (props.isOpen && e.key === 'Escape') {
+  if (actuallyOpen.value && e.key === 'Escape') {
     emit('cancel');
   }
 }
 
 function handleClickOutside(e: MouseEvent) {
-  if (!props.isOpen) return;
+  if (!actuallyOpen.value) return;
   const dialog = document.querySelector('.modal-dialog');
   if (dialog && !dialog.contains(e.target as Node)) {
     emit('cancel');
@@ -54,13 +49,11 @@ function handleClickOutside(e: MouseEvent) {
 let popStateHandler: (() => void) | null = null;
 
 watch(() => props.isOpen, (open) => {
-  setBodyScroll(open);
+  setBodyScroll(open && actuallyOpen.value);
   if (open) {
     openModal(props.modalId);
-    
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('mousedown', handleClickOutside);
-    // Push a new state to the history stack
     window.history.pushState({ modal: true }, '');
     popStateHandler = () => {
       emit('cancel');
@@ -68,14 +61,12 @@ watch(() => props.isOpen, (open) => {
     window.addEventListener('popstate', popStateHandler);
   } else {
     closeModal(props.modalId);
-    
     window.removeEventListener('keydown', handleKeydown);
     window.removeEventListener('mousedown', handleClickOutside);
     if (popStateHandler) {
       window.removeEventListener('popstate', popStateHandler);
       popStateHandler = null;
     }
-    // If modal was closed not by popstate, go back in history if needed
     if (window.history.state && window.history.state.modal) {
       window.history.back();
     }
@@ -85,7 +76,7 @@ watch(() => props.isOpen, (open) => {
 onMounted(() => {
   if (props.isOpen) {
     openModal(props.modalId);
-    setBodyScroll(true);
+    setBodyScroll(actuallyOpen.value);
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('mousedown', handleClickOutside);
     window.history.pushState({ modal: true }, '');

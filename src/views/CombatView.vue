@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
@@ -11,6 +11,7 @@ import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { createIndexationStore } from '@/stores/createIndexationStore';
+import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,27 +20,33 @@ const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 
-const combat = ref<Combat | null>(null);
-const notFound = ref(false);
-
 // Combat mention indexation store
 const useCombatEntityIndexationStore = createIndexationStore('combatEntityIndexation');
 const combatEntityIndexation = useCombatEntityIndexationStore();
 
-onMounted(async () => {
-  const combatId = route.params.id as string;
-  await Promise.all([
-    combatStore.loadCombats(),
-    encounterStore.loadEncounters(),
-    partyStore.loadParties(),
-    moduleStore.loadModules()
-  ]);
-  
-  combat.value = combatStore.getCombatById(combatId);
-  if (!combat.value) {
-    notFound.value = true;
-  }
+onMounted(() => {
+  combatStore.loadCombats();
 });
+
+function updateCombatFromStore() {
+  if (!combatStore.isLoaded) {
+    return;
+  }
+  const combatId = route.params.id as string;
+  const found = combatStore.getCombatById(combatId);
+  if (found) {
+    combatEntityIndexation.addLink({ kind: 'combat', id: found.id });
+  } else {
+    combatEntityIndexation.removeLink({ kind: 'combat', id: combatId });
+  }
+}
+
+// Watch for both route changes, items changes, and isLoaded
+watch([
+  () => route.params.id,
+  () => combatStore.combats,
+  () => combatStore.isLoaded
+], updateCombatFromStore, { immediate: true });
 
 const handleDelete = async () => {
   if (!combat.value) return;
@@ -107,15 +114,23 @@ const mentionedInEntities = computed(() => {
   if (!combat.value) return [];
   return combatEntityIndexation.getBacklinks({ kind: 'combat', id: combat.value.id });
 });
+
+const isLoaded = computed(() => combatStore.isLoaded);
+const combat = computed(() => combatStore.getCombatById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !combat.value);
 </script>
 
 <template>
   <div class="combat-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="combat"
         entity-name="Combat"
-        list-route="/encounters"
+        list-route="/combats"
         :on-delete="handleDelete"
         :title="combatTitle"
         :subtitle="combatSubtitle"
@@ -199,7 +214,7 @@ const mentionedInEntities = computed(() => {
         </div>
       </BaseEntityView>
     </div>
-    <aside style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>

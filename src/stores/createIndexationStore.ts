@@ -18,7 +18,7 @@ function makeKey(ref: EntityRef): string {
 export function createIndexationStore(storeName: string) {
   return defineStore(storeName, () => {
     // Map from 'kind:id' to array of { kind, id }, persisted in localStorage
-    const links = useStorage<Record<string, Link[]>>({
+    const [links, loaded] = useStorage<Record<string, Link[]>>({
       key: `indexation-${storeName}`,
       defaultValue: {}
     });

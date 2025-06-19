@@ -17,6 +17,7 @@ import PartySelector from '@/components/PartySelector.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/stores/createIndexationStore';
+import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,26 +28,34 @@ const moduleStore = useModuleStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
 
-const encounter = ref<Encounter | null>(null);
 const isEditorOpen = ref(false);
 const showLinkModal = ref(false);
 const showPartySelector = ref(false);
-const notFound = ref(false);
 const activeTab = ref('information');
 
 const mentionsStore = useMentionsStore();
 
+const isLoaded = computed(() => encounterStore.isLoaded);
+const encounter = computed(() => encounterStore.getEncounterById(route.params.id as string));
+const loading = computed(() => !isLoaded.value);
+const notFound = computed(() => isLoaded.value && !encounter.value);
+
 function updateEncounterFromStore() {
+  if (!encounterStore.isLoaded) {
+    return;
+  }
   const encounterId = route.params.id as string;
   const found = encounterStore.getEncounterById(encounterId);
-  encounter.value = found;
-  notFound.value = !found;
+  if (!found) {
+    notFound.value = true;
+  }
 }
 
-// Watch for both route changes and encounters changes
+// Watch for both route changes, items changes, and isLoaded
 watch([
   () => route.params.id,
-  () => encounterStore.encounters
+  () => encounterStore.encounters,
+  () => encounterStore.isLoaded
 ], updateEncounterFromStore, { immediate: true });
 
 const handleEdit = () => {
@@ -254,12 +263,19 @@ const mentionedInEntities = computed(() => {
   if (!encounter.value) return [];
   return mentionsStore.getBacklinks({ kind: 'encounter', id: encounter.value.id });
 });
+
+onMounted(() => {
+  encounterStore.loadEncounters();
+});
 </script>
 
 <template>
   <div class="encounter-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
+      <div v-if="loading" class="loading-state">Loading...</div>
+      <NotFoundView v-else-if="notFound" />
       <BaseEntityView
+        v-else
         :entity="encounter"
         entity-name="Encounter"
         list-route="/encounters"
@@ -442,7 +458,7 @@ const mentionedInEntities = computed(() => {
         </template>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
     </aside>

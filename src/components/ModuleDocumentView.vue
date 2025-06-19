@@ -1,21 +1,12 @@
 <script setup lang="ts">
 import type { ModuleTreeNode, Note } from '@/types';
-import { parseMarkdown } from '@/utils/markdownParser';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import BaseModal from '@/components/common/BaseModal.vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import Markdown from '@/components/common/Markdown.vue';
 
 const props = defineProps<{
   noteTree: ModuleTreeNode[];
   notes: Note[];
 }>();
-
-const modalStack = ref<{ entity: any, kind: string }[]>([]);
-const modalContentRef = ref<HTMLElement | null>(null);
 
 function findNotes(noteIds: string[]): Note[] {
   return noteIds
@@ -49,17 +40,6 @@ const combinedMarkdown = computed(() => buildMarkdown(props.noteTree));
 
 const contentRef = ref<HTMLElement | null>(null);
 
-function getEntity(kind: string, id: string) {
-  switch (kind) {
-    case 'note': return useNoteStore().getNoteById(id);
-    case 'module': return useModuleStore().getModuleById(id);
-    case 'party': return usePartyStore().getPartyById(id);
-    case 'monster': return useMonsterStore().getMonsterById(id);
-    case 'encounter': return useEncounterStore().getEncounterById(id);
-    default: return null;
-  }
-}
-
 // Build a flat map of noteId to anchorId for all notes in the module tree
 function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
   const map: Record<string, string> = {};
@@ -81,73 +61,26 @@ function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
 
 const noteAnchorMap = computed(() => buildNoteAnchorMap(props.noteTree));
 
-function globalMentionClickHandler(e: MouseEvent) {
-  const link = (e.target as HTMLElement).closest('.internal-link') as HTMLAnchorElement | null;
-  if (link) {
-    e.preventDefault();
-    const kind = link.getAttribute('data-kind');
-    const id = link.getAttribute('data-id');
-    if (!kind || !id) return;
-    if (kind === 'note' && modalStack.value.length === 0) {
-      const anchorId = noteAnchorMap.value[id];
-      if (anchorId) {
-        const anchor = document.getElementById(anchorId);
-        if (anchor) {
-          anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          if (window.location.hash !== `#${anchorId}` && history.pushState) {
-            history.pushState(null, '', `#${anchorId}`);
-          }
-        }
-        return;
-      }
-    }
-    const entity = getEntity(kind, id);
-    if (entity) {
-      modalStack.value.push({ entity, kind });
-    }
-  }
-}
+const rootEl = ref<HTMLElement | null>(null);
 
 onMounted(() => {
-  document.addEventListener('click', globalMentionClickHandler, true);
-});
-onUnmounted(() => {
-  document.removeEventListener('click', globalMentionClickHandler, true);
-});
-
-const showModal = computed(() => modalStack.value.length > 0);
-const modalEntity = computed(() => modalStack.value.length > 0 ? modalStack.value[modalStack.value.length - 1].entity : null);
-const modalKind = computed(() => modalStack.value.length > 0 ? modalStack.value[modalStack.value.length - 1].kind : '');
-
-function closeTopModal() {
-  if (modalStack.value.length > 0) {
-    modalStack.value.pop();
+  if (rootEl.value) {
+    (rootEl.value as any).noteAnchorMap = noteAnchorMap.value;
   }
-}
+});
+
+watch(noteAnchorMap, (newMap) => {
+  if (rootEl.value) {
+    (rootEl.value as any).noteAnchorMap = newMap;
+  }
+});
 </script>
 
 <template>
-  <div class="module-document-view">
-    <div class="document-markdown" ref="contentRef" v-html="parseMarkdown(combinedMarkdown)"></div>
-    <BaseModal :isOpen="showModal" :title="modalEntity?.title || modalEntity?.name || 'Entity Details'" :showClose="true" modalId="module-document-modal" @cancel="closeTopModal">
-      <template #default>
-        <div v-if="modalKind === 'note'">
-          <div ref="modalContentRef" v-html="parseMarkdown(modalEntity.content)"></div>
-        </div>
-        <div v-else-if="modalKind === 'module'">
-          <div ref="modalContentRef">{{ modalEntity.description }}</div>
-        </div>
-        <div v-else-if="modalKind === 'party'">
-          <div ref="modalContentRef" />
-        </div>
-        <div v-else-if="modalKind === 'monster'">
-          <h2 ref="modalContentRef">{{ modalEntity.name }}</h2>
-        </div>
-        <div v-else-if="modalKind === 'encounter'">
-          <h2 ref="modalContentRef">{{ modalEntity.name }}</h2>
-        </div>
-      </template>
-    </BaseModal>
+  <div class="module-document-view" ref="rootEl">
+    <div class="document-markdown" ref="contentRef">
+      <Markdown :content="combinedMarkdown" :anchorMap="noteAnchorMap" :enableMentionModal="true" />
+    </div>
   </div>
 </template>
 

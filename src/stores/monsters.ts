@@ -31,7 +31,7 @@ const isMonster = (value: unknown): value is Monster => {
 
 export const useMonsterStore = defineStore('monsters', () => {
   // State
-  const items = useStorage<Monster[]>({
+  const [items, loaded] = useStorage<Monster[]>({
     key: 'dnd-monsters',
     defaultValue: [],
     validate: (data): data is Monster[] => 
@@ -44,7 +44,7 @@ export const useMonsterStore = defineStore('monsters', () => {
       )
   });
   const currentMonsterId = ref<string | null>(null);
-  const isLoaded = ref(false);
+  const isLoaded = loaded;
 
   // Computed
   const currentMonster = computed(() => {
@@ -84,9 +84,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   };
   const getMonsterById = (id: string) => items.value.find(m => m.id === id) || null;
   const loadMonsters = async () => {
-    isLoaded.value = false;
     // (simulate async load, but use items.value for now)
-    isLoaded.value = true;
     return items.value;
   };
 

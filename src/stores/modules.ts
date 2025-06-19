@@ -13,13 +13,13 @@ export type ModuleFilter = 'any' | 'none' | string | null;
 
 export const useModuleStore = defineStore('modules', () => {
   // State
-  const items = useStorage<Module[]>({
+  const [items, loaded] = useStorage<Module[]>({
     key: 'dnd-modules',
     defaultValue: [],
     schema: 'module'
   });
   const currentModuleFilter = ref<ModuleFilter>('any');
-  const isLoaded = ref(false);
+  const isLoaded = loaded;
 
   // Computed
   const currentModule = computed(() => {
@@ -71,9 +71,6 @@ export const useModuleStore = defineStore('modules', () => {
   };
   const getModuleById = (id: string | null) => items.value.find(m => m.id === id) || null;
   const loadModules = async () => {
-    isLoaded.value = false;
-    // (simulate async load, but use items.value for now)
-    isLoaded.value = true;
     return items.value;
   };
 

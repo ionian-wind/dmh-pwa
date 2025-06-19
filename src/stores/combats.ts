@@ -21,7 +21,7 @@ const isCombat = (value: unknown): value is Combat => {
 
 export const useCombatStore = defineStore('combats', () => {
   // State
-  const items = useStorage<Combat[]>({
+  const [items, loaded] = useStorage<Combat[]>({
     key: 'dnd-combats',
     defaultValue: [],
     validate: (data): data is Combat[] => 
@@ -33,6 +33,7 @@ export const useCombatStore = defineStore('combats', () => {
       )
   });
   const currentCombatId = ref<string | null>(null);
+  const isLoaded = loaded;
 
   // Computed
   const currentCombat = computed(() => {
@@ -67,7 +68,10 @@ export const useCombatStore = defineStore('combats', () => {
     if (currentCombatId.value === id) currentCombatId.value = null;
   };
   const getCombatById = (id: string) => items.value.find(c => c.id === id) || null;
-  const loadCombats = async () => items.value;
+  const loadCombats = async () => {
+    // (simulate async load, but use items.value for now)
+    return items.value;
+  };
 
   // Combatant/turn helpers (legacy)
   const getCombatByEncounter = (encounterId: string) => items.value.find(c => c.encounterId === encounterId) || null;
@@ -191,5 +195,6 @@ export const useCombatStore = defineStore('combats', () => {
     combats,
     addCombat,
     getCombat,
+    isLoaded,
   };
 }); 

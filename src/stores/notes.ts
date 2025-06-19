@@ -21,7 +21,7 @@ const isNote = (value: unknown): value is Note => {
 
 export const useNoteStore = defineStore('notes', () => {
   // State
-  const items = useStorage<Note[]>({
+  const [items, loaded] = useStorage<Note[]>({
     key: 'dnd-notes',
     defaultValue: [],
     validate: (data): data is Note[] => 
@@ -34,7 +34,7 @@ export const useNoteStore = defineStore('notes', () => {
     key: 'dnd-notes-search',
     defaultValue: ''
   });
-  const isLoaded = ref(false);
+  const isLoaded = loaded;
 
   // Computed
   const currentNote = computed(() => {
@@ -102,9 +102,7 @@ export const useNoteStore = defineStore('notes', () => {
   };
   const getNoteById = (id: string) => items.value.find(n => n.id === id) || null;
   const loadNotes = async () => {
-    isLoaded.value = false;
     // (simulate async load, but use items.value for now)
-    isLoaded.value = true;
     return items.value;
   };
 

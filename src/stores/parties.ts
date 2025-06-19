@@ -11,7 +11,7 @@ registerValidationSchema('party', partySchema);
 
 export const usePartyStore = defineStore('parties', () => {
   // State
-  const items = useStorage<Party[]>({
+  const [items, loaded] = useStorage<Party[]>({
     key: 'dnd-parties',
     defaultValue: [],
     schema: 'party'
@@ -22,7 +22,7 @@ export const usePartyStore = defineStore('parties', () => {
     defaultValue: [],
     schema: 'character'
   });
-  const isLoaded = ref(false);
+  const isLoaded = loaded;
 
   // Computed
   const currentParty = computed(() => {
@@ -65,9 +65,6 @@ export const usePartyStore = defineStore('parties', () => {
   };
   const getPartyById = (id: string) => items.value.find(p => p.id === id) || null;
   const loadParties = async () => {
-    isLoaded.value = false;
-    // (simulate async load, but use items.value for now)
-    isLoaded.value = true;
     return items.value;
   };
 
