@@ -113,17 +113,16 @@ const router = createRouter({
     },
     // 404 route
     {
-      path: '/404',
-      name: 'not-found',
-      component: NotFoundView
-    },
-    // NotFound route
-    {
       path: '/:catchAll(.*)',
       component: NotFoundView
     }
   ],
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    // If navigating to a hash or using browser history, let anchorScroll handle it
+    if (to.hash || savedPosition) {
+      return false;
+    }
+    // On full navigation, scroll to top
     return { left: 0, top: 0 };
   },
 });

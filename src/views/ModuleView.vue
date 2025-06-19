@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -162,15 +162,7 @@ const entityTabs = [
   { id: 'noteTree', label: 'Book Tree' },
 ];
 
-const getInitialTab = () => {
-  const hash = window.location.hash;
-  if (hash && (hash.startsWith('#section-') || hash.startsWith('#note-'))) {
-    return 'document';
-  }
-  return 'parties';
-};
-
-const activeTab = ref(getInitialTab());
+const activeTab = ref('document');
 
 function scrollToAnchorIfNeeded() {
   const hash = window.location.hash;
@@ -185,11 +177,9 @@ function scrollToAnchorIfNeeded() {
 }
 
 onMounted(() => {
-  scrollToAnchorIfNeeded();
   window.addEventListener('hashchange', scrollToAnchorIfNeeded);
 });
 
-import { onUnmounted } from 'vue';
 onUnmounted(() => {
   window.removeEventListener('hashchange', scrollToAnchorIfNeeded);
 });

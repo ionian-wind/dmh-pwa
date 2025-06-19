@@ -144,6 +144,7 @@ watch([
     :showCancel="true"
     submitLabel="Save Note"
     cancelLabel="Cancel"
+    modalId="note-editor-modal"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >

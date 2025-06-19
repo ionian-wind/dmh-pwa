@@ -1,34 +1,40 @@
-import { ref, readonly } from 'vue';
+import { ref, readonly, computed } from 'vue';
 
-// Global modal state
-const isModalOpen = ref(false);
-const activeModals = ref<Set<string>>(new Set());
+// Global modal stack state
+const modalStack = ref<string[]>([]);
 
 export function useModalState() {
   const openModal = (modalId?: string) => {
-    isModalOpen.value = true;
     if (modalId) {
-      activeModals.value.add(modalId);
+      // Only push if not already top of stack
+      if (modalStack.value[modalStack.value.length - 1] !== modalId) {
+        modalStack.value.push(modalId);
+      }
     }
   };
 
   const closeModal = (modalId?: string) => {
     if (modalId) {
-      activeModals.value.delete(modalId);
-      // Only set to false if no other modals are open
-      if (activeModals.value.size === 0) {
-        isModalOpen.value = false;
+      // Remove the modalId from the stack (from the top only)
+      if (modalStack.value[modalStack.value.length - 1] === modalId) {
+        modalStack.value.pop();
+      } else {
+        // Remove all occurrences (shouldn't happen in normal flow)
+        modalStack.value = modalStack.value.filter(id => id !== modalId);
       }
     } else {
       // Close all modals
-      activeModals.value.clear();
-      isModalOpen.value = false;
+      modalStack.value = [];
     }
   };
 
+  const isModalOpen = computed(() => modalStack.value.length > 0);
+  const currentModalId = computed(() => modalStack.value[modalStack.value.length - 1] || null);
+
   return {
     isModalOpen: readonly(isModalOpen),
-    activeModals: readonly(activeModals),
+    modalStack: readonly(modalStack),
+    currentModalId,
     openModal,
     closeModal
   };

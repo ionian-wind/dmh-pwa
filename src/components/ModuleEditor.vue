@@ -56,6 +56,7 @@ const handleCancel = () => {
     :showCancel="true"
     submitLabel="Save Module"
     cancelLabel="Cancel"
+    modalId="module-editor-modal"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >

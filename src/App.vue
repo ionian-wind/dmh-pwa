@@ -17,7 +17,7 @@ const handleRollClick = (event: MouseEvent) => {
     <main class="main-content">
       <RouterView v-slot="{ Component, route }">
         <transition name="fade" mode="out-in">
-          <component :is="Component" :key="route.fullPath" />
+          <component :is="Component" :key="route.path" />
         </transition>
       </RouterView>
     </main>

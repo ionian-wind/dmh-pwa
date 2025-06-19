@@ -153,6 +153,7 @@ const moduleIdsProxy = computed<string[]>({
     :showCancel="true"
     submitLabel="Save Monster"
     cancelLabel="Cancel"
+    modalId="monster-editor-modal"
     @submit="saveMonster"
     @cancel="closeEditor"
   >

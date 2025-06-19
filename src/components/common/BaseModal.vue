@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted } from 'vue';
+import { watch, onMounted, onUnmounted, computed } from 'vue';
 import Button from './Button.vue';
 import { useModalState } from '@/composables/useModalState';
 
@@ -19,7 +19,15 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const { openModal, closeModal } = useModalState();
+const { openModal, closeModal, currentModalId } = useModalState();
+
+// Only show modal if it's the top of the stack (or no modalId is provided)
+const actuallyOpen = computed(() => {
+  if (props.modalId) {
+    return props.isOpen && currentModalId.value === props.modalId;
+  }
+  return props.isOpen;
+});
 
 function setBodyScroll(disabled: boolean) {
   if (disabled) {
@@ -48,7 +56,6 @@ let popStateHandler: (() => void) | null = null;
 watch(() => props.isOpen, (open) => {
   setBodyScroll(open);
   if (open) {
-    // Notify global modal state
     openModal(props.modalId);
     
     window.addEventListener('keydown', handleKeydown);
@@ -60,7 +67,6 @@ watch(() => props.isOpen, (open) => {
     };
     window.addEventListener('popstate', popStateHandler);
   } else {
-    // Notify global modal state
     closeModal(props.modalId);
     
     window.removeEventListener('keydown', handleKeydown);
@@ -104,11 +110,11 @@ onUnmounted(() => {
 
 <template>
   <Transition name="modal-fade">
-    <div v-if="isOpen" class="modal">
+    <div v-if="actuallyOpen" class="modal">
       <div class="modal-dialog">
         <div class="modal-header">
           <h2>{{ title }}</h2>
-          <Button v-if="showClose" variant="link" @click="$emit('cancel')" aria-label="Close">&times;</button>
+          <Button v-if="showClose" variant="link" @click="$emit('cancel')" aria-label="Close">&times;</Button>
         </div>
         <form @submit.prevent="emit('submit')" class="modal-form">
           <div class="modal-scrollable">

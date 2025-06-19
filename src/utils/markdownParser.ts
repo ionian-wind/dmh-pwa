@@ -1,107 +1,125 @@
-import { marked, Renderer } from 'marked';
-import type { Tokens } from 'marked';
+import MarkdownIt from 'markdown-it';
+import type MarkdownItType from 'markdown-it';
+import type { PluginSimple } from 'markdown-it';
+import markdownItAnchor from 'markdown-it-anchor';
+import markdownItAttrs from 'markdown-it-attrs';
 import { useModuleStore } from '@/stores/modules';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import { marked as markedInstance } from 'marked';
 
-// --- Custom inline tokenizer for [[type:id]] links ---
-const mentionRegex = /\[\[([a-zA-Z]+):([a-zA-Z0-9_-]+)(?:\|([^\]]+))?\]\]/y;
+// --- Mention plugin for markdown-it ---
+const mentionRegex = /\[\[([a-zA-Z]+):([a-zA-Z0-9_-]+)(?:\|([^\]]+))?\]\]/g;
 
-const mentionExtension = {
-  name: 'mention',
-  level: 'inline' as const,
-  start(src: string) {
-    return src.indexOf('[[');
-  },
-  tokenizer(src: string) {
+const mentionPlugin: PluginSimple = (md: MarkdownItType) => {
+  md.inline.ruler.before('emphasis', 'mention', (state: any, silent: boolean) => {
+    const pos = state.pos;
+    const src = state.src;
     mentionRegex.lastIndex = 0;
-    const match = mentionRegex.exec(src);
-    if (match) {
-      return {
-        type: 'mention',
-        raw: match[0],
+    const match = mentionRegex.exec(src.slice(pos));
+    if (!match || match.index !== 0) return false;
+    if (!silent) {
+      const token = state.push('mention', '', 0);
+      token.meta = {
         kind: match[1],
         id: match[2],
         alias: match[3] || null,
-        text: `${match[1]}:${match[2]}`,
-        tokens: []
+        raw: match[0],
       };
+      token.content = match[0];
     }
-    return undefined;
-  },
-  renderer(token: any) {
+    state.pos += match[0].length;
+    return true;
+  });
+
+  md.renderer.rules.mention = (tokens: any, idx: number) => {
+    const { kind, id, alias } = tokens[idx].meta;
     const noteStore = useNoteStore();
     const moduleStore = useModuleStore();
     const partyStore = usePartyStore();
     const monsterStore = useMonsterStore();
     const encounterStore = useEncounterStore();
-    const { kind, id, text, alias } = token;
     const linkText = alias || null;
+    const dataAttrs = `data-kind="${kind}" data-id="${id}"`;
     switch (kind) {
       case 'note': {
         const note = noteStore.getNoteById(id);
         if (note) {
-          return `<a href="/notes/${note.id}" class="internal-link note-link">${linkText || note.title || text}</a>`;
+          return `<a href="/notes/${note.id}" class="internal-link note-link" ${dataAttrs}>${linkText || note.title || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'module': {
         const module = moduleStore.getModuleById(id);
         if (module) {
-          return `<a href="/modules/${module.id}" class="internal-link module-link">${linkText || module.name || text}</a>`;
+          return `<a href="/modules/${module.id}" class="internal-link module-link" ${dataAttrs}>${linkText || module.name || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'party': {
         const party = partyStore.getPartyById(id);
         if (party) {
-          return `<a href="/parties/${party.id}" class="internal-link party-link">${linkText || party.name || text}</a>`;
+          return `<a href="/parties/${party.id}" class="internal-link party-link" ${dataAttrs}>${linkText || party.name || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'monster': {
         const monster = monsterStore.getMonsterById(id);
         if (monster) {
-          return `<a href="/monsters/${monster.id}" class="internal-link monster-link">${linkText || monster.name || text}</a>`;
+          return `<a href="/monsters/${monster.id}" class="internal-link monster-link" ${dataAttrs}>${linkText || monster.name || kind + ':' + id}</a>`;
         }
         break;
       }
       case 'encounter': {
         const encounter = encounterStore.getEncounterById(id);
         if (encounter) {
-          return `<a href="/encounters/${encounter.id}" class="internal-link encounter-link">${linkText || encounter.name || text}</a>`;
+          return `<a href="/encounters/${encounter.id}" class="internal-link encounter-link" ${dataAttrs}>${linkText || encounter.name || kind + ':' + id}</a>`;
         }
         break;
       }
     }
-    // If not found, just render as plain text
-    return linkText || text;
-  }
+    return linkText || kind + ':' + id;
+  };
 };
 
-marked.use({ extensions: [mentionExtension] });
-
-// Custom renderer for external links
-const renderer = new Renderer();
-const originalLink = renderer.link;
-renderer.link = function(token: Tokens.Link) {
-  const { href, text } = token;
-  if (href && /^(https?:)?\/\//.test(href)) {
-    // External link
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="external-link">${text}</a>`;
-  }
-  // Internal link: fallback to default
-  return originalLink.call(this, token);
+// --- External link plugin for markdown-it ---
+const externalLinkPlugin: PluginSimple = (md: MarkdownItType) => {
+  const defaultRender = md.renderer.rules.link_open || function(tokens: any, idx: number, options: any, env: any, self: any) {
+    return self.renderToken(tokens, idx, options);
+  };
+  md.renderer.rules.link_open = function(tokens: any, idx: number, options: any, env: any, self: any) {
+    const href = tokens[idx].attrGet('href');
+    if (href && /^(https?:)?\/\//.test(href)) {
+      tokens[idx].attrSet('target', '_blank');
+      tokens[idx].attrSet('rel', 'noopener noreferrer');
+      tokens[idx].attrJoin('class', 'external-link');
+    }
+    return defaultRender(tokens, idx, options, env, self);
+  };
 };
 
-marked.setOptions({ renderer });
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  breaks: false,
+});
+md.use(mentionPlugin);
+md.use(externalLinkPlugin);
+md.use(markdownItAttrs);
+md.use(markdownItAnchor, {
+  // Use the existing id if present, otherwise generate
+  slugify: s => s,
+  permalink: false,
+  // Don't overwrite ids already present in the HTML
+  callback: (token, info) => {
+    // If the token already has an id attribute, do nothing
+    // (markdown-it-anchor will not overwrite it)
+  }
+});
 
 export function parseMarkdown(text: string): string {
-  // marked options are already set globally above
-  return marked.parse(text) as string;
+  return md.render(text || '');
 }
 
 // Extract all entity mentions of the form [[type:id]] from markdown text
@@ -121,7 +139,6 @@ export function extractMentionedEntities(text: string): EntityRef[] {
 }
 
 // --- Mentionable Entities Map ---
-// Maps mention kind to { store, titleKey, idKey, type }
 export function getMentionableEntities() {
   return {
     note: {

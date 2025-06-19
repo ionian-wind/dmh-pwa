@@ -69,6 +69,7 @@ const handleCancel = () => {
     :showCancel="true"
     submitLabel="Save Party"
     cancelLabel="Cancel"
+    modalId="party-editor-modal"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >

@@ -6,6 +6,7 @@ import ModuleTreeNodeComponent from './ModuleTreeNode.vue';
 import { useNoteStore } from '@/stores/notes';
 import Draggable from 'vuedraggable';
 import Button from '@/components/common/Button.vue';
+import { nanoid } from 'nanoid';
 
 const props = defineProps<{
   module: Module;
@@ -29,7 +30,7 @@ const editingNode = ref<ModuleTreeNode | null>(null);
 
 function addNode(parent?: ModuleTreeNode) {
   const id = crypto.randomUUID();
-  const node: ModuleTreeNode = { id, title: 'New Node', notes: [], children: [] };
+  const node: ModuleTreeNode = { id, title: 'New Node', notes: [], children: [], anchorId: `section-${nanoid(6)}`, noteAnchors: {} };
   if (parent) {
     parent.children = parent.children || [];
     parent.children.push(node);
@@ -84,9 +85,15 @@ function addNoteToNode(nodeId: string, noteId: string) {
   if (!realNode.notes) {
     realNode.notes = [];
   }
+  // Ensure noteAnchors exists
+  if (!realNode.noteAnchors) {
+    realNode.noteAnchors = {};
+  }
   // Add note if not already present
   if (!realNode.notes.includes(noteId)) {
     realNode.notes = [...realNode.notes, noteId];
+    // Assign anchorId for this note
+    realNode.noteAnchors[noteId] = `note-${nanoid(6)}`;
     // Force reactivity by updating the tree reference
     tree.value = [...tree.value];
     // Emit save to persist changes

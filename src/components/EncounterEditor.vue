@@ -120,6 +120,7 @@ defineExpose({
     :showCancel="true"
     submitLabel="Save Encounter"
     cancelLabel="Cancel"
+    modalId="encounter-editor-modal"
     @submit="handleSubmit"
     @cancel="closeEditor"
   >

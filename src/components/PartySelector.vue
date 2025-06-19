@@ -137,6 +137,7 @@ const generateId = () => {
     :showCancel="true"
     submitLabel="Start Combat"
     cancelLabel="Cancel"
+    modalId="party-selector-modal"
     @submit="handleCreateCombat"
     @cancel="handleCancel"
   >
