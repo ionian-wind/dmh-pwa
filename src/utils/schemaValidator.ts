@@ -7,17 +7,22 @@ export function registerValidationSchema(schemaName: string, schema: AnySchema):
   ajv.addSchema(schema, schemaName);
 }
 
-export async function validateSchema(schemaName: string, data: unknown): Promise<boolean> {
+export async function validateSchema(schemaName: string, data: unknown): Promise<{ valid: boolean, errors: string[] }> {
   const validate = ajv.getSchema(schemaName);
+
   if (!validate) {
     throw new Error(`Schema "${schemaName}" not found`);
   }
-  const result = validate(data);
-  if (result instanceof Promise) {
-    const resolved = await result;
-    return Boolean(resolved);
-  }
-  return Boolean(result);
+
+  await validate(data);
+  const valid = validate.errors == null || validate.errors.length === 0;
+  const errors = (validate.errors || []).map(error => {
+    const path = error.instancePath ? ` at ${error.instancePath}` : '';
+    return `${error.message}${path}`;
+  });
+
+  return { valid, errors };
+
 }
 
 export async function getValidationErrors(schemaName: string, data: unknown): Promise<string[]> {
@@ -52,4 +57,4 @@ export async function getArrayValidationErrors(schemaName: string, data: unknown
     }
   }));
   return errors;
-} 
+}

@@ -1,117 +1,89 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { Module } from '@/types';
-import moduleSchema from '../schemas/module.schema.json';
-import { registerValidationSchema } from "@/utils/schemaValidator";
-import { extractMentionedEntities } from '@/utils/markdownParser';
-import { createBaseStore, type StandardizedStore } from './createBaseStore';
+import { useStore } from '@/utils/storage';
+import moduleSchema from '@/schemas/module.schema.json';
 
-registerValidationSchema('module', moduleSchema);
+export const useModuleStore = defineStore('modules', () => {
+  const base = useStore<Module>({ storeName: 'modules', validationSchema: moduleSchema });
+  const currentModuleFilter = ref<string>('any');
+  const currentId = ref<string | null>(null);
+  const searchQuery = ref('');
 
-// Define module filter types
-export type ModuleFilter = 'any' | 'none' | string | null;
-
-const baseStore = createBaseStore<Module>({
-  storageKey: 'dnd-modules',
-    schema: 'module'
+  const filtered = computed(() => {
+    let result = base.items.value;
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      result = result.filter(module =>
+        module.name.toLowerCase().includes(query)
+      );
+    }
+    return result;
   });
 
-export const useModuleStore = defineStore('modules', (): StandardizedStore<Module> => {
-  const base = baseStore();
-  const currentModuleFilter = ref<ModuleFilter>('any');
+  const sortedItems = base.sortedItems;
 
-  // Computed
   const current = computed(() => {
     if (!currentModuleFilter.value || currentModuleFilter.value === 'any' || currentModuleFilter.value === 'none') return null;
     return base.getById(currentModuleFilter.value) || null;
   });
 
-  const filtered = computed(() => base.items.value);
-
   // Filtering helpers
-  const matchesModuleFilter = (entityModuleId: string | null): boolean => {
+  const matchesModuleFilter = (moduleId: string | null) => {
     if (currentModuleFilter.value === 'any') return true;
-    if (currentModuleFilter.value === 'none') return !entityModuleId;
-    if (currentModuleFilter.value === null) return !entityModuleId;
-    return entityModuleId === currentModuleFilter.value;
+    if (currentModuleFilter.value === 'none') return !moduleId;
+    return moduleId === currentModuleFilter.value;
   };
 
-  const matchesModuleFilterMultiple = (entityModuleIds: string[] | null | undefined): boolean => {
+  const matchesModuleFilterMultiple = (moduleIds: string[]) => {
     if (currentModuleFilter.value === 'any') return true;
-    if (currentModuleFilter.value === 'none') return !entityModuleIds || entityModuleIds.length === 0;
-    if (currentModuleFilter.value === null) return !entityModuleIds || entityModuleIds.length === 0;
-    return entityModuleIds?.includes(currentModuleFilter.value) || false;
+    if (currentModuleFilter.value === 'none') return !moduleIds || moduleIds.length === 0;
+    return moduleIds.includes(currentModuleFilter.value);
   };
 
-  // Extended CRUD operations with standardized names
-  const create = async (module: Omit<Module, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newModule = await base.create(module);
-    return newModule;
-  };
-
-  const update = async (id: string, module: Partial<Omit<Module, 'id' | 'createdAt' | 'updatedAt'>>) => {
-    const updatedModule = await base.update(id, module);
-    return updatedModule;
-  };
-
-  const remove = async (id: string) => {
-    await base.remove(id);
-    if (currentModuleFilter.value === id) {
-      currentModuleFilter.value = 'any';
-    }
-  };
-
-  const load = async () => {
-    return base.load();
-  };
-
-  // No persistence for module filter
-  const setCurrentModuleFilter = (filter: ModuleFilter) => {
+  const setCurrentModuleFilter = (filter: string) => {
     currentModuleFilter.value = filter;
   };
 
-  const setCurrentModule = (id: string | null) => {
-    if (id === null) {
-      setCurrentModuleFilter('any');
-    } else {
-      setCurrentModuleFilter(id);
-    }
-  };
-
-  const getModuleName = (id: string | null | undefined) => {
-    if (!id) return 'Unknown Module';
-    const module = base.getById(id);
+  const getModuleName = (id: string | null) => {
+    if (!id) return 'No Module';
+    const module = base.items.value.find(m => m.id === id);
     return module?.name || 'Unknown Module';
   };
 
+  async function create(module: Omit<Module, 'id' | 'createdAt' | 'updatedAt'>) {
+    return await base.create(module);
+  }
+
+  async function update(id: string, patch: Partial<Omit<Module, 'id' | 'createdAt' | 'updatedAt'>>) {
+    return await base.update(id, patch);
+  }
+
+  async function remove(id: string) {
+    await base.remove(id);
+    if (currentId.value === id) currentId.value = null;
+  }
+
   return {
-    // State
-    items: base.items,
+    ...base,
     filtered,
-    sortedItems: base.sortedItems,
-    currentId: ref<string | null>(null),
-    current,
-    isLoading: base.isLoading,
-    error: base.error,
-    isLoaded: base.isLoaded,
-
-    // Actions
-    load,
-    create,
-    update,
-    remove,
-    getById: base.getById,
-    setCurrentId: (id: string | null) => { /* No currentId in modules */ },
-    clearCurrent: () => { /* No currentId in modules */ },
-    setFilter: (query: string) => { /* No search in modules */ },
-    clearFilter: () => { /* No search in modules */ },
-
-    // Additional computed properties
-    searchQuery: ref(''),
+    sortedItems,
     currentModuleFilter,
+    current,
     setCurrentModuleFilter,
     matchesModuleFilter,
     matchesModuleFilterMultiple,
     getModuleName,
+    currentId,
+    getById: base.getById,
+    create,
+    update,
+    remove,
+    setCurrentId: (id: string | null) => { currentId.value = id; },
+    clearCurrent: () => { currentId.value = null; },
+    setFilter: (query: string) => { searchQuery.value = query; },
+    clearFilter: () => { searchQuery.value = ''; },
+    setSearchQuery: (query: string) => { searchQuery.value = query; },
+    searchQuery,
   };
 });

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { useStorage } from '@/utils/storage';
+import { ref } from 'vue';
+import { idbPutItem, idbDeleteItem, idbGetAllItems } from '@/utils/storage';
 
 export interface EntityRef {
   kind: string;
@@ -11,25 +12,39 @@ export interface Link {
   id: string;
 }
 
-function makeKey(ref: EntityRef): string {
+function makeKey(ref: EntityRef) {
   return `${ref.kind}:${ref.id}`;
 }
 
 export function createIndexationStore(storeName: string) {
+  const store = `indexations_${storeName}`;
   return defineStore(storeName, () => {
-    // Map from 'kind:id' to array of { kind, id }, persisted in localStorage
-    const [links, loaded] = useStorage<Record<string, Link[]>>({
-      key: `indexation-${storeName}`,
-      defaultValue: {}
-    });
+    const links = ref<Record<string, Link[]>>({});
+    const loaded = ref(false);
+
+    async function load() {
+      const all = await idbGetAllItems<{ id: string; links: Link[] }>(store);
+      links.value = {};
+      for (const rec of all) {
+        links.value[rec.id] = rec.links;
+      }
+      loaded.value = true;
+    }
+
+    async function saveKey(key: string) {
+      if (links.value[key] && links.value[key].length > 0) {
+        await idbPutItem(store, { id: key, links: links.value[key] });
+      } else {
+        await idbDeleteItem(store, key);
+      }
+    }
 
     function addLink(from: EntityRef, to: EntityRef) {
       const key = makeKey(from);
-      if (!links.value[key]) {
-        links.value[key] = [];
-      }
+      if (!links.value[key]) links.value[key] = [];
       if (!links.value[key].some(link => link.kind === to.kind && link.id === to.id)) {
         links.value[key].push({ kind: to.kind, id: to.id });
+        saveKey(key);
       }
     }
 
@@ -37,9 +52,8 @@ export function createIndexationStore(storeName: string) {
       const key = makeKey(from);
       if (links.value[key]) {
         links.value[key] = links.value[key].filter(link => !(link.kind === to.kind && link.id === to.id));
-        if (links.value[key].length === 0) {
-          delete links.value[key];
-        }
+        if (links.value[key].length === 0) delete links.value[key];
+        saveKey(key);
       }
     }
 
@@ -59,18 +73,22 @@ export function createIndexationStore(storeName: string) {
         return true;
       });
       links.value[key] = uniqueLinks;
+      saveKey(key);
     }
 
     function clearLinks(from: EntityRef) {
       const key = makeKey(from);
       delete links.value[key];
+      saveKey(key);
     }
 
-    function clearAll() {
+    async function clearAll() {
       links.value = {};
+      // Remove all records from the object store
+      const all = await idbGetAllItems<{ id: string }>(store);
+      await Promise.all(all.map(rec => idbDeleteItem(store, rec.id)));
     }
 
-    // Get all EntityRefs that link to the given entity (backlinks)
     function getBacklinks(target: EntityRef): EntityRef[] {
       const result: EntityRef[] = [];
       const targetKey = makeKey(target);
@@ -83,9 +101,9 @@ export function createIndexationStore(storeName: string) {
       return result;
     }
 
-
     return {
       links,
+      loaded,
       addLink,
       removeLink,
       getLinks,

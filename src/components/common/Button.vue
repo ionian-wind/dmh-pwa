@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'link';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'link' | 'light';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
@@ -134,7 +134,7 @@ function handleClick(event: MouseEvent) {
   background: var(--color-warning-dark);
 }
 
-.btn--link {
+.btn--link, .btn--light {
   background: transparent;
   color: var(--color-primary);
   border: none;

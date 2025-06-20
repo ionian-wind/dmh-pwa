@@ -35,17 +35,15 @@ const mentionPlugin: PluginSimple = (md: MarkdownItType) => {
 
   md.renderer.rules.mention = (tokens: any, idx: number) => {
     const { kind, id, alias } = tokens[idx].meta;
-    const noteStore = useNoteStore();
-    const moduleStore = useModuleStore();
-    const partyStore = usePartyStore();
-    const monsterStore = useMonsterStore();
-    const encounterStore = useEncounterStore();
+    // Only call useStore inside the renderer
+    const noteStore = require('@/stores/notes').useNoteStore();
+    const moduleStore = require('@/stores/modules').useModuleStore();
+    const partyStore = require('@/stores/parties').usePartyStore();
+    const monsterStore = require('@/stores/monsters').useMonsterStore();
+    const encounterStore = require('@/stores/encounters').useEncounterStore();
     const linkText = alias || null;
     const dataAttrs = `data-kind="${kind}" data-id="${id}"`;
 
-    const { useStore } = getMentionableEntities(kind)
-    
-    
     switch (kind) {
       case 'note': {
         const note = noteStore.getById(id);

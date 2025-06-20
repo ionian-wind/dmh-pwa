@@ -1,93 +1,60 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { NoteType } from '@/types';
-import { isArray, hasRequiredFields } from '@/utils/storage';
-import { registerValidationSchema } from "@/utils/schemaValidator";
+import { useStore } from '@/utils/storage';
 import noteTypeSchema from "@/schemas/noteType.schema.json";
-import { createBaseStore, type StandardizedStore } from './createBaseStore';
 
-registerValidationSchema('noteType', noteTypeSchema);
-
-const isNoteType = (value: unknown): value is NoteType => {
-  return typeof value === 'object' && value !== null &&
-    typeof (value as any).name === 'string';
-};
-
-const baseStore = createBaseStore<NoteType>({
-  storageKey: 'dnd-note-types',
-  validate: (data): data is NoteType[] => 
-    isArray(data) && data.every(type => 
-      isNoteType(type) && hasRequiredFields(type as NoteType, ['id', 'name', 'createdAt', 'updatedAt'])
-    ),
-  schema: 'noteType'
-});
-
-export const useNoteTypeStore = defineStore('noteTypes', (): StandardizedStore<NoteType> => {
-  const base = baseStore();
+export const useNoteTypeStore = defineStore('noteTypes', () => {
+  const base = useStore<NoteType>({ storeName: 'noteTypes', validationSchema: noteTypeSchema });
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
 
-  // Computed
+  async function create(noteType: Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>) {
+    return await base.create(noteType);
+  }
+
+  async function update(id: string, patch: Partial<Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>>) {
+    return await base.update(id, patch);
+  }
+
+  async function remove(id: string) {
+    await base.remove(id);
+    if (currentId.value === id) currentId.value = null;
+  }
+
+  const filtered = computed(() => {
+    let result = base.items.value;
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      result = result.filter(noteType =>
+        noteType.name.toLowerCase().includes(query)
+      );
+    }
+    return result;
+  });
+
+  const sortedItems = base.sortedItems;
+
   const current = computed(() => {
     if (!currentId.value) return null;
     return base.getById(currentId.value) || null;
   });
 
-  const filtered = computed(() => {
-    if (searchQuery.value === '') return base.items.value;
-    return base.items.value.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-  });
-
-  // Extended CRUD operations with standardized names
-  const create = async (type: Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newType = await base.create(type);
-    return newType;
-  };
-
-  const update = async (id: string, type: Partial<Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>>) => {
-    const updatedType = await base.update(id, type);
-    return updatedType;
-  };
-
-  const remove = async (id: string) => {
-    await base.remove(id);
-    if (currentId.value === id) currentId.value = null;
-  };
-
-  const load = async () => {
-    return base.load();
-  };
-
-  // Helpers
-  const setCurrentType = (id: string | null) => {
-    currentId.value = id;
-  };
-
   return {
-    // State
-    items: base.items,
+    ...base,
     filtered,
-    sortedItems: base.sortedItems,
+    sortedItems,
     currentId,
     current,
-    isLoading: base.isLoading,
-    error: base.error,
-    isLoaded: base.isLoaded,
-
-    // Actions
-    load,
+    getById: base.getById,
     create,
     update,
     remove,
-    getById: base.getById,
     setCurrentId: (id: string | null) => { currentId.value = id; },
     clearCurrent: () => { currentId.value = null; },
     setFilter: (query: string) => { searchQuery.value = query; },
     clearFilter: () => { searchQuery.value = ''; },
-
-    // Additional computed properties
+    setSearchQuery: (query: string) => { searchQuery.value = query; },
     searchQuery,
   };
 }); 

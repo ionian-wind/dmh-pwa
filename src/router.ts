@@ -13,7 +13,6 @@ import EncounterView from '@/views/EncounterView.vue';
 import CombatView from '@/views/CombatView.vue';
 import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
-import ConfigurationView from '@/views/ConfigurationView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import { useNavigationStore } from '@/stores/navigation';
 
@@ -104,12 +103,11 @@ const router = createRouter({
       name: 'module-detail',
       component: ModuleView
     },
-    // Configuration route
+    // Jukebox route
     {
-      path: '/configuration',
-      name: 'configuration',
-      component: ConfigurationView,
-      meta: { exact: true }
+      path: '/music',
+      name: 'Jukebox',
+      component: () => import('./jukebox/components/MusicPlayerApp.vue'),
     },
     // 404 route
     {

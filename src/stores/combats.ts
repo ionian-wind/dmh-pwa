@@ -1,228 +1,93 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { Combat, Combatant } from '@/types';
-import { isArray, hasRequiredFields, migrateStorageData, migrateCombatData } from '@/utils/storage';
-import { useModuleStore } from './modules';
 import combatSchema from "@/schemas/combat.schema.json";
-import { registerValidationSchema } from "@/utils/schemaValidator";
-import { extractMentionedEntities } from '@/utils/markdownParser';
-import { createBaseStore, type StandardizedStore } from './createBaseStore';
+import { useStore } from '@/utils/storage';
 
-registerValidationSchema('combat', combatSchema);
-
-const isCombat = (value: unknown): value is Combat => {
-  return typeof value === 'object' && value !== null &&
-    typeof (value as any).encounterId === 'string' &&
-    typeof (value as any).partyId === 'string' &&
-    typeof (value as any).status === 'string' &&
-    typeof (value as any).currentRound === 'number' &&
-    typeof (value as any).currentTurn === 'number' &&
-    Array.isArray((value as any).combatants);
-};
-
-const baseStore = createBaseStore<Combat>({
-  storageKey: 'dnd-combats',
-  validate: (data): data is Combat[] => 
-    isArray(data) && data.every(combat => 
-      isCombat(combat) && hasRequiredFields(combat as Combat, [
-        'id', 'encounterId', 'partyId', 'status', 'currentRound',
-        'currentTurn', 'combatants', 'createdAt', 'updatedAt'
-      ])
-    ),
-  schema: 'combat'
-});
-
-export const useCombatStore = defineStore('combats', (): StandardizedStore<Combat> => {
-  const base = baseStore();
+export const useCombatStore = defineStore('combats', () => {
+  const base = useStore<Combat>({ storeName: 'combats', validationSchema: combatSchema });
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
 
-  // Computed
-  const current = computed(() => {
-    if (!currentId.value) return null;
-    return base.getById(currentId.value) || null;
-  });
+  async function create(combat: Omit<Combat, 'id' | 'createdAt' | 'updatedAt'>) {
+    return await base.create(combat);
+  }
 
-  const filtered = computed(() => {
-    if (searchQuery.value === '') return base.items.value;
-    return base.items.value.filter(combat => {
-      const search = searchQuery.value.toLowerCase();
-      return (
-        combat.encounterId.toLowerCase().includes(search) ||
-        combat.partyId.toLowerCase().includes(search) ||
-        combat.status.toLowerCase().includes(search)
-      );
-    });
-  });
+  async function update(id: string, patch: Partial<Omit<Combat, 'id' | 'createdAt' | 'updatedAt'>>) {
+    return await base.update(id, patch);
+  }
 
-  // Extended CRUD operations with standardized names
-  const create = async (combat: Omit<Combat, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newCombat = await base.create(combat);
-    return newCombat;
-  };
-
-  const update = async (id: string, combat: Partial<Omit<Combat, 'id' | 'createdAt' | 'updatedAt'>>) => {
-    const updatedCombat = await base.update(id, combat);
-    return updatedCombat;
-  };
-
-  const remove = async (id: string) => {
+  async function remove(id: string) {
     await base.remove(id);
     if (currentId.value === id) currentId.value = null;
+  }
+
+  const filtered = computed(() => {
+    let result = base.items.value;
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      result = result.filter(combat =>
+        (combat.notes && combat.notes.toLowerCase().includes(query)) ||
+        combat.combatants.some(c => c.name.toLowerCase().includes(query))
+      );
+    }
+    return result;
+  });
+
+  const getById = (id: string): Combat | null => {
+    return base.items.value.find(item => item.id === id) || null;
   };
 
-  const load = async () => {
-    // Run migration first if data exists but validation fails
-    try {
-      const migratedData = await migrateStorageData('dnd-combats', migrateCombatData, []);
-      if (migratedData.length > 0 && base.items.value.length === 0) {
-        // Only update if we have migrated data and no current data
-        base.items.value = migratedData;
-        console.log(`[Combats] Migrated ${migratedData.length} combats`);
-      }
-    } catch (e) {
-      console.warn('[Combats] Migration failed:', e);
-    }
-    
-    // Then load normally
-    return base.load();
-  };
+  const sortedItems = computed(() => {
+    return [...base.items.value].sort((a, b) => b.updatedAt - a.updatedAt);
+  });
 
   // Combatant/turn helpers
-  const getCombatByEncounter = (encounterId: string) => 
+  const getCombatByEncounter = (encounterId: string) =>
     base.items.value.find(c => c.encounterId === encounterId) || null;
 
-  const getCombatByParty = (partyId: string) => 
+  const getCombatByParty = (partyId: string) =>
     base.items.value.filter(c => c.partyId === partyId);
 
   const updateCombatant = (combatId: string, combatantId: string, updates: Partial<Combatant>) => {
-    const combat = base.getById(combatId);
+    const combat = getById(combatId);
     if (!combat) return;
-    const combatantIndex = combat.combatants.findIndex(c => c.id === combatantId);
-    if (combatantIndex === -1) return;
-    combat.combatants[combatantIndex] = {
-      ...combat.combatants[combatantIndex],
-      ...updates
-    };
-    combat.updatedAt = Date.now();
-  };
-
-  const addCombatant = (combatId: string, combatant: Combatant) => {
-    const combat = base.getById(combatId);
-    if (!combat) return;
-    combat.combatants.push(combatant);
-    combat.updatedAt = Date.now();
+    const idx = combat.combatants.findIndex(c => c.id === combatantId);
+    if (idx === -1) return;
+    Object.assign(combat.combatants[idx], updates);
+    update(combatId, { combatants: combat.combatants });
   };
 
   const removeCombatant = (combatId: string, combatantId: string) => {
-    const combat = base.getById(combatId);
+    const combat = getById(combatId);
     if (!combat) return;
     combat.combatants = combat.combatants.filter(c => c.id !== combatantId);
-    combat.updatedAt = Date.now();
+    update(combatId, { combatants: combat.combatants });
   };
 
   const updateCombatStatus = (combatId: string, status: Combat['status']) => {
-    const combat = base.getById(combatId);
-    if (!combat) return;
-    combat.status = status;
-    combat.updatedAt = Date.now();
-  };
-
-  const updateTurn = (combatId: string, round: number, turn: number) => {
-    const combat = base.getById(combatId);
-    if (!combat) return;
-    combat.currentRound = round;
-    combat.currentTurn = turn;
-    combat.updatedAt = Date.now();
-  };
-
-  const nextTurn = (combatId: string) => {
-    const combat = base.getById(combatId);
-    if (!combat || !combat.combatants) return;
-    combat.currentTurn++;
-    if (combat.currentTurn >= combat.combatants.length) {
-      combat.currentTurn = 0;
-      combat.currentRound++;
-    }
-    combat.updatedAt = Date.now();
-  };
-
-  const previousTurn = (combatId: string) => {
-    const combat = base.getById(combatId);
-    if (!combat || !combat.combatants) return;
-    combat.currentTurn--;
-    if (combat.currentTurn < 0) {
-      if (combat.currentRound > 1) {
-        combat.currentRound--;
-        combat.currentTurn = combat.combatants.length - 1;
-      } else {
-        combat.currentTurn = 0;
-      }
-    }
-    combat.updatedAt = Date.now();
-  };
-
-  const endCombat = (combatId: string) => {
-    const combat = base.getById(combatId);
-    if (!combat) return;
-    combat.status = 'completed';
-    combat.updatedAt = Date.now();
-  };
-
-  const startCombat = (combatId: string) => {
-    const combat = base.getById(combatId);
-    if (!combat) return;
-    combat.status = 'active';
-    combat.currentRound = 1;
-    combat.currentTurn = 0;
-    combat.updatedAt = Date.now();
-  };
-
-  const resetCombat = (combatId: string) => {
-    const combat = base.getById(combatId);
-    if (!combat || !combat.combatants) return;
-    combat.status = 'preparing';
-    combat.currentRound = 0;
-    combat.currentTurn = 0;
-    combat.combatants.forEach(combatant => {
-      combatant.hitPoints.current = combatant.hitPoints.maximum;
-      combatant.hitPoints.temporary = 0;
-      combatant.conditions = [];
-    });
-    combat.updatedAt = Date.now();
+    update(combatId, { status });
   };
 
   return {
-    // State
-    items: base.items,
+    ...base,
     filtered,
-    sortedItems: base.sortedItems,
     currentId,
-    current,
-    isLoading: base.isLoading,
-    error: base.error,
-    isLoaded: base.isLoaded,
-
-    // Actions
-    load,
+    getById,
+    sortedItems,
     create,
     update,
     remove,
-    getById: base.getById,
+    getCombatByEncounter,
+    getCombatByParty,
+    updateCombatant,
+    removeCombatant,
+    updateCombatStatus,
     setCurrentId: (id: string | null) => { currentId.value = id; },
     clearCurrent: () => { currentId.value = null; },
     setFilter: (query: string) => { searchQuery.value = query; },
     clearFilter: () => { searchQuery.value = ''; },
-
-    // Additional computed properties
+    setSearchQuery: (query: string) => { searchQuery.value = query; },
     searchQuery,
-    addCombatant,
-    removeCombatant,
-    updateCombatant,
-    nextTurn,
-    previousTurn,
-    startCombat,
-    endCombat,
-    resetCombat,
   };
 }); 

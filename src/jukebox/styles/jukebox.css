@@ -1,0 +1,23 @@
+:root {
+  --jukebox-accent: #007bff;
+}
+
+.artwork-display {
+  transition: background 0.5s;
+  background: var(--jukebox-accent, #f8f9fa);
+}
+.artwork-display img {
+  transition: transform 0.3s;
+}
+.artwork-display img:active {
+  transform: scale(1.05);
+}
+.track-list li.current {
+  background: var(--jukebox-accent, #007bff);
+  color: #fff;
+  font-weight: bold;
+  transition: background 0.3s, color 0.3s;
+}
+.track-list li {
+  transition: background 0.2s, color 0.2s;
+} 
