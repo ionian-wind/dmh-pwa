@@ -32,14 +32,31 @@ export function hasRequiredFields<T extends object>(obj: T, fields: (keyof T)[])
 // --- IndexedDB Helper using idb ---
 const DB_NAME = 'dmh-db';
 const DB_VERSION = 1;
+// TODO: implement migrations mechanism, so we can add changes to database structure without breaking existing data
+const ALL_STORE_NAMES = [
+  'characters',
+  'monsters',
+  'notes',
+  'parties',
+  'modules',
+  'encounters',
+  'combats',
+  'noteTypes',
+  // Indexation stores
+  'indexations_mentions',
+  // Jukebox stores
+  'jukebox_playlists',
+  'jukebox_tracks',
+];
 
 async function openDB(storeName: string): Promise<IDBPDatabase> {
-  // Always open the main DB, and ensure the store exists
+  // Always open the main DB, and ensure all stores exist
   return idbOpenDB(DB_NAME, DB_VERSION, {
     upgrade(db) {
-      // If a new storeName is passed that's not in ALL_STORE_NAMES, create it
-      if (!db.objectStoreNames.contains(storeName)) {
-        db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: false });
+      for (const name of ALL_STORE_NAMES) {
+        if (!db.objectStoreNames.contains(name)) {
+          db.createObjectStore(name, { keyPath: 'id', autoIncrement: false });
+        }
       }
     },
   });

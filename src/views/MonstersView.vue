@@ -89,7 +89,8 @@ const deleteMonster = async (monsterId: string) => {
         :key="monster.id"
         :monster="monster"
         @view="() => router.push(`/monsters/${monster.id}`)"
-        @edit="() => { editingMonster = monster; showEditor = true; }"
+        :show-actions="true"
+        @edit="handleEditClick"
         @delete="deleteMonster"
       />
     </div>

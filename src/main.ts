@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { PiniaSharedState } from 'pinia-shared-state'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
@@ -19,6 +20,10 @@ const app = createApp(App)
 
 // Create and use Pinia store
 const pinia = createPinia()
+pinia.use(PiniaSharedState({
+  enable: true,
+  initialize: true, // Sync initial state between tabs
+}))
 app.use(pinia)
 
 // Use router
