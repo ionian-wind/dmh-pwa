@@ -1,21 +1,20 @@
 <template>
-  <div class="range-slider-container" :class="{ 'is-disabled': disabled, 'is-vertical': vertical }">
-    <input
-      type="range"
-      :min="min"
-      :max="max"
-      :step="step"
-      :value="modelValue"
-      class="slider"
-      @input="onInput"
-      :style="sliderStyle"
-      :disabled="disabled"
-    />
+  <div
+    ref="sliderContainerRef"
+    class="slider-container"
+    :class="{ 'is-disabled': disabled, 'is-vertical': vertical, 'is-horizontal': !vertical }"
+    @mousedown.prevent="handleInteractionStart"
+    @touchstart.prevent="handleInteractionStart"
+  >
+    <div class="track">
+      <div class="track-fill" :style="fillStyle"></div>
+    </div>
+    <div class="thumb" :style="thumbStyle"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 
 interface Props {
   modelValue: number;
@@ -36,117 +35,172 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['update:modelValue']);
 
-function onInput(event: Event) {
-  const target = event.target as HTMLInputElement;
-  emit('update:modelValue', parseFloat(target.value));
-}
+const sliderContainerRef = ref<HTMLElement | null>(null);
+const isDragging = ref(false);
 
-const sliderProgress = computed(() => {
+const progressPercentage = computed(() => {
   const range = props.max - props.min;
-  if (range === 0) return '0%';
-  const progress = ((props.modelValue - props.min) / range) * 100;
-  return `${progress}%`;
+  if (range === 0) return 0;
+  return ((props.modelValue - props.min) / range) * 100;
 });
 
-const sliderStyle = computed(() => ({
-  '--progress': sliderProgress.value,
-}));
+const fillStyle = computed(() => {
+  const sizeProperty = props.vertical ? 'height' : 'width';
+  return {
+    [sizeProperty]: `${progressPercentage.value}%`,
+  };
+});
+
+const thumbStyle = computed(() => {
+  const positionProperty = props.vertical ? 'bottom' : 'left';
+  return {
+    [positionProperty]: `${progressPercentage.value}%`,
+  };
+});
+
+function handleInteractionStart(event: MouseEvent | TouchEvent) {
+  if (props.disabled) return;
+  isDragging.value = true;
+  updateValue(event);
+  window.addEventListener('mousemove', handleInteractionMove);
+  window.addEventListener('touchmove', handleInteractionMove);
+  window.addEventListener('mouseup', handleInteractionEnd);
+  window.addEventListener('touchend', handleInteractionEnd);
+}
+
+function handleInteractionMove(event: MouseEvent | TouchEvent) {
+  if (!isDragging.value) return;
+  updateValue(event);
+}
+
+function handleInteractionEnd() {
+  isDragging.value = false;
+  window.removeEventListener('mousemove', handleInteractionMove);
+  window.removeEventListener('touchmove', handleInteractionMove);
+  window.removeEventListener('mouseup', handleInteractionEnd);
+  window.removeEventListener('touchend', handleInteractionEnd);
+}
+
+function updateValue(event: MouseEvent | TouchEvent) {
+  if (!sliderContainerRef.value) return;
+
+  const rect = sliderContainerRef.value.getBoundingClientRect();
+  const touch = (event as TouchEvent).touches?.[0];
+
+  let percentage: number;
+
+  if (props.vertical) {
+    const clientY = touch ? touch.clientY : (event as MouseEvent).clientY;
+    percentage = 1 - ((clientY - rect.top) / rect.height);
+  } else {
+    const clientX = touch ? touch.clientX : (event as MouseEvent).clientX;
+    percentage = (clientX - rect.left) / rect.width;
+  }
+  
+  // Clamp percentage
+  percentage = Math.max(0, Math.min(1, percentage));
+
+  let newValue = props.min + percentage * (props.max - props.min);
+
+  // Apply step
+  const steppedValue = Math.round(newValue / props.step) * props.step;
+  
+  // Clamp to min/max after stepping
+  const finalValue = Math.max(props.min, Math.min(props.max, steppedValue));
+
+  if (finalValue !== props.modelValue) {
+    emit('update:modelValue', finalValue);
+  }
+}
+
+onBeforeUnmount(() => {
+  // Clean up global listeners
+  handleInteractionEnd();
+});
 </script>
 
 <style scoped>
-.range-slider-container {
+.slider-container {
   --track-height: 4px;
-  --thumb-size: 12px;
-  --thumb-border-width: 2px;
   --track-color: #e5e7eb;
   --track-fill-color: var(--primary-color, #4f46e5);
-  display: flex;
-  align-items: center;
+  --thumb-size: 14px;
   position: relative;
+  cursor: pointer;
+  padding: 5px 0;
   width: 100%;
-  height: var(--thumb-size);
 }
 
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
+.track {
   width: 100%;
   height: var(--track-height);
-  background: linear-gradient(to right, var(--track-fill-color) var(--progress, 0%), var(--track-color) var(--progress, 0%));
+  background-color: var(--track-color);
   border-radius: var(--track-height);
-  outline: none;
-  cursor: pointer;
-  transition: opacity .2s;
-  padding: 0;
-  margin: 0;
+  position: relative;
+  overflow: hidden;
 }
 
-.is-disabled .slider {
+.track-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--track-fill-color);
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  background-color: white;
+  border: 2px solid var(--track-fill-color);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.1s ease;
+}
+
+
+.slider-container.is-disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-/* Thumb */
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: var(--thumb-size);
-  height: var(--thumb-size);
-  background-color: var(--track-fill-color);
-  border-radius: 50%;
-  border: var(--thumb-border-width) solid white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  margin-top: calc(((var(--thumb-size) + var(--thumb-border-width) * 2) - var(--track-height)) / -2);
-  transition: transform 0.2s ease;
+/* Vertical styles */
+.slider-container.is-vertical {
+  width: auto;
+  height: 100%;
+  padding: 0 5px;
 }
 
-.slider::-moz-range-thumb {
-  width: var(--thumb-size);
-  height: var(--thumb-size);
-  background-color: var(--track-fill-color);
-  border-radius: 50%;
-  border: var(--thumb-border-width) solid white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+.is-vertical .track {
+  width: var(--track-height);
+  height: 100%;
+}
+
+.is-vertical .track-fill {
+  top: auto;
+  bottom: 0;
+  width: 100%;
+  /* height set by inline style */
+}
+
+.is-vertical .thumb {
+  top: auto;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 50%);
 }
 
 /* Hover/Active states */
-.slider:not(:disabled):hover::-webkit-slider-thumb {
-  transform: scale(1.1);
-}
-.slider:not(:disabled):hover::-moz-range-thumb {
-  transform: scale(1.1);
+.slider-container.is-horizontal:hover .thumb {
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
-/* Focus states */
-.slider:focus {
-  outline: none;
-}
-.slider:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px white, 0 0 0 5px var(--track-fill-color);
-}
-.slider:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 3px white, 0 0 0 5px var(--track-fill-color);
-}
-
-
-/* Vertical styles */
-.is-vertical {
-  width: var(--thumb-size);
-  height: 100%;
-  min-height: 100px;
-}
-.is-vertical .slider {
-  writing-mode: bt-lr; /* IE */
-  -webkit-appearance: slider-vertical; /* WebKit */
-  width: var(--track-height);
-  height: 100%;
-  background: linear-gradient(to top, var(--track-fill-color) var(--progress, 0%), var(--track-color) var(--progress, 0%));
-}
-.is-vertical .slider::-webkit-slider-thumb {
-  margin-top: 0;
-  margin-left: calc(((var(--thumb-size) + var(--thumb-border-width) * 2) - var(--track-height)) / -2);
-}
-.is-vertical .slider::-moz-range-thumb {
-    margin-top: 0;
+.slider-container.is-vertical .thumb:hover {
+  transform: translate(-50%, 50%) scale(1.1);
 }
 </style> 

@@ -1,11 +1,11 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import { nanoid } from 'nanoid';
 import { openDB as idbOpenDB, IDBPDatabase } from 'idb';
-import { toRaw } from 'vue';
 import { defineStore } from 'pinia';
 
 import * as schemaValidator from './schemaValidator';
-import {WithMetadata} from "@/types";
+import { WithMetadata } from "@/types";
+import { deepUnwrap } from './deepUnwrap';
 
 export class StorageError extends Error {
   constructor(
@@ -51,7 +51,7 @@ const ALL_STORE_NAMES = [
   'jukebox_files'
 ];
 
-async function openDB(storeName: string): Promise<IDBPDatabase> {
+async function openDB(): Promise<IDBPDatabase> {
   // Always open the main DB, and ensure all stores exist
   return idbOpenDB(DB_NAME, DB_VERSION, {
     upgrade(db) {
@@ -66,7 +66,7 @@ async function openDB(storeName: string): Promise<IDBPDatabase> {
 
 // --- Per-item CRUD helpers using idb ---
 export async function idbGetItem<T>(storeName: string, id: string): Promise<T | undefined> {
-  const db = await openDB(storeName);
+  const db = await openDB();
   return db.transaction(storeName).objectStore(storeName).get(id);
 }
 
@@ -79,17 +79,17 @@ export async function idbPutItem<T extends { id: string }>(storeName: string, it
     }
   }
   
-  const db = await openDB(storeName);
+  const db = await openDB();
   await db.transaction(storeName, 'readwrite').objectStore(storeName).put(item);
 }
 
 export async function idbDeleteItem(storeName: string, id: string): Promise<void> {
-  const db = await openDB(storeName);
+  const db = await openDB();
   await db.transaction(storeName, 'readwrite').objectStore(storeName).delete(id);
 }
 
 export async function idbGetAllItems<T>(storeName: string): Promise<T[]> {
-  const db = await openDB(storeName);
+  const db = await openDB();
   return db.transaction(storeName).objectStore(storeName).getAll();
 }
 
@@ -108,31 +108,6 @@ export interface BaseStore<T extends WithMetadata> {
   update: (id: string, patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<T>;
   remove: (id: string) => Promise<void>;
   load: () => Promise<void>;
-}
-
-export function deepUnwrap(obj: any): any {
-  // Do not unwrap FileSystemFileHandle or FileSystemDirectoryHandle
-  if (
-    obj &&
-    (obj.constructor?.name === 'FileSystemFileHandle' ||
-     obj.constructor?.name === 'FileSystemDirectoryHandle')
-  ) {
-    return obj;
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(deepUnwrap);
-  }
-  if (obj && typeof obj === 'object') {
-    if (typeof obj === 'function') return undefined;
-    if (obj.__v_isRef) return deepUnwrap(obj.value);
-    if (obj.__v_isReactive) obj = toRaw(obj);
-    const out: any = {};
-    for (const key in obj) {
-      out[key] = deepUnwrap(obj[key]);
-    }
-    return out;
-  }
-  return obj;
 }
 
 // This cache will ensure that we create only one store instance per store name.
