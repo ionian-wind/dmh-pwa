@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import { useRouter } from 'vue-router';
 import { Section } from '@/types';
 import Button from '@/components/common/Button.vue';
+import { useConfigStore } from '@/utils/configStore';
 
 const { t } = useI18n();
 const moduleStore = useModuleStore();
 const router = useRouter();
+const configStore = useConfigStore();
 
 const moduleOptions = computed(() => [
   { id: 'any', name: 'Any Module', value: 'any' },
@@ -16,15 +18,13 @@ const moduleOptions = computed(() => [
   ...moduleStore.items.map(({ id, name }) => ({ id, name, value: id }))
 ]);
 
-const setCurrentModuleFilter = (filterValue: string) => {
-  if (filterValue === 'none') {
-    moduleStore.setCurrentModuleFilter('none');
-  } else if (filterValue === 'any') {
-    moduleStore.setCurrentModuleFilter('any');
-  } else {
-    moduleStore.setCurrentModuleFilter(filterValue);
+// Use configStore to track current module filter
+const currentModuleFilter = computed({
+  get: () => configStore.currentModuleFilter || 'none',
+  set: (value: string) => {
+    configStore.currentModuleFilter = value;
   }
-};
+});
 
 const navigateTo = (path: string) => {
   router.push(path);
@@ -44,19 +44,13 @@ const isActive = (item: { section: Section, path: string }) => {
 
   return sections.some((mod) => mod.section === item.section && currentPath.startsWith(mod.path)) ?? currentPath.startsWith(item.path);
 };
-
-onMounted(() => {
-  if (!moduleStore.currentModuleFilter || moduleStore.currentModuleFilter === 'any') {
-    moduleStore.setCurrentModuleFilter('none');
-  }
-});
 </script>
 
 <template>
   <nav class="global-menu">
     <div class="module-selector-row">
       <div class="module-selector">
-        <select v-model="moduleStore.currentModuleFilter" @change="setCurrentModuleFilter(($event.target as HTMLSelectElement)?.value || 'any')">
+        <select v-model="currentModuleFilter">
           <option v-for="module in moduleOptions" :key="module.id" :value="module.value">
             {{ module.name }}
           </option>
@@ -66,8 +60,8 @@ onMounted(() => {
         variant="danger"
         size="small"
         class="clear-module-btn"
-        @click="setCurrentModuleFilter('none')"
-        v-if="moduleStore.currentModuleFilter !== 'none'"
+        @click="currentModuleFilter = 'none'"
+        v-if="currentModuleFilter !== 'none'"
         :title="t('app.clear')"
       >
         <i class="si si-x"></i>

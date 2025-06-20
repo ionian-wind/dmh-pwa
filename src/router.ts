@@ -15,7 +15,7 @@ import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
-import { useNavigationStore } from '@/stores/navigation';
+import { useConfigStore } from '@/utils/configStore';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -128,11 +128,11 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-  const navigationStore = useNavigationStore();
+  const configStore = useConfigStore();
   
   // Don't update last opened page for detail views
   if (!to.params.id) {
-    navigationStore.setLastOpenedPage(to.path);
+    configStore.lastOpenedPage = to.path;
   }
   
   next();

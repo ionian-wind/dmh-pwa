@@ -1,9 +1,12 @@
 import { Buffer } from 'buffer';
-window.Buffer = Buffer;
+// window.Buffer = Buffer;
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { PiniaSharedState } from 'pinia-shared-state'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
+
+
 import 'siimple-icons/siimple-icons.css'
 import App from './App.vue'
 import router from './router'
@@ -24,6 +27,7 @@ const app = createApp(App)
 
 // Create and use Pinia store
 const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate);
 pinia.use(PiniaSharedState({
   enable: true,
   initialize: true, // Sync initial state between tabs

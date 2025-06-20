@@ -126,12 +126,13 @@ import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
-
+import { useConfigStore } from '@/utils/configStore';
 
 const audioRef = ref<HTMLAudioElement | null>(null);
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
 const filesStore = useJukeboxFilesStore();
+const configStore = useConfigStore();
 
 const tracks = tracksStore.items;
 const playlists = playlistsStore.items;
@@ -155,8 +156,8 @@ const currentTrack = ref<JukeboxTrack | null>(null);
 const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
-const volume = ref(1);
-const lastVolume = ref(1);
+const volume = ref(configStore.lastVolume);
+const lastVolume = ref(configStore.lastVolume);
 
 function openPlaylistModal(playlist: JukeboxPlaylist | null) {
   playlistToEdit.value = playlist;
@@ -328,7 +329,10 @@ async function verifyFilePermission(handle: FileSystemFileHandle, mode: 'read' |
 async function playTrack(track: JukeboxTrack) {
   if (!audioRef.value) return;
 
+  const isNewTrack = currentTrack.value?.id !== track.id;
   currentTrack.value = track;
+  configStore.lastTrackId = track.id;
+  
   const fileRecord = await getJukeboxFile(track.fileId);
   if (!fileRecord || !isFileSystemFileHandle(fileRecord.handle)) return;
 
@@ -338,6 +342,13 @@ async function playTrack(track: JukeboxTrack) {
 
   const file = await getFileFromHandle(handle);
   audioRef.value.src = URL.createObjectURL(file);
+  
+  // Only reset progress when selecting a different track
+  if (isNewTrack) {
+    configStore.lastTrackProgress = 0;
+    currentTime.value = 0;
+  }
+  
   audioRef.value.play();
 }
 
@@ -349,6 +360,12 @@ function togglePlay() {
     if (filteredTracks.value.length > 0) {
       playTrack(filteredTracks.value[0]);
     }
+    return;
+  }
+
+  // If we have a current track but no audio source, load it first
+  if (!audioRef.value.src && currentTrack.value) {
+    playTrack(currentTrack.value);
     return;
   }
 
@@ -390,6 +407,11 @@ function onTimeUpdate() {
   if (audioRef.value) {
     currentTime.value = audioRef.value.currentTime;
     isPlaying.value = !audioRef.value.paused;
+    
+    // Save progress to config store
+    if (currentTrack.value) {
+      configStore.lastTrackProgress = audioRef.value.currentTime;
+    }
   }
 }
 
@@ -407,7 +429,7 @@ function handleVolumeChange(newVolume: number) {
   if (audioRef.value) {
     audioRef.value.volume = newVolume;
   }
-  localStorage.setItem('jukebox-volume', newVolume.toString());
+  configStore.lastVolume = newVolume;
 }
 
 function toggleMute() {
@@ -428,22 +450,62 @@ function setupAudioEvents() {
   audioRef.value.addEventListener('ended', playNext);
 }
 
-onMounted(() => {
-  tracksStore.load();
-  playlistsStore.load();
-  filesStore.load();
-  const savedVolume = localStorage.getItem('jukebox-volume');
-  if (savedVolume !== null) {
-    const parsedVolume = parseFloat(savedVolume);
-    volume.value = parsedVolume;
-    if (parsedVolume > 0) {
-      lastVolume.value = parsedVolume;
-    }
-  }
+onMounted(async () => {
+  // Wait for all stores to load first
+  await Promise.all([
+    tracksStore.load(),
+    playlistsStore.load(),
+    filesStore.load()
+  ]);
+  
+  console.log('Stores loaded, tracks count:', tracksStore.items.value.length);
+  console.log('Config store lastTrackId:', configStore.lastTrackId);
+  
+  // Restore volume from config store
+  volume.value = configStore.lastVolume;
+  lastVolume.value = configStore.lastVolume;
+  
   if (audioRef.value) {
     audioRef.value.volume = volume.value;
   }
+  
   setupAudioEvents();
+  
+  // Restore last played track if available (after stores are loaded)
+  if (configStore.lastTrackId) {
+    const lastTrack = tracksStore.getById(configStore.lastTrackId);
+    console.log('Found last track:', lastTrack);
+    if (lastTrack) {
+      currentTrack.value = lastTrack;
+      console.log('Restored current track:', currentTrack.value);
+      
+      // Restore progress position
+      const savedProgress = configStore.lastTrackProgress;
+      if (savedProgress > 0) {
+        console.log('Restoring progress:', savedProgress);
+        currentTime.value = savedProgress;
+        
+        // Load the audio file and set the position
+        const fileRecord = await getJukeboxFile(lastTrack.fileId);
+        if (fileRecord && isFileSystemFileHandle(fileRecord.handle)) {
+          const handle = fileRecord.handle;
+          const hasPerm = await verifyFilePermission(handle, 'read');
+          if (hasPerm) {
+            const file = await getFileFromHandle(handle);
+            audioRef.value!.src = URL.createObjectURL(file);
+            
+            // Set the time after the audio is loaded
+            audioRef.value!.addEventListener('loadedmetadata', () => {
+              if (audioRef.value && savedProgress < audioRef.value.duration) {
+                audioRef.value.currentTime = savedProgress;
+                currentTime.value = savedProgress;
+              }
+            }, { once: true });
+          }
+        }
+      }
+    }
+  }
 });
 </script>
 

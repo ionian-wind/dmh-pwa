@@ -3,12 +3,17 @@ import { ref, computed } from 'vue';
 import type { Module } from '@/types';
 import { useStore } from '@/utils/storage';
 import moduleSchema from '@/schemas/module.schema.json';
+import { useConfigStore } from '@/utils/configStore';
 
 export const useModuleStore = defineStore('modules', () => {
   const base = useStore<Module>({ storeName: 'modules', validationSchema: moduleSchema });
-  const currentModuleFilter = ref<string>('any');
+  const configStore = useConfigStore();
+
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
+
+  // Use configStore directly for current module filter
+  const currentModuleFilter = computed(() => configStore.currentModuleFilter || 'none');
 
   const filtered = computed(() => {
     let result = base.items.value;
@@ -42,7 +47,7 @@ export const useModuleStore = defineStore('modules', () => {
   };
 
   const setCurrentModuleFilter = (filter: string) => {
-    currentModuleFilter.value = filter;
+    configStore.currentModuleFilter = filter;
   };
 
   const getModuleName = (id: string | null) => {
