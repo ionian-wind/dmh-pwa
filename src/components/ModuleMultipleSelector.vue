@@ -23,7 +23,6 @@ const updateValue = (event: Event) => {
 };
 
 const moduleOptions = computed(() => [
-  { id: 'any', name: 'Any Module', value: 'any' },
   { id: 'none', name: 'No Module', value: 'none' },
   ...moduleStore.items.map(module => ({
     id: module.id,

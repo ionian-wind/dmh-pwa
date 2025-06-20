@@ -35,12 +35,12 @@ const mentionPlugin: PluginSimple = (md: MarkdownItType) => {
 
   md.renderer.rules.mention = (tokens: any, idx: number) => {
     const { kind, id, alias } = tokens[idx].meta;
-    // Only call useStore inside the renderer
-    const noteStore = require('@/stores/notes').useNoteStore();
-    const moduleStore = require('@/stores/modules').useModuleStore();
-    const partyStore = require('@/stores/parties').usePartyStore();
-    const monsterStore = require('@/stores/monsters').useMonsterStore();
-    const encounterStore = require('@/stores/encounters').useEncounterStore();
+    // Use imported store functions
+    const noteStore = useNoteStore();
+    const moduleStore = useModuleStore();
+    const partyStore = usePartyStore();
+    const monsterStore = useMonsterStore();
+    const encounterStore = useEncounterStore();
     const linkText = alias || null;
     const dataAttrs = `data-kind="${kind}" data-id="${id}"`;
 
@@ -111,10 +111,10 @@ md.use(externalLinkPlugin);
 md.use(markdownItAttrs);
 md.use(markdownItAnchor, {
   // Use the existing id if present, otherwise generate
-  slugify: s => s,
+  slugify: (s: string) => s,
   permalink: false,
   // Don't overwrite ids already present in the HTML
-  callback: (token, info) => {
+  callback: (token: any, info: any) => {
     // If the token already has an id attribute, do nothing
     // (markdown-it-anchor will not overwrite it)
   }

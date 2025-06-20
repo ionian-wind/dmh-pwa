@@ -3,7 +3,6 @@ import { ref, watch, computed, onMounted } from 'vue';
 import { useModuleStore } from '@/stores/modules';
 import type { Party, UUID } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   party: Party | null;
@@ -93,7 +92,7 @@ const handleCancel = () => {
             v-model="editedParty.moduleIds"
             multiple
           >
-            <option v-for="module in moduleStore.modules" :key="module.id" :value="module.id">{{ module.name }}</option>
+            <option v-for="module in moduleStore.items" :key="module.id" :value="module.id">{{ module.name }}</option>
           </select>
         </div>
       </div>

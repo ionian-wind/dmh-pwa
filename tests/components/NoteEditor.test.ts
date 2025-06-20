@@ -9,10 +9,6 @@ jest.mock('@/components/TagSelector.vue', () => ({
   __esModule: true,
   default: { name: 'TagSelector', template: '<div />' }
 }));
-jest.mock('@/components/EntityAutosuggest.vue', () => ({
-  __esModule: true,
-  default: { name: 'EntityAutosuggest', template: '<div />' }
-}));
 jest.mock('@/components/NoteTypeSelector.vue', () => ({
   __esModule: true,
   default: { name: 'NoteTypeSelector', template: '<div />' }

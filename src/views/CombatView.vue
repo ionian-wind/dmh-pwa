@@ -9,8 +9,6 @@ import type { Combat } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
-import Mentions from '@/components/common/Mentions.vue';
-import { createIndexationStore } from '@/stores/createIndexationStore';
 import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
@@ -19,10 +17,6 @@ const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
-
-// Combat mention indexation store
-const useCombatEntityIndexationStore = createIndexationStore('combatEntityIndexation');
-const combatEntityIndexation = useCombatEntityIndexationStore();
 
 const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
@@ -101,15 +95,6 @@ const resetCombat = () => {
   if (!combat.value) return;
   combatStore.resetCombat(combat.value.id);
 };
-
-const mentionedEntities = computed(() => {
-  if (!combat.value) return [];
-  return combatEntityIndexation.getLinks({ kind: 'combat', id: combat.value.id });
-});
-const mentionedInEntities = computed(() => {
-  if (!combat.value) return [];
-  return combatEntityIndexation.getBacklinks({ kind: 'combat', id: combat.value.id });
-});
 
 onMounted(async () => {
   combatStore.load();
@@ -209,10 +194,6 @@ onMounted(async () => {
         </div>
       </BaseEntityView>
     </div>
-    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
-      <Mentions title="Mentions" :entities="mentionedEntities" />
-      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
-    </aside>
   </div>
 </template>
 

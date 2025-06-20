@@ -3,11 +3,13 @@ import { ref, computed } from 'vue';
 import type { Monster } from '@/types';
 import { useStore } from '@/utils/storage'
 import monsterSchema from "@/schemas/monster.schema.json";
+import { useModuleStore } from '@/stores/modules';
 
 export const useMonsterStore = defineStore('monsters', () => {
   const base = useStore<Monster>({ storeName: 'monsters', validationSchema: monsterSchema });
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
+  const moduleStore = useModuleStore();
 
   async function create(monster: Omit<Monster, 'id' | 'createdAt' | 'updatedAt'>) {
     return await base.create(monster);
@@ -30,6 +32,8 @@ export const useMonsterStore = defineStore('monsters', () => {
         monster.name.toLowerCase().includes(query)
       );
     }
+    // Module filter
+    result = result.filter(monster => moduleStore.matchesModuleFilterMultiple(monster.moduleIds || []));
     return result;
   });
 

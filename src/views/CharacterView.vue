@@ -159,7 +159,7 @@ import CharacterEditor from '@/components/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import { useMentionsStore } from '@/stores/createIndexationStore';
+import { useMentionsStore } from '@/utils/storage';
 import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();

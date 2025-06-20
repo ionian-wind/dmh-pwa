@@ -103,12 +103,6 @@ const router = createRouter({
       name: 'module-detail',
       component: ModuleView
     },
-    // Jukebox route
-    {
-      path: '/music',
-      name: 'Jukebox',
-      component: () => import('./jukebox/components/MusicPlayerApp.vue'),
-    },
     // 404 route
     {
       path: '/:catchAll(.*)',

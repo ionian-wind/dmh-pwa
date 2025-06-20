@@ -18,7 +18,7 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 
 const encounter = computed(() => {
-  return encounterStore.encounters.find(e => e.id === props.encounterId);
+  return encounterStore.items.find(e => e.id === props.encounterId);
 });
 
 const combat = computed(() => {
@@ -140,9 +140,9 @@ const formatTime = (timestamp: number) => {
 // Функция для получения деталей комбатанта
 const combatantDetails = (combatant: Combatant) => {
   if (combatant.type === 'monster' && combatant.referenceId) {
-    return monsterStore.monsters.find(m => m.id === combatant.referenceId);
+    return monsterStore.items.find(m => m.id === combatant.referenceId);
   } else if (combatant.type === 'player' && combatant.referenceId && combat.value) {
-    const party = partyStore.parties.find(p => p.id === combat.value!.partyId);
+    const party = partyStore.items.find(p => p.id === combat.value!.partyId);
     if (party && Array.isArray(party.characters)) {
       return party.characters.find(c => c === combatant.referenceId);
     }
@@ -234,6 +234,9 @@ onMounted(() => {
 });
 
 const getCombatantName = (combatantId: string) => {
+  if (!combat.value) return '';
+  const combatant = combat.value.combatants.find(c => c.id === combatantId);
+  if (!combatant) return '';
   if (combatant.type === 'monster') {
     const monster = monsterStore.items.find(m => m.id === combatant.referenceId);
     return monster ? monster.name : combatant.name;

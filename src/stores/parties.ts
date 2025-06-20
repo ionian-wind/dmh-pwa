@@ -3,11 +3,13 @@ import { ref, computed } from 'vue';
 import type { Party } from '@/types';
 import { useStore } from '@/utils/storage';
 import partySchema from "@/schemas/party.schema.json";
+import { useModuleStore } from '@/stores/modules';
 
 export const usePartyStore = defineStore('parties', () => {
   const base = useStore<Party>({ storeName: 'parties', validationSchema: partySchema });
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
+  const moduleStore = useModuleStore();
 
   async function create(party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) {
     return await base.create(party);
@@ -30,6 +32,8 @@ export const usePartyStore = defineStore('parties', () => {
         party.name.toLowerCase().includes(query)
       );
     }
+    // Module filter
+    result = result.filter(party => moduleStore.matchesModuleFilterMultiple(party.moduleIds || []));
     return result;
   });
 

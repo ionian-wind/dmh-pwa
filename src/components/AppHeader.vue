@@ -55,8 +55,7 @@ onUnmounted(() => {
 <template>
   <header class="app-header">
     <div class="header-content">
-      <nav><router-link to="/configuration" class="config-button">⚙️</router-link></nav>
-      <div class="header-right">
+      <nav>
         <Button
           class="fullscreen-btn"
           variant="link"
@@ -66,8 +65,11 @@ onUnmounted(() => {
         >
           <span v-if="!isFullscreen">⛶</span>
           <span v-else>🗖</span>
-        </button>
+        </Button>
         <LanguageSwitcher />
+
+      </nav>
+      <div class="header-right">
         <GlobalMenu />
       </div>
     </div>

@@ -4,7 +4,6 @@ import { useModuleStore } from '@/stores/modules';
 import { Encounter } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -137,6 +136,7 @@ defineExpose({
             id="encounter-module"
             v-model="editedEncounter.moduleId"
             placeholder="Select Module"
+            :allowAnyModule="false"
             required
           />
         </div>

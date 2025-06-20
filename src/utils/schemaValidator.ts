@@ -7,6 +7,10 @@ export function registerValidationSchema(schemaName: string, schema: AnySchema):
   ajv.addSchema(schema, schemaName);
 }
 
+export function canValidate(schemaName: string): boolean {
+  return typeof ajv.getSchema(schemaName) !== 'undefined';
+}
+
 export async function validateSchema(schemaName: string, data: unknown): Promise<{ valid: boolean, errors: string[] }> {
   const validate = ajv.getSchema(schemaName);
 

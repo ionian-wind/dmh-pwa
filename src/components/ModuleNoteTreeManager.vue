@@ -150,10 +150,23 @@ function handleEditNote(noteId: string) {
 }
 const handleSaveNote = async (note: Note) => {
   let savedNote: Note;
+  const isNew = !note.id;
   if (note.id) {
     savedNote = await noteStore.update(note.id, note);
   } else {
     savedNote = await noteStore.create(note);
+  }
+  // If a new note was created and editingNode is set, add the note to the node
+  if (isNew && editingNode.value) {
+    if (!editingNode.value.notes) editingNode.value.notes = [];
+    if (!editingNode.value.noteAnchors) editingNode.value.noteAnchors = {};
+    if (!editingNode.value.notes.includes(savedNote.id)) {
+      editingNode.value.notes.push(savedNote.id);
+      editingNode.value.noteAnchors[savedNote.id] = `note-${nanoid(6)}`;
+      // Force reactivity by updating the tree reference
+      tree.value = [...tree.value];
+      emit('save', JSON.parse(JSON.stringify(tree.value)));
+    }
   }
   showNoteEditor.value = false;
   editingNote.value = {
@@ -168,6 +181,7 @@ const handleSaveNote = async (note: Note) => {
     parentId: undefined,
     metadata: undefined
   };
+  editingNode.value = null;
   return savedNote;
 };
 function handleNoteEditorCancel() {
@@ -344,7 +358,7 @@ function onRootNodeMove(evt: any) {
             @cancel-edit-node="cancelEditNode"
             @add-note-to-node="addNoteToNode"
             @remove-note-from-node="removeNoteFromNode"
-            @handle-create-note="handleCreateNote"
+            @create-note="handleCreateNote"
             @handle-edit-note="handleEditNote"
             @move-node="handleMoveNode"
             @move-note="handleMoveNote"

@@ -4,12 +4,14 @@ import type { Note } from '@/types';
 import { useStore } from '@/utils/storage';
 import noteSchema from "@/schemas/note.schema.json";
 import { extractMentionedEntities } from '@/utils/markdownParser';
-import { useMentionsStore } from './createIndexationStore';
+import { useMentionsStore } from '@/utils/storage';
+import { useModuleStore } from '@/stores/modules';
 
 export const useNoteStore = defineStore('notes', () => {
   const base = useStore<Note>({ storeName: 'notes', validationSchema: noteSchema });
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
+  const moduleStore = useModuleStore();
 
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
     const newNote = await base.create(note);
@@ -50,6 +52,8 @@ export const useNoteStore = defineStore('notes', () => {
         note.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
+    // Module filter
+    result = result.filter(note => moduleStore.matchesModuleFilter(note.moduleId || null));
     return result;
   });
 

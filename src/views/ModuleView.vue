@@ -101,7 +101,7 @@ import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import { useMentionsStore } from '@/stores/createIndexationStore';
+import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import ModuleNoteTreeManager from '@/components/ModuleNoteTreeManager.vue';
 import ModuleDocumentView from '@/components/ModuleDocumentView.vue';

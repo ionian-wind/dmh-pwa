@@ -5,9 +5,11 @@ import { computed } from 'vue';
 const props = withDefaults(defineProps<{
   modelValue: string | null;
   placeholder?: string;
+  allowAnyModule?: boolean;
 }>(), {
   modelValue: null,
-  placeholder: 'No Module'
+  placeholder: 'No Module',
+  allowAnyModule: false
 });
 
 const emit = defineEmits<{
@@ -22,15 +24,19 @@ const updateValue = (event: Event) => {
   emit('update:modelValue', value);
 };
 
-const moduleOptions = computed(() => [
-  { id: 'any', name: 'Any Module', value: 'any' },
-  { id: 'none', name: 'No Module', value: 'none' },
-  ...moduleStore.items.map(module => ({
+const moduleOptions = computed(() => {
+  const options = [];
+  if (props.allowAnyModule) {
+    options.push({ id: 'any', name: 'Any Module', value: 'any' });
+  }
+  options.push({ id: 'none', name: 'No Module', value: 'none' });
+  options.push(...moduleStore.items.map(module => ({
     id: module.id,
     name: module.name,
     value: module.id
-  }))
-]);
+  })));
+  return options;
+});
 </script>
 
 <template>

@@ -7,6 +7,7 @@ import NoteTypeSelector from './NoteTypeSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
+import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 
 const props = defineProps<{
   note: Note | null;
@@ -20,10 +21,6 @@ const emit = defineEmits<{
 }>();
 
 const moduleStore = useModuleStore();
-
-const showAutosuggest = ref(false);
-const autosuggestPosition = ref({ top: 0, left: 0 });
-const cursorPosition = ref(0);
 
 const editedNote = ref<Note>({
   createdAt: 0,
@@ -67,55 +64,6 @@ watch(() => moduleStore.currentModuleFilter, (newFilter) => {
   }
 });
 
-const handleContentInput = (event: Event) => {
-  const textarea = event.target as HTMLTextAreaElement;
-  cursorPosition.value = textarea.selectionStart;
-  const text = textarea.value;
-  const textBeforeCursor = text.substring(0, cursorPosition.value);
-  const linkMatch = textBeforeCursor.match(/\[\[([^:]*):?([^\]]*)$/);
-
-  if (linkMatch) {
-    const rect = textarea.getBoundingClientRect();
-    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
-    const lines = textBeforeCursor.split('\n');
-    const currentLine = lines[lines.length - 1];
-    const lineNumber = lines.length - 1;
-    
-    autosuggestPosition.value = {
-      top: rect.top + (lineNumber * lineHeight),
-      left: rect.left + (currentLine.length * 8) // Approximate character width
-    };
-    
-    showAutosuggest.value = true;
-  } else {
-    showAutosuggest.value = false;
-  }
-};
-
-const insertSuggestion = (suggestion: string) => {
-  const textarea = document.querySelector('.content-editor') as HTMLTextAreaElement;
-  if (!textarea) return;
-
-  const cursorPosition = textarea.selectionStart;
-  const text = textarea.value;
-  const textBeforeCursor = text.substring(0, cursorPosition);
-  const textAfterCursor = text.substring(cursorPosition);
-  const lastAtIndex = textBeforeCursor.lastIndexOf('[[');
-  
-  if (lastAtIndex !== -1) {
-    const newText = textBeforeCursor.substring(0, lastAtIndex) + suggestion + textAfterCursor;
-    editedNote.value.content = newText;
-    showAutosuggest.value = false;
-    
-    // Set cursor position after the inserted suggestion
-    setTimeout(() => {
-      const newPosition = lastAtIndex + suggestion.length;
-      textarea.setSelectionRange(newPosition, newPosition);
-      textarea.focus();
-    }, 0);
-  }
-};
-
 const handleSubmit = () => {
   if (!editedNote.value.title) {
     alert('Title is required');
@@ -127,13 +75,6 @@ const handleSubmit = () => {
 const handleCancel = () => {
   emit('cancel');
 };
-
-watch([
-  () => showAutosuggest,
-  () => autosuggestPosition
-], ([show, pos]) => {
-  console.log('NoteEditor: showAutosuggest', show, 'autosuggestPosition', pos)
-})
 </script>
 
 <template>
@@ -167,6 +108,7 @@ watch([
           <ModuleSelector
             v-model="editedNote.moduleId"
             placeholder="No Module"
+            :allowAnyModule="false"
           />
         </div>
       </div>
@@ -190,42 +132,13 @@ watch([
     <div class="form-section">
       <h3>Content</h3>
       <div class="form-group">
-        <textarea
+        <MarkdownEditor
           v-model="editedNote.content"
-          @input="handleContentInput"
-          @keyup="handleContentInput"
-          rows="10"
+          :rows="10"
           placeholder="Write your note here... Use [[type:]] to link entities"
-          class="content-editor"
-        ></textarea>
-        <div class="formatting-help">
-          <h4>Formatting Help</h4>
-          <div class="help-grid">
-            <div class="help-item">
-              <span class="help-title">Internal Links</span>
-              <code>[[type:id]]</code>
-              <p>Link to other entities in your campaign:</p>
-              <ul>
-                <li><code>[[note:123]]</code> - Link to a note</li>
-                <li><code>[[module:123]]</code> - Link to a module</li>
-                <li><code>[[party:123]]</code> - Link to a party</li>
-                <li><code>[[monster:123]]</code> - Link to a monster</li>
-                <li><code>[[encounter:123]]</code> - Link to an encounter</li>
-              </ul>
-            </div>
-            <div class="help-item">
-              <span class="help-title">Markdown</span>
-              <p>Basic markdown formatting:</p>
-              <ul>
-                <li><code>**bold**</code> - <strong>Bold text</strong></li>
-                <li><code>*italic*</code> - <em>Italic text</em></li>
-                <li><code># Heading</code> - Section heading</li>
-                <li><code>- item</code> - Bullet list</li>
-                <li><code>1. item</code> - Numbered list</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+          className="content-editor"
+          label="Content"
+        />
       </div>
     </div>
   </BaseModal>
