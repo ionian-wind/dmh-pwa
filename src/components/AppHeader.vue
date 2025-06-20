@@ -84,6 +84,7 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 100;
+  height: var(--header-height);
 }
 
 .header-content {

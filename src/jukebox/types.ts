@@ -2,13 +2,14 @@ import type { WithMetadata, UUID as GlobalUUID, Timestamp, WithId, WithTimestamp
 
 export type UUID = GlobalUUID;
 
-export interface JukeboxPlaylist extends WithId, WithTimestamps {
+export interface JukeboxPlaylist extends WithId, WithTimestamps, WithMetadata {
   name: string;
   description?: string;
   trackIds: UUID[];
+  sortOrder?: number;
 }
 
-export interface JukeboxFile extends WithId, WithTimestamps {
+export interface JukeboxFile extends WithId, WithTimestamps, WithMetadata {
   id: UUID;
   name: string;
   size: number;

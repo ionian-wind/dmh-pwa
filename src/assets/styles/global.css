@@ -65,9 +65,10 @@
   --transition-slow: 0.5s ease;
 
   /* Layout */
+  --base-padding: 1rem;
   --max-width: 1200px;
-  --header-height: 60px;
-  --footer-height: 60px;
+  --footer-height: 40px;
+  --header-height: calc(var(--footer-height) * 4);
 }
 
 /* Reset and base styles */
@@ -462,10 +463,13 @@ select {
   box-sizing: border-box;
 } 
 
+.view-container, .view-list {
+  padding: var(--base-padding);
+}
+
 .view-list {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
 }
 
 .view-header {

@@ -22,12 +22,6 @@ const handleRollClick = (event: MouseEvent) => {
         </transition>
       </RouterView>
     </main>
-    <footer class="app-footer">
-      <div class="footer-content">
-        <p>© 2024 D&D Notes Manager</p>
-        <p class="version">Version 1.0.0</p>
-      </div>
-    </footer>
     
     <!-- Floating Action Button -->
     <RollButton @click="handleRollClick" />
@@ -74,28 +68,6 @@ body {
 
 .main-content {
   flex: 1;
-  padding-top: 1rem;
-}
-
-.app-footer {
-  background-color: var(--primary-color);
-  color: white;
-  padding: 1rem;
-  margin-top: auto;
-}
-
-.footer-content {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 1rem;
-}
-
-.version {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Transitions */
@@ -107,15 +79,6 @@ body {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .footer-content {
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: center;
-  }
 }
 
 /* Utility Classes */

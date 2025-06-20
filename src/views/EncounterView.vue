@@ -266,7 +266,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="encounter-view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
+  <div class="view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
     <div style="flex: 2 1 0; min-width: 0;">
       <div v-if="loading" class="loading-state">Loading...</div>
       <NotFoundView v-else-if="notFound" />

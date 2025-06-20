@@ -1,33 +1,60 @@
 <template>
   <div class="jukebox-player">
-    <div class="track-display">
-      <div class="artwork" :style="{ backgroundImage: `url(${track?.picture})` }"></div>
-      <div class="info">
-        <div class="title">{{ track?.title || 'No track selected' }}</div>
-        <div class="artist">{{ track?.artist || '' }}</div>
+    <div class="track-info-top">
+      <div class="title">{{ track?.title || 'No track selected' }}</div>
+      <div class="artist">{{ track?.artist || '' }}</div>
+    </div>
+    <div class="player-controls-bottom">
+      <div class="controls">
+        <button @click="onPrev">&laquo;</button>
+        <button @click="onTogglePlay">{{ isPlaying ? '❚❚' : '►' }}</button>
+        <button @click="onNext">&raquo;</button>
       </div>
-    </div>
-    <div class="controls">
-      <button @click="onPrev">&laquo;</button>
-      <button @click="onTogglePlay">{{ isPlaying ? '❚❚' : '►' }}</button>
-      <button @click="onNext">&raquo;</button>
-    </div>
-    <div class="progress-bar">
-      <span>{{ formatTime(currentTime) }}</span>
-      <input
-        type="range"
-        :value="currentTime"
-        :max="duration"
-        @input="onSeek"
-        class="slider"
-      />
-      <span>{{ formatTime(duration) }}</span>
+      <div class="progress-bar">
+        <span>{{ formatTime(currentTime) }}</span>
+        <input
+          type="range"
+          :value="currentTime"
+          :max="duration"
+          @input="onSeek"
+          class="slider"
+        />
+        <span>{{ formatTime(duration) }}</span>
+      </div>
+      <div class="volume-control">
+        <button 
+          @click="onToggleMute" 
+          class="volume-button"
+          @mouseenter="showVolumeSlider"
+          @mouseleave="startHideTimer"
+        >
+          <span v-if="volume > 0.5">🔊</span>
+          <span v-else-if="volume > 0">🔉</span>
+          <span v-else>🔇</span>
+        </button>
+        <div 
+          v-show="isVolumeSliderVisible" 
+          class="volume-slider-container"
+          @mouseenter="cancelHideTimer"
+          @mouseleave="startHideTimer"
+        >
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            :value="volume"
+            @input="onVolumeChange"
+            class="slider vertical"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
 import type { JukeboxTrack } from '../types';
 
 defineProps<{
@@ -35,9 +62,31 @@ defineProps<{
   isPlaying: boolean;
   currentTime: number;
   duration: number;
+  volume: number;
 }>();
 
-const emit = defineEmits(['toggle-play', 'next', 'prev', 'seek']);
+const emit = defineEmits(['toggle-play', 'next', 'prev', 'seek', 'volumechange', 'togglemute']);
+
+const isVolumeSliderVisible = ref(false);
+const hideVolumeTimeout = ref<number | null>(null);
+
+function showVolumeSlider() {
+  cancelHideTimer();
+  isVolumeSliderVisible.value = true;
+}
+
+function startHideTimer() {
+  hideVolumeTimeout.value = window.setTimeout(() => {
+    isVolumeSliderVisible.value = false;
+  }, 200); // 200ms delay before hiding
+}
+
+function cancelHideTimer() {
+  if (hideVolumeTimeout.value) {
+    clearTimeout(hideVolumeTimeout.value);
+    hideVolumeTimeout.value = null;
+  }
+}
 
 function onTogglePlay() {
   emit('toggle-play');
@@ -52,6 +101,14 @@ function onSeek(event: Event) {
   emit('seek', parseFloat((event.target as HTMLInputElement).value));
 }
 
+function onToggleMute() {
+  emit('togglemute');
+}
+
+function onVolumeChange(event: Event) {
+  emit('volumechange', parseFloat((event.target as HTMLInputElement).value));
+}
+
 function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds === 0) return '0:00';
   const mins = Math.floor(seconds / 60);
@@ -62,32 +119,33 @@ function formatTime(seconds: number): string {
 
 <style scoped>
 .jukebox-player {
-  display: grid;
-  grid-template-areas:
-    "display controls progress";
-  grid-template-columns: 1fr 1fr 2fr;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 120px;
   padding: 1em;
   background: #f5f5f5;
-  border-radius: 8px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 1rem;
 }
-.track-display {
-  grid-area: display;
-  display: flex;
+.track-info-top {
+  text-align: center;
+  min-height: 2.5em; /* Reserve space to prevent layout shifts */
+}
+.track-info-top .title {
+  font-weight: bold;
+}
+.track-info-top .artist {
+  font-size: 0.9em;
+  color: #666;
+  min-height: 2em; /* Ensure space is reserved even if artist is not present */
+}
+.player-controls-bottom {
+  display: grid;
+  grid-template-areas: "controls progress volume";
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-}
-.artwork {
-  width: 60px;
-  height: 60px;
-  background-size: cover;
-  background-color: #e0e0e0;
-  border-radius: 4px;
-  margin-right: 1em;
+  gap: 1em;
 }
 .controls {
   grid-area: controls;
@@ -103,5 +161,36 @@ function formatTime(seconds: number): string {
 }
 .slider {
   flex-grow: 1;
+}
+.volume-control {
+  grid-area: volume;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.volume-slider-container {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #e0e0e0;
+  padding: 1rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.1);
+}
+.slider.vertical {
+  -webkit-appearance: slider-vertical;
+  writing-mode: bt-lr; /* Fix for Firefox */
+  width: 8px;
+  height: 100px;
+}
+.volume-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
 }
 </style> 

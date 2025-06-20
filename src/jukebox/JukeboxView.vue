@@ -1,80 +1,127 @@
 <template>
-  <div class="jukebox-container" :style="{ paddingBottom: playerHeight }">
-    <!-- Playlist Sidebar -->
-    <div class="playlist-sidebar">
-      <h3>Playlists</h3>
-      <button @click="openPlaylistModal(null)">Create Playlist</button>
-      <ul class="playlist-list">
-        <li
-          @click="setActivePlaylist(null)"
-          :class="{ active: activePlaylistId === null }"
-        >
-          All Tracks
-        </li>
-        <li
-          v-for="playlist in playlists"
-          :key="playlist.id"
-          @click="setActivePlaylist(playlist.id)"
-          :class="{ active: activePlaylistId === playlist.id }"
-        >
-          {{ playlist.name }}
-          <button @click.stop="openPlaylistModal(playlist)">Edit</button>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Main Content -->
-    <div class="jukebox-view">
-      <h1>Jukebox</h1>
-      <button @click="pickFiles">Add Tracks</button>
-      <div v-if="filteredTracks.length">
-        <h2>Tracks</h2>
-        <ul>
+  <div class="jukebox-container">
+    <div class="jukebox-layout">
+      <!-- Playlist Sidebar -->
+      <div class="playlist-sidebar">
+        <div class="sidebar-header">
+          <h3>Playlists</h3>
+          <button @click="openPlaylistModal(null)" class="btn-create-playlist">+</button>
+        </div>
+        <ul class="playlist-list">
           <li
-            v-for="track in filteredTracks"
-            :key="track.id"
-            :style="{ '--track-color': track.color || 'transparent' }"
-            class="track-item"
+            @click="setActivePlaylist(null)"
+            :class="{ active: activePlaylistId === null }"
+            class="playlist-item"
           >
-            <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }"></div>
-            <div class="track-info">
-              <span class="track-title">{{ track.title }}</span>
-              <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
-            </div>
-            <button @click="openAddToPlaylistModal(track)">Add to Playlist</button>
-            <button @click="playTrack(track)">Play</button>
+            All Tracks
           </li>
         </ul>
+        <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
+          <template #item="{ element: playlist }">
+            <li
+              @click="setActivePlaylist(playlist.id)"
+              :class="{ active: activePlaylistId === playlist.id }"
+              class="playlist-item"
+            >
+              <span class="playlist-name">{{ playlist.name }}</span>
+              <div class="playlist-actions">
+                <button @click.stop="openPlaylistModal(playlist)">Edit</button>
+                <button @click.stop="removePlaylist(playlist.id)" class="btn-remove">×</button>
+              </div>
+            </li>
+          </template>
+        </draggable>
+      </div>
+
+      <!-- Main Content -->
+      <div class="jukebox-view">
+        <div class="view-header">
+          <button @click="pickFiles" class="btn-add-tracks">Add Tracks</button>
+        </div>
+
+        <JukeboxPlayer
+          :track="currentTrack"
+          :is-playing="isPlaying"
+          :current-time="currentTime"
+          :duration="duration"
+          :volume="volume"
+          @toggle-play="togglePlay"
+          @next="playNext"
+          @prev="playPrev"
+          @seek="handleSeek"
+          @volumechange="handleVolumeChange"
+          @togglemute="toggleMute"
+        />
+
+        <div class="tracks-wrapper">
+          <div v-if="filteredTracks.length">
+            <draggable v-if="activePlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".track-item" item-key="id" @end="onTrackSortEnd">
+              <template #item="{ element: track }">
+                <li
+                  :style="{ '--track-color': track.color || 'transparent' }"
+                  class="track-item"
+                  :class="{ 'is-playing': currentTrack && currentTrack.id === track.id }"
+                  @click="playTrack(track)"
+                >
+                  <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }"></div>
+                  <div class="track-info">
+                    <span class="track-title">{{ track.title }}</span>
+                    <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
+                  </div>
+                  <div class="track-actions">
+                    <button @click.stop="openAddToPlaylistModal(track)">Add to Playlist</button>
+                    <button @click.stop="removeTrack(track)" class="btn-remove">×</button>
+                  </div>
+                </li>
+              </template>
+            </draggable>
+            <ul v-else class="track-list">
+              <li
+                v-for="track in filteredTracks"
+                :key="track.id"
+                :style="{ '--track-color': track.color || 'transparent' }"
+                class="track-item"
+                :class="{ 'is-playing': currentTrack && currentTrack.id === track.id }"
+                @click="playTrack(track)"
+              >
+                <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }"></div>
+                <div class="track-info">
+                  <span class="track-title">{{ track.title }}</span>
+                  <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
+                </div>
+                <div class="track-actions">
+                  <button @click.stop="openAddToPlaylistModal(track)">Add to Playlist</button>
+                  <button @click.stop="removeTrack(track)" class="btn-remove">×</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div v-else class="no-tracks">
+            <p>No tracks to display. Add some tracks to get started!</p>
+          </div>
+        </div>
       </div>
     </div>
+
+    <audio ref="audioRef" @timeupdate="onTimeUpdate" @ended="playNext" @loadedmetadata="onLoadedMetadata"></audio>
 
     <PlaylistEditor
       v-model="isPlaylistModalOpen"
       :playlist="playlistToEdit"
+      @seek="handleSeek"
     />
     <AddToPlaylistModal
       v-model="isAddToPlaylistModalOpen"
       :track="trackToAddToPlaylist"
     />
-
-    <JukeboxPlayer
-      :track="currentTrack"
-      :is-playing="isPlaying"
-      :current-time="currentTime"
-      :duration="duration"
-      @toggle-play="togglePlay"
-      @next="playNext"
-      @prev="playPrev"
-      @seek="handleSeek"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import draggable from 'vuedraggable';
 import { pickAudioFiles, getFileFromHandle, getAudioMetadata, extractTrackMetadata } from '@/jukebox/FileSystemUtils';
-import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, putJukeboxFile, getJukeboxFile } from '@/jukebox/stores';
-import { generateId } from '@/utils/storage';
+import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, getJukeboxFile, deleteJukeboxFile } from '@/jukebox/stores';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
@@ -88,6 +135,11 @@ const filesStore = useJukeboxFilesStore();
 
 const tracks = tracksStore.items;
 const playlists = playlistsStore.items;
+
+const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
+watch(playlists, (newPlaylists) => {
+  sortedPlaylists.value = [...newPlaylists].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}, { immediate: true, deep: true });
 
 const activePlaylistId = ref<string | null>(null);
 
@@ -103,7 +155,8 @@ const currentTrack = ref<JukeboxTrack | null>(null);
 const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
-const playerHeight = ref('120px'); // To prevent content from hiding behind fixed player
+const volume = ref(1);
+const lastVolume = ref(1);
 
 function openPlaylistModal(playlist: JukeboxPlaylist | null) {
   playlistToEdit.value = playlist;
@@ -119,6 +172,37 @@ function setActivePlaylist(playlistId: string | null) {
   activePlaylistId.value = playlistId;
 }
 
+async function removePlaylist(playlistId: string) {
+  if (activePlaylistId.value === playlistId) {
+    activePlaylistId.value = null;
+  }
+  await playlistsStore.remove(playlistId);
+}
+
+async function removeTrack(track: JukeboxTrack) {
+  // 1. Remove file handle
+  if (track.fileId) {
+    try {
+      await deleteJukeboxFile(track.fileId);
+    } catch (e) {
+      console.error(`Failed to delete file handle for track ${track.id}:`, e);
+    }
+  }
+
+  // 2. Remove track from all playlists
+  const updates = playlists.value.map(playlist => {
+    if (playlist.trackIds.includes(track.id)) {
+      const newTrackIds = playlist.trackIds.filter(tid => tid !== track.id);
+      return playlistsStore.update(playlist.id, { ...playlist, trackIds: newTrackIds });
+    }
+    return Promise.resolve();
+  });
+  await Promise.all(updates);
+
+  // 3. Remove track itself
+  await tracksStore.remove(track.id);
+}
+
 const filteredTracks = computed(() => {
   if (!activePlaylistId.value) {
     return tracks.value;
@@ -127,8 +211,35 @@ const filteredTracks = computed(() => {
   if (!activePlaylist) {
     return [];
   }
-  return tracks.value.filter((track: JukeboxTrack) => activePlaylist.trackIds.includes(track.id));
+  // Preserve sort order from playlist
+  return activePlaylist.trackIds.map(trackId => tracks.value.find(t => t.id === trackId)).filter(Boolean) as JukeboxTrack[];
 });
+
+const draggableTracks = ref<JukeboxTrack[]>([]);
+watch(filteredTracks, (newTracks) => {
+  draggableTracks.value = [...newTracks];
+}, { immediate: true });
+
+async function onPlaylistSortEnd() {
+  // The v-model on draggable component already updated the local `sortedPlaylists` ref array order.
+  // Now, we need to persist this new order by updating the 'sortOrder' field.
+  for (let i = 0; i < sortedPlaylists.value.length; i++) {
+    const playlist = sortedPlaylists.value[i];
+    if (playlist.sortOrder !== i) {
+      await playlistsStore.update(playlist.id, { sortOrder: i });
+    }
+  }
+}
+
+async function onTrackSortEnd() {
+  if (!activePlaylistId.value) return;
+
+  const activePlaylist = playlists.value.find(p => p.id === activePlaylistId.value);
+  if (activePlaylist) {
+    const newTrackIds = draggableTracks.value.map(t => t.id);
+    await playlistsStore.update(activePlaylist.id, { trackIds: newTrackIds });
+  }
+}
 
 function isFileSystemFileHandle(obj: any): obj is FileSystemFileHandle {
   return obj && typeof obj === 'object' && typeof obj.getFile === 'function' && typeof obj.name === 'string';
@@ -225,7 +336,17 @@ async function playTrack(track: JukeboxTrack) {
 }
 
 function togglePlay() {
-  if (!audioRef.value || !currentTrack.value) return;
+  if (!audioRef.value) return;
+
+  // If no track is selected, play the first one in the list.
+  if (!currentTrack.value) {
+    if (filteredTracks.value.length > 0) {
+      playTrack(filteredTracks.value[0]);
+    }
+    return;
+  }
+
+  // If a track is selected, toggle play/pause.
   if (isPlaying.value) {
     audioRef.value.pause();
   } else {
@@ -255,6 +376,40 @@ function playPrev() {
 function handleSeek(newTime: number) {
   if (audioRef.value) {
     audioRef.value.currentTime = newTime;
+    currentTime.value = newTime;
+  }
+}
+
+function onTimeUpdate() {
+  if (audioRef.value) {
+    currentTime.value = audioRef.value.currentTime;
+    isPlaying.value = !audioRef.value.paused;
+  }
+}
+
+function onLoadedMetadata() {
+  if (audioRef.value) {
+    duration.value = audioRef.value.duration;
+  }
+}
+
+function handleVolumeChange(newVolume: number) {
+  volume.value = newVolume;
+  if (newVolume > 0) {
+    lastVolume.value = newVolume;
+  }
+  if (audioRef.value) {
+    audioRef.value.volume = newVolume;
+  }
+  localStorage.setItem('jukebox-volume', newVolume.toString());
+}
+
+function toggleMute() {
+  if (volume.value > 0) {
+    lastVolume.value = volume.value;
+    handleVolumeChange(0);
+  } else {
+    handleVolumeChange(lastVolume.value > 0 ? lastVolume.value : 1);
   }
 }
 
@@ -270,83 +425,167 @@ function setupAudioEvents() {
 onMounted(() => {
   tracksStore.load();
   playlistsStore.load();
+  filesStore.load();
+  const savedVolume = localStorage.getItem('jukebox-volume');
+  if (savedVolume !== null) {
+    const parsedVolume = parseFloat(savedVolume);
+    volume.value = parsedVolume;
+    if (parsedVolume > 0) {
+      lastVolume.value = parsedVolume;
+    }
+  }
+  if (audioRef.value) {
+    audioRef.value.volume = volume.value;
+  }
   setupAudioEvents();
 });
 </script>
 
 <style scoped>
 .jukebox-container {
+  height: calc(100vh - var(--header-height)); /* Adjust 60px based on your header height */
   display: flex;
-  gap: 2em;
-  padding-bottom: 120px;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.jukebox-layout {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
 }
 
 .playlist-sidebar {
-  width: 200px;
+  width: 250px;
   flex-shrink: 0;
   border-right: 1px solid #ccc;
-  padding-right: 2em;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #f9f9f9;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+}
+
+.btn-create-playlist {
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .playlist-list {
   list-style: none;
   padding: 0;
-  margin-top: 1em;
+  margin: 0;
 }
 
-.playlist-list li {
-  padding: 0.5em;
-  cursor: pointer;
-  border-radius: 4px;
-  margin-bottom: 0.5em;
+.playlist-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s;
 }
 
-.playlist-list li:hover {
-  background-color: #f0f0f0;
+.playlist-item:hover {
+  background-color: #eee;
 }
 
-.playlist-list li.active {
-  background-color: #e0e0f0;
+.playlist-list .sortable-ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
+}
+
+.playlist-item.active {
+  background-color: #e0e0e0;
   font-weight: bold;
+}
+
+.playlist-name {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.playlist-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
 }
 
 .jukebox-view {
   flex-grow: 1;
+  padding: 1rem 1rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.tracks-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.track-list {
+  list-style: none;
+  padding: 0;
+}
+
+.track-list .sortable-ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
 }
 
 .track-item {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
-  padding: 8px;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  border-left: 8px solid var(--track-color);
-  transition: background-color 0.3s;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-left: 5px solid var(--track-color, #ccc);
+  cursor: pointer;
 }
 
-.track-item:hover {
-  background-color: #f0f0f0;
+.track-item.is-playing {
+  background-color: #e6f7ff;
+  border-left-color: #1890ff;
 }
 
 .track-artwork {
   width: 50px;
   height: 50px;
-  margin-right: 12px;
+  flex-shrink: 0;
   background-size: cover;
   background-position: center;
-  background-color: #e0e0e0;
+  background-color: #eee;
   border-radius: 4px;
-  flex-shrink: 0;
+  margin-right: 1rem;
 }
 
 .track-info {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
 }
 
 .track-title {
@@ -354,11 +593,33 @@ onMounted(() => {
 }
 
 .track-artist {
-  font-size: 0.9em;
-  color: #555;
+  font-size: 0.9rem;
+  color: #666;
 }
 
-button {
-  margin-left: 12px;
+.track-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btn-remove:hover {
+  color: #dc3545;
+}
+
+.no-tracks {
+  text-align: center;
+  margin-top: 4rem;
+  color: #888;
 }
 </style> 
