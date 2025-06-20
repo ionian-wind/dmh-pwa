@@ -5,7 +5,7 @@
       <div class="playlist-sidebar">
         <div class="sidebar-header">
           <h3>Playlists</h3>
-          <button @click="openPlaylistModal(null)" class="btn-create-playlist">+</button>
+          <button @click="openPlaylistModal(null)" class="btn-create-playlist"><i class="si si-plus"></i></button>
         </div>
         <ul class="playlist-list">
           <li
@@ -25,8 +25,8 @@
             >
               <span class="playlist-name">{{ playlist.name }}</span>
               <div class="playlist-actions">
-                <button @click.stop="openPlaylistModal(playlist)">Edit</button>
-                <button @click.stop="removePlaylist(playlist.id)" class="btn-remove">×</button>
+                <button @click.stop="openPlaylistModal(playlist)" class="btn-edit"><i class="si si-pencil"></i></button>
+                <button @click.stop="removePlaylist(playlist.id)" class="btn-remove"><i class="si si-x"></i></button>
               </div>
             </li>
           </template>
@@ -36,7 +36,7 @@
       <!-- Main Content -->
       <div class="jukebox-view">
         <div class="view-header">
-          <button @click="pickFiles" class="btn-add-tracks">Add Tracks</button>
+          <button @click="pickFiles" class="btn-add-tracks"><i class="si si-plus"></i> Add Tracks</button>
         </div>
 
         <JukeboxPlayer
@@ -69,8 +69,8 @@
                     <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
                   </div>
                   <div class="track-actions">
-                    <button @click.stop="openAddToPlaylistModal(track)">Add to Playlist</button>
-                    <button @click.stop="removeTrack(track)" class="btn-remove">×</button>
+                    <button @click.stop="openAddToPlaylistModal(track)" class="btn-icon-text"><i class="si si-plus"></i> Add to Playlist</button>
+                    <button @click.stop="removeTrack(track)" class="btn-remove"><i class="si si-x"></i></button>
                   </div>
                 </li>
               </template>
@@ -90,8 +90,8 @@
                   <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
                 </div>
                 <div class="track-actions">
-                  <button @click.stop="openAddToPlaylistModal(track)">Add to Playlist</button>
-                  <button @click.stop="removeTrack(track)" class="btn-remove">×</button>
+                  <button @click.stop="openAddToPlaylistModal(track)" class="btn-icon-text"><i class="si si-plus"></i> Add to Playlist</button>
+                  <button @click.stop="removeTrack(track)" class="btn-remove"><i class="si si-x"></i></button>
                 </div>
               </li>
             </ul>
@@ -615,6 +615,19 @@ onMounted(() => {
 
 .btn-remove:hover {
   color: #dc3545;
+}
+
+.btn-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1rem;
+  color: #888;
+}
+
+.btn-edit:hover {
+  color: var(--primary-color);
 }
 
 .no-tracks {

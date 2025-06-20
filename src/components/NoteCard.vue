@@ -55,6 +55,7 @@ function toggleExpand() { expanded.value = !expanded.value; }
     </div>
     <template #actions>
       <Button v-if="clamped" size="small" variant="secondary" @click="toggleExpand">
+        <i :class="['si', expanded ? 'si-arrow-up' : 'si-arrow-down']"></i>
         {{ expanded ? 'Collapse' : 'Expand' }}
       </Button>
     </template>
@@ -117,5 +118,9 @@ function toggleExpand() { expanded.value = !expanded.value; }
 }
 .tag.clickable:hover {
   color: var(--color-primary);
+}
+
+.si {
+  margin-right: 0.5em;
 }
 </style> 

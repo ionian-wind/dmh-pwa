@@ -6,9 +6,9 @@
     </div>
     <div class="player-controls-bottom">
       <div class="controls">
-        <button @click="onPrev">&laquo;</button>
-        <button @click="onTogglePlay">{{ isPlaying ? '❚❚' : '►' }}</button>
-        <button @click="onNext">&raquo;</button>
+        <button @click="onPrev"><i class="si si-step-backward"></i></button>
+        <button @click="onTogglePlay"><i :class="isPlaying ? 'si si-pause' : 'si si-play'"></i></button>
+        <button @click="onNext"><i class="si si-step-forward"></i></button>
       </div>
       <div class="progress-bar">
         <span>{{ formatTime(currentTime) }}</span>
@@ -28,9 +28,8 @@
           @mouseenter="showVolumeSlider"
           @mouseleave="startHideTimer"
         >
-          <span v-if="volume > 0.5">🔊</span>
-          <span v-else-if="volume > 0">🔉</span>
-          <span v-else>🔇</span>
+          <i v-if="volume > 0" class="si si-volume-up"></i>
+          <i v-else class="si si-volume-mute"></i>
         </button>
         <div 
           v-show="isVolumeSliderVisible" 
@@ -185,12 +184,20 @@ function formatTime(seconds: number): string {
   width: 8px;
   height: 100px;
 }
-.volume-button {
+.controls button, .volume-button {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2rem;
   padding: 0;
   line-height: 1;
+  font-size: 1.2rem;
+  width: 28px;
+  height: 28px;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.controls button:hover, .volume-button:hover {
+  color: var(--primary-color);
 }
 </style> 

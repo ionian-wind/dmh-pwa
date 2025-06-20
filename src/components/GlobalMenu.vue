@@ -69,8 +69,9 @@ onMounted(() => {
         class="clear-module-btn"
         @click="setCurrentModuleFilter('none')"
         v-if="moduleStore.currentModuleFilter !== 'none'"
+        :title="t('app.clear')"
       >
-        {{ t('app.clear') }}
+        <i class="si si-x"></i>
       </Button>
     </div>
     <div class="menu-items">
@@ -118,7 +119,16 @@ onMounted(() => {
 }
 
 .clear-module-btn {
-  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.clear-module-btn:hover {
+  color: #ff5252;
 }
 
 .menu-items {

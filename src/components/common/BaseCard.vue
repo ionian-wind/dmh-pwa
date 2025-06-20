@@ -15,9 +15,15 @@
         <slot name="actions" />
       </div>
       <div class="base-card-actions-right">
-        <Button v-if="showView" variant="link" size="small" @click="$emit('view')">View Details</Button>
-        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">✏️</Button>
-        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">🗑️</Button>
+        <Button v-if="showView" variant="link" size="small" @click="$emit('view')" title="View Details">
+          <i class="si si-eye"></i>
+        </Button>
+        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">
+          <i class="si si-pencil"></i>
+        </Button>
+        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">
+          <i class="si si-trash"></i>
+        </Button>
       </div>
     </div>
   </div>

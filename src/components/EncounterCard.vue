@@ -62,7 +62,9 @@ function handleRunCombat() {
       <span class="value">{{ monstersCount }}</span>
     </div>
     <template #actions>
-      <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">⚔️</Button>
+      <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">
+        <i class="si si-swords"></i>
+      </Button>
     </template>
   </BaseCard>
 </template>

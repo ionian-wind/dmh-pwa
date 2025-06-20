@@ -105,7 +105,9 @@ onUnmounted(() => {
       <div class="modal-dialog">
         <div class="modal-header">
           <h2>{{ title }}</h2>
-          <Button v-if="showClose" variant="link" @click="$emit('cancel')" aria-label="Close">&times;</Button>
+          <Button v-if="showClose" variant="link" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
+            <i class="si si-x"></i>
+          </Button>
         </div>
         <form @submit.prevent="emit('submit')" class="modal-form">
           <div class="modal-scrollable">
@@ -169,6 +171,18 @@ onUnmounted(() => {
   color: var(--color-text);
 }
 
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  padding: 0;
+  cursor: pointer;
+  color: #888;
+}
+
+.btn-close-modal:hover {
+  color: #333;
+}
 
 .modal-form {
   display: flex;

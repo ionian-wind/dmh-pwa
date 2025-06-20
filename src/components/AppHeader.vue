@@ -63,8 +63,8 @@ onUnmounted(() => {
           :title="isFullscreen ? 'Exit full page' : 'Open app in full page'"
           :aria-label="isFullscreen ? 'Exit full page' : 'Open app in full page'"
         >
-          <span v-if="!isFullscreen">⛶</span>
-          <span v-else>🗖</span>
+          <i v-if="!isFullscreen" class="si si-fullscreen"></i>
+          <i v-else class="si si-fullscreen-exit"></i>
         </Button>
         <LanguageSwitcher />
 
@@ -104,7 +104,7 @@ onUnmounted(() => {
 .fullscreen-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   cursor: pointer;
   padding: 0 0.5rem;
   color: var(--color-text, #222);
