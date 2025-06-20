@@ -45,6 +45,10 @@ const ALL_STORE_NAMES = [
   'noteTypes',
   // Indexation stores
   'indexations_mentions',
+  // Jukebox stores
+  'jukebox_playlists',
+  'jukebox_tracks',
+  'jukebox_files'
 ];
 
 async function openDB(storeName: string): Promise<IDBPDatabase> {
@@ -107,6 +111,14 @@ export interface BaseStore<T extends WithMetadata> {
 }
 
 export function deepUnwrap(obj: any): any {
+  // Do not unwrap FileSystemFileHandle or FileSystemDirectoryHandle
+  if (
+    obj &&
+    (obj.constructor?.name === 'FileSystemFileHandle' ||
+     obj.constructor?.name === 'FileSystemDirectoryHandle')
+  ) {
+    return obj;
+  }
   if (Array.isArray(obj)) {
     return obj.map(deepUnwrap);
   }
@@ -123,8 +135,17 @@ export function deepUnwrap(obj: any): any {
   return obj;
 }
 
+// This cache will ensure that we create only one store instance per store name.
+const storeCache: Map<string, BaseStore<any>> = new Map();
+
 export function useStore<T extends WithMetadata>(options: StorageOptions): BaseStore<T> {
   const { storeName, validationSchema } = options;
+
+  // If a store for this name already exists in the cache, return it.
+  if (storeCache.has(storeName)) {
+    return storeCache.get(storeName) as BaseStore<T>;
+  }
+
   const items = ref<any[]>([]) as unknown as Ref<T[]>;
   const isLoaded: Ref<boolean> = ref(false);
   const error: Ref<Error | null> = ref(null);
@@ -187,7 +208,7 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
     return [...items.value].sort((a, b) => b.updatedAt - a.updatedAt);
   });
 
-  return {
+  const store: BaseStore<T> = {
     items,
     isLoaded,
     error,
@@ -198,6 +219,11 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
     remove,
     load,
   };
+
+  // Add the new store to the cache before returning it.
+  storeCache.set(storeName, store);
+
+  return store;
 }
 
 // --- Indexation Store Logic (moved from createIndexationStore.ts) ---

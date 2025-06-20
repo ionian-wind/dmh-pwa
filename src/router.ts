@@ -14,6 +14,7 @@ import CombatView from '@/views/CombatView.vue';
 import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
+import JukeboxView from '@/jukebox/JukeboxView.vue';
 import { useNavigationStore } from '@/stores/navigation';
 
 const router = createRouter({
@@ -102,6 +103,13 @@ const router = createRouter({
       path: '/modules/:id',
       name: 'module-detail',
       component: ModuleView
+    },
+    // Jukebox route
+    {
+      path: '/jukebox',
+      name: 'jukebox',
+      component: JukeboxView,
+      meta: { exact: true }
     },
     // 404 route
     {

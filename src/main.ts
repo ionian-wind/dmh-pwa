@@ -1,3 +1,6 @@
+import { Buffer } from 'buffer';
+window.Buffer = Buffer;
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { PiniaSharedState } from 'pinia-shared-state'
