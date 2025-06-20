@@ -96,6 +96,7 @@ const handleSubmit = async (editedNote: Note) => {
   if (!note.value) return;
   await noteStore.update(note.value.id, editedNote);
   isEditing.value = false;
+  updateNoteFromStore();
 };
 
 const handleCancel = () => {

@@ -6,6 +6,7 @@ import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
+import { cropTitle } from '@/utils/cropTitle';
 
 interface EntityRef {
   kind: string;
@@ -40,7 +41,7 @@ function getEntityDisplay(entity: EntityRef) {
   switch (entity.kind) {
     case 'note': {
       const n = noteStore.getById(entity.id);
-      label = n ? n.title || n.id : entity.id;
+      label = n ? n.title || entity.id : entity.id;
       break;
     }
     case 'module': {
@@ -66,10 +67,7 @@ function getEntityDisplay(entity: EntityRef) {
     default:
       label = entity.id;
   }
-  if (label.length > 25) {
-    return label.slice(0, 25) + '…';
-  }
-  return label;
+  return cropTitle(label);
 }
 
 const groupedEntities = computed(() => {

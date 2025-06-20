@@ -35,6 +35,11 @@ const editedNote = ref<Note>({
 
 const lastNoteId = ref<string | null>(null);
 
+const noteContent = computed({
+  get: () => editedNote.value.content,
+  set: (val) => { editedNote.value.content = val; }
+});
+
 watch(() => props.note, (newNote) => {
   if (newNote && newNote.id !== lastNoteId.value) {
     editedNote.value = {
@@ -133,7 +138,8 @@ const handleCancel = () => {
       <h3>Content</h3>
       <div class="form-group">
         <MarkdownEditor
-          v-model="editedNote.content"
+          v-model="noteContent"
+          enableMentions
           :rows="10"
           placeholder="Write your note here... Use [[type:]] to link entities"
           className="content-editor"

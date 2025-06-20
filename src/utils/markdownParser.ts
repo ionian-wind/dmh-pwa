@@ -8,6 +8,7 @@ import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
+import { cropTitle } from './cropTitle';
 
 // --- Mention plugin for markdown-it ---
 const mentionRegex = /\[\[([a-zA-Z]+):([a-zA-Z0-9_-]+)(?:\|([^\]]+))?\]\]/g;
