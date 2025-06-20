@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import RollButton from '@/components/RollButton.vue'
+import JukeboxButton from '@/components/JukeboxButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'
 import MentionModalStack from '@/components/common/MentionModalStack.vue'
@@ -23,8 +24,11 @@ const handleRollClick = (event: MouseEvent) => {
       </RouterView>
     </main>
     
-    <!-- Floating Action Button -->
-    <RollButton @click="handleRollClick" />
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+      <JukeboxButton />
+      <RollButton @click="handleRollClick" />
+    </div>
     
     <!-- PWA Components -->
     <PWAInstallPrompt />
@@ -68,6 +72,15 @@ body {
 
 .main-content {
   flex: 1;
+}
+
+.fab-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 1rem;
+  z-index: 1000;
 }
 
 /* Transitions */

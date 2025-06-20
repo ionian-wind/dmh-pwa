@@ -64,8 +64,12 @@ const handleGoBack = () => {
           <slot name="sub" />
         </div>
         <div class="header-actions">
-          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">✏️</Button>
-          <Button variant="danger" @click="handleDelete" title="Delete">🗑️</Button>
+          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">
+            <i class="si si-pencil"></i>
+          </Button>
+          <Button variant="danger" @click="handleDelete" title="Delete">
+            <i class="si si-trash"></i>
+          </Button>
         </div>
       </div>
 

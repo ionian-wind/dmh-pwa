@@ -127,7 +127,9 @@ function handleTagClick(tag: string) {
 <template>
   <div class="view-list">
     <div class="view-header notes-header-row">
-      <Button @click="addNote">+</Button>
+      <Button @click="addNote" title="Create Note">
+        <i class="si si-plus"></i>
+      </Button>
       <div class="search-input-wrapper">
         <input
           v-model="searchQuery"
@@ -137,7 +139,9 @@ function handleTagClick(tag: string) {
         >
         <span v-if="tagFilter" class="tag-chip">
           #{{ tagFilter }}
-          <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">&times;</button>
+          <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
+            <i class="si si-x"></i>
+          </button>
         </span>
       </div>
     </div>
@@ -154,8 +158,8 @@ function handleTagClick(tag: string) {
           :key="note.id"
           :note="note"
           :module-name="note.moduleId ? moduleStore.items.find((m: Module) => m.id === note.moduleId)?.name : undefined"
-          @view="note => $router.push(`/notes/${note.id}`)"
-          @edit="note => { editingNote = note as Note; showEditor = true; }"
+          @view="(note: Note) => $router.push(`/notes/${note.id}`)"
+          @edit="(note: Note) => { editingNote = note as Note; showEditor = true; }"
           @delete="handleDelete"
           @tag-click="handleTagClick"
         />

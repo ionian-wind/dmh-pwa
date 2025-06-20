@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import Button from '@/components/common/Button.vue';
 
 const isOnline = ref(navigator.onLine);
 const isStandalone = ref(false);
@@ -51,18 +52,22 @@ onMounted(() => {
     <!-- Update Prompt -->
     <div v-if="showUpdatePrompt" class="pwa-update-prompt">
       <div class="pwa-update-content">
-        <div class="pwa-update-icon">🔄</div>
+        <div class="pwa-update-icon">
+          <i class="si si-refresh"></i>
+        </div>
         <div class="pwa-update-text">
           <h3>Update Available</h3>
           <p>A new version of D&D Notes Manager is available.</p>
         </div>
         <div class="pwa-update-actions">
-          <button @click="updateApp" class="pwa-update-btn">
-            Update Now
-          </button>
-          <button @click="dismissUpdate" class="pwa-dismiss-btn">
-            Later
-          </button>
+          <Button @click="updateApp" variant="success" size="small">
+            <i class="si si-download"></i>
+            <span>Update Now</span>
+          </Button>
+          <Button @click="dismissUpdate" variant="secondary" size="small">
+            <i class="si si-close"></i>
+            <span>Later</span>
+          </Button>
         </div>
       </div>
     </div>
@@ -70,11 +75,11 @@ onMounted(() => {
     <!-- Status Indicators -->
     <div class="pwa-status-indicators">
       <div v-if="!isOnline" class="pwa-status-item offline">
-        <span class="pwa-status-icon">📡</span>
+        <i class="si si-signal pwa-status-icon"></i>
         <span class="pwa-status-text">Offline Mode</span>
       </div>
       <div v-if="isStandalone" class="pwa-status-item standalone">
-        <span class="pwa-status-icon">📱</span>
+        <i class="si si-mobile pwa-status-icon"></i>
         <span class="pwa-status-text">App Mode</span>
       </div>
     </div>
@@ -111,6 +116,11 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.pwa-update-actions .si,
+.pwa-status-item .si {
+  margin-right: 0.5em;
+}
+
 .pwa-update-text {
   flex: 1;
   min-width: 0;
@@ -133,37 +143,6 @@ onMounted(() => {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
-}
-
-.pwa-update-btn {
-  background: var(--color-success, #28a745);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.pwa-update-btn:hover {
-  background: var(--color-success-dark, #1e7e34);
-}
-
-.pwa-dismiss-btn {
-  background: transparent;
-  color: var(--color-text-light);
-  border: 1px solid var(--color-border);
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.pwa-dismiss-btn:hover {
-  background: var(--color-background-soft);
-  color: var(--color-text);
 }
 
 .pwa-status-indicators {

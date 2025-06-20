@@ -39,7 +39,7 @@ function toggleExpand() { expanded.value = !expanded.value; }
       <span v-if="moduleName" class="module-badge">{{ moduleName }}</span>
     </template>
     <div v-if="note.content?.length > 0 || note.tags?.length > 0">
-      <div :class="['note-card-content', { clamped: clamped && !expanded }]">
+      <div ref="contentRef" :class="['note-card-content', { clamped: clamped && !expanded }]">
         <Markdown :content="note.content" />
       </div>
       <div class="note-card-footer">
@@ -54,9 +54,14 @@ function toggleExpand() { expanded.value = !expanded.value; }
       </div>
     </div>
     <template #actions>
-      <Button v-if="clamped" size="small" variant="secondary" @click="toggleExpand">
-        <i :class="['si', expanded ? 'si-arrow-up' : 'si-arrow-down']"></i>
-        {{ expanded ? 'Collapse' : 'Expand' }}
+      <Button
+        v-if="clamped"
+        size="small"
+        variant="secondary"
+        @click="toggleExpand"
+        :title="expanded ? 'Collapse' : 'Expand'"
+      >
+        <i :class="['si', expanded ? 'si-chevron-up' : 'si-chevron-down']"></i>
       </Button>
     </template>
   </BaseCard>
@@ -90,10 +95,6 @@ function toggleExpand() { expanded.value = !expanded.value; }
 
 .note-card-content p {
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .note-card-footer {
@@ -121,6 +122,6 @@ function toggleExpand() { expanded.value = !expanded.value; }
 }
 
 .si {
-  margin-right: 0.5em;
+  margin-right: 0;
 }
 </style> 

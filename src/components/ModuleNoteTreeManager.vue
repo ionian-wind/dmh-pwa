@@ -323,8 +323,12 @@ function onRootNodeMove(evt: any) {
 <template>
   <div class="note-tree-manager">
     <div class="tree-controls">
-      <Button @click="addNode()" size="small" variant="link">Add Root Node</Button>
-      <Button @click="saveTree" size="small" variant="link">Save Tree</Button>
+      <Button @click="addNode()" size="small" variant="link" title="Add Root Node">
+        <i class="si si-plus"></i> Add Root Node
+      </Button>
+      <Button @click="saveTree" size="small" variant="link" title="Save Tree">
+        <i class="si si-disk"></i> Save Tree
+      </Button>
     </div>
     <div 
       class="tree-root"
@@ -383,6 +387,13 @@ function onRootNodeMove(evt: any) {
 
 .tree-controls {
   margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.tree-controls .si {
+  margin-right: 0.5em;
+  vertical-align: middle;
 }
 
 .tree-root {

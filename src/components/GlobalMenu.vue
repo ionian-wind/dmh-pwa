@@ -10,7 +10,6 @@ const { t } = useI18n();
 const moduleStore = useModuleStore();
 const router = useRouter();
 
-const currentModule = computed(() => moduleStore.currentModule);
 const moduleOptions = computed(() => [
   { id: 'any', name: 'Any Module', value: 'any' },
   { id: 'none', name: 'No Module', value: 'none' },

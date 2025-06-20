@@ -91,7 +91,9 @@ const handlePartySelectorCancel = () => {
 <template>
   <div class="view-list">
     <div class="view-header">
-      <Button @click="handleCreate">+</Button>
+      <Button @click="handleCreate" title="Create Encounter">
+        <i class="si si-plus"></i>
+      </Button>
     </div>
 
     <div v-if="encounterStore.filtered.length === 0" class="view-empty">

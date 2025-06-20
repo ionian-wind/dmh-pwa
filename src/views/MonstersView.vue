@@ -76,7 +76,9 @@ const deleteMonster = async (monsterId: string) => {
 <template>
   <div class="view-list">
     <div class="view-header">
-      <Button @click="handleCreateClick">+</Button>
+      <Button @click="handleCreateClick" title="Create Monster">
+        <i class="si si-plus"></i>
+      </Button>
     </div>
 
     <div v-if="monsterStore.filtered.length === 0" class="view-empty">

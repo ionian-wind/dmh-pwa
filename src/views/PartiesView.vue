@@ -61,7 +61,9 @@ const deleteParty = async (party: Party) => {
 <template>
   <div class="view-list">
     <div class="view-header">
-      <Button @click="handleCreateClick">+</Button>
+      <Button @click="handleCreateClick" title="Create Party">
+        <i class="si si-plus"></i>
+      </Button>
     </div>
 
     <div v-if="partyStore.filtered.length === 0" class="view-empty">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import Button from '@/components/common/Button.vue';
 
 const showInstallPrompt = ref(false);
 const deferredPrompt = ref<any>(null);
@@ -71,12 +72,14 @@ onMounted(() => {
         <p>Add this app to your home screen for quick access and offline use.</p>
       </div>
       <div class="pwa-install-actions">
-        <button @click="installApp" class="pwa-install-btn">
-          Install
-        </button>
-        <button @click="dismissPrompt" class="pwa-dismiss-btn">
-          Not now
-        </button>
+        <Button @click="installApp" variant="primary" size="small">
+          <i class="si si-download"></i>
+          <span>Install</span>
+        </Button>
+        <Button @click="dismissPrompt" variant="secondary" size="small">
+          <i class="si si-close"></i>
+          <span>Not now</span>
+        </Button>
       </div>
     </div>
   </div>
@@ -135,6 +138,10 @@ onMounted(() => {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+}
+
+.pwa-install-actions .si {
+  margin-right: 0.5em;
 }
 
 .pwa-install-btn {

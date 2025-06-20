@@ -221,13 +221,19 @@ watch(filteredTracks, (newTracks) => {
 }, { immediate: true });
 
 async function onPlaylistSortEnd() {
-  // The v-model on draggable component already updated the local `sortedPlaylists` ref array order.
-  // Now, we need to persist this new order by updating the 'sortOrder' field.
-  for (let i = 0; i < sortedPlaylists.value.length; i++) {
-    const playlist = sortedPlaylists.value[i];
-    if (playlist.sortOrder !== i) {
-      await playlistsStore.update(playlist.id, { sortOrder: i });
+  const updatePromises = sortedPlaylists.value.map((playlist, index) => {
+    if (playlist.sortOrder !== index) {
+      // Create a plain object for the update to avoid passing proxies
+      return playlistsStore.update(playlist.id, { sortOrder: index });
     }
+    return null;
+  }).filter(Boolean);
+
+  if (updatePromises.length > 0) {
+    await Promise.all(updatePromises);
+    // After all updates are done, reload from the store to ensure consistency
+    // This is a simple way to get the fresh, correctly-sorted data back
+    await playlistsStore.load();
   }
 }
 

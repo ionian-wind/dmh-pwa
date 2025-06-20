@@ -31,6 +31,8 @@ interface Props {
   disabled?: boolean;
   /** Whether to hide when modals are open */
   hideOnModal?: boolean;
+  /** Whether the button should have static positioning */
+  static?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,7 +40,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'medium',
   variant: 'primary',
   disabled: false,
-  hideOnModal: true
+  hideOnModal: true,
+  static: false
 });
 
 const emit = defineEmits<{
@@ -55,7 +58,8 @@ const buttonClasses = computed(() => [
   `float-action-button--${props.variant}`,
   {
     'float-action-button--disabled': props.disabled,
-    'float-action-button--hidden': props.hideOnModal && isModalOpen.value
+    'float-action-button--hidden': props.hideOnModal && isModalOpen.value,
+    'float-action-button--static': props.static
   }
 ]);
 
@@ -90,6 +94,10 @@ const handleClick = (event: MouseEvent) => {
   justify-content: center;
   font-size: 1.5rem;
   transition: all 0.3s ease;
+}
+
+.float-action-button--static {
+  position: static;
 }
 
 /* Hidden state */

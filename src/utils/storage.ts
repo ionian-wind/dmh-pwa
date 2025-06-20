@@ -169,9 +169,8 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
   // load();
 
   async function create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
-    const plainData = deepUnwrap(data);
     const newItem: T = {
-      ...plainData,
+      ...deepUnwrap(data),
       id: generateId(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -184,9 +183,12 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
   async function update(id: string, patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>): Promise<T> {
     const idx = items.value.findIndex(item => item.id === id);
     if (idx === -1) throw new Error('Item not found');
+
+    const plainOriginal = deepUnwrap(items.value[idx]);
     const plainPatch = deepUnwrap(patch);
+
     const updated: T = {
-      ...items.value[idx],
+      ...plainOriginal,
       ...plainPatch,
       updatedAt: Date.now(),
     };

@@ -58,7 +58,9 @@ const deleteModule = async (module: Module) => {
 <template>
   <div class="view-list">
     <div class="view-header">
-      <Button @click="handleCreateClick">+</Button>
+      <Button @click="handleCreateClick" title="Create Module">
+        <i class="si si-plus"></i>
+      </Button>
     </div>
 
     <div v-if="moduleStore.items.length === 0" class="view-empty">

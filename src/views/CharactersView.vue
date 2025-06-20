@@ -1,7 +1,9 @@
 <template>
   <div class="view-list">
     <div class="view-header">
-      <Button @click="handleCreateClick">+</Button>
+      <Button @click="handleCreateClick" title="Create Character">
+        <i class="si si-plus"></i>
+      </Button>
     </div>
 
     <div v-if="characterStore.items.length === 0" class="view-empty">
@@ -12,7 +14,7 @@
       <div v-for="character in characterStore.items" :key="character.id" class="character-card">
         <CharacterCard
           :character="character"
-          @view="character => $router.push(`/characters/${character.id}`)"
+          @view="(character: PlayerCharacter) => $router.push(`/characters/${character.id}`)"
           @edit="() => handleEditClick(character)"
           @delete="() => deleteCharacter(character)"
         />

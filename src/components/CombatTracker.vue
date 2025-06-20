@@ -256,9 +256,15 @@ const getCombatantName = (combatantId: string) => {
     <div class="header">
       <h2>{{ encounter.name }} - Round {{ combat.currentRound }}</h2>
       <div class="controls">
-        <Button size="small" variant="secondary" @click="previousTurn">Previous</Button>
-        <Button size="small" variant="secondary" @click="nextTurn">Next</Button>
-        <Button size="small" variant="danger" @click="endCombat">End Combat</Button>
+        <Button size="small" variant="secondary" @click="previousTurn" title="Previous Turn">
+          <i class="si si-arrow-left"></i>
+        </Button>
+        <Button size="small" variant="secondary" @click="nextTurn" title="Next Turn">
+          <i class="si si-arrow-right"></i>
+        </Button>
+        <Button size="small" variant="danger" @click="endCombat" title="End Combat">
+          <i class="si si-close"></i>
+        </Button>
       </div>
     </div>
 
@@ -282,7 +288,7 @@ const getCombatantName = (combatantId: string) => {
             <div v-for="condition in availableConditions" :key="condition" class="condition-item">
               <ToggleSwitch
                 :model-value="selectedConditions[condition] || false"
-                @update:model-value="(value) => handleConditionToggle(currentCombatant!.id, condition, value)"
+                @update:model-value="(value: boolean) => handleConditionToggle(currentCombatant!.id, condition, value)"
               />
               <span class="condition-label">{{ condition }}</span>
             </div>
@@ -317,33 +323,17 @@ const getCombatantName = (combatantId: string) => {
     <div class="quick-actions" v-if="combat.status === 'active'">
       <h3>Quick Actions</h3>
       <div class="action-buttons">
-        <Button 
-          variant="secondary"
-          size="small"
-          @click="rollInitiative"
-        >
-          🎲 Roll Initiative
+        <Button variant="secondary" size="small" @click="rollInitiative" title="Roll Initiative">
+          <i class="si si-dice"></i> <span>Roll Initiative</span>
         </Button>
-        <Button 
-          variant="success"
-          size="small"
-          @click="healAll"
-        >
-          💚 Heal All
+        <Button variant="success" size="small" @click="healAll" title="Heal All">
+          <i class="si si-heart"></i> <span>Heal All</span>
         </Button>
-        <Button 
-          variant="secondary"
-          size="small"
-          @click="clearConditions(currentCombatant!.id)"
-        >
-          🧹 Clear All Conditions
+        <Button variant="secondary" size="small" @click="clearConditions(currentCombatant!.id)" title="Clear All Conditions">
+          <i class="si si-erase"></i> <span>Clear Conditions</span>
         </Button>
-        <Button 
-          :variant="autoAdvance ? 'primary' : 'secondary'"
-          size="small"
-          @click="toggleAutoAdvance"
-        >
-          {{ autoAdvance ? '⏸️' : '▶️' }} Auto Advance
+        <Button :variant="autoAdvance ? 'primary' : 'secondary'" size="small" @click="toggleAutoAdvance" :title="autoAdvance ? 'Pause Auto-Advance' : 'Enable Auto-Advance'">
+          <i :class="['si', autoAdvance ? 'si-player-pause' : 'si-player-play']"></i> <span>Auto Advance</span>
         </Button>
       </div>
     </div>
@@ -362,12 +352,8 @@ const getCombatantName = (combatantId: string) => {
           <span class="log-message">{{ entry.message }}</span>
         </div>
       </div>
-      <Button 
-        variant="secondary"
-        size="small"
-        @click="clearLog"
-      >
-        Clear Log
+      <Button variant="secondary" size="small" @click="clearLog" title="Clear Log">
+        <i class="si si-trash"></i> <span>Clear Log</span>
       </Button>
     </div>
   </div>
@@ -475,7 +461,15 @@ const getCombatantName = (combatantId: string) => {
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.5rem;
+}
+
+.action-buttons .si {
+  margin-right: 0.5em;
+}
+
+.controls .si {
+  vertical-align: middle;
 }
 
 .combat-log {
@@ -492,7 +486,7 @@ const getCombatantName = (combatantId: string) => {
 }
 
 .log-entries {
-  max-height: 300px;
+  max-height: 200px;
   overflow-y: auto;
   margin-bottom: 1rem;
 }

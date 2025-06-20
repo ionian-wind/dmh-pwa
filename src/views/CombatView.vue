@@ -5,7 +5,7 @@ import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
-import type { Combat } from '@/types';
+import type { Combat, Combatant } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
@@ -134,29 +134,29 @@ onMounted(async () => {
               </div>
             </div>
             <div class="combat-controls">
-              <Button 
+              <Button
                 v-if="combat.status === 'preparing'"
                 variant="primary"
                 @click="startCombat"
                 class="start-btn"
               >
-                🚀 Start Combat
+                <i class="si si-player-play"></i> Start Combat
               </Button>
-              <Button 
+              <Button
                 v-if="combat.status === 'active'"
                 variant="warning"
                 @click="resetCombat"
                 class="reset-btn"
               >
-                🔄 Reset Combat
+                <i class="si si-refresh"></i> Reset Combat
               </Button>
-              <Button 
+              <Button
                 v-if="combat.status === 'active'"
                 variant="danger"
                 @click="endCombat"
                 class="end-btn"
               >
-                🏁 End Combat
+                <i class="si si-close"></i> End Combat
               </Button>
             </div>
           </div>
@@ -179,11 +179,11 @@ onMounted(async () => {
               </div>
               <div class="summary-item">
                 <label>Active Combatants:</label>
-                <span class="summary-value">{{ combat.combatants.filter(c => c.hitPoints.current > 0).length }}</span>
+                <span class="summary-value">{{ combat.combatants.filter((c: Combatant) => c.hitPoints.current > 0).length }}</span>
               </div>
               <div class="summary-item">
                 <label>Downed Combatants:</label>
-                <span class="summary-value">{{ combat.combatants.filter(c => c.hitPoints.current <= 0).length }}</span>
+                <span class="summary-value">{{ combat.combatants.filter((c: Combatant) => c.hitPoints.current <= 0).length }}</span>
               </div>
             </div>
           </div>
@@ -363,5 +363,10 @@ onMounted(async () => {
 
 .end-btn:hover {
   background: var(--color-danger-dark);
+}
+
+.combat-controls .si {
+  margin-right: 0.5em;
+  vertical-align: middle;
 }
 </style> 

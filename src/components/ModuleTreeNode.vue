@@ -223,15 +223,25 @@ function cropTitle(title: string, max = 25) {
   >
     <div class="tree-node-header">
       <span class="drag-handle">⠿</span>
-      <span class="tree-node-icon">📂</span>
+      <i class="si si-folder tree-node-icon"></i>
       <span v-if="editingNodeId !== node.id" @dblclick="onStartEditNode" class="tree-node-title">{{ node.title || '(untitled)' }}</span>
       <input v-else v-model="localTitle" @keyup.enter="onSaveEditNode" @blur="onSaveEditNode" class="tree-node-input" />
       <div class="tree-node-actions">
-        <Button @click="onAddNode" title="Add child" size="small" variant="secondary"><span class="icon">＋</span></Button>
-        <Button v-if="editingNodeId !== node.id" @click="onStartEditNode" title="Rename" size="small" variant="secondary"><span class="icon">✏️</span></Button>
-        <Button v-else @click="onCancelEditNode" title="Cancel" size="small" variant="secondary"><span class="icon">✖️</span></Button>
-        <Button @click="onRemoveNode" title="Delete" size="small" variant="danger"><span class="icon">🗑️</span></Button>
-        <Button @click="onCreateNote" title="Create note in this node" size="small" variant="secondary"><span class="icon">📝</span></Button>
+        <Button @click="onAddNode" title="Add child" size="small" variant="secondary">
+          <i class="si si-plus"></i>
+        </Button>
+        <Button v-if="editingNodeId !== node.id" @click="onStartEditNode" title="Rename" size="small" variant="secondary">
+          <i class="si si-pencil"></i>
+        </Button>
+        <Button v-else @click="onCancelEditNode" title="Cancel" size="small" variant="secondary">
+          <i class="si si-x"></i>
+        </Button>
+        <Button @click="onRemoveNode" title="Delete" size="small" variant="danger">
+          <i class="si si-trash"></i>
+        </Button>
+        <Button @click="onCreateNote" title="Create note in this node" size="small" variant="secondary">
+          <i class="si si-note"></i>
+        </Button>
       </div>
     </div>
     <div 
@@ -255,11 +265,15 @@ function cropTitle(title: string, max = 25) {
           <div class="tree-note">
             <span class="drag-handle">⠿</span>
             <div class="note-content">
-              <div class="note-title">{{ cropTitle(notes.find(n => n.id === noteId)?.title || noteId) }}</div>
+              <div class="note-title">{{ cropTitle(notes.find((n: Note) => n.id === noteId)?.title || noteId) }}</div>
             </div>
             <div class="tree-note-actions">
-              <Button @click="onEditNote(noteId)" title="Edit note" size="small" variant="secondary"><span class="icon">✏️</span></Button>
-              <Button @click="onRemoveNoteFromNode(noteId)" title="Remove" size="small" variant="danger"><span class="icon">🗑️</span></Button>
+              <Button @click="onEditNote(noteId)" title="Edit note" size="small" variant="secondary">
+                <i class="si si-pencil"></i>
+              </Button>
+              <Button @click="onRemoveNoteFromNode(noteId)" title="Remove" size="small" variant="danger">
+                <i class="si si-trash"></i>
+              </Button>
             </div>
           </div>
         </template>
@@ -298,8 +312,8 @@ function cropTitle(title: string, max = 25) {
               @start-edit-node="$emit('start-edit-node', $event)"
               @save-edit-node="$emit('save-edit-node', $event)"
               @cancel-edit-node="$emit('cancel-edit-node')"
-              @add-note-to-node="(nodeId, noteId) => $emit('add-note-to-node', nodeId, noteId)"
-              @remove-note-from-node="(...args) => $emit('remove-note-from-node', ...args)"
+              @add-note-to-node="(nodeId: string, noteId: string) => $emit('add-note-to-node', nodeId, noteId)"
+              @remove-note-from-node="(node: ModuleTreeNode, noteId: string) => $emit('remove-note-from-node', node, noteId)"
               @create-note="$emit('create-note', $event)"
               @handle-edit-note="$emit('handle-edit-note', $event)"
               @move-node="$emit('move-node', $event)"
@@ -336,6 +350,7 @@ function cropTitle(title: string, max = 25) {
   font-size: 1.1em;
   margin-right: 0.2em;
   opacity: 0.7;
+  color: #5f6368;
 }
 
 .tree-node-title {
@@ -491,5 +506,9 @@ function cropTitle(title: string, max = 25) {
   border: 1px solid #b0b8c1;
   font-size: 0.95em;
   width: 100%
+}
+
+.tree-note-actions .si {
+  vertical-align: middle;
 }
 </style> 
