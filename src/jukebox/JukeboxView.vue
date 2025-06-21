@@ -39,20 +39,6 @@
           <button @click="pickFiles" class="btn-add-tracks"><i class="si si-plus"></i> Add Tracks</button>
         </div>
 
-        <JukeboxPlayer
-          :track="currentTrack"
-          :is-playing="isPlaying"
-          :current-time="currentTime"
-          :duration="duration"
-          :volume="volume"
-          @toggle-play="togglePlay"
-          @next="playNext"
-          @prev="playPrev"
-          @seek="handleSeek"
-          @volumechange="handleVolumeChange"
-          @togglemute="toggleMute"
-        />
-
         <div class="tracks-wrapper">
           <div v-if="filteredTracks.length">
             <draggable v-if="activePlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".track-item" item-key="id" @end="onTrackSortEnd">
@@ -100,15 +86,19 @@
             <p>No tracks to display. Add some tracks to get started!</p>
           </div>
         </div>
+
+        <JukeboxPlayer
+          :tracks="filteredTracks"
+          :playlist-id="activePlaylistId"
+          @track-change="handleTrackChange"
+          ref="playerRef"
+        />
       </div>
     </div>
-
-    <audio ref="audioRef" @timeupdate="onTimeUpdate" @ended="playNext" @loadedmetadata="onLoadedMetadata"></audio>
 
     <PlaylistEditor
       v-model="isPlaylistModalOpen"
       :playlist="playlistToEdit"
-      @seek="handleSeek"
     />
     <AddToPlaylistModal
       v-model="isAddToPlaylistModalOpen"
@@ -121,14 +111,13 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { pickAudioFiles, getFileFromHandle, getAudioMetadata, extractTrackMetadata } from '@/jukebox/FileSystemUtils';
-import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, getJukeboxFile, deleteJukeboxFile } from '@/jukebox/stores';
+import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, deleteJukeboxFile } from '@/jukebox/stores';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import { useConfigStore } from '@/utils/configStore';
 
-const audioRef = ref<HTMLAudioElement | null>(null);
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
 const filesStore = useJukeboxFilesStore();
@@ -151,13 +140,9 @@ const isAddingTracks = ref(false);
 const isAddToPlaylistModalOpen = ref(false);
 const trackToAddToPlaylist = ref<JukeboxTrack | null>(null);
 
-// Player State
+// Player reference
+const playerRef = ref<InstanceType<typeof JukeboxPlayer> | null>(null);
 const currentTrack = ref<JukeboxTrack | null>(null);
-const isPlaying = ref(false);
-const currentTime = ref(0);
-const duration = ref(0);
-const volume = ref(configStore.lastVolume);
-const lastVolume = ref(configStore.lastVolume);
 
 function openPlaylistModal(playlist: JukeboxPlaylist | null) {
   playlistToEdit.value = playlist;
@@ -318,140 +303,15 @@ async function pickFiles() {
   }
 }
 
-async function verifyFilePermission(handle: FileSystemFileHandle, mode: 'read' | 'readwrite' = 'read') {
-  // @ts-ignore
-  if ((await handle.queryPermission({ mode })) === 'granted') {
-    return true;
+// Player interaction functions
+function playTrack(track: JukeboxTrack) {
+  if (playerRef.value) {
+    playerRef.value.playTrack(track);
   }
-  // @ts-ignore
-  if ((await handle.requestPermission({ mode })) === 'granted') {
-    return true;
-  }
-  return false;
 }
 
-async function playTrack(track: JukeboxTrack) {
-  if (!audioRef.value) return;
-
-  const isNewTrack = currentTrack.value?.id !== track.id;
+function handleTrackChange(track: JukeboxTrack | null) {
   currentTrack.value = track;
-  configStore.lastTrackId = track.id;
-  
-  const fileRecord = await getJukeboxFile(track.fileId);
-  if (!fileRecord || !isFileSystemFileHandle(fileRecord.handle)) return;
-
-  const handle = fileRecord.handle;
-  const hasPerm = await verifyFilePermission(handle, 'read');
-  if (!hasPerm) return;
-
-  const file = await getFileFromHandle(handle);
-  audioRef.value.src = URL.createObjectURL(file);
-  
-  // Only reset progress when selecting a different track
-  if (isNewTrack) {
-    configStore.lastTrackProgress = 0;
-    currentTime.value = 0;
-  }
-  
-  audioRef.value.play();
-}
-
-function togglePlay() {
-  if (!audioRef.value) return;
-
-  // If no track is selected, play the first one in the list.
-  if (!currentTrack.value) {
-    if (filteredTracks.value.length > 0) {
-      playTrack(filteredTracks.value[0]);
-    }
-    return;
-  }
-
-  // If we have a current track but no audio source, load it first
-  if (!audioRef.value.src && currentTrack.value) {
-    playTrack(currentTrack.value);
-    return;
-  }
-
-  // If a track is selected, toggle play/pause.
-  if (isPlaying.value) {
-    audioRef.value.pause();
-  } else {
-    audioRef.value.play();
-  }
-}
-
-function findCurrentTrackIndex(): number {
-  if (!currentTrack.value) return -1;
-  return filteredTracks.value.findIndex(t => t.id === currentTrack.value?.id);
-}
-
-function playNext() {
-  const currentIndex = findCurrentTrackIndex();
-  if (currentIndex > -1 && currentIndex < filteredTracks.value.length - 1) {
-    playTrack(filteredTracks.value[currentIndex + 1]);
-  }
-}
-
-function playPrev() {
-  const currentIndex = findCurrentTrackIndex();
-  if (currentIndex > 0) {
-    playTrack(filteredTracks.value[currentIndex - 1]);
-  }
-}
-
-function handleSeek(newTime: number) {
-  if (audioRef.value) {
-    audioRef.value.currentTime = newTime;
-    currentTime.value = newTime;
-  }
-}
-
-function onTimeUpdate() {
-  if (audioRef.value) {
-    currentTime.value = audioRef.value.currentTime;
-    isPlaying.value = !audioRef.value.paused;
-    
-    // Save progress to config store
-    if (currentTrack.value) {
-      configStore.lastTrackProgress = audioRef.value.currentTime;
-    }
-  }
-}
-
-function onLoadedMetadata() {
-  if (audioRef.value) {
-    duration.value = audioRef.value.duration;
-  }
-}
-
-function handleVolumeChange(newVolume: number) {
-  volume.value = newVolume;
-  if (newVolume > 0) {
-    lastVolume.value = newVolume;
-  }
-  if (audioRef.value) {
-    audioRef.value.volume = newVolume;
-  }
-  configStore.lastVolume = newVolume;
-}
-
-function toggleMute() {
-  if (volume.value > 0) {
-    lastVolume.value = volume.value;
-    handleVolumeChange(0);
-  } else {
-    handleVolumeChange(lastVolume.value > 0 ? lastVolume.value : 1);
-  }
-}
-
-function setupAudioEvents() {
-  audioRef.value = new Audio();
-  audioRef.value.addEventListener('play', () => { isPlaying.value = true; });
-  audioRef.value.addEventListener('pause', () => { isPlaying.value = false; });
-  audioRef.value.addEventListener('timeupdate', () => { currentTime.value = audioRef.value?.currentTime || 0; });
-  audioRef.value.addEventListener('loadedmetadata', () => { duration.value = audioRef.value?.duration || 0; });
-  audioRef.value.addEventListener('ended', playNext);
 }
 
 onMounted(async () => {
@@ -468,52 +328,6 @@ onMounted(async () => {
     console.log('Restored active playlist:', activePlaylistId.value);
   } else {
     console.log('No active playlist to restore, defaulting to "All Tracks"');
-  }
-  
-  // Restore volume from config store
-  volume.value = configStore.lastVolume;
-  lastVolume.value = configStore.lastVolume;
-  
-  if (audioRef.value) {
-    audioRef.value.volume = volume.value;
-  }
-  
-  setupAudioEvents();
-  
-  // Restore last played track if available (after stores are loaded)
-  if (configStore.lastTrackId) {
-    const lastTrack = tracksStore.getById(configStore.lastTrackId);
-    console.log('Found last track:', lastTrack);
-    if (lastTrack) {
-      currentTrack.value = lastTrack;
-      console.log('Restored current track:', currentTrack.value);
-      
-      // Restore progress position
-      const savedProgress = configStore.lastTrackProgress;
-      if (savedProgress > 0) {
-        console.log('Restoring progress:', savedProgress);
-        currentTime.value = savedProgress;
-        
-        // Load the audio file and set the position
-        const fileRecord = await getJukeboxFile(lastTrack.fileId);
-        if (fileRecord && isFileSystemFileHandle(fileRecord.handle)) {
-          const handle = fileRecord.handle;
-          const hasPerm = await verifyFilePermission(handle, 'read');
-          if (hasPerm) {
-            const file = await getFileFromHandle(handle);
-            audioRef.value!.src = URL.createObjectURL(file);
-            
-            // Set the time after the audio is loaded
-            audioRef.value!.addEventListener('loadedmetadata', () => {
-              if (audioRef.value && savedProgress < audioRef.value.duration) {
-                audioRef.value.currentTime = savedProgress;
-                currentTime.value = savedProgress;
-              }
-            }, { once: true });
-          }
-        }
-      }
-    }
   }
 });
 </script>
@@ -607,28 +421,50 @@ onMounted(async () => {
 .playlist-actions button {
   padding: 0.25rem 0.5rem;
   font-size: 0.8rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.playlist-actions button:hover {
+  color: #333;
 }
 
 .jukebox-view {
   flex-grow: 1;
-  padding: 1rem 1rem 0 1rem;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+
+.btn-add-tracks {
+  background: var(--primary-color, #4f46e5);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.btn-add-tracks:hover {
+  background: var(--primary-color-dark, #3730a3);
 }
 
 .tracks-wrapper {
   flex-grow: 1;
   overflow-y: auto;
+  padding: 1rem;
 }
 
 .track-list {
   list-style: none;
   padding: 0;
-}
-
-.track-list .sortable-ghost {
-  opacity: 0.5;
-  background: #c8ebfb;
+  margin: 0;
 }
 
 .track-item {
@@ -636,80 +472,121 @@ onMounted(async () => {
   align-items: center;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
-  border-radius: 4px;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  border-left: 5px solid var(--track-color, #ccc);
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  border: 1px solid #eee;
+  position: relative;
+  overflow: hidden;
+}
+
+.track-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--track-color, transparent);
+  transition: width 0.2s;
+}
+
+.track-item:hover::before {
+  width: 8px;
+}
+
+.track-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .track-item.is-playing {
-  background-color: #e6f7ff;
-  border-left-color: #1890ff;
+  background: #f0f8ff;
+  border-color: var(--track-color, #4f46e5);
+}
+
+.track-item.is-playing::before {
+  width: 8px;
 }
 
 .track-artwork {
-  width: 50px;
-  height: 50px;
-  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
   background-size: cover;
   background-position: center;
-  background-color: #eee;
-  border-radius: 4px;
+  background-color: #f0f0f0;
   margin-right: 1rem;
+  flex-shrink: 0;
 }
 
 .track-info {
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
 }
 
 .track-title {
-  font-weight: bold;
+  font-weight: 500;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .track-artist {
-  font-size: 0.9rem;
+  font-size: 0.9em;
   color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .track-actions {
   display: flex;
   gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.btn-icon-text {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.btn-icon-text:hover {
+  background: #f5f5f5;
+  color: #333;
 }
 
 .btn-remove {
   background: none;
   border: none;
-  color: #888;
-  font-size: 1.5rem;
-  line-height: 1;
-  padding: 0;
+  color: #999;
   cursor: pointer;
-  transition: color 0.2s;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
 .btn-remove:hover {
-  color: #dc3545;
-}
-
-.btn-edit {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  font-size: 1rem;
-  color: #888;
-}
-
-.btn-edit:hover {
-  color: var(--primary-color);
+  background: #fee;
+  color: #e53e3e;
 }
 
 .no-tracks {
   text-align: center;
-  margin-top: 4rem;
-  color: #888;
+  padding: 2rem;
+  color: #666;
+}
+
+.no-tracks p {
+  margin: 0;
+  font-size: 1.1rem;
 }
 </style> 
