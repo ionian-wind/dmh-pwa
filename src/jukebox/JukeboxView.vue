@@ -54,7 +54,7 @@
         <div class="jukebox-view">
           <div class="tracks-wrapper">
             <div v-if="filteredTracks.length">
-              <draggable v-if="activePlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".track-item" item-key="id" @end="onTrackSortEnd">
+              <draggable v-if="activePlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".playlist-item" item-key="id" @end="onTrackSortEnd">
                 <template #item="{ element: track }">
                   <li
                     :style="{ '--track-color': track.color || 'transparent' }"
@@ -62,7 +62,10 @@
                     :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
                     @click="playerStore.playTrack(track)"
                   >
-                    <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }"></div>
+                    <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }" v-if="track.picture"></div>
+                    <div v-else class="track-artwork track-artwork-placeholder">
+                      <i class="si si-music-note"></i>
+                    </div>
                     <div class="track-info">
                       <span class="track-title">{{ track.title }}</span>
                       <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
@@ -83,7 +86,10 @@
                   :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
                   @click="playerStore.playTrack(track)"
                 >
-                  <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }"></div>
+                  <div v-if="track.picture" :style="{ backgroundImage: `url(${track.picture})` }" class="track-artwork"></div>
+                  <div v-else class="track-artwork track-artwork-placeholder">
+                    <i class="si si-music-note"></i>
+                  </div>
                   <div class="track-info">
                     <span class="track-title">{{ track.title }}</span>
                     <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
@@ -595,6 +601,15 @@ function togglePlaylistPanel() {
   flex-shrink: 0;
 }
 
+.track-artwork-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #999;
+  font-size: 24px;
+}
+
 .track-info {
   flex-grow: 1;
   min-width: 0;
@@ -680,7 +695,8 @@ function togglePlaylistPanel() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: #f0f0f0;
+
+  background: linear-gradient(90deg,rgb(249, 249, 249) 0%, rgb(240, 240, 240) 100%);
   border-right: 1px solid #ccc;
 }
 
