@@ -47,6 +47,10 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     return queue.value.findIndex(t => t.id === currentTrack.value?.id);
   });
   
+  const hasNextTrack = computed(() => {
+    return currentTrackIndex.value > -1 && currentTrackIndex.value < queue.value.length - 1;
+  });
+  
   // --- Core Methods ---
 
   function init(element: HTMLAudioElement) {
@@ -292,7 +296,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   
   function playNext() {
     console.log('🎵 JukeboxPlayer: Play next called, current index:', currentTrackIndex.value);
-    if (currentTrackIndex.value > -1 && currentTrackIndex.value < queue.value.length - 1) {
+    if (hasNextTrack.value) {
       const nextTrack = queue.value[currentTrackIndex.value + 1];
       console.log('🎵 JukeboxPlayer: Playing next track:', nextTrack.title);
       playTrack(nextTrack);
@@ -365,6 +369,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     
     // Getters
     currentQueueId: computed(() => currentQueueId.value),
+    hasNextTrack,
     
     // Methods
     init,

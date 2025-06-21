@@ -9,7 +9,7 @@
         <div class="controls">
           <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.currentTrack"><i class="si si-step-backward"></i></Button>
           <Button variant="light" @click="playerStore.togglePlay()"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
-          <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack"><i class="si si-step-forward"></i></Button>
+          <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"><i class="si si-step-forward"></i></Button>
         </div>
         <div class="progress-bar">
           <span>{{ formatTime(playerStore.currentTime) }}</span>

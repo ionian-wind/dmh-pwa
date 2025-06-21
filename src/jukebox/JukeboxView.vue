@@ -221,6 +221,20 @@ async function removeTrack(track: JukeboxTrack) {
     playerStore.playNext();
   }
   
+  // Find all playlists that contain the track
+  const playlistsToUpdate = playlistsStore.items.value.filter((p: JukeboxPlaylist) => p.trackIds.includes(track.id));
+
+  // Update these playlists by removing the track ID
+  const updatePromises = playlistsToUpdate.map(p => {
+    const newTrackIds = p.trackIds.filter((tid: string) => tid !== track.id);
+    return playlistsStore.update(p.id, { trackIds: newTrackIds });
+  });
+  await Promise.all(updatePromises);
+  
+  // Remove the track itself from the main track store
+  await tracksStore.remove(track.id);
+
+  // If a file is associated, delete it from IndexedDB
   if (track.fileId) {
     try {
       await deleteJukeboxFile(track.fileId);
@@ -229,16 +243,14 @@ async function removeTrack(track: JukeboxTrack) {
     }
   }
 
-  const updates = playlistsStore.items.value.map((playlist: JukeboxPlaylist) => {
-    if (playlist.trackIds.includes(track.id)) {
-      const newTrackIds = playlist.trackIds.filter((tid: string) => tid !== track.id);
-      return playlistsStore.update(playlist.id, { ...playlist, trackIds: newTrackIds });
-    }
-    return Promise.resolve();
-  });
-  await Promise.all(updates);
+  // Manually update the local draggableTracks to reflect the change immediately
+  const trackIndex = draggableTracks.value.findIndex(t => t.id === track.id);
+  if (trackIndex > -1) {
+    draggableTracks.value.splice(trackIndex, 1);
+  }
 
-  await tracksStore.remove(track.id);
+  // Explicitly update the player's queue after removing the track
+  playerStore.setQueue(draggableTracks.value, activePlaylistId.value);
 }
 
 const filteredTracks = computed(() => {
