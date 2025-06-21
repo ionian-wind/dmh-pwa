@@ -134,7 +134,7 @@ onMounted(async () => {
               </div>
             </div>
             <div class="combat-controls">
-              <Button
+              <Button 
                 v-if="combat.status === 'preparing'"
                 variant="primary"
                 @click="startCombat"
@@ -142,7 +142,7 @@ onMounted(async () => {
               >
                 <i class="si si-player-play"></i> Start Combat
               </Button>
-              <Button
+              <Button 
                 v-if="combat.status === 'active'"
                 variant="warning"
                 @click="resetCombat"
@@ -150,7 +150,7 @@ onMounted(async () => {
               >
                 <i class="si si-refresh"></i> Reset Combat
               </Button>
-              <Button
+              <Button 
                 v-if="combat.status === 'active'"
                 variant="danger"
                 @click="endCombat"

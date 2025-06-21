@@ -171,11 +171,15 @@ function openAddToPlaylistModal(track: JukeboxTrack) {
 
 function setActivePlaylist(playlistId: string | null) {
   activePlaylistId.value = playlistId;
+  // Save to config store for persistence
+  configStore.activePlaylistId = playlistId;
 }
 
 async function removePlaylist(playlistId: string) {
   if (activePlaylistId.value === playlistId) {
     activePlaylistId.value = null;
+    // Save the change to config store
+    configStore.activePlaylistId = null;
   }
   await playlistsStore.remove(playlistId);
 }
@@ -458,8 +462,13 @@ onMounted(async () => {
     filesStore.load()
   ]);
   
-  console.log('Stores loaded, tracks count:', tracksStore.items.value.length);
-  console.log('Config store lastTrackId:', configStore.lastTrackId);
+  // Restore active playlist from config store
+  if (configStore.activePlaylistId !== undefined) {
+    activePlaylistId.value = configStore.activePlaylistId;
+    console.log('Restored active playlist:', activePlaylistId.value);
+  } else {
+    console.log('No active playlist to restore, defaulting to "All Tracks"');
+  }
   
   // Restore volume from config store
   volume.value = configStore.lastVolume;

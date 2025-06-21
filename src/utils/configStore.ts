@@ -10,6 +10,7 @@ export const useConfigStore = defineStore('config', () => {
   const lastTrackId = ref<string | null>(null);
   const lastTrackProgress = ref<number>(0);
   const lastVolume = ref<number>(1);
+  const activePlaylistId = ref<string | null>(null);
 
   return {
     currentModuleFilter,
@@ -17,7 +18,9 @@ export const useConfigStore = defineStore('config', () => {
     lastTrackId,
     lastTrackProgress,
     lastVolume,
+    activePlaylistId,
   };
 }, {
   persist: true,
-}); 
+  share: { enable: false }
+});
