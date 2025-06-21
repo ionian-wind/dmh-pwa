@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { usePartyStore } from '@/stores/parties';
-import { useCombatStore } from '@/stores/combats';
-import { useEncounterStore } from '@/stores/encounters';
+import { useCombatStore } from '@/stores/combats';;
 import { useMonsterStore } from '@/stores/monsters';
 import { useCharacterStore } from '@/stores/characters';
-import { Combat, Combatant, Encounter, Monster, PlayerCharacter } from '@/types';
+import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Button from '@/components/common/Button.vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{
@@ -22,7 +20,6 @@ const emit = defineEmits<{
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
-const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
 const characterStore = useCharacterStore();
 const router = useRouter();
@@ -49,7 +46,7 @@ const handleCreateCombat = async () => {
   }
 
   // Get party characters
-  const partyCharacters = characterStore.items.filter(c => c.partyId === selectedPartyId.value);
+  const partyCharacters = characterStore.items;
   
   // Get encounter monsters
   const encounterMonsters = monsterStore.items.filter(m =>
@@ -61,12 +58,10 @@ const handleCreateCombat = async () => {
     id: generateId(),
     name: char.name,
     type: 'player',
-    initiative: char.initiative,
-    armorClass: char.armorClass,
     hitPoints: {
-      maximum: char.hitPoints.maximum,
-      current: char.hitPoints.current,
-      temporary: char.hitPoints.temporary || 0
+      maximum: 10,
+      current: 10,
+      temporary: 0
     },
     conditions: [],
     referenceId: char.id,
@@ -84,11 +79,9 @@ const handleCreateCombat = async () => {
         id: generateId(),
         name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
         type: 'monster',
-        initiative: 0, // Will be rolled
-        armorClass: monster.armorClass,
         hitPoints: {
-          maximum: monster.hitPoints,
-          current: monster.hitPoints,
+          maximum: 10,
+          current: 10,
           temporary: 0
         },
         conditions: [],
@@ -141,7 +134,6 @@ const generateId = () => {
   >
     <div class="party-selector">
       <div class="form-section">
-        <label>Select Party</label>
         <select v-model="selectedPartyId" required>
           <option value="">Choose a party...</option>
           <option v-for="party in partyStore.filtered" :key="party.id" :value="party.id">
@@ -154,8 +146,7 @@ const generateId = () => {
         <h4>Party Information</h4>
         <div class="party-details">
           <p><strong>Party:</strong> {{ partyStore.getById(selectedPartyId)?.name }}</p>
-          <p><strong>Characters:</strong> {{ characterStore.items.filter(c => c.partyId === selectedPartyId).length }}</p>
-          <p><strong>Monsters:</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
+          <p><strong>Characters:</strong> {{ characterStore.items.length }}</p>
         </div>
       </div>
 
@@ -163,9 +154,7 @@ const generateId = () => {
         <h4>Encounter Information</h4>
         <div class="encounter-details">
           <p><strong>Encounter:</strong> {{ encounter?.name }}</p>
-          <p><strong>Difficulty:</strong> {{ encounter?.difficulty }}</p>
-          <p><strong>Level:</strong> {{ encounter?.level }}</p>
-          <p><strong>XP:</strong> {{ encounter?.xp }}</p>
+          <p><strong>Monsters:</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
         </div>
       </div>
     </div>
@@ -197,7 +186,34 @@ const generateId = () => {
   color: var(--color-text);
 }
 
-.party-info,
+.party-info {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.party-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.party-details {
+  margin: 0;
+}
+
+.party-details p {
+  margin: 0.25rem 0;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.party-details strong {
+  color: var(--color-text);
+}
+
 .encounter-info {
   background: var(--color-background-soft);
   border: 1px solid var(--color-border);
@@ -206,26 +222,22 @@ const generateId = () => {
   margin-bottom: 1rem;
 }
 
-.party-info h4,
 .encounter-info h4 {
   margin: 0 0 0.5rem 0;
   color: var(--color-text);
   font-size: 1rem;
 }
 
-.party-details,
 .encounter-details {
   margin: 0;
 }
 
-.party-details p,
 .encounter-details p {
   margin: 0.25rem 0;
   color: var(--color-text-light);
   font-size: 0.9rem;
 }
 
-.party-details strong,
 .encounter-details strong {
   color: var(--color-text);
 }

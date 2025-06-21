@@ -6,6 +6,7 @@ import JukeboxButton from '@/components/JukeboxButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'
 import MentionModalStack from '@/components/common/MentionModalStack.vue'
+import GlobalAudioPlayer from '@/jukebox/components/GlobalAudioPlayer.vue'
 
 const handleRollClick = (event: MouseEvent) => {
   // TODO: Implement dice rolling functionality
@@ -25,14 +26,19 @@ const handleRollClick = (event: MouseEvent) => {
     </main>
     
     <!-- Floating Action Buttons -->
-    <div class="fab-container">
-      <JukeboxButton />
-      <RollButton @click="handleRollClick" />
+    <div class="fab-container-left">
+      <JukeboxButton class="fab-item" />
+    </div>
+    <div class="fab-container-right">
+      <RollButton @click="handleRollClick" class="fab-item" />
     </div>
     
     <!-- PWA Components -->
     <PWAInstallPrompt />
     <PWAStatus />
+
+    <!-- Global Jukebox Player -->
+    <GlobalAudioPlayer />
 
     <!-- Global Mention Modal Stack -->
     <MentionModalStack />
@@ -74,13 +80,25 @@ body {
   flex: 1;
 }
 
-.fab-container {
+.fab-container-left,
+.fab-container-right {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  display: flex;
-  gap: 1rem;
+  bottom: 2rem;
   z-index: 1000;
+  pointer-events: none; /* Allow clicks to pass through the container */
+}
+
+.fab-container-left {
+  left: 4.5rem;
+}
+
+.fab-container-right {
+  right: 2rem;
+}
+
+.fab-container-left > .fab-item,
+.fab-container-right > .fab-item {
+  pointer-events: auto; /* Re-enable pointer events on direct children */
 }
 
 /* Transitions */

@@ -7,6 +7,7 @@ export interface JukeboxPlaylist extends WithId, WithTimestamps, WithMetadata {
   description?: string;
   trackIds: UUID[];
   sortOrder?: number;
+  moduleIds?: string[];
 }
 
 export interface JukeboxFile extends WithId, WithTimestamps, WithMetadata {

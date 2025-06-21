@@ -3,8 +3,12 @@
   "title": "Encounter",
   "type": "object",
   "required": [
-    "id", "name", "difficulty", "monsters", "currentRound",
-    "currentTurn", "moduleId", "createdAt", "updatedAt"
+    "id",
+    "name",
+    "monsters",
+    "moduleId",
+    "createdAt",
+    "updatedAt"
   ],
   "properties": {
     "id": {
@@ -19,22 +23,6 @@
       "type": "string",
       "description": "Description of the encounter"
     },
-    "difficulty": {
-      "type": "string",
-      "enum": ["easy", "medium", "hard", "deadly"],
-      "description": "Difficulty level of the encounter"
-    },
-    "level": {
-      "type": "number",
-      "minimum": 1,
-      "maximum": 20,
-      "description": "Level of the encounter"
-    },
-    "xp": {
-      "type": "number",
-      "minimum": 0,
-      "description": "Experience points for the encounter"
-    },
     "monsters": {
       "type": "object",
       "additionalProperties": {
@@ -43,16 +31,6 @@
         "maximum": 20
       },
       "description": "Object mapping monster IDs to their counts in this encounter"
-    },
-    "currentRound": {
-      "type": "number",
-      "minimum": 0,
-      "description": "Current round number"
-    },
-    "currentTurn": {
-      "type": "number",
-      "minimum": 0,
-      "description": "Current turn number"
     },
     "moduleId": {
       "type": "string",

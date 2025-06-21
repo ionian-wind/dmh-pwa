@@ -1,17 +1,19 @@
 <template>
-  <div class="view-list">
+  <div class="view-root">
     <div class="view-header">
       <Button @click="handleCreateClick" title="Create Character">
         <i class="si si-plus"></i>
       </Button>
     </div>
+    <div class="view-list">
+    
 
-    <div v-if="characterStore.items.length === 0" class="view-empty">
+    <div v-if="characterStore.filtered.length === 0" class="view-empty">
       <p>No characters yet. Create your first character to get started!</p>
     </div>
 
     <div v-else class="view-grid">
-      <div v-for="character in characterStore.items" :key="character.id" class="character-card">
+      <div v-for="character in characterStore.filtered" :key="character.id" class="character-card">
         <CharacterCard
           :character="character"
           @view="(character: PlayerCharacter) => $router.push(`/characters/${character.id}`)"
@@ -29,6 +31,8 @@
       @cancel="handleCancel"
     />
   </div>
+  </div>
+  
 </template>
 
 <script setup lang="ts">

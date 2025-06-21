@@ -125,27 +125,27 @@ function handleTagClick(tag: string) {
 </script>
 
 <template>
-  <div class="view-list">
-    <div class="view-header notes-header-row">
-      <Button @click="addNote" title="Create Note">
-        <i class="si si-plus"></i>
-      </Button>
-      <div class="search-input-wrapper">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search notes..."
-          class="search-input"
-        >
-        <span v-if="tagFilter" class="tag-chip">
-          #{{ tagFilter }}
-          <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
-            <i class="si si-x"></i>
-          </button>
-        </span>
-      </div>
+  <div class="view-root">
+  <div class="view-header ">
+    <Button @click="addNote" title="Create Note">
+      <i class="si si-plus"></i>
+    </Button>
+    <div class="search-input-wrapper">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search notes..."
+        class="search-input"
+      >
+      <span v-if="tagFilter" class="tag-chip">
+        #{{ tagFilter }}
+        <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
+          <i class="si si-x"></i>
+        </button>
+      </span>
     </div>
-
+  </div>
+  <div class="view-list">
     <div v-if="filteredNotes.length === 0" class="view-empty">
       <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
       <p v-else>No notes yet. Create your first note to get started!</p>
@@ -174,16 +174,10 @@ function handleTagClick(tag: string) {
       @cancel="cancelEdit"
     />
   </div>
+  </div>
 </template>
 
 <style scoped>
-.notes-header-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
 .search-input-wrapper {
   position: relative;
   display: flex;

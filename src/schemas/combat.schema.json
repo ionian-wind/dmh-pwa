@@ -38,13 +38,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "type", "initiative", "armorClass", "hitPoints"],
+        "required": ["id", "name", "type", "hitPoints"],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
           "type": { "type": "string" },
-          "initiative": { "type": "number" },
-          "armorClass": { "type": "number" },
           "hitPoints": {
             "type": "object",
             "required": ["maximum", "current"],

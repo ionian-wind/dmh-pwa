@@ -74,89 +74,19 @@ export interface Party extends WithMetadata {
 // Common base for PlayerCharacter and Monster
 export interface Character extends WithMetadata {
   name: string;
-  alignment?: string;
-  armorClass: number;
   notes?: string;
-  stats: {
-    strength: number;
-    dexterity: number;
-    constitution: number;
-    intelligence: number;
-    wisdom: number;
-    charisma: number;
-  };
 }
 
 export interface PlayerCharacter extends Character {
-  level: number;
-  class: string;
-  race: string;
-  playerName: string;
-  background?: string;
-  hitPoints: {
-    maximum: number;
-    current: number;
-    temporary?: number;
-  };
-  initiative: number;
-  speed: number;
-  proficiencies: string[];
-  equipment: string[];
-  spells?: string[];
-  features?: string[];
-  partyId?: UUID | null;
 }
 
 export interface Monster extends Character {
-  type: string;
-  description: string;
-  size: string;
-  alignment: string;
-  hitPoints: number;
-  speed: {
-    walk?: number;
-    fly?: number;
-    swim?: number;
-    burrow?: number;
-    climb?: number;
-  };
-  savingThrows?: {
-    strength?: number;
-    dexterity?: number;
-    constitution?: number;
-    intelligence?: number;
-    wisdom?: number;
-    charisma?: number;
-  };
-  skills?: Record<string, number>;
-  damageVulnerabilities?: string[];
-  damageResistances?: string[];
-  damageImmunities?: string[];
-  conditionImmunities?: string[];
-  senses: string[];
-  languages: string[];
-  specialAbilities: string[];
-  challengeRating: string;
-  xp: number;
-  traits?: string[];
-  actions: string[];
-  legendaryActions?: string[];
   moduleIds?: UUID[];
-  stats: {
-    strength: number;
-    dexterity: number;
-    constitution: number;
-    intelligence: number;
-    wisdom: number;
-    charisma: number;
-  };
 }
 
 export interface Combatant extends WithMetadata {
   name: string;
   type: 'player' | 'monster';
-  initiative: number;
-  armorClass: number;
   hitPoints: {
     maximum: number;
     current: number;
@@ -170,14 +100,9 @@ export interface Combatant extends WithMetadata {
 export interface Encounter extends WithMetadata {
   name: string;
   description?: string;
-  difficulty: 'easy' | 'medium' | 'hard' | 'deadly';
-  level: number;
   monsters: Record<UUID, number>;
-  currentRound: number;
-  currentTurn: number;
   moduleId: UUID;
   notes?: string;
-  xp: number;
 }
 
 export interface Combat extends WithMetadata {

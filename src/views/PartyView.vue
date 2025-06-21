@@ -30,29 +30,28 @@ const notFound = computed(() => isLoaded.value && !party.value);
 
 const modules = computed(() => {
   return party.value?.moduleIds
-    .map(id => moduleStore.getById(id))
-    .filter(Boolean);
+    ?.map(id => moduleStore.getById(id))
+    .filter(Boolean) || [];
 });
 
-const allCharacters = computed(() => characterStore.all);
+const allCharacters = computed(() => characterStore.items);
 const partyCharacters = computed(() => {
   const p = party.value;
   if (!p) return [];
-  return allCharacters.value.filter(c => c.partyId === p.id);
+  return allCharacters.value.filter(c => p.characters.includes(c.id));
 });
 
 const availableCharacters = computed(() => {
   const p = party.value;
-  if (!p) return [];
-  return allCharacters.value.filter(c => !c.partyId || c.partyId !== p.id);
+  if (!p) return allCharacters.value;
+  return allCharacters.value.filter(c => !p.characters.includes(c.id));
 });
 
 const linkedCharacters = computed(() => {
   const p = party.value;
   if (!p) return {};
-  const linked = allCharacters.value.filter(c => c.partyId === p.id).map(c => c.id);
   return allCharacters.value.reduce((acc, character) => {
-    acc[character.id] = linked.includes(character.id);
+    acc[character.id] = p.characters.includes(character.id);
     return acc;
   }, {} as Record<string, boolean>);
 });
@@ -69,13 +68,15 @@ const mentionedInEntities = computed(() => {
 });
 
 const handleDeleteParty = async () => {
-  if (confirm(`Are you sure you want to delete ${party.value?.name}?`)) {
-    partyStore.remove(party.value.id);
+  if (!party.value) return;
+  if (confirm(`Are you sure you want to delete ${party.value.name}?`)) {
+    await partyStore.remove(party.value.id);
     router.push('/parties');
   }
 };
 
 const handleSaveParty = async (updatedParty: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
+  if (!party.value) return;
   await partyStore.update(party.value.id, updatedParty);
   showEditor.value = false;
 };
@@ -85,18 +86,24 @@ const handlePartyCancel = () => {
 };
 
 const handleRemoveCharacter = (character: PlayerCharacter) => {
+  if (!party.value) return;
   if (confirm(`Remove character "${character.name}" from this party?`)) {
-    characterStore.setParty(character.id, null);
+    const updatedCharacters = party.value.characters.filter(id => id !== character.id);
+    partyStore.update(party.value.id, { characters: updatedCharacters });
   }
 };
 
 const handleToggleCharacter = (character: PlayerCharacter, isLinked: boolean) => {
   if (!party.value) return;
+  let updatedCharacters = [...party.value.characters];
   if (isLinked) {
-    characterStore.setParty(character.id, party.value.id);
+    if (!updatedCharacters.includes(character.id)) {
+      updatedCharacters.push(character.id);
+    }
   } else {
-    characterStore.setParty(character.id, null);
+    updatedCharacters = updatedCharacters.filter(id => id !== character.id);
   }
+  partyStore.update(party.value.id, { characters: updatedCharacters });
 };
 
 const isCharacterLinked = (characterId: string) => {
@@ -110,7 +117,7 @@ const partySubtitle = computed(() => {
   
   const parts = [];
   if (modules.value.length > 0) {
-    parts.push(`Modules: ${modules.value.map(m => m.name).join(', ')}`);
+    parts.push(`Modules: ${modules.value.map(m => m?.name).filter(Boolean).join(', ')}`);
   }
   parts.push(`${partyCharacters.value.length} characters`);
   
@@ -118,7 +125,11 @@ const partySubtitle = computed(() => {
 });
 
 onMounted(async () => {
-  partyStore.load();
+  await Promise.all([
+    partyStore.load(),
+    characterStore.load(),
+    moduleStore.load()
+  ]);
 });
 </script>
 
@@ -156,16 +167,12 @@ onMounted(async () => {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Level</th>
-                    <th>Class</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="character in partyCharacters" :key="character.id">
                     <td>{{ character.name }}</td>
-                    <td>{{ character.level }}</td>
-                    <td>{{ character.class }}</td>
                     <td>
                       <button class="unlink-btn" @click="handleToggleCharacter(character, false)">Unlink</button>
                     </td>
@@ -198,6 +205,7 @@ onMounted(async () => {
       :showCancel="true"
       :showSubmit="false"
       cancelLabel="Close"
+      modalId="link-characters-modal"
       @cancel="showLinkModal = false"
     >
       <div v-if="allCharacters.length === 0" class="empty-state">
@@ -208,16 +216,12 @@ onMounted(async () => {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Level</th>
-              <th>Class</th>
               <th>Linked</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="character in allCharacters" :key="character.id">
               <td>{{ character.name }}</td>
-              <td>{{ character.level }}</td>
-              <td>{{ character.class }}</td>
               <td>
                 <ToggleSwitch
                   v-model="linkedCharacters[character.id]"

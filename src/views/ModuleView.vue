@@ -60,6 +60,20 @@
                   <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
                 </div>
               </section>
+              <section v-else-if="activeTab === 'playlists'" class="content-section">
+                <div v-if="modulePlaylists.length === 0" class="empty-state">
+                  <p>No playlists in this module</p>
+                </div>
+                <div v-else class="content-grid">
+                  <JukeboxPlaylistCard
+                    v-for="playlist in modulePlaylists"
+                    :key="playlist.id"
+                    :playlist="playlist"
+                    @view="() => router.push('/jukebox')"
+                    @play="handlePlayPlaylist"
+                  />
+                </div>
+              </section>
               <section v-else-if="activeTab === 'noteTree'" class="content-section">
                 <ModuleNoteTreeManager
                   :module="module"
@@ -91,13 +105,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
+import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useJukeboxTracksStore } from '@/jukebox/stores';
+import { useConfigStore } from '@/utils/configStore';
 import type { Module } from '@/types';
+import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
@@ -109,14 +128,20 @@ import PartyCard from '@/components/PartyCard.vue';
 import MonsterCard from '@/components/MonsterCard.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
 import NoteCard from '@/components/NoteCard.vue';
+import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
+const router = useRouter();
 const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const noteStore = useNoteStore();
+const playlistsStore = useJukeboxPlaylistsStore();
+const playerStore = useJukeboxPlayerStore();
+const tracksStore = useJukeboxTracksStore();
+const configStore = useConfigStore();
 
 const showEditor = ref(false);
 const isLoaded = computed(() => moduleStore.isLoaded);
@@ -140,6 +165,10 @@ const moduleNotes = computed(() =>
   noteStore.items.filter(note => note.moduleId === route.params.id)
 );
 
+const modulePlaylists = computed(() => 
+  playlistsStore.items.value.filter(playlist => playlist.moduleIds?.includes(route.params.id as string))
+);
+
 const mentionsStore = useMentionsStore();
 
 const mentionedEntities = computed(() => {
@@ -157,13 +186,17 @@ const entityTabs = [
   { id: 'monsters', label: 'Monsters' },
   { id: 'encounters', label: 'Encounters' },
   { id: 'notes', label: 'Notes' },
+  { id: 'playlists', label: 'Playlists' },
   { id: 'noteTree', label: 'Book Tree' },
 ];
 
 const activeTab = ref('document');
 
 onMounted(async () => {
-  moduleStore.load();
+  await Promise.all([
+    moduleStore.load(),
+    playlistsStore.load()
+  ]);
 });
 
 function updateModuleFromStore() {
@@ -199,6 +232,22 @@ const moduleSubtitle = computed(() => module.value?.description || '');
 function handleSaveNoteTree(newTree: any) {
   if (!module.value) return;
   moduleStore.update(module.value.id, { ...module.value, noteTree: newTree });
+}
+
+function handlePlayPlaylist(playlist: JukeboxPlaylist) {
+  // Set the active playlist in config
+  configStore.activePlaylistId = playlist.id;
+  
+  // Get the tracks for this playlist
+  const playlistTracks = playlist.trackIds
+    .map((trackId: string) => tracksStore.items.value.find(t => t.id === trackId))
+    .filter((track): track is JukeboxTrack => track !== undefined);
+  
+  // Set the queue and start playing
+  if (playlistTracks.length > 0) {
+    playerStore.setQueue(playlistTracks, playlist.id);
+    playerStore.playTrack(playlistTracks[0]);
+  }
 }
 </script>
 

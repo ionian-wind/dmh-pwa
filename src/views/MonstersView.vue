@@ -36,27 +36,7 @@ const handleSave = async (monster: Monster) => {
   editingMonster.value = {
     id: '',
     name: '',
-    type: '',
-    description: '',
-    size: '',
-    alignment: '',
-    armorClass: 0,
-    hitPoints: 0,
-    speed: {},
-    stats: {
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10
-    },
-    senses: [],
-    languages: [],
-    specialAbilities: [],
-    challengeRating: '0',
-    xp: 0,
-    actions: [],
+    notes: '',
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -74,18 +54,18 @@ const deleteMonster = async (monsterId: string) => {
 </script>
 
 <template>
-  <div class="view-list">
+  <div class="view-root">
     <div class="view-header">
       <Button @click="handleCreateClick" title="Create Monster">
         <i class="si si-plus"></i>
       </Button>
     </div>
-
+    <div class="view-list">
     <div v-if="monsterStore.filtered.length === 0" class="view-empty">
       <p>No monsters found.</p>
     </div>
 
-    <div class="monsters-grid">
+    <div class="view-grid">
       <MonsterCard
         v-for="monster in monsterStore.filtered"
         :key="monster.id"
@@ -105,4 +85,6 @@ const deleteMonster = async (monsterId: string) => {
       @cancel="handleCancel"
     />
   </div>
+  </div>
+
 </template>

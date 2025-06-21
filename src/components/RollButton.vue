@@ -1,9 +1,7 @@
 <template>
   <FloatActionButton
-    position="bottom-right"
     size="medium"
     variant="primary"
-    :static="true"
     @click="$emit('click', $event)"
   >
     🎲

@@ -72,7 +72,7 @@ function toggleExpand() { expanded.value = !expanded.value; }
   position: relative;
 }
 .note-card-content.clamped {
-  max-height: 600px;
+  max-height: 400px;
   overflow: hidden;
 }
 .note-card-content.clamped::after {

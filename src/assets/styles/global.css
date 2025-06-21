@@ -467,18 +467,29 @@ select {
   padding: var(--base-padding);
 }
 
-.view-list {
+.view-list, .view-header {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.view-root {
+  display: flex;
+  flex-direction: column;
 }
 
 .view-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 1rem 1rem;
   border-bottom: 1px solid #ccc;
   background: #f9f9f9;
+  gap: 1rem;
+  width: 100%;
+}
+
+.view-header > .view-list {
+  margin-top: 1rem;
 }
 
 .view-empty {

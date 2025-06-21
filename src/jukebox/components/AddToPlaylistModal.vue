@@ -1,24 +1,31 @@
 <template>
-  <BaseModal :isOpen="modelValue" modalId="add-to-playlist" @update:isOpen="$emit('update:modelValue', $event)" title="Add to Playlist">
+  <BaseModal 
+    :isOpen="modelValue" 
+    modalId="add-to-playlist" 
+    @update:isOpen="$emit('update:modelValue', $event)" 
+    title="Add to Playlist"
+    :showSubmit="false"
+    :showCancel="true"
+    cancelLabel="Done"
+    @cancel="$emit('update:modelValue', false)"
+  >
     <div v-if="playlists.length === 0">
       <p>No playlists found. Please create one first.</p>
     </div>
     <div v-else>
-      <ul>
-        <li v-for="playlist in playlists" :key="playlist.id">
-          <label>
-            <input
-              type="checkbox"
-              :checked="isTrackInPlaylist(playlist)"
-              @change="togglePlaylist(playlist)"
-            />
-            {{ playlist.name }}
-          </label>
-        </li>
-      </ul>
-    </div>
-    <div class="modal-actions">
-      <button type="button" @click="$emit('update:modelValue', false)">Done</button>
+      <div class="playlist-list">
+        <div 
+          v-for="playlist in playlists" 
+          :key="playlist.id" 
+          class="playlist-item"
+        >
+          <ToggleSwitch
+            :model-value="isTrackInPlaylist(playlist)"
+            :label="playlist.name"
+            @update:model-value="(value) => togglePlaylist(playlist, value)"
+          />
+        </div>
+      </div>
     </div>
   </BaseModal>
 </template>
@@ -26,6 +33,7 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
 import type { JukeboxTrack, JukeboxPlaylist } from '../types';
 
@@ -44,16 +52,16 @@ function isTrackInPlaylist(playlist: JukeboxPlaylist): boolean {
   return playlist.trackIds.includes(props.track.id);
 }
 
-async function togglePlaylist(playlist: JukeboxPlaylist) {
+async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
   if (!props.track) return;
 
   const trackId = props.track.id;
   const trackIds = new Set(playlist.trackIds);
 
-  if (trackIds.has(trackId)) {
-    trackIds.delete(trackId);
-  } else {
+  if (value) {
     trackIds.add(trackId);
+  } else {
+    trackIds.delete(trackId);
   }
 
   await playlistsStore.update(playlist.id, { trackIds: Array.from(trackIds) });
@@ -61,16 +69,18 @@ async function togglePlaylist(playlist: JukeboxPlaylist) {
 </script>
 
 <style scoped>
-ul {
-  list-style: none;
-  padding: 0;
-}
-li {
-  padding: 0.5em 0;
-}
-.modal-actions {
+.playlist-list {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5em;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.playlist-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border, #eee);
+}
+
+.playlist-item:last-child {
+  border-bottom: none;
 }
 </style> 

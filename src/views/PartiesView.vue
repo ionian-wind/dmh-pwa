@@ -59,36 +59,40 @@ const deleteParty = async (party: Party) => {
 </script>
 
 <template>
-  <div class="view-list">
+  <div class="view-root">
     <div class="view-header">
       <Button @click="handleCreateClick" title="Create Party">
         <i class="si si-plus"></i>
       </Button>
     </div>
+    <div class="view-list">
 
-    <div v-if="partyStore.filtered.length === 0" class="view-empty">
-      <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
-      <p v-else>No parties yet. Create your first party to get started!</p>
-    </div>
 
-    <div class="parties-grid">
-      <PartyCard
-        v-for="party in partyStore.filtered"
-        :key="party.id"
-        :party="party"
-        @view="() => router.push(`/parties/${party.id}`)"
-        @edit="() => { editingParty = party; showEditor = true; }"
-        @delete="deleteParty"
-      />
-    </div>
+<div v-if="partyStore.filtered.length === 0" class="view-empty">
+  <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
+  <p v-else>No parties yet. Create your first party to get started!</p>
+</div>
 
-    <PartyEditor
-      v-if="showEditor"
-      :party="editingParty"
-      :is-open="showEditor"
-      @submit="handleSave"
-      @cancel="handleCancel"
-    />
+<div class="view-grid">
+  <PartyCard
+    v-for="party in partyStore.filtered"
+    :key="party.id"
+    :party="party"
+    @view="() => router.push(`/parties/${party.id}`)"
+    @edit="() => { editingParty = party; showEditor = true; }"
+    @delete="deleteParty"
+  />
+</div>
+
+<PartyEditor
+  v-if="showEditor"
+  :party="editingParty"
+  :is-open="showEditor"
+  @submit="handleSave"
+  @cancel="handleCancel"
+/>
+</div>
   </div>
+  
 </template>
 

@@ -51,9 +51,6 @@ function handleRunCombat() {
       <h3>{{ encounter.name }}</h3>
     </template>
     <div class="encounter-meta">
-      <span class="meta-item"><span class="label">Level:</span> <span class="value">{{ encounter.level }}</span></span>
-      <span class="meta-item"><span class="label">Difficulty:</span> <span class="value">{{ encounter.difficulty }}</span></span>
-      <span class="meta-item"><span class="label">XP:</span> <span class="value">{{ encounter.xp }}</span></span>
       <span class="meta-item"><span class="label">Module:</span> <span class="value">{{ moduleName }}</span></span>
     </div>
     <p v-if="encounter.description" class="description">{{ encounter.description }}</p>
@@ -63,7 +60,7 @@ function handleRunCombat() {
     </div>
     <template #actions>
       <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">
-        <i class="si si-swords"></i>
+        <i class="si si-play"></i>
       </Button>
     </template>
   </BaseCard>

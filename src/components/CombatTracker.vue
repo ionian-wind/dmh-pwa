@@ -78,28 +78,6 @@ const updateHitPoints = (combatantId: string, change: number) => {
 };
 
 // Quick actions functionality
-const rollInitiative = () => {
-  if (!combat.value) return;
-  
-  combat.value.combatants.forEach(combatant => {
-    const roll = Math.floor(Math.random() * 20) + 1;
-    const modifier = Math.floor((combatant.initiative - 10) / 2);
-    const total = roll + modifier;
-    combatant.initiative = total;
-    addLogEntry(`${combatant.name} rolled initiative: ${roll} + ${modifier} = ${total}`, 'action');
-  });
-  
-  // Sort combatants by initiative (highest first)
-  combat.value.combatants.sort((a, b) => b.initiative - a.initiative);
-  
-  // Update each combatant's initiative
-  combat.value.combatants.forEach(combatant => {
-    combatStore.updateCombatant(combat.value!.id, combatant.id, { initiative: combatant.initiative });
-  });
-  
-  addLogEntry('Initiative order updated', 'info');
-};
-
 const healAll = () => {
   if (!combat.value) return;
   
@@ -273,7 +251,6 @@ const getCombatantName = (combatantId: string) => {
       <div class="combatant-details">
         <p>Type: {{ currentCombatant.type }}</p>
         <p>HP: {{ currentCombatant.hitPoints.current }}/{{ currentCombatant.hitPoints.maximum }}</p>
-        <p>AC: {{ currentCombatant.armorClass }}</p>
 
         <div class="hp-controls">
           <Button size="small" variant="danger" @click="updateHitPoints(currentCombatant.id, -1)">-1</Button>
@@ -308,9 +285,7 @@ const getCombatantName = (combatantId: string) => {
            }">
         <span class="order">{{ index + 1 }}.</span>
         <span class="name">{{ combatant.name }}</span>
-        <span class="initiative">{{ combatant.initiative }}</span>
         <span class="hp">{{ combatant.hitPoints.current }}/{{ combatant.hitPoints.maximum }}</span>
-        <span class="ac">AC: {{ combatant.armorClass }}</span>
         <span class="conditions">
           <span v-for="condition in combatant.conditions" :key="condition" class="condition-tag">
             {{ condition.substring(0, 3) }}
@@ -323,9 +298,6 @@ const getCombatantName = (combatantId: string) => {
     <div class="quick-actions" v-if="combat.status === 'active'">
       <h3>Quick Actions</h3>
       <div class="action-buttons">
-        <Button variant="secondary" size="small" @click="rollInitiative" title="Roll Initiative">
-          <i class="si si-dice"></i> <span>Roll Initiative</span>
-        </Button>
         <Button variant="success" size="small" @click="healAll" title="Heal All">
           <i class="si si-heart"></i> <span>Heal All</span>
         </Button>
@@ -442,7 +414,7 @@ const getCombatantName = (combatantId: string) => {
 
 .order { width: 30px; }
 .name { flex: 2; }
-.initiative, .hp, .ac { flex: 1; }
+.hp { flex: 1; }
 .conditions { flex: 2; }
 
 .quick-actions {

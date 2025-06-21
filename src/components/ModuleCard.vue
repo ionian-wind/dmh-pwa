@@ -5,16 +5,19 @@ import BaseCard from '@/components/common/BaseCard.vue';;
 const props = defineProps<{ module: Module }>();
 const emit = defineEmits(['edit', 'delete', 'view']);
 
-function handleView() { emit('view', props.module); }
-function handleEdit() { emit('edit', props.module); }
-function handleDelete() { emit('delete', props.module); }
+const handleView = () => emit('view', props.module);
+const handleEdit = () => emit('edit', props.module);
+const handleDelete = () => emit('delete', props.module);
 </script>
+
 <template>
   <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
     <template #header>
       <h3>{{ module.name }}</h3>
     </template>
-    <p class="description">{{ module.description }}</p>
+    <div class="description" v-if="module.description">
+      <p>{{ module.description }}</p>
+    </div>
   </BaseCard>
 </template>
 <style scoped>

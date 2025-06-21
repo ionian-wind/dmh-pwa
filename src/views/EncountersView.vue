@@ -89,13 +89,14 @@ const handlePartySelectorCancel = () => {
 </script>
 
 <template>
-  <div class="view-list">
+  <div class="view-root">
     <div class="view-header">
       <Button @click="handleCreate" title="Create Encounter">
         <i class="si si-plus"></i>
       </Button>
     </div>
 
+    <div class="view-list">
     <div v-if="encounterStore.filtered.length === 0" class="view-empty">
       <p>No encounters yet. Create your first encounter to get started!</p>
     </div>
@@ -126,5 +127,6 @@ const handlePartySelectorCancel = () => {
       @cancel="handlePartySelectorCancel"
       @combat-created="handleCombatCreated"
     />
+  </div>
   </div>
 </template>

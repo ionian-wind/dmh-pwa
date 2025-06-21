@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import GlobalMenu from '@/components/GlobalMenu.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import Button from './common/Button.vue';
 
+const router = useRouter();
 const isFullscreen = ref(false);
 
 function updateFullscreenState() {
@@ -36,6 +38,10 @@ function toggleFullscreen() {
   }
 }
 
+function navigateToJukebox() {
+  router.push('/jukebox');
+}
+
 onMounted(() => {
   document.addEventListener('fullscreenchange', updateFullscreenState);
   document.addEventListener('webkitfullscreenchange', updateFullscreenState);
@@ -66,6 +72,17 @@ onUnmounted(() => {
           <i v-if="!isFullscreen" class="si si-fullscreen"></i>
           <i v-else class="si si-fullscreen-exit"></i>
         </Button>
+        
+        <Button
+          class="jukebox-btn"
+          variant="link"
+          @click="navigateToJukebox"
+          title="Jukebox"
+          aria-label="Open Jukebox"
+        >
+          <i class="si si-music-note" />
+        </Button>
+        
         <LanguageSwitcher />
 
       </nav>
@@ -111,6 +128,19 @@ onUnmounted(() => {
   transition: color 0.15s;
 }
 .fullscreen-btn:hover {
+  color: var(--color-primary, #007bff);
+}
+
+.jukebox-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  color: var(--color-text, #222);
+  transition: color 0.15s;
+}
+.jukebox-btn:hover {
   color: var(--color-primary, #007bff);
 }
 </style> 
