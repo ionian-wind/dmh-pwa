@@ -58,6 +58,26 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     return currentIndex > -1 && currentIndex < queue.value.length - 1;
   });
   
+  const hasPrevTrack = computed(() => {
+    // If no current track or queue is empty, there's no previous track
+    if (!currentTrack.value || queue.value.length === 0) {
+      return false;
+    }
+    
+    // Check if current track is in the queue and not the first one
+    const currentIndex = currentTrackIndex.value;
+    if (currentIndex > 0) {
+      return true;
+    }
+    
+    // If at first track (index 0), check if track has been playing for at least 5 seconds
+    if (currentIndex === 0) {
+      return currentTime.value >= 5;
+    }
+    
+    return false;
+  });
+  
   const isReady = computed(() => {
     return audioEl.value !== null && tracksStore.items.value.length > 0;
   });
@@ -405,6 +425,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     // Getters
     currentQueueId: computed(() => currentQueueId.value),
     hasNextTrack,
+    hasPrevTrack,
     isReady,
     queue: computed(() => queue.value),
     

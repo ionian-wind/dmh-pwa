@@ -19,8 +19,8 @@
       </div>
       <div class="player-controls-bottom">
         <div class="controls">
-          <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.currentTrack"><i class="si si-step-backward"></i></Button>
-          <Button variant="light" @click="playerStore.togglePlay()" :disabled="isPlayDisabled"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
+          <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.hasPrevTrack"><i class="si si-step-backward"></i></Button>
+          <Button variant="light" @click="playerStore.togglePlay()" :disabled="isPlayDisabled" class="play-pause"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
           <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"><i class="si si-step-forward"></i></Button>
         </div>
         <div class="progress-bar">
@@ -414,9 +414,46 @@ const isPlayDisabled = computed(() => {
   font-size: 1.5rem;
   cursor: pointer;
   color: #333;
-  transition: color 0.2s;
+  transition: all 0.2s ease-in-out;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
 }
-.controls button:hover, .volume-button:hover {
+.controls button:hover:not(:disabled), .volume-button:hover:not(:disabled) {
   color: var(--primary-color, #4f46e5);
+  transform: scale(1.1);
+}
+.controls button:active:not(:disabled), .volume-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.controls button:disabled, .volume-button:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+.controls button:disabled:hover, .volume-button:disabled:hover {
+  transform: none;
+}
+
+/* Special styling for play/pause button */
+.controls button.play-pause {
+  font-size: 1.8rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.controls button.play-pause:hover:not(:disabled) {
+  color: var(--primary-color, #4f46e5);
+  transform: scale(1.15);
+}
+
+.controls button.play-pause:active:not(:disabled) {
+  transform: scale(0.9);
 }
 </style> 
