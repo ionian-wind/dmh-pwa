@@ -100,19 +100,11 @@ const groupedEntities = computed(() => {
 </template>
 
 <style scoped>
-.mentions-title {
-  margin-top: 0;
-  font-size: 1.1em;
-  margin-bottom: 0.5em;
-}
+
 .mentions-group {
   margin-bottom: 1em;
 }
-.mentions-group-title {
-  margin: 0 0 0.25em 0;
-  font-size: 1em;
-  color: var(--color-text-light);
-}
+
 .mentions-list {
   list-style: none;
   padding: 0;

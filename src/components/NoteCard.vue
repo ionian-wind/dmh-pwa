@@ -47,7 +47,7 @@ function toggleExpand() { expanded.value = !expanded.value; }
           <span
             v-for="tag in note.tags"
             :key="tag"
-            class="tag clickable"
+            class="tag"
             @click.stop="emit('tag-click', tag)"
           >#{{ tag }}</span>
         </div>
@@ -112,12 +112,12 @@ function toggleExpand() { expanded.value = !expanded.value; }
   color: var(--color-text);
 }
 
-.tag.clickable {
+.tag {
   cursor: pointer;
   text-decoration: underline dotted;
   transition: color 0.15s;
 }
-.tag.clickable:hover {
+.tag:hover {
   color: var(--color-primary);
 }
 

@@ -122,25 +122,6 @@ const mentionedInNotes = computed(() => {
     .filter((n): n is Note => !!n);
 });
 
-function getEntityRoute(entity: { kind: string; id: string }) {
-  switch (entity.kind) {
-    case 'monster': return `/monsters/${entity.id}`;
-    case 'party': return `/parties/${entity.id}`;
-    case 'encounter': return `/encounters/${entity.id}`;
-    case 'module': return `/modules/${entity.id}`;
-    case 'note': return `/notes/${entity.id}`;
-    default: return '#';
-  }
-}
-
-function getEntityLabel(entity: { kind: string; id: string }) {
-  return entity.kind.charAt(0).toUpperCase() + entity.kind.slice(1);
-}
-
-function handleTagClick(tag: string) {
-  router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
-}
-
 onMounted(async () => {
   await noteStore.load();
   await moduleStore.load();
@@ -162,17 +143,6 @@ onMounted(async () => {
     :title="noteTitle"
     :not-found="notFound"
   >
-    <template #sub>
-      <div v-if="note?.tags?.length" class="tags">
-        <span
-          v-for="tag in note.tags"
-          :key="tag"
-          class="tag clickable"
-          @click.stop="handleTagClick(tag)"
-        >#{{ tag }}</span>
-      </div>
-    </template>
-    
     <Markdown :content="note?.content || ''" />
 
     <template #editor>
@@ -188,6 +158,17 @@ onMounted(async () => {
 
     <template #sidepanel>
       <div class="side-panel-content">
+        <div v-if="note?.tags?.length" class="tags-section">
+          <h3>Tags</h3>
+          <div class="tags">
+            <router-link
+              v-for="tag in note.tags"
+              :key="tag"
+              class="tag"
+              :to="{ path: '/notes', query: { tag: encodeURIComponent(tag) } }"
+            >#{{ tag }}</router-link>
+          </div>
+        </div>
         <Mentions title="Mentions" :entities="mentions" />
         <Mentions title="Mentioned In" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id, title: n.title }))" />
       </div>
@@ -250,36 +231,9 @@ onMounted(async () => {
   padding: 0;
 }
 
-.tag.clickable {
-  cursor: pointer;
-  text-decoration: underline dotted;
-  transition: color 0.15s;
-}
-.tag.clickable:hover {
-  color: var(--color-primary);
-}
-
-.tags {
+.side-panel-content {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  flex-direction: column;
+  gap: 2rem;
 }
-
-.tag {
-  background: var(--color-background-soft);
-  color: var(--color-primary);
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius-sm);
-  font-size: 0.9rem;
-}
-
-.clickable {
-  cursor: pointer;
-}
-
-.clickable:hover {
-  background: var(--color-border);
-}
-
 </style>
