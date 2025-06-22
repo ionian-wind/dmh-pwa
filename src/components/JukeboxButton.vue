@@ -3,7 +3,8 @@
     v-if="!isOnJukeboxPage"
     :is-open="isPopoverOpen" 
     @close="isPopoverOpen = false" 
-    placement="right"
+    placement="right-end"
+    :offset="12"
     :disable-internal-trigger="true"
   >
     <template #trigger>
@@ -13,13 +14,14 @@
         @click.stop="handleClick"
         title="Jukebox"
         :class="fabClasses"
+        :style="gradientStyle"
       >
         <i class="si si-music-note" />
       </FloatActionButton>
     </template>
     
     <div class="jukebox-popover-content">
-      <JukeboxPlayer />
+      <JukeboxPlayer :show-artwork="true" />
     </div>
   </PopoverPanel>
 </template>
@@ -31,6 +33,7 @@ import FloatActionButton from './common/FloatActionButton.vue';
 import PopoverPanel from './common/PopoverPanel.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
 
 const route = useRoute();
 const isPopoverOpen = ref(false);
@@ -57,6 +60,12 @@ const fabClasses = computed(() => ({
 const handleClick = () => {
   isPopoverOpen.value = !isPopoverOpen.value;
 };
+
+// Use the animated gradient composable
+const gradientStyle = useAnimatedGradient(
+  computed(() => playerStore.isPlaying),
+  () => playerStore.currentTrack?.palette
+);
 </script>
 
 <style scoped>
@@ -74,7 +83,7 @@ const handleClick = () => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background: var(--custom-gradient, linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab));
   background-size: 400% 400%;
   
   opacity: 0; /* Hidden by default */

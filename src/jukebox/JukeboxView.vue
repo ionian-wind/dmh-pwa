@@ -62,7 +62,7 @@
                     :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
                     @click="playerStore.playTrack(track)"
                   >
-                    <div class="track-artwork" :style="{ backgroundImage: `url(${track.picture})` }" v-if="track.picture"></div>
+                    <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
                     <div v-else class="track-artwork track-artwork-placeholder">
                       <i class="si si-music-note"></i>
                     </div>
@@ -86,7 +86,7 @@
                   :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
                   @click="playerStore.playTrack(track)"
                 >
-                  <div v-if="track.picture" :style="{ backgroundImage: `url(${track.picture})` }" class="track-artwork"></div>
+                  <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
                   <div v-else class="track-artwork track-artwork-placeholder">
                     <i class="si si-music-note"></i>
                   </div>
@@ -123,9 +123,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import draggable from 'vuedraggable';
-import { pickAudioFiles, getFileFromHandle, getAudioMetadata, extractTrackMetadata } from '@/jukebox/FileSystemUtils';
+import { pickAudioFiles, getFileFromHandle, extractTrackMetadata } from '@/jukebox/FileSystemUtils';
 import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, deleteJukeboxFile, putJukeboxFile, getJukeboxFile } from '@/jukebox/stores';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
@@ -198,6 +198,32 @@ const isAddToPlaylistModalOpen = ref(false);
 const trackToAddToPlaylist = ref<JukeboxTrack | null>(null);
 
 const isPlaylistPanelVisible = ref(true);
+
+const createdUrls = ref<string[]>([]);
+const pictureUrlCache = ref<Map<string, string>>(new Map());
+
+function getPictureStyle(picture: string | Blob | undefined): { backgroundImage: string } {
+  if (!picture) return { backgroundImage: '' };
+  
+  let url = '';
+  if (typeof picture === 'string') {
+    url = picture;
+  } else {
+    // Create a unique key for this blob based on its content
+    const blobKey = `${picture.size}-${picture.type}`;
+    
+    // Check if we already have a URL for this blob
+    if (pictureUrlCache.value.has(blobKey)) {
+      url = pictureUrlCache.value.get(blobKey)!;
+    } else {
+      // Create new URL and cache it
+      url = URL.createObjectURL(picture);
+      pictureUrlCache.value.set(blobKey, url);
+      createdUrls.value.push(url);
+    }
+  }
+  return { backgroundImage: `url(${url})` };
+}
 
 function openPlaylistModal(playlist: JukeboxPlaylist | null) {
   playlistToEdit.value = playlist;
@@ -304,19 +330,17 @@ async function pickFiles() {
         updatedAt: Date.now(),
       });
 
-      const [audioMeta, trackMeta] = await Promise.all([
-        getAudioMetadata(file),
-        extractTrackMetadata(file),
-      ]);
+      const trackMeta = await extractTrackMetadata(file);
 
       const newTrackData = {
         fileId,
         title: trackMeta.title || file.name.replace(/\.[^/.]+$/, ""),
         artist: trackMeta.artist,
         album: trackMeta.album,
-        duration: audioMeta.duration,
+        duration: trackMeta.duration,
         picture: trackMeta.picture, // This is a blob URL
         color: trackMeta.color,
+        palette: trackMeta.palette,
         playlistIds: [],
         genre: trackMeta.genre,
         year: trackMeta.year,
@@ -374,7 +398,8 @@ onMounted(async () => {
   await Promise.all([
     tracksStore.load(),
     playlistsStore.load(),
-    filesStore.load()
+    filesStore.load(),
+    moduleStore.load(),
   ]);
   
   if (configStore.activePlaylistId !== undefined) {
@@ -388,6 +413,12 @@ onMounted(async () => {
 function togglePlaylistPanel() {
   isPlaylistPanelVisible.value = !isPlaylistPanelVisible.value;
 }
+
+onBeforeUnmount(() => {
+  createdUrls.value.forEach(url => URL.revokeObjectURL(url));
+  createdUrls.value = [];
+  pictureUrlCache.value.clear();
+});
 </script>
 
 <style scoped>
@@ -583,7 +614,6 @@ function togglePlaylistPanel() {
 
 .track-item.is-playing {
   background: #f0f8ff;
-  border-color: var(--track-color, #4f46e5);
 }
 
 .track-item.is-playing::before {
@@ -596,7 +626,6 @@ function togglePlaylistPanel() {
   border-radius: 4px;
   background-size: cover;
   background-position: center;
-  background-color: #f0f0f0;
   margin-right: 1rem;
   flex-shrink: 0;
 }

@@ -4,7 +4,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 interface Props {
   isOpen: boolean;
   trigger?: 'click' | 'hover' | 'focus';
-  placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end' | 'left-start' | 'left-center' | 'left-end' | 'right-start' | 'right-center' | 'right-end';
   offset?: number;
   closeOnClickOutside?: boolean;
   closeOnEscape?: boolean;
@@ -58,9 +58,12 @@ function calculatePosition() {
 
   const triggerRect = triggerEl.getBoundingClientRect();
   
-  // Wait for popover to be rendered
+  // Wait for popover to be rendered and get its dimensions
   if (!popoverRef.value.offsetWidth || !popoverRef.value.offsetHeight) {
-    setTimeout(calculatePosition, 10);
+    // Use requestAnimationFrame for better timing
+    requestAnimationFrame(() => {
+      calculatePosition();
+    });
     return;
   }
   
@@ -96,11 +99,27 @@ function calculatePosition() {
   top = placementResult.top;
   left = placementResult.left;
 
-  // Final viewport boundary check
-  if (left < 8) left = 8;
-  if (top < 8) top = 8;
-  if (left + popoverRect.width > viewportWidth - 8) left = viewportWidth - popoverRect.width - 8;
-  if (top + popoverRect.height > viewportHeight - 8) top = viewportHeight - popoverRect.height - 8;
+  // Final viewport boundary check with more aggressive clamping
+  const minMargin = 8;
+  const maxMargin = 16;
+  
+  // Ensure popover doesn't go off-screen
+  if (left < minMargin) left = minMargin;
+  if (top < minMargin) top = minMargin;
+  if (left + popoverRect.width > viewportWidth - minMargin) {
+    left = viewportWidth - popoverRect.width - minMargin;
+  }
+  if (top + popoverRect.height > viewportHeight - minMargin) {
+    top = viewportHeight - popoverRect.height - minMargin;
+  }
+
+  // Additional check for very small viewports
+  if (viewportWidth < 400) {
+    left = maxMargin;
+    if (left + popoverRect.width > viewportWidth - maxMargin) {
+      left = viewportWidth - popoverRect.width - maxMargin;
+    }
+  }
 
   position.value = { top, left };
   activePlacement.value = finalPlacement as any;
@@ -156,6 +175,14 @@ function calculatePlacement(basePlacement: string, alignment: string, triggerRec
   // Check if it fits within the viewport
   if (top < 8 || left < 8 || (left + popoverRect.width) > (viewportWidth - 8) || (top + popoverRect.height) > (viewportHeight - 8)) {
     fits = false;
+  }
+
+  // Special handling for large content (like jukebox player)
+  if (popoverRect.width > viewportWidth - 16 || popoverRect.height > viewportHeight - 16) {
+    // Center the popover if it's too large
+    left = Math.max(8, (viewportWidth - popoverRect.width) / 2);
+    top = Math.max(8, (viewportHeight - popoverRect.height) / 2);
+    fits = true;
   }
 
   return { top, left, fits };
@@ -257,16 +284,20 @@ function open() {
   isVisible.value = true;
   emit('open');
   
+  // Use nextTick to ensure DOM is updated, then calculate position
   nextTick(() => {
-    calculatePosition();
-    if (props.autoFocus && popoverRef.value) {
-      const firstFocusable = popoverRef.value.querySelector(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      ) as HTMLElement;
-      if (firstFocusable) {
-        firstFocusable.focus();
+    // Add a small delay to ensure the popover is fully rendered
+    setTimeout(() => {
+      calculatePosition();
+      if (props.autoFocus && popoverRef.value) {
+        const firstFocusable = popoverRef.value.querySelector(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) as HTMLElement;
+        if (firstFocusable) {
+          firstFocusable.focus();
+        }
       }
-    }
+    }, 10);
   });
 }
 
@@ -307,6 +338,11 @@ watch(() => isVisible.value, (visible) => {
     window.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('resize', calculatePosition);
     window.addEventListener('scroll', calculatePosition);
+    
+    // Recalculate position after a short delay to ensure content is rendered
+    setTimeout(() => {
+      calculatePosition();
+    }, 50);
   } else {
     window.removeEventListener('keydown', handleKeydown);
     window.removeEventListener('mousedown', handleClickOutside);
@@ -437,11 +473,76 @@ onUnmounted(() => {
   outline-offset: 2px;
 }
 
+/* Placement-specific styles */
+.popover-panel--top-center,
+.popover-panel--bottom-center {
+  transform-origin: center bottom;
+}
+
+.popover-panel--left-center,
+.popover-panel--right-center {
+  transform-origin: center left;
+}
+
+/* Center alignment visual indicators (optional) */
+.popover-panel--top-center::before,
+.popover-panel--bottom-center::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+}
+
+.popover-panel--top-center::before {
+  bottom: -6px;
+  border-top: 6px solid var(--color-border);
+}
+
+.popover-panel--bottom-center::before {
+  top: -6px;
+  border-bottom: 6px solid var(--color-border);
+}
+
+.popover-panel--left-center::after,
+.popover-panel--right-center::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+.popover-panel--left-center::after {
+  right: -6px;
+  border-left: 6px solid var(--color-border);
+}
+
+.popover-panel--right-center::after {
+  left: -6px;
+  border-right: 6px solid var(--color-border);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .popover-panel {
     max-width: calc(100vw - 32px) !important;
     min-width: 200px !important;
+    max-height: calc(100vh - 32px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .popover-panel {
+    max-width: calc(100vw - 16px) !important;
+    min-width: 150px !important;
+    max-height: calc(100vh - 16px) !important;
   }
 }
 </style> 

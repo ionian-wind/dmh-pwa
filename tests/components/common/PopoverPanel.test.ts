@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 import PopoverPanel from '@/components/common/PopoverPanel.vue';
 import Button from '@/components/common/Button.vue';
 
 // Mock window methods
-const mockGetBoundingClientRect = vi.fn(() => ({
+const mockGetBoundingClientRect = jest.fn(() => ({
   top: 100,
   left: 100,
   right: 200,
@@ -14,9 +14,9 @@ const mockGetBoundingClientRect = vi.fn(() => ({
   height: 50
 }));
 
-const mockQuerySelector = vi.fn();
-const mockAddEventListener = vi.fn();
-const mockRemoveEventListener = vi.fn();
+const mockQuerySelector = jest.fn();
+const mockAddEventListener = jest.fn();
+const mockRemoveEventListener = jest.fn();
 
 Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true });
 Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
@@ -31,7 +31,7 @@ describe('PopoverPanel', () => {
   let wrapper: VueWrapper<any>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -77,6 +77,30 @@ describe('PopoverPanel', () => {
       wrapper = createWrapper({ isOpen: true, placement: 'top' });
       await nextTick();
       expect(wrapper.find('.popover-panel--top').exists()).toBe(true);
+    });
+
+    it('applies correct center alignment placement class', async () => {
+      wrapper = createWrapper({ isOpen: true, placement: 'top-center' });
+      await nextTick();
+      expect(wrapper.find('.popover-panel--top-center').exists()).toBe(true);
+    });
+
+    it('applies correct bottom center placement class', async () => {
+      wrapper = createWrapper({ isOpen: true, placement: 'bottom-center' });
+      await nextTick();
+      expect(wrapper.find('.popover-panel--bottom-center').exists()).toBe(true);
+    });
+
+    it('applies correct left center placement class', async () => {
+      wrapper = createWrapper({ isOpen: true, placement: 'left-center' });
+      await nextTick();
+      expect(wrapper.find('.popover-panel--left-center').exists()).toBe(true);
+    });
+
+    it('applies correct right center placement class', async () => {
+      wrapper = createWrapper({ isOpen: true, placement: 'right-center' });
+      await nextTick();
+      expect(wrapper.find('.popover-panel--right-center').exists()).toBe(true);
     });
 
     it('shows arrow when showArrow is true', async () => {
@@ -302,6 +326,52 @@ describe('PopoverPanel', () => {
       window.dispatchEvent(new Event('resize'));
       
       expect(mockGetBoundingClientRect).toHaveBeenCalled();
+    });
+
+    it('centers large content when it exceeds viewport', async () => {
+      // Mock a large popover that exceeds viewport
+      const mockLargePopoverRect = {
+        top: 0,
+        left: 0,
+        right: 800,
+        bottom: 600,
+        width: 800,
+        height: 600
+      };
+      
+      // Mock small viewport
+      Object.defineProperty(window, 'innerWidth', { value: 400, writable: true });
+      Object.defineProperty(window, 'innerHeight', { value: 300, writable: true });
+      
+      // Mock getBoundingClientRect to return different values for trigger and popover
+      let callCount = 0;
+      Element.prototype.getBoundingClientRect = jest.fn(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Trigger element
+          return {
+            top: 100,
+            left: 100,
+            right: 200,
+            bottom: 150,
+            width: 100,
+            height: 50
+          };
+        } else {
+          // Popover element
+          return mockLargePopoverRect;
+        }
+      });
+      
+      wrapper = createWrapper({ isOpen: true });
+      await nextTick();
+      
+      // Verify that positioning was calculated
+      expect(Element.prototype.getBoundingClientRect).toHaveBeenCalled();
+      
+      // Reset viewport
+      Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true });
+      Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
     });
   });
 

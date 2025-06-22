@@ -292,7 +292,7 @@ onMounted(() => {
                       <span class="monster-name">{{ monster.name }}</span>
                     </div>
                   </div>
-                </div>
+                  </div>
                 <div class="add-monsters">
                   <Button @click="showLinkModal = true">{{ t('encounters.buttons.addMonsters') }}</Button>
                 </div>
@@ -347,10 +347,10 @@ onMounted(() => {
       <div class="monster-linking">
         <div v-for="monster in allMonsters" :key="monster.id" class="monster-link-item">
           <span>{{ monster.name }}</span>
-          <ToggleSwitch 
+                <ToggleSwitch
             :model-value="isMonsterLinked(monster.id)" 
             @update:model-value="handleToggleMonster(monster, $event)" 
-          />
+                />
         </div>
       </div>
     </BaseModal>

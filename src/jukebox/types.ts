@@ -34,7 +34,8 @@ export interface JukeboxTrack extends WithMetadata {
   composer?: string;
   comment?: string;
   lyrics?: string;
-  picture?: string; // base64 or object URL for artwork
+  picture?: string | Blob; // base64, object URL, or Blob for artwork
   color?: string; // dominant color from artwork
+  palette?: string[]; // color palette from artwork
   // Add more fields as needed for extracted metadata
 } 

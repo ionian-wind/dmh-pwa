@@ -21,7 +21,7 @@ export async function getFileFromHandle(handle: FileSystemFileHandle): Promise<F
   return await handle.getFile();
 }
 
-export async function getAudioMetadata(file: File): Promise<{ duration: number }> {
+async function getAudioMetadata(file: File): Promise<{ duration: number }> {
   return new Promise((resolve, reject) => {
     const audio = document.createElement('audio');
     audio.preload = 'metadata';
@@ -38,20 +38,17 @@ export async function getAudioMetadata(file: File): Promise<{ duration: number }
 }
 
 export async function extractTrackMetadata(file: File): Promise<any> {
+  const audioMetadata = await getAudioMetadata(file);
+
   return new Promise((resolve, reject) => {
     // Vite specific worker import: `?worker` suffix is not needed with `new URL`
-    const worker = new Worker(new URL('./metadata.worker.ts', import.meta.url), {
+    const worker = new Worker(new URL('./worker/metadata.worker.ts', import.meta.url), {
       type: 'module',
     });
 
     worker.onmessage = (event: MessageEvent) => {
       if (event.data.type === 'success') {
-        const metadata = event.data.metadata;
-        if (metadata.picture) {
-          const blob = new Blob([metadata.picture.data], { type: metadata.picture.format });
-          metadata.picture = URL.createObjectURL(blob);
-        }
-        resolve(metadata);
+        resolve({ ...event.data.metadata, ...audioMetadata });
       } else {
         console.error('Jukebox Worker Error:', event.data.error);
         // Resolve with an empty object so the flow doesn't break

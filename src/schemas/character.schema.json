@@ -13,10 +13,10 @@
       "type": "string"
     },
     "name": {
-      "type": "string"
+        "type": "string"
     },
     "notes": {
-      "type": "string"
+        "type": "string"
     },
     "createdAt": {
       "type": "number"

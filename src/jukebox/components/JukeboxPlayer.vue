@@ -1,6 +1,14 @@
 <template>
-  <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }">
+  <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }" :style="gradientStyle">
     <div class="jukebox-player-content">
+      <!-- Track Artwork -->
+      <div v-if="showArtwork" class="track-artwork-container">
+        <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
+        <div v-else class="track-artwork track-artwork-placeholder">
+          <i class="si si-music-note"></i>
+        </div>
+      </div>
+      
       <div class="track-info-top">
         <div class="title">{{ playerStore.currentTrack?.title || 'No track selected' }}</div>
         <div class="artist">{{ playerStore.currentTrack?.artist || '&nbsp;' }}</div>
@@ -51,15 +59,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps } from 'vue';
+import { ref, computed, defineProps, onBeforeUnmount, watch } from 'vue';
 import RangeSlider from '@/components/common/RangeSlider.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import Button from '@/components/common/Button.vue';
+import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
 
-const props = defineProps<{ animatedBackground?: boolean }>();
+const props = defineProps<{ 
+  animatedBackground?: boolean;
+  showArtwork?: boolean;
+}>();
 const playerStore = useJukeboxPlayerStore();
 
 const showAnimatedBg = computed(() => !!props.animatedBackground && playerStore.isPlaying);
+
+// Use the new composable for the gradient style
+const gradientStyle = useAnimatedGradient(showAnimatedBg, () => playerStore.currentTrack?.palette);
+
+// Track artwork handling
+const createdUrls = ref<string[]>([]);
+const pictureUrlCache = ref<Map<string, string>>(new Map());
+
+// Memoize the picture style to prevent URL recreation on every render
+const pictureStyle = computed(() => {
+  if (!playerStore.currentTrack?.picture) {
+    return { backgroundImage: '' };
+  }
+  
+  const picture = playerStore.currentTrack.picture;
+  let url = '';
+  
+  if (typeof picture === 'string') {
+    url = picture;
+  } else {
+    // Create a unique key for this blob based on its content
+    const blobKey = `${picture.size}-${picture.type}`;
+    
+    // Check if we already have a URL for this blob
+    if (pictureUrlCache.value.has(blobKey)) {
+      url = pictureUrlCache.value.get(blobKey)!;
+    } else {
+      // Create new URL and cache it
+      url = URL.createObjectURL(picture);
+      pictureUrlCache.value.set(blobKey, url);
+      createdUrls.value.push(url);
+    }
+  }
+  
+  return { backgroundImage: `url(${url})` };
+});
+
+// Clean up created URLs on component unmount
+onBeforeUnmount(() => {
+  createdUrls.value.forEach(url => URL.revokeObjectURL(url));
+  createdUrls.value = [];
+  pictureUrlCache.value.clear();
+});
 
 // Volume slider state is UI-specific, so it stays here.
 const isVolumeSliderVisible = ref(false);
@@ -103,6 +158,43 @@ function formatTime(seconds: number): string {
   flex-direction: column;
   min-width: 600px;
 }
+
+/* Responsive adjustments for popover context */
+@media (max-width: 768px) {
+  .jukebox-player {
+    min-width: 400px;
+  }
+  
+  .track-artwork {
+    width: 150px;
+    height: 150px;
+    max-width: 300px;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .jukebox-player {
+    min-width: 300px;
+  }
+  
+  .track-artwork {
+    width: 120px;
+    height: 120px;
+    max-width: 200px;
+    max-height: 200px;
+  }
+  
+  .player-controls-bottom {
+    grid-template-areas: 
+      "controls"
+      "progress"
+      "volume";
+    grid-template-columns: 1fr;
+    gap: 0.5em;
+  }
+}
+
 .jukebox-player.with-animated-bg::before {
   content: '';
   position: absolute;
@@ -111,13 +203,13 @@ function formatTime(seconds: number): string {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg,
+  background: var(--custom-gradient, linear-gradient(45deg,
     rgba(79, 70, 229, 0.15) 0%,
     rgba(147, 51, 234, 0.15) 25%,
     rgba(236, 72, 153, 0.15) 50%,
     rgba(59, 130, 246, 0.15) 75%,
     rgba(34, 197, 94, 0.15) 100%
-  );
+  ));
   background-size: 400% 400%;
   animation: gradientShift 8s ease infinite;
   pointer-events: none;
@@ -133,12 +225,30 @@ function formatTime(seconds: number): string {
     background-position: 0% 50%;
   }
 }
-.jukebox-player-content {
-  position: relative;
-  z-index: 1;
+
+.track-artwork-container {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.track-artwork {
+  width: 200px;
+  height: 200px;
+  max-width: 400px;
+  max-height: 400px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.track-artwork-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 3rem;
 }
 .track-info-top {
   text-align: center;
@@ -197,12 +307,5 @@ function formatTime(seconds: number): string {
 }
 .controls button:hover, .volume-button:hover {
   color: var(--primary-color, #4f46e5);
-}
-.controls button:disabled {
-  color: #ccc;
-  cursor: not-allowed;
-}
-.controls button:disabled:hover {
-  color: #ccc;
 }
 </style> 
