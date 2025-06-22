@@ -7,6 +7,7 @@ import type { Party } from '@/types';
 import PartyEditor from '@/components/PartyEditor.vue';
 import PartyCard from '@/components/PartyCard.vue';
 import Button from '@/components/common/Button.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 
 const router = useRouter();
 const partyStore = usePartyStore();
@@ -60,11 +61,11 @@ const deleteParty = async (party: Party) => {
 
 <template>
   <div class="view-root">
-    <div class="view-header">
-      <Button @click="handleCreateClick" title="Create Party">
-        <i class="si si-plus"></i>
-      </Button>
-    </div>
+    <ViewHeader
+      show-create
+      create-title="Create Party"
+      @create="handleCreateClick"
+    />
     <div class="view-list">
 
 
@@ -73,7 +74,7 @@ const deleteParty = async (party: Party) => {
   <p v-else>No parties yet. Create your first party to get started!</p>
 </div>
 
-<div class="view-grid">
+<div v-else class="view-grid">
   <PartyCard
     v-for="party in partyStore.filtered"
     :key="party.id"

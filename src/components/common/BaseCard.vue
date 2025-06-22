@@ -15,7 +15,7 @@
         <slot name="actions" />
       </div>
       <div class="base-card-actions-right">
-        <Button v-if="showView" variant="link" size="small" @click="$emit('view')" title="View Details">
+        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" title="View Details">
           <i class="si si-eye"></i>
         </Button>
         <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">

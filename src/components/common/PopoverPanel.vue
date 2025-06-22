@@ -397,6 +397,14 @@ onUnmounted(() => {
         :aria-labelledby="title ? 'popover-title' : undefined"
         aria-modal="true"
       >
+        <!-- Corner slots for custom buttons -->
+        <!-- Usage: <template #corner-left>...</template> and <template #corner-right>...</template> -->
+        <div class="popover-corner popover-corner--left">
+          <slot name="corner-left" />
+        </div>
+        <div class="popover-corner popover-corner--right">
+          <slot name="corner-right" />
+        </div>
         <!-- Header -->
         <div v-if="title" class="popover-panel__header">
           <h3 id="popover-title" class="popover-panel__title">{{ title }}</h3>
@@ -544,5 +552,18 @@ onUnmounted(() => {
     min-width: 150px !important;
     max-height: calc(100vh - 16px) !important;
   }
+}
+
+.popover-corner {
+  position: absolute;
+  top: 0.5rem;
+  z-index: 20;
+  pointer-events: auto;
+}
+.popover-corner--left {
+  left: 0.5rem;
+}
+.popover-corner--right {
+  right: 0.5rem;
 }
 </style> 

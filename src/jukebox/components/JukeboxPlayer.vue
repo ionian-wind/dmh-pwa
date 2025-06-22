@@ -424,7 +424,7 @@ const isPlayDisabled = computed(() => {
   min-height: 2.5rem;
 }
 .controls button:hover:not(:disabled), .volume-button:hover:not(:disabled) {
-  color: var(--primary-color, #4f46e5);
+  background: none;
   transform: scale(1.1);
 }
 .controls button:active:not(:disabled), .volume-button:active:not(:disabled) {
@@ -445,11 +445,10 @@ const isPlayDisabled = computed(() => {
   font-size: 1.8rem;
   min-width: 3rem;
   min-height: 3rem;
-  transition: all 0.3s ease-in-out;
 }
 
+
 .controls button.play-pause:hover:not(:disabled) {
-  color: var(--primary-color, #4f46e5);
   transform: scale(1.15);
 }
 

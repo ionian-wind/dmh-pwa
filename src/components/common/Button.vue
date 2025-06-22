@@ -136,18 +136,23 @@ function handleClick(event: MouseEvent) {
 
 .btn--link, .btn--light {
   background: transparent;
-  color: var(--color-primary);
+  color: var(--color-text, #666);
   border: none;
   padding: 0.25rem 0.5rem;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  transition: all 0.2s ease;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn--link:hover:not(.btn--disabled) {
   background: var(--color-primary-alpha);
   text-decoration-color: var(--color-primary);
   transform: translateY(-1px);
+}
+
+.btn--light:hover:not(.btn--disabled) {
+  color: var(--primary-color, #4f46e5);
+  background-color: rgba(79, 70, 229, 0.1);
+  transform: scale(1.1);
 }
 
 /* Disabled state */

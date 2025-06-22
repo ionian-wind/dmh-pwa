@@ -6,6 +6,7 @@ import type { Monster } from '@/types';
 import MonsterEditor from '@/components/MonsterEditor.vue';
 import MonsterCard from '@/components/MonsterCard.vue';
 import Button from '@/components/common/Button.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 
 const router = useRouter();
 const monsterStore = useMonsterStore();
@@ -55,17 +56,17 @@ const deleteMonster = async (monsterId: string) => {
 
 <template>
   <div class="view-root">
-    <div class="view-header">
-      <Button @click="handleCreateClick" title="Create Monster">
-        <i class="si si-plus"></i>
-      </Button>
-    </div>
+    <ViewHeader
+      show-create
+      create-title="Create Monster"
+      @create="handleCreateClick"
+    />
     <div class="view-list">
     <div v-if="monsterStore.filtered.length === 0" class="view-empty">
       <p>No monsters found.</p>
     </div>
 
-    <div class="view-grid">
+    <div v-else class="view-grid">
       <MonsterCard
         v-for="monster in monsterStore.filtered"
         :key="monster.id"

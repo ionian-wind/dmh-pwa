@@ -36,13 +36,13 @@ const removeTag = (index: number) => {
         :placeholder="placeholder || 'Add tag'"
         @keydown.enter.prevent="addTag"
       >
-      <Button size="small" variant="link" @click.prevent="addTag">+</Button>
+      <Button size="small" variant="light" @click.prevent="addTag">+</Button>
     </div>
 
     <div class="tags-list">
       <span v-for="(tag, index) in modelValue" :key="index" class="tag">
         {{ tag }}
-        <Button size="small" variant="link" @click="removeTag(index)">×</Button>
+        <Button size="small" variant="light" @click="removeTag(index)">×</Button>
       </span>
     </div>
   </div>

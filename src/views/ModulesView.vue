@@ -6,6 +6,7 @@ import type { Module } from '@/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import ModuleCard from '@/components/ModuleCard.vue';
 import Button from '@/components/common/Button.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 
 const router = useRouter();
 const moduleStore = useModuleStore();
@@ -57,11 +58,11 @@ const deleteModule = async (module: Module) => {
 
 <template>
   <div class="view-root">
-    <div class="view-header">
-      <Button @click="handleCreateClick" title="Create Module">
-        <i class="si si-plus"></i>
-      </Button>
-    </div>
+    <ViewHeader
+      show-create
+      create-title="Create Module"
+      @create="handleCreateClick"
+    />
     <div class="view-list">
     <div v-if="moduleStore.items.length === 0" class="view-empty">
       <p>No modules yet. Create your first module to get started!</p>

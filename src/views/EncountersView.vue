@@ -8,6 +8,7 @@ import EncounterEditor from '@/components/EncounterEditor.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
 import Button from '@/components/common/Button.vue';
 import PartySelector from '@/components/PartySelector.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 
 const router = useRouter();
 const encounterStore = useEncounterStore();
@@ -52,14 +53,9 @@ const handleSave = async (encounter: Omit<Encounter, 'id' | 'createdAt' | 'updat
     id: '',
     name: '',
     description: '',
-    difficulty: 'medium',
-    level: 1,
     monsters: {},
-    currentRound: 0,
-    currentTurn: 0,
     moduleId: '',
     notes: '',
-    xp: 0,
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -90,11 +86,11 @@ const handlePartySelectorCancel = () => {
 
 <template>
   <div class="view-root">
-    <div class="view-header">
-      <Button @click="handleCreate" title="Create Encounter">
-        <i class="si si-plus"></i>
-      </Button>
-    </div>
+    <ViewHeader
+      show-create
+      create-title="Create Encounter"
+      @create="handleCreate"
+    />
 
     <div class="view-list">
     <div v-if="encounterStore.filtered.length === 0" class="view-empty">

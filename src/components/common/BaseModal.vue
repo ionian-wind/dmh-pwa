@@ -105,7 +105,7 @@ onUnmounted(() => {
       <div class="modal-dialog">
         <div class="modal-header">
           <h2>{{ title }}</h2>
-          <Button v-if="showClose" variant="link" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
+          <Button v-if="showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
             <i class="si si-x"></i>
           </Button>
         </div>

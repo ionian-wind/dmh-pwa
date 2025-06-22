@@ -19,7 +19,16 @@
         <i class="si si-music-note" />
       </FloatActionButton>
     </template>
-    
+    <template #corner-right>
+      <Button 
+        variant="light" 
+        @click="navigateToJukebox" 
+        title="Open full Jukebox"
+        class="jukebox-nav-button"
+      >
+        <i class="si si-external-link"></i>
+      </Button>
+    </template>
     <div class="jukebox-popover-content">
       <JukeboxPlayer :show-artwork="true" />
     </div>
@@ -28,14 +37,16 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import FloatActionButton from './common/FloatActionButton.vue';
 import PopoverPanel from './common/PopoverPanel.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
+import Button from './common/Button.vue';
 
 const route = useRoute();
+const router = useRouter();
 const isPopoverOpen = ref(false);
 const playerStore = useJukeboxPlayerStore();
 const hasAppeared = ref(false);
@@ -66,6 +77,11 @@ const gradientStyle = useAnimatedGradient(
   computed(() => playerStore.isPlaying),
   () => playerStore.currentTrack?.palette
 );
+
+const navigateToJukebox = () => {
+  router.push('/jukebox');
+  isPopoverOpen.value = false;
+};
 </script>
 
 <style scoped>
@@ -122,5 +138,31 @@ const gradientStyle = useAnimatedGradient(
 /* Still need this to prevent the entrance animation from re-triggering */
 :deep(.float-action-button.no-entrance-animation) {
   animation: none;
+}
+
+.jukebox-nav-button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+}
+
+.jukebox-nav-button:hover {
+  color: var(--primary-color, #4f46e5);
+  background-color: rgba(79, 70, 229, 0.1);
+  transform: scale(1.1);
+}
+
+.jukebox-popover-content {
+  position: relative;
 }
 </style>

@@ -19,7 +19,7 @@
               <Button 
                 @click="setActivePlaylist(null)"
                 :class="{ active: selectedPlaylistId === null }"
-                variant="light"
+                variant="primary"
                 class="all-tracks-button"
               >
                 All Tracks
@@ -505,6 +505,7 @@ onBeforeUnmount(() => {
 .playlist-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
 }
 
@@ -550,6 +551,12 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 0.5rem;
   margin-left: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.playlist-item:hover .playlist-actions {
+  opacity: 1;
 }
 
 .jukebox-view {
@@ -659,6 +666,12 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 0.5rem;
   margin-left: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.track-item:hover .track-actions {
+  opacity: 1;
 }
 
 .btn-icon-text {

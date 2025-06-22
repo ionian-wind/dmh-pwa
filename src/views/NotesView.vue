@@ -8,6 +8,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
 import NoteCard from '@/components/NoteCard.vue';
 import Button from '@/components/common/Button.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 import type { Note, Module } from '@/types';
 
 const noteStore = useNoteStore();
@@ -16,23 +17,11 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 
 const showEditor = ref(false);
-const editingNote = ref<Note>({
-  id: '',
-  title: '',
-  content: '',
-  typeId: null,
-  tags: [],
-  moduleId: null,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  parentId: undefined,
-  metadata: undefined
-});
-const searchQuery = ref('');
-
-const route = useRoute();
+const editingNote = ref<Note | null>(null);
 const router = useRouter();
 
+const searchQuery = ref('');
+const route = useRoute();
 const tagFilter = ref<string | null>(null);
 
 // Watch for query param changes
@@ -65,29 +54,23 @@ const filteredNotes = computed(() => {
 onMounted(async () => {
   await Promise.all([
     noteStore.load(),
-    partyStore.load(),
     monsterStore.load(),
+    partyStore.load(),
     moduleStore.load()
   ]);
 });
 
-const addNote = () => {
-  editingNote.value = {
-    id: '',
-    title: '',
-    content: '',
-    typeId: null,
-    tags: [],
-    moduleId: moduleStore.currentModuleFilter === 'any' || moduleStore.currentModuleFilter === 'none' ? null : (moduleStore.currentModuleFilter as string),
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    parentId: undefined,
-    metadata: undefined
-  };
+const handleCreateClick = () => {
+  editingNote.value = null;
   showEditor.value = true;
 };
 
-const handleSave = async (note: Note) => {
+const handleEditClick = (note: Note) => {
+  editingNote.value = note;
+  showEditor.value = true;
+};
+
+const handleSubmit = async (note: Note) => {
   if (note.id) {
     await noteStore.update(note.id, note);
   } else {
@@ -97,25 +80,13 @@ const handleSave = async (note: Note) => {
 };
 
 const handleDelete = async (note: Note) => {
-  if (note.id) {
+  if (note.id && confirm(`Are you sure you want to delete ${note.title}?`)) {
     await noteStore.remove(note.id);
   }
 };
 
-const cancelEdit = () => {
+const handleCancel = () => {
   showEditor.value = false;
-  editingNote.value = {
-    id: '',
-    title: '',
-    content: '',
-    typeId: null,
-    tags: [],
-    moduleId: null,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    parentId: undefined,
-    metadata: undefined
-  };
 };
 
 function handleTagClick(tag: string) {
@@ -126,76 +97,52 @@ function handleTagClick(tag: string) {
 
 <template>
   <div class="view-root">
-  <div class="view-header ">
-    <Button @click="addNote" title="Create Note">
-      <i class="si si-plus"></i>
-    </Button>
-    <div class="search-input-wrapper">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search notes..."
-        class="search-input"
-      >
+    <ViewHeader
+      show-create
+      create-title="Create Note"
+      @create="handleCreateClick"
+      show-search
+      v-model:searchQuery="searchQuery"
+      search-placeholder="Search notes..."
+    >
       <span v-if="tagFilter" class="tag-chip">
         #{{ tagFilter }}
         <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
           <i class="si si-x"></i>
         </button>
       </span>
-    </div>
-  </div>
-  <div class="view-list">
-    <div v-if="filteredNotes.length === 0" class="view-empty">
-      <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
-      <p v-else>No notes yet. Create your first note to get started!</p>
-    </div>
+    </ViewHeader>
+    <div class="view-list">
+      <div v-if="filteredNotes.length === 0" class="view-empty">
+        <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
+        <p v-else>No notes yet. Create your first note to get started!</p>
+      </div>
 
-    <div v-else class="notes-container">
-      <div class="view-grid">
+      <div v-else class="view-grid">
         <NoteCard
           v-for="note in filteredNotes"
           :key="note.id"
           :note="note"
-          :module-name="note.moduleId ? moduleStore.items.find((m: Module) => m.id === note.moduleId)?.name : undefined"
-          @view="(note: Note) => $router.push(`/notes/${note.id}`)"
-          @edit="(note: Note) => { editingNote = note as Note; showEditor = true; }"
-          @delete="handleDelete"
+          @view="() => router.push(`/notes/${note.id}`)"
+          @edit="() => handleEditClick(note)"
+          @delete="() => handleDelete(note)"
           @tag-click="handleTagClick"
+          :module-name="note.moduleId ? moduleStore.items.find((m: Module) => m.id === note.moduleId)?.name : undefined"
         />
       </div>
-    </div>
 
-    <NoteEditor
-      v-if="showEditor"
-      :note="editingNote"
-      :is-open="showEditor"
-      @submit="handleSave"
-      @cancel="cancelEdit"
-    />
-  </div>
+      <NoteEditor
+        v-if="showEditor"
+        :note="editingNote"
+        :is-open="showEditor"
+        @submit="handleSubmit"
+        @cancel="handleCancel"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-size: 1rem;
-  background: var(--color-background);
-  color: var(--color-text);
-}
-
 .tag-chip {
   display: inline-flex;
   align-items: center;

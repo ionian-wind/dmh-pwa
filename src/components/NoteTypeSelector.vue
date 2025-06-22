@@ -53,7 +53,7 @@ const handleDeleteType = async (id: string) => {
           {{ type.name }}
         </option>
       </select>
-      <Button size="small" variant="link" @click="showTypeEditor = true">+</Button>
+      <Button size="small" variant="light" @click="showTypeEditor = true">+</Button>
     </div>
 
     <div v-if="showTypeEditor" class="type-editor">

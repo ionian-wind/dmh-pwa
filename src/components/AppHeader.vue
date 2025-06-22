@@ -38,10 +38,6 @@ function toggleFullscreen() {
   }
 }
 
-function navigateToJukebox() {
-  router.push('/jukebox');
-}
-
 onMounted(() => {
   document.addEventListener('fullscreenchange', updateFullscreenState);
   document.addEventListener('webkitfullscreenchange', updateFullscreenState);
@@ -64,23 +60,13 @@ onUnmounted(() => {
       <nav>
         <Button
           class="fullscreen-btn"
-          variant="link"
+          variant="light"
           @click="toggleFullscreen"
           :title="isFullscreen ? 'Exit full page' : 'Open app in full page'"
           :aria-label="isFullscreen ? 'Exit full page' : 'Open app in full page'"
         >
           <i v-if="!isFullscreen" class="si si-fullscreen"></i>
           <i v-else class="si si-fullscreen-exit"></i>
-        </Button>
-        
-        <Button
-          class="jukebox-btn"
-          variant="link"
-          @click="navigateToJukebox"
-          title="Jukebox"
-          aria-label="Open Jukebox"
-        >
-          <i class="si si-music-note" />
         </Button>
         
         <LanguageSwitcher />
@@ -116,31 +102,5 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-}
-
-.fullscreen-btn {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0 0.5rem;
-  color: var(--color-text, #222);
-  transition: color 0.15s;
-}
-.fullscreen-btn:hover {
-  color: var(--color-primary, #007bff);
-}
-
-.jukebox-btn {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0 0.5rem;
-  color: var(--color-text, #222);
-  transition: color 0.15s;
-}
-.jukebox-btn:hover {
-  color: var(--color-primary, #007bff);
 }
 </style> 
