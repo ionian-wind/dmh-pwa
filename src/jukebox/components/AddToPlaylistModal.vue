@@ -1,35 +1,3 @@
-<template>
-  <BaseModal 
-    :isOpen="modelValue" 
-    modalId="add-to-playlist" 
-    @update:isOpen="$emit('update:modelValue', $event)" 
-    title="Add to Playlist"
-    :showSubmit="false"
-    :showCancel="true"
-    cancelLabel="Done"
-    @cancel="$emit('update:modelValue', false)"
-  >
-    <div v-if="playlists.length === 0">
-      <p>No playlists found. Please create one first.</p>
-    </div>
-    <div v-else>
-      <div class="playlist-list">
-        <div 
-          v-for="playlist in playlists" 
-          :key="playlist.id" 
-          class="playlist-item"
-        >
-          <ToggleSwitch
-            :model-value="isTrackInPlaylist(playlist)"
-            :label="playlist.name"
-            @update:model-value="(value) => togglePlaylist(playlist, value)"
-          />
-        </div>
-      </div>
-    </div>
-  </BaseModal>
-</template>
-
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -67,6 +35,38 @@ async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
   await playlistsStore.update(playlist.id, { trackIds: Array.from(trackIds) });
 }
 </script>
+
+<template>
+  <BaseModal 
+    :isOpen="modelValue" 
+    modalId="add-to-playlist" 
+    @update:isOpen="$emit('update:modelValue', $event)" 
+    title="Add to Playlist"
+    :showSubmit="false"
+    :showCancel="true"
+    cancelLabel="Done"
+    @cancel="$emit('update:modelValue', false)"
+  >
+    <div v-if="playlists.length === 0">
+      <p>No playlists found. Please create one first.</p>
+    </div>
+    <div v-else>
+      <div class="playlist-list">
+        <div 
+          v-for="playlist in playlists" 
+          :key="playlist.id" 
+          class="playlist-item"
+        >
+          <ToggleSwitch
+            :model-value="isTrackInPlaylist(playlist)"
+            :label="playlist.name"
+            @update:model-value="(value) => togglePlaylist(playlist, value)"
+          />
+        </div>
+      </div>
+    </div>
+  </BaseModal>
+</template>
 
 <style scoped>
 .playlist-list {

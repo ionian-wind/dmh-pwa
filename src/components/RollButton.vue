@@ -1,3 +1,10 @@
+<script setup lang="ts">
+import FloatActionButton from './common/FloatActionButton.vue';
+
+defineEmits<{(e: 'click', event: MouseEvent): void;
+}>();
+</script> 
+
 <template>
   <FloatActionButton
     size="medium"
@@ -6,11 +13,4 @@
   >
     🎲
   </FloatActionButton>
-</template>
-
-<script setup lang="ts">
-import FloatActionButton from './common/FloatActionButton.vue';
-
-defineEmits<{(e: 'click', event: MouseEvent): void;
-}>();
-</script> 
+</template> 

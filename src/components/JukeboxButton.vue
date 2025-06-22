@@ -1,40 +1,3 @@
-<template>
-  <PopoverPanel 
-    v-if="!isOnJukeboxPage"
-    :is-open="isPopoverOpen" 
-    @close="isPopoverOpen = false" 
-    placement="right-end"
-    :offset="12"
-    :disable-internal-trigger="true"
-  >
-    <template #trigger>
-      <FloatActionButton
-        size="medium"
-        variant="secondary"
-        @click.stop="handleClick"
-        title="Jukebox"
-        :class="fabClasses"
-        :style="gradientStyle"
-      >
-        <i class="si si-music-note" />
-      </FloatActionButton>
-    </template>
-    <template #corner-right>
-      <Button 
-        variant="light" 
-        @click="navigateToJukebox" 
-        title="Open full Jukebox"
-        class="jukebox-nav-button"
-      >
-        <i class="si si-external-link"></i>
-      </Button>
-    </template>
-    <div class="jukebox-popover-content">
-      <JukeboxPlayer :show-artwork="true" />
-    </div>
-  </PopoverPanel>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -83,6 +46,43 @@ const navigateToJukebox = () => {
   isPopoverOpen.value = false;
 };
 </script>
+
+<template>
+  <PopoverPanel 
+    v-if="!isOnJukeboxPage"
+    :is-open="isPopoverOpen" 
+    @close="isPopoverOpen = false" 
+    placement="right-end"
+    :offset="12"
+    :disable-internal-trigger="true"
+  >
+    <template #trigger>
+      <FloatActionButton
+        size="medium"
+        variant="secondary"
+        @click.stop="handleClick"
+        title="Jukebox"
+        :class="fabClasses"
+        :style="gradientStyle"
+      >
+        <i class="si si-music-note" />
+      </FloatActionButton>
+    </template>
+    <template #corner-right>
+      <Button 
+        variant="light" 
+        @click="navigateToJukebox" 
+        title="Open full Jukebox"
+        class="jukebox-nav-button"
+      >
+        <i class="si si-external-link"></i>
+      </Button>
+    </template>
+    <div class="jukebox-popover-content">
+      <JukeboxPlayer :show-artwork="true" />
+    </div>
+  </PopoverPanel>
+</template>
 
 <style scoped>
 /*

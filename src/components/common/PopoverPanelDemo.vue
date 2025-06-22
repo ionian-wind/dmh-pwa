@@ -1,3 +1,28 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import PopoverPanel from './PopoverPanel.vue';
+import Button from './Button.vue';
+
+const basicOpen = ref(false);
+const hoverOpen = ref(false);
+const titleOpen = ref(false);
+const focusOpen = ref(false);
+const noArrowOpen = ref(false);
+const customOpen = ref(false);
+const placementOpen = ref<string | null>(null);
+
+const placements = [
+  'top',
+  'bottom', 
+  'left',
+  'right',
+  'top-start',
+  'top-end',
+  'bottom-start',
+  'bottom-end'
+] as const;
+</script>
+
 <template>
   <div class="popover-demo">
     <h2>PopoverPanel Demo</h2>
@@ -151,31 +176,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import PopoverPanel from './PopoverPanel.vue';
-import Button from './Button.vue';
-
-const basicOpen = ref(false);
-const hoverOpen = ref(false);
-const titleOpen = ref(false);
-const focusOpen = ref(false);
-const noArrowOpen = ref(false);
-const customOpen = ref(false);
-const placementOpen = ref<string | null>(null);
-
-const placements = [
-  'top',
-  'bottom', 
-  'left',
-  'right',
-  'top-start',
-  'top-end',
-  'bottom-start',
-  'bottom-end'
-] as const;
-</script>
 
 <style scoped>
 .popover-demo {

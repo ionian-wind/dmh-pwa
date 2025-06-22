@@ -1,35 +1,3 @@
-<template>
-  <BaseModal 
-    :isOpen="modelValue" 
-    modalId="playlist-editor" 
-    @update:isOpen="$emit('update:modelValue', $event)" 
-    title="Playlist"
-    :showSubmit="true"
-    :showCancel="true"
-    submitLabel="Save"
-    cancelLabel="Cancel"
-    @submit="save"
-    @cancel="$emit('update:modelValue', false)"
-  >
-    <div class="form-group">
-      <label for="playlist-name">Name</label>
-      <input id="playlist-name" v-model="editablePlaylist.name" type="text" required />
-    </div>
-    <div class="form-group">
-      <label for="playlist-description">Description</label>
-      <textarea id="playlist-description" v-model="editablePlaylist.description"></textarea>
-    </div>
-    <div class="form-group">
-      <label for="playlist-modules">Modules</label>
-      <ModuleMultipleSelector
-        id="playlist-modules"
-        v-model="moduleIdsProxy"
-        placeholder="No Modules"
-      />
-    </div>
-  </BaseModal>
-</template>
-
 <script setup lang="ts">
 import { ref, watch, defineProps, defineEmits, type Ref, computed } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -105,6 +73,38 @@ async function save() {
   emit('update:modelValue', false);
 }
 </script>
+
+<template>
+  <BaseModal 
+    :isOpen="modelValue" 
+    modalId="playlist-editor" 
+    @update:isOpen="$emit('update:modelValue', $event)" 
+    title="Playlist"
+    :showSubmit="true"
+    :showCancel="true"
+    submitLabel="Save"
+    cancelLabel="Cancel"
+    @submit="save"
+    @cancel="$emit('update:modelValue', false)"
+  >
+    <div class="form-group">
+      <label for="playlist-name">Name</label>
+      <input id="playlist-name" v-model="editablePlaylist.name" type="text" required />
+    </div>
+    <div class="form-group">
+      <label for="playlist-description">Description</label>
+      <textarea id="playlist-description" v-model="editablePlaylist.description"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="playlist-modules">Modules</label>
+      <ModuleMultipleSelector
+        id="playlist-modules"
+        v-model="moduleIdsProxy"
+        placeholder="No Modules"
+      />
+    </div>
+  </BaseModal>
+</template>
 
 <style scoped>
 .form-group {

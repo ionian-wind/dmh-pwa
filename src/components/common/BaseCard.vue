@@ -1,39 +1,6 @@
-<template>
-  <div class="base-card">
-    <div
-      style="cursor: pointer"
-      v-if="$slots.header"
-      class="base-card-header"
-      :class="{ 'no-border': noBorderAfterHeader }"
-      @click="$emit('view')"
-    >
-      <slot name="header" />
-    </div>
-    <div v-if="hasContent" class="base-card-content">
-      <slot />
-    </div>
-    <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
-      <div class="base-card-actions-left">
-        <slot name="actions" />
-      </div>
-      <div class="base-card-actions-right">
-        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" title="View Details">
-          <i class="si si-eye"></i>
-        </Button>
-        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">
-          <i class="si si-pencil"></i>
-        </Button>
-        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">
-          <i class="si si-trash"></i>
-        </Button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import Button from './Button.vue';
-import { computed, useSlots, Fragment, Comment, getCurrentInstance } from 'vue';
+import { computed, useSlots, Fragment, Comment } from 'vue';
 
 const props = defineProps({
   showView: { type: Boolean, default: false },
@@ -70,6 +37,39 @@ const noBorderAfterHeader = computed(() => {
   return !!(slots.actions || props.showView || props.showEdit || props.showDelete);
 });
 </script>
+
+<template>
+  <div class="base-card">
+    <div
+      style="cursor: pointer"
+      v-if="$slots.header"
+      class="base-card-header"
+      :class="{ 'no-border': noBorderAfterHeader }"
+      @click="$emit('view')"
+    >
+      <slot name="header" />
+    </div>
+    <div v-if="hasContent" class="base-card-content">
+      <slot />
+    </div>
+    <div v-if="$slots.actions || showView || showEdit || showDelete" class="base-card-actions">
+      <div class="base-card-actions-left">
+        <slot name="actions" />
+      </div>
+      <div class="base-card-actions-right">
+        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" title="View Details">
+          <i class="si si-eye"></i>
+        </Button>
+        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">
+          <i class="si si-pencil"></i>
+        </Button>
+        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">
+          <i class="si si-trash"></i>
+        </Button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .base-card {

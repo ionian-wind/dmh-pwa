@@ -1,18 +1,3 @@
-<template>
-  <div
-    ref="sliderContainerRef"
-    class="slider-container"
-    :class="{ 'is-disabled': disabled, 'is-vertical': vertical, 'is-horizontal': !vertical }"
-    @mousedown.prevent="handleInteractionStart"
-    @touchstart.prevent="handleInteractionStart"
-  >
-    <div class="track">
-      <div class="track-fill" :style="fillStyle"></div>
-    </div>
-    <div class="thumb" :style="thumbStyle"></div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue';
 
@@ -118,6 +103,21 @@ onBeforeUnmount(() => {
   handleInteractionEnd();
 });
 </script>
+
+<template>
+  <div
+    ref="sliderContainerRef"
+    class="slider-container"
+    :class="{ 'is-disabled': disabled, 'is-vertical': vertical, 'is-horizontal': !vertical }"
+    @mousedown.prevent="handleInteractionStart"
+    @touchstart.prevent="handleInteractionStart"
+  >
+    <div class="track">
+      <div class="track-fill" :style="fillStyle"></div>
+    </div>
+    <div class="thumb" :style="thumbStyle"></div>
+  </div>
+</template>
 
 <style scoped>
 .slider-container {

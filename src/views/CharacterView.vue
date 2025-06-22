@@ -1,42 +1,3 @@
-<template>
-  <BaseEntityView
-    :entity="character"
-    entity-name="Character"
-    list-route="/characters"
-    :on-delete="handleDelete"
-    :on-edit="editCharacter"
-    :is-editing="showEditor"
-    :title="characterTitle"
-    :not-found="notFound"
-    :loading="loading"
-  >
-    <!-- Character Content -->
-    <div v-if="character" class="character-sheet">
-      <!-- Notes -->
-      <section v-if="character.notes" class="sheet-section notes">
-        <h2>Notes</h2>
-        <div class="notes-content">
-          <p>{{ character.notes }}</p>
-        </div>
-      </section>
-    </div>
-
-    <!-- Editor Modal -->
-    <template #editor>
-      <CharacterEditor
-        :isOpen="showEditor"
-        :character="character"
-        @submit="handleSave"
-        @cancel="closeEditor"
-      />
-    </template>
-
-    <template #sidepanel>
-      <Mentions title="Mentions" :entities="mentionedEntities" />
-      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
-    </template>
-  </BaseEntityView>
-</template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
@@ -98,6 +59,46 @@ onMounted(async () => {
   characterStore.load();
 });
 </script>
+
+<template>
+  <BaseEntityView
+    :entity="character"
+    entity-name="Character"
+    list-route="/characters"
+    :on-delete="handleDelete"
+    :on-edit="editCharacter"
+    :is-editing="showEditor"
+    :title="characterTitle"
+    :not-found="notFound"
+    :loading="loading"
+  >
+    <!-- Character Content -->
+    <div v-if="character" class="character-sheet">
+      <!-- Notes -->
+      <section v-if="character.notes" class="sheet-section notes">
+        <h2>Notes</h2>
+        <div class="notes-content">
+          <p>{{ character.notes }}</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Editor Modal -->
+    <template #editor>
+      <CharacterEditor
+        :isOpen="showEditor"
+        :character="character"
+        @submit="handleSave"
+        @cancel="closeEditor"
+      />
+    </template>
+
+    <template #sidepanel>
+      <Mentions title="Mentions" :entities="mentionedEntities" />
+      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+    </template>
+  </BaseEntityView>
+</template>
 
 <style scoped>
 .character-sheet {

@@ -1,127 +1,3 @@
-<template>
-  <div class="view-root">
-    <ViewHeader
-      show-create
-      create-title="Add Tracks"
-      @create="pickFiles"
-    />
-    
-    <div class="jukebox-container">
-      <div class="jukebox-layout">
-        <div class="sidebar-wrapper" :class="{ collapsed: !isPlaylistPanelVisible }">
-          <!-- Playlist Sidebar -->
-          <div class="playlist-sidebar">
-            <div class="sidebar-header">
-              <h3>Playlists</h3>
-              <Button @click="openPlaylistModal(null)" variant="light"><i class="si si-plus"></i></Button>
-            </div>
-            <div class="all-tracks-section">
-              <Button 
-                @click="setActivePlaylist(null)"
-                :class="{ active: selectedPlaylistId === null }"
-                variant="primary"
-                class="all-tracks-button"
-              >
-                All Tracks
-              </Button>
-            </div>
-            <div class="playlist-container">
-              <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
-                <template #item="{ element: playlist }">
-                  <li
-                    @click="setActivePlaylist(playlist.id)"
-                    :class="{ active: selectedPlaylistId === playlist.id }"
-                    class="playlist-item"
-                  >
-                    <span class="playlist-name">{{ playlist.name }}</span>
-                    <div class="playlist-actions">
-                      <Button @click.stop="openPlaylistModal(playlist)" variant="light"><i class="si si-pencil"></i></Button>
-                      <Button @click.stop="removePlaylist(playlist.id)" variant="light"><i class="si si-x"></i></Button>
-                    </div>
-                  </li>
-                </template>
-              </draggable>
-            </div>
-          </div>
-          
-          <!-- Playlist Panel Toggle Handle -->
-          <div class="playlist-toggle-handle" @click="togglePlaylistPanel">
-            <i :class="isPlaylistPanelVisible ? 'si si-chevron-left' : 'si si-chevron-right'"></i>
-          </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="jukebox-view">
-          <div class="tracks-wrapper">
-            <div v-if="filteredTracks.length">
-              <draggable v-if="selectedPlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".playlist-item" item-key="id" @end="onTrackSortEnd">
-                <template #item="{ element: track }">
-                  <li
-                    :style="{ '--track-color': track.color || 'transparent' }"
-                    class="track-item"
-                    :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
-                    @click="playTrackFromPlaylist(track)"
-                  >
-                    <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
-                    <div v-else class="track-artwork track-artwork-placeholder">
-                      <i class="si si-music-note"></i>
-                    </div>
-                    <div class="track-info">
-                      <span class="track-title">{{ track.title }}</span>
-                      <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
-                    </div>
-                    <div class="track-actions">
-                      <Button variant="light" @click.stop="openAddToPlaylistModal(track)"><i class="si si-plus"></i> Add to Playlist</Button>
-                      <Button variant="light" @click.stop="removeTrack(track)"><i class="si si-x"></i></Button>
-                    </div>
-                  </li>
-                </template>
-              </draggable>
-              <ul v-else class="track-list">
-                <li
-                  v-for="track in filteredTracks"
-                  :key="track.id"
-                  :style="{ '--track-color': track.color || 'transparent' }"
-                  class="track-item"
-                  :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
-                  @click="playTrackFromPlaylist(track)"
-                >
-                  <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
-                  <div v-else class="track-artwork track-artwork-placeholder">
-                    <i class="si si-music-note"></i>
-                  </div>
-                  <div class="track-info">
-                    <span class="track-title">{{ track.title }}</span>
-                    <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
-                  </div>
-                  <div class="track-actions">
-                    <Button variant="light" @click.stop="openAddToPlaylistModal(track)"><i class="si si-plus"></i> Add to Playlist</Button>
-                    <Button variant="light" @click.stop="removeTrack(track)"><i class="si si-x"></i></Button>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div v-else class="no-tracks">
-              <p>No tracks to display. Add some tracks to get started!</p>
-            </div>
-          </div>
-
-          <JukeboxPlayer :animated-background="true" />
-        </div>
-      </div>
-    </div>
-
-    <PlaylistEditor
-      v-model="isPlaylistModalOpen"
-      :playlist="playlistToEdit"
-    />
-    <AddToPlaylistModal
-      v-model="isAddToPlaylistModalOpen"
-      :track="trackToAddToPlaylist"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onBeforeUnmount, ComputedRef } from 'vue';
 import draggable from 'vuedraggable';
@@ -416,6 +292,130 @@ onBeforeUnmount(() => {
   pictureUrlCacheStore.clearCache();
 });
 </script>
+
+<template>
+  <div class="view-root">
+    <ViewHeader
+      show-create
+      create-title="Add Tracks"
+      @create="pickFiles"
+    />
+    
+    <div class="jukebox-container">
+      <div class="jukebox-layout">
+        <div class="sidebar-wrapper" :class="{ collapsed: !isPlaylistPanelVisible }">
+          <!-- Playlist Sidebar -->
+          <div class="playlist-sidebar">
+            <div class="sidebar-header">
+              <h3>Playlists</h3>
+              <Button @click="openPlaylistModal(null)" variant="light"><i class="si si-plus"></i></Button>
+            </div>
+            <div class="all-tracks-section">
+              <Button 
+                @click="setActivePlaylist(null)"
+                :class="{ active: selectedPlaylistId === null }"
+                variant="primary"
+                class="all-tracks-button"
+              >
+                All Tracks
+              </Button>
+            </div>
+            <div class="playlist-container">
+              <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
+                <template #item="{ element: playlist }">
+                  <li
+                    @click="setActivePlaylist(playlist.id)"
+                    :class="{ active: selectedPlaylistId === playlist.id }"
+                    class="playlist-item"
+                  >
+                    <span class="playlist-name">{{ playlist.name }}</span>
+                    <div class="playlist-actions">
+                      <Button @click.stop="openPlaylistModal(playlist)" variant="light"><i class="si si-pencil"></i></Button>
+                      <Button @click.stop="removePlaylist(playlist.id)" variant="light"><i class="si si-x"></i></Button>
+                    </div>
+                  </li>
+                </template>
+              </draggable>
+            </div>
+          </div>
+          
+          <!-- Playlist Panel Toggle Handle -->
+          <div class="playlist-toggle-handle" @click="togglePlaylistPanel">
+            <i :class="isPlaylistPanelVisible ? 'si si-chevron-left' : 'si si-chevron-right'"></i>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="jukebox-view">
+          <div class="tracks-wrapper">
+            <div v-if="filteredTracks.length">
+              <draggable v-if="selectedPlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".playlist-item" item-key="id" @end="onTrackSortEnd">
+                <template #item="{ element: track }">
+                  <li
+                    :style="{ '--track-color': track.color || 'transparent' }"
+                    class="track-item"
+                    :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
+                    @click="playTrackFromPlaylist(track)"
+                  >
+                    <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
+                    <div v-else class="track-artwork track-artwork-placeholder">
+                      <i class="si si-music-note"></i>
+                    </div>
+                    <div class="track-info">
+                      <span class="track-title">{{ track.title }}</span>
+                      <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
+                    </div>
+                    <div class="track-actions">
+                      <Button variant="light" @click.stop="openAddToPlaylistModal(track)"><i class="si si-plus"></i> Add to Playlist</Button>
+                      <Button variant="light" @click.stop="removeTrack(track)"><i class="si si-x"></i></Button>
+                    </div>
+                  </li>
+                </template>
+              </draggable>
+              <ul v-else class="track-list">
+                <li
+                  v-for="track in filteredTracks"
+                  :key="track.id"
+                  :style="{ '--track-color': track.color || 'transparent' }"
+                  class="track-item"
+                  :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
+                  @click="playTrackFromPlaylist(track)"
+                >
+                  <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
+                  <div v-else class="track-artwork track-artwork-placeholder">
+                    <i class="si si-music-note"></i>
+                  </div>
+                  <div class="track-info">
+                    <span class="track-title">{{ track.title }}</span>
+                    <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
+                  </div>
+                  <div class="track-actions">
+                    <Button variant="light" @click.stop="openAddToPlaylistModal(track)"><i class="si si-plus"></i> Add to Playlist</Button>
+                    <Button variant="light" @click.stop="removeTrack(track)"><i class="si si-x"></i></Button>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div v-else class="no-tracks">
+              <p>No tracks to display. Add some tracks to get started!</p>
+            </div>
+          </div>
+
+          <JukeboxPlayer :animated-background="true" />
+        </div>
+      </div>
+    </div>
+
+    <PlaylistEditor
+      v-model="isPlaylistModalOpen"
+      :playlist="playlistToEdit"
+    />
+    <AddToPlaylistModal
+      v-model="isAddToPlaylistModalOpen"
+      :track="trackToAddToPlaylist"
+    />
+  </div>
+</template>
 
 <style scoped>
 

@@ -1,17 +1,3 @@
-<template>
-  <div class="language-switcher">
-    <select 
-      :value="currentLocale" 
-      @change="changeLanguage"
-      class="language-select"
-      aria-label="Select language"
-    >
-      <option value="en">English</option>
-      <option value="es">Español</option>
-    </select>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -26,6 +12,20 @@ const changeLanguage = (event: Event) => {
   localStorage.setItem('dnd-language', target.value);
 };
 </script>
+
+<template>
+  <div class="language-switcher">
+    <select 
+      :value="currentLocale" 
+      @change="changeLanguage"
+      class="language-select"
+      aria-label="Select language"
+    >
+      <option value="en">English</option>
+      <option value="es">Español</option>
+    </select>
+  </div>
+</template>
 
 <style scoped>
 .language-switcher {

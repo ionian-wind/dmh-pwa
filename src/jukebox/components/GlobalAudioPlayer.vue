@@ -1,7 +1,3 @@
-<template>
-  <audio ref="audioRef" style="display: none;"></audio>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
@@ -33,3 +29,7 @@ onMounted(async () => {
   }
 });
 </script> 
+
+<template>
+  <audio ref="audioRef" style="display: none;"></audio>
+</template> 

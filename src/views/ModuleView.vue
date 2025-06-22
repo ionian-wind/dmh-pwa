@@ -1,103 +1,3 @@
-<template>
-  <BaseEntityView
-    :entity="module"
-    entity-name="Module"
-    list-route="/modules"
-    :on-delete="handleDelete"
-    :on-edit="() => showEditor = true"
-    :is-editing="showEditor"
-    :title="moduleTitle"
-    :subtitle="moduleSubtitle"
-    :not-found="notFound"
-    :loading="loading"
-  >
-    <div v-if="module" class="module-content">
-      <TabGroup :tabs="entityTabs" v-model="activeTab">
-        <TabPanel tab-id="document">
-          <ModuleDocumentView
-            v-if="module && module.noteTree && module.noteTree.length > 0"
-            :note-tree="module.noteTree"
-            :notes="moduleNotes"
-          />
-          <div v-else class="empty-state">
-            <p>No document structure defined for this module.</p>
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="parties">
-          <div v-if="moduleParties.length === 0" class="empty-state">
-            <p>No parties in this module</p>
-          </div>
-          <div v-else class="content-grid">
-            <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="monsters">
-          <div v-if="moduleMonsters.length === 0" class="empty-state">
-            <p>No monsters in this module</p>
-          </div>
-          <div v-else class="content-grid">
-            <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="encounters">
-          <div v-if="moduleEncounters.length === 0" class="empty-state">
-            <p>No encounters in this module</p>
-          </div>
-          <div v-else class="content-grid">
-            <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="notes">
-          <div v-if="moduleNotes.length === 0" class="empty-state">
-            <p>No notes in this module</p>
-          </div>
-          <div v-else class="content-grid">
-            <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="playlists">
-          <div v-if="modulePlaylists.length === 0" class="empty-state">
-            <p>No playlists in this module</p>
-          </div>
-          <div v-else class="content-grid">
-            <JukeboxPlaylistCard
-              v-for="playlist in modulePlaylists"
-              :key="playlist.id"
-              :playlist="playlist"
-              @view="() => router.push('/jukebox')"
-              @play="handlePlayPlaylist"
-            />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="noteTree">
-          <ModuleNoteTreeManager
-            :module="module"
-            :notes="moduleNotes"
-            @save="handleSaveNoteTree"
-          />
-        </TabPanel>
-      </TabGroup>
-    </div>
-    <!-- Editor Modal -->
-    <template #editor>
-      <ModuleEditor
-        v-if="showEditor"
-        :module="module"
-        :is-open="showEditor"
-        @submit="handleSubmit"
-        @cancel="handleCancel"
-      />
-    </template>
-
-    <template #sidepanel>
-      <div v-if="activeTab !== 'document'">
-        <Mentions title="Mentions" :entities="mentionedEntities" />
-        <Mentions title="Mentioned In" :entities="mentionedInEntities" />
-      </div>
-    </template>
-  </BaseEntityView>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -246,6 +146,106 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
   }
 }
 </script>
+
+<template>
+  <BaseEntityView
+    :entity="module"
+    entity-name="Module"
+    list-route="/modules"
+    :on-delete="handleDelete"
+    :on-edit="() => showEditor = true"
+    :is-editing="showEditor"
+    :title="moduleTitle"
+    :subtitle="moduleSubtitle"
+    :not-found="notFound"
+    :loading="loading"
+  >
+    <div v-if="module" class="module-content">
+      <TabGroup :tabs="entityTabs" v-model="activeTab">
+        <TabPanel tab-id="document">
+          <ModuleDocumentView
+            v-if="module && module.noteTree && module.noteTree.length > 0"
+            :note-tree="module.noteTree"
+            :notes="moduleNotes"
+          />
+          <div v-else class="empty-state">
+            <p>No document structure defined for this module.</p>
+          </div>
+        </TabPanel>
+        <TabPanel tab-id="parties">
+          <div v-if="moduleParties.length === 0" class="empty-state">
+            <p>No parties in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
+          </div>
+        </TabPanel>
+        <TabPanel tab-id="monsters">
+          <div v-if="moduleMonsters.length === 0" class="empty-state">
+            <p>No monsters in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
+          </div>
+        </TabPanel>
+        <TabPanel tab-id="encounters">
+          <div v-if="moduleEncounters.length === 0" class="empty-state">
+            <p>No encounters in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
+          </div>
+        </TabPanel>
+        <TabPanel tab-id="notes">
+          <div v-if="moduleNotes.length === 0" class="empty-state">
+            <p>No notes in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
+          </div>
+        </TabPanel>
+        <TabPanel tab-id="playlists">
+          <div v-if="modulePlaylists.length === 0" class="empty-state">
+            <p>No playlists in this module</p>
+          </div>
+          <div v-else class="content-grid">
+            <JukeboxPlaylistCard
+              v-for="playlist in modulePlaylists"
+              :key="playlist.id"
+              :playlist="playlist"
+              @view="() => router.push('/jukebox')"
+              @play="handlePlayPlaylist"
+            />
+          </div>
+        </TabPanel>
+        <TabPanel tab-id="noteTree">
+          <ModuleNoteTreeManager
+            :module="module"
+            :notes="moduleNotes"
+            @save="handleSaveNoteTree"
+          />
+        </TabPanel>
+      </TabGroup>
+    </div>
+    <!-- Editor Modal -->
+    <template #editor>
+      <ModuleEditor
+        v-if="showEditor"
+        :module="module"
+        :is-open="showEditor"
+        @submit="handleSubmit"
+        @cancel="handleCancel"
+      />
+    </template>
+
+    <template #sidepanel>
+      <div v-if="activeTab !== 'document'">
+        <Mentions title="Mentions" :entities="mentionedEntities" />
+        <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+      </div>
+    </template>
+  </BaseEntityView>
+</template>
 
 <style scoped>
 .module-content {

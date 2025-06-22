@@ -1,67 +1,3 @@
-<template>
-  <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }" :style="gradientStyle">
-    <div v-if="!storesLoaded" class="jukebox-player-loading">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Loading player...</div>
-    </div>
-    <div v-else class="jukebox-player-content">
-      <!-- Track Artwork -->
-      <div v-if="showArtwork" class="track-artwork-container">
-        <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
-        <div v-else class="track-artwork track-artwork-placeholder">
-          <i class="si si-music-note"></i>
-        </div>
-      </div>
-      
-      <div class="track-info-top">
-        <div class="title">{{ playerStore.currentTrack?.title || 'No track selected' }}</div>
-        <div class="artist">{{ playerStore.currentTrack?.artist || '&nbsp;' }}</div>
-      </div>
-      <div class="player-controls-bottom">
-        <div class="controls">
-          <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.hasPrevTrack"><i class="si si-step-backward"></i></Button>
-          <Button variant="light" @click="playerStore.togglePlay()" :disabled="isPlayDisabled" class="play-pause"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
-          <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"><i class="si si-step-forward"></i></Button>
-        </div>
-        <div class="progress-bar">
-          <span>{{ formatTime(playerStore.currentTime) }}</span>
-          <RangeSlider
-            :model-value="playerStore.currentTime"
-            :max="playerStore.duration || 1"
-            :disabled="!playerStore.currentTrack"
-            @update:modelValue="playerStore.seek($event)"
-          />
-          <span>{{ formatTime(playerStore.duration) }}</span>
-        </div>
-        <div
-          class="volume-control"
-          @mouseenter="showVolumeSlider"
-          @mouseleave="startHideTimer"
-          @wheel.prevent="handleWheel"
-        >
-          <Button variant="light" @click="playerStore.toggleMute()" class="volume-button">
-            <i v-if="playerStore.volume > 0" class="si si-volume-up"></i>
-            <i v-else class="si si-volume-mute"></i>
-          </Button>
-          <div
-            v-show="isVolumeSliderVisible"
-            class="volume-slider-container"
-            @mouseenter="cancelHideTimer"
-            @mouseleave="startHideTimer"
-          >
-            <RangeSlider
-              :model-value="playerStore.volume"
-              :max="1"
-              :step="0.01"
-              @update:modelValue="playerStore.setVolume($event)"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, defineProps, onBeforeUnmount, watch, onMounted } from 'vue';
 import RangeSlider from '@/components/common/RangeSlider.vue';
@@ -233,6 +169,70 @@ const isPlayDisabled = computed(() => {
   return true;
 });
 </script>
+
+<template>
+  <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }" :style="gradientStyle">
+    <div v-if="!storesLoaded" class="jukebox-player-loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading player...</div>
+    </div>
+    <div v-else class="jukebox-player-content">
+      <!-- Track Artwork -->
+      <div v-if="showArtwork" class="track-artwork-container">
+        <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
+        <div v-else class="track-artwork track-artwork-placeholder">
+          <i class="si si-music-note"></i>
+        </div>
+      </div>
+      
+      <div class="track-info-top">
+        <div class="title">{{ playerStore.currentTrack?.title || 'No track selected' }}</div>
+        <div class="artist">{{ playerStore.currentTrack?.artist || '&nbsp;' }}</div>
+      </div>
+      <div class="player-controls-bottom">
+        <div class="controls">
+          <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.hasPrevTrack"><i class="si si-step-backward"></i></Button>
+          <Button variant="light" @click="playerStore.togglePlay()" :disabled="isPlayDisabled" class="play-pause"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
+          <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"><i class="si si-step-forward"></i></Button>
+        </div>
+        <div class="progress-bar">
+          <span>{{ formatTime(playerStore.currentTime) }}</span>
+          <RangeSlider
+            :model-value="playerStore.currentTime"
+            :max="playerStore.duration || 1"
+            :disabled="!playerStore.currentTrack"
+            @update:modelValue="playerStore.seek($event)"
+          />
+          <span>{{ formatTime(playerStore.duration) }}</span>
+        </div>
+        <div
+          class="volume-control"
+          @mouseenter="showVolumeSlider"
+          @mouseleave="startHideTimer"
+          @wheel.prevent="handleWheel"
+        >
+          <Button variant="light" @click="playerStore.toggleMute()" class="volume-button">
+            <i v-if="playerStore.volume > 0" class="si si-volume-up"></i>
+            <i v-else class="si si-volume-mute"></i>
+          </Button>
+          <div
+            v-show="isVolumeSliderVisible"
+            class="volume-slider-container"
+            @mouseenter="cancelHideTimer"
+            @mouseleave="startHideTimer"
+          >
+            <RangeSlider
+              :model-value="playerStore.volume"
+              :max="1"
+              :step="0.01"
+              @update:modelValue="playerStore.setVolume($event)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .jukebox-player {
