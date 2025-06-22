@@ -1,6 +1,10 @@
 <template>
   <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }" :style="gradientStyle">
-    <div class="jukebox-player-content">
+    <div v-if="!storesLoaded" class="jukebox-player-loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading player...</div>
+    </div>
+    <div v-else class="jukebox-player-content">
       <!-- Track Artwork -->
       <div v-if="showArtwork" class="track-artwork-container">
         <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
@@ -16,7 +20,7 @@
       <div class="player-controls-bottom">
         <div class="controls">
           <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.currentTrack"><i class="si si-step-backward"></i></Button>
-          <Button variant="light" @click="playerStore.togglePlay()"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
+          <Button variant="light" @click="playerStore.togglePlay()" :disabled="isPlayDisabled"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
           <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"><i class="si si-step-forward"></i></Button>
         </div>
         <div class="progress-bar">
@@ -59,61 +63,124 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, defineProps, onBeforeUnmount, watch, onMounted } from 'vue';
 import RangeSlider from '@/components/common/RangeSlider.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { usePictureUrlCacheStore, useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore } from '@/jukebox/stores';
+import { useConfigStore } from '@/utils/configStore';
 import Button from '@/components/common/Button.vue';
 import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
+import type { JukeboxTrack } from '@/jukebox/types';
 
 const props = defineProps<{ 
   animatedBackground?: boolean;
   showArtwork?: boolean;
 }>();
 const playerStore = useJukeboxPlayerStore();
+const pictureUrlCacheStore = usePictureUrlCacheStore();
+const configStore = useConfigStore();
+
+// Get store instances for loading
+const tracksStore = useJukeboxTracksStore();
+const playlistsStore = useJukeboxPlaylistsStore();
+const filesStore = useJukeboxFilesStore();
+
+// Loading state
+const storesLoaded = ref(false);
+
+onMounted(async () => {
+  console.log('🎵 JukeboxPlayer: Component mounted, ensuring stores are loaded...');
+  
+  // Check if stores are already loaded, if not, load them
+  if (!tracksStore.items.value || tracksStore.items.value.length === 0) {
+    console.log('🎵 JukeboxPlayer: Stores not loaded, loading now...');
+    await Promise.all([
+      tracksStore.load(),
+      playlistsStore.load(),
+      filesStore.load()
+    ]);
+  }
+  
+  // Wait for player to be ready (audio element initialized)
+  if (!playerStore.isReady) {
+    console.log('🎵 JukeboxPlayer: Waiting for player to be ready...');
+    // Wait a bit for the GlobalAudioPlayer to initialize
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  // Set up queue context if not already set (for popover usage)
+  if (!playerStore.currentQueueId && tracksStore.items.value.length > 0) {
+    console.log('🎵 JukeboxPlayer: Setting up default queue context for popover...');
+    
+    // Use the activePlaylistId from config (reflects the playlist from which current track is playing)
+    if (configStore.activePlaylistId) {
+      const activePlaylist = playlistsStore.items.value.find(p => p.id === configStore.activePlaylistId);
+      if (activePlaylist) {
+        const playlistTracks = activePlaylist.trackIds
+          .map(trackId => tracksStore.items.value.find(t => t.id === trackId))
+          .filter((track): track is JukeboxTrack => track !== undefined);
+        playerStore.setQueue(playlistTracks, configStore.activePlaylistId);
+        console.log('🎵 JukeboxPlayer: Set queue from active playlist:', playlistTracks.length, 'tracks');
+      }
+    } else {
+      // Otherwise, use all tracks as the queue
+      const allTracks = tracksStore.items.value;
+      playerStore.setQueue(allTracks, null);
+      console.log('🎵 JukeboxPlayer: Set queue from all tracks:', allTracks.length, 'tracks');
+    }
+  }
+  
+  storesLoaded.value = true;
+  console.log('🎵 JukeboxPlayer: Stores ready, player should work correctly');
+});
+
+// Watch for player readiness in case it becomes ready after mount
+watch(() => playerStore.isReady, (isReady) => {
+  if (isReady && !storesLoaded.value) {
+    console.log('🎵 JukeboxPlayer: Player became ready, enabling controls');
+    storesLoaded.value = true;
+  }
+});
+
+// Watch for active playlist changes to update queue context
+watch(() => configStore.activePlaylistId, (newPlaylistId) => {
+  if (storesLoaded.value && tracksStore.items.value.length > 0) {
+    console.log('🎵 JukeboxPlayer: Active playlist changed, updating queue...');
+    
+    if (newPlaylistId) {
+      const activePlaylist = playlistsStore.items.value.find(p => p.id === newPlaylistId);
+      if (activePlaylist) {
+        const playlistTracks = activePlaylist.trackIds
+          .map(trackId => tracksStore.items.value.find(t => t.id === trackId))
+          .filter((track): track is JukeboxTrack => track !== undefined);
+        playerStore.setQueue(playlistTracks, newPlaylistId);
+        console.log('🎵 JukeboxPlayer: Updated queue from playlist:', playlistTracks.length, 'tracks');
+      }
+    } else {
+      // No active playlist, use all tracks
+      const allTracks = tracksStore.items.value;
+      playerStore.setQueue(allTracks, null);
+      console.log('🎵 JukeboxPlayer: Updated queue from all tracks:', allTracks.length, 'tracks');
+    }
+  }
+});
 
 const showAnimatedBg = computed(() => !!props.animatedBackground && playerStore.isPlaying);
 
 // Use the new composable for the gradient style
 const gradientStyle = useAnimatedGradient(showAnimatedBg, () => playerStore.currentTrack?.palette);
 
-// Track artwork handling
-const createdUrls = ref<string[]>([]);
-const pictureUrlCache = ref<Map<string, string>>(new Map());
+// Use the shared store for picture handling
+const { getPictureStyle } = pictureUrlCacheStore;
 
-// Memoize the picture style to prevent URL recreation on every render
+// Create computed property for picture style
 const pictureStyle = computed(() => {
-  if (!playerStore.currentTrack?.picture) {
-    return { backgroundImage: '' };
-  }
-  
-  const picture = playerStore.currentTrack.picture;
-  let url = '';
-  
-  if (typeof picture === 'string') {
-    url = picture;
-  } else {
-    // Create a unique key for this blob based on its content
-    const blobKey = `${picture.size}-${picture.type}`;
-    
-    // Check if we already have a URL for this blob
-    if (pictureUrlCache.value.has(blobKey)) {
-      url = pictureUrlCache.value.get(blobKey)!;
-    } else {
-      // Create new URL and cache it
-      url = URL.createObjectURL(picture);
-      pictureUrlCache.value.set(blobKey, url);
-      createdUrls.value.push(url);
-    }
-  }
-  
-  return { backgroundImage: `url(${url})` };
+  return getPictureStyle(playerStore.currentTrack?.picture);
 });
 
 // Clean up created URLs on component unmount
 onBeforeUnmount(() => {
-  createdUrls.value.forEach(url => URL.revokeObjectURL(url));
-  createdUrls.value = [];
-  pictureUrlCache.value.clear();
+  pictureUrlCacheStore.clearCache();
 });
 
 // Volume slider state is UI-specific, so it stays here.
@@ -150,6 +217,21 @@ function formatTime(seconds: number): string {
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;
 }
+
+const isPlayDisabled = computed(() => {
+  // If a track is selected, always enable
+  if (playerStore.currentTrack) {
+    return false;
+  }
+  
+  // If no track selected, check if there are tracks in the queue to play
+  if (playerStore.queue.length > 0) {
+    return false;
+  }
+  
+  // If no tracks available in queue, disable
+  return true;
+});
 </script>
 
 <style scoped>
@@ -157,6 +239,35 @@ function formatTime(seconds: number): string {
   display: flex;
   flex-direction: column;
   min-width: 600px;
+}
+
+.jukebox-player-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: 200px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.loading-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Responsive adjustments for popover context */

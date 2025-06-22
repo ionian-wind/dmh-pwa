@@ -18,7 +18,7 @@
             <div class="all-tracks-section">
               <Button 
                 @click="setActivePlaylist(null)"
-                :class="{ active: activePlaylistId === null }"
+                :class="{ active: selectedPlaylistId === null }"
                 variant="light"
                 class="all-tracks-button"
               >
@@ -30,7 +30,7 @@
                 <template #item="{ element: playlist }">
                   <li
                     @click="setActivePlaylist(playlist.id)"
-                    :class="{ active: activePlaylistId === playlist.id }"
+                    :class="{ active: selectedPlaylistId === playlist.id }"
                     class="playlist-item"
                   >
                     <span class="playlist-name">{{ playlist.name }}</span>
@@ -54,13 +54,13 @@
         <div class="jukebox-view">
           <div class="tracks-wrapper">
             <div v-if="filteredTracks.length">
-              <draggable v-if="activePlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".playlist-item" item-key="id" @end="onTrackSortEnd">
+              <draggable v-if="selectedPlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".playlist-item" item-key="id" @end="onTrackSortEnd">
                 <template #item="{ element: track }">
                   <li
                     :style="{ '--track-color': track.color || 'transparent' }"
                     class="track-item"
                     :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
-                    @click="playerStore.playTrack(track)"
+                    @click="playTrackFromPlaylist(track)"
                   >
                     <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
                     <div v-else class="track-artwork track-artwork-placeholder">
@@ -84,7 +84,7 @@
                   :style="{ '--track-color': track.color || 'transparent' }"
                   class="track-item"
                   :class="{ 'is-playing': playerStore.currentTrack && playerStore.currentTrack.id === track.id }"
-                  @click="playerStore.playTrack(track)"
+                  @click="playTrackFromPlaylist(track)"
                 >
                   <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork"></div>
                   <div v-else class="track-artwork track-artwork-placeholder">
@@ -123,10 +123,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount, ComputedRef } from 'vue';
 import draggable from 'vuedraggable';
 import { pickAudioFiles, getFileFromHandle, extractTrackMetadata } from '@/jukebox/FileSystemUtils';
-import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, deleteJukeboxFile, putJukeboxFile, getJukeboxFile } from '@/jukebox/stores';
+import { useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore, deleteJukeboxFile, putJukeboxFile, getJukeboxFile, usePictureUrlCacheStore } from '@/jukebox/stores';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
@@ -142,6 +142,7 @@ const filesStore = useJukeboxFilesStore();
 const configStore = useConfigStore();
 const playerStore = useJukeboxPlayerStore();
 const moduleStore = useModuleStore();
+const pictureUrlCacheStore = usePictureUrlCacheStore();
 
 const tracks = tracksStore.items;
 const playlists = playlistsStore.items;
@@ -156,14 +157,14 @@ const filteredPlaylists = computed(() => {
 
 // Use filtered playlists but ensure currently selected playlist is included
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
-const activePlaylistId = ref<string | null>(null);
+const selectedPlaylistId = ref<string | null>(configStore.activePlaylistId ?? null);
 
-// Watch filtered playlists and activePlaylistId separately to avoid watch source issues
+// Watch filtered playlists and selectedPlaylistId separately to avoid watch source issues
 watch(filteredPlaylists, (newPlaylists) => {
-  updateSortedPlaylists(newPlaylists, activePlaylistId.value);
+  updateSortedPlaylists(newPlaylists, selectedPlaylistId.value);
 }, { immediate: true, deep: true });
 
-watch(activePlaylistId, (currentPlaylistId) => {
+watch(selectedPlaylistId, (currentPlaylistId) => {
   updateSortedPlaylists(filteredPlaylists.value, currentPlaylistId);
 }, { immediate: true });
 
@@ -199,31 +200,8 @@ const trackToAddToPlaylist = ref<JukeboxTrack | null>(null);
 
 const isPlaylistPanelVisible = ref(true);
 
-const createdUrls = ref<string[]>([]);
-const pictureUrlCache = ref<Map<string, string>>(new Map());
-
-function getPictureStyle(picture: string | Blob | undefined): { backgroundImage: string } {
-  if (!picture) return { backgroundImage: '' };
-  
-  let url = '';
-  if (typeof picture === 'string') {
-    url = picture;
-  } else {
-    // Create a unique key for this blob based on its content
-    const blobKey = `${picture.size}-${picture.type}`;
-    
-    // Check if we already have a URL for this blob
-    if (pictureUrlCache.value.has(blobKey)) {
-      url = pictureUrlCache.value.get(blobKey)!;
-    } else {
-      // Create new URL and cache it
-      url = URL.createObjectURL(picture);
-      pictureUrlCache.value.set(blobKey, url);
-      createdUrls.value.push(url);
-    }
-  }
-  return { backgroundImage: `url(${url})` };
-}
+// Remove the local caching logic and use the store instead
+const { getPictureStyle } = pictureUrlCacheStore;
 
 function openPlaylistModal(playlist: JukeboxPlaylist | null) {
   playlistToEdit.value = playlist;
@@ -236,23 +214,45 @@ function openAddToPlaylistModal(track: JukeboxTrack) {
 }
 
 function setActivePlaylist(playlistId: string | null) {
-  activePlaylistId.value = playlistId;
-  configStore.activePlaylistId = playlistId;
+  selectedPlaylistId.value = playlistId;
+  // Do NOT update configStore.activePlaylistId here - it should only be updated when playback starts
+}
+
+function playTrackFromPlaylist(track: JukeboxTrack) {
+  // When a track is played, update the config to reflect the playlist from which it was started
+  configStore.activePlaylistId = selectedPlaylistId.value;
+  console.log('🎵 JukeboxView: Playing track from playlist, updated config.activePlaylistId to:', selectedPlaylistId.value);
+  playerStore.playTrack(track);
 }
 
 async function removePlaylist(playlistId: string) {
-  if (activePlaylistId.value === playlistId) {
-    activePlaylistId.value = null;
+  if (selectedPlaylistId.value === playlistId) {
+    selectedPlaylistId.value = null;
     configStore.activePlaylistId = null;
   }
   await playlistsStore.remove(playlistId);
 }
 
 async function removeTrack(track: JukeboxTrack) {
-  if (playerStore.currentTrack?.id === track.id) {
-    playerStore.playNext();
+  const isCurrentlyPlaying = playerStore.currentTrack?.id === track.id;
+
+  // Remove the track from the current queue
+  const currentQueue = playerStore.queue;
+  const newQueue = currentQueue.filter((t: JukeboxTrack) => t.id !== track.id);
+  playerStore.setQueue(newQueue, playerStore.currentQueueId);
+
+  // If we deleted the currently playing track and there are more tracks in the queue, play the next one
+  if (isCurrentlyPlaying && newQueue.length > 0) {
+    const nextTrackIndex = Math.min(currentQueue.findIndex(t => t.id === track.id), newQueue.length - 1);
+    const nextTrack = newQueue[nextTrackIndex];
+    if (nextTrack) {
+      await playerStore.playTrack(nextTrack);
+    }
+  } else if (isCurrentlyPlaying) {
+    // Only stop if there are no more tracks to play
+    playerStore.stop();
   }
-  
+
   // Find all playlists that contain the track
   const playlistsToUpdate = playlistsStore.items.value.filter((p: JukeboxPlaylist) => p.trackIds.includes(track.id));
 
@@ -280,16 +280,13 @@ async function removeTrack(track: JukeboxTrack) {
   if (trackIndex > -1) {
     draggableTracks.value.splice(trackIndex, 1);
   }
-
-  // Explicitly update the player's queue after removing the track
-  playerStore.setQueue(draggableTracks.value, activePlaylistId.value);
 }
 
 const filteredTracks = computed(() => {
-  if (!activePlaylistId.value) {
+  if (!selectedPlaylistId.value) {
     return tracks.value;
   }
-  const activePlaylist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === activePlaylistId.value);
+  const activePlaylist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
   if (!activePlaylist) {
     return [];
   }
@@ -299,8 +296,8 @@ const filteredTracks = computed(() => {
 const draggableTracks = ref<JukeboxTrack[]>([]);
 watch(filteredTracks, (newTracks) => {
   // Update the global player's queue if the context changes
-  if (playerStore.currentQueueId !== activePlaylistId.value) {
-    playerStore.setQueue(newTracks, activePlaylistId.value);
+  if (playerStore.currentQueueId !== selectedPlaylistId.value) {
+    playerStore.setQueue(newTracks, selectedPlaylistId.value);
   }
   draggableTracks.value = [...newTracks];
 }, { immediate: true, deep: true });
@@ -356,8 +353,8 @@ async function pickFiles() {
     }
 
     // If a playlist is active, add the new tracks to it
-    if (activePlaylistId.value) {
-      const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === activePlaylistId.value);
+    if (selectedPlaylistId.value) {
+      const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
       if (playlist) {
         const updatedTrackIds = [...playlist.trackIds, ...newTrackIds];
         await playlistsStore.update(playlist.id, { trackIds: updatedTrackIds });
@@ -385,13 +382,13 @@ function onPlaylistSortEnd(event: any) {
 }
 
 function onTrackSortEnd(_event: any) {
-  if (!activePlaylistId.value) return;
-  const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === activePlaylistId.value);
+  if (!selectedPlaylistId.value) return;
+  const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
   if (!playlist) return;
   
   const newTrackIds = draggableTracks.value.map(t => t.id);
   playlistsStore.update(playlist.id, { ...playlist, trackIds: newTrackIds });
-  playerStore.setQueue(draggableTracks.value, activePlaylistId.value);
+  playerStore.setQueue(draggableTracks.value, selectedPlaylistId.value);
 }
 
 onMounted(async () => {
@@ -403,11 +400,11 @@ onMounted(async () => {
   ]);
   
   if (configStore.activePlaylistId !== undefined) {
-    activePlaylistId.value = configStore.activePlaylistId;
+    selectedPlaylistId.value = configStore.activePlaylistId;
   }
 
   // Set initial queue
-  playerStore.setQueue(filteredTracks.value, activePlaylistId.value);
+  playerStore.setQueue(filteredTracks.value, selectedPlaylistId.value);
 });
 
 function togglePlaylistPanel() {
@@ -415,9 +412,7 @@ function togglePlaylistPanel() {
 }
 
 onBeforeUnmount(() => {
-  createdUrls.value.forEach(url => URL.revokeObjectURL(url));
-  createdUrls.value = [];
-  pictureUrlCache.value.clear();
+  pictureUrlCacheStore.clearCache();
 });
 </script>
 

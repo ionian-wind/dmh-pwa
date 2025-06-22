@@ -48,9 +48,20 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   });
   
   const hasNextTrack = computed(() => {
-    return currentTrackIndex.value > -1 && currentTrackIndex.value < queue.value.length - 1;
+    // If no current track or queue is empty, there's no next track
+    if (!currentTrack.value || queue.value.length === 0) {
+      return false;
+    }
+    
+    // Check if current track is in the queue and not the last one
+    const currentIndex = currentTrackIndex.value;
+    return currentIndex > -1 && currentIndex < queue.value.length - 1;
   });
   
+  const isReady = computed(() => {
+    return audioEl.value !== null && tracksStore.items.value.length > 0;
+  });
+
   // --- Core Methods ---
 
   function init(element: HTMLAudioElement) {
@@ -123,7 +134,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       console.log('🎵 JukeboxPlayer: Updating Media Session metadata for track:', currentTrack.value.title);
       
       const artwork = [];
-      if (currentTrack.value.picture) {
+      if (currentTrack.value.picture && typeof currentTrack.value.picture === 'string') {
         artwork.push({ src: currentTrack.value.picture, sizes: '512x512', type: 'image/jpeg' });
       }
 
@@ -315,6 +326,14 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     } else if (currentTrackIndex.value === 0 && audioEl.value) {
       console.log('🎵 JukeboxPlayer: At first track, restarting from beginning');
       audioEl.value.currentTime = 0;
+      currentTime.value = 0;
+      configStore.lastTrackProgress = 0;
+    } else if (currentTrackIndex.value === -1 && audioEl.value) {
+      // No track in queue, reset progress
+      console.log('🎵 JukeboxPlayer: No track in queue, resetting progress');
+      audioEl.value.currentTime = 0;
+      currentTime.value = 0;
+      configStore.lastTrackProgress = 0;
     }
   }
 
@@ -357,6 +376,22 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     console.log('🎵 JukeboxPlayer: Setting queue, tracks:', tracks.length, 'queueId:', queueId);
     queue.value = tracks;
     currentQueueId.value = queueId;
+    // Always update the config to reflect the playlist from which the current queue was started
+    configStore.activePlaylistId = queueId;
+    console.log('🎵 JukeboxPlayer: Updated config.activePlaylistId to:', queueId);
+  }
+
+  function stop() {
+    console.log('🎵 JukeboxPlayer: Stopping playback');
+    if (audioEl.value) {
+      audioEl.value.pause();
+      audioEl.value.src = '';
+    }
+    isPlaying.value = false;
+    currentTrack.value = null;
+    currentTime.value = 0;
+    configStore.lastTrackId = null;
+    configStore.lastTrackProgress = 0;
   }
 
   return {
@@ -370,6 +405,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     // Getters
     currentQueueId: computed(() => currentQueueId.value),
     hasNextTrack,
+    isReady,
+    queue: computed(() => queue.value),
     
     // Methods
     init,
@@ -382,5 +419,6 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     setVolume,
     toggleMute,
     setQueue,
+    stop,
   };
 }); 
