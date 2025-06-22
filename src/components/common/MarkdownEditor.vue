@@ -16,6 +16,8 @@ const props = defineProps<{
   label?: string;
   hideFormattingHelp?: boolean;
   enableMentions?: boolean;
+  currentEntityType?: string;
+  currentEntityId?: string;
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -57,7 +59,14 @@ function checkMentionTrigger(target: HTMLTextAreaElement) {
       const entityMeta = getMentionableEntities(mentionKind.value);
       if (entityMeta) {
         const store = entityMeta.useStore();
-        mentionItems.value = (store?.items || []).map((item: any) => ({
+        let items = (store?.items || []) as any[];
+
+        // Filter out the current entity
+        if (props.currentEntityId && props.currentEntityType === mentionKind.value) {
+          items = items.filter((item: any) => item.id !== props.currentEntityId);
+        }
+
+        mentionItems.value = items.map((item: any) => ({
           id: item[entityMeta.idKey],
           kind: mentionKind.value,
           title: item[entityMeta.titleKey] || item[entityMeta.idKey],
@@ -188,6 +197,8 @@ onUnmounted(() => {
       :anchorEl="mentionAnchorEl"
       @select="handleMentionSelect"
       @close="handleMentionClose"
+      :current-entity-type="props.currentEntityType"
+      :current-entity-id="props.currentEntityId"
     />
     <div v-if="!props.hideFormattingHelp" class="formatting-help">
       <h4>Formatting Help</h4>

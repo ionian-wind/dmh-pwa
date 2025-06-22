@@ -26,11 +26,13 @@ const filterInputRef = ref<HTMLInputElement | null>(null);
 
 const filteredItems = computed(() => {
   const f = filter.value.trim().toLowerCase();
-  let result = props.items;
+  let items = props.items;
+
   if (f) {
-    result = result.filter(item => item.title.toLowerCase().includes(f));
+    items = items.filter(item => item.title.toLowerCase().includes(f));
   }
-  return result.slice(0, 10);
+
+  return items.slice(0, 10);
 });
 
 function handleKeydown(e: KeyboardEvent) {

@@ -145,6 +145,8 @@ const handleCancel = () => {
           placeholder="Write your note here... Use [[type:]] to link entities"
           className="content-editor"
           label="Content"
+          :current-entity-id="editedNote.id"
+          current-entity-type="note"
         />
       </div>
     </div>

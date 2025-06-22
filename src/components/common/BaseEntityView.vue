@@ -90,7 +90,7 @@ const toggleSidePanel = () => {
       </div>
 
       <!-- Side Panel -->
-      <div class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
+      <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
         <div class="side-panel-toggle-handle" @click="toggleSidePanel">
           <i :class="isSidePanelVisible ? 'si si-chevron-right' : 'si si-chevron-left'"></i>
         </div>
