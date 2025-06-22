@@ -123,6 +123,7 @@ const handleCancel = () => {
           <NoteTypeSelector
             v-model="editedNote.typeId"
             placeholder="No Type"
+            allow-create
           />
         </div>
         <div class="form-group">

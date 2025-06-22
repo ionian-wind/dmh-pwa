@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useNoteTypeStore } from '@/stores/noteTypes';
 import type { NoteType } from '@/types';
 import Button from '@/components/common/Button.vue';
+import PopoverPanel from '@/components/common/PopoverPanel.vue';
 
 const props = defineProps<{
   modelValue: string | null;
   placeholder?: string;
+  allowCreate?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +24,7 @@ const newType = ref<Partial<NoteType>>({
   icon: undefined,
   fields: []
 });
+const createButtonRef = ref<HTMLElement | null>(null);
 
 onMounted(async () => {
   await noteTypeStore.load();
@@ -31,6 +34,7 @@ const handleCreateType = async () => {
   if (newType.value.name?.trim()) {
     await noteTypeStore.create(newType.value as Omit<NoteType, 'id'>);
     newType.value.name = '';
+    showTypeEditor.value = false;
   }
 };
 
@@ -53,51 +57,60 @@ const handleDeleteType = async (id: string) => {
           {{ type.name }}
         </option>
       </select>
-      <Button size="small" variant="light" @click="showTypeEditor = true">+</Button>
+      <Button v-if="allowCreate" ref="createButtonRef" size="small" variant="light" @click="showTypeEditor = true">+</Button>
     </div>
 
-    <div v-if="showTypeEditor" class="type-editor">
-      <div class="form-group">
-        <label for="type-name">Name</label>
-        <input
-          id="type-name"
-          v-model="newType.name"
-          type="text"
-          placeholder="Type name"
-          @keydown.enter.prevent="handleCreateType"
-        >
+    <PopoverPanel
+      :is-open="showTypeEditor"
+      :trigger-el="createButtonRef"
+      @close="showTypeEditor = false"
+      placement="bottom-end"
+      :trap-focus="true"
+    >
+      <div class="type-editor">
+        <h3>Create New Type</h3>
+        <div class="form-group">
+          <label for="type-name">Name</label>
+          <input
+            id="type-name"
+            v-model="newType.name"
+            type="text"
+            placeholder="Type name"
+            @keydown.enter.prevent="handleCreateType"
+          >
+        </div>
+        <div class="form-group">
+          <label for="type-description">Description</label>
+          <input
+            id="type-description"
+            v-model="newType.description"
+            type="text"
+            placeholder="Type description (optional)"
+          >
+        </div>
+        <div class="form-group">
+          <label for="type-color">Color</label>
+          <input
+            id="type-color"
+            v-model="newType.color"
+            type="color"
+          >
+        </div>
+        <div class="form-group">
+          <label for="type-icon">Icon (optional)</label>
+          <input
+            id="type-icon"
+            v-model="newType.icon"
+            type="text"
+            placeholder="Icon name or class"
+          >
+        </div>
+        <div class="type-editor-actions">
+          <Button size="small" @click="handleCreateType">Add</Button>
+          <Button size="small" variant="secondary" @click="showTypeEditor = false">Cancel</Button>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="type-description">Description</label>
-        <input
-          id="type-description"
-          v-model="newType.description"
-          type="text"
-          placeholder="Type description (optional)"
-        >
-      </div>
-      <div class="form-group">
-        <label for="type-color">Color</label>
-        <input
-          id="type-color"
-          v-model="newType.color"
-          type="color"
-        >
-      </div>
-      <div class="form-group">
-        <label for="type-icon">Icon (optional)</label>
-        <input
-          id="type-icon"
-          v-model="newType.icon"
-          type="text"
-          placeholder="Icon name or class"
-        >
-      </div>
-      <div class="type-editor-actions">
-        <Button size="small" @click="handleCreateType">Add</Button>
-        <Button size="small" variant="secondary" @click="showTypeEditor = false">Cancel</Button>
-      </div>
-    </div>
+    </PopoverPanel>
 
     <div v-if="noteTypeStore.items.length > 0" class="type-list">
       <div v-for="type in noteTypeStore.items" :key="type.id" class="type-item">
@@ -137,8 +150,13 @@ const handleDeleteType = async (id: string) => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
-  background: var(--color-background-soft);
-  border-radius: var(--border-radius);
+  min-width: 250px;
+}
+
+.type-editor h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
 }
 
 .form-group {
@@ -198,15 +216,12 @@ const handleDeleteType = async (id: string) => {
 }
 
 .type-icon {
-  width: 1rem;
-  height: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 1rem;
 }
 
-.type-name {
-  font-weight: 500;
+.remove-type-btn {
+  padding: 0.1em 0.4em;
+  font-size: 1.1em;
+  line-height: 1;
 }
 </style> 

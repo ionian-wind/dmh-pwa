@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 
 interface Props {
   isOpen: boolean;
-  triggerEl?: HTMLElement | null;
+  triggerEl?: any;
   trigger?: 'click' | 'hover' | 'focus';
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end' | 'left-start' | 'left-center' | 'left-end' | 'right-start' | 'right-center' | 'right-end';
   offset?: number;
@@ -51,8 +51,14 @@ const popoverClasses = computed(() => [
 
 // Position calculation
 function calculatePosition() {
-  // Use the actual slotted element for measurement, not the wrapper div
-  const triggerEl = props.triggerEl || triggerRef.value?.firstElementChild || triggerRef.value;
+  const rawTriggerEl = props.triggerEl || triggerRef.value?.firstElementChild || triggerRef.value;
+
+  if (!rawTriggerEl) {
+    return;
+  }
+  
+  // Handle case where triggerEl is a Vue component instance
+  const triggerEl = rawTriggerEl.$el || rawTriggerEl;
 
   if (!triggerEl || !popoverRef.value) {
     return;
