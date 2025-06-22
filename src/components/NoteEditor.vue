@@ -91,6 +91,7 @@ const handleCancel = () => {
     submitLabel="Save Note"
     cancelLabel="Cancel"
     modalId="note-editor-modal"
+    show-expand
     @submit="handleSubmit"
     @cancel="handleCancel"
   >

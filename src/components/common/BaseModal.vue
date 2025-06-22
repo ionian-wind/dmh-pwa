@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted, computed } from 'vue';
+import { watch, onMounted, onUnmounted, computed, ref } from 'vue';
 import Button from './Button.vue';
 import { useModalState } from '@/composables/useModalState';
 
@@ -12,6 +12,7 @@ const props = defineProps<{
   cancelLabel?: string;
   showClose?: boolean;
   modalId: string;
+  showExpand?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { openModal, closeModal, currentModalId } = useModalState();
+const isExpanded = ref(false);
 
 // Only show modal if it's open and is the top of the stack
 const actuallyOpen = computed(() => props.isOpen && currentModalId.value === props.modalId);
@@ -102,12 +104,18 @@ onUnmounted(() => {
 <template>
   <Transition name="modal-fade">
     <div v-if="actuallyOpen" class="modal">
-      <div class="modal-dialog">
+      <div class="modal-dialog" :class="{ 'is-expanded': isExpanded }">
         <div class="modal-header">
           <h2>{{ title }}</h2>
-          <Button v-if="showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
-            <i class="si si-x"></i>
-          </Button>
+          <div class="header-actions">
+            <slot name="header-actions" />
+            <Button v-if="props.showExpand" @click="isExpanded = !isExpanded" variant="light" :title="isExpanded ? 'Collapse' : 'Expand'">
+              <i :class="isExpanded ? 'si si-arrows-minimize' : 'si si-arrows-maximize'"></i>
+            </Button>
+            <Button v-if="showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
+              <i class="si si-x"></i>
+            </Button>
+          </div>
         </div>
         <form @submit.prevent="emit('submit')" class="modal-form">
           <div class="modal-scrollable">
@@ -151,6 +159,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 32px rgba(0,0,0,0.15);
+  transition: all 0.3s ease-in-out;
+}
+
+.modal-dialog.is-expanded {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
 }
 
 .modal-header {
@@ -164,11 +181,20 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 0;
+  max-height: 60vh;
+  transition: max-height 0.3s ease-in-out;
 }
 
 .modal-header h2 {
   margin: 0;
   color: var(--color-text);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-close-modal {
@@ -198,6 +224,10 @@ onUnmounted(() => {
   flex: 1 1 auto;
   min-height: 0;
   max-height: 60vh;
+}
+
+.modal-dialog.is-expanded .modal-scrollable {
+  max-height: none;
 }
 
 .modal-actions {
