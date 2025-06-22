@@ -142,7 +142,12 @@ function handleTagClick(tag: string) {
 }
 
 onMounted(async () => {
-  noteStore.load();
+  await noteStore.load();
+  await moduleStore.load();
+  await mentionsStore.load();
+  await partyStore.load();
+  await monsterStore.load();
+  await encounterStore.load();
 });
 </script>
 
@@ -191,11 +196,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.note-body {
-  color: var(--color-text);
-  line-height: 1.6;
-}
-
 .markdown-content {
   font-family: var(--font-family);
 }
@@ -250,37 +250,6 @@ onMounted(async () => {
   padding: 0;
 }
 
-.mentions-aside {
-  background: var(--color-background-soft);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-.mentions-title {
-  margin-top: 0;
-  font-size: 1.1em;
-  margin-bottom: 0.5em;
-}
-.mentions-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.mentions-list li {
-  margin-bottom: 0.5em;
-}
-
-@media (max-width: 800px) {
-  .note-view-container {
-    flex-direction: column !important;
-    gap: 1rem !important;
-  }
-  .mentioned-entities-aside {
-    max-width: 100%;
-    margin-top: 1rem;
-  }
-}
-
 .tag.clickable {
   cursor: pointer;
   text-decoration: underline dotted;
@@ -313,9 +282,4 @@ onMounted(async () => {
   background: var(--color-border);
 }
 
-.side-panel-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
 </style>

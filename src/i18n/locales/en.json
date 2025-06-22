@@ -180,21 +180,28 @@
       "information": "Information",
       "monsters": "Monsters",
       "combats": "Combats"
-    }
-  },
-  "combats": {
-    "title": "Combats",
-    "status": {
-      "preparing": "Preparing",
-      "active": "Active",
-      "completed": "Completed"
     },
-    "fields": {
-      "encounter": "Encounter",
-      "party": "Party",
-      "round": "Round",
-      "turn": "Turn",
-      "combatants": "Combatants"
+    "monsters": {
+      "title": "Monsters",
+      "linkAction": "Link Monsters",
+      "linkModalTitle": "Link Monsters to Encounter",
+      "none": "No monsters in this encounter"
+    },
+    "combats": {
+      "title": "Past Combats",
+      "none": "No combats have been run for this encounter",
+      "status": {
+        "preparing": "Preparing",
+        "active": "Active",
+        "completed": "Completed"
+      },
+      "fields": {
+        "encounter": "Encounter",
+        "party": "Party",
+        "round": "Round",
+        "turn": "Turn",
+        "combatants": "Combatants"
+      }
     }
   },
   "modules": {

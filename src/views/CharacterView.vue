@@ -1,46 +1,41 @@
 <template>
-  <div class="view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
-    <div style="flex: 2 1 0; min-width: 0;">
-      <div v-if="loading" class="loading-state">Loading...</div>
-      <NotFoundView v-else-if="notFound" />
-      <BaseEntityView
-        v-else
-        :entity="character"
-        entity-name="Character"
-        list-route="/characters"
-        :on-delete="handleDelete"
-        :on-edit="editCharacter"
-        :is-editing="showEditor"
-        :title="characterTitle"
-        :not-found="notFound"
-      >
-        <!-- Character Content -->
-        <div v-if="character" class="character-sheet">
-          <!-- Notes -->
-          <section v-if="character.notes" class="sheet-section notes">
-            <h2>Notes</h2>
-            <div class="notes-content">
-              <p>{{ character.notes }}</p>
-            </div>
-          </section>
+  <BaseEntityView
+    :entity="character"
+    entity-name="Character"
+    list-route="/characters"
+    :on-delete="handleDelete"
+    :on-edit="editCharacter"
+    :is-editing="showEditor"
+    :title="characterTitle"
+    :not-found="notFound"
+    :loading="loading"
+  >
+    <!-- Character Content -->
+    <div v-if="character" class="character-sheet">
+      <!-- Notes -->
+      <section v-if="character.notes" class="sheet-section notes">
+        <h2>Notes</h2>
+        <div class="notes-content">
+          <p>{{ character.notes }}</p>
         </div>
-
-        <!-- Editor Modal -->
-        <template #editor>
-          <CharacterEditor
-            :isOpen="showEditor"
-            :character="character"
-            @submit="handleSave"
-            @cancel="closeEditor"
-          />
-        </template>
-      </BaseEntityView>
+      </section>
     </div>
-    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+
+    <!-- Editor Modal -->
+    <template #editor>
+      <CharacterEditor
+        :isOpen="showEditor"
+        :character="character"
+        @submit="handleSave"
+        @cancel="closeEditor"
+      />
+    </template>
+
+    <template #sidepanel>
       <Mentions title="Mentions" :entities="mentionedEntities" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
-    </aside>
-  </div>
+    </template>
+  </BaseEntityView>
 </template>
 
 <script setup lang="ts">

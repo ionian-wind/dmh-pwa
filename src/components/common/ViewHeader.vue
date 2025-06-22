@@ -1,11 +1,12 @@
 <template>
   <div class="view-header">
     <div class="view-header-content">
-      <Button v-if="showCreate" @click="$emit('create')" :title="createTitle">
-        <i class="si si-plus"></i>
-      </Button>
+      <div v-if="title" class="header-wrapper header-title">
+        <b>{{ title }}</b>
+        <slot name="subtitle" />
+      </div>
 
-      <div v-if="showSearch || $slots.default" class="search-input-wrapper">
+      <div v-if="showSearch" class="header-wrapper">
         <input
           v-if="showSearch"
           :value="searchQuery"
@@ -14,8 +15,17 @@
           :placeholder="searchPlaceholder"
           class="search-input"
         >
-        <slot></slot>
+        <slot name="search-filter"></slot>
       </div>
+
+
+      <div v-if="!showSearch && !$slots.default" class="header-wrapper"></div>
+
+      <slot name="actions" />
+
+      <Button v-if="showCreate" @click="$emit('create')" :title="createTitle">
+        <i class="si si-plus"></i>
+      </Button>
     </div>
   </div>
 </template>
@@ -24,6 +34,10 @@
 import Button from '@/components/common/Button.vue';
 
 defineProps({
+  title: {
+    type: String,
+    default: ''
+  },
   showCreate: {
     type: Boolean,
     default: false,
@@ -48,23 +62,3 @@ defineProps({
 
 defineEmits(['create', 'update:searchQuery']);
 </script>
-
-<style scoped>
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-size: 1rem;
-  background: var(--color-background);
-  color: var(--color-text);
-}
-</style>

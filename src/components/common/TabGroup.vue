@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, provide } from 'vue';
 
 export interface Tab {
   id: string;
@@ -36,6 +36,8 @@ const activeTab = computed({
     }
   }
 });
+
+provide('activeTab', activeTab);
 
 const activeTabData = computed(() => 
   props.tabs.find(tab => tab.id === activeTab.value)
@@ -117,20 +119,7 @@ watch(() => props.tabs, (newTabs) => {
 
     <!-- Tab Content -->
     <div class="tab-content">
-      <div class="tab-panel">
-        <Transition v-if="!disableTransition" name="tab-fade" mode="out-in">
-          <div :key="activeTab" class="tab-panel-content">
-            <slot :active-tab="activeTab" :active-tab-data="activeTabData">
-              <!-- Default slot content -->
-            </slot>
-          </div>
-        </Transition>
-        <div v-else :key="activeTab" class="tab-panel-content">
-          <slot :active-tab="activeTab" :active-tab-data="activeTabData">
-            <!-- Default slot content -->
-          </slot>
-        </div>
-      </div>
+      <slot />
     </div>
   </div>
 </template>

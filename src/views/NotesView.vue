@@ -7,7 +7,6 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
 import NoteCard from '@/components/NoteCard.vue';
-import Button from '@/components/common/Button.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import type { Note, Module } from '@/types';
 
@@ -105,12 +104,14 @@ function handleTagClick(tag: string) {
       v-model:searchQuery="searchQuery"
       search-placeholder="Search notes..."
     >
-      <span v-if="tagFilter" class="tag-chip">
-        #{{ tagFilter }}
-        <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
-          <i class="si si-x"></i>
-        </button>
-      </span>
+      <template #search-filter>
+        <span v-if="tagFilter" class="tag-chip">
+          #{{ tagFilter }}
+          <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
+            <i class="si si-x"></i>
+          </button>
+        </span>
+      </template>
     </ViewHeader>
     <div class="view-list">
       <div v-if="filteredNotes.length === 0" class="view-empty">

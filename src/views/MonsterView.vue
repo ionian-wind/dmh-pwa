@@ -77,48 +77,43 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
-    <div style="flex: 2 1 0; min-width: 0;">
-      <div v-if="loading" class="loading-state">Loading...</div>
-      <NotFoundView v-else-if="notFound" />
-      <BaseEntityView
-        v-else
-        :entity="monster"
-        entity-name="Monster"
-        list-route="/monsters"
-        :on-delete="handleDelete"
-        :on-edit="handleEditClick"
-        :is-editing="showEditor"
-        :title="monsterTitle"
-        :not-found="notFound"
-      >
-        <!-- Monster Content -->
-        <div v-if="monster" class="monster-sheet">
-          <!-- Notes -->
-          <section v-if="monster.notes" class="sheet-section notes">
-            <h2>Notes</h2>
-            <div class="notes-content">
-              <p>{{ monster.notes }}</p>
-            </div>
-          </section>
+  <BaseEntityView
+    :entity="monster"
+    entity-name="Monster"
+    list-route="/monsters"
+    :on-delete="handleDelete"
+    :on-edit="handleEditClick"
+    :is-editing="showEditor"
+    :title="monsterTitle"
+    :not-found="notFound"
+    :loading="loading"
+  >
+    <!-- Monster Content -->
+    <div v-if="monster" class="monster-sheet">
+      <!-- Notes -->
+      <section v-if="monster.notes" class="sheet-section notes">
+        <h2>Notes</h2>
+        <div class="notes-content">
+          <p>{{ monster.notes }}</p>
         </div>
-
-        <!-- Editor Modal -->
-        <template #editor>
-          <MonsterEditor
-            :isOpen="showEditor"
-            :monster="monster"
-            @submit="handleSave"
-            @cancel="handleCancel"
-          />
-        </template>
-      </BaseEntityView>
+      </section>
     </div>
-    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
+
+    <!-- Editor Modal -->
+    <template #editor>
+      <MonsterEditor
+        :isOpen="showEditor"
+        :monster="monster"
+        @submit="handleSave"
+        @cancel="handleCancel"
+      />
+    </template>
+
+    <template #sidepanel>
       <Mentions title="Mentions" :entities="mentions" />
       <Mentions title="Mentioned In" :entities="mentionedInEntities" />
-    </aside>
-  </div>
+    </template>
+  </BaseEntityView>
 </template>
 
 <style scoped>

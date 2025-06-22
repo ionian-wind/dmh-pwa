@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useNoteStore } from '@/stores/notes';
-import { useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
@@ -19,7 +18,6 @@ const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
-const router = useRouter();
 
 function getEntityRoute(entity: EntityRef) {
   switch (entity.kind) {

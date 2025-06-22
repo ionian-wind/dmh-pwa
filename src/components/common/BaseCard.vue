@@ -1,9 +1,11 @@
 <template>
   <div class="base-card">
     <div
+      style="cursor: pointer"
       v-if="$slots.header"
       class="base-card-header"
       :class="{ 'no-border': noBorderAfterHeader }"
+      @click="$emit('view')"
     >
       <slot name="header" />
     </div>

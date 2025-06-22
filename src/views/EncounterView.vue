@@ -15,6 +15,7 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/common/Button.vue';
 import PartySelector from '@/components/PartySelector.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
+import TabPanel from '@/components/common/TabPanel.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
 import NotFoundView from './NotFoundView.vue';
@@ -238,127 +239,117 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
-    <div style="flex: 2 1 0; min-width: 0;">
-      <div v-if="loading" class="loading-state">Loading...</div>
-      <NotFoundView v-else-if="notFound" />
-      <BaseEntityView
-        v-else
-        :entity="encounter"
-        entity-name="Encounter"
-        list-route="/encounters"
-        :on-delete="handleDelete"
-        :on-edit="handleEdit"
-        :is-editing="isEditorOpen"
-        :title="encounterTitle"
-      >
-        <template #default>
-          <TabGroup :tabs="tabs" :active-tab="activeTab" @update:active-tab="activeTab = $event">
-            <template #information>
-              <div class="tab-content-section">
-                <section class="content-section">
-                  <h2>{{ t('common.description') }}</h2>
-                  <p class="description">{{ encounter.description || t('common.noDescription') }}</p>
-                </section>
-                <section class="content-section">
-                  <h2>{{ t('common.statistics') }}</h2>
-                  <div class="stats-grid">
-                    <div class="stat-item">
-                      <span class="stat-label">{{ t('encounters.fields.module') }}:</span>
-                      <span class="stat-value">{{ getModuleName(encounter.moduleId) }}</span>
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">{{ t('encounters.fields.monsters') }}:</span>
-                      <span class="stat-value">{{ encounterMonsters.length }}</span>
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">{{ t('combats.title') }}:</span>
-                      <span class="stat-value">{{ encounterCombats.length }}</span>
-                    </div>
-                  </div>
-                </section>
-                <section v-if="encounter.notes" class="content-section">
-                  <h2>{{ t('common.notes') }}</h2>
-                  <p class="notes">{{ encounter.notes }}</p>
-                </section>
-              </div>
-            </template>
-            <!-- Monsters Tab -->
-            <template #monsters>
-              <div class="monsters-section">
-                <div class="monsters-list">
-                  <div v-for="monster in encounterMonsters" :key="monster.id" class="monster-item">
-                    <div class="monster-info">
-                      <span class="monster-name">{{ monster.name }}</span>
-                    </div>
-                  </div>
-                  </div>
-                <div class="add-monsters">
-                  <Button @click="showLinkModal = true">{{ t('encounters.buttons.addMonsters') }}</Button>
-                </div>
-              </div>
-            </template>
-            <!-- Combats Tab -->
-            <template #combats>
-              <div class="combats-section">
-                <div v-if="encounterCombats.length > 0" class="combats-list">
-                  <div v-for="combat in encounterCombats" :key="combat.id" class="combat-item">
-                    <div class="combat-info">
-                      <span class="combat-party">{{ getPartyName(combat.partyId) }}</span>
-                      <span class="combat-date">{{ formatDate(combat.createdAt) }}</span>
-                      <span class="status-badge" :class="getStatusBadgeClass(combat.status)">{{ combat.status }}</span>
-                    </div>
-                    <Button size="small" @click="handleViewCombat(combat)">{{ t('common.view') }}</Button>
-                  </div>
-                </div>
-                <div v-else class="no-combats">
-                  <p>{{ t('combats.noCombats') }}</p>
-                </div>
-              </div>
-            </template>
-          </TabGroup>
-        </template>
-
-        <!-- Editor Modal -->
-        <template #editor>
-          <EncounterEditor
-            :isOpen="isEditorOpen"
-            :encounter="encounter"
-            @submit="handleSave"
-            @cancel="handleCancel"
-          />
-        </template>
-      </BaseEntityView>
-    </div>
-    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
-      <Mentions title="Mentions" :entities="mentions" />
-      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
-    </aside>
-    <!-- Link Monsters Modal -->
-    <BaseModal
-      :isOpen="showLinkModal"
-      title="Link Monsters"
-      :showCancel="true"
-      :showSubmit="false"
-      cancelLabel="Close"
-      modalId="monster-link-modal"
-      @cancel="showLinkModal = false"
+  <div>
+    <BaseEntityView
+      :entity="encounter"
+      entity-name="Encounter"
+      list-route="/encounters"
+      :on-delete="handleDelete"
+      :on-edit="handleEdit"
+      :is-editing="isEditorOpen"
+      :title="encounterTitle"
+      :not-found="notFound"
+      :loading="loading"
     >
-      <div class="monster-linking">
+      <template #sub>
+        <div v-if="encounter?.moduleId" class="module-link">
+          <router-link :to="`/modules/${encounter.moduleId}`">
+            {{ getModuleName(encounter.moduleId) }}
+          </router-link>
+        </div>
+      </template>
+      
+      <template #actions>
+        <Button v-if="encounter" @click="handleRunCombat" variant="primary" title="Run Combat">
+          <i class="si si-d20"></i>
+        </Button>
+      </template>
+      
+      <div class="encounter-content">
+        <TabGroup :tabs="tabs" v-model="activeTab" />
+
+        <div class="tab-content">
+          <TabPanel tab-id="information">
+            <section class="details-section">
+              <h2>{{ $t('common.details') }}</h2>
+              <div v-html="encounter?.description"></div>
+            </section>
+          </TabPanel>
+
+          <TabPanel tab-id="monsters">
+            <div class="monster-list-controls">
+              <h2>{{ $t('encounters.monsters.title') }}</h2>
+              <Button @click="showLinkModal = true">{{ $t('encounters.monsters.linkAction') }}</Button>
+            </div>
+            <div v-if="encounterMonsters.length" class="monster-grid">
+              <div v-for="monster in encounterMonsters" :key="monster.id" class="monster-card-item">
+                <router-link :to="`/monsters/${monster.id}`" class="monster-link">
+                  <div class="monster-name">{{ monster.name }}</div>
+                  <div class="monster-quantity">
+                    x {{ encounter?.monsters[monster.id] }}
+                  </div>
+                </router-link>
+              </div>
+            </div>
+            <p v-else>{{ $t('encounters.monsters.none') }}</p>
+          </TabPanel>
+
+          <TabPanel tab-id="combats">
+            <h2>{{ $t('encounters.combats.title') }}</h2>
+            <div v-if="encounterCombats.length > 0" class="combat-list">
+              <div
+                v-for="combat in encounterCombats"
+                :key="combat.id"
+                class="combat-list-item"
+                @click="handleViewCombat(combat)"
+              >
+                <div class="combat-info">
+                  <span>{{ getPartyName(combat.partyId) }}</span>
+                  <span>{{ formatDate(combat.createdAt) }}</span>
+                </div>
+                <span :class="['status-badge', getStatusBadgeClass(combat.status)]">
+                  {{ $t(`combats.status.${combat.status}`) }}
+                </span>
+              </div>
+            </div>
+            <p v-else>{{ $t('encounters.combats.none') }}</p>
+          </TabPanel>
+        </div>
+      </div>
+
+      <!-- Editor Modal -->
+      <template #editor>
+        <EncounterEditor
+          :isOpen="isEditorOpen"
+          :encounter="encounter"
+          @submit="handleSave"
+          @cancel="handleCancel"
+        />
+      </template>
+
+      <template #sidepanel>
+        <Mentions title="Mentions" :entities="mentions" />
+        <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+      </template>
+    </BaseEntityView>
+
+    <!-- Modals -->
+    <BaseModal :is-open="showLinkModal" @close="showLinkModal = false" :title="$t('encounters.monsters.linkModalTitle')" modal-id="monster-linking-modal">
+      <div class="monster-linking-modal">
         <div v-for="monster in allMonsters" :key="monster.id" class="monster-link-item">
-          <span>{{ monster.name }}</span>
-                <ToggleSwitch
-            :model-value="isMonsterLinked(monster.id)" 
-            @update:model-value="handleToggleMonster(monster, $event)" 
-                />
+          <ToggleSwitch
+            :model-value="isMonsterLinked(monster.id)"
+            @update:model-value="handleToggleMonster(monster, $event)"
+            :label="monster.name"
+          />
         </div>
       </div>
     </BaseModal>
-    <!-- Party Selector Modal -->
+
     <PartySelector
-      :isOpen="showPartySelector"
+      :is-open="showPartySelector"
       :encounter="encounter"
-      @created="handleCombatCreated"
+      @combat-created="handleCombatCreated"
       @cancel="handlePartySelectorCancel"
     />
   </div>

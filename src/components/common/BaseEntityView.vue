@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import Button from './Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 
 interface Props {
   entity: any | null;
@@ -59,80 +60,66 @@ const toggleSidePanel = () => {
   <div class="base-entity-container">
     <div v-if="loading" class="loading-state">Loading...</div>
     <NotFoundView v-else-if="notFound" />
-    <div v-else-if="entity" class="base-entity-layout">
-      <div class="base-entity-view">
-        <!-- Header -->
-        <div class="entity-header">
-          <div class="header-content">
-            <h1>{{ title }}</h1>
-            <div v-if="subtitle" class="entity-subtitle">
-              {{ subtitle }}
-            </div>
-            <slot name="sub" />
+    <template v-else-if="entity">
+      <ViewHeader :title="title">
+        <template #subtitle>
+          <div v-if="subtitle" class="entity-subtitle">
+            {{ subtitle }}
           </div>
-          <div class="header-actions">
-            <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">
-              <i class="si si-pencil"></i>
-            </Button>
-            <Button variant="danger" @click="handleDelete" title="Delete">
-              <i class="si si-trash"></i>
-            </Button>
+          <slot name="sub" />
+        </template>
+        <template #actions>
+          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">
+            <i class="si si-pencil"></i>
+          </Button>
+          <Button variant="danger" @click="handleDelete" title="Delete">
+            <i class="si si-trash"></i>
+          </Button>
+        </template>
+      </ViewHeader>
+      <div class="base-entity-layout">
+        <div class="base-entity-view">
+          <div class="entity-content">
+            <slot />
           </div>
+
+          <!-- Editor Modal -->
+          <slot name="editor" />
         </div>
 
-        <!-- Content -->
-        <div class="entity-content">
-          <slot />
-        </div>
-
-        <!-- Editor Modal -->
-        <slot name="editor" />
-      </div>
-
-      <!-- Side Panel -->
-      <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
-        <div class="side-panel-toggle-handle" @click="toggleSidePanel">
-          <i :class="isSidePanelVisible ? 'si si-chevron-right' : 'si si-chevron-left'"></i>
-        </div>
-        <div class="side-panel">
-          <slot name="sidepanel" />
+        <!-- Side Panel -->
+        <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
+          <div class="side-panel-toggle-handle" @click="toggleSidePanel">
+            <i :class="isSidePanelVisible ? 'si si-chevron-right' : 'si si-chevron-left'"></i>
+          </div>
+          <div class="side-panel">
+            <slot name="sidepanel" />
+          </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .base-entity-container {
-  width: 100%;
   display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
 }
 
 .base-entity-layout {
   display: flex;
   flex: 1;
+  min-height: 0;
 }
 
 .base-entity-view {
   flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.entity-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.header-content h1 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-  font-size: 2.5rem;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .entity-subtitle {
@@ -143,16 +130,10 @@ const toggleSidePanel = () => {
   margin-bottom: 1rem;
 }
 
-.header-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
 .entity-content {
-  background: var(--color-background);
-  border-radius: var(--border-radius);
-  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 2rem;
 }
 
 .sidebar-wrapper {
@@ -160,6 +141,7 @@ const toggleSidePanel = () => {
   width: calc(300px + 16px);
   flex-shrink: 0;
   transition: width 0.3s ease;
+  border-right: 1px solid #ccc;
 }
 
 .sidebar-wrapper.collapsed {
@@ -170,9 +152,15 @@ const toggleSidePanel = () => {
   width: 300px;
   background-color: var(--color-background-soft);
   padding: 1rem;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.side-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .side-panel-toggle-handle {
@@ -190,7 +178,13 @@ const toggleSidePanel = () => {
 
 @media (max-width: 1024px) {
   .sidebar-wrapper {
-    display: none; /* Hide sidebar on smaller screens for now */
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .entity-content {
+    padding: 1rem;
   }
 }
 </style> 
