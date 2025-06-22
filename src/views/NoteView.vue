@@ -147,54 +147,47 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
-    <div style="flex: 2 1 0; min-width: 0;">
-      <div v-if="loading" class="loading-state">Loading...</div>
-      <NotFoundView v-else-if="notFound" />
-      <BaseEntityView
-        v-else
-        :entity="note"
-        entity-name="Note"
-        list-route="/notes"
-        :on-delete="handleDelete"
-        :on-edit="handleEdit"
-        :is-editing="isEditing"
-        :title="noteTitle"
-        :not-found="notFound"
-      >
-        <!-- Note Content -->
-        <div v-if="note">
-          <Markdown :content="note?.content || ''" />
-        </div>
+  <BaseEntityView
+    :entity="note"
+    entity-name="Note"
+    list-route="/notes"
+    :on-delete="handleDelete"
+    :on-edit="handleEdit"
+    :is-editing="isEditing"
+    :title="noteTitle"
+    :not-found="notFound"
+  >
+    <template #sub>
+      <div v-if="note?.tags?.length" class="tags">
+        <span
+          v-for="tag in note.tags"
+          :key="tag"
+          class="tag clickable"
+          @click.stop="handleTagClick(tag)"
+        >#{{ tag }}</span>
+      </div>
+    </template>
+    
+    <Markdown :content="note?.content || ''" />
 
-        <template #sub>
-          <div class="tags" v-if="note!.tags && note!.tags.length">
-            <span
-              v-for="tag in note!.tags"
-              :key="tag"
-              class="tag clickable"
-              @click.stop="handleTagClick(tag)"
-            >#{{ tag }}</span>
-          </div>
-        </template>
-        <!-- Editor Modal -->
-        <template #editor>
-          <NoteEditor
-            v-if="isEditing"
-            :note="note"
-            :is-open="isEditing"
-            :validation-error="validationError"
-            @submit="handleSubmit"
-            @cancel="handleCancel"
-          />
-        </template>
-      </BaseEntityView>
-    </div>
-    <aside v-if="!notFound && !loading" style="flex: 1 1 250px; min-width: 200px; max-width: 320px; display: flex; flex-direction: column; gap: 2rem;">
-      <Mentions title="Mentions" :entities="mentions" />
-      <Mentions title="Mentioned In" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id }))" />
-    </aside>
-  </div>
+    <template #editor>
+      <NoteEditor
+        v-if="isEditing"
+        :note="note"
+        :is-open="isEditing"
+        :validation-error="validationError"
+        @submit="handleSubmit"
+        @cancel="handleCancel"
+      />
+    </template>
+
+    <template #sidepanel>
+      <div class="side-panel-content">
+        <Mentions title="Mentions" :entities="mentions" />
+        <Mentions title="Mentioned In" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id, title: n.title }))" />
+      </div>
+    </template>
+  </BaseEntityView>
 </template>
 
 <style scoped>
@@ -295,5 +288,34 @@ onMounted(async () => {
 }
 .tag.clickable:hover {
   color: var(--color-primary);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tag {
+  background: var(--color-background-soft);
+  color: var(--color-primary);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9rem;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background: var(--color-border);
+}
+
+.side-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 </style>

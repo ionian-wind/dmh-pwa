@@ -102,12 +102,6 @@ const groupedEntities = computed(() => {
 </template>
 
 <style scoped>
-.mentions-aside {
-  background: var(--color-background-soft);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
 .mentions-title {
   margin-top: 0;
   font-size: 1.1em;

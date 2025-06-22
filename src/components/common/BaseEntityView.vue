@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
+import { ref } from 'vue';
 import Button from './Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 
@@ -30,6 +31,7 @@ const emit = defineEmits<{
 
 const route = useRoute();
 const router = useRouter();
+const isSidePanelVisible = ref(true);
 
 const handleEdit = () => {
   if (props.onEdit) {
@@ -47,39 +49,55 @@ const handleDelete = async () => {
 const handleGoBack = () => {
   router.push(props.listRoute);
 };
+
+const toggleSidePanel = () => {
+  isSidePanelVisible.value = !isSidePanelVisible.value;
+};
 </script>
 
 <template>
   <div class="base-entity-container">
     <div v-if="loading" class="loading-state">Loading...</div>
     <NotFoundView v-else-if="notFound" />
-    <div v-else-if="entity" class="base-entity-view">
-      <!-- Header -->
-      <div class="entity-header">
-        <div class="header-content">
-          <h1>{{ title }}</h1>
-          <div v-if="subtitle" class="entity-subtitle">
-            {{ subtitle }}
+    <div v-else-if="entity" class="base-entity-layout">
+      <div class="base-entity-view">
+        <!-- Header -->
+        <div class="entity-header">
+          <div class="header-content">
+            <h1>{{ title }}</h1>
+            <div v-if="subtitle" class="entity-subtitle">
+              {{ subtitle }}
+            </div>
+            <slot name="sub" />
           </div>
-          <slot name="sub" />
+          <div class="header-actions">
+            <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">
+              <i class="si si-pencil"></i>
+            </Button>
+            <Button variant="danger" @click="handleDelete" title="Delete">
+              <i class="si si-trash"></i>
+            </Button>
+          </div>
         </div>
-        <div class="header-actions">
-          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">
-            <i class="si si-pencil"></i>
-          </Button>
-          <Button variant="danger" @click="handleDelete" title="Delete">
-            <i class="si si-trash"></i>
-          </Button>
+
+        <!-- Content -->
+        <div class="entity-content">
+          <slot />
         </div>
+
+        <!-- Editor Modal -->
+        <slot name="editor" />
       </div>
 
-      <!-- Content -->
-      <div class="entity-content">
-        <slot />
+      <!-- Side Panel -->
+      <div class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
+        <div class="side-panel-toggle-handle" @click="toggleSidePanel">
+          <i :class="isSidePanelVisible ? 'si si-chevron-right' : 'si si-chevron-left'"></i>
+        </div>
+        <div class="side-panel">
+          <slot name="sidepanel" />
+        </div>
       </div>
-
-      <!-- Editor Modal -->
-      <slot name="editor" />
     </div>
   </div>
 </template>
@@ -87,12 +105,19 @@ const handleGoBack = () => {
 <style scoped>
 .base-entity-container {
   width: 100%;
+  display: flex;
+}
+
+.base-entity-layout {
+  display: flex;
+  flex: 1;
 }
 
 .base-entity-view {
+  flex: 1;
+  padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
 }
 
 .entity-header {
@@ -130,19 +155,42 @@ const handleGoBack = () => {
   padding: 2rem;
 }
 
-@media (max-width: 768px) {
-  .base-entity-view {
-    padding: 1rem;
-  }
-  
-  .entity-header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: center;
+.sidebar-wrapper {
+  display: flex;
+  width: calc(300px + 16px);
+  flex-shrink: 0;
+  transition: width 0.3s ease;
+}
+
+.sidebar-wrapper.collapsed {
+  width: 16px;
+}
+
+.side-panel {
+  width: 300px;
+  background-color: var(--color-background-soft);
+  padding: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-panel-toggle-handle {
+  width: 16px;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: linear-gradient(-90deg,rgb(249, 249, 249) 0%, rgb(240, 240, 240) 100%);
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-wrapper {
+    display: none; /* Hide sidebar on smaller screens for now */
   }
 }
 </style> 
