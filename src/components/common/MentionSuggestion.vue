@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { cropTitle } from '@/utils/cropTitle';
+import PopoverPanel from './PopoverPanel.vue';
 
 interface MentionItem {
   id: string;
@@ -21,7 +22,7 @@ const emit = defineEmits<{
 
 const filter = ref('');
 const activeIndex = ref(0);
-const popupRef = ref<HTMLElement | null>(null);
+const filterInputRef = ref<HTMLInputElement | null>(null);
 
 const filteredItems = computed(() => {
   const f = filter.value.trim().toLowerCase();
@@ -50,89 +51,56 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-function handleClickOutside(e: MouseEvent) {
-  if (!props.show) return;
-  if (popupRef.value && !popupRef.value.contains(e.target as Node)) {
-    e.preventDefault();
-    emit('close');
-  }
-}
-
 watch(() => props.show, (show) => {
   if (show) {
-    document.addEventListener('mousedown', handleClickOutside);
     nextTick(() => {
-      if (popupRef.value) popupRef.value.focus();
+      filterInputRef.value?.focus();
     });
   } else {
-    document.removeEventListener('mousedown', handleClickOutside);
     filter.value = '';
     activeIndex.value = 0;
   }
 });
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside);
-});
-
-const popupStyle = computed<Record<string, string>>(() => {
-  if (!props.anchorEl) {
-    return {
-      display: 'none',
-      position: 'absolute',
-      top: '0px',
-      left: '0px',
-      minWidth: '0px',
-      zIndex: '9999',
-    };
-  }
-  const rect = props.anchorEl.getBoundingClientRect();
-  return {
-    display: 'block',
-    position: 'absolute',
-    top: `${rect.bottom + window.scrollY}px`,
-    left: `${rect.left + window.scrollX}px`,
-    minWidth: `${rect.width}px`,
-    zIndex: '9999',
-  };
-});
 </script>
 
 <template>
-  <div v-if="show" :style="popupStyle" class="mention-suggestion-popup" ref="popupRef" tabindex="-1">
-    <input
-      v-model="filter"
-      class="mention-suggestion-filter"
-      type="text"
-      placeholder="Type to filter..."
-      @keydown.stop="handleKeydown"
-    />
-    <ul class="mention-suggestion-list">
-      <li
-        v-for="(item, idx) in filteredItems"
-        :key="item.kind + ':' + item.id"
-        :class="{ active: idx === activeIndex }"
-        @click.stop="emit('select', item)"
-      >
-        <span class="mention-kind">{{ item.kind }}</span>
-        <span class="mention-title">{{ cropTitle(item.title) }}</span>
-      </li>
-      <li v-if="filteredItems.length === 0" class="mention-suggestion-empty">No results</li>
-    </ul>
-  </div>
+  <PopoverPanel
+    :is-open="show"
+    :trigger-el="anchorEl"
+    disable-internal-trigger
+    placement="bottom-start"
+    @close="emit('close')"
+  >
+    <div class="mention-suggestion-popup" @keydown="handleKeydown">
+      <input
+        ref="filterInputRef"
+        v-model="filter"
+        class="mention-suggestion-filter"
+        type="text"
+        placeholder="Type to filter..."
+        @keydown.stop="handleKeydown"
+      />
+      <ul class="mention-suggestion-list">
+        <li
+          v-for="(item, idx) in filteredItems"
+          :key="item.kind + ':' + item.id"
+          :class="{ active: idx === activeIndex }"
+          @click.stop="emit('select', item)"
+        >
+          <span class="mention-kind">{{ item.kind }}</span>
+          <span class="mention-title">{{ cropTitle(item.title) }}</span>
+        </li>
+        <li v-if="filteredItems.length === 0" class="mention-suggestion-empty">No results</li>
+      </ul>
+    </div>
+  </PopoverPanel>
 </template>
 
 <style scoped>
 .mention-suggestion-popup {
-  background: var(--color-background, #fff);
-  border: 1px solid var(--color-border, #ccc);
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   padding: 0.5em 0.5em 0.25em 0.5em;
   min-width: 220px;
   max-width: 350px;
-  max-height: 320px;
-  overflow-y: auto;
   font-size: 1em;
 }
 .mention-suggestion-filter {
@@ -147,6 +115,8 @@ const popupStyle = computed<Record<string, string>>(() => {
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: 250px;
+  overflow-y: auto;
 }
 .mention-suggestion-list li {
   padding: 0.25em 0.5em;

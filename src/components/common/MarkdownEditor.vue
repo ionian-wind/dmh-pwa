@@ -143,6 +143,7 @@ function handleMentionClose() {
     document.body.removeChild(mentionAnchorEl.value);
     mentionAnchorEl.value = null;
   }
+  textareaRef.value?.focus();
 }
 
 onMounted(async () => {

@@ -1,10 +1,10 @@
 <template>
   <div class="view-root">
-    <div class="view-header">
-      <Button variant="primary" @click="pickFiles" title="Add Tracks">
-        <i class="si si-plus"></i>
-      </Button>
-    </div>
+    <ViewHeader
+      show-create
+      create-title="Add Tracks"
+      @create="pickFiles"
+    />
     
     <div class="jukebox-container">
       <div class="jukebox-layout">
@@ -134,6 +134,7 @@ import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import { useConfigStore } from '@/utils/configStore';
 import Button from '@/components/common/Button.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
 import { useModuleStore } from '@/stores/modules';
 
 const tracksStore = useJukeboxTracksStore();
@@ -421,13 +422,6 @@ onBeforeUnmount(() => {
 .view-root {
   height: calc(100vh - var(--header-height));
   overflow: hidden;
-}
-
-.view-header {
-  flex-shrink: 0;
-  border-bottom: 1px solid #ccc;
-  background: #f9f9f9;
-  padding: 1rem;
 }
 
 .jukebox-container {
