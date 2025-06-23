@@ -716,3 +716,47 @@ select {
 .entity-content:has(.jukebox-main-content) {
   padding: 0;
 }
+
+
+.markdown-content {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* Task list styles for markdown checkboxes */
+.task-list {
+  padding-left: 1.2em;
+  margin-bottom: 1em;
+}
+.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85em;
+  min-height: 1.8em;
+  margin-bottom: 0.2em;
+  list-style-type: none;
+  position: relative;
+}
+.task-list-checkbox {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: middle;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  background: var(--color-background, #fff);
+  border: 1px solid var(--color-border, #ccc);
+  transition: box-shadow 0.2s;
+}
+.task-list-label {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  cursor: pointer;
+  user-select: text;
+  width: 100%;
+}
+
+ul:has(.task-list-label) li::marker {
+    content: none;
+}

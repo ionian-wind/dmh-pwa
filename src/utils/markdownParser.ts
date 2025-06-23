@@ -8,7 +8,6 @@ import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import { cropTitle } from './cropTitle';
 
 // --- Mention plugin for markdown-it ---
 const mentionRegex = /\[\[([a-zA-Z]+):([a-zA-Z0-9_-]+)(?:\|([^\]]+))?\]\]/g;
@@ -102,6 +101,46 @@ const externalLinkPlugin: PluginSimple = (md: MarkdownItType) => {
   };
 };
 
+// --- Checkbox (Task List) plugin for markdown-it ---
+const checkboxRegex = /^\s*\[([ xX])\]\s+/;
+
+const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
+  // Patch the renderer for list_item_open to add the class and for inline to render checkboxes
+  const originalListItemOpen = md.renderer.rules.list_item_open || function(tokens: any, idx: number, options: any, env: any, self: any) {
+    return self.renderToken(tokens, idx, options);
+  };
+  md.renderer.rules.list_item_open = function(tokens: any, idx: number, options: any, env: any, self: any) {
+    // Check if the next inline token contains a checkbox
+    const next = tokens[idx + 1];
+    if (next && next.type === 'inline' && next.children && next.children[0] && next.children[0].type === 'text') {
+      const match = checkboxRegex.exec(next.children[0].content);
+      if (match) {
+        tokens[idx].attrJoin('class', 'task-list-item');
+      }
+    }
+    return originalListItemOpen(tokens, idx, options, env, self);
+  };
+
+  const originalInline = md.renderer.rules.text || function(tokens: any, idx: number, options: any, env: any, self: any) {
+    return self.renderToken(tokens, idx, options);
+  };
+  md.renderer.rules.text = function(tokens: any, idx: number, options: any, env: any, self: any) {
+    // Only process if parent is a list item and matches checkbox
+    const token = tokens[idx];
+    const parent = token && token.level > 0 ? tokens[idx - 1] : null;
+    const match = checkboxRegex.exec(token.content);
+    if (match) {
+      const checked = match[1].toLowerCase() === 'x';
+      // Remove the [ ] or [x] from the text
+      const label = token.content.slice(match[0].length);
+      // Use env.taskCheckboxEnabled to control enabled/disabled state
+      const enabled = env && env.taskCheckboxEnabled === true;
+      return `<label class="task-list-label"><input type="checkbox"${checked ? ' checked' : ''}${enabled ? '' : ' disabled'} class="task-list-checkbox">${md.utils.escapeHtml(label)}</label>`;
+    }
+    return md.utils.escapeHtml(token.content);
+  };
+};
+
 const md = new MarkdownIt({
   html: true,
   linkify: true,
@@ -109,6 +148,7 @@ const md = new MarkdownIt({
 });
 md.use(mentionPlugin);
 md.use(externalLinkPlugin);
+md.use(checkboxPlugin);
 md.use(markdownItAttrs);
 md.use(markdownItAnchor, {
   // Use the existing id if present, otherwise generate
@@ -121,8 +161,8 @@ md.use(markdownItAnchor, {
   }
 });
 
-export function parseMarkdown(text: string): string {
-  return md.render(text || '');
+export function parseMarkdown(text: string, env?: unknown): string {
+  return md.render(text || '', env);
 }
 
 // Extract all entity mentions of the form [[type:id]] from markdown text

@@ -224,7 +224,9 @@ onUnmounted(() => {
             <li><code># Heading</code> - Section heading</li>
             <li><code>- item</code> - Bullet list</li>
             <li><code>1. item</code> - Numbered list</li>
+            <li><code>- [ ] Task item</code> or <code>- [x] Completed task</code> - Task list with checkboxes</li>
           </ul>
+          <p><em>Task lists</em> written as <code>- [ ]</code> or <code>- [x]</code> will render as disabled checkboxes.</p>
         </div>
       </div>
     </div>

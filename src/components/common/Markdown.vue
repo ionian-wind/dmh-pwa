@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { parseMarkdown } from '@/utils/markdownParser';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
@@ -9,8 +9,16 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
 
-const props = defineProps<{ content: string; anchorMap?: Record<string, string>; enableMentionModal?: boolean }>();
-const parsed = computed(() => parseMarkdown(props.content));
+const props = defineProps<{ 
+  content: string;
+  anchorMap?: Record<string, string>;
+  enableMentionModal?: boolean,
+  taskCheckboxEnabled?: boolean
+}>();
+
+const emit = defineEmits(['update:content']);
+
+const parsed = computed(() => parseMarkdown(props.content, { taskCheckboxEnabled: !!props.taskCheckboxEnabled }));
 
 const rootEl = ref<HTMLElement | null>(null);
 
@@ -80,11 +88,70 @@ function scrollToAnchorIfNeeded() {
   // (Optional: implement anchor scroll on hashchange if needed)
 }
 
-onMounted(() => {
+// Map from checkbox index to markdown line index
+function getTaskLineIndexes(markdown: string): number[] {
+  const lines = markdown.split(/\r?\n/);
+  const indexes: number[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*[-*+]\s*\[([ xX])\]/.test(lines[i])) {
+      indexes.push(i);
+    }
+  }
+  return indexes;
+}
+
+function handleCheckboxChange(e: Event) {
+  if (!props.taskCheckboxEnabled) return;
+  const target = e.target as HTMLInputElement;
+  if (!target || target.type !== 'checkbox' || !rootEl.value) return;
+  // Find all checkboxes in order
+  const checkboxes = Array.from(rootEl.value.querySelectorAll('input[type="checkbox"].task-list-checkbox'));
+  const idx = checkboxes.indexOf(target);
+  if (idx === -1) return;
+  // Find the corresponding line in the markdown
+  const lines = props.content.split(/\r?\n/);
+  const taskIndexes = getTaskLineIndexes(props.content);
+  const lineIdx = taskIndexes[idx];
+  if (lineIdx === undefined) return;
+  // Toggle the checkbox in the markdown
+  lines[lineIdx] = lines[lineIdx].replace(/^(\s*[-*+]\s*\[)([ xX])(\])/, (m, pre, mark, post) => pre + (target.checked ? 'x' : ' ') + post);
+  const newContent = lines.join('\n');
+  emit('update:content', newContent);
+}
+
+onMounted(async () => {
   if (rootEl.value) {
     rootEl.value.addEventListener('click', handleInternalLinkClick, true);
+    if (props.taskCheckboxEnabled) {
+      rootEl.value.addEventListener('change', handleCheckboxChange, true);
+    }
   }
   window.addEventListener('hashchange', scrollToAnchorIfNeeded);
+
+  await noteStore.load();
+  await moduleStore.load();
+  await partyStore.load();
+  await monsterStore.load();
+  await encounterStore.load();
+});
+
+onUnmounted(() => {
+  if (rootEl.value) {
+    rootEl.value.removeEventListener('click', handleInternalLinkClick, true);
+    if (props.taskCheckboxEnabled) {
+      rootEl.value.removeEventListener('change', handleCheckboxChange, true);
+    }
+  }
+  window.removeEventListener('hashchange', scrollToAnchorIfNeeded);
+});
+
+watch(() => props.taskCheckboxEnabled, (enabled) => {
+  if (!rootEl.value) return;
+  if (enabled) {
+    rootEl.value.addEventListener('change', handleCheckboxChange, true);
+  } else {
+    rootEl.value.removeEventListener('change', handleCheckboxChange, true);
+  }
 });
 </script>
 
@@ -93,11 +160,3 @@ onMounted(() => {
     <div v-html="parsed"></div>
   </div>
 </template>
-
-<style scoped>
-.markdown-content {
-  font-family: var(--font-family);
-  color: var(--color-text);
-  line-height: 1.6;
-}
-</style> 

@@ -12,7 +12,6 @@ import NoteEditor from '@/components/NoteEditor.vue';
 import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import NotFoundView from './NotFoundView.vue';
 import Markdown from '@/components/common/Markdown.vue';
 
 const route = useRoute();
@@ -29,8 +28,9 @@ const isLoaded = computed(() => noteStore.isLoaded);
 const note = ref<Note | null>(null);
 const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !note.value);
-const parsedContent = computed(() => note.value ? parseMarkdown(note.value.content) : '');
+const parsedContent = computed(() => note.value ? parseMarkdown(note.value.content, { taskCheckboxEnabled: true }) : '');
 const validationError = ref<string | null>(null);
+const noteContent = ref('');
 
 function updateNoteFromStore() {
   if (!noteStore.isLoaded) {
@@ -48,6 +48,17 @@ watch([
   () => noteStore.items,
   () => noteStore.isLoaded
 ], updateNoteFromStore, { immediate: true });
+
+watch(note, (n) => {
+  if (n) noteContent.value = n.content;
+}, { immediate: true });
+
+function handleMarkdownContentChange(newContent: string) {
+  noteContent.value = newContent;
+  if (note.value) {
+    noteStore.update(note.value.id, { content: newContent });
+  }
+}
 
 const handleEdit = () => {
   isEditing.value = true;
@@ -143,7 +154,7 @@ onMounted(async () => {
     :title="noteTitle"
     :not-found="notFound"
   >
-    <Markdown :content="note?.content || ''" />
+    <Markdown :taskCheckboxEnabled="true" :content="noteContent" @update:content="handleMarkdownContentChange" />
 
     <template #editor>
       <NoteEditor

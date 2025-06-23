@@ -6,7 +6,11 @@ jest.mock('@/stores/notes', () => ({
     notes: [
       { id: 'note-1', title: 'Test Note', content: 'Test content' },
       { id: 'note-2', title: 'Another Note', content: 'Another content' }
-    ]
+    ],
+    getById: (id: string) => ({
+      'note-1': { id: 'note-1', title: 'Test Note', content: 'Test content' },
+      'note-2': { id: 'note-2', title: 'Another Note', content: 'Another content' }
+    }[id] || null)
   })
 }));
 
@@ -15,7 +19,11 @@ jest.mock('@/stores/modules', () => ({
     modules: [
       { id: 'module-1', name: 'Test Module', description: 'Test description' },
       { id: 'module-2', name: 'Another Module', description: 'Another description' }
-    ]
+    ],
+    getById: (id: string) => ({
+      'module-1': { id: 'module-1', name: 'Test Module', description: 'Test description' },
+      'module-2': { id: 'module-2', name: 'Another Module', description: 'Another description' }
+    }[id] || null)
   })
 }));
 
@@ -24,7 +32,11 @@ jest.mock('@/stores/parties', () => ({
     parties: [
       { id: 'party-1', name: 'Test Party', characters: [] },
       { id: 'party-2', name: 'Another Party', characters: [] }
-    ]
+    ],
+    getById: (id: string) => ({
+      'party-1': { id: 'party-1', name: 'Test Party', characters: [] },
+      'party-2': { id: 'party-2', name: 'Another Party', characters: [] }
+    }[id] || null)
   })
 }));
 
@@ -33,7 +45,11 @@ jest.mock('@/stores/monsters', () => ({
     monsters: [
       { id: 'monster-1', name: 'Test Monster', type: 'Beast', description: 'Test description' },
       { id: 'monster-2', name: 'Another Monster', type: 'Humanoid', description: 'Another description' }
-    ]
+    ],
+    getById: (id: string) => ({
+      'monster-1': { id: 'monster-1', name: 'Test Monster', type: 'Beast', description: 'Test description' },
+      'monster-2': { id: 'monster-2', name: 'Another Monster', type: 'Humanoid', description: 'Another description' }
+    }[id] || null)
   })
 }));
 
@@ -42,7 +58,11 @@ jest.mock('@/stores/encounters', () => ({
     encounters: [
       { id: 'encounter-1', name: 'Test Encounter', difficulty: 'medium', level: 5 },
       { id: 'encounter-2', name: 'Another Encounter', difficulty: 'hard', level: 10 }
-    ]
+    ],
+    getById: (id: string) => ({
+      'encounter-1': { id: 'encounter-1', name: 'Test Encounter', difficulty: 'medium', level: 5 },
+      'encounter-2': { id: 'encounter-2', name: 'Another Encounter', difficulty: 'hard', level: 10 }
+    }[id] || null)
   })
 }));
 
@@ -60,8 +80,8 @@ describe('Markdown Parser', () => {
       const input = '# Heading 1\n## Heading 2';
       const result = parseMarkdown(input);
       
-      expect(result).toContain('<h1>Heading 1</h1>');
-      expect(result).toContain('<h2>Heading 2</h2>');
+      expect(result).toContain('<h1 id="Heading 1" tabindex="-1">Heading 1</h1>');
+      expect(result).toContain('<h2 id="Heading 2" tabindex="-1">Heading 2</h2>');
     });
 
     it('should parse lists', () => {
@@ -95,40 +115,35 @@ describe('Markdown Parser', () => {
     it('should parse note links', () => {
       const input = 'Check this [[note:note-1]] for more info';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
+      expect(result).toMatch(/<a href="\/notes\/note-1" class="internal-link note-link"[^>]*data-kind="note"[^>]*data-id="note-1"[^>]*>Test Note<\/a>/);
       expect(result).toContain('Check this');
     });
 
     it('should parse module links', () => {
       const input = 'See [[module:module-1]] for details';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
+      expect(result).toMatch(/<a href="\/modules\/module-1" class="internal-link module-link"[^>]*data-kind="module"[^>]*data-id="module-1"[^>]*>Test Module<\/a>/);
       expect(result).toContain('See');
     });
 
     it('should parse party links', () => {
       const input = 'The [[party:party-1]] is ready';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="/parties/party-1" class="internal-link party-link">');
+      expect(result).toMatch(/<a href="\/parties\/party-1" class="internal-link party-link"[^>]*data-kind="party"[^>]*data-id="party-1"[^>]*>Test Party<\/a>/);
       expect(result).toContain('The');
     });
 
     it('should parse monster links', () => {
       const input = 'Fight the [[monster:monster-1]]';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="/monsters/monster-1" class="internal-link monster-link">');
+      expect(result).toMatch(/<a href="\/monsters\/monster-1" class="internal-link monster-link"[^>]*data-kind="monster"[^>]*data-id="monster-1"[^>]*>Test Monster<\/a>/);
       expect(result).toContain('Fight the');
     });
 
     it('should parse encounter links', () => {
       const input = 'Start [[encounter:encounter-1]]';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="/encounters/encounter-1" class="internal-link encounter-link">');
+      expect(result).toMatch(/<a href="\/encounters\/encounter-1" class="internal-link encounter-link"[^>]*data-kind="encounter"[^>]*data-id="encounter-1"[^>]*>Test Encounter<\/a>/);
       expect(result).toContain('Start');
     });
 
@@ -172,28 +187,25 @@ describe('Markdown Parser', () => {
     it('should handle mixed markdown and internal links', () => {
       const input = '**Important**: Check [[note:note-1]] for details about the [[monster:monster-1]].';
       const result = parseMarkdown(input);
-      
       expect(result).toContain('<strong>Important</strong>');
-      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
-      expect(result).toContain('<a href="/monsters/monster-1" class="internal-link monster-link">');
+      expect(result).toMatch(/<a href="\/notes\/note-1" class="internal-link note-link"[^>]*data-kind="note"[^>]*data-id="note-1"[^>]*>Test Note<\/a>/);
+      expect(result).toMatch(/<a href="\/monsters\/monster-1" class="internal-link monster-link"[^>]*data-kind="monster"[^>]*data-id="monster-1"[^>]*>Test Monster<\/a>/);
     });
 
     it('should handle multiple links in one line', () => {
       const input = '[[note:note-1]] and [[module:module-1]] and [[party:party-1]]';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
-      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
-      expect(result).toContain('<a href="/parties/party-1" class="internal-link party-link">');
+      expect(result).toMatch(/<a href="\/notes\/note-1" class="internal-link note-link"[^>]*data-kind="note"[^>]*data-id="note-1"[^>]*>Test Note<\/a>/);
+      expect(result).toMatch(/<a href="\/modules\/module-1" class="internal-link module-link"[^>]*data-kind="module"[^>]*data-id="module-1"[^>]*>Test Module<\/a>/);
+      expect(result).toMatch(/<a href="\/parties\/party-1" class="internal-link party-link"[^>]*data-kind="party"[^>]*data-id="party-1"[^>]*>Test Party<\/a>/);
     });
 
     it('should handle links within lists', () => {
       const input = '- Check [[note:note-1]]\n- See [[module:module-1]]';
       const result = parseMarkdown(input);
-      
       expect(result).toContain('<ul>');
-      expect(result).toContain('<a href="/notes/note-1" class="internal-link note-link">');
-      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
+      expect(result).toMatch(/<a href="\/notes\/note-1" class="internal-link note-link"[^>]*data-kind="note"[^>]*data-id="note-1"[^>]*>Test Note<\/a>/);
+      expect(result).toMatch(/<a href="\/modules\/module-1" class="internal-link module-link"[^>]*data-kind="module"[^>]*data-id="module-1"[^>]*>Test Module<\/a>/);
     });
   });
 
@@ -218,9 +230,41 @@ describe('Markdown Parser', () => {
     it('should handle partial internal link syntax', () => {
       const input = 'Check [[note: and [[module:module-1]]';
       const result = parseMarkdown(input);
-      
       expect(result).toContain('Check [[note:');
-      expect(result).toContain('<a href="/modules/module-1" class="internal-link module-link">');
+      expect(result).toMatch(/<a href="\/modules\/module-1" class="internal-link module-link"[^>]*data-kind="module"[^>]*data-id="module-1"[^>]*>Test Module<\/a>/);
+    });
+  });
+
+  describe('Checkbox/Task List Plugin', () => {
+    it('should render unchecked task list items as disabled checkboxes', () => {
+      const input = '- [ ] Unchecked item';
+      const result = parseMarkdown(input);
+      expect(result).toContain('<ul');
+      expect(result).toContain('<input type="checkbox" disabled class="task-list-checkbox">');
+      expect(result).toContain('Unchecked item');
+    });
+
+    it('should render checked task list items as checked disabled checkboxes', () => {
+      const input = '- [x] Checked item';
+      const result = parseMarkdown(input);
+      expect(result).toContain('<ul');
+      expect(result).toContain('<input type="checkbox" disabled checked class="task-list-checkbox">');
+      expect(result).toContain('Checked item');
+    });
+
+    it('should render mixed checked and unchecked items', () => {
+      const input = '- [ ] Unchecked\n- [x] Checked';
+      const result = parseMarkdown(input);
+      expect(result).toContain('<input type="checkbox" disabled class="task-list-checkbox">');
+      expect(result).toContain('<input type="checkbox" disabled checked class="task-list-checkbox">');
+    });
+
+    it('should not affect normal lists', () => {
+      const input = '- Not a task item';
+      const result = parseMarkdown(input);
+      expect(result).toContain('<ul');
+      expect(result).toContain('<li>Not a task item</li>');
+      expect(result).not.toContain('type="checkbox"');
     });
   });
 }); 
