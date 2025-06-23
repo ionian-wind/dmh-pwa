@@ -1,4 +1,4 @@
-import type { WithMetadata, UUID as GlobalUUID, Timestamp, WithId, WithTimestamps } from '@/types';
+import type { WithMetadata, UUID as GlobalUUID, WithId, WithTimestamps } from '@/types';
 
 export type UUID = GlobalUUID;
 

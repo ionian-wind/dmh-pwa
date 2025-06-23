@@ -21,6 +21,7 @@ const emit = defineEmits<{
 
 function handleClick(event: MouseEvent) {
   if (!props.disabled && !props.loading) {
+    event.stopPropagation();
     emit('click', event);
   }
 }

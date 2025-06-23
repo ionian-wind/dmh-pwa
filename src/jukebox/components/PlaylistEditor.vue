@@ -12,7 +12,7 @@ const props = defineProps<{
   playlist: JukeboxPlaylist | null;
 }>();
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'saved']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const moduleStore = useModuleStore();
@@ -61,14 +61,16 @@ const moduleIdsProxy = computed<string[]>({
 
 async function save() {
   if (props.playlist && props.playlist.id) {
-    await playlistsStore.update(props.playlist.id, {
+    const updatedPlaylist = await playlistsStore.update(props.playlist.id, {
       name: editablePlaylist.value.name,
       description: editablePlaylist.value.description,
       trackIds: editablePlaylist.value.trackIds,
       moduleIds: editablePlaylist.value.moduleIds,
     });
+    emit('saved', updatedPlaylist);
   } else {
-    await playlistsStore.create(editablePlaylist.value);
+    const newPlaylist = await playlistsStore.create(editablePlaylist.value);
+    emit('saved', newPlaylist);
   }
   emit('update:modelValue', false);
 }

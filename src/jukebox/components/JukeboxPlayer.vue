@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, onBeforeUnmount, watch, onMounted } from 'vue';
+import {computed, defineProps, onBeforeUnmount, onMounted, ref, watch, watchEffect} from 'vue';
 import RangeSlider from '@/components/common/RangeSlider.vue';
-import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
-import { usePictureUrlCacheStore, useJukeboxTracksStore, useJukeboxPlaylistsStore, useJukeboxFilesStore } from '@/jukebox/stores';
-import { useConfigStore } from '@/utils/configStore';
+import {useJukeboxPlayerStore} from '@/jukebox/playerStore';
+import {useJukeboxFilesStore, useJukeboxPlaylistsStore, useJukeboxTracksStore, usePictureUrlCacheStore} from '@/jukebox/stores';
+import {useConfigStore} from '@/utils/configStore';
 import Button from '@/components/common/Button.vue';
-import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
-import type { JukeboxTrack } from '@/jukebox/types';
+import {useAnimatedGradient} from '@/jukebox/useAnimatedGradient';
+import type {JukeboxTrack} from '@/jukebox/types';
+import {formatTime} from "@/jukebox/utils";
 
 const props = defineProps<{ 
   animatedBackground?: boolean;
@@ -27,15 +28,11 @@ const storesLoaded = ref(false);
 onMounted(async () => {
   console.log('🎵 JukeboxPlayer: Component mounted, ensuring stores are loaded...');
   
-  // Check if stores are already loaded, if not, load them
-  if (!tracksStore.items.value || tracksStore.items.value.length === 0) {
-    console.log('🎵 JukeboxPlayer: Stores not loaded, loading now...');
-    await Promise.all([
-      tracksStore.load(),
-      playlistsStore.load(),
-      filesStore.load()
-    ]);
-  }
+  await Promise.all([
+    tracksStore.load(),
+    playlistsStore.load(),
+    filesStore.load()
+  ]);
   
   // Wait for player to be ready (audio element initialized)
   if (!playerStore.isReady) {
@@ -104,7 +101,23 @@ watch(() => configStore.activePlaylistId, (newPlaylistId) => {
 const showAnimatedBg = computed(() => !!props.animatedBackground && playerStore.isPlaying);
 
 // Use the new composable for the gradient style
-const gradientStyle = useAnimatedGradient(showAnimatedBg, () => playerStore.currentTrack?.palette);
+const gradientStyle = useAnimatedGradient(
+  showAnimatedBg,
+  () => {
+    const track = playerStore.currentTrack;
+    if (track?.palette && track.palette.length > 0) {
+      return track.palette;
+    } else if (track?.color) {
+      // Use a simple palette based on the single color
+      // Approach: create a gradient with the color at different stops and alpha
+      // Example: [color, color with more alpha, ...]
+      // We'll use the color at 0% and 100%, and a lighter version at 50%
+      // For simplicity, just repeat the color
+      return [track.color, track.color, track.color];
+    }
+    return undefined;
+  }
+);
 
 // Use the shared store for picture handling
 const { getPictureStyle } = pictureUrlCacheStore;
@@ -147,13 +160,6 @@ function handleWheel(event: WheelEvent) {
   playerStore.setVolume(newVolume);
 }
 
-function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) return '0:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-  return `${mins}:${secs}`;
-}
-
 const isPlayDisabled = computed(() => {
   // If a track is selected, always enable
   if (playerStore.currentTrack) {
@@ -167,6 +173,58 @@ const isPlayDisabled = computed(() => {
   
   // If no tracks available in queue, disable
   return true;
+});
+
+// Theming logic: update CSS variables for JukeboxPlayer based on track color
+const defaultTheme = {
+  '--color-primary': '#1e1e2e',
+  '--color-primary-dark': '#2d2d44',
+  '--color-background': '#fff',
+  '--color-text': '#333',
+};
+
+function getContrastColor(hex: string): string {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  // Parse r, g, b
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 3) {
+    r = parseInt(hex[0] + hex[0], 16);
+    g = parseInt(hex[1] + hex[1], 16);
+    b = parseInt(hex[2] + hex[2], 16);
+  } else if (hex.length === 6) {
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  }
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  // Return dark for light colors, light for dark colors
+  return luminance > 0.6 ? '#1e1e2e' : '#fff';
+}
+
+function setJukeboxTheme(color?: string) {
+  const el = document.querySelector('.jukebox-player') as HTMLElement | null;
+  if (!el) return;
+  if (color) {
+    const contrast = getContrastColor(color);
+    el.style.setProperty('--color-primary', contrast + 'cc');
+    el.style.setProperty('--track-color', contrast + 'cc');
+    el.style.setProperty('--track-fill-color', getContrastColor(contrast));
+    
+    el.style.setProperty('--color-primary-dark', contrast);
+    // el.style.setProperty('--color-background', '#fff');
+    el.style.setProperty('--color-text', '#333');
+  } else {
+    Object.entries(defaultTheme).forEach(([key, value]) => {
+      el.style.setProperty(key, value);
+    });
+  }
+}
+
+watchEffect(() => {
+  const color = playerStore.currentTrack?.color;
+  setTimeout(() => setJukeboxTheme(color), 0); // next tick to ensure DOM is ready
 });
 </script>
 
@@ -248,6 +306,10 @@ const isPlayDisabled = computed(() => {
   justify-content: center;
   padding: 2rem;
   min-height: 200px;
+}
+
+.jukebox-player-content {
+  padding: 1rem;
 }
 
 .loading-spinner {
@@ -454,5 +516,13 @@ const isPlayDisabled = computed(() => {
 
 .controls button.play-pause:active:not(:disabled) {
   transform: scale(0.9);
+}
+
+.jukebox-player .si {
+  color: var(--color-primary);
+}
+.jukebox-player .si:hover,
+.jukebox-player .si:active {
+  color: var(--color-primary-dark);
 }
 </style> 
