@@ -241,21 +241,21 @@ export function createIndexationStore(storeName: string) {
       }
     }
 
-    function addLink(from: EntityRef, to: EntityRef) {
+    async function addLink(from: EntityRef, to: EntityRef) {
       const key = makeKey(from);
       if (!links.value[key]) links.value[key] = [];
       if (!links.value[key].some(link => link.kind === to.kind && link.id === to.id)) {
         links.value[key].push({ kind: to.kind, id: to.id });
-        saveKey(key);
+        await saveKey(key);
       }
     }
 
-    function removeLink(from: EntityRef, to: EntityRef) {
+    async function removeLink(from: EntityRef, to: EntityRef) {
       const key = makeKey(from);
       if (links.value[key]) {
         links.value[key] = links.value[key].filter(link => !(link.kind === to.kind && link.id === to.id));
         if (links.value[key].length === 0) delete links.value[key];
-        saveKey(key);
+        await saveKey(key);
       }
     }
 
@@ -264,7 +264,7 @@ export function createIndexationStore(storeName: string) {
       return links.value[key] || [];
     }
 
-    function setLinks(from: EntityRef, toLinks: Link[]) {
+    async function setLinks(from: EntityRef, toLinks: Link[]) {
       const key = makeKey(from);
       // Deduplicate by kind+id
       const seen = new Set<string>();
@@ -275,13 +275,13 @@ export function createIndexationStore(storeName: string) {
         return true;
       });
       links.value[key] = uniqueLinks;
-      saveKey(key);
+      await saveKey(key);
     }
 
-    function clearLinks(from: EntityRef) {
+    async function clearLinks(from: EntityRef) {
       const key = makeKey(from);
       delete links.value[key];
-      saveKey(key);
+      await saveKey(key);
     }
 
     async function clearAll() {
@@ -320,5 +320,3 @@ export function createIndexationStore(storeName: string) {
 
 // Global mentions store for all entity mentions
 export const useMentionsStore = createIndexationStore('mentions');
-
-export const useCombatEntityIndexationStore = createIndexationStore('combatEntityIndexation');

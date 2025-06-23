@@ -64,7 +64,7 @@ const handleEdit = () => {
 const handleDelete = async () => {
   if (!encounter.value) return;
   await encounterStore.remove(encounter.value.id);
-  router.push('/encounters');
+  await router.push('/encounters');
 };
 
 const handleSave = async (updatedEncounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -75,10 +75,6 @@ const handleSave = async (updatedEncounter: Omit<Encounter, 'id' | 'createdAt' |
 
 const handleCancel = () => {
   isEditorOpen.value = false;
-};
-
-const getMonsterName = (monsterId: string) => {
-  return monsterStore.items.find(m => m.id === monsterId);
 };
 
 const getModuleName = (moduleId: string | null) => {
@@ -233,7 +229,8 @@ onMounted(() => {
     monsterStore.load(),
     moduleStore.load(),
     combatStore.load(),
-    partyStore.load()
+    partyStore.load(),
+    mentionsStore.load(),
   ]);
 });
 </script>

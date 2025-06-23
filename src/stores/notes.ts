@@ -12,24 +12,23 @@ export const useNoteStore = defineStore('notes', () => {
   const currentId = ref<string | null>(null);
   const searchQuery = ref('');
   const moduleStore = useModuleStore();
-
+  const indexation = useMentionsStore();
+  
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
     const newNote = await base.create(note);
     // Indexation
-    const indexation = useMentionsStore();
     const from = { kind: 'note', id: newNote.id };
     const mentioned = extractMentionedEntities(newNote.content);
-    indexation.setLinks(from, mentioned);
+    await indexation.setLinks(from, mentioned);
     return newNote;
   }
 
   async function update(id: string, patch: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>>) {
     const updated = await base.update(id, patch);
     // Indexation
-    const indexation = useMentionsStore();
     const from = { kind: 'note', id };
     const mentioned = extractMentionedEntities(updated.content || '');
-    indexation.setLinks(from, mentioned);
+    await indexation.setLinks(from, mentioned);
     return updated;
   }
 
@@ -37,9 +36,8 @@ export const useNoteStore = defineStore('notes', () => {
     await base.remove(id);
     if (currentId.value === id) currentId.value = null;
     // Indexation
-    const indexation = useMentionsStore();
     const from = { kind: 'note', id };
-    indexation.clearLinks(from);
+    await indexation.clearLinks(from);
   }
 
   const filtered = computed(() => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
@@ -12,7 +12,6 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/common/Button.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
-import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -128,7 +127,8 @@ onMounted(async () => {
   await Promise.all([
     partyStore.load(),
     characterStore.load(),
-    moduleStore.load()
+    moduleStore.load(),
+    mentionsStore.load(),
   ]);
 });
 </script>

@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/components/CharacterEditor.vue';
@@ -8,7 +8,6 @@ import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
-import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const characterStore = useCharacterStore();
@@ -56,7 +55,8 @@ const mentionedInEntities = computed(() => {
 });
 
 onMounted(async () => {
-  characterStore.load();
+  await characterStore.load();
+  await mentionsStore.load();
 });
 </script>
 

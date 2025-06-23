@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -91,7 +91,8 @@ const activeTab = ref('document');
 onMounted(async () => {
   await Promise.all([
     moduleStore.load(),
-    playlistsStore.load()
+    playlistsStore.load(),
+    mentionsStore.load(),
   ]);
 });
 
@@ -132,7 +133,7 @@ function handleSaveNoteTree(newTree: any) {
 
 function handlePlayPlaylist(playlist: JukeboxPlaylist) {
   // Set the active playlist in config
-  configStore.activePlaylistId = playlist.id;
+  configStore.activePlaylistId.value = playlist.id;
   
   // Get the tracks for this playlist
   const playlistTracks = playlist.trackIds

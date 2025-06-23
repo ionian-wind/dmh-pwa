@@ -7,7 +7,6 @@ import MonsterEditor from '@/components/MonsterEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
-import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -72,7 +71,8 @@ const mentionedInEntities = computed(() => {
 });
 
 onMounted(async () => {
-  monsterStore.load();
+  await monsterStore.load();
+  await mentionsStore.load();
 });
 </script>
 
