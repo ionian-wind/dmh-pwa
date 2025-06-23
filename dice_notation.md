@@ -121,6 +121,7 @@ The dice engine follows a specific order of operations, which may differ from st
   - `!r`: Recursive explosion (exploded dice can explode again) (`1d6!r`)
   - `!N`: Explode on custom value or higher (`1d10!7` explodes on 7+)
   - Example: `1d6!`, `1d10!7`, `2d6!p`
+  - **Limitation:** To prevent infinite chains, the total number of exploding rolls is limited to 99 per roll expression. If this limit is reached, rolling simply stops.
 - **Compounding Dice:**
   - `!!`: All explosions are summed into a single value (`4d6!!`)
   - Example: `3d6!!`
@@ -272,7 +273,6 @@ The dice engine follows a specific order of operations, which may differ from st
 
 - **Invalid expressions:** Invalid expressions should return a clear error message.
 - **Divide-by-Zero Handling:** If a division by zero occurs (e.g., `1d6/0`), the result is `null` or an error message is displayed.
-- **Negative Dice:** `-1d6` is invalid and will return an error.
 
 **Advanced/Edge-Case Examples:**
 - Division by zero in a complex expression:
