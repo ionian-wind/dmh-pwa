@@ -1,11 +1,12 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { usePartyStore } from '@/stores/parties';
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-555')
+import { vi } from 'vitest';
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-555')
 }));
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilterMultiple: () => true }) }));
-jest.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: jest.fn() }));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilterMultiple: () => true }) }));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
 
 describe('Party Store', () => {
   beforeEach(() => {

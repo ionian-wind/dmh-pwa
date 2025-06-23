@@ -151,8 +151,6 @@ The dice engine follows a specific order of operations, which may differ from st
 - **Multiple Modifiers:**
   - Modifiers can be chained: `4d6kh3ro1!>5sd`
   - Example: `4d6kh3ro1!>5sd`
-- **Roll Option:**
-  - Some sheets or APIs support `rolloption` to toggle features, e.g. `{{rolloption_advantage=1}}`.
 - **Reroll Until Success:**
   - `raN`: Reroll infinitely until success (e.g., `d20ra1`).
   - Example: `d20ra1`

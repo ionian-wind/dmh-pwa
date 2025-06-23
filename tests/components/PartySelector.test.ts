@@ -1,15 +1,16 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import PartySelector from '@/components/PartySelector.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({
-  loadParties: jest.fn(),
+vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({
+  loadParties: vi.fn(),
   filteredParties: [ { id: 'p1', name: 'Party 1', characters: [1,2], moduleIds: [] } ],
-  getPartyById: jest.fn(() => ({ id: 'p1', name: 'Party 1', characters: [1,2], moduleIds: [] }))
+  getPartyById: vi.fn(() => ({ id: 'p1', name: 'Party 1', characters: [1,2], moduleIds: [] }))
 }) }));
-jest.mock('@/stores/combats', () => ({ useCombatStore: () => ({ createCombat: jest.fn((c) => ({ ...c, id: 'c1' })) }) }));
-jest.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({}) }));
-jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ loadMonsters: jest.fn(), monsters: [ { id: 'm1', name: 'Goblin', hitPoints: 7, armorClass: 13 } ] }) }));
-jest.mock('@/stores/characters', () => ({ useCharacterStore: () => ({ all: [ { id: 'char1', name: 'Alice', partyId: 'p1', initiative: 2, armorClass: 15, hitPoints: { maximum: 10, current: 10 } } ] }) }));
+vi.mock('@/stores/combats', () => ({ useCombatStore: () => ({ createCombat: vi.fn((c) => ({ ...c, id: 'c1' })) }) }));
+vi.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({}) }));
+vi.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ loadMonsters: vi.fn(), monsters: [ { id: 'm1', name: 'Goblin', hitPoints: 7, armorClass: 13 } ] }) }));
+vi.mock('@/stores/characters', () => ({ useCharacterStore: () => ({ all: [ { id: 'char1', name: 'Alice', partyId: 'p1', initiative: 2, armorClass: 15, hitPoints: { maximum: 10, current: 10 } } ] }) }));
 
 describe('PartySelector', () => {
   const baseProps = { isOpen: true, encounter: { id: 'e1', name: 'Test Encounter', monsters: { m1: 1 }, difficulty: 'Easy', level: 1, xp: 100 } };
@@ -45,7 +46,7 @@ describe('PartySelector', () => {
   });
 
   it('shows alert if no party selected on submit', async () => {
-    window.alert = jest.fn();
+    window.alert = vi.fn();
     const wrapper = mount(PartySelector, { props: baseProps });
     await wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(window.alert).toHaveBeenCalledWith('Please select a party');

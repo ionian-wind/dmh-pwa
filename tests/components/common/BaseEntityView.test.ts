@@ -1,32 +1,21 @@
 import { mount } from '@vue/test-utils';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import { vi } from 'vitest';
 
-jest.mock('vue-router', () => ({
+vi.mock('vue-router', () => ({
   useRoute: () => ({}),
-  useRouter: () => ({ push: jest.fn() })
+  useRouter: () => ({ push: vi.fn() })
 }));
 
-jest.mock('@/components/common/Button.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'Button',
-    template: '<button><slot /></button>'
-  }
-}));
-jest.mock('@/views/NotFoundView.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'NotFoundView',
-    template: '<div class="not-found">Not Found</div>'
-  }
-}));
+vi.mock('@/components/common/Button.vue', () => ({ __esModule: true, default: {} }));
+vi.mock('@/views/NotFoundView.vue', () => ({ __esModule: true, default: {} }));
 
 describe('BaseEntityView', () => {
   const baseProps = {
     entity: { id: '1' },
     entityName: 'Test',
     listRoute: '/test',
-    onDelete: jest.fn(),
+    onDelete: vi.fn(),
     title: 'Test Title',
     subtitle: 'Test Subtitle'
   };
@@ -53,14 +42,14 @@ describe('BaseEntityView', () => {
   });
 
   it('calls onDelete and navigates on delete', async () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     const wrapper = mount(BaseEntityView, { props: baseProps });
     await wrapper.findAll('button')[1].trigger('click'); // Delete
     expect(baseProps.onDelete).toHaveBeenCalled();
   });
 
   it('calls onEdit if provided', async () => {
-    const onEdit = jest.fn();
+    const onEdit = vi.fn();
     const wrapper = mount(BaseEntityView, { props: { ...baseProps, onEdit } });
     await wrapper.findAll('button')[0].trigger('click'); // Edit
     expect(onEdit).toHaveBeenCalled();

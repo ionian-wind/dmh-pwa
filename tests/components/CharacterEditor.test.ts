@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import CharacterEditor from '@/components/CharacterEditor.vue';
+import { vi } from 'vitest';
 
 describe('CharacterEditor', () => {
   const baseProps = { isOpen: true };
@@ -28,7 +29,7 @@ describe('CharacterEditor', () => {
   });
 
   it('shows alert if required fields are missing on submit', async () => {
-    window.alert = jest.fn();
+    window.alert = vi.fn();
     const wrapper = mount(CharacterEditor, { props: baseProps });
     await wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(window.alert).toHaveBeenCalled();

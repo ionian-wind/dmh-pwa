@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { registerValidationSchema, validateSchema, getValidationErrors, validateArray, getArrayValidationErrors } from '@/utils/schemaValidator';
 
 describe('Schema Validator', () => {
@@ -25,7 +26,7 @@ describe('Schema Validator', () => {
 
   beforeEach(() => {
     // Clear any previously registered schemas
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('registerValidationSchema', () => {

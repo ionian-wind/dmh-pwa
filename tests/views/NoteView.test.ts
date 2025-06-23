@@ -1,34 +1,35 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import NoteView from '@/views/NoteView.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/NoteEditor.vue', () => ({
+vi.mock('@/components/NoteEditor.vue', () => ({
   __esModule: true,
   default: { name: 'NoteEditor', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: { name: 'BaseEntityView', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/utils/markdownParser', () => ({
+vi.mock('@/utils/markdownParser', () => ({
   parseMarkdown: (content: string) => `<p>${content}</p>`
 }));
-jest.mock('@/stores/notes', () => ({
+vi.mock('@/stores/notes', () => ({
   useNoteStore: () => ({
-    loadNotes: jest.fn(),
+    loadNotes: vi.fn(),
     getNoteById: (id: string) => id === 'n1' ? { id: 'n1', title: 'Test Note', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 } : null,
-    updateNote: jest.fn(),
-    deleteNote: jest.fn()
+    updateNote: vi.fn(),
+    deleteNote: vi.fn()
   })
 }));
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
-    loadModules: jest.fn(),
-    getModuleName: jest.fn(() => 'Module Name')
+    loadModules: vi.fn(),
+    getModuleName: vi.fn(() => 'Module Name')
   })
 }));
 
 const $route = { params: { id: 'n1' } };
-const $router = { push: jest.fn() };
+const $router = { push: vi.fn() };
 
 describe('NoteView', () => {
   it('renders note content and title', async () => {
@@ -69,7 +70,7 @@ describe('NoteView', () => {
     });
     await flushPromises();
     await wrapper.vm.handleDelete();
-    // The mock store's deleteNote is a jest.fn()
+    // The mock store's deleteNote is a vi.fn()
     expect(require('@/stores/notes').useNoteStore().deleteNote).toHaveBeenCalledWith('n1');
   });
 

@@ -1,7 +1,8 @@
 import { mount } from '@vue/test-utils';
 import FloatActionButton from '@/components/common/FloatActionButton.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/composables/useModalState', () => ({ useModalState: () => ({ isModalOpen: { value: false } }) }));
+vi.mock('@/composables/useModalState', () => ({ useModalState: () => ({ isModalOpen: { value: false } }) }));
 
 describe('FloatActionButton', () => {
   it('renders slot content and applies classes', () => {
@@ -24,7 +25,7 @@ describe('FloatActionButton', () => {
   });
 
   it('is hidden when hideOnModal and modal is open', () => {
-    jest.mock('@/composables/useModalState', () => ({ useModalState: () => ({ isModalOpen: { value: true } }) }));
+    vi.mock('@/composables/useModalState', () => ({ useModalState: () => ({ isModalOpen: { value: true } }) }));
     const wrapper = mount(FloatActionButton, { props: { hideOnModal: true }, slots: { default: 'FAB' } });
     expect(wrapper.classes()).toContain('float-action-button--hidden');
   });

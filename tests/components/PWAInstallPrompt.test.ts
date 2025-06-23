@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
+import { vi } from 'vitest';
 
 describe('PWAInstallPrompt', () => {
   it('renders prompt when showInstallPrompt is true', async () => {
@@ -11,7 +12,7 @@ describe('PWAInstallPrompt', () => {
 
   it('calls installApp when Install is clicked', async () => {
     const wrapper = mount(PWAInstallPrompt);
-    await wrapper.setData({ showInstallPrompt: true, deferredPrompt: { prompt: jest.fn(), userChoice: Promise.resolve({ outcome: 'accepted' }) } });
+    await wrapper.setData({ showInstallPrompt: true, deferredPrompt: { prompt: vi.fn(), userChoice: Promise.resolve({ outcome: 'accepted' }) } });
     await wrapper.find('.pwa-install-btn').trigger('click');
     expect(wrapper.vm.deferredPrompt).toBeNull();
     expect(wrapper.vm.showInstallPrompt).toBe(false);

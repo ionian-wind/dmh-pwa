@@ -1,27 +1,30 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import MonsterView from '@/views/MonsterView.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/MonsterEditor.vue', () => ({
+vi.mock('@/components/MonsterEditor.vue', () => ({
   __esModule: true,
   default: { name: 'MonsterEditor', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: { name: 'BaseEntityView', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/stores/monsters', () => ({
+vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({
-    loadMonsters: jest.fn(),
+    loadMonsters: vi.fn(),
     monsters: [
       { id: 'm1', name: 'Goblin', type: 'Humanoid', size: 'Small', alignment: 'Chaotic Evil', challengeRating: 1, armorClass: 13, hitPoints: 7, speed: { walk: 30 }, stats: { strength: 8, dexterity: 14, constitution: 10, intelligence: 10, wisdom: 8, charisma: 8 }, savingThrows: {}, skills: {}, damageVulnerabilities: [], damageResistances: [], damageImmunities: [], conditionImmunities: [], senses: [], languages: ['Common'], xp: 50, specialAbilities: [], actions: [], legendaryActions: [], description: '', moduleId: 'mod-1', createdAt: 0, updatedAt: 0 }
     ],
-    updateMonster: jest.fn(),
-    deleteMonster: jest.fn()
+    updateMonster: vi.fn(),
+    deleteMonster: vi.fn()
   })
 }));
+vi.mock('@/stores/notes', () => ({}));
+vi.mock('@/stores/encounters', () => ({}));
 
 const $route = { params: { id: 'm1' } };
-const $router = { push: jest.fn() };
+const $router = { push: vi.fn() };
 
 describe('MonsterView', () => {
   it('renders monster content and title', async () => {
@@ -64,8 +67,8 @@ describe('MonsterView', () => {
   });
 
   it('sets notFound if monster is missing', async () => {
-    jest.mock('@/stores/monsters', () => ({
-      useMonsterStore: () => ({ loadMonsters: jest.fn(), monsters: [], updateMonster: jest.fn(), deleteMonster: jest.fn() })
+    vi.mock('@/stores/monsters', () => ({
+      useMonsterStore: () => ({ loadMonsters: vi.fn(), monsters: [], updateMonster: vi.fn(), deleteMonster: vi.fn() })
     }));
     const missingRoute = { params: { id: 'missing' } };
     const wrapper = mount(MonsterView, {

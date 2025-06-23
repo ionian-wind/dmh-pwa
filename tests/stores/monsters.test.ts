@@ -1,6 +1,6 @@
+import { vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useMonsterStore } from '@/stores/monsters';
-import { vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('@/utils/storage', () => ({

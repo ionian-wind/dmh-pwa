@@ -1,54 +1,30 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import MonstersView from '@/views/MonstersView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router
-jest.mock('vue-router', () => ({
-  useRouter: () => ({ push: jest.fn() })
-}));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Mock MonsterCard and MonsterEditor
-jest.mock('@/components/MonsterCard.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'MonsterCard',
-    props: ['monster', 'showActions'],
-    emits: ['view', 'edit', 'delete', 'add-to-encounter'],
-    template: '<div class="monster-card">MonsterCard</div>'
-  }
-}));
-jest.mock('@/components/MonsterEditor.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'MonsterEditor',
-    props: ['monster', 'isOpen'],
-    emits: ['submit', 'cancel'],
-    template: '<div class="monster-editor">MonsterEditor</div>'
-  }
-}));
+vi.mock('@/components/MonsterCard.vue', () => ({}));
+vi.mock('@/components/MonsterEditor.vue', () => ({}));
 
 // Mock store
-jest.mock('@/stores/monsters', () => {
-  const monsters = [
-    { id: '1', name: 'Goblin', type: 'humanoid', size: 'small', alignment: 'chaotic evil', armorClass: 15, hitPoints: 7, speed: {}, abilities: {}, senses: [], languages: [], challengeRating: 1, xp: 200, actions: [], moduleId: 'mod1', createdAt: 0, updatedAt: 0 },
-    { id: '2', name: 'Orc', type: 'humanoid', size: 'medium', alignment: 'chaotic evil', armorClass: 13, hitPoints: 15, speed: {}, abilities: {}, senses: [], languages: [], challengeRating: 2, xp: 450, actions: [], moduleId: 'mod1', createdAt: 0, updatedAt: 0 }
-  ];
-  return {
-    useMonsterStore: () => ({
-      filteredMonsters: monsters,
-      loadMonsters: jest.fn(),
-      getMonsterById: (id: string) => monsters.find(m => m.id === id),
-      createMonster: jest.fn(),
-      updateMonster: jest.fn(),
-      deleteMonster: jest.fn()
-    })
-  };
-});
+vi.mock('@/stores/monsters', () => ({
+  loadMonsters: vi.fn(),
+  createMonster: vi.fn(),
+  updateMonster: vi.fn(),
+  deleteMonster: vi.fn()
+}));
+vi.clearAllMocks();
+vi.doMock('@/stores/monsters', () => ({ loadMonsters: vi.fn() }));
+window.confirm = vi.fn(() => true);
 
 describe('MonstersView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders header and create button', () => {
@@ -58,10 +34,10 @@ describe('MonstersView', () => {
   });
 
   it('shows empty state if no monsters', async () => {
-    jest.doMock('@/stores/monsters', () => ({
+    vi.doMock('@/stores/monsters', () => ({
       useMonsterStore: () => ({
         filteredMonsters: [],
-        loadMonsters: jest.fn()
+        loadMonsters: vi.fn()
       })
     }));
     const wrapper = mount(MonstersView);
@@ -114,7 +90,11 @@ describe('MonstersView', () => {
   });
 
   it('calls store deleteMonster on delete event', async () => {
-    window.confirm = jest.fn(() => true);
+    vi.doMock('@/stores/monsters', () => ({
+      useMonsterStore: () => ({
+        deleteMonster: vi.fn()
+      })
+    }));
     const wrapper = mount(MonstersView);
     const store = require('@/stores/monsters').useMonsterStore();
     await wrapper.findAllComponents({ name: 'MonsterCard' })[0].vm.$emit('delete', '1');

@@ -1,7 +1,8 @@
 import { mount } from '@vue/test-utils';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import { vi } from 'vitest';
 
-jest.mock('vue-i18n', () => {
+vi.mock('vue-i18n', () => {
   let locale = { value: 'en' };
   return {
     useI18n: () => ({

@@ -1,48 +1,51 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import PartyView from '@/views/PartyView.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/PartyEditor.vue', () => ({
+vi.mock('@/components/PartyEditor.vue', () => ({
   __esModule: true,
   default: { name: 'PartyEditor', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: { name: 'BaseEntityView', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/components/common/BaseModal.vue', () => ({
+vi.mock('@/components/common/BaseModal.vue', () => ({
   __esModule: true,
   default: { name: 'BaseModal', template: '<div><slot /></div>' }
 }));
-jest.mock('@/components/common/ToggleSwitch.vue', () => ({
+vi.mock('@/components/common/ToggleSwitch.vue', () => ({
   __esModule: true,
   default: { name: 'ToggleSwitch', template: '<div />' }
 }));
-jest.mock('@/components/common/Button.vue', () => ({
+vi.mock('@/components/common/Button.vue', () => ({
   __esModule: true,
   default: { name: 'Button', template: '<button><slot /></button>' }
 }));
-jest.mock('@/stores/parties', () => ({
+vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
     getPartyById: (id: string) => id === 'p1' ? { id: 'p1', name: 'Test Party', moduleIds: [], createdAt: 0, updatedAt: 0 } : null,
-    deleteParty: jest.fn(),
-    updateParty: jest.fn()
+    deleteParty: vi.fn(),
+    updateParty: vi.fn()
   })
 }));
-jest.mock('@/stores/modules', () => ({
-  useModuleStore: () => ({ getModuleById: jest.fn(() => ({ id: 'mod-1', name: 'Module One' })) })
+vi.mock('@/stores/modules', () => ({
+  useModuleStore: () => ({ getModuleById: vi.fn(() => ({ id: 'mod-1', name: 'Module One' })) })
 }));
-jest.mock('@/stores/characters', () => ({
+vi.mock('@/stores/characters', () => ({
   useCharacterStore: () => ({
     all: [
       { id: 'c1', name: 'Alice', partyId: 'p1', level: 2, class: 'Wizard' },
       { id: 'c2', name: 'Bob', partyId: null, level: 1, class: 'Fighter' }
     ],
-    setParty: jest.fn()
+    setParty: vi.fn()
   })
 }));
+vi.mock('@/stores/combats', () => ({}));
+vi.mock('@/stores/encounters', () => ({}));
 
 const $route = { params: { id: 'p1' } };
-const $router = { push: jest.fn() };
+const $router = { push: vi.fn() };
 
 describe('PartyView', () => {
   it('renders party content and title', async () => {

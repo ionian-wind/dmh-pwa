@@ -1,63 +1,27 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import NotesView from '@/views/NotesView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router
-jest.mock('vue-router', () => ({
-  useRouter: () => ({ push: jest.fn() })
-}));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Mock NoteCard and NoteEditor
-jest.mock('@/components/NoteCard.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'NoteCard',
-    props: ['note', 'moduleName'],
-    emits: ['view', 'edit', 'delete'],
-    template: '<div class="note-card">NoteCard</div>'
-  }
-}));
-jest.mock('@/components/NoteEditor.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'NoteEditor',
-    props: ['note', 'isOpen'],
-    emits: ['submit', 'cancel'],
-    template: '<div class="note-editor">NoteEditor</div>'
-  }
-}));
+vi.mock('@/components/NoteCard.vue', () => ({}));
+vi.mock('@/components/NoteEditor.vue', () => ({}));
 
 // Mock stores
-jest.mock('@/stores/notes', () => ({ useNoteStore: () => ({ 
-  items: [], 
-  filtered: [
-    { id: 'n1', title: 'Note One', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 },
-    { id: 'n2', title: 'Note Two', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 }
-  ], 
-  create: jest.fn(), 
-  update: jest.fn(), 
-  remove: jest.fn(), 
-  load: jest.fn() 
-}) }));
-
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ 
-  items: [], 
-  currentModuleFilter: 'any', 
-  load: jest.fn() 
-}) }));
-
-jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ 
-  load: jest.fn() 
-}) }));
-
-jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ 
-  load: jest.fn() 
-}) }));
+vi.mock('@/stores/notes', () => ({ useNoteStore: () => ({ create: vi.fn(), update: vi.fn(), remove: vi.fn(), load: vi.fn() }) }));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ items: [], currentModuleFilter: 'any', load: vi.fn() }) }));
+vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({ load: vi.fn() }) }));
+vi.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ load: vi.fn() }) }));
+vi.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ load: vi.fn() }) }));
+vi.mock('@/stores/characters', () => ({ useCharacterStore: () => ({ load: vi.fn() }) }));
 
 describe('NotesView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders header and add button', () => {
@@ -67,8 +31,8 @@ describe('NotesView', () => {
   });
 
   it('shows empty state if no notes', async () => {
-    jest.doMock('@/stores/notes', () => ({
-      useNoteStore: () => ({ items: [], filtered: [], create: jest.fn(), update: jest.fn(), remove: jest.fn(), load: jest.fn() })
+    vi.doMock('@/stores/notes', () => ({
+      useNoteStore: () => ({ items: [], filtered: [], create: vi.fn(), update: vi.fn(), remove: vi.fn(), load: vi.fn() })
     }));
     const wrapper = mount(NotesView);
     await flushPromises();
@@ -120,7 +84,7 @@ describe('NotesView', () => {
   });
 
   it('calls store deleteNote on delete event', async () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     const wrapper = mount(NotesView);
     const store = require('@/stores/notes').useNoteStore();
     await wrapper.findAllComponents({ name: 'NoteCard' })[0].vm.$emit('delete', { id: '1', title: 'Note 1' });

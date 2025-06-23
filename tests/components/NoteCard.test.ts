@@ -1,5 +1,9 @@
 import { mount } from '@vue/test-utils';
 import NoteCard from '@/components/NoteCard.vue';
+import { vi } from 'vitest';
+
+vi.mock('@/stores/notes', () => ({}));
+vi.mock('@/stores/modules', () => ({}));
 
 const mockNote = {
   id: 'note-1',

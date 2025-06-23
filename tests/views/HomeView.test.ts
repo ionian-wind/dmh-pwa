@@ -3,49 +3,50 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { createI18n } from 'vue-i18n';
 import { setActivePinia, createPinia } from 'pinia';
 import HomeView from '@/views/HomeView.vue';
+import { vi } from 'vitest';
 
 // Mock the stores
-jest.mock('@/stores/notes', () => ({ useNoteStore: () => ({ 
+vi.mock('@/stores/notes', () => ({ useNoteStore: () => ({ 
   filtered: [
     { id: 'n1', title: 'Note One', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 },
     { id: 'n2', title: 'Note Two', content: 'Content', tags: [], moduleId: null, typeId: null, createdAt: 0, updatedAt: 0 }
   ], 
-  load: jest.fn() 
+  load: vi.fn() 
 }) }));
 
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ 
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ 
   items: [
     { id: 'm1', name: 'Module One', description: 'Desc', createdAt: 0, updatedAt: 0 },
     { id: 'm2', name: 'Module Two', description: 'Desc', createdAt: 0, updatedAt: 0 }
   ], 
-  load: jest.fn() 
+  load: vi.fn() 
 }) }));
 
-jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ 
+vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({ 
   filtered: [
     { id: 'p1', name: 'Party One', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 },
     { id: 'p2', name: 'Party Two', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 }
   ], 
-  load: jest.fn() 
+  load: vi.fn() 
 }) }));
 
-jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ 
+vi.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ 
   filtered: [
     { id: 'mo1', name: 'Goblin', type: 'humanoid', size: 'small', alignment: 'neutral evil', armorClass: 15, hitPoints: 7, speed: { walk: 30 }, stats: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 }, senses: [], languages: ['Common', 'Goblin'], challengeRating: 0.25, xp: 50, actions: [], moduleIds: [], createdAt: 0, updatedAt: 0 },
     { id: 'mo2', name: 'Orc', type: 'humanoid', size: 'medium', alignment: 'chaotic evil', armorClass: 13, hitPoints: 15, speed: { walk: 30 }, stats: { str: 16, dex: 12, con: 16, int: 7, wis: 11, cha: 10 }, senses: [], languages: ['Common', 'Orc'], challengeRating: 0.5, xp: 100, actions: [], moduleIds: [], createdAt: 0, updatedAt: 0 }
   ], 
-  load: jest.fn() 
+  load: vi.fn() 
 }) }));
 
-jest.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ 
+vi.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ 
   filtered: [
     { id: 'e1', name: 'Encounter One', difficulty: 'Easy', monsters: {}, currentRound: 0, currentTurn: 0, moduleId: 'm1', createdAt: 0, updatedAt: 0 },
     { id: 'e2', name: 'Encounter Two', difficulty: 'Medium', monsters: {}, currentRound: 0, currentTurn: 0, moduleId: 'm2', createdAt: 0, updatedAt: 0 }
   ], 
-  load: jest.fn() 
+  load: vi.fn() 
 }) }));
 
-jest.mock('@/stores/characters', () => ({
+vi.mock('@/stores/characters', () => ({
   useCharacterStore: () => ({
     all: [
       { id: 'char-1', name: 'Character 1' },
@@ -114,7 +115,7 @@ describe('HomeView', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Component Structure', () => {
@@ -378,17 +379,17 @@ describe('HomeView', () => {
   describe('Edge Cases', () => {
     it('should handle empty store data', () => {
       // Mock empty stores
-      jest.doMock('@/stores/notes', () => ({
+      vi.doMock('@/stores/notes', () => ({
         useNoteStore: () => ({
           filtered: [],
-          load: jest.fn()
+          load: vi.fn()
         })
       }));
 
-      jest.doMock('@/stores/parties', () => ({
+      vi.doMock('@/stores/parties', () => ({
         usePartyStore: () => ({
           filtered: [],
-          load: jest.fn()
+          load: vi.fn()
         })
       }));
 

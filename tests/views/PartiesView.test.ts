@@ -1,53 +1,25 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import PartiesView from '@/views/PartiesView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router
-jest.mock('vue-router', () => ({
-  useRouter: () => ({ push: jest.fn() })
-}));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Mock PartyCard and PartyEditor
-jest.mock('@/components/PartyCard.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'PartyCard',
-    props: ['party'],
-    emits: ['view', 'edit', 'delete'],
-    template: '<div class="party-card">PartyCard</div>'
-  }
-}));
-jest.mock('@/components/PartyEditor.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'PartyEditor',
-    props: ['party', 'isOpen'],
-    emits: ['submit', 'cancel'],
-    template: '<div class="party-editor">PartyEditor</div>'
-  }
-}));
+vi.mock('@/components/PartyCard.vue', () => ({}));
+vi.mock('@/components/PartyEditor.vue', () => ({}));
 
 // Mock store
-jest.mock('@/stores/parties', () => {
-  const parties = [
-    { id: '1', name: 'Alpha', description: 'First', characters: ['a'], moduleIds: ['m1'], createdAt: 0, updatedAt: 0 },
-    { id: '2', name: 'Beta', description: 'Second', characters: ['b'], moduleIds: ['m2'], createdAt: 0, updatedAt: 0 }
-  ];
-  return {
-    usePartyStore: () => ({
-      filteredParties: parties,
-      loadParties: jest.fn(),
-      createParty: jest.fn(),
-      updateParty: jest.fn(),
-      deleteParty: jest.fn()
-    })
-  };
-});
+vi.mock('@/stores/parties', () => ({}));
+vi.mock('@/stores/characters', () => ({}));
+vi.mock('@/stores/combats', () => ({}));
+vi.mock('@/stores/encounters', () => ({}));
 
 describe('PartiesView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders header and create button', () => {
@@ -57,8 +29,8 @@ describe('PartiesView', () => {
   });
 
   it('shows empty state if no parties', async () => {
-    jest.doMock('@/stores/parties', () => ({
-      usePartyStore: () => ({ filteredParties: [], loadParties: jest.fn(), createParty: jest.fn(), updateParty: jest.fn(), deleteParty: jest.fn() })
+    vi.doMock('@/stores/parties', () => ({
+      usePartyStore: () => ({ filteredParties: [], loadParties: vi.fn(), createParty: vi.fn(), updateParty: vi.fn(), deleteParty: vi.fn() })
     }));
     const wrapper = mount(PartiesView);
     await flushPromises();
@@ -110,7 +82,7 @@ describe('PartiesView', () => {
   });
 
   it('calls store deleteParty on delete event', async () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     const wrapper = mount(PartiesView);
     const store = require('@/stores/parties').usePartyStore();
     await wrapper.findAllComponents({ name: 'PartyCard' })[0].vm.$emit('delete', { id: '1', name: 'Alpha' });

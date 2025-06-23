@@ -1,54 +1,31 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import CharactersView from '@/views/CharactersView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router
-jest.mock('vue-router', () => ({
-  useRouter: () => ({ push: jest.fn() })
-}));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Mock CharacterCard and CharacterEditor
-jest.mock('@/components/CharacterCard.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'CharacterCard',
-    props: ['character'],
-    emits: ['view', 'edit', 'delete'],
-    template: '<div class="character-card">CharacterCard</div>'
-  }
-}));
-jest.mock('@/components/CharacterEditor.vue', () => ({
-  __esModule: true,
-  default: {
-    name: 'CharacterEditor',
-    props: ['character', 'isOpen'],
-    emits: ['submit', 'cancel'],
-    template: '<div class="character-editor">CharacterEditor</div>'
-  }
-}));
+vi.mock('@/components/CharacterCard.vue', () => ({}));
+vi.mock('@/components/CharacterEditor.vue', () => ({}));
 
 // Mock store
-jest.mock('@/stores/characters', () => {
-  const characters = [
-    { id: '1', name: 'Alice', class: 'Wizard', level: 3, race: 'Elf', playerName: 'A', stats: { strength: 8, dexterity: 14, constitution: 12, intelligence: 18, wisdom: 10, charisma: 13 }, hitPoints: { maximum: 20, current: 15 }, armorClass: 12, initiative: 2, speed: 30, proficiencies: [], equipment: [], createdAt: 0, updatedAt: 0 },
-    { id: '2', name: 'Bob', class: 'Fighter', level: 2, race: 'Human', playerName: 'B', stats: { strength: 16, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 10, charisma: 8 }, hitPoints: { maximum: 25, current: 25 }, armorClass: 16, initiative: 1, speed: 30, proficiencies: [], equipment: [], createdAt: 0, updatedAt: 0 }
-  ];
-  return {
-    useCharacterStore: () => ({
-      all: characters,
-      add: jest.fn(),
-      update: jest.fn(),
-      remove: jest.fn()
-    })
-  };
-});
-jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ loadParties: jest.fn() }) }));
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ loadModules: jest.fn() }) }));
+vi.mock('@/stores/characters', () => ({
+  useCharacterStore: () => ({
+    all: [],
+    add: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
+  })
+}));
+vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({ loadParties: vi.fn() }) }));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ loadModules: vi.fn() }) }));
 
 describe('CharactersView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders header and create button', () => {
@@ -58,8 +35,8 @@ describe('CharactersView', () => {
   });
 
   it('shows empty state if no characters', async () => {
-    jest.doMock('@/stores/characters', () => ({
-      useCharacterStore: () => ({ all: [], add: jest.fn(), update: jest.fn(), remove: jest.fn() })
+    vi.doMock('@/stores/characters', () => ({
+      useCharacterStore: () => ({ all: [], add: vi.fn(), update: vi.fn(), remove: vi.fn() })
     }));
     const wrapper = mount(CharactersView);
     await flushPromises();
@@ -111,7 +88,7 @@ describe('CharactersView', () => {
   });
 
   it('calls store remove on delete event', async () => {
-    window.confirm = jest.fn(() => true);
+    vi.fn(() => true);
     const wrapper = mount(CharactersView);
     const store = require('@/stores/characters').useCharacterStore();
     await wrapper.findAllComponents({ name: 'CharacterCard' })[0].vm.$emit('delete', { id: '1', name: 'Alice' });

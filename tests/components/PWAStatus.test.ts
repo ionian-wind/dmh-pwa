@@ -1,11 +1,12 @@
 import { mount } from '@vue/test-utils';
 import PWAStatus from '@/components/PWAStatus.vue';
+import { vi } from 'vitest';
 
 describe('PWAStatus', () => {
   beforeEach(() => {
     // Mock navigator.onLine and matchMedia
     Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });
-    window.matchMedia = jest.fn().mockReturnValue({ matches: false });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
   });
 
   it('renders status indicators', () => {
@@ -21,7 +22,7 @@ describe('PWAStatus', () => {
   });
 
   it('shows standalone indicator when in app mode', async () => {
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     const wrapper = mount(PWAStatus);
     await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain('App Mode');

@@ -1,15 +1,16 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import NoteTypeSelector from '@/components/NoteTypeSelector.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/noteTypes', () => ({
+vi.mock('@/stores/noteTypes', () => ({
   useNoteTypeStore: () => ({
     noteTypes: [
       { id: 't1', name: 'Type One', description: '', color: '#fff', icon: '', fields: [] },
       { id: 't2', name: 'Type Two', description: '', color: '#000', icon: '', fields: [] }
     ],
-    loadNoteTypes: jest.fn(),
-    addNoteType: jest.fn(),
-    deleteNoteType: jest.fn()
+    loadNoteTypes: vi.fn(),
+    addNoteType: vi.fn(),
+    deleteNoteType: vi.fn()
   })
 }));
 
@@ -45,7 +46,7 @@ describe('NoteTypeSelector', () => {
   });
 
   it('calls deleteNoteType when remove button is clicked', async () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     const wrapper = mount(NoteTypeSelector, { props: { modelValue: null } });
     await wrapper.findAll('.remove-type-btn')[0].trigger('click');
     const store = require('@/stores/noteTypes').useNoteTypeStore();

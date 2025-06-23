@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import JukeboxButton from '@/components/JukeboxButton.vue';
@@ -8,7 +8,7 @@ const mockRoute = {
   path: '/home'
 };
 
-jest.mock('vue-router', () => ({
+vi.mock('vue-router', () => ({
   useRoute: () => mockRoute
 }));
 
@@ -17,7 +17,7 @@ const mockPlayerStore = {
   isPlaying: false
 };
 
-jest.mock('@/jukebox/playerStore', () => ({
+vi.mock('@/jukebox/playerStore', () => ({
   useJukeboxPlayerStore: () => mockPlayerStore
 }));
 
@@ -26,7 +26,7 @@ describe('JukeboxButton', () => {
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {

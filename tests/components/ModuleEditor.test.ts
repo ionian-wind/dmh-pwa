@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import ModuleEditor from '@/components/ModuleEditor.vue';
+import { vi } from 'vitest';
 
 describe('ModuleEditor', () => {
   const baseProps = { isOpen: true, module: null };
@@ -27,7 +28,7 @@ describe('ModuleEditor', () => {
   });
 
   it('shows alert if name is missing on submit', async () => {
-    window.alert = jest.fn();
+    window.alert = vi.fn();
     const wrapper = mount(ModuleEditor, { props: baseProps });
     await wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(window.alert).toHaveBeenCalledWith('Name is required');

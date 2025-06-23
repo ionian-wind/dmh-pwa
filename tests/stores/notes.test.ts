@@ -1,13 +1,20 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { useNoteStore } from '@/stores/notes';
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-999'),
+import { vi } from 'vitest';
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-999'),
   isArray: Array.isArray,
-  hasRequiredFields: () => true
+  hasRequiredFields: vi.fn(),
+  isStorageAvailable: vi.fn(),
+  clearStorage: vi.fn(),
+  getStorageKeys: vi.fn(),
+  getStorageSize: vi.fn(),
+  isStorageQuotaExceeded: vi.fn(),
+  getStorageInfo: vi.fn()
 }));
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
-jest.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: jest.fn() }));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
 
 describe('Note Store', () => {
   beforeEach(() => {

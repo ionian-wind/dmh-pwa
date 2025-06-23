@@ -1,15 +1,16 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { useEncounterStore } from '../../src/stores/encounters';
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-enc')
+import { vi } from 'vitest';
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-enc')
 }));
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
-jest.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: jest.fn() }));
-jest.mock('@/utils/storage', () => ({
-  ...jest.requireActual('@/utils/storage'),
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-enc')
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
+vi.mock('@/utils/storage', () => ({
+  ...vi.importActual('@/utils/storage'),
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-enc')
 }));
 
 describe('Encounter Store', () => {

@@ -1,49 +1,50 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import ModuleView from '@/views/ModuleView.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/ModuleEditor.vue', () => ({
+vi.mock('@/components/ModuleEditor.vue', () => ({
   __esModule: true,
   default: { name: 'ModuleEditor', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: { name: 'BaseEntityView', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
-    loadModules: jest.fn(),
+    loadModules: vi.fn(),
     getModuleById: (id: string) => id === 'm1' ? { id: 'm1', name: 'Test Module', description: 'Desc', createdAt: 0, updatedAt: 0 } : null,
-    updateModule: jest.fn(),
-    deleteModule: jest.fn()
+    updateModule: vi.fn(),
+    deleteModule: vi.fn()
   })
 }));
-jest.mock('@/stores/parties', () => ({
+vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
-    loadParties: jest.fn(),
+    loadParties: vi.fn(),
     parties: [ { id: 'p1', name: 'Party', moduleIds: ['m1'] } ]
   })
 }));
-jest.mock('@/stores/monsters', () => ({
+vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({
-    loadMonsters: jest.fn(),
+    loadMonsters: vi.fn(),
     monsters: [ { id: 'mo1', name: 'Monster', moduleId: 'm1', type: 'Beast' } ]
   })
 }));
-jest.mock('@/stores/encounters', () => ({
+vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => ({
-    loadEncounters: jest.fn(),
+    loadEncounters: vi.fn(),
     encounters: [ { id: 'e1', name: 'Encounter', moduleId: 'm1', description: 'Fight' } ]
   })
 }));
-jest.mock('@/stores/notes', () => ({
+vi.mock('@/stores/notes', () => ({
   useNoteStore: () => ({
-    loadNotes: jest.fn(),
+    loadNotes: vi.fn(),
     notes: [ { id: 'n1', title: 'Note', moduleId: 'm1', content: 'Note content' } ]
   })
 }));
 
 const $route = { params: { id: 'm1' } };
-const $router = { push: jest.fn() };
+const $router = { push: vi.fn() };
 
 describe('ModuleView', () => {
   it('renders module content and all sections', async () => {

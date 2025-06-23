@@ -1,8 +1,9 @@
 import { mount } from '@vue/test-utils';
 import BaseCard from '@/components/common/BaseCard.vue';
+import { vi } from 'vitest';
 
 // Mock Button to avoid deep rendering
-jest.mock('@/components/common/Button.vue', () => ({
+vi.mock('@/components/common/Button.vue', () => ({
   __esModule: true,
   default: {
     name: 'Button',

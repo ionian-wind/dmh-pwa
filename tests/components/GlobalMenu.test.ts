@@ -4,10 +4,9 @@ import { createTestingPinia } from '@pinia/testing';
 import { useModuleStore } from '@/stores/modules';
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { nextTick } from 'vue';
+import { vi } from 'vitest';
 
-jest.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key })
-}));
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 
 describe('GlobalMenu', () => {
   let router;
@@ -33,13 +32,13 @@ describe('GlobalMenu', () => {
     ];
     moduleStore.currentModule = { id: 'mod-1', name: 'Module One' };
     moduleStore.currentModuleFilter = 'mod-1';
-    moduleStore.setCurrentModuleFilter = jest.fn();
+    moduleStore.setCurrentModuleFilter = vi.fn();
   });
 
   it('renders module selector and menu items', async () => {
     const wrapper = mount(GlobalMenu, {
       global: {
-        plugins: [createTestingPinia({ createSpy: jest.fn }), router]
+        plugins: [createTestingPinia({ createSpy: vi.fn }), router]
       }
     });
     expect(wrapper.find('select').exists()).toBe(true);
@@ -50,7 +49,7 @@ describe('GlobalMenu', () => {
   it('calls setCurrentModuleFilter on select change', async () => {
     const wrapper = mount(GlobalMenu, {
       global: {
-        plugins: [createTestingPinia({ createSpy: jest.fn }), router]
+        plugins: [createTestingPinia({ createSpy: vi.fn }), router]
       }
     });
     const select = wrapper.find('select');
@@ -59,10 +58,10 @@ describe('GlobalMenu', () => {
   });
 
   it('navigates to section on button click', async () => {
-    router.push = jest.fn();
+    router.push = vi.fn();
     const wrapper = mount(GlobalMenu, {
       global: {
-        plugins: [createTestingPinia({ createSpy: jest.fn }), router]
+        plugins: [createTestingPinia({ createSpy: vi.fn }), router]
       }
     });
     const btn = wrapper.findAllComponents({ name: 'Button' })[0];
@@ -73,7 +72,7 @@ describe('GlobalMenu', () => {
   it('shows current module and clear button', () => {
     const wrapper = mount(GlobalMenu, {
       global: {
-        plugins: [createTestingPinia({ createSpy: jest.fn }), router]
+        plugins: [createTestingPinia({ createSpy: vi.fn }), router]
       }
     });
     expect(wrapper.text()).toContain('common.currentModule');
@@ -85,7 +84,7 @@ describe('GlobalMenu', () => {
     await router.isReady();
     const wrapper = mount(GlobalMenu, {
       global: {
-        plugins: [createTestingPinia({ createSpy: jest.fn }), router]
+        plugins: [createTestingPinia({ createSpy: vi.fn }), router]
       }
     });
     await nextTick();

@@ -1,20 +1,21 @@
+import { vi } from 'vitest';
 import { generateId, isArray, hasRequiredFields, isStorageAvailable, useStorage, clearStorage, getStorageKeys, getStorageSize, isStorageQuotaExceeded, getStorageInfo } from '@/utils/storage';
 
 // Mock Vue's ref and watch
-jest.mock('vue', () => ({
-  ref: jest.fn((value) => ({ value })),
-  watch: jest.fn(),
+vi.mock('vue', () => ({
+  ref: vi.fn((value) => ({ value })),
+  watch: vi.fn(),
 }));
 
 // Mock schemaValidator
-jest.mock('@/utils/schemaValidator', () => ({
-  validateArray: jest.fn(() => true),
-  getArrayValidationErrors: jest.fn(() => []),
+vi.mock('@/utils/schemaValidator', () => ({
+  validateArray: vi.fn(() => true),
+  getArrayValidationErrors: vi.fn(() => []),
 }));
 
 describe('Storage Utils', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
   });
 
@@ -77,7 +78,7 @@ describe('Storage Utils', () => {
 
     it('should return false when localStorage throws an error', () => {
       const originalSetItem = localStorage.setItem;
-      localStorage.setItem = jest.fn().mockImplementation(() => {
+      localStorage.setItem = vi.fn().mockImplementation(() => {
         throw new Error('QuotaExceededError');
       });
 
@@ -89,7 +90,7 @@ describe('Storage Utils', () => {
 
   describe('useStorage', () => {
     const mockRef = { value: [] };
-    const mockWatch = jest.fn();
+    const mockWatch = vi.fn();
 
     beforeEach(() => {
       const { ref, watch } = require('vue');

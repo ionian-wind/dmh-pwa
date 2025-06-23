@@ -1,73 +1,75 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import EncounterView from '@/views/EncounterView.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/EncounterEditor.vue', () => ({
+vi.mock('@/components/EncounterEditor.vue', () => ({
   __esModule: true,
   default: { name: 'EncounterEditor', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: { name: 'BaseEntityView', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/components/common/BaseModal.vue', () => ({
+vi.mock('@/components/common/BaseModal.vue', () => ({
   __esModule: true,
   default: { name: 'BaseModal', template: '<div><slot /></div>' }
 }));
-jest.mock('@/components/common/ToggleSwitch.vue', () => ({
+vi.mock('@/components/common/ToggleSwitch.vue', () => ({
   __esModule: true,
   default: { name: 'ToggleSwitch', template: '<div />' }
 }));
-jest.mock('@/components/common/Button.vue', () => ({
+vi.mock('@/components/common/Button.vue', () => ({
   __esModule: true,
   default: { name: 'Button', template: '<button><slot /></button>' }
 }));
-jest.mock('@/components/PartySelector.vue', () => ({
+vi.mock('@/components/PartySelector.vue', () => ({
   __esModule: true,
   default: { name: 'PartySelector', template: '<div />' }
 }));
-jest.mock('@/components/common/TabGroup.vue', () => ({
+vi.mock('@/components/common/TabGroup.vue', () => ({
   __esModule: true,
   default: { name: 'TabGroup', template: '<div />' }
 }));
-jest.mock('@/stores/encounters', () => ({
+vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => ({
-    loadEncounters: jest.fn(),
+    loadEncounters: vi.fn(),
     getEncounterById: (id: string) => id === 'e1' ? { id: 'e1', name: 'Test Encounter', level: 3, difficulty: 'Medium', xp: 200, moduleId: 'mod-1', monsters: { m1: 2 }, createdAt: 0, updatedAt: 0 } : null,
-    updateEncounter: jest.fn(),
-    deleteEncounter: jest.fn(),
-    getMonsterCount: jest.fn(() => 2),
-    setMonsterCount: jest.fn(),
-    addMonster: jest.fn(),
-    removeMonster: jest.fn()
+    updateEncounter: vi.fn(),
+    deleteEncounter: vi.fn(),
+    getMonsterCount: vi.fn(() => 2),
+    setMonsterCount: vi.fn(),
+    addMonster: vi.fn(),
+    removeMonster: vi.fn()
   })
 }));
-jest.mock('@/stores/monsters', () => ({
+vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({
-    loadMonsters: jest.fn(),
+    loadMonsters: vi.fn(),
     filteredMonsters: [ { id: 'm1', name: 'Goblin' }, { id: 'm2', name: 'Orc' } ],
     monsters: [ { id: 'm1', name: 'Goblin' }, { id: 'm2', name: 'Orc' } ]
   })
 }));
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
-    loadModules: jest.fn(),
+    loadModules: vi.fn(),
     modules: [ { id: 'mod-1', name: 'Module One' } ]
   })
 }));
-jest.mock('@/stores/combats', () => ({
+vi.mock('@/stores/combats', () => ({
   useCombatStore: () => ({
-    loadCombats: jest.fn()
+    loadCombats: vi.fn()
   })
 }));
-jest.mock('@/stores/parties', () => ({
+vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
-    loadParties: jest.fn(),
+    loadParties: vi.fn(),
     parties: [ { id: 'p1', name: 'Party' } ]
   })
 }));
+vi.mock('@/stores/characters', () => ({}));
 
 const $route = { params: { id: 'e1' } };
-const $router = { push: jest.fn() };
+const $router = { push: vi.fn() };
 
 describe('EncounterView', () => {
   it('renders encounter content and title', async () => {

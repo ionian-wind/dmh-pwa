@@ -1,14 +1,15 @@
 import { mount } from '@vue/test-utils';
 import BaseModal from '@/components/common/BaseModal.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/common/Button.vue', () => ({
+vi.mock('@/components/common/Button.vue', () => ({
   __esModule: true,
   default: {
     name: 'Button',
     template: '<button><slot /></button>'
   }
 }));
-jest.mock('@/composables/useModalState', () => ({ useModalState: () => ({ openModal: jest.fn(), closeModal: jest.fn() }) }));
+vi.mock('@/composables/useModalState', () => ({ useModalState: () => ({ openModal: vi.fn(), closeModal: vi.fn() }) }));
 
 describe('BaseModal', () => {
   const baseProps = { isOpen: true, title: 'Test Modal', showSubmit: true, showCancel: true };

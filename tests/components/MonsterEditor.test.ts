@@ -1,24 +1,26 @@
 import { mount } from '@vue/test-utils';
 import MonsterEditor from '@/components/MonsterEditor.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/ModuleSelector.vue', () => ({
+vi.mock('@/components/ModuleSelector.vue', () => ({
   __esModule: true,
   default: { name: 'ModuleSelector', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseModal.vue', () => ({
+vi.mock('@/components/common/BaseModal.vue', () => ({
   __esModule: true,
   default: { name: 'BaseModal', template: '<div><slot /></div>' }
 }));
-jest.mock('@/components/common/Button.vue', () => ({
+vi.mock('@/components/common/Button.vue', () => ({
   __esModule: true,
   default: { name: 'Button', template: '<button><slot /></button>' }
 }));
-jest.mock('@/stores/monsters', () => ({
+vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({})
 }));
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({ currentModule: { id: 'mod-1', name: 'Module One' } })
 }));
+window.alert = vi.fn();
 
 describe('MonsterEditor', () => {
   const monster = {
@@ -83,7 +85,6 @@ describe('MonsterEditor', () => {
   });
 
   it('shows alert if name or type is missing on submit', async () => {
-    window.alert = jest.fn();
     const wrapper = mount(MonsterEditor, {
       props: { monster: { ...monster, name: '', type: '' }, isOpen: true }
     });

@@ -1,19 +1,18 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { useCharacterStore } from '@/stores/characters';
 import type { PlayerCharacter } from '@/types';
+import { vi } from 'vitest';
 
 // Mock the storage utility
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({
     value: []
   })),
-  generateId: jest.fn(() => 'test-uuid-789')
+  generateId: vi.fn(() => 'test-uuid-789')
 }));
 
 // Mock the schema validator
-jest.mock('@/utils/schemaValidator', () => ({
-  registerValidationSchema: jest.fn()
-}));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
 
 describe('Character Store', () => {
   beforeEach(() => {

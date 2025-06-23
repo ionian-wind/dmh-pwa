@@ -1,7 +1,8 @@
+import { vi } from 'vitest';
 import { parseMarkdown } from '@/utils/markdownParser';
 
 // Mock the stores
-jest.mock('@/stores/notes', () => ({
+vi.mock('@/stores/notes', () => ({
   useNoteStore: () => ({
     notes: [
       { id: 'note-1', title: 'Test Note', content: 'Test content' },
@@ -14,7 +15,7 @@ jest.mock('@/stores/notes', () => ({
   })
 }));
 
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
     modules: [
       { id: 'module-1', name: 'Test Module', description: 'Test description' },
@@ -27,7 +28,7 @@ jest.mock('@/stores/modules', () => ({
   })
 }));
 
-jest.mock('@/stores/parties', () => ({
+vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
     parties: [
       { id: 'party-1', name: 'Test Party', characters: [] },
@@ -40,7 +41,7 @@ jest.mock('@/stores/parties', () => ({
   })
 }));
 
-jest.mock('@/stores/monsters', () => ({
+vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({
     monsters: [
       { id: 'monster-1', name: 'Test Monster', type: 'Beast', description: 'Test description' },
@@ -53,7 +54,7 @@ jest.mock('@/stores/monsters', () => ({
   })
 }));
 
-jest.mock('@/stores/encounters', () => ({
+vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => ({
     encounters: [
       { id: 'encounter-1', name: 'Test Encounter', difficulty: 'medium', level: 5 },

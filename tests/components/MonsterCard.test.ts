@@ -1,8 +1,9 @@
 import { mount } from '@vue/test-utils';
 import MonsterCard from '@/components/MonsterCard.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/modules', () => ({
-  useModuleStore: () => ({ getModuleName: jest.fn(() => 'Test Module') })
+vi.mock('@/stores/modules', () => ({
+  useModuleStore: () => ({ getModuleName: vi.fn(() => 'Test Module') })
 }));
 
 describe('MonsterCard', () => {

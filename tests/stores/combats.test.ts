@@ -1,11 +1,13 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { useCombatStore } from '../../src/stores/combats';
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-combat')
+import { vi } from 'vitest';
+
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-combat')
 }));
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
-jest.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: jest.fn() }));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
 
 describe('Combat Store', () => {
   beforeEach(() => {

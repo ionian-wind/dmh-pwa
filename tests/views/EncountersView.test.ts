@@ -1,14 +1,13 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import EncountersView from '@/views/EncountersView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router
-jest.mock('vue-router', () => ({
-  useRouter: () => ({ push: jest.fn() })
-}));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Mock EncounterCard, EncounterEditor, PartySelector
-jest.mock('@/components/EncounterCard.vue', () => ({
+vi.mock('@/components/EncounterCard.vue', () => ({
   __esModule: true,
   default: {
     name: 'EncounterCard',
@@ -17,7 +16,7 @@ jest.mock('@/components/EncounterCard.vue', () => ({
     template: '<div class="encounter-card">EncounterCard</div>'
   }
 }));
-jest.mock('@/components/EncounterEditor.vue', () => ({
+vi.mock('@/components/EncounterEditor.vue', () => ({
   __esModule: true,
   default: {
     name: 'EncounterEditor',
@@ -26,7 +25,7 @@ jest.mock('@/components/EncounterEditor.vue', () => ({
     template: '<div class="encounter-editor">EncounterEditor</div>'
   }
 }));
-jest.mock('@/components/PartySelector.vue', () => ({
+vi.mock('@/components/PartySelector.vue', () => ({
   __esModule: true,
   default: {
     name: 'PartySelector',
@@ -37,27 +36,21 @@ jest.mock('@/components/PartySelector.vue', () => ({
 }));
 
 // Mock store
-jest.mock('@/stores/encounters', () => {
-  const encounters = [
-    { id: '1', name: 'Alpha', description: 'First', level: 1, difficulty: 'Easy', xp: 100, moduleId: 'm1', monsters: { m1: 2 }, currentRound: 1, currentTurn: 0, createdAt: 0, updatedAt: 0 },
-    { id: '2', name: 'Beta', description: 'Second', level: 2, difficulty: 'Medium', xp: 200, moduleId: 'm2', monsters: { m2: 1 }, currentRound: 1, currentTurn: 0, createdAt: 0, updatedAt: 0 }
-  ];
-  return {
-    useEncounterStore: () => ({
-      filteredEncounters: encounters,
-      loadEncounters: jest.fn(),
-      createEncounter: jest.fn(),
-      updateEncounter: jest.fn(),
-      deleteEncounter: jest.fn()
-    })
-  };
-});
-jest.mock('@/stores/modules', () => ({ useModuleStore: () => ({ modules: [] }) }));
+vi.mock('@/stores/encounters', () => ({
+  useEncounterStore: () => ({
+    filteredEncounters: [],
+    loadEncounters: vi.fn(),
+    createEncounter: vi.fn(),
+    updateEncounter: vi.fn(),
+    deleteEncounter: vi.fn()
+  })
+}));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ modules: [] }) }));
 
 describe('EncountersView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders header and create button', () => {
@@ -67,8 +60,8 @@ describe('EncountersView', () => {
   });
 
   it('shows empty state if no encounters', async () => {
-    jest.doMock('@/stores/encounters', () => ({
-      useEncounterStore: () => ({ filteredEncounters: [], loadEncounters: jest.fn(), createEncounter: jest.fn(), updateEncounter: jest.fn(), deleteEncounter: jest.fn() })
+    vi.doMock('@/stores/encounters', () => ({
+      useEncounterStore: () => ({ filteredEncounters: [], loadEncounters: vi.fn(), createEncounter: vi.fn(), updateEncounter: vi.fn(), deleteEncounter: vi.fn() })
     }));
     const wrapper = mount(EncountersView);
     await flushPromises();
@@ -120,7 +113,7 @@ describe('EncountersView', () => {
   });
 
   it('calls store deleteEncounter on delete event', async () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     const wrapper = mount(EncountersView);
     const store = require('@/stores/encounters').useEncounterStore();
     await wrapper.findAllComponents({ name: 'EncounterCard' })[0].vm.$emit('delete', { id: '1', name: 'Alpha' });

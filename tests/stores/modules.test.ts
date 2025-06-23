@@ -1,10 +1,12 @@
+import { vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useModuleStore } from '../../src/stores/modules';
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-123')
+
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-123')
 }));
-jest.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: jest.fn() }));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
 
 describe('Module Store', () => {
   beforeEach(() => {
@@ -90,7 +92,7 @@ describe('Module Store', () => {
     const mod = store.addModule({ name: 'C', description: '', createdAt: 0, updatedAt: 0 });
     store.setCurrentModuleFilter(mod.id);
     // Spy on localStorage.setItem
-    const setItemSpy = jest.spyOn(window.localStorage.__proto__, 'setItem');
+    const setItemSpy = vi.spyOn(window.localStorage.__proto__, 'setItem');
     store.deleteModule(mod.id);
     expect(store.currentModuleFilter).toBe('any');
     expect(setItemSpy).toHaveBeenCalledWith('dnd-current-module-filter', 'any');

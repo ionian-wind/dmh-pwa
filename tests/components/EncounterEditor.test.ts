@@ -1,13 +1,14 @@
 import { mount } from '@vue/test-utils';
 import EncounterEditor from '@/components/EncounterEditor.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({ modules: [
     { id: 'mod-1', name: 'Module One' },
     { id: 'mod-2', name: 'Module Two' },
     ], currentModuleFilter: 'mod-1' })
 }));
-jest.mock('@/components/ModuleSelector.vue', () => ({
+vi.mock('@/components/ModuleSelector.vue', () => ({
   __esModule: true,
   default: {
     name: 'ModuleSelector',
@@ -50,7 +51,7 @@ describe('EncounterEditor', () => {
   });
 
   it('shows alert if name is missing on submit', async () => {
-    window.alert = jest.fn();
+    window.alert = vi.fn();
     const wrapper = mount(EncounterEditor, { props: baseProps });
     await wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(window.alert).toHaveBeenCalledWith('Name is required');
@@ -58,7 +59,7 @@ describe('EncounterEditor', () => {
   });
 
   it('shows alert if module is missing on submit', async () => {
-    window.alert = jest.fn();
+    window.alert = vi.fn();
     const wrapper = mount(EncounterEditor, { props: baseProps });
     await wrapper.find('input').setValue('Name');
     wrapper.vm.editedEncounter.moduleId = '';

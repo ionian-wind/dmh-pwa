@@ -1,7 +1,8 @@
 import { mount } from '@vue/test-utils';
+import { vi } from 'vitest';
 import RollButton from '@/components/RollButton.vue';
 
-jest.mock('@/components/common/FloatActionButton.vue', () => ({
+vi.mock('@/components/common/FloatActionButton.vue', () => ({
   __esModule: true,
   default: {
     name: 'FloatActionButton',

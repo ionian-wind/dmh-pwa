@@ -1,26 +1,29 @@
 import { mount } from '@vue/test-utils';
+import { vi } from 'vitest';
 import NoteEditor from '@/components/NoteEditor.vue';
 
-jest.mock('@/components/ModuleSelector.vue', () => ({
+vi.mock('@/components/ModuleSelector.vue', () => ({
   __esModule: true,
   default: { name: 'ModuleSelector', template: '<div />' }
 }));
-jest.mock('@/components/TagSelector.vue', () => ({
+vi.mock('@/components/TagSelector.vue', () => ({
   __esModule: true,
   default: { name: 'TagSelector', template: '<div />' }
 }));
-jest.mock('@/components/NoteTypeSelector.vue', () => ({
+vi.mock('@/components/NoteTypeSelector.vue', () => ({
   __esModule: true,
   default: { name: 'NoteTypeSelector', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseModal.vue', () => ({
+vi.mock('@/components/common/BaseModal.vue', () => ({
   __esModule: true,
   default: { name: 'BaseModal', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/components/common/Button.vue', () => ({
+vi.mock('@/components/common/Button.vue', () => ({
   __esModule: true,
   default: { name: 'Button', template: '<button><slot /></button>' }
 }));
+
+window.alert = vi.fn();
 
 describe('NoteEditor', () => {
   const note = {
@@ -63,7 +66,6 @@ describe('NoteEditor', () => {
   });
 
   it('shows alert if title is missing on submit', async () => {
-    window.alert = jest.fn();
     const wrapper = mount(NoteEditor, {
       props: { note: { ...note, title: '' }, isOpen: true }
     });

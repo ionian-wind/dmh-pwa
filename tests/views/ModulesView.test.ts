@@ -1,14 +1,13 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import ModulesView from '@/views/ModulesView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router
-jest.mock('vue-router', () => ({
-  useRouter: () => ({ push: jest.fn() })
-}));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Mock ModuleCard and ModuleEditor
-jest.mock('@/components/ModuleCard.vue', () => ({
+vi.mock('@/components/ModuleCard.vue', () => ({
   __esModule: true,
   default: {
     name: 'ModuleCard',
@@ -17,7 +16,7 @@ jest.mock('@/components/ModuleCard.vue', () => ({
     template: '<div class="module-card">ModuleCard</div>'
   }
 }));
-jest.mock('@/components/ModuleEditor.vue', () => ({
+vi.mock('@/components/ModuleEditor.vue', () => ({
   __esModule: true,
   default: {
     name: 'ModuleEditor',
@@ -28,7 +27,7 @@ jest.mock('@/components/ModuleEditor.vue', () => ({
 }));
 
 // Mock store
-jest.mock('@/stores/modules', () => {
+vi.mock('@/stores/modules', () => {
   const modules = [
     { id: '1', name: 'Alpha', description: 'First', createdAt: 0, updatedAt: 0 },
     { id: '2', name: 'Beta', description: 'Second', createdAt: 0, updatedAt: 0 }
@@ -36,10 +35,10 @@ jest.mock('@/stores/modules', () => {
   return {
     useModuleStore: () => ({
       modules,
-      loadModules: jest.fn(),
-      createModule: jest.fn(),
-      updateModule: jest.fn(),
-      deleteModule: jest.fn()
+      loadModules: vi.fn(),
+      createModule: vi.fn(),
+      updateModule: vi.fn(),
+      deleteModule: vi.fn()
     })
   };
 });
@@ -47,7 +46,7 @@ jest.mock('@/stores/modules', () => {
 describe('ModulesView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders header and create button', () => {
@@ -57,8 +56,8 @@ describe('ModulesView', () => {
   });
 
   it('shows empty state if no modules', async () => {
-    jest.doMock('@/stores/modules', () => ({
-      useModuleStore: () => ({ modules: [], loadModules: jest.fn(), createModule: jest.fn(), updateModule: jest.fn(), deleteModule: jest.fn() })
+    vi.doMock('@/stores/modules', () => ({
+      useModuleStore: () => ({ modules: [], loadModules: vi.fn(), createModule: vi.fn(), updateModule: vi.fn(), deleteModule: vi.fn() })
     }));
     const wrapper = mount(ModulesView);
     await flushPromises();
@@ -110,7 +109,7 @@ describe('ModulesView', () => {
   });
 
   it('calls store deleteModule on delete event', async () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     const wrapper = mount(ModulesView);
     const store = require('@/stores/modules').useModuleStore();
     await wrapper.findAllComponents({ name: 'ModuleCard' })[0].vm.$emit('delete', { id: '1', name: 'Alpha' });

@@ -1,18 +1,19 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import CombatView from '@/views/CombatView.vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { vi } from 'vitest';
 
 // Mock router and route
-jest.mock('vue-router', () => ({
+vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { id: 'c1' } }),
-  useRouter: () => ({ push: jest.fn() })
+  useRouter: () => ({ push: vi.fn() })
 }));
 
 // Mock stores
-jest.mock('@/stores/combats', () => ({
+vi.mock('@/stores/combats', () => ({
   useCombatStore: () => ({
-    loadCombats: jest.fn(),
-    getCombatById: jest.fn((id) => id === 'c1' ? {
+    loadCombats: vi.fn(),
+    getCombatById: vi.fn((id) => id === 'c1' ? {
       id: 'c1',
       encounterId: 'e1',
       partyId: 'p1',
@@ -25,34 +26,34 @@ jest.mock('@/stores/combats', () => ({
       notes: 'Combat notes',
       createdAt: 0,
       updatedAt: 0
-    } : null,
-    deleteCombat: jest.fn(),
-    startCombat: jest.fn(),
-    endCombat: jest.fn(),
-    resetCombat: jest.fn()
+    } : null),
+    deleteCombat: vi.fn(),
+    startCombat: vi.fn(),
+    endCombat: vi.fn(),
+    resetCombat: vi.fn()
   })
 }));
-jest.mock('@/stores/encounters', () => ({
+vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => ({
-    loadEncounters: jest.fn(),
-    getEncounterById: jest.fn((id) => id === 'e1' ? { id: 'e1', name: 'Encounter', moduleId: 'mod-1' } : null )
+    loadEncounters: vi.fn(),
+    getEncounterById: vi.fn((id) => id === 'e1' ? { id: 'e1', name: 'Encounter', moduleId: 'mod-1' } : null )
   })
 }));
-jest.mock('@/stores/parties', () => ({
+vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
-    loadParties: jest.fn(),
-    getPartyById: jest.fn((id) => id === 'p1' ? { id: 'p1', name: 'Party' } : null )
+    loadParties: vi.fn(),
+    getPartyById: vi.fn((id) => id === 'p1' ? { id: 'p1', name: 'Party' } : null )
   })
 }));
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
-    loadModules: jest.fn(),
+    loadModules: vi.fn(),
     modules: [ { id: 'mod-1', name: 'Module One' } ]
   })
 }));
 
 // Mock components
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: {
     name: 'BaseEntityView',
@@ -60,7 +61,7 @@ jest.mock('@/components/common/BaseEntityView.vue', () => ({
     template: '<div class="base-entity-view"><slot /></div>'
   }
 }));
-jest.mock('@/components/CombatTracker.vue', () => ({
+vi.mock('@/components/CombatTracker.vue', () => ({
   __esModule: true,
   default: {
     name: 'CombatTracker',
@@ -72,7 +73,7 @@ jest.mock('@/components/CombatTracker.vue', () => ({
 describe('CombatView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders combat info and controls', async () => {
@@ -98,7 +99,7 @@ describe('CombatView', () => {
   });
 
   it('calls deleteCombat and navigates on delete', async () => {
-    window.confirm = jest.fn(() => true);
+    vi.fn(() => true);
     const wrapper = mount(CombatView);
     await flushPromises();
     await wrapper.vm.handleDelete();
@@ -109,14 +110,14 @@ describe('CombatView', () => {
   });
 
   it('shows not found state if combat is missing', async () => {
-    jest.mock('@/stores/combats', () => ({
+    vi.mock('@/stores/combats', () => ({
       useCombatStore: () => ({
-        loadCombats: jest.fn(),
-        getCombatById: jest.fn(() => null),
-        deleteCombat: jest.fn(),
-        startCombat: jest.fn(),
-        endCombat: jest.fn(),
-        resetCombat: jest.fn()
+        loadCombats: vi.fn(),
+        getCombatById: vi.fn(() => null),
+        deleteCombat: vi.fn(),
+        startCombat: vi.fn(),
+        endCombat: vi.fn(),
+        resetCombat: vi.fn()
       })
     }));
     const wrapper = mount(CombatView);

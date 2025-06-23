@@ -1,10 +1,12 @@
 import { setActivePinia, createPinia } from 'pinia';
 import { useNoteTypeStore } from '../../src/stores/noteTypes';
-jest.mock('@/utils/storage', () => ({
-  useStorage: jest.fn(() => ({ value: [] })),
-  generateId: jest.fn(() => 'test-uuid-type')
+import { vi } from 'vitest';
+
+vi.mock('@/utils/storage', () => ({
+  useStorage: vi.fn(() => ({ value: [] })),
+  generateId: vi.fn(() => 'test-uuid-type')
 }));
-jest.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: jest.fn() }));
+vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
 
 describe('NoteType Store', () => {
   beforeEach(() => {

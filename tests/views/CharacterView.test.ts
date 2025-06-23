@@ -1,24 +1,25 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import CharacterView from '@/views/CharacterView.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/components/CharacterEditor.vue', () => ({
+vi.mock('@/components/CharacterEditor.vue', () => ({
   __esModule: true,
   default: { name: 'CharacterEditor', template: '<div />' }
 }));
-jest.mock('@/components/common/BaseEntityView.vue', () => ({
+vi.mock('@/components/common/BaseEntityView.vue', () => ({
   __esModule: true,
   default: { name: 'BaseEntityView', template: '<div><slot /><slot name="editor" /></div>' }
 }));
-jest.mock('@/stores/characters', () => ({
+vi.mock('@/stores/characters', () => ({
   useCharacterStore: () => ({
-    getById: (id: string) => id === 'c1' ? { id: 'c1', name: 'Alice', playerName: 'Player', background: 'Sage', level: 2, class: 'Wizard', stats: { strength: 8, dexterity: 14, constitution: 10, intelligence: 18, wisdom: 8, charisma: 8 }, armorClass: 13, speed: 30, hitPoints: { current: 10, maximum: 12, temporary: 2 }, proficiencies: ['Arcana'], equipment: ['Staff'], spells: ['Magic Missile'], features: ['Spellcasting'], notes: 'Some notes', createdAt: 0, updatedAt: 0 }, remove: jest.fn(), update: jest.fn() } : null,
-    remove: jest.fn(),
-    update: jest.fn()
+    getById: vi.fn(),
+    remove: vi.fn(),
+    update: vi.fn()
   })
 }));
 
 const $route = { params: { id: 'c1' } };
-const $router = { push: jest.fn() };
+const $router = { push: vi.fn() };
 
 describe('CharacterView', () => {
   it('renders character content and title', async () => {

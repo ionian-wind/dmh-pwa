@@ -1,7 +1,8 @@
 import { mount } from '@vue/test-utils';
 import PartyCard from '@/components/PartyCard.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({ modules: [
     { id: 'mod-1', name: 'Module One' },
     { id: 'mod-2', name: 'Module Two' }

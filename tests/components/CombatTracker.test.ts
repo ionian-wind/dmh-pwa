@@ -1,9 +1,10 @@
 import { mount } from '@vue/test-utils';
 import CombatTracker from '@/components/CombatTracker.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/combats', () => ({
+vi.mock('@/stores/combats', () => ({
   useCombatStore: () => ({
-    getCombatByEncounter: jest.fn(() => ({
+    getCombatByEncounter: vi.fn(() => ({
       id: 'c1',
       encounterId: 'e1',
       partyId: 'p1',
@@ -15,17 +16,17 @@ jest.mock('@/stores/combats', () => ({
         { id: 'cb2', name: 'Goblin', type: 'monster', initiative: 8, hitPoints: { maximum: 7, current: 7, temporary: 0 }, conditions: [], referenceId: 'm1', notes: '', createdAt: 0, updatedAt: 0 }
       ]
     })),
-    nextTurn: jest.fn(),
-    previousTurn: jest.fn(),
-    endCombat: jest.fn(),
-    updateCombatant: jest.fn(),
-    addCombatant: jest.fn(),
-    removeCombatant: jest.fn()
+    nextTurn: vi.fn(),
+    previousTurn: vi.fn(),
+    endCombat: vi.fn(),
+    updateCombatant: vi.fn(),
+    addCombatant: vi.fn(),
+    removeCombatant: vi.fn()
   })
 }));
-jest.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ encounters: [{ id: 'e1', name: 'Encounter', monsters: {}, moduleId: 'mod-1' }] }) }));
-jest.mock('@/stores/parties', () => ({ usePartyStore: () => ({ parties: [{ id: 'p1', name: 'Party', characters: ['char1'] }] }) }));
-jest.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ monsters: [{ id: 'm1', name: 'Goblin', hitPoints: 7, armorClass: 13 }] }) }));
+vi.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ encounters: [{ id: 'e1', name: 'Encounter', monsters: {}, moduleId: 'mod-1' }] }) }));
+vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({ parties: [{ id: 'p1', name: 'Party', characters: ['char1'] }] }) }));
+vi.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ monsters: [{ id: 'm1', name: 'Goblin', hitPoints: 7, armorClass: 13 }] }) }));
 
 describe('CombatTracker', () => {
   const baseProps = { encounterId: 'e1' };

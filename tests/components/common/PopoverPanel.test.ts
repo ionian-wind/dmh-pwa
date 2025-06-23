@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 import PopoverPanel from '@/components/common/PopoverPanel.vue';
 import Button from '@/components/common/Button.vue';
 
 // Mock window methods
-const mockGetBoundingClientRect = jest.fn(() => ({
+const mockGetBoundingClientRect = vi.fn(() => ({
   top: 100,
   left: 100,
   right: 200,
@@ -14,9 +14,9 @@ const mockGetBoundingClientRect = jest.fn(() => ({
   height: 50
 }));
 
-const mockQuerySelector = jest.fn();
-const mockAddEventListener = jest.fn();
-const mockRemoveEventListener = jest.fn();
+const mockQuerySelector = vi.fn();
+const mockAddEventListener = vi.fn();
+const mockRemoveEventListener = vi.fn();
 
 Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true });
 Object.defineProperty(window, 'innerHeight', { value: 800, writable: true });
@@ -31,7 +31,7 @@ describe('PopoverPanel', () => {
   let wrapper: VueWrapper<any>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -345,7 +345,7 @@ describe('PopoverPanel', () => {
       
       // Mock getBoundingClientRect to return different values for trigger and popover
       let callCount = 0;
-      Element.prototype.getBoundingClientRect = jest.fn(() => {
+      Element.prototype.getBoundingClientRect = vi.fn(() => {
         callCount++;
         if (callCount === 1) {
           // Trigger element

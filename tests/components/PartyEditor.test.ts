@@ -1,12 +1,15 @@
 import { mount } from '@vue/test-utils';
 import PartyEditor from '@/components/PartyEditor.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({ modules: [
     { id: 'mod-1', name: 'Module One' },
     { id: 'mod-2', name: 'Module Two' }
   ] })
 }));
+
+window.alert = vi.fn();
 
 describe('PartyEditor', () => {
   const baseProps = { isOpen: true, party: null };
@@ -42,7 +45,6 @@ describe('PartyEditor', () => {
   });
 
   it('shows alert if name is missing on submit', async () => {
-    window.alert = jest.fn();
     const wrapper = mount(PartyEditor, { props: baseProps });
     await wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(window.alert).toHaveBeenCalledWith('Name is required');

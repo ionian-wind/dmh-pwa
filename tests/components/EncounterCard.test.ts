@@ -1,7 +1,8 @@
 import { mount } from '@vue/test-utils';
 import EncounterCard from '@/components/EncounterCard.vue';
+import { vi } from 'vitest';
 
-jest.mock('@/stores/modules', () => ({
+vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({ modules: [
     { id: 'mod-1', name: 'Module One' }
   ] })
