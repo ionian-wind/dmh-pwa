@@ -28,13 +28,12 @@ const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
+const mentionsStore = useMentionsStore();
 
 const isEditorOpen = ref(false);
 const showLinkModal = ref(false);
 const showPartySelector = ref(false);
 const activeTab = ref('information');
-
-const mentionsStore = useMentionsStore();
 
 const encounter = ref<Encounter | null>(null);
 const loading = computed(() => !encounterStore.isLoaded);

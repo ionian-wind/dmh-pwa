@@ -9,14 +9,14 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
 
-const router = useRouter();
-const { t, locale } = useI18n();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
+const router = useRouter();
+const { t, locale } = useI18n();
 
 const stats = computed(() => ({
   notes: noteStore.filtered.length,

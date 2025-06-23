@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useModuleStore } from '@/stores/modules';
 import { Monster } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';;
 
@@ -26,20 +24,8 @@ const handleDelete = () => emit('delete', props.monster.id);
     @delete="handleDelete"
   >
     <template #header>
-      <div class="monster-header">
-        <h3>{{ monster.name }}</h3>
-      </div>
+      <h3>{{ monster.name }}</h3>
     </template>
   </BaseCard>
 </template>
 
-<style scoped>
-.monster-header {
-  margin-bottom: 0.5rem;
-}
-.monster-header h3 {
-  margin: 0;
-  color: #333;
-  font-size: 1.2rem;
-}
-</style>

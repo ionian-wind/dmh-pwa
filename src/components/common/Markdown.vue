@@ -9,6 +9,13 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
 
+const noteStore = useNoteStore();
+const moduleStore = useModuleStore();
+const partyStore = usePartyStore();
+const monsterStore = useMonsterStore();
+const encounterStore = useEncounterStore();
+const { openMentionModal, closeMentionModal } = useModalState();
+
 const props = defineProps<{ 
   content: string;
   anchorMap?: Record<string, string>;
@@ -21,14 +28,6 @@ const emit = defineEmits(['update:content']);
 const parsed = computed(() => parseMarkdown(props.content, { taskCheckboxEnabled: !!props.taskCheckboxEnabled }));
 
 const rootEl = ref<HTMLElement | null>(null);
-
-const { openMentionModal, closeMentionModal } = useModalState();
-
-const noteStore = useNoteStore();
-const moduleStore = useModuleStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
 
 function getEntity(kind: string, id: string) {
   switch (kind) {

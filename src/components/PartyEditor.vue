@@ -4,6 +4,8 @@ import { useModuleStore } from '@/stores/modules';
 import type { Party, UUID } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 
+const moduleStore = useModuleStore();
+
 const props = defineProps<{
   party: Party | null;
   isOpen: boolean;
@@ -14,8 +16,6 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const moduleStore = useModuleStore();
-
 type PartyForm = Omit<Party, 'id' | 'createdAt' | 'updatedAt'>;
 
 const editedParty = ref<PartyForm>({
@@ -23,7 +23,7 @@ const editedParty = ref<PartyForm>({
   description: '',
   notes: '',
   characters: [],
-  moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : []
+  moduleIds: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? [moduleStore.currentModuleFilter.value] : []
 });
 
 watch(() => props.party, (newParty) => {
@@ -36,12 +36,12 @@ watch(() => props.party, (newParty) => {
       description: '',
       notes: '',
       characters: [],
-      moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : []
+      moduleIds: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? [moduleStore.currentModuleFilter.value] : []
     };
   }
 }, { immediate: true });
 
-watch(() => moduleStore.currentModuleFilter, (newFilter) => {
+watch(() => moduleStore.currentModuleFilter.value, (newFilter) => {
   if (!props.party && props.isOpen) {
     editedParty.value.moduleIds = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? [newFilter] : [];
   }

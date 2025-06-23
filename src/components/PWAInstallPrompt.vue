@@ -35,24 +35,19 @@ onMounted(() => {
   const handleBeforeInstallPrompt = (e: Event) => {
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
-    
     // Stash the event so it can be triggered later
     deferredPrompt.value = e;
-    
     // Show the install prompt
     showInstallPrompt.value = true;
   };
-
   // Listen for the appinstalled event
   const handleAppInstalled = () => {
     console.log('PWA was installed');
     showInstallPrompt.value = false;
     deferredPrompt.value = null;
   };
-
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   window.addEventListener('appinstalled', handleAppInstalled);
-
   // Cleanup
   onUnmounted(() => {
     window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

@@ -8,6 +8,12 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 
+const noteStore = useNoteStore();
+const moduleStore = useModuleStore();
+const partyStore = usePartyStore();
+const monsterStore = useMonsterStore();
+const encounterStore = useEncounterStore();
+
 const props = defineProps<{
   modelValue: string;
   placeholder?: string;
@@ -158,11 +164,11 @@ function handleMentionClose() {
 onMounted(async () => {
   if (props.enableMentions) {
     const stores = [
-      useNoteStore(),
-      useModuleStore(),
-      usePartyStore(),
-      useMonsterStore(),
-      useEncounterStore(),
+      noteStore,
+      moduleStore,
+      partyStore,
+      monsterStore,
+      encounterStore,
     ];
     await Promise.all(
       stores.map(store => store.isLoaded && store.isLoaded ? undefined : store.load?.())

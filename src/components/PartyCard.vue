@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { Party } from '@/types';
 import { useModuleStore } from '@/stores/modules';
 import BaseCard from '@/components/common/BaseCard.vue';;
-import Button from '@/components/common/Button.vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view']);
 const moduleStore = useModuleStore();
+
+onMounted(async () => {
+  await moduleStore.load();
+});
 
 function handleView() { emit('view', props.party); }
 function handleEdit() { emit('edit', props.party); }

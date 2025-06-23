@@ -18,6 +18,7 @@ const router = useRouter();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const characterStore = useCharacterStore();
+const mentionsStore = useMentionsStore();
 
 const showEditor = ref(false);
 const showLinkModal = ref(false);
@@ -54,8 +55,6 @@ const linkedCharacters = computed(() => {
     return acc;
   }, {} as Record<string, boolean>);
 });
-
-const mentionsStore = useMentionsStore();
 
 const mentionedEntities = computed(() => {
   if (!party.value) return [];

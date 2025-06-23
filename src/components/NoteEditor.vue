@@ -9,6 +9,8 @@ import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 
+const moduleStore = useModuleStore();
+
 const props = defineProps<{
   note: Note | null;
   isOpen: boolean;
@@ -20,8 +22,6 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const moduleStore = useModuleStore();
-
 const editedNote = ref<Note>({
   createdAt: 0,
   updatedAt: 0,
@@ -29,7 +29,7 @@ const editedNote = ref<Note>({
   title: '',
   content: '',
   tags: [],
-  moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : null,
+  moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : null,
   typeId: null
 });
 
@@ -56,14 +56,14 @@ watch(() => props.note, (newNote) => {
       title: '',
       content: '',
       tags: [],
-      moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : null,
+      moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : null,
       typeId: null
     };
     lastNoteId.value = null;
   }
 }, { immediate: true });
 
-watch(() => moduleStore.currentModuleFilter, (newFilter) => {
+watch(() => moduleStore.currentModuleFilter.value, (newFilter) => {
   if (!props.note && props.isOpen) {
     editedNote.value.moduleId = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? newFilter : null;
   }

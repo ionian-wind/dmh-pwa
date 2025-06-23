@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import { useRouter } from 'vue-router';
@@ -7,10 +7,14 @@ import { Section } from '@/types';
 import Button from '@/components/common/Button.vue';
 import { useConfigStore } from '@/utils/configStore';
 
-const { t } = useI18n();
 const moduleStore = useModuleStore();
 const router = useRouter();
 const configStore = useConfigStore();
+const { t } = useI18n();
+
+onMounted(async () => {
+  await moduleStore.load();
+});
 
 const moduleOptions = computed(() => [
   { id: 'any', name: 'Any Module', value: 'any' },
@@ -20,9 +24,9 @@ const moduleOptions = computed(() => [
 
 // Use configStore to track current module filter
 const currentModuleFilter = computed({
-  get: () => configStore.currentModuleFilter || 'none',
+  get: () => configStore.currentModuleFilter?.value || 'none',
   set: (value: string) => {
-    configStore.currentModuleFilter = value;
+    configStore.currentModuleFilter.value = value;
   }
 });
 

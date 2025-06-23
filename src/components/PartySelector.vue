@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { usePartyStore } from '@/stores/parties';
-import { useCombatStore } from '@/stores/combats';;
+import { useCombatStore } from '@/stores/combats';
 import { useMonsterStore } from '@/stores/monsters';
 import { useCharacterStore } from '@/stores/characters';
 import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useRouter } from 'vue-router';
+
+const partyStore = usePartyStore();
+const combatStore = useCombatStore();
+const monsterStore = useMonsterStore();
+const characterStore = useCharacterStore();
+const router = useRouter();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -17,12 +23,6 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
   (e: 'combat-created', combat: Combat): void;
 }>();
-
-const partyStore = usePartyStore();
-const combatStore = useCombatStore();
-const monsterStore = useMonsterStore();
-const characterStore = useCharacterStore();
-const router = useRouter();
 
 const selectedPartyId = ref<string>('');
 

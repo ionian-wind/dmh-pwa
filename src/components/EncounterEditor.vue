@@ -5,6 +5,8 @@ import { Encounter } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 
+const moduleStore = useModuleStore();
+
 const props = defineProps<{
   encounter: Encounter | null;
   isOpen: boolean;
@@ -15,15 +17,13 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const moduleStore = useModuleStore();
-
 type EncounterFormData = Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>;
 
 const editedEncounter = ref<EncounterFormData>({
   name: '',
   description: '',
   monsters: {},
-  moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : '',
+  moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : '',
   notes: ''
 });
 
@@ -38,13 +38,13 @@ watch(() => props.encounter, (newEncounter) => {
       name: '',
       description: '',
       monsters: {},
-      moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : '',
+      moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : '',
       notes: ''
     };
   }
 }, { immediate: true });
 
-watch(() => moduleStore.currentModuleFilter, (newFilter) => {
+watch(() => moduleStore.currentModuleFilter.value, (newFilter) => {
   if (!props.encounter && props.isOpen) {
     editedEncounter.value.moduleId = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? newFilter : '';
   }
@@ -55,7 +55,7 @@ const resetForm = () => {
     name: '',
     description: '',
     monsters: {},
-    moduleId: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? moduleStore.currentModuleFilter : '',
+    moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : '',
     notes: ''
   };
 };

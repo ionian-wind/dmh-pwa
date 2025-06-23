@@ -11,10 +11,8 @@ import { useMentionsStore } from '@/utils/storage';
 const route = useRoute();
 const router = useRouter();
 const monsterStore = useMonsterStore();
-const showEditor = ref(false);
-
-// Monster mention indexation store
 const mentionsStore = useMentionsStore();
+const showEditor = ref(false);
 
 const monster = ref<Monster | null>(null);
 const loading = computed(() => !monsterStore.isLoaded);

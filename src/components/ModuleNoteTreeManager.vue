@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { Module, ModuleTreeNode, Note } from '@/types';
 import NoteEditor from './NoteEditor.vue';
 import ModuleTreeNodeComponent from './ModuleTreeNode.vue';
@@ -22,6 +22,10 @@ const editingNodeId = ref<string | null>(null);
 const newNodeTitle = ref('');
 const selectedNoteId = ref('');
 const isRootDragOver = ref(false);
+
+onMounted(async () => {
+  await noteStore.load();
+});
 
 // Note editor state
 const showNoteEditor = ref(false);

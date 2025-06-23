@@ -38,6 +38,7 @@ const playlistsStore = useJukeboxPlaylistsStore();
 const playerStore = useJukeboxPlayerStore();
 const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
+const mentionsStore = useMentionsStore();
 
 const showEditor = ref(false);
 const isLoaded = computed(() => moduleStore.isLoaded);
@@ -64,8 +65,6 @@ const moduleNotes = computed(() =>
 const modulePlaylists = computed(() => 
   playlistsStore.items.value.filter(playlist => playlist.moduleIds?.includes(route.params.id as string))
 );
-
-const mentionsStore = useMentionsStore();
 
 const mentionedEntities = computed(() => {
   if (!module.value) return [];

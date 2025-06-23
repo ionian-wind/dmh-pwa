@@ -7,14 +7,14 @@ import { useMonsterStore } from '@/stores/monsters';
 import type { Combatant } from '@/types';
 import Button from '@/components/common/Button.vue';
 
-const props = defineProps<{
-  encounterId: string;
-}>();
-
 const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
+
+const props = defineProps<{
+  encounterId: string;
+}>();
 
 const encounter = computed(() => {
   return encounterStore.items.find(e => e.id === props.encounterId);
@@ -101,12 +101,10 @@ watch(() => combat.value?.currentRound, (newRound, oldRound) => {
 });
 
 onMounted(async () => {
-
   await combatStore.load();
   await encounterStore.load();
   await partyStore.load();
   await monsterStore.load();
-  
   if (combat.value) {
     addLogEntry(`Loaded combat for encounter: ${encounter.value?.name}`, 'info');
   }

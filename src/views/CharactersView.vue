@@ -13,10 +13,10 @@ import type { PlayerCharacter } from '@/types';
 const characterStore = useCharacterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
+const router = useRouter();
 
 const showEditor = ref(false);
 const editingCharacter = ref<PlayerCharacter | null>(null);
-const router = useRouter();
 
 onMounted(async () => {
   await Promise.all([

@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
@@ -11,9 +10,8 @@ import { useMentionsStore } from '@/utils/storage';
 
 const route = useRoute();
 const characterStore = useCharacterStore();
-const showEditor = ref(false);
-
 const mentionsStore = useMentionsStore();
+const showEditor = ref(false);
 
 const isLoaded = computed(() => characterStore.isLoaded);
 const character = computed(() => characterStore.getById(route.params.id as string));

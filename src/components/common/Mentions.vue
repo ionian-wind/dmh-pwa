@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -18,6 +18,14 @@ const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
+
+onMounted(async () => {
+  await noteStore.load();
+  await moduleStore.load();
+  await partyStore.load();
+  await monsterStore.load();
+  await encounterStore.load();
+});
 
 function getEntityRoute(entity: EntityRef) {
   switch (entity.kind) {

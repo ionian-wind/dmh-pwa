@@ -14,13 +14,13 @@ const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
+const router = useRouter();
+const route = useRoute();
 
 const showEditor = ref(false);
 const editingNote = ref<Note | null>(null);
-const router = useRouter();
 
 const searchQuery = ref('');
-const route = useRoute();
 const tagFilter = ref<string | null>(null);
 
 // Watch for query param changes

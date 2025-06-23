@@ -5,6 +5,8 @@ import type { Monster } from '@/types';
 import ModuleMultipleSelector from "@/components/ModuleMultipleSelector.vue";
 import BaseModal from '@/components/common/BaseModal.vue';
 
+const moduleStore = useModuleStore();
+
 const props = defineProps<{
   monster: Monster | null;
   isOpen: boolean;
@@ -15,13 +17,11 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const moduleStore = useModuleStore();
-
 const blankMonster = (): Monster => ({
   id: '',
   name: '',
   notes: '',
-  moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : [],
+  moduleIds: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? [moduleStore.currentModuleFilter.value] : [],
   createdAt: Date.now(),
   updatedAt: Date.now()
 });

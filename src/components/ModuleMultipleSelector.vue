@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useModuleStore } from '@/stores/modules';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
+const moduleStore = useModuleStore();
+onMounted(async () => {
+  await moduleStore.load();
+});
 const props = withDefaults(defineProps<{
   modelValue: string[];
   placeholder?: string;
@@ -13,8 +17,6 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string[]): void;
 }>();
-
-const moduleStore = useModuleStore();
 
 const updateValue = (event: Event) => {
   const select = event.target as HTMLSelectElement;
