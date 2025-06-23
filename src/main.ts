@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import { PiniaSharedState } from 'pinia-shared-state'
 
 import 'siimple-icons/siimple-icons.css'
+import 'rpg-awesome/css/rpg-awesome.css'
 
 import App from './App.vue'
 import router from './router'

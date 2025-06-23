@@ -31,7 +31,6 @@ const setValue = (key: string, value: unknown) => {
 export const useConfigStore = defineStore('config', () => {
   // Define your state here
   const currentModuleFilter = ref<string | null>(getValue('currentModuleFilter', null));
-  const lastOpenedPage = ref<string>(getValue('lastOpenedPage', '/'));
   
   // Jukebox state
   const lastTrackId = ref<string | null>(getValue('lastTrackId', null));
@@ -41,7 +40,6 @@ export const useConfigStore = defineStore('config', () => {
 
   const config: Record<string, Ref> = {
     currentModuleFilter,
-    lastOpenedPage,
     lastTrackId,
     lastTrackProgress,
     lastVolume,

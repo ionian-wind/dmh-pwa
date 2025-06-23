@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import type { Encounter } from '@/types';
-import BaseCard from '@/components/common/BaseCard.vue';;
-import { useRouter } from 'vue-router';
-import { computed } from 'vue';
+import BaseCard from '@/components/common/BaseCard.vue';
+import {computed, onMounted} from 'vue';
 import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat']);
-const router = useRouter();
 const moduleStore = useModuleStore();
 
 const moduleName = computed(() => {
@@ -38,6 +36,10 @@ const monstersCount = computed(() => {
   return `${kinds} (${total})`;
 });
 
+onMounted(async () => {
+  await moduleStore.load();
+});
+
 function handleView() { emit('view', props.encounter); }
 function handleEdit() { emit('edit', props.encounter); }
 function handleDelete() { emit('delete', props.encounter); }
@@ -60,7 +62,7 @@ function handleRunCombat() {
     </div>
     <template #actions>
       <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">
-        <i class="si si-play"></i>
+        <i class="ra ra-crossed-swords"></i>
       </Button>
     </template>
   </BaseCard>

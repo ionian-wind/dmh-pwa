@@ -15,7 +15,6 @@ import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
-import { useConfigStore } from '@/utils/configStore';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -117,7 +116,7 @@ const router = createRouter({
       component: NotFoundView
     }
   ],
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(to, _from, savedPosition) {
     // If navigating to a hash or using browser history, let anchorScroll handle it
     if (to.hash || savedPosition) {
       return false;
@@ -125,17 +124,6 @@ const router = createRouter({
     // On full navigation, scroll to top
     return { left: 0, top: 0 };
   },
-});
-
-router.beforeEach((to, _from, next) => {
-  const configStore = useConfigStore();
-  
-  // Don't update last opened page for detail views
-  if (!to.params.id) {
-    configStore.lastOpenedPage = to.path;
-  }
-  
-  next();
 });
 
 export default router;

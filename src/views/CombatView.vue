@@ -43,7 +43,7 @@ watch([
 const handleDelete = async () => {
   if (!combat.value) return;
   await combatStore.remove(combat.value.id);
-  router.push('/combats');
+  await router.push('/encounters');
 };
 
 const getEncounterName = (encounterId: string) => {
@@ -97,104 +97,94 @@ const resetCombat = () => {
 };
 
 onMounted(async () => {
-  combatStore.load();
+  await combatStore.load();
+  await encounterStore.load();
+  await partyStore.load();
+  await moduleStore.load();
 });
 </script>
 
 <template>
-  <div class="view-container" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start;">
-    <div style="flex: 2 1 0; min-width: 0;">
-      <div v-if="loading" class="loading-state">Loading...</div>
-      <NotFoundView v-else-if="notFound" />
-      <BaseEntityView
-        v-else
-        :entity="combat"
-        entity-name="Combat"
-        list-route="/combats"
-        :on-delete="handleDelete"
-        :title="combatTitle"
-        :subtitle="combatSubtitle"
-        :not-found="notFound"
+  <BaseEntityView
+    :entity="combat"
+    entity-name="Combat"
+    list-route="/combats"
+    :title="combatTitle"
+    :subtitle="combatSubtitle"
+    :not-found="notFound"
+  >
+    <template #actions>
+      <Button
+        v-if="combat.status === 'preparing'"
+        variant="primary"
+        @click="startCombat"
+        class="start-btn"
       >
-        <!-- Combat Content -->
-        <div v-if="combat" class="combat-content">
-          <div class="combat-header">
-            <div class="combat-info">
-              <div class="info-section">
-                <h3>Encounter</h3>
-                <p>{{ getEncounterName(combat.encounterId) }}</p>
-              </div>
-              <div class="info-section">
-                <h3>Party</h3>
-                <p>{{ getPartyName(combat.partyId) }}</p>
-              </div>
-              <div class="info-section">
-                <h3>Status</h3>
-                <span class="status-badge" :class="combat.status">{{ combat.status }}</span>
-              </div>
-            </div>
-            <div class="combat-controls">
-              <Button 
-                v-if="combat.status === 'preparing'"
-                variant="primary"
-                @click="startCombat"
-                class="start-btn"
-              >
-                <i class="si si-player-play"></i> Start Combat
-              </Button>
-              <Button 
-                v-if="combat.status === 'active'"
-                variant="warning"
-                @click="resetCombat"
-                class="reset-btn"
-              >
-                <i class="si si-refresh"></i> Reset Combat
-              </Button>
-              <Button 
-                v-if="combat.status === 'active'"
-                variant="danger"
-                @click="endCombat"
-                class="end-btn"
-              >
-                <i class="si si-close"></i> End Combat
-              </Button>
-            </div>
+        <i class="si si-player-play"></i> Start Combat
+      </Button>
+      <Button
+        v-if="combat.status === 'active'"
+        variant="warning"
+        @click="resetCombat"
+        class="reset-btn"
+      >
+        <i class="si si-refresh"></i> Reset Combat
+      </Button>
+      <Button
+        v-if="combat.status === 'active'"
+        variant="danger"
+        @click="endCombat"
+        class="end-btn"
+      >
+        <i class="si si-close"></i> End Combat
+      </Button>
+    </template>
+    <!-- Combat Content -->
+    <div v-if="combat" class="combat-content">
+      <div class="combat-header">
+        <div class="combat-info">
+          <div class="info-section">
+            <h3>Encounter</h3>
+            <p>{{ getEncounterName(combat.encounterId) }}</p>
           </div>
-          <!-- Combat Tracker -->
-          <div class="combat-tracker-section">
-            <h3>Combat Tracker</h3>
-            <CombatTracker :encounterId="combat.encounterId" />
+          <div class="info-section">
+            <h3>Party</h3>
+            <p>{{ getPartyName(combat.partyId) }}</p>
           </div>
-          <!-- Combat Summary -->
-          <div class="combat-summary" v-if="combat.status === 'active'">
-            <h3>Combat Summary</h3>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <label>Round:</label>
-                <span class="summary-value">{{ combat.currentRound }}</span>
-              </div>
-              <div class="summary-item">
-                <label>Turn:</label>
-                <span class="summary-value">{{ combat.currentTurn + 1 }} of {{ combat.combatants.length }}</span>
-              </div>
-              <div class="summary-item">
-                <label>Active Combatants:</label>
-                <span class="summary-value">{{ combat.combatants.filter((c: Combatant) => c.hitPoints.current > 0).length }}</span>
-              </div>
-              <div class="summary-item">
-                <label>Downed Combatants:</label>
-                <span class="summary-value">{{ combat.combatants.filter((c: Combatant) => c.hitPoints.current <= 0).length }}</span>
-              </div>
-            </div>
-          </div>
-          <div v-if="combat.notes" class="content-section">
-            <h3>Notes</h3>
-            <p class="notes">{{ combat.notes }}</p>
+          <div class="info-section">
+            <h3>Status</h3>
+            <span class="status-badge" :class="combat.status">{{ combat.status }}</span>
           </div>
         </div>
-      </BaseEntityView>
+        <div class="combat-controls">
+          
+        </div>
+      </div>
+      <!-- Combat Tracker -->
+      <div class="combat-tracker-section">
+        <h3>Combat Tracker</h3>
+        <CombatTracker :encounterId="combat.encounterId" />
+      </div>
+      <!-- Combat Summary -->
+      <div class="combat-summary" v-if="combat.status === 'active'">
+        <h3>Combat Summary</h3>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <label>Round:</label>
+            <span class="summary-value">{{ combat.currentRound }}</span>
+          </div>
+          <div class="summary-item">
+            <label>Turn:</label>
+            <span class="summary-value">{{ combat.currentTurn + 1 }} of {{ combat.combatants.length }}</span>
+          </div>
+        </div>
+      </div>
+      <div v-if="combat.notes" class="content-section">
+        <h3>Notes</h3>
+        <p class="notes">{{ combat.notes }}</p>
+      </div>
     </div>
-  </div>
+  </BaseEntityView>
 </template>
 
 <style scoped>

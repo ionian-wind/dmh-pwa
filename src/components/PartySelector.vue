@@ -58,12 +58,6 @@ const handleCreateCombat = async () => {
     id: generateId(),
     name: char.name,
     type: 'player',
-    hitPoints: {
-      maximum: 10,
-      current: 10,
-      temporary: 0
-    },
-    conditions: [],
     referenceId: char.id,
     notes: '',
     createdAt: Date.now(),
@@ -79,12 +73,6 @@ const handleCreateCombat = async () => {
         id: generateId(),
         name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
         type: 'monster',
-        hitPoints: {
-          maximum: 10,
-          current: 10,
-          temporary: 0
-        },
-        conditions: [],
         referenceId: monster.id,
         notes: '',
         createdAt: Date.now(),

@@ -38,24 +38,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "type", "hitPoints"],
+        "required": ["id", "name", "type"],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
           "type": { "type": "string" },
-          "hitPoints": {
-            "type": "object",
-            "required": ["maximum", "current"],
-            "properties": {
-              "maximum": { "type": "number" },
-              "current": { "type": "number" },
-              "temporary": { "type": "number" }
-            }
-          },
-          "conditions": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
           "referenceId": { "type": "string" },
           "notes": { "type": "string" }
         }

@@ -55,25 +55,25 @@ export const useCombatStore = defineStore('combats', () => {
     const idx = combat.combatants.findIndex(c => c.id === combatantId);
     if (idx === -1) return;
     Object.assign(combat.combatants[idx], updates);
-    update(combatId, { combatants: combat.combatants });
+    return update(combatId, { combatants: combat.combatants });
   };
 
   const removeCombatant = (combatId: string, combatantId: string) => {
     const combat = getById(combatId);
     if (!combat) return;
     combat.combatants = combat.combatants.filter(c => c.id !== combatantId);
-    update(combatId, { combatants: combat.combatants });
+    return update(combatId, { combatants: combat.combatants });
   };
 
   const updateCombatStatus = (combatId: string, status: Combat['status']) => {
-    update(combatId, { status });
+    return update(combatId, { status });
   };
 
   function startCombat(id: string) {
     const combat = getById(id);
     if (!combat) return;
     if (combat.status !== 'preparing') return;
-    update(id, {
+    return update(id, {
       status: 'active',
       currentRound: 1,
       currentTurn: 0,
@@ -84,7 +84,7 @@ export const useCombatStore = defineStore('combats', () => {
     const combat = getById(id);
     if (!combat) return;
     if (combat.status !== 'active') return;
-    update(id, {
+    return update(id, {
       status: 'completed',
     });
   }
@@ -93,7 +93,7 @@ export const useCombatStore = defineStore('combats', () => {
     const combat = getById(id);
     if (!combat) return;
     if (combat.status !== 'active') return;
-    update(id, {
+    return update(id, {
       currentRound: 1,
       currentTurn: 0,
     });
@@ -108,7 +108,7 @@ export const useCombatStore = defineStore('combats', () => {
       nextTurn = 0;
       nextRound += 1;
     }
-    update(id, {
+    return update(id, {
       currentTurn: nextTurn,
       currentRound: nextRound,
     });
@@ -123,7 +123,7 @@ export const useCombatStore = defineStore('combats', () => {
       prevTurn = combat.combatants.length - 1;
       prevRound = Math.max(1, prevRound - 1);
     }
-    update(id, {
+    return update(id, {
       currentTurn: prevTurn,
       currentRound: prevRound,
     });

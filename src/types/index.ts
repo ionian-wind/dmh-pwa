@@ -87,12 +87,6 @@ export interface Monster extends Character {
 export interface Combatant extends WithMetadata {
   name: string;
   type: 'player' | 'monster';
-  hitPoints: {
-    maximum: number;
-    current: number;
-    temporary?: number;
-  };
-  conditions: string[];
   referenceId?: UUID;
   notes?: string;
 }
