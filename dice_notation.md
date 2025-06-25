@@ -1,6 +1,5 @@
 # Dice Notation Specification
 
-
 ---
 
 ## 1. Arithmetic
@@ -14,21 +13,15 @@
   - `**` (exponentiation, e.g., `2**3` is 8)
 - **Order of Operations:** Parentheses can be used to control order, e.g. `(2+3)*2`.
 - **Math-Only Rolls:** You can roll just math, e.g. `5+7*2`.
-- **Examples:**
-  - `7%4`
-  - `7 % 4` → 3
-  - `2 ** 3` → 8
-
----
-
-## 2. Math Functions
-
 - **Supported Functions:**
   - `floor(x)`: Rounds x towards negative infinity.
   - `round(x)`: Rounds x towards 0 if the fractional portion is less than 0.5, and towards positive infinity if 0.5 or greater.
   - `ceil(x)`: Rounds x towards positive infinity.
   - `abs(x)`: Returns the absolute value of x.
 - **Examples:**
+  - `7%4`
+  - `7 % 4` → 3
+  - `2 ** 3` → 8
   - `floor(2.9)` → 2
   - `ceil(2.1)` → 3
   - `round(2.5)` → 3
@@ -36,7 +29,7 @@
 
 ---
 
-## 3. Basic Dice Expressions
+## 3. Dice Expressions
 
 - **Format:** `NdX`
   - `N`: Number of dice (optional, defaults to 1)
@@ -57,11 +50,10 @@
   - **Format:** `(N+Y)dX` or `Nd(X+Y)`
   - The value inside the parentheses is evaluated first, and the result is rounded to the nearest whole number (as with `round(N+Y)`).
   - This can be used with both Basic and Fate dice.
-  - **Examples:**
-    - `(2+1)d6` rolls 3d6
-    - `2d(4+2)` rolls 2d6
-    - `(1+2)dF` rolls 3 FATE dice
 - **Examples:**
+  - `(2+1)d6` rolls 3d6
+  - `2d(4+2)` rolls 2d6
+  - `(1+2)dF` rolls 3 FATE dice
   - `d6`
   - `2d8`
   - `4d10`
@@ -74,7 +66,10 @@
 
 ---
 
-## 3. Modifiers
+## 3.1. Modifiers
+
+*depends on #3*
+
 - **Dice Pool Operators:**
   - `=N`: Count dice equal to exactly N (e.g., `5d6=5` counts dice showing 5).
   - `e`: Exhaustive success count (reroll successes until none remain).
@@ -120,9 +115,6 @@
 - **Sorting Dice:**
   - `sa` / `sd`: Sort ascending/descending (`4d6sa`)
   - Example: `4d6sd`
-- **Grouped Roll Modifiers:**
-  - Modifiers can be applied to grouped rolls, e.g. `{4d6kh3, 1d8+2}`
-  - Example: `{4d6kh3, 1d8+2}`
 - **Multiple Modifiers:**
   - Modifiers can be chained: `4d6kh3ro1!>5sd`
   - Example: `4d6kh3ro1!>5sd`
@@ -132,25 +124,32 @@
 - **Custom Drop/Keep Syntax:**
   - `k>N`/`k<N`: Keep dice above/below N (e.g., `4d6k>3`).
   - Example: `4d6k>3`
-- **Roll Once Modifier:**
-  - `o`: Rolls entire group once (e.g., `{1d6, 2d8}o`).
-  - Example: `{1d6, 2d8}o`
 - **Dedicated Advantage/Disadvantage:**
   - Use `2d20kh1` for advantage, `2d20kl1` for disadvantage (native syntax).
   - Example: `2d20kh1`, `2d20kl1`
 
 ---
 
-## 4. Advanced Dice Features
+## 3.2. Advanced Dice Features
+
+*depends on #3*
+
 - **Custom Dice:** `d[1,2,3,5,8]`
   - Example: `2d[1,2,3,5,8]`
 - **Grouping Rolls:**
   - Use `{}` to group multiple rolls, e.g. `{1d6, 2d8+1, 1d4-1}`
   - Example: `{1d6, 2d8+1, 1d4-1}`
-
+- **Roll Once Modifier:**
+  - `o`: Rolls entire group once (e.g., `{1d6, 2d8}o`).
+  - Example: `{1d6, 2d8}o`
+- **Grouped Roll Modifiers:**
+  - Modifiers can be applied to grouped rolls, e.g. `{4d6kh3, 1d8+2}`
+  - Example: `{4d6kh3, 1d8+2}`
 ---
 
 ## 4.1 Nested Group Modifiers
+
+*depends on #3 and #5*
 
 - Modifiers can be applied to subgroups (e.g., `{2d6kh1, 1d8}kh1` applies keep highest to the group result).
   - Example: `{2d6kh1, 1d8}kh1`
@@ -162,94 +161,49 @@
 - **General Syntax:** Use `Nt[table-name]` to roll N times on a user-defined table.
   - Example: `1t[loot-table]` (roll once on the table)
   - Example: `2t[loot-table]` (roll twice on the table)
-- **Weighted Table Entries:** Table entries can have weights, e.g. `Sword, Sword, Shield` makes Sword twice as likely.
-- **Rollable Tables in Inline Rolls:** You can use table rolls inside inline rolls, e.g. `[[1t[loot-table]]]`.
-- **Table Ranges:** Use `Nt[table-name]` for multiple rolls on a table, e.g. `[[2t[loot-table]]]`.
+- **Weighted Table Entries:** Table entries can have weights. Two options:
+  - Either the number of times you want the item to be a possible result.
+  - Or a percentage value. The final number of all items that are elements of the table must equal 100.
+- **Table Ranges:** Use `Nt[table-name]` for multiple rolls on a table, e.g. `2t[loot-table]`.
 
 ---
 
-## 6. Macros
+## 6. Advanced syntax
 
-- **Definition:** Macros allow users to define reusable roll expressions.
-- **Syntax:** `#macro_name` (use `#` to call a macro)
-  - Example: `#attack`
-- **Macro Nesting and Chaining:** Macros can call other macros or be chained with `;` (`#macro1; #macro2`)
-  - Example: `#macro1; #macro2`
+## 6.1. Roll Queries
 
----
-
-## 7. Roll Queries
+- **Definition:** Roll Queries allow users to control roll evaluation by providing additional data.
 - **Prompt User:** `?{Prompt Message}` asks user to input value
 - **Default Value:** `?{Prompt Message|Default}` (if user presses enter, uses Default)
   - Example: `?{Bonus|0}`
-- **Query Default Expressions:** Default values in queries can be rolls (e.g., `?{Dmg|[[1d8]]}`).
-  - Example: `?{Dmg|[[1d8]]}`
-- **Variant Choice:** `?{Prompt Message|Option1,Option2}` prompts user for select
-  - Example: `?{Weapon|Sword,Axe}`
-- **Variant Choice With Label:** `?{Attack or Damage|Attack, 1d20+5|Damage, 1d8+3}`
-- **Roll Queries in Math:** Can be used in any part of a macro or roll (`1d20+?{Bonus|0}`)
-  - Example: `1d20+?{Bonus|0}`
+- **Variant Choice:** `?{Prompt Message|Option1|Option2}` prompts user for select
+  - Example: `?{Weapon|Sword|Axe}`
+- **Variant Choice With Label:** `?{Attack or Damage|Attack, 5|Damage, 3}` content after comma is result of selection
 - **Multi-Prompts:**
   - Use multiple independent queries by including several `?{...}` in the same line (e.g., `?{X?} ?{Y?}`). Each prompt will be presented separately and their results can be used in the expression.
   - Example: `?{Weapon?} ?{Bonus?}`
-
----
-
-## 8. Nesting Macros and Roll Queries
-
-- **Nesting Macros in Roll Queries:**
-  - When nesting a macro call inside a Roll Query, ensure there is a space after the macro name, and no space between the comma and `#` so that it is properly recognized.
+- **Expressions as Values:** Dice expressions, arithmetic, table rolls, and other valid expressions can be used as values in roll queries. This allows for dynamic and complex options.
+  - **Examples:**
+    - `?{Attack or Damage|Attack, 1d20+5|Damage, 1d8+3}`
+    - `?{Loot|Gold, 2d6*10|Magic Item, 1t[magic-items]}`
+- **Using Roll Query Results in Expressions:** The result of a roll query can be used as part of any expression, such as in dice rolls, arithmetic, or other calculations.
   - **Example:**
-    - `?{Which macro?|Attack,#use-sword |Defend,#use-shield }`
+    - `1d20+?{Bonus|0}` (adds the value entered for Bonus to the roll)
 
----
+# 6.2. Escaping Special Characters
 
-# 9. Escaping Special Characters in Marcos and Roll Queries
-
-- Use `\\` to escape `|`, `}}`, or `,` in queries/macros.
+- Use `\\` to escape `|`, `}}`, or `,` in queries.
   - Example: `?{Name|Option\, with comma}`
 
 ---
 
-## 10. Inline Dice Rolls
-- Use `[[...]]` to embed a roll result inline in macros or roll queries.
+## 7. Inline Dice Rolls
+- Use `[[...]]` to embed a roll result inline in roll queries or any other content.
   - Example: `[[1d20+5]]`
 
 ---
 
-## 11. Reusing Roll Results
-
-- **Reusing Roll Results:** Use the result of one roll in another calculation within the same macro (e.g., via inline roll).
-  - Example: `$[[0]]+2`
-- **Result Referencing:** Use `$[[N]]-1` syntax to reference/modify prior inline rolls (e.g., `$[[0]]-1`).
-  - Example: `$[[0]]-1`
-- **Roll History References:**
-  - Reference prior rolls via ID using `$[roll:XYZ]` syntax, where `XYZ` is the unique roll identifier. This allows you to use the result of a previous roll elsewhere in your expressions.
-  - Example: `$[roll:attackRoll] + 2`
-
-
----
-
-## 12. Result Formatting and Special Output
-
-- **Labels:** `2d6[label]` or `2d6[fire]` (labels the roll for display or reference)
-  - Example: `2d6[fire]`
-- **Markdown in Dice Labels:** Markdown is supported in dice labels.
-  - Example: `2d6[**Fire**]`
-- **Extra Text for roll:** You can add descriptive text after a roll, e.g. `1d20+5 for initiative`.
-- **Comments:** `// comment` (ignored by parser)
-- **Line Breaks with %NEWLINE%:**
-  - Use `%NEWLINE%` in your output text to break the line and start a new one in the displayed result.
-  - **Example:**
-    - `Attack hits!%NEWLINE%Roll damage: [[1d8+2]]` will display as:
-      ```
-      Attack hits!
-      Roll damage: (result)
-      ```
----
-
-## 13. Error Handling
-
+## Error Handling 
 - **Invalid expressions:** Invalid expressions should return a clear error message.
 - **Divide-by-Zero Handling:** If a division by zero occurs (e.g., `1d6/0`), the result is `null` or an error message is displayed.
 
@@ -261,8 +215,6 @@
   - Example: `0d6` → Error: Must roll at least 1 die
   - Example: `2d-6` → Error: Dice sides must be positive
   - Example: `2d6.5` → Error: Dice sides must be an integer
-- Unknown macro or attribute:
-  - Example: `#unknownmacro` → Error: Macro not found
 - Invalid use of modifiers:
   - Example: `2d6kh0` → Error: Must keep at least 1 die
   - Example: `2d6kl3` (when rolling 2 dice) → Error: Cannot keep more dice than rolled
