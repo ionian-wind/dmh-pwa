@@ -88,8 +88,8 @@ const isActive = (item: { section: Section, path: string }) => {
 
 <style scoped>
 .global-menu {
-  background: #1e1e2e;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -110,22 +110,22 @@ const isActive = (item: { section: Section, path: string }) => {
   width: 100%;
   padding: 0.5rem;
   border-radius: 4px;
-  border: 1px solid #ddd;
-  background: white;
-  color: #333;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
 }
 
 .clear-module-btn {
   background: none;
   border: none;
-  color: white;
+  color: var(--color-text-inverse);
   cursor: pointer;
   padding: 0.5rem;
   font-size: 1rem;
 }
 
 .clear-module-btn:hover {
-  color: #ff5252;
+  color: var(--color-danger);
 }
 
 .menu-items {
@@ -134,16 +134,16 @@ const isActive = (item: { section: Section, path: string }) => {
 }
 
 .menu-items .btn {
-  background: #2d2d44;
-  color: white;
+  background: var(--color-primary-dark);
+  color: var(--color-text-inverse);
   border: none;
 }
 
 .menu-items .btn:hover {
-  background: #3d3d54;
+  background: var(--color-secondary);
 }
 
 .menu-items .btn.active {
-  background: #4caf50;
+  background: var(--color-success);
 }
 </style> 

@@ -406,8 +406,8 @@ function onRootNodeMove(evt: any) {
 }
 
 .tree-root.root-drag-over {
-  border-color: #007bff;
-  background: #e3f2fd;
+  border-color: var(--color-info);
+  background: var(--color-background-mute);
   box-shadow: 0 0 15px rgba(0, 123, 255, 0.2);
 }
 
@@ -419,17 +419,17 @@ function onRootNodeMove(evt: any) {
   content: "Drop nodes here to make them root nodes";
   display: block;
   text-align: center;
-  color: #6c757d;
+  color: var(--color-text-light);
   font-style: italic;
   padding: 2rem;
-  border: 2px dashed #dee2e6;
+  border: 2px dashed var(--color-border-light);
   border-radius: 4px;
-  background: white;
+  background: var(--color-background);
 }
 
 .tree-root.root-drag-over .root-nodes-container:empty::after {
-  border-color: #007bff;
-  background: rgba(0, 123, 255, 0.05);
-  color: #007bff;
+  border-color: var(--color-info);
+  background: var(--color-info, rgba(0, 123, 255, 0.05));
+  color: var(--color-info);
 }
 </style> 

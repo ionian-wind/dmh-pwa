@@ -13,9 +13,12 @@
     "test:watch": "vitest",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "postinstall": "patch-package"
   },
   "dependencies": {
+    "@3d-dice/dice-box": "1.1.4",
+    "@3d-dice/dice-ui": "0.5.2",
     "@vitejs/plugin-vue": "5.2.4",
     "ajv": "8.17.1",
     "buffer": "6.0.3",
@@ -27,6 +30,7 @@
     "marked": "15.0.12",
     "music-metadata": "11.3.0",
     "nanoid": "5.1.5",
+    "patch-package": "8.0.0",
     "pinia": "3.0.3",
     "pinia-plugin-persistedstate": "4.3.0",
     "pinia-shared-state": "1.0.1",

@@ -12,7 +12,7 @@ interface Props {
   onDelete?: () => Promise<void>;
   onEdit?: () => void;
   isEditing?: boolean;
-  title: string;
+  title?: string;
   subtitle?: string;
   loading?: boolean;
   notFound?: boolean;

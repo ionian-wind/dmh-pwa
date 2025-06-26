@@ -122,8 +122,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .slider-container {
   --track-height: 4px;
-  --track-color: #e5e7eb;
-  --track-fill-color: var(--primary-color, #4f46e5);
+  --track-color: var(--color-border-light, #e5e7eb);
+  --track-fill-color: var(--color-primary, #4f46e5);
   --thumb-size: 14px;
   position: relative;
   cursor: pointer;
@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: var(--thumb-size);
   height: var(--thumb-size);
-  background-color: white;
+  background-color: var(--color-background);
   border: 2px solid var(--track-fill-color);
   border-radius: 50%;
   transform: translate(-50%, -50%);

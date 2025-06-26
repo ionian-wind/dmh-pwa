@@ -432,7 +432,7 @@ onMounted(() => {
 
 .unlink-btn {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.25rem 0.5rem;
   border-radius: var(--border-radius);
@@ -453,7 +453,7 @@ onMounted(() => {
 
 .link-btn {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--border-radius);
@@ -467,7 +467,7 @@ onMounted(() => {
 
 .run-combat-btn {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--border-radius);
@@ -541,22 +541,22 @@ onMounted(() => {
 
 .status-preparing {
   background: var(--color-warning);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .status-active {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .status-completed {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .status-unknown {
   background: var(--color-text-light);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .stats-grid {

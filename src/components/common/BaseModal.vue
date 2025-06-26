@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted, computed, ref } from 'vue';
+import { watch, onMounted, onUnmounted, computed, ref, useSlots } from 'vue';
 import Button from './Button.vue';
 import { useModalState } from '@/composables/useModalState';
 
 const props = defineProps<{
   isOpen: boolean;
-  title: string;
+  title?: string;
   showSubmit?: boolean;
   showCancel?: boolean;
   submitLabel?: string;
@@ -13,15 +13,19 @@ const props = defineProps<{
   showClose?: boolean;
   modalId: string;
   showExpand?: boolean;
+  isExpanded?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'submit'): void;
   (e: 'cancel'): void;
+  (e: 'update:isExpanded'): void;
 }>();
 
 const { openModal, closeModal, currentModalId } = useModalState();
-const isExpanded = ref(false);
+const isExpanded = ref(props.isExpanded ?? false);
+const slots = useSlots();
+const hasHeader = computed(() => !!props.title || !!slots['header-actions'] || !!props.showExpand || !!props.showClose);
 
 // Only show modal if it's open and is the top of the stack
 const actuallyOpen = computed(() => props.isOpen && currentModalId.value === props.modalId);
@@ -99,20 +103,31 @@ onUnmounted(() => {
     popStateHandler = null;
   }
 });
+
+// Sync prop to local state
+watch(() => props.isExpanded, (val) => {
+  if (typeof val === 'boolean') isExpanded.value = val;
+});
+
+// Emit update when local state changes
+function setExpanded(val: boolean) {
+  isExpanded.value = val;
+  emit('update:isExpanded', val);
+}
 </script>
 
 <template>
   <Transition name="modal-fade">
     <div v-if="actuallyOpen" class="modal">
       <div class="modal-dialog" :class="{ 'is-expanded': isExpanded }">
-        <div class="modal-header">
-          <h2>{{ title }}</h2>
+        <div v-if="hasHeader" class="modal-header">
+          <h2 v-if="title">{{ title }}</h2>
           <div class="header-actions">
             <slot name="header-actions" />
-            <Button v-if="props.showExpand" @click="isExpanded = !isExpanded" variant="light" :title="isExpanded ? 'Collapse' : 'Expand'">
+            <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? 'Collapse' : 'Expand'">
               <i :class="isExpanded ? 'si si-arrows-minimize' : 'si si-arrows-maximize'"></i>
             </Button>
-            <Button v-if="showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
+            <Button v-if="props.showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
               <i class="si si-x"></i>
             </Button>
           </div>
@@ -148,6 +163,7 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   z-index: 8000;
+  pointer-events: auto;
 }
 
 .modal-dialog {
@@ -203,11 +219,11 @@ onUnmounted(() => {
   font-size: 1.5rem;
   padding: 0;
   cursor: pointer;
-  color: #888;
+  color: var(--color-text-light);
 }
 
 .btn-close-modal:hover {
-  color: #333;
+  color: var(--color-text);
 }
 
 .modal-form {
@@ -255,7 +271,7 @@ onUnmounted(() => {
 
 .submit-btn {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .cancel-btn {

@@ -35,7 +35,7 @@ function handleDelete() { emit('delete', props.character); }
 }
 .character-header h3 {
   margin: 0;
-  color: #333;
+  color: var(--color-text);
   font-size: 1.2rem;
 }
 .character-card-actions {

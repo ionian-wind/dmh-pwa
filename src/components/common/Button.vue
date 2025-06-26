@@ -91,7 +91,7 @@ function handleClick(event: MouseEvent) {
 /* Color variants */
 .btn--primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn--primary:hover:not(.btn--disabled) {
@@ -110,7 +110,7 @@ function handleClick(event: MouseEvent) {
 
 .btn--danger {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn--danger:hover:not(.btn--disabled) {
@@ -119,7 +119,7 @@ function handleClick(event: MouseEvent) {
 
 .btn--success {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn--success:hover:not(.btn--disabled) {
@@ -128,7 +128,7 @@ function handleClick(event: MouseEvent) {
 
 .btn--warning {
   background: var(--color-warning);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .btn--warning:hover:not(.btn--disabled) {
@@ -137,7 +137,7 @@ function handleClick(event: MouseEvent) {
 
 .btn--link, .btn--light {
   background: transparent;
-  color: var(--color-text, #666);
+  color: var(--color-text-light);
   border: none;
   padding: 0.25rem 0.5rem;
   text-decoration: none;

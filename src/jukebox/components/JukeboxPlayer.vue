@@ -102,7 +102,7 @@ const showAnimatedBg = computed(() => !!props.animatedBackground && playerStore.
 
 // Use the new composable for the gradient style
 const gradientStyle = useAnimatedGradient(
-  showAnimatedBg,
+  () => !!props.animatedBackground && playerStore.isPlaying,
   () => {
     const track = playerStore.currentTrack;
     if (track?.palette && track.palette.length > 0) {
@@ -177,10 +177,10 @@ const isPlayDisabled = computed(() => {
 
 // Theming logic: update CSS variables for JukeboxPlayer based on track color
 const defaultTheme = {
-  '--color-primary': '#1e1e2e',
-  '--color-primary-dark': '#2d2d44',
-  '--color-background': '#fff',
-  '--color-text': '#333',
+  '--color-primary': 'var(--color-primary)',
+  '--color-primary-dark': 'var(--color-primary-dark)',
+  '--color-background': 'var(--color-background)',
+  '--color-text': 'var(--color-text)',
 };
 
 function getContrastColor(hex: string): string {
@@ -211,7 +211,6 @@ function setJukeboxTheme(color?: string) {
     el.style.setProperty('--color-primary', contrast + 'cc');
     el.style.setProperty('--track-color', contrast + 'cc');
     el.style.setProperty('--track-fill-color', getContrastColor(contrast));
-    
     el.style.setProperty('--color-primary-dark', contrast);
     // el.style.setProperty('--color-background', '#fff');
     el.style.setProperty('--color-text', '#333');
@@ -315,15 +314,15 @@ watchEffect(() => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #4f46e5;
+  border: 4px solid var(--color-background-soft);
+  border-top: 4px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
 .loading-text {
-  color: #666;
+  color: var(--color-text-light);
   font-size: 0.9rem;
 }
 
@@ -413,14 +412,14 @@ watchEffect(() => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 .track-artwork-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: var(--color-text-inverse);
   font-size: 3rem;
 }
 .track-info-top {
@@ -432,7 +431,7 @@ watchEffect(() => {
 }
 .track-info-top .artist {
   font-size: 0.9em;
-  color: #666;
+  color: var(--color-text-light);
 }
 .player-controls-bottom {
   display: grid;
@@ -464,10 +463,10 @@ watchEffect(() => {
   bottom: 80%;
   left: calc(-100% - 5px);
   transform: translateX(-50%);
-  background: white;
+  background: var(--color-background);
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-md);
   width: 150px;
 }
 .controls button, .volume-button {
@@ -475,7 +474,7 @@ watchEffect(() => {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #333;
+  color: var(--color-text);
   transition: all 0.2s ease-in-out;
   padding: 0.5rem;
   border-radius: 50%;
@@ -493,7 +492,7 @@ watchEffect(() => {
   transform: scale(0.95);
 }
 .controls button:disabled, .volume-button:disabled {
-  color: #ccc;
+  color: var(--color-text-lightest);
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;

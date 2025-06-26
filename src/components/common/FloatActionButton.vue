@@ -205,7 +205,7 @@ onUnmounted(() => {
 /* Disabled state */
 .float-action-button--disabled {
   cursor: not-allowed;
-  background-color: #ccc !important;
+  background-color: var(--color-text-lightest) !important;
   box-shadow: none;
   opacity: 0.7;
   transform: scale(1) translateZ(0);
@@ -250,19 +250,19 @@ onUnmounted(() => {
 
 /* Color variants with enhanced hover effects */
 .float-action-button--primary {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .float-action-button--primary:hover:not(:disabled) {
-  background-color: #1a1a2a;
+  background-color: var(--color-primary-dark);
   box-shadow: 0 8px 25px rgba(30, 30, 46, 0.3);
 }
 
 .float-action-button--secondary {
-  background-color: var(--secondary-color);
-  color: white;
+  background-color: var(--color-secondary);
+  color: var(--color-text-inverse);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -272,35 +272,35 @@ onUnmounted(() => {
 }
 
 .float-action-button--success {
-  background-color: #28a745;
-  color: white;
+  background-color: var(--color-success);
+  color: var(--color-text-inverse);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .float-action-button--success:hover:not(:disabled) {
-  background-color: #218838;
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  background-color: var(--color-success-dark);
+  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
 }
 
 .float-action-button--danger {
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--color-danger);
+  color: var(--color-text-inverse);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .float-action-button--danger:hover:not(:disabled) {
-  background-color: #c82333;
-  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+  background-color: var(--color-danger-dark);
+  box-shadow: 0 8px 25px rgba(244, 67, 54, 0.3);
 }
 
 .float-action-button--warning {
-  background-color: #ffc107;
-  color: #212529;
+  background-color: var(--color-warning);
+  color: var(--color-text);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .float-action-button--warning:hover:not(:disabled) {
-  background-color: #e0a800;
+  background-color: var(--color-warning-dark);
   box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
 }
 

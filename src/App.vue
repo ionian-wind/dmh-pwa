@@ -7,11 +7,6 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'
 import MentionModalStack from '@/components/common/MentionModalStack.vue'
 import GlobalAudioPlayer from '@/jukebox/components/GlobalAudioPlayer.vue'
-
-const handleRollClick = (event: MouseEvent) => {
-  // TODO: Implement dice rolling functionality
-  console.log('Roll button clicked!', event);
-};
 </script>
 
 <template>
@@ -30,7 +25,7 @@ const handleRollClick = (event: MouseEvent) => {
       <JukeboxButton class="fab-item" />
     </div>
     <div class="fab-container-right">
-      <RollButton @click="handleRollClick" class="fab-item" />
+      <RollButton class="fab-item" />
     </div>
     
     <!-- PWA Components -->
@@ -47,12 +42,12 @@ const handleRollClick = (event: MouseEvent) => {
 
 <style>
 :root {
-  --primary-color: #1e1e2e;
-  --secondary-color: #2c3e50;
-  --text-color: #333;
-  --light-text: #666;
-  --border-color: #ddd;
-  --background-color: #f5f5f5;
+  --color-primary: #1e1e2e;
+  --color-secondary: #2c3e50;
+  --color-text: #333;
+  --color-text-light: #666;
+  --color-border: #ddd;
+  --color-background: #f5f5f5;
   --max-width: 1200px;
 }
 
@@ -66,8 +61,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--background-color);
+  color: var(--color-text);
+  background-color: var(--color-background);
 }
 
 .app {

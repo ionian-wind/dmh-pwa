@@ -35,7 +35,7 @@ const changeLanguage = (event: Event) => {
 
 .language-select {
   padding: 0.5rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-border);
   border-radius: 0.375rem;
   background-color: var(--bg-color);
   color: var(--text-color);

@@ -103,7 +103,7 @@ function handleRunCombat() {
 
 .run-combat-btn {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: var(--border-radius);
   padding: 0.5rem 1rem;

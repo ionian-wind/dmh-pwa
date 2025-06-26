@@ -232,17 +232,17 @@ onMounted(async () => {
 
 .status-badge.preparing {
   background: var(--color-warning);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .status-badge.active {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .status-badge.completed {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .combat-controls {
@@ -330,7 +330,7 @@ onMounted(async () => {
 
 .start-btn {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .start-btn:hover {
@@ -339,7 +339,7 @@ onMounted(async () => {
 
 .reset-btn {
   background: var(--color-warning);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .reset-btn:hover {
@@ -348,7 +348,7 @@ onMounted(async () => {
 
 .end-btn {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .end-btn:hover {

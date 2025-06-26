@@ -254,16 +254,16 @@ onUnmounted(() => {
   font-family: inherit;
   font-size: 1em;
   padding: 0.75em 1em;
-  border: 1px solid var(--color-border, #ccc);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: var(--color-background, #fff);
+  background: var(--color-background);
   resize: vertical;
   margin-bottom: 1em;
 }
 .formatting-help {
   margin-top: 0.5em;
-  background: var(--color-background-soft, #f9f9f9);
-  border: 1px solid var(--color-border, #eee);
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 0.75em 1em;
   font-size: 0.95em;

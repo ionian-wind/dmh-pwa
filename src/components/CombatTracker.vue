@@ -181,7 +181,7 @@ const getCombatantName = (combatantId: string) => {
 
 <style scoped>
 .combat-tracker {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -195,7 +195,7 @@ const getCombatantName = (combatantId: string) => {
 }
 
 .current-turn {
-  background-color: #f0f7ff;
+  background-color: var(--color-info-light);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -208,17 +208,17 @@ const getCombatantName = (combatantId: string) => {
 .initiative-item {
   display: flex;
   padding: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-light);
   align-items: center;
 }
 
 .initiative-item.current {
-  background-color: #ffeb3b;
+  background-color: var(--color-warning-light);
   font-weight: bold;
 }
 
-.player { background-color: #e8f5e9; }
-.monster { background-color: #ffebee; }
+.player { background-color: var(--color-success-light); }
+.monster { background-color: var(--color-danger-light); }
 
 .order { width: 30px; }
 .name { flex: 2; }
@@ -232,7 +232,7 @@ const getCombatantName = (combatantId: string) => {
 }
 
 .combat-log {
-  background: var(--color-background-soft);
+  background: var(--color-info-light);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   padding: 1.5rem;
@@ -241,7 +241,7 @@ const getCombatantName = (combatantId: string) => {
 
 .combat-log h3 {
   margin: 0 0 1rem 0;
-  color: var(--color-text);
+  color: var(--color-info-dark);
 }
 
 .log-entries {
@@ -260,23 +260,23 @@ const getCombatantName = (combatantId: string) => {
 }
 
 .log-entry.info {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
 }
 
 .log-entry.action {
-  background: #fff3e0;
-  color: #f57c00;
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
 }
 
 .log-entry.damage {
-  background: #ffebee;
-  color: #d32f2f;
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
 }
 
 .log-entry.heal {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
 }
 
 .log-time {

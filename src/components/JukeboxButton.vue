@@ -99,7 +99,7 @@ const navigateToJukebox = () => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background: var(--custom-gradient, linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab));
+  background: var(--custom-gradient, linear-gradient(-45deg, var(--color-warning), var(--color-danger), var(--color-info), var(--color-success)));
   background-size: 400% 400%;
   
   opacity: 0; /* Hidden by default */
@@ -145,7 +145,7 @@ const navigateToJukebox = () => {
   border: none;
   font-size: 1rem;
   cursor: pointer;
-  color: #666;
+  color: var(--color-text-light);
   padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s ease-in-out;
@@ -157,8 +157,8 @@ const navigateToJukebox = () => {
 }
 
 .jukebox-nav-button:hover {
-  color: var(--primary-color, #4f46e5);
-  background-color: rgba(79, 70, 229, 0.1);
+  color: var(--color-primary);
+  background-color: rgba(30, 30, 46, 0.1); /* Use var(--color-primary) with alpha if possible */
   transform: scale(1.1);
 }
 

@@ -123,8 +123,8 @@ onMounted(async () => {
 }
 
 .stat-card {
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 1.5rem;
   text-decoration: none;
@@ -138,12 +138,12 @@ onMounted(async () => {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-color: #2196f3;
+  border-color: var(--color-info);
 }
 
 .stat-icon {
   font-size: 2rem;
-  background: #f5f5f5;
+  background: var(--color-background-soft);
   width: 60px;
   height: 60px;
   display: flex;
@@ -154,13 +154,13 @@ onMounted(async () => {
 
 .stat-content h3 {
   margin: 0;
-  color: #333;
+  color: var(--color-text);
   font-size: 1.2rem;
 }
 
 .stat-content p {
   margin: 0.5rem 0 0;
-  color: #666;
+  color: var(--color-text-light);
   font-size: 0.9rem;
 }
 </style>

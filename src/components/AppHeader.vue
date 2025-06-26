@@ -81,8 +81,8 @@ onUnmounted(() => {
 
 <style scoped>
 .app-header {
-  background: white;
-  border-bottom: 1px solid #ddd;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
   padding: 1rem;
   position: sticky;
   top: 0;

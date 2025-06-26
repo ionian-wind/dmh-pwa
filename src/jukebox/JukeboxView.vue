@@ -303,8 +303,6 @@ onBeforeUnmount(() => {
     :entity="{ loaded: true }"  
     entity-name="Jukebox"
     list-route="/"
-    :title="'Jukebox'"
-    :subtitle="''"
     :loading="false"
     :not-found="false"
   >
@@ -453,8 +451,8 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   z-index: 10;
-  background: #f5f5f5;
-  border-top: 1px solid #ddd;
+  background: var(--color-background-soft);
+  border-top: 1px solid var(--color-border);
 }
 .view-root {
   height: calc(100vh - var(--header-height));
@@ -523,8 +521,8 @@ onBeforeUnmount(() => {
 }
 
 .all-tracks-button.active {
-  background-color: var(--primary-color, #4f46e5);
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .playlist-container {
@@ -551,16 +549,16 @@ onBeforeUnmount(() => {
 }
 
 .playlist-item:hover {
-  background-color: #eee;
+  background-color: var(--color-border-light);
 }
 
 .playlist-list .sortable-ghost {
   opacity: 0.5;
-  background: #c8ebfb;
+  background: var(--color-info-light);
 }
 
 .playlist-item.active {
-  background-color: #e0e0e0;
+  background-color: var(--color-background-mute);
   font-weight: bold;
 }
 
@@ -605,8 +603,8 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: white;
-  border: 1px solid #eee;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
   position: relative;
   overflow: hidden;
 }
@@ -628,11 +626,11 @@ onBeforeUnmount(() => {
 
 .track-item:hover {
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .track-item.is-selected {
-  background: #f0f8ff;
+  background: var(--color-info-light);
 }
 
 .track-item.is-selected::before {
@@ -650,12 +648,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: var(--color-text-lighter);
   font-size: 24px;
 }
 
 .track-artwork-placeholder {
-  background-color: #f0f0f0;
+  background-color: var(--color-background-mute);
 }
 
 .track-info {
@@ -673,7 +671,7 @@ onBeforeUnmount(() => {
 
 .track-artist {
   font-size: 0.9em;
-  color: #666;
+  color: var(--color-text-light);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -691,41 +689,10 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
-.btn-icon-text {
-  background: none;
-  border: 1px solid #ddd;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  color: #666;
-  transition: all 0.2s;
-}
-
-.btn-icon-text:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-.btn-remove {
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.btn-remove:hover {
-  background: #fee;
-  color: #e53e3e;
-}
-
 .no-tracks {
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: var(--color-text-light);;
 }
 
 .no-tracks p {
@@ -735,8 +702,8 @@ onBeforeUnmount(() => {
 
 .jukebox-container .jukebox-player {
   padding: 1em;
-  background: #f5f5f5;
-  border-top: 1px solid #ddd;
+  background: var(--color-background-soft);
+  border-top: 1px solid var(--color-border);
   min-width: 600px;
   position: relative;
 }
@@ -750,8 +717,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   cursor: pointer;
 
-  background: linear-gradient(90deg,rgb(249, 249, 249) 0%, rgb(240, 240, 240) 100%);
-  border-right: 1px solid #ccc;
+  background: linear-gradient(90deg, var(--color-background-soft) 0%, var(--color-background-mute) 100%);
+  border-right: 1px solid var(--color-border-dark);
 }
 
 .track-item .si-play, .track-item .si-pause {

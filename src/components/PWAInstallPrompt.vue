@@ -140,8 +140,8 @@ onMounted(() => {
 }
 
 .pwa-install-btn {
-  background: var(--color-primary, #2196f3);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--border-radius);
@@ -151,7 +151,7 @@ onMounted(() => {
 }
 
 .pwa-install-btn:hover {
-  background: var(--color-primary-dark, #1976d2);
+  background: var(--color-primary-dark);
 }
 
 .pwa-dismiss-btn {

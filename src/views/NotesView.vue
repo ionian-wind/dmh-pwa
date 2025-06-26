@@ -169,6 +169,6 @@ function handleTagClick(tag: string) {
 }
 
 .remove-tag:hover {
-  color: var(--color-danger, #c00);
+  color: var(--color-danger);
 }
 </style> 

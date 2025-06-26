@@ -297,7 +297,7 @@ onMounted(async () => {
 
 .unlink-btn {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.25rem 0.5rem;
   border-radius: var(--border-radius);
@@ -318,7 +318,7 @@ onMounted(async () => {
 
 .link-btn {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: var(--border-radius);

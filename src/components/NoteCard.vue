@@ -83,7 +83,7 @@ function toggleExpand() { expanded.value = !expanded.value; }
   bottom: 0;
   height: 3em;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #fff 100%);
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, var(--color-background) 100%);
   z-index: 2;
 }
 
