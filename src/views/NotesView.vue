@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
-import NoteEditor from '@/components/NoteEditor.vue';
+import BaseListView from '@/components/common/BaseListView.vue';
 import NoteCard from '@/components/NoteCard.vue';
-import ViewHeader from '@/components/common/ViewHeader.vue';
-import type { Note, Module } from '@/types';
+import NoteEditor from '@/components/NoteEditor.vue';
+import type { Note } from '@/types';
 
 const noteStore = useNoteStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const router = useRouter();
 const route = useRoute();
-
-const showEditor = ref(false);
-const editingNote = ref<Note | null>(null);
 
 // Sync tag filter from route
 watch(
@@ -27,7 +24,6 @@ watch(
   { immediate: true }
 );
 
-// Local searchQuery ref for v-model
 const searchQuery = ref(noteStore.searchQuery);
 function updateSearchQuery(val: string) {
   searchQuery.value = val;
@@ -42,87 +38,70 @@ onMounted(async () => {
   ]);
 });
 
-const handleCreateClick = () => {
-  editingNote.value = null;
-  showEditor.value = true;
-};
+function cardProps(note: Note) {
+  return {
+    note,
+    onView: () => router.push(`/notes/${note.id}`),
+    onEdit: () => handleEdit(note),
+    onDelete: () => handleDelete(note),
+    onTagClick: (tag: string) => handleTagClick(tag),
+    moduleName: undefined
+  };
+}
 
-const handleEditClick = (note: Note) => {
-  editingNote.value = note;
-  showEditor.value = true;
-};
+function editorProps(note: Note | null) {
+  return {
+    note,
+    isOpen: true
+  };
+}
 
-const handleSubmit = async (note: Note) => {
-  if (note.id) {
-    await noteStore.update(note.id, note);
-  } else {
-    await noteStore.create(note);
-  }
-  showEditor.value = false;
-};
-
-const handleDelete = async (note: Note) => {
+function handleEdit(note: Note) {
+  // handled by BaseListView
+}
+function handleDelete(note: Note) {
   if (note.id && confirm(`Are you sure you want to delete ${note.title}?`)) {
-    await noteStore.remove(note.id);
+    noteStore.remove(note.id);
   }
-};
-
-const handleCancel = () => {
-  showEditor.value = false;
-};
-
+}
+function handleSubmit(note: Note) {
+  if (note.id) {
+    noteStore.update(note.id, note);
+  } else {
+    noteStore.create(note);
+  }
+}
 function handleTagClick(tag: string) {
   router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
 }
 </script>
 
 <template>
-  <div class="view-root">
-    <ViewHeader
-      show-create
-      create-title="Create Note"
-      @create="handleCreateClick"
-      show-search
-      :searchQuery="searchQuery"
-      @update:searchQuery="updateSearchQuery"
-      search-placeholder="Search notes..."
-    >
-      <template #search-filter>
-        <span v-if="noteStore.tagFilter" class="tag-chip">
-          #{{ noteStore.tagFilter }}
-          <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
-            <i class="si si-x"></i>
-          </button>
-        </span>
-      </template>
-    </ViewHeader>
-    <div class="view-list">
-      <div v-if="noteStore.filtered.length === 0" class="view-empty">
-        <p>No notes yet. Create your first note to get started!</p>
-      </div>
-
-      <div v-else class="view-grid">
-        <NoteCard
-          v-for="note in noteStore.filtered"
-          :key="note.id"
-          :note="note"
-          @view="() => router.push(`/notes/${note.id}`)"
-          @edit="() => handleEditClick(note)"
-          @delete="() => handleDelete(note)"
-          @tag-click="handleTagClick"
-          :module-name="undefined"
-        />
-      </div>
-
-      <NoteEditor
-        v-if="showEditor"
-        :note="editingNote"
-        :is-open="showEditor"
-        @submit="handleSubmit"
-        @cancel="handleCancel"
-      />
-    </div>
-  </div>
+  <BaseListView
+    :items="noteStore.filtered"
+    :card-component="NoteCard"
+    :editor-component="NoteEditor"
+    :empty-message="'No notes yet. Create your first note to get started!'"
+    create-title="Create Note"
+    :card-props="cardProps"
+    :editor-props="editorProps"
+    @delete="handleDelete"
+    @submit="handleSubmit"
+    @view="(note) => router.push(`/notes/${note.id}`)"
+    @tag-click="handleTagClick"
+    :show-search="true"
+    :search-query="searchQuery"
+    @update:searchQuery="updateSearchQuery"
+  >
+    <template #search-filter>
+      <span v-if="noteStore.tagFilter" class="tag-chip">
+        #{{ noteStore.tagFilter }}
+        <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
+          <i class="si si-x"></i>
+        </button>
+      </span>
+    </template>
+  </BaseListView>
 </template>
 
 <style scoped>

@@ -1,98 +1,66 @@
 <script setup lang="ts">
-import { ref, watchEffect, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
-import type { Party } from '@/types';
-import PartyEditor from '@/components/PartyEditor.vue';
+import BaseListView from '@/components/common/BaseListView.vue';
 import PartyCard from '@/components/PartyCard.vue';
-import Button from '@/components/common/Button.vue';
-import ViewHeader from '@/components/common/ViewHeader.vue';
+import PartyEditor from '@/components/PartyEditor.vue';
+import type { Party } from '@/types';
 
 const router = useRouter();
 const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
-const showEditor = ref(false);
-const editingParty = ref<Party | null>(null);
 
 onMounted(async () => {
   await partyStore.load();
 });
 
-const handleCreateClick = () => {
-  editingParty.value = null;
-  showEditor.value = true;
-};
-
-const handleEditClick = (party: Party) => {
-  editingParty.value = party;
-  showEditor.value = true;
-};
-
-const handleSave = async (party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>) => {
-  if (editingParty.value?.id) {
-    await partyStore.update(editingParty.value.id, party);
-  } else {
-    await partyStore.create(party);
-  }
-  showEditor.value = false;
-  editingParty.value = {
-    id: '',
-    name: '',
-    description: '',
-    characters: [],
-    notes: '',
-    moduleIds: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now()
+function cardProps(party: Party) {
+  return {
+    party,
+    onView: () => router.push(`/parties/${party.id}`),
+    onEdit: () => handleEdit(party),
+    onDelete: () => handleDelete(party)
   };
-};
+}
 
-const handleCancel = () => {
-  showEditor.value = false;
-};
+function editorProps(party: Party | null) {
+  return {
+    party,
+    isOpen: true
+  };
+}
 
-const deleteParty = async (party: Party) => {
+function handleEdit(party: Party) {
+  // handled by BaseListView
+}
+
+function handleDelete(party: Party) {
   if (confirm(`Are you sure you want to delete ${party.name}?`)) {
-    await partyStore.remove(party.id);
+    partyStore.remove(party.id);
   }
-};
+}
+
+function handleSubmit(party: Party) {
+  if (party.id) {
+    partyStore.update(party.id, party);
+  } else {
+    partyStore.create(party);
+  }
+}
 </script>
 
 <template>
-  <div class="view-root">
-    <ViewHeader
-      show-create
-      create-title="Create Party"
-      @create="handleCreateClick"
-    />
-    <div class="view-list">
-
-
-<div v-if="partyStore.filtered.length === 0" class="view-empty">
-  <p>No parties yet. Create your first party to get started!</p>
-</div>
-
-<div v-else class="view-grid">
-  <PartyCard
-    v-for="party in partyStore.filtered"
-    :key="party.id"
-    :party="party"
-    @view="() => router.push(`/parties/${party.id}`)"
-    @edit="() => { editingParty = party; showEditor = true; }"
-    @delete="deleteParty"
+  <BaseListView
+    :items="partyStore.filtered"
+    :card-component="PartyCard"
+    :editor-component="PartyEditor"
+    :empty-message="'No parties yet. Create your first party to get started!'"
+    create-title="Create Party"
+    :card-props="cardProps"
+    :editor-props="editorProps"
+    @delete="handleDelete"
+    @submit="handleSubmit"
+    @view="(party) => router.push(`/parties/${party.id}`)"
   />
-</div>
-
-<PartyEditor
-  v-if="showEditor"
-  :party="editingParty"
-  :is-open="showEditor"
-  @submit="handleSave"
-  @cancel="handleCancel"
-/>
-</div>
-  </div>
-  
 </template>
 
