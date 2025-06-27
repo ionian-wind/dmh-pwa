@@ -11,7 +11,6 @@ import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import { useConfigStore } from '@/utils/configStore';
 import Button from '@/components/common/Button.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import { useModuleStore } from '@/stores/modules';
 import {formatTime} from "./utils";
 
 const tracksStore = useJukeboxTracksStore();
@@ -411,10 +410,11 @@ onBeforeUnmount(() => {
           <p>No tracks to display. Add some tracks to get started!</p>
         </div>
       </div>
-      <div class="jukebox-player-fixed">
-        <JukeboxPlayer :animated-background="true" />
-      </div>
     </div>
+
+    <template #fixed-bottom>
+      <JukeboxPlayer :animated-background="true" />
+    </template>
 
     <PlaylistEditor
       v-model="isPlaylistModalOpen"
@@ -428,29 +428,13 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.jukebox-main-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  flex: 1;
-}
 .tracks-wrapper {
-  flex: 1 1 auto;
+  flex: 1 1 0%;
+  min-height: 0;
   overflow-y: auto;
   padding: 1rem;
-  min-height: 0;
 }
-.jukebox-player-fixed {
-  flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background: var(--color-background-soft);
-  border-top: 1px solid var(--color-border);
-}
+
 .view-root {
   height: calc(100vh - var(--header-height));
   overflow: hidden;
@@ -578,12 +562,12 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
-.jukebox-view {
-  flex: 1;
+.jukebox-main-content {
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .track-list {

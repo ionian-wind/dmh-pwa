@@ -492,7 +492,7 @@ watchEffect(() => {
   transform: scale(0.95);
 }
 .controls button:disabled, .volume-button:disabled {
-  color: var(--color-text-lightest);
+  color: var(--color-text-light);
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;
@@ -508,20 +508,11 @@ watchEffect(() => {
   min-height: 3rem;
 }
 
-
 .controls button.play-pause:hover:not(:disabled) {
   transform: scale(1.15);
 }
 
 .controls button.play-pause:active:not(:disabled) {
   transform: scale(0.9);
-}
-
-.jukebox-player .si {
-  color: var(--color-primary);
-}
-.jukebox-player .si:hover,
-.jukebox-player .si:active {
-  color: var(--color-primary-dark);
 }
 </style> 

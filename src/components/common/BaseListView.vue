@@ -76,31 +76,36 @@ function onCreate() {
       </template>
     </ViewHeader>
     <div class="base-list-layout">
-      <div class="view-list">
-        <div v-if="items.length === 0" class="view-empty">
-          <p>{{ emptyMessage }}</p>
-        </div>
-        <div v-else class="masonry-grid">
+      <div class="main-list-column">
+        <div class="view-list">
+          <div v-if="items.length === 0" class="view-empty">
+            <p>{{ emptyMessage }}</p>
+          </div>
+          <div v-else class="masonry-grid">
+            <component
+              v-for="item in items as any[]"
+              :is="cardComponent"
+              :key="item.id"
+              v-bind="cardProps(item)"
+              @view="$emit('view', item)"
+              @edit="() => { handleEdit(item); $emit('edit', item); }"
+              @delete="() => { handleDelete(item); $emit('delete', item); }"
+              @tag-click="$emit('tag-click', $event)"
+              @copy="$emit('copy', item)"
+            />
+          </div>
           <component
-            v-for="item in items as any[]"
-            :is="cardComponent"
-            :key="item.id"
-            v-bind="cardProps(item)"
-            @view="$emit('view', item)"
-            @edit="() => { handleEdit(item); $emit('edit', item); }"
-            @delete="() => { handleDelete(item); $emit('delete', item); }"
-            @tag-click="$emit('tag-click', $event)"
-            @copy="$emit('copy', item)"
+            v-if="showEditor"
+            :is="editorComponent"
+            v-bind="editorProps(editingItem)"
+            :is-open="showEditor"
+            @submit="(item: any) => { handleSubmit(item); $emit('submit', item); }"
+            @cancel="() => { handleCancel(); $emit('cancel'); }"
           />
         </div>
-        <component
-          v-if="showEditor"
-          :is="editorComponent"
-          v-bind="editorProps(editingItem)"
-          :is-open="showEditor"
-          @submit="(item: any) => { handleSubmit(item); $emit('submit', item); }"
-          @cancel="() => { handleCancel(); $emit('cancel'); }"
-        />
+        <div v-if="$slots['fixed-bottom']" class="list-fixed-bottom">
+          <slot name="fixed-bottom" />
+        </div>
       </div>
       <!-- Side Panel -->
       <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">

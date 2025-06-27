@@ -151,7 +151,6 @@ function handleClick(event: MouseEvent) {
 }
 
 .btn--light:hover:not(.btn--disabled) {
-  color: var(--primary-color, #4f46e5);
   background-color: rgba(79, 70, 229, 0.1);
   transform: scale(1.1);
 }

@@ -99,7 +99,13 @@ const navigateToJukebox = () => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background: var(--custom-gradient, linear-gradient(-45deg, var(--color-warning), var(--color-danger), var(--color-info), var(--color-success)));
+  background: var(--custom-gradient, linear-gradient(45deg,
+    rgba(79, 70, 229, 0.15) 0%,
+    rgba(147, 51, 234, 0.15) 25%,
+    rgba(236, 72, 153, 0.15) 50%,
+    rgba(59, 130, 246, 0.15) 75%,
+    rgba(34, 197, 94, 0.15) 100%
+  ));
   background-size: 400% 400%;
   
   opacity: 0; /* Hidden by default */

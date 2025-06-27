@@ -77,15 +77,17 @@ const toggleSidePanel = () => {
         </template>
       </ViewHeader>
       <div class="base-entity-layout">
-        <div class="base-entity-view">
-          <div class="entity-content">
-            <slot />
+        <div class="entity-main-column">
+          <div class="base-entity-view">
+            <div class="entity-content">
+              <slot />
+            </div>
+            <slot name="editor" />
           </div>
-
-          <!-- Editor Modal -->
-          <slot name="editor" />
+          <div v-if="$slots['fixed-bottom']" class="entity-fixed-bottom">
+            <slot name="fixed-bottom" />
+          </div>
         </div>
-
         <!-- Side Panel -->
         <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
           <div class="side-panel-toggle-handle" @click="toggleSidePanel">
