@@ -111,10 +111,6 @@ onMounted(async () => {
   padding: 1rem;
 }
 
-.content {
-  margin-top: 2rem;
-}
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

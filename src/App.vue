@@ -3,6 +3,7 @@ import {onMounted, onUnmounted, ref} from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import RollButton from '@/components/RollButton.vue'
+import RollModal from '@/components/RollModal.vue'
 import Button from '@/components/common/Button.vue'
 import JukeboxButton from '@/components/JukeboxButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
@@ -48,12 +49,12 @@ function navigateTo(path: string) {
 // Roll modal state for RollButton
 import { ref as vueRef } from 'vue'
 import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
-const rollModalOpen = vueRef(false)
+const rollModalRef = vueRef<InstanceType<typeof RollModal> | null>(null)
 function openRollModal() {
-  rollModalOpen.value = true
+  rollModalRef.value?.openModal()
 }
 function closeRollModal() {
-  rollModalOpen.value = false
+  // The modal will handle its own closing
 }
 
 // Jukebox open logic (assume JukeboxButton emits 'open' event or similar, or use a ref if needed)
@@ -136,10 +137,12 @@ onUnmounted(() => {
           <i class="ra ra-perspective-dice-one" />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.roll') }}</span>
         </Button>
-        <Button variant="primary" @click="openJukebox" :title="t('app.jukebox')">
+        <!-- <Button variant="primary" @click="openJukebox" :title="t('app.jukebox')">
           <i class="si si-music-note" />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
-        </Button>
+        </Button> -->
+
+        <JukeboxButton :left-menu-minimized="leftMenuMinimized" />
 
         <Button
           class="fullscreen-btn"
@@ -173,9 +176,9 @@ onUnmounted(() => {
       <RollButton class="fab-item" />
     </div-->
     <!-- Roll Modal (if needed) -->
-    <RollButton v-if="rollModalOpen" @close="closeRollModal" />
+    <RollModal ref="rollModalRef" @close="closeRollModal" />
     <!-- Jukebox Modal (if needed) -->
-    <JukeboxButton v-if="jukeboxOpen" @close="closeJukebox" />
+    <!-- <JukeboxButton v-if="jukeboxOpen" @close="closeJukebox" /> -->
     
     <!-- PWA Components -->
     <PWAInstallPrompt />
@@ -261,9 +264,5 @@ onUnmounted(() => {
   flex-direction: column;
   flex: 1 1 0%;
   min-height: 0;
-}
-
-.main-area.minimized {
-  /* No margin-left */
 }
 </style>

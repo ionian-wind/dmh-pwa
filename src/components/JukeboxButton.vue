@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import FloatActionButton from './common/FloatActionButton.vue';
+import { useI18n } from 'vue-i18n';
 import PopoverPanel from './common/PopoverPanel.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
 import Button from './common/Button.vue';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const isPopoverOpen = ref(false);
 const playerStore = useJukeboxPlayerStore();
 const hasAppeared = ref(false);
+
+// Props for left menu integration
+const props = defineProps<{
+  leftMenuMinimized?: boolean;
+}>();
 
 onMounted(() => {
   // After the initial entrance animation of the FAB, mark it as appeared.
@@ -26,13 +32,14 @@ const isOnJukeboxPage = computed(() => {
   return route.path === '/jukebox';
 });
 
-const fabClasses = computed(() => ({
-  'jukebox-button--playing': playerStore.isPlaying,
-  'no-entrance-animation': hasAppeared.value,
-}));
-
 const handleClick = () => {
-  isPopoverOpen.value = !isPopoverOpen.value;
+  if (isOnJukeboxPage.value) {
+    // If we're already on the jukebox page, just navigate to it (refresh)
+    router.push('/jukebox');
+  } else {
+    // If we're on another page, toggle the popover
+    isPopoverOpen.value = !isPopoverOpen.value;
+  }
 };
 
 // Use the animated gradient composable
@@ -57,16 +64,15 @@ const navigateToJukebox = () => {
     :disable-internal-trigger="true"
   >
     <template #trigger>
-      <FloatActionButton
-        size="medium"
-        variant="secondary"
-        @click.stop="handleClick"
-        title="Jukebox"
-        :class="fabClasses"
-        :style="gradientStyle"
+      <Button 
+        variant="primary" 
+        @click.stop="handleClick" 
+        :title="t('app.jukebox')"
+        :class="['menu-item', { active: isOnJukeboxPage }]"
       >
-        <i class="si si-music-note" />
-      </FloatActionButton>
+        <i class="si si-music-note menu-icon" />
+        <span v-if="!props.leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
+      </Button>
     </template>
     <template #corner-right>
       <Button 
@@ -82,92 +88,21 @@ const navigateToJukebox = () => {
       <JukeboxPlayer :show-artwork="true" />
     </div>
   </PopoverPanel>
+  
+  <!-- Show just the button when on jukebox page -->
+  <Button 
+    v-else
+    variant="primary" 
+    @click="handleClick" 
+    :title="t('app.jukebox')"
+    :class="['menu-item', { active: isOnJukeboxPage }]"
+  >
+    <i class="si si-music-note menu-icon" />
+    <span v-if="!props.leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
+  </Button>
 </template>
 
 <style scoped>
-/*
-  The FAB has its own background color from the 'variant' prop.
-  We create a pseudo-element on top of it to hold the animated gradient.
-  We transition the opacity of this pseudo-element for a smooth fade-in/fade-out
-  effect, preventing the "white blink" when the player state changes.
-*/
-:deep(.float-action-button::before) {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 50%;
-  background: var(--custom-gradient, linear-gradient(45deg,
-    rgba(79, 70, 229, 0.15) 0%,
-    rgba(147, 51, 234, 0.15) 25%,
-    rgba(236, 72, 153, 0.15) 50%,
-    rgba(59, 130, 246, 0.15) 75%,
-    rgba(34, 197, 94, 0.15) 100%
-  ));
-  background-size: 400% 400%;
-  
-  opacity: 0; /* Hidden by default */
-  transition: opacity 0.4s ease-in-out; /* Smooth fade */
-  
-  /* The gradient animation is paused by default */
-  animation: gradientShift 3s ease infinite;
-  animation-play-state: paused;
-}
-
-/* When the 'jukebox-button--playing' class is active, fade in the gradient
-   and start its animation. */
-:deep(.float-action-button.jukebox-button--playing::before) {
-  opacity: 1;
-  animation-play-state: running;
-}
-
-/* Also give it a more pronounced hover effect when playing */
-:deep(.float-action-button.jukebox-button--playing:hover) {
-  transform: scale(1.1) translateZ(0);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-}
-
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Still need this to prevent the entrance animation from re-triggering */
-:deep(.float-action-button.no-entrance-animation) {
-  animation: none;
-}
-
-.jukebox-nav-button {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  color: var(--color-text-light);
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
-  min-height: 1.5rem;
-}
-
-.jukebox-nav-button:hover {
-  color: var(--color-primary);
-  background-color: rgba(30, 30, 46, 0.1); /* Use var(--color-primary) with alpha if possible */
-  transform: scale(1.1);
-}
-
 .jukebox-popover-content {
   position: relative;
 }
