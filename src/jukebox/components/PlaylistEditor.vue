@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, defineEmits, type Ref, computed } from 'vue';
+import {ref, watch, defineEmits, type Ref, computed, onMounted} from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
@@ -44,6 +44,18 @@ watch(() => props.playlist, (newPlaylist) => {
   }
 }, { immediate: true });
 
+// Reset form when modal opens for new playlist
+watch(() => props.modelValue, (isOpen) => {
+  if (isOpen && !props.playlist) {
+    editablePlaylist.value = { 
+      name: '', 
+      description: '', 
+      trackIds: [],
+      moduleIds: []
+    };
+  }
+});
+
 const moduleIdsProxy = computed<string[]>({
   get() {
     return editablePlaylist.value.moduleIds ?? [];
@@ -52,6 +64,8 @@ const moduleIdsProxy = computed<string[]>({
     editablePlaylist.value.moduleIds = val;
   }
 });
+
+onMounted(() => moduleStore.load());
 
 async function save() {
   if (props.playlist && props.playlist.id) {

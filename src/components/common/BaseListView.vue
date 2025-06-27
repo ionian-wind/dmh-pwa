@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, defineProps, defineEmits, watch } from 'vue';
 import ViewHeader from './ViewHeader.vue';
+import VueDraggable from 'vuedraggable';
 
 const props = defineProps({
   items: { type: Array, required: true },
@@ -15,17 +16,23 @@ const props = defineProps({
   editorProps: { type: Function, default: (item: any) => ({}) },
   sidePanelVisible: { type: Boolean, default: false },
   viewStyle: { type: String, default: 'masonry' },
+  draggable: { type: Boolean, default: false },
 });
 
 const showEditor = ref(false);
 const editingItem = ref<any>(null);
 const isSidePanelVisible = ref(props.sidePanelVisible);
+const localItems = ref([...props.items]);
 
-watch(() => props.sidePanelVisible, (val) => {
-  isSidePanelVisible.value = val;
+watch(() => props.items, (val) => {
+  localItems.value = [...val];
 });
 
-const emit = defineEmits(['create', 'edit', 'delete', 'submit', 'cancel', 'update:searchQuery', 'view', 'tag-click', 'copy', 'update:sidePanelVisible']);
+const emit = defineEmits(['create', 'edit', 'delete', 'submit', 'cancel', 'update:searchQuery', 'view', 'tag-click', 'copy', 'update:sidePanelVisible', 'sort']);
+
+function handleSortEnd() {
+  emit('sort', localItems.value);
+}
 
 function handleCreate() {
   editingItem.value = null;
@@ -59,6 +66,11 @@ function onCreate() {
   handleCreate();
   emit('create');
 }
+
+const cardPropsWithDraggable = (item) => {
+  const base = props.cardProps(item);
+  return { ...base, draggable: props.draggable };
+};
 </script>
 
 <template>
@@ -83,32 +95,47 @@ function onCreate() {
             <p>{{ emptyMessage }}</p>
           </div>
           <div v-else>
-            <div v-if="viewStyle === 'masonry'" class="masonry-grid">
-              <component
-                v-for="item in items as any[]"
-                :is="cardComponent"
-                :key="item.id"
-                v-bind="cardProps(item)"
-                @view="$emit('view', item)"
-                @edit="() => { handleEdit(item); $emit('edit', item); }"
-                @delete="() => { handleDelete(item); $emit('delete', item); }"
-                @tag-click="$emit('tag-click', $event)"
-                @copy="$emit('copy', item)"
-              />
+            <VueDraggable
+              v-if="draggable"
+              :key="'draggable'"
+              v-model="localItems"
+              item-key="id"
+              @end="handleSortEnd"
+              tag="ul"
+              class="simple-list"
+            >
+              <template #item="{ element: item }">
+                <component :is="cardComponent" v-bind="cardPropsWithDraggable(item)" />
+              </template>
+            </VueDraggable>
+            <div v-else>
+              <div v-if="viewStyle === 'masonry'" class="masonry-grid">
+                <component
+                  v-for="item in items as any[]"
+                  :is="cardComponent"
+                  :key="item.id"
+                  v-bind="cardPropsWithDraggable(item)"
+                  @view="$emit('view', item)"
+                  @edit="() => { handleEdit(item); $emit('edit', item); }"
+                  @delete="() => { handleDelete(item); $emit('delete', item); }"
+                  @tag-click="$emit('tag-click', $event)"
+                  @copy="$emit('copy', item)"
+                />
+              </div>
+              <ul v-else :key="'static'" class="simple-list">
+                <component
+                  v-for="item in items as any[]"
+                  :is="cardComponent"
+                  :key="item.id"
+                  v-bind="cardPropsWithDraggable(item)"
+                  @view="$emit('view', item)"
+                  @edit="() => { handleEdit(item); $emit('edit', item); }"
+                  @delete="() => { handleDelete(item); $emit('delete', item); }"
+                  @tag-click="$emit('tag-click', $event)"
+                  @copy="$emit('copy', item)"
+                />
+              </ul>
             </div>
-            <ul v-else class="simple-list">
-              <component
-                v-for="item in items as any[]"
-                :is="cardComponent"
-                :key="item.id"
-                v-bind="cardProps(item)"
-                @view="$emit('view', item)"
-                @edit="() => { handleEdit(item); $emit('edit', item); }"
-                @delete="() => { handleDelete(item); $emit('delete', item); }"
-                @tag-click="$emit('tag-click', $event)"
-                @copy="$emit('copy', item)"
-              />
-            </ul>
           </div>
           <component
             v-if="showEditor && editorComponent"
@@ -140,11 +167,13 @@ function onCreate() {
 <style scoped>
 .simple-list {
   list-style: none;
-  padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
+  max-width: 1200px;
+  margin: auto;
+  padding: var(--base-padding);
 }
 </style>
 

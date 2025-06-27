@@ -7,12 +7,12 @@ import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
-import TrackCard from '@/components/TrackCard.vue';
+import TrackCard from '@/jukebox/components/TrackCard.vue';
 import BaseListView from '@/components/common/BaseListView.vue';
 import Button from '@/components/common/Button.vue';
 import { useConfigStore } from '@/utils/configStore';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
-import {formatTime} from "./utils";
+
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -30,19 +30,16 @@ const filteredPlaylists = computed(() => {
 });
 
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
-const selectedPlaylistId = ref<string | null>(configStore.activePlaylistId ?? null);
+const selectedPlaylistId = ref<string | null>(configStore.activePlaylistId?.value ?? null);
 
-const selectedPlaylistIdValue = computed(() =>
-  selectedPlaylistId && typeof selectedPlaylistId === 'object' && 'value' in selectedPlaylistId
-    ? selectedPlaylistId.value
-    : null
-);
+const selectedPlaylistIdValue = computed(() => selectedPlaylistId.value);
 
 watch(filteredPlaylists, (newPlaylists) => {
   updateSortedPlaylists(newPlaylists, selectedPlaylistId.value);
 }, { immediate: true, deep: true });
 
 watch(selectedPlaylistId, (currentPlaylistId) => {
+  console.log('selectedPlaylistIdValue:', currentPlaylistId);
   updateSortedPlaylists(filteredPlaylists.value, currentPlaylistId);
 }, { immediate: true });
 
@@ -81,18 +78,22 @@ function openAddToPlaylistModal(track: JukeboxTrack) {
 }
 
 function setActivePlaylist(playlistId: string | null) {
-  selectedPlaylistId.value = playlistId;
+  selectedPlaylistId.value = playlistId ?? null;
 }
 
 function playTrackFromPlaylist(track: JukeboxTrack) {
-  configStore.activePlaylistId = selectedPlaylistId.value;
+  if (configStore.activePlaylistId) {
+    configStore.activePlaylistId.value = selectedPlaylistId.value;
+  }
   playerStore.playTrack(track);
 }
 
 async function removePlaylist(playlistId: string) {
   if (selectedPlaylistId.value === playlistId) {
     selectedPlaylistId.value = null;
-    configStore.activePlaylistId = null;
+  }
+  if (configStore.activePlaylistId && configStore.activePlaylistId.value === playlistId) {
+    configStore.activePlaylistId.value = null;
   }
   await playlistsStore.remove(playlistId);
 }
@@ -144,8 +145,8 @@ const filteredTracks = computed(() => {
 
 const draggableTracks = ref<JukeboxTrack[]>([]);
 watch(filteredTracks, (newTracks) => {
-  if (configStore.activePlaylistId === selectedPlaylistId.value) {
-    playerStore.setQueue(newTracks, configStore.activePlaylistId);
+  if ((configStore.activePlaylistId ? configStore.activePlaylistId.value : null) === selectedPlaylistId.value) {
+    playerStore.setQueue(newTracks, (configStore.activePlaylistId ? configStore.activePlaylistId.value : null));
   }
   draggableTracks.value = [...newTracks];
 }, { immediate: true, deep: true });
@@ -219,21 +220,10 @@ function onPlaylistSortEnd(event: any) {
   });
 }
 
-function onTrackSortEnd(_event: any) {
-  if (!selectedPlaylistId.value) return;
-  const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
-  if (!playlist) return;
-  const newTrackIds = draggableTracks.value.map(t => t.id);
-  playlistsStore.update(playlist.id, { ...playlist, trackIds: newTrackIds });
-  if (configStore.activePlaylistId === selectedPlaylistId.value) {
-    playerStore.setQueue(draggableTracks.value, selectedPlaylistId.value);
-  }
-}
-
 const trackIsActive = (track: JukeboxTrack): boolean => 
   Boolean(playerStore.currentTrack && 
   playerStore.currentTrack.id === track.id && 
-  configStore.activePlaylistId === selectedPlaylistId.value);
+  (configStore.activePlaylistId ? configStore.activePlaylistId.value : null) === selectedPlaylistId.value);
 
 const trackClick = (track: JukeboxTrack) => trackIsActive(track) ? playerStore.togglePlay() : playTrackFromPlaylist(track);
 
@@ -243,8 +233,8 @@ onMounted(async () => {
     playlistsStore.load(),
     filesStore.load(),
   ]);
-  if (configStore.activePlaylistId !== undefined) {
-    selectedPlaylistId.value = configStore.activePlaylistId;
+  if (configStore.activePlaylistId && typeof configStore.activePlaylistId.value !== 'undefined') {
+    selectedPlaylistId.value = configStore.activePlaylistId.value;
   }
   playerStore.setQueue(filteredTracks.value, selectedPlaylistId.value);
 });
@@ -263,119 +253,82 @@ function cardProps(track: JukeboxTrack) {
     onPlay: () => trackClick(track),
   };
 }
+
+function onTracksSorted(newOrder: JukeboxTrack[]) {
+  if (!selectedPlaylistId.value) return;
+  const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
+  if (!playlist) return;
+  const newTrackIds = newOrder.map(t => t.id);
+  playlistsStore.update(playlist.id, { ...playlist, trackIds: newTrackIds });
+  if ((configStore.activePlaylistId ? configStore.activePlaylistId.value : null) === selectedPlaylistId.value) {
+    playerStore.setQueue(draggableTracks.value, selectedPlaylistId.value);
+  }
+}
 </script>
 
 <template>
-  <div class="jukebox-view-root">
-    <BaseListView
-      :items="filteredTracks"
-      :card-component="TrackCard"
-      :empty-message="'No tracks to display. Add some tracks to get started!'"
-      create-title="Add Tracks"
-      :card-props="cardProps"
-      :show-search="false"
-      :view-style="'list'"
-    >
-      <template #actions>
-        <Button @click="pickFiles" variant="primary" title="Add Tracks">
-          <i class="si si-plus"></i>
-        </Button>
-      </template>
-      <template #sidepanel>
-        <div class="playlist-sidebar">
-          <div class="sidebar-header">
-            <h3>Playlists</h3>
-            <Button @click="openPlaylistModal(null)" variant="light"><i class="si si-plus"></i></Button>
-          </div>
-          <div class="all-tracks-section">
-            <Button 
-              @click="setActivePlaylist(null)"
-              :class="{ active: selectedPlaylistIdValue === null }"
-              variant="primary"
-              class="all-tracks-button"
-            >
-              All Tracks
-            </Button>
-          </div>
-          <div class="playlist-container">
-            <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
-              <template #item="{ element: playlist }">
-                <li
-                  @click="setActivePlaylist(playlist.id)"
-                  :class="{ active: selectedPlaylistIdValue === playlist.id }"
-                  class="playlist-item"
-                >
-                  <span class="playlist-name">{{ playlist.name }}</span>
-                  <div class="playlist-actions">
-                    <Button @click.stop="openPlaylistModal(playlist)" variant="light"><i class="si si-pencil"></i></Button>
-                    <Button @click.stop="removePlaylist(playlist.id)" variant="light"><i class="si si-x"></i></Button>
-                  </div>
-                </li>
-              </template>
-            </draggable>
-          </div>
+  <BaseListView
+    :items="filteredTracks"
+    :card-component="TrackCard"
+    :empty-message="'No tracks to display. Add some tracks to get started!'"
+    create-title="Add Tracks"
+    :card-props="cardProps"
+    :show-search="false"
+    :view-style="'list'"
+    @create="pickFiles"
+    :draggable="selectedPlaylistIdValue !== null"
+    @sort="onTracksSorted"
+  >
+    <template #sidepanel>
+      <div class="playlist-sidebar">
+        <div class="sidebar-header">
+          <h3>Playlists</h3>
+          <Button @click="openPlaylistModal(null)" variant="light"><i class="si si-plus"></i></Button>
         </div>
-      </template>
-      <template #fixed-bottom>
-        <JukeboxPlayer :animated-background="true" />
-      </template>
-    </BaseListView>
-    <PlaylistEditor
-      v-model="isPlaylistModalOpen"
-      :playlist="playlistToEdit"
-    />
-    <AddToPlaylistModal
-      v-model="isAddToPlaylistModalOpen"
-      :track="trackToAddToPlaylist"
-    />
-  </div>
+        <div class="all-tracks-section">
+          <Button 
+            @click="setActivePlaylist(null)"
+            :class="{ active: selectedPlaylistIdValue === null }"
+            variant="primary"
+            class="all-tracks-button"
+          >
+            All Tracks
+          </Button>
+        </div>
+        <div class="playlist-container">
+          <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
+            <template #item="{ element: playlist }">
+              <li
+                @click="setActivePlaylist(playlist.id)"
+                :class="{ active: selectedPlaylistIdValue === playlist.id }"
+                class="playlist-item"
+              >
+                <span class="playlist-name">{{ playlist.name }}</span>
+                <div class="playlist-actions">
+                  <Button @click.stop="openPlaylistModal(playlist)" variant="light"><i class="si si-pencil"></i></Button>
+                  <Button @click.stop="removePlaylist(playlist.id)" variant="light"><i class="si si-x"></i></Button>
+                </div>
+              </li>
+            </template>
+          </draggable>
+        </div>
+      </div>
+    </template>
+    <template #fixed-bottom>
+      <JukeboxPlayer :animated-background="true" />
+      <PlaylistEditor
+        v-model="isPlaylistModalOpen"
+        :playlist="playlistToEdit"
+      />
+      <AddToPlaylistModal
+        v-model="isAddToPlaylistModalOpen"
+        :track="trackToAddToPlaylist"
+      />
+    </template>
+  </BaseListView>
 </template>
 
 <style scoped>
-.tracks-wrapper {
-  flex: 1 1 0%;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.view-root {
-  height: calc(100vh - var(--header-height));
-  overflow: hidden;
-}
-
-.jukebox-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.jukebox-layout {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.sidebar-wrapper {
-  display: flex;
-  width: calc(250px + 16px);
-  flex-shrink: 0;
-  transition: width 0.3s ease;
-}
-
-.sidebar-wrapper.collapsed {
-  width: 16px;
-}
-
-.playlist-sidebar {
-  overflow: hidden;
-}
-
 .sidebar-header {
   display: flex;
   justify-content: space-between;
@@ -385,13 +338,6 @@ function cardProps(track: JukeboxTrack) {
 
 .sidebar-header h3 {
   margin: 0;
-}
-
-.btn-create-playlist {
-  width: 32px;
-  height: 32px;
-  font-size: 1.5rem;
-  line-height: 1;
 }
 
 .all-tracks-section {
@@ -434,7 +380,7 @@ function cardProps(track: JukeboxTrack) {
 }
 
 .playlist-item:hover {
-  background-color: var(--color-border-light);
+  background-color: var(--color-border);
 }
 
 .playlist-list .sortable-ghost {
@@ -464,162 +410,6 @@ function cardProps(track: JukeboxTrack) {
 
 .playlist-item:hover .playlist-actions {
   opacity: 1;
-}
-
-.jukebox-main-content {
-  flex: 1 1 0%;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.track-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.track-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-light);
-  position: relative;
-  overflow: hidden;
-}
-
-.track-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--track-color, transparent);
-  transition: width 0.2s;
-}
-
-.track-item:hover::before {
-  width: 8px;
-}
-
-.track-item:hover {
-  transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
-}
-
-.track-item.is-selected {
-  background: var(--color-info-light);
-}
-
-.track-item.is-selected::before {
-  width: 8px;
-}
-
-.track-artwork {
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-  background-size: cover;
-  background-position: center;
-  margin-right: 1rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-lighter);
-  font-size: 24px;
-}
-
-.track-artwork-placeholder {
-  background-color: var(--color-background-mute);
-}
-
-.track-info {
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.track-title {
-  font-weight: 500;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.track-artist {
-  font-size: 0.9em;
-  color: var(--color-text-light);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.track-actions {
-  gap: 0.5rem;
-  margin-left: 1rem;
-  opacity: 0;
-  display: none;
-}
-
-.track-item:hover .track-actions {
-  display: flex;
-  opacity: 1;
-}
-
-.no-tracks {
-  text-align: center;
-  padding: 2rem;
-  color: var(--color-text-light);;
-}
-
-.no-tracks p {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.jukebox-container .jukebox-player {
-  padding: 1em;
-  background: var(--color-background-soft);
-  border-top: 1px solid var(--color-border);
-  min-width: 600px;
-  position: relative;
-}
-
-.playlist-toggle-handle {
-  width: 16px;
-  height: 100%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-
-  background: linear-gradient(90deg, var(--color-background-soft) 0%, var(--color-background-mute) 100%);
-  border-right: 1px solid var(--color-border-dark);
-}
-
-.track-item .si-play, .track-item .si-pause {
-  display: none;
-}
-
-.track-item:hover .si-music-note {
-  display: none;
-}
-
-.track-item:not(.is-playing):hover .si-play {
-  display: inline-flex;
-}
-
-.track-item.is-playing:hover .si-pause {
-  display: inline-flex;
 }
 
 </style> 

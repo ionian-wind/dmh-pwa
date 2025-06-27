@@ -108,7 +108,6 @@ async function handleCopy(note: Note) {
         </button>
       </span>
     </template>
-    <template #sidepanel>123</template>
   </BaseListView>
 </template>
 

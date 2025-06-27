@@ -244,16 +244,25 @@ onUnmounted(() => {
 .mb-4 { margin-bottom: 2rem; }
 
 .app.layout-flex {
+  min-height: 100vh;
   display: flex;
   flex-direction: row;
-  min-height: 100vh;
 }
 
 .main-area {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 0%;
-  min-width: 0;
-  transition: none;
+  min-height: 0;
 }
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
 .main-area.minimized {
   /* No margin-left */
 }

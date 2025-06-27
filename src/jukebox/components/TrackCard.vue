@@ -1,12 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 import Button from '@/components/common/Button.vue';
 import type { JukeboxTrack } from '@/jukebox/types';
-import { computed } from 'vue';
+
+import { formatTime } from "../utils";
+import { usePictureUrlCacheStore } from '@/jukebox/stores';
 
 const props = defineProps<{
   track: JukeboxTrack;
   isSelected?: boolean;
   isPlaying?: boolean;
+  draggable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -20,6 +25,14 @@ const handleRemove = () => emit('remove', props.track);
 const handlePlay = () => emit('play', props.track);
 
 const trackColor = computed(() => props.track.color || 'transparent');
+const pictureUrlCacheStore = usePictureUrlCacheStore();
+
+const albumArtStyle = computed(() => {
+  if (props.track.picture) {
+    return pictureUrlCacheStore.getPictureStyle(props.track.picture);
+  }
+  return {};
+});
 </script>
 <template>
   <li
@@ -27,21 +40,17 @@ const trackColor = computed(() => props.track.color || 'transparent');
     :class="{ 'is-selected': isSelected, 'is-playing': isPlaying }"
     :style="{ '--track-color': trackColor }"
     @click="handlePlay"
+    v-bind="draggable ? { 'data-draggable': true } : {}"
   >
-    <div v-if="track.picture" :style="{ backgroundImage: `url(${track.picture})` }" class="track-artwork">
-      <i class="si si-play"></i>
-      <i class="si si-pause"></i>
-    </div>
+    <div v-if="track.picture" :style="albumArtStyle" class="track-artwork"></div>
     <div v-else class="track-artwork track-artwork-placeholder">
       <i class="si si-music-note"></i>
-      <i class="si si-play"></i>
-      <i class="si si-pause"></i>
     </div>
     <div class="track-info">
       <span class="track-title">{{ track.title }}</span>
       <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
     </div>
-    <div class="track-duration">{{ track.duration ? Math.floor(track.duration / 60) + ':' + String(Math.floor(track.duration % 60)).padStart(2, '0') : '' }}</div>
+    <div class="track-duration">{{ track.duration ? formatTime(track.duration) : '' }}</div>
     <div class="track-actions">
       <Button variant="light" @click.stop="handleAddToPlaylist"><i class="si si-plus"></i></Button>
       <Button variant="light" @click.stop="handleRemove"><i class="si si-x"></i></Button>
@@ -127,5 +136,9 @@ const trackColor = computed(() => props.track.color || 'transparent');
   margin-left: 1rem;
   display: flex;
   align-items: center;
+}
+
+.track-item.is-selected {
+  background-color: var(--color-info-light);
 }
 </style> 

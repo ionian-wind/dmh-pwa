@@ -75,7 +75,8 @@ async function handleCopy(encounter: Encounter) {
 </script>
 
 <template>
-  <BaseListView
+  <div>
+    <BaseListView
     :items="encounterStore.filtered"
     :card-component="EncounterCard"
     :editor-component="EncounterEditor"
@@ -95,4 +96,5 @@ async function handleCopy(encounter: Encounter) {
     @cancel="handlePartySelectorCancel"
     @combat-created="handleCombatCreated"
   />
+  </div>
 </template>

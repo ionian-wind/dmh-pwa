@@ -1,21 +1,21 @@
 :root {
   /* Colors */
-  --color-primary: #1e1e2e;
-  --color-primary-dark: #2d2d44;
+  --color-primary: rgba(30, 30, 46);
+  --color-primary-dark: rgba(45, 45, 68);
+  --color-primary-light: #d7d7d7;
   --color-secondary: #2c3e50;
   --color-danger-light: #ffebee;
   --color-danger: #f44336;
   --color-danger-dark: #d32f2f;
   --color-success-light: #e8f5e9;
   --color-success: #4caf50;
-  --color-success-dark: #2e7d32;
+  --color-success-dark: #388e3c;
   --color-info-light: #e3f2fd;
   --color-info: #2196f3;
   --color-info-dark: #1976d2;
   --color-warning-light: #fff3e0;
   --color-warning: #ff9800;
   --color-warning-dark: #f57c00;
-  --color-primary-light: #f3e5f5;
 
   /* Text Colors */
   --color-text: #333;
@@ -94,6 +94,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html, body, #app, .app, .main-area, .main-content {
+  height: 100%;
+  min-height: 0;
 }
 
 html {
@@ -486,7 +491,8 @@ select {
 .view-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  flex: 1 1 0%;
+  min-height: 0;
   overflow: hidden;
 }
 
