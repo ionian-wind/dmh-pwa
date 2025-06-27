@@ -73,7 +73,7 @@ onUnmounted(() => {
 
       </nav>
       <div class="header-right">
-        <GlobalMenu />
+        <!-- <GlobalMenu /> -->
       </div>
     </div>
   </header>

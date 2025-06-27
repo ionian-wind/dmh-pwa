@@ -1,14 +1,20 @@
-// Service Worker for D&D Notes Manager PWA
-const CACHE_NAME = 'dnd-notes-v1';
-const STATIC_CACHE = 'dnd-notes-static-v1';
-const DYNAMIC_CACHE = 'dnd-notes-dynamic-v1';
+const VERSION = 6;
+const CACHE_NAME = `dnd-notes-v${VERSION}`;
+const STATIC_CACHE = `dnd-notes-static-v${VERSION}`;
+const DYNAMIC_CACHE = `dnd-notes-dynamic-v${VERSION}`;
 
 // Files to cache immediately
 const STATIC_FILES = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icon-72.png',
+  '/icon-96.png',
+  '/icon-128.png',
+  '/icon-144.png',
+  '/icon-152.png',
   '/icon-192.png',
+  '/icon-384.png',
   '/icon-512.png'
 ];
 

@@ -1,6 +1,6 @@
 {
-  "name": "D&D Session Notes Manager",
-  "short_name": "D&D Notes",
+  "name": "Owlbear's Dungeon Master Helper",
+  "short_name": "Owlbear's DMH",
   "description": "Advanced note manager for D&D sessions with character management, encounter tracking, and campaign organization",
   "start_url": "/",
   "display": "standalone",

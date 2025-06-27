@@ -166,8 +166,8 @@ button {
 /* Common button styles */
 .btn {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  /* align-items: center;
+  justify-content: center; */
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--border-radius-sm);
   font-weight: 500;
@@ -764,4 +764,38 @@ select {
 
 ul:has(.task-list-label) li::marker {
     content: none;
+}
+
+
+.menu-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  flex: 1;
+}
+.menu-item {
+  display: flex;
+  gap: 1rem;
+  background: none;
+  border: none;
+  color: var(--color-text-inverse);
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.menu-item.active {
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+}
+.menu-item:hover {
+  background: var(--color-primary-dark);
+}
+.menu-icon {
+  font-size: 1.4em;
+}
+.menu-label {
+  white-space: nowrap;
 }

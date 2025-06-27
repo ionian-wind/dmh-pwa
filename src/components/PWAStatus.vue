@@ -53,7 +53,7 @@ onMounted(() => {
     <div v-if="showUpdatePrompt" class="pwa-update-prompt">
       <div class="pwa-update-content">
         <div class="pwa-update-icon">
-          <i class="si si-refresh"></i>
+          <i class="si si-gift"></i>
         </div>
         <div class="pwa-update-text">
           <h3>Update Available</h3>

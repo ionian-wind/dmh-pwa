@@ -63,7 +63,7 @@ onMounted(() => {
         <img src="/icon-192.png" alt="D&D Notes" />
       </div>
       <div class="pwa-install-text">
-        <h3>Install D&D Notes Manager</h3>
+        <h3>Install Owlbear's Dungeon Master Helper</h3>
         <p>Add this app to your home screen for quick access and offline use.</p>
       </div>
       <div class="pwa-install-actions">
