@@ -12,7 +12,7 @@ vi.mock('@/components/NoteEditor.vue', () => ({}));
 
 // Mock stores
 vi.mock('@/stores/notes', () => ({ useNoteStore: () => ({ create: vi.fn(), update: vi.fn(), remove: vi.fn(), load: vi.fn() }) }));
-vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ items: [], currentModuleFilter: 'any', load: vi.fn() }) }));
+vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ items: [], load: vi.fn() }) }));
 vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({ load: vi.fn() }) }));
 vi.mock('@/stores/monsters', () => ({ useMonsterStore: () => ({ load: vi.fn() }) }));
 vi.mock('@/stores/encounters', () => ({ useEncounterStore: () => ({ load: vi.fn() }) }));

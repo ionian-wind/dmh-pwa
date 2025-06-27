@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useConfigStore } from '@/utils/configStore';
+import { storeToRefs } from 'pinia';
 
 const { locale } = useI18n();
+const configStore = useConfigStore();
+const { savedLanguage } = storeToRefs(configStore);
 
 const currentLocale = computed(() => locale.value);
 
 const changeLanguage = (event: Event) => {
   const target = event.target as HTMLSelectElement;
   locale.value = target.value;
-  localStorage.setItem('dnd-language', target.value);
+  savedLanguage.value = target.value;
 };
 </script>
 

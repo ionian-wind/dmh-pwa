@@ -22,14 +22,6 @@ const moduleOptions = computed(() => [
   ...moduleStore.items.map(({ id, name }) => ({ id, name, value: id }))
 ]);
 
-// Use configStore to track current module filter
-const currentModuleFilter = computed({
-  get: () => configStore.currentModuleFilter?.value || 'none',
-  set: (value: string) => {
-    configStore.currentModuleFilter.value = value;
-  }
-});
-
 const navigateTo = (path: string) => {
   router.push(path);
 };
@@ -52,25 +44,6 @@ const isActive = (item: { section: Section, path: string }) => {
 
 <template>
   <nav class="global-menu">
-    <div class="module-selector-row">
-      <div class="module-selector">
-        <select v-model="currentModuleFilter">
-          <option v-for="module in moduleOptions" :key="module.id" :value="module.value">
-            {{ module.name }}
-          </option>
-        </select>
-      </div>
-      <Button 
-        variant="danger"
-        size="small"
-        class="clear-module-btn"
-        @click="currentModuleFilter = 'none'"
-        v-if="currentModuleFilter !== 'none'"
-        :title="t('app.clear')"
-      >
-        <i class="si si-x"></i>
-      </Button>
-    </div>
     <div class="menu-items">
       <Button
         v-for="item in sections"

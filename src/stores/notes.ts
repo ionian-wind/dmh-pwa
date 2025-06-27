@@ -5,13 +5,11 @@ import { useStore } from '@/utils/storage';
 import noteSchema from "@/schemas/note.schema.json";
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import { useMentionsStore } from '@/utils/storage';
-import { useModuleStore } from '@/stores/modules';
 
 export const useNoteStore = defineStore('notes', () => {
   const base = useStore<Note>({ storeName: 'notes', validationSchema: noteSchema });
-  const currentId = ref<string | null>(null);
   const searchQuery = ref('');
-  const moduleStore = useModuleStore();
+  const tagFilter = ref<string | null>(null);
   const indexation = useMentionsStore();
   
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
@@ -34,7 +32,6 @@ export const useNoteStore = defineStore('notes', () => {
 
   async function remove(id: string) {
     await base.remove(id);
-    if (currentId.value === id) currentId.value = null;
     // Indexation
     const from = { kind: 'note', id };
     await indexation.clearLinks(from);
@@ -42,6 +39,12 @@ export const useNoteStore = defineStore('notes', () => {
 
   const filtered = computed(() => {
     let result = base.items.value;
+    
+    // Tag filter
+    if (tagFilter.value) {
+      result = result.filter(note => note.tags.includes(tagFilter.value!));
+    }
+    // Search filter
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
       result = result.filter(note =>
@@ -50,8 +53,6 @@ export const useNoteStore = defineStore('notes', () => {
         note.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
-    // Module filter
-    result = result.filter(note => moduleStore.matchesModuleFilter(note.moduleId || null));
     return result;
   });
 
@@ -66,17 +67,17 @@ export const useNoteStore = defineStore('notes', () => {
   return {
     ...base,
     filtered,
-    currentId,
     getById: base.getById,
     create,
     update,
     remove,
-    setCurrentId: (id: string | null) => { currentId.value = id; },
-    clearCurrent: () => { currentId.value = null; },
     setFilter: (query: string) => { searchQuery.value = query; },
     clearFilter: () => { searchQuery.value = ''; },
     setSearchQuery: (query: string) => { searchQuery.value = query; },
+    setTagFilter: (tag: string | null) => { tagFilter.value = tag; },
+    clearTagFilter: () => { tagFilter.value = null; },
     allTags,
     searchQuery,
+    tagFilter,
   };
 });

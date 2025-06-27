@@ -9,15 +9,10 @@ import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
 import { setupAnchorScrollHandler } from './utils/anchorScroll'
+import { useConfigStore } from './utils/configStore'
 
 // Import global styles
 import './assets/styles/global.css'
-
-// Load saved language preference
-const savedLanguage = localStorage.getItem('dnd-language')
-if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'es')) {
-  i18n.global.locale.value = savedLanguage
-}
 
 // Create app instance
 const app = createApp(App)
@@ -32,6 +27,12 @@ app.use(pinia)
 
 // Use router
 app.use(router)
+
+// Load saved language preference from config store
+const configStore = useConfigStore()
+if (configStore.savedLanguage && (configStore.savedLanguage.value === 'en' || configStore.savedLanguage.value === 'es')) {
+  i18n.global.locale.value = configStore.savedLanguage.value
+}
 
 // Use i18n
 app.use(i18n)

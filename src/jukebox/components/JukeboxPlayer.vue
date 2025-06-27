@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, onBeforeUnmount, onMounted, ref, watch, watchEffect} from 'vue';
+import {computed, onBeforeUnmount, onMounted, ref, watch, watchEffect} from 'vue';
 import RangeSlider from '@/components/common/RangeSlider.vue';
 import {useJukeboxPlayerStore} from '@/jukebox/playerStore';
 import {useJukeboxFilesStore, useJukeboxPlaylistsStore, useJukeboxTracksStore, usePictureUrlCacheStore} from '@/jukebox/stores';

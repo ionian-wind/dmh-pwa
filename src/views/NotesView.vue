@@ -2,7 +2,6 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import NoteEditor from '@/components/NoteEditor.vue';
@@ -11,7 +10,6 @@ import ViewHeader from '@/components/common/ViewHeader.vue';
 import type { Note, Module } from '@/types';
 
 const noteStore = useNoteStore();
-const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const router = useRouter();
@@ -20,42 +18,27 @@ const route = useRoute();
 const showEditor = ref(false);
 const editingNote = ref<Note | null>(null);
 
-const searchQuery = ref('');
-const tagFilter = ref<string | null>(null);
-
-// Watch for query param changes
+// Sync tag filter from route
 watch(
   () => route.query.tag,
   (newTag) => {
-    tagFilter.value = typeof newTag === 'string' ? newTag : null;
+    noteStore.setTagFilter(typeof newTag === 'string' ? newTag : null);
   },
   { immediate: true }
 );
 
-// Watch for search query changes
-watch(searchQuery, (newQuery) => {
-  noteStore.searchQuery = newQuery;
-});
-
-const filteredNotes = computed(() => {
-  let notes = noteStore.filtered;
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    notes = notes.filter((note: Note) =>
-      note.title.toLowerCase().includes(query) ||
-      note.content.toLowerCase().includes(query) ||
-      note.tags.some((tag: string) => tag.toLowerCase().includes(query))
-    );
-  }
-  return notes;
-});
+// Local searchQuery ref for v-model
+const searchQuery = ref(noteStore.searchQuery);
+function updateSearchQuery(val: string) {
+  searchQuery.value = val;
+  noteStore.setSearchQuery(val);
+}
 
 onMounted(async () => {
   await Promise.all([
     noteStore.load(),
     monsterStore.load(),
-    partyStore.load(),
-    moduleStore.load()
+    partyStore.load()
   ]);
 });
 
@@ -91,7 +74,6 @@ const handleCancel = () => {
 function handleTagClick(tag: string) {
   router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
 }
-
 </script>
 
 <template>
@@ -101,12 +83,13 @@ function handleTagClick(tag: string) {
       create-title="Create Note"
       @create="handleCreateClick"
       show-search
-      v-model:searchQuery="searchQuery"
+      :searchQuery="searchQuery"
+      @update:searchQuery="updateSearchQuery"
       search-placeholder="Search notes..."
     >
       <template #search-filter>
-        <span v-if="tagFilter" class="tag-chip">
-          #{{ tagFilter }}
+        <span v-if="noteStore.tagFilter" class="tag-chip">
+          #{{ noteStore.tagFilter }}
           <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
             <i class="si si-x"></i>
           </button>
@@ -114,21 +97,20 @@ function handleTagClick(tag: string) {
       </template>
     </ViewHeader>
     <div class="view-list">
-      <div v-if="filteredNotes.length === 0" class="view-empty">
-        <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
-        <p v-else>No notes yet. Create your first note to get started!</p>
+      <div v-if="noteStore.filtered.length === 0" class="view-empty">
+        <p>No notes yet. Create your first note to get started!</p>
       </div>
 
       <div v-else class="view-grid">
         <NoteCard
-          v-for="note in filteredNotes"
+          v-for="note in noteStore.filtered"
           :key="note.id"
           :note="note"
           @view="() => router.push(`/notes/${note.id}`)"
           @edit="() => handleEditClick(note)"
           @delete="() => handleDelete(note)"
           @tag-click="handleTagClick"
-          :module-name="note.moduleId ? moduleStore.items.find((m: Module) => m.id === note.moduleId)?.name : undefined"
+          :module-name="undefined"
         />
       </div>
 

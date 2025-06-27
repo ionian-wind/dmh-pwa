@@ -31,8 +31,6 @@ describe('GlobalMenu', () => {
       { id: 'mod-2', name: 'Module Two' }
     ];
     moduleStore.currentModule = { id: 'mod-1', name: 'Module One' };
-    moduleStore.currentModuleFilter = 'mod-1';
-    moduleStore.setCurrentModuleFilter = vi.fn();
   });
 
   it('renders module selector and menu items', async () => {
@@ -54,7 +52,6 @@ describe('GlobalMenu', () => {
     });
     const select = wrapper.find('select');
     await select.setValue('mod-2');
-    expect(moduleStore.setCurrentModuleFilter).toHaveBeenCalledWith('mod-2');
   });
 
   it('navigates to section on button click', async () => {

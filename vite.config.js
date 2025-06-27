@@ -158,5 +158,8 @@ export default defineConfig({
     alias: {
       '@': '/src'
     }
+  },
+  worker: {
+    format: 'es'
   }
 })

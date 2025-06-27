@@ -1,4 +1,4 @@
-const VERSION = 6;
+const VERSION = 8;
 const CACHE_NAME = `dnd-notes-v${VERSION}`;
 const STATIC_CACHE = `dnd-notes-static-v${VERSION}`;
 const DYNAMIC_CACHE = `dnd-notes-dynamic-v${VERSION}`;

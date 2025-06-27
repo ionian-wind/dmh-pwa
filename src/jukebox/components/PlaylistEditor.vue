@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits, type Ref, computed } from 'vue';
+import { ref, watch, defineEmits, type Ref, computed } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
@@ -28,7 +28,7 @@ const editablePlaylist: Ref<EditablePlaylist> = ref({
   name: '', 
   description: '', 
   trackIds: [],
-  moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : []
+  moduleIds: []
 });
 
 watch(() => props.playlist, (newPlaylist) => {
@@ -39,16 +39,10 @@ watch(() => props.playlist, (newPlaylist) => {
       name: '', 
       description: '', 
       trackIds: [],
-      moduleIds: (moduleStore.currentModuleFilter !== 'any' && moduleStore.currentModuleFilter !== 'none' && moduleStore.currentModuleFilter) ? [moduleStore.currentModuleFilter] : []
+      moduleIds: []
     };
   }
 }, { immediate: true });
-
-watch(() => moduleStore.currentModuleFilter, (newFilter) => {
-  if (!props.playlist && props.modelValue) {
-    editablePlaylist.value.moduleIds = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? [newFilter] : [];
-  }
-});
 
 const moduleIdsProxy = computed<string[]>({
   get() {

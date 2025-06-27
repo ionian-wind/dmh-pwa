@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import {onMounted, onUnmounted, ref} from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import RollButton from '@/components/RollButton.vue'
@@ -29,12 +29,12 @@ interface SectionItem {
 }
 
 const sections: SectionItem[] = [
-  { section: Section.NOTES, label: t('navigation.notes'), path: '/notes', icon: 'si si-notebook' },
-  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: 'si si-user' },
-  { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties', icon: 'si si-users' },
-  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules', icon: 'si si-box' },
-  { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters', icon: 'si si-skull' },
-  { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters', icon: 'si si-swords' },
+  { section: Section.NOTES, label: t('navigation.notes'), path: '/notes', icon: 'ra ra-scroll-unfurled' },
+  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: 'ra ra-player' },
+  { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties', icon: 'ra ra-double-team' },
+  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules', icon: 'si si-book' },
+  { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters', icon: 'ra ra-wolf-head' },
+  { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters', icon: 'ra ra-crossed-swords' },
 ]
 
 function isActive(item: SectionItem): boolean {
@@ -47,6 +47,7 @@ function navigateTo(path: string) {
 
 // Roll modal state for RollButton
 import { ref as vueRef } from 'vue'
+import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
 const rollModalOpen = vueRef(false)
 function openRollModal() {
   rollModalOpen.value = true
@@ -63,6 +64,54 @@ function openJukebox() {
 function closeJukebox() {
   jukeboxOpen.value = false
 }
+
+
+const isFullscreen = ref(false);
+
+function updateFullscreenState() {
+  isFullscreen.value = !!(
+    document.fullscreenElement ||
+    (document as any).webkitFullscreenElement ||
+    (document as any).mozFullScreenElement ||
+    (document as any).msFullscreenElement
+  );
+}
+
+function toggleFullscreen() {
+  const el = document.documentElement;
+  if (!isFullscreen.value) {
+    if (el.requestFullscreen) {
+      el.requestFullscreen();
+    } else if ((el as any).webkitRequestFullscreen) {
+      (el as any).webkitRequestFullscreen();
+    } else if ((el as any).msRequestFullscreen) {
+      (el as any).msRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if ((document as any).webkitExitFullscreen) {
+      (document as any).webkitExitFullscreen();
+    } else if ((document as any).msExitFullscreen) {
+      (document as any).msExitFullscreen();
+    }
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('fullscreenchange', updateFullscreenState);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenState);
+  document.addEventListener('mozfullscreenchange', updateFullscreenState);
+  document.addEventListener('MSFullscreenChange', updateFullscreenState);
+  updateFullscreenState();
+});
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', updateFullscreenState);
+  document.removeEventListener('webkitfullscreenchange', updateFullscreenState);
+  document.removeEventListener('mozfullscreenchange', updateFullscreenState);
+  document.removeEventListener('MSFullscreenChange', updateFullscreenState);
+});
 </script>
 
 <template>
@@ -83,17 +132,30 @@ function closeJukebox() {
       </template>
       <template #bottom>
         <Button variant="primary" @click="openRollModal" :title="t('app.roll')">
-          <i class="si si-dice" />
+          <i class="ra ra-perspective-dice-one" />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.roll') }}</span>
         </Button>
         <Button variant="primary" @click="openJukebox" :title="t('app.jukebox')">
-          <i class="si si-music" />
+          <i class="si si-music-note" />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
         </Button>
+
+        <Button
+          class="fullscreen-btn"
+          variant="light"
+          @click="toggleFullscreen"
+          :title="isFullscreen ? 'Exit full page' : 'Open app in full page'"
+          :aria-label="isFullscreen ? 'Exit full page' : 'Open app in full page'"
+        >
+          <i v-if="!isFullscreen" class="si si-fullscreen"></i>
+          <i v-else class="si si-fullscreen-exit"></i>
+        </Button>
+
+        <LanguageSwitcher />
+        
       </template>
     </LeftMenu>
     <div class="main-area" :class="{ minimized: leftMenuMinimized }">
-      <AppHeader />
       <main class="main-content">
         <RouterView v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
@@ -127,41 +189,6 @@ function closeJukebox() {
 </template>
 
 <style>
-:root {
-  --color-primary: #1e1e2e;
-  --color-secondary: #2c3e50;
-  --color-text: #333;
-  --color-text-light: #666;
-  --color-border: #ddd;
-  --color-background: #f5f5f5;
-  --max-width: 1200px;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  color: var(--color-text);
-  background-color: var(--color-background);
-}
-
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.main-content {
-  flex: 1;
-  width: 100%;
-}
-
 .fab-container-left,
 .fab-container-right {
   position: fixed;
@@ -215,14 +242,15 @@ body {
 .mb-3 { margin-bottom: 1.5rem; }
 .mb-4 { margin-bottom: 2rem; }
 
-.layout-flex {
+.app.layout-flex {
   display: flex;
   flex-direction: row;
   min-height: 100vh;
 }
 
 .main-area {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
   transition: none;
 }
 .main-area.minimized {

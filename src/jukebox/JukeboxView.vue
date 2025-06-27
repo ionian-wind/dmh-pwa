@@ -19,7 +19,6 @@ const playlistsStore = useJukeboxPlaylistsStore();
 const filesStore = useJukeboxFilesStore();
 const configStore = useConfigStore();
 const playerStore = useJukeboxPlayerStore();
-const moduleStore = useModuleStore();
 const pictureUrlCacheStore = usePictureUrlCacheStore();
 
 const tracks = tracksStore.items;
@@ -28,8 +27,7 @@ const playlists = playlistsStore.items;
 // Filter playlists by current module filter
 const filteredPlaylists = computed(() => {
   let result = playlists.value || [];
-  // Module filter - filter playlists by current module filter
-  result = result.filter(playlist => moduleStore.matchesModuleFilterMultiple(playlist.moduleIds || []));
+
   return result;
 });
 
@@ -282,7 +280,6 @@ onMounted(async () => {
     tracksStore.load(),
     playlistsStore.load(),
     filesStore.load(),
-    moduleStore.load(),
   ]);
   
   if (configStore.activePlaylistId !== undefined) {

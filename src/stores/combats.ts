@@ -6,21 +6,7 @@ import { useStore } from '@/utils/storage';
 
 export const useCombatStore = defineStore('combats', () => {
   const base = useStore<Combat>({ storeName: 'combats', validationSchema: combatSchema });
-  const currentId = ref<string | null>(null);
   const searchQuery = ref('');
-
-  async function create(combat: Omit<Combat, 'id' | 'createdAt' | 'updatedAt'>) {
-    return await base.create(combat);
-  }
-
-  async function update(id: string, patch: Partial<Omit<Combat, 'id' | 'createdAt' | 'updatedAt'>>) {
-    return await base.update(id, patch);
-  }
-
-  async function remove(id: string) {
-    await base.remove(id);
-    if (currentId.value === id) currentId.value = null;
-  }
 
   const filtered = computed(() => {
     let result = base.items.value;
@@ -34,11 +20,7 @@ export const useCombatStore = defineStore('combats', () => {
     return result;
   });
 
-  const getById = (id: string): Combat | null => {
-    return base.items.value.find(item => item.id === id) || null;
-  };
-
-  const sortedItems = computed(() => {
+   const sortedItems = computed(() => {
     return [...base.items.value].sort((a, b) => b.updatedAt - a.updatedAt);
   });
 
@@ -50,30 +32,30 @@ export const useCombatStore = defineStore('combats', () => {
     base.items.value.filter(c => c.partyId === partyId);
 
   const updateCombatant = (combatId: string, combatantId: string, updates: Partial<Combatant>) => {
-    const combat = getById(combatId);
+    const combat = base.getById(combatId);
     if (!combat) return;
     const idx = combat.combatants.findIndex(c => c.id === combatantId);
     if (idx === -1) return;
     Object.assign(combat.combatants[idx], updates);
-    return update(combatId, { combatants: combat.combatants });
+    return base.update(combatId, { combatants: combat.combatants });
   };
 
   const removeCombatant = (combatId: string, combatantId: string) => {
-    const combat = getById(combatId);
+    const combat = base.getById(combatId);
     if (!combat) return;
     combat.combatants = combat.combatants.filter(c => c.id !== combatantId);
-    return update(combatId, { combatants: combat.combatants });
+    return base.update(combatId, { combatants: combat.combatants });
   };
 
   const updateCombatStatus = (combatId: string, status: Combat['status']) => {
-    return update(combatId, { status });
+    return base.update(combatId, { status });
   };
 
   function startCombat(id: string) {
-    const combat = getById(id);
+    const combat = base.getById(id);
     if (!combat) return;
     if (combat.status !== 'preparing') return;
-    return update(id, {
+    return base.update(id, {
       status: 'active',
       currentRound: 1,
       currentTurn: 0,
@@ -81,26 +63,26 @@ export const useCombatStore = defineStore('combats', () => {
   }
 
   function endCombat(id: string) {
-    const combat = getById(id);
+    const combat = base.getById(id);
     if (!combat) return;
     if (combat.status !== 'active') return;
-    return update(id, {
+    return base.update(id, {
       status: 'completed',
     });
   }
 
   function resetCombat(id: string) {
-    const combat = getById(id);
+    const combat = base.getById(id);
     if (!combat) return;
     if (combat.status !== 'active') return;
-    return update(id, {
+    return base.update(id, {
       currentRound: 1,
       currentTurn: 0,
     });
   }
 
   function nextTurn(id: string) {
-    const combat = getById(id);
+    const combat = base.getById(id);
     if (!combat || combat.status !== 'active') return;
     let nextTurn = combat.currentTurn + 1;
     let nextRound = combat.currentRound;
@@ -108,14 +90,14 @@ export const useCombatStore = defineStore('combats', () => {
       nextTurn = 0;
       nextRound += 1;
     }
-    return update(id, {
+    return base.update(id, {
       currentTurn: nextTurn,
       currentRound: nextRound,
     });
   }
 
   function previousTurn(id: string) {
-    const combat = getById(id);
+    const combat = base.getById(id);
     if (!combat || combat.status !== 'active') return;
     let prevTurn = combat.currentTurn - 1;
     let prevRound = combat.currentRound;
@@ -123,7 +105,7 @@ export const useCombatStore = defineStore('combats', () => {
       prevTurn = combat.combatants.length - 1;
       prevRound = Math.max(1, prevRound - 1);
     }
-    return update(id, {
+    return base.update(id, {
       currentTurn: prevTurn,
       currentRound: prevRound,
     });
@@ -132,19 +114,12 @@ export const useCombatStore = defineStore('combats', () => {
   return {
     ...base,
     filtered,
-    currentId,
-    getById,
     sortedItems,
-    create,
-    update,
-    remove,
     getCombatByEncounter,
     getCombatByParty,
     updateCombatant,
     removeCombatant,
     updateCombatStatus,
-    setCurrentId: (id: string | null) => { currentId.value = id; },
-    clearCurrent: () => { currentId.value = null; },
     setFilter: (query: string) => { searchQuery.value = query; },
     clearFilter: () => { searchQuery.value = ''; },
     setSearchQuery: (query: string) => { searchQuery.value = query; },

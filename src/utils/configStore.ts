@@ -30,20 +30,18 @@ const setValue = (key: string, value: unknown) => {
 
 export const useConfigStore = defineStore('config', () => {
   // Define your state here
-  const currentModuleFilter = ref<string | null>(getValue('currentModuleFilter', null));
-  
-  // Jukebox state
   const lastTrackId = ref<string | null>(getValue('lastTrackId', null));
   const lastTrackProgress = ref<number>(getValue('lastTrackProgress', 0));
   const lastVolume = ref<number>(getValue('lastVolume', 1));
   const activePlaylistId = ref<string | null>(getValue('activePlaylistId', null));
+  const savedLanguage = ref<string>(getValue('savedLanguage', 'en'));
 
   const config: Record<string, Ref> = {
-    currentModuleFilter,
     lastTrackId,
     lastTrackProgress,
     lastVolume,
     activePlaylistId,
+    savedLanguage,
   };
   
   Object.keys(config).forEach((key: string) => {

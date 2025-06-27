@@ -70,8 +70,7 @@ const deleteParty = async (party: Party) => {
 
 
 <div v-if="partyStore.filtered.length === 0" class="view-empty">
-  <p v-if="!['any', 'none', null].includes(moduleStore.currentModuleFilter)">Try changing the module filter or create a new note.</p>
-  <p v-else>No parties yet. Create your first party to get started!</p>
+  <p>No parties yet. Create your first party to get started!</p>
 </div>
 
 <div v-else class="view-grid">

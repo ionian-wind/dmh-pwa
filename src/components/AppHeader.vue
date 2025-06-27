@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import GlobalMenu from '@/components/GlobalMenu.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import Button from './common/Button.vue';
 
-const router = useRouter();
 const isFullscreen = ref(false);
 
 function updateFullscreenState() {

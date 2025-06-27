@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
-import { useModuleStore } from '@/stores/modules';
 import { Encounter } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-
-const moduleStore = useModuleStore();
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -23,7 +20,7 @@ const editedEncounter = ref<EncounterFormData>({
   name: '',
   description: '',
   monsters: {},
-  moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : '',
+  moduleId: '',
   notes: ''
 });
 
@@ -38,24 +35,18 @@ watch(() => props.encounter, (newEncounter) => {
       name: '',
       description: '',
       monsters: {},
-      moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : '',
+      moduleId: '',
       notes: ''
     };
   }
 }, { immediate: true });
-
-watch(() => moduleStore.currentModuleFilter.value, (newFilter) => {
-  if (!props.encounter && props.isOpen) {
-    editedEncounter.value.moduleId = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? newFilter : '';
-  }
-});
 
 const resetForm = () => {
   editedEncounter.value = {
     name: '',
     description: '',
     monsters: {},
-    moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : '',
+    moduleId: '',
     notes: ''
   };
 };

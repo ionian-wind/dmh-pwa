@@ -6,21 +6,7 @@ import noteTypeSchema from "@/schemas/noteType.schema.json";
 
 export const useNoteTypeStore = defineStore('noteTypes', () => {
   const base = useStore<NoteType>({ storeName: 'noteTypes', validationSchema: noteTypeSchema });
-  const currentId = ref<string | null>(null);
   const searchQuery = ref('');
-
-  async function create(noteType: Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>) {
-    return await base.create(noteType);
-  }
-
-  async function update(id: string, patch: Partial<Omit<NoteType, 'id' | 'createdAt' | 'updatedAt'>>) {
-    return await base.update(id, patch);
-  }
-
-  async function remove(id: string) {
-    await base.remove(id);
-    if (currentId.value === id) currentId.value = null;
-  }
 
   const filtered = computed(() => {
     let result = base.items.value;
@@ -35,23 +21,10 @@ export const useNoteTypeStore = defineStore('noteTypes', () => {
 
   const sortedItems = base.sortedItems;
 
-  const current = computed(() => {
-    if (!currentId.value) return null;
-    return base.getById(currentId.value) || null;
-  });
-
   return {
     ...base,
     filtered,
     sortedItems,
-    currentId,
-    current,
-    getById: base.getById,
-    create,
-    update,
-    remove,
-    setCurrentId: (id: string | null) => { currentId.value = id; },
-    clearCurrent: () => { currentId.value = null; },
     setFilter: (query: string) => { searchQuery.value = query; },
     clearFilter: () => { searchQuery.value = ''; },
     setSearchQuery: (query: string) => { searchQuery.value = query; },

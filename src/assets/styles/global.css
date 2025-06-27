@@ -77,6 +77,16 @@
   --header-height: calc(var(--footer-height) * 4);
 }
 
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+
 /* Reset and base styles */
 *,
 *::before,
@@ -476,6 +486,8 @@ select {
 .view-root {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .view-header {
@@ -486,6 +498,7 @@ select {
 
 .view-list {
   width: 100%;
+  overflow-y: auto;
 }
 
 .header-actions {
@@ -637,7 +650,7 @@ select {
 .base-entity-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--header-height));
+  height: 100vh;
   overflow: hidden;
 }
 
@@ -798,4 +811,11 @@ ul:has(.task-list-label) li::marker {
 }
 .menu-label {
   white-space: nowrap;
+}
+
+.ra {
+  align-self: center;
+  display: inline-flex;
+  text-rendering: auto;
+  vertical-align: -.125em;
 }

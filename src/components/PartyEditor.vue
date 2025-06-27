@@ -23,7 +23,7 @@ const editedParty = ref<PartyForm>({
   description: '',
   notes: '',
   characters: [],
-  moduleIds: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? [moduleStore.currentModuleFilter.value] : []
+  moduleIds: []
 });
 
 watch(() => props.party, (newParty) => {
@@ -36,16 +36,10 @@ watch(() => props.party, (newParty) => {
       description: '',
       notes: '',
       characters: [],
-      moduleIds: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? [moduleStore.currentModuleFilter.value] : []
+      moduleIds: []
     };
   }
 }, { immediate: true });
-
-watch(() => moduleStore.currentModuleFilter.value, (newFilter) => {
-  if (!props.party && props.isOpen) {
-    editedParty.value.moduleIds = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? [newFilter] : [];
-  }
-});
 
 const handleSubmit = () => {
   if (!editedParty.value.name) {

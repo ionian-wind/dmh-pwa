@@ -29,7 +29,7 @@ const editedNote = ref<Note>({
   title: '',
   content: '',
   tags: [],
-  moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : null,
+  moduleId: null,
   typeId: null
 });
 
@@ -56,18 +56,12 @@ watch(() => props.note, (newNote) => {
       title: '',
       content: '',
       tags: [],
-      moduleId: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? moduleStore.currentModuleFilter.value : null,
+      moduleId: null,
       typeId: null
     };
     lastNoteId.value = null;
   }
 }, { immediate: true });
-
-watch(() => moduleStore.currentModuleFilter.value, (newFilter) => {
-  if (!props.note && props.isOpen) {
-    editedNote.value.moduleId = (newFilter !== 'any' && newFilter !== 'none' && newFilter) ? newFilter : null;
-  }
-});
 
 const handleSubmit = () => {
   if (!editedNote.value.title) {

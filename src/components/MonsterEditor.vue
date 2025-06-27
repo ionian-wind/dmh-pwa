@@ -21,7 +21,7 @@ const blankMonster = (): Monster => ({
   id: '',
   name: '',
   notes: '',
-  moduleIds: (moduleStore.currentModuleFilter.value !== 'any' && moduleStore.currentModuleFilter.value !== 'none' && moduleStore.currentModuleFilter.value) ? [moduleStore.currentModuleFilter.value] : [],
+  moduleIds: [],
   createdAt: Date.now(),
   updatedAt: Date.now()
 });

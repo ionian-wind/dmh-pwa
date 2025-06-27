@@ -27,7 +27,9 @@
     "download": "Download",
     "upload": "Upload",
     "export": "Export",
-    "import": "Import"
+    "import": "Import",
+    "jukebox": "Jukebox",
+    "roll": "Dice Roller"
   },
   "navigation": {
     "home": "Home",

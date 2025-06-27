@@ -108,6 +108,10 @@ export interface BaseStore<T extends WithMetadata> {
   update: (id: string, patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<T>;
   remove: (id: string) => Promise<void>;
   load: () => Promise<void>;
+
+  current: ComputedRef<T | null>;
+  setCurrentId: (id: string | null) => void;
+  clearCurrent: () => void;
 }
 
 // This cache will ensure that we create only one store instance per store name.
@@ -124,6 +128,12 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
   const items = ref<any[]>([]) as unknown as Ref<T[]>;
   const isLoaded: Ref<boolean> = ref(false);
   const error: Ref<Error | null> = ref(null);
+  const currentId = ref<string | null>(null);
+
+  const current = computed(() => {
+    if (!currentId.value) return null;
+    return getById(currentId.value) || null;
+  });
 
   // Register validation schema if provided
   if (validationSchema && storeName) {
@@ -175,6 +185,7 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
   async function remove(id: string): Promise<void> {
     await idbDeleteItem(storeName, id);
     items.value = items.value.filter(item => item.id !== id);
+    if (currentId.value === id) currentId.value = null;
   }
 
   const getById = (id: string): T | null => {
@@ -195,6 +206,9 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
     update,
     remove,
     load,
+    current,
+    setCurrentId: (id: string | null) => { currentId.value = id; },
+    clearCurrent: () => { currentId.value = null; },
   };
 
   // Add the new store to the cache before returning it.
