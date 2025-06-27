@@ -858,12 +858,12 @@ ul:has(.task-list-label) li::marker {
 }
 
 .list-fixed-bottom {
-  flex: 0 0 auto;
+  /* flex: 0 0 auto; */
   min-height: 40px;
   background: var(--color-background-soft);
   border-top: 1px solid var(--color-border);
-  display: flex;
+  /* display: flex; */
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-md);
+  /* padding: var(--spacing-md); */
 }

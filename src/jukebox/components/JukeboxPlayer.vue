@@ -296,6 +296,7 @@ watchEffect(() => {
   display: flex;
   flex-direction: column;
   min-width: 600px;
+  position: relative;
 }
 
 .jukebox-player-loading {
@@ -385,7 +386,14 @@ watchEffect(() => {
   background-size: 400% 400%;
   animation: gradientShift 8s ease infinite;
   pointer-events: none;
+  border-radius: inherit;
 }
+
+.jukebox-player.with-animated-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;

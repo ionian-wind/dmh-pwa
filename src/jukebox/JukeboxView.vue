@@ -7,10 +7,11 @@ import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
-import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
-import { useConfigStore } from '@/utils/configStore';
+import TrackCard from '@/components/TrackCard.vue';
+import BaseListView from '@/components/common/BaseListView.vue';
 import Button from '@/components/common/Button.vue';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import { useConfigStore } from '@/utils/configStore';
+import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import {formatTime} from "./utils";
 
 const tracksStore = useJukeboxTracksStore();
@@ -23,18 +24,20 @@ const pictureUrlCacheStore = usePictureUrlCacheStore();
 const tracks = tracksStore.items;
 const playlists = playlistsStore.items;
 
-// Filter playlists by current module filter
 const filteredPlaylists = computed(() => {
   let result = playlists.value || [];
-
   return result;
 });
 
-// Use filtered playlists but ensure currently selected playlist is included
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const selectedPlaylistId = ref<string | null>(configStore.activePlaylistId ?? null);
 
-// Watch filtered playlists and selectedPlaylistId separately to avoid watch source issues
+const selectedPlaylistIdValue = computed(() =>
+  selectedPlaylistId && typeof selectedPlaylistId === 'object' && 'value' in selectedPlaylistId
+    ? selectedPlaylistId.value
+    : null
+);
+
 watch(filteredPlaylists, (newPlaylists) => {
   updateSortedPlaylists(newPlaylists, selectedPlaylistId.value);
 }, { immediate: true, deep: true });
@@ -44,36 +47,27 @@ watch(selectedPlaylistId, (currentPlaylistId) => {
 }, { immediate: true });
 
 function updateSortedPlaylists(newPlaylists: JukeboxPlaylist[], currentPlaylistId: string | null) {
-  // Defensive check to ensure newPlaylists is an array
   if (!newPlaylists || !Array.isArray(newPlaylists)) {
-    console.warn('Playlists is not an array:', newPlaylists);
     sortedPlaylists.value = [];
     return;
   }
-  
   let filteredPlaylists = [...newPlaylists].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-  
-  // If there's a currently selected playlist, make sure it's included even if filtered out
   if (currentPlaylistId) {
     const currentPlaylist = playlists.value.find((p: JukeboxPlaylist) => p.id === currentPlaylistId);
     if (currentPlaylist && !filteredPlaylists.find((p: JukeboxPlaylist) => p.id === currentPlaylistId)) {
       filteredPlaylists.push(currentPlaylist);
-      // Re-sort after adding the current playlist
       filteredPlaylists.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     }
   }
-  
   sortedPlaylists.value = filteredPlaylists;
 }
 
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
-
 const isAddingTracks = ref(false);
 const isAddToPlaylistModalOpen = ref(false);
 const trackToAddToPlaylist = ref<JukeboxTrack | null>(null);
 
-// Remove the local caching logic and use the store instead
 const { getPictureStyle } = pictureUrlCacheStore;
 
 function openPlaylistModal(playlist: JukeboxPlaylist | null) {
@@ -88,13 +82,10 @@ function openAddToPlaylistModal(track: JukeboxTrack) {
 
 function setActivePlaylist(playlistId: string | null) {
   selectedPlaylistId.value = playlistId;
-  // Do NOT update configStore.activePlaylistId here - it should only be updated when playback starts
 }
 
 function playTrackFromPlaylist(track: JukeboxTrack) {
-  // When a track is played, update the config to reflect the playlist from which it was started
   configStore.activePlaylistId = selectedPlaylistId.value;
-  console.log('🎵 JukeboxView: Playing track from playlist, updated config.activePlaylistId to:', selectedPlaylistId.value);
   playerStore.playTrack(track);
 }
 
@@ -108,13 +99,9 @@ async function removePlaylist(playlistId: string) {
 
 async function removeTrack(track: JukeboxTrack) {
   const isCurrentlyPlaying = playerStore.currentTrack?.id === track.id;
-
-  // Remove the track from the current queue
   const currentQueue = playerStore.queue;
   const newQueue = currentQueue.filter((t: JukeboxTrack) => t.id !== track.id);
   playerStore.setQueue(newQueue, playerStore.currentQueueId);
-
-  // If we deleted the currently playing track and there are more tracks in the queue, play the next one
   if (isCurrentlyPlaying && newQueue.length > 0) {
     const nextTrackIndex = Math.min(currentQueue.findIndex(t => t.id === track.id), newQueue.length - 1);
     const nextTrack = newQueue[nextTrackIndex];
@@ -122,24 +109,15 @@ async function removeTrack(track: JukeboxTrack) {
       await playerStore.playTrack(nextTrack);
     }
   } else if (isCurrentlyPlaying) {
-    // Only stop if there are no more tracks to play
     playerStore.stop();
   }
-
-  // Find all playlists that contain the track
   const playlistsToUpdate = playlistsStore.items.value.filter((p: JukeboxPlaylist) => p.trackIds.includes(track.id));
-
-  // Update these playlists by removing the track ID
   const updatePromises = playlistsToUpdate.map(p => {
     const newTrackIds = p.trackIds.filter((tid: string) => tid !== track.id);
     return playlistsStore.update(p.id, { trackIds: newTrackIds });
   });
   await Promise.all(updatePromises);
-  
-  // Remove the track itself from the main track store
   await tracksStore.remove(track.id);
-
-  // If a file is associated, delete it from IndexedDB
   if (track.fileId) {
     try {
       await deleteJukeboxFile(track.fileId);
@@ -147,8 +125,6 @@ async function removeTrack(track: JukeboxTrack) {
       console.error(`Failed to delete file handle for track ${track.id}:`, e);
     }
   }
-
-  // Manually update the local draggableTracks to reflect the change immediately
   const trackIndex = draggableTracks.value.findIndex(t => t.id === track.id);
   if (trackIndex > -1) {
     draggableTracks.value.splice(trackIndex, 1);
@@ -168,7 +144,6 @@ const filteredTracks = computed(() => {
 
 const draggableTracks = ref<JukeboxTrack[]>([]);
 watch(filteredTracks, (newTracks) => {
-  // Update the global player's queue if the context changes
   if (configStore.activePlaylistId === selectedPlaylistId.value) {
     playerStore.setQueue(newTracks, configStore.activePlaylistId);
   }
@@ -181,14 +156,10 @@ async function pickFiles() {
   try {
     const handles = await pickAudioFiles();
     const newTrackIds: string[] = [];
-
     for (const handle of handles) {
       const file = await getFileFromHandle(handle);
-      
       const fileId = `${file.name}-${file.lastModified}-${file.size}`;
-
       const existingFile = await getJukeboxFile(fileId);
-
       await putJukeboxFile({
         id: fileId,
         handle: handle,
@@ -199,16 +170,14 @@ async function pickFiles() {
         createdAt: existingFile?.createdAt || Date.now(),
         updatedAt: Date.now(),
       });
-
       const trackMeta = await extractTrackMetadata(file);
-
       const newTrackData = {
         fileId,
         title: trackMeta.title || file.name.replace(/\.[^/.]+$/, ""),
         artist: trackMeta.artist,
         album: trackMeta.album,
         duration: trackMeta.duration,
-        picture: trackMeta.picture, // This is a blob URL
+        picture: trackMeta.picture,
         color: trackMeta.color,
         palette: trackMeta.palette,
         playlistIds: [],
@@ -220,12 +189,9 @@ async function pickFiles() {
         comment: trackMeta.comment,
         lyrics: trackMeta.lyrics,
       };
-
       const createdTrack = await tracksStore.create(newTrackData);
       newTrackIds.push(createdTrack.id);
     }
-
-    // If a playlist is active, add the new tracks to it
     if (selectedPlaylistId.value) {
       const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
       if (playlist) {
@@ -233,7 +199,6 @@ async function pickFiles() {
         await playlistsStore.update(playlist.id, { trackIds: updatedTrackIds });
       }
     }
-
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       // User cancelled file picker, do nothing.
@@ -258,10 +223,8 @@ function onTrackSortEnd(_event: any) {
   if (!selectedPlaylistId.value) return;
   const playlist = playlistsStore.items.value.find((p: JukeboxPlaylist) => p.id === selectedPlaylistId.value);
   if (!playlist) return;
-  
   const newTrackIds = draggableTracks.value.map(t => t.id);
   playlistsStore.update(playlist.id, { ...playlist, trackIds: newTrackIds });
-  
   if (configStore.activePlaylistId === selectedPlaylistId.value) {
     playerStore.setQueue(draggableTracks.value, selectedPlaylistId.value);
   }
@@ -280,142 +243,83 @@ onMounted(async () => {
     playlistsStore.load(),
     filesStore.load(),
   ]);
-  
   if (configStore.activePlaylistId !== undefined) {
     selectedPlaylistId.value = configStore.activePlaylistId;
   }
-
-  // Set initial queue
   playerStore.setQueue(filteredTracks.value, selectedPlaylistId.value);
 });
 
 onBeforeUnmount(() => {
   pictureUrlCacheStore.clearCache();
 });
+
+function cardProps(track: JukeboxTrack) {
+  return {
+    track,
+    isSelected: trackIsActive(track),
+    isPlaying: playerStore.isPlaying && trackIsActive(track),
+    onAddToPlaylist: () => openAddToPlaylistModal(track),
+    onRemove: () => removeTrack(track),
+    onPlay: () => trackClick(track),
+  };
+}
 </script>
 
 <template>
-  <BaseEntityView
-    :entity="{ loaded: true }"  
-    entity-name="Jukebox"
-    list-route="/"
-    :loading="false"
-    :not-found="false"
-  >
-    <template #actions>
-      <Button @click="pickFiles" variant="primary" title="Add Tracks">
-        <i class="si si-plus"></i>
-      </Button>
-    </template>
-
-    <template #sidepanel>
-      <div class="playlist-sidebar">
-        <div class="sidebar-header">
-          <h3>Playlists</h3>
-          <Button @click="openPlaylistModal(null)" variant="light"><i class="si si-plus"></i></Button>
-        </div>
-        <div class="all-tracks-section">
-          <Button 
-            @click="setActivePlaylist(null)"
-            :class="{ active: selectedPlaylistId === null }"
-            variant="primary"
-            class="all-tracks-button"
-          >
-            All Tracks
-          </Button>
-        </div>
-        <div class="playlist-container">
-          <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
-            <template #item="{ element: playlist }">
-              <li
-                @click="setActivePlaylist(playlist.id)"
-                :class="{ active: selectedPlaylistId === playlist.id }"
-                class="playlist-item"
-              >
-                <span class="playlist-name">{{ playlist.name }}</span>
-                <div class="playlist-actions">
-                  <Button @click.stop="openPlaylistModal(playlist)" variant="light"><i class="si si-pencil"></i></Button>
-                  <Button @click.stop="removePlaylist(playlist.id)" variant="light"><i class="si si-x"></i></Button>
-                </div>
-              </li>
-            </template>
-          </draggable>
-        </div>
-      </div>
-    </template>
-
-    <div class="jukebox-main-content">
-      <div class="tracks-wrapper">
-        <div v-if="filteredTracks.length">
-          <draggable v-if="selectedPlaylistId" v-model="draggableTracks" tag="ul" class="track-list" handle=".playlist-item" item-key="id" @end="onTrackSortEnd">
-            <template #item="{ element: track }">
-              <li
-                :style="{ '--track-color': track.color || 'transparent' }"
-                class="track-item"
-                :class="{ 'is-selected': trackIsActive(track), 'is-playing': playerStore.isPlaying && trackIsActive(track) }"
-                @click="trackClick(track)"
-              >
-                <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork">
-                  <i class="si si-play"></i>
-                  <i class="si si-pause"></i>
-                </div>
-                <div v-else class="track-artwork track-artwork-placeholder">
-                  <i class="si si-music-note"></i>
-                  <i class="si si-play"></i>
-                  <i class="si si-pause"></i>
-                </div>
-                <div class="track-info">
-                  <span class="track-title">{{ track.title }}</span>
-                  <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
-                </div>
-                <div class="track-duration">{{ formatTime(track.duration) }}</div>
-                <div class="track-actions">
-                  <Button variant="light" @click.stop="openAddToPlaylistModal(track)"><i class="si si-plus"></i> Add to Playlist</Button>
-                  <Button variant="light" @click.stop="removeTrack(track)"><i class="si si-x"></i></Button>
-                </div>
-              </li>
-            </template>
-          </draggable>
-          <ul v-else class="track-list">
-            <li
-              v-for="track in filteredTracks"
-              :key="track.id"
-              :style="{ '--track-color': track.color || 'transparent' }"
-              class="track-item"
-              :class="{ 'is-selected': trackIsActive(track), 'is-playing': playerStore.isPlaying && trackIsActive(track) }"
-              @click="trackClick(track)"
+  <div class="jukebox-view-root">
+    <BaseListView
+      :items="filteredTracks"
+      :card-component="TrackCard"
+      :empty-message="'No tracks to display. Add some tracks to get started!'"
+      create-title="Add Tracks"
+      :card-props="cardProps"
+      :show-search="false"
+      :view-style="'list'"
+    >
+      <template #actions>
+        <Button @click="pickFiles" variant="primary" title="Add Tracks">
+          <i class="si si-plus"></i>
+        </Button>
+      </template>
+      <template #sidepanel>
+        <div class="playlist-sidebar">
+          <div class="sidebar-header">
+            <h3>Playlists</h3>
+            <Button @click="openPlaylistModal(null)" variant="light"><i class="si si-plus"></i></Button>
+          </div>
+          <div class="all-tracks-section">
+            <Button 
+              @click="setActivePlaylist(null)"
+              :class="{ active: selectedPlaylistIdValue === null }"
+              variant="primary"
+              class="all-tracks-button"
             >
-              <div v-if="track.picture" :style="getPictureStyle(track.picture)" class="track-artwork">
-                <i class="si si-play"></i>
-                <i class="si si-pause"></i>
-              </div>
-              <div v-else class="track-artwork track-artwork-placeholder">
-                <i class="si si-music-note"></i>
-                <i class="si si-play"></i>
-                <i class="si si-pause"></i>
-              </div>
-              <div class="track-info">
-                <span class="track-title">{{ track.title }}</span>
-                <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
-              </div>
-              <div class="track-duration">{{ formatTime(track.duration || 0) }}</div>
-              <div class="track-actions">
-                <Button variant="light" @click.stop="openAddToPlaylistModal(track)"><i class="si si-plus"></i> Add to Playlist</Button>
-                <Button variant="light" @click.stop="removeTrack(track)"><i class="si si-x"></i></Button>
-              </div>
-            </li>
-          </ul>
+              All Tracks
+            </Button>
+          </div>
+          <div class="playlist-container">
+            <draggable v-model="sortedPlaylists" tag="ul" class="playlist-list" handle=".playlist-item" item-key="id" @end="onPlaylistSortEnd">
+              <template #item="{ element: playlist }">
+                <li
+                  @click="setActivePlaylist(playlist.id)"
+                  :class="{ active: selectedPlaylistIdValue === playlist.id }"
+                  class="playlist-item"
+                >
+                  <span class="playlist-name">{{ playlist.name }}</span>
+                  <div class="playlist-actions">
+                    <Button @click.stop="openPlaylistModal(playlist)" variant="light"><i class="si si-pencil"></i></Button>
+                    <Button @click.stop="removePlaylist(playlist.id)" variant="light"><i class="si si-x"></i></Button>
+                  </div>
+                </li>
+              </template>
+            </draggable>
+          </div>
         </div>
-        <div v-else class="no-tracks">
-          <p>No tracks to display. Add some tracks to get started!</p>
-        </div>
-      </div>
-    </div>
-
-    <template #fixed-bottom>
-      <JukeboxPlayer :animated-background="true" />
-    </template>
-
+      </template>
+      <template #fixed-bottom>
+        <JukeboxPlayer :animated-background="true" />
+      </template>
+    </BaseListView>
     <PlaylistEditor
       v-model="isPlaylistModalOpen"
       :playlist="playlistToEdit"
@@ -424,7 +328,7 @@ onBeforeUnmount(() => {
       v-model="isAddToPlaylistModalOpen"
       :track="trackToAddToPlaylist"
     />
-  </BaseEntityView>
+  </div>
 </template>
 
 <style scoped>
