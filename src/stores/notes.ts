@@ -13,6 +13,7 @@ export const useNoteStore = defineStore('notes', () => {
   const indexation = useMentionsStore();
   
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
+    console.log('noteStore.create called', note);
     const newNote = await base.create(note);
     // Indexation
     const from = { kind: 'note', id: newNote.id };

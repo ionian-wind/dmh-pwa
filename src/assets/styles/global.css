@@ -496,9 +496,6 @@ select {
   width: 100%;
 }
 
-.view-list {
-  overflow-y: auto;
-}
 
 .header-actions {
   display: flex;
@@ -526,11 +523,11 @@ select {
 
 .base-list-layout {
   display: flex;
-  flex-direction: row;
-  gap: 1.5rem;
+  flex: 1 1 0%;
+  min-height: 0;
 }
 
-.view-list, .view-header-content {
+.view-header-content {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -794,4 +791,32 @@ ul:has(.task-list-label) li::marker {
   display: inline-flex;
   text-rendering: auto;
   vertical-align: -.125em;
+}
+
+.masonry-grid {
+  column-count: 2;
+  column-gap: var(--spacing-lg);
+  padding: var(--base-padding);
+  width: 100%;
+}
+@media (min-width: 900px) {
+  .masonry-grid {
+    column-count: 3;
+  }
+}
+.masonry-grid > * {
+  width: 100%;
+  display: block;
+  margin-bottom: var(--spacing-lg);
+  break-inside: avoid;
+}
+
+.view-list {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }

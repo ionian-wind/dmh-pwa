@@ -68,6 +68,10 @@ function handlePartySelectorCancel() {
   showPartySelector.value = false;
   selectedEncounterForCombat.value = null;
 }
+async function handleCopy(encounter: Encounter) {
+  const { id, createdAt, updatedAt, ...rest } = encounter;
+  await encounterStore.create(rest);
+}
 </script>
 
 <template>
@@ -83,6 +87,7 @@ function handlePartySelectorCancel() {
     @submit="handleSubmit"
     @view="(encounter) => router.push(`/encounters/${encounter.id}`)"
     @run-combat="handleRunCombat"
+    @copy="handleCopy"
   />
   <PartySelector
     :is-open="showPartySelector"

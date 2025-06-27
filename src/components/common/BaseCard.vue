@@ -8,7 +8,7 @@ const props = defineProps({
   showDelete: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['view', 'edit', 'delete']);
+const emit = defineEmits(['view', 'edit', 'delete', 'copy']);
 
 const slots = useSlots();
 
@@ -63,6 +63,9 @@ const noBorderAfterHeader = computed(() => {
         <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">
           <i class="si si-pencil"></i>
         </Button>
+        <Button variant="secondary" size="small" @click="() => { console.log('BaseCard copy button clicked'); $emit('copy'); }" title="Make a Copy">
+          <i class="si si-copy"></i>
+        </Button>
         <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">
           <i class="si si-trash"></i>
         </Button>
@@ -82,6 +85,8 @@ const noBorderAfterHeader = computed(() => {
   flex-direction: column;
   overflow: hidden;
   transition: transform 0.2s;
+  position: relative;
+  max-height: 90vh;
 }
 .base-card:hover {
   transform: translateY(-2px);
@@ -106,6 +111,8 @@ const noBorderAfterHeader = computed(() => {
 
 .base-card-content {
   padding: 1rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 .base-card-actions {
   display: flex;
@@ -115,6 +122,9 @@ const noBorderAfterHeader = computed(() => {
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--color-border, #eee);
   background: var(--color-background, #fff);
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 .base-card-actions-left {
   display: flex;

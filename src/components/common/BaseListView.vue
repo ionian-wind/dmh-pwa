@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref, defineProps, defineEmits, watch } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 
 const props = defineProps({
@@ -13,14 +13,18 @@ const props = defineProps({
   searchPlaceholder: { type: String, default: 'Search...' },
   cardProps: { type: Function, default: (item: any) => ({}) },
   editorProps: { type: Function, default: (item: any) => ({}) },
-  masonry: { type: Boolean, default: false },
-  // Optional: for tag filter, etc.
+  sidePanelVisible: { type: Boolean, default: false },
 });
 
 const showEditor = ref(false);
 const editingItem = ref<any>(null);
-const isSidePanelVisible = ref(true);
-const emit = defineEmits(['create', 'edit', 'delete', 'submit', 'cancel', 'update:searchQuery', 'view', 'tag-click']);
+const isSidePanelVisible = ref(props.sidePanelVisible);
+
+watch(() => props.sidePanelVisible, (val) => {
+  isSidePanelVisible.value = val;
+});
+
+const emit = defineEmits(['create', 'edit', 'delete', 'submit', 'cancel', 'update:searchQuery', 'view', 'tag-click', 'copy', 'update:sidePanelVisible']);
 
 function handleCreate() {
   editingItem.value = null;
@@ -48,6 +52,7 @@ function handleSearch(val: string) {
 }
 function toggleSidePanel() {
   isSidePanelVisible.value = !isSidePanelVisible.value;
+  emit('update:sidePanelVisible', isSidePanelVisible.value);
 }
 function onCreate() {
   handleCreate();
@@ -85,6 +90,7 @@ function onCreate() {
             @edit="() => { handleEdit(item); $emit('edit', item); }"
             @delete="() => { handleDelete(item); $emit('delete', item); }"
             @tag-click="$emit('tag-click', $event)"
+            @copy="$emit('copy', item)"
           />
         </div>
         <component
@@ -109,57 +115,3 @@ function onCreate() {
   </div>
 </template>
 
-<style scoped>
-.sidebar-wrapper {
-  position: relative;
-  min-width: 280px;
-  max-width: 340px;
-  background: var(--color-background-soft);
-  border-left: 1px solid var(--color-border);
-  transition: max-width 0.2s, min-width 0.2s;
-  display: flex;
-  flex-direction: column;
-}
-.sidebar-wrapper.collapsed {
-  max-width: 32px;
-  min-width: 32px;
-}
-.side-panel-toggle-handle {
-  position: absolute;
-  left: -16px;
-  top: 16px;
-  width: 32px;
-  height: 32px;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-.side-panel {
-  padding: 1.5rem 1rem;
-  overflow-y: auto;
-  height: 100%;
-}
-.masonry-grid {
-  column-count: 2;
-  column-gap: 1.5rem;
-  max-height: calc(100vh - var(--base-padding));
-  overflow-y: auto;
-}
-@media (min-width: 900px) {
-  .masonry-grid {
-    column-count: 3;
-  }
-}
-.masonry-grid > * {
-  break-inside: avoid;
-  margin-bottom: 1.5rem;
-  width: 100%;
-  display: block;
-}
-</style>

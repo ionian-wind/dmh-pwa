@@ -2,10 +2,11 @@
 import { computed, onMounted } from 'vue';
 import type { Party } from '@/types';
 import { useModuleStore } from '@/stores/modules';
-import BaseCard from '@/components/common/BaseCard.vue';;
+import BaseCard from '@/components/common/BaseCard.vue';
+import { defineProps, defineEmits } from 'vue';
 
 const props = defineProps<{ party: Party }>();
-const emit = defineEmits(['edit', 'delete', 'view']);
+const emit = defineEmits(['edit', 'delete', 'view', 'copy']);
 const moduleStore = useModuleStore();
 
 onMounted(async () => {
@@ -15,6 +16,7 @@ onMounted(async () => {
 function handleView() { emit('view', props.party); }
 function handleEdit() { emit('edit', props.party); }
 function handleDelete() { emit('delete', props.party); }
+function handleCopy() { emit('copy', props.party); }
 
 const modules = computed(() => 
   props.party.moduleIds
@@ -23,7 +25,7 @@ const modules = computed(() =>
 );
 </script>
 <template>
-  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
+  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete" @copy="handleCopy">
     <template #header>
       <h3>{{ party.name }}</h3>
     </template>

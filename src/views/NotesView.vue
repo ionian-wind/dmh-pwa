@@ -74,6 +74,12 @@ function handleSubmit(note: Note) {
 function handleTagClick(tag: string) {
   router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
 }
+async function handleCopy(note: Note) {
+  console.log('NotesView handleCopy', note);
+  // Copy all fields except id, createdAt, updatedAt
+  const { id, createdAt, updatedAt, ...rest } = note;
+  await noteStore.create(rest);
+}
 </script>
 
 <template>
@@ -89,6 +95,7 @@ function handleTagClick(tag: string) {
     @submit="handleSubmit"
     @view="(note) => router.push(`/notes/${note.id}`)"
     @tag-click="handleTagClick"
+    @copy="handleCopy"
     :show-search="true"
     :search-query="searchQuery"
     @update:searchQuery="updateSearchQuery"
@@ -101,6 +108,7 @@ function handleTagClick(tag: string) {
         </button>
       </span>
     </template>
+    <template #sidepanel>123</template>
   </BaseListView>
 </template>
 

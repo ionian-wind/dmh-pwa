@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import Button from './Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
@@ -18,16 +18,22 @@ interface Props {
   notFound?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props & { sidePanelVisible?: boolean }>(), {
   subtitle: '',
   loading: false,
   notFound: false,
-  isEditing: false
+  isEditing: false,
+  sidePanelVisible: true
 });
 
-
 const router = useRouter();
-const isSidePanelVisible = ref(true);
+const isSidePanelVisible = ref(props.sidePanelVisible);
+
+watch(() => props.sidePanelVisible, (val) => {
+  isSidePanelVisible.value = val;
+});
+
+const emit = defineEmits(['update:sidePanelVisible']);
 
 const handleEdit = () => {
   if (props.onEdit) {
@@ -44,6 +50,7 @@ const handleDelete = async () => {
 
 const toggleSidePanel = () => {
   isSidePanelVisible.value = !isSidePanelVisible.value;
+  emit('update:sidePanelVisible', isSidePanelVisible.value);
 };
 </script>
 

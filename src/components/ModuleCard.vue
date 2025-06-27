@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { Module } from '@/types';
-import BaseCard from '@/components/common/BaseCard.vue';;
+import BaseCard from '@/components/common/BaseCard.vue';
+import { defineProps, defineEmits } from 'vue';
 
 const props = defineProps<{ module: Module }>();
-const emit = defineEmits(['edit', 'delete', 'view']);
+const emit = defineEmits(['edit', 'delete', 'view', 'copy']);
 
 const handleView = () => emit('view', props.module);
 const handleEdit = () => emit('edit', props.module);
 const handleDelete = () => emit('delete', props.module);
+const handleCopy = () => emit('copy', props.module);
 </script>
 
 <template>
-  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
+  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete" @copy="handleCopy">
     <template #header>
       <h3>{{ module.name }}</h3>
     </template>

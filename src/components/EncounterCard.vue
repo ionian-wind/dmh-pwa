@@ -6,7 +6,7 @@ import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 
 const props = defineProps<{ encounter: Encounter }>();
-const emit = defineEmits(['view', 'edit', 'delete', 'run-combat']);
+const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
 const moduleStore = useModuleStore();
 
 const moduleName = computed(() => {
@@ -46,9 +46,10 @@ function handleDelete() { emit('delete', props.encounter); }
 function handleRunCombat() {
   emit('run-combat', props.encounter);
 }
+function handleCopy() { emit('copy', props.encounter); }
 </script>
 <template>
-  <BaseCard showEdit showDelete showView @view="handleView" @edit="handleEdit" @delete="handleDelete">
+  <BaseCard showEdit showDelete showView @view="handleView" @edit="handleEdit" @delete="handleDelete" @copy="handleCopy">
     <template #header>
       <h3>{{ encounter.name }}</h3>
     </template>

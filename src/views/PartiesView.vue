@@ -47,6 +47,11 @@ function handleSubmit(party: Party) {
     partyStore.create(party);
   }
 }
+
+async function handleCopy(party: Party) {
+  const { id, createdAt, updatedAt, ...rest } = party;
+  await partyStore.create(rest);
+}
 </script>
 
 <template>
@@ -61,6 +66,7 @@ function handleSubmit(party: Party) {
     @delete="handleDelete"
     @submit="handleSubmit"
     @view="(party) => router.push(`/parties/${party.id}`)"
+    @copy="handleCopy"
   />
 </template>
 

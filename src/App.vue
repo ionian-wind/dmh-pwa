@@ -59,7 +59,8 @@ function closeRollModal() {
 // Jukebox open logic (assume JukeboxButton emits 'open' event or similar, or use a ref if needed)
 const jukeboxOpen = vueRef(false)
 function openJukebox() {
-  jukeboxOpen.value = true
+  // jukeboxOpen.value = true
+  router.push('/jukebox');
 }
 function closeJukebox() {
   jukeboxOpen.value = false

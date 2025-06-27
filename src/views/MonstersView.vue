@@ -40,6 +40,11 @@ function handleDelete(monster: Monster) {
   }
 }
 
+async function handleCopy(monster: Monster) {
+  const { id, createdAt, updatedAt, ...rest } = monster;
+  await monsterStore.create(rest);
+}
+
 function handleSubmit(monster: Monster) {
   if (monster.id) {
     monsterStore.update(monster.id, monster);
@@ -61,5 +66,6 @@ function handleSubmit(monster: Monster) {
     @delete="handleDelete"
     @submit="handleSubmit"
     @view="(monster) => router.push(`/monsters/${monster.id}`)"
+    @copy="handleCopy"
   />
 </template>

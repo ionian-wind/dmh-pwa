@@ -55,6 +55,11 @@ function handleSubmit(character: PlayerCharacter) {
     characterStore.create(character);
   }
 }
+
+async function handleCopy(character: PlayerCharacter) {
+  const { id, createdAt, updatedAt, ...rest } = character;
+  await characterStore.create(rest);
+}
 </script>
 
 <template>
@@ -69,5 +74,6 @@ function handleSubmit(character: PlayerCharacter) {
     @delete="handleDelete"
     @submit="handleSubmit"
     @view="(character) => router.push(`/characters/${character.id}`)"
+    @copy="handleCopy"
   />
 </template>

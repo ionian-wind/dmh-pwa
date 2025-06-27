@@ -2,12 +2,11 @@
 import type { Note } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';;
 import Button from '@/components/common/Button.vue';
-import { parseMarkdown } from '@/utils/markdownParser';
 import { ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
-const emit = defineEmits(['edit', 'delete', 'view', 'tag-click']);
+const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
 
 const contentRef = ref<HTMLElement | null>(null);
 const clamped = ref(false);
@@ -31,9 +30,13 @@ function handleView() { emit('view', props.note); }
 function handleEdit() { emit('edit', props.note); }
 function handleDelete() { emit('delete', props.note); }
 function toggleExpand() { expanded.value = !expanded.value; }
+function handleCopy() { 
+  console.log('NoteCard handleCopy', props.note);
+  emit('copy', props.note); 
+}
 </script>
 <template>
-  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
+  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete" @copy="handleCopy">
     <template #header>
       <h3>{{ note.title }}</h3>
       <span v-if="moduleName" class="module-badge">{{ moduleName }}</span>

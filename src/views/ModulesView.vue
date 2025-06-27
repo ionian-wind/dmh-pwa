@@ -40,6 +40,11 @@ function handleDelete(module: Module) {
   }
 }
 
+async function handleCopy(module: Module) {
+  const { id, createdAt, updatedAt, ...rest } = module;
+  await moduleStore.create(rest);
+}
+
 function handleSubmit(module: Module) {
   if (module.id) {
     moduleStore.update(module.id, module);
@@ -61,6 +66,7 @@ function handleSubmit(module: Module) {
     @delete="handleDelete"
     @submit="handleSubmit"
     @view="(module) => router.push(`/modules/${module.id}`)"
+    @copy="handleCopy"
   />
 </template>
 
