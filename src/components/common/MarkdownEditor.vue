@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineEmits, useAttrs, ref, nextTick, onUnmounted, onMounted } from 'vue';
+import { useAttrs, ref, nextTick, onUnmounted, onMounted } from 'vue';
 import MentionSuggestion from './MentionSuggestion.vue';
 import { getMentionableEntities } from '@/utils/markdownParser';
 import { useNoteStore } from '@/stores/notes';

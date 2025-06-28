@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, watch } from 'vue';
+import { ref, defineProps, watch } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import VueDraggable from 'vuedraggable';
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAttrs, ref, watch, nextTick, defineEmits } from 'vue';
+import { useAttrs, ref, watch, nextTick } from 'vue';
 import BaseModal from './common/BaseModal.vue';
 
 import DiceBox from '@3d-dice/dice-box';
