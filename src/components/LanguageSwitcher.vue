@@ -26,7 +26,7 @@ const changeLanguage = (event: Event) => {
       aria-label="Select language"
     >
       <option value="en">{{ t('language.english') }}</option>
-      <option value="es">{{ t('language.spanish') }}</option>
+      <option value="ru">{{ t('language.russian') }}</option>
     </select>
   </div>
 </template>

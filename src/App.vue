@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, ref} from 'vue'
 import { RouterView, useRouter } from 'vue-router'
-import AppHeader from '@/components/AppHeader.vue'
-import RollButton from '@/components/RollButton.vue'
 import RollModal from '@/components/RollModal.vue'
 import Button from '@/components/common/Button.vue'
 import JukeboxButton from '@/components/JukeboxButton.vue'
@@ -56,17 +54,6 @@ function openRollModal() {
 function closeRollModal() {
   // The modal will handle its own closing
 }
-
-// Jukebox open logic (assume JukeboxButton emits 'open' event or similar, or use a ref if needed)
-const jukeboxOpen = vueRef(false)
-function openJukebox() {
-  // jukeboxOpen.value = true
-  router.push('/jukebox');
-}
-function closeJukebox() {
-  jukeboxOpen.value = false
-}
-
 
 const isFullscreen = ref(false);
 
