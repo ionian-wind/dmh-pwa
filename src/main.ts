@@ -10,9 +10,15 @@ import router from './router'
 import i18n from './i18n'
 import { setupAnchorScrollHandler } from './utils/anchorScroll'
 import { useConfigStore } from './utils/configStore'
+import { initializeDatabase } from './utils/storage'
 
 // Import global styles
 import './assets/styles/global.css'
+
+// Initialize database and run migrations
+initializeDatabase().catch(error => {
+  console.error('Failed to initialize database:', error);
+});
 
 // Create app instance
 const app = createApp(App)

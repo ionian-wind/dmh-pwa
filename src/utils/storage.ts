@@ -6,6 +6,8 @@ import { defineStore } from 'pinia';
 import * as schemaValidator from './schemaValidator';
 import { WithMetadata } from "@/types";
 import { deepUnwrap } from './deepUnwrap';
+import { sortedMigrations } from '@/migrations';
+import type { Migration } from '@/types/migration';
 
 export class StorageError extends Error {
   constructor(
@@ -32,34 +34,66 @@ export function hasRequiredFields<T extends object>(obj: T, fields: (keyof T)[])
 
 // --- IndexedDB Helper using idb ---
 const DB_NAME = 'dmh-db';
-const DB_VERSION = 1;
-// TODO: implement migrations mechanism, so we can add changes to database structure without breaking existing data
-const ALL_STORE_NAMES = [
-  'characters',
-  'monsters',
-  'notes',
-  'parties',
-  'modules',
-  'encounters',
-  'combats',
-  'noteTypes',
-  // Indexation stores
-  'indexations_mentions',
-  // Jukebox stores
-  'jukebox_playlists',
-  'jukebox_tracks',
-  'jukebox_files'
-];
+const MIGRATIONS_STORE = 'migrations';
 
 async function openDB(): Promise<IDBPDatabase> {
-  // Always open the main DB, and ensure all stores exist
+  const DB_VERSION = Math.max(...sortedMigrations.map(({ version }) => version));
+  let toRun: Migration[] = [];
+  const affectedStores = new Set<string>();
+
   return idbOpenDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      for (const name of ALL_STORE_NAMES) {
-        if (!db.objectStoreNames.contains(name)) {
-          db.createObjectStore(name, { keyPath: 'id', autoIncrement: false });
+    upgrade(db, oldVersion, newVersion, transaction) {
+      const createStore = (storeName: string) => {
+        if (!db.objectStoreNames.contains(storeName)) {
+          affectedStores.add(storeName);
+          db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: false });
         }
+      };
+      
+      createStore(MIGRATIONS_STORE);
+
+      // Use DB_VERSION if newVersion is null
+      const effectiveNewVersion = newVersion ?? DB_VERSION;
+      // Run migrations for versions > oldVersion and <= newVersion
+      toRun = sortedMigrations.filter(m => {
+        if (m.version > oldVersion && m.version <= effectiveNewVersion) {
+          m.affectedStores.forEach((storeName) => createStore(storeName));
+          return true;
+        }
+        
+        return false;
+      });
+      
+      let chain: Promise<any> = Promise.resolve();
+
+      console.log('{{{ MIGRATIONS to run: %i }}}', toRun.length);
+      
+      for (const migration of toRun) {
+        chain = chain
+          .then(() => {
+            const info = {
+              id: generateId(),
+              version: migration.version,
+              name: migration.name,
+              appliedAt: Date.now()
+            };
+          
+            console.log('{{{ MIGRATION loading %o }}}', info);
+          
+            return Promise.resolve(migration.go(transaction))
+              .then(() => transaction.objectStore(MIGRATIONS_STORE).put(info)
+              .then(() => console.log('{{{ MIGRATION loaded %o }}}', info)))
+          });
       }
+
+      chain
+        .then(() => console.log('{{{ MIGRATIONS finished successfully }}}'))
+        .catch(err => {
+          console.log('{{{ MIGRATIONS failed }}}');
+          transaction.abort();
+          throw err;
+        });
+      
     },
   });
 }
@@ -334,3 +368,22 @@ export function createIndexationStore(storeName: string) {
 
 // Global mentions store for all entity mentions
 export const useMentionsStore = createIndexationStore('mentions');
+
+// --- Database initialization ---
+let isInitialized = false;
+
+export async function initializeDatabase(): Promise<void> {
+  if (isInitialized) {
+    return;
+  }
+  
+  try {
+    console.log('Initializing database...');
+    await openDB();
+    isInitialized = true;
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    throw error;
+  }
+}
