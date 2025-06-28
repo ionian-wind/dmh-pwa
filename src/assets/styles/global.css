@@ -653,10 +653,12 @@ select {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow-y: auto;
+
 }
 
 .entity-content {
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   min-height: 0;
   padding: var(--base-padding);
   max-width: 1200px;

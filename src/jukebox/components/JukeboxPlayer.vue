@@ -177,10 +177,12 @@ const isPlayDisabled = computed(() => {
 
 // Theming logic: update CSS variables for JukeboxPlayer based on track color
 const defaultTheme = {
-  '--color-primary': 'var(--color-primary)',
-  '--color-primary-dark': 'var(--color-primary-dark)',
-  '--color-background': 'var(--color-background)',
-  '--color-text': 'var(--color-text)',
+  '--jp-color-primary': 'var(--color-primary)',
+  '--jp-color-background-soft': 'var(--color-background)',
+  '--jp-color-primary-dark': 'var(--color-primary-dark)',
+  '--jp-color-primary-light': 'var(--color-text-light)',
+  '--jp-color-background': 'var(--color-background)',
+  '--jp-color-text': 'var(--color-text)',
 };
 
 function getContrastColor(hex: string): string {
@@ -208,12 +210,13 @@ function setJukeboxTheme(color?: string) {
   if (!el) return;
   if (color) {
     const contrast = getContrastColor(color);
-    el.style.setProperty('--color-primary', contrast + 'cc');
     el.style.setProperty('--track-color', contrast + 'cc');
     el.style.setProperty('--track-fill-color', getContrastColor(contrast));
-    el.style.setProperty('--color-primary-dark', contrast);
-    // el.style.setProperty('--color-background', '#fff');
-    el.style.setProperty('--color-text', '#333');
+
+    el.style.setProperty('--jp-color-primary', contrast + 'cc');
+    el.style.setProperty('--jp-color-primary-dark', contrast);
+    el.style.setProperty('--jp-color-primary-light', contrast + 'cc');
+    el.style.setProperty('--jp-color-text', '#333');
   } else {
     Object.entries(defaultTheme).forEach(([key, value]) => {
       el.style.setProperty(key, value);
@@ -315,15 +318,15 @@ watchEffect(() => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid var(--color-background-soft);
-  border-top: 4px solid var(--color-primary);
+  border: 4px solid var(--jp-color-background-soft);
+  border-top: 4px solid var(--jp-color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
 .loading-text {
-  color: var(--color-text-light);
+  color: var(--jp-color-primary-light);
   font-size: 0.9rem;
 }
 
@@ -438,10 +441,11 @@ watchEffect(() => {
 }
 .track-info-top .title {
   font-weight: bold;
+  color: var(--jp-color-primary);
 }
 .track-info-top .artist {
   font-size: 0.9em;
-  color: var(--color-text-light);
+  color: var(--jp-color-primary-light);
 }
 .player-controls-bottom {
   display: grid;
@@ -473,7 +477,7 @@ watchEffect(() => {
   bottom: 80%;
   left: calc(-100% - 5px);
   transform: translateX(-50%);
-  background: var(--color-background);
+  background: var(--jp-color-background);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   box-shadow: var(--shadow-md);
@@ -484,7 +488,7 @@ watchEffect(() => {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: var(--color-text);
+  color: var(--jp-color-primary);
   transition: all 0.2s ease-in-out;
   padding: 0.5rem;
   border-radius: 50%;
@@ -502,7 +506,7 @@ watchEffect(() => {
   transform: scale(0.95);
 }
 .controls button:disabled, .volume-button:disabled {
-  color: var(--color-text-light);
+  color: var(--jp-color-primary-light);
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;

@@ -38,7 +38,7 @@ const albumArtStyle = computed(() => {
   <li
     class="track-item"
     :class="{ 'is-selected': isSelected, 'is-playing': isPlaying }"
-    :style="{ '--track-color': trackColor }"
+    :style="{ '--track-item-color': trackColor }"
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
@@ -79,7 +79,7 @@ const albumArtStyle = computed(() => {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: var(--track-color, transparent);
+  background: var(--track-item-color, transparent);
   transition: width 0.2s;
 }
 .track-item:hover::before,
