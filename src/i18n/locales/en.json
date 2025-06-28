@@ -297,7 +297,9 @@
     "closeTab": "Close tab",
     "addNewTab": "Add new tab",
     "userMenu": "User Menu",
-    "tableOfContents": "Table of Contents"
+    "tableOfContents": "Table of Contents",
+    "bookmarks": "Bookmarks",
+    "noBookmarks": "No bookmarks yet."
   },
   "validation": {
     "required": "This field is required",

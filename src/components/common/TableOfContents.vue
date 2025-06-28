@@ -3,17 +3,17 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 
 interface TOCItem {
   id: string;
-  title: string;
   level: number;
   anchorId: string;
 }
 
 const props = defineProps<{
   items: TOCItem[];
-  title?: string;
 }>();
 
 const activeItemId = ref<string | null>(null);
+
+const emit = defineEmits(['item-click']);
 
 function scrollToAnchor(anchorId: string) {
   const element = document.getElementById(anchorId);
@@ -137,7 +137,6 @@ watch(() => props.items.length, async () => {
 
 <template>
   <div class="table-of-contents">
-    <h3 v-if="title" class="toc-title">{{ title }}</h3>
     <nav class="toc-nav">
       <ul class="toc-list">
         <li 
@@ -147,7 +146,7 @@ watch(() => props.items.length, async () => {
         >
           <button 
             class="toc-link" 
-            @click="scrollToAnchor(item.anchorId)"
+            @click="emit('item-click', item.anchorId)"
             :title="item.title"
           >
             {{ item.title }}
@@ -159,14 +158,6 @@ watch(() => props.items.length, async () => {
 </template>
 
 <style scoped>
-.toc-title {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.1rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
 .toc-nav {
   max-height: 400px;
   overflow-y: auto;

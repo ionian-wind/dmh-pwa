@@ -297,7 +297,9 @@
     "closeTab": "Закрыть вкладку",
     "addNewTab": "Добавить новую вкладку",
     "userMenu": "Меню пользователя",
-    "tableOfContents": "Содержание"
+    "tableOfContents": "Оглавление",
+    "bookmarks": "Закладки",
+    "noBookmarks": "Пока нет закладок."
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",

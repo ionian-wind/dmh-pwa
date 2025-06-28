@@ -10,6 +10,7 @@ import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useJukeboxTracksStore } from '@/jukebox/stores';
 import { useConfigStore } from '@/utils/configStore';
+import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Module } from '@/types';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
@@ -26,8 +27,8 @@ import MonsterCard from '@/components/MonsterCard.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
 import NoteCard from '@/components/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
-import NotFoundView from './NotFoundView.vue';
 import { useI18n } from 'vue-i18n';
+import Button from '@/components/common/Button.vue';
 
 interface TOCItem {
   id: string;
@@ -48,6 +49,7 @@ const playerStore = useJukeboxPlayerStore();
 const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
 const mentionsStore = useMentionsStore();
+const bookmarkStore = useBookmarkStore();
 const { t } = useI18n();
 
 const showEditor = ref(false);
@@ -86,6 +88,11 @@ const mentionedInEntities = computed(() => {
   return mentionsStore.getBacklinks({ kind: 'module', id: module.value.id });
 });
 
+const moduleBookmarks = computed(() => {
+  if (!module.value || !module.value.id) return [];
+  return bookmarkStore.items.filter(b => b.moduleId === module.value!.id);
+});
+
 const entityTabs = [
   { id: 'document', label: 'Book' },
   { id: 'parties', label: 'Parties' },
@@ -97,6 +104,7 @@ const entityTabs = [
 ];
 
 const activeTab = ref('document');
+const sidepanelTab = ref('toc');
 
 onMounted(async () => {
   await Promise.all([
@@ -159,6 +167,17 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
 
 function handleTOCUpdate(toc: TOCItem[]) {
   tocItems.value = toc;
+}
+
+function scrollToBookmark(anchorId: string) {
+  router.replace({ hash: '#' + anchorId });
+  const el = document.getElementById(anchorId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Optionally, highlight the heading
+    el.classList.add('bookmark-highlight');
+    setTimeout(() => el.classList.remove('bookmark-highlight'), 1200);
+  }
 }
 </script>
 
@@ -255,11 +274,42 @@ function handleTOCUpdate(toc: TOCItem[]) {
     </template>
 
     <template #sidepanel>
-      <div v-if="activeTab === 'document' && tocItems.length > 0">
-        <TableOfContents 
-          :items="tocItems" 
-          :title="t('common.tableOfContents')" 
-        />
+      <div v-if="activeTab === 'document'">
+        <TabGroup
+          :tabs="[
+            { id: 'toc', label: t('common.tableOfContents') },
+            { id: 'bookmarks', label: t('common.bookmarks') }
+          ]"
+          v-model="sidepanelTab"
+          size="sm"
+        >
+          <template #default>
+            <div v-show="sidepanelTab === 'toc'">
+              <TableOfContents :items="tocItems" @item-click="scrollToBookmark" />
+            </div>
+            <div v-show="sidepanelTab === 'bookmarks'">
+              <div v-if="moduleBookmarks.length === 0" class="empty-state">{{ t('common.noBookmarks') }}</div>
+              <ul v-else class="bookmark-list">
+                <li v-for="bookmark in moduleBookmarks" :key="bookmark.id" class="bookmark-list-item">
+                  <div class="bookmark-list-row">
+                    <span class="bookmark-link" @click="scrollToBookmark(bookmark.anchorId)">
+                      <i class="si si-bookmark"></i> {{ bookmark.title }}
+                    </span>
+                    <Button
+                      variant="light"
+                      size="small"
+                      class="bookmark-delete-btn"
+                      title="Delete bookmark"
+                      @click.stop.prevent="bookmarkStore.removeBookmark(bookmark.moduleId, bookmark.anchorId)"
+                    >
+                      <i class="si si-trash"></i>
+                    </Button>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </TabGroup>
       </div>
       <div v-else-if="activeTab !== 'document'">
         <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
@@ -321,5 +371,53 @@ function handleTOCUpdate(toc: TOCItem[]) {
   text-align: center;
   padding: 2rem;
   font-style: italic;
+}
+
+.bookmark-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bookmark-list-item {
+  margin-bottom: 0.5rem;
+}
+
+.bookmark-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bookmark-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  transition: color 0.2s, background-color 0.2s, text-decoration 0.2s;
+}
+
+.bookmark-link:hover {
+  color: var(--color-success);
+  text-decoration: underline;
+  background: var(--color-success-alpha, #e6f9ed);
+}
+
+.bookmark-highlight {
+  animation: bookmark-highlight-fade 1.2s;
+  background: var(--color-success-alpha, #e6f9ed) !important;
+}
+
+@keyframes bookmark-highlight-fade {
+  0% { background: var(--color-success-alpha, #e6f9ed); }
+  100% { background: transparent; }
 }
 </style> 

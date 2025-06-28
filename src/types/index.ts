@@ -108,3 +108,9 @@ export interface Combat extends WithMetadata {
   combatants: Combatant[];
   notes?: string;
 }
+
+export interface Bookmark extends WithMetadata {
+  moduleId: UUID;
+  anchorId: string;
+  title: string;
+}

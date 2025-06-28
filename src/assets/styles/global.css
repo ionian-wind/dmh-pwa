@@ -875,3 +875,31 @@ ul:has(.task-list-label) li::marker {
   justify-content: center;
   /* padding: var(--spacing-md); */
 }
+
+
+.bookmark-btn {
+  font-size: 1em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-light);
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  position: absolute;
+  left: -3em;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.bookmark-btn.visible {
+  opacity: 1;
+}
+
+.bookmark-btn.bookmarked {
+  color: var(--color-success-dark);
+}
+
+.bookmark-btn:hover {
+  color: var(--color-success);
+}

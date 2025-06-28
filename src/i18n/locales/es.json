@@ -290,7 +290,9 @@
     "closeTab": "Cerrar pestaña",
     "addNewTab": "Agregar nueva pestaña",
     "userMenu": "Menú de Usuario",
-    "tableOfContents": "Tabla de Contenidos"
+    "tableOfContents": "Tabla de Contenidos",
+    "bookmarks": "Marcadores",
+    "noBookmarks": "Aún no hay marcadores."
   },
   "validation": {
     "required": "Este campo es obligatorio",
