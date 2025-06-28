@@ -663,6 +663,7 @@ select {
   padding: var(--base-padding);
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .entity-subtitle {
