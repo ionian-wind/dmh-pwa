@@ -7,6 +7,7 @@ interface Props {
   trigger?: 'click' | 'hover' | 'focus';
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end' | 'left-start' | 'left-center' | 'left-end' | 'right-start' | 'right-center' | 'right-end';
   offset?: number;
+  verticalOffset?: number;
   closeOnClickOutside?: boolean;
   closeOnEscape?: boolean;
   autoFocus?: boolean;
@@ -22,6 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
   trigger: 'click',
   placement: 'bottom',
   offset: 8,
+  verticalOffset: 0,
   closeOnClickOutside: true,
   closeOnEscape: true,
   autoFocus: false,
@@ -111,6 +113,9 @@ function calculatePosition() {
   const minMargin = 8;
   const maxMargin = 16;
   
+  // Apply verticalOffset here
+  top = top + (props.verticalOffset ?? 0);
+
   // Ensure popover doesn't go off-screen
   if (left < minMargin) left = minMargin;
   if (top < minMargin) top = minMargin;

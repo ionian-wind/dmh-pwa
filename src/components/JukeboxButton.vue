@@ -60,7 +60,8 @@ const navigateToJukebox = () => {
     :is-open="isPopoverOpen" 
     @close="isPopoverOpen = false" 
     placement="right-end"
-    :offset="12"
+    :offset="80"
+    :vertical-offset="-20"
     :disable-internal-trigger="true"
   >
     <template #trigger>

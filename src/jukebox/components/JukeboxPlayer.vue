@@ -422,14 +422,16 @@ watchEffect(() => {
   background-repeat: no-repeat;
   box-shadow: var(--shadow-md);
 }
+
 .track-artwork-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  color: var(--color-text-inverse);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   font-size: 3rem;
 }
+
 .track-info-top {
   text-align: center;
   min-height: 3.5em; /* Reserve space */
