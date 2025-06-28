@@ -20,6 +20,8 @@ const props = defineProps<{
   closable?: boolean;
   addable?: boolean;
   disableTransition?: boolean;
+  align?: 'left' | 'center' | 'right' | 'justify';
+  titleAlign?: 'left' | 'center' | 'right';
 }>();
 
 const emit = defineEmits<{
@@ -82,7 +84,10 @@ watch(() => props.tabs, (newTabs) => {
     { 'tab-group--vertical': vertical }
   ]">
     <!-- Tab Navigation -->
-    <div class="tab-nav" :class="`tab-nav--${variant || 'default'}`">
+    <div class="tab-nav" :class="[
+      `tab-nav--${variant || 'default'}`,
+      `tab-nav-align--${props.align || 'left'}`
+    ]">
       <div class="tab-list">
         <button
           v-for="tab in tabs"
@@ -91,7 +96,8 @@ watch(() => props.tabs, (newTabs) => {
           :class="[
             `tab-item--${variant || 'default'}`,
             { 'tab-item--active': tab.id === activeTab },
-            { 'tab-item--disabled': tab.disabled }
+            { 'tab-item--disabled': tab.disabled },
+            `tab-title-align--${props.titleAlign || 'left'}`
           ]"
           @click="handleTabClick(tab)"
           :disabled="tab.disabled"
@@ -372,5 +378,37 @@ watch(() => props.tabs, (newTabs) => {
 
 .tab-panel-content {
   width: 100%;
+}
+
+.tab-nav-align--center .tab-list {
+  justify-content: center;
+}
+
+.tab-nav-align--right .tab-list {
+  justify-content: flex-end;
+}
+
+.tab-nav-align--left .tab-list {
+  justify-content: flex-start;
+}
+
+.tab-nav-align--justify .tab-item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.tab-title-align--left {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.tab-title-align--center {
+  justify-content: center;
+  text-align: center;
+}
+
+.tab-title-align--right {
+  justify-content: flex-end;
+  text-align: right;
 }
 </style> 

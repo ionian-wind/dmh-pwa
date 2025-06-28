@@ -276,6 +276,8 @@ function scrollToBookmark(anchorId: string) {
     <template #sidepanel>
       <div v-if="activeTab === 'document'">
         <TabGroup
+          :align="'justify'"
+          :title-align="'center'"
           :tabs="[
             { id: 'toc', label: t('common.tableOfContents') },
             { id: 'bookmarks', label: t('common.bookmarks') }
