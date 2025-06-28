@@ -410,10 +410,20 @@
   },
   "language": {
     "english": "English",
-    "spanish": "Español",
     "russian": "Russian"
   },
   "tags": {
     "title": "Tags"
+  },
+  "backup": {
+    "backup": "Backup",
+    "restore": "Restore",
+    "importModule": "Import Module",
+    "backupCompleted": "Backup completed successfully.",
+    "backupFailed": "Backup failed: ",
+    "restoreCompleted": "Restore completed successfully.",
+    "restoreFailed": "Restore failed: ",
+    "moduleImported": "Module imported successfully.",
+    "moduleImportFailed": "Module import failed: "
   }
 } 

@@ -2,6 +2,7 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import { nanoid } from 'nanoid';
 import { openDB as idbOpenDB, IDBPDatabase } from 'idb';
 import { defineStore } from 'pinia';
+import JSZip from 'jszip';
 
 import * as schemaValidator from './schemaValidator';
 import { WithMetadata } from "@/types";
@@ -386,4 +387,175 @@ export async function initializeDatabase(): Promise<void> {
     console.error('Failed to initialize database:', error);
     throw error;
   }
+}
+
+// List of all main store names for backup/restore
+export const MAIN_STORE_NAMES = [
+  'characters',
+  'combats',
+  'encounters',
+  'monsters',
+  'modules',
+  'notes',
+  'noteTypes',
+  'parties',
+  'bookmarks',
+];
+
+/**
+ * Backup all main stores as a zip file (returns a Blob)
+ */
+export async function backupAllStores(): Promise<Blob> {
+  const zip = new JSZip();
+  for (const storeName of MAIN_STORE_NAMES) {
+    const items = await idbGetAllItems(storeName);
+    zip.file(`${storeName}.json`, JSON.stringify(items, null, 2));
+  }
+  return zip.generateAsync({ type: 'blob' });
+}
+
+/**
+ * Restore all main stores from a zip file (Blob or File)
+ * Overwrites all data in those stores
+ */
+export async function restoreAllStores(zipFile: Blob): Promise<void> {
+  const zip = await JSZip.loadAsync(zipFile);
+  for (const storeName of MAIN_STORE_NAMES) {
+    const file = zip.file(`${storeName}.json`);
+    if (!file) continue;
+    const content = await file.async('string');
+    let items: any[] = [];
+    try {
+      items = JSON.parse(content);
+    } catch (e) {
+      // skip invalid JSON
+      continue;
+    }
+    // Clear existing store
+    await clearStore(storeName);
+    // Add items
+    for (const item of items) {
+      await idbPutItem(storeName, item);
+    }
+  }
+}
+
+/**
+ * Clear all items from a store
+ */
+export async function clearStore(storeName: string): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(storeName, 'readwrite');
+  const store = tx.objectStore(storeName);
+  const keys = await store.getAllKeys();
+  for (const key of keys) {
+    await store.delete(key);
+  }
+  await tx.done;
+}
+
+/**
+ * Import module from a zip file
+ */
+export async function importModuleFromZip(zipFile: Blob): Promise<{ moduleId: string, noteCount: number }> {
+  const zip = await JSZip.loadAsync(zipFile);
+  
+  // Read module.json
+  const moduleFile = zip.file('module.json');
+  if (!moduleFile) {
+    throw new StorageError('Module file not found in zip');
+  }
+  
+  const moduleContent = await moduleFile.async('string');
+  let moduleData: any;
+  try {
+    moduleData = JSON.parse(moduleContent);
+  } catch (e) {
+    throw new StorageError('Invalid module.json format');
+  }
+  
+  // Generate new IDs for the module and all notes
+  const newModuleId = generateId();
+  const idMapping = new Map<string, string>();
+  
+  // Read all note files
+  const notesFolder = zip.folder('notes');
+  if (!notesFolder) {
+    throw new StorageError('Notes folder not found in zip');
+  }
+  
+  const noteFiles = Object.values(notesFolder.files).filter(file => !file.dir);
+  const notes: any[] = [];
+  
+  for (const noteFile of noteFiles) {
+    const noteContent = await noteFile.async('string');
+    let noteData: any;
+    try {
+      noteData = JSON.parse(noteContent);
+    } catch (e) {
+      console.warn(`Skipping invalid note file: ${noteFile.name}`);
+      continue;
+    }
+    
+    // Generate new ID for note
+    const newNoteId = generateId();
+    idMapping.set(noteData.id, newNoteId);
+    
+    // Update note data
+    const newNote = {
+      ...noteData,
+      id: newNoteId,
+      moduleId: newModuleId,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    
+    notes.push(newNote);
+  }
+  
+  // Update module data with new ID and updated note tree
+  const newModule = {
+    ...moduleData,
+    id: newModuleId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    noteTree: updateNoteTreeIds(moduleData.noteTree, idMapping)
+  };
+  
+  // Import everything in a single transaction
+  const db = await openDB();
+  const tx = db.transaction(['modules', 'notes'], 'readwrite');
+  
+  try {
+    // Import module
+    await tx.objectStore('modules').put(newModule);
+    
+    // Import all notes
+    for (const note of notes) {
+      await tx.objectStore('notes').put(note);
+    }
+    
+    // Commit the transaction
+    await tx.done;
+    
+    return {
+      moduleId: newModuleId,
+      noteCount: notes.length
+    };
+  } catch (error) {
+    // Transaction will automatically rollback on error
+    throw new StorageError(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Update note tree IDs using the provided mapping
+ */
+function updateNoteTreeIds(tree: any[], idMapping: Map<string, string>): any[] {
+  return tree.map(node => ({
+    ...node,
+    id: idMapping.get(node.id) || node.id,
+    notes: node.notes?.map((noteId: string) => idMapping.get(noteId) || noteId) || [],
+    children: node.children ? updateNoteTreeIds(node.children, idMapping) : []
+  }));
 }
