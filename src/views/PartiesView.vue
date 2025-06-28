@@ -6,9 +6,11 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import PartyCard from '@/components/PartyCard.vue';
 import PartyEditor from '@/components/PartyEditor.vue';
 import type { Party } from '@/types';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const partyStore = usePartyStore();
+const { t } = useI18n();
 
 onMounted(async () => {
   await partyStore.load();
@@ -59,8 +61,8 @@ async function handleCopy(party: Party) {
     :items="partyStore.filtered"
     :card-component="PartyCard"
     :editor-component="PartyEditor"
-    :empty-message="'No parties yet. Create your first party to get started!'"
-    create-title="Create Party"
+    :empty-message="t('common.emptyParties')"
+    :create-title="t('parties.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
     @delete="handleDelete"

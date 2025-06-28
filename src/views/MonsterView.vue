@@ -7,12 +7,14 @@ import MonsterEditor from '@/components/MonsterEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
 const monsterStore = useMonsterStore();
 const mentionsStore = useMentionsStore();
 const showEditor = ref(false);
+const { t } = useI18n();
 
 const monster = ref<Monster | null>(null);
 const loading = computed(() => !monsterStore.isLoaded);
@@ -77,7 +79,7 @@ onMounted(async () => {
 <template>
   <BaseEntityView
     :entity="monster"
-    entity-name="Monster"
+    entity-name="t('monsters.title')"
     list-route="/monsters"
     :on-delete="handleDelete"
     :on-edit="handleEditClick"
@@ -90,7 +92,7 @@ onMounted(async () => {
     <div v-if="monster" class="monster-sheet">
       <!-- Notes -->
       <section v-if="monster.notes" class="sheet-section notes">
-        <h2>Notes</h2>
+        <h2>{{ t('notes.title') }}</h2>
         <div class="notes-content">
           <p>{{ monster.notes }}</p>
         </div>
@@ -108,8 +110,8 @@ onMounted(async () => {
     </template>
 
     <template #sidepanel>
-      <Mentions title="Mentions" :entities="mentions" />
-      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+      <Mentions :title="t('common.mentions')" :entities="mentions" />
+      <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
     </template>
   </BaseEntityView>
 </template>

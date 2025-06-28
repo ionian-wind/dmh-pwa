@@ -8,11 +8,13 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import CharacterCard from '@/components/CharacterCard.vue';
 import CharacterEditor from '@/components/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
+import { useI18n } from 'vue-i18n';
 
 const characterStore = useCharacterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const router = useRouter();
+const { t } = useI18n();
 
 onMounted(async () => {
   await Promise.all([
@@ -67,8 +69,8 @@ async function handleCopy(character: PlayerCharacter) {
     :items="characterStore.filtered"
     :card-component="CharacterCard"
     :editor-component="CharacterEditor"
-    :empty-message="'No characters yet. Create your first character to get started!'"
-    create-title="Create Character"
+    :empty-message="t('common.emptyCharacters')"
+    :create-title="t('characters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
     @delete="handleDelete"

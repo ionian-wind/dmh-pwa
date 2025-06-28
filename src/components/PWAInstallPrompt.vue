@@ -4,52 +4,96 @@ import Button from '@/components/common/Button.vue';
 
 const showInstallPrompt = ref(false);
 const deferredPrompt = ref<any>(null);
+const hasShownNativePrompt = ref(false);
 
 const installApp = async () => {
   if (!deferredPrompt.value) return;
   
-  // Show the install prompt
-  deferredPrompt.value.prompt();
-  
-  // Wait for the user to respond to the prompt
-  const { outcome } = await deferredPrompt.value.userChoice;
-  
-  if (outcome === 'accepted') {
-    console.log('User accepted the install prompt');
-  } else {
-    console.log('User dismissed the install prompt');
+  try {
+    // Show the install prompt
+    await deferredPrompt.value.prompt();
+    
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.value.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+  } catch (error) {
+    console.error('Error showing install prompt:', error);
+  } finally {
+    // Clear the deferredPrompt
+    deferredPrompt.value = null;
+    showInstallPrompt.value = false;
+    hasShownNativePrompt.value = false;
   }
-  
-  // Clear the deferredPrompt
-  deferredPrompt.value = null;
-  showInstallPrompt.value = false;
 };
 
 const dismissPrompt = () => {
   showInstallPrompt.value = false;
   deferredPrompt.value = null;
+  hasShownNativePrompt.value = false;
 };
 
 onMounted(() => {
+  console.log('PWAInstallPrompt: Component mounted, setting up event listeners');
+  
   // Listen for the beforeinstallprompt event
-  const handleBeforeInstallPrompt = (e: Event) => {
+  const handleBeforeInstallPrompt = async (e: Event) => {
+    console.log('PWAInstallPrompt: beforeinstallprompt event fired');
+    
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
-    // Stash the event so it can be triggered later
+    console.log('PWAInstallPrompt: preventDefault() called');
+    
+    // Store the event for later use
     deferredPrompt.value = e;
-    // Show the install prompt
-    showInstallPrompt.value = true;
+    
+    // Call prompt() immediately to satisfy browser requirements
+    // This prevents the warning about preventDefault() being called without prompt()
+    try {
+      console.log('PWAInstallPrompt: Calling native prompt()');
+      await (e as any).prompt();
+      hasShownNativePrompt.value = true;
+      console.log('PWAInstallPrompt: Native prompt() called successfully');
+      
+      // Wait for user choice
+      const { outcome } = await (e as any).userChoice;
+      console.log('PWAInstallPrompt: User choice outcome:', outcome);
+      
+      if (outcome === 'accepted') {
+        console.log('PWAInstallPrompt: User accepted the native install prompt');
+        // App will be installed, no need to show our custom prompt
+        return;
+      } else {
+        console.log('PWAInstallPrompt: User dismissed the native install prompt, showing custom prompt');
+        // Show our custom prompt as a fallback
+        showInstallPrompt.value = true;
+      }
+    } catch (error) {
+      console.log('PWAInstallPrompt: Native prompt failed or was not supported, showing custom prompt:', error);
+      // Show our custom prompt as fallback
+      showInstallPrompt.value = true;
+    }
   };
+  
   // Listen for the appinstalled event
   const handleAppInstalled = () => {
-    console.log('PWA was installed');
+    console.log('PWAInstallPrompt: PWA was installed');
     showInstallPrompt.value = false;
     deferredPrompt.value = null;
+    hasShownNativePrompt.value = false;
   };
+  
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   window.addEventListener('appinstalled', handleAppInstalled);
+  console.log('PWAInstallPrompt: Event listeners added');
+  
   // Cleanup
   onUnmounted(() => {
+    console.log('PWAInstallPrompt: Component unmounting, removing event listeners');
     window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.removeEventListener('appinstalled', handleAppInstalled);
   });
@@ -64,7 +108,12 @@ onMounted(() => {
       </div>
       <div class="pwa-install-text">
         <h3>Install Owlbear's Dungeon Master Helper</h3>
-        <p>Add this app to your home screen for quick access and offline use.</p>
+        <p v-if="hasShownNativePrompt">
+          You dismissed the install prompt. Would you like to try again?
+        </p>
+        <p v-else>
+          Add this app to your home screen for quick access and offline use.
+        </p>
       </div>
       <div class="pwa-install-actions">
         <Button @click="installApp" variant="primary" size="small">

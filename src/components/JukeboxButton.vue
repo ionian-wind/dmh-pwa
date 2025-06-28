@@ -78,7 +78,7 @@ const navigateToJukebox = () => {
       <Button 
         variant="light" 
         @click="navigateToJukebox" 
-        title="Open full Jukebox"
+        :title="t('common.openFullscreen')"
         class="jukebox-nav-button"
       >
         <i class="si si-external-link"></i>

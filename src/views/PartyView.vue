@@ -12,6 +12,7 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/common/Button.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +20,7 @@ const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const characterStore = useCharacterStore();
 const mentionsStore = useMentionsStore();
+const { t } = useI18n();
 
 const showEditor = ref(false);
 const showLinkModal = ref(false);
@@ -136,7 +138,7 @@ onMounted(async () => {
   <div>
     <BaseEntityView
       :entity="party"
-      entity-name="Party"
+      entity-name="t('parties.title')"
       list-route="/parties"
       :on-delete="handleDeleteParty"
       :on-edit="() => showEditor = true"
@@ -150,27 +152,27 @@ onMounted(async () => {
       <div v-if="party" class="party-content">
         <section class="content-section">
           <div class="section-header">
-            <h2>Characters</h2>
+            <h2>{{ t('notes.title') }}</h2>
             <Button @click="showLinkModal = true" class="link-btn">
               Link Characters
             </Button>
           </div>
           <div v-if="partyCharacters.length === 0" class="empty-state">
-            <p>No characters in this party yet</p>
+            <p>{{ t('partyView.noCharacters') }}</p>
           </div>
           <div v-else class="characters-grid">
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Actions</th>
+                  <th>{{ t('partyView.name') }}</th>
+                  <th>{{ t('partyView.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="character in partyCharacters" :key="character.id">
                   <td>{{ character.name }}</td>
                   <td>
-                    <button class="unlink-btn" @click="handleToggleCharacter(character, false)">Unlink</button>
+                    <button class="unlink-btn" @click="handleToggleCharacter(character, false)">{{ t('partyView.unlink') }}</button>
                   </td>
                 </tr>
               </tbody>
@@ -190,30 +192,30 @@ onMounted(async () => {
       </template>
 
       <template #sidepanel>
-        <Mentions title="Mentions" :entities="mentionedEntities" />
-        <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+        <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
+        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </template>
     </BaseEntityView>
     
     <!-- Link Characters Modal -->
     <BaseModal
       :is-open="showLinkModal"
-      title="Link Characters"
+      title="t('parties.linkCharacters')"
       :show-cancel="true"
       :show-submit="false"
-      cancel-label="Close"
+      cancel-label="t('common.close')"
       modal-id="link-characters-modal"
       @cancel="showLinkModal = false"
     >
       <div v-if="allCharacters.length === 0" class="empty-state">
-        <p>No characters available</p>
+        <p>{{ t('partyView.noAvailable') }}</p>
       </div>
       <div v-else class="characters-grid">
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Linked</th>
+              <th>{{ t('partyView.name') }}</th>
+              <th>{{ t('partyView.linked') }}</th>
             </tr>
           </thead>
           <tbody>

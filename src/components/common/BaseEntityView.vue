@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Button from './Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
@@ -16,6 +17,7 @@ interface Props {
   subtitle?: string;
   loading?: boolean;
   notFound?: boolean;
+  hideHeader?: boolean;
 }
 
 const props = withDefaults(defineProps<Props & { sidePanelVisible?: boolean }>(), {
@@ -23,10 +25,12 @@ const props = withDefaults(defineProps<Props & { sidePanelVisible?: boolean }>()
   loading: false,
   notFound: false,
   isEditing: false,
-  sidePanelVisible: true
+  sidePanelVisible: true,
+  hideHeader: false
 });
 
 const router = useRouter();
+const { t } = useI18n();
 const isSidePanelVisible = ref(props.sidePanelVisible);
 
 watch(() => props.sidePanelVisible, (val) => {
@@ -56,10 +60,10 @@ const toggleSidePanel = () => {
 
 <template>
   <div class="base-entity-container">
-    <div v-if="loading" class="loading-state">Loading...</div>
+    <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <NotFoundView v-else-if="notFound" />
     <template v-else-if="entity">
-      <ViewHeader :title="title">
+      <ViewHeader v-if="!hideHeader" :title="title">
         <template #subtitle>
           <div v-if="subtitle" class="entity-subtitle">
             {{ subtitle }}
@@ -68,10 +72,10 @@ const toggleSidePanel = () => {
         </template>
         <template #actions>
           <slot name="actions" />
-          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" title="Edit">
+          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" :title="t('common.edit')">
             <i class="si si-pencil"></i>
           </Button>
-          <Button v-if="onDelete" variant="danger" @click="handleDelete" title="Delete">
+          <Button v-if="onDelete" variant="danger" @click="handleDelete" :title="t('common.delete')">
             <i class="si si-trash"></i>
           </Button>
         </template>

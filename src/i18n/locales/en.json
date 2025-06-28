@@ -218,6 +218,11 @@
   },
   "common": {
     "empty": "No items found",
+    "emptyModules": "No modules yet. Create your first module to get started!",
+    "emptyParties": "No parties yet. Create your first party to get started!",
+    "emptyEncounters": "No encounters yet. Create your first encounter to get started!",
+    "emptyCharacters": "No characters yet. Create your first character to get started!",
+    "emptyTracks": "No tracks to display. Add some tracks to get started!",
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Operation completed successfully",
@@ -234,7 +239,64 @@
     "information": "Information",
     "statistics": "Statistics",
     "description": "Description",
-    "notes": "Notes"
+    "notes": "Notes",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "remove": "Remove",
+    "save": "Save",
+    "cancel": "Cancel",
+    "view": "View",
+    "copy": "Copy",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "update": "Update",
+    "submit": "Submit",
+    "reset": "Reset",
+    "refresh": "Refresh",
+    "download": "Download",
+    "upload": "Upload",
+    "export": "Export",
+    "import": "Import",
+    "confirm": "Confirm",
+    "start": "Start",
+    "stop": "Stop",
+    "pause": "Pause",
+    "play": "Play",
+    "run": "Run",
+    "link": "Link",
+    "unlink": "Unlink",
+    "rename": "Rename",
+    "details": "Details",
+    "entityDetails": "Entity Details",
+    "fullscreen": "Full Page",
+    "exitFullscreen": "Exit Full Page",
+    "openFullscreen": "Open App in Full Page",
+    "mentions": "Mentions",
+    "mentionedIn": "Mentioned In",
+    "runCombat": "Run Combat",
+    "startCombat": "Start Combat",
+    "clearLog": "Clear Log",
+    "addToPlaylist": "Add to Playlist",
+    "playlist": "Playlist",
+    "addTracks": "Add Tracks",
+    "removeTagFilter": "Remove tag filter",
+    "addRootNode": "Add Root Node",
+    "saveTree": "Save Tree",
+    "addChild": "Add child",
+    "createNoteInNode": "Create note in this node",
+    "editNote": "Edit note",
+    "closeTab": "Close tab",
+    "addNewTab": "Add new tab",
+    "userMenu": "User Menu"
   },
   "validation": {
     "required": "This field is required",
@@ -243,5 +305,111 @@
     "email": "Please enter a valid email address",
     "number": "Please enter a valid number",
     "positive": "Please enter a positive number"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "errorCode": "404",
+    "message": "The page you are looking for doesn't exist or has been moved.",
+    "goHome": "🏠 Go Home",
+    "goBack": "← Go Back",
+    "helpTitle": "You can also try:",
+    "helpItems": [
+      "Checking the URL for typos",
+      "Using the navigation menu above",
+      "Going back to the previous page"
+    ]
+  },
+  "project": {
+    "name": "DMH PWA",
+    "subtitle": "Dungeon Master's Helper"
+  },
+  "statCard": {
+    "notes": "Notes",
+    "parties": "Parties",
+    "monsters": "Monsters",
+    "characters": "Characters",
+    "encounters": "Encounters",
+    "modules": "Modules"
+  },
+  "combat": {
+    "encounter": "Encounter",
+    "party": "Party",
+    "status": "Status",
+    "tracker": "Combat Tracker",
+    "summary": "Combat Summary",
+    "round": "Round:",
+    "turn": "Turn:",
+    "notes": "Notes",
+    "noActive": "No active combat found for this encounter.",
+    "currentTurn": "Current Turn: {name}",
+    "type": "Type: {type}",
+    "log": "Combat Log",
+    "clearLog": "Clear Log"
+  },
+  "encounterCard": {
+    "module": "Module:",
+    "monsters": "Monsters:"
+  },
+  "partyView": {
+    "noCharacters": "No characters in this party yet",
+    "noAvailable": "No characters available",
+    "name": "Name",
+    "actions": "Actions",
+    "linked": "Linked",
+    "unlink": "Unlink"
+  },
+  "moduleView": {
+    "noDocument": "No document structure defined for this module.",
+    "noParties": "No parties in this module",
+    "noMonsters": "No monsters in this module",
+    "noEncounters": "No encounters in this module",
+    "noNotes": "No notes in this module",
+    "noPlaylists": "No playlists in this module"
+  },
+  "playlist": {
+    "none": "No playlists found. Please create one first.",
+    "name": "Name",
+    "description": "Description",
+    "modules": "Modules"
+  },
+  "noteTypeSelector": {
+    "selectType": "Select note type",
+    "createNew": "Create New Type",
+    "name": "Name",
+    "description": "Description",
+    "color": "Color",
+    "icon": "Icon (optional)",
+    "add": "Add",
+    "cancel": "Cancel"
+  },
+  "moduleTreeNode": {
+    "untitled": "(untitled)",
+    "addNote": "Add note..."
+  },
+  "editor": {
+    "basicInformation": "Basic Information",
+    "content": "Content",
+    "description": "Description",
+    "notes": "Notes",
+    "title": "Title",
+    "module": "Module",
+    "type": "Type",
+    "tags": "Tags"
+  },
+  "partySelector": {
+    "chooseParty": "Choose a party...",
+    "partyInformation": "Party Information",
+    "encounterInformation": "Encounter Information",
+    "party": "Party:",
+    "characters": "Characters:",
+    "encounter": "Encounter:",
+    "monsters": "Monsters:"
+  },
+  "language": {
+    "english": "English",
+    "spanish": "Español"
+  },
+  "tags": {
+    "title": "Tags"
   }
 } 

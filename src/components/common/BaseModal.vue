@@ -2,6 +2,7 @@
 import { watch, onMounted, onUnmounted, computed, ref, useSlots } from 'vue';
 import Button from './Button.vue';
 import { useModalState } from '@/composables/useModalState';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -29,6 +30,8 @@ const hasHeader = computed(() => !!props.title || !!slots['header-actions'] || !
 
 // Only show modal if it's open and is the top of the stack
 const actuallyOpen = computed(() => props.isOpen && currentModalId.value === props.modalId);
+
+const { t } = useI18n();
 
 function setBodyScroll(disabled: boolean) {
   if (disabled) {
@@ -124,7 +127,7 @@ function setExpanded(val: boolean) {
           <h2 v-if="title">{{ title }}</h2>
           <div class="header-actions">
             <slot name="header-actions" />
-            <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? 'Collapse' : 'Expand'">
+            <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? t('common.collapse') : t('common.expand')">
               <i :class="isExpanded ? 'si si-arrows-minimize' : 'si si-arrows-maximize'"></i>
             </Button>
             <Button v-if="props.showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">

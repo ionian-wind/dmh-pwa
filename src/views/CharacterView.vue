@@ -7,10 +7,12 @@ import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const characterStore = useCharacterStore();
 const mentionsStore = useMentionsStore();
+const { t } = useI18n();
 const showEditor = ref(false);
 
 const isLoaded = computed(() => characterStore.isLoaded);
@@ -61,7 +63,7 @@ onMounted(async () => {
 <template>
   <BaseEntityView
     :entity="character"
-    entity-name="Character"
+    entity-name="t('characters.title')"
     list-route="/characters"
     :on-delete="handleDelete"
     :on-edit="editCharacter"
@@ -74,7 +76,7 @@ onMounted(async () => {
     <div v-if="character" class="character-sheet">
       <!-- Notes -->
       <section v-if="character.notes" class="sheet-section notes">
-        <h2>Notes</h2>
+        <h2>{{ t('notes.title') }}</h2>
         <div class="notes-content">
           <p>{{ character.notes }}</p>
         </div>
@@ -92,8 +94,8 @@ onMounted(async () => {
     </template>
 
     <template #sidepanel>
-      <Mentions title="Mentions" :entities="mentionedEntities" />
-      <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+      <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
+      <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
     </template>
   </BaseEntityView>
 </template>

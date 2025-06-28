@@ -17,6 +17,7 @@ const props = defineProps({
   sidePanelVisible: { type: Boolean, default: false },
   viewStyle: { type: String, default: 'masonry' },
   draggable: { type: Boolean, default: false },
+  hideHeader: { type: Boolean, default: false },
 });
 
 const showEditor = ref(false);
@@ -67,7 +68,7 @@ function onCreate() {
   emit('create');
 }
 
-const cardPropsWithDraggable = (item) => {
+const cardPropsWithDraggable = (item: any) => {
   const base = props.cardProps(item);
   return { ...base, draggable: props.draggable };
 };
@@ -76,6 +77,7 @@ const cardPropsWithDraggable = (item) => {
 <template>
   <div class="view-root base-list-container">
     <ViewHeader
+      v-if="!hideHeader"
       show-create
       :create-title="createTitle"
       :show-search="showSearch"
@@ -110,6 +112,19 @@ const cardPropsWithDraggable = (item) => {
             </VueDraggable>
             <div v-else>
               <div v-if="viewStyle === 'masonry'" class="masonry-grid">
+                <component
+                  v-for="item in items as any[]"
+                  :is="cardComponent"
+                  :key="item.id"
+                  v-bind="cardPropsWithDraggable(item)"
+                  @view="$emit('view', item)"
+                  @edit="() => { handleEdit(item); $emit('edit', item); }"
+                  @delete="() => { handleDelete(item); $emit('delete', item); }"
+                  @tag-click="$emit('tag-click', $event)"
+                  @copy="$emit('copy', item)"
+                />
+              </div>
+              <div v-else-if="viewStyle === 'grid'" class="grid-layout">
                 <component
                   v-for="item in items as any[]"
                   :is="cardComponent"
@@ -171,6 +186,15 @@ const cardPropsWithDraggable = (item) => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  max-width: 1200px;
+  margin: auto;
+  padding: var(--base-padding);
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-md);
   max-width: 1200px;
   margin: auto;
   padding: var(--base-padding);

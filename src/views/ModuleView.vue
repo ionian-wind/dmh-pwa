@@ -26,6 +26,7 @@ import EncounterCard from '@/components/EncounterCard.vue';
 import NoteCard from '@/components/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import NotFoundView from './NotFoundView.vue';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
@@ -39,6 +40,7 @@ const playerStore = useJukeboxPlayerStore();
 const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
 const mentionsStore = useMentionsStore();
+const { t } = useI18n();
 
 const showEditor = ref(false);
 const isLoaded = computed(() => moduleStore.isLoaded);
@@ -150,7 +152,7 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
 <template>
   <BaseEntityView
     :entity="module"
-    entity-name="Module"
+    entity-name="t('modules.title')"
     list-route="/modules"
     :on-delete="handleDelete"
     :on-edit="() => showEditor = true"
@@ -169,12 +171,12 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
             :notes="moduleNotes"
           />
           <div v-else class="empty-state">
-            <p>No document structure defined for this module.</p>
+            <p>{{ t('moduleView.noDocument') }}</p>
           </div>
         </TabPanel>
         <TabPanel tab-id="parties">
           <div v-if="moduleParties.length === 0" class="empty-state">
-            <p>No parties in this module</p>
+            <p>{{ t('moduleView.noParties') }}</p>
           </div>
           <div v-else class="content-grid">
             <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
@@ -182,7 +184,7 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
         </TabPanel>
         <TabPanel tab-id="monsters">
           <div v-if="moduleMonsters.length === 0" class="empty-state">
-            <p>No monsters in this module</p>
+            <p>{{ t('moduleView.noMonsters') }}</p>
           </div>
           <div v-else class="content-grid">
             <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
@@ -190,7 +192,7 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
         </TabPanel>
         <TabPanel tab-id="encounters">
           <div v-if="moduleEncounters.length === 0" class="empty-state">
-            <p>No encounters in this module</p>
+            <p>{{ t('moduleView.noEncounters') }}</p>
           </div>
           <div v-else class="content-grid">
             <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
@@ -198,7 +200,7 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
         </TabPanel>
         <TabPanel tab-id="notes">
           <div v-if="moduleNotes.length === 0" class="empty-state">
-            <p>No notes in this module</p>
+            <p>{{ t('moduleView.noNotes') }}</p>
           </div>
           <div v-else class="content-grid">
             <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
@@ -206,7 +208,7 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
         </TabPanel>
         <TabPanel tab-id="playlists">
           <div v-if="modulePlaylists.length === 0" class="empty-state">
-            <p>No playlists in this module</p>
+            <p>{{ t('moduleView.noPlaylists') }}</p>
           </div>
           <div v-else class="content-grid">
             <JukeboxPlaylistCard
@@ -240,8 +242,8 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
 
     <template #sidepanel>
       <div v-if="activeTab !== 'document'">
-        <Mentions title="Mentions" :entities="mentionedEntities" />
-        <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+        <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
+        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </div>
     </template>
   </BaseEntityView>

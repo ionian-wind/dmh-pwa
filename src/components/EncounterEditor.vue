@@ -3,6 +3,7 @@ import { ref, watch, computed, onMounted } from 'vue';
 import { Encounter } from '@/types';
 import ModuleSelector from './ModuleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -25,6 +26,8 @@ const editedEncounter = ref<EncounterFormData>({
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
+
+const { t } = useI18n();
 
 watch(() => props.encounter, (newEncounter) => {
   if (newEncounter) {
@@ -96,14 +99,14 @@ defineExpose({
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <h3>Basic Information</h3>
+      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="encounter-name">Name</label>
+          <label for="encounter-name">{{ t('common.name') }}</label>
           <input id="encounter-name" v-model="editedEncounter.name" type="text" required />
         </div>
         <div class="form-group">
-          <label for="encounter-module">Module</label>
+          <label for="encounter-module">{{ t('editor.module') }}</label>
           <ModuleSelector
             id="encounter-module"
             v-model="editedEncounter.moduleId"
@@ -115,16 +118,16 @@ defineExpose({
       </div>
     </div>
     <div class="form-section">
-      <h3>Description</h3>
+      <h3>{{ t('editor.description') }}</h3>
       <div class="form-group">
-        <label for="encounter-description">Description</label>
+        <label for="encounter-description">{{ t('editor.description') }}</label>
         <textarea id="encounter-description" v-model="editedEncounter.description" rows="3" placeholder="Description"></textarea>
       </div>
     </div>
     <div class="form-section">
-      <h3>Notes</h3>
+      <h3>{{ t('editor.notes') }}</h3>
       <div class="form-group">
-        <label for="encounter-notes">Notes</label>
+        <label for="encounter-notes">{{ t('editor.notes') }}</label>
         <textarea id="encounter-notes" v-model="editedEncounter.notes" rows="3" placeholder="Additional notes about this encounter"></textarea>
       </div>
     </div>

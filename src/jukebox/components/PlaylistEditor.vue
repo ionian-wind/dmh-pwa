@@ -6,6 +6,7 @@ import { useJukeboxPlaylistsStore } from '../stores';
 import { useModuleStore } from '@/stores/modules';
 import type { JukeboxPlaylist } from '../types';
 import type { UUID } from '@/types';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -16,6 +17,7 @@ const emit = defineEmits(['update:modelValue', 'saved']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const moduleStore = useModuleStore();
+const { t } = useI18n();
 
 type EditablePlaylist = {
   name: string;
@@ -92,25 +94,26 @@ async function save() {
     title="Playlist"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save"
-    cancelLabel="Cancel"
+    submitLabel="t('common.save')"
+    cancelLabel="t('common.cancel')"
     @submit="save"
     @cancel="$emit('update:modelValue', false)"
   >
+    <template #title>{{ t('common.playlist') }}</template>
     <div class="form-group">
-      <label for="playlist-name">Name</label>
+      <label for="playlist-name">{{ t('playlist.name') }}</label>
       <input id="playlist-name" v-model="editablePlaylist.name" type="text" required />
     </div>
     <div class="form-group">
-      <label for="playlist-description">Description</label>
+      <label for="playlist-description">{{ t('playlist.description') }}</label>
       <textarea id="playlist-description" v-model="editablePlaylist.description"></textarea>
     </div>
     <div class="form-group">
-      <label for="playlist-modules">Modules</label>
+      <label for="playlist-modules">{{ t('playlist.modules') }}</label>
       <ModuleMultipleSelector
         id="playlist-modules"
         v-model="moduleIdsProxy"
-        placeholder="No Modules"
+        placeholder="t('common.noModules')"
       />
     </div>
   </BaseModal>

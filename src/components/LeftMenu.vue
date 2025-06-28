@@ -67,4 +67,11 @@ function isMinimized() {
   flex-direction: column;
   align-items: stretch;
 }
+.left-menu.minimized .left-menu-bottom {
+  align-items: center;
+  padding: 0.5rem 0;
+}
+.left-menu.minimized .left-menu-bottom .menu-label {
+  display: none;
+}
 </style> 

@@ -8,8 +8,10 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
+import { useI18n } from 'vue-i18n';
 
 const moduleStore = useModuleStore();
+const { t } = useI18n();
 
 const props = defineProps<{
   note: Note | null;
@@ -91,10 +93,10 @@ const handleCancel = () => {
   >
     <div v-if="validationError" class="validation-error">{{ validationError }}</div>
     <div class="form-section">
-      <h3>Basic Information</h3>
+      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="title">Title</label>
+          <label for="title">{{ t('editor.title') }}</label>
           <input
             id="title"
             v-model="editedNote.title"
@@ -104,7 +106,7 @@ const handleCancel = () => {
           >
         </div>
         <div class="form-group">
-          <label for="module">Module</label>
+          <label for="module">{{ t('editor.module') }}</label>
           <ModuleSelector
             v-model="editedNote.moduleId"
             placeholder="No Module"
@@ -114,7 +116,7 @@ const handleCancel = () => {
       </div>
       <div class="form-grid">
         <div class="form-group">
-          <label for="type">Type</label>
+          <label for="type">{{ t('editor.type') }}</label>
           <NoteTypeSelector
             v-model="editedNote.typeId"
             placeholder="No Type"
@@ -122,7 +124,7 @@ const handleCancel = () => {
           />
         </div>
         <div class="form-group">
-          <label for="tags">Tags</label>
+          <label for="tags">{{ t('editor.tags') }}</label>
           <TagSelector
             v-model="editedNote.tags"
             placeholder="Add tags..."
@@ -131,7 +133,7 @@ const handleCancel = () => {
       </div>
     </div>
     <div class="form-section">
-      <h3>Content</h3>
+      <h3>{{ t('editor.content') }}</h3>
       <div class="form-group">
         <MarkdownEditor
           v-model="noteContent"

@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useConfigStore } from '@/utils/configStore';
 import { storeToRefs } from 'pinia';
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const configStore = useConfigStore();
 const { savedLanguage } = storeToRefs(configStore);
 
@@ -25,8 +25,8 @@ const changeLanguage = (event: Event) => {
       class="language-select"
       aria-label="Select language"
     >
-      <option value="en">English</option>
-      <option value="es">Español</option>
+      <option value="en">{{ t('language.english') }}</option>
+      <option value="es">{{ t('language.spanish') }}</option>
     </select>
   </div>
 </template>

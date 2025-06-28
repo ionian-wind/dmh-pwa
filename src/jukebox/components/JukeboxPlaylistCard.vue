@@ -3,9 +3,12 @@ import { computed } from 'vue';
 import type { JukeboxPlaylist } from '../types';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ playlist: JukeboxPlaylist; }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'play']);
+
+const { t } = useI18n();
 
 const handleView = () => emit('view', props.playlist);
 const handleEdit = () => emit('edit', props.playlist);
@@ -28,7 +31,7 @@ const subtitle = computed(() => {
       <p>{{ playlist.description }}</p>
     </div>
     <template #actions>
-        <Button @click="handlePlay" variant="success" size="small" title="Play">
+        <Button @click="handlePlay" variant="success" size="small" :title="t('common.play')">
             <i class="si si-music-note"></i>
         </Button>
     </template>

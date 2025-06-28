@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, provide } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 export interface Tab {
   id: string;
@@ -27,6 +28,8 @@ const emit = defineEmits<{
   (e: 'tab-close', tabId: string): void;
   (e: 'tab-add'): void;
 }>();
+
+const { t } = useI18n();
 
 const activeTab = computed({
   get: () => props.modelValue || props.tabs[0]?.id || '',
@@ -100,7 +103,7 @@ watch(() => props.tabs, (newTabs) => {
             v-if="closable && !tab.disabled"
             class="tab-close"
             @click="handleTabClose(tab.id, $event)"
-            title="Close tab"
+            title="t('common.closeTab')"
           >
             ×
           </button>
@@ -111,7 +114,7 @@ watch(() => props.tabs, (newTabs) => {
         v-if="addable"
         class="tab-add"
         @click="handleAddTab"
-        title="Add new tab"
+        title="t('common.addNewTab')"
       >
         +
       </button>

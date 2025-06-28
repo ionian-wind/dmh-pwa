@@ -4,6 +4,7 @@ import BaseCard from '@/components/common/BaseCard.vue';;
 import Button from '@/components/common/Button.vue';
 import { ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
@@ -11,6 +12,8 @@ const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
 const contentRef = ref<HTMLElement | null>(null);
 const clamped = ref(false);
 const expanded = ref(false);
+
+const { t } = useI18n();
 
 function checkClamped() {
   if (contentRef.value) {
@@ -62,7 +65,7 @@ function handleCopy() {
         size="small"
         variant="secondary"
         @click="toggleExpand"
-        :title="expanded ? 'Collapse' : 'Expand'"
+        :title="expanded ? t('common.collapse') : t('common.expand')"
       >
         <i :class="['si', expanded ? 'si-chevron-up' : 'si-chevron-down']"></i>
       </Button>

@@ -7,12 +7,15 @@ import { useCharacterStore } from '@/stores/characters';
 import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import Button from '@/components/common/Button.vue';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
 const monsterStore = useMonsterStore();
 const characterStore = useCharacterStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -123,7 +126,7 @@ const generateId = () => {
     <div class="party-selector">
       <div class="form-section">
         <select v-model="selectedPartyId" required>
-          <option value="">Choose a party...</option>
+          <option value="">{{ t('partySelector.chooseParty') }}</option>
           <option v-for="party in partyStore.filtered" :key="party.id" :value="party.id">
             {{ party.name }}
           </option>
@@ -131,21 +134,25 @@ const generateId = () => {
       </div>
 
       <div v-if="selectedPartyId" class="party-info">
-        <h4>Party Information</h4>
+        <h4>{{ t('partySelector.partyInformation') }}</h4>
         <div class="party-details">
-          <p><strong>Party:</strong> {{ partyStore.getById(selectedPartyId)?.name }}</p>
-          <p><strong>Characters:</strong> {{ characterStore.items.length }}</p>
+          <p><strong>{{ t('partySelector.party') }}</strong> {{ partyStore.getById(selectedPartyId)?.name }}</p>
+          <p><strong>{{ t('partySelector.characters') }}</strong> {{ characterStore.items.length }}</p>
         </div>
       </div>
 
       <div class="encounter-info">
-        <h4>Encounter Information</h4>
+        <h4>{{ t('partySelector.encounterInformation') }}</h4>
         <div class="encounter-details">
-          <p><strong>Encounter:</strong> {{ encounter?.name }}</p>
-          <p><strong>Monsters:</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
+          <p><strong>{{ t('partySelector.encounter') }}</strong> {{ encounter?.name }}</p>
+          <p><strong>{{ t('partySelector.monsters') }}</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
         </div>
       </div>
     </div>
+
+    <template #footer>
+      <Button :submitLabel="t('common.startCombat')" />
+    </template>
   </BaseModal>
 </template>
 

@@ -6,9 +6,11 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import ModuleCard from '@/components/ModuleCard.vue';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import type { Module } from '@/types';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const moduleStore = useModuleStore();
+const { t } = useI18n();
 
 onMounted(async () => {
   await moduleStore.load();
@@ -59,8 +61,8 @@ function handleSubmit(module: Module) {
     :items="moduleStore.items"
     :card-component="ModuleCard"
     :editor-component="ModuleEditor"
-    :empty-message="'No modules yet. Create your first module to get started!'"
-    create-title="Create Module"
+    :empty-message="t('common.emptyModules')"
+    :create-title="t('modules.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
     @delete="handleDelete"

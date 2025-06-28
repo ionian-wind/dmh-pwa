@@ -6,11 +6,13 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Combatant } from '@/types';
 import Button from '@/components/common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
+const { t } = useI18n();
 
 const props = defineProps<{
   encounterId: string;
@@ -169,7 +171,7 @@ const getCombatantName = (combatantId: string) => {
           <span class="log-message">{{ entry.message }}</span>
         </div>
       </div>
-      <Button variant="secondary" size="small" @click="clearLog" title="Clear Log">
+      <Button variant="secondary" size="small" @click="clearLog" :title="t('common.clearLog')">
         <i class="si si-trash"></i> <span>Clear Log</span>
       </Button>
     </div>

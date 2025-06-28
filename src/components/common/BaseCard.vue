@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import Button from './Button.vue';
 import { computed, useSlots, Fragment, Comment } from 'vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   showView: { type: Boolean, default: false },
@@ -57,16 +60,16 @@ const noBorderAfterHeader = computed(() => {
         <slot name="actions" />
       </div>
       <div class="base-card-actions-right">
-        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" title="View Details">
+        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" :title="t('common.view')">
           <i class="si si-eye"></i>
         </Button>
-        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" title="Edit">
+        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" :title="t('common.edit')">
           <i class="si si-pencil"></i>
         </Button>
-        <Button variant="secondary" size="small" @click="() => { console.log('BaseCard copy button clicked'); $emit('copy'); }" title="Make a Copy">
+        <Button variant="secondary" size="small" @click="() => { console.log('BaseCard copy button clicked'); $emit('copy'); }" :title="t('common.copy')">
           <i class="si si-copy"></i>
         </Button>
-        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" title="Delete">
+        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" :title="t('common.delete')">
           <i class="si si-trash"></i>
         </Button>
       </div>

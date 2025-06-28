@@ -238,7 +238,7 @@ onMounted(() => {
   <div>
     <BaseEntityView
       :entity="encounter"
-      entity-name="Encounter"
+      entity-name="t('encounters.title')"
       list-route="/encounters"
       :on-delete="handleDelete"
       :on-edit="handleEdit"
@@ -256,7 +256,7 @@ onMounted(() => {
       </template>
       
       <template #actions>
-        <Button v-if="encounter" @click="handleRunCombat" variant="primary" title="Run Combat">
+        <Button v-if="encounter" @click="handleRunCombat" variant="primary" :title="t('common.runCombat')">
           <i class="si si-d20"></i>
         </Button>
       </template>
@@ -324,8 +324,8 @@ onMounted(() => {
       </template>
 
       <template #sidepanel>
-        <Mentions title="Mentions" :entities="mentions" />
-        <Mentions title="Mentioned In" :entities="mentionedInEntities" />
+        <Mentions :title="t('common.mentions')" :entities="mentions" />
+        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </template>
     </BaseEntityView>
 

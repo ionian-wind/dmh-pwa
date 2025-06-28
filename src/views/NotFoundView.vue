@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import Button from '@/components/common/Button.vue';
 
 const router = useRouter();
+const { t } = useI18n();
 
 const goHome = () => {
   router.push('/');
@@ -16,25 +18,23 @@ const goBack = () => {
 <template>
   <div class="not-found">
     <div class="not-found-content">
-      <div class="error-code">404</div>
-      <h1>Page Not Found</h1>
+      <div class="error-code">{{ t('notFound.errorCode') }}</div>
+      <h1>{{ t('notFound.title') }}</h1>
       <p class="error-message">
-        The page you are looking for doesn't exist or has been moved.
+        {{ t('notFound.message') }}
       </p>
       <div class="actions">
         <Button @click="goHome" variant="primary">
-          🏠 Go Home
+          {{ t('notFound.goHome') }}
         </Button>
         <Button @click="goBack" variant="secondary">
-          ← Go Back
+          {{ t('notFound.goBack') }}
         </Button>
       </div>
       <div class="help-text">
-        <p>You can also try:</p>
+        <p>{{ t('notFound.helpTitle') }}</p>
         <ul>
-          <li>Checking the URL for typos</li>
-          <li>Using the navigation menu above</li>
-          <li>Going back to the previous page</li>
+          <li v-for="item in t('notFound.helpItems')" :key="item">{{ item }}</li>
         </ul>
       </div>
     </div>

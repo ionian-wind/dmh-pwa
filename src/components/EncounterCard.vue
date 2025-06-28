@@ -4,10 +4,12 @@ import BaseCard from '@/components/common/BaseCard.vue';
 import {computed, onMounted} from 'vue';
 import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
 const moduleStore = useModuleStore();
+const { t } = useI18n();
 
 const moduleName = computed(() => {
   if (!props.encounter.moduleId) return 'No Module';
@@ -54,15 +56,15 @@ function handleCopy() { emit('copy', props.encounter); }
       <h3>{{ encounter.name }}</h3>
     </template>
     <div class="encounter-meta">
-      <span class="meta-item"><span class="label">Module:</span> <span class="value">{{ moduleName }}</span></span>
+      <span class="meta-item"><span class="label">{{ t('encounterCard.module') }}</span> <span class="value">{{ moduleName }}</span></span>
     </div>
     <p v-if="encounter.description" class="description">{{ encounter.description }}</p>
     <div class="monsters-summary">
-      <span class="label">Monsters:</span>
+      <span class="label">{{ t('encounterCard.monsters') }}</span>
       <span class="value">{{ monstersCount }}</span>
     </div>
     <template #actions>
-      <Button size="small" variant="success" @click="handleRunCombat" title="Run Combat">
+      <Button size="small" variant="success" @click="handleRunCombat" :title="t('common.runCombat')">
         <i class="ra ra-crossed-swords"></i>
       </Button>
     </template>

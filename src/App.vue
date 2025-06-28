@@ -144,18 +144,17 @@ onUnmounted(() => {
 
         <JukeboxButton :left-menu-minimized="leftMenuMinimized" />
 
-        <Button
+        <Button v-if="!leftMenuMinimized"
           class="fullscreen-btn"
           variant="light"
           @click="toggleFullscreen"
-          :title="isFullscreen ? 'Exit full page' : 'Open app in full page'"
-          :aria-label="isFullscreen ? 'Exit full page' : 'Open app in full page'"
+          :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
         >
           <i v-if="!isFullscreen" class="si si-fullscreen"></i>
           <i v-else class="si si-fullscreen-exit"></i>
         </Button>
 
-        <LanguageSwitcher />
+        <LanguageSwitcher v-if="!leftMenuMinimized" />
         
       </template>
     </LeftMenu>

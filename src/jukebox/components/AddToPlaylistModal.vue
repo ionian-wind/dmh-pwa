@@ -4,6 +4,7 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
 import type { JukeboxTrack, JukeboxPlaylist } from '../types';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -14,6 +15,7 @@ defineEmits(['update:modelValue']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const playlists = playlistsStore.items;
+const { t } = useI18n();
 
 function isTrackInPlaylist(playlist: JukeboxPlaylist): boolean {
   if (!props.track) return false;
@@ -41,14 +43,14 @@ async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
     :isOpen="modelValue" 
     modalId="add-to-playlist" 
     @update:isOpen="$emit('update:modelValue', $event)" 
-    title="Add to Playlist"
+    title="{{ t('common.addToPlaylist') }}"
     :showSubmit="false"
     :showCancel="true"
     cancelLabel="Done"
     @cancel="$emit('update:modelValue', false)"
   >
     <div v-if="playlists.length === 0">
-      <p>No playlists found. Please create one first.</p>
+      <p>{{ t('playlist.none') }}</p>
     </div>
     <div v-else>
       <div class="playlist-list">

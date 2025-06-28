@@ -2,8 +2,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import Button from './common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const isFullscreen = ref(false);
+const { t } = useI18n();
 
 function updateFullscreenState() {
   isFullscreen.value = !!(
@@ -59,7 +61,7 @@ onUnmounted(() => {
           class="fullscreen-btn"
           variant="light"
           @click="toggleFullscreen"
-          :title="isFullscreen ? 'Exit full page' : 'Open app in full page'"
+          :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
           :aria-label="isFullscreen ? 'Exit full page' : 'Open app in full page'"
         >
           <i v-if="!isFullscreen" class="si si-fullscreen"></i>

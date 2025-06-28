@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import type { ModuleTreeNode, Note } from '@/types';
 import Draggable from 'vuedraggable';
 import Button from '@/components/common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   node: ModuleTreeNode;
@@ -28,6 +29,8 @@ const localTitle = ref(props.node.title || '');
 const localSelectedNoteId = ref('');
 const isDragOver = ref(false);
 const isEmptyChildren = computed(() => !props.node.children || props.node.children.length === 0);
+
+const { t } = useI18n();
 
 watch(() => props.node.title, (val) => {
   localTitle.value = val || '';
@@ -224,22 +227,22 @@ function cropTitle(title: string, max = 25) {
     <div class="tree-node-header">
       <span class="drag-handle">⠿</span>
       <i class="si si-folder tree-node-icon"></i>
-      <span v-if="editingNodeId !== node.id" @dblclick="onStartEditNode" class="tree-node-title">{{ node.title || '(untitled)' }}</span>
+      <span v-if="editingNodeId !== node.id" @dblclick="onStartEditNode" class="tree-node-title">{{ node.title || t('moduleTreeNode.untitled') }}</span>
       <input v-else v-model="localTitle" @keyup.enter="onSaveEditNode" @blur="onSaveEditNode" class="tree-node-input" />
       <div class="tree-node-actions">
-        <Button @click="onAddNode" title="Add child" size="small" variant="secondary">
+        <Button @click="onAddNode" :title="t('common.addChild')" size="small" variant="secondary">
           <i class="si si-plus"></i>
         </Button>
-        <Button v-if="editingNodeId !== node.id" @click="onStartEditNode" title="Rename" size="small" variant="secondary">
+        <Button v-if="editingNodeId !== node.id" @click="onStartEditNode" :title="t('common.rename')" size="small" variant="secondary">
           <i class="si si-pencil"></i>
         </Button>
-        <Button v-else @click="onCancelEditNode" title="Cancel" size="small" variant="secondary">
+        <Button v-else @click="onCancelEditNode" :title="t('common.cancel')" size="small" variant="secondary">
           <i class="si si-x"></i>
         </Button>
-        <Button @click="onRemoveNode" title="Delete" size="small" variant="danger">
+        <Button @click="onRemoveNode" :title="t('common.delete')" size="small" variant="danger">
           <i class="si si-trash"></i>
         </Button>
-        <Button @click="onCreateNote" title="Create note in this node" size="small" variant="secondary">
+        <Button @click="onCreateNote" :title="t('common.createNoteInNode')" size="small" variant="secondary">
           <i class="si si-note"></i>
         </Button>
       </div>
@@ -268,10 +271,10 @@ function cropTitle(title: string, max = 25) {
               <div class="note-title">{{ cropTitle(notes.find((n: Note) => n.id === noteId)?.title || noteId) }}</div>
             </div>
             <div class="tree-note-actions">
-              <Button @click="onEditNote(noteId)" title="Edit note" size="small" variant="secondary">
+              <Button @click="onEditNote(noteId)" :title="t('common.editNote')" size="small" variant="secondary">
                 <i class="si si-pencil"></i>
               </Button>
-              <Button @click="onRemoveNoteFromNode(noteId)" title="Remove" size="small" variant="danger">
+              <Button @click="onRemoveNoteFromNode(noteId)" :title="t('common.remove')" size="small" variant="danger">
                 <i class="si si-trash"></i>
               </Button>
             </div>
@@ -281,7 +284,7 @@ function cropTitle(title: string, max = 25) {
     </div>
     <div class="tree-note-select">
       <select :value="localSelectedNoteId" @change="onAddNoteToNode">
-        <option value="">Add note...</option>
+        <option value="">{{ t('moduleTreeNode.addNote') }}</option>
         <option v-for="note in availableNotes" :key="note.id" :value="note.id">{{ note.title }}</option>
       </select>
     </div>

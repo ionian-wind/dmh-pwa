@@ -4,16 +4,22 @@ import { useRouter, useRoute } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
+import { useModuleStore } from '@/stores/modules';
+import { useNoteTypeStore } from '@/stores/noteTypes';
 import BaseListView from '@/components/common/BaseListView.vue';
 import NoteCard from '@/components/NoteCard.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import type { Note } from '@/types';
+import { useI18n } from 'vue-i18n';
 
 const noteStore = useNoteStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
+const moduleStore = useModuleStore();
+const noteTypeStore = useNoteTypeStore();
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 
 // Sync tag filter from route
 watch(
@@ -87,8 +93,8 @@ async function handleCopy(note: Note) {
     :items="noteStore.filtered"
     :card-component="NoteCard"
     :editor-component="NoteEditor"
-    :empty-message="'No notes yet. Create your first note to get started!'"
-    create-title="Create Note"
+    :empty-message="t('common.empty')"
+    :create-title="t('notes.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
     @delete="handleDelete"
@@ -103,7 +109,7 @@ async function handleCopy(note: Note) {
     <template #search-filter>
       <span v-if="noteStore.tagFilter" class="tag-chip">
         #{{ noteStore.tagFilter }}
-        <button class="remove-tag" @click="router.push({ path: '/notes' })" title="Remove tag filter">
+        <button class="remove-tag" @click="router.push({ path: '/notes' })" :title="t('common.removeTagFilter')">
           <i class="si si-x"></i>
         </button>
       </span>

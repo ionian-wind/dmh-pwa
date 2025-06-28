@@ -13,9 +13,11 @@ import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser'
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import Markdown from '@/components/common/Markdown.vue';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
@@ -146,7 +148,7 @@ onMounted(async () => {
 <template>
   <BaseEntityView
     :entity="note"
-    entity-name="Note"
+    entity-name="t('notes.title')"
     list-route="/notes"
     :on-delete="handleDelete"
     :on-edit="handleEdit"
@@ -170,7 +172,7 @@ onMounted(async () => {
     <template #sidepanel>
       <div class="side-panel-content">
         <div v-if="note?.tags?.length" class="tags-section">
-          <h3>Tags</h3>
+          <h3>{{ t('tags.title') }}</h3>
           <div class="tags">
             <router-link
               v-for="tag in note.tags"
@@ -180,8 +182,8 @@ onMounted(async () => {
             >#{{ tag }}</router-link>
           </div>
         </div>
-        <Mentions title="Mentions" :entities="mentions" />
-        <Mentions title="Mentioned In" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id, title: n.title }))" />
+        <Mentions :title="t('common.mentions')" :entities="mentions" />
+        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id, title: n.title }))" />
       </div>
     </template>
   </BaseEntityView>

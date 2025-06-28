@@ -2,6 +2,9 @@
 import { ref } from 'vue';
 import PopoverPanel from './PopoverPanel.vue';
 import Button from './Button.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const basicOpen = ref(false);
 const hoverOpen = ref(false);
@@ -67,7 +70,7 @@ const placements = [
       <h3>With Title and Custom Placement</h3>
       <PopoverPanel 
         :is-open="titleOpen" 
-        title="User Menu"
+        title="t('common.userMenu')"
         placement="bottom-end"
         :max-width="'250px'"
         @close="titleOpen = false"

@@ -10,6 +10,7 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
 import NotFoundView from './NotFoundView.vue';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,6 +18,7 @@ const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
+const { t } = useI18n();
 
 const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
@@ -144,16 +146,16 @@ onMounted(async () => {
       <div class="combat-header">
         <div class="combat-info">
           <div class="info-section">
-            <h3>Encounter</h3>
-            <p>{{ getEncounterName(combat.encounterId) }}</p>
+            <h3>{{ t('combat.encounter') }}</h3>
+            <p>{{ getEncounterName(combat?.encounterId) }}</p>
           </div>
           <div class="info-section">
-            <h3>Party</h3>
-            <p>{{ getPartyName(combat.partyId) }}</p>
+            <h3>{{ t('combat.party') }}</h3>
+            <p>{{ getPartyName(combat?.partyId) }}</p>
           </div>
           <div class="info-section">
-            <h3>Status</h3>
-            <span class="status-badge" :class="combat.status">{{ combat.status }}</span>
+            <h3>{{ t('combat.status') }}</h3>
+            <span class="status-badge" :class="combat?.status">{{ t('combat.statuses.' + (combat?.status || '')) }}</span>
           </div>
         </div>
         <div class="combat-controls">
@@ -162,27 +164,30 @@ onMounted(async () => {
       </div>
       <!-- Combat Tracker -->
       <div class="combat-tracker-section">
-        <h3>Combat Tracker</h3>
-        <CombatTracker :encounterId="combat.encounterId" />
+        <h3>{{ t('combat.tracker') }}</h3>
+        <CombatTracker :encounterId="combat?.encounterId" />
       </div>
       <!-- Combat Summary -->
-      <div class="combat-summary" v-if="combat.status === 'active'">
-        <h3>Combat Summary</h3>
+      <div class="combat-summary" v-if="combat?.status === 'active'">
+        <h3>{{ t('combat.summary') }}</h3>
         <div class="summary-grid">
           <div class="summary-item">
-            <label>Round:</label>
-            <span class="summary-value">{{ combat.currentRound }}</span>
+            <label>{{ t('combat.round') }}</label>
+            <span class="summary-value">{{ combat?.currentRound }}</span>
           </div>
           <div class="summary-item">
-            <label>Turn:</label>
-            <span class="summary-value">{{ combat.currentTurn + 1 }} of {{ combat.combatants.length }}</span>
+            <label>{{ t('combat.turn') }}</label>
+            <span class="summary-value">{{ (combat?.currentTurn ?? 0) + 1 }} of {{ combat?.combatants?.length ?? 0 }}</span>
           </div>
         </div>
       </div>
-      <div v-if="combat.notes" class="content-section">
-        <h3>Notes</h3>
-        <p class="notes">{{ combat.notes }}</p>
+      <div v-if="combat?.notes" class="content-section">
+        <h3>{{ t('combat.notes') }}</h3>
+        <p class="notes">{{ combat?.notes }}</p>
       </div>
+    </div>
+    <div v-else>
+      <p>{{ t('combat.noActive') }}</p>
     </div>
   </BaseEntityView>
 </template>
@@ -360,3 +365,4 @@ onMounted(async () => {
   vertical-align: middle;
 }
 </style> 
+

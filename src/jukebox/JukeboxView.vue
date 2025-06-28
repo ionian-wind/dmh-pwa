@@ -12,6 +12,7 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import Button from '@/components/common/Button.vue';
 import { useConfigStore } from '@/utils/configStore';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
+import { useI18n } from 'vue-i18n';
 
 
 const tracksStore = useJukeboxTracksStore();
@@ -20,6 +21,7 @@ const filesStore = useJukeboxFilesStore();
 const configStore = useConfigStore();
 const playerStore = useJukeboxPlayerStore();
 const pictureUrlCacheStore = usePictureUrlCacheStore();
+const { t } = useI18n();
 
 const tracks = tracksStore.items;
 const playlists = playlistsStore.items;
@@ -270,8 +272,8 @@ function onTracksSorted(newOrder: JukeboxTrack[]) {
   <BaseListView
     :items="filteredTracks"
     :card-component="TrackCard"
-    :empty-message="'No tracks to display. Add some tracks to get started!'"
-    create-title="Add Tracks"
+    :empty-message="t('common.emptyTracks')"
+    :create-title="t('common.addTracks')"
     :card-props="cardProps"
     :show-search="false"
     :view-style="'list'"

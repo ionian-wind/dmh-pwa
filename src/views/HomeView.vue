@@ -8,6 +8,8 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
+import BaseListView from '@/components/common/BaseListView.vue';
+import StatCard from '@/components/StatCard.vue';
 
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
@@ -27,6 +29,57 @@ const stats = computed(() => ({
   modules: moduleStore.items.length
 }));
 
+const statsCards = computed(() => [
+  {
+    id: 'notes',
+    key: 'notes',
+    title: t('home.stats.notes'),
+    count: stats.value.notes,
+    icon: '📜',
+    route: '/notes'
+  },
+  {
+    id: 'parties',
+    key: 'parties',
+    title: t('home.stats.parties'),
+    count: stats.value.parties,
+    icon: '👥',
+    route: '/parties'
+  },
+  {
+    id: 'monsters',
+    key: 'monsters',
+    title: t('home.stats.monsters'),
+    count: stats.value.monsters,
+    icon: '🐉',
+    route: '/monsters'
+  },
+  {
+    id: 'encounters',
+    key: 'encounters',
+    title: t('home.stats.encounters'),
+    count: stats.value.encounters,
+    icon: '⚔️',
+    route: '/encounters'
+  },
+  {
+    id: 'characters',
+    key: 'characters',
+    title: t('home.stats.characters'),
+    count: stats.value.characters,
+    icon: '🧙🏻‍♂️',
+    route: '/characters'
+  },
+  {
+    id: 'modules',
+    key: 'modules',
+    title: t('home.stats.modules'),
+    count: stats.value.modules,
+    icon: '📖',
+    route: '/modules'
+  }
+]);
+
 onMounted(async () => {
   await Promise.all([
     noteStore.load(),
@@ -42,64 +95,27 @@ onMounted(async () => {
 <template>
   <div class="home-view">    
     <div class="content">
-      <!-- i18n Test Section -->
-      <div class="i18n-test">
-        <h3>i18n Test</h3>
-        <p>Current locale: {{ locale }}</p>
-        <p>App title: {{ t('app.title') }}</p>
-        <p>Navigation home: {{ t('navigation.home') }}</p>
-        <p>Common empty: {{ t('common.empty') }}</p>
+      <!-- Project Header Panel -->
+      <div class="project-header">
+        <div class="project-info">
+          <img src="/icon-192.png" alt="DMH PWA Icon" class="project-icon" />
+          <div class="project-details">
+            <h1 class="project-title">{{ t('project.name') }}</h1>
+            <p class="project-subtitle">{{ t('project.subtitle') }}</p>
+          </div>
+        </div>
       </div>
       
-      <div class="stats-grid">
-        <router-link to="/notes" class="stat-card" exact>
-          <div class="stat-icon">📜</div>
-          <div class="stat-content">
-            <h3>{{ t('home.stats.notes') }}</h3>
-            <p>{{ stats.notes }} {{ t('home.stats.notes').toLowerCase() }}</p>
-          </div>
-        </router-link>
-
-        <router-link to="/parties" class="stat-card" exact>
-          <div class="stat-icon">👥</div>
-          <div class="stat-content">
-            <h3>{{ t('home.stats.parties') }}</h3>
-            <p>{{ stats.parties }} {{ t('home.stats.parties').toLowerCase() }}</p>
-          </div>
-        </router-link>
-
-        <router-link to="/monsters" class="stat-card" exact>
-          <div class="stat-icon">🐉</div>
-          <div class="stat-content">
-            <h3>{{ t('home.stats.monsters') }}</h3>
-            <p>{{ stats.monsters }} {{ t('home.stats.monsters').toLowerCase() }}</p>
-          </div>
-        </router-link>
-
-        <router-link to="/encounters" class="stat-card" exact>
-          <div class="stat-icon">⚔️</div>
-          <div class="stat-content">
-            <h3>{{ t('home.stats.encounters') }}</h3>
-            <p>{{ stats.encounters }} {{ t('home.stats.encounters').toLowerCase() }}</p>
-          </div>
-        </router-link>
-
-        <router-link to="/characters" class="stat-card" exact>
-          <div class="stat-icon">🧙🏻‍♂️</div>
-          <div class="stat-content">
-            <h3>{{ t('home.stats.characters') }}</h3>
-            <p>{{ stats.characters }} {{ t('home.stats.characters').toLowerCase() }}</p>
-          </div>
-        </router-link>
-
-        <router-link to="/modules" class="stat-card" exact>
-          <div class="stat-icon">📖</div>
-          <div class="stat-content">
-            <h3>{{ t('home.stats.modules') }}</h3>
-            <p>{{ stats.modules }} {{ t('home.stats.modules').toLowerCase() }}</p>
-          </div>
-        </router-link>
-      </div>
+      <BaseListView 
+        :items="statsCards" 
+        :card-component="StatCard"
+        :card-props="(item: any) => ({ item })"
+        :empty-message="t('common.empty')"
+        :create-title="t('common.create')"
+        :show-search="false"
+        view-style="grid"
+        :hide-header="true"
+      />
     </div>
   </div>
 </template>
@@ -111,52 +127,42 @@ onMounted(async () => {
   padding: 1rem;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+.project-header {
+  padding: 2rem;
   margin-bottom: 2rem;
+  text-align: center;
 }
 
-.stat-card {
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  text-decoration: none;
-  color: inherit;
+.project-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 1rem;
-  transition: all 0.2s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-color: var(--color-info);
+.project-icon {
+  width: 150px;
+  height: 150px;
 }
 
-.stat-icon {
-  font-size: 2rem;
-  background: var(--color-background-soft);
-  width: 60px;
-  height: 60px;
+.project-details {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.stat-content h3 {
+.project-title {
   margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
   color: var(--color-text);
-  font-size: 1.2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.stat-content p {
-  margin: 0.5rem 0 0;
+.project-subtitle {
+  margin: 0;
+  font-size: 1.2rem;
   color: var(--color-text-light);
-  font-size: 0.9rem;
+  font-style: italic;
 }
 </style>

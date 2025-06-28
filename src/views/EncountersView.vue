@@ -8,10 +8,12 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
 import EncounterEditor from '@/components/EncounterEditor.vue';
 import PartySelector from '@/components/PartySelector.vue';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const encounterStore = useEncounterStore();
 const moduleStore = useModuleStore();
+const { t } = useI18n();
 
 const showPartySelector = ref(false);
 const selectedEncounterForCombat = ref<Encounter | null>(null);
@@ -80,8 +82,8 @@ async function handleCopy(encounter: Encounter) {
     :items="encounterStore.filtered"
     :card-component="EncounterCard"
     :editor-component="EncounterEditor"
-    :empty-message="'No encounters yet. Create your first encounter to get started!'"
-    create-title="Create Encounter"
+    :empty-message="t('common.emptyEncounters')"
+    :create-title="t('encounters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
     @delete="handleDelete"

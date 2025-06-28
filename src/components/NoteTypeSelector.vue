@@ -4,6 +4,7 @@ import { useNoteTypeStore } from '@/stores/noteTypes';
 import type { NoteType } from '@/types';
 import Button from '@/components/common/Button.vue';
 import PopoverPanel from '@/components/common/PopoverPanel.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: string | null;
@@ -25,6 +26,7 @@ const newType = ref<Partial<NoteType>>({
   fields: []
 });
 const createButtonRef = ref<HTMLElement | null>(null);
+const { t } = useI18n();
 
 onMounted(async () => {
   await noteTypeStore.load();
@@ -52,7 +54,7 @@ const handleDeleteType = async (id: string) => {
         :value="modelValue"
         @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value || null)"
       >
-        <option value="" disabled>{{ placeholder || 'Select note type' }}</option>
+        <option value="" disabled>{{ placeholder || t('noteTypeSelector.selectType') }}</option>
         <option v-for="type in noteTypeStore.items" :key="type.id" :value="type.id">
           {{ type.name }}
         </option>
@@ -68,9 +70,9 @@ const handleDeleteType = async (id: string) => {
       :trap-focus="true"
     >
       <div class="type-editor">
-        <h3>Create New Type</h3>
+        <h3>{{ t('noteTypeSelector.createNew') }}</h3>
         <div class="form-group">
-          <label for="type-name">Name</label>
+          <label for="type-name">{{ t('noteTypeSelector.name') }}</label>
           <input
             id="type-name"
             v-model="newType.name"
@@ -80,7 +82,7 @@ const handleDeleteType = async (id: string) => {
           >
         </div>
         <div class="form-group">
-          <label for="type-description">Description</label>
+          <label for="type-description">{{ t('noteTypeSelector.description') }}</label>
           <input
             id="type-description"
             v-model="newType.description"
@@ -89,7 +91,7 @@ const handleDeleteType = async (id: string) => {
           >
         </div>
         <div class="form-group">
-          <label for="type-color">Color</label>
+          <label for="type-color">{{ t('noteTypeSelector.color') }}</label>
           <input
             id="type-color"
             v-model="newType.color"
@@ -97,7 +99,7 @@ const handleDeleteType = async (id: string) => {
           >
         </div>
         <div class="form-group">
-          <label for="type-icon">Icon (optional)</label>
+          <label for="type-icon">{{ t('noteTypeSelector.icon') }}</label>
           <input
             id="type-icon"
             v-model="newType.icon"
@@ -106,8 +108,8 @@ const handleDeleteType = async (id: string) => {
           >
         </div>
         <div class="type-editor-actions">
-          <Button size="small" @click="handleCreateType">Add</Button>
-          <Button size="small" variant="secondary" @click="showTypeEditor = false">Cancel</Button>
+          <Button size="small" @click="handleCreateType">{{ t('noteTypeSelector.add') }}</Button>
+          <Button size="small" variant="secondary" @click="showTypeEditor = false">{{ t('noteTypeSelector.cancel') }}</Button>
         </div>
       </div>
     </PopoverPanel>
