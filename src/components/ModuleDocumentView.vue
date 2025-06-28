@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import type { ModuleTreeNode, Note } from '@/types';
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, watch, nextTick, shallowRef } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useBookmarkStore } from '@/stores/bookmarks';
-import Button from '@/components/common/Button.vue';
+// @ts-ignore: no types for vue-virtual-scroller
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 
 interface TOCItem {
   id: string;
   title: string;
   level: number;
   anchorId: string;
+}
+
+interface DocumentChunk {
+  id: string;
+  title: string;
+  content: string;
+  level: number;
+  anchorId: string;
+  nodeId?: string;
+  noteId?: string;
 }
 
 const props = defineProps<{
@@ -23,69 +34,84 @@ const emit = defineEmits<{
 
 const bookmarkStore = useBookmarkStore();
 
+const chunks = shallowRef<DocumentChunk[]>([]);
+const tocItems = shallowRef<TOCItem[]>([]);
+const isLoading = ref(false);
+
 function findNotes(noteIds: string[]): Note[] {
   return noteIds
     .map(id => props.notes.find(n => n.id === id))
     .filter((n): n is Note => !!n);
 }
 
-function buildMarkdown(nodes: ModuleTreeNode[], depth = 1): { markdown: string; toc: TOCItem[] } {
-  let md = '';
-  const toc: TOCItem[] = [];
-  
+function buildChunks(nodes: ModuleTreeNode[], depth = 1): DocumentChunk[] {
+  const result: DocumentChunk[] = [];
   for (const node of nodes) {
     if (node.title) {
       const anchorId = node.anchorId || `section-${node.id}`;
-      md += `${'#'.repeat(depth + 1)} ${node.title} {#${anchorId}}\n\n`;
-      
-      toc.push({
-        id: node.id,
+      result.push({
+        id: `node-${node.id}`,
         title: node.title,
+        content: `${'#'.repeat(depth + 1)} ${node.title} {#${anchorId}}\n\n`,
         level: depth + 1,
-        anchorId
+        anchorId,
+        nodeId: node.id
       });
     }
-    
     const nodeNotes = findNotes(node.notes);
     for (const note of nodeNotes) {
       if (note.title) {
         const anchorId = node.noteAnchors && node.noteAnchors[note.id] 
           ? node.noteAnchors[note.id] 
           : `note-${note.id}`;
-        md += `${'#'.repeat(depth + 2)} ${note.title} {#${anchorId}}\n\n`;
-        
-        toc.push({
-          id: note.id,
+        result.push({
+          id: `note-${note.id}`,
           title: note.title,
+          content: `${'#'.repeat(depth + 2)} ${note.title} {#${anchorId}}\n\n${note.content || ''}\n\n`,
           level: depth + 2,
-          anchorId
+          anchorId,
+          noteId: note.id
+        });
+      } else if (note.content) {
+        result.push({
+          id: `note-content-${note.id}`,
+          title: `Note ${note.id}`,
+          content: `${note.content}\n\n`,
+          level: depth + 2,
+          anchorId: `note-${note.id}`,
+          noteId: note.id
         });
       }
-      if (note.content) {
-        md += note.content + '\n\n';
-      }
     }
-    
     if (node.children && node.children.length > 0) {
-      const childResult = buildMarkdown(node.children, depth + 1);
-      md += childResult.markdown;
-      toc.push(...childResult.toc);
+      const childChunks = buildChunks(node.children, depth + 1);
+      result.push(...childChunks);
     }
   }
-  
-  return { markdown: md, toc };
+  return result;
 }
 
-const combinedMarkdown = computed(() => buildMarkdown(props.noteTree));
+function buildTOC(chunks: DocumentChunk[]): TOCItem[] {
+  return chunks
+    .filter(chunk => chunk.title && chunk.title !== `Note ${chunk.noteId}`)
+    .map(chunk => ({
+      id: chunk.id,
+      title: chunk.title,
+      level: chunk.level,
+      anchorId: chunk.anchorId
+    }));
+}
 
-// Emit TOC when it changes
-watch(combinedMarkdown, (result) => {
-  emit('toc-update', result.toc);
-}, { immediate: true });
+function initializeDocument() {
+  isLoading.value = true;
+  setTimeout(() => {
+    chunks.value = buildChunks(props.noteTree);
+    tocItems.value = buildTOC(chunks.value);
+    emit('toc-update', tocItems.value);
+    isLoading.value = false;
+  }, 0);
+}
 
-const contentRef = ref<HTMLElement | null>(null);
-
-// Build a flat map of noteId to anchorId for all notes in the module tree
 function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
   const map: Record<string, string> = {};
   function traverse(nodes: ModuleTreeNode[]) {
@@ -105,12 +131,8 @@ function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
 }
 
 const noteAnchorMap = computed(() => buildNoteAnchorMap(props.noteTree));
-
 const rootEl = ref<HTMLElement | null>(null);
-
-// Helper to get moduleId from the root noteTree (assume all nodes share the same moduleId)
 const moduleId = computed(() => {
-  // Try to get from the first note in the tree
   const firstNoteId = props.noteTree[0]?.notes?.[0];
   if (firstNoteId) {
     const note = props.notes.find(n => n.id === firstNoteId);
@@ -119,20 +141,15 @@ const moduleId = computed(() => {
   return null;
 });
 
-// After markdown is rendered, inject bookmark buttons next to headings
 function injectBookmarkButtons() {
-  if (!contentRef.value || !moduleId.value) return;
-  // Remove old buttons
-  contentRef.value.querySelectorAll('.bookmark-btn').forEach(el => el.remove());
-  // For each heading with id
-  contentRef.value.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]').forEach(heading => {
+  if (!rootEl.value || !moduleId.value) return;
+  rootEl.value.querySelectorAll('.bookmark-btn').forEach(el => el.remove());
+  rootEl.value.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]').forEach(heading => {
     const anchorId = heading.id;
     const title = heading.textContent || '';
-    // Only proceed if moduleId is a string
     if (!moduleId.value) return;
     const modId = moduleId.value as string;
     const isBookmarked = bookmarkStore.isBookmarked(modId, anchorId);
-    // Create button
     const btn = document.createElement('button');
     btn.className = 'bookmark-btn';
     if (isBookmarked) btn.classList.add('bookmarked', 'visible');
@@ -149,10 +166,8 @@ function injectBookmarkButtons() {
       } else {
         bookmarkStore.addBookmark(modId, anchorId, title);
       }
-      // Re-inject after state change
       setTimeout(injectBookmarkButtons, 100);
     };
-    // Show on hover or always if bookmarked
     heading.addEventListener('mouseenter', () => {
       btn.classList.add('visible');
     });
@@ -170,18 +185,15 @@ onMounted(() => {
   if (rootEl.value) {
     (rootEl.value as any).noteAnchorMap = noteAnchorMap.value;
   }
+  initializeDocument();
+  window.addEventListener('scroll', () => {
+    nextTick(() => injectBookmarkButtons());
+  }, { passive: true });
   watch(() => [props.noteTree, props.notes, bookmarkStore.items], () => {
     nextTick(() => injectBookmarkButtons());
   }, { immediate: true, deep: true });
 });
 
-watch(noteAnchorMap, (newMap) => {
-  if (rootEl.value) {
-    (rootEl.value as any).noteAnchorMap = newMap;
-  }
-});
-
-// Handle clicking on heading elements to copy anchor links
 function handleHeadingClick(event: Event) {
   const target = event.target as HTMLElement;
   if (target && target.tagName && /^H[1-6]$/.test(target.tagName)) {
@@ -189,7 +201,6 @@ function handleHeadingClick(event: Event) {
     if (id) {
       const url = `${window.location.origin}${window.location.pathname}#${id}`;
       navigator.clipboard.writeText(url).then(() => {
-        // Optional: Show a brief visual feedback
         const originalColor = target.style.color;
         target.style.color = 'var(--color-primary, #007bff)';
         setTimeout(() => {
@@ -205,8 +216,36 @@ function handleHeadingClick(event: Event) {
 
 <template>
   <div class="module-document-view" ref="rootEl">
-    <div class="document-markdown" ref="contentRef" @click="handleHeadingClick">
-      <Markdown :content="combinedMarkdown.markdown" :anchorMap="noteAnchorMap" :enableMentionModal="true" />
+    <div v-if="isLoading" class="loading-indicator">
+      <div class="loading-spinner"></div>
+      <p>Loading document...</p>
+    </div>
+    <div v-else class="document-container">
+      <DynamicScroller
+        :items="chunks"
+        :minItemSize="500"
+        key-field="id"
+        class="document-scroller"
+        :emitUpdate="true"
+        v-slot="{ item, index, active }"
+      >
+        <DynamicScrollerItem :item="item" :active="active" :index="index" :size-dependencies="[item.content]" :key="item.id">
+          <div
+            class="document-chunk"
+            :data-chunk-id="item.id"
+            @click="handleHeadingClick"
+          >
+            <Markdown
+              :content="item.content"
+              :anchorMap="noteAnchorMap"
+              :enableMentionModal="true"
+            />
+          </div>
+        </DynamicScrollerItem>
+      </DynamicScroller>
+      <div v-if="chunks.length === 0" class="empty-state">
+        <p>No content to display</p>
+      </div>
     </div>
   </div>
 </template>
@@ -215,29 +254,60 @@ function handleHeadingClick(event: Event) {
 .module-document-view {
   padding: 0;
 }
-.document-markdown {
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--color-text-light);
+}
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-border);
+  border-top: 4px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.document-container {
   color: var(--color-text);
   line-height: 1.6;
+  height: 80vh;
+  overflow-y: auto;
 }
-
-/* Add cursor pointer to all heading elements */
-.document-markdown :deep(h1),
-.document-markdown :deep(h2),
-.document-markdown :deep(h3),
-.document-markdown :deep(h4),
-.document-markdown :deep(h5),
-.document-markdown :deep(h6) {
+.document-scroller {
+  height: 100%;
+}
+.document-chunk {
+  margin-bottom: 1rem;
+}
+.empty-state {
+  color: var(--color-text-light);
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+}
+.document-chunk :deep(h1),
+.document-chunk :deep(h2),
+.document-chunk :deep(h3),
+.document-chunk :deep(h4),
+.document-chunk :deep(h5),
+.document-chunk :deep(h6) {
   cursor: pointer;
   position: relative;
 }
-
-/* Show '#' before heading elements on hover */
-.document-markdown :deep(h1):hover::before,
-.document-markdown :deep(h2):hover::before,
-.document-markdown :deep(h3):hover::before,
-.document-markdown :deep(h4):hover::before,
-.document-markdown :deep(h5):hover::before,
-.document-markdown :deep(h6):hover::before {
+.document-chunk :deep(h1):hover::before,
+.document-chunk :deep(h2):hover::before,
+.document-chunk :deep(h3):hover::before,
+.document-chunk :deep(h4):hover::before,
+.document-chunk :deep(h5):hover::before,
+.document-chunk :deep(h6):hover::before {
   content: '#';
   position: absolute;
   left: -0.95em;

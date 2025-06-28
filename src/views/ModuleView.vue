@@ -71,9 +71,13 @@ const moduleEncounters = computed(() =>
   encounterStore.items.filter(encounter => encounter.moduleId === route.params.id)
 );
 
-const moduleNotes = computed(() => 
-  noteStore.items.filter(note => note.moduleId === route.params.id)
-);
+const moduleNotes = computed(() => {
+  return noteStore.items.filter(note => note.moduleId === route.params.id && note.hidden === false);
+});
+
+const moduleTreeNotes = computed(() => {
+  return noteStore.items.filter(note => note.moduleId === route.params.id && note.hidden === true);
+});
 
 const modulePlaylists = computed(() => 
   playlistsStore.items.value.filter(playlist => playlist.moduleIds?.includes(route.params.id as string))
@@ -104,13 +108,19 @@ const entityTabs = [
 ];
 
 const activeTab = ref('document');
-const sidepanelTab = ref('toc');
+const sidePanelTab = ref('toc');
 
 onMounted(async () => {
   await Promise.all([
     moduleStore.load(),
+    partyStore.load(),
+    monsterStore.load(),
+    encounterStore.load(),
+    noteStore.load(),
     playlistsStore.load(),
+    tracksStore.load(),
     mentionsStore.load(),
+    bookmarkStore.load(),
   ]);
 });
 
@@ -200,7 +210,7 @@ function scrollToBookmark(anchorId: string) {
           <ModuleDocumentView
             v-if="module && module.noteTree && module.noteTree.length > 0"
             :note-tree="module.noteTree"
-            :notes="moduleNotes"
+            :notes="moduleTreeNotes"
             @toc-update="handleTOCUpdate"
           />
           <div v-else class="empty-state">
@@ -256,7 +266,7 @@ function scrollToBookmark(anchorId: string) {
         <TabPanel tab-id="noteTree">
           <ModuleNoteTreeManager
             :module="module"
-            :notes="moduleNotes"
+            :notes="moduleTreeNotes"
             @save="handleSaveNoteTree"
           />
         </TabPanel>
@@ -282,14 +292,14 @@ function scrollToBookmark(anchorId: string) {
             { id: 'toc', label: t('common.tableOfContents') },
             { id: 'bookmarks', label: t('common.bookmarks') }
           ]"
-          v-model="sidepanelTab"
+          v-model="sidePanelTab"
           size="sm"
         >
           <template #default>
-            <div v-show="sidepanelTab === 'toc'">
+            <div v-show="sidePanelTab === 'toc'">
               <TableOfContents :items="tocItems" @item-click="scrollToBookmark" />
             </div>
-            <div v-show="sidepanelTab === 'bookmarks'">
+            <div v-show="sidePanelTab === 'bookmarks'">
               <div v-if="moduleBookmarks.length === 0" class="empty-state">{{ t('common.noBookmarks') }}</div>
               <ul v-else class="bookmark-list">
                 <li v-for="bookmark in moduleBookmarks" :key="bookmark.id" class="bookmark-list-item">

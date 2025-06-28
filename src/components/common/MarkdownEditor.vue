@@ -54,7 +54,7 @@ function checkMentionTrigger(target: HTMLTextAreaElement) {
   const caret = target.selectionStart || 0;
   // Find the last [[ before caret
   const before = value.slice(0, caret);
-  const match = before.match(/\[\[([a-zA-Z]*)?(:)?([^\]|]*)?$/);
+  const match = before.match(/\[\[([a-zA-Z]*)\(\)?:?([^\]|]*)?$/);
   if (match) {
     // If user typed [[ or [[kind:
     mentionStartPos.value = caret - match[0].length;
@@ -70,6 +70,17 @@ function checkMentionTrigger(target: HTMLTextAreaElement) {
         // Filter out the current entity
         if (props.currentEntityId && props.currentEntityType === mentionKind.value) {
           items = items.filter((item: any) => item.id !== props.currentEntityId);
+        }
+
+        // If suggesting notes, and the current note is not hidden, only show notes with hidden=false
+        if (mentionKind.value === 'note') {
+          let currentNote = null;
+          if (props.currentEntityId) {
+            currentNote = noteStore.getById(props.currentEntityId);
+          }
+          if (!currentNote || currentNote.hidden === false) {
+            items = items.filter((item: any) => item.hidden === false);
+          }
         }
 
         mentionItems.value = items.map((item: any) => ({

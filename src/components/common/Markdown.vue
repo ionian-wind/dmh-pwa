@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue';
 import { parseMarkdown } from '@/utils/markdownParser';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
@@ -25,7 +25,32 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:content']);
 
-const parsed = computed(() => parseMarkdown(props.content, { taskCheckboxEnabled: !!props.taskCheckboxEnabled }));
+// Performance optimization: memoize parsed content
+const parsedContentCache = shallowRef<Map<string, string>>(new Map());
+const isVisible = ref(false);
+const observer = ref<IntersectionObserver | null>(null);
+
+const parsed = computed(() => {
+  // Check cache first
+  const cacheKey = `${props.content}-${props.taskCheckboxEnabled || false}`;
+  if (parsedContentCache.value.has(cacheKey)) {
+    return parsedContentCache.value.get(cacheKey)!;
+  }
+  
+  // Parse and cache
+  const result = parseMarkdown(props.content, { taskCheckboxEnabled: !!props.taskCheckboxEnabled });
+  parsedContentCache.value.set(cacheKey, result);
+  
+  // Limit cache size to prevent memory leaks
+  if (parsedContentCache.value.size > 100) {
+    const firstKey = parsedContentCache.value.keys().next().value;
+    if (firstKey) {
+      parsedContentCache.value.delete(firstKey);
+    }
+  }
+  
+  return result;
+});
 
 const rootEl = ref<HTMLElement | null>(null);
 
@@ -118,6 +143,30 @@ function handleCheckboxChange(e: Event) {
   emit('update:content', newContent);
 }
 
+// Setup intersection observer for lazy loading
+function setupIntersectionObserver() {
+  if (!rootEl.value) return;
+  
+  observer.value = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          isVisible.value = true;
+        } else {
+          isVisible.value = false;
+        }
+      });
+    },
+    {
+      root: null,
+      rootMargin: '50px',
+      threshold: 0.1
+    }
+  );
+  
+  observer.value.observe(rootEl.value);
+}
+
 onMounted(async () => {
   if (rootEl.value) {
     rootEl.value.addEventListener('click', handleInternalLinkClick, true);
@@ -126,6 +175,9 @@ onMounted(async () => {
     }
   }
   window.addEventListener('hashchange', scrollToAnchorIfNeeded);
+
+  // Setup intersection observer for lazy loading
+  setupIntersectionObserver();
 
   await noteStore.load();
   await moduleStore.load();
@@ -142,6 +194,10 @@ onUnmounted(() => {
     }
   }
   window.removeEventListener('hashchange', scrollToAnchorIfNeeded);
+  
+  if (observer.value) {
+    observer.value.disconnect();
+  }
 });
 
 watch(() => props.taskCheckboxEnabled, (enabled) => {
@@ -159,3 +215,38 @@ watch(() => props.taskCheckboxEnabled, (enabled) => {
     <div v-html="parsed"></div>
   </div>
 </template>
+
+<style scoped>
+.markdown-content {
+  position: relative;
+}
+
+.markdown-placeholder {
+  padding: 1rem;
+  background: var(--color-background-soft);
+  border-radius: var(--border-radius);
+  border: 1px dashed var(--color-border);
+}
+
+.placeholder-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.placeholder-line {
+  height: 1rem;
+  background: var(--color-border);
+  border-radius: 4px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.placeholder-line.short {
+  width: 60%;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+}
+</style>

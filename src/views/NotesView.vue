@@ -74,7 +74,7 @@ function handleSubmit(note: Note) {
   if (note.id) {
     noteStore.update(note.id, note);
   } else {
-    noteStore.create(note);
+    noteStore.create({ ...note, hidden: false });
   }
 }
 function handleTagClick(tag: string) {
@@ -84,13 +84,13 @@ async function handleCopy(note: Note) {
   console.log('NotesView handleCopy', note);
   // Copy all fields except id, createdAt, updatedAt
   const { id, createdAt, updatedAt, ...rest } = note;
-  await noteStore.create(rest);
+  await noteStore.create({ ...rest, hidden: false });
 }
 </script>
 
 <template>
   <BaseListView
-    :items="noteStore.filtered"
+    :items="noteStore.filtered.filter(n => !n.hidden)"
     :card-component="NoteCard"
     :editor-component="NoteEditor"
     :empty-message="t('common.empty')"

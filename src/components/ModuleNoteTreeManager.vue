@@ -7,6 +7,7 @@ import { useNoteStore } from '@/stores/notes';
 import Draggable from 'vuedraggable';
 import Button from '@/components/common/Button.vue';
 import { nanoid } from 'nanoid';
+import { deepUnwrap } from '@/utils/deepUnwrap';
 
 const props = defineProps<{
   module: Module;
@@ -48,6 +49,16 @@ function addNode(parent?: ModuleTreeNode) {
 function removeNode(targetId: string, nodes: ModuleTreeNode[] = tree.value) {
   const idx = nodes.findIndex(n => n.id === targetId);
   if (idx !== -1) {
+    // Recursively delete all notes in this node and its children
+    function deleteNotesRecursively(node: ModuleTreeNode) {
+      if (Array.isArray(node.notes)) {
+        node.notes.forEach(noteId => noteStore.remove(noteId));
+      }
+      if (Array.isArray(node.children)) {
+        node.children.forEach(child => deleteNotesRecursively(child));
+      }
+    }
+    deleteNotesRecursively(nodes[idx]);
     nodes.splice(idx, 1);
     return true;
   }
@@ -76,54 +87,18 @@ function cancelEditNode() {
   editingNodeId.value = null;
 }
 function saveTree() {
-  emit('save', JSON.parse(JSON.stringify(tree.value)));
+  emit('save', deepUnwrap(tree.value));
 }
-function addNoteToNode(nodeId: string, noteId: string) {
-  if (!noteId) return;
-  const { node: realNode } = findNodeAndParent(nodeId, tree.value);
-  if (!realNode) {
-    console.error('Node not found:', nodeId);
-    return;
-  }
-  // Ensure notes array exists
-  if (!realNode.notes) {
-    realNode.notes = [];
-  }
-  // Ensure noteAnchors exists
-  if (!realNode.noteAnchors) {
-    realNode.noteAnchors = {};
-  }
-  // Add note if not already present
-  if (!realNode.notes.includes(noteId)) {
-    realNode.notes = [...realNode.notes, noteId];
-    // Assign anchorId for this note
-    realNode.noteAnchors[noteId] = `note-${nanoid(6)}`;
-    // Force reactivity by updating the tree reference
-    tree.value = [...tree.value];
-    // Emit save to persist changes
-    emit('save', JSON.parse(JSON.stringify(tree.value)));
-  }
-  selectedNoteId.value = '';
-}
+
 function removeNoteFromNode(node: ModuleTreeNode | undefined, noteId: string) {
   if (!node || !Array.isArray(node.notes)) {
     console.warn('removeNoteFromNode called with invalid node:', node, noteId);
     return;
   }
   node.notes = node.notes.filter(id => id !== noteId);
+  // Also delete the note from the store
+  noteStore.remove(noteId);
 }
-const availableNotes = computed(() => {
-  // Notes not assigned to any node
-  const assigned = new Set<string>();
-  function collectNotes(nodes: ModuleTreeNode[]) {
-    for (const n of nodes) {
-      n.notes.forEach(id => assigned.add(id));
-      if (n.children) collectNotes(n.children);
-    }
-  }
-  collectNotes(tree.value);
-  return props.notes.filter(n => !assigned.has(n.id));
-});
 
 function handleCreateNote(node: ModuleTreeNode) {
   editingNote.value = {
@@ -139,7 +114,8 @@ function handleCreateNote(node: ModuleTreeNode) {
     metadata: {
       nodeId: node.id,
       nodePath: node.id // Using id as path since path doesn't exist
-    }
+    },
+    hidden: true
   };
   editingNode.value = node;
   showNoteEditor.value = true;
@@ -169,7 +145,7 @@ const handleSaveNote = async (note: Note) => {
       editingNode.value.noteAnchors[savedNote.id] = `note-${nanoid(6)}`;
       // Force reactivity by updating the tree reference
       tree.value = [...tree.value];
-      emit('save', JSON.parse(JSON.stringify(tree.value)));
+      emit('save', deepUnwrap(tree.value));
     }
   }
   showNoteEditor.value = false;
@@ -183,7 +159,8 @@ const handleSaveNote = async (note: Note) => {
     createdAt: Date.now(),
     updatedAt: Date.now(),
     parentId: undefined,
-    metadata: undefined
+    metadata: undefined,
+    hidden: true
   };
   editingNode.value = null;
   return savedNote;
@@ -236,7 +213,7 @@ function handleMoveNode({ nodeId, newParentId, newIndex }: { nodeId: string, new
   } else {
     tree.value.splice(newIndex, 0, node);
   }
-  emit('save', JSON.parse(JSON.stringify(tree.value)));
+  emit('save', deepUnwrap(tree.value));
 }
 
 // Helper function to check if a node is a descendant of another node
@@ -264,7 +241,7 @@ function handleMoveNote({ noteId, fromNodeId, toNodeId, newIndex }: { noteId: st
   fromNode.notes = fromNode.notes.filter(id => id !== noteId);
   // Insert into new
   toNode.notes.splice(newIndex, 0, noteId);
-  emit('save', JSON.parse(JSON.stringify(tree.value)));
+  emit('save', deepUnwrap(tree.value));
 }
 
 // Root drag handlers
@@ -307,7 +284,7 @@ function onRootNodeMove(evt: any) {
     
     // Add to root at the specified index
     tree.value.splice(newIndex, 0, node);
-    emit('save', JSON.parse(JSON.stringify(tree.value)));
+    emit('save', deepUnwrap(tree.value));
   } else if (evt.moved) {
     // Node was reordered at root level
     const nodeId = evt.moved.element.id;
@@ -318,7 +295,7 @@ function onRootNodeMove(evt: any) {
     if (nodeIndex !== -1) {
       const node = tree.value.splice(nodeIndex, 1)[0];
       tree.value.splice(newIndex, 0, node);
-      emit('save', JSON.parse(JSON.stringify(tree.value)));
+      emit('save', deepUnwrap(tree.value));
     }
   }
 }
@@ -355,16 +332,12 @@ function onRootNodeMove(evt: any) {
           <ModuleTreeNodeComponent
             :node="node"
             :notes="props.notes"
-            :availableNotes="availableNotes"
             :editingNodeId="editingNodeId"
-            v-model:newNodeTitle="newNodeTitle"
-            v-model:selectedNoteId="selectedNoteId"
             @add-node="addNode"
             @remove-node="removeNode"
             @start-edit-node="startEditNode"
             @save-edit-node="saveEditNode"
             @cancel-edit-node="cancelEditNode"
-            @add-note-to-node="addNoteToNode"
             @remove-note-from-node="removeNoteFromNode"
             @create-note="handleCreateNote"
             @handle-edit-note="handleEditNote"
@@ -377,7 +350,8 @@ function onRootNodeMove(evt: any) {
     <NoteEditor
       v-if="showNoteEditor"
       :note="editingNote"
-      :is-open="showNoteEditor"
+      :isOpen="showNoteEditor"
+      :hideModuleSelector="true"
       @submit="handleSaveNote"
       @cancel="handleNoteEditorCancel"
     />

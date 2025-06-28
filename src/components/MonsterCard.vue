@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Monster } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
-import { defineProps } from 'vue';
 
 const props = defineProps<{
   monster: Monster;

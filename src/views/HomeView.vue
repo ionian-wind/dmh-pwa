@@ -22,7 +22,7 @@ const router = useRouter();
 const { t, locale } = useI18n();
 
 const stats = computed(() => ({
-  notes: noteStore.filtered.length,
+  notes: noteStore.items.filter(n => !n.hidden).length,
   characters: characterStore.items.length,
   parties: partyStore.filtered.length,
   monsters: monsterStore.filtered.length,

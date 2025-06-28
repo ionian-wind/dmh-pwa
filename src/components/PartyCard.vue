@@ -3,7 +3,6 @@ import { computed, onMounted } from 'vue';
 import type { Party } from '@/types';
 import { useModuleStore } from '@/stores/modules';
 import BaseCard from '@/components/common/BaseCard.vue';
-import { defineProps } from 'vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'copy']);

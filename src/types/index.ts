@@ -29,6 +29,7 @@ export interface Note extends WithMetadata {
   moduleId: UUID | null;
   parentId?: UUID;
   metadata?: Record<string, unknown>;
+  hidden: boolean; // If true, note is hidden from general listing (e.g. document tree notes)
 }
 
 export interface ModuleTreeNode {

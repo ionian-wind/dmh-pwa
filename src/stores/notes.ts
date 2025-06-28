@@ -23,7 +23,13 @@ export const useNoteStore = defineStore('notes', () => {
   }
 
   async function update(id: string, patch: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>>) {
-    const updated = await base.update(id, patch);
+    // Prevent 'hidden' from being changed after creation
+    const original = base.getById(id);
+    const patchWithoutHidden = { ...patch };
+    if (original && 'hidden' in original) {
+      patchWithoutHidden.hidden = original.hidden;
+    }
+    const updated = await base.update(id, patchWithoutHidden);
     // Indexation
     const from = { kind: 'note', id };
     const mentioned = extractMentionedEntities(updated.content || '');

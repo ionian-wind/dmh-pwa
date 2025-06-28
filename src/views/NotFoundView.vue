@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import Button from '@/components/common/Button.vue';
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, tm } = useI18n();
 
 const goHome = () => {
   router.push('/');
@@ -13,6 +13,9 @@ const goHome = () => {
 const goBack = () => {
   router.back();
 };
+
+const helpItems = tm('notFound.helpItems') as unknown as string[];
+
 </script>
 
 <template>
@@ -34,7 +37,7 @@ const goBack = () => {
       <div class="help-text">
         <p>{{ t('notFound.helpTitle') }}</p>
         <ul>
-          <li v-for="item in t('notFound.helpItems')" :key="item">{{ item }}</li>
+          <li v-for="item in helpItems" :key="item">{{ item }}</li>
         </ul>
       </div>
     </div>

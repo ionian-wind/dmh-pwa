@@ -17,6 +17,7 @@ const props = defineProps<{
   note: Note | null;
   isOpen: boolean;
   validationError?: string | null;
+  hideModuleSelector?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -32,7 +33,8 @@ const editedNote = ref<Note>({
   content: '',
   tags: [],
   moduleId: null,
-  typeId: null
+  typeId: null,
+  hidden: false
 });
 
 const lastNoteId = ref<string | null>(null);
@@ -59,7 +61,8 @@ watch(() => props.note, (newNote) => {
       content: '',
       tags: [],
       moduleId: null,
-      typeId: null
+      typeId: null,
+      hidden: false
     };
     lastNoteId.value = null;
   }
@@ -108,6 +111,7 @@ const handleCancel = () => {
         <div class="form-group">
           <label for="module">{{ t('editor.module') }}</label>
           <ModuleSelector
+            v-if="!props.hideModuleSelector"
             v-model="editedNote.moduleId"
             placeholder="No Module"
             :allowAnyModule="false"

@@ -11,6 +11,8 @@ import i18n from './i18n'
 import { setupAnchorScrollHandler } from './utils/anchorScroll'
 import { useConfigStore } from './utils/configStore'
 import { initializeDatabase } from './utils/storage'
+import VueVirtualScroller from 'vue-virtual-scroller';
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
 // Import global styles
 import './assets/styles/global.css'
@@ -42,6 +44,8 @@ if (configStore.savedLanguage && (configStore.savedLanguage.value === 'en' || co
 
 // Use i18n
 app.use(i18n)
+
+app.use(VueVirtualScroller);
 
 // Setup anchor scroll handler
 setupAnchorScrollHandler()

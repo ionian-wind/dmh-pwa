@@ -92,26 +92,31 @@ function buildTree(sections) {
   const stack = [{ level: 0, node: { id: 'root', title: 'Root', notes: [], children: [] } }];
   
   for (const section of sections) {
-    const node = {
-      id: section.id,
-      title: section.title,
-      notes: [section.id], // Each section becomes a note
-      children: []
-    };
-    
-    // Find the appropriate parent
+    // Find the appropriate parent node (the node at the level above this section)
     while (stack.length > 1 && stack[stack.length - 1].level >= section.level) {
       stack.pop();
     }
     
-    // Add to parent's children
-    stack[stack.length - 1].node.children.push(node);
+    const parentNode = stack[stack.length - 1].node;
     
-    // Push this node onto stack
-    stack.push({ level: section.level, node });
+    // If this section is at level 1, create a new top-level node
+    if (section.level === 1) {
+      const newNode = {
+        id: generateId(),
+        title: section.title,
+        notes: [section.id], // Link the note to this node
+        children: []
+      };
+      tree.push(newNode);
+      stack.push({ level: section.level, node: newNode });
+    } else {
+      // For deeper levels, add the note to the parent node's notes array
+      // Don't create intermediate nodes - just link the note to the parent
+      parentNode.notes.push(section.id);
+    }
   }
   
-  return stack[0].node.children; // Return root children
+  return tree; // Return the top-level nodes
 }
 
 // Create module JSON
@@ -135,7 +140,8 @@ function createNoteJson(section, moduleId) {
     tags: [],
     moduleId: moduleId,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    hidden: true
   };
 }
 

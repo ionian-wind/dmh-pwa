@@ -8,7 +8,6 @@ import { useI18n } from 'vue-i18n';
 const props = defineProps<{
   node: ModuleTreeNode;
   notes: Note[];
-  availableNotes: Note[];
   editingNodeId: string | null;
 }>();
 const emit = defineEmits<{
@@ -17,7 +16,6 @@ const emit = defineEmits<{
   (e: 'start-edit-node', node: ModuleTreeNode): void;
   (e: 'save-edit-node', node: ModuleTreeNode): void;
   (e: 'cancel-edit-node'): void;
-  (e: 'add-note-to-node', nodeId: string, noteId: string): void;
   (e: 'remove-note-from-node', node: ModuleTreeNode, noteId: string): void;
   (e: 'create-note', node: ModuleTreeNode): void;
   (e: 'handle-edit-note', noteId: string): void;
@@ -26,7 +24,6 @@ const emit = defineEmits<{
 }>();
 
 const localTitle = ref(props.node.title || '');
-const localSelectedNoteId = ref('');
 const isDragOver = ref(false);
 const isEmptyChildren = computed(() => !props.node.children || props.node.children.length === 0);
 
@@ -55,14 +52,6 @@ function onSaveEditNode() {
 }
 function onCancelEditNode() {
   emit('cancel-edit-node');
-}
-function onAddNoteToNode(event: Event) {
-  const value = (event.target as HTMLSelectElement).value;
-  if (!value) return;
-  emit('add-note-to-node', props.node.id, value);
-  // Reset the select value
-  localSelectedNoteId.value = '';
-  (event.target as HTMLSelectElement).value = '';
 }
 function onRemoveNoteFromNode(noteId: string) {
   emit('remove-note-from-node', props.node, noteId);
@@ -282,12 +271,6 @@ function cropTitle(title: string, max = 25) {
         </template>
       </Draggable>
     </div>
-    <div class="tree-note-select">
-      <select :value="localSelectedNoteId" @change="onAddNoteToNode">
-        <option value="">{{ t('moduleTreeNode.addNote') }}</option>
-        <option v-for="note in availableNotes" :key="note.id" :value="note.id">{{ note.title }}</option>
-      </select>
-    </div>
     <div 
       :class="['tree-node-children', { 'empty-children': isEmptyChildren }]"
       @dragover.prevent="onNodeDragOver"
@@ -308,14 +291,12 @@ function cropTitle(title: string, max = 25) {
             <ModuleTreeNode
               :node="(child as any)"
               :notes="notes"
-              :availableNotes="availableNotes"
               :editingNodeId="editingNodeId"
               @add-node="$emit('add-node', $event)"
               @remove-node="$emit('remove-node', $event)"
               @start-edit-node="$emit('start-edit-node', $event)"
               @save-edit-node="$emit('save-edit-node', $event)"
               @cancel-edit-node="$emit('cancel-edit-node')"
-              @add-note-to-node="(nodeId: string, noteId: string) => $emit('add-note-to-node', nodeId, noteId)"
               @remove-note-from-node="(node: ModuleTreeNode, noteId: string) => $emit('remove-note-from-node', node, noteId)"
               @create-note="$emit('create-note', $event)"
               @handle-edit-note="$emit('handle-edit-note', $event)"
@@ -412,7 +393,7 @@ function cropTitle(title: string, max = 25) {
   font-size: 1.1em;
 }
 
-.tree-node-notes, .tree-note-select {
+.tree-node-notes {
   border: none;
   padding: 0.1rem 0.2rem 0.1rem 1.5rem;
   transition: all 0.2s ease;
@@ -502,16 +483,5 @@ function cropTitle(title: string, max = 25) {
 .tree-node.drag-over .drag-handle {
   opacity: 1;
   color: #007bff;
-}
-
-.tree-note-select select {
-  border-radius: 4px;
-  border: 1px solid #b0b8c1;
-  font-size: 0.95em;
-  width: 100%
-}
-
-.tree-note-actions .si {
-  vertical-align: middle;
 }
 </style> 
