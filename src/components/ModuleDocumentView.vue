@@ -3,9 +3,20 @@ import type { ModuleTreeNode, Note } from '@/types';
 import { ref, onMounted, computed, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 
+interface TOCItem {
+  id: string;
+  title: string;
+  level: number;
+  anchorId: string;
+}
+
 const props = defineProps<{
   noteTree: ModuleTreeNode[];
   notes: Note[];
+}>();
+
+const emit = defineEmits<{
+  (e: 'toc-update', toc: TOCItem[]): void;
 }>();
 
 function findNotes(noteIds: string[]): Note[] {
@@ -14,29 +25,59 @@ function findNotes(noteIds: string[]): Note[] {
     .filter((n): n is Note => !!n);
 }
 
-function buildMarkdown(nodes: ModuleTreeNode[], depth = 1): string {
+function buildMarkdown(nodes: ModuleTreeNode[], depth = 1): { markdown: string; toc: TOCItem[] } {
   let md = '';
+  const toc: TOCItem[] = [];
+  
   for (const node of nodes) {
     if (node.title) {
-      md += `${'#'.repeat(depth + 1)} ${node.title} ${node.anchorId ? ` {#${node.anchorId}}` : ''}\n\n`;
+      const anchorId = node.anchorId || `section-${node.id}`;
+      md += `${'#'.repeat(depth + 1)} ${node.title} {#${anchorId}}\n\n`;
+      
+      toc.push({
+        id: node.id,
+        title: node.title,
+        level: depth + 1,
+        anchorId
+      });
     }
+    
     const nodeNotes = findNotes(node.notes);
     for (const note of nodeNotes) {
       if (note.title) {
-        md += `${'#'.repeat(depth + 2)} ${note.title}${node.noteAnchors && node.noteAnchors[note.id] ? ` {#${node.noteAnchors[note.id]}}` : ''}\n\n`;
+        const anchorId = node.noteAnchors && node.noteAnchors[note.id] 
+          ? node.noteAnchors[note.id] 
+          : `note-${note.id}`;
+        md += `${'#'.repeat(depth + 2)} ${note.title} {#${anchorId}}\n\n`;
+        
+        toc.push({
+          id: note.id,
+          title: note.title,
+          level: depth + 2,
+          anchorId
+        });
       }
       if (note.content) {
         md += note.content + '\n\n';
       }
     }
+    
     if (node.children && node.children.length > 0) {
-      md += buildMarkdown(node.children, depth + 1);
+      const childResult = buildMarkdown(node.children, depth + 1);
+      md += childResult.markdown;
+      toc.push(...childResult.toc);
     }
   }
-  return md;
+  
+  return { markdown: md, toc };
 }
 
 const combinedMarkdown = computed(() => buildMarkdown(props.noteTree));
+
+// Emit TOC when it changes
+watch(combinedMarkdown, (result) => {
+  emit('toc-update', result.toc);
+}, { immediate: true });
 
 const contentRef = ref<HTMLElement | null>(null);
 
@@ -100,7 +141,7 @@ function handleHeadingClick(event: Event) {
 <template>
   <div class="module-document-view" ref="rootEl">
     <div class="document-markdown" ref="contentRef" @click="handleHeadingClick">
-      <Markdown :content="combinedMarkdown" :anchorMap="noteAnchorMap" :enableMentionModal="true" />
+      <Markdown :content="combinedMarkdown.markdown" :anchorMap="noteAnchorMap" :enableMentionModal="true" />
     </div>
   </div>
 </template>

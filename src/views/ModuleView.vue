@@ -15,6 +15,7 @@ import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
+import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import TabPanel from '@/components/common/TabPanel.vue';
@@ -27,6 +28,13 @@ import NoteCard from '@/components/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import NotFoundView from './NotFoundView.vue';
 import { useI18n } from 'vue-i18n';
+
+interface TOCItem {
+  id: string;
+  title: string;
+  level: number;
+  anchorId: string;
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -43,6 +51,7 @@ const mentionsStore = useMentionsStore();
 const { t } = useI18n();
 
 const showEditor = ref(false);
+const tocItems = ref<TOCItem[]>([]);
 const isLoaded = computed(() => moduleStore.isLoaded);
 const module = computed(() => moduleStore.getById(route.params.id as string));
 const loading = computed(() => !isLoaded.value);
@@ -147,6 +156,10 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
     playerStore.playTrack(playlistTracks[0]);
   }
 }
+
+function handleTOCUpdate(toc: TOCItem[]) {
+  tocItems.value = toc;
+}
 </script>
 
 <template>
@@ -169,6 +182,7 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
             v-if="module && module.noteTree && module.noteTree.length > 0"
             :note-tree="module.noteTree"
             :notes="moduleNotes"
+            @toc-update="handleTOCUpdate"
           />
           <div v-else class="empty-state">
             <p>{{ t('moduleView.noDocument') }}</p>
@@ -241,7 +255,13 @@ function handlePlayPlaylist(playlist: JukeboxPlaylist) {
     </template>
 
     <template #sidepanel>
-      <div v-if="activeTab !== 'document'">
+      <div v-if="activeTab === 'document' && tocItems.length > 0">
+        <TableOfContents 
+          :items="tocItems" 
+          :title="t('common.tableOfContents')" 
+        />
+      </div>
+      <div v-else-if="activeTab !== 'document'">
         <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
         <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </div>

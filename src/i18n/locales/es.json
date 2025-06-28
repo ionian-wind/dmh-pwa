@@ -289,7 +289,8 @@
     "editNote": "Editar nota",
     "closeTab": "Cerrar pestaña",
     "addNewTab": "Agregar nueva pestaña",
-    "userMenu": "Menú de Usuario"
+    "userMenu": "Menú de Usuario",
+    "tableOfContents": "Tabla de Contenidos"
   },
   "validation": {
     "required": "Este campo es obligatorio",
