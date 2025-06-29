@@ -30,19 +30,13 @@
   "definitions": {
     "ModuleTreeNode": {
       "type": "object",
-      "required": ["id", "notes"],
+      "required": ["noteId", "children"],
       "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "notes": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Ordered list of note IDs"
-        },
+        "noteId": { "type": "string" },
         "children": {
           "type": "array",
           "items": { "$ref": "#/definitions/ModuleTreeNode" },
-          "description": "Child nodes"
+          "description": "Child notes"
         }
       }
     }

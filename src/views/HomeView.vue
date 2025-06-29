@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
@@ -10,7 +10,10 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
 import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
-import { backupAllStores, restoreAllStores, importModuleFromZip } from '@/utils/storage';
+import ImportValidationModal from '@/components/ImportValidationModal.vue';
+import { backupAllStores, restoreAllStores } from '@/utils/storage';
+import { parseModuleZip, importModuleFromZip, validateModuleImport, type ImportValidationResult } from '@/utils/moduleImportExport';
+import {deepUnwrap} from "@/utils/deepUnwrap";
 
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
@@ -20,6 +23,16 @@ const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
 const router = useRouter();
 const { t, locale } = useI18n();
+
+// Import validation modal state
+const showValidationModal = ref(false);
+const validationResult = ref<ImportValidationResult | null>(null);
+const pendingImportData = ref<{
+  file: File;
+  module: any;
+  tree: any[];
+  notes: any[];
+} | null>(null);
 
 const stats = computed(() => ({
   notes: noteStore.items.filter(n => !n.hidden).length,
@@ -143,7 +156,28 @@ async function handleModuleImport(event: Event) {
   const file = input.files[0];
   
   try {
-    const result = await importModuleFromZip(file);
+    // Parse the zip file for validation
+    const { module, tree, notes } = await parseModuleZip(file);
+    
+    // Validate the import
+    const result = validateModuleImport(module, tree, notes);
+
+    // Store the data for potential import
+    pendingImportData.value = { file, module, tree, notes };
+    validationResult.value = result;
+    showValidationModal.value = true;
+    
+  } catch (e) {
+    alert(t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e));
+  }
+  input.value = '';
+}
+
+async function handleImportConfirm() {
+  if (!pendingImportData.value) return;
+  
+  try {
+    const result = await importModuleFromZip(deepUnwrap(pendingImportData));
     alert(t('backup.moduleImported') + ` ${result.noteCount} notes imported.`);
     
     // Reload stores to show new data
@@ -154,7 +188,17 @@ async function handleModuleImport(event: Event) {
   } catch (e) {
     alert(t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e));
   }
-  input.value = '';
+  
+  // Close modal and clear data
+  showValidationModal.value = false;
+  validationResult.value = null;
+  pendingImportData.value = null;
+}
+
+function handleImportCancel() {
+  showValidationModal.value = false;
+  validationResult.value = null;
+  pendingImportData.value = null;
 }
 </script>
 
@@ -194,6 +238,14 @@ async function handleModuleImport(event: Event) {
         :hide-header="true"
       />
     </div>
+    
+    <!-- Import Validation Modal -->
+    <ImportValidationModal
+      v-if="showValidationModal && validationResult"
+      :result="validationResult"
+      @import="handleImportConfirm"
+      @cancel="handleImportCancel"
+    />
   </div>
 </template>
 

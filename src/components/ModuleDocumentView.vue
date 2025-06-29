@@ -3,6 +3,7 @@ import type { ModuleTreeNode, Note } from '@/types';
 import { ref, onMounted, computed, watch, nextTick, shallowRef } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useBookmarkStore } from '@/stores/bookmarks';
+import { useNoteStore } from '@/stores/notes';
 // @ts-ignore: no types for vue-virtual-scroller
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 
@@ -18,14 +19,12 @@ interface DocumentChunk {
   title: string;
   content: string;
   level: number;
-  anchorId: string;
-  nodeId?: string;
-  noteId?: string;
+  noteId: string;
 }
 
 const props = defineProps<{
+  moduleId: string;
   noteTree: ModuleTreeNode[];
-  notes: Note[];
 }>();
 
 const emit = defineEmits<{
@@ -33,55 +32,33 @@ const emit = defineEmits<{
 }>();
 
 const bookmarkStore = useBookmarkStore();
+const noteStore = useNoteStore();
 
 const chunks = shallowRef<DocumentChunk[]>([]);
 const tocItems = shallowRef<TOCItem[]>([]);
 const isLoading = ref(false);
 
-function findNotes(noteIds: string[]): Note[] {
-  return noteIds
-    .map(id => props.notes.find(n => n.id === id))
-    .filter((n): n is Note => !!n);
-}
+// Get notes for this module that are hidden (document tree notes)
+const notes = computed(() => 
+  noteStore.items.filter(note => note.moduleId === props.moduleId && note.hidden === true)
+);
 
 function buildChunks(nodes: ModuleTreeNode[], depth = 1): DocumentChunk[] {
   const result: DocumentChunk[] = [];
   for (const node of nodes) {
-    if (node.title) {
-      const anchorId = node.anchorId || `section-${node.id}`;
+    // Find the note for this node
+    const note = notes.value.find(n => n.id === node.noteId);
+
+    console.log(note);
+
+    if (note) {
       result.push({
-        id: `node-${node.id}`,
-        title: node.title,
-        content: `${'#'.repeat(depth + 1)} ${node.title} {#${anchorId}}\n\n`,
+        id: `note-${note.id}`,
+        title: note.title,
+        content: `${'#'.repeat(depth + 1)} ${note.title} {#${note.id}}\n\n${note.content || ''}\n\n`,
         level: depth + 1,
-        anchorId,
-        nodeId: node.id
+        noteId: note.id
       });
-    }
-    const nodeNotes = findNotes(node.notes);
-    for (const note of nodeNotes) {
-      if (note.title) {
-        const anchorId = node.noteAnchors && node.noteAnchors[note.id] 
-          ? node.noteAnchors[note.id] 
-          : `note-${note.id}`;
-        result.push({
-          id: `note-${note.id}`,
-          title: note.title,
-          content: `${'#'.repeat(depth + 2)} ${note.title} {#${anchorId}}\n\n${note.content || ''}\n\n`,
-          level: depth + 2,
-          anchorId,
-          noteId: note.id
-        });
-      } else if (note.content) {
-        result.push({
-          id: `note-content-${note.id}`,
-          title: `Note ${note.id}`,
-          content: `${note.content}\n\n`,
-          level: depth + 2,
-          anchorId: `note-${note.id}`,
-          noteId: note.id
-        });
-      }
     }
     if (node.children && node.children.length > 0) {
       const childChunks = buildChunks(node.children, depth + 1);
@@ -93,12 +70,11 @@ function buildChunks(nodes: ModuleTreeNode[], depth = 1): DocumentChunk[] {
 
 function buildTOC(chunks: DocumentChunk[]): TOCItem[] {
   return chunks
-    .filter(chunk => chunk.title && chunk.title !== `Note ${chunk.noteId}`)
     .map(chunk => ({
       id: chunk.id,
       title: chunk.title,
       level: chunk.level,
-      anchorId: chunk.anchorId
+      anchorId: chunk.id
     }));
 }
 
@@ -116,11 +92,8 @@ function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
   const map: Record<string, string> = {};
   function traverse(nodes: ModuleTreeNode[]) {
     for (const node of nodes) {
-      if (node.noteAnchors) {
-        for (const [noteId, anchorId] of Object.entries(node.noteAnchors)) {
-          map[noteId] = anchorId;
-        }
-      }
+      // Use note ID as anchor
+      map[node.noteId] = node.noteId;
       if (node.children) {
         traverse(node.children);
       }
@@ -132,23 +105,16 @@ function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
 
 const noteAnchorMap = computed(() => buildNoteAnchorMap(props.noteTree));
 const rootEl = ref<HTMLElement | null>(null);
-const moduleId = computed(() => {
-  const firstNoteId = props.noteTree[0]?.notes?.[0];
-  if (firstNoteId) {
-    const note = props.notes.find(n => n.id === firstNoteId);
-    return note?.moduleId || null;
-  }
-  return null;
-});
+const moduleId = props.moduleId;
 
 function injectBookmarkButtons() {
-  if (!rootEl.value || !moduleId.value) return;
+  if (!rootEl.value || !moduleId) return;
   rootEl.value.querySelectorAll('.bookmark-btn').forEach(el => el.remove());
   rootEl.value.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]').forEach(heading => {
     const anchorId = heading.id;
     const title = heading.textContent || '';
-    if (!moduleId.value) return;
-    const modId = moduleId.value as string;
+    if (!moduleId) return;
+    const modId = moduleId;
     const isBookmarked = bookmarkStore.isBookmarked(modId, anchorId);
     const btn = document.createElement('button');
     btn.className = 'bookmark-btn';
@@ -159,8 +125,8 @@ function injectBookmarkButtons() {
     btn.onclick = (e) => {
       e.stopPropagation();
       e.preventDefault();
-      if (!moduleId.value) return;
-      const modId = moduleId.value as string;
+      if (!moduleId) return;
+      const modId = moduleId;
       if (bookmarkStore.isBookmarked(modId, anchorId)) {
         bookmarkStore.removeBookmark(modId, anchorId);
       } else {
@@ -181,7 +147,8 @@ function injectBookmarkButtons() {
   });
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await noteStore.load();
   if (rootEl.value) {
     (rootEl.value as any).noteAnchorMap = noteAnchorMap.value;
   }
@@ -189,7 +156,7 @@ onMounted(() => {
   window.addEventListener('scroll', () => {
     nextTick(() => injectBookmarkButtons());
   }, { passive: true });
-  watch(() => [props.noteTree, props.notes, bookmarkStore.items], () => {
+  watch(() => [props.noteTree, notes.value, bookmarkStore.items], () => {
     nextTick(() => injectBookmarkButtons());
   }, { immediate: true, deep: true });
 });

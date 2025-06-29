@@ -33,12 +33,8 @@ export interface Note extends WithMetadata {
 }
 
 export interface ModuleTreeNode {
-  id: UUID;
-  title?: string;
-  notes: UUID[]; // ordered list of note IDs
+  noteId: UUID;
   children?: ModuleTreeNode[];
-  anchorId?: string; // for section anchor
-  noteAnchors?: Record<UUID, string>; // noteId -> anchorId
 }
 
 export interface Module extends WithMetadata {

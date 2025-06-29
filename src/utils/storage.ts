@@ -5,7 +5,7 @@ import { defineStore } from 'pinia';
 import JSZip from 'jszip';
 
 import * as schemaValidator from './schemaValidator';
-import { WithMetadata } from "@/types";
+import {Module, Note, WithMetadata} from "@/types";
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
@@ -454,108 +454,3 @@ export async function clearStore(storeName: string): Promise<void> {
   await tx.done;
 }
 
-/**
- * Import module from a zip file
- */
-export async function importModuleFromZip(zipFile: Blob): Promise<{ moduleId: string, noteCount: number }> {
-  const zip = await JSZip.loadAsync(zipFile);
-  
-  // Read module.json
-  const moduleFile = zip.file('module.json');
-  if (!moduleFile) {
-    throw new StorageError('Module file not found in zip');
-  }
-  
-  const moduleContent = await moduleFile.async('string');
-  let moduleData: any;
-  try {
-    moduleData = JSON.parse(moduleContent);
-  } catch (e) {
-    throw new StorageError('Invalid module.json format');
-  }
-  
-  // Generate new IDs for the module and all notes
-  const newModuleId = generateId();
-  const idMapping = new Map<string, string>();
-  
-  // Read all note files
-  const notesFolder = zip.folder('notes');
-  if (!notesFolder) {
-    throw new StorageError('Notes folder not found in zip');
-  }
-  
-  const noteFiles = Object.values(notesFolder.files).filter(file => !file.dir);
-  const notes: any[] = [];
-  
-  for (const noteFile of noteFiles) {
-    const noteContent = await noteFile.async('string');
-    let noteData: any;
-    try {
-      noteData = JSON.parse(noteContent);
-    } catch (e) {
-      console.warn(`Skipping invalid note file: ${noteFile.name}`);
-      continue;
-    }
-    
-    // Generate new ID for note
-    const newNoteId = generateId();
-    idMapping.set(noteData.id, newNoteId);
-    
-    // Update note data
-    const newNote = {
-      ...noteData,
-      id: newNoteId,
-      moduleId: newModuleId,
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    
-    notes.push(newNote);
-  }
-  
-  // Update module data with new ID and updated note tree
-  const newModule = {
-    ...moduleData,
-    id: newModuleId,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    noteTree: updateNoteTreeIds(moduleData.noteTree, idMapping)
-  };
-  
-  // Import everything in a single transaction
-  const db = await openDB();
-  const tx = db.transaction(['modules', 'notes'], 'readwrite');
-  
-  try {
-    // Import module
-    await tx.objectStore('modules').put(newModule);
-    
-    // Import all notes
-    for (const note of notes) {
-      await tx.objectStore('notes').put(note);
-    }
-    
-    // Commit the transaction
-    await tx.done;
-    
-    return {
-      moduleId: newModuleId,
-      noteCount: notes.length
-    };
-  } catch (error) {
-    // Transaction will automatically rollback on error
-    throw new StorageError(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * Update note tree IDs using the provided mapping
- */
-function updateNoteTreeIds(tree: any[], idMapping: Map<string, string>): any[] {
-  return tree.map(node => ({
-    ...node,
-    id: idMapping.get(node.id) || node.id,
-    notes: node.notes?.map((noteId: string) => idMapping.get(noteId) || noteId) || [],
-    children: node.children ? updateNoteTreeIds(node.children, idMapping) : []
-  }));
-}

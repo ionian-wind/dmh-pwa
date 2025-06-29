@@ -22,8 +22,10 @@ if (!moduleName) {
   process.exit(1);
 }
 
-// Get markdown file path (default to docs/cos.md if not provided)
-const markdownFile = args[args.length - 1] || 'docs/cos.md';
+// Get markdown file path
+const markdownFile = args[args.length - 1];
+
+console.log(markdownFile);
 
 if (!fs.existsSync(markdownFile)) {
   console.error(`Markdown file not found: ${markdownFile}`);
@@ -89,7 +91,7 @@ function parseMarkdownSections(content) {
 // Build tree structure from sections
 function buildTree(sections) {
   const tree = [];
-  const stack = [{ level: 0, node: { id: 'root', title: 'Root', notes: [], children: [] } }];
+  const stack = [{ level: 0, node: { id: 'root', children: [] } }];
   
   for (const section of sections) {
     // Find the appropriate parent node (the node at the level above this section)
@@ -99,20 +101,23 @@ function buildTree(sections) {
     
     const parentNode = stack[stack.length - 1].node;
     
-    // If this section is at level 1, create a new top-level node
+    // Create a new node for this section
+    const newNode = {
+      noteId: section.id, // Use the section ID as the noteId
+      children: []
+    };
+    
+    // If this section is at level 1, add to top-level tree
     if (section.level === 1) {
-      const newNode = {
-        id: generateId(),
-        title: section.title,
-        notes: [section.id], // Link the note to this node
-        children: []
-      };
       tree.push(newNode);
       stack.push({ level: section.level, node: newNode });
     } else {
-      // For deeper levels, add the note to the parent node's notes array
-      // Don't create intermediate nodes - just link the note to the parent
-      parentNode.notes.push(section.id);
+      // For deeper levels, add as child of the parent node
+      if (!parentNode.children) {
+        parentNode.children = [];
+      }
+      parentNode.children.push(newNode);
+      stack.push({ level: section.level, node: newNode });
     }
   }
   

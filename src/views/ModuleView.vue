@@ -20,8 +20,6 @@ import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import TabPanel from '@/components/common/TabPanel.vue';
-import ModuleNoteTreeManager from '@/components/ModuleNoteTreeManager.vue';
-import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
 import PartyCard from '@/components/PartyCard.vue';
 import MonsterCard from '@/components/MonsterCard.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
@@ -29,6 +27,10 @@ import NoteCard from '@/components/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/common/Button.vue';
+import ModuleDocumentTree from '@/components/ModuleDocumentTree.vue';
+import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
+import JSZip from 'jszip';
+import { nanoid } from 'nanoid';
 
 interface TOCItem {
   id: string;
@@ -73,10 +75,6 @@ const moduleEncounters = computed(() =>
 
 const moduleNotes = computed(() => {
   return noteStore.items.filter(note => note.moduleId === route.params.id && note.hidden === false);
-});
-
-const moduleTreeNotes = computed(() => {
-  return noteStore.items.filter(note => note.moduleId === route.params.id && note.hidden === true);
 });
 
 const modulePlaylists = computed(() => 
@@ -155,6 +153,7 @@ const moduleTitle = computed(() => module.value?.name || '');
 const moduleSubtitle = computed(() => module.value?.description || '');
 
 function handleSaveNoteTree(newTree: any) {
+  console.log('[ModuleView] Saving tree', newTree);
   if (!module.value) return;
   moduleStore.update(module.value.id, { ...module.value, noteTree: newTree });
 }
@@ -189,6 +188,74 @@ function scrollToBookmark(anchorId: string) {
     setTimeout(() => el.classList.remove('bookmark-highlight'), 1200);
   }
 }
+
+async function handleExportModule() {
+  if (!module.value) return;
+  // Gather module data
+  const moduleId = module.value.id;
+  const moduleNotes = noteStore.items.filter(note => note.moduleId === moduleId);
+  const tree = module.value.noteTree || [];
+
+  // Prepare module.json (match markdown-to-json.js structure)
+  const moduleJson = {
+    id: module.value.id,
+    name: module.value.name,
+    createdAt: module.value.createdAt,
+    updatedAt: module.value.updatedAt,
+    noteTree: tree
+  };
+
+  // Prepare tree.json
+  const treeJson = tree;
+
+  // Prepare notes/*.json
+  const notes = moduleNotes.map(note => ({
+    id: note.id,
+    title: note.title,
+    content: note.content,
+    typeId: note.typeId || null,
+    tags: note.tags || [],
+    moduleId: note.moduleId,
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+    hidden: note.hidden
+  }));
+
+  // Prepare summary.json
+  const summary = {
+    moduleName: module.value.name,
+    moduleId: module.value.id,
+    totalSections: notes.length,
+    totalNotes: notes.length,
+    generatedAt: new Date().toISOString()
+  };
+
+  // Create zip
+  const zip = new JSZip();
+  zip.file('module.json', JSON.stringify(moduleJson, null, 2));
+  zip.file('tree.json', JSON.stringify(treeJson, null, 2));
+  const notesFolder = zip.folder('notes');
+  if (notesFolder) {
+    for (const note of notes) {
+      notesFolder.file(`${note.id}.json`, JSON.stringify(note, null, 2));
+    }
+  }
+  zip.file('summary.json', JSON.stringify(summary, null, 2));
+
+  // Generate zip and trigger download
+  const zipBuffer = await zip.generateAsync({ type: 'blob' });
+  const zipFileName = `${module.value.name.replace(/[^a-zA-Z0-9]/g, '_')}_module.zip`;
+  const url = URL.createObjectURL(zipBuffer);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = zipFileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
 </script>
 
 <template>
@@ -204,13 +271,18 @@ function scrollToBookmark(anchorId: string) {
     :not-found="notFound"
     :loading="loading"
   >
-    <div v-if="module" class="module-content">
+    <template #actions>
+      <Button @click="handleExportModule" variant="success" :title="t('common.export')">
+        <i class="si si-download"></i>
+      </Button>
+    </template>
+    <template #default>
       <TabGroup :tabs="entityTabs" v-model="activeTab">
         <TabPanel tab-id="document">
           <ModuleDocumentView
             v-if="module && module.noteTree && module.noteTree.length > 0"
+            :module-id="module?.id || ''"
             :note-tree="module.noteTree"
-            :notes="moduleTreeNotes"
             @toc-update="handleTOCUpdate"
           />
           <div v-else class="empty-state">
@@ -264,14 +336,14 @@ function scrollToBookmark(anchorId: string) {
           </div>
         </TabPanel>
         <TabPanel tab-id="noteTree">
-          <ModuleNoteTreeManager
-            :module="module"
-            :notes="moduleTreeNotes"
-            @save="handleSaveNoteTree"
+          <ModuleDocumentTree
+            :module-id="module?.id || ''"
+            :note-tree="module?.noteTree || []"
+            @update:noteTree="handleSaveNoteTree"
           />
         </TabPanel>
       </TabGroup>
-    </div>
+    </template>
     <!-- Editor Modal -->
     <template #editor>
       <ModuleEditor

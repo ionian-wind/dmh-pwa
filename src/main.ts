@@ -13,6 +13,7 @@ import { useConfigStore } from './utils/configStore'
 import { initializeDatabase } from './utils/storage'
 import VueVirtualScroller from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 
 // Import global styles
 import './assets/styles/global.css'
@@ -49,6 +50,14 @@ app.use(VueVirtualScroller);
 
 // Setup anchor scroll handler
 setupAnchorScrollHandler()
+
+app.use(VueDnDKitPlugin, {
+  defaultOverlay: {
+    styles: {
+      transition: 'none',
+    },
+  },
+} as IPluginOptions);
 
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {
