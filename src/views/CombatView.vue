@@ -7,11 +7,12 @@ import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import type { Combat } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
 import { useI18n } from 'vue-i18n';
 import {useCharacterStore} from "@/stores/characters";
 import {useMonsterStore} from "@/stores/monsters";
+import BaseModal from "@/components/common/BaseModal.vue";
+import ToggleSwitch from "@/components/common/ToggleSwitch.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -23,11 +24,109 @@ const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const { t } = useI18n();
 
+onMounted(async () => {
+  await characterStore.load();
+  await monsterStore.load();
+  await combatStore.load();
+  await encounterStore.load();
+  await partyStore.load();
+  await moduleStore.load();
+});
+
 const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
 const notFound = computed(() => combatStore.isLoaded && !combat.value);
 
+// Add local state for new participant
+const activeParticipantIndex = ref(0);
+
+// Modal state
+const isInitiativeModalOpen = ref(false);
+const editingParticipant = ref<any>(null);
+const newInitiative = ref(0);
+const isAddParticipantModalOpen = ref(false);
+const localParticipants = ref<Record<string, { selected: boolean; initiative: number }>>({});
+
+// Computed: current participant
+const currentParticipant = computed(() => {
+  if (!combat.value || combat.value.status !== 'active' || !combat.value.combatants.length) return null;
+  return combat.value.combatants[activeParticipantIndex.value];
+});
+
+const encounter = computed(() => combat.value ? encounterStore.getById(combat.value.encounterId) : null);
+const party = computed(() => combat.value ? partyStore.getById(combat.value.partyId) : null);
+
+const partyCharacters = computed(() => {
+  if (!party.value) return [];
+  return party.value.characters
+    .map(id => characterStore.getById(id))
+    .filter((c): c is NonNullable<typeof c> => !!c);
+});
+
+const encounterMonsters = computed(() => {
+  if (!encounter.value) return [];
+  // encounter.value.monsters is Record<UUID, number>
+  const monsters: any[] = [];
+  Object.entries(encounter.value.monsters).forEach(([monsterId, count]) => {
+    const monster = monsterStore.getById(monsterId);
+    if (monster) {
+      for (let i = 0; i < count; i++) {
+        monsters.push({ ...monster, instance: i + 1 });
+      }
+    }
+  });
+  return monsters;
+});
+
+const allParticipants = computed(() => {
+  const players = partyCharacters.value.map(c => ({
+    id: c.id,
+    type: 'player',
+    referenceId: c.id
+  }));
+  const monsters = encounterMonsters.value.map(m => ({
+    id: m.id + (m.instance ? `-${m.instance}` : ''),
+    type: 'monster',
+    referenceId: m.id
+  }));
+  return [...players, ...monsters];
+});
+
+const availableCharactersToAdd = computed(() => {
+  if (!combat.value) return [];
+  const combatantCharacterIds = new Set(
+    combat.value.combatants.filter(c => c.type === 'player').map(c => c.referenceId)
+  );
+  return partyCharacters.value.filter(c => !combatantCharacterIds.has(c.id));
+});
+
+const isParticipantInCombat = (participantId: string) => {
+  return combat.value?.combatants.some(c => c.id === participantId) ?? false;
+};
+
+// Helper to get display name for a combatant
+function getCombatantDisplayName(combatant: { type: string; referenceId?: string; id: string }) {
+  if (combatant.type === 'player' && combatant.referenceId) {
+    const char = characterStore.getById(combatant.referenceId);
+    return char ? char.name : 'Unknown Player';
+  } else if (combatant.type === 'monster' && combatant.referenceId) {
+    const monster = monsterStore.getById(combatant.referenceId);
+    if (monster) {
+      // If there are multiple monsters of the same type, add a number
+      const all = combat.value?.combatants.filter(c => c.referenceId === combatant.referenceId && c.type === 'monster') || [];
+      if (all.length > 1) {
+        const idx = all.findIndex(c => c.id === combatant.id);
+        return `${monster.name} #${idx + 1}`;
+      }
+      return monster.name;
+    }
+    return 'Unknown Monster';
+  }
+  return 'Unknown';
+}
+
 function updateCombatFromStore() {
+  if (!combatStore.isLoaded) return;
   const combatId = route.params.id as string;
   const found = combatStore.getById(combatId);
   if (found) {
@@ -37,9 +136,36 @@ function updateCombatFromStore() {
   }
 }
 
-watch([
-  () => combatStore.items,
-], updateCombatFromStore, { immediate: true });
+watch(combat, (newCombat) => {
+  if (newCombat && newCombat.status === 'preparing' && newCombat.combatants.length === 0 && allParticipants.value.length > 0) {
+    const now = Date.now();
+    newCombat.combatants = allParticipants.value.map(p => ({
+      id: p.id,
+      type: p.type as 'player' | 'monster',
+      referenceId: p.referenceId,
+      initiative: 0,
+      hasActed: false,
+      isPostponed: false,
+      createdAt: now,
+      updatedAt: now
+    }));
+  }
+}, { immediate: true });
+
+watch(
+  () => combatStore.items, 
+  updateCombatFromStore, 
+  { deep: true, immediate: true }
+);
+
+watch(isAddParticipantModalOpen, (isOpen) => {
+  if (isOpen) {
+    localParticipants.value = availableCharactersToAdd.value.reduce((acc, p) => {
+      acc[p.id] = { selected: false, initiative: 0 };
+      return acc;
+    }, {} as Record<string, { selected: boolean, initiative: number }>);
+  }
+});
 
 const getEncounterName = (encounterId: string) => {
   const encounter = encounterStore.getById(encounterId);
@@ -57,42 +183,150 @@ const combatTitle = computed(() => {
   return `${getEncounterName(combat.value.encounterId)} vs ${getPartyName(combat.value.partyId)}`;
 });
 
-const combatSubtitle = computed(() => {
-  if (!combat.value) return '';
-  
-  const parts = [
-    `Status: ${combat.value.status}`,
-    `Round ${combat.value.currentRound}`,
-    `Turn ${combat.value.currentTurn + 1}`,
-    `${combat.value.combatants.length} combatants`
-  ];
-  
-  return parts.join(' • ');
-});
+// Start battle
+function startCombat() {
+  if (!combat.value || combat.value.combatants.length < 1) return;
 
-const startCombat = () => {
+  const updatedCombatants = combat.value.combatants.map(c => ({
+    ...c,
+    hasActed: false,
+    isPostponed: false
+  })).sort((a, b) => b.initiative - a.initiative);
+
+  combatStore.update(combat.value.id, {
+    status: 'active',
+    currentRound: 1,
+    currentTurn: 0,
+    combatants: updatedCombatants,
+  });
+
+  activeParticipantIndex.value = 0;
+}
+
+// Next turn
+function nextTurn() {
+  if (!combat.value || combat.value.status !== 'active') return;
+  if (currentParticipant.value) {
+    currentParticipant.value.hasActed = true;
+  }
+  let nextIndex = -1;
+  for (let i = activeParticipantIndex.value + 1; i < combat.value.combatants.length; i++) {
+    if (!combat.value.combatants[i].hasActed && !combat.value.combatants[i].isPostponed) {
+      nextIndex = i;
+      break;
+    }
+  }
+  if (nextIndex !== -1) {
+    activeParticipantIndex.value = nextIndex;
+  } else {
+    startNewRound();
+  }
+}
+
+// Start new round
+function startNewRound() {
   if (!combat.value) return;
-  combatStore.startCombat(combat.value.id);
-};
+  combat.value.combatants.sort((a, b) => b.initiative - a.initiative);
+  combat.value.currentRound++;
+  combat.value.combatants.forEach(p => {
+    p.hasActed = false;
+    p.isPostponed = false;
+  });
+  activeParticipantIndex.value = 0;
+}
 
-const endCombat = () => {
+// Postpone current
+function postponeCurrent() {
+  if (!combat.value || combat.value.status !== 'active' || !currentParticipant.value) return;
+  currentParticipant.value.isPostponed = true;
+  nextTurn();
+}
+
+// Activate postponed
+function activatePostponed(id: string) {
+  if (!combat.value) return;
+  const participant = combat.value.combatants.find(p => p.id === id);
+  if (!participant) return;
+  participant.isPostponed = false;
+  participant.hasActed = false;
+  if (combat.value.status === 'active') {
+    const index = combat.value.combatants.findIndex(p => p.id === id);
+    if (index !== -1) {
+      activeParticipantIndex.value = index;
+    }
+  }
+}
+
+// End battle
+function endCombat() {
   if (!combat.value) return;
   combatStore.endCombat(combat.value.id);
-};
+}
 
-const resetCombat = () => {
+function openInitiativeModal(participant: any) {
+  if (combat.value && combat.value.status === 'preparing') {
+    editingParticipant.value = participant;
+    newInitiative.value = participant.initiative;
+    isInitiativeModalOpen.value = true;
+  }
+}
+
+function saveInitiative() {
+  if (!combat.value || !editingParticipant.value || combat.value.status !== 'preparing') return;
+  const combatants = [...combat.value.combatants];
+  const pIndex = combatants.findIndex(p => p.id === editingParticipant.value.id);
+
+  if (pIndex > -1) {
+    combatants[pIndex] = {
+      ...combatants[pIndex],
+      initiative: newInitiative.value,
+      updatedAt: Date.now()
+    };
+    combatStore.update(combat.value.id, { combatants });
+  }
+
+  isInitiativeModalOpen.value = false;
+  editingParticipant.value = null;
+}
+
+function handleParticipantToggle(participantId: string, isSelected: boolean) {
+  if (localParticipants.value[participantId]) {
+    localParticipants.value[participantId].selected = isSelected;
+  }
+}
+
+function handleInitiativeChange(participantId: string, initiative: number) {
+  if (localParticipants.value[participantId]) {
+    localParticipants.value[participantId].initiative = initiative;
+  }
+}
+
+function handleAddParticipants() {
   if (!combat.value) return;
-  combatStore.resetCombat(combat.value.id);
-};
 
-onMounted(async () => {
-  await characterStore.load();
-  await monsterStore.load();
-  await combatStore.load();
-  await encounterStore.load();
-  await partyStore.load();
-  await moduleStore.load();
-});
+  const now = Date.now();
+  const newCombatants = Object.entries(localParticipants.value)
+    .filter(([, data]) => data.selected)
+    .map(([characterId, data]) => {
+      return {
+        id: characterId,
+        type: 'player' as const,
+        referenceId: characterId,
+        initiative: data.initiative,
+        hasActed: false,
+        isPostponed: false,
+        createdAt: now,
+        updatedAt: now
+      };
+    });
+
+  if (newCombatants.length > 0) {
+    const updatedCombatants = [...combat.value.combatants, ...newCombatants];
+    combatStore.update(combat.value.id, { combatants: updatedCombatants });
+  }
+
+  isAddParticipantModalOpen.value = false;
+}
 </script>
 
 <template>
@@ -101,29 +335,21 @@ onMounted(async () => {
     entity-name="Combat"
     list-route="/combats"
     :title="combatTitle"
-    :subtitle="combatSubtitle"
     :not-found="notFound"
     :loading="loading"
   >
     <template #actions>
       <Button
-        v-if="combat.status === 'preparing'"
+        v-if="combat && combat.status === 'preparing'"
         variant="primary"
         @click="startCombat"
         class="start-btn"
+        :disabled="combat.combatants.length < 1"
       >
-        <i class="si si-player-play"></i> Start Combat
+        <i class="ra ra-crossed-swords"></i> Start Combat
       </Button>
       <Button
-        v-if="combat.status === 'active'"
-        variant="warning"
-        @click="resetCombat"
-        class="reset-btn"
-      >
-        <i class="si si-refresh"></i> Reset Combat
-      </Button>
-      <Button
-        v-if="combat.status === 'active'"
+        v-if="combat && combat.status === 'active'"
         variant="danger"
         @click="endCombat"
         class="end-btn"
@@ -133,44 +359,129 @@ onMounted(async () => {
     </template>
     <!-- Combat Content -->
     <div v-if="combat" class="combat-content">
-      <div class="combat-header">
-        <div class="combat-info">
-          <div class="info-section">
-            <h3>{{ t('combat.encounter') }}</h3>
-            <p>{{ getEncounterName(combat?.encounterId) }}</p>
-          </div>
-          <div class="info-section">
-            <h3>{{ t('combat.party') }}</h3>
-            <p>{{ getPartyName(combat?.partyId) }}</p>
-          </div>
-          <div class="info-section">
-            <h3>{{ t('combat.status') }}</h3>
-            <span class="status-badge" :class="combat?.status">{{ t('combat.statuses.' + (combat?.status || '')) }}</span>
-          </div>
+      <!-- Phase Tabs and Round/Turn Display -->
+      <div class="phase-indicator">
+        <div 
+          class="phase-tab" 
+          :class="{active: combat && combat.status === 'preparing'}"
+        >
+          <i class="ra ra-cycle"></i> Preparation
         </div>
-        <div class="combat-controls">
-          
+        <div 
+          class="phase-tab" 
+          :class="{active: combat && combat.status === 'active'}"
+        >
+          <i class="ra ra-crossed-swords"></i> Active Battle
+        </div>
+        <div 
+          class="phase-tab" 
+          :class="{active: combat && combat.status === 'completed'}"
+        >
+          <i class="ra ra-skull-trophy"></i> Battle Ended
         </div>
       </div>
-      <!-- Combat Tracker -->
-      <div class="combat-tracker-section">
-        <h3>{{ t('combat.tracker') }}</h3>
-        <CombatTracker :encounterId="combat?.encounterId" />
-      </div>
-      <!-- Combat Summary -->
+
+
+              <!-- Combat Summary -->
       <div class="combat-summary" v-if="combat?.status === 'active'">
         <h3>{{ t('combat.summary') }}</h3>
-        <div class="summary-grid">
-          <div class="summary-item">
-            <label>{{ t('combat.round') }}</label>
-            <span class="summary-value">{{ combat?.currentRound }}</span>
+        
+          <div class="current-turn" v-if="combat && combat.status === 'active' && combat.combatants.length">
+            Current Turn: {{ currentParticipant ? getCombatantDisplayName(currentParticipant) : '' }}
+            <span v-if="currentParticipant?.isPostponed">(Postponed)</span>
           </div>
-          <div class="summary-item">
-            <label>{{ t('combat.turn') }}</label>
-            <span class="summary-value">{{ (combat?.currentTurn ?? 0) + 1 }} of {{ combat?.combatants?.length ?? 0 }}</span>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <label>{{ t('combat.round') }}</label>
+              <span class="summary-value">{{ combat?.currentRound }}</span>
+            </div>
+            <div class="summary-item">
+              <label>{{ t('combat.turn') }}</label>
+              <span class="summary-value">{{ (combat?.currentTurn ?? 0) + 1 }} of {{ combat?.combatants?.length ?? 0 }}</span>
+            </div>
+          </div>
+      </div>
+
+      <!-- Ended State -->
+      <div v-if="combat && combat.status === 'completed'" class="combat-summary empty-state">
+        <i class="si si-flag"></i> The battle has concluded after {{ combat.currentRound }} rounds.
+      </div>
+
+      <!-- Participants Section -->
+      <div class="participants-section">
+        <div class="combat-title">
+          <h2>Participants: {{ combat.combatants.length }}</h2>
+          <Button
+            v-if="combat && (combat.status === 'preparing' || combat.status === 'active')"
+            @click="isAddParticipantModalOpen = true"
+            :disabled="availableCharactersToAdd.length === 0"
+            size="small"
+          >
+            <i class="fas fa-plus"></i> {{ t('combat.addParticipant') }}
+          </Button>
+        </div>
+
+        <!-- Participant List -->
+        <div v-if="combat.combatants.length" class="participant-list">
+          <div
+            v-for="(participant, index) in combat.combatants"
+            :key="participant.id"
+            @click="openInitiativeModal(participant)"
+            :class="{
+              'participant-row': true,
+              preparing: combat && combat.status === 'preparing',
+              active: combat && combat.status === 'active' && activeParticipantIndex === index,
+              postponed: participant.isPostponed,
+              acted: combat && combat.status === 'active' && participant.hasActed && !participant.isPostponed
+            }"
+          >
+            <div class="participant-artwork">
+              <i v-if="participant.type === 'player'" class="ra ra-player"></i>
+              <i v-else class="ra ra-wolf-head"></i>
+            </div>
+
+            <div class="participant-info">
+              <div class="participant-name">
+                {{ getCombatantDisplayName(participant) }}
+              </div>
+              <div class="participant-initiative">
+                {{ participant.initiative }}
+              </div>
+            </div>
+
+            <div class="participant-status">
+              <span v-if="combat && combat.status === 'active'">
+                <span v-if="participant.isPostponed" class="participant-badge badge-postponed">
+                  <i class="fas fa-clock"></i> Postponed
+                </span>
+                <span v-else-if="participant.hasActed" class="participant-badge badge-acted">
+                  <i class="si si-check-circle"></i> Acted this round
+                </span>
+              </span>
+            </div>
+
+            <div class="participant-actions">
+              <Button
+                v-if="combat && combat.status === 'active' && participant.isPostponed"
+                variant="success"
+                size="large"
+                @click="activatePostponed(participant.id)"
+              >
+                <i class="si si-bolt"></i>
+              </Button>
+              <div class="controls" v-if="combat && combat.status === 'active' && activeParticipantIndex === index">
+                <Button size="large" variant="warning" @click="postponeCurrent" :disabled="!currentParticipant">
+                  <i class="si si-pause"></i>
+                </Button>
+                <Button size="large" variant="success" @click="nextTurn" :disabled="!currentParticipant">
+                  <i class="si si-check"></i>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       <div v-if="combat?.notes" class="content-section">
         <h3>{{ t('combat.notes') }}</h3>
         <p class="notes">{{ combat?.notes }}</p>
@@ -179,6 +490,69 @@ onMounted(async () => {
     <div v-else>
       <p>{{ t('combat.noActive') }}</p>
     </div>
+    <BaseModal
+      :is-open="isInitiativeModalOpen"
+      @cancel="isInitiativeModalOpen = false"
+      @submit="saveInitiative"
+      title="Set Initiative"
+      modal-id="initiative-modal"
+      :showSubmit="true"
+      :showCancel="true"
+      submitLabel="Save"
+      cancelLabel="Cancel"
+    >
+      <div class="initiative-modal-content">
+        <p v-if="editingParticipant">
+          Set initiative for <strong>{{ getCombatantDisplayName(editingParticipant) }}</strong>
+        </p>
+        <input type="number" v-model.number="newInitiative" class="initiative-input" placeholder="Enter initiative" />
+      </div>
+    </BaseModal>
+
+    <BaseModal
+      :is-open="isAddParticipantModalOpen"
+      @cancel="isAddParticipantModalOpen = false"
+      @submit="handleAddParticipants"
+      :title="t('combat.addParticipantTitle')"
+      modal-id="add-participant-modal"
+      :show-submit="true"
+      :show-cancel="true"
+      :submit-label="t('common.add')"
+      :cancel-label="t('common.cancel')"
+    >
+      <div v-if="availableCharactersToAdd.length === 0" class="empty-state">
+        <p>{{ t('combat.allPartyCharactersAdded') }}</p>
+      </div>
+      <table v-else class="participant-list">
+        <thead>
+          <tr>
+            <th>{{ t('common.name') }}</th>
+            <th>{{ t('common.add') }}</th>
+            <th>{{ t('common.initiative') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in availableCharactersToAdd" :key="p.id">
+            <td>{{ p.name }}</td>
+            <td>
+              <ToggleSwitch
+                :model-value="localParticipants[p.id]?.selected"
+                @update:model-value="val => handleParticipantToggle(p.id, val)"
+              />
+            </td>
+            <td>
+              <input
+                v-if="localParticipants[p.id]?.selected"
+                type="number"
+                class="initiative-input"
+                :value="localParticipants[p.id]?.initiative"
+                @change="handleInitiativeChange(p.id, parseInt(($event.target as HTMLInputElement).value))"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </BaseModal>
   </BaseEntityView>
 </template>
 
@@ -353,6 +727,185 @@ onMounted(async () => {
 .combat-controls .si {
   margin-right: 0.5em;
   vertical-align: middle;
+}
+
+.phase-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.phase-tab {
+  padding: 0.5rem 1.5rem 0.25rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-light);
+  font-weight: 500;
+  font-size: 1.1rem;
+  box-shadow: none;
+  border-radius: 0;
+  cursor: default;
+  transition: color 0.2s, border-bottom 0.2s;
+}
+
+.phase-tab.active {
+  color: var(--color-primary);
+  border-bottom: 3px solid var(--color-primary);
+}
+
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.participant-row {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.participant-row.preparing {
+  cursor: pointer;
+}
+
+.participant-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--track-item-color, transparent);
+  transition: width 0.2s;
+}
+
+.participant-row:hover::before,
+.participant-row.active::before {
+  width: 8px;
+}
+
+.participant-row:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.participant-row.active {
+  background-color: var(--color-info-light);
+  --track-item-color: var(--color-info);
+}
+
+.participant-row.postponed {
+  --track-item-color: var(--color-warning);
+}
+
+.participant-row.acted {
+  opacity: 0.6;
+}
+
+.participant-artwork {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-lighter);
+  font-size: 24px;
+  background-color: var(--color-background-mute);
+}
+
+.participant-info {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.participant-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.participant-initiative {
+  font-size: 0.9em;
+  color: var(--color-text-light);
+}
+
+.participant-status {
+  margin-left: 1rem;
+  flex-basis: auto;
+  min-width: 120px;
+  text-align: center;
+}
+
+.participant-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+.participant-list tr.active {
+  background-color: var(--color-info-light);
+}
+
+.initiative-modal-content {
+  padding: 1rem;
+}
+.initiative-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-background-input);
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.participant-badge.badge-acted {
+   background: var(--color-success-light);
+  color: var(--color-success-dark);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+.participant-badge.badge-postponed {
+    background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+
+.info-message {
+  padding: 1rem;
+  background-color: var(--color-background-soft);
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+  color: var(--color-text-light);
+}
+
+.combat-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 </style> 
 

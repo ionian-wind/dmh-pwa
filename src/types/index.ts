@@ -82,10 +82,12 @@ export interface Monster extends Character {
 }
 
 export interface Combatant extends WithMetadata {
-  name: string;
   type: 'player' | 'monster';
   referenceId?: UUID;
   notes?: string;
+  initiative: number;
+  hasActed: boolean;
+  isPostponed: boolean;
 }
 
 export interface Encounter extends WithMetadata {

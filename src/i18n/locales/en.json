@@ -188,23 +188,26 @@
       "title": "Monsters",
       "linkAction": "Link Monsters",
       "linkModalTitle": "Link Monsters to Encounter",
-      "none": "No monsters in this encounter"
+      "none": "No monsters in this encounter",
+      "noneAvailable": "No monsters available to link.",
+      "setQuantity": "Set Monster Quantity",
+      "setQuantityFor": "Set quantity for {monsterName}"
     },
     "combats": {
-      "title": "Past Combats",
-      "none": "No combats have been run for this encounter",
+      "title": "Combats",
+      "addParticipant": "Add Participant",
+      "addParticipantTitle": "Add Participants to Combat",
+      "allParticipantsAdded": "All available participants are already in the combat.",
+      "allPartyCharactersAdded": "All party characters are already in the combat.",
+      "party": "Party",
+      "created": "Created",
       "status": {
         "preparing": "Preparing",
         "active": "Active",
         "completed": "Completed"
       },
-      "fields": {
-        "encounter": "Encounter",
-        "party": "Party",
-        "round": "Round",
-        "turn": "Turn",
-        "combatants": "Combatants"
-      }
+      "actions": "Actions",
+      "view": "View"
     }
   },
   "modules": {
@@ -301,7 +304,8 @@
     "tableOfContents": "Table of Contents",
     "bookmarks": "Bookmarks",
     "noBookmarks": "No bookmarks yet.",
-    "name": "Name"
+    "name": "Name",
+    "initiative": "Initiative"
   },
   "validation": {
     "required": "This field is required",
@@ -349,7 +353,10 @@
     "currentTurn": "Current Turn: {name}",
     "type": "Type: {type}",
     "log": "Combat Log",
-    "clearLog": "Clear Log"
+    "clearLog": "Clear Log",
+    "addParticipant": "Add Participant",
+    "addParticipantTitle": "Add Participants to Combat",
+    "allPartyCharactersAdded": "All party characters are already in the combat."
   },
   "encounterCard": {
     "module": "Module:",
@@ -408,7 +415,9 @@
     "party": "Party:",
     "characters": "Characters:",
     "encounter": "Encounter:",
-    "monsters": "Monsters:"
+    "monsters": "Monsters:",
+    "selectCharacters": "Select Characters",
+    "selectAtLeastOneCharacter": "Select at least one character to start combat."
   },
   "language": {
     "english": "English",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { usePartyStore } from '@/stores/parties';
 import { useCombatStore } from '@/stores/combats';
 import { useMonsterStore } from '@/stores/monsters';
@@ -9,6 +9,7 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/common/Button.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
@@ -28,28 +29,46 @@ const emit = defineEmits<{
 }>();
 
 const selectedPartyId = ref<string>('');
+const selectedCharacters = ref<Record<string, boolean>>({});
 
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
-    monsterStore.load()
+    monsterStore.load(),
+    characterStore.load(),
+    combatStore.load(),
   ]);
+});
+
+// Watch for party selection and initialize togglers
+watch(selectedPartyId, (partyId) => {
+  if (!partyId) {
+    selectedCharacters.value = {};
+    return;
+  }
+  const party = partyStore.getById(partyId);
+  if (party) {
+    const toggles: Record<string, boolean> = {};
+    party.characters.forEach(cid => { toggles[cid] = true; });
+    selectedCharacters.value = toggles;
+  }
 });
 
 const handleCreateCombat = async () => {
   if (!props.encounter || !selectedPartyId.value) {
-    alert('Please select a party');
     return;
   }
 
   const selectedParty = partyStore.getById(selectedPartyId.value);
   if (!selectedParty) {
-    alert('Selected party not found');
     return;
   }
 
-  // Get party characters
-  const partyCharacters = characterStore.items;
+  // Get selected party characters
+  const partyCharacters = characterStore.items.filter(char => selectedCharacters.value[char.id]);
+  if (partyCharacters.length === 0) {
+    return;
+  }
   
   // Get encounter monsters
   const encounterMonsters = monsterStore.items.filter(m =>
@@ -59,10 +78,12 @@ const handleCreateCombat = async () => {
   // Create combatants from characters
   const characterCombatants: Combatant[] = partyCharacters.map(char => ({
     id: generateId(),
-    name: char.name,
     type: 'player',
     referenceId: char.id,
     notes: '',
+    initiative: 0,
+    hasActed: false,
+    isPostponed: false,
     createdAt: Date.now(),
     updatedAt: Date.now()
   }));
@@ -74,10 +95,12 @@ const handleCreateCombat = async () => {
     for (let i = 0; i < count; i++) {
       monsterCombatants.push({
         id: generateId(),
-        name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
         type: 'monster',
         referenceId: monster.id,
         notes: '',
+        initiative: 0,
+        hasActed: false,
+        isPostponed: false,
         createdAt: Date.now(),
         updatedAt: Date.now()
       });
@@ -124,6 +147,23 @@ const generateId = () => {
     @cancel="handleCancel"
   >
     <div class="party-selector">
+      <div class="info-row">
+        <div class="encounter-info">
+          <h4>{{ t('partySelector.encounterInformation') }}</h4>
+          <div class="encounter-details">
+            <p><strong>{{ t('partySelector.encounter') }}</strong> {{ encounter?.name }}</p>
+            <p><strong>{{ t('partySelector.monsters') }}</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
+          </div>
+        </div>
+        <div v-if="selectedPartyId" class="party-info">
+          <h4>{{ t('partySelector.partyInformation') }}</h4>
+          <div class="party-details">
+            <p><strong>{{ t('partySelector.party') }}</strong> {{ partyStore.getById(selectedPartyId)?.name }}</p>
+            <p><strong>{{ t('partySelector.characters') }}</strong> {{ characterStore.items.length }}</p>
+          </div>
+        </div>
+      </div>
+
       <div class="form-section">
         <select v-model="selectedPartyId" required>
           <option value="">{{ t('partySelector.chooseParty') }}</option>
@@ -133,25 +173,27 @@ const generateId = () => {
         </select>
       </div>
 
-      <div v-if="selectedPartyId" class="party-info">
-        <h4>{{ t('partySelector.partyInformation') }}</h4>
-        <div class="party-details">
-          <p><strong>{{ t('partySelector.party') }}</strong> {{ partyStore.getById(selectedPartyId)?.name }}</p>
-          <p><strong>{{ t('partySelector.characters') }}</strong> {{ characterStore.items.length }}</p>
-        </div>
-      </div>
-
-      <div class="encounter-info">
-        <h4>{{ t('partySelector.encounterInformation') }}</h4>
-        <div class="encounter-details">
-          <p><strong>{{ t('partySelector.encounter') }}</strong> {{ encounter?.name }}</p>
-          <p><strong>{{ t('partySelector.monsters') }}</strong> {{ Object.values(encounter?.monsters || {}).reduce((sum, count) => sum + count, 0) }}</p>
-        </div>
+      <div v-if="selectedPartyId">
+        <template v-if="partyStore.getById(selectedPartyId)">
+          <h4>{{ t('partySelector.selectCharacters') }}</h4>
+          <div v-if="Object.values(selectedCharacters).filter(Boolean).length === 0" class="info-text">
+            {{ t('partySelector.selectAtLeastOneCharacter') }}
+          </div>
+          <div class="character-list">
+            <div v-for="charId in partyStore.getById(selectedPartyId)?.characters || []" :key="charId" class="character-toggle-row">
+              <ToggleSwitch
+                :model-value="selectedCharacters[charId]"
+                @update:model-value="val => selectedCharacters[charId] = val"
+                :label="characterStore.getById(charId)?.name || charId"
+              />
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
     <template #footer>
-      <Button :submitLabel="t('common.startCombat')" />
+      <Button :submitLabel="t('common.startCombat')" :disabled="!selectedPartyId || Object.values(selectedCharacters).filter(Boolean).length === 0" />
     </template>
   </BaseModal>
 </template>
@@ -181,12 +223,18 @@ const generateId = () => {
   color: var(--color-text);
 }
 
-.party-info {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1rem;
+.info-row {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.party-info, .encounter-info {
+  flex: 1 1 250px;
+  min-width: 220px;
+  margin-bottom: 0;
 }
 
 .party-info h4 {
@@ -209,14 +257,6 @@ const generateId = () => {
   color: var(--color-text);
 }
 
-.encounter-info {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
 .encounter-info h4 {
   margin: 0 0 0.5rem 0;
   color: var(--color-text);
@@ -235,5 +275,43 @@ const generateId = () => {
 
 .encounter-details strong {
   color: var(--color-text);
+}
+
+.info-text {
+  margin-bottom: 1rem;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.character-list {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  margin-top: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.character-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+}
+
+.character-toggle-row:last-child {
+  border-bottom: none;
+}
+
+.character-toggle-row:hover {
+  background-color: var(--color-background-soft);
+}
+
+@media (max-width: 700px) {
+  .info-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 </style> 

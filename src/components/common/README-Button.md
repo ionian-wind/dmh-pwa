@@ -320,8 +320,8 @@ The component uses CSS custom properties for theming:
 - `.btn--{variant}`: Variant-specific styling
 - `.btn--{size}`: Size-specific styling
 - `.btn--disabled`: Disabled state styling
-- `.btn__loading`: Loading state container
-- `.btn__spinner`: Loading spinner animation
+- `.btn--loading`: Loading state container
+- `.btn--spinner`: Loading spinner animation
 
 ### Custom Styling
 

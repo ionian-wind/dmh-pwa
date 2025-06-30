@@ -10,10 +10,7 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
 import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
-import ImportValidationModal from '@/components/ImportValidationModal.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
-import { parseModuleZip, importModuleFromZip, validateModuleImport, type ImportValidationResult } from '@/utils/moduleImportExport';
-import {deepUnwrap} from "@/utils/deepUnwrap";
 
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
@@ -23,16 +20,6 @@ const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
 const router = useRouter();
 const { t, locale } = useI18n();
-
-// Import validation modal state
-const showValidationModal = ref(false);
-const validationResult = ref<ImportValidationResult | null>(null);
-const pendingImportData = ref<{
-  file: File;
-  module: any;
-  tree: any[];
-  notes: any[];
-} | null>(null);
 
 const stats = computed(() => ({
   notes: noteStore.items.filter(n => !n.hidden).length,
@@ -149,57 +136,6 @@ async function handleRestore(event: Event) {
   }
   input.value = '';
 }
-
-async function handleModuleImport(event: Event) {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  
-  try {
-    // Parse the zip file for validation
-    const { module, tree, notes } = await parseModuleZip(file);
-    
-    // Validate the import
-    const result = validateModuleImport(module, tree, notes);
-
-    // Store the data for potential import
-    pendingImportData.value = { file, module, tree, notes };
-    validationResult.value = result;
-    showValidationModal.value = true;
-    
-  } catch (e) {
-    alert(t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e));
-  }
-  input.value = '';
-}
-
-async function handleImportConfirm() {
-  if (!pendingImportData.value) return;
-  
-  try {
-    const result = await importModuleFromZip(deepUnwrap(pendingImportData));
-    alert(t('backup.moduleImported') + ` ${result.noteCount} notes imported.`);
-    
-    // Reload stores to show new data
-    await Promise.all([
-      moduleStore.load(),
-      noteStore.load()
-    ]);
-  } catch (e) {
-    alert(t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e));
-  }
-  
-  // Close modal and clear data
-  showValidationModal.value = false;
-  validationResult.value = null;
-  pendingImportData.value = null;
-}
-
-function handleImportCancel() {
-  showValidationModal.value = false;
-  validationResult.value = null;
-  pendingImportData.value = null;
-}
 </script>
 
 <template>
@@ -220,10 +156,6 @@ function handleImportCancel() {
             {{ t('backup.restore') }}
             <input type="file" accept=".zip" @change="handleRestore" style="display:none" />
           </label>
-          <label class="import-btn">
-            {{ t('backup.importModule') }}
-            <input type="file" accept=".zip" @change="handleModuleImport" style="display:none" />
-          </label>
         </div>
       </div>
       
@@ -238,14 +170,6 @@ function handleImportCancel() {
         :hide-header="true"
       />
     </div>
-    
-    <!-- Import Validation Modal -->
-    <ImportValidationModal
-      v-if="showValidationModal && validationResult"
-      :result="validationResult"
-      @import="handleImportConfirm"
-      @cancel="handleImportCancel"
-    />
   </div>
 </template>
 
@@ -295,7 +219,7 @@ function handleImportCancel() {
   font-style: italic;
 }
 
-.backup-btn, .restore-btn, .import-btn {
+.backup-btn, .restore-btn {
   background: var(--color-primary, #4a90e2);
   color: #fff;
   border: none;
@@ -305,10 +229,10 @@ function handleImportCancel() {
   cursor: pointer;
   transition: background 0.2s;
 }
-.backup-btn:hover, .restore-btn:hover, .import-btn:hover {
+.backup-btn:hover, .restore-btn:hover {
   background: var(--color-primary-dark, #357ab8);
 }
-.restore-btn input[type="file"], .import-btn input[type="file"] {
+.restore-btn input[type="file"] {
   display: none;
 }
 </style>

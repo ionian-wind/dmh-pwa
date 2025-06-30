@@ -18,10 +18,6 @@ onMounted(async () => {
   await monsterStore.load();
 });
 
-const filteredMonsters = computed(() => {
-  return monsterStore.filtered;
-});
-
 const cardProps = (monster: Monster) => ({
   monster,
   showView: true,

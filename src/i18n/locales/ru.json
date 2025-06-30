@@ -186,25 +186,26 @@
     },
     "monsters": {
       "title": "Монстры",
-      "linkAction": "Связать монстров",
-      "linkModalTitle": "Связать монстров со схваткой",
-      "none": "В этой схватке нет монстров"
+      "linkAction": "Привязать монстров",
+      "linkModalTitle": "Привязка монстров к столкновению",
+      "noneAvailable": "Нет доступных монстров для привязки.",
+      "setQuantity": "Установить количество монстров",
+      "setQuantityFor": "Установить количество для {monsterName}"
     },
     "combats": {
-      "title": "Прошлые бои",
-      "none": "Для этой схватки ещё не было боёв",
+      "title": "Бои",
+      "addParticipant": "Добавить участника",
+      "addParticipantTitle": "Добавить участников в бой",
+      "allParticipantsAdded": "Все доступные участники уже в бою.",
+      "party": "Группа",
+      "created": "Создано",
       "status": {
         "preparing": "Подготовка",
         "active": "Активный",
         "completed": "Завершён"
       },
-      "fields": {
-        "encounter": "Схватка",
-        "party": "Группа",
-        "round": "Раунд",
-        "turn": "Ход",
-        "combatants": "Участники"
-      }
+      "actions": "Действия",
+      "view": "Открыть"
     }
   },
   "modules": {
@@ -301,7 +302,8 @@
     "tableOfContents": "Оглавление",
     "bookmarks": "Закладки",
     "noBookmarks": "Пока нет закладок.",
-    "name": "Имя"
+    "name": "Имя",
+    "initiative": "Инициатива"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",
@@ -349,7 +351,10 @@
     "currentTurn": "Текущий ход: {name}",
     "type": "Тип: {type}",
     "log": "Журнал боя",
-    "clearLog": "Очистить журнал"
+    "clearLog": "Очистить журнал",
+    "addParticipant": "Добавить участника",
+    "addParticipantTitle": "Добавить участников в бой",
+    "allPartyCharactersAdded": "Все персонажи группы уже добавлены в бой."
   },
   "encounterCard": {
     "module": "Модуль:",
@@ -408,7 +413,9 @@
     "party": "Группа:",
     "characters": "Персонажи:",
     "encounter": "Схватка:",
-    "monsters": "Монстры:"
+    "monsters": "Монстры:",
+    "selectCharacters": "Выберите персонажей",
+    "selectAtLeastOneCharacter": "Выберите хотя бы одного персонажа для начала боя."
   },
   "language": {
     "english": "Английский",

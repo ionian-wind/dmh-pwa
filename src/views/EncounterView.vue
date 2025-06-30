@@ -18,7 +18,6 @@ import TabGroup from '@/components/common/TabGroup.vue';
 import TabPanel from '@/components/common/TabPanel.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
-import NotFoundView from './NotFoundView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -34,6 +33,11 @@ const isEditorOpen = ref(false);
 const showLinkModal = ref(false);
 const showPartySelector = ref(false);
 const activeTab = ref('information');
+const localMonsters = ref<Record<string, number>>({});
+
+const isQuantityModalOpen = ref(false);
+const editingMonster = ref<Monster | null>(null);
+const newQuantity = ref(1);
 
 const encounter = ref<Encounter | null>(null);
 const loading = computed(() => !encounterStore.isLoaded);
@@ -54,7 +58,13 @@ function updateEncounterFromStore() {
 watch([
   () => encounterStore.items,
   () => encounterStore.isLoaded
-], updateEncounterFromStore, { immediate: true });
+], updateEncounterFromStore, { immediate: true, deep: true });
+
+watch(showLinkModal, (isOpen) => {
+  if (isOpen && encounter.value) {
+    localMonsters.value = JSON.parse(JSON.stringify(encounter.value.monsters || {}));
+  }
+});
 
 const handleEdit = () => {
   isEditorOpen.value = true;
@@ -142,6 +152,16 @@ const handleToggleMonster = (monster: Monster, isLinked: boolean) => {
   encounter.value = encounterStore.getById(encounter.value.id);
 };
 
+const handleMonsterQuantityChange = (monsterId: string, count: number) => {
+  if (!encounter.value) return;
+  const newCount = Math.max(1, count || 1);
+  const monsters = { ...encounter.value.monsters };
+  if (monsters[monsterId] !== undefined) {
+    monsters[monsterId] = newCount;
+    encounterStore.update(encounter.value.id, { monsters });
+  }
+};
+
 const isMonsterLinked = (monsterId: string) => {
   return linkedMonsters.value[monsterId];
 };
@@ -222,8 +242,48 @@ const mentionedInEntities = computed(() => {
   return mentionsStore.getBacklinks({ kind: 'encounter', id: encounter.value.id });
 });
 
-onMounted(() => {
-  Promise.all([
+const handleModalToggleMonster = (monsterId: string, isLinked: boolean) => {
+  const current = { ...localMonsters.value };
+  if (isLinked) {
+    if (current[monsterId] === undefined) {
+      current[monsterId] = 1;
+    }
+  } else {
+    delete current[monsterId];
+  }
+  localMonsters.value = current;
+};
+
+const handleModalQuantityChange = (monsterId: string, count: number) => {
+  if (localMonsters.value[monsterId] === undefined) return;
+  const newCount = Math.max(1, count || 1);
+  localMonsters.value[monsterId] = newCount;
+};
+
+const handleSaveMonsterLinks = async () => {
+  if (!encounter.value) return;
+  await encounterStore.update(encounter.value.id, { monsters: localMonsters.value });
+  showLinkModal.value = false;
+};
+
+const openQuantityModal = (monster: Monster) => {
+  editingMonster.value = monster;
+  newQuantity.value = encounter.value?.monsters?.[monster.id] || 1;
+  isQuantityModalOpen.value = true;
+};
+
+const handleSaveQuantity = async () => {
+  if (!encounter.value || !editingMonster.value) return;
+
+  const monsters = { ...encounter.value.monsters };
+  monsters[editingMonster.value.id] = newQuantity.value;
+
+  await encounterStore.update(encounter.value.id, { monsters });
+  isQuantityModalOpen.value = false;
+};
+
+onMounted(async () => {
+  await Promise.all([
     encounterStore.load(),
     monsterStore.load(),
     moduleStore.load(),
@@ -256,15 +316,14 @@ onMounted(() => {
       </template>
       
       <template #actions>
-        <Button v-if="encounter" @click="handleRunCombat" variant="primary" :title="t('common.runCombat')">
-          <i class="si si-d20"></i>
+        <Button v-if="encounter" @click="handleRunCombat" variant="success" :title="t('common.runCombat')">
+          <i class="ra ra-crossed-swords"></i>
         </Button>
       </template>
       
       <div class="encounter-content">
-        <TabGroup :tabs="tabs" v-model="activeTab" />
+        <TabGroup :tabs="tabs" v-model="activeTab">
 
-        <div class="tab-content">
           <TabPanel tab-id="information">
             <section class="details-section">
               <h2>{{ $t('common.details') }}</h2>
@@ -273,44 +332,79 @@ onMounted(() => {
           </TabPanel>
 
           <TabPanel tab-id="monsters">
-            <div class="monster-list-controls">
+            <div class="section-header">
               <h2>{{ $t('encounters.monsters.title') }}</h2>
               <Button @click="showLinkModal = true">{{ $t('encounters.monsters.linkAction') }}</Button>
             </div>
-            <div v-if="encounterMonsters.length" class="monster-grid">
-              <div v-for="monster in encounterMonsters" :key="monster.id" class="monster-card-item">
-                <router-link :to="`/monsters/${monster.id}`" class="monster-link">
-                  <div class="monster-name">{{ monster.name }}</div>
-                  <div class="monster-quantity">
-                    x {{ encounter?.monsters[monster.id] }}
-                  </div>
-                </router-link>
-              </div>
+            <div v-if="encounterMonsters.length === 0" class="empty-state">
+              <p>{{ $t('encounters.monsters.none') }}</p>
             </div>
-            <p v-else>{{ $t('encounters.monsters.none') }}</p>
+            <div v-else class="monsters-grid">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ t('monsters.name') }}</th>
+                    <th>{{ t('common.quantity') }}</th>
+                    <th>{{ t('common.actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="monster in encounterMonsters" :key="monster.id">
+                    <td>
+                      <router-link :to="`/monsters/${monster.id}`">
+                        {{ monster.name }}
+                      </router-link>
+                    </td>
+                    <td>
+                      <Button variant="secondary" @click="openQuantityModal(monster)">
+                        {{ encounter?.monsters[monster.id] }}
+                      </Button>
+                    </td>
+                    <td>
+                      <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
+                        {{ t('common.unlink') }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </TabPanel>
 
           <TabPanel tab-id="combats">
             <h2>{{ $t('encounters.combats.title') }}</h2>
-            <div v-if="encounterCombats.length > 0" class="combat-list">
-              <div
-                v-for="combat in encounterCombats"
-                :key="combat.id"
-                class="combat-list-item"
-                @click="handleViewCombat(combat)"
-              >
-                <div class="combat-info">
-                  <span>{{ getPartyName(combat.partyId) }}</span>
-                  <span>{{ formatDate(combat.createdAt) }}</span>
-                </div>
-                <span :class="['status-badge', getStatusBadgeClass(combat.status)]">
-                  {{ $t(`combats.status.${combat.status}`) }}
-                </span>
-              </div>
+            <div v-if="encounterCombats.length > 0" class="combats-grid">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ $t('encounters.combats.party') }}</th>
+                    <th>{{ $t('encounters.combats.created') }}</th>
+                    <th>{{ $t('encounters.combats.status') }}</th>
+                    <th>{{ $t('encounters.combats.actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="combat in encounterCombats" :key="combat.id">
+                    <td>{{ getPartyName(combat.partyId) }}</td>
+                    <td>{{ formatDate(combat.createdAt) }}</td>
+                    <td>
+                      <span :class="['status-badge', getStatusBadgeClass(combat.status)]">
+                        {{ $t(`combats.status.${combat.status}`) }}
+                      </span>
+                    </td>
+                    <td>
+                      <Button size="small" variant="primary" @click="handleViewCombat(combat)">
+                        {{ $t('encounters.combats.view') }}
+                      </Button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
             <p v-else>{{ $t('encounters.combats.none') }}</p>
           </TabPanel>
-        </div>
+
+        </TabGroup>
       </div>
 
       <!-- Editor Modal -->
@@ -330,15 +424,75 @@ onMounted(() => {
     </BaseEntityView>
 
     <!-- Modals -->
-    <BaseModal :is-open="showLinkModal" @close="showLinkModal = false" :title="$t('encounters.monsters.linkModalTitle')" modal-id="monster-linking-modal">
-      <div class="monster-linking-modal">
-        <div v-for="monster in allMonsters" :key="monster.id" class="monster-link-item">
-          <ToggleSwitch
-            :model-value="isMonsterLinked(monster.id)"
-            @update:model-value="handleToggleMonster(monster, $event)"
-            :label="monster.name"
-          />
-        </div>
+    <BaseModal
+      :is-open="isQuantityModalOpen"
+      @cancel="isQuantityModalOpen = false"
+      @submit="handleSaveQuantity"
+      :title="t('encounters.monsters.setQuantity')"
+      modal-id="quantity-modal"
+      :show-submit="true"
+      :show-cancel="true"
+      :submit-label="t('common.save')"
+      :cancel-label="t('common.cancel')"
+    >
+      <div class="quantity-modal-content">
+        <p v-if="editingMonster">
+          {{ t('encounters.monsters.setQuantityFor', { monsterName: editingMonster.name }) }}
+        </p>
+        <input
+          type="number"
+          v-model.number="newQuantity"
+          class="count-input"
+          min="1"
+        />
+      </div>
+    </BaseModal>
+
+    <BaseModal
+      :is-open="showLinkModal"
+      @cancel="showLinkModal = false"
+      @submit="handleSaveMonsterLinks"
+      :title="$t('encounters.monsters.linkModalTitle')"
+      modal-id="monster-linking-modal"
+      :show-cancel="true"
+      :show-submit="true"
+      :cancel-label="t('common.cancel')"
+      :submit-label="t('common.save')"
+    >
+      <div v-if="allMonsters.length === 0" class="empty-state">
+        <p>{{ $t('encounters.monsters.noneAvailable') }}</p>
+      </div>
+      <div v-else class="monsters-grid">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ t('monsters.name') }}</th>
+              <th>{{ t('common.quantity') }}</th>
+              <th>{{ t('common.linked') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="monster in allMonsters" :key="monster.id">
+              <td>{{ monster.name }}</td>
+              <td>
+                <input
+                  v-if="localMonsters[monster.id] !== undefined"
+                  type="number"
+                  class="count-input"
+                  :value="localMonsters[monster.id] || 1"
+                  @change="handleModalQuantityChange(monster.id, parseInt(($event.target as HTMLInputElement).value))"
+                  min="1"
+                />
+              </td>
+              <td>
+                <ToggleSwitch
+                  :model-value="localMonsters[monster.id] !== undefined"
+                  @update:model-value="handleModalToggleMonster(monster.id, $event)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </BaseModal>
 
@@ -583,5 +737,36 @@ onMounted(() => {
 .stat-value {
   color: var(--color-primary);
   font-weight: 600;
+}
+
+.monster-linking-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  margin-right: -0.5rem;
+}
+
+.monster-link-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s;
+}
+
+.monster-link-item:hover {
+  background-color: var(--color-background);
+}
+
+.quantity-modal-content {
+  padding: 1rem;
+}
+
+.quantity-modal-content p {
+  margin-bottom: 1rem;
 }
 </style>

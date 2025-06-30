@@ -38,13 +38,13 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "type"],
+        "required": ["id", "type", "initiative"],
         "properties": {
           "id": { "type": "string" },
-          "name": { "type": "string" },
           "type": { "type": "string" },
           "referenceId": { "type": "string" },
-          "notes": { "type": "string" }
+          "notes": { "type": "string" },
+          "initiative": { "type": "number" }
         }
       },
       "description": "Array of combatants in this combat"

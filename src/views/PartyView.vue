@@ -134,7 +134,7 @@ onMounted(async () => {
       <div v-if="party" class="party-content">
         <section class="content-section">
           <div class="section-header">
-            <h2>{{ t('notes.title') }}</h2>
+            <h2>{{ t('partyView.title') }}</h2>
             <Button @click="showLinkModal = true" class="link-btn">
               Link Characters
             </Button>
