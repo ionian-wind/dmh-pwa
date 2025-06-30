@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { nanoid } from 'nanoid';
 import JSZip from 'jszip';
+import removeMarkdown from 'remove-markdown';
+import sanitizeHtml from 'sanitize-html';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -25,8 +27,6 @@ if (!moduleName) {
 // Get markdown file path
 const markdownFile = args[args.length - 1];
 
-console.log(markdownFile);
-
 if (!fs.existsSync(markdownFile)) {
   console.error(`Markdown file not found: ${markdownFile}`);
   process.exit(1);
@@ -35,6 +35,11 @@ if (!fs.existsSync(markdownFile)) {
 // Generate ID using the same method as the app
 function generateId() {
   return nanoid(10);
+}
+
+// Utility to clean markdown and HTML from text
+function cleanText(str) {
+  return sanitizeHtml(removeMarkdown(str), { allowedTags: [], allowedAttributes: {} });
 }
 
 // Parse markdown content and extract sections
@@ -55,13 +60,13 @@ function parseMarkdownSections(content) {
       if (currentSection) {
         sections.push({
           ...currentSection,
-          content: currentContent.join('\n').trim()
+          content: cleanText(currentContent.join('\n').trim())
         });
       }
       
       // Start new section
       const level = headerMatch[1].length;
-      const title = headerMatch[2].trim();
+      const title = cleanText(headerMatch[2].trim());
       
       currentSection = {
         level,
@@ -81,7 +86,7 @@ function parseMarkdownSections(content) {
   if (currentSection) {
     sections.push({
       ...currentSection,
-      content: currentContent.join('\n').trim()
+      content: cleanText(currentContent.join('\n').trim())
     });
   }
   
@@ -154,6 +159,8 @@ function createNoteJson(section, moduleId) {
 async function main() {
   try {
     console.log(`Processing markdown file: ${markdownFile}`);
+    // Remove markdown and HTML from module name
+    moduleName = cleanText(moduleName);
     console.log(`Module name: ${moduleName}`);
     
     // Read markdown file

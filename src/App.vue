@@ -29,7 +29,7 @@ interface SectionItem {
 
 const sections: SectionItem[] = [
   { section: Section.NOTES, label: t('navigation.notes'), path: '/notes', icon: 'ra ra-scroll-unfurled' },
-  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: 'ra ra-player' },
+  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: 'si si-user' },
   { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties', icon: 'ra ra-double-team' },
   { section: Section.MODULES, label: t('navigation.modules'), path: '/modules', icon: 'si si-book' },
   { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters', icon: 'ra ra-wolf-head' },

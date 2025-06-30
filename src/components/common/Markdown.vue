@@ -8,6 +8,10 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
+import {scrollToHeading} from "@/utils/scrollToHeading";
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
@@ -18,9 +22,10 @@ const { openMentionModal, closeMentionModal } = useModalState();
 
 const props = defineProps<{ 
   content: string;
-  anchorMap?: Record<string, string>;
+  anchorMap?: Set<string>;
   enableMentionModal?: boolean,
-  taskCheckboxEnabled?: boolean
+  taskCheckboxEnabled?: boolean,
+  scrollToAnchor?: (id: string, heading?: HTMLElement) => void
 }>();
 
 const emit = defineEmits(['update:content']);
@@ -72,20 +77,20 @@ function handleInternalLinkClick(e: MouseEvent) {
   const kind = link.getAttribute('data-kind');
   const id = link.getAttribute('data-id');
   const href = link.getAttribute('href');
-  const anchorMap = props.anchorMap || {};
+  const anchorMap = props.anchorMap ?? new Set<string>();
 
   // If note link and anchor exists, scroll to anchor
   if (kind && id) {
-    const anchorId = anchorMap[id];
-    if (anchorId) {
+    if (anchorMap.has(id)) {
       const anchor = (rootEl.value && rootEl.value.contains(link))
-        ? rootEl.value.querySelector(`#${CSS.escape(anchorId)}`) as HTMLElement
+        ? rootEl.value.querySelector(`#${CSS.escape(id)}`) as HTMLElement
         : null;
       if (anchor) {
         e.preventDefault();
-        anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        if (window.location.hash !== `#${anchorId}` && history.pushState) {
-          history.pushState(history.state, '', `#${anchorId}`);
+        if (props.scrollToAnchor) {
+          props.scrollToAnchor(id, anchor);
+        } else {
+          scrollToHeading(id, router, anchor);
         }
         return;
       }

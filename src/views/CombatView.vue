@@ -100,10 +100,6 @@ const availableCharactersToAdd = computed(() => {
   return partyCharacters.value.filter(c => !combatantCharacterIds.has(c.id));
 });
 
-const isParticipantInCombat = (participantId: string) => {
-  return combat.value?.combatants.some(c => c.id === participantId) ?? false;
-};
-
 // Helper to get display name for a combatant
 function getCombatantDisplayName(combatant: { type: string; referenceId?: string; id: string }) {
   if (combatant.type === 'player' && combatant.referenceId) {
@@ -415,9 +411,10 @@ function handleAddParticipants() {
             v-if="combat && (combat.status === 'preparing' || combat.status === 'active')"
             @click="isAddParticipantModalOpen = true"
             :disabled="availableCharactersToAdd.length === 0"
-            size="small"
+            size="large"
+            :title="t('combat.addParticipant')"
           >
-            <i class="fas fa-plus"></i> {{ t('combat.addParticipant') }}
+            <i class="si si-user-plus"></i>
           </Button>
         </div>
 
@@ -436,7 +433,7 @@ function handleAddParticipants() {
             }"
           >
             <div class="participant-artwork">
-              <i v-if="participant.type === 'player'" class="ra ra-player"></i>
+              <i v-if="participant.type === 'player'" class="si si-user"></i>
               <i v-else class="ra ra-wolf-head"></i>
             </div>
 
@@ -494,8 +491,8 @@ function handleAddParticipants() {
       :is-open="isInitiativeModalOpen"
       @cancel="isInitiativeModalOpen = false"
       @submit="saveInitiative"
-      title="Set Initiative"
       modal-id="initiative-modal"
+      title="Set initiative"
       :showSubmit="true"
       :showCancel="true"
       submitLabel="Save"
@@ -523,7 +520,7 @@ function handleAddParticipants() {
       <div v-if="availableCharactersToAdd.length === 0" class="empty-state">
         <p>{{ t('combat.allPartyCharactersAdded') }}</p>
       </div>
-      <table v-else class="participant-list">
+      <table v-else>
         <thead>
           <tr>
             <th>{{ t('common.name') }}</th>
@@ -871,7 +868,7 @@ function handleAddParticipants() {
   padding: 1rem;
 }
 .initiative-input {
-  width: 100%;
+  width: 5em;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);

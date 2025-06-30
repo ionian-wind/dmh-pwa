@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import BaseListView from '@/components/common/BaseListView.vue';
@@ -11,8 +11,6 @@ import { useI18n } from 'vue-i18n';
 const router = useRouter();
 const monsterStore = useMonsterStore();
 const { t } = useI18n();
-
-const searchQuery = ref('');
 
 onMounted(async () => {
   await monsterStore.load();
@@ -49,14 +47,6 @@ function handleCopy(monster: Monster) {
 function handleView(monster: Monster) {
   router.push(`/monsters/${monster.id}`);
 }
-
-function handleTagClick(tag: string) {
-  // Implementation of handleTagClick
-}
-
-function updateSearchQuery(query: string) {
-  searchQuery.value = query;
-}
 </script>
 
 <template>
@@ -71,10 +61,6 @@ function updateSearchQuery(query: string) {
     @delete="handleDelete"
     @submit="handleSubmit"
     @view="handleView"
-    @tag-click="handleTagClick"
     @copy="handleCopy"
-    :show-search="true"
-    :search-query="searchQuery"
-    @update:searchQuery="updateSearchQuery"
   />
 </template>

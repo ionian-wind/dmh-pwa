@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -14,7 +14,7 @@ import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Module } from '@/types';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
@@ -107,6 +107,8 @@ const entityTabs = [
 
 const activeTab = ref('document');
 const sidePanelTab = ref('toc');
+const moduleDocumentViewRef = ref<any>(null);
+const activeAnchorId = ref<string | null>(null);
 
 onMounted(async () => {
   await Promise.all([
@@ -120,6 +122,24 @@ onMounted(async () => {
     mentionsStore.load(),
     bookmarkStore.load(),
   ]);
+  // Listen for hash changes
+  window.addEventListener('hashchange', handleHashChange);
+
+  // Handle initial hash navigation
+  handleHashChange();
+});
+
+function handleHashChange() {
+  if (activeTab.value !== 'document') return;
+  const anchorId = window.location.hash.replace(/^#/, '');
+  if (anchorId) {
+    console.log({ handleHashChange: anchorId });
+    scrollToBookmark(anchorId);
+  }
+}
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', handleHashChange);
 });
 
 function updateModuleFromStore() {
@@ -148,7 +168,7 @@ const handleDelete = async () => {
   await moduleStore.remove(module.value.id);
 };
 
-// Computed properties for BaseEntityView
+// Computed properties for BaseEntityTabView
 const moduleTitle = computed(() => module.value?.name || '');
 const moduleSubtitle = computed(() => module.value?.description || '');
 
@@ -179,14 +199,14 @@ function handleTOCUpdate(toc: TOCItem[]) {
 }
 
 function scrollToBookmark(anchorId: string) {
-  router.replace({ hash: '#' + anchorId });
-  const el = document.getElementById(anchorId);
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // Optionally, highlight the heading
-    el.classList.add('bookmark-highlight');
-    setTimeout(() => el.classList.remove('bookmark-highlight'), 1200);
+  // Try to use the exposed scrollToAnchor method if available
+  if (moduleDocumentViewRef.value && typeof moduleDocumentViewRef.value.scrollToAnchor === 'function') {
+    moduleDocumentViewRef.value.scrollToAnchor(anchorId);
   }
+}
+
+function handleActiveAnchorId(anchorId: string) {
+  activeAnchorId.value = anchorId;
 }
 
 async function handleExportModule() {
@@ -259,7 +279,7 @@ async function handleExportModule() {
 </script>
 
 <template>
-  <BaseEntityView
+  <BaseEntityTabView
     :entity="module"
     entity-name="t('modules.title')"
     list-route="/modules"
@@ -270,81 +290,80 @@ async function handleExportModule() {
     :subtitle="moduleSubtitle"
     :not-found="notFound"
     :loading="loading"
+    :tabs="entityTabs"
+    v-model="activeTab"
   >
     <template #actions>
       <Button @click="handleExportModule" variant="success" :title="t('common.export')">
         <i class="si si-download"></i>
       </Button>
     </template>
-    <template #default>
-      <TabGroup :tabs="entityTabs" v-model="activeTab">
-        <TabPanel tab-id="document">
-          <ModuleDocumentView
-            v-if="module && module.noteTree && module.noteTree.length > 0"
-            :module-id="module?.id || ''"
-            :note-tree="module.noteTree"
-            @toc-update="handleTOCUpdate"
-          />
-          <div v-else class="empty-state">
-            <p>{{ t('moduleView.noDocument') }}</p>
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="parties">
-          <div v-if="moduleParties.length === 0" class="empty-state">
-            <p>{{ t('moduleView.noParties') }}</p>
-          </div>
-          <div v-else class="content-grid">
-            <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="monsters">
-          <div v-if="moduleMonsters.length === 0" class="empty-state">
-            <p>{{ t('moduleView.noMonsters') }}</p>
-          </div>
-          <div v-else class="content-grid">
-            <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="encounters">
-          <div v-if="moduleEncounters.length === 0" class="empty-state">
-            <p>{{ t('moduleView.noEncounters') }}</p>
-          </div>
-          <div v-else class="content-grid">
-            <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="notes">
-          <div v-if="moduleNotes.length === 0" class="empty-state">
-            <p>{{ t('moduleView.noNotes') }}</p>
-          </div>
-          <div v-else class="content-grid">
-            <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="playlists">
-          <div v-if="modulePlaylists.length === 0" class="empty-state">
-            <p>{{ t('moduleView.noPlaylists') }}</p>
-          </div>
-          <div v-else class="content-grid">
-            <JukeboxPlaylistCard
-              v-for="playlist in modulePlaylists"
-              :key="playlist.id"
-              :playlist="playlist"
-              @view="() => router.push('/jukebox')"
-              @play="handlePlayPlaylist"
-            />
-          </div>
-        </TabPanel>
-        <TabPanel tab-id="noteTree">
-          <ModuleDocumentTree
-            :module-id="module?.id || ''"
-            :note-tree="module?.noteTree || []"
-            @update:noteTree="handleSaveNoteTree"
-          />
-        </TabPanel>
-      </TabGroup>
+    <template #document>
+      <ModuleDocumentView
+        ref="moduleDocumentViewRef"
+        v-if="module && module.noteTree && module.noteTree.length > 0"
+        :module-id="module?.id || ''"
+        :note-tree="module.noteTree"
+        @toc-update="handleTOCUpdate"
+        @active-anchor-id="handleActiveAnchorId"
+      />
+      <div v-else class="empty-state">
+        <p>{{ t('moduleView.noDocument') }}</p>
+      </div>
     </template>
-    <!-- Editor Modal -->
+    <template #parties>
+      <div v-if="moduleParties.length === 0" class="empty-state">
+        <p>{{ t('moduleView.noParties') }}</p>
+      </div>
+      <div v-else class="content-grid">
+        <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
+      </div>
+    </template>
+    <template #monsters>
+      <div v-if="moduleMonsters.length === 0" class="empty-state">
+        <p>{{ t('moduleView.noMonsters') }}</p>
+      </div>
+      <div v-else class="content-grid">
+        <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
+      </div>
+    </template>
+    <template #encounters>
+      <div v-if="moduleEncounters.length === 0" class="empty-state">
+        <p>{{ t('moduleView.noEncounters') }}</p>
+      </div>
+      <div v-else class="content-grid">
+        <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
+      </div>
+    </template>
+    <template #notes>
+      <div v-if="moduleNotes.length === 0" class="empty-state">
+        <p>{{ t('moduleView.noNotes') }}</p>
+      </div>
+      <div v-else class="content-grid">
+        <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
+      </div>
+    </template>
+    <template #playlists>
+      <div v-if="modulePlaylists.length === 0" class="empty-state">
+        <p>{{ t('moduleView.noPlaylists') }}</p>
+      </div>
+      <div v-else class="content-grid">
+        <JukeboxPlaylistCard
+          v-for="playlist in modulePlaylists"
+          :key="playlist.id"
+          :playlist="playlist"
+          @view="() => router.push('/jukebox')"
+          @play="handlePlayPlaylist"
+        />
+      </div>
+    </template>
+    <template #noteTree>
+      <ModuleDocumentTree
+        :module-id="module?.id || ''"
+        :note-tree="module?.noteTree || []"
+        @update:noteTree="handleSaveNoteTree"
+      />
+    </template>
     <template #editor>
       <ModuleEditor
         v-if="showEditor"
@@ -354,7 +373,6 @@ async function handleExportModule() {
         @cancel="handleCancel"
       />
     </template>
-
     <template #sidepanel>
       <div v-if="activeTab === 'document'">
         <TabGroup
@@ -369,7 +387,7 @@ async function handleExportModule() {
         >
           <template #default>
             <div v-show="sidePanelTab === 'toc'">
-              <TableOfContents :items="tocItems" @item-click="scrollToBookmark" />
+              <TableOfContents :items="tocItems" :active-anchor-id="activeAnchorId" @item-click="scrollToBookmark" />
             </div>
             <div v-show="sidePanelTab === 'bookmarks'">
               <div v-if="moduleBookmarks.length === 0" class="empty-state">{{ t('common.noBookmarks') }}</div>
@@ -400,7 +418,7 @@ async function handleExportModule() {
         <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </div>
     </template>
-  </BaseEntityView>
+  </BaseEntityTabView>
 </template>
 
 <style scoped>

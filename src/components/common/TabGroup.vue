@@ -348,8 +348,6 @@ watch(() => props.tabs, (newTabs) => {
 /* Tab Content */
 .tab-content {
   flex: 1;
-  padding: 1rem;
-  background: var(--color-background);
 }
 
 .tab-group--vertical .tab-content {

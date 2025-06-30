@@ -5,7 +5,7 @@ import { defineStore } from 'pinia';
 import JSZip from 'jszip';
 
 import * as schemaValidator from './schemaValidator';
-import {Module, Note, WithMetadata} from "@/types";
+import {WithMetadata} from "@/types";
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
@@ -37,7 +37,7 @@ export function hasRequiredFields<T extends object>(obj: T, fields: (keyof T)[])
 const DB_NAME = 'dmh-db';
 const MIGRATIONS_STORE = 'migrations';
 
-async function openDB(): Promise<IDBPDatabase> {
+export async function openDB(): Promise<IDBPDatabase> {
   const DB_VERSION = Math.max(...sortedMigrations.map(({ version }) => version));
   let toRun: Migration[] = [];
   const affectedStores = new Set<string>();

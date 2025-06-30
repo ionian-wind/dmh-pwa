@@ -9,7 +9,7 @@ import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
 import type { Encounter, Monster, Combat } from '@/types';
 import EncounterEditor from '@/components/EncounterEditor.vue';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/common/Button.vue';
@@ -296,7 +296,7 @@ onMounted(async () => {
 
 <template>
   <div>
-    <BaseEntityView
+    <BaseEntityTabView
       :entity="encounter"
       entity-name="t('encounters.title')"
       list-route="/encounters"
@@ -306,6 +306,8 @@ onMounted(async () => {
       :title="encounterTitle"
       :not-found="notFound"
       :loading="loading"
+      :tabs="tabs"
+      v-model="activeTab"
     >
       <template #sub>
         <div v-if="encounter?.moduleId" class="module-link">
@@ -314,100 +316,88 @@ onMounted(async () => {
           </router-link>
         </div>
       </template>
-      
       <template #actions>
         <Button v-if="encounter" @click="handleRunCombat" variant="success" :title="t('common.runCombat')">
           <i class="ra ra-crossed-swords"></i>
         </Button>
       </template>
-      
-      <div class="encounter-content">
-        <TabGroup :tabs="tabs" v-model="activeTab">
-
-          <TabPanel tab-id="information">
-            <section class="details-section">
-              <h2>{{ $t('common.details') }}</h2>
-              <div v-html="encounter?.description"></div>
-            </section>
-          </TabPanel>
-
-          <TabPanel tab-id="monsters">
-            <div class="section-header">
-              <h2>{{ $t('encounters.monsters.title') }}</h2>
-              <Button @click="showLinkModal = true">{{ $t('encounters.monsters.linkAction') }}</Button>
-            </div>
-            <div v-if="encounterMonsters.length === 0" class="empty-state">
-              <p>{{ $t('encounters.monsters.none') }}</p>
-            </div>
-            <div v-else class="monsters-grid">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{{ t('monsters.name') }}</th>
-                    <th>{{ t('common.quantity') }}</th>
-                    <th>{{ t('common.actions') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="monster in encounterMonsters" :key="monster.id">
-                    <td>
-                      <router-link :to="`/monsters/${monster.id}`">
-                        {{ monster.name }}
-                      </router-link>
-                    </td>
-                    <td>
-                      <Button variant="secondary" @click="openQuantityModal(monster)">
-                        {{ encounter?.monsters[monster.id] }}
-                      </Button>
-                    </td>
-                    <td>
-                      <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
-                        {{ t('common.unlink') }}
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </TabPanel>
-
-          <TabPanel tab-id="combats">
-            <h2>{{ $t('encounters.combats.title') }}</h2>
-            <div v-if="encounterCombats.length > 0" class="combats-grid">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{{ $t('encounters.combats.party') }}</th>
-                    <th>{{ $t('encounters.combats.created') }}</th>
-                    <th>{{ $t('encounters.combats.status') }}</th>
-                    <th>{{ $t('encounters.combats.actions') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="combat in encounterCombats" :key="combat.id">
-                    <td>{{ getPartyName(combat.partyId) }}</td>
-                    <td>{{ formatDate(combat.createdAt) }}</td>
-                    <td>
-                      <span :class="['status-badge', getStatusBadgeClass(combat.status)]">
-                        {{ $t(`combats.status.${combat.status}`) }}
-                      </span>
-                    </td>
-                    <td>
-                      <Button size="small" variant="primary" @click="handleViewCombat(combat)">
-                        {{ $t('encounters.combats.view') }}
-                      </Button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p v-else>{{ $t('encounters.combats.none') }}</p>
-          </TabPanel>
-
-        </TabGroup>
-      </div>
-
-      <!-- Editor Modal -->
+      <template #information>
+        <section class="details-section">
+          <h2>{{ $t('common.details') }}</h2>
+          <div v-html="encounter?.description"></div>
+        </section>
+      </template>
+      <template #monsters>
+        <div class="section-header">
+          <h2>{{ $t('encounters.monsters.title') }}</h2>
+          <Button @click="showLinkModal = true">{{ $t('encounters.monsters.linkAction') }}</Button>
+        </div>
+        <div v-if="encounterMonsters.length === 0" class="empty-state">
+          <p>{{ $t('encounters.monsters.none') }}</p>
+        </div>
+        <div v-else class="monsters-grid">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ t('monsters.name') }}</th>
+                <th>{{ t('common.quantity') }}</th>
+                <th>{{ t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="monster in encounterMonsters" :key="monster.id">
+                <td>
+                  <router-link :to="`/monsters/${monster.id}`">
+                    {{ monster.name }}
+                  </router-link>
+                </td>
+                <td>
+                  <Button variant="secondary" @click="openQuantityModal(monster)">
+                    {{ encounter?.monsters[monster.id] }}
+                  </Button>
+                </td>
+                <td>
+                  <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
+                    {{ t('common.unlink') }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+      <template #combats>
+        <h2>{{ $t('encounters.combats.title') }}</h2>
+        <div v-if="encounterCombats.length > 0" class="combats-grid">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ $t('encounters.combats.party') }}</th>
+                <th>{{ $t('encounters.combats.created') }}</th>
+                <th>{{ $t('encounters.combats.status') }}</th>
+                <th>{{ $t('encounters.combats.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="combat in encounterCombats" :key="combat.id">
+                <td>{{ getPartyName(combat.partyId) }}</td>
+                <td>{{ formatDate(combat.createdAt) }}</td>
+                <td>
+                  <span :class="['status-badge', getStatusBadgeClass(combat.status)]">
+                    {{ $t(`combats.status.${combat.status}`) }}
+                  </span>
+                </td>
+                <td>
+                  <Button size="small" variant="primary" @click="handleViewCombat(combat)">
+                    {{ $t('encounters.combats.view') }}
+                  </Button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-else>{{ $t('encounters.combats.none') }}</p>
+      </template>
       <template #editor>
         <EncounterEditor
           :isOpen="isEditorOpen"
@@ -416,12 +406,11 @@ onMounted(async () => {
           @cancel="handleCancel"
         />
       </template>
-
       <template #sidepanel>
         <Mentions :title="t('common.mentions')" :entities="mentions" />
         <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </template>
-    </BaseEntityView>
+    </BaseEntityTabView>
 
     <!-- Modals -->
     <BaseModal

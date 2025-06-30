@@ -998,6 +998,12 @@ ul:has(.task-list-label) li::marker {
 }
 
 
+.highlight-anchor {
+  background: var(--color-primary);
+  color: var(--color-text-inverse) !important;
+  transition: background 0.3s, color 0.3s;
+}
+
 .bookmark-btn {
   font-size: 1em;
   background: none;

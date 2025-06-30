@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { ModuleTreeNode, Note } from '@/types';
+import type { ModuleTreeNode } from '@/types';
 import { ref, onMounted, computed, watch, nextTick, shallowRef } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import { useNoteStore } from '@/stores/notes';
+import { scrollToHeading } from '@/utils/scrollToHeading';
+import { useRouter } from 'vue-router';
 // @ts-ignore: no types for vue-virtual-scroller
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 
@@ -29,14 +31,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'toc-update', toc: TOCItem[]): void;
+  (e: 'active-anchor-id', anchorId: string): void;
 }>();
 
 const bookmarkStore = useBookmarkStore();
 const noteStore = useNoteStore();
+const router = useRouter();
 
 const chunks = shallowRef<DocumentChunk[]>([]);
 const tocItems = shallowRef<TOCItem[]>([]);
 const isLoading = ref(false);
+const scrollerRef = ref<any>(null); // Ref for DynamicScroller
+const activeAnchorId = ref<string | null>(null);
 
 // Get notes for this module that are hidden (document tree notes)
 const notes = computed(() => 
@@ -49,13 +55,11 @@ function buildChunks(nodes: ModuleTreeNode[], depth = 1): DocumentChunk[] {
     // Find the note for this node
     const note = notes.value.find(n => n.id === node.noteId);
 
-    console.log(note);
-
     if (note) {
       result.push({
         id: `note-${note.id}`,
         title: note.title,
-        content: `${'#'.repeat(depth + 1)} ${note.title} {#${note.id}}\n\n${note.content || ''}\n\n`,
+        content: `${'#'.repeat(depth + 1)} ${note.title} {#note-${note.id}}\n\n${note.content || ''}\n\n`,
         level: depth + 1,
         noteId: note.id
       });
@@ -88,17 +92,19 @@ function initializeDocument() {
   }, 0);
 }
 
-function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Record<string, string> {
-  const map: Record<string, string> = {};
-  function traverse(nodes: ModuleTreeNode[]) {
+function buildNoteAnchorMap(nodes: ModuleTreeNode[]): Set<string> {
+  const map = new Set<string>();
+  const traverse = (nodes: ModuleTreeNode[]) => {
     for (const node of nodes) {
       // Use note ID as anchor
-      map[node.noteId] = node.noteId;
+      map.add(node.noteId);
+
       if (node.children) {
         traverse(node.children);
       }
     }
-  }
+  };
+
   traverse(nodes);
   return map;
 }
@@ -107,78 +113,62 @@ const noteAnchorMap = computed(() => buildNoteAnchorMap(props.noteTree));
 const rootEl = ref<HTMLElement | null>(null);
 const moduleId = props.moduleId;
 
-function injectBookmarkButtons() {
-  if (!rootEl.value || !moduleId) return;
-  rootEl.value.querySelectorAll('.bookmark-btn').forEach(el => el.remove());
-  rootEl.value.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]').forEach(heading => {
-    const anchorId = heading.id;
-    const title = heading.textContent || '';
-    if (!moduleId) return;
-    const modId = moduleId;
-    const isBookmarked = bookmarkStore.isBookmarked(modId, anchorId);
-    const btn = document.createElement('button');
-    btn.className = 'bookmark-btn';
-    if (isBookmarked) btn.classList.add('bookmarked', 'visible');
-    btn.type = 'button';
-    btn.title = isBookmarked ? 'Remove bookmark' : 'Add bookmark';
-    btn.innerHTML = '<i class="si si-bookmark"></i>';
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      if (!moduleId) return;
-      const modId = moduleId;
-      if (bookmarkStore.isBookmarked(modId, anchorId)) {
-        bookmarkStore.removeBookmark(modId, anchorId);
-      } else {
-        bookmarkStore.addBookmark(modId, anchorId, title);
-      }
-      setTimeout(injectBookmarkButtons, 100);
-    };
-    heading.addEventListener('mouseenter', () => {
-      btn.classList.add('visible');
-    });
-    heading.addEventListener('mouseleave', () => {
-      if (!btn.classList.contains('bookmarked')) btn.classList.remove('visible');
-    });
-    if (isBookmarked) btn.classList.add('visible');
-    else btn.classList.remove('visible');
-    (heading as HTMLElement).style.position = 'relative';
-    heading.insertBefore(btn, heading.firstChild);
-  });
-}
-
 onMounted(async () => {
   await noteStore.load();
+  await bookmarkStore.load();
+
   if (rootEl.value) {
     (rootEl.value as any).noteAnchorMap = noteAnchorMap.value;
   }
   initializeDocument();
-  window.addEventListener('scroll', () => {
-    nextTick(() => injectBookmarkButtons());
-  }, { passive: true });
-  watch(() => [props.noteTree, notes.value, bookmarkStore.items], () => {
-    nextTick(() => injectBookmarkButtons());
-  }, { immediate: true, deep: true });
 });
 
 function handleHeadingClick(event: Event) {
-  const target = event.target as HTMLElement;
-  if (target && target.tagName && /^H[1-6]$/.test(target.tagName)) {
-    const id = target.id;
+  const heading = event.target as HTMLElement;
+  if (heading && heading.tagName && /^H[1-6]$/.test(heading.tagName)) {
+    const id = heading.id;
     if (id) {
       const url = `${window.location.origin}${window.location.pathname}#${id}`;
-      navigator.clipboard.writeText(url).then(() => {
-        const originalColor = target.style.color;
-        target.style.color = 'var(--color-primary, #007bff)';
-        setTimeout(() => {
-          target.style.color = originalColor;
-        }, 500);
-      }).catch(err => {
-        console.error('Failed to copy link:', err);
-      });
+      
+      Promise.all([
+        navigator.clipboard.writeText(url),
+        scrollToHeading(id, router, heading),
+      ])
+        .catch(err => console.error(err));
     }
   }
 }
+
+/**
+ * Scroll to a chunk and heading by anchorId (note id)
+ */
+async function scrollToAnchor(anchorId: string) {
+  console.log('scrollToAnchor', { anchorId });
+  // Find the chunk index by noteId or chunk id
+  const idx = chunks.value.findIndex(chunk => chunk.noteId === anchorId || chunk.id === anchorId);
+  if (idx === -1) return;
+  // Scroll to the chunk using DynamicScroller
+  if (scrollerRef.value && typeof scrollerRef.value.scrollToItem === 'function') {
+    scrollerRef.value.scrollToItem(idx);
+  }
+  // Wait for DOM update, then scroll to heading
+  await nextTick();
+  // Try to find the heading element with id=anchorId
+  const heading = rootEl.value?.querySelector(`[id='${anchorId}']`);
+  
+  await scrollToHeading(anchorId, router, heading as HTMLElement);
+}
+
+function handleScrollerUpdate(_startIndex: number, _endIndex: number, visibleStartIndex: number, _visibleEndIndex: number) {
+  // Use visibleStartIndex to get the topmost visible chunk
+  if (typeof visibleStartIndex === 'number' && chunks.value[visibleStartIndex]) {
+    const topChunk = chunks.value[visibleStartIndex];
+    activeAnchorId.value = topChunk.id;
+    emit('active-anchor-id', topChunk.id);
+  }
+}
+
+defineExpose({ scrollToAnchor });
 </script>
 
 <template>
@@ -189,11 +179,13 @@ function handleHeadingClick(event: Event) {
     </div>
     <div v-else class="document-container">
       <DynamicScroller
+        ref="scrollerRef"
         :items="chunks"
         :minItemSize="500"
         key-field="id"
         class="document-scroller"
         :emitUpdate="true"
+        @update="handleScrollerUpdate"
         v-slot="{ item, index, active }"
       >
         <DynamicScrollerItem :item="item" :active="active" :index="index" :size-dependencies="[item.content]" :key="item.id">
@@ -205,6 +197,7 @@ function handleHeadingClick(event: Event) {
             <Markdown
               :content="item.content"
               :anchorMap="noteAnchorMap"
+              :scrollToAnchor="scrollToAnchor"
               :enableMentionModal="true"
             />
           </div>
@@ -268,19 +261,5 @@ function handleHeadingClick(event: Event) {
 .document-chunk :deep(h6) {
   cursor: pointer;
   position: relative;
-}
-.document-chunk :deep(h1):hover::before,
-.document-chunk :deep(h2):hover::before,
-.document-chunk :deep(h3):hover::before,
-.document-chunk :deep(h4):hover::before,
-.document-chunk :deep(h5):hover::before,
-.document-chunk :deep(h6):hover::before {
-  content: '#';
-  position: absolute;
-  left: -0.95em;
-  top: calc(50% - 13px);
-  color: var(--color-primary, #007bff);
-  font-weight: bold;
-  opacity: 0.7;
 }
 </style> 

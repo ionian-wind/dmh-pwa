@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Bookmark",
   "type": "object",
-  "required": ["id", "moduleId", "anchorId", "title", "createdAt", "updatedAt"],
+  "required": ["id", "moduleId", "noteId", "title", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
@@ -12,7 +12,7 @@
       "type": "string",
       "description": "ID of the module this bookmark belongs to"
     },
-    "anchorId": {
+    "noteId": {
       "type": "string",
       "description": "Anchor ID of the heading/bookmark"
     },

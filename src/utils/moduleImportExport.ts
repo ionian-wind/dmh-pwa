@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import type { Module, Note, ModuleTreeNode } from '@/types';
+import {openDB, StorageError} from "./storage";
 
 export interface ImportValidationResult {
   missingNoteIds: string[]; // noteIds in tree but not in notes
@@ -129,9 +130,27 @@ export async function importModuleFromZip({module: moduleData, tree: noteTree, n
   }
 
   // Import everything in a single transaction
-  // This part is app-specific and may need to be adapted to your storage solution
-  // Here, we assume openDB, etc. are available globally or imported as needed
-  // You may need to refactor this part to fit your app's storage layer
-  // For now, we throw to indicate this needs to be implemented
-  throw new Error('importModuleFromZip: Implement database import logic here.');
+  const db = await openDB();
+  const tx = db.transaction(['modules', 'notes'], 'readwrite');
+
+  try {
+    // Import module
+    await tx.objectStore('modules').put(module);
+
+    // Import all notes
+    for (const note of notes) {
+      await tx.objectStore('notes').put(note);
+    }
+
+    // Commit the transaction
+    await tx.done;
+
+    return {
+      moduleId: module.id,
+      noteCount: notes.length
+    };
+  } catch (error) {
+    // Transaction will automatically rollback on error
+    throw new StorageError(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 } 

@@ -18,9 +18,11 @@ interface Props {
   loading?: boolean;
   notFound?: boolean;
   hideHeader?: boolean;
+  unwrapContent?: boolean;
 }
 
 const props = withDefaults(defineProps<Props & { sidePanelVisible?: boolean }>(), {
+  unwrapContent: false,
   subtitle: '',
   loading: false,
   notFound: false,
@@ -83,7 +85,8 @@ const toggleSidePanel = () => {
       <div class="base-entity-layout">
         <div class="entity-main-column">
           <div class="base-entity-view">
-            <div class="entity-content">
+            <slot v-if="props.unwrapContent" />
+            <div v-else class="entity-content">
               <slot />
             </div>
             <slot name="editor" />

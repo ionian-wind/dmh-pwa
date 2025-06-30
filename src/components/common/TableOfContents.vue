@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
 
 interface TOCItem {
   id: string;
   level: number;
   anchorId: string;
+  title: string;
 }
 
 const props = defineProps<{
   items: TOCItem[];
+  activeAnchorId?: string | null;
 }>();
 
 const activeItemId = ref<string | null>(null);
+const tocNavRef = ref<HTMLElement | null>(null);
+const tocItemRefs = ref<{ [key: string]: HTMLElement | undefined }>({});
 
 const emit = defineEmits(['item-click']);
 
@@ -27,7 +32,7 @@ function getIndentClass(level: number): string {
 }
 
 function getActiveClass(itemId: string): string {
-  return activeItemId.value === itemId ? 'active' : '';
+  return (props.activeAnchorId ? props.activeAnchorId === itemId : activeItemId.value === itemId) ? 'active' : '';
 }
 
 // Find the scrollable container that contains the document content
@@ -97,26 +102,44 @@ function handleScroll() {
   }, 50); // Reduced throttle time for more responsive updates
 }
 
+// Clear refs on items change to avoid stale refs
+watch(() => props.items, () => {
+  tocItemRefs.value = {};
+});
+
+watch(() => props.activeAnchorId, (val) => {
+  if (val) activeItemId.value = val;
+  // Scroll the active TOC item into view
+  nextTick(() => {
+    const el = tocItemRefs.value && tocItemRefs.value[val || ''];
+    if (el && tocNavRef.value) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+});
+
 onMounted(async () => {
   await nextTick();
-  updateActiveSection();
-  
-  const scrollContainer = findScrollableContainer();
-  if (scrollContainer) {
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-  } else {
-    window.addEventListener('scroll', handleScroll, { passive: true });
+  if (!props.activeAnchorId) updateActiveSection();
+  if (!props.activeAnchorId) {
+    const scrollContainer = findScrollableContainer();
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    } else {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
   }
 });
 
 onUnmounted(() => {
-  const scrollContainer = findScrollableContainer();
-  if (scrollContainer) {
-    scrollContainer.removeEventListener('scroll', handleScroll);
-  } else {
-    window.removeEventListener('scroll', handleScroll);
+  if (!props.activeAnchorId) {
+    const scrollContainer = findScrollableContainer();
+    if (scrollContainer) {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    } else {
+      window.removeEventListener('scroll', handleScroll);
+    }
   }
-  
   if (scrollTimeout) {
     clearTimeout(scrollTimeout);
   }
@@ -133,16 +156,23 @@ watch(() => props.items.length, async () => {
   await nextTick();
   setTimeout(updateActiveSection, 100);
 });
+
+function setTocItemRef(el: Element | ComponentPublicInstance | null, item: TOCItem) {
+  if (el && el instanceof HTMLElement) {
+    tocItemRefs.value[item.anchorId] = el;
+  }
+}
 </script>
 
 <template>
   <div class="table-of-contents">
-    <nav class="toc-nav">
+    <nav class="toc-nav" ref="tocNavRef">
       <ul class="toc-list">
         <li 
           v-for="item in items" 
           :key="item.id" 
           :class="['toc-item', getIndentClass(item.level), getActiveClass(item.anchorId)]"
+          :ref="el => setTocItemRef(el, item)"
         >
           <button 
             class="toc-link" 
@@ -158,15 +188,13 @@ watch(() => props.items.length, async () => {
 </template>
 
 <style scoped>
-.toc-nav {
-  max-height: 400px;
-  overflow-y: auto;
-}
+
 
 .toc-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  padding-left: var(--base-padding);
 }
 
 .toc-item {
