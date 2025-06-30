@@ -8,6 +8,7 @@ import { scrollToHeading } from '@/utils/scrollToHeading';
 import { useRouter } from 'vue-router';
 // @ts-ignore: no types for vue-virtual-scroller
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
+import Bookmark from '@/components/common/Bookmark.vue';
 
 interface TOCItem {
   id: string;
@@ -190,10 +191,15 @@ defineExpose({ scrollToAnchor });
       >
         <DynamicScrollerItem :item="item" :active="active" :index="index" :size-dependencies="[item.content]" :key="item.id">
           <div
-            class="document-chunk"
+            class="document-chunk with-hover-bookmark"
             :data-chunk-id="item.id"
             @click="handleHeadingClick"
           >
+            <Bookmark
+              :note-id="item.noteId"
+              :module-id="moduleId"
+              class="bookmark-float"
+            />
             <Markdown
               :content="item.content"
               :anchorMap="noteAnchorMap"
@@ -245,7 +251,8 @@ defineExpose({ scrollToAnchor });
   height: 100%;
 }
 .document-chunk {
-  margin-bottom: 1rem;
+  margin-bottom: var(--base-padding);
+  margin-left: calc(var(--base-padding) * 2);
 }
 .empty-state {
   color: var(--color-text-light);
@@ -261,5 +268,26 @@ defineExpose({ scrollToAnchor });
 .document-chunk :deep(h6) {
   cursor: pointer;
   position: relative;
+}
+.document-chunk.with-hover-bookmark {
+  position: relative;
+}
+.bookmark-float {
+  position: absolute;
+  top: -0.5rem;
+  left: -2rem;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 10;
+  padding: 0.5rem 0.5rem;
+}
+
+.bookmark-float:not(.marked) {
+  opacity: 0;
+}
+
+.document-chunk.with-hover-bookmark:hover .bookmark-float {
+  opacity: 1;
+  pointer-events: auto;
 }
 </style> 

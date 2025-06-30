@@ -11,7 +11,7 @@ import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useJukeboxTracksStore } from '@/jukebox/stores';
 import { useConfigStore } from '@/utils/configStore';
 import { useBookmarkStore } from '@/stores/bookmarks';
-import type { Module } from '@/types';
+import type { Module, Bookmark } from '@/types';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/components/ModuleEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
@@ -19,7 +19,6 @@ import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
-import TabPanel from '@/components/common/TabPanel.vue';
 import PartyCard from '@/components/PartyCard.vue';
 import MonsterCard from '@/components/MonsterCard.vue';
 import EncounterCard from '@/components/EncounterCard.vue';
@@ -30,7 +29,8 @@ import Button from '@/components/common/Button.vue';
 import ModuleDocumentTree from '@/components/ModuleDocumentTree.vue';
 import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
 import JSZip from 'jszip';
-import { nanoid } from 'nanoid';
+import { cropTitle } from '@/utils/cropTitle';
+import BaseModal from '@/components/common/BaseModal.vue';
 
 interface TOCItem {
   id: string;
@@ -109,6 +109,8 @@ const activeTab = ref('document');
 const sidePanelTab = ref('toc');
 const moduleDocumentViewRef = ref<any>(null);
 const activeAnchorId = ref<string | null>(null);
+const editingBookmark = ref<Bookmark | null>(null);
+const editingTitle = ref('');
 
 onMounted(async () => {
   await Promise.all([
@@ -276,10 +278,26 @@ async function handleExportModule() {
     URL.revokeObjectURL(url);
   }, 100);
 }
+
+function openEditBookmark(bookmark: Bookmark) {
+  editingBookmark.value = bookmark;
+  editingTitle.value = bookmark.title;
+}
+function closeEditBookmark() {
+  editingBookmark.value = null;
+  editingTitle.value = '';
+}
+async function saveEditBookmark() {
+  if (editingBookmark.value) {
+    await bookmarkStore.update(editingBookmark.value.id, { title: editingTitle.value });
+    closeEditBookmark();
+  }
+}
 </script>
 
 <template>
-  <BaseEntityTabView
+  <div>
+    <BaseEntityTabView
     :entity="module"
     entity-name="t('modules.title')"
     list-route="/modules"
@@ -394,15 +412,25 @@ async function handleExportModule() {
               <ul v-else class="bookmark-list">
                 <li v-for="bookmark in moduleBookmarks" :key="bookmark.id" class="bookmark-list-item">
                   <div class="bookmark-list-row">
-                    <span class="bookmark-link" @click="scrollToBookmark(bookmark.anchorId)">
-                      <i class="si si-bookmark"></i> {{ bookmark.title }}
+                    <span class="bookmark-link" @click="scrollToBookmark(bookmark.noteId)">
+                      <i class="si si-bookmark"></i>
+                      {{ cropTitle(bookmark.title || noteStore.getById(bookmark.noteId)?.title || 'Untitled') }}
                     </span>
+                    <Button
+                      variant="light"
+                      size="small"
+                      class="bookmark-edit-btn"
+                      title="Edit bookmark"
+                      @click.stop.prevent="openEditBookmark(bookmark)"
+                    >
+                      <i class="si si-pencil"></i>
+                    </Button>
                     <Button
                       variant="light"
                       size="small"
                       class="bookmark-delete-btn"
                       title="Delete bookmark"
-                      @click.stop.prevent="bookmarkStore.removeBookmark(bookmark.moduleId, bookmark.anchorId)"
+                      @click.stop.prevent="bookmarkStore.removeBookmark(bookmark.moduleId, bookmark.noteId)"
                     >
                       <i class="si si-trash"></i>
                     </Button>
@@ -419,6 +447,25 @@ async function handleExportModule() {
       </div>
     </template>
   </BaseEntityTabView>
+
+  <!-- Edit Bookmark Modal -->
+  <BaseModal
+    v-if="editingBookmark"
+    :isOpen="!!editingBookmark"
+    modalId="edit-bookmark-modal"
+    title="Edit Bookmark"
+    :showSubmit="true"
+    :showCancel="true"
+    @update:isOpen="(val: boolean) => { if (!val) closeEditBookmark(); }"
+    @submit="saveEditBookmark"
+    @cancel="closeEditBookmark"
+  >
+    <label>
+      Title:
+      <input v-model="editingTitle" type="text" class="modal-input" />
+    </label>
+  </BaseModal>
+  </div>
 </template>
 
 <style scoped>
@@ -521,5 +568,37 @@ async function handleExportModule() {
 @keyframes bookmark-highlight-fade {
   0% { background: var(--color-success-alpha, #e6f9ed); }
   100% { background: transparent; }
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-dialog {
+  background: var(--color-background);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  padding: 2rem;
+  min-width: 320px;
+  max-width: 90vw;
+}
+.modal-input {
+  width: 100%;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
 }
 </style> 

@@ -110,6 +110,6 @@ export interface Combat extends WithMetadata {
 
 export interface Bookmark extends WithMetadata {
   moduleId: UUID;
-  anchorId: string;
+  noteId: string;
   title: string;
 }
