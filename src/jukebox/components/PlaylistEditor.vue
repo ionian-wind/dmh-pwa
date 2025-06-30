@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch, defineEmits, type Ref, computed, onMounted} from 'vue';
+import {ref, watch, type Ref, computed, onMounted} from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { useJukeboxPlaylistsStore } from '../stores';

@@ -52,14 +52,16 @@ function onInput(event: Event) {
 function checkMentionTrigger(target: HTMLTextAreaElement) {
   const value = target.value;
   const caret = target.selectionStart || 0;
-  // Find the last [[ before caret
+  // Find the last _kind: before caret
   const before = value.slice(0, caret);
-  const match = before.match(/\[\[([a-zA-Z]*)\(\)?:?([^\]|]*)?$/);
+  // Match _kind: at the end of the string before the caret
+  // e.g. "This is a note:"
+  const match = before.match(/(?:^|\W)(note|module|party|monster|encounter):$/i);
   if (match) {
-    // If user typed [[ or [[kind:
-    mentionStartPos.value = caret - match[0].length;
-    mentionKind.value = match[1] || '';
-    mentionQuery.value = match[3] || '';
+    // The mention trigger starts at the matched position
+    mentionStartPos.value = caret - match[0].length + (match[0].length - match[1].length - 1); // position after the _
+    mentionKind.value = match[1].toLowerCase();
+    mentionQuery.value = '';
     if (mentionKind.value && getMentionableEntities(mentionKind.value)) {
       // Show popup for this kind
       const entityMeta = getMentionableEntities(mentionKind.value);
@@ -146,7 +148,7 @@ function handleMentionSelect(item: any) {
   // Replace the mention trigger with the selected mention
   const before = value.slice(0, mentionStartPos.value);
   const after = value.slice(caret);
-  const mentionMarkup = `[[${item.kind}:${item.id}|${item.title}]]`;
+  const mentionMarkup = `[${item.title}](${item.kind}://${item.id})`;
   const newValue = before + mentionMarkup + after;
   emit('update:modelValue', newValue);
   // Move caret after inserted mention
@@ -222,14 +224,14 @@ onUnmounted(() => {
       <div class="help-grid">
         <div class="help-item">
           <span class="help-title">Internal Links</span>
-          <code>[[type:id]]</code>
+          <code>[title](type://id)</code>
           <p>Link to other entities in your campaign:</p>
           <ul>
-            <li><code>[[note:123]]</code> - Link to a note</li>
-            <li><code>[[module:123]]</code> - Link to a module</li>
-            <li><code>[[party:123]]</code> - Link to a party</li>
-            <li><code>[[monster:123]]</code> - Link to a monster</li>
-            <li><code>[[encounter:123]]</code> - Link to an encounter</li>
+            <li><code>[Note Title](note://123)</code> - Link to a note</li>
+            <li><code>[Module Name](module://123)</code> - Link to a module</li>
+            <li><code>[Party Name](party://123)</code> - Link to a party</li>
+            <li><code>[Monster Name](monster://123)</code> - Link to a monster</li>
+            <li><code>[Encounter Name](encounter://123)</code> - Link to an encounter</li>
           </ul>
         </div>
         <div class="help-item">

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineEmits } from 'vue';
-
 const props = defineProps<{ minimized: boolean | { value: boolean } }>();
 const emit = defineEmits(['toggle']);
 

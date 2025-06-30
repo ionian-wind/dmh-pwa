@@ -313,6 +313,7 @@ watchEffect(() => {
 
 .jukebox-player-content {
   padding: 1rem;
+  color: var(--jp-color-text);
 }
 
 .loading-spinner {
