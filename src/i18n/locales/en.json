@@ -84,7 +84,8 @@
       "description": "Description",
       "characters": "Characters",
       "modules": "Modules"
-    }
+    },
+    "linkCharacters": "Link Characters"
   },
   "monsters": {
     "title": "Monsters",
@@ -299,7 +300,8 @@
     "userMenu": "User Menu",
     "tableOfContents": "Table of Contents",
     "bookmarks": "Bookmarks",
-    "noBookmarks": "No bookmarks yet."
+    "noBookmarks": "No bookmarks yet.",
+    "name": "Name"
   },
   "validation": {
     "required": "This field is required",

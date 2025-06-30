@@ -43,12 +43,6 @@ const partyCharacters = computed(() => {
   return allCharacters.value.filter(c => p.characters.includes(c.id));
 });
 
-const availableCharacters = computed(() => {
-  const p = party.value;
-  if (!p) return allCharacters.value;
-  return allCharacters.value.filter(c => !p.characters.includes(c.id));
-});
-
 const linkedCharacters = computed(() => {
   const p = party.value;
   if (!p) return {};
@@ -85,14 +79,6 @@ const handlePartyCancel = () => {
   showEditor.value = false;
 };
 
-const handleRemoveCharacter = (character: PlayerCharacter) => {
-  if (!party.value) return;
-  if (confirm(`Remove character "${character.name}" from this party?`)) {
-    const updatedCharacters = party.value.characters.filter(id => id !== character.id);
-    partyStore.update(party.value.id, { characters: updatedCharacters });
-  }
-};
-
 const handleToggleCharacter = (character: PlayerCharacter, isLinked: boolean) => {
   if (!party.value) return;
   let updatedCharacters = [...party.value.characters];
@@ -104,10 +90,6 @@ const handleToggleCharacter = (character: PlayerCharacter, isLinked: boolean) =>
     updatedCharacters = updatedCharacters.filter(id => id !== character.id);
   }
   partyStore.update(party.value.id, { characters: updatedCharacters });
-};
-
-const isCharacterLinked = (characterId: string) => {
-  return linkedCharacters.value[characterId];
 };
 
 // Computed properties for BaseEntityView
@@ -200,10 +182,10 @@ onMounted(async () => {
     <!-- Link Characters Modal -->
     <BaseModal
       :is-open="showLinkModal"
-      title="t('parties.linkCharacters')"
+      :title="t('parties.linkCharacters')"
       :show-cancel="true"
       :show-submit="false"
-      cancel-label="t('common.close')"
+      :cancel-label="t('common.close')"
       modal-id="link-characters-modal"
       @cancel="showLinkModal = false"
     >

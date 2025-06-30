@@ -5,16 +5,19 @@ import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
-import type { Combat, Combatant } from '@/types';
+import type { Combat } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CombatTracker from '@/components/CombatTracker.vue';
 import Button from '@/components/common/Button.vue';
-import NotFoundView from './NotFoundView.vue';
 import { useI18n } from 'vue-i18n';
+import {useCharacterStore} from "@/stores/characters";
+import {useMonsterStore} from "@/stores/monsters";
 
 const route = useRoute();
 const router = useRouter();
 const combatStore = useCombatStore();
+const characterStore = useCharacterStore();
+const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
@@ -25,9 +28,6 @@ const loading = computed(() => !combatStore.isLoaded);
 const notFound = computed(() => combatStore.isLoaded && !combat.value);
 
 function updateCombatFromStore() {
-  if (!combatStore.isLoaded) {
-    return;
-  }
   const combatId = route.params.id as string;
   const found = combatStore.getById(combatId);
   if (found) {
@@ -39,14 +39,7 @@ function updateCombatFromStore() {
 
 watch([
   () => combatStore.items,
-  () => combatStore.isLoaded
 ], updateCombatFromStore, { immediate: true });
-
-const handleDelete = async () => {
-  if (!combat.value) return;
-  await combatStore.remove(combat.value.id);
-  await router.push('/encounters');
-};
 
 const getEncounterName = (encounterId: string) => {
   const encounter = encounterStore.getById(encounterId);
@@ -56,12 +49,6 @@ const getEncounterName = (encounterId: string) => {
 const getPartyName = (partyId: string) => {
   const party = partyStore.getById(partyId);
   return party ? party.name : 'Unknown Party';
-};
-
-const getModuleName = (moduleId: string | null) => {
-  if (!moduleId) return 'No Module';
-  const module = moduleStore.items.find(m => m.id === moduleId);
-  return module ? module.name : 'Unknown Module';
 };
 
 // Computed properties for BaseEntityView
@@ -99,6 +86,8 @@ const resetCombat = () => {
 };
 
 onMounted(async () => {
+  await characterStore.load();
+  await monsterStore.load();
   await combatStore.load();
   await encounterStore.load();
   await partyStore.load();
@@ -114,6 +103,7 @@ onMounted(async () => {
     :title="combatTitle"
     :subtitle="combatSubtitle"
     :not-found="notFound"
+    :loading="loading"
   >
     <template #actions>
       <Button

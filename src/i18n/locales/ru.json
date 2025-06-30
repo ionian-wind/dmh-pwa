@@ -84,7 +84,8 @@
       "description": "Описание",
       "characters": "Персонажи",
       "modules": "Модули"
-    }
+    },
+    "linkCharacters": "Связать персонажей"
   },
   "monsters": {
     "title": "Монстры",
@@ -299,7 +300,8 @@
     "userMenu": "Меню пользователя",
     "tableOfContents": "Оглавление",
     "bookmarks": "Закладки",
-    "noBookmarks": "Пока нет закладок."
+    "noBookmarks": "Пока нет закладок.",
+    "name": "Имя"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",
