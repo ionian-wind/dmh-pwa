@@ -1,157 +1,125 @@
-import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
+import {defineStore} from 'pinia';
+import {computed, ref, watch} from 'vue';
 import type { JukeboxTrack } from './types';
-import { useJukeboxTracksStore, getJukeboxFile } from './stores';
-import { useConfigStore } from '@/utils/configStore';
-import { getFileFromHandle } from '@/jukebox/FileSystemUtils';
+import {getJukeboxFile, useJukeboxPlaylistsStore, useJukeboxTracksStore} from './stores';
+import {JukeboxRepeatMode, useConfigStore} from '@/utils/configStore';
+import {getFileFromHandle} from '@/jukebox/FileSystemUtils';
+import {debug, debugError, debugWarn} from '@/utils/debug';
+import { rng } from "@/utils/random";
+import { Howl, Howler } from 'howler';
 
-// Helper from the original JukeboxPlayer.vue to handle file permissions
-async function verifyFilePermission(handle: FileSystemFileHandle, mode: 'read' | 'readwrite' = 'read') {
+// Helper to handle file permissions
+const verifyFilePermission = async (handle: FileSystemFileHandle, mode: 'read' | 'readwrite' = 'read') => {
   // @ts-ignore
-  if ((await handle.queryPermission({ mode })) === 'granted') {
-    return true;
-  }
+  const query = await handle.queryPermission({ mode });
   // @ts-ignore
-  if ((await handle.requestPermission({ mode })) === 'granted') {
-    return true;
-  }
-  console.error('Jukebox: File permission not granted.');
-  return false;
+  const request = await handle.requestPermission({ mode });
+
+  return query === 'granted' || request === 'granted';
 }
 
-function isFileSystemFileHandle(obj: any): obj is FileSystemFileHandle {
-  return obj && typeof obj === 'object' && typeof obj.getFile === 'function' && typeof obj.name === 'string';
-}
+const isFileSystemFileHandle = (obj: any): obj is FileSystemFileHandle  =>
+  obj && typeof obj === 'object' && typeof obj.getFile === 'function' && typeof obj.name === 'string';
 
 export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
-  const audioEl = ref<HTMLAudioElement | null>(null);
+  let howl: Howl | null = null;
+  const configStore = useConfigStore();
 
+  // Other Stores
+  const tracksStore = useJukeboxTracksStore();
+  const playlistsStore = useJukeboxPlaylistsStore();
+  
   // Core State
   const currentTrack = ref<JukeboxTrack | null>(null);
   const isPlaying = ref(false);
   const currentTime = ref(0);
   const duration = ref(0);
-  const volume = ref(1);
+  const volume = ref<number>(1);
   const lastVolume = ref(1);
-
+  
   // Queue State
   const queue = ref<JukeboxTrack[]>([]);
-  const currentQueueId = ref<string | null>(null);
+  const queueIndex = ref(0);
 
-  // Other Stores
-  const tracksStore = useJukeboxTracksStore();
-  const configStore = useConfigStore();
+  // --- Shuffle/Repeat/History State ---
+  const hasPrevTrack = computed(() => {
+    const currentIndex = queueIndex.value;
+    
+    // If no current track or history is empty, there's no previous track
+    if (!currentTrack.value || queue.value.length === 0) {
+      return false;
+    }
 
-  const currentTrackIndex = computed(() => {
-    if (!currentTrack.value) return -1;
-    return queue.value.findIndex(t => t.id === currentTrack.value?.id);
+    // Check if current track is in the queue and not the first one
+    // Not first track, or else = check if track has been playing for at least 5 seconds
+    return currentIndex > 0 || currentTime.value >= 5;
   });
-  
+
+  const canPlay = computed(() => {
+    // If a track is selected, always enable
+    if (currentTrack.value) {
+      return true;
+    }
+    // If no track selected, check if there are tracks in the queue to play
+    if (queue.value.length > 0) {
+      return true;
+    }
+    // If no tracks available in queue, disable
+    return false;
+  });
+
   const hasNextTrack = computed(() => {
     // If no current track or queue is empty, there's no next track
     if (!currentTrack.value || queue.value.length === 0) {
       return false;
     }
-    
+
     // Check if current track is in the queue and not the last one
-    const currentIndex = currentTrackIndex.value;
-    return currentIndex > -1 && currentIndex < queue.value.length - 1;
-  });
-  
-  const hasPrevTrack = computed(() => {
-    // If no current track or queue is empty, there's no previous track
-    if (!currentTrack.value || queue.value.length === 0) {
-      return false;
-    }
-    
-    // Check if current track is in the queue and not the first one
-    const currentIndex = currentTrackIndex.value;
-    if (currentIndex > 0) {
-      return true;
-    }
-    
-    // If at first track (index 0), check if track has been playing for at least 5 seconds
-    if (currentIndex === 0) {
-      return currentTime.value >= 5;
-    }
-    
-    return false;
-  });
-  
-  const isReady = computed(() => {
-    return audioEl.value !== null && tracksStore.items.value.length > 0;
+    const currentIndex = queueIndex.value;
+
+    return configStore.jukeboxRepeatMode === JukeboxRepeatMode.list || currentIndex < queue.value.length - 1;
   });
 
   // --- Core Methods ---
-
-  function init(element: HTMLAudioElement) {
-    console.log('🎵 JukeboxPlayer: Initializing global player store');
-    
-    if (audioEl.value) {
-      console.log('🎵 JukeboxPlayer: Already initialized, skipping');
-      return;
-    }
-    
-    audioEl.value = element;
-    console.log('🎵 JukeboxPlayer: Audio element set up');
-    
-    // Load volume from config
-    volume.value = configStore.lastVolume;
-    lastVolume.value = configStore.lastVolume;
-    audioEl.value.volume = volume.value;
-    console.log('🎵 JukeboxPlayer: Volume restored from config:', volume.value);
-
-    audioEl.value.addEventListener('play', () => { 
-      isPlaying.value = true; 
-      console.log('🎵 JukeboxPlayer: Play event triggered');
+  async function init() {
+    debug('🎵 JukeboxPlayer: Initializing global player store (Howler)');
+    // Log all Howler-supported codecs
+    const codecs = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'opus', 'webm', 'flac'];
+    const codecSupport: Record<string, boolean> = {};
+    codecs.forEach(codec => {
+      codecSupport[codec] = Howler.codecs(codec);
     });
-    audioEl.value.addEventListener('pause', () => { 
-      isPlaying.value = false; 
-      console.log('🎵 JukeboxPlayer: Pause event triggered');
-    });
-    audioEl.value.addEventListener('ended', () => {
-      console.log('🎵 JukeboxPlayer: Track ended, playing next');
-      playNext();
-    });
-    audioEl.value.addEventListener('timeupdate', onTimeUpdate);
-    audioEl.value.addEventListener('loadedmetadata', onLoadedMetadata);
-
-    console.log('🎵 JukeboxPlayer: Audio event listeners attached');
-
+    debug('🎵 JukeboxPlayer: Codec support:', codecSupport);
+    // Howler doesn't need to watch for an audio element, so we move this logic to init
+    await Promise.all([
+      tracksStore.load(),
+      playlistsStore.load(),
+    ]);
+    
+    const vol = configStore.jukeboxLastVolume;
+    Howler.volume(vol);
+    volume.value = vol;
+    lastVolume.value = vol;
     setupMediaSession();
-
-    // Restore last played track if available
-    restoreLastTrack();
+    await restoreLastTrack();
+    watchPlaylist();
   }
 
+  // --START -- MEDIA SESSION
   function setupMediaSession() {
     if ('mediaSession' in navigator) {
-      console.log('🎵 JukeboxPlayer: Setting up Media Session API');
-
-      navigator.mediaSession.setActionHandler('play', () => { 
-        console.log('🎵 JukeboxPlayer: Media Session "play" triggered');
-        togglePlay();
-      });
-      navigator.mediaSession.setActionHandler('pause', () => {
-        console.log('🎵 JukeboxPlayer: Media Session "pause" triggered');
-        togglePlay();
-      });
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        console.log('🎵 JukeboxPlayer: Media Session "previoustrack" triggered');
-        playPrev();
-      });
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        console.log('🎵 JukeboxPlayer: Media Session "nexttrack" triggered');
-        playNext();
-      });
+      navigator.mediaSession.setActionHandler('play', () => currentTrack.value ? playTrack(currentTrack.value) : null);
+      navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+      navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+      navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
     } else {
-      console.log('🎵 JukeboxPlayer: Media Session API not available');
+      debug('🎵 JukeboxPlayer: Media Session API not available');
     }
   }
-
+  
   function updateMediaMetadata() {
     if ('mediaSession' in navigator && currentTrack.value) {
-      console.log('🎵 JukeboxPlayer: Updating Media Session metadata for track:', currentTrack.value.title);
+      debug('🎵 JukeboxPlayer: Updating Media Session metadata for track:', currentTrack.value.title);
       
       const artwork = [];
       if (currentTrack.value.picture && typeof currentTrack.value.picture === 'string') {
@@ -161,7 +129,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: currentTrack.value.title,
         artist: currentTrack.value.artist,
-        album: 'DMH PWA Jukebox',
+        album: 'DMH PWA Jukebox', // TODO: set album name
         artwork: artwork
       });
     }
@@ -172,274 +140,402 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       updateMediaMetadata();
     }
   });
-
+  
   async function restoreLastTrack() {
-    console.log('🎵 JukeboxPlayer: Attempting to restore last track');
-    console.log('🎵 JukeboxPlayer: Config lastTrackId:', configStore.lastTrackId);
-    console.log('🎵 JukeboxPlayer: Config lastTrackProgress:', configStore.lastTrackProgress);
-    console.log('🎵 JukeboxPlayer: Config lastVolume:', configStore.lastVolume);
-    
-    if (!configStore.lastTrackId) {
-      console.log('🎵 JukeboxPlayer: No lastTrackId in config, skipping restoration');
+    debug('🎵 JukeboxPlayer: Attempting to restore last track');
+    debug('🎵 JukeboxPlayer: Config lastTrackId:', configStore.jukeboxLastTrackId);
+    debug('🎵 JukeboxPlayer: Config lastTrackProgress:', configStore.jukeboxLastTrackProgress);
+    debug('🎵 JukeboxPlayer: Config lastVolume:', configStore.jukeboxLastVolume);
+
+    const lastTrackId = configStore.jukeboxLastTrackId;
+
+    if (!lastTrackId) {
+      debug('🎵 JukeboxPlayer: No lastTrackId in config, skipping restoration');
       return;
     }
 
-    const lastTrack = tracksStore.items.value.find(t => t.id === configStore.lastTrackId);
+    const lastTrack = tracksStore.getById(lastTrackId);
     if (!lastTrack) {
-      console.log('🎵 JukeboxPlayer: Last track not found in available tracks');
+      debug('🎵 JukeboxPlayer: Last track not found in available tracks');
       return;
     }
 
-    console.log('🎵 JukeboxPlayer: Found last track:', lastTrack.title);
-    currentTrack.value = lastTrack;
-    
-    const savedProgress = configStore.lastTrackProgress;
-    if (savedProgress > 0) {
-      console.log('🎵 JukeboxPlayer: Restoring progress:', savedProgress);
-      currentTime.value = savedProgress;
-    }
-
-    // Load the audio file and set the position
-    const fileRecord = await getJukeboxFile(lastTrack.fileId);
-    if (!fileRecord || !isFileSystemFileHandle(fileRecord.handle)) {
-      console.warn('🎵 JukeboxPlayer: Could not find file record for restored track:', lastTrack.title);
-      return;
-    }
-
-    const hasPerm = await verifyFilePermission(fileRecord.handle, 'read');
-    if (!hasPerm) {
-      console.warn('🎵 JukeboxPlayer: No permission to access file for restored track:', lastTrack.title);
-      return;
-    }
-
-    const file = await getFileFromHandle(fileRecord.handle);
-    if (audioEl.value) {
-      console.log('🎵 JukeboxPlayer: Loading audio file for restoration');
-      audioEl.value.src = URL.createObjectURL(file);
-      
-      // Set the time after the audio is loaded
-      audioEl.value.addEventListener('loadedmetadata', () => {
-        if (audioEl.value && savedProgress > 0 && savedProgress < audioEl.value.duration) {
-          audioEl.value.currentTime = savedProgress;
-          currentTime.value = savedProgress;
-          console.log('🎵 JukeboxPlayer: Successfully restored track with progress');
-        } else {
-          console.log('🎵 JukeboxPlayer: Track restored without progress (progress:', savedProgress, 'duration:', audioEl.value?.duration);
-        }
-      }, { once: true });
+    if (await prepareAudioFile(lastTrack, configStore.jukeboxLastTrackProgress)) {
+      debug('🎵 JukeboxPlayer: Restored last track with Howler');
     }
   }
+  
+  const getPlaylistTracks = (shuffleOutput: boolean): JukeboxTrack[] => {
+    const currentPlaylistId = configStore.jukeboxActivePlaylistId;
+    const playlist = currentPlaylistId ? playlistsStore.getById(currentPlaylistId) : null;
+    const tracks = playlist
+      ? playlist.trackIds.map(trackId => tracksStore.getById(trackId)).filter(Boolean) as JukeboxTrack[]
+      : tracksStore.items.value;
 
-  function onTimeUpdate() {
-    if (audioEl.value) {
-      currentTime.value = audioEl.value.currentTime;
-      if (currentTrack.value) {
-        configStore.lastTrackProgress = audioEl.value.currentTime;
+    return shuffleOutput ? tracks.toSorted(() => 0.5 - rng()) : tracks;
+  };
+  
+  function watchPlaylist() {
+    watch(
+      () => configStore.$state.jukeboxActivePlaylistId,
+      (newPlaylistId) => {
+        if (newPlaylistId) {
+          const activePlaylist = playlistsStore.getById(newPlaylistId);
+          if (!activePlaylist) {
+            configStore.jukeboxActivePlaylistId = null;
+            return;
+          }
+        }
+        
+        actualiseQueue();
+      }, { immediate: true });
+  }
+  // -- END -- MEDIA SESSION
+
+  // --- Queue Methods ---
+  function addToQueue(tracks: JukeboxTrack[], next?: boolean) {
+    if (tracks.length > 0) {
+      if (next) {
+        queue.value = queue.value.toSpliced(queueIndex.value + 1, 0, ...tracks);
+      } else {
+        queue.value.push(...tracks);
       }
     }
   }
 
-  function onLoadedMetadata() {
-    if (audioEl.value) {
-      duration.value = audioEl.value.duration;
-      console.log('🎵 JukeboxPlayer: Track metadata loaded, duration:', duration.value);
+  function removeFromQueue(tracks: JukeboxTrack[]) {
+    const currentQueue = queue.value;
+    for (const track of tracks) {
+      let index = currentQueue.indexOf(track);
+      while (index >= 0) {
+        currentQueue.splice(index, 1);
+        
+        if (index <= queueIndex.value) {
+          queueIndex.value -= 1;
+        }
+        
+        index = currentQueue.indexOf(track);
+      }
     }
-  }
 
+    queue.value = currentQueue;
+  }
+  
   // --- Playback Methods ---
 
-  async function playTrack(track: JukeboxTrack) {
-    console.log('🎵 JukeboxPlayer: Playing track:', track.title);
-    
-    if (!audioEl.value) {
-      console.warn('🎵 JukeboxPlayer: No audio element available');
-      return;
-    }
-
-    const isNewTrack = currentTrack.value?.id !== track.id;
-    currentTrack.value = track;
-    configStore.lastTrackId = track.id;
-    console.log('🎵 JukeboxPlayer: Current track updated, saving to config');
-
+  const prepareAudioFile = async (track: JukeboxTrack, seekTo: number = 0): Promise<boolean> => {
     const fileRecord = await getJukeboxFile(track.fileId);
     if (!fileRecord || !isFileSystemFileHandle(fileRecord.handle)) {
-      console.error('🎵 JukeboxPlayer: Could not find file record for track:', track.title);
-      return;
+      return false;
     }
-
     const hasPerm = await verifyFilePermission(fileRecord.handle, 'read');
     if (!hasPerm) {
-      console.error('🎵 JukeboxPlayer: No permission to access file for track:', track.title);
-      return;
+      return false;
     }
-
     const file = await getFileFromHandle(fileRecord.handle);
-    URL.revokeObjectURL(audioEl.value.src); // Clean up previous object URL
-    audioEl.value.src = URL.createObjectURL(file);
-    
-    if (isNewTrack) {
-      configStore.lastTrackProgress = 0;
-      currentTime.value = 0;
-      console.log('🎵 JukeboxPlayer: New track, resetting progress');
+    const src = URL.createObjectURL(file);
+    // Determine format from file.type or file.name
+    let format: string | undefined;
+    if (file.type) {
+      format = file.type.split('/').pop();
+    } else if (file.name && file.name.includes('.')) {
+      format = file.name.split('.').pop();
     }
-    
-    try {
-      await audioEl.value.play();
-      console.log('🎵 JukeboxPlayer: Track playback started successfully');
-    } catch (error) {
-      console.error("🎵 JukeboxPlayer: Playback failed.", error);
-      isPlaying.value = false;
+    if (howl) {
+      howl.unload();
+      howl = null;
+    }
+    howl = new Howl({
+      src: [src],
+      html5: true,
+      volume: volume.value,
+      format: format ? [format] : undefined,
+      onplay: () => {
+        isPlaying.value = true;
+        duration.value = howl?.duration() || 0;
+        debug('🎵 JukeboxPlayer: Howler play event');
+      },
+      onpause: () => {
+        isPlaying.value = false;
+        debug('🎵 JukeboxPlayer: Howler pause event');
+      },
+      onend: () => {
+        debug('🎵 JukeboxPlayer: Howler ended event, playing next');
+        playNext();
+      },
+      onseek: () => {
+        currentTime.value = howl?.seek() as number || 0;
+      },
+      onload: () => {
+        duration.value = howl?.duration() || 0;
+        debug('🎵 JukeboxPlayer: Howler loaded, duration:', duration.value);
+        if (seekTo > 0 && howl) {
+          howl.seek(seekTo);
+          currentTime.value = seekTo;
+        }
+      },
+      onloaderror: (id: number, err: unknown) => {
+        debugError('🎵 JukeboxPlayer: Howler load error', err);
+      },
+      onplayerror: (id: number, err: unknown) => {
+        debugError('🎵 JukeboxPlayer: Howler play error', err);
+      },
+    });
+    currentTrack.value = track;
+    return true;
+  };
+  
+  function resetDuration() {
+    configStore.jukeboxLastTrackProgress = 0;
+    currentTime.value = 0;
+    if (howl) {
+      howl.seek(0);
+    }
+    debug('🎵 JukeboxPlayer: Resetting progress');
+  }
+  
+  async function playTrack(track: JukeboxTrack) {
+    if ((await prepareAudioFile(track))) {
+      configStore.jukeboxLastTrackId = track.id;
+      const isNewTrack = currentTrack.value?.id !== track.id;
+      if (isNewTrack) {
+        debug('🎵 JukeboxPlayer: New track');
+        resetDuration();
+      }
+      try {
+        howl?.play();
+        debug('🎵 JukeboxPlayer: Track playback started successfully (Howler)');
+      } catch (error) {
+        debugError("🎵 JukeboxPlayer: Playback failed (Howler).", error);
+        isPlaying.value = false;
+      }
     }
   }
 
-  function togglePlay() {
-    console.log('🎵 JukeboxPlayer: Toggle play called, current state:', isPlaying.value);
+  async function playTrackFromPlaylist(track: JukeboxTrack) {
+    queueIndex.value = queue.value.findIndex(({ id }) => id === track.id);
+
+    await playTrack(track);
+  }
+  
+  async function togglePlay() {
+    debug('🎵 JukeboxPlayer: Toggle play called, current state:', isPlaying.value);
     
-    if (!audioEl.value) {
-      console.warn('🎵 JukeboxPlayer: No audio element available');
-      return;
-    }
-
-    if (!currentTrack.value) {
-      if (queue.value.length > 0) {
-        console.log('🎵 JukeboxPlayer: No current track, playing first in queue');
-        playTrack(queue.value[0]);
-      } else {
-        console.log('🎵 JukeboxPlayer: No current track and empty queue');
-      }
-      return;
-    }
-
-    if (!audioEl.value.src && currentTrack.value) {
-      console.log('🎵 JukeboxPlayer: No audio source, loading current track');
-      playTrack(currentTrack.value);
+    if (!howl) {
+      debugWarn('🎵 JukeboxPlayer: No Howler instance available');
       return;
     }
 
     if (isPlaying.value) {
-      audioEl.value.pause();
-      console.log('🎵 JukeboxPlayer: Pausing playback');
-    } else {
-      audioEl.value.play();
-      console.log('🎵 JukeboxPlayer: Resuming playback');
-    }
-  }
-  
-  function playNext() {
-    console.log('🎵 JukeboxPlayer: Play next called, current index:', currentTrackIndex.value);
-    if (hasNextTrack.value) {
-      const nextTrack = queue.value[currentTrackIndex.value + 1];
-      console.log('🎵 JukeboxPlayer: Playing next track:', nextTrack.title);
-      playTrack(nextTrack);
-    } else {
-      console.log('🎵 JukeboxPlayer: Reached end of queue, stopping playback');
+      debug('🎵 JukeboxPlayer: Pausing playback (Howler)');
+      howl.pause();
       isPlaying.value = false;
-    }
-  }
-
-  function playPrev() {
-    console.log('🎵 JukeboxPlayer: Play prev called, current index:', currentTrackIndex.value);
-    if (currentTrackIndex.value > 0) {
-      const prevTrack = queue.value[currentTrackIndex.value - 1];
-      console.log('🎵 JukeboxPlayer: Playing previous track:', prevTrack.title);
-      playTrack(prevTrack);
-    } else if (currentTrackIndex.value === 0 && audioEl.value) {
-      console.log('🎵 JukeboxPlayer: At first track, restarting from beginning');
-      audioEl.value.currentTime = 0;
-      currentTime.value = 0;
-      configStore.lastTrackProgress = 0;
-    } else if (currentTrackIndex.value === -1 && audioEl.value) {
-      // No track in queue, reset progress
-      console.log('🎵 JukeboxPlayer: No track in queue, resetting progress');
-      audioEl.value.currentTime = 0;
-      currentTime.value = 0;
-      configStore.lastTrackProgress = 0;
-    }
-  }
-
-  function seek(newTime: number) {
-    console.log('🎵 JukeboxPlayer: Seeking to:', newTime);
-    if (audioEl.value) {
-      audioEl.value.currentTime = newTime;
-    }
-  }
-
-  // --- Volume Methods ---
-
-  function setVolume(newVolume: number) {
-    console.log('🎵 JukeboxPlayer: Setting volume to:', newVolume);
-    volume.value = newVolume;
-    if (newVolume > 0) {
-      lastVolume.value = newVolume;
-    }
-    if (audioEl.value) {
-      audioEl.value.volume = newVolume;
-    }
-    configStore.lastVolume = newVolume;
-    console.log('🎵 JukeboxPlayer: Volume saved to config');
-  }
-
-  function toggleMute() {
-    console.log('🎵 JukeboxPlayer: Toggle mute called, current volume:', volume.value);
-    if (volume.value > 0) {
-      setVolume(0);
-      console.log('🎵 JukeboxPlayer: Muted');
     } else {
-      const newVolume = lastVolume.value > 0 ? lastVolume.value : 0.5;
-      setVolume(newVolume);
-      console.log('🎵 JukeboxPlayer: Unmuted to:', newVolume);
+      debug('🎵 JukeboxPlayer: Resuming playback (Howler)');
+      howl.play();
     }
+  }
+
+  async function playPrev() {
+    if (!hasPrevTrack.value) {
+      return;
+    }
+    
+    if (currentTime.value >= 5) {
+      resetDuration();
+      return;
+    }
+    
+    queueIndex.value -= 1;
+    const prevTrack = queue.value.at(queueIndex.value);
+    if (prevTrack) await playTrack(prevTrack);
   }
   
-  // --- Queue Methods ---
-  function setQueue(tracks: JukeboxTrack[], queueId: string | null) {
-    console.log('🎵 JukeboxPlayer: Setting queue, tracks:', tracks.length, 'queueId:', queueId);
-    queue.value = tracks;
-    currentQueueId.value = queueId;
-    // Always update the config to reflect the playlist from which the current queue was started
-    configStore.activePlaylistId = queueId;
-    console.log('🎵 JukeboxPlayer: Updated config.activePlaylistId to:', queueId);
-  }
+  async function playNext() {
+    const repeatMode = configStore.jukeboxRepeatMode;
 
+    if (repeatMode === JukeboxRepeatMode.track) {
+      // Replay the current track from the beginning
+      if (currentTrack.value) {
+        await playTrack(currentTrack.value);
+        return;
+      }
+    }
+
+    if (!hasNextTrack.value) {
+      return;
+    }
+
+    if (queueIndex.value === queue.value.length - 1) {
+      if (repeatMode === JukeboxRepeatMode.list) {
+        addToQueue(getPlaylistTracks(configStore.jukeboxShuffle));
+      }
+    }
+    queueIndex.value += 1;
+
+    const nextTrack = queue.value.at(queueIndex.value);
+    if (nextTrack) await playTrack(nextTrack);
+  }
+  
   function stop() {
-    console.log('🎵 JukeboxPlayer: Stopping playback');
-    if (audioEl.value) {
-      audioEl.value.pause();
-      audioEl.value.src = '';
+    debug('🎵 JukeboxPlayer: Stopping playback (Howler)');
+    if (howl) {
+      howl.stop();
+      howl.unload();
+      howl = null;
     }
     isPlaying.value = false;
     currentTrack.value = null;
     currentTime.value = 0;
-    configStore.lastTrackId = null;
-    configStore.lastTrackProgress = 0;
+    configStore.jukeboxLastTrackId = null;
+    configStore.jukeboxLastTrackProgress = 0;
   }
 
+  // --- Shuffle/Repeat/History Methods ---
+  function toggleShuffle() {
+    configStore.jukeboxShuffle = !configStore.jukeboxShuffle;
+
+    actualiseQueue();
+  }
+
+  function cycleRepeatMode() {
+    const repeatMode = configStore.jukeboxRepeatMode;
+
+    if (repeatMode === JukeboxRepeatMode.off) {
+      configStore.jukeboxRepeatMode = JukeboxRepeatMode.list;
+    } else if (repeatMode === JukeboxRepeatMode.list) {
+      configStore.jukeboxRepeatMode = JukeboxRepeatMode.track;
+    } else {
+      configStore.jukeboxRepeatMode = JukeboxRepeatMode.off;
+    }
+  }
+
+  // --- Watch for active playlist changes to update queue context ---
+
+  /**
+   * Remove a track from the queue and handle play state/history.
+   * Returns true if the track was in the queue and removed, false otherwise.
+   */
+  async function removeTrackFromQueue(track: JukeboxTrack) {
+    removeFromQueue([track]);
+    const played = isPlaying.value;
+
+    stop();
+    
+    if (played) {
+      await playNext();
+    }
+  }
+
+  /**
+   * Returns true if the given track is the currently active track in the current playlist context.
+   * @param track The track to check
+   * @param selectedPlaylistId The selected playlist id (from JukeboxView)
+   */
+  function trackIsActive(track: JukeboxTrack, selectedPlaylistId: string | null): boolean {
+    return Boolean(
+      currentTrack.value &&
+      currentTrack.value.id === track.id &&
+      configStore.jukeboxActivePlaylistId === selectedPlaylistId
+    );
+  }
+
+  function actualiseQueue() {
+    const shuffle = configStore.jukeboxShuffle;
+    const tracks = getPlaylistTracks(shuffle);
+
+    queue.value = [];
+    queueIndex.value = 0;
+    
+    if (tracks.length > 0) {
+      if (shuffle) {
+        if (currentTrack.value) {
+          addToQueue([currentTrack.value]);
+        }
+
+        addToQueue(tracks.filter(({ id }) => id !== (currentTrack.value ? currentTrack.value.id : '')));
+      } else {
+        addToQueue(tracks);
+      }
+
+      queueIndex.value = currentTrack.value
+        ? queue.value.findIndex(({ id }) => id === currentTrack.value!.id)
+        : 0;
+    } else {
+      currentTrack.value = null;
+    }
+  }
+  
+  function resortQueue(selectedPlaylistId: string) {
+    if (configStore.jukeboxActivePlaylistId === selectedPlaylistId && !configStore.jukeboxShuffle && currentTrack.value) {
+      actualiseQueue();
+    }
+  }
+
+
+  // --- Volume Methods ---
+  function setVolume(newVolume: number) {
+    debug('🎵 JukeboxPlayer: Setting volume to:', newVolume);
+    volume.value = newVolume;
+    if (newVolume > 0) {
+      lastVolume.value = newVolume;
+    }
+    Howler.volume(newVolume);
+    configStore.jukeboxLastVolume = newVolume;
+    debug('🎵 JukeboxPlayer: Volume saved to config');
+  }
+
+  function toggleMute() {
+    debug('🎵 JukeboxPlayer: Toggle mute called, current volume:', volume.value);
+    if (volume.value > 0) {
+      setVolume(0);
+      debug('🎵 JukeboxPlayer: Muted');
+    } else {
+      const newVolume = lastVolume.value > 0 ? lastVolume.value : 0.5;
+      setVolume(newVolume);
+      debug('🎵 JukeboxPlayer: Unmuted to:', newVolume);
+    }
+  }
+  
   return {
     // State
     currentTrack,
     isPlaying,
-    currentTime,
-    duration,
-    volume,
     
     // Getters
-    currentQueueId: computed(() => currentQueueId.value),
-    hasNextTrack,
     hasPrevTrack,
-    isReady,
-    queue: computed(() => queue.value),
+    canPlay,
+    hasNextTrack,
+
+    currentTime,
+    duration,
+    
+    shuffle: computed(() => configStore.jukeboxShuffle),
+    repeatMode: computed(() => configStore.jukeboxRepeatMode),
+
+    volume,
     
     // Methods
     init,
-    restoreLastTrack,
-    playTrack,
+    resortQueue,
+    removeTrackFromQueue,
+    
+    playPrev,
+    playTrackFromPlaylist,
     togglePlay,
     playNext,
-    playPrev,
-    seek,
+    stop,
+
+    seek: (newTime: number) => {
+      if (howl) {
+        howl.seek(newTime);
+        currentTime.value = newTime;
+      }
+    },
     setVolume,
     toggleMute,
-    setQueue,
-    stop,
+    toggleShuffle,
+    cycleRepeatMode,
+    trackIsActive,
   };
-}); 
+});

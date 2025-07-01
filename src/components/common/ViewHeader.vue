@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Button from '@/components/common/Button.vue';
+import { IconPlus } from '@tabler/icons-vue';
 
 defineProps({
   title: {
@@ -57,7 +58,7 @@ defineEmits(['create', 'update:searchQuery']);
       <slot name="actions" />
 
       <Button v-if="showCreate" @click="$emit('create')" :title="createTitle">
-        <i class="si si-plus"></i>
+        <IconPlus />
       </Button>
     </div>
   </div>

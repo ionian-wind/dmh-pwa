@@ -195,11 +195,6 @@ button {
   white-space: nowrap;
 }
 
-.btn:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
 /* Size variants */
 .btn--small {
   padding: 0.375rem 0.75rem;

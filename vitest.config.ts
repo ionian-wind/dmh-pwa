@@ -6,12 +6,7 @@ import path from 'node:path'
 export default defineConfig({
   plugins: [vue()],
   test: {
-    onConsoleLog(log: string, type: 'stdout' | 'stderr'): false | void {
-      console.log('log in test: ', log);
-      if (log === 'message from third party library' && type === 'stdout') {
-        return false;
-      }
-    },
+    printConsoleTrace: true,
     disableConsoleIntercept: true,
     environment: 'jsdom',
     globals: true,

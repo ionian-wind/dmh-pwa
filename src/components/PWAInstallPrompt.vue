@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import Button from '@/components/common/Button.vue';
+import { IconDownload, IconX } from '@tabler/icons-vue';
+import { debug, debugError } from '@/utils/debug';
 
 const showInstallPrompt = ref(false);
 const deferredPrompt = ref<any>(null);
@@ -17,12 +19,12 @@ const installApp = async () => {
     const { outcome } = await deferredPrompt.value.userChoice;
     
     if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+      debug('User accepted the install prompt');
     } else {
-      console.log('User dismissed the install prompt');
+      debug('User dismissed the install prompt');
     }
   } catch (error) {
-    console.error('Error showing install prompt:', error);
+    debugError('Error showing install prompt:', error);
   } finally {
     // Clear the deferredPrompt
     deferredPrompt.value = null;
@@ -38,15 +40,15 @@ const dismissPrompt = () => {
 };
 
 onMounted(() => {
-  console.log('PWAInstallPrompt: Component mounted, setting up event listeners');
+  debug('PWAInstallPrompt: Component mounted, setting up event listeners');
   
   // Listen for the beforeinstallprompt event
   const handleBeforeInstallPrompt = async (e: Event) => {
-    console.log('PWAInstallPrompt: beforeinstallprompt event fired');
+    debug('PWAInstallPrompt: beforeinstallprompt event fired');
     
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
-    console.log('PWAInstallPrompt: preventDefault() called');
+    debug('PWAInstallPrompt: preventDefault() called');
     
     // Store the event for later use
     deferredPrompt.value = e;
@@ -54,26 +56,26 @@ onMounted(() => {
     // Call prompt() immediately to satisfy browser requirements
     // This prevents the warning about preventDefault() being called without prompt()
     try {
-      console.log('PWAInstallPrompt: Calling native prompt()');
+      debug('PWAInstallPrompt: Calling native prompt()');
       await (e as any).prompt();
       hasShownNativePrompt.value = true;
-      console.log('PWAInstallPrompt: Native prompt() called successfully');
+      debug('PWAInstallPrompt: Native prompt() called successfully');
       
       // Wait for user choice
       const { outcome } = await (e as any).userChoice;
-      console.log('PWAInstallPrompt: User choice outcome:', outcome);
+      debug('PWAInstallPrompt: User choice outcome:', outcome);
       
       if (outcome === 'accepted') {
-        console.log('PWAInstallPrompt: User accepted the native install prompt');
+        debug('PWAInstallPrompt: User accepted the native install prompt');
         // App will be installed, no need to show our custom prompt
         return;
       } else {
-        console.log('PWAInstallPrompt: User dismissed the native install prompt, showing custom prompt');
+        debug('PWAInstallPrompt: User dismissed the native install prompt, showing custom prompt');
         // Show our custom prompt as a fallback
         showInstallPrompt.value = true;
       }
     } catch (error) {
-      console.log('PWAInstallPrompt: Native prompt failed or was not supported, showing custom prompt:', error);
+      debug('PWAInstallPrompt: Native prompt failed or was not supported, showing custom prompt:', error);
       // Show our custom prompt as fallback
       showInstallPrompt.value = true;
     }
@@ -81,7 +83,7 @@ onMounted(() => {
   
   // Listen for the appinstalled event
   const handleAppInstalled = () => {
-    console.log('PWAInstallPrompt: PWA was installed');
+    debug('PWAInstallPrompt: PWA was installed');
     showInstallPrompt.value = false;
     deferredPrompt.value = null;
     hasShownNativePrompt.value = false;
@@ -89,11 +91,11 @@ onMounted(() => {
   
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   window.addEventListener('appinstalled', handleAppInstalled);
-  console.log('PWAInstallPrompt: Event listeners added');
+  debug('PWAInstallPrompt: Event listeners added');
   
   // Cleanup
   onUnmounted(() => {
-    console.log('PWAInstallPrompt: Component unmounting, removing event listeners');
+    debug('PWAInstallPrompt: Component unmounting, removing event listeners');
     window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.removeEventListener('appinstalled', handleAppInstalled);
   });
@@ -117,11 +119,11 @@ onMounted(() => {
       </div>
       <div class="pwa-install-actions">
         <Button @click="installApp" variant="primary" size="small">
-          <i class="si si-download"></i>
+          <IconDownload />
           <span>Install</span>
         </Button>
         <Button @click="dismissPrompt" variant="secondary" size="small">
-          <i class="si si-close"></i>
+          <IconX />
           <span>Not now</span>
         </Button>
       </div>

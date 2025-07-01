@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
+
 const props = defineProps<{ minimized: boolean | { value: boolean } }>();
 const emit = defineEmits(['toggle']);
 
@@ -14,7 +16,8 @@ function isMinimized() {
 <template>
   <aside :class="['left-menu', { minimized: isMinimized() }]">
     <div class="toggle-btn" @click="toggleMenu">
-      <i :class="isMinimized() ? 'si si-chevron-right' : 'si si-chevron-left'" />
+      <IconChevronRight v-if="isMinimized()" />
+      <IconChevronLeft v-else />
     </div>
     <nav class="menu-items">
       <slot name="navigation" />

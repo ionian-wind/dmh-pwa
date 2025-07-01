@@ -1,7 +1,8 @@
 import type { Router } from 'vue-router';
+import { debug } from './debug';
 
 export const scrollToHeading = async (id: string, router: Router, heading?: HTMLElement) => {
-  console.log({ scrollToHeading: id });
+  debug({ scrollToHeading: id });
 
   // Also update the hash in the browser using router
   if (window.location.hash !== `#${id}`) {

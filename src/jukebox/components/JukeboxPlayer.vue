@@ -1,102 +1,34 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, watch, watchEffect} from 'vue';
-import RangeSlider from '@/components/common/RangeSlider.vue';
-import {useJukeboxPlayerStore} from '@/jukebox/playerStore';
-import {useJukeboxFilesStore, useJukeboxPlaylistsStore, useJukeboxTracksStore, usePictureUrlCacheStore} from '@/jukebox/stores';
-import {useConfigStore} from '@/utils/configStore';
-import Button from '@/components/common/Button.vue';
+import {computed, onBeforeUnmount, onMounted, ref, watchEffect} from 'vue';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { usePictureUrlCacheStore} from '@/jukebox/stores';
 import {useAnimatedGradient} from '@/jukebox/useAnimatedGradient';
-import type {JukeboxTrack} from '@/jukebox/types';
 import {formatTime} from "@/jukebox/utils";
+
+import RangeSlider from '@/components/common/RangeSlider.vue';
+import Button from '@/components/common/Button.vue';
+
+// Tabler icons
+import { 
+  IconMusic as IconMusicNote, 
+  IconPlayerSkipBack, 
+  IconPlayerPlay, 
+  IconPlayerPause, 
+  IconPlayerSkipForward, 
+  IconArrowsShuffle as IconShuffle, 
+  IconRepeat, 
+  IconRepeatOnce, 
+  IconVolume, 
+  IconVolumeOff 
+} from '@tabler/icons-vue';
 
 const props = defineProps<{ 
   animatedBackground?: boolean;
   showArtwork?: boolean;
 }>();
-const playerStore = useJukeboxPlayerStore();
 const pictureUrlCacheStore = usePictureUrlCacheStore();
-const configStore = useConfigStore();
 
-// Get store instances for loading
-const tracksStore = useJukeboxTracksStore();
-const playlistsStore = useJukeboxPlaylistsStore();
-const filesStore = useJukeboxFilesStore();
-
-// Loading state
-const storesLoaded = ref(false);
-
-onMounted(async () => {
-  console.log('🎵 JukeboxPlayer: Component mounted, ensuring stores are loaded...');
-  
-  await Promise.all([
-    tracksStore.load(),
-    playlistsStore.load(),
-    filesStore.load()
-  ]);
-  
-  // Wait for player to be ready (audio element initialized)
-  if (!playerStore.isReady) {
-    console.log('🎵 JukeboxPlayer: Waiting for player to be ready...');
-    // Wait a bit for the GlobalAudioPlayer to initialize
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  
-  // Set up queue context if not already set (for popover usage)
-  if (!playerStore.currentQueueId && tracksStore.items.value.length > 0) {
-    console.log('🎵 JukeboxPlayer: Setting up default queue context for popover...');
-    
-    // Use the activePlaylistId from config (reflects the playlist from which current track is playing)
-    if (configStore.activePlaylistId) {
-      const activePlaylist = playlistsStore.items.value.find(p => p.id === configStore.activePlaylistId);
-      if (activePlaylist) {
-        const playlistTracks = activePlaylist.trackIds
-          .map(trackId => tracksStore.items.value.find(t => t.id === trackId))
-          .filter((track): track is JukeboxTrack => track !== undefined);
-        playerStore.setQueue(playlistTracks, configStore.activePlaylistId);
-        console.log('🎵 JukeboxPlayer: Set queue from active playlist:', playlistTracks.length, 'tracks');
-      }
-    } else {
-      // Otherwise, use all tracks as the queue
-      const allTracks = tracksStore.items.value;
-      playerStore.setQueue(allTracks, null);
-      console.log('🎵 JukeboxPlayer: Set queue from all tracks:', allTracks.length, 'tracks');
-    }
-  }
-  
-  storesLoaded.value = true;
-  console.log('🎵 JukeboxPlayer: Stores ready, player should work correctly');
-});
-
-// Watch for player readiness in case it becomes ready after mount
-watch(() => playerStore.isReady, (isReady) => {
-  if (isReady && !storesLoaded.value) {
-    console.log('🎵 JukeboxPlayer: Player became ready, enabling controls');
-    storesLoaded.value = true;
-  }
-});
-
-// Watch for active playlist changes to update queue context
-watch(() => configStore.activePlaylistId, (newPlaylistId) => {
-  if (storesLoaded.value && tracksStore.items.value.length > 0) {
-    console.log('🎵 JukeboxPlayer: Active playlist changed, updating queue...');
-    
-    if (newPlaylistId) {
-      const activePlaylist = playlistsStore.items.value.find(p => p.id === newPlaylistId);
-      if (activePlaylist) {
-        const playlistTracks = activePlaylist.trackIds
-          .map(trackId => tracksStore.items.value.find(t => t.id === trackId))
-          .filter((track): track is JukeboxTrack => track !== undefined);
-        playerStore.setQueue(playlistTracks, newPlaylistId);
-        console.log('🎵 JukeboxPlayer: Updated queue from playlist:', playlistTracks.length, 'tracks');
-      }
-    } else {
-      // No active playlist, use all tracks
-      const allTracks = tracksStore.items.value;
-      playerStore.setQueue(allTracks, null);
-      console.log('🎵 JukeboxPlayer: Updated queue from all tracks:', allTracks.length, 'tracks');
-    }
-  }
-});
+const playerStore = useJukeboxPlayerStore();
 
 const showAnimatedBg = computed(() => !!props.animatedBackground && playerStore.isPlaying);
 
@@ -160,21 +92,6 @@ function handleWheel(event: WheelEvent) {
   playerStore.setVolume(newVolume);
 }
 
-const isPlayDisabled = computed(() => {
-  // If a track is selected, always enable
-  if (playerStore.currentTrack) {
-    return false;
-  }
-  
-  // If no track selected, check if there are tracks in the queue to play
-  if (playerStore.queue.length > 0) {
-    return false;
-  }
-  
-  // If no tracks available in queue, disable
-  return true;
-});
-
 // Theming logic: update CSS variables for JukeboxPlayer based on track color
 const defaultTheme = {
   '--jp-color-primary': 'var(--color-primary)',
@@ -228,20 +145,21 @@ watchEffect(() => {
   const color = playerStore.currentTrack?.color;
   setTimeout(() => setJukeboxTheme(color), 0); // next tick to ensure DOM is ready
 });
+
+const showRemainingTime = ref(false);
+function toggleTimeDisplay() {
+  showRemainingTime.value = !showRemainingTime.value;
+}
 </script>
 
 <template>
   <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }" :style="gradientStyle">
-    <div v-if="!storesLoaded" class="jukebox-player-loading">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Loading player...</div>
-    </div>
-    <div v-else class="jukebox-player-content">
+    <div class="jukebox-player-content">
       <!-- Track Artwork -->
       <div v-if="showArtwork" class="track-artwork-container">
         <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
         <div v-else class="track-artwork track-artwork-placeholder">
-          <i class="si si-music-note"></i>
+          <IconMusicNote />
         </div>
       </div>
       
@@ -251,19 +169,60 @@ watchEffect(() => {
       </div>
       <div class="player-controls-bottom">
         <div class="controls">
-          <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.hasPrevTrack"><i class="si si-step-backward"></i></Button>
-          <Button variant="light" @click="playerStore.togglePlay()" :disabled="isPlayDisabled" class="play-pause"><i :class="playerStore.isPlaying ? 'si si-pause' : 'si si-play'"></i></Button>
-          <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"><i class="si si-step-forward"></i></Button>
+          <Button variant="light" @click="playerStore.playPrev()" :disabled="!playerStore.hasPrevTrack" class="prev-track">
+            <IconPlayerSkipBack />
+          </Button>
+          <Button variant="light" @click="playerStore.togglePlay()" :disabled="!playerStore.canPlay" class="play-pause">
+            <IconPlayerPause v-if="playerStore.isPlaying" />
+            <IconPlayerPlay v-else />
+          </Button>
+          <Button variant="light" @click="playerStore.playNext()" :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack" class="next-track">
+            <IconPlayerSkipForward />
+          </Button>
         </div>
         <div class="progress-bar">
-          <span>{{ formatTime(playerStore.currentTime) }}</span>
+          <span class="progress-bar-time time-current" @click="toggleTimeDisplay">
+            <template v-if="!showRemainingTime">
+              {{ formatTime(playerStore.currentTime) }}
+            </template>
+            <template v-else>
+              -{{ formatTime((playerStore.duration || 0) - playerStore.currentTime) }}
+            </template>
+          </span>
           <RangeSlider
             :model-value="playerStore.currentTime"
             :max="playerStore.duration || 1"
             :disabled="!playerStore.currentTrack"
             @update:modelValue="playerStore.seek($event)"
           />
-          <span>{{ formatTime(playerStore.duration) }}</span>
+          <span class="progress-bar-time time-duration">{{ formatTime(playerStore.duration) }}</span>
+        </div>
+        <!-- Shuffle/Repeat Buttons -->
+        <div class="playback-options">
+          <Button
+            variant="light"
+            :class="{ active: playerStore.shuffle }"
+            @click="playerStore.toggleShuffle"
+            title="Shuffle"
+          >
+            <IconShuffle />
+          </Button>
+          <Button
+            variant="light"
+            :class="{ active: playerStore.repeatMode === 'list' || playerStore.repeatMode === 'track' }"
+            @click="playerStore.cycleRepeatMode"
+            title="Repeat"
+          >
+            <template v-if="playerStore.repeatMode === 'off'">
+              <IconRepeat />
+            </template>
+            <template v-else-if="playerStore.repeatMode === 'list'">
+              <IconRepeat />
+            </template>
+            <template v-else>
+              <IconRepeatOnce />
+            </template>
+          </Button>
         </div>
         <div
           class="volume-control"
@@ -272,8 +231,12 @@ watchEffect(() => {
           @wheel.prevent="handleWheel"
         >
           <Button variant="light" @click="playerStore.toggleMute()" class="volume-button">
-            <i v-if="playerStore.volume > 0" class="si si-volume-up"></i>
-            <i v-else class="si si-volume-mute"></i>
+            <template v-if="playerStore.volume > 0">
+              <IconVolume />
+            </template>
+            <template v-else>
+              <IconVolumeOff />
+            </template>
           </Button>
           <div
             v-show="isVolumeSliderVisible"
@@ -316,26 +279,6 @@ watchEffect(() => {
   color: var(--jp-color-text);
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--jp-color-background-soft);
-  border-top: 4px solid var(--jp-color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-.loading-text {
-  color: var(--jp-color-primary-light);
-  font-size: 0.9rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* Responsive adjustments for popover context */
 @media (max-width: 768px) {
   .jukebox-player {
@@ -366,6 +309,7 @@ watchEffect(() => {
     grid-template-areas: 
       "controls"
       "progress"
+      "playback-options"
       "volume";
     grid-template-columns: 1fr;
     gap: 0.5em;
@@ -450,8 +394,8 @@ watchEffect(() => {
 }
 .player-controls-bottom {
   display: grid;
-  grid-template-areas: "controls progress volume";
-  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "controls progress playback-options volume";
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 1em;
 }
@@ -466,6 +410,17 @@ watchEffect(() => {
   display: flex;
   align-items: center;
   gap: 1em;
+}
+.playback-options {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  grid-area: playback-options;
+  justify-content: center;
+}
+.playback-options .active {
+  color: var(--jp-color-text);
+  background: var(--jp-color-primary-light);
 }
 .volume-control {
   grid-area: volume;
@@ -484,12 +439,11 @@ watchEffect(() => {
   box-shadow: var(--shadow-md);
   width: 150px;
 }
-.controls button, .volume-button {
+.controls button, .volume-button, .playback-options button {
   background: none;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: var(--jp-color-primary);
   transition: all 0.2s ease-in-out;
   padding: 0.5rem;
   border-radius: 50%;
@@ -499,20 +453,25 @@ watchEffect(() => {
   min-width: 2.5rem;
   min-height: 2.5rem;
 }
-.controls button:hover:not(:disabled), .volume-button:hover:not(:disabled) {
+
+.controls button, .volume-button {
+  color: var(--jp-color-primary);
+}
+
+.controls button:hover:not(:disabled), .volume-button:hover:not(:disabled), .playback-options button:hover:not(:disabled) {
   background: none;
   transform: scale(1.1);
 }
-.controls button:active:not(:disabled), .volume-button:active:not(:disabled) {
+.controls button:active:not(:disabled), .volume-button:active:not(:disabled), .playback-options button:active:not(:disabled) {
   transform: scale(0.95);
 }
-.controls button:disabled, .volume-button:disabled {
+.controls button:disabled, .volume-button:disabled, .playback-options button:disabled {
   color: var(--jp-color-primary-light);
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;
 }
-.controls button:disabled:hover, .volume-button:disabled:hover {
+.controls button:disabled:hover, .volume-button:disabled:hover, .playback-options button:disabled:hover {
   transform: none;
 }
 
@@ -529,5 +488,9 @@ watchEffect(() => {
 
 .controls button.play-pause:active:not(:disabled) {
   transform: scale(0.9);
+}
+
+.progress-bar-time.time-current {
+  cursor: pointer;
 }
 </style> 

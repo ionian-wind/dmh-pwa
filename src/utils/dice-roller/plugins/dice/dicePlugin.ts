@@ -16,6 +16,7 @@ import {
 } from '../../lib/utils';
 import { inlineRollsPlugin } from '../inline-rolls';
 import { rollReferencesPlugin } from '../roll-references';
+import { debug } from '../../../debug';
 
 // DEBUG LOGGING
 function debugLog(...args: any[]) {

@@ -14,10 +14,9 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/common/Button.vue';
 import PartySelector from '@/components/PartySelector.vue';
-import TabGroup from '@/components/common/TabGroup.vue';
-import TabPanel from '@/components/common/TabPanel.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
+import { IconSwords } from '@tabler/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -318,7 +317,7 @@ onMounted(async () => {
       </template>
       <template #actions>
         <Button v-if="encounter" @click="handleRunCombat" variant="success" :title="t('common.runCombat')">
-          <i class="ra ra-crossed-swords"></i>
+          <IconSwords />
         </Button>
       </template>
       <template #information>

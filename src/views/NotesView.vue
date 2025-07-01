@@ -11,6 +11,8 @@ import NoteCard from '@/components/NoteCard.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import type { Note } from '@/types';
 import { useI18n } from 'vue-i18n';
+import { IconX } from '@tabler/icons-vue';
+import { debug } from '@/utils/debug';
 
 const noteStore = useNoteStore();
 const partyStore = usePartyStore();
@@ -81,7 +83,7 @@ function handleTagClick(tag: string) {
   router.push({ path: '/notes', query: { tag: encodeURIComponent(tag) } });
 }
 async function handleCopy(note: Note) {
-  console.log('NotesView handleCopy', note);
+  debug('NotesView handleCopy', note);
   // Copy all fields except id, createdAt, updatedAt
   const { id, createdAt, updatedAt, ...rest } = note;
   await noteStore.create({ ...rest, hidden: false });
@@ -110,7 +112,7 @@ async function handleCopy(note: Note) {
       <span v-if="noteStore.tagFilter" class="tag-chip">
         #{{ noteStore.tagFilter }}
         <button class="remove-tag" @click="router.push({ path: '/notes' })" :title="t('common.removeTagFilter')">
-          <i class="si si-x"></i>
+          <IconX />
         </button>
       </span>
     </template>

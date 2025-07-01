@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAttrs, ref, watch, nextTick } from 'vue';
 import BaseModal from './common/BaseModal.vue';
+import { debug } from '@/utils/debug';
 
 import DiceBox from '@3d-dice/dice-box';
 import { AdvancedRoller } from '@3d-dice/dice-ui'
@@ -26,7 +27,7 @@ watch(isModalOpen, () =>
           assetPath: '/assets/dice-box/',
           theme: 'default',
           onThemeConfigLoaded: (themeData) => {
-            console.log('Theme loaded:', themeData);
+            debug('Theme loaded:', themeData);
           }
         });
         await diceBox.init();

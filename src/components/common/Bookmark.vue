@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue';
 import Button from './Button.vue';
 import { useBookmarkStore } from '@/stores/bookmarks';
+import { IconBookmark } from '@tabler/icons-vue';
 
 const props = defineProps<{
   noteId: string;
@@ -31,7 +32,7 @@ onMounted(() => bookmarkStore.load());
     @click="handleClick"
     title="Bookmark"
   >
-    <i class="si si-bookmark"></i>
+    <IconBookmark />
   </Button>
 </template>
 

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import Button from './Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
+import { IconPencil, IconTrash, IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
 
 interface Props {
   entity: any | null;
@@ -75,10 +76,10 @@ const toggleSidePanel = () => {
         <template #actions>
           <slot name="actions" />
           <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" :title="t('common.edit')">
-            <i class="si si-pencil"></i>
+            <IconPencil />
           </Button>
           <Button v-if="onDelete" variant="danger" @click="handleDelete" :title="t('common.delete')">
-            <i class="si si-trash"></i>
+            <IconTrash />
           </Button>
         </template>
       </ViewHeader>
@@ -98,7 +99,8 @@ const toggleSidePanel = () => {
         <!-- Side Panel -->
         <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
           <div class="side-panel-toggle-handle" @click="toggleSidePanel">
-            <i :class="isSidePanelVisible ? 'si si-chevron-right' : 'si si-chevron-left'"></i>
+            <IconChevronRight v-if="isSidePanelVisible" />
+            <IconChevronLeft v-else />
           </div>
           <div class="side-panel">
             <slot name="sidepanel" />

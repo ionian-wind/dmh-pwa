@@ -6,6 +6,7 @@ import { useNoteStore } from '@/stores/notes';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 import Button from '@/components/common/Button.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
+import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
 
 // Extended tree node type that includes note data for the Tree component
 interface ExtendedTreeNode {
@@ -225,7 +226,7 @@ onMounted(async () => {
   <div class="module-document-tree">
     <div class="tree-controls">
       <slot name="add-root">
-        <Button size="small" variant="light" @click="openAddRootNote"><span class="si si-plus" /></Button>
+        <Button size="small" variant="light" @click="openAddRootNote"><IconPlus /></Button>
       </slot>
     </div>
     
@@ -239,9 +240,9 @@ onMounted(async () => {
         <div class="module-tree-item-content">
           <span class="module-tree-item-title">{{ item.title }}</span>
           <div class="module-tree-item-controls">
-            <Button size="small" variant="light" @click="openAddNode(item)"><span class="si si-plus" /></Button>
-            <Button size="small" variant="light" @click="openEdit(item)"><span  class="si si-pencil" /></Button>
-            <Button size="small" variant="light" @click="handleRemove(item)"><span  class="si si-x" /></Button>
+            <Button size="small" variant="light" @click="openAddNode(item)"><IconPlus /></Button>
+            <Button size="small" variant="light" @click="openEdit(item)"><IconPencil /></Button>
+            <Button size="small" variant="light" @click="handleRemove(item)"><IconX /></Button>
           </div>
         </div>
       </Tree>

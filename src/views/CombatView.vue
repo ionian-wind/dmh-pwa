@@ -13,6 +13,7 @@ import {useCharacterStore} from "@/stores/characters";
 import {useMonsterStore} from "@/stores/monsters";
 import BaseModal from "@/components/common/BaseModal.vue";
 import ToggleSwitch from "@/components/common/ToggleSwitch.vue";
+import { IconFlag, IconGhost3, IconListNumbers, IconUserPlus, IconUser, IconCheck, IconBolt, IconPlayerPause, IconSwords, IconTrophy } from '@tabler/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -179,7 +180,7 @@ const combatTitle = computed(() => {
   return `${getEncounterName(combat.value.encounterId)} vs ${getPartyName(combat.value.partyId)}`;
 });
 
-// Start battle
+// Start
 function startCombat() {
   if (!combat.value || combat.value.combatants.length < 1) return;
 
@@ -342,7 +343,7 @@ function handleAddParticipants() {
         class="start-btn"
         :disabled="combat.combatants.length < 1"
       >
-        <i class="ra ra-crossed-swords"></i> Start Combat
+        <IconSwords /> Start
       </Button>
       <Button
         v-if="combat && combat.status === 'active'"
@@ -350,7 +351,7 @@ function handleAddParticipants() {
         @click="endCombat"
         class="end-btn"
       >
-        <i class="si si-close"></i> End Combat
+        <IconFlag /> End
       </Button>
     </template>
     <!-- Combat Content -->
@@ -361,19 +362,19 @@ function handleAddParticipants() {
           class="phase-tab" 
           :class="{active: combat && combat.status === 'preparing'}"
         >
-          <i class="ra ra-cycle"></i> Preparation
+          <IconListNumbers /> Preparation
         </div>
         <div 
           class="phase-tab" 
           :class="{active: combat && combat.status === 'active'}"
         >
-          <i class="ra ra-crossed-swords"></i> Active Battle
+          <IconSwords /> Active
         </div>
         <div 
           class="phase-tab" 
           :class="{active: combat && combat.status === 'completed'}"
         >
-          <i class="ra ra-skull-trophy"></i> Battle Ended
+          <IconTrophy /> Ended
         </div>
       </div>
 
@@ -400,7 +401,7 @@ function handleAddParticipants() {
 
       <!-- Ended State -->
       <div v-if="combat && combat.status === 'completed'" class="combat-summary empty-state">
-        <i class="si si-flag"></i> The battle has concluded after {{ combat.currentRound }} rounds.
+        <IconFlag /> The encounter has concluded after {{ combat.currentRound }} rounds.
       </div>
 
       <!-- Participants Section -->
@@ -414,7 +415,7 @@ function handleAddParticipants() {
             size="large"
             :title="t('combat.addParticipant')"
           >
-            <i class="si si-user-plus"></i>
+            <IconUserPlus />
           </Button>
         </div>
 
@@ -433,8 +434,10 @@ function handleAddParticipants() {
             }"
           >
             <div class="participant-artwork">
-              <i v-if="participant.type === 'player'" class="si si-user"></i>
-              <i v-else class="ra ra-wolf-head"></i>
+              <template v-if="participant.type === 'player'">
+                <IconUser />
+              </template>
+              <IconGhost3 v-else />
             </div>
 
             <div class="participant-info">
@@ -452,7 +455,7 @@ function handleAddParticipants() {
                   <i class="fas fa-clock"></i> Postponed
                 </span>
                 <span v-else-if="participant.hasActed" class="participant-badge badge-acted">
-                  <i class="si si-check-circle"></i> Acted this round
+                  <IconCheckCircle /> Acted this round
                 </span>
               </span>
             </div>
@@ -464,14 +467,14 @@ function handleAddParticipants() {
                 size="large"
                 @click="activatePostponed(participant.id)"
               >
-                <i class="si si-bolt"></i>
+                <IconBolt />
               </Button>
               <div class="controls" v-if="combat && combat.status === 'active' && activeParticipantIndex === index">
                 <Button size="large" variant="warning" @click="postponeCurrent" :disabled="!currentParticipant">
-                  <i class="si si-pause"></i>
+                  <IconPlayerPause />
                 </Button>
                 <Button size="large" variant="success" @click="nextTurn" :disabled="!currentParticipant">
-                  <i class="si si-check"></i>
+                  <IconCheck />
                 </Button>
               </div>
             </div>
@@ -903,6 +906,13 @@ function handleAddParticipants() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.phase-tab .tabler-icon {
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style> 
 

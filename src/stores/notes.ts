@@ -5,6 +5,7 @@ import { useStore } from '@/utils/storage';
 import noteSchema from "@/schemas/note.schema.json";
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import { useMentionsStore } from '@/utils/storage';
+import { debug } from '../utils/debug';
 
 export const useNoteStore = defineStore('notes', () => {
   const base = useStore<Note>({ storeName: 'notes', validationSchema: noteSchema });
@@ -13,7 +14,7 @@ export const useNoteStore = defineStore('notes', () => {
   const indexation = useMentionsStore();
   
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
-    console.log('noteStore.create called', note);
+    debug('noteStore.create called', note);
     const newNote = await base.create(note);
     // Indexation
     const from = { kind: 'note', id: newNote.id };

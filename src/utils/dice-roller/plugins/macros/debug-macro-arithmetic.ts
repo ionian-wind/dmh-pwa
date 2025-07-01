@@ -2,11 +2,12 @@
 import { DiceRollerCore } from '../../core';
 import { macrosPlugin } from './index';
 import { dicePlugin } from '../dice/dicePlugin';
+import { debug, debugError } from '../../debug';
 
 // Register plugins
-console.log('[DEBUG] Registering dice plugin...');
+debug('[DEBUG] Registering dice plugin...');
 DiceRollerCore.registerPlugin(dicePlugin);
-console.log('[DEBUG] Registering macros plugin...');
+debug('[DEBUG] Registering macros plugin...');
 DiceRollerCore.registerPlugin(macrosPlugin);
 
 // Macro map with nested macro
@@ -19,32 +20,32 @@ function defineDebug() {
   };
 
   const expr = '1d20 + #b';
-  console.log('[DEBUG] Parsing:', expr);
+  debug('[DEBUG] Parsing:', expr);
   const ast = DiceRollerCore.parseInput(expr);
-  console.log('[DEBUG] AST:', JSON.stringify(ast, null, 2));
+  debug('[DEBUG] AST:', JSON.stringify(ast, null, 2));
 
   const context: any = { macroMap };
-  console.log('[DEBUG] Evaluating AST...');
+  debug('[DEBUG] Evaluating AST...');
   try {
     const result = DiceRollerCore.evaluate(ast, context);
-    console.log('[DEBUG] Evaluation result:', JSON.stringify(result, null, 2));
+    debug('[DEBUG] Evaluation result:', JSON.stringify(result, null, 2));
   } catch (err) {
-    console.error('[DEBUG] Evaluation error:', err);
+    debugError('[DEBUG] Evaluation error:', err);
   }
 }
 
 // Minimal arithmetic test
 function minimalArithmeticTest() {
   const expr = '1+2';
-  console.log('[DEBUG] Minimal arithmetic test: Parsing:', expr);
+  debug('[DEBUG] Minimal arithmetic test: Parsing:', expr);
   const ast = DiceRollerCore.parseInput(expr);
-  console.log('[DEBUG] Minimal arithmetic AST:', JSON.stringify(ast, null, 2));
-  console.log('[DEBUG] Evaluating minimal arithmetic AST...');
+  debug('[DEBUG] Minimal arithmetic AST:', JSON.stringify(ast, null, 2));
+  debug('[DEBUG] Evaluating minimal arithmetic AST...');
   try {
     const result = DiceRollerCore.evaluate(ast, {});
-    console.log('[DEBUG] Minimal arithmetic evaluation result:', JSON.stringify(result, null, 2));
+    debug('[DEBUG] Minimal arithmetic evaluation result:', JSON.stringify(result, null, 2));
   } catch (err) {
-    console.error('[DEBUG] Minimal arithmetic evaluation error:', err);
+    debugError('[DEBUG] Minimal arithmetic evaluation error:', err);
   }
 }
 

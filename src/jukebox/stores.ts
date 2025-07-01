@@ -95,4 +95,24 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
     getPictureStyle,
     clearCache
   };
-}); 
+});
+
+/**
+ * Returns true if the given track is the currently active track in the current playlist context.
+ * @param currentTrack The currently playing track (from playerStore)
+ * @param track The track to check
+ * @param activePlaylistId The active playlist id (from configStore)
+ * @param selectedPlaylistId The selected playlist id (from JukeboxView)
+ */
+export function trackIsActive(
+  currentTrack: JukeboxTrack | null,
+  track: JukeboxTrack,
+  activePlaylistId: string | null,
+  selectedPlaylistId: string | null
+): boolean {
+  return Boolean(
+    currentTrack &&
+    currentTrack.id === track.id &&
+    activePlaylistId === selectedPlaylistId
+  );
+} 

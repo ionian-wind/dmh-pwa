@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import Button from '@/components/common/Button.vue';
+import { IconGift, IconDownload, IconX, IconSignal3g, IconDeviceMobile } from '@tabler/icons-vue';
 
 const isOnline = ref(navigator.onLine);
 const isStandalone = ref(false);
@@ -53,7 +54,7 @@ onMounted(() => {
     <div v-if="showUpdatePrompt" class="pwa-update-prompt">
       <div class="pwa-update-content">
         <div class="pwa-update-icon">
-          <i class="si si-gift"></i>
+          <IconGift />
         </div>
         <div class="pwa-update-text">
           <h3>Update Available</h3>
@@ -61,11 +62,11 @@ onMounted(() => {
         </div>
         <div class="pwa-update-actions">
           <Button @click="updateApp" variant="success" size="small">
-            <i class="si si-download"></i>
+            <IconDownload />
             <span>Update Now</span>
           </Button>
           <Button @click="dismissUpdate" variant="secondary" size="small">
-            <i class="si si-close"></i>
+            <IconX />
             <span>Later</span>
           </Button>
         </div>
@@ -75,11 +76,11 @@ onMounted(() => {
     <!-- Status Indicators -->
     <div class="pwa-status-indicators">
       <div v-if="!isOnline" class="pwa-status-item offline">
-        <i class="si si-signal pwa-status-icon"></i>
+        <IconSignal3g class="pwa-status-icon" />
         <span class="pwa-status-text">Offline Mode</span>
       </div>
       <div v-if="isStandalone" class="pwa-status-item standalone">
-        <i class="si si-mobile pwa-status-icon"></i>
+        <IconDeviceMobile class="pwa-status-icon" />
         <span class="pwa-status-text">App Mode</span>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import PopoverPanel from './PopoverPanel.vue';
 import Button from './Button.vue';
 import { useI18n } from 'vue-i18n';
+import { IconUser } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
@@ -77,7 +78,7 @@ const placements = [
       >
         <template #trigger>
           <Button @click="titleOpen = !titleOpen">
-            <i class="si si-user"></i>
+            <IconUser />
             Profile Menu
           </Button>
         </template>

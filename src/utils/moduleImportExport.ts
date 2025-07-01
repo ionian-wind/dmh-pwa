@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import type { Module, Note, ModuleTreeNode } from '@/types';
 import {openDB, StorageError} from "./storage";
+import { debug, debugWarn } from './debug';
 
 export interface ImportValidationResult {
   missingNoteIds: string[]; // noteIds in tree but not in notes
@@ -91,11 +92,9 @@ export async function parseModuleZip(zipFile: Blob): Promise<{
     let noteData: any;
     try {
       noteData = JSON.parse(noteContent);
-      if (!noteData.id) {
-        console.log(noteData);
-      }
+      debug(noteData);
     } catch (e) {
-      console.warn(`Skipping invalid note file: ${noteFile.name}`);
+      debugWarn(`Skipping invalid note file: ${noteFile.name}`);
       continue;
     }
     notes.push(noteData);

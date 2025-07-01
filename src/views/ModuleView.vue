@@ -31,6 +31,8 @@ import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
 import JSZip from 'jszip';
 import { cropTitle } from '@/utils/cropTitle';
 import BaseModal from '@/components/common/BaseModal.vue';
+import { IconDownload, IconBookmark, IconPencil, IconTrash } from '@tabler/icons-vue';
+import { debug } from '@/utils/debug';
 
 interface TOCItem {
   id: string;
@@ -47,7 +49,6 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const noteStore = useNoteStore();
 const playlistsStore = useJukeboxPlaylistsStore();
-const playerStore = useJukeboxPlayerStore();
 const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
 const mentionsStore = useMentionsStore();
@@ -112,6 +113,8 @@ const activeAnchorId = ref<string | null>(null);
 const editingBookmark = ref<Bookmark | null>(null);
 const editingTitle = ref('');
 
+const playerStore = useJukeboxPlayerStore();
+
 onMounted(async () => {
   await Promise.all([
     moduleStore.load(),
@@ -135,7 +138,7 @@ function handleHashChange() {
   if (activeTab.value !== 'document') return;
   const anchorId = window.location.hash.replace(/^#/, '');
   if (anchorId) {
-    console.log({ handleHashChange: anchorId });
+    debug({ handleHashChange: anchorId });
     scrollToBookmark(anchorId);
   }
 }
@@ -175,25 +178,13 @@ const moduleTitle = computed(() => module.value?.name || '');
 const moduleSubtitle = computed(() => module.value?.description || '');
 
 function handleSaveNoteTree(newTree: any) {
-  console.log('[ModuleView] Saving tree', newTree);
+  debug('[ModuleView] Saving tree', newTree);
   if (!module.value) return;
   moduleStore.update(module.value.id, { ...module.value, noteTree: newTree });
 }
 
 function handlePlayPlaylist(playlist: JukeboxPlaylist) {
-  // Set the active playlist in config
-  configStore.activePlaylistId.value = playlist.id;
-  
-  // Get the tracks for this playlist
-  const playlistTracks = playlist.trackIds
-    .map((trackId: string) => tracksStore.items.value.find(t => t.id === trackId))
-    .filter((track): track is JukeboxTrack => track !== undefined);
-  
-  // Set the queue and start playing
-  if (playlistTracks.length > 0) {
-    playerStore.setQueue(playlistTracks, playlist.id);
-    playerStore.playTrack(playlistTracks[0]);
-  }
+  // TODO: implement
 }
 
 function handleTOCUpdate(toc: TOCItem[]) {
@@ -313,7 +304,7 @@ async function saveEditBookmark() {
   >
     <template #actions>
       <Button @click="handleExportModule" variant="success" :title="t('common.export')">
-        <i class="si si-download"></i>
+        <IconDownload />
       </Button>
     </template>
     <template #document>
@@ -413,7 +404,7 @@ async function saveEditBookmark() {
                 <li v-for="bookmark in moduleBookmarks" :key="bookmark.id" class="bookmark-list-item">
                   <div class="bookmark-list-row">
                     <span class="bookmark-link" @click="scrollToBookmark(bookmark.noteId)">
-                      <i class="si si-bookmark"></i>
+                      <IconBookmark />
                       {{ cropTitle(bookmark.title || noteStore.getById(bookmark.noteId)?.title || 'Untitled') }}
                     </span>
                     <Button
@@ -423,7 +414,7 @@ async function saveEditBookmark() {
                       title="Edit bookmark"
                       @click.stop.prevent="openEditBookmark(bookmark)"
                     >
-                      <i class="si si-pencil"></i>
+                      <IconPencil />
                     </Button>
                     <Button
                       variant="light"
@@ -432,7 +423,7 @@ async function saveEditBookmark() {
                       title="Delete bookmark"
                       @click.stop.prevent="bookmarkStore.removeBookmark(bookmark.moduleId, bookmark.noteId)"
                     >
-                      <i class="si si-trash"></i>
+                      <IconTrash />
                     </Button>
                   </div>
                 </li>

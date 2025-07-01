@@ -2,6 +2,8 @@
 import { useI18n } from 'vue-i18n';
 import Button from './Button.vue';
 import { computed, useSlots, Fragment, Comment } from 'vue';
+import { IconEye, IconPencil, IconCopy, IconTrash } from '@tabler/icons-vue';
+import { debug } from '@/utils/debug';
 
 const { t } = useI18n();
 
@@ -61,16 +63,16 @@ const noBorderAfterHeader = computed(() => {
       </div>
       <div class="base-card-actions-right">
         <Button v-if="showView" variant="light" size="small" @click="$emit('view')" :title="t('common.view')">
-          <i class="si si-eye"></i>
+          <IconEye />
         </Button>
         <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" :title="t('common.edit')">
-          <i class="si si-pencil"></i>
+          <IconPencil />
         </Button>
-        <Button variant="secondary" size="small" @click="() => { console.log('BaseCard copy button clicked'); $emit('copy'); }" :title="t('common.copy')">
-          <i class="si si-copy"></i>
+        <Button variant="secondary" size="small" @click="() => { debug('BaseCard copy button clicked'); $emit('copy'); }" :title="t('common.copy')">
+          <IconCopy />
         </Button>
         <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" :title="t('common.delete')">
-          <i class="si si-trash"></i>
+          <IconTrash />
         </Button>
       </div>
     </div>

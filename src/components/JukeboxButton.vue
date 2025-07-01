@@ -7,12 +7,12 @@ import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
 import Button from './common/Button.vue';
+import { IconMusic, IconExternalLink } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const isPopoverOpen = ref(false);
-const playerStore = useJukeboxPlayerStore();
 const hasAppeared = ref(false);
 
 // Props for left menu integration
@@ -52,6 +52,8 @@ const navigateToJukebox = () => {
   router.push('/jukebox');
   isPopoverOpen.value = false;
 };
+
+const playerStore = useJukeboxPlayerStore();
 </script>
 
 <template>
@@ -71,7 +73,7 @@ const navigateToJukebox = () => {
         :title="t('app.jukebox')"
         :class="['menu-item', { active: isOnJukeboxPage }]"
       >
-        <i class="si si-music-note menu-icon" />
+        <IconMusic class="menu-icon" />
         <span v-if="!props.leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
       </Button>
     </template>
@@ -82,7 +84,7 @@ const navigateToJukebox = () => {
         :title="t('common.openFullscreen')"
         class="jukebox-nav-button"
       >
-        <i class="si si-external-link"></i>
+        <IconExternalLink />
       </Button>
     </template>
     <div class="jukebox-popover-content">
@@ -98,7 +100,7 @@ const navigateToJukebox = () => {
     :title="t('app.jukebox')"
     :class="['menu-item', { active: isOnJukeboxPage }]"
   >
-    <i class="si si-music-note menu-icon" />
+    <IconMusic class="menu-icon" />
     <span v-if="!props.leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
   </Button>
 </template>

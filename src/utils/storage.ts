@@ -9,6 +9,7 @@ import {WithMetadata} from "@/types";
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
+import { debug } from './debug';
 
 export class StorageError extends Error {
   constructor(
@@ -67,7 +68,7 @@ export async function openDB(): Promise<IDBPDatabase> {
       
       let chain: Promise<any> = Promise.resolve();
 
-      console.log('{{{ MIGRATIONS to run: %i }}}', toRun.length);
+      debug('{{{ MIGRATIONS to run: %i }}}', toRun.length);
       
       for (const migration of toRun) {
         chain = chain
@@ -79,18 +80,18 @@ export async function openDB(): Promise<IDBPDatabase> {
               appliedAt: Date.now()
             };
           
-            console.log('{{{ MIGRATION loading %o }}}', info);
+            debug('{{{ MIGRATION loading %o }}}', info);
           
             return Promise.resolve(migration.go(transaction))
               .then(() => transaction.objectStore(MIGRATIONS_STORE).put(info)
-              .then(() => console.log('{{{ MIGRATION loaded %o }}}', info)))
+              .then(() => debug('{{{ MIGRATION loaded %o }}}', info)))
           });
       }
 
       chain
-        .then(() => console.log('{{{ MIGRATIONS finished successfully }}}'))
+        .then(() => debug('{{{ MIGRATIONS finished successfully }}}'))
         .catch(err => {
-          console.log('{{{ MIGRATIONS failed }}}');
+          debug('{{{ MIGRATIONS failed }}}');
           transaction.abort();
           throw err;
         });
@@ -379,12 +380,12 @@ export async function initializeDatabase(): Promise<void> {
   }
   
   try {
-    console.log('Initializing database...');
+    debug('Initializing database...');
     await openDB();
     isInitialized = true;
-    console.log('Database initialized successfully');
+    debug('Database initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    debug('Failed to initialize database:', error);
     throw error;
   }
 }

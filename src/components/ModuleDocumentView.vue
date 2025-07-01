@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router';
 // @ts-ignore: no types for vue-virtual-scroller
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import Bookmark from '@/components/common/Bookmark.vue';
+import { debug, debugError } from '@/utils/debug';
 
 interface TOCItem {
   id: string;
@@ -135,7 +136,7 @@ function handleHeadingClick(event: Event) {
         navigator.clipboard.writeText(url),
         scrollToHeading(id, router, heading),
       ])
-        .catch(err => console.error(err));
+        .catch(err => debugError(err));
     }
   }
 }
@@ -144,7 +145,7 @@ function handleHeadingClick(event: Event) {
  * Scroll to a chunk and heading by anchorId (note id)
  */
 async function scrollToAnchor(anchorId: string) {
-  console.log('scrollToAnchor', { anchorId });
+  debug('scrollToAnchor', { anchorId });
   // Find the chunk index by noteId or chunk id
   const idx = chunks.value.findIndex(chunk => chunk.noteId === anchorId || chunk.id === anchorId);
   if (idx === -1) return;

@@ -1,3 +1,6 @@
+import { debug } from '../utils/debug';
+import { debugError } from '../utils/debug';
+
 export async function pickAudioFiles(): Promise<FileSystemFileHandle[]> {
   // Only works in Chromium browsers
   // @ts-ignore
@@ -12,7 +15,7 @@ export async function pickAudioFiles(): Promise<FileSystemFileHandle[]> {
     excludeAcceptAllOption: true,
   });
 
-  console.log(handles);
+  debug(handles);
 
   return handles;
 }
@@ -27,7 +30,7 @@ async function getAudioMetadata(file: File): Promise<{ duration: number }> {
     audio.preload = 'metadata';
     audio.src = URL.createObjectURL(file);
     audio.onloadedmetadata = () => {
-        console.log({ duration: audio.duration })
+        debug({ duration: audio.duration })
       resolve({ duration: audio.duration });
       URL.revokeObjectURL(audio.src);
     };
@@ -50,7 +53,7 @@ export async function extractTrackMetadata(file: File): Promise<any> {
       if (event.data.type === 'success') {
         resolve({ ...event.data.metadata, ...audioMetadata });
       } else {
-        console.error('Jukebox Worker Error:', event.data.error);
+        debugError('Jukebox Worker Error:', event.data.error);
         // Resolve with an empty object so the flow doesn't break
         resolve({});
       }
@@ -58,7 +61,7 @@ export async function extractTrackMetadata(file: File): Promise<any> {
     };
 
     worker.onerror = (error: ErrorEvent) => {
-      console.error('Jukebox Worker failed to load:', error);
+      debugError('Jukebox Worker failed to load:', error);
       // Reject or resolve with empty, depends on how you want to handle it
       resolve({});
       worker.terminate();

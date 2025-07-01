@@ -3,6 +3,7 @@
 import type { DiceRollerPlugin, ASTNode, EvaluationContext, EvaluationResult } from '../../core';
 import type { TableAstNode, TableExtractionResult } from './types';
 import { debugLog } from '../../lib/utils';
+import { debug } from '../../../debug';
 
 // --- Parsing ---
 export function parseTableAst(input: string): ASTNode {
@@ -105,9 +106,7 @@ export const tablesPlugin: DiceRollerPlugin = {
   },
   extractTables(ast: any): string[] {
     if (!ast) return [];
-    if (typeof window === 'undefined') {
-      console.log('[tablesPlugin] extractTables AST:', JSON.stringify(ast));
-    }
+    debug('[tablesPlugin] extractTables AST:', JSON.stringify(ast));
     if (ast.type === 'table') {
       return [ast.name];
     }
@@ -123,9 +122,7 @@ export const tablesPlugin: DiceRollerPlugin = {
     return found;
   },
   evaluateTable(ast: any, context: any) {
-    if (typeof window === 'undefined') {
-      console.log('[tablesPlugin] evaluateTable called:', JSON.stringify(ast));
-    }
+    debug('[tablesPlugin] evaluateTable called:', JSON.stringify(ast));
     throw new Error('Table evaluation not implemented');
   },
 };

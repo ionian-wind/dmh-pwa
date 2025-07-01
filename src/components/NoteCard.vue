@@ -5,6 +5,8 @@ import Button from '@/components/common/Button.vue';
 import { ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useI18n } from 'vue-i18n';
+import { IconChevronUp, IconChevronDown } from '@tabler/icons-vue';
+import { debug } from '@/utils/debug';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
@@ -34,7 +36,7 @@ function handleEdit() { emit('edit', props.note); }
 function handleDelete() { emit('delete', props.note); }
 function toggleExpand() { expanded.value = !expanded.value; }
 function handleCopy() { 
-  console.log('NoteCard handleCopy', props.note);
+  debug('NoteCard handleCopy', props.note);
   emit('copy', props.note); 
 }
 </script>
@@ -67,7 +69,8 @@ function handleCopy() {
         @click="toggleExpand"
         :title="expanded ? t('common.collapse') : t('common.expand')"
       >
-        <i :class="['si', expanded ? 'si-chevron-up' : 'si-chevron-down']"></i>
+        <IconChevronUp v-if="expanded" />
+        <IconChevronDown v-else />
       </Button>
     </template>
   </BaseCard>

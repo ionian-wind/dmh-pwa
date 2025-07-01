@@ -1,4 +1,5 @@
 import { CstNode, IToken } from 'chevrotain';
+import { debug } from '../../../debug';
 
 // AST node types
 export type DiceAstNode = DiceNode | ArithmeticNode | NumberNode | FunctionNode | UnaryNode | MacroNode | TableNode | GroupedRollNode;
@@ -126,7 +127,7 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
       let label: string | undefined = undefined;
       
       // Debug: print keys in cst.children
-      console.log('[AST DEBUG] dice cst.children keys:', Object.keys(cst.children));
+      debug('[AST DEBUG] dice cst.children keys:', Object.keys(cst.children));
       
       // Extract count and sides based on CST structure
       const allIntegers = (cst.children.Integer || []).filter((tok: any) => isIToken(tok));
@@ -160,8 +161,8 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
       
       // If we have lexer tokens and no label was found, try to reconstruct from lexer tokens
       if (!label && lexerTokens) {
-        console.log('[AST DEBUG] Attempting to reconstruct label from lexer tokens');
-        console.log('[AST DEBUG] Lexer tokens:', lexerTokens.map((t: any) => ({ image: t.image, type: t.tokenType.name })));
+        debug('[AST DEBUG] Attempting to reconstruct label from lexer tokens');
+        debug('[AST DEBUG] Lexer tokens:', lexerTokens.map((t: any) => ({ image: t.image, type: t.tokenType.name })));
         
         // Find the dice expression in the lexer tokens and extract the label
         const diceStart = lexerTokens.findIndex((tok: any) => 
@@ -169,7 +170,7 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
           lexerTokens[lexerTokens.indexOf(tok) + 1]?.tokenType.name === 'D'
         );
         
-        console.log('[AST DEBUG] Dice start index:', diceStart);
+        debug('[AST DEBUG] Dice start index:', diceStart);
         
         if (diceStart >= 0) {
           // Look for label tokens after the dice expression
@@ -177,22 +178,22 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
             idx > diceStart && tok.tokenType.name === 'LBracket'
           );
           
-          console.log('[AST DEBUG] Label start index:', labelStart);
+          debug('[AST DEBUG] Label start index:', labelStart);
           
           if (labelStart >= 0) {
             const labelEnd = lexerTokens.findIndex((tok: any, idx: number) => 
               idx > labelStart && tok.tokenType.name === 'RBracket'
             );
             
-            console.log('[AST DEBUG] Label end index:', labelEnd);
+            debug('[AST DEBUG] Label end index:', labelEnd);
             
             if (labelEnd >= 0) {
               // Extract all tokens between LBracket and RBracket
               const labelTokens = lexerTokens.slice(labelStart + 1, labelEnd);
-              console.log('[AST DEBUG] Label tokens:', labelTokens.map((t: any) => ({ image: t.image, type: t.tokenType.name })));
+              debug('[AST DEBUG] Label tokens:', labelTokens.map((t: any) => ({ image: t.image, type: t.tokenType.name })));
               const labelParts = labelTokens.map((tok: any) => tok.image);
               label = labelParts.join('');
-              console.log('[AST DEBUG] Reconstructed label:', label);
+              debug('[AST DEBUG] Reconstructed label:', label);
             }
           }
         }
@@ -201,8 +202,8 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
       // Debug: print keys in cst.children
       if (typeof window === 'undefined') {
         // Only log in Node.js
-        console.log('[AST DEBUG] dice cst.children keys:', Object.keys(cst.children));
-        console.log('[AST DEBUG] count:', count, 'sides:', sides);
+        debug('[AST DEBUG] dice cst.children keys:', Object.keys(cst.children));
+        debug('[AST DEBUG] count:', count, 'sides:', sides);
       }
       
       // Modifiers
@@ -328,7 +329,7 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
       }
       
       if (typeof window === 'undefined') {
-        console.log('[AST DEBUG] final modifiers:', modifiers);
+        debug('[AST DEBUG] final modifiers:', modifiers);
       }
       
       return { type: 'dice', count, sides, modifiers, label };
@@ -461,7 +462,7 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
       const modifiers: ModifierNode[] = [];
       for (const key of Object.keys(cst.children)) {
         if (typeof window === 'undefined') {
-          console.log(`[AST DEBUG] Checking key: ${key}`);
+          debug(`[AST DEBUG] Checking key: ${key}`);
         }
         if ([
           'Kh','Kl','Dh','Dl','Kgt','Klt','R','Ro','Rlt','Rgt','Req','Explode','Mi','Ma','M','Gt','Lt','Eq','S','F','Cs','Cf','Sa','Sd','O'
@@ -471,21 +472,21 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
             continue;
           }
           if (typeof window === 'undefined') {
-            console.log(`[AST DEBUG] Found modifier key: ${key}`);
+            debug(`[AST DEBUG] Found modifier key: ${key}`);
           }
           const arr = cst.children[key];
           if (arr && arr.length > 0) {
             if (typeof window === 'undefined') {
-              console.log(`[AST DEBUG] Modifier array length: ${arr.length}`);
+              debug(`[AST DEBUG] Modifier array length: ${arr.length}`);
             }
             for (const tok of arr) {
               if (typeof window === 'undefined') {
-                console.log(`[AST DEBUG] Checking token:`, tok);
+                debug(`[AST DEBUG] Checking token:`, tok);
                 if (isIToken(tok)) {
-                  console.log(`[AST DEBUG] isIToken(tok): true`);
-                  console.log(`[AST DEBUG] typeof tok.image: ${typeof tok.image}`);
+                  debug(`[AST DEBUG] isIToken(tok): true`);
+                  debug(`[AST DEBUG] typeof tok.image: ${typeof tok.image}`);
                 } else {
-                  console.log(`[AST DEBUG] isIToken(tok): false`);
+                  debug(`[AST DEBUG] isIToken(tok): false`);
                 }
               }
               if (tok && isIToken(tok) && typeof tok.image === 'string') {

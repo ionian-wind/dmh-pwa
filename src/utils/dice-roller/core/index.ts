@@ -3,6 +3,7 @@ import type { ASTNode, EvaluationContext, DiceRollerPlugin, EvaluationResult } f
 import { SyntaxError, ValidationError, MissingDataError } from '../lib/types';
 import { traverseAST } from '../lib/utils';
 import { assignInlineRollIndices } from '../plugins/inline-rolls';
+import { debug } from '../../debug';
 
 // Plugin registry
 const plugins: DiceRollerPlugin[] = [];
@@ -61,7 +62,7 @@ export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationRe
   // DEBUG LOGGING
   function debugLog(...args: any[]) {
     if (typeof window === 'undefined') {
-      console.log('[core]', ...args);
+      debug('[core]', ...args);
     }
   }
 
@@ -69,7 +70,7 @@ export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationRe
   const warnings: string[] = context.warnings || [];
   
   if (typeof window === 'undefined') {
-    console.log('[core] evaluate called with node:', JSON.stringify(ast));
+    debug('[core] evaluate called with node:', JSON.stringify(ast));
   }
   
   try {

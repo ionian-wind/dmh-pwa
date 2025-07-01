@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import VueDraggable from 'vuedraggable';
+import { IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
 
 const props = defineProps({
   items: { type: Array, required: true },
@@ -168,7 +169,8 @@ const cardPropsWithDraggable = (item: any) => {
       <!-- Side Panel -->
       <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
         <div class="side-panel-toggle-handle" @click="toggleSidePanel">
-          <i :class="isSidePanelVisible ? 'si si-chevron-right' : 'si si-chevron-left'"></i>
+          <IconChevronRight v-if="isSidePanelVisible" />
+          <IconChevronLeft v-else />
         </div>
         <div class="side-panel">
           <slot name="sidepanel" />

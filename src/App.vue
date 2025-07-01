@@ -12,6 +12,8 @@ import LeftMenu from '@/components/LeftMenu.vue'
 import { Section } from '@/types'
 import { useI18n } from 'vue-i18n'
 
+import { IconMaximize, IconMaximizeOff, IconDice5, IconNote, IconUser, IconUsers, IconBook, IconGhost3, IconSwords } from '@tabler/icons-vue';
+
 const leftMenuMinimized = ref(false)
 function toggleLeftMenu() {
   leftMenuMinimized.value = !leftMenuMinimized.value
@@ -24,16 +26,16 @@ interface SectionItem {
   section: Section;
   label: string;
   path: string;
-  icon: string;
+  icon: any; // Tabler icon component
 }
 
 const sections: SectionItem[] = [
-  { section: Section.NOTES, label: t('navigation.notes'), path: '/notes', icon: 'ra ra-scroll-unfurled' },
-  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: 'si si-user' },
-  { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties', icon: 'ra ra-double-team' },
-  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules', icon: 'si si-book' },
-  { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters', icon: 'ra ra-wolf-head' },
-  { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters', icon: 'ra ra-crossed-swords' },
+  { section: Section.NOTES, label: t('navigation.notes'), path: '/notes', icon: IconNote },
+  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: IconUser },
+  { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties', icon: IconUsers },
+  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules', icon: IconBook },
+  { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters', icon: IconGhost3 },
+  { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters', icon: IconSwords },
 ]
 
 function isActive(item: SectionItem): boolean {
@@ -115,19 +117,15 @@ onUnmounted(() => {
           :title="item.label"
           variant="primary"
         >
-          <i :class="item.icon" class="menu-icon" />
+          <component :is="item.icon" class="menu-icon" />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ item.label }}</span>
         </Button>
       </template>
       <template #bottom>
         <Button variant="primary" @click="openRollModal" :title="t('app.roll')">
-          <i class="ra ra-perspective-dice-one" />
+          <IconDice5 />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.roll') }}</span>
         </Button>
-        <!-- <Button variant="primary" @click="openJukebox" :title="t('app.jukebox')">
-          <i class="si si-music-note" />
-          <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.jukebox') }}</span>
-        </Button> -->
 
         <JukeboxButton :left-menu-minimized="leftMenuMinimized" />
 
@@ -137,8 +135,8 @@ onUnmounted(() => {
           @click="toggleFullscreen"
           :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
         >
-          <i v-if="!isFullscreen" class="si si-fullscreen"></i>
-          <i v-else class="si si-fullscreen-exit"></i>
+          <IconMaximize v-if="!isFullscreen" />
+          <IconMaximizeOff v-else />
         </Button>
 
         <LanguageSwitcher v-if="!leftMenuMinimized" />
@@ -154,18 +152,9 @@ onUnmounted(() => {
         </RouterView>
       </main>
     </div>
-    <!-- Floating Action Buttons -->
-    <!--div class="fab-container-left">
-      <JukeboxButton class="fab-item" />
-    </div>
-    <div class="fab-container-right">
-      <RollButton class="fab-item" />
-    </div-->
-    <!-- Roll Modal (if needed) -->
+
     <RollModal ref="rollModalRef" @close="closeRollModal" />
-    <!-- Jukebox Modal (if needed) -->
-    <!-- <JukeboxButton v-if="jukeboxOpen" @close="closeJukebox" /> -->
-    
+
     <!-- PWA Components -->
     <PWAInstallPrompt />
     <PWAStatus />

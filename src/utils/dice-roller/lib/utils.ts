@@ -1,6 +1,7 @@
 // Shared utilities for the dice roller system
 
 import type { ASTNode, EvaluationContext } from './types';
+import { debug } from '../../debug';
 
 // AST traversal utilities
 export function traverseAST(node: ASTNode, visitor: (node: ASTNode) => void): void {
@@ -162,6 +163,6 @@ export function explodeDice(
 // Debug log utility
 export function debugLog(module: string, ...args: any[]) {
   if (typeof window === 'undefined') {
-    console.log(`[${module}]`, ...args);
+    debug(`[${module}]`, ...args);
   }
 } 

@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n';
 import ImportValidationModal from '@/components/ImportValidationModal.vue';
 import { parseModuleZip, importModuleFromZip, validateModuleImport, type ImportValidationResult } from '@/utils/moduleImportExport';
 import { deepUnwrap } from '@/utils/deepUnwrap';
+import { IconUpload } from '@tabler/icons-vue';
 
 const router = useRouter();
 const moduleStore = useModuleStore();
@@ -121,7 +122,7 @@ function handleImportCancel() {
     >
       <template #actions>
         <label class="btn btn--success btn--medium import-module" :title="t('backup.importModule')">
-          <i class="si si-upload"></i>
+          <IconUpload />
           <input type="file" accept=".zip" @change="handleModuleImport" style="display:none" />
         </label>
       </template>

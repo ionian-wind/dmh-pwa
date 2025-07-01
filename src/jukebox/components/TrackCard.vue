@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { IconMusic, IconPlus, IconX } from '@tabler/icons-vue';
 
 import Button from '@/components/common/Button.vue';
 import type { JukeboxTrack } from '@/jukebox/types';
@@ -44,7 +45,7 @@ const albumArtStyle = computed(() => {
   >
     <div v-if="track.picture" :style="albumArtStyle" class="track-artwork"></div>
     <div v-else class="track-artwork track-artwork-placeholder">
-      <i class="si si-music-note"></i>
+      <IconMusic />
     </div>
     <div class="track-info">
       <span class="track-title">{{ track.title }}</span>
@@ -52,8 +53,8 @@ const albumArtStyle = computed(() => {
     </div>
     <div class="track-duration">{{ track.duration ? formatTime(track.duration) : '' }}</div>
     <div class="track-actions">
-      <Button variant="light" @click.stop="handleAddToPlaylist"><i class="si si-plus"></i></Button>
-      <Button variant="light" @click.stop="handleRemove"><i class="si si-x"></i></Button>
+      <Button variant="light" @click.stop="handleAddToPlaylist"><IconPlus /></Button>
+      <Button variant="light" @click.stop="handleRemove"><IconX /></Button>
     </div>
   </li>
 </template>

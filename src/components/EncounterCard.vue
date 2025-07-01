@@ -5,6 +5,7 @@ import {computed, onMounted} from 'vue';
 import Button from '@/components/common/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 import { useI18n } from 'vue-i18n';
+import { IconSwords } from '@tabler/icons-vue';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
@@ -65,7 +66,7 @@ function handleCopy() { emit('copy', props.encounter); }
     </div>
     <template #actions>
       <Button size="small" variant="success" @click="handleRunCombat" :title="t('common.runCombat')">
-        <i class="ra ra-crossed-swords"></i>
+        <IconSwords />
       </Button>
     </template>
   </BaseCard>

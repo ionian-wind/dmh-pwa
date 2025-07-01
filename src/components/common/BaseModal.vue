@@ -3,6 +3,7 @@ import { watch, onMounted, onUnmounted, computed, ref, useSlots } from 'vue';
 import Button from './Button.vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
+import { IconX, IconArrowsMinimize, IconArrowsMaximize } from '@tabler/icons-vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -128,10 +129,11 @@ function setExpanded(val: boolean) {
           <div class="header-actions">
             <slot name="header-actions" />
             <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? t('common.collapse') : t('common.expand')">
-              <i :class="isExpanded ? 'si si-arrows-minimize' : 'si si-arrows-maximize'"></i>
+              <IconArrowsMinimize v-if="isExpanded"/>
+              <IconArrowsMaximize v-else />
             </Button>
             <Button v-if="props.showClose" variant="light" @click="$emit('cancel')" aria-label="Close" class="btn-close-modal">
-              <i class="si si-x"></i>
+              <IconX />
             </Button>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { config } from '@vue/test-utils';
 import { vi, beforeEach } from 'vitest';
-
+import { exposeConsole, debug } from '../src/utils/debug';
 // Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),
@@ -62,6 +62,9 @@ globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }));
 
+beforeAll(async () => {
+  await exposeConsole();
+})
 // Reset mocks before each test
 beforeEach(() => {
   vi.clearAllMocks();
