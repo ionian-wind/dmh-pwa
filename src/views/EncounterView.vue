@@ -322,17 +322,17 @@ onMounted(async () => {
       </template>
       <template #information>
         <section class="details-section">
-          <h2>{{ $t('common.details') }}</h2>
+          <h2>{{ t('common.details') }}</h2>
           <div v-html="encounter?.description"></div>
         </section>
       </template>
       <template #monsters>
         <div class="section-header">
-          <h2>{{ $t('encounters.monsters.title') }}</h2>
-          <Button @click="showLinkModal = true">{{ $t('encounters.monsters.linkAction') }}</Button>
+          <h2>{{ t('encounters.monsters.title') }}</h2>
+          <Button @click="showLinkModal = true">{{ t('encounters.monsters.linkAction') }}</Button>
         </div>
         <div v-if="encounterMonsters.length === 0" class="empty-state">
-          <p>{{ $t('encounters.monsters.none') }}</p>
+          <p>{{ t('encounters.monsters.none') }}</p>
         </div>
         <div v-else class="monsters-grid">
           <table>
@@ -366,15 +366,15 @@ onMounted(async () => {
         </div>
       </template>
       <template #combats>
-        <h2>{{ $t('encounters.combats.title') }}</h2>
+        <h2>{{ t('encounters.combats.title') }}</h2>
         <div v-if="encounterCombats.length > 0" class="combats-grid">
           <table>
             <thead>
               <tr>
-                <th>{{ $t('encounters.combats.party') }}</th>
-                <th>{{ $t('encounters.combats.created') }}</th>
-                <th>{{ $t('encounters.combats.status') }}</th>
-                <th>{{ $t('encounters.combats.actions') }}</th>
+                <th>{{ t('encounters.combats.party') }}</th>
+                <th>{{ t('encounters.combats.created') }}</th>
+                <th>{{ t('encounters.combats.status') }}</th>
+                <th>{{ t('encounters.combats.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -383,19 +383,19 @@ onMounted(async () => {
                 <td>{{ formatDate(combat.createdAt) }}</td>
                 <td>
                   <span :class="['status-badge', getStatusBadgeClass(combat.status)]">
-                    {{ $t(`combats.status.${combat.status}`) }}
+                    {{ t(`combats.status.${combat.status}`) }}
                   </span>
                 </td>
                 <td>
                   <Button size="small" variant="primary" @click="handleViewCombat(combat)">
-                    {{ $t('encounters.combats.view') }}
+                    {{ t('encounters.combats.view') }}
                   </Button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p v-else>{{ $t('encounters.combats.none') }}</p>
+        <p v-else>{{ t('encounters.combats.none') }}</p>
       </template>
       <template #editor>
         <EncounterEditor
@@ -416,16 +416,16 @@ onMounted(async () => {
       :is-open="isQuantityModalOpen"
       @cancel="isQuantityModalOpen = false"
       @submit="handleSaveQuantity"
-      :title="$t('encounters.monsters.setQuantity')"
+      :title="t('encounters.monsters.setQuantity')"
       modal-id="quantity-modal"
       :show-submit="true"
       :show-cancel="true"
-      :submit-label="$t('common.save')"
-      :cancel-label="$t('common.cancel')"
+      :submit-label="t('common.save')"
+      :cancel-label="t('common.cancel')"
     >
       <div class="quantity-modal-content">
         <p v-if="editingMonster">
-          {{ $t('encounters.monsters.setQuantityFor', { monsterName: editingMonster.name }) }}
+          {{ t('encounters.monsters.setQuantityFor', { monsterName: editingMonster.name }) }}
         </p>
         <input
           type="number"
@@ -440,15 +440,15 @@ onMounted(async () => {
       :is-open="showLinkModal"
       @cancel="showLinkModal = false"
       @submit="handleSaveMonsterLinks"
-      :title="$t('encounters.monsters.linkModalTitle')"
+      :title="t('encounters.monsters.linkModalTitle')"
       modal-id="monster-linking-modal"
       :show-cancel="true"
       :show-submit="true"
-      :cancel-label="$t('common.cancel')"
-      :submit-label="$t('common.save')"
+      :cancel-label="t('common.cancel')"
+      :submit-label="t('common.save')"
     >
       <div v-if="allMonsters.length === 0" class="empty-state">
-        <p>{{ $t('encounters.monsters.noneAvailable') }}</p>
+        <p>{{ t('encounters.monsters.noneAvailable') }}</p>
       </div>
       <div v-else class="monsters-grid">
         <table>

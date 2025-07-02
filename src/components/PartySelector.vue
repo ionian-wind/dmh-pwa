@@ -137,7 +137,7 @@ const generateId = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="$t('partySelector.startCombat')"
+    :title="t('partySelector.startCombat')"
     :showSubmit="true"
     :showCancel="true"
     submitLabel="partySelector.startCombat"

@@ -66,19 +66,19 @@ const toggleSidePanel = () => {
     <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <NotFoundView v-else-if="notFound" />
     <template v-else-if="entity">
-      <ViewHeader v-if="!hideHeader" :title="$t(title || '')">
+      <ViewHeader v-if="!hideHeader" :title="t(title || '')">
         <template #subtitle>
           <div v-if="subtitle" class="entity-subtitle">
-            {{ $t(subtitle || '') }}
+            {{ t(subtitle || '') }}
           </div>
           <slot name="sub" />
         </template>
         <template #actions>
           <slot name="actions" />
-          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" :title="$t('common.edit')">
+          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" :title="t('common.edit')">
             <IconPencil />
           </Button>
-          <Button v-if="onDelete" variant="danger" @click="handleDelete" :title="$t('common.delete')">
+          <Button v-if="onDelete" variant="danger" @click="handleDelete" :title="t('common.delete')">
             <IconTrash />
           </Button>
         </template>

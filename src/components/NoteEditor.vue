@@ -105,7 +105,7 @@ const handleCancel = () => {
             v-model="editedNote.title"
             type="text"
             required
-            :placeholder="$t('editor.titlePlaceholder')"
+            :placeholder="t('editor.titlePlaceholder')"
           >
         </div>
         <div class="form-group">
@@ -113,7 +113,7 @@ const handleCancel = () => {
           <ModuleSelector
             v-if="!props.hideModuleSelector"
             v-model="editedNote.moduleId"
-            :placeholder="$t('common.noModule')"
+            :placeholder="t('common.noModule')"
             :allowAnyModule="false"
           />
         </div>
@@ -123,7 +123,7 @@ const handleCancel = () => {
           <label for="type">{{ t('editor.type') }}</label>
           <NoteTypeSelector
             v-model="editedNote.typeId"
-            :placeholder="$t('noteTypeSelector.noType')"
+            :placeholder="t('noteTypeSelector.noType')"
             allow-create
           />
         </div>
@@ -131,7 +131,7 @@ const handleCancel = () => {
           <label for="tags">{{ t('editor.tags') }}</label>
           <TagSelector
             v-model="editedNote.tags"
-            :placeholder="$t('editor.addTags')"
+            :placeholder="t('editor.addTags')"
           />
         </div>
       </div>
@@ -143,7 +143,7 @@ const handleCancel = () => {
           v-model="noteContent"
           enableMentions
           :rows="10"
-          :placeholder="$t('editor.contentPlaceholder')"
+          :placeholder="t('editor.contentPlaceholder')"
           className="content-editor"
           label="Content"
           :current-entity-id="editedNote.id"

@@ -303,7 +303,7 @@ async function saveEditBookmark() {
     v-model="activeTab"
   >
     <template #actions>
-      <Button @click="handleExportModule" variant="success" :title="$t('common.export')">
+      <Button @click="handleExportModule" variant="success" :title="t('common.export')">
         <IconDownload />
       </Button>
     </template>
@@ -317,12 +317,12 @@ async function saveEditBookmark() {
         @active-anchor-id="handleActiveAnchorId"
       />
       <div v-else class="empty-state">
-        <p>{{ $t('moduleView.noDocument') }}</p>
+        <p>{{ t('moduleView.noDocument') }}</p>
       </div>
     </template>
     <template #parties>
       <div v-if="moduleParties.length === 0" class="empty-state">
-        <p>{{ $t('moduleView.noParties') }}</p>
+        <p>{{ t('moduleView.noParties') }}</p>
       </div>
       <div v-else class="content-grid">
         <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
@@ -330,7 +330,7 @@ async function saveEditBookmark() {
     </template>
     <template #monsters>
       <div v-if="moduleMonsters.length === 0" class="empty-state">
-        <p>{{ $t('moduleView.noMonsters') }}</p>
+        <p>{{ t('moduleView.noMonsters') }}</p>
       </div>
       <div v-else class="content-grid">
         <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
@@ -338,7 +338,7 @@ async function saveEditBookmark() {
     </template>
     <template #encounters>
       <div v-if="moduleEncounters.length === 0" class="empty-state">
-        <p>{{ $t('moduleView.noEncounters') }}</p>
+        <p>{{ t('moduleView.noEncounters') }}</p>
       </div>
       <div v-else class="content-grid">
         <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
@@ -346,7 +346,7 @@ async function saveEditBookmark() {
     </template>
     <template #notes>
       <div v-if="moduleNotes.length === 0" class="empty-state">
-        <p>{{ $t('moduleView.noNotes') }}</p>
+        <p>{{ t('moduleView.noNotes') }}</p>
       </div>
       <div v-else class="content-grid">
         <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
@@ -354,7 +354,7 @@ async function saveEditBookmark() {
     </template>
     <template #playlists>
       <div v-if="modulePlaylists.length === 0" class="empty-state">
-        <p>{{ $t('moduleView.noPlaylists') }}</p>
+        <p>{{ t('moduleView.noPlaylists') }}</p>
       </div>
       <div v-else class="content-grid">
         <JukeboxPlaylistCard

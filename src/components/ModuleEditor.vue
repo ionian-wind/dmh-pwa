@@ -3,6 +3,7 @@ import { ref, watch, computed, onMounted } from 'vue';
 import type { Module } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   module: Module | null;
@@ -18,6 +19,8 @@ const editedModule = ref<Omit<Module, 'id' | 'createdAt' | 'updatedAt'>>({
   name: '',
   description: '',
 });
+
+const { t } = useI18n();
 
 watch(() => props.module, (newModule) => {
   if (newModule) {
@@ -61,26 +64,26 @@ const handleCancel = () => {
     @cancel="handleCancel"
   >
     <div class="form-section">
-      <h3>{{ $t('editor.basicInformation') }}</h3>
+      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="name">{{ $t('common.name') }}</label>
+          <label for="name">{{ t('common.name') }}</label>
           <input
             id="name"
             v-model="editedModule.name"
             type="text"
             required
-            :placeholder="$t('modules.namePlaceholder')"
+            :placeholder="t('modules.namePlaceholder')"
           >
         </div>
       </div>
       <div class="form-group">
-        <label for="description">{{ $t('editor.description') }}</label>
+        <label for="description">{{ t('editor.description') }}</label>
         <textarea
           id="description"
           v-model="editedModule.description"
           rows="3"
-          :placeholder="$t('modules.descriptionPlaceholder')"
+          :placeholder="t('modules.descriptionPlaceholder')"
         ></textarea>
       </div>
     </div>

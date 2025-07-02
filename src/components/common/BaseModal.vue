@@ -126,10 +126,10 @@ function setExpanded(val: boolean) {
     <div v-if="actuallyOpen" class="modal">
       <div class="modal-dialog" :class="{ 'is-expanded': isExpanded }">
         <div v-if="hasHeader" class="modal-header">
-          <h2 v-if="title">{{ $t(title) }}</h2>
+          <h2 v-if="title">{{ t(title) }}</h2>
           <div class="header-actions">
             <slot name="header-actions" />
-            <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? $t('common.collapse') : $t('common.expand')">
+            <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? t('common.collapse') : t('common.expand')">
               <IconArrowsMinimize v-if="isExpanded"/>
               <IconArrowsMaximize v-else />
             </Button>
@@ -144,10 +144,10 @@ function setExpanded(val: boolean) {
           </div>
           <div v-if="$slots.actions || showSubmit || showCancel" class="modal-actions">
             <Button v-if="showCancel" variant="secondary" @click="emit('cancel')">
-              {{ $t(cancelLabel || '') || $t('common.cancel') }}
+              {{ t(cancelLabel || '') || t('common.cancel') }}
             </Button>
             <Button v-if="showSubmit" variant="primary" type="submit" :disabled="props.disableSubmit">
-              {{ $t(submitLabel || '') || $t('common.save') }}
+              {{ t(submitLabel || '') || t('common.save') }}
             </Button>
             <slot name="actions" />
           </div>

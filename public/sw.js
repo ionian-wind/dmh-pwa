@@ -1,21 +1,21 @@
-const VERSION = 9;
-const CACHE_NAME = `dnd-notes-v${VERSION}`;
-const STATIC_CACHE = `dnd-notes-static-v${VERSION}`;
-const DYNAMIC_CACHE = `dnd-notes-dynamic-v${VERSION}`;
+const VERSION = 10;
+const CACHE_NAME = `dmh-pwa-v${VERSION}`;
+const STATIC_CACHE = `dmh-pwa-static-v${VERSION}`;
+const DYNAMIC_CACHE = `dmh-pwa-dynamic-v${VERSION}`;
 
 // Files to cache immediately
 const STATIC_FILES = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-72.png',
-  '/icon-96.png',
-  '/icon-128.png',
-  '/icon-144.png',
-  '/icon-152.png',
-  '/icon-192.png',
-  '/icon-384.png',
-  '/icon-512.png'
+  '/dmh-pwa/',
+  '/dmh-pwa/index.html',
+  '/dmh-pwa/manifest.json',
+  '/dmh-pwa/icon-72.png',
+  '/dmh-pwa/icon-96.png',
+  '/dmh-pwa/icon-128.png',
+  '/dmh-pwa/icon-144.png',
+  '/dmh-pwa/icon-152.png',
+  '/dmh-pwa/icon-192.png',
+  '/dmh-pwa/icon-384.png',
+  '/dmh-pwa/icon-512.png'
 ];
 
 // Install event - cache static files
@@ -72,7 +72,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle different types of requests
-  if (url.pathname === '/' || url.pathname === '/index.html') {
+  if (url.pathname === '/dmh-pwa' || url.pathname === '/dmh-pwa/index.html') {
     // App shell - serve from cache first, then network
     event.respondWith(
       caches.match(request)
@@ -154,8 +154,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'New D&D session update!',
-    icon: '/icon-192.png',
-    badge: '/icon-72.png',
+    icon: '/dmh-pwa/icon-192.png',
+    badge: '/dmh-pwa/icon-72.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -165,12 +165,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'View Session',
-        icon: '/icon-192.png'
+        icon: '/dmh-pwa/icon-192.png'
       },
       {
         action: 'close',
         title: 'Close',
-        icon: '/icon-192.png'
+        icon: '/dmh-pwa/icon-192.png'
       }
     ]
   };
@@ -188,7 +188,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow('/dmh-pwa')
     );
   }
 }); 

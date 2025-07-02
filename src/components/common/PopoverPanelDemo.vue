@@ -29,26 +29,26 @@ const placements = [
 
 <template>
   <div class="popover-demo">
-    <h2>{{ $t('popoverDemo.title') }}</h2>
+    <h2>{{ t('popoverDemo.title') }}</h2>
     
     <div class="demo-section">
-      <h3>{{ $t('popoverDemo.basicClick') }}</h3>
+      <h3>{{ t('popoverDemo.basicClick') }}</h3>
       <PopoverPanel :is-open="basicOpen" @close="basicOpen = false">
         <template #trigger>
           <Button @click="basicOpen = !basicOpen">
-            {{ $t('popoverDemo.clickToOpen') }}
+            {{ t('popoverDemo.clickToOpen') }}
           </Button>
         </template>
         
         <div>
-          <p>{{ $t('popoverDemo.basicPopoverText') }}</p>
-          <Button @click="basicOpen = false">{{ $t('common.close') }}</Button>
+          <p>{{ t('popoverDemo.basicPopoverText') }}</p>
+          <Button @click="basicOpen = false">{{ t('common.close') }}</Button>
         </div>
       </PopoverPanel>
     </div>
 
     <div class="demo-section">
-      <h3>{{ $t('popoverDemo.hoverTrigger') }}</h3>
+      <h3>{{ t('popoverDemo.hoverTrigger') }}</h3>
       <PopoverPanel 
         :is-open="hoverOpen" 
         trigger="hover"
@@ -57,21 +57,21 @@ const placements = [
         @close="hoverOpen = false"
       >
         <template #trigger>
-          <span class="hover-trigger">{{ $t('popoverDemo.hoverOverMe') }}</span>
+          <span class="hover-trigger">{{ t('popoverDemo.hoverOverMe') }}</span>
         </template>
         
         <div>
-          <h4>{{ $t('popoverDemo.helpInformation') }}</h4>
-          <p>{{ $t('popoverDemo.hoverPopoverText') }}</p>
+          <h4>{{ t('popoverDemo.helpInformation') }}</h4>
+          <p>{{ t('popoverDemo.hoverPopoverText') }}</p>
         </div>
       </PopoverPanel>
     </div>
 
     <div class="demo-section">
-      <h3>{{ $t('popoverDemo.withTitleAndPlacement') }}</h3>
+      <h3>{{ t('popoverDemo.withTitleAndPlacement') }}</h3>
       <PopoverPanel 
         :is-open="titleOpen" 
-        :title="$t('common.userMenu')"
+        :title="t('common.userMenu')"
         placement="bottom-end"
         :max-width="'250px'"
         @close="titleOpen = false"
@@ -79,21 +79,21 @@ const placements = [
         <template #trigger>
           <Button @click="titleOpen = !titleOpen">
             <IconUser />
-            {{ $t('popoverDemo.profileMenu') }}
+            {{ t('popoverDemo.profileMenu') }}
           </Button>
         </template>
         
         <div class="user-menu">
-          <a href="#" class="menu-item">{{ $t('popoverDemo.viewProfile') }}</a>
-          <a href="#" class="menu-item">{{ $t('popoverDemo.settings') }}</a>
-          <a href="#" class="menu-item">{{ $t('popoverDemo.help') }}</a>
-          <a href="#" class="menu-item">{{ $t('popoverDemo.logout') }}</a>
+          <a href="#" class="menu-item">{{ t('popoverDemo.viewProfile') }}</a>
+          <a href="#" class="menu-item">{{ t('popoverDemo.settings') }}</a>
+          <a href="#" class="menu-item">{{ t('popoverDemo.help') }}</a>
+          <a href="#" class="menu-item">{{ t('popoverDemo.logout') }}</a>
         </div>
       </PopoverPanel>
     </div>
 
     <div class="demo-section">
-      <h3>{{ $t('popoverDemo.focusTrigger') }}</h3>
+      <h3>{{ t('popoverDemo.focusTrigger') }}</h3>
       <PopoverPanel 
         :is-open="focusOpen" 
         trigger="focus"
@@ -105,15 +105,15 @@ const placements = [
         <template #trigger>
           <input 
             type="text" 
-            :placeholder="$t('popoverDemo.searchPlaceholder')"
+            :placeholder="t('popoverDemo.searchPlaceholder')"
             class="search-input"
           />
         </template>
         
         <div class="search-results">
-          <div class="search-item">{{ $t('popoverDemo.searchResult1') }}</div>
-          <div class="search-item">{{ $t('popoverDemo.searchResult2') }}</div>
-          <div class="search-item">{{ $t('popoverDemo.searchResult3') }}</div>
+          <div class="search-item">{{ t('popoverDemo.searchResult1') }}</div>
+          <div class="search-item">{{ t('popoverDemo.searchResult2') }}</div>
+          <div class="search-item">{{ t('popoverDemo.searchResult3') }}</div>
         </div>
       </PopoverPanel>
     </div>

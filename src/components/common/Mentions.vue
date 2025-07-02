@@ -6,6 +6,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { cropTitle } from '@/utils/cropTitle';
+import { useI18n } from 'vue-i18n';
 
 interface EntityRef {
   kind: string;
@@ -18,6 +19,7 @@ const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
+const { t } = useI18n();
 
 onMounted(async () => {
   await noteStore.load();
@@ -88,7 +90,7 @@ const groupedEntities = computed(() => {
 
 <template>
   <div class="mentions-aside">
-    <h3 class="mentions-title">{{ $t(title) }}</h3>
+    <h3 class="mentions-title">{{ t(title) }}</h3>
     <template v-if="entities.length">
       <div v-for="(group, kind) in groupedEntities" :key="kind" class="mentions-group">
         <h4 class="mentions-group-title">{{ getEntityLabel({ kind, id: '' }) }}<span v-if="group.length > 1">s</span></h4>

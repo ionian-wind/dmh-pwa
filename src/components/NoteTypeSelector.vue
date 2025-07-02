@@ -54,7 +54,7 @@ const handleDeleteType = async (id: string) => {
         :value="modelValue"
         @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value || null)"
       >
-        <option value="" disabled>{{ $t(placeholder || 'noteTypeSelector.selectType') }}</option>
+        <option value="" disabled>{{ t(placeholder || 'noteTypeSelector.selectType') }}</option>
         <option v-for="type in noteTypeStore.items" :key="type.id" :value="type.id">
           {{ type.name }}
         </option>
@@ -70,28 +70,28 @@ const handleDeleteType = async (id: string) => {
       :trap-focus="true"
     >
       <div class="type-editor">
-        <h3>{{ $t('noteTypeSelector.createNew') }}</h3>
+        <h3>{{ t('noteTypeSelector.createNew') }}</h3>
         <div class="form-group">
-          <label for="type-name">{{ $t('noteTypeSelector.name') }}</label>
+          <label for="type-name">{{ t('noteTypeSelector.name') }}</label>
           <input
             id="type-name"
             v-model="newType.name"
             type="text"
-            :placeholder="$t('noteTypeSelector.name')"
+            :placeholder="t('noteTypeSelector.name')"
             @keydown.enter.prevent="handleCreateType"
           >
         </div>
         <div class="form-group">
-          <label for="type-description">{{ $t('noteTypeSelector.description') }}</label>
+          <label for="type-description">{{ t('noteTypeSelector.description') }}</label>
           <input
             id="type-description"
             v-model="newType.description"
             type="text"
-            :placeholder="$t('noteTypeSelector.description')"
+            :placeholder="t('noteTypeSelector.description')"
           >
         </div>
         <div class="form-group">
-          <label for="type-color">{{ $t('noteTypeSelector.color') }}</label>
+          <label for="type-color">{{ t('noteTypeSelector.color') }}</label>
           <input
             id="type-color"
             v-model="newType.color"
@@ -99,17 +99,17 @@ const handleDeleteType = async (id: string) => {
           >
         </div>
         <div class="form-group">
-          <label for="type-icon">{{ $t('noteTypeSelector.icon') }}</label>
+          <label for="type-icon">{{ t('noteTypeSelector.icon') }}</label>
           <input
             id="type-icon"
             v-model="newType.icon"
             type="text"
-            :placeholder="$t('noteTypeSelector.iconPlaceholder')"
+            :placeholder="t('noteTypeSelector.iconPlaceholder')"
           >
         </div>
         <div class="type-editor-actions">
-          <Button size="small" @click="handleCreateType">{{ $t('noteTypeSelector.add') }}</Button>
-          <Button size="small" variant="secondary" @click="showTypeEditor = false">{{ $t('noteTypeSelector.cancel') }}</Button>
+          <Button size="small" @click="handleCreateType">{{ t('noteTypeSelector.add') }}</Button>
+          <Button size="small" variant="secondary" @click="showTypeEditor = false">{{ t('noteTypeSelector.cancel') }}</Button>
         </div>
       </div>
     </PopoverPanel>
