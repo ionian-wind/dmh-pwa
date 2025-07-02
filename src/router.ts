@@ -18,7 +18,7 @@ import JukeboxView from '@/jukebox/JukeboxView.vue';
 import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/dmh-pwa/'),
   routes: [
     {
       path: '/',
