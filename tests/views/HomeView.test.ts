@@ -1,6 +1,5 @@
 import { mount } from '@vue/test-utils';
 import { createRouter, createWebHistory } from 'vue-router';
-import { createI18n } from 'vue-i18n';
 import { setActivePinia, createPinia } from 'pinia';
 import HomeView from '@/views/HomeView.vue';
 import { vi } from 'vitest';
@@ -73,45 +72,12 @@ const createTestRouter = () => {
   });
 };
 
-// Create test i18n
-const createTestI18n = () => {
-  return createI18n({
-    legacy: false,
-    locale: 'en',
-    messages: {
-      en: {
-        app: {
-          title: 'D&D Session Notes Manager'
-        },
-        navigation: {
-          home: 'Home'
-        },
-        common: {
-          empty: 'No items found'
-        },
-        home: {
-          stats: {
-            notes: 'Notes',
-            parties: 'Parties',
-            monsters: 'Monsters',
-            encounters: 'Encounters',
-            characters: 'Characters',
-            modules: 'Modules'
-          }
-        }
-      }
-    }
-  });
-};
-
 describe('HomeView', () => {
   let router: ReturnType<typeof createTestRouter>;
-  let i18n: ReturnType<typeof createTestI18n>;
 
   beforeEach(() => {
     setActivePinia(createPinia());
     router = createTestRouter();
-    i18n = createTestI18n();
   });
 
   afterEach(() => {
@@ -256,7 +222,7 @@ describe('HomeView', () => {
         }
       });
 
-      expect(wrapper.text()).toContain('App title: D&D Session Notes Manager');
+      expect(wrapper.text()).toContain('App title: Owlbear\'s Dungeon Master Helper');
     });
 
     it('should display translated navigation text', () => {

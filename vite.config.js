@@ -19,8 +19,8 @@ export default defineConfig({
         'icon-384.png'
       ],
       manifest: {
-        name: 'D&D Session Notes Manager',
-        short_name: 'D&D Notes',
+        name: 'Owlbear\'s Dungeon Master Helper',
+        short_name: 'Owlbear\'s DMH',
         description: 'Advanced note manager for D&D sessions with character management, encounter tracking, and campaign organization',
         theme_color: '#1e1e2e',
         background_color: '#1e1e2e',
