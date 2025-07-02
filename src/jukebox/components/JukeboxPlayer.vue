@@ -159,7 +159,7 @@ function toggleTimeDisplay() {
       <div v-if="showArtwork" class="track-artwork-container">
         <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
         <div v-else class="track-artwork track-artwork-placeholder">
-          <IconMusicNote />
+          <IconMusicNote width="80" height="80" />
         </div>
       </div>
       

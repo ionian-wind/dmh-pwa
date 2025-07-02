@@ -15,6 +15,7 @@ import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
+import TimersView from '@/views/TimersView.vue';
 // import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
@@ -109,6 +110,13 @@ const router = createRouter({
       path: '/jukebox',
       name: 'jukebox',
       component: JukeboxView,
+      meta: { exact: true }
+    },
+    // Timers route
+    {
+      path: '/timers',
+      name: 'timers',
+      component: TimersView,
       meta: { exact: true }
     },
     // Icons route

@@ -80,7 +80,7 @@ self.addEventListener('fetch', (event) => {
           return response || fetch(request);
         })
     );
-  } else if (url.pathname.startsWith('/api/')) {
+  } else if (url.pathname.startsWith('/dmh-pwa/api/')) {
     // API requests - network first, then cache
     event.respondWith(
       fetch(request)

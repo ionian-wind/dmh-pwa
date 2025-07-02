@@ -276,9 +276,22 @@ button {
   transform: translateY(-1px);
 }
 
+.btn--light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+
 .btn--light:hover:not(.btn--disabled) {
   background-color: rgba(79, 70, 229, 0.1);
   transform: scale(1.1);
+}
+
+.btn__icon {
+  display: flex;
+  align-items: center;
+  /* Optional: margin-right if icon is before text */
 }
 
 /* Disabled state */

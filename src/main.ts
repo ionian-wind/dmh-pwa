@@ -13,6 +13,8 @@ import VueVirtualScroller from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 import { debug, debugWarn, debugError } from './utils/debug';
+import Toast from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 // Import global styles
 import './assets/styles/global.css'
@@ -67,6 +69,8 @@ app.use(VueDnDKitPlugin, {
     },
   },
 } as IPluginOptions);
+
+app.use(Toast);
 
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {

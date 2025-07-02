@@ -40,7 +40,8 @@
     "encounters": "Encounters",
     "combats": "Combats",
     "modules": "Modules",
-    "configuration": "Configuration"
+    "configuration": "Configuration",
+    "timers": "Timers"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -476,5 +477,27 @@
     "add": "+",
     "remove": "×",
     "hash": "#"
+  },
+  "timers": {
+    "empty": "No timers yet. Create your first timer!",
+    "create": "Create Timer",
+    "edit": "Edit Timer",
+    "delete": "Delete Timer",
+    "noTitle": "(no title)",
+    "title": "Title",
+    "titlePlaceholder": "Enter timer title",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter timer description",
+    "duration": "Duration",
+    "remaining": "Remaining",
+    "finished": "Finished!",
+    "start": "Start",
+    "stop": "Stop",
+    "reset": "Reset",
+    "status": {
+      "inactive": "Inactive",
+      "running": "Running",
+      "finished": "Finished"
+    }
   }
 } 

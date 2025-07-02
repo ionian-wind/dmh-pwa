@@ -40,7 +40,8 @@
     "encounters": "Схватки",
     "combats": "Бои",
     "modules": "Модули",
-    "configuration": "Настройки"
+    "configuration": "Настройки",
+    "timers": "Таймеры"
   },
   "home": {
     "title": "Добро пожаловать в D&D Master Helper",
@@ -474,5 +475,27 @@
     "add": "+",
     "remove": "×",
     "hash": "#"
+  },
+  "timers": {
+    "empty": "Пока нет таймеров. Создайте свой первый таймер!",
+    "create": "Создать таймер",
+    "edit": "Редактировать таймер",
+    "delete": "Удалить таймер",
+    "noTitle": "(без названия)",
+    "title": "Название",
+    "titlePlaceholder": "Введите название таймера",
+    "description": "Описание",
+    "descriptionPlaceholder": "Введите описание таймера",
+    "duration": "Длительность",
+    "remaining": "Осталось",
+    "finished": "Завершён!",
+    "start": "Старт",
+    "stop": "Стоп",
+    "reset": "Сбросить",
+    "status": {
+      "inactive": "Неактивен",
+      "running": "Идёт",
+      "finished": "Завершён"
+    }
   }
 } 

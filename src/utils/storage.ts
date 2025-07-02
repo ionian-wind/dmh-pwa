@@ -10,6 +10,8 @@ import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
 import { debug } from './debug';
+import type { Timer } from '@/types';
+import timerValidationSchema from '@/schemas/timer.schema.json';
 
 export class StorageError extends Error {
   constructor(

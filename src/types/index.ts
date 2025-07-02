@@ -12,6 +12,7 @@ export type WithMetadata = WithId & WithTimestamps;
 
 // Enums
 export enum Section {
+  TIMERS = 'timers',
   NOTES = 'notes',
   PARTIES = 'parties',
   MONSTERS = 'monsters',
@@ -112,4 +113,12 @@ export interface Bookmark extends WithMetadata {
   moduleId: UUID;
   noteId: string;
   title: string;
+}
+
+export interface Timer extends WithMetadata {
+  title?: string;
+  description?: string;
+  duration: number; // milliseconds
+  startedAt: number | null;
+  status: 'inactive' | 'running' | 'finished';
 }

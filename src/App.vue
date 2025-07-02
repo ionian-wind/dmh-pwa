@@ -13,10 +13,12 @@ import { Section } from '@/types'
 import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
 import RollButton from "@/components/RollButton.vue";
 
-import { IconMaximize, IconMaximizeOff, IconNote, IconUser, IconUsers, IconBook, IconGhost3, IconSwords } from '@tabler/icons-vue';
+import {IconMaximize, IconMaximizeOff, IconNote, IconUser, IconUsers, IconBook, IconGhost3, IconSwords, IconClock} from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useTimerStore } from './stores/timers'
 
 const playerStore = useJukeboxPlayerStore();
+const timerStore = useTimerStore();
 
 const leftMenuMinimized = ref(false)
 function toggleLeftMenu() {
@@ -40,6 +42,7 @@ const sections: SectionItem[] = [
   { section: Section.MODULES, label: 'navigation.modules', path: '/modules', icon: IconBook },
   { section: Section.MONSTERS, label: 'navigation.monsters', path: '/monsters', icon: IconGhost3 },
   { section: Section.ENCOUNTERS, label: 'navigation.encounters', path: '/encounters', icon: IconSwords },
+  { section: Section.TIMERS, label: 'navigation.timers', path: '/timers', icon: IconClock },
 ]
 
 function isActive(item: SectionItem): boolean {
@@ -49,8 +52,6 @@ function isActive(item: SectionItem): boolean {
 function navigateTo(path: string) {
   router.push(path)
 }
-
-
 
 const isFullscreen = ref(false);
 
@@ -91,6 +92,7 @@ onMounted(async () => {
   document.addEventListener('MSFullscreenChange', updateFullscreenState);
   updateFullscreenState();
   await playerStore.init();
+  await timerStore.init();
 });
 
 onUnmounted(() => {
