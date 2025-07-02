@@ -104,7 +104,7 @@ const groupedEntities = computed(() => {
       </div>
     </template>
     <template v-else>
-      <div class="mentions-empty">No mentions exist.</div>
+      <div class="mentions-empty">{{ t('mentions.empty') }}</div>
     </template>
   </div>
 </template>

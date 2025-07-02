@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import type { PlayerCharacter, UUID } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Button from '@/components/common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = withDefaults(defineProps<{
   character?: PlayerCharacter | null;
@@ -16,6 +17,8 @@ const emit = defineEmits<{
   (e: 'submit', character: PlayerCharacter): void;
   (e: 'cancel'): void;
 }>();
+
+const { t } = useI18n();
 
 const blankCharacter = (): PlayerCharacter => ({
   id: '',
@@ -42,7 +45,7 @@ function resetForm() {
 
 function handleSubmit() {
   if (!editedCharacter.value.name) {
-    alert('Name is required');
+    alert(t('characterEditor.nameRequired'));
     return;
   }
   emit('submit', { ...editedCharacter.value });

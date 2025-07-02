@@ -68,7 +68,7 @@ function handleEdit(note: Note) {
   // handled by BaseListView
 }
 function handleDelete(note: Note) {
-  if (note.id && confirm(`Are you sure you want to delete ${note.title}?`)) {
+  if (note.id && confirm(t('notes.confirmDelete', { title: note.title }))) {
     noteStore.remove(note.id);
   }
 }
@@ -110,7 +110,7 @@ async function handleCopy(note: Note) {
   >
     <template #search-filter>
       <span v-if="noteStore.tagFilter" class="tag-chip">
-        #{{ noteStore.tagFilter }}
+        {{ t('tagSelector.hash') }}{{ noteStore.tagFilter }}
         <button class="remove-tag" @click="router.push({ path: '/notes' })" :title="t('common.removeTagFilter')">
           <IconX />
         </button>

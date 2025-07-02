@@ -57,7 +57,7 @@ function handleCopy() {
             :key="tag"
             class="tag"
             @click.stop="emit('tag-click', tag)"
-          >#{{ tag }}</span>
+          >{{ t('tagSelector.hash') }}{{ tag }}</span>
         </div>
       </div>
     </div>

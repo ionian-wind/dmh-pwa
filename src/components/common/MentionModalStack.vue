@@ -3,8 +3,10 @@ import { computed, watchEffect } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useModalState } from '@/composables/useModalState';
+import { useI18n } from 'vue-i18n';
 
 const { currentMentionModal, currentModalId, closeMentionModal } = useModalState();
+const { t } = useI18n();
 
 const showModal = computed(() => {
   const show = !!(currentMentionModal.value && currentMentionModal.value.modalId === currentModalId.value);
@@ -24,7 +26,7 @@ function handleClose() {
   <BaseModal
     v-if="showModal"
     :isOpen="showModal"
-    :title="modalEntity?.title || modalEntity?.name || 'Entity Details'"
+    :title="modalEntity?.title || modalEntity?.name || t('modal.entityDetails')"
     :showClose="true"
     :modalId="modalId"
     @cancel="handleClose"
@@ -50,7 +52,7 @@ function handleClose() {
         </div>
       </div>
       <div v-else>
-        <div style="color: var(--color-danger, red);">Entity not found.</div>
+        <div style="color: var(--color-danger, red);">{{ t('modal.entityNotFound') }}</div>
       </div>
     </template>
   </BaseModal>

@@ -7,6 +7,9 @@ import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
@@ -199,11 +202,11 @@ onUnmounted(() => {
 
 <template>
   <div class="markdown-editor-wrapper">
-    <label v-if="props.label" class="markdown-label">{{ $t(props.label) }}</label>
+    <label v-if="props.label" class="markdown-label">{{ t(props.label) }}</label>
     <textarea
       ref="textareaRef"
       :value="props.modelValue"
-      :placeholder="$t(props.placeholder || 'Write here... Markdown supported')"
+      :placeholder="t(props.placeholder || 'markdownEditor.placeholder')"
       :rows="props.rows || 10"
       :class="['markdown-editor', props.className]"
       @input="onInput"
@@ -220,32 +223,32 @@ onUnmounted(() => {
       :current-entity-id="props.currentEntityId"
     />
     <div v-if="!props.hideFormattingHelp" class="formatting-help">
-      <h4>{{ $t('markdownEditor.formattingHelp') }}</h4>
+      <h4>{{ t('markdownEditor.formattingHelp') }}</h4>
       <div class="help-grid">
         <div class="help-item">
-          <span class="help-title">Internal Links</span>
+          <span class="help-title">{{ t('markdownEditor.help.internalLinks') }}</span>
           <code>[title](type://id)</code>
-          <p>Link to other entities in your campaign:</p>
+          <p>{{ t('markdownEditor.help.linkToOtherEntities') }}</p>
           <ul>
-            <li><code>[Note Title](note://123)</code> - Link to a note</li>
-            <li><code>[Module Name](module://123)</code> - Link to a module</li>
-            <li><code>[Party Name](party://123)</code> - Link to a party</li>
-            <li><code>[Monster Name](monster://123)</code> - Link to a monster</li>
-            <li><code>[Encounter Name](encounter://123)</code> - Link to an encounter</li>
+            <li><code>[Note Title](note://123)</code> - {{ t('markdownEditor.help.linkToNote') }}</li>
+            <li><code>[Module Name](module://123)</code> - {{ t('markdownEditor.help.linkToModule') }}</li>
+            <li><code>[Party Name](party://123)</code> - {{ t('markdownEditor.help.linkToParty') }}</li>
+            <li><code>[Monster Name](monster://123)</code> - {{ t('markdownEditor.help.linkToMonster') }}</li>
+            <li><code>[Encounter Name](encounter://123)</code> - {{ t('markdownEditor.help.linkToEncounter') }}</li>
           </ul>
         </div>
         <div class="help-item">
-          <span class="help-title">Markdown</span>
-          <p>Basic markdown formatting:</p>
+          <span class="help-title">{{ t('markdownEditor.help.markdown') }}</span>
+          <p>{{ t('markdownEditor.help.basicFormatting') }}</p>
           <ul>
-            <li><code>**bold**</code> - <strong>Bold text</strong></li>
-            <li><code>*italic*</code> - <em>Italic text</em></li>
-            <li><code># Heading</code> - Section heading</li>
-            <li><code>- item</code> - Bullet list</li>
-            <li><code>1. item</code> - Numbered list</li>
-            <li><code>- [ ] Task item</code> or <code>- [x] Completed task</code> - Task list with checkboxes</li>
+            <li><code>**bold**</code> - <strong>{{ t('markdownEditor.help.boldText') }}</strong></li>
+            <li><code>*italic*</code> - <em>{{ t('markdownEditor.help.italicText') }}</em></li>
+            <li><code># Heading</code> - {{ t('markdownEditor.help.sectionHeading') }}</li>
+            <li><code>- item</code> - {{ t('markdownEditor.help.bulletList') }}</li>
+            <li><code>1. item</code> - {{ t('markdownEditor.help.numberedList') }}</li>
+            <li><code>- [ ] Task item</code> {{ t('markdownEditor.help.or') }} <code>- [x] {{ t('markdownEditor.help.completedTask') }}</code> - {{ t('markdownEditor.help.taskList') }}</li>
           </ul>
-          <p><em>Task lists</em> written as <code>- [ ]</code> or <code>- [x]</code> will render as disabled checkboxes.</p>
+          <p><em>{{ t('markdownEditor.help.taskLists') }}</em> {{ t('markdownEditor.help.taskListsWillRender') }}</p>
         </div>
       </div>
     </div>

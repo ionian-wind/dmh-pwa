@@ -72,7 +72,8 @@
       "npc": "NPC",
       "location": "Локация",
       "item": "Предмет"
-    }
+    },
+    "confirmDelete": "Вы уверены, что хотите удалить {title}?"
   },
   "parties": {
     "title": "Группы",
@@ -237,7 +238,6 @@
     "noDescription": "Описание не предоставлено",
     "created": "Создано",
     "actions": "Действия",
-    "details": "Детали",
     "information": "Информация",
     "statistics": "Статистика",
     "description": "Описание",
@@ -434,5 +434,45 @@
     "restoreFailed": "Ошибка восстановления: ",
     "moduleImported": "Модуль импортирован успешно.",
     "moduleImportFailed": "Ошибка импорта модуля: "
+  },
+  "markdownEditor": {
+    "help": {
+      "internalLinks": "Внутренние ссылки",
+      "linkToOtherEntities": "Ссылка на другие сущности вашей кампании:",
+      "linkToNote": "Ссылка на заметку",
+      "linkToModule": "Ссылка на модуль",
+      "linkToParty": "Ссылка на группу",
+      "linkToMonster": "Ссылка на монстра",
+      "linkToEncounter": "Ссылка на схватку",
+      "markdown": "Markdown",
+      "basicFormatting": "Базовое форматирование markdown:",
+      "boldText": "Жирный текст",
+      "italicText": "Курсив",
+      "sectionHeading": "Заголовок раздела",
+      "bulletList": "Маркированный список",
+      "numberedList": "Нумерованный список",
+      "or": "или",
+      "completedTask": "Выполненная задача",
+      "taskList": "Список задач с чекбоксами",
+      "taskLists": "Списки задач",
+      "taskListsWillRender": "записанные как - [ ] или - [x] будут отображаться как неактивные чекбоксы."
+    },
+    "placeholder": "Пишите здесь... Поддерживается Markdown"
+  },
+  "mentions": {
+    "empty": "Упоминаний нет."
+  },
+  "modal": {
+    "entityDetails": "Детали объекта",
+    "entityNotFound": "Объект не найден."
+  },
+  "characterEditor": {
+    "nameRequired": "Имя обязательно"
+  },
+  "tagSelector": {
+    "addTag": "Добавить тег",
+    "add": "+",
+    "remove": "×",
+    "hash": "#"
   }
 } 

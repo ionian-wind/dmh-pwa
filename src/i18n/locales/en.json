@@ -72,7 +72,8 @@
       "npc": "NPC",
       "location": "Location",
       "item": "Item"
-    }
+    },
+    "confirmDelete": "Are you sure you want to delete {title}?"
   },
   "parties": {
     "title": "Parties",
@@ -279,7 +280,6 @@
     "link": "Link",
     "unlink": "Unlink",
     "rename": "Rename",
-    "details": "Details",
     "entityDetails": "Entity Details",
     "fullscreen": "Full Page",
     "exitFullscreen": "Exit Full Page",
@@ -436,5 +436,45 @@
     "restoreFailed": "Restore failed: ",
     "moduleImported": "Module imported successfully.",
     "moduleImportFailed": "Module import failed: "
+  },
+  "markdownEditor": {
+    "help": {
+      "internalLinks": "Internal Links",
+      "linkToOtherEntities": "Link to other entities in your campaign:",
+      "linkToNote": "Link to a note",
+      "linkToModule": "Link to a module",
+      "linkToParty": "Link to a party",
+      "linkToMonster": "Link to a monster",
+      "linkToEncounter": "Link to an encounter",
+      "markdown": "Markdown",
+      "basicFormatting": "Basic markdown formatting:",
+      "boldText": "Bold text",
+      "italicText": "Italic text",
+      "sectionHeading": "Section heading",
+      "bulletList": "Bullet list",
+      "numberedList": "Numbered list",
+      "or": "or",
+      "completedTask": "Completed task",
+      "taskList": "Task list with checkboxes",
+      "taskLists": "Task lists",
+      "taskListsWillRender": "written as - [ ] or - [x] will render as disabled checkboxes."
+    },
+    "placeholder": "Write here... Markdown supported"
+  },
+  "mentions": {
+    "empty": "No mentions exist."
+  },
+  "modal": {
+    "entityDetails": "Entity Details",
+    "entityNotFound": "Entity not found."
+  },
+  "characterEditor": {
+    "nameRequired": "Name is required"
+  },
+  "tagSelector": {
+    "addTag": "Add tag",
+    "add": "+",
+    "remove": "×",
+    "hash": "#"
   }
 } 

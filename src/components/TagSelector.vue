@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import Button from '@/components/common/Button.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: string[];
@@ -10,6 +11,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string[]): void;
 }>();
+
+const { t } = useI18n();
 
 const newTag = ref('');
 
@@ -33,16 +36,16 @@ const removeTag = (index: number) => {
     <div class="tag-input">
       <input
         v-model="newTag"
-        :placeholder="placeholder || 'Add tag'"
+        :placeholder="placeholder || t('tagSelector.addTag')"
         @keydown.enter.prevent="addTag"
       >
-      <Button size="small" variant="light" @click.prevent="addTag">+</Button>
+      <Button size="small" variant="light" @click.prevent="addTag">{{ t('tagSelector.add') }}</Button>
     </div>
 
     <div class="tags-list">
       <span v-for="(tag, index) in modelValue" :key="index" class="tag">
         {{ tag }}
-        <Button size="small" variant="light" @click="removeTag(index)">×</Button>
+        <Button size="small" variant="light" @click="removeTag(index)">{{ t('tagSelector.remove') }}</Button>
       </span>
     </div>
   </div>
