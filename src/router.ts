@@ -15,7 +15,7 @@ import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
-import AllIconsView from './views/AllIconsView.vue';
+// import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
   history: createWebHistory('/dmh-pwa/'),
@@ -112,11 +112,11 @@ const router = createRouter({
       meta: { exact: true }
     },
     // Icons route
-    {
-      path: '/icons',
-      name: 'AllIcons',
-      component: AllIconsView
-    },
+    // {
+    //   path: '/icons',
+    //   name: 'AllIcons',
+    //   component: AllIconsView
+    // },
     // 404 route
     {
       path: '/:catchAll(.*)',
