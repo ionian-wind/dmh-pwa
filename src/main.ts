@@ -38,6 +38,8 @@ app.use(router)
 
 // Load saved language preference from config store
 const configStore = useConfigStore();
+debug('Loaded configStore.savedLanguage:', configStore.savedLanguage);
+debug('Initial i18n.global.locale.value:', i18n.global.locale.value);
 
 // Use i18n
 app.use(i18n)
@@ -46,7 +48,9 @@ app.use(i18n)
 watch(
   () => configStore.savedLanguage,
   (newLang) => {
+    debug('Language changed:', newLang);
     i18n.global.locale.value = newLang as any;
+    debug('i18n.global.locale.value after change:', i18n.global.locale.value);
   },
   { immediate: true }
 );
