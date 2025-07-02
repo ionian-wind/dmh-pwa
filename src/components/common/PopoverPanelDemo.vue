@@ -205,7 +205,7 @@ const placements = [
   display: inline-block;
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: background-color var(--transition-fast);
@@ -268,7 +268,7 @@ const placements = [
 /* Custom styling example */
 .custom-popover :deep(.popover-panel) {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
 }
 
@@ -279,10 +279,10 @@ const placements = [
 
 .custom-popover :deep(.popover-panel__header) {
   background: var(--color-primary-dark);
-  border-bottom-color: rgba(255, 255, 255, 0.2);
+  border-bottom-color: var(--color-border-inverse, rgba(255, 255, 255, 0.2));
 }
 
 .custom-popover :deep(.popover-panel__title) {
-  color: white;
+  color: var(--color-text-inverse);
 }
 </style> 

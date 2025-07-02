@@ -257,7 +257,7 @@ onUnmounted(() => {
 
 .float-action-button--primary:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
-  box-shadow: 0 8px 25px rgba(30, 30, 46, 0.3);
+  box-shadow: 0 8px 25px var(--color-primary-shadow, rgba(30, 30, 46, 0.3));
 }
 
 .float-action-button--secondary {
@@ -267,8 +267,8 @@ onUnmounted(() => {
 }
 
 .float-action-button--secondary:hover:not(:disabled) {
-  background-color: #263849;
-  box-shadow: 0 8px 25px rgba(44, 62, 80, 0.3);
+  background-color: var(--color-secondary-dark, #263849);
+  box-shadow: 0 8px 25px var(--color-secondary-shadow, rgba(44, 62, 80, 0.3));
 }
 
 .float-action-button--success {
@@ -279,7 +279,7 @@ onUnmounted(() => {
 
 .float-action-button--success:hover:not(:disabled) {
   background-color: var(--color-success-dark);
-  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 8px 25px var(--color-success-shadow, rgba(76, 175, 80, 0.3));
 }
 
 .float-action-button--danger {
@@ -290,7 +290,7 @@ onUnmounted(() => {
 
 .float-action-button--danger:hover:not(:disabled) {
   background-color: var(--color-danger-dark);
-  box-shadow: 0 8px 25px rgba(244, 67, 54, 0.3);
+  box-shadow: 0 8px 25px var(--color-danger-shadow, rgba(244, 67, 54, 0.3));
 }
 
 .float-action-button--warning {
@@ -301,7 +301,7 @@ onUnmounted(() => {
 
 .float-action-button--warning:hover:not(:disabled) {
   background-color: var(--color-warning-dark);
-  box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
+  box-shadow: 0 8px 25px var(--color-warning-shadow, rgba(255, 152, 0, 0.3));
 }
 
 /* Position variants with entrance animations */

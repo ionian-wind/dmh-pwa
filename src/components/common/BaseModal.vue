@@ -16,12 +16,13 @@ const props = defineProps<{
   modalId: string;
   showExpand?: boolean;
   isExpanded?: boolean;
+  disableSubmit?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'submit'): void;
   (e: 'cancel'): void;
-  (e: 'update:isExpanded'): void;
+  (e: 'update:isExpanded', value: boolean): void;
 }>();
 
 const { openModal, closeModal, currentModalId } = useModalState();
@@ -145,7 +146,7 @@ function setExpanded(val: boolean) {
             <Button v-if="showCancel" variant="secondary" @click="emit('cancel')">
               {{ cancelLabel || 'Cancel' }}
             </Button>
-            <Button v-if="showSubmit" variant="primary" type="submit">
+            <Button v-if="showSubmit" variant="primary" type="submit" :disabled="props.disableSubmit">
               {{ submitLabel || 'Save' }}
             </Button>
             <slot name="actions" />

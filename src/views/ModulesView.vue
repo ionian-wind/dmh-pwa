@@ -130,6 +130,7 @@ function handleImportCancel() {
     <ImportValidationModal
       v-if="showValidationModal && validationResult"
       :result="validationResult"
+      :isOpen="showValidationModal"
       @import="handleImportConfirm"
       @cancel="handleImportCancel"
     />

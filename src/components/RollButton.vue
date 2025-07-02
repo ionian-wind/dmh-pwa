@@ -6,7 +6,10 @@ import BaseModal from './common/BaseModal.vue';
 import DiceBox from '@3d-dice/dice-box';
 import { AdvancedRoller } from '@3d-dice/dice-ui'
 import { debug } from '@/utils/debug';
+import {IconDice5} from "@tabler/icons-vue";
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const isModalOpen = ref(false);
 const attrs = useAttrs();
 
@@ -54,8 +57,9 @@ export default {
     size="medium"
     variant="primary"
     @click="openModal"
+    :title="t('app.roll')"
   >
-    🎲
+    <IconDice5 />
   </FloatActionButton>
   <BaseModal
     :isOpen="isModalOpen"

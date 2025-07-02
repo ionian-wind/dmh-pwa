@@ -903,13 +903,6 @@ ul:has(.task-list-label) li::marker {
 .menu-item {
   display: flex;
   gap: 1rem;
-  background: none;
-  border: none;
-  color: var(--color-text-inverse);
-  font-size: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 .menu-item.active {
@@ -1024,4 +1017,8 @@ ul:has(.task-list-label) li::marker {
 
 .bookmark-btn:hover {
   color: var(--color-success);
+}
+
+.align-middle {
+  vertical-align: middle;
 }

@@ -9,7 +9,6 @@ import { AdvancedRoller } from '@3d-dice/dice-ui'
 const emit = defineEmits(['close']);
 
 const isModalOpen = ref(false);
-const attrs = useAttrs();
 
 function openModal() {
   isModalOpen.value = true;

@@ -253,13 +253,16 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       onplay: () => {
         isPlaying.value = true;
         duration.value = howl?.duration() || 0;
+        startProgressTimer();
         debug('🎵 JukeboxPlayer: Howler play event');
       },
       onpause: () => {
         isPlaying.value = false;
+        stopProgressTimer();
         debug('🎵 JukeboxPlayer: Howler pause event');
       },
       onend: () => {
+        stopProgressTimer();
         debug('🎵 JukeboxPlayer: Howler ended event, playing next');
         playNext();
       },
@@ -384,6 +387,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       howl.unload();
       howl = null;
     }
+    stopProgressTimer();
     isPlaying.value = false;
     currentTrack.value = null;
     currentTime.value = 0;
@@ -497,6 +501,28 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     }
   }
   
+  let progressTimer: number | null = null;
+
+  function startProgressTimer() {
+    stopProgressTimer();
+    if (howl && isPlaying.value) {
+      const update = () => {
+        if (howl && isPlaying.value) {
+          currentTime.value = typeof howl.seek() === 'number' ? howl.seek() as number : 0;
+          progressTimer = requestAnimationFrame(update);
+        }
+      };
+      progressTimer = requestAnimationFrame(update);
+    }
+  }
+
+  function stopProgressTimer() {
+    if (progressTimer !== null) {
+      cancelAnimationFrame(progressTimer);
+      progressTimer = null;
+    }
+  }
+
   return {
     // State
     currentTrack,

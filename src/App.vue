@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, ref} from 'vue'
 import { RouterView, useRouter } from 'vue-router'
-import RollModal from '@/components/RollModal.vue'
+import { useI18n } from 'vue-i18n'
+
 import Button from '@/components/common/Button.vue'
 import JukeboxButton from '@/components/JukeboxButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'
 import MentionModalStack from '@/components/common/MentionModalStack.vue'
-import GlobalAudioPlayer from '@/jukebox/components/GlobalAudioPlayer.vue'
 import LeftMenu from '@/components/LeftMenu.vue'
 import { Section } from '@/types'
-import { useI18n } from 'vue-i18n'
+import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
+import RollButton from "@/components/RollButton.vue";
 
-import { IconMaximize, IconMaximizeOff, IconDice5, IconNote, IconUser, IconUsers, IconBook, IconGhost3, IconSwords } from '@tabler/icons-vue';
+import { IconMaximize, IconMaximizeOff, IconNote, IconUser, IconUsers, IconBook, IconGhost3, IconSwords } from '@tabler/icons-vue';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+
+const playerStore = useJukeboxPlayerStore();
 
 const leftMenuMinimized = ref(false)
 function toggleLeftMenu() {
@@ -46,16 +50,7 @@ function navigateTo(path: string) {
   router.push(path)
 }
 
-// Roll modal state for RollButton
-import { ref as vueRef } from 'vue'
-import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
-const rollModalRef = vueRef<InstanceType<typeof RollModal> | null>(null)
-function openRollModal() {
-  rollModalRef.value?.openModal()
-}
-function closeRollModal() {
-  // The modal will handle its own closing
-}
+
 
 const isFullscreen = ref(false);
 
@@ -89,12 +84,13 @@ function toggleFullscreen() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('fullscreenchange', updateFullscreenState);
   document.addEventListener('webkitfullscreenchange', updateFullscreenState);
   document.addEventListener('mozfullscreenchange', updateFullscreenState);
   document.addEventListener('MSFullscreenChange', updateFullscreenState);
   updateFullscreenState();
+  await playerStore.init();
 });
 
 onUnmounted(() => {
@@ -122,25 +118,20 @@ onUnmounted(() => {
         </Button>
       </template>
       <template #bottom>
-        <Button variant="primary" @click="openRollModal" :title="t('app.roll')">
-          <IconDice5 />
-          <span v-if="!leftMenuMinimized" class="menu-label">{{ t('app.roll') }}</span>
-        </Button>
-
         <JukeboxButton :left-menu-minimized="leftMenuMinimized" />
 
-        <Button v-if="!leftMenuMinimized"
-          class="fullscreen-btn"
-          variant="light"
-          @click="toggleFullscreen"
-          :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
-        >
-          <IconMaximize v-if="!isFullscreen" />
-          <IconMaximizeOff v-else />
-        </Button>
-
-        <LanguageSwitcher v-if="!leftMenuMinimized" />
-        
+        <div v-if="!leftMenuMinimized" class="leftmenu-actions-row">
+          <Button
+            class="fullscreen-btn"
+            variant="light"
+            @click="toggleFullscreen"
+            :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
+          >
+            <IconMaximize v-if="!isFullscreen" />
+            <IconMaximizeOff v-else />
+          </Button>
+          <LanguageSwitcher class="language-switcher" />
+        </div>
       </template>
     </LeftMenu>
     <div class="main-area" :class="{ minimized: leftMenuMinimized }">
@@ -153,14 +144,13 @@ onUnmounted(() => {
       </main>
     </div>
 
-    <RollModal ref="rollModalRef" @close="closeRollModal" />
-
+    <div class="fab-container-right">
+      <RollButton class="fab-item" />
+    </div>
+    
     <!-- PWA Components -->
     <PWAInstallPrompt />
     <PWAStatus />
-
-    <!-- Global Jukebox Player -->
-    <GlobalAudioPlayer />
 
     <!-- Global Mention Modal Stack -->
     <MentionModalStack />
@@ -239,5 +229,21 @@ onUnmounted(() => {
   flex-direction: column;
   flex: 1 1 0%;
   min-height: 0;
+}
+
+.leftmenu-actions-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.fullscreen-btn,
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  width: auto;
+  min-width: 0;
 }
 </style>
