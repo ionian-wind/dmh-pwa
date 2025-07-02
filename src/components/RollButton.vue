@@ -11,7 +11,7 @@ import { debug } from '@/utils/debug';
 const showFabs = ref(false);
 const fabContainerRef = ref<HTMLElement | null>(null);
 
-let diceBox: DiceBox;;
+let diceBox: DiceBox;
 
 function toggleFabs() {
   showFabs.value = !showFabs.value;
@@ -58,7 +58,8 @@ onMounted(async () => {
   diceBox = new DiceBox({
     container: '#dice-roller',
     assetPath: '/dmh-pwa/assets/dice-box/',
-    theme: 'default',
+    theme: 'default-extras',
+    preloadThemes: ['default-extras'],
     onThemeConfigLoaded: (themeData) => {
       debug('Theme loaded:', themeData);
     }

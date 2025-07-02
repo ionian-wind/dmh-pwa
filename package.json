@@ -21,6 +21,7 @@
   "dependencies": {
     "@3d-dice/dice-box": "1.1.4",
     "@3d-dice/dice-ui": "0.5.2",
+    "@3d-dice/theme-default-extras": "0.1.1",
     "@tabler/icons-vue": "3.34.0",
     "@vitejs/plugin-vue": "6.0.0",
     "@vue-dnd-kit/components": "0.6.1",
