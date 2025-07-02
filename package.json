@@ -1,6 +1,7 @@
 {
   "name": "dmh-pwa",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "license": "MIT",
   "author": "",
