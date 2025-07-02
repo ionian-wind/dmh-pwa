@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { PiniaSharedState } from 'pinia-shared-state'
+import { watch } from 'vue'
 
 import App from './App.vue'
 import router from './router'
@@ -38,10 +39,17 @@ app.use(router)
 // Load saved language preference from config store
 const configStore = useConfigStore();
 
-i18n.global.locale.value = configStore.savedLanguage;
-
 // Use i18n
 app.use(i18n)
+
+// Sync i18n locale with configStore.savedLanguage
+watch(
+  () => configStore.savedLanguage,
+  (newLang) => {
+    i18n.global.locale.value = newLang as any;
+  },
+  { immediate: true }
+);
 
 app.use(VueVirtualScroller);
 

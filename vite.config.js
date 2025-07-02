@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/dmh-pwa/',
+  base: '/dmh-pwa',
   plugins: [
     vue(),
     VitePWA({
@@ -27,94 +27,56 @@ export default defineConfig({
         background_color: '#1e1e2e',
         display: 'standalone',
         orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
+        scope: '/dmh-pwa',
+        start_url: '/dmh-pwa',
         icons: [
           {
-            src: '/icon-192.png',
+            src: '/dmh-pwa/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/icon-512.png',
+            src: '/dmh-pwa/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/icon-72.png',
+            src: '/dmh-pwa/icon-72.png',
             sizes: '72x72',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-96.png',
+            src: '/dmh-pwa/icon-96.png',
             sizes: '96x96',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-128.png',
+            src: '/dmh-pwa/icon-128.png',
             sizes: '128x128',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-144.png',
+            src: '/dmh-pwa/icon-144.png',
             sizes: '144x144',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-152.png',
+            src: '/dmh-pwa/icon-152.png',
             sizes: '152x152',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icon-384.png',
+            src: '/dmh-pwa/icon-384.png',
             sizes: '384x384',
             type: 'image/png',
             purpose: 'any'
-          }
-        ],
-        shortcuts: [
-          {
-            name: 'New Character',
-            short_name: 'Character',
-            description: 'Create a new character',
-            url: '/characters?action=new',
-            icons: [
-              {
-                src: '/icon-192.png',
-                sizes: '192x192'
-              }
-            ]
-          },
-          {
-            name: 'New Encounter',
-            short_name: 'Encounter',
-            description: 'Create a new encounter',
-            url: '/encounters?action=new',
-            icons: [
-              {
-                src: '/icon-192.png',
-                sizes: '192x192'
-              }
-            ]
-          },
-          {
-            name: 'New Note',
-            short_name: 'Note',
-            description: 'Create a new note',
-            url: '/notes?action=new',
-            icons: [
-              {
-                src: '/icon-192.png',
-                sizes: '192x192'
-              }
-            ]
           }
         ],
         categories: ['productivity', 'games', 'utilities'],
