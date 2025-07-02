@@ -122,19 +122,20 @@ onUnmounted(() => {
 
         <div v-if="!leftMenuMinimized" class="leftmenu-actions-row">
           <Button
-            class="fullscreen-btn"
-            variant="light"
-            @click="toggleFullscreen"
-            :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
-          >
-            <IconMaximize v-if="!isFullscreen" />
-            <IconMaximizeOff v-else />
-          </Button>
+          class="fullscreen-btn"
+          variant="light"
+          @click="toggleFullscreen"
+          :title="isFullscreen ? t('common.exitFullscreen') : t('common.openFullscreen')"
+        >
+          <IconMaximize v-if="!isFullscreen" />
+          <IconMaximizeOff v-else />
+        </Button>
           <LanguageSwitcher class="language-switcher" />
         </div>
       </template>
     </LeftMenu>
     <div class="main-area" :class="{ minimized: leftMenuMinimized }">
+      <div id="dice-roller" />
       <main class="main-content">
         <RouterView v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
@@ -158,6 +159,21 @@ onUnmounted(() => {
 </template>
 
 <style>
+#dice-roller {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 900;
+  display: flex;
+}
+
+#dice-roller canvas {
+  width: 100%;
+  height: 100%;
+}
+
 .fab-container-left,
 .fab-container-right {
   position: fixed;
@@ -218,6 +234,7 @@ onUnmounted(() => {
 }
 
 .main-area {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1 1 0%;

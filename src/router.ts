@@ -15,6 +15,7 @@ import ModulesView from '@/views/ModulesView.vue';
 import ModuleView from '@/views/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
+import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -109,6 +110,12 @@ const router = createRouter({
       name: 'jukebox',
       component: JukeboxView,
       meta: { exact: true }
+    },
+    // Icons route
+    {
+      path: '/icons',
+      name: 'AllIcons',
+      component: AllIconsView
     },
     // 404 route
     {

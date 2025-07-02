@@ -308,25 +308,25 @@ onUnmounted(() => {
 .float-action-button--top-left {
   top: 20px;
   left: 20px;
-  animation: slideInTopLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  /* animation: slideInTopLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1); */
 }
 
 .float-action-button--top-right {
   top: 20px;
   right: 20px;
-  animation: slideInTopRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  /* animation: slideInTopRight 0.5s cubic-bezier(0.4, 0, 0.2, 1); */
 }
 
 .float-action-button--bottom-left {
   bottom: 20px;
   left: 20px;
-  animation: slideInBottomLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  /* animation: slideInBottomLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1); */
 }
 
 .float-action-button--bottom-right {
   bottom: 20px;
   right: 20px;
-  animation: slideInBottomRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  /* animation: slideInBottomRight 0.5s cubic-bezier(0.4, 0, 0.2, 1); */
 }
 
 /* Ripple effect */

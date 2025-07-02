@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
@@ -18,8 +17,8 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
-const router = useRouter();
-const { t, locale } = useI18n();
+
+const { t } = useI18n();
 
 const stats = computed(() => ({
   notes: noteStore.items.filter(n => !n.hidden).length,
@@ -158,7 +157,6 @@ async function handleRestore(event: Event) {
           </label>
         </div>
       </div>
-      
       <BaseListView 
         :items="statsCards" 
         :card-component="StatCard"
