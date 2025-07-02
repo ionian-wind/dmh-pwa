@@ -59,43 +59,5 @@
       "type": "image/png",
       "purpose": "any"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "New Character",
-      "short_name": "Character",
-      "description": "Create a new character",
-      "url": "/characters?action=new",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "New Encounter",
-      "short_name": "Encounter",
-      "description": "Create a new encounter",
-      "url": "/encounters?action=new",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "New Note",
-      "short_name": "Note",
-      "description": "Create a new note",
-      "url": "/notes?action=new",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
   ]
 } 

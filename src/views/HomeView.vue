@@ -149,13 +149,13 @@ async function handleRestore(event: Event) {
             <p class="project-subtitle">{{ t('project.subtitle') }}</p>
           </div>
         </div>
-        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <!-- <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
           <button @click="handleBackup" class="backup-btn">{{ t('backup.backup') }}</button>
           <label class="restore-btn">
             {{ t('backup.restore') }}
             <input type="file" accept=".zip" @change="handleRestore" style="display:none" />
           </label>
-        </div>
+        </div> -->
       </div>
       <BaseListView 
         :items="statsCards" 

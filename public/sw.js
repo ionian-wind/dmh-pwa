@@ -1,4 +1,4 @@
-const VERSION = 8;
+const VERSION = 9;
 const CACHE_NAME = `dnd-notes-v${VERSION}`;
 const STATIC_CACHE = `dnd-notes-static-v${VERSION}`;
 const DYNAMIC_CACHE = `dnd-notes-dynamic-v${VERSION}`;
@@ -176,7 +176,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('D&D Notes Manager', options)
+    self.registration.showNotification('Owlbear\'s DMH', options)
   );
 });
 

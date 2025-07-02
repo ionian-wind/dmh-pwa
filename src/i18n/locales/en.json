@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "D&D Master Helper",
+    "title": "Owlbear's Dungeon Master Helper",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -43,7 +43,7 @@
     "configuration": "Configuration"
   },
   "home": {
-    "title": "Welcome to D&D Master Helper",
+    "title": "Welcome to Owlbear's Dungeon Master Helper",
     "subtitle": "Your comprehensive tool for managing D&D campaigns",
     "stats": {
       "notes": "Notes",
@@ -329,8 +329,8 @@
     ]
   },
   "project": {
-    "name": "DMH PWA",
-    "subtitle": "Dungeon Master's Helper"
+    "name": "Owlbear's DMH",
+    "subtitle": "Dungeon Master Helper"
   },
   "statCard": {
     "notes": "Notes",
