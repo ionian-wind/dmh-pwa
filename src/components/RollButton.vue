@@ -57,7 +57,7 @@ function getFabStyle(index: number, total: number, visible: boolean) {
 onMounted(async () => {
   diceBox = new DiceBox({
     container: '#dice-roller',
-    assetPath: '/assets/dice-box/',
+    assetPath: '/dmh-pwa/assets/dice-box/',
     theme: 'default',
     onThemeConfigLoaded: (themeData) => {
       debug('Theme loaded:', themeData);
