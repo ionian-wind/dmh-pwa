@@ -88,7 +88,7 @@ const groupedEntities = computed(() => {
 
 <template>
   <div class="mentions-aside">
-    <h3 class="mentions-title">{{ title }}</h3>
+    <h3 class="mentions-title">{{ $t(title) }}</h3>
     <template v-if="entities.length">
       <div v-for="(group, kind) in groupedEntities" :key="kind" class="mentions-group">
         <h4 class="mentions-group-title">{{ getEntityLabel({ kind, id: '' }) }}<span v-if="group.length > 1">s</span></h4>

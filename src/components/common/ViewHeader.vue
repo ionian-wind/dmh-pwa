@@ -36,7 +36,7 @@ defineEmits(['create', 'update:searchQuery']);
   <div class="view-header">
     <div class="view-header-content">
       <div v-if="title" class="header-wrapper header-title">
-        <b>{{ title }}</b>
+        <b>{{ $t(title) }}</b>
         <slot name="subtitle" />
       </div>
 
@@ -46,7 +46,7 @@ defineEmits(['create', 'update:searchQuery']);
           :value="searchQuery"
           @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
           type="text"
-          :placeholder="searchPlaceholder"
+          :placeholder="$t(searchPlaceholder)"
           class="search-input"
         >
         <slot name="search-filter"></slot>
@@ -57,7 +57,7 @@ defineEmits(['create', 'update:searchQuery']);
 
       <slot name="actions" />
 
-      <Button v-if="showCreate" @click="$emit('create')" :title="createTitle">
+      <Button v-if="showCreate" @click="$emit('create')" :title="$t(createTitle)">
         <IconPlus />
       </Button>
     </div>

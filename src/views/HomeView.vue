@@ -33,7 +33,7 @@ const statsCards = computed(() => [
   {
     id: 'notes',
     key: 'notes',
-    title: t('home.stats.notes'),
+    title: 'home.stats.notes',
     count: stats.value.notes,
     icon: '📜',
     route: '/notes'
@@ -41,7 +41,7 @@ const statsCards = computed(() => [
   {
     id: 'parties',
     key: 'parties',
-    title: t('home.stats.parties'),
+    title: 'home.stats.parties',
     count: stats.value.parties,
     icon: '👥',
     route: '/parties'
@@ -49,7 +49,7 @@ const statsCards = computed(() => [
   {
     id: 'monsters',
     key: 'monsters',
-    title: t('home.stats.monsters'),
+    title: 'home.stats.monsters',
     count: stats.value.monsters,
     icon: '🐉',
     route: '/monsters'
@@ -57,7 +57,7 @@ const statsCards = computed(() => [
   {
     id: 'encounters',
     key: 'encounters',
-    title: t('home.stats.encounters'),
+    title: 'home.stats.encounters',
     count: stats.value.encounters,
     icon: '⚔️',
     route: '/encounters'
@@ -65,7 +65,7 @@ const statsCards = computed(() => [
   {
     id: 'characters',
     key: 'characters',
-    title: t('home.stats.characters'),
+    title: 'home.stats.characters',
     count: stats.value.characters,
     icon: '🧙🏻‍♂️',
     route: '/characters'
@@ -73,7 +73,7 @@ const statsCards = computed(() => [
   {
     id: 'modules',
     key: 'modules',
-    title: t('home.stats.modules'),
+    title: 'home.stats.modules',
     count: stats.value.modules,
     icon: '📖',
     route: '/modules'

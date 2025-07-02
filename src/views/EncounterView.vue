@@ -297,7 +297,7 @@ onMounted(async () => {
   <div>
     <BaseEntityTabView
       :entity="encounter"
-      entity-name="t('encounters.title')"
+      entity-name="encounters.title"
       list-route="/encounters"
       :on-delete="handleDelete"
       :on-edit="handleEdit"
@@ -416,16 +416,16 @@ onMounted(async () => {
       :is-open="isQuantityModalOpen"
       @cancel="isQuantityModalOpen = false"
       @submit="handleSaveQuantity"
-      :title="t('encounters.monsters.setQuantity')"
+      :title="$t('encounters.monsters.setQuantity')"
       modal-id="quantity-modal"
       :show-submit="true"
       :show-cancel="true"
-      :submit-label="t('common.save')"
-      :cancel-label="t('common.cancel')"
+      :submit-label="$t('common.save')"
+      :cancel-label="$t('common.cancel')"
     >
       <div class="quantity-modal-content">
         <p v-if="editingMonster">
-          {{ t('encounters.monsters.setQuantityFor', { monsterName: editingMonster.name }) }}
+          {{ $t('encounters.monsters.setQuantityFor', { monsterName: editingMonster.name }) }}
         </p>
         <input
           type="number"
@@ -444,8 +444,8 @@ onMounted(async () => {
       modal-id="monster-linking-modal"
       :show-cancel="true"
       :show-submit="true"
-      :cancel-label="t('common.cancel')"
-      :submit-label="t('common.save')"
+      :cancel-label="$t('common.cancel')"
+      :submit-label="$t('common.save')"
     >
       <div v-if="allMonsters.length === 0" class="empty-state">
         <p>{{ $t('encounters.monsters.noneAvailable') }}</p>

@@ -103,13 +103,13 @@ watch(() => props.tabs, (newTabs) => {
           :disabled="tab.disabled"
         >
           <span v-if="tab.icon" class="tab-icon">{{ tab.icon }}</span>
-          <span class="tab-label">{{ tab.label }}</span>
+          <span class="tab-label">{{ $t(tab.label) }}</span>
           <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
           <button
             v-if="closable && !tab.disabled"
             class="tab-close"
             @click="handleTabClose(tab.id, $event)"
-            title="t('common.closeTab')"
+            :title="$t('common.closeTab')"
           >
             ×
           </button>

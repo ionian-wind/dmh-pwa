@@ -495,17 +495,17 @@ function handleAddParticipants() {
       @cancel="isInitiativeModalOpen = false"
       @submit="saveInitiative"
       modal-id="initiative-modal"
-      title="Set initiative"
+      :title="$t('combat.setInitiative')"
       :showSubmit="true"
       :showCancel="true"
-      submitLabel="Save"
-      cancelLabel="Cancel"
+      submitLabel="$t('common.save')"
+      cancelLabel="$t('common.cancel')"
     >
       <div class="initiative-modal-content">
         <p v-if="editingParticipant">
-          Set initiative for <strong>{{ getCombatantDisplayName(editingParticipant) }}</strong>
+          {{ $t('combat.setInitiativeFor', { name: getCombatantDisplayName(editingParticipant) }) }}
         </p>
-        <input type="number" v-model.number="newInitiative" class="initiative-input" placeholder="Enter initiative" />
+        <input type="number" v-model.number="newInitiative" class="initiative-input" :placeholder="$t('combat.initiativePlaceholder')" />
       </div>
     </BaseModal>
 
@@ -513,12 +513,12 @@ function handleAddParticipants() {
       :is-open="isAddParticipantModalOpen"
       @cancel="isAddParticipantModalOpen = false"
       @submit="handleAddParticipants"
-      :title="t('combat.addParticipantTitle')"
+      :title="$t('combat.addParticipantTitle')"
       modal-id="add-participant-modal"
       :show-submit="true"
       :show-cancel="true"
-      :submit-label="t('common.add')"
-      :cancel-label="t('common.cancel')"
+      submit-label="$t('common.add')"
+      cancel-label="$t('common.cancel')"
     >
       <div v-if="availableCharactersToAdd.length === 0" class="empty-state">
         <p>{{ t('combat.allPartyCharactersAdded') }}</p>

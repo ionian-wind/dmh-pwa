@@ -91,29 +91,29 @@ async function save() {
     :isOpen="modelValue" 
     modalId="playlist-editor" 
     @update:isOpen="$emit('update:modelValue', $event)" 
-    title="Playlist"
+    title="playlist.title"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="t('common.save')"
-    cancelLabel="t('common.cancel')"
+    submitLabel="common.save"
+    cancelLabel="common.cancel"
     @submit="save"
     @cancel="$emit('update:modelValue', false)"
   >
-    <template #title>{{ t('common.playlist') }}</template>
+    <template #title>{{ $t('common.playlist') }}</template>
     <div class="form-group">
-      <label for="playlist-name">{{ t('playlist.name') }}</label>
+      <label for="playlist-name">{{ $t('playlist.name') }}</label>
       <input id="playlist-name" v-model="editablePlaylist.name" type="text" required />
     </div>
     <div class="form-group">
-      <label for="playlist-description">{{ t('playlist.description') }}</label>
+      <label for="playlist-description">{{ $t('playlist.description') }}</label>
       <textarea id="playlist-description" v-model="editablePlaylist.description"></textarea>
     </div>
     <div class="form-group">
-      <label for="playlist-modules">{{ t('playlist.modules') }}</label>
+      <label for="playlist-modules">{{ $t('playlist.modules') }}</label>
       <ModuleMultipleSelector
         id="playlist-modules"
         v-model="moduleIdsProxy"
-        placeholder="t('common.noModules')"
+        :placeholder="$t('common.noModules')"
       />
     </div>
   </BaseModal>

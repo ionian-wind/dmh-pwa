@@ -89,28 +89,28 @@ defineExpose({
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="isEditing ? 'Edit Encounter' : 'Add Encounter'"
+    :title="isEditing ? 'encounters.edit' : 'encounters.create'"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save Encounter"
-    cancelLabel="Cancel"
+    submitLabel="common.save"
+    cancelLabel="common.cancel"
     modalId="encounter-editor-modal"
     @submit="handleSubmit"
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <h3>{{ t('editor.basicInformation') }}</h3>
+      <h3>{{ $t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="encounter-name">{{ t('common.name') }}</label>
-          <input id="encounter-name" v-model="editedEncounter.name" type="text" required />
+          <label for="encounter-name">{{ $t('common.name') }}</label>
+          <input id="encounter-name" v-model="editedEncounter.name" type="text" required :placeholder="$t('encounters.namePlaceholder')" />
         </div>
         <div class="form-group">
-          <label for="encounter-module">{{ t('editor.module') }}</label>
+          <label for="encounter-module">{{ $t('editor.module') }}</label>
           <ModuleSelector
             id="encounter-module"
             v-model="editedEncounter.moduleId"
-            placeholder="Select Module"
+            :placeholder="$t('common.noModule')"
             :allowAnyModule="false"
             required
           />
@@ -118,17 +118,17 @@ defineExpose({
       </div>
     </div>
     <div class="form-section">
-      <h3>{{ t('editor.description') }}</h3>
+      <h3>{{ $t('editor.description') }}</h3>
       <div class="form-group">
-        <label for="encounter-description">{{ t('editor.description') }}</label>
-        <textarea id="encounter-description" v-model="editedEncounter.description" rows="3" placeholder="Description"></textarea>
+        <label for="encounter-description">{{ $t('editor.description') }}</label>
+        <textarea id="encounter-description" v-model="editedEncounter.description" rows="3" :placeholder="$t('encounters.descriptionPlaceholder')"></textarea>
       </div>
     </div>
     <div class="form-section">
-      <h3>{{ t('editor.notes') }}</h3>
+      <h3>{{ $t('editor.notes') }}</h3>
       <div class="form-group">
-        <label for="encounter-notes">{{ t('editor.notes') }}</label>
-        <textarea id="encounter-notes" v-model="editedEncounter.notes" rows="3" placeholder="Additional notes about this encounter"></textarea>
+        <label for="encounter-notes">{{ $t('editor.notes') }}</label>
+        <textarea id="encounter-notes" v-model="editedEncounter.notes" rows="3" :placeholder="$t('encounters.notesPlaceholder')"></textarea>
       </div>
     </div>
   </BaseModal>

@@ -199,11 +199,11 @@ onUnmounted(() => {
 
 <template>
   <div class="markdown-editor-wrapper">
-    <label v-if="props.label" class="markdown-label">{{ props.label }}</label>
+    <label v-if="props.label" class="markdown-label">{{ $t(props.label) }}</label>
     <textarea
       ref="textareaRef"
       :value="props.modelValue"
-      :placeholder="props.placeholder || 'Write here... Markdown supported'"
+      :placeholder="$t(props.placeholder || 'Write here... Markdown supported')"
       :rows="props.rows || 10"
       :class="['markdown-editor', props.className]"
       @input="onInput"
@@ -220,7 +220,7 @@ onUnmounted(() => {
       :current-entity-id="props.currentEntityId"
     />
     <div v-if="!props.hideFormattingHelp" class="formatting-help">
-      <h4>Formatting Help</h4>
+      <h4>{{ $t('markdownEditor.formattingHelp') }}</h4>
       <div class="help-grid">
         <div class="help-item">
           <span class="help-title">Internal Links</span>

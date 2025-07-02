@@ -84,11 +84,11 @@ const handleCancel = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="note ? 'Edit Note' : 'Create Note'"
+    :title="note ? 'notes.edit' : 'notes.create'"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save Note"
-    cancelLabel="Cancel"
+    submitLabel="common.save"
+    cancelLabel="common.cancel"
     modalId="note-editor-modal"
     show-expand
     @submit="handleSubmit"
@@ -105,7 +105,7 @@ const handleCancel = () => {
             v-model="editedNote.title"
             type="text"
             required
-            placeholder="Note title"
+            :placeholder="$t('editor.titlePlaceholder')"
           >
         </div>
         <div class="form-group">
@@ -113,7 +113,7 @@ const handleCancel = () => {
           <ModuleSelector
             v-if="!props.hideModuleSelector"
             v-model="editedNote.moduleId"
-            placeholder="No Module"
+            :placeholder="$t('common.noModule')"
             :allowAnyModule="false"
           />
         </div>
@@ -123,7 +123,7 @@ const handleCancel = () => {
           <label for="type">{{ t('editor.type') }}</label>
           <NoteTypeSelector
             v-model="editedNote.typeId"
-            placeholder="No Type"
+            :placeholder="$t('noteTypeSelector.noType')"
             allow-create
           />
         </div>
@@ -131,7 +131,7 @@ const handleCancel = () => {
           <label for="tags">{{ t('editor.tags') }}</label>
           <TagSelector
             v-model="editedNote.tags"
-            placeholder="Add tags..."
+            :placeholder="$t('editor.addTags')"
           />
         </div>
       </div>
@@ -143,7 +143,7 @@ const handleCancel = () => {
           v-model="noteContent"
           enableMentions
           :rows="10"
-          placeholder="Write your note here... Use [[type:]] to link entities"
+          :placeholder="$t('editor.contentPlaceholder')"
           className="content-editor"
           label="Content"
           :current-entity-id="editedNote.id"

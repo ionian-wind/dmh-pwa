@@ -38,13 +38,13 @@ function handleKeydown(e: KeyboardEvent) {
       @keydown="handleKeydown"
       :disabled="disabled"
       :aria-checked="modelValue"
-      :aria-label="label"
+      :aria-label="$t(label)"
       role="switch"
       tabindex="0"
     >
       <div class="toggle-slider"></div>
     </button>
-    <label v-if="label" class="toggle-label" @click="toggle">{{ label }}</label>
+    <label v-if="label" class="toggle-label" @click="toggle">{{ $t(label) }}</label>
   </div>
 </template>
 

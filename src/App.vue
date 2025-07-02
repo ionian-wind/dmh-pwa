@@ -34,12 +34,12 @@ interface SectionItem {
 }
 
 const sections: SectionItem[] = [
-  { section: Section.NOTES, label: t('navigation.notes'), path: '/notes', icon: IconNote },
-  { section: Section.CHARACTERS, label: t('navigation.characters'), path: '/characters', icon: IconUser },
-  { section: Section.PARTIES, label: t('navigation.parties'), path: '/parties', icon: IconUsers },
-  { section: Section.MODULES, label: t('navigation.modules'), path: '/modules', icon: IconBook },
-  { section: Section.MONSTERS, label: t('navigation.monsters'), path: '/monsters', icon: IconGhost3 },
-  { section: Section.ENCOUNTERS, label: t('navigation.encounters'), path: '/encounters', icon: IconSwords },
+  { section: Section.NOTES, label: 'navigation.notes', path: '/notes', icon: IconNote },
+  { section: Section.CHARACTERS, label: 'navigation.characters', path: '/characters', icon: IconUser },
+  { section: Section.PARTIES, label: 'navigation.parties', path: '/parties', icon: IconUsers },
+  { section: Section.MODULES, label: 'navigation.modules', path: '/modules', icon: IconBook },
+  { section: Section.MONSTERS, label: 'navigation.monsters', path: '/monsters', icon: IconGhost3 },
+  { section: Section.ENCOUNTERS, label: 'navigation.encounters', path: '/encounters', icon: IconSwords },
 ]
 
 function isActive(item: SectionItem): boolean {
@@ -110,11 +110,11 @@ onUnmounted(() => {
           :key="item.section"
           :class="['menu-item', { active: isActive(item) } ]"
           @click="navigateTo(item.path)"
-          :title="item.label"
+          :title="t(item.label)"
           variant="primary"
         >
           <component :is="item.icon" class="menu-icon" />
-          <span v-if="!leftMenuMinimized" class="menu-label">{{ item.label }}</span>
+          <span v-if="!leftMenuMinimized" class="menu-label">{{ t(item.label) }}</span>
         </Button>
       </template>
       <template #bottom>

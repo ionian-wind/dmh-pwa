@@ -11,6 +11,7 @@ const props = defineProps({
   showView: { type: Boolean, default: false },
   showEdit: { type: Boolean, default: false },
   showDelete: { type: Boolean, default: false },
+  title: { type: String, default: '' },
 });
 
 const emit = defineEmits(['view', 'edit', 'delete', 'copy']);
@@ -52,7 +53,9 @@ const noBorderAfterHeader = computed(() => {
       :class="{ 'no-border': noBorderAfterHeader }"
       @click="$emit('view')"
     >
-      <slot name="header" />
+      <slot name="header">
+        <span v-if="title">{{ $t(title) }}</span>
+      </slot>
     </div>
     <div v-if="hasContent" class="base-card-content">
       <slot />
@@ -62,16 +65,16 @@ const noBorderAfterHeader = computed(() => {
         <slot name="actions" />
       </div>
       <div class="base-card-actions-right">
-        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" :title="t('common.view')">
+        <Button v-if="showView" variant="light" size="small" @click="$emit('view')" :title="$t('common.view')">
           <IconEye />
         </Button>
-        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" :title="t('common.edit')">
+        <Button v-if="showEdit" variant="primary" size="small" @click="$emit('edit')" :title="$t('common.edit')">
           <IconPencil />
         </Button>
-        <Button variant="secondary" size="small" @click="() => { debug('BaseCard copy button clicked'); $emit('copy'); }" :title="t('common.copy')">
+        <Button variant="secondary" size="small" @click="() => { debug('BaseCard copy button clicked'); $emit('copy'); }" :title="$t('common.copy')">
           <IconCopy />
         </Button>
-        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" :title="t('common.delete')">
+        <Button v-if="showDelete" variant="danger" size="small" @click="$emit('delete')" :title="$t('common.delete')">
           <IconTrash />
         </Button>
       </div>

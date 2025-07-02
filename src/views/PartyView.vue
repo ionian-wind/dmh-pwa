@@ -120,7 +120,7 @@ onMounted(async () => {
   <div>
     <BaseEntityView
       :entity="party"
-      entity-name="t('parties.title')"
+      entity-name="parties.title"
       list-route="/parties"
       :on-delete="handleDeleteParty"
       :on-edit="() => showEditor = true"
@@ -134,27 +134,27 @@ onMounted(async () => {
       <div v-if="party" class="party-content">
         <section class="content-section">
           <div class="section-header">
-            <h2>{{ t('partyView.title') }}</h2>
+            <h2>{{ $t('partyView.title') }}</h2>
             <Button @click="showLinkModal = true" class="link-btn">
-              Link Characters
+              {{ $t('parties.linkCharacters') }}
             </Button>
           </div>
           <div v-if="partyCharacters.length === 0" class="empty-state">
-            <p>{{ t('partyView.noCharacters') }}</p>
+            <p>{{ $t('partyView.noCharacters') }}</p>
           </div>
           <div v-else class="characters-grid">
             <table>
               <thead>
                 <tr>
-                  <th>{{ t('partyView.name') }}</th>
-                  <th>{{ t('partyView.actions') }}</th>
+                  <th>{{ $t('partyView.name') }}</th>
+                  <th>{{ $t('partyView.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="character in partyCharacters" :key="character.id">
                   <td>{{ character.name }}</td>
                   <td>
-                    <button class="unlink-btn" @click="handleToggleCharacter(character, false)">{{ t('partyView.unlink') }}</button>
+                    <button class="unlink-btn" @click="handleToggleCharacter(character, false)">{{ $t('partyView.unlink') }}</button>
                   </td>
                 </tr>
               </tbody>

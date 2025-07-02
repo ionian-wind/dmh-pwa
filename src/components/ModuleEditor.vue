@@ -51,36 +51,36 @@ const handleCancel = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="module ? 'Edit Module' : 'Create Module'"
+    :title="module ? 'modules.edit' : 'modules.create'"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save Module"
-    cancelLabel="Cancel"
+    submitLabel="common.save"
+    cancelLabel="common.cancel"
     modalId="module-editor-modal"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
     <div class="form-section">
-      <h3>Basic Information</h3>
+      <h3>{{ $t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="name">Name</label>
+          <label for="name">{{ $t('common.name') }}</label>
           <input
             id="name"
             v-model="editedModule.name"
             type="text"
             required
-            placeholder="Module name"
+            :placeholder="$t('modules.namePlaceholder')"
           >
         </div>
       </div>
       <div class="form-group">
-        <label for="description">Description</label>
+        <label for="description">{{ $t('editor.description') }}</label>
         <textarea
           id="description"
           v-model="editedModule.description"
           rows="3"
-          placeholder="Module description"
+          :placeholder="$t('modules.descriptionPlaceholder')"
         ></textarea>
       </div>
     </div>

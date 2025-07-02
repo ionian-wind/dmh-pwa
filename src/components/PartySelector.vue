@@ -137,11 +137,11 @@ const generateId = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    title="Start Combat"
+    :title="$t('partySelector.startCombat')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Start Combat"
-    cancelLabel="Cancel"
+    submitLabel="partySelector.startCombat"
+    cancelLabel="common.cancel"
     modalId="party-selector-modal"
     @submit="handleCreateCombat"
     @cancel="handleCancel"
