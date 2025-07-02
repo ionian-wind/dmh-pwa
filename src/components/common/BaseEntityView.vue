@@ -49,7 +49,7 @@ const handleEdit = () => {
 };
 
 const handleDelete = async () => {
-  if (props.onDelete && confirm(`Are you sure you want to delete this ${props.entityName.toLowerCase()}?`)) {
+  if (props.onDelete && confirm(`Are you sure you want to delete this ${t(props.entityName).toLowerCase()}?`)) {
     await props.onDelete();
     router.push(props.listRoute);
   }

@@ -131,7 +131,6 @@ const handleCancel = () => {
           <label for="tags">{{ t('editor.tags') }}</label>
           <TagSelector
             v-model="editedNote.tags"
-            :placeholder="t('editor.addTags')"
           />
         </div>
       </div>

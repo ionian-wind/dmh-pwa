@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: string[];
-  placeholder?: string;
 }>();
 
 const emit = defineEmits<{
@@ -36,7 +35,7 @@ const removeTag = (index: number) => {
     <div class="tag-input">
       <input
         v-model="newTag"
-        :placeholder="placeholder || t('tagSelector.addTag')"
+        :placeholder="t('tagSelector.addTag')"
         @keydown.enter.prevent="addTag"
       >
       <Button size="small" variant="light" @click.prevent="addTag">{{ t('tagSelector.add') }}</Button>

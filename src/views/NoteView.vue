@@ -148,7 +148,7 @@ onMounted(async () => {
 <template>
   <BaseEntityView
     :entity="note"
-    entity-name="t('notes.title')"
+    entity-name="notes.title"
     list-route="/notes"
     :on-delete="handleDelete"
     :on-edit="handleEdit"
