@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/common/Button.vue';
-import { IconPlayerPlay, IconPlayerPause, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-vue';
+import { IconPlayerPlay, IconX, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-vue';
 import type { Timer } from '@/types';
 import { useTimerStore } from '@/stores/timers';
 
@@ -22,8 +22,6 @@ const statusLabel = computed(() => {
 const remaining = ref<string|null>(null);
 
 watch(() => timerStore.now, (now) => {
-  console.log();
-
   if (props.timer.status === 'running') {
     const elapsed = now - props.timer.startedAt!;
     const left = Math.max(props.timer.duration - elapsed, 0);
@@ -33,18 +31,13 @@ watch(() => timerStore.now, (now) => {
     remaining.value = `${min}:${sec.toString().padStart(2, '0')}`;
   }
 }, { immediate: true });
-
-computed(() => {
-  console.log(timerStore.now);
-  
-});
 </script>
 
 <template>
   <div class="participant-row timer-row" :class="props.timer.status">
     <div class="participant-artwork timer-actions">
       <Button variant="light" v-if="props.timer.status === 'inactive'" @click="$emit('start')" :title="t('timers.start')"><IconPlayerPlay /></Button>
-      <Button variant="light" v-if="props.timer.status === 'running'" @click="$emit('stop')" :title="t('timers.stop')"><IconPlayerPause /></Button>
+      <Button variant="light" v-if="props.timer.status === 'running'" @click="$emit('stop')" :title="t('timers.stop')"><IconX /></Button>
       <Button variant="light" v-if="props.timer.status === 'finished'" @click="$emit('reset')" :title="t('timers.reset')"><IconRefresh /></Button>
     </div>
     <div class="participant-info">

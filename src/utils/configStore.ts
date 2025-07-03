@@ -53,7 +53,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>('config', (): C
   const jukeboxActivePlaylistId = ref<string | null>(getValue('jukeboxActivePlaylistId', null));
   const jukeboxRepeatMode = ref<JukeboxRepeatMode>(getValue('jukeboxRepeatMode', JukeboxRepeatMode.off));
   const jukeboxShuffle = ref<boolean>(getValue('jukeboxShuffle', false));
-  const savedLanguage = ref<string>(getValue('savedLanguage', 'en'));
+  const savedLanguage = ref<string>(getValue('savedLanguage', window?.navigator?.language ?? 'en'));
   
   const config: ConfigStore = {
     jukeboxLastTrackId,

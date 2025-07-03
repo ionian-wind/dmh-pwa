@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref} from 'vue'
-import { RouterView, useRouter } from 'vue-router'
+import {onMounted, onUnmounted, ref, watch} from 'vue'
+import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import Button from '@/components/common/Button.vue'
@@ -12,27 +12,83 @@ import LeftMenu from '@/components/LeftMenu.vue'
 import { Section } from '@/types'
 import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
 import RollButton from "@/components/RollButton.vue";
+import CalculatorButton from '@/components/CalculatorButton.vue';
 
-import {IconMaximize, IconMaximizeOff, IconNote, IconUser, IconUsers, IconBook, IconGhost3, IconSwords, IconClock} from '@tabler/icons-vue';
+import {
+  IconMaximize,
+  IconMaximizeOff,
+  IconNote,
+  IconUser,
+  IconUsers,
+  IconBook,
+  IconGhost3,
+  IconSwords,
+  IconClockHour1,
+  IconClockHour2,
+  IconClockHour3,
+  IconClockHour4,
+  IconClockHour5,
+  IconClockHour6,
+  IconClockHour7,
+  IconClockHour8,
+  IconClockHour9,
+  IconClockHour10,
+  IconClockHour11,
+  IconClockHour12,
+} from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers'
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
 
-const leftMenuMinimized = ref(false)
+const leftMenuMinimized = ref(false);
+const animationFrame = ref(0);
+
+const hours = [
+  IconClockHour4,
+  IconClockHour5,
+  IconClockHour6,
+  IconClockHour7,
+  IconClockHour8,
+  IconClockHour9,
+  IconClockHour10,
+  IconClockHour11,
+  IconClockHour12,
+  IconClockHour1,
+  IconClockHour2,
+  IconClockHour3,
+]
+
+const timerIcon = ref(IconClockHour4);
+
+watch(() => timerStore.now, () => {
+  if (timerStore.running) {
+    if (animationFrame.value === hours.length) {
+      animationFrame.value = 0;
+    }
+
+    timerIcon.value = hours[animationFrame.value];
+
+    animationFrame.value += 1;
+  }
+});
+
+
 function toggleLeftMenu() {
   leftMenuMinimized.value = !leftMenuMinimized.value
 }
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute();
 
 interface SectionItem {
   section: Section;
   label: string;
   path: string;
   icon: any; // Tabler icon component
+  ref?: boolean;
 }
 
 const sections: SectionItem[] = [
@@ -42,7 +98,7 @@ const sections: SectionItem[] = [
   { section: Section.MODULES, label: 'navigation.modules', path: '/modules', icon: IconBook },
   { section: Section.MONSTERS, label: 'navigation.monsters', path: '/monsters', icon: IconGhost3 },
   { section: Section.ENCOUNTERS, label: 'navigation.encounters', path: '/encounters', icon: IconSwords },
-  { section: Section.TIMERS, label: 'navigation.timers', path: '/timers', icon: IconClock },
+  { section: Section.TIMERS, label: 'navigation.timers', path: '/timers', icon: timerIcon, ref: true },
 ]
 
 function isActive(item: SectionItem): boolean {
@@ -115,11 +171,16 @@ onUnmounted(() => {
           :title="t(item.label)"
           variant="primary"
         >
-          <component :is="item.icon" class="menu-icon" />
+          <component
+            :is="item.section === Section.TIMERS && item.icon.value ? item.icon.value : item.icon"
+            class="menu-icon"
+            :key="item.section === Section.TIMERS ? animationFrame : undefined"
+          />
           <span v-if="!leftMenuMinimized" class="menu-label">{{ t(item.label) }}</span>
         </Button>
       </template>
       <template #bottom>
+        <CalculatorButton :left-menu-minimized="leftMenuMinimized" />
         <JukeboxButton :left-menu-minimized="leftMenuMinimized" />
 
         <div v-if="!leftMenuMinimized" class="leftmenu-actions-row">
@@ -137,7 +198,7 @@ onUnmounted(() => {
       </template>
     </LeftMenu>
     <div class="main-area" :class="{ minimized: leftMenuMinimized }">
-      <div id="dice-roller" />
+      <div v-if="route.path !== '/jukebox'" id="dice-roller" />
       <main class="main-content">
         <RouterView v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
@@ -147,7 +208,7 @@ onUnmounted(() => {
       </main>
     </div>
 
-    <div class="fab-container-right">
+    <div v-if="route.path !== '/jukebox'" class="fab-container-right">
       <RollButton class="fab-item" />
     </div>
     

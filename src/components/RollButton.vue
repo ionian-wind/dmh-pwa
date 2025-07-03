@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import FloatActionButton from './common/FloatActionButton.vue';
 import { IconDice5, IconX } from '@tabler/icons-vue';
 
@@ -67,6 +67,8 @@ onMounted(async () => {
 
   await diceBox.init();
 });
+
+onUnmounted(() => diceBox.clear());
 </script>
 
 <template>
@@ -101,14 +103,14 @@ onMounted(async () => {
 <style scoped>
 .fab-roll-group {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 10px;
+  right: 10px;
   z-index: 1000;
 }
 .fab-children-container {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
 }
 .roll-fab-main {
   z-index: 1001;

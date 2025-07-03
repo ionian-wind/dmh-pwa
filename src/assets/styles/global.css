@@ -16,7 +16,10 @@
   --color-warning-light: #fff3e0;
   --color-warning: #ff9800;
   --color-warning-dark: #f57c00;
-
+  --color-misc-light: #f3e5f5;
+  --color-misc: #c475d2;
+  --color-misc-dark: #6a1b9a;
+  
   /* Text Colors */
   --color-text: #333;
   --color-text-light: #666;
@@ -703,12 +706,13 @@ select {
 /* Internal link backgrounds by type */
 .internal-link.note-link {
   background: var(--color-info-light);
+  color: var(--color-info-dark);
   padding: 0.1em 0.3em;
   border-radius: 4px;
 }
 .internal-link.module-link {
-  background: var(--color-primary-light, #f3e5f5);
-  color: var(--color-primary-dark, #6a1b9a);
+  background: var(--color-misc-light);
+  color: var(--color-misc-dark);
   padding: 0.1em 0.3em;
   border-radius: 4px;
 }
