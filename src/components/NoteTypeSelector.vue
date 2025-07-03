@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useNoteTypeStore } from '@/stores/noteTypes';
 import type { NoteType } from '@/types';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import PopoverPanel from '@/components/common/PopoverPanel.vue';
 import { useI18n } from 'vue-i18n';
 

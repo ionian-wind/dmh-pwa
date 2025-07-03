@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 import PopoverPanel from '@/components/common/PopoverPanel.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '../../../src/components/form/Button.vue';
 
 // Mock window methods
 const mockGetBoundingClientRect = vi.fn(() => ({

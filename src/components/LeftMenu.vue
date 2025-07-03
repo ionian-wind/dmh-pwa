@@ -31,7 +31,7 @@ function isMinimized() {
 <style scoped>
 .left-menu {
   height: 100vh;
-  width: 220px;
+  width: 200px;
   background: var(--color-primary);
   color: var(--color-text-inverse);
   display: flex;

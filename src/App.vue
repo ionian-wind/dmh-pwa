@@ -3,7 +3,7 @@ import {onMounted, onUnmounted, ref, watch} from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import Button from '@/components/common/Button.vue'
+import Button from '@/components/form/Button.vue'
 import JukeboxButton from '@/components/JukeboxButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'

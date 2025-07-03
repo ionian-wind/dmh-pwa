@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue';
 import type { Module } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{

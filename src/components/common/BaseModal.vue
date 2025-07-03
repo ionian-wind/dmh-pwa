@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch, onMounted, onUnmounted, computed, ref, useSlots } from 'vue';
-import Button from './Button.vue';
+import Button from '../form/Button.vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
 import { IconX, IconArrowsMinimize, IconArrowsMaximize } from '@tabler/icons-vue';
@@ -129,7 +129,8 @@ function setExpanded(val: boolean) {
           <h2 v-if="title">{{ t(title) }}</h2>
           <div class="header-actions">
             <slot name="header-actions" />
-            <Button v-if="props.showExpand" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? t('common.collapse') : t('common.expand')">
+            <!-- Hide expand button on mobile with CSS -->
+            <Button v-if="props.showExpand" class="modal-expand-btn" @click="setExpanded(!isExpanded)" variant="light" :title="isExpanded ? t('common.collapse') : t('common.expand')">
               <IconArrowsMinimize v-if="isExpanded"/>
               <IconArrowsMaximize v-else />
             </Button>
@@ -326,5 +327,31 @@ function setExpanded(val: boolean) {
 .modal-fade-leave-to .modal-dialog {
   transform: scale(0.96);
   opacity: 0;
+}
+
+/* Always expand modal and hide expand button on mobile */
+@media (max-width: 768px) {
+  .modal-dialog {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+  .modal-expand-btn {
+    display: none !important;
+  }
+  .modal-actions {
+    padding: 1rem 1rem 1.25rem 1rem !important;
+    gap: 0.5rem !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0 !important;
+  }
+  .modal-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
 }
 </style> 

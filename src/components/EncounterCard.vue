@@ -2,7 +2,7 @@
 import type { Encounter } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
 import {computed, onMounted} from 'vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 import { useI18n } from 'vue-i18n';
 import { IconSwords } from '@tabler/icons-vue';

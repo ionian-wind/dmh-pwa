@@ -25,7 +25,7 @@ import EncounterCard from '@/components/EncounterCard.vue';
 import NoteCard from '@/components/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import { useI18n } from 'vue-i18n';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import ModuleDocumentTree from '@/components/ModuleDocumentTree.vue';
 import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
 import JSZip from 'jszip';

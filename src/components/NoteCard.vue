@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Note } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';;
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useI18n } from 'vue-i18n';

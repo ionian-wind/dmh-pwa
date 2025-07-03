@@ -5,7 +5,7 @@ import ModuleSelector from './ModuleSelector.vue';
 import TagSelector from './TagSelector.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useModuleStore } from '@/stores/modules';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import { useI18n } from 'vue-i18n';

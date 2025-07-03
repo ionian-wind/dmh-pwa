@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{

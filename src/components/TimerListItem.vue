@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { IconPlayerPlay, IconX, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-vue';
 import type { Timer } from '@/types';
 import { useTimerStore } from '@/stores/timers';
@@ -76,7 +76,6 @@ watch(() => timerStore.now, (now) => {
   display: flex;
   align-items: center;
   padding: 0.75rem;
-  margin-bottom: 0.5rem;
   border-radius: 8px;
   transition: all 0.2s;
   background: var(--color-background);

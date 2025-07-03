@@ -12,7 +12,7 @@ import EncounterEditor from '@/components/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import PartySelector from '@/components/PartySelector.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';

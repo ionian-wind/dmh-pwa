@@ -8,7 +8,7 @@ import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 
 const partyStore = usePartyStore();

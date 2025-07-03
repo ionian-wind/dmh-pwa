@@ -2,6 +2,9 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { cropTitle } from '@/utils/cropTitle';
 import PopoverPanel from './PopoverPanel.vue';
+// @ts-expect-error: no types for textarea-caret
+import textCursorHelper from 'text-cursor-helper';
+import { autoPlacement } from '@floating-ui/vue';
 
 interface MentionItem {
   id: string;
@@ -13,6 +16,8 @@ const props = defineProps<{
   items: MentionItem[];
   show: boolean;
   anchorEl: HTMLElement | null;
+  currentEntityType?: string;
+  currentEntityId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -23,6 +28,15 @@ const emit = defineEmits<{
 const filter = ref('');
 const activeIndex = ref(0);
 const filterInputRef = ref<HTMLInputElement | null>(null);
+const caretVirtualEl = ref<any>(null);
+
+watch(() => props.anchorEl, (val) => {
+  if (val) {
+    caretVirtualEl.value = {
+      getBoundingClientRect: () => val.getBoundingClientRect(),
+    };
+  }
+});
 
 const filteredItems = computed(() => {
   const f = filter.value.trim().toLowerCase();
@@ -68,9 +82,9 @@ watch(() => props.show, (show) => {
 <template>
   <PopoverPanel
     :is-open="show"
-    :trigger-el="anchorEl"
+    :trigger-el="caretVirtualEl"
     disable-internal-trigger
-    placement="bottom-start"
+    :auto-placement="true"
     @close="emit('close')"
   >
     <div class="mention-suggestion-popup" @keydown="handleKeydown">

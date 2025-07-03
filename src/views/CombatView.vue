@@ -7,7 +7,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import type { Combat } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import {useCharacterStore} from "@/stores/characters";
 import {useMonsterStore} from "@/stores/monsters";

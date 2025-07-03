@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { IconDownload, IconX } from '@tabler/icons-vue';
 import { debug, debugError } from '@/utils/debug';
 
@@ -143,6 +143,9 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 9999;
   animation: slideUp 0.3s ease-out;
+  width: auto;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .pwa-install-content {
@@ -236,8 +239,10 @@ onMounted(() => {
 @media (max-width: 480px) {
   .pwa-install-prompt {
     bottom: 10px;
-    left: 10px;
-    right: 10px;
+    left: calc(50% - 45vw);
+    right: 0;
+    width: 90vw;
+    max-width: 100vw;
   }
   
   .pwa-install-content {

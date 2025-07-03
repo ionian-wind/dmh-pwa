@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { evaluate } from 'mathjs';
 import { IconParentheses, IconPercentage, IconDivide, IconX, IconMinus, IconPlus, IconBackspace, IconEqual } from '@tabler/icons-vue'
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 
 const input = ref('');
 const result = ref('');

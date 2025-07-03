@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import Button from './common/Button.vue';
+import Button from './form/Button.vue';
 import PopoverPanel from './common/PopoverPanel.vue';
 import CalculatorView from '@/views/CalculatorView.vue';
 import { IconCalculator } from '@tabler/icons-vue';
@@ -22,8 +22,6 @@ const handleClick = () => {
     :is-open="isPopoverOpen"
     @close="isPopoverOpen = false"
     placement="right-end"
-    :offset="80"
-    :vertical-offset="-20"
     :disable-internal-trigger="true"
   >
     <template #trigger>

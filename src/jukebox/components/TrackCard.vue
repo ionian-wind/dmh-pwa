@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { IconMusic, IconPlus, IconX } from '@tabler/icons-vue';
 
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import type { JukeboxTrack } from '@/jukebox/types';
 
 import { formatTime } from "../utils";

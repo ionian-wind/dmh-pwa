@@ -4,7 +4,7 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { Tree } from '@/components/Tree';
 import { useNoteStore } from '@/stores/notes';
 import { deepUnwrap } from '@/utils/deepUnwrap';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
 

@@ -80,31 +80,3 @@ function handleReset(timer: Timer) {
     @reset="handleReset"
   />
 </template>
-
-<style scoped>
-.timer-list-item {
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: 8px;
-  padding: 1em;
-  margin-bottom: 1em;
-  background: var(--color-background, #fff);
-}
-.timer-title {
-  font-weight: bold;
-  font-size: 1.1em;
-}
-.timer-description {
-  color: var(--color-text-light);
-  margin-bottom: 0.5em;
-}
-.timer-details {
-  font-size: 1.1em;
-  margin-bottom: 0.5em;
-}
-.timer-actions button {
-  margin-right: 0.5em;
-}
-.form-section {
-  margin-bottom: 1em;
-}
-</style> 

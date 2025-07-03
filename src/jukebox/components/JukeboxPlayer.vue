@@ -6,7 +6,7 @@ import {useAnimatedGradient} from '@/jukebox/useAnimatedGradient';
 import {formatTime} from "@/jukebox/utils";
 
 import RangeSlider from '@/components/common/RangeSlider.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 
 // Tabler icons
 import { 
@@ -155,17 +155,19 @@ function toggleTimeDisplay() {
 <template>
   <div class="jukebox-player" :class="{ 'with-animated-bg': showAnimatedBg }" :style="gradientStyle">
     <div class="jukebox-player-content">
-      <!-- Track Artwork -->
-      <div v-if="showArtwork" class="track-artwork-container">
-        <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
-        <div v-else class="track-artwork track-artwork-placeholder">
-          <IconMusicNote width="80" height="80" />
+      <div class="track-info-row">
+        <!-- Track Artwork -->
+        <div v-if="showArtwork" class="track-artwork-container">
+          <div v-if="playerStore.currentTrack?.picture" :style="pictureStyle" class="track-artwork"></div>
+          <div v-else class="track-artwork track-artwork-placeholder">
+            <IconMusicNote width="80" height="80" />
+          </div>
         </div>
-      </div>
-      
-      <div class="track-info-top">
-        <div class="title">{{ playerStore.currentTrack?.title || 'No track selected' }}</div>
-        <div class="artist">{{ playerStore.currentTrack?.artist || '&nbsp;' }}</div>
+        <!-- Track Info -->
+        <div class="track-info-top">
+          <div class="title">{{ playerStore.currentTrack?.title || 'No track selected' }}</div>
+          <div class="artist">{{ playerStore.currentTrack?.artist || '&nbsp;' }}</div>
+        </div>
       </div>
       <div class="player-controls-bottom">
         <div class="controls">
@@ -197,7 +199,6 @@ function toggleTimeDisplay() {
           />
           <span class="progress-bar-time time-duration">{{ formatTime(playerStore.duration) }}</span>
         </div>
-        <!-- Shuffle/Repeat Buttons -->
         <div class="playback-options">
           <Button
             variant="light"
@@ -281,23 +282,125 @@ function toggleTimeDisplay() {
 
 /* Responsive adjustments for popover context */
 @media (max-width: 768px) {
-  .jukebox-player {
-    min-width: 400px;
+  .jukebox-player,
+  .jukebox-player-content {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 300px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
   }
-  
+
+  .track-info-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .track-artwork-container {
+    order: 2;
+    margin-bottom: 0;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+  .track-info-top {
+    order: 1;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
   .track-artwork {
-    width: 150px;
-    height: 150px;
-    max-width: 300px;
-    max-height: 300px;
+    width: 72px !important;
+    height: 72px !important;
+    max-width: 80px !important;
+    max-height: 80px !important;
+  }
+  .player-controls-bottom {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 0.2em !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+  .progress-bar {
+    grid-column: 1 / 4;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5em !important;
+    width: 100% !important;
+    margin-bottom: 0.3em !important;
+  }
+  .controls {
+    grid-column: 1;
+    grid-row: 2;
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .playback-options {
+    grid-column: 2;
+    grid-row: 2;
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .volume-control {
+    grid-column: 3;
+    grid-row: 2;
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .controls button, .volume-button, .playback-options button {
+    font-size: 1rem !important;
+    min-width: 2rem !important;
+    min-height: 2rem !important;
+    padding: 0.2rem !important;
+  }
+  .controls button.play-pause {
+    font-size: 1.1rem !important;
+    min-width: 2.2rem !important;
+    min-height: 2.2rem !important;
+  }
+  .progress-bar-time.time-current {
+    font-size: 0.95em !important;
+    text-align: left !important;
+    min-width: 2.5em;
+    margin-bottom: 0 !important;
+  }
+  .progress-bar-time.time-duration {
+    font-size: 0.95em !important;
+    text-align: right !important;
+    min-width: 2.5em;
+    margin-top: 0 !important;
+  }
+  .progress-bar .range-slider {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0.1em 0 !important;
+    display: block !important;
   }
 }
 
-@media (max-width: 480px) {
-  .jukebox-player {
-    min-width: 300px;
-  }
-  
+@media (max-width: 480px) { 
   .track-artwork {
     width: 120px;
     height: 120px;
@@ -393,37 +496,52 @@ function toggleTimeDisplay() {
   color: var(--jp-color-primary-light);
 }
 .player-controls-bottom {
-  display: grid;
-  grid-template-areas: "controls progress playback-options volume";
-  grid-template-columns: auto 1fr auto auto;
+  display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 1em;
+  width: 100%;
 }
-.controls {
-  grid-area: controls;
+.player-controls-row {
   display: flex;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
   gap: 1em;
+  width: auto;
+}
+.controls, .playback-options, .volume-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .progress-bar {
-  grid-area: progress;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 1em;
-}
-.playback-options {
-  display: flex;
-  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
   gap: 0.5em;
-  grid-area: playback-options;
-  justify-content: center;
+}
+.progress-bar-time.time-current {
+  text-align: left;
+  min-width: 2.5em;
+}
+.progress-bar-time.time-duration {
+  text-align: right;
+  min-width: 2.5em;
+}
+.progress-bar .range-slider {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0 0.2em;
+  display: block;
 }
 .playback-options .active {
   color: var(--jp-color-text);
   background: var(--jp-color-primary-light);
 }
 .volume-control {
-  grid-area: volume;
   position: relative;
   display: flex;
   justify-content: center;
@@ -493,4 +611,42 @@ function toggleTimeDisplay() {
 .progress-bar-time.time-current {
   cursor: pointer;
 }
+
+/* --- JukeboxPlayer Desktop (Regular) View Fixes --- */
+.player-controls-bottom {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1em;
+  width: 100%;
+}
+.progress-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 0.5em;
+}
+.controls, .playback-options, .volume-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.progress-bar-time.time-current {
+  text-align: left;
+  min-width: 2.5em;
+}
+.progress-bar-time.time-duration {
+  text-align: right;
+  min-width: 2.5em;
+}
+.progress-bar .range-slider {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0 0.2em;
+  display: block;
+}
+/* --- END JukeboxPlayer Desktop (Regular) View Fixes --- */
 </style> 

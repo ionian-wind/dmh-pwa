@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { useFloating, offset, flip, shift, autoUpdate, autoPlacement } from '@floating-ui/vue';
+import type { Placement } from '@floating-ui/vue';
 
 interface Props {
   isOpen: boolean;
   triggerEl?: any;
   trigger?: 'click' | 'hover' | 'focus';
-  placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end' | 'left-start' | 'left-center' | 'left-end' | 'right-start' | 'right-center' | 'right-end';
+  placement?: Placement;
   offset?: number;
   verticalOffset?: number;
   closeOnClickOutside?: boolean;
@@ -16,6 +18,7 @@ interface Props {
   maxWidth?: string;
   minWidth?: string;
   disableInternalTrigger?: boolean;
+  autoPlacement?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -30,7 +33,8 @@ const props = withDefaults(defineProps<Props>(), {
   trapFocus: false,
   maxWidth: undefined,
   minWidth: undefined,
-  disableInternalTrigger: false
+  disableInternalTrigger: false,
+  autoPlacement: false
 });
 
 const emit = defineEmits<{
@@ -38,179 +42,32 @@ const emit = defineEmits<{
   (e: 'open'): void;
 }>();
 
-const popoverRef = ref<HTMLDivElement>();
-const triggerRef = ref<HTMLElement>();
+const popoverRef = ref<HTMLElement | null>(null);
+const triggerRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
-const position = ref({ top: 0, left: 0 });
-const activePlacement = ref(props.placement);
+
+const floatingPlacementValue = computed(() => props.placement || 'bottom');
+
+// Use Floating UI for positioning
+const { floatingStyles, placement: floatingPlacement } = useFloating(
+  triggerRef,
+  popoverRef,
+  {
+    ...(props.autoPlacement ? {} : {placement: floatingPlacementValue}),
+    middleware: [
+      offset(props.offset || 8),
+      ...(props.autoPlacement ? [autoPlacement()] : [flip(), shift()]),
+    ],
+    whileElementsMounted: autoUpdate,
+  }
+);
 
 // Computed classes
 const popoverClasses = computed(() => [
   'popover-panel',
-  `popover-panel--${activePlacement.value}`,
+  `popover-panel--${floatingPlacement}`,
   { 'popover-panel--visible': isVisible.value }
 ]);
-
-// Position calculation
-function calculatePosition() {
-  const rawTriggerEl = props.triggerEl || triggerRef.value?.firstElementChild || triggerRef.value;
-
-  if (!rawTriggerEl) {
-    return;
-  }
-  
-  // Handle case where triggerEl is a Vue component instance
-  const triggerEl = rawTriggerEl.$el || rawTriggerEl;
-
-  if (!triggerEl || !popoverRef.value) {
-    return;
-  }
-
-  const triggerRect = triggerEl.getBoundingClientRect();
-  
-  // Wait for popover to be rendered and get its dimensions
-  if (!popoverRef.value.offsetWidth || !popoverRef.value.offsetHeight) {
-    // Use requestAnimationFrame for better timing
-    requestAnimationFrame(() => {
-      calculatePosition();
-    });
-    return;
-  }
-  
-  const popoverRect = popoverRef.value.getBoundingClientRect();
-  
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  let top = 0;
-  let left = 0;
-  let finalPlacement = props.placement as string;
-
-  const basePlacement = props.placement.split('-')[0];
-  const alignment = props.placement.includes('-') ? props.placement.split('-')[1] : 'center';
-
-  // Try the preferred placement first
-  let placementResult = calculatePlacement(basePlacement, alignment, triggerRect, popoverRect, viewportWidth, viewportHeight);
-  
-  // If it doesn't fit, try alternatives
-  if (!placementResult.fits) {
-    const alternatives = getAlternativePlacements(basePlacement);
-    for (const altPlacement of alternatives) {
-      const altResult = calculatePlacement(altPlacement, alignment, triggerRect, popoverRect, viewportWidth, viewportHeight);
-      if (altResult.fits) {
-        placementResult = altResult;
-        finalPlacement = altPlacement;
-        break;
-      }
-    }
-  }
-
-  // If no placement fits, use the original and let it be clipped
-  top = placementResult.top;
-  left = placementResult.left;
-
-  // Final viewport boundary check with more aggressive clamping
-  const minMargin = 8;
-  const maxMargin = 16;
-  
-  // Apply verticalOffset here
-  top = top + (props.verticalOffset ?? 0);
-
-  // Ensure popover doesn't go off-screen
-  if (left < minMargin) left = minMargin;
-  if (top < minMargin) top = minMargin;
-  if (left + popoverRect.width > viewportWidth - minMargin) {
-    left = viewportWidth - popoverRect.width - minMargin;
-  }
-  if (top + popoverRect.height > viewportHeight - minMargin) {
-    top = viewportHeight - popoverRect.height - minMargin;
-  }
-
-  // Additional check for very small viewports
-  if (viewportWidth < 400) {
-    left = maxMargin;
-    if (left + popoverRect.width > viewportWidth - maxMargin) {
-      left = viewportWidth - popoverRect.width - maxMargin;
-    }
-  }
-
-  position.value = { top, left };
-  activePlacement.value = finalPlacement as any;
-}
-
-function calculateAlignment(alignment: string, triggerRect: DOMRect, popoverRect: DOMRect) {
-  if (alignment === 'start') {
-    return triggerRect.left;
-  }
-  if (alignment === 'end') {
-    return triggerRect.right - popoverRect.width;
-  }
-  // Default to center
-  return triggerRect.left + (triggerRect.width / 2) - (popoverRect.width / 2);
-}
-
-function calculateVerticalAlignment(alignment: string, triggerRect: DOMRect, popoverRect: DOMRect) {
-  if (alignment === 'start') {
-    return triggerRect.top;
-  }
-  if (alignment === 'end') {
-    return triggerRect.bottom - popoverRect.height;
-  }
-  // Default to center
-  return triggerRect.top + (triggerRect.height / 2) - (popoverRect.height / 2);
-}
-
-function calculatePlacement(basePlacement: string, alignment: string, triggerRect: DOMRect, popoverRect: DOMRect, viewportWidth: number, viewportHeight: number) {
-  let top = 0;
-  let left = 0;
-  let fits = true;
-
-  // Calculate Popover Position
-  switch (basePlacement) {
-    case 'top':
-      top = triggerRect.top - popoverRect.height - props.offset;
-      left = calculateAlignment(alignment, triggerRect, popoverRect);
-      break;
-    case 'bottom':
-      top = triggerRect.bottom + props.offset;
-      left = calculateAlignment(alignment, triggerRect, popoverRect);
-      break;
-    case 'left':
-      top = calculateVerticalAlignment(alignment, triggerRect, popoverRect);
-      left = triggerRect.left - popoverRect.width - props.offset;
-      break;
-    case 'right':
-      top = calculateVerticalAlignment(alignment, triggerRect, popoverRect);
-      left = triggerRect.right + props.offset;
-      break;
-  }
-  
-  // Check if it fits within the viewport
-  if (top < 8 || left < 8 || (left + popoverRect.width) > (viewportWidth - 8) || (top + popoverRect.height) > (viewportHeight - 8)) {
-    fits = false;
-  }
-
-  // Special handling for large content (like jukebox player)
-  if (popoverRect.width > viewportWidth - 16 || popoverRect.height > viewportHeight - 16) {
-    // Center the popover if it's too large
-    left = Math.max(8, (viewportWidth - popoverRect.width) / 2);
-    top = Math.max(8, (viewportHeight - popoverRect.height) / 2);
-    fits = true;
-  }
-
-  return { top, left, fits };
-}
-
-function getAlternativePlacements(preferred: string): string[] {
-  const placements = ['top', 'bottom', 'left', 'right'];
-  
-  const opposite: { [key: string]: string } = {
-    top: 'bottom', bottom: 'top', left: 'right', right: 'left'
-  };
-
-  // Prioritize the opposite direction, then the rest
-  return [opposite[preferred], ...placements.filter(p => p !== preferred && p !== opposite[preferred])];
-}
 
 // Event handlers
 function handleKeydown(e: KeyboardEvent) {
@@ -221,7 +78,9 @@ function handleKeydown(e: KeyboardEvent) {
   }
 
   if (props.trapFocus && e.key === 'Tab') {
-    const focusableElements = popoverRef.value?.querySelectorAll(
+    const el = popoverRef.value;
+    if (!el) return;
+    const focusableElements = el.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     
@@ -242,10 +101,10 @@ function handleKeydown(e: KeyboardEvent) {
 
 function handleClickOutside(e: MouseEvent) {
   if (!isVisible.value || !props.closeOnClickOutside) return;
-  
   const target = e.target as Node;
-  if (popoverRef.value && !popoverRef.value.contains(target) && 
-      triggerRef.value && !triggerRef.value.contains(target)) {
+  const popoverEl = popoverRef.value;
+  const triggerEl = triggerRef.value;
+  if (popoverEl && !popoverEl.contains(target) && triggerEl && !triggerEl.contains(target)) {
     close();
   }
 }
@@ -293,7 +152,6 @@ function handleTriggerBlur() {
 function open() {
   if (isVisible.value) return;
   
-  activePlacement.value = props.placement;
   isVisible.value = true;
   emit('open');
   
@@ -301,7 +159,6 @@ function open() {
   nextTick(() => {
     // Add a small delay to ensure the popover is fully rendered
     setTimeout(() => {
-      calculatePosition();
       if (props.autoFocus && popoverRef.value) {
         const firstFocusable = popoverRef.value.querySelector(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -349,18 +206,9 @@ watch(() => isVisible.value, (visible) => {
   if (visible) {
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('resize', calculatePosition);
-    window.addEventListener('scroll', calculatePosition);
-    
-    // Recalculate position after a short delay to ensure content is rendered
-    setTimeout(() => {
-      calculatePosition();
-    }, 50);
   } else {
     window.removeEventListener('keydown', handleKeydown);
     window.removeEventListener('mousedown', handleClickOutside);
-    window.removeEventListener('resize', calculatePosition);
-    window.removeEventListener('scroll', calculatePosition);
   }
 });
 
@@ -374,22 +222,20 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('mousedown', handleClickOutside);
-  window.removeEventListener('resize', calculatePosition);
-  window.removeEventListener('scroll', calculatePosition);
 });
 </script>
 
 <template>
-  <div class="popover-container">
+  <div>
     <!-- Trigger slot -->
     <div
       ref="triggerRef"
-      class="popover-trigger"
       @click="handleTriggerClick"
       @mouseenter="handleTriggerMouseEnter"
       @mouseleave="handleTriggerMouseLeave"
       @focus="handleTriggerFocus"
       @blur="handleTriggerBlur"
+      class="popover-trigger"
     >
       <slot name="trigger" />
     </div>
@@ -400,31 +246,28 @@ onUnmounted(() => {
         v-if="isVisible"
         ref="popoverRef"
         :class="popoverClasses"
-        :style="{
-          top: `${position.top}px`,
-          left: `${position.left}px`,
-          maxWidth: maxWidth,
-          minWidth: minWidth
-        }"
+        :style="{ ...floatingStyles, maxWidth: props.maxWidth, minWidth: props.minWidth }"
         role="dialog"
         :aria-labelledby="title ? 'popover-title' : undefined"
         aria-modal="true"
       >
         <!-- Corner slots for custom buttons -->
         <!-- Usage: <template #corner-left>...</template> and <template #corner-right>...</template> -->
-        <div class="popover-corner popover-corner--left">
-          <slot name="corner-left" />
+        <div v-if="title || $slots['corner-right'] || $slots['corner-left']" class="popover-head">
+          <div class="popover-corner popover-corner--left">
+            <slot name="corner-left" />
+          </div>
+          <!-- Header -->
+          <div class="popover-panel__header">
+            <h3 v-if="title" id="popover-title" class="popover-panel__title">{{ title }}</h3>
+          </div>
+          <div class="popover-corner popover-corner--right">
+            <slot name="corner-right" />
+          </div>
         </div>
-        <div class="popover-corner popover-corner--right">
-          <slot name="corner-right" />
-        </div>
-        <!-- Header -->
-        <div v-if="title" class="popover-panel__header">
-          <h3 id="popover-title" class="popover-panel__title">{{ title }}</h3>
-        </div>
-
+        
         <!-- Content -->
-        <div class="popover-panel__content">
+        <div class="popover-panel--content">
           <slot />
         </div>
       </div>
@@ -433,16 +276,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.popover-container {
-  position: relative;
-  display: inline-block;
-}
-
-.popover-trigger {
-  display: inline-block;
-  cursor: pointer;
-}
-
 .popover-panel {
   position: fixed;
   z-index: 9000;
@@ -455,12 +288,40 @@ onUnmounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding: var(--base-padding);
+}
+
+.popover-head {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 2.5rem;
+}
+
+.popover-corner {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+.popover-corner--left {
+  justify-content: flex-start;
+}
+.popover-corner--right {
+  justify-content: flex-end;
 }
 
 .popover-panel__header {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border-light);
-  background: var(--color-background-soft);
+  min-width: 0;
 }
 
 .popover-panel__title {
@@ -468,86 +329,31 @@ onUnmounted(() => {
   font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.popover-panel__content {
-  padding: var(--spacing-md);
-  overflow-y: auto;
+.popover-panel--content {
+  overflow: hidden;
   flex: 1;
 }
 
 /* Transitions */
 .popover-fade-enter-active,
 .popover-fade-leave-active {
-  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  transition: opacity var(--transition-normal);
 }
 
 .popover-fade-enter-from,
 .popover-fade-leave-to {
   opacity: 0;
-  transform: scale(0.95);
 }
 
 /* Focus styles */
 .popover-panel:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-}
-
-/* Placement-specific styles */
-.popover-panel--top-center,
-.popover-panel--bottom-center {
-  transform-origin: center bottom;
-}
-
-.popover-panel--left-center,
-.popover-panel--right-center {
-  transform-origin: center left;
-}
-
-/* Center alignment visual indicators (optional) */
-.popover-panel--top-center::before,
-.popover-panel--bottom-center::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-}
-
-.popover-panel--top-center::before {
-  bottom: -6px;
-  border-top: 6px solid var(--color-border);
-}
-
-.popover-panel--bottom-center::before {
-  top: -6px;
-  border-bottom: 6px solid var(--color-border);
-}
-
-.popover-panel--left-center::after,
-.popover-panel--right-center::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-}
-
-.popover-panel--left-center::after {
-  right: -6px;
-  border-left: 6px solid var(--color-border);
-}
-
-.popover-panel--right-center::after {
-  left: -6px;
-  border-right: 6px solid var(--color-border);
 }
 
 /* Responsive adjustments */
@@ -561,22 +367,9 @@ onUnmounted(() => {
 
 @media (max-width: 480px) {
   .popover-panel {
-    max-width: calc(100vw - 16px) !important;
+    max-width: calc(97vw - 16px) !important;
     min-width: 150px !important;
     max-height: calc(100vh - 16px) !important;
   }
-}
-
-.popover-corner {
-  position: absolute;
-  top: 0.5rem;
-  z-index: 20;
-  pointer-events: auto;
-}
-.popover-corner--left {
-  left: 0.5rem;
-}
-.popover-corner--right {
-  right: 0.5rem;
 }
 </style> 

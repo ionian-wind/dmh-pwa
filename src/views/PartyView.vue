@@ -9,7 +9,7 @@ import PartyEditor from '@/components/PartyEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
 import { useI18n } from 'vue-i18n';

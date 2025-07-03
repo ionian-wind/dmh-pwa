@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import Button from './Button.vue';
+import Button from '../form/Button.vue';
 import { computed, useSlots, Fragment, Comment } from 'vue';
 import { IconEye, IconPencil, IconCopy, IconTrash } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';

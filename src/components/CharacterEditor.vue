@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import type { PlayerCharacter, UUID } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 
 const props = withDefaults(defineProps<{

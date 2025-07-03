@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { IconGift, IconDownload, IconX, IconSignal3g, IconDeviceMobile } from '@tabler/icons-vue';
 
 const isOnline = ref(navigator.onLine);

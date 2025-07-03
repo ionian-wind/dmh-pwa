@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import Button from '@/components/common/Button.vue';
+import Button from '../../../src/components/form/Button.vue';
 
 describe('Button', () => {
   it('renders slot content', () => {

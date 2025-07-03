@@ -140,6 +140,7 @@ function getCaretCoordinates(textarea: HTMLTextAreaElement): HTMLElement | null 
   anchor.style.width = '1px';
   anchor.style.height = '1em';
   document.body.appendChild(anchor);
+
   return anchor;
 }
 

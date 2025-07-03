@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { PlayerCharacter } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';;
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 
 const props = defineProps<{
   character: PlayerCharacter;

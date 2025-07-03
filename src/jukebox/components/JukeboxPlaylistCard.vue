@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { JukeboxPlaylist } from '../types';
 import BaseCard from '@/components/common/BaseCard.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import { IconMusic } from '@tabler/icons-vue';
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import Button from './Button.vue';
+import Button from '../form/Button.vue';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import { IconBookmark } from '@tabler/icons-vue';
 

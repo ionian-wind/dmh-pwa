@@ -9,7 +9,7 @@ import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import TrackCard from '@/jukebox/components/TrackCard.vue';
 import BaseListView from '@/components/common/BaseListView.vue';
-import Button from '@/components/common/Button.vue';
+import Button from '@/components/form/Button.vue';
 import { useConfigStore } from '@/utils/configStore';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import { useI18n } from 'vue-i18n';

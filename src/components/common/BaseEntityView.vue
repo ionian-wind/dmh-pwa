@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Button from './Button.vue';
+import Button from '../form/Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { IconPencil, IconTrash, IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
