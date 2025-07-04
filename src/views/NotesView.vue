@@ -13,6 +13,7 @@ import type { Note } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { IconX } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
+import TagChip from '@/components/common/TagChip.vue';
 
 const noteStore = useNoteStore();
 const partyStore = usePartyStore();
@@ -109,12 +110,9 @@ async function handleCopy(note: Note) {
     @update:searchQuery="updateSearchQuery"
   >
     <template #search-filter>
-      <span v-if="noteStore.tagFilter" class="tag-chip">
+      <TagChip v-if="noteStore.tagFilter" removable @remove="router.push({ path: '/notes' })">
         {{ t('tagSelector.hash') }}{{ noteStore.tagFilter }}
-        <button class="remove-tag" @click="router.push({ path: '/notes' })" :title="t('common.removeTagFilter')">
-          <IconX />
-        </button>
-      </span>
+      </TagChip>
     </template>
   </BaseListView>
 </template>

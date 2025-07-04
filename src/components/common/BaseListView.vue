@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import VueDraggable from 'vuedraggable';
 import { IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
+import { QList, QItem } from 'quasar';
 
 const props = defineProps({
   items: { type: Array, required: true },
@@ -39,27 +40,19 @@ function handleSortEnd() {
 function handleCreate() {
   editingItem.value = null;
   showEditor.value = true;
-  // $emit('create') will be used in template
 }
 function handleEdit(item: any) {
   editingItem.value = item;
   showEditor.value = true;
-  // $emit('edit', item) will be used in template
 }
-function handleDelete(item: any) {
-  // $emit('delete', item) will be used in template
-}
+function handleDelete(item: any) {}
 function handleSubmit(item: any) {
   showEditor.value = false;
-  // $emit('submit', item) will be used in template
 }
 function handleCancel() {
   showEditor.value = false;
-  // $emit('cancel') will be used in template
 }
-function handleSearch(val: string) {
-  // $emit('update:searchQuery', val) will be used in template
-}
+function handleSearch(val: string) {}
 function toggleSidePanel() {
   isSidePanelVisible.value = !isSidePanelVisible.value;
   emit('update:sidePanelVisible', isSidePanelVisible.value);
@@ -76,7 +69,7 @@ const cardPropsWithDraggable = (item: any) => {
 </script>
 
 <template>
-  <div class="view-root base-list-container">
+  <div class="q-pa-md q-gutter-md base-list-container">
     <ViewHeader
       v-if="!hideHeader"
       show-create
@@ -91,8 +84,8 @@ const cardPropsWithDraggable = (item: any) => {
         <slot :name="name" v-bind="slotProps" />
       </template>
     </ViewHeader>
-    <div class="base-list-layout">
-      <div class="main-list-column">
+    <div class="row q-col-gutter-md base-list-layout">
+      <div class="col main-list-column">
         <div class="view-list">
           <div v-if="items.length === 0" class="view-empty">
             <p>{{ emptyMessage }}</p>
@@ -105,52 +98,54 @@ const cardPropsWithDraggable = (item: any) => {
               item-key="id"
               @end="handleSortEnd"
               tag="ul"
-              class="simple-list"
+              class="q-list simple-list"
             >
               <template #item="{ element: item }">
-                <component :is="cardComponent" v-bind="cardPropsWithDraggable(item)" />
+                <QItem>
+                  <component :is="cardComponent" v-bind="cardPropsWithDraggable(item)" />
+                </QItem>
               </template>
             </VueDraggable>
             <div v-else>
-              <div v-if="viewStyle === 'masonry'" class="masonry-grid">
-                <component
-                  v-for="item in items as any[]"
-                  :is="cardComponent"
-                  :key="item.id"
-                  v-bind="cardPropsWithDraggable(item)"
-                  @view="$emit('view', item)"
-                  @edit="() => { handleEdit(item); $emit('edit', item); }"
-                  @delete="() => { handleDelete(item); $emit('delete', item); }"
-                  @tag-click="$emit('tag-click', $event)"
-                  @copy="$emit('copy', item)"
-                />
+              <div v-if="viewStyle === 'masonry'" class="q-gutter-md row items-stretch">
+                <div v-for="item in items as any[]" :key="item.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+                  <component
+                    :is="cardComponent"
+                    v-bind="cardPropsWithDraggable(item)"
+                    @view="$emit('view', item)"
+                    @edit="() => { handleEdit(item); $emit('edit', item); }"
+                    @delete="() => { handleDelete(item); $emit('delete', item); }"
+                    @tag-click="$emit('tag-click', $event)"
+                    @copy="$emit('copy', item)"
+                  />
+                </div>
               </div>
-              <div v-else-if="viewStyle === 'grid'" class="grid-layout">
-                <component
-                  v-for="item in items as any[]"
-                  :is="cardComponent"
-                  :key="item.id"
-                  v-bind="cardPropsWithDraggable(item)"
-                  @view="$emit('view', item)"
-                  @edit="() => { handleEdit(item); $emit('edit', item); }"
-                  @delete="() => { handleDelete(item); $emit('delete', item); }"
-                  @tag-click="$emit('tag-click', $event)"
-                  @copy="$emit('copy', item)"
-                />
+              <div v-else-if="viewStyle === 'grid'" class="q-gutter-md row items-stretch">
+                <div v-for="item in items as any[]" :key="item.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+                  <component
+                    :is="cardComponent"
+                    v-bind="cardPropsWithDraggable(item)"
+                    @view="$emit('view', item)"
+                    @edit="() => { handleEdit(item); $emit('edit', item); }"
+                    @delete="() => { handleDelete(item); $emit('delete', item); }"
+                    @tag-click="$emit('tag-click', $event)"
+                    @copy="$emit('copy', item)"
+                  />
+                </div>
               </div>
-              <ul v-else :key="'static'" class="simple-list">
-                <component
-                  v-for="item in items as any[]"
-                  :is="cardComponent"
-                  :key="item.id"
-                  v-bind="cardPropsWithDraggable(item)"
-                  @view="$emit('view', item)"
-                  @edit="() => { handleEdit(item); $emit('edit', item); }"
-                  @delete="() => { handleDelete(item); $emit('delete', item); }"
-                  @tag-click="$emit('tag-click', $event)"
-                  @copy="$emit('copy', item)"
-                />
-              </ul>
+              <QList v-else :key="'static'" class="simple-list">
+                <QItem v-for="item in items as any[]" :key="item.id">
+                  <component
+                    :is="cardComponent"
+                    v-bind="cardPropsWithDraggable(item)"
+                    @view="$emit('view', item)"
+                    @edit="() => { handleEdit(item); $emit('edit', item); }"
+                    @delete="$emit('delete', item)"
+                    @tag-click="$emit('tag-click', $event)"
+                    @copy="$emit('copy', item)"
+                  />
+                </QItem>
+              </QList>
             </div>
           </div>
           <component
@@ -180,26 +175,4 @@ const cardPropsWithDraggable = (item: any) => {
     <slot />
   </div>
 </template>
-
-<style scoped>
-.simple-list {
-  list-style: none;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  max-width: 1200px;
-  margin: auto;
-  padding: var(--base-padding);
-}
-
-.grid-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-md);
-  max-width: 1200px;
-  margin: auto;
-  padding: var(--base-padding);
-}
-</style>
 

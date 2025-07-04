@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { QFab } from 'quasar';
 import { useModalState } from '@/composables/useModalState';
 
 /**
@@ -54,121 +54,44 @@ const emit = defineEmits<{
 // Modal state integration
 const { isModalOpen } = useModalState();
 
-// Animation state
-const isPressed = ref(false);
-const isHovered = ref(false);
-const ripples = ref<Array<{ id: number; x: number; y: number; size: number }>>([]);
-let rippleId = 0;
-
-const buttonClasses = computed(() => [
-  'float-action-button',
-  `float-action-button--${props.position}`,
-  `float-action-button--${props.size}`,
-  `float-action-button--${props.variant}`,
-  {
-    'float-action-button--disabled': props.disabled,
-    'float-action-button--hidden': props.hideOnModal && isModalOpen.value,
-    'float-action-button--static': props.static,
-    'float-action-button--pressed': isPressed.value,
-    'float-action-button--hovered': isHovered.value
-  }
-]);
-
-const handleClick = (event: MouseEvent) => {
-  if (!props.disabled) {
-    // Add ripple effect
-    if (props.ripple) {
-      addRipple(event);
-    }
-    
-    // Trigger press animation
-    isPressed.value = true;
-    setTimeout(() => {
-      isPressed.value = false;
-    }, 150);
-    
-    emit('click', event);
-  }
+// Map position prop to Quasar's fixed/position system
+const positionMap: Record<string, {fixed: boolean, position: string}> = {
+  'top-left': { fixed: true, position: 'top-left' },
+  'top-right': { fixed: true, position: 'top-right' },
+  'bottom-left': { fixed: true, position: 'bottom-left' },
+  'bottom-right': { fixed: true, position: 'bottom-right' },
 };
 
-const handleMouseDown = () => {
-  if (!props.disabled) {
-    isPressed.value = true;
-  }
+// Map size to Quasar size
+const sizeMap: Record<string, string> = {
+  small: 'sm',
+  medium: 'md',
+  large: 'lg',
 };
 
-const handleMouseUp = () => {
-  if (!props.disabled) {
-    isPressed.value = false;
-  }
+// Map variant to Quasar color
+const colorMap: Record<string, string> = {
+  primary: 'primary',
+  secondary: 'secondary',
+  success: 'positive',
+  danger: 'negative',
+  warning: 'warning',
 };
-
-const handleMouseEnter = () => {
-  if (!props.disabled) {
-    isHovered.value = true;
-  }
-};
-
-const handleMouseLeave = () => {
-  if (!props.disabled) {
-    isHovered.value = false;
-    isPressed.value = false;
-  }
-};
-
-const addRipple = (event: MouseEvent) => {
-  const button = event.currentTarget as HTMLElement;
-  const rect = button.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  const x = event.clientX - rect.left - size / 2;
-  const y = event.clientY - rect.top - size / 2;
-  
-  const ripple = {
-    id: rippleId++,
-    x,
-    y,
-    size
-  };
-  
-  ripples.value.push(ripple);
-  
-  // Remove ripple after animation
-  setTimeout(() => {
-    ripples.value = ripples.value.filter(r => r.id !== ripple.id);
-  }, 600);
-};
-
-// Cleanup ripples on unmount
-onUnmounted(() => {
-  ripples.value = [];
-});
 </script>
 
 <template>
-  <button
-    :class="buttonClasses"
-    :disabled="disabled"
-    @click="handleClick"
-    @mousedown="handleMouseDown"
-    @mouseup="handleMouseUp"
-    @mouseenter="handleMouseEnter"
-    @mouseleave="handleMouseLeave"
+  <QFab
+    v-if="!props.hideOnModal || !isModalOpen"
+    :color="colorMap[props.variant]"
+    :size="sizeMap[props.size]"
+    :disable="props.disabled"
+    :ripple="props.ripple"
+    :fixed="!props.static && positionMap[props.position]?.fixed"
+    :position="!props.static ? positionMap[props.position]?.position : undefined"
+    @click="(event: MouseEvent) => emit('click', event)"
   >
     <slot />
-    
-    <!-- Ripple effects -->
-    <span
-      v-for="ripple in ripples"
-      :key="ripple.id"
-      class="float-action-button__ripple"
-      :style="{
-        left: ripple.x + 'px',
-        top: ripple.y + 'px',
-        width: ripple.size + 'px',
-        height: ripple.size + 'px'
-      }"
-    />
-  </button>
+  </QFab>
 </template>
 
 <style scoped>

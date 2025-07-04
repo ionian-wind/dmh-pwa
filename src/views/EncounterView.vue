@@ -327,42 +327,48 @@ onMounted(async () => {
         </section>
       </template>
       <template #monsters>
-        <div class="section-header">
-          <h2>{{ t('encounters.monsters.title') }}</h2>
-          <Button @click="showLinkModal = true">{{ t('encounters.monsters.linkAction') }}</Button>
+        <div class="row items-center q-mb-md">
+          <div class="col">
+            <h2>{{ t('encounters.monsters.title') }}</h2>
+          </div>
+          <div class="col-auto">
+            <Button @click="showLinkModal = true" class="q-ml-md">{{ t('encounters.monsters.linkAction') }}</Button>
+          </div>
         </div>
-        <div v-if="encounterMonsters.length === 0" class="empty-state">
+        <div v-if="encounterMonsters.length === 0" class="q-pa-md text-grey text-center q-mt-xl">
           <p>{{ t('encounters.monsters.none') }}</p>
         </div>
-        <div v-else class="monsters-grid">
-          <table>
-            <thead>
-              <tr>
-                <th>{{ t('monsters.name') }}</th>
-                <th>{{ t('common.quantity') }}</th>
-                <th>{{ t('common.actions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="monster in encounterMonsters" :key="monster.id">
-                <td>
-                  <router-link :to="`/monsters/${monster.id}`">
-                    {{ monster.name }}
-                  </router-link>
-                </td>
-                <td>
-                  <Button variant="secondary" @click="openQuantityModal(monster)">
-                    {{ encounter?.monsters[monster.id] }}
-                  </Button>
-                </td>
-                <td>
-                  <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
-                    {{ t('common.unlink') }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else class="row q-gutter-md">
+          <div class="col-12">
+            <table class="q-table">
+              <thead>
+                <tr>
+                  <th>{{ t('monsters.name') }}</th>
+                  <th>{{ t('common.quantity') }}</th>
+                  <th>{{ t('common.actions') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="monster in encounterMonsters" :key="monster.id">
+                  <td>
+                    <router-link :to="`/monsters/${monster.id}`">
+                      {{ monster.name }}
+                    </router-link>
+                  </td>
+                  <td>
+                    <Button variant="secondary" @click="openQuantityModal(monster)">
+                      {{ encounter?.monsters[monster.id] }}
+                    </Button>
+                  </td>
+                  <td>
+                    <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
+                      {{ t('common.unlink') }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </template>
       <template #combats>

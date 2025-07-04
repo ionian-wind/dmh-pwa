@@ -1,18 +1,13 @@
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref, watch} from 'vue'
+import {onMounted, onUnmounted, ref, watch, provide, shallowRef} from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import Button from '@/components/form/Button.vue'
-import JukeboxButton from '@/components/JukeboxButton.vue'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue'
 import PWAStatus from '@/components/PWAStatus.vue'
 import MentionModalStack from '@/components/common/MentionModalStack.vue'
-import LeftMenu from '@/components/LeftMenu.vue'
 import { Section } from '@/types'
 import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
-import RollButton from "@/components/RollButton.vue";
-import CalculatorButton from '@/components/CalculatorButton.vue';
 
 import {
   IconMaximize,
@@ -35,6 +30,9 @@ import {
   IconClockHour10,
   IconClockHour11,
   IconClockHour12,
+  IconMenu2,
+  IconMusic,
+  IconCalculator,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers'
@@ -81,7 +79,6 @@ function toggleLeftMenu() {
 
 const { t } = useI18n()
 const router = useRouter()
-const route = useRoute();
 
 interface SectionItem {
   section: Section;
@@ -157,10 +154,120 @@ onUnmounted(() => {
   document.removeEventListener('mozfullscreenchange', updateFullscreenState);
   document.removeEventListener('MSFullscreenChange', updateFullscreenState);
 });
+
+const leftDrawerOpen = ref(false)
+const rightDrawerOpen = ref(true)
+
+function toggleLeftDrawer () {
+  leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+function toggleRightDrawer () {
+  rightDrawerOpen.value = !rightDrawerOpen.value
+}
+
+const miniState = ref(true);
+
+const rightDrawerContent = shallowRef<null | (() => any)>(null)
+provide('setRightDrawerContent', (content: any) => {
+  rightDrawerContent.value = content;
+});
+
+const bottomDrawerContent = shallowRef<null | (() => any)>(null)
+provide('setBottomDrawerContent', (content: any) => {
+  bottomDrawerContent.value = content;
+});
+
 </script>
 
 <template>
-  <div class="app layout-flex">
+  <QLayout view="lHh lpR lFr">
+    <QHeader reveal bordered class="bg-secondary text-white">
+      <QToolbar>
+        <QBtn dense flat @click="toggleLeftDrawer">
+          <IconMenu2 />
+        </QBtn>
+
+        <QToolbarTitle>
+          Title
+        </QToolbarTitle>
+
+<!--        <QBtn dense flat round icon="menu" @click="toggleRightDrawer" />-->
+      </QToolbar>
+    </QHeader>
+
+    <QDrawer show-if-above
+             v-model="leftDrawerOpen"
+             side="left"
+             bordered
+             :mini="miniState"
+             @mouseenter="miniState = false"
+             @mouseleave="miniState = true"
+             class="full-height column justify-between"
+    >
+    <div>
+      <QList>
+        <template v-for="(menuItem, index) in sections" :key="index">
+          <QItem clickable :active="isActive(menuItem)" v-ripple @click="navigateTo(menuItem.path)">
+            <QItemSection avatar>
+              <component
+                :is="menuItem.section === Section.TIMERS && menuItem.icon.value ? menuItem.icon.value : menuItem.icon"
+                :key="menuItem.section === Section.TIMERS ? animationFrame : undefined"
+              />
+            </QItemSection>
+            <QItemSection>
+              {{ t(menuItem.label) }}
+            </QItemSection>
+          </QItem>
+        </template>
+      </QList>
+    </div>
+    <div>
+      <QList>
+        <QItem clickable :active="false" v-ripple @click="navigateTo('/jukebox')">
+          <QItemSection avatar>
+            <IconMusic />
+          </QItemSection>
+          <QItemSection>
+            {{ t('app.jukebox') }}
+          </QItemSection>
+        </QItem>
+        <QItem clickable :active="false" v-ripple>
+          <QItemSection avatar>
+            <IconCalculator />
+          </QItemSection>
+          <QItemSection>
+            Calculator
+          </QItemSection>
+        </QItem>
+      </QList>
+    </div>
+
+      
+    </QDrawer>
+
+    <QDrawer v-if="rightDrawerContent" v-model="rightDrawerOpen" side="right" overlay bordered class="right-sidebar">
+      <component :is="rightDrawerContent" />
+    </QDrawer>
+
+    <QPageContainer>
+      <router-view />
+    </QPageContainer>
+
+    <QFooter v-if="bottomDrawerContent" bordered class="bottom-bar">
+      <component :is="bottomDrawerContent" />
+    </QFooter>
+
+  </QLayout>
+
+
+
+
+
+
+
+  <div>
+  <!-- <div class="app layout-flex">
     <LeftMenu :minimized="leftMenuMinimized" @toggle="toggleLeftMenu">
       <template #navigation>
         <Button
@@ -210,7 +317,7 @@ onUnmounted(() => {
 
     <div v-if="route.path !== '/jukebox'" class="fab-container-right">
       <RollButton class="fab-item" />
-    </div>
+    </div> -->
     
     <!-- PWA Components -->
     <PWAInstallPrompt />
@@ -220,110 +327,3 @@ onUnmounted(() => {
     <MentionModalStack />
   </div>
 </template>
-
-<style>
-#dice-roller {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 900;
-  display: flex;
-}
-
-#dice-roller canvas {
-  width: 100%;
-  height: 100%;
-}
-
-.fab-container-left,
-.fab-container-right {
-  position: fixed;
-  bottom: 2rem;
-  z-index: 1000;
-  pointer-events: none; /* Allow clicks to pass through the container */
-}
-
-.fab-container-left {
-  left: 4.5rem;
-}
-
-.fab-container-right {
-  right: 2rem;
-}
-
-.fab-container-left > .fab-item,
-.fab-container-right > .fab-item {
-  pointer-events: auto; /* Re-enable pointer events on direct children */
-}
-
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Utility Classes */
-.container {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-.mt-4 { margin-top: 2rem; }
-
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 2rem; }
-
-.app.layout-flex {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: row;
-}
-
-.main-area {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0%;
-  min-height: 0;
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0%;
-  min-height: 0;
-}
-
-.leftmenu-actions-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-.fullscreen-btn,
-.language-switcher {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
-  width: auto;
-  min-width: 0;
-}
-</style>

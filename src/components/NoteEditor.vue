@@ -84,77 +84,42 @@ const handleCancel = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="note ? 'notes.edit' : 'notes.create'"
+    :title="isEditing ? t('editor.editNote') : t('editor.createNote')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="common.save"
-    cancelLabel="common.cancel"
-    modalId="note-editor-modal"
-    show-expand
+    submitLabel="Save Note"
+    cancelLabel="Cancel"
+    modalId="note-editor"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
-    <div v-if="validationError" class="validation-error">{{ validationError }}</div>
-    <div class="form-section">
-      <h3>{{ t('editor.basicInformation') }}</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="title">{{ t('editor.title') }}</label>
-          <input
-            id="title"
-            v-model="editedNote.title"
-            type="text"
-            required
-            :placeholder="t('editor.titlePlaceholder')"
-          >
-        </div>
-        <div class="form-group">
-          <label for="module">{{ t('editor.module') }}</label>
-          <ModuleSelector
-            v-if="!props.hideModuleSelector"
-            v-model="editedNote.moduleId"
-            :placeholder="t('common.noModule')"
-            :allowAnyModule="false"
-          />
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="type">{{ t('editor.type') }}</label>
-          <NoteTypeSelector
-            v-model="editedNote.typeId"
-            :placeholder="t('noteTypeSelector.noType')"
-            allow-create
-          />
-        </div>
-        <div class="form-group">
-          <label for="tags">{{ t('editor.tags') }}</label>
-          <TagSelector
-            v-model="editedNote.tags"
-          />
+    <div class="q-pa-md q-gutter-md">
+      <div class="q-mb-md">
+        <h3>{{ t('editor.content') }}</h3>
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <MarkdownEditor
+              v-model="noteContent"
+              enableMentions
+              :rows="10"
+              :placeholder="t('editor.contentPlaceholder')"
+              class="q-input"
+              label="Content"
+              :current-entity-id="editedNote.id"
+              current-entity-type="note"
+            />
+          </div>
         </div>
       </div>
     </div>
-    <div class="form-section">
-      <h3>{{ t('editor.content') }}</h3>
-      <div class="form-group">
-        <MarkdownEditor
-          v-model="noteContent"
-          enableMentions
-          :rows="10"
-          :placeholder="t('editor.contentPlaceholder')"
-          className="content-editor"
-          label="Content"
-          :current-entity-id="editedNote.id"
-          current-entity-type="note"
-        />
-      </div>
+    <div v-if="validationError" class="q-mt-md q-mb-md text-negative bg-grey-1 q-pa-sm rounded-borders">
+      {{ validationError }}
     </div>
   </BaseModal>
 </template>
 
 <style scoped>
-/* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
+/* Removed custom form-section, form-grid, form-group styles. Use Quasar classes. */
 .validation-error {
   color: var(--color-danger);
   background: var(--color-background-soft);

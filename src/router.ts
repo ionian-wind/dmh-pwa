@@ -32,60 +32,70 @@ const router = createRouter({
       path: '/notes',
       name: 'notes',
       component: NotesView,
-      meta: { exact: true }
-    },
-    {
-      path: '/notes/:id',
-      name: 'note-detail',
-      component: NoteView
+      meta: { exact: true },
+      children: [
+        {
+          path: ':id',
+          name: 'note-detail',
+          component: NoteView
+        },
+      ]
     },
     // Parties routes
     {
       path: '/parties',
       name: 'parties',
       component: PartiesView,
-      meta: { exact: true }
-    },
-    {
-      path: '/parties/:id',
-      name: 'party-detail',
-      component: PartyView
+      meta: { exact: true },
+      children: [
+        {
+          path: ':id',
+          name: 'party-detail',
+          component: PartyView
+        },
+      ]
     },
     // Monsters routes
     {
       path: '/monsters',
       name: 'monsters',
       component: MonstersView,
-      meta: { exact: true }
-    },
-    {
-      path: '/monsters/:id',
-      name: 'monster-detail',
-      component: MonsterView
+      meta: { exact: true },
+      children: [
+        {
+          path: ':id',
+          name: 'monster-detail',
+          component: MonsterView
+        }
+      ]
     },
     // Characters routes
     {
       path: '/characters',
       name: 'characters',
       component: CharactersView,
-      meta: { exact: true }
-    },
-    {
-      path: '/characters/:id',
-      name: 'character-detail',
-      component: CharacterView
+      meta: { exact: true },
+      children: [
+        {
+          path: ':id',
+          name: 'character-detail',
+          component: CharacterView
+        }
+      ]
     },
     // Encounters routes
     {
       path: '/encounters',
       name: 'encounters',
       component: EncountersView,
-      meta: { exact: true }
-    },
-    {
-      path: '/encounters/:id',
-      name: 'encounter-detail',
-      component: EncounterView
+      meta: { exact: true },
+      children: [
+        {
+          path: ':id',
+          name: 'encounter-detail',
+          component: EncounterView
+        },
+      ]
     },
     // Combats routes
     {
@@ -98,12 +108,14 @@ const router = createRouter({
       path: '/modules',
       name: 'modules',
       component: ModulesView,
-      meta: { exact: true }
-    },
-    {
-      path: '/modules/:id',
-      name: 'module-detail',
-      component: ModuleView
+      meta: { exact: true },
+      children: [
+        {
+          path: '/modules/:id',
+          name: 'module-detail',
+          component: ModuleView
+        },
+      ],
     },
     // Jukebox route
     {
@@ -119,12 +131,6 @@ const router = createRouter({
       component: TimersView,
       meta: { exact: true }
     },
-    // Icons route
-    // {
-    //   path: '/icons',
-    //   name: 'AllIcons',
-    //   component: AllIconsView
-    // },
     // 404 route
     {
       path: '/:catchAll(.*)',

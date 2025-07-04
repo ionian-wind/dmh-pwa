@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import BaseEntityView from './BaseEntityView.vue';
-import TabGroup, { type Tab } from './TabGroup.vue';
-import TabPanel from './TabPanel.vue';
+import { QTabs, QTab, QTabPanels, QTabPanel } from 'quasar';
+
+interface Tab {
+  id: string;
+  label: string;
+  icon?: string;
+  disabled?: boolean;
+  badge?: string | number;
+}
 
 interface Props {
   entity: any | null;
@@ -19,7 +26,6 @@ interface Props {
   sidePanelVisible?: boolean;
   tabs: Tab[];
   modelValue?: string;
-  tabGroupProps?: Partial<InstanceType<typeof TabGroup>["$props"]>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -77,20 +83,27 @@ function handleTabAdd() {
   >
     <template #default>
       <div>
-        <TabGroup
+        <QTabs
           v-if="tabs.length > 0"
           v-model="activeTab"
-          :tabs="tabs"
-          v-bind="tabGroupProps"
-          @update:modelValue="handleTabUpdate"
-          @tab-click="handleTabClick"
-          @tab-close="handleTabClose"
-          @tab-add="handleTabAdd"
+          dense
+          class="q-mb-md"
         >
-          <TabPanel :tab-id="activeTab" class="entity-content">
-            <slot :name="activeTab" />
-          </TabPanel>
-        </TabGroup>
+          <QTab
+            v-for="tab in tabs"
+            :key="tab.id"
+            :name="tab.id"
+            :label="tab.label"
+            :icon="tab.icon"
+            :disable="tab.disabled"
+            @click="() => handleTabClick(tab)"
+          />
+        </QTabs>
+        <QTabPanels v-model="activeTab" animated>
+          <QTabPanel v-for="tab in tabs" :key="tab.id" :name="tab.id">
+            <slot :name="tab.id" />
+          </QTabPanel>
+        </QTabPanels>
       </div>
     </template>
     <template v-if="$slots.editor" #editor>

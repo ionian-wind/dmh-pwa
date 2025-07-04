@@ -106,7 +106,7 @@ onMounted(() => {
   <div v-if="showInstallPrompt" class="pwa-install-prompt">
     <div class="pwa-install-content">
       <div class="pwa-install-icon">
-        <img src="/icon-192.png" alt="D&D Notes" />
+        <img src="/dmh-pwa/icon-192.png" alt="D&D Notes" />
       </div>
       <div class="pwa-install-text">
         <h3>Install Owlbear's Dungeon Master Helper</h3>

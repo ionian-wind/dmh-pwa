@@ -131,36 +131,42 @@ onMounted(async () => {
       :loading="loading"
     >
       <!-- Party Content -->
-      <div v-if="party" class="party-content">
-        <section class="content-section">
-          <div class="section-header">
-            <h2>{{ t('partyView.title') }}</h2>
-            <Button @click="showLinkModal = true" class="link-btn">
-              {{ t('parties.linkCharacters') }}
-            </Button>
+      <div v-if="party">
+        <div class="q-pa-md q-gutter-md">
+          <div class="row items-center q-mb-md">
+            <div class="col">
+              <h2>{{ t('partyView.title') }}</h2>
+            </div>
+            <div class="col-auto">
+              <Button @click="showLinkModal = true" class="q-ml-md">
+                {{ t('parties.linkCharacters') }}
+              </Button>
+            </div>
           </div>
-          <div v-if="partyCharacters.length === 0" class="empty-state">
+          <div v-if="partyCharacters.length === 0" class="q-pa-md text-grey text-center q-mt-xl">
             <p>{{ t('partyView.noCharacters') }}</p>
           </div>
-          <div v-else class="characters-grid">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ t('partyView.name') }}</th>
-                  <th>{{ t('partyView.actions') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="character in partyCharacters" :key="character.id">
-                  <td>{{ character.name }}</td>
-                  <td>
-                    <button class="unlink-btn" @click="handleToggleCharacter(character, false)">{{ t('partyView.unlink') }}</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-else class="row q-gutter-md">
+            <div class="col-12">
+              <table class="q-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('partyView.name') }}</th>
+                    <th>{{ t('partyView.actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="character in partyCharacters" :key="character.id">
+                    <td>{{ character.name }}</td>
+                    <td>
+                      <button class="q-btn q-btn--flat text-negative" @click="handleToggleCharacter(character, false)">{{ t('partyView.unlink') }}</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
 
       <!-- Editor Modal -->
@@ -189,128 +195,36 @@ onMounted(async () => {
       modal-id="link-characters-modal"
       @cancel="showLinkModal = false"
     >
-      <div v-if="allCharacters.length === 0" class="empty-state">
+      <div v-if="allCharacters.length === 0" class="q-pa-md text-grey text-center q-mt-xl">
         <p>{{ t('partyView.noAvailable') }}</p>
       </div>
-      <div v-else class="characters-grid">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ t('partyView.name') }}</th>
-              <th>{{ t('partyView.linked') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="character in allCharacters" :key="character.id">
-              <td>{{ character.name }}</td>
-              <td>
-                <ToggleSwitch
-                  :model-value="linkedCharacters[character.id]"
-                  @update:modelValue="(value) => handleToggleCharacter(character, value)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="row q-gutter-md">
+        <div class="col-12">
+          <table class="q-table">
+            <thead>
+              <tr>
+                <th>{{ t('partyView.name') }}</th>
+                <th>{{ t('partyView.linked') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="character in allCharacters" :key="character.id">
+                <td>{{ character.name }}</td>
+                <td>
+                  <ToggleSwitch
+                    :model-value="linkedCharacters[character.id]"
+                    @update:modelValue="(value) => handleToggleCharacter(character, value)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </BaseModal>
   </div>
 </template>
 
 <style scoped>
-.party-content {
-  display: grid;
-  gap: 2rem;
-}
-
-.content-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.content-section h2 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.section-header h2 {
-  margin: 0;
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.characters-grid {
-  overflow-x: auto;
-}
-
-.characters-grid table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.characters-grid th,
-.characters-grid td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.characters-grid th {
-  background: var(--color-background);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.characters-grid td {
-  color: var(--color-text-light);
-}
-
-.unlink-btn {
-  background: var(--color-danger);
-  color: var(--color-text-inverse);
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.unlink-btn:hover {
-  background: var(--color-danger-dark);
-}
-
-.empty-state {
-  color: var(--color-text-light);
-  text-align: center;
-  padding: 2rem;
-  font-style: italic;
-}
-
-.link-btn {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.link-btn:hover {
-  background: var(--color-primary-dark);
-}
+/* Removed .content-section, .section-header, .empty-state, .characters-grid. Use Quasar classes. */
 </style>

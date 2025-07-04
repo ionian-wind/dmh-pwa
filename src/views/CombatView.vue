@@ -355,7 +355,7 @@ function handleAddParticipants() {
       </Button>
     </template>
     <!-- Combat Content -->
-    <div v-if="combat" class="combat-content">
+    <div v-if="combat" class="q-pa-md q-gutter-md">
       <!-- Phase Tabs and Round/Turn Display -->
       <div class="phase-indicator">
         <div 
@@ -378,29 +378,23 @@ function handleAddParticipants() {
         </div>
       </div>
 
-
-              <!-- Combat Summary -->
-      <div class="combat-summary" v-if="combat?.status === 'active'">
+      <!-- Combat Summary -->
+      <div v-if="combat?.status === 'active'" class="q-mb-md">
         <h3>{{ t('combat.summary') }}</h3>
-        
-          <div class="current-turn" v-if="combat && combat.status === 'active' && combat.combatants.length">
-            Current Turn: {{ currentParticipant ? getCombatantDisplayName(currentParticipant) : '' }}
-            <span v-if="currentParticipant?.isPostponed">(Postponed)</span>
+        <div class="row q-gutter-md">
+          <div class="col-12 col-md-6">
+            <label>{{ t('combat.round') }}</label>
+            <span>{{ combat?.currentRound }}</span>
           </div>
-          <div class="summary-grid">
-            <div class="summary-item">
-              <label>{{ t('combat.round') }}</label>
-              <span class="summary-value">{{ combat?.currentRound }}</span>
-            </div>
-            <div class="summary-item">
-              <label>{{ t('combat.turn') }}</label>
-              <span class="summary-value">{{ (combat?.currentTurn ?? 0) + 1 }} of {{ combat?.combatants?.length ?? 0 }}</span>
-            </div>
+          <div class="col-12 col-md-6">
+            <label>{{ t('combat.turn') }}</label>
+            <span>{{ (combat?.currentTurn ?? 0) + 1 }} of {{ combat?.combatants?.length ?? 0 }}</span>
           </div>
+        </div>
       </div>
 
       <!-- Ended State -->
-      <div v-if="combat && combat.status === 'completed'" class="combat-summary empty-state">
+      <div v-if="combat && combat.status === 'completed'" class="q-pa-md text-grey text-center q-mt-xl">
         <IconFlag /> The encounter has concluded after {{ combat.currentRound }} rounds.
       </div>
 

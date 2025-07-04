@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { QToolbar, QToolbarTitle, QInput } from 'quasar';
 import Button from '@/components/form/Button.vue';
 import { IconPlus } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
-defineProps({
+const props = defineProps({
   title: {
     type: String,
     default: ''
@@ -32,37 +33,41 @@ defineProps({
   }
 });
 
-defineEmits(['create', 'update:searchQuery']);
+const emit = defineEmits(['create', 'update:searchQuery']);
 </script>
 
 <template>
-  <div class="view-header">
-    <div class="view-header-content">
-      <div v-if="title" class="header-wrapper header-title">
-        <b>{{ t(title) }}</b>
-        <slot name="subtitle" />
-      </div>
+  <QToolbar class="view-header">
+    <QToolbarTitle v-if="props.title">
+      {{ t(props.title) }}
+      <slot name="subtitle" />
+    </QToolbarTitle>
 
-      <div v-if="showSearch" class="header-wrapper">
-        <input
-          v-if="showSearch"
-          :value="searchQuery"
-          @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-          type="text"
-          :placeholder="t(searchPlaceholder)"
-          class="search-input"
-        >
-        <slot name="search-filter"></slot>
-      </div>
-
-
-      <div v-if="!showSearch && !$slots.default" class="header-wrapper"></div>
-
-      <slot name="actions" />
-
-      <Button v-if="showCreate" @click="$emit('create')" :title="t(createTitle)">
-        <IconPlus />
-      </Button>
+    <div v-if="props.showSearch" class="q-mx-md" style="flex:1;max-width:400px;">
+      <QInput
+        dense
+        outlined
+        :model-value="props.searchQuery"
+        @update:model-value="val => emit('update:searchQuery', val)"
+        :placeholder="t(props.searchPlaceholder)"
+        class="search-input"
+        clearable
+      />
+      <slot name="search-filter"></slot>
     </div>
-  </div>
+
+    <slot name="actions" />
+
+    <Button
+      v-if="props.showCreate"
+      variant="primary"
+      size="small"
+      @click="() => emit('create')"
+      :title="t(props.createTitle)"
+      class="q-ml-md"
+      aria-label="Create"
+    >
+      <IconPlus />
+    </Button>
+  </QToolbar>
 </template>

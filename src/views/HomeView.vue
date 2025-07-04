@@ -138,99 +138,29 @@ async function handleRestore(event: Event) {
 </script>
 
 <template>
-  <div class="home-view">    
-    <div class="content">
-      <!-- Project Header Panel -->
-      <div class="project-header">
-        <div class="project-info">
-          <img src="/icon-192.png" alt="DMH PWA Icon" class="project-icon" />
-          <div class="project-details">
-            <h1 class="project-title">{{ t('project.name') }}</h1>
-            <p class="project-subtitle">{{ t('project.subtitle') }}</p>
-          </div>
+  <div class="q-pa-md q-gutter-md" style="max-width: 1200px; margin: 0 auto;">
+    <div class="q-pa-xl q-mb-xl text-center">
+      <div class="q-mb-md flex flex-center column items-center">
+        <img src="/dmh-pwa/icon-192.png" alt="DMH PWA Icon" style="width: 150px; height: 150px;" />
+        <div class="q-mt-md">
+          <h1 class="text-h2 text-bold">{{ t('project.name') }}</h1>
+          <p class="text-subtitle1 text-grey-7 q-mt-xs">{{ t('project.subtitle') }}</p>
         </div>
-        <!-- <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-          <button @click="handleBackup" class="backup-btn">{{ t('backup.backup') }}</button>
-          <label class="restore-btn">
-            {{ t('backup.restore') }}
-            <input type="file" accept=".zip" @change="handleRestore" style="display:none" />
-          </label>
-        </div> -->
       </div>
-      <BaseListView 
-        :items="statsCards" 
-        :card-component="StatCard"
-        :card-props="(item: any) => ({ item })"
-        :empty-message="t('common.empty')"
-        :create-title="t('common.create')"
-        :show-search="false"
-        view-style="grid"
-        :hide-header="true"
-      />
     </div>
+    <BaseListView 
+      :items="statsCards" 
+      :card-component="StatCard"
+      :card-props="(item: any) => ({ item })"
+      :empty-message="t('common.empty')"
+      :create-title="t('common.create')"
+      :show-search="false"
+      view-style="grid"
+      :hide-header="true"
+    />
   </div>
 </template>
 
 <style scoped>
-.home-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.project-header {
-  padding: 2rem;
-  margin-bottom: 2rem;
-  text-align: center;
-}
-
-.project-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.project-icon {
-  width: 150px;
-  height: 150px;
-}
-
-.project-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.project-title {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: var(--color-text);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.project-subtitle {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--color-text-light);
-  font-style: italic;
-}
-
-.backup-btn, .restore-btn {
-  background: var(--color-primary, #4a90e2);
-  color: #fff;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.backup-btn:hover, .restore-btn:hover {
-  background: var(--color-primary-dark, #357ab8);
-}
-.restore-btn input[type="file"] {
-  display: none;
-}
+/* Removed custom layout classes. Use Quasar classes. */
 </style>
