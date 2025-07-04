@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import EncounterEditor from '@/components/EncounterEditor.vue';
+import EncounterEditor from '../../src/encounters/EncounterEditor.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/modules', () => ({

@@ -1,6 +1,11 @@
 // Macros Plugin Entry
 // Modular dice roller plugin for macro parsing, extraction, and evaluation
-import type { DiceRollerPlugin, ASTNode, EvaluationContext, EvaluationResult } from '../../core';
+import type {
+  DiceRollerPlugin,
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../core';
 import type { MacroAstNode, MacroExtractionResult } from './types';
 import { debug } from '../../../debug';
 import { evaluate } from '../../core';
@@ -12,15 +17,15 @@ import { evaluate } from '../../core';
 // --- Extraction ---
 export function extractMacros(ast: ASTNode): MacroExtractionResult[] {
   const macros: MacroExtractionResult[] = [];
-  
+
   function traverse(node: any): void {
     if (!node || typeof node !== 'object') return;
-    
+
     // Check if this is a macro node
     if (node.type === 'macro' && node.name) {
       macros.push({ name: node.name });
     }
-    
+
     // Recursively traverse all properties
     for (const key in node) {
       if (node[key] && typeof node[key] === 'object') {
@@ -34,15 +39,22 @@ export function extractMacros(ast: ASTNode): MacroExtractionResult[] {
       }
     }
   }
-  
+
   traverse(ast);
   debug('macrosPlugin', 'Extracted macros:', macros);
   return macros;
 }
 
 // --- Evaluation ---
-export function evaluateMacroNode(node: ASTNode, context: EvaluationContext): EvaluationResult {
-  debug('evaluateMacroNode called with:', JSON.stringify(node), JSON.stringify(context));
+export function evaluateMacroNode(
+  node: ASTNode,
+  context: EvaluationContext,
+): EvaluationResult {
+  debug(
+    'evaluateMacroNode called with:',
+    JSON.stringify(node),
+    JSON.stringify(context),
+  );
   if (node.type !== 'macro') {
     debug('Not a macro node:', node);
     throw new Error('Expected macro node');
@@ -72,18 +84,21 @@ export function evaluateMacroNode(node: ASTNode, context: EvaluationContext): Ev
     typeof (result as any).type === 'string' &&
     !('total' in result)
   ) {
-    debug('Result of macro expansion is still AST, recursively evaluating:', result);
+    debug(
+      'Result of macro expansion is still AST, recursively evaluating:',
+      result,
+    );
     return evaluate(result as any, newContext);
   }
   // Add warning and details for macro expansion
   const warnings = [
     ...(result.warnings || []),
-    `Macro '${macroName}' expanded (nesting level: ${nestingLevel + 1})`
+    `Macro '${macroName}' expanded (nesting level: ${nestingLevel + 1})`,
   ];
   const details = {
     ...(result.details || {}),
     macro: macroName,
-    nestingLevel: nestingLevel + 1
+    nestingLevel: nestingLevel + 1,
   };
   const finalResult = { ...result, warnings, details };
   debug('Returning macro evaluation result:', finalResult);
@@ -136,4 +151,4 @@ export const macrosPlugin: DiceRollerPlugin = {
  * Macros Plugin
  * - extractMacros: returns an array of macro names from the AST
  * - evaluateMacro: evaluates macro nodes with recursion and context
- */ 
+ */

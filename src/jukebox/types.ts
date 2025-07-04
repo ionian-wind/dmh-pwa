@@ -1,4 +1,9 @@
-import type { WithMetadata, UUID as GlobalUUID, WithId, WithTimestamps } from '@/types';
+import type {
+  WithMetadata,
+  UUID as GlobalUUID,
+  WithId,
+  WithTimestamps,
+} from '@/types';
 
 export type UUID = GlobalUUID;
 
@@ -38,4 +43,4 @@ export interface JukeboxTrack extends WithMetadata {
   color?: string; // dominant color from artwork
   palette?: string[]; // color palette from artwork
   // Add more fields as needed for extracted metadata
-} 
+}

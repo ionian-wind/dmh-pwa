@@ -1,24 +1,24 @@
-import { 
-  registerPlugin, 
-  parseInput, 
-  extractQueries, 
-  extractMacros, 
-  extractTables, 
-  extractRolls, 
+import {
+  registerPlugin,
+  parseInput,
+  extractQueries,
+  extractMacros,
+  extractTables,
+  extractRolls,
   extractFormatting,
   evaluate,
   processDiceExpression,
   DiceRollerCore,
   SyntaxError,
   ValidationError,
-  MissingDataError
+  MissingDataError,
 } from '../core';
-import { 
-  traverseAST, 
-  findNodesByType, 
-  mathFunctions, 
-  validateInteger, 
-  validatePositiveInteger, 
+import {
+  traverseAST,
+  findNodesByType,
+  mathFunctions,
+  validateInteger,
+  validatePositiveInteger,
   validateRange,
   rollDie,
   rollDice,
@@ -27,7 +27,7 @@ import {
   dropHighest,
   dropLowest,
   countSuccesses,
-  explodeDice
+  explodeDice,
 } from '../lib/utils';
 import { vi } from 'vitest';
 
@@ -46,12 +46,12 @@ const mockPlugin = {
     }
     throw new Error('Evaluate failed');
   },
-  extractQueries: (ast: any) => ast.type === 'query' ? [ast] : [],
-  extractMacros: (ast: any) => ast.type === 'macro' ? [ast] : [],
-  extractTables: (ast: any) => ast.type === 'table' ? [ast] : [],
-  extractRolls: (ast: any) => ast.type === 'roll' ? [ast] : [],
-  extractFormatting: (ast: any) => ast.type === 'formatting' ? [ast] : [],
-  register: () => {}
+  extractQueries: (ast: any) => (ast.type === 'query' ? [ast] : []),
+  extractMacros: (ast: any) => (ast.type === 'macro' ? [ast] : []),
+  extractTables: (ast: any) => (ast.type === 'table' ? [ast] : []),
+  extractRolls: (ast: any) => (ast.type === 'roll' ? [ast] : []),
+  extractFormatting: (ast: any) => (ast.type === 'formatting' ? [ast] : []),
+  register: () => {},
 };
 
 describe('Dice Roller Core', () => {
@@ -83,16 +83,26 @@ describe('Dice Roller Core', () => {
 
     it('should throw SyntaxError when no plugin can parse', () => {
       expect(() => parseInput('invalid')).toThrow(SyntaxError);
-      expect(() => parseInput('invalid')).toThrow('Unable to parse input: invalid');
+      expect(() => parseInput('invalid')).toThrow(
+        'Unable to parse input: invalid',
+      );
     });
 
     it('should continue to next plugin if one fails', () => {
-      const failingPlugin = { ...mockPlugin, parse: () => { throw new Error('Fail'); } };
-      const workingPlugin = { ...mockPlugin, parse: (input: string) => ({ type: 'number', value: 100 }) };
-      
+      const failingPlugin = {
+        ...mockPlugin,
+        parse: () => {
+          throw new Error('Fail');
+        },
+      };
+      const workingPlugin = {
+        ...mockPlugin,
+        parse: (input: string) => ({ type: 'number', value: 100 }),
+      };
+
       registerPlugin(failingPlugin);
       registerPlugin(workingPlugin);
-      
+
       const result = parseInput('valid');
       expect(result).toEqual({ type: 'number', value: 100 });
     });
@@ -156,7 +166,7 @@ describe('Dice Roller Core', () => {
         total: 42,
         rolls: [],
         warnings: [],
-        details: {}
+        details: {},
       });
     });
 
@@ -164,7 +174,9 @@ describe('Dice Roller Core', () => {
       const ast = { type: 'unknown', value: 42 };
       const context = { warnings: [] };
       expect(() => evaluate(ast, context)).toThrow(SyntaxError);
-      expect(() => evaluate(ast, context)).toThrow('Unable to evaluate node type: unknown');
+      expect(() => evaluate(ast, context)).toThrow(
+        'Unable to evaluate node type: unknown',
+      );
     });
 
     it('should preserve warnings from context', () => {
@@ -191,8 +203,8 @@ describe('Dice Roller Core', () => {
           macros: [],
           tables: [],
           rolls: [],
-          formatting: []
-        }
+          formatting: [],
+        },
       });
     });
 
@@ -214,14 +226,14 @@ describe('Dice Roller Utils', () => {
         type: 'arithmetic',
         op: '+',
         left: { type: 'number', value: 1 },
-        right: { type: 'number', value: 2 }
+        right: { type: 'number', value: 2 },
       };
-      
+
       const visited: string[] = [];
       traverseAST(ast, (node) => {
         visited.push(node.type);
       });
-      
+
       expect(visited).toContain('arithmetic');
       expect(visited).toContain('number');
       expect(visited).toHaveLength(3);
@@ -234,9 +246,9 @@ describe('Dice Roller Utils', () => {
         type: 'arithmetic',
         op: '+',
         left: { type: 'number', value: 1 },
-        right: { type: 'number', value: 2 }
+        right: { type: 'number', value: 2 },
       };
-      
+
       const numbers = findNodesByType(ast, 'number');
       expect(numbers).toHaveLength(2);
       expect(numbers[0].type).toBe('number');
@@ -259,19 +271,29 @@ describe('Dice Roller Utils', () => {
     it('should validate integers correctly', () => {
       expect(validateInteger('42', 'test')).toBe(42);
       expect(validateInteger(42, 'test')).toBe(42);
-      expect(() => validateInteger('abc', 'test')).toThrow('test must be a valid integer');
+      expect(() => validateInteger('abc', 'test')).toThrow(
+        'test must be a valid integer',
+      );
     });
 
     it('should validate positive integers correctly', () => {
       expect(validatePositiveInteger('42', 'test')).toBe(42);
-      expect(() => validatePositiveInteger('0', 'test')).toThrow('test must be a positive integer');
-      expect(() => validatePositiveInteger('-1', 'test')).toThrow('test must be a positive integer');
+      expect(() => validatePositiveInteger('0', 'test')).toThrow(
+        'test must be a positive integer',
+      );
+      expect(() => validatePositiveInteger('-1', 'test')).toThrow(
+        'test must be a positive integer',
+      );
     });
 
     it('should validate ranges correctly', () => {
       expect(validateRange(5, 1, 10, 'test')).toBe(5);
-      expect(() => validateRange(0, 1, 10, 'test')).toThrow('test must be between 1 and 10');
-      expect(() => validateRange(11, 1, 10, 'test')).toThrow('test must be between 1 and 10');
+      expect(() => validateRange(0, 1, 10, 'test')).toThrow(
+        'test must be between 1 and 10',
+      );
+      expect(() => validateRange(11, 1, 10, 'test')).toThrow(
+        'test must be between 1 and 10',
+      );
     });
   });
 
@@ -285,7 +307,7 @@ describe('Dice Roller Utils', () => {
     it('should roll multiple dice', () => {
       const results = rollDice(3, 6);
       expect(results).toHaveLength(3);
-      results.forEach(roll => {
+      results.forEach((roll) => {
         expect(roll).toBeGreaterThanOrEqual(1);
         expect(roll).toBeLessThanOrEqual(6);
       });
@@ -334,28 +356,30 @@ describe('Dice Roller Utils', () => {
       // Mock Math.random to return 0.9 (which gives us 6 on d6)
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.9);
-      
+
       const rolls = [6, 3, 6];
       const result = explodeDice(rolls, 6, 10);
-      
+
       expect(result.rolls.length).toBeGreaterThan(3);
       // Accept warnings if present due to max roll count
       expect(result.warnings.length).toBeGreaterThanOrEqual(0);
-      
+
       Math.random = originalRandom;
     });
 
     it('should respect max roll limit', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.9);
-      
+
       const rolls = [6];
       const result = explodeDice(rolls, 6, 5);
-      
+
       expect(result.rolls.length).toBeLessThanOrEqual(5);
-      expect(result.warnings).toContain('Maximum roll count (99) reached during explosion');
-      
+      expect(result.warnings).toContain(
+        'Maximum roll count (99) reached during explosion',
+      );
+
       Math.random = originalRandom;
     });
   });
-}); 
+});

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import PartyEditor from '@/components/PartyEditor.vue';
+import PartyEditor from '../../src/parties/PartyEditor.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/modules', () => ({

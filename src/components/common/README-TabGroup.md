@@ -25,7 +25,7 @@ import TabGroup, { type Tab } from '@/components/TabGroup.vue';
 const tabs = ref<Tab[]>([
   { id: 'overview', label: 'Overview', icon: '📊' },
   { id: 'details', label: 'Details', icon: '📋' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' }
+  { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]);
 
 const activeTab = ref('overview');
@@ -51,108 +51,117 @@ const activeTab = ref('overview');
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `tabs` | `Tab[]` | `[]` | Array of tab objects |
-| `modelValue` | `string` | `undefined` | Currently active tab ID |
-| `variant` | `'default' \| 'pills' \| 'underline' \| 'cards'` | `'default'` | Visual style variant |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Tab size |
-| `fullWidth` | `boolean` | `false` | Make tabs take full width |
-| `vertical` | `boolean` | `false` | Display tabs vertically |
-| `closable` | `boolean` | `false` | Show close buttons on tabs |
-| `addable` | `boolean` | `false` | Show add button for new tabs |
-| `disableTransition` | `boolean` | `false` | Disable tab switching animations |
+| Prop                | Type                                             | Default     | Description                      |
+| ------------------- | ------------------------------------------------ | ----------- | -------------------------------- |
+| `tabs`              | `Tab[]`                                          | `[]`        | Array of tab objects             |
+| `modelValue`        | `string`                                         | `undefined` | Currently active tab ID          |
+| `variant`           | `'default' \| 'pills' \| 'underline' \| 'cards'` | `'default'` | Visual style variant             |
+| `size`              | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Tab size                         |
+| `fullWidth`         | `boolean`                                        | `false`     | Make tabs take full width        |
+| `vertical`          | `boolean`                                        | `false`     | Display tabs vertically          |
+| `closable`          | `boolean`                                        | `false`     | Show close buttons on tabs       |
+| `addable`           | `boolean`                                        | `false`     | Show add button for new tabs     |
+| `disableTransition` | `boolean`                                        | `false`     | Disable tab switching animations |
 
 ## Tab Interface
 
 ```typescript
 interface Tab {
-  id: string;           // Unique identifier
-  label: string;        // Display text
-  icon?: string;        // Optional icon (emoji or text)
-  disabled?: boolean;   // Disable the tab
+  id: string; // Unique identifier
+  label: string; // Display text
+  icon?: string; // Optional icon (emoji or text)
+  disabled?: boolean; // Disable the tab
   badge?: string | number; // Optional badge content
 }
 ```
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `update:modelValue` | `string` | Emitted when active tab changes |
-| `tab-click` | `Tab` | Emitted when a tab is clicked |
-| `tab-close` | `string` | Emitted when a tab is closed (tabId) |
-| `tab-add` | - | Emitted when add button is clicked |
+| Event               | Payload  | Description                          |
+| ------------------- | -------- | ------------------------------------ |
+| `update:modelValue` | `string` | Emitted when active tab changes      |
+| `tab-click`         | `Tab`    | Emitted when a tab is clicked        |
+| `tab-close`         | `string` | Emitted when a tab is closed (tabId) |
+| `tab-add`           | -        | Emitted when add button is clicked   |
 
 ## Variants
 
 ### Default
+
 Standard tabs with bottom border indicator.
 
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" variant="default">
+<TabGroup v-model="activeTab" :tabs="tabs" variant="default"></TabGroup>
 ```
 
 ### Pills
+
 Rounded pill-style tabs.
 
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" variant="pills">
+<TabGroup v-model="activeTab" :tabs="tabs" variant="pills"></TabGroup>
 ```
 
 ### Underline
+
 Minimal tabs with underline indicator.
 
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" variant="underline">
+<TabGroup v-model="activeTab" :tabs="tabs" variant="underline"></TabGroup>
 ```
 
 ### Cards
+
 Card-style tabs with shadows.
 
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" variant="cards">
+<TabGroup v-model="activeTab" :tabs="tabs" variant="cards"></TabGroup>
 ```
 
 ## Sizes
 
 ### Small
+
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" size="sm">
+<TabGroup v-model="activeTab" :tabs="tabs" size="sm"></TabGroup>
 ```
 
 ### Medium (Default)
+
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" size="md">
+<TabGroup v-model="activeTab" :tabs="tabs" size="md"></TabGroup>
 ```
 
 ### Large
+
 ```vue
-<TabGroup v-model="activeTab" :tabs="tabs" size="lg">
+<TabGroup v-model="activeTab" :tabs="tabs" size="lg"></TabGroup>
 ```
 
 ## Advanced Features
 
 ### Closable Tabs
+
 ```vue
 <script setup lang="ts">
 const handleTabClose = (tabId: string) => {
-  tabs.value = tabs.value.filter(tab => tab.id !== tabId);
+  tabs.value = tabs.value.filter((tab) => tab.id !== tabId);
   if (activeTab.value === tabId && tabs.value.length > 0) {
     activeTab.value = tabs.value[0].id;
   }
 };
 </script>
 
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="tabs" 
-  closable 
+<TabGroup
+  v-model="activeTab"
+  :tabs="tabs"
+  closable
   @tab-close="handleTabClose"
->
+></TabGroup>
 ```
 
 ### Addable Tabs
+
 ```vue
 <script setup lang="ts">
 let tabCounter = 3;
@@ -161,7 +170,7 @@ const handleTabAdd = () => {
   const newTab: Tab = {
     id: `tab${tabCounter}`,
     label: `New Tab ${tabCounter}`,
-    icon: '➕'
+    icon: '➕',
   };
   tabs.value.push(newTab);
   activeTab.value = newTab.id;
@@ -169,57 +178,48 @@ const handleTabAdd = () => {
 };
 </script>
 
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="tabs" 
-  addable 
+<TabGroup
+  v-model="activeTab"
+  :tabs="tabs"
+  addable
   @tab-add="handleTabAdd"
->
+></TabGroup>
 ```
 
 ### Vertical Layout
+
 ```vue
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="tabs" 
-  vertical
->
+<TabGroup v-model="activeTab" :tabs="tabs" vertical></TabGroup>
 ```
 
 ### Full Width
+
 ```vue
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="tabs" 
-  full-width
->
+<TabGroup v-model="activeTab" :tabs="tabs" full-width></TabGroup>
 ```
 
 ### Disable Transitions
+
 ```vue
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="tabs" 
+<TabGroup
+  v-model="activeTab"
+  :tabs="tabs"
   :disable-transition="true"
->
+></TabGroup>
 ```
 
 ### Disabled Tabs
+
 ```vue
-const tabs = ref<Tab[]>([
-  { id: 'active', label: 'Active', icon: '✅' },
-  { id: 'pending', label: 'Pending', icon: '⏳' },
-  { id: 'disabled', label: 'Disabled', icon: '❌', disabled: true }
-]);
+const tabs = ref
+<Tab[]></Tab[]>
 ```
 
 ### Tabs with Badges
+
 ```vue
-const tabs = ref<Tab[]>([
-  { id: 'inbox', label: 'Inbox', icon: '📥', badge: '12' },
-  { id: 'sent', label: 'Sent', icon: '📤', badge: '5' },
-  { id: 'drafts', label: 'Drafts', icon: '📝', badge: '3' }
-]);
+const tabs = ref
+<Tab[]></Tab[]>
 ```
 
 ## Slot Props
@@ -261,23 +261,27 @@ The component uses CSS custom properties for theming:
 The TabGroup component includes smooth transitions when switching between tabs to prevent flickering and provide a better user experience.
 
 ### Default Transitions
+
 By default, tab content transitions with a subtle fade and slide effect:
+
 - **Duration**: 0.2 seconds
 - **Easing**: Ease function
 - **Effect**: Fade opacity + horizontal slide
 
 ### Disable Transitions
+
 If you prefer instant tab switching without animations, use the `disableTransition` prop:
 
 ```vue
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="tabs" 
+<TabGroup
+  v-model="activeTab"
+  :tabs="tabs"
   :disable-transition="true"
->
+></TabGroup>
 ```
 
 ### Custom Transitions
+
 You can override the default transitions by adding your own CSS:
 
 ```css
@@ -301,6 +305,7 @@ You can override the default transitions by adding your own CSS:
 ## Examples
 
 ### Character Sheet
+
 ```vue
 <TabGroup v-model="activeTab" :tabs="characterTabs" variant="pills">
   <div v-if="activeTab === 'basic'">
@@ -316,6 +321,7 @@ You can override the default transitions by adding your own CSS:
 ```
 
 ### Settings Panel
+
 ```vue
 <TabGroup v-model="activeTab" :tabs="settingsTabs" variant="underline">
   <div v-if="activeTab === 'general'">
@@ -331,12 +337,13 @@ You can override the default transitions by adding your own CSS:
 ```
 
 ### File Browser
+
 ```vue
-<TabGroup 
-  v-model="activeTab" 
-  :tabs="fileTabs" 
-  variant="cards" 
-  closable 
+<TabGroup
+  v-model="activeTab"
+  :tabs="fileTabs"
+  variant="cards"
+  closable
   addable
   @tab-close="handleTabClose"
   @tab-add="handleTabAdd"

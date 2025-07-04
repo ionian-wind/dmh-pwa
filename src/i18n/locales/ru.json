@@ -296,6 +296,7 @@
     "saveTree": "Сохранить дерево",
     "addChild": "Добавить дочерний элемент",
     "createNoteInNode": "Создать заметку в этом узле",
+    "createNote": "Создать заметку",
     "editNote": "Редактировать заметку",
     "closeTab": "Закрыть вкладку",
     "addNewTab": "Добавить новую вкладку",
@@ -328,7 +329,7 @@
     ]
   },
   "project": {
-    "name": "DMH PWA",
+    "name": "Owlbear's DMH",
     "subtitle": "Помощник Мастера Подземелий"
   },
   "statCard": {
@@ -437,6 +438,9 @@
     "moduleImportFailed": "Ошибка импорта модуля: "
   },
   "markdownEditor": {
+    "rawMode": "Сырой Markdown",
+    "visualMode": "Визуальный редактор",
+    "formattingHelp": "Справка по форматированию",
     "help": {
       "internalLinks": "Внутренние ссылки",
       "linkToOtherEntities": "Ссылка на другие сущности вашей кампании:",
@@ -498,4 +502,4 @@
       "finished": "Завершён"
     }
   }
-} 
+}

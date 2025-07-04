@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { IconMusic, IconPlus, IconX } from '@tabler/icons-vue';
+import { IconPlus, IconX } from '@tabler/icons-vue';
 
-import Button from '@/components/form/Button.vue';
 import type { JukeboxTrack } from '@/jukebox/types';
 
-import { formatTime } from "../utils";
+import { formatTime } from '../utils';
 import { usePictureUrlCacheStore } from '@/jukebox/stores';
+import TrackInfo from './TrackInfo.vue';
 
 const props = defineProps<{
   track: JukeboxTrack;
@@ -36,27 +36,28 @@ const albumArtStyle = computed(() => {
 });
 </script>
 <template>
-  <li
+  <QItem
     class="track-item"
     :class="{ 'is-selected': isSelected, 'is-playing': isPlaying }"
     :style="{ '--track-item-color': trackColor }"
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
-    <div v-if="track.picture" :style="albumArtStyle" class="track-artwork"></div>
-    <div v-else class="track-artwork track-artwork-placeholder">
-      <IconMusic />
-    </div>
-    <div class="track-info">
-      <span class="track-title">{{ track.title }}</span>
-      <span class="track-artist" v-if="track.artist">- {{ track.artist }}</span>
-    </div>
-    <div class="track-duration">{{ track.duration ? formatTime(track.duration) : '' }}</div>
-    <div class="track-actions">
-      <Button variant="light" @click.stop="handleAddToPlaylist"><IconPlus /></Button>
-      <Button variant="light" @click.stop="handleRemove"><IconX /></Button>
-    </div>
-  </li>
+    <QItemSection>
+      <TrackInfo :artwork-size="'60px'" :track="track" :show-artwork="true" />
+    </QItemSection>
+    <QItemSection>
+      <div class="track-duration">
+        {{ track.duration ? formatTime(track.duration) : '' }}
+      </div>
+    </QItemSection>
+    <QItemSection>
+      <div class="track-actions">
+        <QBtn flat @click.stop="handleAddToPlaylist"><IconPlus /></QBtn>
+        <QBtn flat @click.stop="handleRemove"><IconX /></QBtn>
+      </div>
+    </QItemSection>
+  </QItem>
 </template>
 
 <style scoped>
@@ -135,11 +136,15 @@ const albumArtStyle = computed(() => {
 .track-actions {
   gap: 0.5rem;
   margin-left: 1rem;
-  display: flex;
+  display: none;
   align-items: center;
+}
+
+.track-item:hover .track-actions {
+  display: flex;
 }
 
 .track-item.is-selected {
   background-color: var(--color-info-light);
 }
-</style> 
+</style>

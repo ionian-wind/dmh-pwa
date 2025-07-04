@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import Button from '@/components/form/Button.vue';
-import { IconPlus } from '@tabler/icons-vue';
+import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
+import { PropType } from 'vue';
 
 const { t } = useI18n();
 
-defineProps({
+const props = defineProps({
   title: {
     type: String,
-    default: ''
+    default: '',
   },
   showCreate: {
     type: Boolean,
@@ -17,6 +17,67 @@ defineProps({
   createTitle: {
     type: String,
     default: 'Create',
+  },
+  onCreate: {
+    type: Function as PropType<
+      (
+        evt: Event,
+        go?: (opts?: {
+          to?: any;
+          replace?: boolean;
+          returnRouterError?: boolean;
+        }) => Promise<any>,
+      ) => void
+    >,
+    default: (evt: Event) => {},
+  },
+
+  showEdit: {
+    type: Boolean,
+    default: false,
+  },
+  editTitle: {
+    type: String,
+    default: 'Create',
+  },
+  onEdit: {
+    type: Function as PropType<
+      (
+        evt: Event,
+        go?: (opts?: {
+          to?: any;
+          replace?: boolean;
+          returnRouterError?: boolean;
+        }) => Promise<any>,
+      ) => void
+    >,
+    default: (evt: Event) => {},
+  },
+
+  showDelete: {
+    type: Boolean,
+    default: false,
+  },
+  deleteTitle: {
+    type: String,
+    default: 'Create',
+  },
+  onDelete: {
+    type: Function as PropType<
+      (
+        evt: Event,
+        go?: (opts?: {
+          to?: any;
+          replace?: boolean;
+          returnRouterError?: boolean;
+        }) => Promise<any>,
+      ) => void
+    >,
+    default: (evt: Event) => {},
+  },
+  isEditing: {
+    type: Boolean,
+    default: false,
   },
   showSearch: {
     type: Boolean,
@@ -28,41 +89,60 @@ defineProps({
   },
   searchPlaceholder: {
     type: String,
-    default: 'Search...'
-  }
+    default: '',
+  },
 });
 
-defineEmits(['create', 'update:searchQuery']);
+const emit = defineEmits(['create', 'update:searchQuery']);
 </script>
 
 <template>
-  <div class="view-header">
-    <div class="view-header-content">
-      <div v-if="title" class="header-wrapper header-title">
-        <b>{{ t(title) }}</b>
-        <slot name="subtitle" />
-      </div>
+  <QToolbarTitle v-if="props.title">
+    {{ props.title }}
+  </QToolbarTitle>
 
-      <div v-if="showSearch" class="header-wrapper">
-        <input
-          v-if="showSearch"
-          :value="searchQuery"
-          @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-          type="text"
-          :placeholder="t(searchPlaceholder)"
-          class="search-input"
-        >
-        <slot name="search-filter"></slot>
-      </div>
+  <QBtnGroup>
+    <QBtn
+      v-if="props.showCreate"
+      :color="'positive'"
+      @click="props.onCreate"
+      :title="t('common.create')"
+      :aria-label="t('common.create')"
+    >
+      <IconPlus />
+    </QBtn>
 
+    <QBtn
+      v-if="props.showEdit"
+      :color="'positive'"
+      @click="props.onEdit"
+      :disabled="props.isEditing"
+      :title="t('common.edit')"
+      :aria-label="t('common.edit')"
+    >
+      <IconPencil />
+    </QBtn>
 
-      <div v-if="!showSearch && !$slots.default" class="header-wrapper"></div>
+    <QBtn
+      v-if="props.showDelete"
+      :color="'negative'"
+      @click="props.onDelete"
+      :title="t('common.delete')"
+      :aria-label="t('common.delete')"
+    >
+      <IconTrash />
+    </QBtn>
+  </QBtnGroup>
 
-      <slot name="actions" />
-
-      <Button v-if="showCreate" @click="$emit('create')" :title="t(createTitle)">
-        <IconPlus />
-      </Button>
-    </div>
-  </div>
+  <QInput
+    v-if="props.showSearch"
+    :autofocus="false"
+    :model-value="props.searchQuery"
+    @update:model-value="(val) => emit('update:searchQuery', val)"
+    :placeholder="t(props.searchPlaceholder)"
+    class="search-input"
+    clearable
+    dense
+    outlined
+  />
 </template>

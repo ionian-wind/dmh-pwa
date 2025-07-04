@@ -8,7 +8,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
-import {scrollToHeading} from "@/utils/scrollToHeading";
+import { scrollToHeading } from '@/utils/scrollToHeading';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -20,12 +20,12 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const { openMentionModal, closeMentionModal } = useModalState();
 
-const props = defineProps<{ 
+const props = defineProps<{
   content: string;
   anchorMap?: Set<string>;
-  enableMentionModal?: boolean,
-  taskCheckboxEnabled?: boolean,
-  scrollToAnchor?: (id: string, heading?: HTMLElement) => void
+  enableMentionModal?: boolean;
+  taskCheckboxEnabled?: boolean;
+  scrollToAnchor?: (id: string, heading?: HTMLElement) => void;
 }>();
 
 const emit = defineEmits(['update:content']);
@@ -41,11 +41,13 @@ const parsed = computed(() => {
   if (parsedContentCache.value.has(cacheKey)) {
     return parsedContentCache.value.get(cacheKey)!;
   }
-  
+
   // Parse and cache
-  const result = parseMarkdown(props.content, { taskCheckboxEnabled: !!props.taskCheckboxEnabled });
+  const result = parseMarkdown(props.content, {
+    taskCheckboxEnabled: !!props.taskCheckboxEnabled,
+  });
   parsedContentCache.value.set(cacheKey, result);
-  
+
   // Limit cache size to prevent memory leaks
   if (parsedContentCache.value.size > 100) {
     const firstKey = parsedContentCache.value.keys().next().value;
@@ -53,7 +55,7 @@ const parsed = computed(() => {
       parsedContentCache.value.delete(firstKey);
     }
   }
-  
+
   return result;
 });
 
@@ -61,17 +63,25 @@ const rootEl = ref<HTMLElement | null>(null);
 
 function getEntity(kind: string, id: string) {
   switch (kind) {
-    case 'note': return noteStore.getById(id);
-    case 'module': return moduleStore.getById(id);
-    case 'party': return partyStore.getById(id);
-    case 'monster': return monsterStore.getById(id);
-    case 'encounter': return encounterStore.getById(id);
-    default: return null;
+    case 'note':
+      return noteStore.getById(id);
+    case 'module':
+      return moduleStore.getById(id);
+    case 'party':
+      return partyStore.getById(id);
+    case 'monster':
+      return monsterStore.getById(id);
+    case 'encounter':
+      return encounterStore.getById(id);
+    default:
+      return null;
   }
 }
 
 function handleInternalLinkClick(e: MouseEvent) {
-  const link = (e.target as HTMLElement).closest('.internal-link') as HTMLAnchorElement | null;
+  const link = (e.target as HTMLElement).closest(
+    '.internal-link',
+  ) as HTMLAnchorElement | null;
   if (!link) return;
 
   const kind = link.getAttribute('data-kind');
@@ -82,9 +92,10 @@ function handleInternalLinkClick(e: MouseEvent) {
   // If note link and anchor exists, scroll to anchor
   if (kind && id) {
     if (anchorMap.has(id)) {
-      const anchor = (rootEl.value && rootEl.value.contains(link))
-        ? rootEl.value.querySelector(`#${CSS.escape(id)}`) as HTMLElement
-        : null;
+      const anchor =
+        rootEl.value && rootEl.value.contains(link)
+          ? (rootEl.value.querySelector(`#${CSS.escape(id)}`) as HTMLElement)
+          : null;
       if (anchor) {
         e.preventDefault();
         if (props.scrollToAnchor) {
@@ -134,7 +145,9 @@ function handleCheckboxChange(e: Event) {
   const target = e.target as HTMLInputElement;
   if (!target || target.type !== 'checkbox' || !rootEl.value) return;
   // Find all checkboxes in order
-  const checkboxes = Array.from(rootEl.value.querySelectorAll('input[type="checkbox"].task-list-checkbox'));
+  const checkboxes = Array.from(
+    rootEl.value.querySelectorAll('input[type="checkbox"].task-list-checkbox'),
+  );
   const idx = checkboxes.indexOf(target);
   if (idx === -1) return;
   // Find the corresponding line in the markdown
@@ -143,7 +156,10 @@ function handleCheckboxChange(e: Event) {
   const lineIdx = taskIndexes[idx];
   if (lineIdx === undefined) return;
   // Toggle the checkbox in the markdown
-  lines[lineIdx] = lines[lineIdx].replace(/^(\s*[-*+]\s*\[)([ xX])(\])/, (m, pre, mark, post) => pre + (target.checked ? 'x' : ' ') + post);
+  lines[lineIdx] = lines[lineIdx].replace(
+    /^(\s*[-*+]\s*\[)([ xX])(\])/,
+    (m, pre, mark, post) => pre + (target.checked ? 'x' : ' ') + post,
+  );
   const newContent = lines.join('\n');
   emit('update:content', newContent);
 }
@@ -151,10 +167,10 @@ function handleCheckboxChange(e: Event) {
 // Setup intersection observer for lazy loading
 function setupIntersectionObserver() {
   if (!rootEl.value) return;
-  
+
   observer.value = new IntersectionObserver(
     (entries) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
           isVisible.value = true;
         } else {
@@ -165,10 +181,10 @@ function setupIntersectionObserver() {
     {
       root: null,
       rootMargin: '50px',
-      threshold: 0.1
-    }
+      threshold: 0.1,
+    },
   );
-  
+
   observer.value.observe(rootEl.value);
 }
 
@@ -199,20 +215,23 @@ onUnmounted(() => {
     }
   }
   window.removeEventListener('hashchange', scrollToAnchorIfNeeded);
-  
+
   if (observer.value) {
     observer.value.disconnect();
   }
 });
 
-watch(() => props.taskCheckboxEnabled, (enabled) => {
-  if (!rootEl.value) return;
-  if (enabled) {
-    rootEl.value.addEventListener('change', handleCheckboxChange, true);
-  } else {
-    rootEl.value.removeEventListener('change', handleCheckboxChange, true);
-  }
-});
+watch(
+  () => props.taskCheckboxEnabled,
+  (enabled) => {
+    if (!rootEl.value) return;
+    if (enabled) {
+      rootEl.value.addEventListener('change', handleCheckboxChange, true);
+    } else {
+      rootEl.value.removeEventListener('change', handleCheckboxChange, true);
+    }
+  },
+);
 </script>
 
 <template>
@@ -251,7 +270,12 @@ watch(() => props.taskCheckboxEnabled, (enabled) => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 </style>

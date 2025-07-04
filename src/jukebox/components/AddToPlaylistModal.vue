@@ -38,10 +38,10 @@ async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
 </script>
 
 <template>
-  <BaseModal 
-    :isOpen="modelValue" 
-    modalId="add-to-playlist" 
-    @update:isOpen="$emit('update:modelValue', $event)" 
+  <BaseModal
+    :isOpen="modelValue"
+    modalId="add-to-playlist"
+    @update:isOpen="$emit('update:modelValue', $event)"
     title="{{ t('common.addToPlaylist') }}"
     :showSubmit="false"
     :showCancel="true"
@@ -53,9 +53,9 @@ async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
     </div>
     <div v-else>
       <div class="playlist-list">
-        <div 
-          v-for="playlist in playlists" 
-          :key="playlist.id" 
+        <div
+          v-for="playlist in playlists"
+          :key="playlist.id"
           class="playlist-item"
         >
           <ToggleSwitch
@@ -84,4 +84,4 @@ async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
 .playlist-item:last-child {
   border-bottom: none;
 }
-</style> 
+</style>

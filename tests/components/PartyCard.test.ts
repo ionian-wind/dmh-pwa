@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import PartyCard from '@/components/PartyCard.vue';
+import PartyCard from '../../src/parties/PartyCard.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/modules', () => ({

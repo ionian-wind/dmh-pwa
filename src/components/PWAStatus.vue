@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import Button from '@/components/form/Button.vue';
-import { IconGift, IconDownload, IconX, IconSignal3g, IconDeviceMobile } from '@tabler/icons-vue';
+import {
+  IconGift,
+  IconDownload,
+  IconX,
+  IconSignal3g,
+  IconDeviceMobile,
+} from '@tabler/icons-vue';
 
 const isOnline = ref(navigator.onLine);
 const isStandalone = ref(false);
@@ -10,9 +15,10 @@ const showUpdatePrompt = ref(false);
 
 const checkPWAStatus = () => {
   // Check if running as standalone PWA
-  isStandalone.value = window.matchMedia('(display-mode: standalone)').matches || 
-                      (window.navigator as any).standalone === true;
-  
+  isStandalone.value =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true;
+
   // Check online status
   isOnline.value = navigator.onLine;
 };
@@ -28,16 +34,16 @@ const dismissUpdate = () => {
 
 onMounted(() => {
   checkPWAStatus();
-  
+
   // Listen for online/offline events
   window.addEventListener('online', () => {
     isOnline.value = true;
   });
-  
+
   window.addEventListener('offline', () => {
     isOnline.value = false;
   });
-  
+
   // Listen for PWA update events
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -58,21 +64,21 @@ onMounted(() => {
         </div>
         <div class="pwa-update-text">
           <h3>Update Available</h3>
-          <p>A new version of D&D Notes Manager is available.</p>
+          <p>A new version of Owlbear's DMH is available.</p>
         </div>
         <div class="pwa-update-actions">
-          <Button @click="updateApp" variant="success" size="small">
+          <QBtn flat @click="updateApp" :color="'positive'">
             <IconDownload />
             <span>Update Now</span>
-          </Button>
-          <Button @click="dismissUpdate" variant="secondary" size="small">
+          </QBtn>
+          <QBtn flat @click="dismissUpdate">
             <IconX />
             <span>Later</span>
-          </Button>
+          </QBtn>
         </div>
       </div>
     </div>
-    
+
     <!-- Status Indicators -->
     <div class="pwa-status-indicators">
       <div v-if="!isOnline" class="pwa-status-item offline">
@@ -207,21 +213,21 @@ onMounted(() => {
     left: 10px;
     right: 10px;
   }
-  
+
   .pwa-update-content {
     flex-direction: column;
     text-align: center;
     gap: 0.75rem;
   }
-  
+
   .pwa-update-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .pwa-status-indicators {
     top: 10px;
     right: 10px;
   }
 }
-</style> 
+</style>

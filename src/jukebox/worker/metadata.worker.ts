@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer';
-import {type ICommonTagsResult, IPicture, parseBlob} from 'music-metadata';
+import { type ICommonTagsResult, IPicture, parseBlob } from 'music-metadata';
 
-import {getColor, getPalette} from './color-from-image';
+import { getColor, getPalette } from './color-from-image';
 
 // In case the global polyfill is not picked up by the worker, we can provide it here.
 (self as any).Buffer = Buffer;
@@ -9,7 +9,7 @@ import {getColor, getPalette} from './color-from-image';
 const getImageData = async (pic: IPicture) => {
   const blob = new Blob([pic.data], { type: pic.format });
   const bitmap = await createImageBitmap(blob);
-  
+
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
   const context = canvas.getContext('2d');
   if (!context) {
@@ -17,38 +17,55 @@ const getImageData = async (pic: IPicture) => {
   }
   context.drawImage(bitmap, 0, 0);
 
-  return { image: context.getImageData(0, 0, bitmap.width, bitmap.height).data, blob };
-}
+  return {
+    image: context.getImageData(0, 0, bitmap.width, bitmap.height).data,
+    blob,
+  };
+};
 
 self.onmessage = async (event: MessageEvent<File>) => {
   const file = event.data;
   try {
     const metadata = await parseBlob(file);
-    const common: ICommonTagsResult = metadata.common || ({} as ICommonTagsResult);
-    
+    const common: ICommonTagsResult =
+      metadata.common || ({} as ICommonTagsResult);
+
     let picture: Blob | undefined;
     let color: string | undefined;
     let palette: null | string[];
-    
+
     if (common.picture && common.picture.length > 0) {
       const { image, blob } = await getImageData(common.picture[0]);
-      picture = blob
+      picture = blob;
 
       color = getColor(image, { sample: 10, group: 30, format: 'hex' });
-      palette = getPalette(image, { sample: 10, group: 30, amount: 4, format: 'hex' })
+      palette = getPalette(image, {
+        sample: 10,
+        group: 30,
+        amount: 4,
+        format: 'hex',
+      });
     }
 
     const extractedData = {
       title: common.title,
       artist: common.artist,
       album: common.album,
-      genre: Array.isArray(common.genre) ? common.genre.join(', ') : common.genre,
+      genre: Array.isArray(common.genre)
+        ? common.genre.join(', ')
+        : common.genre,
       year: common.year,
       trackNumber: common.track?.no,
       discNumber: common.disk?.no,
-      composer: Array.isArray(common.composer) ? common.composer.join(', ') : common.composer,
-      comment: Array.isArray(common.comment) ? common.comment.join(' ') : common.comment,
-      lyrics: Array.isArray(common.lyrics) ? common.lyrics.join(' ') : common.lyrics,
+      composer: Array.isArray(common.composer)
+        ? common.composer.join(', ')
+        : common.composer,
+      comment: Array.isArray(common.comment)
+        ? common.comment.join(' ')
+        : common.comment,
+      lyrics: Array.isArray(common.lyrics)
+        ? common.lyrics.join(' ')
+        : common.lyrics,
       picture,
       color,
       palette,
@@ -57,4 +74,4 @@ self.onmessage = async (event: MessageEvent<File>) => {
   } catch (error) {
     self.postMessage({ type: 'error', error: (error as Error).message });
   }
-}; 
+};

@@ -12,7 +12,7 @@ const props = defineProps<{
 const bookmarkStore = useBookmarkStore();
 
 const marked = computed(() =>
-  bookmarkStore.isBookmarked(props.moduleId, props.noteId)
+  bookmarkStore.isBookmarked(props.moduleId, props.noteId),
 );
 
 function handleClick() {
@@ -43,4 +43,4 @@ onMounted(() => bookmarkStore.load());
 .marked:hover {
   color: var(--color-success-dark) !important;
 }
-</style> 
+</style>

@@ -3,8 +3,15 @@
   "title": "Combat",
   "type": "object",
   "required": [
-    "id", "encounterId", "partyId", "status", "currentRound",
-    "currentTurn", "combatants", "createdAt", "updatedAt"
+    "id",
+    "encounterId",
+    "partyId",
+    "status",
+    "currentRound",
+    "currentTurn",
+    "combatants",
+    "createdAt",
+    "updatedAt"
   ],
   "properties": {
     "id": {
@@ -62,4 +69,4 @@
       "description": "Timestamp when the combat was last updated"
     }
   }
-} 
+}

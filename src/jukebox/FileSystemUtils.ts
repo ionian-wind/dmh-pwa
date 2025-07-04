@@ -20,7 +20,9 @@ export async function pickAudioFiles(): Promise<FileSystemFileHandle[]> {
   return handles;
 }
 
-export async function getFileFromHandle(handle: FileSystemFileHandle): Promise<File> {
+export async function getFileFromHandle(
+  handle: FileSystemFileHandle,
+): Promise<File> {
   return await handle.getFile();
 }
 
@@ -30,7 +32,7 @@ async function getAudioMetadata(file: File): Promise<{ duration: number }> {
     audio.preload = 'metadata';
     audio.src = URL.createObjectURL(file);
     audio.onloadedmetadata = () => {
-        debug({ duration: audio.duration })
+      debug({ duration: audio.duration });
       resolve({ duration: audio.duration });
       URL.revokeObjectURL(audio.src);
     };
@@ -45,9 +47,12 @@ export async function extractTrackMetadata(file: File): Promise<any> {
 
   return new Promise((resolve, reject) => {
     // Vite specific worker import: `?worker` suffix is not needed with `new URL`
-    const worker = new Worker(new URL('./worker/metadata.worker.ts', import.meta.url), {
-      type: 'module',
-    });
+    const worker = new Worker(
+      new URL('./worker/metadata.worker.ts', import.meta.url),
+      {
+        type: 'module',
+      },
+    );
 
     worker.onmessage = (event: MessageEvent) => {
       if (event.data.type === 'success') {
@@ -74,4 +79,4 @@ export async function extractTrackMetadata(file: File): Promise<any> {
 
 // The extractColorFromPicture function is no longer needed here,
 // as the logic has been moved into the web worker.
-// The file can be cleaned up to remove it. 
+// The file can be cleaned up to remove it.

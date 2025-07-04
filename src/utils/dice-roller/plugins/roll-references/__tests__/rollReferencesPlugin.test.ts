@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { parseRollReferenceAst, extractRollReferences, evaluateRollReferenceNode } from '../index';
+import {
+  parseRollReferenceAst,
+  extractRollReferences,
+  evaluateRollReferenceNode,
+} from '../index';
 
 // --- Parsing ---
 describe('Roll References Plugin > Parsing', () => {
@@ -14,9 +18,15 @@ describe('Roll References Plugin > Parsing', () => {
   });
 
   it('should throw on invalid roll reference syntax', () => {
-    expect(() => parseRollReferenceAst('$[0]')).toThrow('Invalid roll reference syntax');
-    expect(() => parseRollReferenceAst('$[roll:]')).toThrow('Invalid roll reference syntax');
-    expect(() => parseRollReferenceAst('$[[abc]]')).toThrow('Invalid roll reference syntax');
+    expect(() => parseRollReferenceAst('$[0]')).toThrow(
+      'Invalid roll reference syntax',
+    );
+    expect(() => parseRollReferenceAst('$[roll:]')).toThrow(
+      'Invalid roll reference syntax',
+    );
+    expect(() => parseRollReferenceAst('$[[abc]]')).toThrow(
+      'Invalid roll reference syntax',
+    );
   });
 });
 
@@ -33,7 +43,7 @@ describe('Roll References Plugin > Extraction', () => {
       type: 'arithmetic',
       op: '+',
       left: { type: 'roll-reference', ref: '0' },
-      right: { type: 'roll-reference', ref: 'attackRoll' }
+      right: { type: 'roll-reference', ref: 'attackRoll' },
     };
     const refs = extractRollReferences(ast);
     expect(refs).toEqual(['0', 'attackRoll']);
@@ -70,12 +80,16 @@ describe('Roll References Plugin > Evaluation', () => {
   it('should throw error for missing reference', () => {
     const node = { type: 'roll-reference', ref: 'missing' };
     const context = { rolls: {} } as any;
-    expect(() => evaluateRollReferenceNode(node, context)).toThrow("Referenced roll 'missing' not found");
+    expect(() => evaluateRollReferenceNode(node, context)).toThrow(
+      "Referenced roll 'missing' not found",
+    );
   });
 
   it('should throw error for non-roll-reference node', () => {
     const node = { type: 'number', value: 5 };
     const context = {} as any;
-    expect(() => evaluateRollReferenceNode(node, context)).toThrow('Expected roll reference node');
+    expect(() => evaluateRollReferenceNode(node, context)).toThrow(
+      'Expected roll reference node',
+    );
   });
-}); 
+});

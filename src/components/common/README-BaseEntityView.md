@@ -14,32 +14,32 @@ A reusable layout component that provides a standardized view structure for disp
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `entity` | `any \| null` | - | The entity object to display |
-| `entityName` | `string` | - | Name of the entity type (used in buttons and confirmations) |
-| `listRoute` | `string` | - | Route to navigate to when clicking "Back" button |
-| `onDelete` | `() => Promise<void>` | - | Function to handle entity deletion |
-| `onEdit` | `() => void` | `undefined` | Optional function to handle edit action |
-| `isEditing` | `boolean` | `false` | Whether the entity is currently being edited |
-| `title` | `string` | - | Main title displayed in the header |
-| `subtitle` | `string` | `''` | Optional subtitle displayed below the title |
-| `loading` | `boolean` | `false` | Whether to show loading state |
-| `notFound` | `boolean` | `false` | Whether to show not found state |
+| Prop         | Type                  | Default     | Description                                                 |
+| ------------ | --------------------- | ----------- | ----------------------------------------------------------- |
+| `entity`     | `any \| null`         | -           | The entity object to display                                |
+| `entityName` | `string`              | -           | Name of the entity type (used in buttons and confirmations) |
+| `listRoute`  | `string`              | -           | Route to navigate to when clicking "Back" button            |
+| `onDelete`   | `() => Promise<void>` | -           | Function to handle entity deletion                          |
+| `onEdit`     | `() => void`          | `undefined` | Optional function to handle edit action                     |
+| `isEditing`  | `boolean`             | `false`     | Whether the entity is currently being edited                |
+| `title`      | `string`              | -           | Main title displayed in the header                          |
+| `subtitle`   | `string`              | `''`        | Optional subtitle displayed below the title                 |
+| `loading`    | `boolean`             | `false`     | Whether to show loading state                               |
+| `notFound`   | `boolean`             | `false`     | Whether to show not found state                             |
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `edit` | - | Emitted when edit button is clicked |
-| `delete` | - | Emitted when delete button is clicked |
+| Event    | Payload | Description                           |
+| -------- | ------- | ------------------------------------- |
+| `edit`   | -       | Emitted when edit button is clicked   |
+| `delete` | -       | Emitted when delete button is clicked |
 
 ## Slots
 
-| Slot | Description |
-|------|-------------|
+| Slot      | Description                                     |
+| --------- | ----------------------------------------------- |
 | `default` | Main content area for displaying entity details |
-| `editor` | Optional slot for editor modal or form |
+| `editor`  | Optional slot for editor modal or form          |
 
 ## Usage
 
@@ -81,7 +81,12 @@ import { ref } from 'vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import CharacterEditor from '@/components/CharacterEditor.vue';
 
-const character = ref({ name: 'Aragorn', race: 'Human', class: 'Ranger', level: 10 });
+const character = ref({
+  name: 'Aragorn',
+  race: 'Human',
+  class: 'Ranger',
+  level: 10,
+});
 const isEditing = ref(false);
 
 const deleteCharacter = async () => {
@@ -188,6 +193,7 @@ The component uses CSS custom properties for theming:
 ## Examples
 
 ### Monster View
+
 ```vue
 <BaseEntityView
   :entity="monster"
@@ -204,6 +210,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Encounter View
+
 ```vue
 <BaseEntityView
   :entity="encounter"
@@ -217,4 +224,4 @@ The component uses CSS custom properties for theming:
   <EncounterDetails :encounter="encounter" />
   <MonsterList :monsters="encounter.monsters" />
 </BaseEntityView>
-``` 
+```

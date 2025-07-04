@@ -1,6 +1,11 @@
 // Tables Plugin Entry
 // Modular dice roller plugin for table parsing, extraction, and evaluation
-import type { DiceRollerPlugin, ASTNode, EvaluationContext, EvaluationResult } from '../../core';
+import type {
+  DiceRollerPlugin,
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../core';
 import type { TableAstNode, TableExtractionResult } from './types';
 import { debugLog } from '../../lib/utils';
 import { debug } from '../../../debug';
@@ -44,7 +49,10 @@ export function extractTables(ast: ASTNode): TableExtractionResult[] {
 }
 
 // --- Evaluation ---
-export function evaluateTableNode(node: ASTNode, context: EvaluationContext): EvaluationResult {
+export function evaluateTableNode(
+  node: ASTNode,
+  context: EvaluationContext,
+): EvaluationResult {
   if (node.type !== 'table') {
     throw new Error('Expected table node');
   }
@@ -54,7 +62,9 @@ export function evaluateTableNode(node: ASTNode, context: EvaluationContext): Ev
   const table = tableMap[tableName];
   debugLog('tablesPlugin', 'Evaluating table:', { tableName, count, table });
   if (!Array.isArray(table) || table.length === 0) {
-    debugLog('tablesPlugin', `Table '${tableName}' not found or empty`, { table });
+    debugLog('tablesPlugin', `Table '${tableName}' not found or empty`, {
+      table,
+    });
     throw new Error(`Table '${tableName}' not found or empty`);
   }
   if (typeof count !== 'number' || count < 1 || !Number.isInteger(count)) {
@@ -64,16 +74,22 @@ export function evaluateTableNode(node: ASTNode, context: EvaluationContext): Ev
 
   // Build weighted pool: each entry appears as many times as its weight (default 1)
   let weightedPool: any[] = [];
-  if (table.some(entry => typeof entry === 'object' && entry.weight)) {
-    table.forEach(entry => {
-      if (typeof entry === 'object' && entry.weight && entry.value !== undefined) {
+  if (table.some((entry) => typeof entry === 'object' && entry.weight)) {
+    table.forEach((entry) => {
+      if (
+        typeof entry === 'object' &&
+        entry.weight &&
+        entry.value !== undefined
+      ) {
         for (let i = 0; i < entry.weight; i++) weightedPool.push(entry.value);
       }
     });
     debugLog('tablesPlugin', 'Weighted pool (object entries):', weightedPool);
   } else {
     // Classic: repeated entries are naturally weighted
-    weightedPool = table.filter(entry => typeof entry === 'string' || typeof entry === 'number');
+    weightedPool = table.filter(
+      (entry) => typeof entry === 'string' || typeof entry === 'number',
+    );
     debugLog('tablesPlugin', 'Weighted pool (classic):', weightedPool);
   }
   if (weightedPool.length === 0) {
@@ -92,7 +108,12 @@ export function evaluateTableNode(node: ASTNode, context: EvaluationContext): Ev
     total: 0,
     rolls: results as any[],
     warnings: [],
-    details: { table: tableName, count, results, weightedPoolSize: weightedPool.length }
+    details: {
+      table: tableName,
+      count,
+      results,
+      weightedPoolSize: weightedPool.length,
+    },
   };
 }
 
@@ -132,4 +153,4 @@ export const tablesPlugin: DiceRollerPlugin = {
  * Tables Plugin
  * - extractTables: returns an array of table names from the AST
  * - evaluateTable: throws (not implemented)
- */ 
+ */

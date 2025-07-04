@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, it, expect, vi } from 'vitest';
-import ModuleDocumentTree from '@/components/ModuleDocumentTree.vue';
+import ModuleDocumentTree from '../../src/modules/ModuleDocumentTree.vue';
 import type { ModuleTreeNode, Note } from '@/types';
 
 // Mock the stores

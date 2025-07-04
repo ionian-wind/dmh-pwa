@@ -8,13 +8,22 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 
 // --- Internal Entity Link Plugin for markdown-it ---
-const entityLinkRegex = /^(note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)$/;
+const entityLinkRegex =
+  /^(note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)$/;
 
 const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
-  const defaultRender = md.renderer.rules.link_open || function(tokens: any, idx: number, options: any, env: any, self: any) {
-    return self.renderToken(tokens, idx, options);
-  };
-  md.renderer.rules.link_open = function(tokens: any, idx: number, options: any, env: any, self: any) {
+  const defaultRender =
+    md.renderer.rules.link_open ||
+    function (tokens: any, idx: number, options: any, env: any, self: any) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.link_open = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
     const href = tokens[idx].attrGet('href');
     if (href) {
       const match = entityLinkRegex.exec(href);
@@ -26,11 +35,21 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
         tokens[idx].attrJoin('class', `internal-link ${kind}-link`);
         // Set SPA route for href
         switch (kind) {
-          case 'note': tokens[idx].attrSet('href', `/notes/${id}`); break;
-          case 'module': tokens[idx].attrSet('href', `/modules/${id}`); break;
-          case 'party': tokens[idx].attrSet('href', `/parties/${id}`); break;
-          case 'monster': tokens[idx].attrSet('href', `/monsters/${id}`); break;
-          case 'encounter': tokens[idx].attrSet('href', `/encounters/${id}`); break;
+          case 'note':
+            tokens[idx].attrSet('href', `/notes/${id}`);
+            break;
+          case 'module':
+            tokens[idx].attrSet('href', `/modules/${id}`);
+            break;
+          case 'party':
+            tokens[idx].attrSet('href', `/parties/${id}`);
+            break;
+          case 'monster':
+            tokens[idx].attrSet('href', `/monsters/${id}`);
+            break;
+          case 'encounter':
+            tokens[idx].attrSet('href', `/encounters/${id}`);
+            break;
         }
       } else if (/^(https?:)?\/\//.test(href)) {
         // External link
@@ -43,10 +62,18 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
   };
 
   // Optionally, customize link text rendering for internal links
-  const defaultTextRender = md.renderer.rules.text || function(tokens: any, idx: number, options: any, env: any, self: any) {
-    return self.renderToken(tokens, idx, options);
-  };
-  md.renderer.rules.text = function(tokens: any, idx: number, options: any, env: any, self: any) {
+  const defaultTextRender =
+    md.renderer.rules.text ||
+    function (tokens: any, idx: number, options: any, env: any, self: any) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.text = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
     // No-op, let markdown-it handle link text
     return md.utils.escapeHtml(tokens[idx].content);
   };
@@ -56,12 +83,26 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
 const checkboxRegex = /^\s*\[([ xX])\]\s+/;
 
 const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
-  const originalListItemOpen = md.renderer.rules.list_item_open || function(tokens: any, idx: number, options: any, env: any, self: any) {
-    return self.renderToken(tokens, idx, options);
-  };
-  md.renderer.rules.list_item_open = function(tokens: any, idx: number, options: any, env: any, self: any) {
+  const originalListItemOpen =
+    md.renderer.rules.list_item_open ||
+    function (tokens: any, idx: number, options: any, env: any, self: any) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.list_item_open = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
     const next = tokens[idx + 1];
-    if (next && next.type === 'inline' && next.children && next.children[0] && next.children[0].type === 'text') {
+    if (
+      next &&
+      next.type === 'inline' &&
+      next.children &&
+      next.children[0] &&
+      next.children[0].type === 'text'
+    ) {
       const match = checkboxRegex.exec(next.children[0].content);
       if (match) {
         tokens[idx].attrJoin('class', 'task-list-item');
@@ -69,7 +110,13 @@ const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
     }
     return originalListItemOpen(tokens, idx, options, env, self);
   };
-  md.renderer.rules.text = function(tokens: any, idx: number, options: any, env: any, self: any) {
+  md.renderer.rules.text = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
     const token = tokens[idx];
     const match = checkboxRegex.exec(token.content);
     if (match) {
@@ -88,10 +135,18 @@ const validKinds = ['note', 'module', 'party', 'monster', 'encounter'];
 
 const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
   // Patch the renderer for heading_open
-  const originalHeadingOpen = md.renderer.rules.heading_open || function(tokens: any, idx: number, options: any, env: any, self: any) {
-    return self.renderToken(tokens, idx, options);
-  };
-  md.renderer.rules.heading_open = function(tokens: any, idx: number, options: any, env: any, self: any) {
+  const originalHeadingOpen =
+    md.renderer.rules.heading_open ||
+    function (tokens: any, idx: number, options: any, env: any, self: any) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.heading_open = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
     // Find the inline token for this heading
     const inlineToken = tokens[idx + 1];
     if (inlineToken && inlineToken.type === 'inline') {
@@ -142,7 +197,8 @@ export interface EntityRef {
 
 export function extractMentionedEntities(text: string): EntityRef[] {
   // Match [title](type://id)
-  const entityLinkExtractRegex = /\[[^\]]*\]\((note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)\)/g;
+  const entityLinkExtractRegex =
+    /\[[^\]]*\]\((note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)\)/g;
   const results: EntityRef[] = [];
   let match;
   while ((match = entityLinkExtractRegex.exec(text)) !== null) {
@@ -159,7 +215,7 @@ export function getMentionableEntities(kind: string) {
       titleKey: 'title',
       idKey: 'id',
       type: 'Note',
-      target: 'notes'
+      target: 'notes',
     },
     module: {
       useStore: useModuleStore,

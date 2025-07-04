@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import type { Module, Note, ModuleTreeNode } from '@/types';
-import {openDB, StorageError} from "./storage";
+import { openDB, StorageError } from './storage';
 import { debugWarn } from './debug';
 
 export interface ImportValidationResult {
@@ -27,14 +27,19 @@ function extractNoteIds(nodes: ModuleTreeNode[]): string[] {
 export function validateModuleImport(
   module: Pick<Module, 'noteTree'>,
   tree: ModuleTreeNode[],
-  notes: Pick<Note, 'id'>[]
+  notes: Pick<Note, 'id'>[],
 ): ImportValidationResult {
   const treeNoteIds = extractNoteIds(tree);
   const actualNoteIds = notes.map((n) => n.id);
-  const missingNoteIds = treeNoteIds.filter(noteId => !actualNoteIds.includes(noteId));
-  const orphanedNoteFiles = actualNoteIds.filter(noteId => !treeNoteIds.includes(noteId));
+  const missingNoteIds = treeNoteIds.filter(
+    (noteId) => !actualNoteIds.includes(noteId),
+  );
+  const orphanedNoteFiles = actualNoteIds.filter(
+    (noteId) => !treeNoteIds.includes(noteId),
+  );
   const moduleNoteIds = extractNoteIds(module.noteTree || []);
-  const treeMatchesModule = JSON.stringify(treeNoteIds.sort()) === JSON.stringify(moduleNoteIds.sort());
+  const treeMatchesModule =
+    JSON.stringify(treeNoteIds.sort()) === JSON.stringify(moduleNoteIds.sort());
 
   return {
     missingNoteIds,
@@ -84,7 +89,9 @@ export async function parseModuleZip(zipFile: Blob): Promise<{
     throw new Error('Notes folder not found in zip');
   }
 
-  const noteFiles = Object.values(notesFolder.files).filter(file => !file.dir && file.name.startsWith('notes/'));
+  const noteFiles = Object.values(notesFolder.files).filter(
+    (file) => !file.dir && file.name.startsWith('notes/'),
+  );
   const notes: any[] = [];
 
   for (const noteFile of noteFiles) {
@@ -102,17 +109,25 @@ export async function parseModuleZip(zipFile: Blob): Promise<{
   return {
     module: moduleData,
     tree: treeData,
-    notes
+    notes,
   };
 }
 
-export async function importModuleFromZip({module: moduleData, tree: noteTree, notes: notesData }: { module: Omit<Module, 'noteTree'>, tree: Module['noteTree'], notes: Note[] }): Promise<{ moduleId: string, noteCount: number }> {
+export async function importModuleFromZip({
+  module: moduleData,
+  tree: noteTree,
+  notes: notesData,
+}: {
+  module: Omit<Module, 'noteTree'>;
+  tree: Module['noteTree'];
+  notes: Note[];
+}): Promise<{ moduleId: string; noteCount: number }> {
   // Update module data with new ID and updated note tree
   const module = {
     ...moduleData,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    noteTree
+    noteTree,
   };
 
   const notes: Note[] = [];
@@ -122,7 +137,7 @@ export async function importModuleFromZip({module: moduleData, tree: noteTree, n
       ...noteInfo,
       moduleId: module.id,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
     notes.push(newNote);
   }
@@ -145,10 +160,12 @@ export async function importModuleFromZip({module: moduleData, tree: noteTree, n
 
     return {
       moduleId: module.id,
-      noteCount: notes.length
+      noteCount: notes.length,
     };
   } catch (error) {
     // Transaction will automatically rollback on error
-    throw new StorageError(`Import failed: ${error instanceof Error ? error.message : String(error)}`);
+    throw new StorageError(
+      `Import failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
-} 
+}

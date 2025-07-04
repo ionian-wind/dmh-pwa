@@ -3,18 +3,29 @@
 
 import { describe, it, expect, vi, type Mock } from 'vitest';
 import { parseDiceAst, evaluateDiceNode, dicePlugin } from '../dicePlugin';
-import type { ASTNode, EvaluationContext, EvaluationResult } from '../../../core';
+import type {
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../../core';
 import { evaluate } from '../../../core';
 
 // Mock the core evaluate function
 vi.mock('../../../core', () => ({
-  evaluate: vi.fn((ast: ASTNode, context: EvaluationContext): EvaluationResult => {
-    if (ast.type === 'number') {
-      return { total: (ast as any).value, rolls: [], warnings: [], details: {} };
-    }
-    // Fallback for other types
-    return { total: 0, rolls: [], warnings: [], details: {} };
-  }),
+  evaluate: vi.fn(
+    (ast: ASTNode, context: EvaluationContext): EvaluationResult => {
+      if (ast.type === 'number') {
+        return {
+          total: (ast as any).value,
+          rolls: [],
+          warnings: [],
+          details: {},
+        };
+      }
+      // Fallback for other types
+      return { total: 0, rolls: [], warnings: [], details: {} };
+    },
+  ),
 }));
 
 describe('Advanced Dice Features', () => {
@@ -25,7 +36,7 @@ describe('Advanced Dice Features', () => {
       count: 2,
       sides: 6,
       modifiers: [],
-      label: 'fire'
+      label: 'fire',
     });
   });
 
@@ -35,7 +46,7 @@ describe('Advanced Dice Features', () => {
       type: 'custom-dice',
       count: 1,
       sides: [1, 2, 3, 5, 8],
-      modifiers: []
+      modifiers: [],
     });
   });
 
@@ -48,18 +59,22 @@ describe('Advanced Dice Features', () => {
   it('should evaluate dice with labels', () => {
     const ast = parseDiceAst('2d6[fire]');
     const result = evaluateDiceNode(ast, {});
-    
+
     expect(result.rolls).toHaveLength(2);
-    expect(result.rolls!.every((roll: number) => roll >= 1 && roll <= 6)).toBe(true);
+    expect(result.rolls!.every((roll: number) => roll >= 1 && roll <= 6)).toBe(
+      true,
+    );
     expect((result.details as any).label).toBe('fire');
   });
 
   it('should evaluate custom dice', () => {
     const ast = parseDiceAst('2d[1,2,3,5,8]');
     const result = evaluateDiceNode(ast, {});
-    
+
     expect(result.rolls).toHaveLength(2);
-    expect(result.rolls!.every((roll: number) => [1, 2, 3, 5, 8].includes(roll))).toBe(true);
+    expect(
+      result.rolls!.every((roll: number) => [1, 2, 3, 5, 8].includes(roll)),
+    ).toBe(true);
     expect((result.details as any).sides).toEqual([1, 2, 3, 5, 8]);
   });
 
@@ -67,11 +82,13 @@ describe('Advanced Dice Features', () => {
     // This test now requires mocking the core 'evaluate' for child expressions
     const ast = parseDiceAst('{1d6, 1d4}');
     (evaluate as Mock).mockImplementation((node: ASTNode) => {
-      if (node.type === 'dice' && node.sides === 6) return { total: 4, rolls: [4], warnings: [] };
-      if (node.type === 'dice' && node.sides === 4) return { total: 3, rolls: [3], warnings: [] };
+      if (node.type === 'dice' && node.sides === 6)
+        return { total: 4, rolls: [4], warnings: [] };
+      if (node.type === 'dice' && node.sides === 4)
+        return { total: 3, rolls: [3], warnings: [] };
       return { total: 0, rolls: [], warnings: [] };
     });
-    
+
     const result = dicePlugin.evaluate!(ast, {});
     expect(result!.total).toBe(7); // 4 + 3
     expect(result!.rolls).toEqual([4, 3]);
@@ -80,18 +97,22 @@ describe('Advanced Dice Features', () => {
   it('should apply modifiers to grouped rolls', () => {
     const ast = parseDiceAst('{1d6, 1d4}kh1');
     (evaluate as Mock).mockImplementation((node: ASTNode) => {
-      if (node.type === 'dice' && node.sides === 6) return { total: 4, rolls: [4], warnings: [] };
-      if (node.type === 'dice' && node.sides === 4) return { total: 3, rolls: [3], warnings: [] };
+      if (node.type === 'dice' && node.sides === 6)
+        return { total: 4, rolls: [4], warnings: [] };
+      if (node.type === 'dice' && node.sides === 4)
+        return { total: 3, rolls: [3], warnings: [] };
       return { total: 0, rolls: [], warnings: [] };
     });
-    
+
     const result = dicePlugin.evaluate!(ast, {});
     expect(result!.total).toBe(4); // Keep highest of [4, 3]
   });
 
   it('should throw error for empty custom dice', () => {
     const ast = parseDiceAst('d[]');
-    expect(() => evaluateDiceNode(ast, {})).toThrow('Custom dice must have at least one side');
+    expect(() => evaluateDiceNode(ast, {})).toThrow(
+      'Custom dice must have at least one side',
+    );
   });
 
   it('should evaluate complex arithmetic', () => {
@@ -118,7 +139,7 @@ describe('Advanced Dice Features', () => {
       type: 'fudge-dice',
       count: 1,
       variant: 'basic',
-      modifiers: []
+      modifiers: [],
     });
   });
 
@@ -128,7 +149,7 @@ describe('Advanced Dice Features', () => {
       type: 'fudge-dice',
       count: 1,
       variant: '1',
-      modifiers: []
+      modifiers: [],
     });
 
     const ast2 = parseDiceAst('dF.2');
@@ -136,7 +157,7 @@ describe('Advanced Dice Features', () => {
       type: 'fudge-dice',
       count: 1,
       variant: '2',
-      modifiers: []
+      modifiers: [],
     });
 
     const ast3 = parseDiceAst('dF.3');
@@ -144,16 +165,18 @@ describe('Advanced Dice Features', () => {
       type: 'fudge-dice',
       count: 1,
       variant: '3',
-      modifiers: []
+      modifiers: [],
     });
   });
 
   it('should evaluate basic Fudge dice', () => {
     const ast = parseDiceAst('4dF');
     const result = evaluateDiceNode(ast, {});
-    
+
     expect(result.rolls).toHaveLength(4);
-    expect(result.rolls!.every((roll: number) => roll >= -1 && roll <= 1)).toBe(true);
+    expect(result.rolls!.every((roll: number) => roll >= -1 && roll <= 1)).toBe(
+      true,
+    );
     expect((result.details as any).variant).toBe('basic');
   });
 
@@ -194,14 +217,14 @@ describe('Advanced Dice Features', () => {
   it('should evaluate custom drop/keep syntax', () => {
     const ast1 = parseDiceAst('4d6k>3');
     const result1 = evaluateDiceNode(ast1, {});
-    
+
     // Should only keep dice above 3
     expect(result1.rolls!.every((roll: number) => roll > 3)).toBe(true);
     expect((result1.details as any).modifiers).toContain('k>');
 
     const ast2 = parseDiceAst('4d6k<4');
     const result2 = evaluateDiceNode(ast2, {});
-    
+
     // Should only keep dice below 4
     expect(result2.rolls!.every((roll: number) => roll < 4)).toBe(true);
     expect((result2.details as any).modifiers).toContain('k<');
@@ -210,7 +233,7 @@ describe('Advanced Dice Features', () => {
   it('should handle custom drop/keep with other modifiers', () => {
     const ast = parseDiceAst('4d6k>3sd');
     const result = evaluateDiceNode(ast, {});
-    
+
     // Should keep dice above 3 and sort descending
     expect(result.rolls!.every((roll: number) => roll > 3)).toBe(true);
     expect(result.rolls).toEqual([...result.rolls!].sort((a, b) => b - a));
@@ -230,13 +253,25 @@ describe('Advanced Dice Features', () => {
   it('should parse advanced reroll modifiers', () => {
     const ast1 = parseDiceAst('4d6r<3');
     if (ast1.type !== 'dice') throw new Error('Expected dice');
-    expect(ast1.modifiers[0]).toMatchObject({ type: 'r', value: '3', operator: '<' });
+    expect(ast1.modifiers[0]).toMatchObject({
+      type: 'r',
+      value: '3',
+      operator: '<',
+    });
     const ast2 = parseDiceAst('4d6r>5');
     if (ast2.type !== 'dice') throw new Error('Expected dice');
-    expect(ast2.modifiers[0]).toMatchObject({ type: 'r', value: '5', operator: '>' });
+    expect(ast2.modifiers[0]).toMatchObject({
+      type: 'r',
+      value: '5',
+      operator: '>',
+    });
     const ast3 = parseDiceAst('4d6r!=1');
     if (ast3.type !== 'dice') throw new Error('Expected dice');
-    expect(ast3.modifiers[0]).toMatchObject({ type: 'r', value: '1', operator: '!=' });
+    expect(ast3.modifiers[0]).toMatchObject({
+      type: 'r',
+      value: '1',
+      operator: '!=',
+    });
   });
 
   it('should evaluate advanced reroll modifiers', () => {
@@ -282,7 +317,9 @@ describe('Exhaustive (e) dice pool operator', () => {
     const ast = parseDiceAst('1d1=1e');
     const result = evaluateDiceNode(ast, {});
     expect(result.details?.exhaustive.cycles).toBeGreaterThanOrEqual(99);
-    expect(result.warnings!.some(w => w.includes('Exhaustive reroll limit'))).toBe(true);
+    expect(
+      result.warnings!.some((w) => w.includes('Exhaustive reroll limit')),
+    ).toBe(true);
   });
 
   it('should include details.exhaustive in the result', () => {
@@ -294,4 +331,4 @@ describe('Exhaustive (e) dice pool operator', () => {
     }
     expect(typeof result.details?.exhaustive.cycles).toBe('number');
   });
-}); 
+});

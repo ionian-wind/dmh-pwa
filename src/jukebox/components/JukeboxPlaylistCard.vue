@@ -6,7 +6,7 @@ import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import { IconMusic } from '@tabler/icons-vue';
 
-const props = defineProps<{ playlist: JukeboxPlaylist; }>();
+const props = defineProps<{ playlist: JukeboxPlaylist }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'play']);
 
 const { t } = useI18n();
@@ -23,7 +23,14 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <BaseCard showView showEdit showDelete @view="handleView" @edit="handleEdit" @delete="handleDelete">
+  <BaseCard
+    showView
+    showEdit
+    showDelete
+    @view="handleView"
+    @edit="handleEdit"
+    @delete="handleDelete"
+  >
     <template #header>
       <h3>{{ playlist.name }}</h3>
       <h4>{{ subtitle }}</h4>
@@ -32,9 +39,14 @@ const subtitle = computed(() => {
       <p>{{ playlist.description }}</p>
     </div>
     <template #actions>
-        <Button @click="handlePlay" variant="success" size="small" :title="t('common.play')">
-            <IconMusic />
-        </Button>
+      <Button
+        @click="handlePlay"
+        variant="success"
+        size="small"
+        :title="t('common.play')"
+      >
+        <IconMusic />
+      </Button>
     </template>
   </BaseCard>
 </template>
@@ -48,4 +60,4 @@ const subtitle = computed(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-</style> 
+</style>

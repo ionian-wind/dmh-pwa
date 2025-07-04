@@ -5,19 +5,17 @@ import { defineStore } from 'pinia';
 import JSZip from 'jszip';
 
 import * as schemaValidator from './schemaValidator';
-import {WithMetadata} from "@/types";
+import { WithMetadata } from '@/types';
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
 import { debug } from './debug';
-import type { Timer } from '@/types';
-import timerValidationSchema from '@/schemas/timer.schema.json';
 
 export class StorageError extends Error {
   constructor(
     message: string,
     public key?: string,
-    public cause?: unknown
+    public cause?: unknown,
   ) {
     super(message);
     this.name = 'StorageError';
@@ -32,8 +30,11 @@ export function isArray(value: unknown): value is unknown[] {
   return Array.isArray(value);
 }
 
-export function hasRequiredFields<T extends object>(obj: T, fields: (keyof T)[]): boolean {
-  return fields.every(field => field in obj);
+export function hasRequiredFields<T extends object>(
+  obj: T,
+  fields: (keyof T)[],
+): boolean {
+  return fields.every((field) => field in obj);
 }
 
 // --- IndexedDB Helper using idb ---
@@ -41,7 +42,9 @@ const DB_NAME = 'dmh-db';
 const MIGRATIONS_STORE = 'migrations';
 
 export async function openDB(): Promise<IDBPDatabase> {
-  const DB_VERSION = Math.max(...sortedMigrations.map(({ version }) => version));
+  const DB_VERSION = Math.max(
+    ...sortedMigrations.map(({ version }) => version),
+  );
   let toRun: Migration[] = [];
   const affectedStores = new Set<string>();
 
@@ -50,80 +53,101 @@ export async function openDB(): Promise<IDBPDatabase> {
       const createStore = (storeName: string) => {
         if (!db.objectStoreNames.contains(storeName)) {
           affectedStores.add(storeName);
-          db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: false });
+          db.createObjectStore(storeName, {
+            keyPath: 'id',
+            autoIncrement: false,
+          });
         }
       };
-      
+
       createStore(MIGRATIONS_STORE);
 
       // Use DB_VERSION if newVersion is null
       const effectiveNewVersion = newVersion ?? DB_VERSION;
       // Run migrations for versions > oldVersion and <= newVersion
-      toRun = sortedMigrations.filter(m => {
+      toRun = sortedMigrations.filter((m) => {
         if (m.version > oldVersion && m.version <= effectiveNewVersion) {
           m.affectedStores.forEach((storeName) => createStore(storeName));
           return true;
         }
-        
+
         return false;
       });
-      
+
       let chain: Promise<any> = Promise.resolve();
 
       debug('{{{ MIGRATIONS to run: %i }}}', toRun.length);
-      
+
       for (const migration of toRun) {
-        chain = chain
-          .then(() => {
-            const info = {
-              id: generateId(),
-              version: migration.version,
-              name: migration.name,
-              appliedAt: Date.now()
-            };
-          
-            debug('{{{ MIGRATION loading %o }}}', info);
-          
-            return Promise.resolve(migration.go(transaction))
-              .then(() => transaction.objectStore(MIGRATIONS_STORE).put(info)
-              .then(() => debug('{{{ MIGRATION loaded %o }}}', info)))
-          });
+        chain = chain.then(() => {
+          const info = {
+            id: generateId(),
+            version: migration.version,
+            name: migration.name,
+            appliedAt: Date.now(),
+          };
+
+          debug('{{{ MIGRATION loading %o }}}', info);
+
+          return Promise.resolve(migration.go(transaction)).then(() =>
+            transaction
+              .objectStore(MIGRATIONS_STORE)
+              .put(info)
+              .then(() => debug('{{{ MIGRATION loaded %o }}}', info)),
+          );
+        });
       }
 
       chain
         .then(() => debug('{{{ MIGRATIONS finished successfully }}}'))
-        .catch(err => {
+        .catch((err) => {
           debug('{{{ MIGRATIONS failed }}}');
           transaction.abort();
           throw err;
         });
-      
     },
   });
 }
 
 // --- Per-item CRUD helpers using idb ---
-export async function idbGetItem<T>(storeName: string, id: string): Promise<T | undefined> {
+export async function idbGetItem<T>(
+  storeName: string,
+  id: string,
+): Promise<T | undefined> {
   const db = await openDB();
   return db.transaction(storeName).objectStore(storeName).get(id);
 }
 
-export async function idbPutItem<T extends { id: string }>(storeName: string, item: T): Promise<void> {
+export async function idbPutItem<T extends { id: string }>(
+  storeName: string,
+  item: T,
+): Promise<void> {
   if (schemaValidator.canValidate(storeName)) {
-    const { valid, errors } = await schemaValidator.validateSchema(storeName, item);
-  
+    const { valid, errors } = await schemaValidator.validateSchema(
+      storeName,
+      item,
+    );
+
     if (!valid) {
-      throw new StorageError(`Validation failed for store '${storeName}': ${errors.join('; ')}`);
+      throw new StorageError(
+        `Validation failed for store '${storeName}': ${errors.join('; ')}`,
+      );
     }
   }
-  
+
   const db = await openDB();
   await db.transaction(storeName, 'readwrite').objectStore(storeName).put(item);
 }
 
-export async function idbDeleteItem(storeName: string, id: string): Promise<void> {
+export async function idbDeleteItem(
+  storeName: string,
+  id: string,
+): Promise<void> {
   const db = await openDB();
-  await db.transaction(storeName, 'readwrite').objectStore(storeName).delete(id);
+  await db
+    .transaction(storeName, 'readwrite')
+    .objectStore(storeName)
+    .delete(id);
 }
 
 export async function idbGetAllItems<T>(storeName: string): Promise<T[]> {
@@ -143,7 +167,10 @@ export interface BaseStore<T extends WithMetadata> {
   sortedItems: ComputedRef<T[]>;
   getById: (id: string) => T | null;
   create: (item: Omit<T, 'id' | 'createdAt' | 'updatedAt'>) => Promise<T>;
-  update: (id: string, patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<T>;
+  update: (
+    id: string,
+    patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>,
+  ) => Promise<T>;
   remove: (id: string) => Promise<void>;
   load: () => Promise<void>;
 
@@ -155,7 +182,9 @@ export interface BaseStore<T extends WithMetadata> {
 // This cache will ensure that we create only one store instance per store name.
 const storeCache: Map<string, BaseStore<any>> = new Map();
 
-export function useStore<T extends WithMetadata>(options: StorageOptions): BaseStore<T> {
+export function useStore<T extends WithMetadata>(
+  options: StorageOptions,
+): BaseStore<T> {
   const { storeName, validationSchema } = options;
 
   // If a store for this name already exists in the cache, return it.
@@ -191,7 +220,9 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
   // Optionally, call load() initially if you want eager loading
   // load();
 
-  async function create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
+  async function create(
+    data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<T> {
     const newItem: T = {
       ...deepUnwrap(data),
       id: generateId(),
@@ -203,8 +234,11 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
     return newItem;
   }
 
-  async function update(id: string, patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>): Promise<T> {
-    const idx = items.value.findIndex(item => item.id === id);
+  async function update(
+    id: string,
+    patch: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<T> {
+    const idx = items.value.findIndex((item) => item.id === id);
     if (idx === -1) throw new Error('Item not found');
 
     const plainOriginal = deepUnwrap(items.value[idx]);
@@ -222,12 +256,12 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
 
   async function remove(id: string): Promise<void> {
     await idbDeleteItem(storeName, id);
-    items.value = items.value.filter(item => item.id !== id);
+    items.value = items.value.filter((item) => item.id !== id);
     if (currentId.value === id) currentId.value = null;
   }
 
   const getById = (id: string): T | null => {
-    return items.value.find(item => item.id === id) || null;
+    return items.value.find((item) => item.id === id) || null;
   };
 
   const sortedItems: ComputedRef<T[]> = computed(() => {
@@ -245,8 +279,12 @@ export function useStore<T extends WithMetadata>(options: StorageOptions): BaseS
     remove,
     load,
     current,
-    setCurrentId: (id: string | null) => { currentId.value = id; },
-    clearCurrent: () => { currentId.value = null; },
+    setCurrentId: (id: string | null) => {
+      currentId.value = id;
+    },
+    clearCurrent: () => {
+      currentId.value = null;
+    },
   };
 
   // Add the new store to the cache before returning it.
@@ -287,7 +325,10 @@ export function createIndexationStore(storeName: string) {
 
     async function saveKey(key: string) {
       if (links.value[key] && links.value[key].length > 0) {
-        await idbPutItem(store, deepUnwrap({ id: key, links: links.value[key] }));
+        await idbPutItem(
+          store,
+          deepUnwrap({ id: key, links: links.value[key] }),
+        );
       } else {
         await idbDeleteItem(store, key);
       }
@@ -296,7 +337,11 @@ export function createIndexationStore(storeName: string) {
     async function addLink(from: EntityRef, to: EntityRef) {
       const key = makeKey(from);
       if (!links.value[key]) links.value[key] = [];
-      if (!links.value[key].some(link => link.kind === to.kind && link.id === to.id)) {
+      if (
+        !links.value[key].some(
+          (link) => link.kind === to.kind && link.id === to.id,
+        )
+      ) {
         links.value[key].push({ kind: to.kind, id: to.id });
         await saveKey(key);
       }
@@ -305,7 +350,9 @@ export function createIndexationStore(storeName: string) {
     async function removeLink(from: EntityRef, to: EntityRef) {
       const key = makeKey(from);
       if (links.value[key]) {
-        links.value[key] = links.value[key].filter(link => !(link.kind === to.kind && link.id === to.id));
+        links.value[key] = links.value[key].filter(
+          (link) => !(link.kind === to.kind && link.id === to.id),
+        );
         if (links.value[key].length === 0) delete links.value[key];
         await saveKey(key);
       }
@@ -320,7 +367,7 @@ export function createIndexationStore(storeName: string) {
       const key = makeKey(from);
       // Deduplicate by kind+id
       const seen = new Set<string>();
-      const uniqueLinks = toLinks.filter(link => {
+      const uniqueLinks = toLinks.filter((link) => {
         const k = makeKey(link);
         if (seen.has(k)) return false;
         seen.add(k);
@@ -340,14 +387,14 @@ export function createIndexationStore(storeName: string) {
       links.value = {};
       // Remove all records from the object store
       const all = await idbGetAllItems<{ id: string }>(store);
-      await Promise.all(all.map(rec => idbDeleteItem(store, rec.id)));
+      await Promise.all(all.map((rec) => idbDeleteItem(store, rec.id)));
     }
 
     function getBacklinks(target: EntityRef): EntityRef[] {
       const result: EntityRef[] = [];
       const targetKey = makeKey(target);
       for (const [fromKey, toLinks] of Object.entries(links.value)) {
-        if (toLinks.some(link => makeKey(link) === targetKey)) {
+        if (toLinks.some((link) => makeKey(link) === targetKey)) {
           const [kind, id] = fromKey.split(':');
           result.push({ kind, id });
         }
@@ -380,7 +427,7 @@ export async function initializeDatabase(): Promise<void> {
   if (isInitialized) {
     return;
   }
-  
+
   try {
     debug('Initializing database...');
     await openDB();
@@ -456,4 +503,3 @@ export async function clearStore(storeName: string): Promise<void> {
   }
   await tx.done;
 }
-

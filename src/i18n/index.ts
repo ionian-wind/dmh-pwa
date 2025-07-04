@@ -12,8 +12,8 @@ const i18n = createI18n({
   fallbackLocale: 'en', // Fallback locale
   messages: {
     en,
-    ru
-  }
+    ru,
+  },
 });
 
-export default i18n; 
+export default i18n;

@@ -1,25 +1,35 @@
-import {defineStore} from 'pinia';
-import {computed, ref, watch} from 'vue';
+import { defineStore } from 'pinia';
+import { computed, ref, watch } from 'vue';
 import type { JukeboxTrack } from './types';
-import {getJukeboxFile, useJukeboxPlaylistsStore, useJukeboxTracksStore} from './stores';
-import {JukeboxRepeatMode, useConfigStore} from '@/utils/configStore';
-import {getFileFromHandle} from '@/jukebox/FileSystemUtils';
-import {debug, debugError, debugWarn} from '@/utils/debug';
-import { rng } from "@/utils/random";
+import {
+  getJukeboxFile,
+  useJukeboxPlaylistsStore,
+  useJukeboxTracksStore,
+} from './stores';
+import { JukeboxRepeatMode, useConfigStore } from '@/utils/configStore';
+import { getFileFromHandle } from '@/jukebox/FileSystemUtils';
+import { debug, debugError, debugWarn } from '@/utils/debug';
+import { rng } from '@/utils/random';
 import { Howl, Howler } from 'howler';
 
 // Helper to handle file permissions
-const verifyFilePermission = async (handle: FileSystemFileHandle, mode: 'read' | 'readwrite' = 'read') => {
+const verifyFilePermission = async (
+  handle: FileSystemFileHandle,
+  mode: 'read' | 'readwrite' = 'read',
+) => {
   // @ts-ignore
   const query = await handle.queryPermission({ mode });
   // @ts-ignore
   const request = await handle.requestPermission({ mode });
 
   return query === 'granted' || request === 'granted';
-}
+};
 
-const isFileSystemFileHandle = (obj: any): obj is FileSystemFileHandle  =>
-  obj && typeof obj === 'object' && typeof obj.getFile === 'function' && typeof obj.name === 'string';
+const isFileSystemFileHandle = (obj: any): obj is FileSystemFileHandle =>
+  obj &&
+  typeof obj === 'object' &&
+  typeof obj.getFile === 'function' &&
+  typeof obj.name === 'string';
 
 export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   let howl: Howl | null = null;
@@ -28,7 +38,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   // Other Stores
   const tracksStore = useJukeboxTracksStore();
   const playlistsStore = useJukeboxPlaylistsStore();
-  
+
   // Core State
   const currentTrack = ref<JukeboxTrack | null>(null);
   const isPlaying = ref(false);
@@ -36,7 +46,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   const duration = ref(0);
   const volume = ref<number>(1);
   const lastVolume = ref(1);
-  
+
   // Queue State
   const queue = ref<JukeboxTrack[]>([]);
   const queueIndex = ref(0);
@@ -44,7 +54,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   // --- Shuffle/Repeat/History State ---
   const hasPrevTrack = computed(() => {
     const currentIndex = queueIndex.value;
-    
+
     // If no current track or history is empty, there's no previous track
     if (!currentTrack.value || queue.value.length === 0) {
       return false;
@@ -77,7 +87,10 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     // Check if current track is in the queue and not the last one
     const currentIndex = queueIndex.value;
 
-    return configStore.jukeboxRepeatMode === JukeboxRepeatMode.list || currentIndex < queue.value.length - 1;
+    return (
+      configStore.jukeboxRepeatMode === JukeboxRepeatMode.list ||
+      currentIndex < queue.value.length - 1
+    );
   });
 
   // --- Core Methods ---
@@ -86,16 +99,13 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     // Log all Howler-supported codecs
     const codecs = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'opus', 'webm', 'flac'];
     const codecSupport: Record<string, boolean> = {};
-    codecs.forEach(codec => {
+    codecs.forEach((codec) => {
       codecSupport[codec] = Howler.codecs(codec);
     });
     debug('🎵 JukeboxPlayer: Codec support:', codecSupport);
     // Howler doesn't need to watch for an audio element, so we move this logic to init
-    await Promise.all([
-      tracksStore.load(),
-      playlistsStore.load(),
-    ]);
-    
+    await Promise.all([tracksStore.load(), playlistsStore.load()]);
+
     const vol = configStore.jukeboxLastVolume;
     Howler.volume(vol);
     volume.value = vol;
@@ -108,29 +118,43 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   // --START -- MEDIA SESSION
   function setupMediaSession() {
     if ('mediaSession' in navigator) {
-      navigator.mediaSession.setActionHandler('play', () => currentTrack.value ? playTrack(currentTrack.value) : null);
+      navigator.mediaSession.setActionHandler('play', () =>
+        currentTrack.value ? playTrack(currentTrack.value) : null,
+      );
       navigator.mediaSession.setActionHandler('pause', () => togglePlay());
-      navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+      navigator.mediaSession.setActionHandler('previoustrack', () =>
+        playPrev(),
+      );
       navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
     } else {
       debug('🎵 JukeboxPlayer: Media Session API not available');
     }
   }
-  
+
   function updateMediaMetadata() {
     if ('mediaSession' in navigator && currentTrack.value) {
-      debug('🎵 JukeboxPlayer: Updating Media Session metadata for track:', currentTrack.value.title);
-      
+      debug(
+        '🎵 JukeboxPlayer: Updating Media Session metadata for track:',
+        currentTrack.value.title,
+      );
+
       const artwork = [];
-      if (currentTrack.value.picture && typeof currentTrack.value.picture === 'string') {
-        artwork.push({ src: currentTrack.value.picture, sizes: '512x512', type: 'image/jpeg' });
+      if (
+        currentTrack.value.picture &&
+        typeof currentTrack.value.picture === 'string'
+      ) {
+        artwork.push({
+          src: currentTrack.value.picture,
+          sizes: '512x512',
+          type: 'image/jpeg',
+        });
       }
 
       navigator.mediaSession.metadata = new MediaMetadata({
         title: currentTrack.value.title,
         artist: currentTrack.value.artist,
-        album: 'DMH PWA Jukebox', // TODO: set album name
-        artwork: artwork
+        album: "Owlbear's DMH", // TODO: set album name
+        artwork: artwork,
       });
     }
   }
@@ -140,12 +164,21 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       updateMediaMetadata();
     }
   });
-  
+
   async function restoreLastTrack() {
     debug('🎵 JukeboxPlayer: Attempting to restore last track');
-    debug('🎵 JukeboxPlayer: Config lastTrackId:', configStore.jukeboxLastTrackId);
-    debug('🎵 JukeboxPlayer: Config lastTrackProgress:', configStore.jukeboxLastTrackProgress);
-    debug('🎵 JukeboxPlayer: Config lastVolume:', configStore.jukeboxLastVolume);
+    debug(
+      '🎵 JukeboxPlayer: Config lastTrackId:',
+      configStore.jukeboxLastTrackId,
+    );
+    debug(
+      '🎵 JukeboxPlayer: Config lastTrackProgress:',
+      configStore.jukeboxLastTrackProgress,
+    );
+    debug(
+      '🎵 JukeboxPlayer: Config lastVolume:',
+      configStore.jukeboxLastVolume,
+    );
 
     const lastTrackId = configStore.jukeboxLastTrackId;
 
@@ -160,21 +193,27 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       return;
     }
 
-    if (await prepareAudioFile(lastTrack, configStore.jukeboxLastTrackProgress)) {
+    if (
+      await prepareAudioFile(lastTrack, configStore.jukeboxLastTrackProgress)
+    ) {
       debug('🎵 JukeboxPlayer: Restored last track with Howler');
     }
   }
-  
+
   const getPlaylistTracks = (shuffleOutput: boolean): JukeboxTrack[] => {
     const currentPlaylistId = configStore.jukeboxActivePlaylistId;
-    const playlist = currentPlaylistId ? playlistsStore.getById(currentPlaylistId) : null;
+    const playlist = currentPlaylistId
+      ? playlistsStore.getById(currentPlaylistId)
+      : null;
     const tracks = playlist
-      ? playlist.trackIds.map(trackId => tracksStore.getById(trackId)).filter(Boolean) as JukeboxTrack[]
+      ? (playlist.trackIds
+          .map((trackId) => tracksStore.getById(trackId))
+          .filter(Boolean) as JukeboxTrack[])
       : tracksStore.items.value;
 
     return shuffleOutput ? tracks.toSorted(() => 0.5 - rng()) : tracks;
   };
-  
+
   function watchPlaylist() {
     watch(
       () => configStore.$state.jukeboxActivePlaylistId,
@@ -186,9 +225,11 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
             return;
           }
         }
-        
+
         actualiseQueue();
-      }, { immediate: true });
+      },
+      { immediate: true },
+    );
   }
   // -- END -- MEDIA SESSION
 
@@ -209,21 +250,24 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       let index = currentQueue.indexOf(track);
       while (index >= 0) {
         currentQueue.splice(index, 1);
-        
+
         if (index <= queueIndex.value) {
           queueIndex.value -= 1;
         }
-        
+
         index = currentQueue.indexOf(track);
       }
     }
 
     queue.value = currentQueue;
   }
-  
+
   // --- Playback Methods ---
 
-  const prepareAudioFile = async (track: JukeboxTrack, seekTo: number = 0): Promise<boolean> => {
+  const prepareAudioFile = async (
+    track: JukeboxTrack,
+    seekTo: number = 0,
+  ): Promise<boolean> => {
     const fileRecord = await getJukeboxFile(track.fileId);
     if (!fileRecord || !isFileSystemFileHandle(fileRecord.handle)) {
       return false;
@@ -267,7 +311,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
         playNext();
       },
       onseek: () => {
-        currentTime.value = howl?.seek() as number || 0;
+        currentTime.value = (howl?.seek() as number) || 0;
       },
       onload: () => {
         duration.value = howl?.duration() || 0;
@@ -287,7 +331,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     currentTrack.value = track;
     return true;
   };
-  
+
   function resetDuration() {
     configStore.jukeboxLastTrackProgress = 0;
     currentTime.value = 0;
@@ -296,9 +340,9 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     }
     debug('🎵 JukeboxPlayer: Resetting progress');
   }
-  
+
   async function playTrack(track: JukeboxTrack) {
-    if ((await prepareAudioFile(track))) {
+    if (await prepareAudioFile(track)) {
       configStore.jukeboxLastTrackId = track.id;
       const isNewTrack = currentTrack.value?.id !== track.id;
       if (isNewTrack) {
@@ -309,7 +353,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
         howl?.play();
         debug('🎵 JukeboxPlayer: Track playback started successfully (Howler)');
       } catch (error) {
-        debugError("🎵 JukeboxPlayer: Playback failed (Howler).", error);
+        debugError('🎵 JukeboxPlayer: Playback failed (Howler).', error);
         isPlaying.value = false;
       }
     }
@@ -320,10 +364,13 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
 
     await playTrack(track);
   }
-  
+
   async function togglePlay() {
-    debug('🎵 JukeboxPlayer: Toggle play called, current state:', isPlaying.value);
-    
+    debug(
+      '🎵 JukeboxPlayer: Toggle play called, current state:',
+      isPlaying.value,
+    );
+
     if (!howl) {
       debugWarn('🎵 JukeboxPlayer: No Howler instance available');
       return;
@@ -343,17 +390,17 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     if (!hasPrevTrack.value) {
       return;
     }
-    
+
     if (currentTime.value >= 5) {
       resetDuration();
       return;
     }
-    
+
     queueIndex.value -= 1;
     const prevTrack = queue.value.at(queueIndex.value);
     if (prevTrack) await playTrack(prevTrack);
   }
-  
+
   async function playNext() {
     const repeatMode = configStore.jukeboxRepeatMode;
 
@@ -379,7 +426,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     const nextTrack = queue.value.at(queueIndex.value);
     if (nextTrack) await playTrack(nextTrack);
   }
-  
+
   function stop() {
     debug('🎵 JukeboxPlayer: Stopping playback (Howler)');
     if (howl) {
@@ -425,7 +472,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     const played = isPlaying.value;
 
     stop();
-    
+
     if (played) {
       await playNext();
     }
@@ -436,11 +483,14 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
    * @param track The track to check
    * @param selectedPlaylistId The selected playlist id (from JukeboxView)
    */
-  function trackIsActive(track: JukeboxTrack, selectedPlaylistId: string | null): boolean {
+  function trackIsActive(
+    track: JukeboxTrack,
+    selectedPlaylistId: string | null,
+  ): boolean {
     return Boolean(
       currentTrack.value &&
-      currentTrack.value.id === track.id &&
-      configStore.jukeboxActivePlaylistId === selectedPlaylistId
+        currentTrack.value.id === track.id &&
+        configStore.jukeboxActivePlaylistId === selectedPlaylistId,
     );
   }
 
@@ -450,14 +500,19 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
 
     queue.value = [];
     queueIndex.value = 0;
-    
+
     if (tracks.length > 0) {
       if (shuffle) {
         if (currentTrack.value) {
           addToQueue([currentTrack.value]);
         }
 
-        addToQueue(tracks.filter(({ id }) => id !== (currentTrack.value ? currentTrack.value.id : '')));
+        addToQueue(
+          tracks.filter(
+            ({ id }) =>
+              id !== (currentTrack.value ? currentTrack.value.id : ''),
+          ),
+        );
       } else {
         addToQueue(tracks);
       }
@@ -469,13 +524,16 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       currentTrack.value = null;
     }
   }
-  
+
   function resortQueue(selectedPlaylistId: string) {
-    if (configStore.jukeboxActivePlaylistId === selectedPlaylistId && !configStore.jukeboxShuffle && currentTrack.value) {
+    if (
+      configStore.jukeboxActivePlaylistId === selectedPlaylistId &&
+      !configStore.jukeboxShuffle &&
+      currentTrack.value
+    ) {
       actualiseQueue();
     }
   }
-
 
   // --- Volume Methods ---
   function setVolume(newVolume: number) {
@@ -490,7 +548,10 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   }
 
   function toggleMute() {
-    debug('🎵 JukeboxPlayer: Toggle mute called, current volume:', volume.value);
+    debug(
+      '🎵 JukeboxPlayer: Toggle mute called, current volume:',
+      volume.value,
+    );
     if (volume.value > 0) {
       setVolume(0);
       debug('🎵 JukeboxPlayer: Muted');
@@ -500,7 +561,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       debug('🎵 JukeboxPlayer: Unmuted to:', newVolume);
     }
   }
-  
+
   let progressTimer: number | null = null;
 
   function startProgressTimer() {
@@ -508,7 +569,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     if (howl && isPlaying.value) {
       const update = () => {
         if (howl && isPlaying.value) {
-          currentTime.value = typeof howl.seek() === 'number' ? howl.seek() as number : 0;
+          currentTime.value =
+            typeof howl.seek() === 'number' ? (howl.seek() as number) : 0;
           progressTimer = requestAnimationFrame(update);
         }
       };
@@ -527,7 +589,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     // State
     currentTrack,
     isPlaying,
-    
+
     // Getters
     hasPrevTrack,
     canPlay,
@@ -535,17 +597,17 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
 
     currentTime,
     duration,
-    
+
     shuffle: computed(() => configStore.jukeboxShuffle),
     repeatMode: computed(() => configStore.jukeboxRepeatMode),
 
     volume,
-    
+
     // Methods
     init,
     resortQueue,
     removeTrackFromQueue,
-    
+
     playPrev,
     playTrackFromPlaylist,
     togglePlay,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch, type Ref, computed, onMounted} from 'vue';
+import { ref, watch, type Ref, computed, onMounted } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
@@ -26,37 +26,44 @@ type EditablePlaylist = {
   moduleIds?: string[];
 };
 
-const editablePlaylist: Ref<EditablePlaylist> = ref({ 
-  name: '', 
-  description: '', 
+const editablePlaylist: Ref<EditablePlaylist> = ref({
+  name: '',
+  description: '',
   trackIds: [],
-  moduleIds: []
+  moduleIds: [],
 });
 
-watch(() => props.playlist, (newPlaylist) => {
-  if (newPlaylist) {
-    editablePlaylist.value = { ...newPlaylist };
-  } else {
-    editablePlaylist.value = { 
-      name: '', 
-      description: '', 
-      trackIds: [],
-      moduleIds: []
-    };
-  }
-}, { immediate: true });
+watch(
+  () => props.playlist,
+  (newPlaylist) => {
+    if (newPlaylist) {
+      editablePlaylist.value = { ...newPlaylist };
+    } else {
+      editablePlaylist.value = {
+        name: '',
+        description: '',
+        trackIds: [],
+        moduleIds: [],
+      };
+    }
+  },
+  { immediate: true },
+);
 
 // Reset form when modal opens for new playlist
-watch(() => props.modelValue, (isOpen) => {
-  if (isOpen && !props.playlist) {
-    editablePlaylist.value = { 
-      name: '', 
-      description: '', 
-      trackIds: [],
-      moduleIds: []
-    };
-  }
-});
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen && !props.playlist) {
+      editablePlaylist.value = {
+        name: '',
+        description: '',
+        trackIds: [],
+        moduleIds: [],
+      };
+    }
+  },
+);
 
 const moduleIdsProxy = computed<string[]>({
   get() {
@@ -64,7 +71,7 @@ const moduleIdsProxy = computed<string[]>({
   },
   set(val) {
     editablePlaylist.value.moduleIds = val;
-  }
+  },
 });
 
 onMounted(() => moduleStore.load());
@@ -87,10 +94,10 @@ async function save() {
 </script>
 
 <template>
-  <BaseModal 
-    :isOpen="modelValue" 
-    modalId="playlist-editor" 
-    @update:isOpen="$emit('update:modelValue', $event)" 
+  <BaseModal
+    :isOpen="modelValue"
+    modalId="playlist-editor"
+    @update:isOpen="$emit('update:modelValue', $event)"
     title="playlist.title"
     :showSubmit="true"
     :showCancel="true"
@@ -102,11 +109,25 @@ async function save() {
     <template #title>{{ t('common.playlist') }}</template>
     <div class="form-group">
       <label for="playlist-name">{{ t('playlist.name') }}</label>
-      <input id="playlist-name" v-model="editablePlaylist.name" type="text" required />
+      <QInput
+        id="playlist-name"
+        v-model="editablePlaylist.name"
+        type="text"
+        required
+        dense
+        outlined
+      />
     </div>
     <div class="form-group">
       <label for="playlist-description">{{ t('playlist.description') }}</label>
-      <textarea id="playlist-description" v-model="editablePlaylist.description"></textarea>
+      <QInput
+        id="playlist-description"
+        v-model="editablePlaylist.description"
+        type="textarea"
+        :rows="3"
+        dense
+        outlined
+      />
     </div>
     <div class="form-group">
       <label for="playlist-modules">{{ t('playlist.modules') }}</label>
@@ -127,8 +148,9 @@ label {
   display: block;
   margin-bottom: 0.5em;
 }
-input, textarea {
+input,
+textarea {
   width: 100%;
   padding: 0.5em;
 }
-</style> 
+</style>

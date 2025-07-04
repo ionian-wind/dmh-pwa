@@ -13,6 +13,11 @@ describe('Tables Plugin', () => {
   });
 
   it('should throw on evaluateTable (not implemented)', () => {
-    expect(() => tablesPlugin.evaluateTable?.({ type: 'table-roll', table: 'loot-table' }, {})).toThrow();
+    expect(() =>
+      tablesPlugin.evaluateTable?.(
+        { type: 'table-roll', table: 'loot-table' },
+        {},
+      ),
+    ).toThrow();
   });
-}); 
+});

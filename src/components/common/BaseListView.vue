@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import VueDraggable from 'vuedraggable';
-import { IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
+import type { ComponentInjection } from '@/types';
 
 const props = defineProps({
   items: { type: Array, required: true },
@@ -10,9 +10,6 @@ const props = defineProps({
   editorComponent: { type: [Object, Function, String], required: false },
   emptyMessage: { type: String, required: true },
   createTitle: { type: String, required: true },
-  showSearch: { type: Boolean, default: false },
-  searchQuery: { type: String, default: '' },
-  searchPlaceholder: { type: String, default: 'Search...' },
   cardProps: { type: Function, default: (item: any) => ({}) },
   editorProps: { type: Function, default: (item: any) => ({}) },
   sidePanelVisible: { type: Boolean, default: false },
@@ -23,14 +20,28 @@ const props = defineProps({
 
 const showEditor = ref(false);
 const editingItem = ref<any>(null);
-const isSidePanelVisible = ref(props.sidePanelVisible);
 const localItems = ref([...props.items]);
 
-watch(() => props.items, (val) => {
-  localItems.value = [...val];
-});
+watch(
+  () => props.items,
+  (val) => {
+    localItems.value = [...val];
+  },
+);
 
-const emit = defineEmits(['create', 'edit', 'delete', 'submit', 'cancel', 'update:searchQuery', 'view', 'tag-click', 'copy', 'update:sidePanelVisible', 'sort']);
+const emit = defineEmits([
+  'create',
+  'edit',
+  'delete',
+  'submit',
+  'cancel',
+  'update:searchQuery',
+  'view',
+  'tag-click',
+  'copy',
+  'update:sidePanelVisible',
+  'sort',
+]);
 
 function handleSortEnd() {
   emit('sort', localItems.value);
@@ -39,31 +50,19 @@ function handleSortEnd() {
 function handleCreate() {
   editingItem.value = null;
   showEditor.value = true;
-  // $emit('create') will be used in template
 }
 function handleEdit(item: any) {
   editingItem.value = item;
   showEditor.value = true;
-  // $emit('edit', item) will be used in template
 }
-function handleDelete(item: any) {
-  // $emit('delete', item) will be used in template
-}
+function handleDelete(item: any) {}
 function handleSubmit(item: any) {
   showEditor.value = false;
-  // $emit('submit', item) will be used in template
 }
 function handleCancel() {
   showEditor.value = false;
-  // $emit('cancel') will be used in template
 }
-function handleSearch(val: string) {
-  // $emit('update:searchQuery', val) will be used in template
-}
-function toggleSidePanel() {
-  isSidePanelVisible.value = !isSidePanelVisible.value;
-  emit('update:sidePanelVisible', isSidePanelVisible.value);
-}
+
 function onCreate() {
   handleCreate();
   emit('create');
@@ -73,133 +72,155 @@ const cardPropsWithDraggable = (item: any) => {
   const base = props.cardProps(item);
   return { ...base, draggable: props.draggable };
 };
+
+const setTopMenuContent = inject('setTopMenuContent') as (
+  arg: ComponentInjection,
+) => void;
+
+onMounted(async () => {
+  setTopMenuContent(
+    props.hideHeader
+      ? null
+      : {
+          component: ViewHeader,
+          props: {
+            showCreate: true,
+            createTitle: props.createTitle,
+            onCreate,
+          },
+        },
+  );
+});
+
+onBeforeUnmount(() => {
+  setTopMenuContent(null);
+});
 </script>
 
 <template>
-  <div class="view-root base-list-container">
-    <ViewHeader
-      v-if="!hideHeader"
-      show-create
-      :create-title="createTitle"
-      :show-search="showSearch"
-      :search-query="searchQuery"
-      :search-placeholder="searchPlaceholder"
-      @create="onCreate"
-      v-bind="$attrs"
-    >
-      <template v-for="(_, name) in $slots" #[name]="slotProps">
-        <slot :name="name" v-bind="slotProps" />
-      </template>
-    </ViewHeader>
-    <div class="base-list-layout">
-      <div class="main-list-column">
-        <div class="view-list">
-          <div v-if="items.length === 0" class="view-empty">
-            <p>{{ emptyMessage }}</p>
+  <div class="q-pa-lg base-list-container">
+    <div v-if="items.length === 0" class="fixed-center text-primary">
+      {{ emptyMessage }}
+    </div>
+    <div v-else>
+      <VueDraggable
+        v-if="draggable"
+        :key="'draggable'"
+        v-model="localItems"
+        item-key="id"
+        @end="handleSortEnd"
+        tag="ul"
+        class="q-list simple-list"
+      >
+        <template #item="{ element: item }">
+          <QItem>
+            <component
+              :is="cardComponent"
+              v-bind="cardPropsWithDraggable(item)"
+            />
+          </QItem>
+        </template>
+      </VueDraggable>
+      <div v-else>
+        <div
+          v-if="viewStyle === 'masonry'"
+          class="q-gutter-md row items-stretch"
+        >
+          <div
+            v-for="item in items as any[]"
+            :key="item.id"
+            class="col-12 col-sm-6 col-md-4 col-lg-3"
+          >
+            <component
+              :is="cardComponent"
+              v-bind="cardPropsWithDraggable(item)"
+              @view="$emit('view', item)"
+              @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+              @delete="
+                () => {
+                  handleDelete(item);
+                  $emit('delete', item);
+                }
+              "
+              @tag-click="$emit('tag-click', $event)"
+              @copy="$emit('copy', item)"
+            />
           </div>
-          <div v-else>
-            <VueDraggable
-              v-if="draggable"
-              :key="'draggable'"
-              v-model="localItems"
-              item-key="id"
-              @end="handleSortEnd"
-              tag="ul"
-              class="simple-list"
-            >
-              <template #item="{ element: item }">
-                <component :is="cardComponent" v-bind="cardPropsWithDraggable(item)" />
-              </template>
-            </VueDraggable>
-            <div v-else>
-              <div v-if="viewStyle === 'masonry'" class="masonry-grid">
-                <component
-                  v-for="item in items as any[]"
-                  :is="cardComponent"
-                  :key="item.id"
-                  v-bind="cardPropsWithDraggable(item)"
-                  @view="$emit('view', item)"
-                  @edit="() => { handleEdit(item); $emit('edit', item); }"
-                  @delete="() => { handleDelete(item); $emit('delete', item); }"
-                  @tag-click="$emit('tag-click', $event)"
-                  @copy="$emit('copy', item)"
-                />
-              </div>
-              <div v-else-if="viewStyle === 'grid'" class="grid-layout">
-                <component
-                  v-for="item in items as any[]"
-                  :is="cardComponent"
-                  :key="item.id"
-                  v-bind="cardPropsWithDraggable(item)"
-                  @view="$emit('view', item)"
-                  @edit="() => { handleEdit(item); $emit('edit', item); }"
-                  @delete="() => { handleDelete(item); $emit('delete', item); }"
-                  @tag-click="$emit('tag-click', $event)"
-                  @copy="$emit('copy', item)"
-                />
-              </div>
-              <ul v-else :key="'static'" class="simple-list">
-                <component
-                  v-for="item in items as any[]"
-                  :is="cardComponent"
-                  :key="item.id"
-                  v-bind="cardPropsWithDraggable(item)"
-                  @view="$emit('view', item)"
-                  @edit="() => { handleEdit(item); $emit('edit', item); }"
-                  @delete="() => { handleDelete(item); $emit('delete', item); }"
-                  @tag-click="$emit('tag-click', $event)"
-                  @copy="$emit('copy', item)"
-                />
-              </ul>
-            </div>
+        </div>
+        <div
+          v-else-if="viewStyle === 'grid'"
+          class="q-gutter-md row items-stretch"
+        >
+          <div
+            v-for="item in items as any[]"
+            :key="item.id"
+            class="col-12 col-sm-6 col-md-4 col-lg-3"
+          >
+            <component
+              :is="cardComponent"
+              v-bind="cardPropsWithDraggable(item)"
+              @view="$emit('view', item)"
+              @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+              @delete="
+                () => {
+                  handleDelete(item);
+                  $emit('delete', item);
+                }
+              "
+              @tag-click="$emit('tag-click', $event)"
+              @copy="$emit('copy', item)"
+            />
           </div>
-          <component
-            v-if="showEditor && editorComponent"
-            :is="editorComponent"
-            v-bind="editorProps(editingItem)"
-            :is-open="showEditor"
-            @submit="(item: any) => { handleSubmit(item); $emit('submit', item); }"
-            @cancel="() => { handleCancel(); $emit('cancel'); }"
-          />
         </div>
-        <div v-if="$slots['fixed-bottom']" class="list-fixed-bottom">
-          <slot name="fixed-bottom" />
-        </div>
-      </div>
-      <!-- Side Panel -->
-      <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
-        <div class="side-panel-toggle-handle" @click="toggleSidePanel">
-          <IconChevronRight v-if="isSidePanelVisible" />
-          <IconChevronLeft v-else />
-        </div>
-        <div class="side-panel">
-          <slot name="sidepanel" />
-        </div>
+        <QList v-else :key="'static'" class="simple-list">
+          <div v-for="item in items as any[]" :key="item.id">
+            <component
+              :is="cardComponent"
+              v-bind="cardPropsWithDraggable(item)"
+              @view="$emit('view', item)"
+              @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+              @delete="$emit('delete', item)"
+              @tag-click="$emit('tag-click', $event)"
+              @copy="$emit('copy', item)"
+            />
+          </div>
+        </QList>
       </div>
     </div>
+    <component
+      v-if="showEditor && editorComponent"
+      :is="editorComponent"
+      v-bind="editorProps(editingItem)"
+      :is-open="showEditor"
+      @submit="
+        (item: any) => {
+          handleSubmit(item);
+          $emit('submit', item);
+        }
+      "
+      @cancel="
+        () => {
+          handleCancel();
+          $emit('cancel');
+        }
+      "
+    />
+
     <slot />
   </div>
 </template>
-
-<style scoped>
-.simple-list {
-  list-style: none;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  max-width: 1200px;
-  margin: auto;
-  padding: var(--base-padding);
-}
-
-.grid-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-md);
-  max-width: 1200px;
-  margin: auto;
-  padding: var(--base-padding);
-}
-</style>
-

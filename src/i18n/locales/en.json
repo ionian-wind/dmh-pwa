@@ -439,6 +439,9 @@
     "moduleImportFailed": "Module import failed: "
   },
   "markdownEditor": {
+    "rawMode": "Raw Markdown",
+    "visualMode": "Visual Editor",
+    "formattingHelp": "Formatting Help",
     "help": {
       "internalLinks": "Internal Links",
       "linkToOtherEntities": "Link to other entities in your campaign:",
@@ -500,4 +503,4 @@
       "finished": "Finished"
     }
   }
-} 
+}

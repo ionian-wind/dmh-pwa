@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import CharacterEditor from '@/components/CharacterEditor.vue';
+import CharacterEditor from '../../src/characters/CharacterEditor.vue';
 import { vi } from 'vitest';
 
 describe('CharacterEditor', () => {

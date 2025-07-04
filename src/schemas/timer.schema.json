@@ -7,11 +7,18 @@
     "title": { "type": ["string", "null"] },
     "description": { "type": ["string", "null"] },
     "duration": { "type": "number", "minimum": 0 },
-    "startedAt": { "anyOf": [ { "type": "number" }, { "type": "null" } ] },
+    "startedAt": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
     "status": { "type": "string", "enum": ["inactive", "running", "finished"] },
     "createdAt": { "type": "number" },
     "updatedAt": { "type": "number" }
   },
-  "required": ["id", "duration", "startedAt", "status", "createdAt", "updatedAt"],
+  "required": [
+    "id",
+    "duration",
+    "startedAt",
+    "status",
+    "createdAt",
+    "updatedAt"
+  ],
   "additionalProperties": false
-} 
+}

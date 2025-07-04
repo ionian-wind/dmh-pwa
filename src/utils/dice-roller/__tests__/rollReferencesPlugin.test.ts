@@ -13,6 +13,11 @@ describe('Roll References Plugin', () => {
   });
 
   it('should throw on evaluateRollReference (not implemented)', () => {
-    expect(() => rollReferencesPlugin.evaluateRollReference?.({ type: 'roll-reference', ref: 'attackRoll' }, {})).toThrow();
+    expect(() =>
+      rollReferencesPlugin.evaluateRollReference?.(
+        { type: 'roll-reference', ref: 'attackRoll' },
+        {},
+      ),
+    ).toThrow();
   });
-}); 
+});

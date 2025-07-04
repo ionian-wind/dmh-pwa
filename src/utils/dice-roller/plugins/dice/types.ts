@@ -1,19 +1,23 @@
 // Dice plugin specific types
 
-import type { ASTNode, EvaluationContext, EvaluationResult } from '../../lib/types';
+import type {
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../lib/types';
 
 // Dice AST node types
-export type DiceAstNode = 
-  | DiceNode 
+export type DiceAstNode =
+  | DiceNode
   | LabeledDiceNode
   | CustomDiceNode
   | GroupedRollNode
-  | ArithmeticNode 
-  | NumberNode 
-  | FunctionNode 
-  | GroupNode 
-  | UnaryNode 
-  | MacroNode 
+  | ArithmeticNode
+  | NumberNode
+  | FunctionNode
+  | GroupNode
+  | UnaryNode
+  | MacroNode
   | TableNode
   | FudgeDiceNode
   | InlineRollNode;
@@ -212,4 +216,4 @@ export interface InlineRollNode {
   type: 'inline-roll';
   expression: string;
   index?: number;
-} 
+}

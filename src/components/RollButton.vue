@@ -46,9 +46,12 @@ function getFabStyle(index: number, total: number, visible: boolean) {
     position: 'absolute',
     left: `${x}px`,
     top: `${y}px`,
-    transform: visible ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.2)',
+    transform: visible
+      ? 'translate(-50%, -50%) scale(1)'
+      : 'translate(-50%, -50%) scale(0.2)',
     opacity: visible ? 1 : 0,
-    transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.4s cubic-bezier(0.4,0,0.2,1)',
+    transition:
+      'transform 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.4s cubic-bezier(0.4,0,0.2,1)',
     zIndex: 999,
     pointerEvents: visible ? 'auto' : 'none',
   };
@@ -62,7 +65,7 @@ onMounted(async () => {
     preloadThemes: ['default-extras'],
     onThemeConfigLoaded: (themeData) => {
       debug('Theme loaded:', themeData);
-    }
+    },
   });
 
   await diceBox.init();
@@ -78,7 +81,12 @@ onUnmounted(() => diceBox.clear());
         class="roll-fab-main"
         size="medium"
         variant="primary"
-        :style="{ position: 'absolute', left: '100px', top: '100px', transform: 'translate(-50%, -50%)' }"
+        :style="{
+          position: 'absolute',
+          left: '100px',
+          top: '100px',
+          transform: 'translate(-50%, -50%)',
+        }"
         @click="toggleFabs"
         :title="'Roll'"
       >

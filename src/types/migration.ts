@@ -4,5 +4,7 @@ export interface Migration {
   version: number;
   name: string;
   affectedStores: string[];
-  go: (transaction: IDBPTransaction<unknown, string[], 'versionchange'>) => Promise<void>;
+  go: (
+    transaction: IDBPTransaction<unknown, string[], 'versionchange'>,
+  ) => Promise<void>;
 }

@@ -6,13 +6,16 @@ const moduleStore = useModuleStore();
 onMounted(async () => {
   await moduleStore.load();
 });
-const props = withDefaults(defineProps<{
-  modelValue: string[];
-  placeholder?: string;
-}>(), {
-  modelValue: () => [],
-  placeholder: 'No Modules'
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue: string[];
+    placeholder?: string;
+  }>(),
+  {
+    modelValue: () => [],
+    placeholder: 'No Modules',
+  },
+);
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string[]): void;
@@ -20,35 +23,38 @@ const emit = defineEmits<{
 
 const updateValue = (event: Event) => {
   const select = event.target as HTMLSelectElement;
-  const selected = Array.from(select.selectedOptions).map(opt => opt.value).filter(v => v);
+  const selected = Array.from(select.selectedOptions)
+    .map((opt) => opt.value)
+    .filter((v) => v);
   emit('update:modelValue', selected);
 };
 
 const moduleOptions = computed(() => [
   { id: 'none', name: 'No Module', value: 'none' },
-  ...moduleStore.items.map(module => ({
+  ...moduleStore.items.map((module) => ({
     id: module.id,
     name: module.name,
-    value: module.id
-  }))
+    value: module.id,
+  })),
 ]);
 </script>
 
 <template>
-  <select
+  <QSelect
+    :model-value="props.modelValue"
+    @update:model-value="emit('update:modelValue', $event)"
+    :options="
+      moduleOptions.map((opt) => ({ label: opt.name, value: opt.value }))
+    "
     multiple
-    :value="props.modelValue"
-    @change="updateValue"
+    emit-value
+    map-options
+    use-chips
+    dense
+    outlined
     class="module-multiselect"
-  >
-    <option
-      v-for="option in moduleOptions"
-      :key="option.value"
-      :value="option.value"
-    >
-      {{ option.name }}
-    </option>
-  </select>
+    :label="props.placeholder"
+  />
 </template>
 
 <style scoped>
@@ -67,4 +73,4 @@ const moduleOptions = computed(() => [
   outline: none;
   border-color: var(--color-primary);
 }
-</style> 
+</style>

@@ -31,12 +31,18 @@ onMounted(async () => {
 
 function getEntityRoute(entity: EntityRef) {
   switch (entity.kind) {
-    case 'monster': return `/monsters/${entity.id}`;
-    case 'party': return `/parties/${entity.id}`;
-    case 'encounter': return `/encounters/${entity.id}`;
-    case 'module': return `/modules/${entity.id}`;
-    case 'note': return `/notes/${entity.id}`;
-    default: return '#';
+    case 'monster':
+      return `/monsters/${entity.id}`;
+    case 'party':
+      return `/parties/${entity.id}`;
+    case 'encounter':
+      return `/encounters/${entity.id}`;
+    case 'module':
+      return `/modules/${entity.id}`;
+    case 'note':
+      return `/notes/${entity.id}`;
+    default:
+      return '#';
   }
 }
 
@@ -53,22 +59,22 @@ function getEntityDisplay(entity: EntityRef) {
       break;
     }
     case 'module': {
-      const m = moduleStore.items.find(m => m.id === entity.id);
+      const m = moduleStore.items.find((m) => m.id === entity.id);
       label = m ? m.name || m.id : entity.id;
       break;
     }
     case 'party': {
-      const p = partyStore.items.find(p => p.id === entity.id);
+      const p = partyStore.items.find((p) => p.id === entity.id);
       label = p ? p.name || p.id : entity.id;
       break;
     }
     case 'monster': {
-      const m = monsterStore.items.find(m => m.id === entity.id);
+      const m = monsterStore.items.find((m) => m.id === entity.id);
       label = m ? m.name || m.id : entity.id;
       break;
     }
     case 'encounter': {
-      const e = encounterStore.items.find(e => e.id === entity.id);
+      const e = encounterStore.items.find((e) => e.id === entity.id);
       label = e ? e.name || e.id : entity.id;
       break;
     }
@@ -90,10 +96,17 @@ const groupedEntities = computed(() => {
 
 <template>
   <div class="mentions-aside">
-    <h3 class="mentions-title">{{ t(title) }}</h3>
+    <h5 class="mentions-title">{{ t(title) }}</h5>
     <template v-if="entities.length">
-      <div v-for="(group, kind) in groupedEntities" :key="kind" class="mentions-group">
-        <h4 class="mentions-group-title">{{ getEntityLabel({ kind, id: '' }) }}<span v-if="group.length > 1">s</span></h4>
+      <div
+        v-for="(group, kind) in groupedEntities"
+        :key="kind"
+        class="mentions-group"
+      >
+        <h6 class="mentions-group-title">
+          {{ getEntityLabel({ kind, id: '' })
+          }}<span v-if="group.length > 1">s</span>
+        </h6>
         <ul class="mentions-list">
           <li v-for="entity in group" :key="entity.kind + ':' + entity.id">
             <router-link :to="getEntityRoute(entity)">
@@ -108,25 +121,3 @@ const groupedEntities = computed(() => {
     </template>
   </div>
 </template>
-
-<style scoped>
-
-.mentions-group {
-  margin-bottom: 1em;
-}
-
-.mentions-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.mentions-list li {
-  margin-bottom: 0.5em;
-}
-.mentions-empty {
-  color: var(--color-text-light);
-  font-style: italic;
-  text-align: center;
-  padding: 0.5rem 0;
-}
-</style> 

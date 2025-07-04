@@ -1,5 +1,10 @@
 // Core entry point for dice-roller engine
-import type { ASTNode, EvaluationContext, DiceRollerPlugin, EvaluationResult } from '../lib/types';
+import type {
+  ASTNode,
+  EvaluationContext,
+  DiceRollerPlugin,
+  EvaluationResult,
+} from '../lib/types';
 import { SyntaxError, ValidationError, MissingDataError } from '../lib/types';
 import { traverseAST } from '../lib/utils';
 import { assignInlineRollIndices } from '../plugins/inline-rolls';
@@ -31,34 +36,41 @@ export function parseInput(input: string): ASTNode {
       }
     }
   }
-  
+
   // If no plugin can parse, throw syntax error
   throw new SyntaxError(`Unable to parse input: ${input}`);
 }
 
 // Step 2: Extract queries, macros, tables, and rolls
 export function extractQueries(ast: ASTNode): any[] {
-  return plugins.flatMap(p => p.extractQueries ? p.extractQueries(ast) : []);
+  return plugins.flatMap((p) =>
+    p.extractQueries ? p.extractQueries(ast) : [],
+  );
 }
 
 export function extractMacros(ast: ASTNode): any[] {
-  return plugins.flatMap(p => p.extractMacros ? p.extractMacros(ast) : []);
+  return plugins.flatMap((p) => (p.extractMacros ? p.extractMacros(ast) : []));
 }
 
 export function extractTables(ast: ASTNode): any[] {
-  return plugins.flatMap(p => p.extractTables ? p.extractTables(ast) : []);
+  return plugins.flatMap((p) => (p.extractTables ? p.extractTables(ast) : []));
 }
 
 export function extractRolls(ast: ASTNode): any[] {
-  return plugins.flatMap(p => p.extractRolls ? p.extractRolls(ast) : []);
+  return plugins.flatMap((p) => (p.extractRolls ? p.extractRolls(ast) : []));
 }
 
 export function extractFormatting(ast: ASTNode): any[] {
-  return plugins.flatMap(p => p.extractFormatting ? p.extractFormatting(ast) : []);
+  return plugins.flatMap((p) =>
+    p.extractFormatting ? p.extractFormatting(ast) : [],
+  );
 }
 
 // Step 3: Evaluate AST with context
-export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationResult {
+export function evaluate(
+  ast: ASTNode,
+  context: EvaluationContext,
+): EvaluationResult {
   // DEBUG LOGGING
   function debugLog(...args: any[]) {
     if (typeof window === 'undefined') {
@@ -66,13 +78,17 @@ export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationRe
     }
   }
 
-  debugLog('evaluate called with:', JSON.stringify(ast), JSON.stringify(context));
+  debugLog(
+    'evaluate called with:',
+    JSON.stringify(ast),
+    JSON.stringify(context),
+  );
   const warnings: string[] = context.warnings || [];
-  
+
   if (typeof window === 'undefined') {
     debug('[core] evaluate called with node:', JSON.stringify(ast));
   }
-  
+
   try {
     // Find the appropriate plugin to evaluate this node
     for (const plugin of plugins) {
@@ -81,7 +97,10 @@ export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationRe
         try {
           const result = plugin.evaluate(ast, { ...context, warnings });
           if (result) {
-            debugLog(`Plugin '${plugin.name}' handled node type: ${ast.type}, result:`, JSON.stringify(result));
+            debugLog(
+              `Plugin '${plugin.name}' handled node type: ${ast.type}, result:`,
+              JSON.stringify(result),
+            );
             return {
               total: result.total || 0,
               rolls: result.rolls || [],
@@ -90,19 +109,25 @@ export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationRe
             };
           }
         } catch (err) {
-          debugLog(`Plugin '${plugin.name}' threw error for node type: ${ast.type}:`, err);
+          debugLog(
+            `Plugin '${plugin.name}' threw error for node type: ${ast.type}:`,
+            err,
+          );
           // Continue to next plugin if this one fails
           continue;
         }
       }
     }
-    
+
     debugLog('No plugin handled node type:', ast.type);
     throw new SyntaxError('Unable to evaluate node type: ' + ast.type);
-    
   } catch (err) {
     debugLog('evaluate threw error:', err);
-    if (err instanceof SyntaxError || err instanceof ValidationError || err instanceof MissingDataError) {
+    if (
+      err instanceof SyntaxError ||
+      err instanceof ValidationError ||
+      err instanceof MissingDataError
+    ) {
       throw err;
     }
     throw new SyntaxError(`Evaluation failed: ${(err as Error).message}`);
@@ -111,23 +136,23 @@ export function evaluate(ast: ASTNode, context: EvaluationContext): EvaluationRe
 
 // Complete workflow function
 export function processDiceExpression(
-  input: string, 
-  context: EvaluationContext = {}
+  input: string,
+  context: EvaluationContext = {},
 ): EvaluationResult {
   try {
     // Step 1: Parse
     const ast = parseInput(input);
-    
+
     // Step 2: Extract (for UI preparation)
     const queries = extractQueries(ast);
     const macros = extractMacros(ast);
     const tables = extractTables(ast);
     const rolls = extractRolls(ast);
     const formatting = extractFormatting(ast);
-    
+
     // Step 3: Evaluate
     const result = evaluate(ast, context);
-    
+
     return {
       ...result,
       details: {
@@ -136,12 +161,15 @@ export function processDiceExpression(
         macros,
         tables,
         rolls,
-        formatting
-      }
+        formatting,
+      },
     };
-    
   } catch (error) {
-    if (error instanceof SyntaxError || error instanceof ValidationError || error instanceof MissingDataError) {
+    if (
+      error instanceof SyntaxError ||
+      error instanceof ValidationError ||
+      error instanceof MissingDataError
+    ) {
       throw error;
     }
     throw new SyntaxError(`Processing failed: ${(error as Error).message}`);
@@ -164,4 +192,4 @@ export const DiceRollerCore = {
 
 // Re-export types for convenience
 export type { ASTNode, EvaluationContext, DiceRollerPlugin, EvaluationResult };
-export { SyntaxError, ValidationError, MissingDataError }; 
+export { SyntaxError, ValidationError, MissingDataError };

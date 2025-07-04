@@ -13,6 +13,11 @@ describe('Formatting Plugin', () => {
   });
 
   it('should throw on evaluateFormatting (not implemented)', () => {
-    expect(() => formattingPlugin.evaluateFormatting?.({ type: 'formatting', markup: '%NEWLINE%' }, {})).toThrow();
+    expect(() =>
+      formattingPlugin.evaluateFormatting?.(
+        { type: 'formatting', markup: '%NEWLINE%' },
+        {},
+      ),
+    ).toThrow();
   });
-}); 
+});

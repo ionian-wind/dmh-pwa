@@ -15,28 +15,38 @@ const goBack = () => {
 };
 
 const helpItems = tm('notFound.helpItems') as unknown as string[];
-
 </script>
 
 <template>
-  <div class="not-found">
-    <div class="not-found-content">
-      <div class="error-code">{{ t('notFound.errorCode') }}</div>
-      <h1>{{ t('notFound.title') }}</h1>
-      <p class="error-message">
+  <div
+    class="q-pa-xl flex flex-center column items-center text-center"
+    style="min-height: 60vh"
+  >
+    <div style="max-width: 500px; width: 100%">
+      <div class="text-h1 text-primary text-bold q-mb-md">
+        {{ t('notFound.errorCode') }}
+      </div>
+      <h1 class="text-h4 q-mb-md">{{ t('notFound.title') }}</h1>
+      <p class="text-subtitle1 text-grey-7 q-mb-xl">
         {{ t('notFound.message') }}
       </p>
-      <div class="actions">
-        <Button @click="goHome" variant="primary">
-          {{ t('notFound.goHome') }}
-        </Button>
-        <Button @click="goBack" variant="secondary">
-          {{ t('notFound.goBack') }}
-        </Button>
+      <div class="row q-gutter-md q-mb-xl flex-center">
+        <div class="col-auto">
+          <Button @click="goHome" variant="primary">{{
+            t('notFound.goHome')
+          }}</Button>
+        </div>
+        <div class="col-auto">
+          <Button @click="goBack" variant="secondary">{{
+            t('notFound.goBack')
+          }}</Button>
+        </div>
       </div>
-      <div class="help-text">
-        <p>{{ t('notFound.helpTitle') }}</p>
-        <ul>
+      <div class="q-pa-md bg-grey-1 rounded-borders q-mt-md text-left">
+        <p class="text-bold text-body1 q-mb-xs">
+          {{ t('notFound.helpTitle') }}
+        </p>
+        <ul class="q-pl-md text-grey-7">
           <li v-for="item in helpItems" :key="item">{{ item }}</li>
         </ul>
       </div>
@@ -45,85 +55,5 @@ const helpItems = tm('notFound.helpItems') as unknown as string[];
 </template>
 
 <style scoped>
-.not-found {
-  min-height: 60vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-}
-
-.not-found-content {
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.error-code {
-  font-size: 6rem;
-  font-weight: bold;
-  color: var(--color-primary);
-  margin-bottom: 1rem;
-  line-height: 1;
-}
-
-.error-message {
-  font-size: 1.1rem;
-  color: var(--color-text-light);
-  margin-bottom: 2rem;
-  line-height: 1.5;
-}
-
-.actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.help-text {
-  text-align: left;
-  background: var(--color-background-soft);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--color-border);
-}
-
-.help-text p {
-  margin: 0 0 0.5rem 0;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.help-text ul {
-  margin: 0;
-  padding-left: 1.5rem;
-  color: var(--color-text-light);
-}
-
-.help-text li {
-  margin-bottom: 0.25rem;
-}
-
-@media (max-width: 600px) {
-  .not-found {
-    padding: 1rem;
-  }
-  
-  .error-code {
-    font-size: 4rem;
-  }
-
-  
-  .actions {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .actions .btn {
-    width: 100%;
-    max-width: 200px;
-  }
-}
-</style> 
+/* Removed custom layout classes. Use Quasar classes. */
+</style>

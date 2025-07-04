@@ -1,26 +1,45 @@
-import { useStore, idbGetItem, idbPutItem, idbDeleteItem, idbGetAllItems } from '@/utils/storage';
+import {
+  useStore,
+  idbGetItem,
+  idbPutItem,
+  idbDeleteItem,
+  idbGetAllItems,
+} from '@/utils/storage';
 import type { JukeboxPlaylist, JukeboxTrack, JukeboxFile } from './types';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 // Bypass schema validation for jukebox stores (FileSystemFileHandle is not plain object)
 export const useJukeboxPlaylistsStore = () =>
-  useStore<JukeboxPlaylist>({ storeName: 'jukebox_playlists', validationSchema: undefined });
+  useStore<JukeboxPlaylist>({
+    storeName: 'jukebox_playlists',
+    validationSchema: undefined,
+  });
 
 export const useJukeboxTracksStore = () =>
-  useStore<JukeboxTrack>({ storeName: 'jukebox_tracks', validationSchema: undefined });
+  useStore<JukeboxTrack>({
+    storeName: 'jukebox_tracks',
+    validationSchema: undefined,
+  });
 
 export const useJukeboxFilesStore = () =>
-  useStore<JukeboxFile>({ storeName: 'jukebox_files', validationSchema: undefined });
+  useStore<JukeboxFile>({
+    storeName: 'jukebox_files',
+    validationSchema: undefined,
+  });
 
-export function isFileSystemFileHandle(handle: any): handle is FileSystemFileHandle {
+export function isFileSystemFileHandle(
+  handle: any,
+): handle is FileSystemFileHandle {
   return handle && handle.kind === 'file';
 }
 
 // File helpers (not Pinia)
 const FILE_STORE = 'jukebox_files';
 
-export async function getJukeboxFile(id: string): Promise<JukeboxFile | undefined> {
+export async function getJukeboxFile(
+  id: string,
+): Promise<JukeboxFile | undefined> {
   return idbGetItem<JukeboxFile>(FILE_STORE, id);
 }
 
@@ -51,19 +70,19 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
    */
   function getPictureUrl(picture: string | Blob | undefined): string {
     if (!picture) return '';
-    
+
     if (typeof picture === 'string') {
       return picture;
     }
-    
+
     // Create a unique key for this blob based on its content
     const blobKey = `${picture.size}-${picture.type}`;
-    
+
     // Check if we already have a URL for this blob
     if (pictureUrlCache.value.has(blobKey)) {
       return pictureUrlCache.value.get(blobKey)!;
     }
-    
+
     // Create new URL and cache it
     const url = URL.createObjectURL(picture);
     pictureUrlCache.value.set(blobKey, url);
@@ -76,7 +95,9 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
    * @param picture - The picture data (string URL or Blob)
    * @returns CSS style object with backgroundImage property
    */
-  function getPictureStyle(picture: string | Blob | undefined): { backgroundImage: string } {
+  function getPictureStyle(picture: string | Blob | undefined): {
+    backgroundImage: string;
+  } {
     const url = getPictureUrl(picture);
     return { backgroundImage: url ? `url(${url})` : '' };
   }
@@ -93,7 +114,7 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
   return {
     getPictureUrl,
     getPictureStyle,
-    clearCache
+    clearCache,
   };
 });
 
@@ -108,11 +129,11 @@ export function trackIsActive(
   currentTrack: JukeboxTrack | null,
   track: JukeboxTrack,
   activePlaylistId: string | null,
-  selectedPlaylistId: string | null
+  selectedPlaylistId: string | null,
 ): boolean {
   return Boolean(
     currentTrack &&
-    currentTrack.id === track.id &&
-    activePlaylistId === selectedPlaylistId
+      currentTrack.id === track.id &&
+      activePlaylistId === selectedPlaylistId,
   );
-} 
+}

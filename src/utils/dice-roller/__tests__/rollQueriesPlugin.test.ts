@@ -13,6 +13,11 @@ describe('Roll Queries Plugin', () => {
   });
 
   it('should throw on evaluateRollQuery (not implemented)', () => {
-    expect(() => rollQueriesPlugin.evaluateRollQuery?.({ type: 'roll-query', prompt: 'Bonus?' }, {})).toThrow();
+    expect(() =>
+      rollQueriesPlugin.evaluateRollQuery?.(
+        { type: 'roll-query', prompt: 'Bonus?' },
+        {},
+      ),
+    ).toThrow();
   });
-}); 
+});
