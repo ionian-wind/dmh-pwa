@@ -3,8 +3,8 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import BaseListView from '@/components/common/BaseListView.vue';
-import MonsterCard from '@/components/MonsterCard.vue';
-import MonsterEditor from '@/components/MonsterEditor.vue';
+import MonsterCard from '@/monsters/MonsterCard.vue';
+import MonsterEditor from '@/monsters/MonsterEditor.vue';
 import type { Monster } from '@/types';
 import { useI18n } from 'vue-i18n';
 

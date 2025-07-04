@@ -66,53 +66,34 @@ const handleCancel = () => {
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
-    <div class="form-section">
-      <h3>Basic Information</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input
-            id="name"
-            v-model="editedParty.name"
-            type="text"
-            required
-            placeholder="Party name"
-          >
+    <div class="q-pa-md q-gutter-md">
+      <div class="q-mb-md">
+        <h3>Basic Information</h3>
+        <div class="row q-col-gutter-md">
+          <div class="col-12 col-md-6">
+            <label for="name">Name</label>
+            <input id="name" v-model="editedParty.name" type="text" required placeholder="Party name" class="q-input" />
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="module">Module</label>
+            <select id="module" v-model="editedParty.moduleIds" multiple class="q-input">
+              <option v-for="module in moduleStore.items" :key="module.id" :value="module.id">{{ module.name }}</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="module">Module</label>
-          <select
-            id="module"
-            v-model="editedParty.moduleIds"
-            multiple
-          >
-            <option v-for="module in moduleStore.items" :key="module.id" :value="module.id">{{ module.name }}</option>
-          </select>
+        <div class="q-mb-md">
+          <label for="description">Description</label>
+          <textarea id="description" v-model="editedParty.description" rows="3" placeholder="Party description" class="q-input" />
         </div>
       </div>
-      <div class="form-group">
-        <label for="description">Description</label>
-        <textarea
-          id="description"
-          v-model="editedParty.description"
-          rows="3"
-          placeholder="Party description"
-        ></textarea>
-      </div>
-    </div>
-    <div class="form-section">
-      <h3>Notes</h3>
-      <div class="form-group">
-        <textarea
-          v-model="editedParty.notes"
-          rows="3"
-          placeholder="Additional notes about the party"
-        ></textarea>
+      <div class="q-mb-md">
+        <h3>Notes</h3>
+        <textarea v-model="editedParty.notes" rows="3" placeholder="Additional notes about the party" class="q-input" />
       </div>
     </div>
   </BaseModal>
 </template>
 
 <style scoped>
-/* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
+/* Removed custom form-section, form-grid, form-group styles. Use Quasar classes. */
 </style> 

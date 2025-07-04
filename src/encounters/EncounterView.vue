@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import {ref, onMounted, computed, watch, inject, onBeforeUnmount} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
@@ -7,16 +7,15 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
-import type { Encounter, Monster, Combat } from '@/types';
-import EncounterEditor from '@/components/EncounterEditor.vue';
+import type {Encounter, Monster, Combat, ComponentInjection} from '@/types';
+import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/form/Button.vue';
-import PartySelector from '@/components/PartySelector.vue';
-import Mentions from '@/components/common/Mentions.vue';
-import { useMentionsStore } from '@/utils/storage';
+import PartySelector from '@/encounters/PartySelector.vue';
 import { IconSwords } from '@tabler/icons-vue';
+import EncounterViewSidebar from "@/encounters/EncounterViewSidebar.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -26,7 +25,6 @@ const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
-const mentionsStore = useMentionsStore();
 
 const isEditorOpen = ref(false);
 const showLinkModal = ref(false);
@@ -232,15 +230,6 @@ const tabs = computed(() => [
   }
 ]);
 
-const mentions = computed(() => {
-  if (!encounter.value) return [];
-  return mentionsStore.getLinks({ kind: 'encounter', id: encounter.value.id });
-});
-const mentionedInEntities = computed(() => {
-  if (!encounter.value) return [];
-  return mentionsStore.getBacklinks({ kind: 'encounter', id: encounter.value.id });
-});
-
 const handleModalToggleMonster = (monsterId: string, isLinked: boolean) => {
   const current = { ...localMonsters.value };
   if (isLinked) {
@@ -281,6 +270,8 @@ const handleSaveQuantity = async () => {
   isQuantityModalOpen.value = false;
 };
 
+const setRightDrawerContent = inject('setRightDrawerContent') as (arg: ComponentInjection) => void
+
 onMounted(async () => {
   await Promise.all([
     encounterStore.load(),
@@ -288,8 +279,13 @@ onMounted(async () => {
     moduleStore.load(),
     combatStore.load(),
     partyStore.load(),
-    mentionsStore.load(),
   ]);
+
+  setRightDrawerContent({ component: EncounterViewSidebar, props: { encounter } });
+});
+
+onBeforeUnmount(() => {
+  setRightDrawerContent(null);
 });
 </script>
 
@@ -327,42 +323,48 @@ onMounted(async () => {
         </section>
       </template>
       <template #monsters>
-        <div class="section-header">
-          <h2>{{ t('encounters.monsters.title') }}</h2>
-          <Button @click="showLinkModal = true">{{ t('encounters.monsters.linkAction') }}</Button>
+        <div class="row items-center q-mb-md">
+          <div class="col">
+            <h2>{{ t('encounters.monsters.title') }}</h2>
+          </div>
+          <div class="col-auto">
+            <Button @click="showLinkModal = true" class="q-ml-md">{{ t('encounters.monsters.linkAction') }}</Button>
+          </div>
         </div>
-        <div v-if="encounterMonsters.length === 0" class="empty-state">
+        <div v-if="encounterMonsters.length === 0" class="q-pa-md text-grey text-center q-mt-xl">
           <p>{{ t('encounters.monsters.none') }}</p>
         </div>
-        <div v-else class="monsters-grid">
-          <table>
-            <thead>
-              <tr>
-                <th>{{ t('monsters.name') }}</th>
-                <th>{{ t('common.quantity') }}</th>
-                <th>{{ t('common.actions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="monster in encounterMonsters" :key="monster.id">
-                <td>
-                  <router-link :to="`/monsters/${monster.id}`">
-                    {{ monster.name }}
-                  </router-link>
-                </td>
-                <td>
-                  <Button variant="secondary" @click="openQuantityModal(monster)">
-                    {{ encounter?.monsters[monster.id] }}
-                  </Button>
-                </td>
-                <td>
-                  <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
-                    {{ t('common.unlink') }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else class="row q-gutter-md">
+          <div class="col-12">
+            <table class="q-table">
+              <thead>
+                <tr>
+                  <th>{{ t('monsters.name') }}</th>
+                  <th>{{ t('common.quantity') }}</th>
+                  <th>{{ t('common.actions') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="monster in encounterMonsters" :key="monster.id">
+                  <td>
+                    <router-link :to="`/monsters/${monster.id}`">
+                      {{ monster.name }}
+                    </router-link>
+                  </td>
+                  <td>
+                    <Button variant="secondary" @click="openQuantityModal(monster)">
+                      {{ encounter?.monsters[monster.id] }}
+                    </Button>
+                  </td>
+                  <td>
+                    <button class="unlink-btn" @click="handleToggleMonster(monster, false)">
+                      {{ t('common.unlink') }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </template>
       <template #combats>
@@ -404,10 +406,6 @@ onMounted(async () => {
           @submit="handleSave"
           @cancel="handleCancel"
         />
-      </template>
-      <template #sidepanel>
-        <Mentions :title="t('common.mentions')" :entities="mentions" />
-        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
       </template>
     </BaseEntityTabView>
 

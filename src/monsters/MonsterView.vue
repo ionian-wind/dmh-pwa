@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import {ref, computed, watch, onMounted, inject, onBeforeUnmount} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
-import type { Monster } from '@/types';
-import MonsterEditor from '@/components/MonsterEditor.vue';
+import type {ComponentInjection, Monster} from '@/types';
+import MonsterEditor from '@/monsters/MonsterEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Mentions from '@/components/common/Mentions.vue';
-import { useMentionsStore } from '@/utils/storage';
 import { useI18n } from 'vue-i18n';
+import MonsterViewSidebar from "@/monsters/MonsterViewSidebar.vue";
 
 const route = useRoute();
 const router = useRouter();
 const monsterStore = useMonsterStore();
-const mentionsStore = useMentionsStore();
 const showEditor = ref(false);
 const { t } = useI18n();
 
@@ -61,18 +59,15 @@ const handleDelete = async () => {
 // Computed properties for BaseEntityView
 const monsterTitle = computed(() => monster.value?.name || '');
 
-const mentions = computed(() => {
-  if (!monster.value) return [];
-  return mentionsStore.getLinks({ kind: 'monster', id: monster.value.id });
-});
-const mentionedInEntities = computed(() => {
-  if (!monster.value) return [];
-  return mentionsStore.getBacklinks({ kind: 'monster', id: monster.value.id });
-});
+const setRightDrawerContent = inject('setRightDrawerContent') as (arg: ComponentInjection) => void
 
 onMounted(async () => {
   await monsterStore.load();
-  await mentionsStore.load();
+  setRightDrawerContent({ component: MonsterViewSidebar, props: { monster } });
+});
+
+onBeforeUnmount(() => {
+  setRightDrawerContent(null);
 });
 </script>
 
@@ -88,15 +83,13 @@ onMounted(async () => {
     :not-found="notFound"
     :loading="loading"
   >
-    <!-- Monster Content -->
-    <div v-if="monster" class="monster-sheet">
-      <!-- Notes -->
-      <section v-if="monster.notes" class="sheet-section notes">
+    <div v-if="monster" class="q-pa-md q-gutter-md">
+      <div v-if="monster.notes" class="q-mb-md">
         <h2>{{ t('notes.title') }}</h2>
-        <div class="notes-content">
+        <div class="q-pa-sm bg-grey-1 rounded-borders">
           <p>{{ monster.notes }}</p>
         </div>
-      </section>
+      </div>
     </div>
 
     <!-- Editor Modal -->
@@ -108,67 +101,5 @@ onMounted(async () => {
         @cancel="handleCancel"
       />
     </template>
-
-    <template #sidepanel>
-      <Mentions :title="t('common.mentions')" :entities="mentions" />
-      <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
-    </template>
   </BaseEntityView>
 </template>
-
-<style scoped>
-.monster-sheet {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-.sheet-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.sheet-section h2 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.sheet-section h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-  font-size: 1.1rem;
-}
-
-/* Basic Information */
-.info-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.info-item label {
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.info-item span {
-  color: var(--color-text-light);
-}
-
-/* Notes */
-.notes-content {
-  color: var(--color-text);
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-</style>

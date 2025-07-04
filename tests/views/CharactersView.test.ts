@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import CharactersView from '@/views/CharactersView.vue';
+import CharactersView from '../../src/characters/CharactersView.vue';
 import { setActivePinia, createPinia } from 'pinia';
 import { vi } from 'vitest';
 

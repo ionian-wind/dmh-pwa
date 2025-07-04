@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ModuleCard from '@/components/ModuleCard.vue';
+import ModuleCard from '../../src/modules/ModuleCard.vue';
 
 describe('ModuleCard', () => {
   const module = { id: 'm1', name: 'Test Module', description: 'A module', createdAt: 0, updatedAt: 0 };

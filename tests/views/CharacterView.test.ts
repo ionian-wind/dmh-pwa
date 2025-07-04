@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import CharacterView from '@/views/CharacterView.vue';
+import CharacterView from '../../src/characters/CharacterView.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/CharacterEditor.vue', () => ({

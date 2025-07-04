@@ -16,6 +16,13 @@ import { debug, debugWarn, debugError } from './utils/debug';
 import Toast from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
+import { Quasar } from 'quasar'
+import quasarLangRu from 'quasar/lang/ru'
+import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6'
+
+// Import Quasar css
+import 'quasar/src/css/index.sass'
+
 // Import global styles
 import './assets/styles/global.css'
 
@@ -71,6 +78,12 @@ app.use(VueDnDKitPlugin, {
 } as IPluginOptions);
 
 app.use(Toast);
+
+app.use(Quasar, {
+  plugins: {}, // import Quasar plugins and add here
+  lang: quasarLangRu,
+  iconSet: quasarIconSet,
+});
 
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {

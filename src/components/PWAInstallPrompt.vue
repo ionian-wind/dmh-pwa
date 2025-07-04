@@ -72,12 +72,12 @@ onMounted(() => {
       } else {
         debug('PWAInstallPrompt: User dismissed the native install prompt, showing custom prompt');
         // Show our custom prompt as a fallback
-        showInstallPrompt.value = true;
+        // showInstallPrompt.value = true;
       }
     } catch (error) {
       debug('PWAInstallPrompt: Native prompt failed or was not supported, showing custom prompt:', error);
       // Show our custom prompt as fallback
-      showInstallPrompt.value = true;
+      // showInstallPrompt.value = true;
     }
   };
   
@@ -106,7 +106,7 @@ onMounted(() => {
   <div v-if="showInstallPrompt" class="pwa-install-prompt">
     <div class="pwa-install-content">
       <div class="pwa-install-icon">
-        <img src="/icon-192.png" alt="D&D Notes" />
+        <img src="/dmh-pwa/icon-192.png" alt="D&D Notes" />
       </div>
       <div class="pwa-install-text">
         <h3>Install Owlbear's Dungeon Master Helper</h3>

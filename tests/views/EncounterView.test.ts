@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import EncounterView from '@/views/EncounterView.vue';
+import EncounterView from '../../src/encounters/EncounterView.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/EncounterEditor.vue', () => ({

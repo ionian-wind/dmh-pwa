@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import ModuleView from '@/views/ModuleView.vue';
+import ModuleView from '../../src/modules/ModuleView.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/ModuleEditor.vue', () => ({

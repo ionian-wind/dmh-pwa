@@ -5,8 +5,8 @@ import { useCharacterStore } from '@/stores/characters';
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import BaseListView from '@/components/common/BaseListView.vue';
-import CharacterCard from '@/components/CharacterCard.vue';
-import CharacterEditor from '@/components/CharacterEditor.vue';
+import CharacterCard from '@/characters/CharacterCard.vue';
+import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import { useI18n } from 'vue-i18n';
 

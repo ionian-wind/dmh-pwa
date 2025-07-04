@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import NoteView from '@/views/NoteView.vue';
+import NoteView from '../../src/notes/NoteView.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/NoteEditor.vue', () => ({

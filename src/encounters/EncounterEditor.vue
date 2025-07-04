@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 import { Encounter } from '@/types';
-import ModuleSelector from './ModuleSelector.vue';
+import ModuleSelector from '../components/ModuleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
 

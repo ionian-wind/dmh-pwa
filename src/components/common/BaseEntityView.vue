@@ -6,6 +6,7 @@ import Button from '../form/Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { IconPencil, IconTrash, IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
+import { QLayout, QDrawer, QPageContainer, QPage } from 'quasar';
 
 interface Props {
   entity: any | null;
@@ -62,7 +63,7 @@ const toggleSidePanel = () => {
 </script>
 
 <template>
-  <div class="base-entity-container">
+  <QLayout view="lHh Lpr lFf" class="base-entity-container">
     <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <NotFoundView v-else-if="notFound" />
     <template v-else-if="entity">
@@ -83,8 +84,8 @@ const toggleSidePanel = () => {
           </Button>
         </template>
       </ViewHeader>
-      <div class="base-entity-layout">
-        <div class="entity-main-column">
+      <QPageContainer class="base-entity-layout">
+        <QPage class="entity-main-column">
           <div class="base-entity-view">
             <slot v-if="props.unwrapContent" />
             <div v-else class="entity-content">
@@ -95,18 +96,8 @@ const toggleSidePanel = () => {
           <div v-if="$slots['fixed-bottom']" class="entity-fixed-bottom">
             <slot name="fixed-bottom" />
           </div>
-        </div>
-        <!-- Side Panel -->
-        <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
-          <div class="side-panel-toggle-handle" @click="toggleSidePanel">
-            <IconChevronRight v-if="isSidePanelVisible" />
-            <IconChevronLeft v-else />
-          </div>
-          <div class="side-panel">
-            <slot name="sidepanel" />
-          </div>
-        </div>
-      </div>
+        </QPage>
+      </QPageContainer>
     </template>
-  </div>
+  </QLayout>
 </template>

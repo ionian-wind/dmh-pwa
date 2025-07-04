@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import CharacterCard from '@/components/CharacterCard.vue';
+import CharacterCard from '../../src/characters/CharacterCard.vue';
 
 const mockCharacter = {
   id: 'char-1',

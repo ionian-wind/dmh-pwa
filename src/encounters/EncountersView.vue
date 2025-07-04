@@ -5,9 +5,9 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useModuleStore } from '@/stores/modules';
 import type { Encounter, Combat } from '@/types';
 import BaseListView from '@/components/common/BaseListView.vue';
-import EncounterCard from '@/components/EncounterCard.vue';
-import EncounterEditor from '@/components/EncounterEditor.vue';
-import PartySelector from '@/components/PartySelector.vue';
+import EncounterCard from '@/encounters/EncounterCard.vue';
+import EncounterEditor from '@/encounters/EncounterEditor.vue';
+import PartySelector from '@/encounters/PartySelector.vue';
 import { useI18n } from 'vue-i18n';
 
 const router = useRouter();

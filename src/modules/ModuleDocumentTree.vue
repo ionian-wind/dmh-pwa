@@ -5,7 +5,7 @@ import { Tree } from '@/components/Tree';
 import { useNoteStore } from '@/stores/notes';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 import Button from '@/components/form/Button.vue';
-import NoteEditor from '@/components/NoteEditor.vue';
+import NoteEditor from '@/notes/NoteEditor.vue';
 import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
 
 // Extended tree node type that includes note data for the Tree component

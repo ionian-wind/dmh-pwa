@@ -1,18 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '@/views/HomeView.vue';
-import NotesView from '@/views/NotesView.vue';
-import NoteView from '@/views/NoteView.vue';
-import PartiesView from '@/views/PartiesView.vue';
-import PartyView from '@/views/PartyView.vue';
-import MonstersView from '@/views/MonstersView.vue';
-import MonsterView from '@/views/MonsterView.vue';
-import CharactersView from '@/views/CharactersView.vue';
-import CharacterView from '@/views/CharacterView.vue';
-import EncountersView from '@/views/EncountersView.vue';
-import EncounterView from '@/views/EncounterView.vue';
-import CombatView from '@/views/CombatView.vue';
-import ModulesView from '@/views/ModulesView.vue';
-import ModuleView from '@/views/ModuleView.vue';
+import NotesView from '@/notes/NotesView.vue';
+import NoteView from '@/notes/NoteView.vue';
+import PartiesView from '@/parties/PartiesView.vue';
+import PartyView from '@/parties/PartyView.vue';
+import MonstersView from '@/monsters/MonstersView.vue';
+import MonsterView from '@/monsters/MonsterView.vue';
+import CharactersView from '@/characters/CharactersView.vue';
+import CharacterView from '@/characters/CharacterView.vue';
+import EncountersView from '@/encounters/EncountersView.vue';
+import EncounterView from '@/encounters/EncounterView.vue';
+import CombatView from '@/encounters/CombatView.vue';
+import ModulesView from '@/modules/ModulesView.vue';
+import ModuleView from '@/modules/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import TimersView from '@/views/TimersView.vue';
@@ -32,7 +32,7 @@ const router = createRouter({
       path: '/notes',
       name: 'notes',
       component: NotesView,
-      meta: { exact: true }
+      meta: { exact: true },
     },
     {
       path: '/notes/:id',
@@ -44,7 +44,7 @@ const router = createRouter({
       path: '/parties',
       name: 'parties',
       component: PartiesView,
-      meta: { exact: true }
+      meta: { exact: true },
     },
     {
       path: '/parties/:id',
@@ -56,7 +56,7 @@ const router = createRouter({
       path: '/monsters',
       name: 'monsters',
       component: MonstersView,
-      meta: { exact: true }
+      meta: { exact: true },
     },
     {
       path: '/monsters/:id',
@@ -68,7 +68,7 @@ const router = createRouter({
       path: '/characters',
       name: 'characters',
       component: CharactersView,
-      meta: { exact: true }
+      meta: { exact: true },
     },
     {
       path: '/characters/:id',
@@ -80,7 +80,7 @@ const router = createRouter({
       path: '/encounters',
       name: 'encounters',
       component: EncountersView,
-      meta: { exact: true }
+      meta: { exact: true },
     },
     {
       path: '/encounters/:id',
@@ -98,7 +98,7 @@ const router = createRouter({
       path: '/modules',
       name: 'modules',
       component: ModulesView,
-      meta: { exact: true }
+      meta: { exact: true },
     },
     {
       path: '/modules/:id',
@@ -119,12 +119,6 @@ const router = createRouter({
       component: TimersView,
       meta: { exact: true }
     },
-    // Icons route
-    // {
-    //   path: '/icons',
-    //   name: 'AllIcons',
-    //   component: AllIconsView
-    // },
     // 404 route
     {
       path: '/:catchAll(.*)',

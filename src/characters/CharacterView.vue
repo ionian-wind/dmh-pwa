@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
-import CharacterEditor from '@/components/CharacterEditor.vue';
+import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
@@ -72,15 +72,13 @@ onMounted(async () => {
     :not-found="notFound"
     :loading="loading"
   >
-    <!-- Character Content -->
-    <div v-if="character" class="character-sheet">
-      <!-- Notes -->
-      <section v-if="character.notes" class="sheet-section notes">
+    <div v-if="character" class="q-pa-md q-gutter-md">
+      <div v-if="character.notes" class="q-mb-md">
         <h2>{{ t('notes.title') }}</h2>
-        <div class="notes-content">
+        <div class="q-pa-sm bg-grey-1 rounded-borders">
           <p>{{ character.notes }}</p>
         </div>
-      </section>
+      </div>
     </div>
 
     <!-- Editor Modal -->
@@ -101,59 +99,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.character-sheet {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-.sheet-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.sheet-section h2 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.sheet-section h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-  font-size: 1.1rem;
-}
-
-/* Basic Information */
-.info-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.info-item label {
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.info-item span {
-  color: var(--color-text-light);
-}
-
-/* Notes */
-.notes-content {
-  color: var(--color-text);
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
+/* Removed custom layout classes. Use Quasar classes. */
 </style>
   

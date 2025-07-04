@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch, inject } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
@@ -7,17 +7,15 @@ import { useMentionsStore } from '@/utils/storage';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import type { Note } from '@/types';
-import NoteEditor from '@/components/NoteEditor.vue';
-import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser';
+import type { Note, ComponentInjection } from '@/types';
+import NoteEditor from '@/notes/NoteEditor.vue';
+import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Mentions from '@/components/common/Mentions.vue';
 import Markdown from '@/components/common/Markdown.vue';
-import { useI18n } from 'vue-i18n';
+import NoteViewSidebar from "@/notes/NoteViewSidebar.vue";
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
@@ -28,9 +26,7 @@ const encounterStore = useEncounterStore();
 const isEditing = ref(false);
 const isLoaded = computed(() => noteStore.isLoaded);
 const note = ref<Note | null>(null);
-const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !note.value);
-const parsedContent = computed(() => note.value ? parseMarkdown(note.value.content, { taskCheckboxEnabled: true }) : '');
 const validationError = ref<string | null>(null);
 const noteContent = ref('');
 
@@ -69,9 +65,11 @@ const handleEdit = () => {
 const handleDelete = async () => {
   if (!note.value) return;
   await noteStore.remove(note.value.id);
-  router.push('/notes');
+  await router.push('/notes');
 };
-
+const handleCancel = () => {
+  isEditing.value = false;
+};
 const handleSubmit = async (editedNote: Note) => {
   // Validate mentions
   const mentions = extractMentionedEntities(editedNote.content);
@@ -112,28 +110,10 @@ const handleSubmit = async (editedNote: Note) => {
   updateNoteFromStore();
 };
 
-const handleCancel = () => {
-  isEditing.value = false;
-};
-
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title || '');
 
-const mentions = computed(() => {
-  if (!note.value) return [];
-  return mentionsStore.getLinks({ kind: 'note', id: note.value.id });
-});
-
-// Find notes that mention this note using the indexation store
-const mentionedInNotes = computed(() => {
-  if (!note.value) return [];
-  const backlinks = mentionsStore.getBacklinks({ kind: 'note', id: note.value.id });
-  // Only include notes that exist (not null)
-  return backlinks
-    .filter(ref => ref.kind === 'note' && ref.id !== note.value?.id)
-    .map(ref => noteStore.getById(ref.id))
-    .filter((n): n is Note => !!n);
-});
+const setRightDrawerContent = inject('setRightDrawerContent') as (arg: ComponentInjection) => void
 
 onMounted(async () => {
   await noteStore.load();
@@ -142,6 +122,12 @@ onMounted(async () => {
   await partyStore.load();
   await monsterStore.load();
   await encounterStore.load();
+  
+  setRightDrawerContent({ component: NoteViewSidebar, props: { note } });
+});
+
+onBeforeUnmount(() => {
+  setRightDrawerContent(null);
 });
 </script>
 
@@ -167,24 +153,6 @@ onMounted(async () => {
         @submit="handleSubmit"
         @cancel="handleCancel"
       />
-    </template>
-
-    <template #sidepanel>
-      <div class="side-panel-content">
-        <div v-if="note?.tags?.length" class="tags-section">
-          <h3>{{ t('tags.title') }}</h3>
-          <div class="tags">
-            <router-link
-              v-for="tag in note.tags"
-              :key="tag"
-              class="tag"
-              :to="{ path: '/notes', query: { tag: encodeURIComponent(tag) } }"
-            >#{{ tag }}</router-link>
-          </div>
-        </div>
-        <Mentions :title="t('common.mentions')" :entities="mentions" />
-        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInNotes.map(n => ({ kind: 'note', id: n.id, title: n.title }))" />
-      </div>
     </template>
   </BaseEntityView>
 </template>
@@ -242,11 +210,5 @@ onMounted(async () => {
 .markdown-content :deep(pre code) {
   background: none;
   padding: 0;
-}
-
-.side-panel-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
 }
 </style>

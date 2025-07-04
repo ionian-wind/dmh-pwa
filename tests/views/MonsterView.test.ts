@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import MonsterView from '@/views/MonsterView.vue';
+import MonsterView from '../../src/monsters/MonsterView.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/MonsterEditor.vue', () => ({

@@ -2,6 +2,8 @@
 export type UUID = string;
 export type Timestamp = number;
 
+export type ComponentInjection = { component: any, props?: Record<string, any> } | null;
+
 // Utility types
 export type WithId = { id: UUID };
 export type WithTimestamps = {

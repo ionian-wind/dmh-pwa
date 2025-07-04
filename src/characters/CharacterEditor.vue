@@ -70,66 +70,24 @@ function handleCancel() {
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
-    <div class="form-section">
-      <h3>Basic Information</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Name</label>
-          <input v-model="editedCharacter.name" type="text" required />
+    <div class="q-pa-md q-gutter-md">
+      <div class="q-mb-md">
+        <h3>Basic Information</h3>
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <label>Name</label>
+            <input v-model="editedCharacter.name" type="text" required class="q-input" />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="form-section">
-      <div class="form-group">
+      <div class="q-mb-md">
         <label>Notes</label>
-        <textarea v-model="editedCharacter.notes" rows="3" />
+        <textarea v-model="editedCharacter.notes" rows="3" class="q-input" />
       </div>
     </div>
   </BaseModal>
 </template>
 
 <style scoped>
-.form-section {
-  background: var(--color-background-soft);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-}
-
-.form-section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  color: var(--color-text);
-  font-size: 0.9rem;
-}
-
-.form-group input,
-.form-group textarea {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
-}
+/* Removed custom form-section, form-grid, form-group styles. Use Quasar classes. */
 </style> 

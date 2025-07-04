@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import PartyView from '@/views/PartyView.vue';
+import PartyView from '../../src/parties/PartyView.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/PartyEditor.vue', () => ({

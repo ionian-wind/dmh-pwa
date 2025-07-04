@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import ModulesView from '@/views/ModulesView.vue';
+import ModulesView from '../../src/modules/ModulesView.vue';
 import { setActivePinia, createPinia } from 'pinia';
 import { vi } from 'vitest';
 

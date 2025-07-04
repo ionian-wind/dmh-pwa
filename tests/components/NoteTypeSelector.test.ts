@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import NoteTypeSelector from '@/components/NoteTypeSelector.vue';
+import NoteTypeSelector from '../../src/notes/NoteTypeSelector.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/noteTypes', () => ({

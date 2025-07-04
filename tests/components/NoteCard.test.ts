@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import NoteCard from '@/components/NoteCard.vue';
+import NoteCard from '../../src/notes/NoteCard.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/notes', () => ({}));

@@ -13,21 +13,21 @@ import { useConfigStore } from '@/utils/configStore';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Module, Bookmark } from '@/types';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
-import ModuleEditor from '@/components/ModuleEditor.vue';
+import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
-import PartyCard from '@/components/PartyCard.vue';
-import MonsterCard from '@/components/MonsterCard.vue';
-import EncounterCard from '@/components/EncounterCard.vue';
-import NoteCard from '@/components/NoteCard.vue';
+import PartyCard from '@/parties/PartyCard.vue';
+import MonsterCard from '@/monsters/MonsterCard.vue';
+import EncounterCard from '@/encounters/EncounterCard.vue';
+import NoteCard from '@/notes/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/form/Button.vue';
-import ModuleDocumentTree from '@/components/ModuleDocumentTree.vue';
-import ModuleDocumentView from '@/components/ModuleDocumentView.vue';
+import ModuleDocumentTree from '@/modules/ModuleDocumentTree.vue';
+import ModuleDocumentView from '@/modules/ModuleDocumentView.vue';
 import JSZip from 'jszip';
 import { cropTitle } from '@/utils/cropTitle';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -289,119 +289,116 @@ async function saveEditBookmark() {
 <template>
   <div>
     <BaseEntityTabView
-    :entity="module"
-    entity-name="modules.title"
-    list-route="/modules"
-    :on-delete="handleDelete"
-    :on-edit="() => showEditor = true"
-    :is-editing="showEditor"
-    :title="moduleTitle"
-    :subtitle="moduleSubtitle"
-    :not-found="notFound"
-    :loading="loading"
-    :tabs="entityTabs"
-    v-model="activeTab"
-  >
-    <template #actions>
-      <Button @click="handleExportModule" variant="success" :title="t('common.export')">
-        <IconDownload />
-      </Button>
-    </template>
-    <template #document>
-      <ModuleDocumentView
-        ref="moduleDocumentViewRef"
-        v-if="module && module.noteTree && module.noteTree.length > 0"
-        :module-id="module?.id || ''"
-        :note-tree="module.noteTree"
-        @toc-update="handleTOCUpdate"
-        @active-anchor-id="handleActiveAnchorId"
-      />
-      <div v-else class="empty-state">
-        <p>{{ t('moduleView.noDocument') }}</p>
-      </div>
-    </template>
-    <template #parties>
-      <div v-if="moduleParties.length === 0" class="empty-state">
-        <p>{{ t('moduleView.noParties') }}</p>
-      </div>
-      <div v-else class="content-grid">
-        <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
-      </div>
-    </template>
-    <template #monsters>
-      <div v-if="moduleMonsters.length === 0" class="empty-state">
-        <p>{{ t('moduleView.noMonsters') }}</p>
-      </div>
-      <div v-else class="content-grid">
-        <MonsterCard v-for="monster in moduleMonsters" :key="monster.id" :monster="monster" />
-      </div>
-    </template>
-    <template #encounters>
-      <div v-if="moduleEncounters.length === 0" class="empty-state">
-        <p>{{ t('moduleView.noEncounters') }}</p>
-      </div>
-      <div v-else class="content-grid">
-        <EncounterCard v-for="encounter in moduleEncounters" :key="encounter.id" :encounter="encounter" />
-      </div>
-    </template>
-    <template #notes>
-      <div v-if="moduleNotes.length === 0" class="empty-state">
-        <p>{{ t('moduleView.noNotes') }}</p>
-      </div>
-      <div v-else class="content-grid">
-        <NoteCard v-for="note in moduleNotes" :key="note.id" :note="note" />
-      </div>
-    </template>
-    <template #playlists>
-      <div v-if="modulePlaylists.length === 0" class="empty-state">
-        <p>{{ t('moduleView.noPlaylists') }}</p>
-      </div>
-      <div v-else class="content-grid">
-        <JukeboxPlaylistCard
-          v-for="playlist in modulePlaylists"
-          :key="playlist.id"
-          :playlist="playlist"
-          @view="() => router.push('/jukebox')"
-          @play="handlePlayPlaylist"
+      :entity="module"
+      entity-name="modules.title"
+      list-route="/modules"
+      :on-delete="handleDelete"
+      :on-edit="() => showEditor = true"
+      :is-editing="showEditor"
+      :title="moduleTitle"
+      :subtitle="moduleSubtitle"
+      :not-found="notFound"
+      :loading="loading"
+      :tabs="entityTabs"
+      v-model="activeTab"
+    >
+      <template #actions>
+        <Button @click="handleExportModule" variant="success" :title="t('common.export')">
+          <IconDownload />
+        </Button>
+      </template>
+      <template #document>
+        <ModuleDocumentView
+          ref="moduleDocumentViewRef"
+          v-if="module && module.noteTree && module.noteTree.length > 0"
+          :module-id="module?.id || ''"
+          :note-tree="module.noteTree"
+          @toc-update="handleTOCUpdate"
+          @active-anchor-id="handleActiveAnchorId"
         />
-      </div>
-    </template>
-    <template #noteTree>
-      <ModuleDocumentTree
-        :module-id="module?.id || ''"
-        :note-tree="module?.noteTree || []"
-        @update:noteTree="handleSaveNoteTree"
-      />
-    </template>
-    <template #editor>
-      <ModuleEditor
-        v-if="showEditor"
-        :module="module"
-        :is-open="showEditor"
-        @submit="handleSubmit"
-        @cancel="handleCancel"
-      />
-    </template>
-    <template #sidepanel>
-      <div v-if="activeTab === 'document'">
-        <TabGroup
-          :align="'justify'"
-          :title-align="'center'"
-          :tabs="[
-            { id: 'toc', label: t('common.tableOfContents') },
-            { id: 'bookmarks', label: t('common.bookmarks') }
-          ]"
-          v-model="sidePanelTab"
-          size="sm"
-        >
-          <template #default>
-            <div v-show="sidePanelTab === 'toc'">
-              <TableOfContents :items="tocItems" :active-anchor-id="activeAnchorId" @item-click="scrollToBookmark" />
-            </div>
-            <div v-show="sidePanelTab === 'bookmarks'">
-              <div v-if="moduleBookmarks.length === 0" class="empty-state">{{ t('common.noBookmarks') }}</div>
-              <ul v-else class="bookmark-list">
-                <li v-for="bookmark in moduleBookmarks" :key="bookmark.id" class="bookmark-list-item">
+        <div v-else class="empty-state">
+          <p>{{ t('moduleView.noDocument') }}</p>
+        </div>
+      </template>
+      <template #parties>
+        <div v-if="moduleParties.length === 0" class="empty-state">
+          <p>{{ t('moduleView.noParties') }}</p>
+        </div>
+        <div v-else class="content-grid">
+          <PartyCard v-for="party in moduleParties" :key="party.id" :party="party" />
+        </div>
+      </template>
+      <template #monsters>
+        <div v-if="moduleMonsters.length === 0" class="q-pa-md text-grey text-center q-mt-xl">{{ t('moduleView.noMonsters') }}</div>
+        <div v-else class="row q-gutter-md">
+          <div v-for="monster in moduleMonsters" :key="monster.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <MonsterCard :monster="monster" />
+          </div>
+        </div>
+      </template>
+      <template #encounters>
+        <div v-if="moduleEncounters.length === 0" class="q-pa-md text-grey text-center q-mt-xl">{{ t('moduleView.noEncounters') }}</div>
+        <div v-else class="row q-gutter-md">
+          <div v-for="encounter in moduleEncounters" :key="encounter.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <EncounterCard :encounter="encounter" />
+          </div>
+        </div>
+      </template>
+      <template #notes>
+        <div v-if="moduleNotes.length === 0" class="q-pa-md text-grey text-center q-mt-xl">{{ t('moduleView.noNotes') }}</div>
+        <div v-else class="row q-gutter-md">
+          <div v-for="note in moduleNotes" :key="note.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <NoteCard :note="note" />
+          </div>
+        </div>
+      </template>
+      <template #playlists>
+        <div v-if="modulePlaylists.length === 0" class="q-pa-md text-grey text-center q-mt-xl">{{ t('moduleView.noPlaylists') }}</div>
+        <div v-else class="row q-gutter-md">
+          <div v-for="playlist in modulePlaylists" :key="playlist.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <JukeboxPlaylistCard
+              :playlist="playlist"
+              @view="() => router.push('/jukebox')"
+              @play="handlePlayPlaylist"
+            />
+          </div>
+        </div>
+      </template>
+      <template #noteTree>
+        <ModuleDocumentTree
+          :module-id="module?.id || ''"
+          :note-tree="module?.noteTree || []"
+          @update:noteTree="handleSaveNoteTree"
+        />
+      </template>
+      <template #editor>
+        <ModuleEditor
+          v-if="showEditor"
+          :module="module"
+          :is-open="showEditor"
+          @submit="handleSubmit"
+          @cancel="handleCancel"
+        />
+      </template>
+      <template #sidepanel>
+        <div v-if="activeTab === 'document'">
+          <TabGroup
+            :align="'justify'"
+            :title-align="'center'"
+            :tabs="[
+              { id: 'toc', label: t('common.tableOfContents') },
+              { id: 'bookmarks', label: t('common.bookmarks') }
+            ]"
+            v-model="sidePanelTab"
+            size="sm"
+          >
+            <template #default>
+              <div v-show="sidePanelTab === 'toc'">
+                <TableOfContents :items="tocItems" :active-anchor-id="activeAnchorId" @item-click="scrollToBookmark" />
+              </div>
+              <div v-show="sidePanelTab === 'bookmarks'">
+                <div v-if="moduleBookmarks.length === 0" class="q-pa-md text-grey text-center q-mt-xl">{{ t('common.noBookmarks') }}</div>
+                <ul v-else class="bookmark-list">
                   <div class="bookmark-list-row">
                     <span class="bookmark-link" @click="scrollToBookmark(bookmark.noteId)">
                       <IconBookmark />
@@ -426,170 +423,38 @@ async function saveEditBookmark() {
                       <IconTrash />
                     </Button>
                   </div>
-                </li>
-              </ul>
-            </div>
-          </template>
-        </TabGroup>
-      </div>
-      <div v-else-if="activeTab !== 'document'">
-        <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
-        <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
-      </div>
-    </template>
-  </BaseEntityTabView>
+                </ul>
+              </div>
+            </template>
+          </TabGroup>
+        </div>
+        <div v-else-if="activeTab !== 'document'">
+          <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
+          <Mentions :title="t('common.mentionedIn')" :entities="mentionedInEntities" />
+        </div>
+      </template>
+    </BaseEntityTabView>
 
-  <!-- Edit Bookmark Modal -->
-  <BaseModal
-    v-if="editingBookmark"
-    :isOpen="!!editingBookmark"
-    modalId="edit-bookmark-modal"
-    title="Edit Bookmark"
-    :showSubmit="true"
-    :showCancel="true"
-    @update:isOpen="(val: boolean) => { if (!val) closeEditBookmark(); }"
-    @submit="saveEditBookmark"
-    @cancel="closeEditBookmark"
-  >
-    <label>
-      Title:
-      <input v-model="editingTitle" type="text" class="modal-input" />
-    </label>
-  </BaseModal>
+    <!-- Edit Bookmark Modal -->
+    <BaseModal
+      v-if="editingBookmark"
+      :isOpen="!!editingBookmark"
+      modalId="edit-bookmark-modal"
+      title="Edit Bookmark"
+      :showSubmit="true"
+      :showCancel="true"
+      @update:isOpen="(val: boolean) => { if (!val) closeEditBookmark(); }"
+      @submit="saveEditBookmark"
+      @cancel="closeEditBookmark"
+    >
+      <label>
+        Title:
+        <input v-model="editingTitle" type="text" class="modal-input" />
+      </label>
+    </BaseModal>
   </div>
 </template>
 
 <style scoped>
-.module-content {
-  display: grid;
-  gap: 2rem;
-}
-
-.content-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.content-section h2 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.content-card {
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-}
-
-.content-card h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-  font-size: 1.1rem;
-}
-
-.content-card p {
-  margin: 0;
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-.empty-state {
-  color: var(--color-text-light);
-  text-align: center;
-  padding: 2rem;
-  font-style: italic;
-}
-
-.bookmark-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.bookmark-list-item {
-  margin-bottom: 0.5rem;
-}
-
-.bookmark-list-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.bookmark-link {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  color: var(--color-text);
-  font-size: 0.95rem;
-  padding: 0.25rem 0;
-  cursor: pointer;
-  border-radius: 4px;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  transition: color 0.2s, background-color 0.2s, text-decoration 0.2s;
-}
-
-.bookmark-link:hover {
-  color: var(--color-success);
-  text-decoration: underline;
-  background: var(--color-success-alpha, #e6f9ed);
-}
-
-.bookmark-highlight {
-  animation: bookmark-highlight-fade 1.2s;
-  background: var(--color-success-alpha, #e6f9ed) !important;
-}
-
-@keyframes bookmark-highlight-fade {
-  0% { background: var(--color-success-alpha, #e6f9ed); }
-  100% { background: transparent; }
-}
-
-.modal-backdrop {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal-dialog {
-  background: var(--color-background);
-  border-radius: var(--border-radius);
-  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
-  padding: 2rem;
-  min-width: 320px;
-  max-width: 90vw;
-}
-.modal-input {
-  width: 100%;
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  font-size: 1rem;
-}
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-}
+/* Removed .content-grid and .empty-state. Use Quasar classes. */
 </style> 

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import MonsterCard from '@/components/MonsterCard.vue';
+import MonsterCard from '../../src/monsters/MonsterCard.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/modules', () => ({

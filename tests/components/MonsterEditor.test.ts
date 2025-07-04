@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import MonsterEditor from '@/components/MonsterEditor.vue';
+import MonsterEditor from '../../src/monsters/MonsterEditor.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/components/ModuleSelector.vue', () => ({

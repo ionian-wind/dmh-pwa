@@ -3,8 +3,8 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePartyStore } from '@/stores/parties';
 import BaseListView from '@/components/common/BaseListView.vue';
-import PartyCard from '@/components/PartyCard.vue';
-import PartyEditor from '@/components/PartyEditor.vue';
+import PartyCard from '@/parties/PartyCard.vue';
+import PartyEditor from '@/parties/PartyEditor.vue';
 import type { Party } from '@/types';
 import { useI18n } from 'vue-i18n';
 
