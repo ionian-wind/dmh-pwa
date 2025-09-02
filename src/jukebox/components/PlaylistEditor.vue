@@ -98,11 +98,11 @@ async function save() {
     :isOpen="modelValue"
     modalId="playlist-editor"
     @update:isOpen="$emit('update:modelValue', $event)"
-    title="playlist.title"
+    :title="t('playlist.title')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="common.save"
-    cancelLabel="common.cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     @submit="save"
     @cancel="$emit('update:modelValue', false)"
   >
@@ -134,7 +134,7 @@ async function save() {
       <ModuleMultipleSelector
         id="playlist-modules"
         v-model="moduleIdsProxy"
-        :placeholder="'common.noModules'"
+        :placeholder="t('common.noModules')"
       />
     </div>
   </BaseModal>

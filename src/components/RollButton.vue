@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import FloatActionButton from './common/FloatActionButton.vue';
 import { IconDice5, IconX } from '@tabler/icons-vue';
 
@@ -8,6 +9,7 @@ import DiceBox from '@3d-dice/dice-box';
 
 import { debug } from '@/utils/debug';
 
+const { t } = useI18n();
 const showFabs = ref(false);
 const fabContainerRef = ref<HTMLElement | null>(null);
 
@@ -88,7 +90,7 @@ onUnmounted(() => diceBox.clear());
           transform: 'translate(-50%, -50%)',
         }"
         @click="toggleFabs"
-        :title="'Roll'"
+        :title="t('app.roll')"
       >
         <IconX v-if="showFabs" />
         <IconDice5 v-else />

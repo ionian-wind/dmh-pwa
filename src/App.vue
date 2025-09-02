@@ -332,7 +332,7 @@ const isCalculatorPopupOpen = ref(false);
               @click="isCalculatorPopupOpen = true"
             >
               <QItemSection side><IconCalculator /></QItemSection>
-              <QItemSection>Calculator</QItemSection>
+              <QItemSection>{{ t('app.calculator') }}</QItemSection>
             </QItem>
           </QList>
         </div>

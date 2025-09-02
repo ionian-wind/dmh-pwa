@@ -106,9 +106,7 @@ onBeforeUnmount(() => {
     :create-title="t('notes.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    @delete="handleDelete"
     @submit="handleSubmit"
-    @view="(note) => router.push(`/notes/${note.id}`)"
     @tag-click="handleTagClick"
     @copy="handleCopy"
   >

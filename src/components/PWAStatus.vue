@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   IconGift,
   IconDownload,
@@ -8,6 +9,7 @@ import {
   IconDeviceMobile,
 } from '@tabler/icons-vue';
 
+const { t } = useI18n();
 const isOnline = ref(navigator.onLine);
 const isStandalone = ref(false);
 const hasUpdate = ref(false);
@@ -63,17 +65,17 @@ onMounted(() => {
           <IconGift />
         </div>
         <div class="pwa-update-text">
-          <h3>Update Available</h3>
-          <p>A new version of Owlbear's DMH is available.</p>
+          <h3>{{ t('pwa.updateAvailable') }}</h3>
+          <p>{{ t('pwa.updateMessage') }}</p>
         </div>
         <div class="pwa-update-actions">
           <QBtn flat @click="updateApp" :color="'positive'">
             <IconDownload />
-            <span>Update Now</span>
+            <span>{{ t('pwa.updateNow') }}</span>
           </QBtn>
           <QBtn flat @click="dismissUpdate">
             <IconX />
-            <span>Later</span>
+            <span>{{ t('pwa.later') }}</span>
           </QBtn>
         </div>
       </div>
@@ -83,11 +85,11 @@ onMounted(() => {
     <div class="pwa-status-indicators">
       <div v-if="!isOnline" class="pwa-status-item offline">
         <IconSignal3g class="pwa-status-icon" />
-        <span class="pwa-status-text">Offline Mode</span>
+        <span class="pwa-status-text">{{ t('pwa.offlineMode') }}</span>
       </div>
       <div v-if="isStandalone" class="pwa-status-item standalone">
         <IconDeviceMobile class="pwa-status-icon" />
-        <span class="pwa-status-text">App Mode</span>
+        <span class="pwa-status-text">{{ t('pwa.appMode') }}</span>
       </div>
     </div>
   </div>

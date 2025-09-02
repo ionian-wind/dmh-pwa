@@ -40,7 +40,7 @@ watch(
 
 const handleSubmit = async () => {
   if (!editedModule.value.name) {
-    await alert('Name is required');
+    await alert(t('common.nameRequired'));
     return;
   }
   emit('submit', {
@@ -58,11 +58,11 @@ const handleCancel = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="module ? 'modules.edit' : 'modules.create'"
+    :title="module ? t('modules.edit') : t('modules.create')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="common.save"
-    cancelLabel="common.cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     modalId="module-editor-modal"
     @submit="handleSubmit"
     @cancel="handleCancel"

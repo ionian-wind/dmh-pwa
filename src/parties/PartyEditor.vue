@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import type { Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { alert } from '@/dialogs';
 
+const { t } = useI18n();
 const moduleStore = useModuleStore();
 
 const props = defineProps<{
@@ -48,7 +50,7 @@ watch(
 
 const handleSubmit = async () => {
   if (!editedParty.value.name) {
-    await alert('Name is required');
+    await alert(t('common.nameRequired'));
     return;
   }
   // Ensure moduleIds is always an array of strings
@@ -66,33 +68,33 @@ const handleCancel = () => {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="party ? 'Edit Party' : 'Create Party'"
+    :title="party ? t('parties.edit') : t('parties.create')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save Party"
-    cancelLabel="Cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     modalId="party-editor-modal"
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
     <div class="q-pa-md q-gutter-md">
       <div class="q-mb-md">
-        <h3>Basic Information</h3>
+        <h3>{{ t('editor.basicInformation') }}</h3>
         <div class="row q-col-gutter-md">
           <div class="col-12 col-md-6">
-            <label for="name">Name</label>
+            <label for="name">{{ t('common.name') }}</label>
             <QInput
               id="name"
               v-model="editedParty.name"
               type="text"
               required
-              placeholder="Party name"
+              :placeholder="t('parties.namePlaceholder')"
               dense
               outlined
             />
           </div>
           <div class="col-12 col-md-6">
-            <label for="module">Module</label>
+            <label for="module">{{ t('common.module') }}</label>
             <QSelect
               id="module"
               v-model="editedParty.moduleIds"
@@ -106,12 +108,12 @@ const handleCancel = () => {
               use-chips
               dense
               outlined
-              placeholder="Select modules"
+              placeholder="{{ t('partyEditor.placeholders.selectModules') }}"
             />
           </div>
         </div>
         <div class="q-mb-md">
-          <label for="description">Description</label>
+          <label for="description">{{ t('common.description') }}</label>
           <QInput
             id="description"
             v-model="editedParty.description"
@@ -124,12 +126,12 @@ const handleCancel = () => {
         </div>
       </div>
       <div class="q-mb-md">
-        <h3>Notes</h3>
+        <h3>{{ t('common.notes') }}</h3>
         <QInput
           v-model="editedParty.notes"
           type="textarea"
           :rows="3"
-          placeholder="Additional notes about the party"
+          placeholder="{{ t('partyEditor.placeholders.additionalNotes') }}"
           dense
           outlined
         />

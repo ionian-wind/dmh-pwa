@@ -68,9 +68,7 @@ async function handleCopy(party: Party) {
     :create-title="t('parties.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    @delete="handleDelete"
     @submit="handleSubmit"
-    @view="(party) => router.push(`/parties/${party.id}`)"
     @copy="handleCopy"
   />
 </template>

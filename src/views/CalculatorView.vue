@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { evaluate, create, all } from 'mathjs';
 import {
   IconTransform,
@@ -15,6 +16,7 @@ import {
   IconCopy,
 } from '@tabler/icons-vue';
 
+const { t } = useI18n();
 const math = create(all);
 
 const emit = defineEmits<{
@@ -207,8 +209,8 @@ onUnmounted(() => {
     <QCard style="min-width: 350px; min-height: 410px">
       <QToolbar class="justify-between">
         <QTabs class="q-mb-xs" v-model="tab">
-          <QTab name="calculate" title="Calculator"><IconCalculator /></QTab>
-          <QTab name="convert" title="Converter"><IconTransform /></QTab>
+          <QTab name="calculate" :title="t('calculator.calculator')"><IconCalculator /></QTab>
+          <QTab name="convert" :title="t('calculator.converter')"><IconTransform /></QTab>
         </QTabs>
 
         <QBtn flat clickable @click="emit('update:modelValue', false)"
@@ -286,7 +288,7 @@ onUnmounted(() => {
                     outlined
                     v-model="unitBase"
                     :options="unitBases"
-                    label="Physical base"
+                    :label="t('calculator.physicalBase')"
                     emit-value
                   />
                 </div>
@@ -296,7 +298,7 @@ onUnmounted(() => {
                     v-if="unitBase"
                     v-model="sourceUnit"
                     :options="unitMap[unitBase] || []"
-                    label="Unit"
+                    :label="t('calculator.unit')"
                   />
                 </div>
               </div>

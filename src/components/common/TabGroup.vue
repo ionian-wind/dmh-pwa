@@ -133,7 +133,7 @@ watch(
         v-if="addable"
         class="tab-add"
         @click="handleAddTab"
-        title="t('common.addNewTab')"
+        :title="t('common.addNewTab')"
       >
         +
       </button>

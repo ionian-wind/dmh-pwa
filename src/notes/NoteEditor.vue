@@ -79,7 +79,7 @@ const markdownEditorRef = ref<any>(null);
 
 const handleSubmit = async () => {
   if (!editedNote.value.title) {
-    await alert('Title is required');
+    await alert(t('editor.titleRequired'));
     return;
   }
   // Get latest markdown from editor instance (Milkdown/Crepe form integration)
@@ -101,8 +101,8 @@ const handleCancel = () => {
     :showSubmit="true"
     :showCancel="true"
     :showExpand="true"
-    submitLabel="Save Note"
-    cancelLabel="Cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     modalId="note-editor"
     @submit="handleSubmit"
     @cancel="handleCancel"

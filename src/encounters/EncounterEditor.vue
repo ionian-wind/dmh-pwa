@@ -64,12 +64,12 @@ const resetForm = () => {
 
 const handleSubmit = async () => {
   if (!editedEncounter.value.name) {
-    await alert('Name is required');
+    await alert(t('common.nameRequired'));
     return;
   }
 
   if (!editedEncounter.value.moduleId) {
-    await alert('Module is required');
+    await alert(t('common.moduleRequired'));
     return;
   }
 
@@ -97,11 +97,11 @@ defineExpose({
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="isEditing ? 'encounters.edit' : 'encounters.create'"
+    :title="isEditing ? t('encounters.edit') : t('encounters.create')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="common.save"
-    cancelLabel="common.cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     modalId="encounter-editor-modal"
     @submit="handleSubmit"
     @cancel="closeEditor"

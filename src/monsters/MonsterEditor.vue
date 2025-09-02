@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import type { Monster } from '@/types';
 import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { alert } from '@/dialogs';
 
+const { t } = useI18n();
 const moduleStore = useModuleStore();
 
 const props = defineProps<{
@@ -58,7 +60,7 @@ const resetForm = () => {
 
 const saveMonster = async () => {
   if (!editedMonster.value.name) {
-    await alert('Name is required');
+    await alert(t('common.nameRequired'));
     return;
   }
 
@@ -84,20 +86,20 @@ const moduleIdsProxy = computed<string[]>({
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="isEditing ? 'Edit Monster' : 'Add Monster'"
+    :title="isEditing ? t('monsters.edit') : t('monsters.create')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save Monster"
-    cancelLabel="Cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     modalId="monster-editor-modal"
     @submit="saveMonster"
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <h3>Basic Information</h3>
+      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="monster-name">Name</label>
+          <label for="monster-name">{{ t('common.name') }}</label>
           <QInput
             id="monster-name"
             v-model="editedMonster.name"
@@ -110,20 +112,20 @@ const moduleIdsProxy = computed<string[]>({
       </div>
     </div>
     <div class="form-section">
-      <h3>Modules</h3>
+      <h3>{{ t('monsterEditor.sections.modules') }}</h3>
       <div class="form-group">
-        <label for="monster-modules">Modules</label>
+        <label for="monster-modules">{{ t('monsterEditor.sections.modules') }}</label>
         <ModuleMultipleSelector
           id="monster-modules"
           v-model="moduleIdsProxy"
-          placeholder="No Modules"
+          placeholder="{{ t('monsterEditor.placeholders.noModules') }}"
         />
       </div>
     </div>
     <div class="form-section">
-      <h3>Notes</h3>
+      <h3>{{ t('monsterEditor.sections.notes') }}</h3>
       <div class="form-group">
-        <label for="monster-notes">Notes</label>
+        <label for="monster-notes">{{ t('monsterEditor.sections.notes') }}</label>
         <QInput
           id="monster-notes"
           v-model="editedMonster.notes"

@@ -11,14 +11,14 @@
       v-model="search"
       class="mention-insert-search"
       type="text"
-      :placeholder="'Search ' + kindLabel + 's...'"
+      :placeholder="t('mentions.searchPlaceholder', { kind: kindLabel })"
       @keydown.down.prevent="moveSelection(1)"
       @keydown.up.prevent="moveSelection(-1)"
       @keydown.enter.prevent="selectCurrentMention"
       @keydown.esc.prevent="onClose"
       autofocus
     />
-    <div class="mention-insert-header">Select {{ kindLabel }} to mention</div>
+    <div class="mention-insert-header">{{ t('mentions.selectToMention', { kind: kindLabel }) }}</div>
     <ul class="mention-insert-list">
       <li
         v-for="(mention, idx) in filteredMentions"
@@ -30,13 +30,14 @@
         <span class="mention-insert-title">{{ mention.title || mention.name }}</span>
         <span v-if="mention.id" class="mention-insert-id">({{ mention.id }})</span>
       </li>
-      <li v-if="filteredMentions.length === 0" class="mention-insert-empty">No results</li>
+      <li v-if="filteredMentions.length === 0" class="mention-insert-empty">{{ t('mentions.noResults') }}</li>
     </ul>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { StyleValue } from 'vue';
 
 const props = defineProps<{
@@ -47,17 +48,18 @@ const props = defineProps<{
   onClose: () => void;
 }>();
 
+const { t } = useI18n();
 const selectedIdx = ref(0);
 const search = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
 
 const kindLabel = computed(() => {
   switch (props.kind) {
-    case 'note': return 'Note';
-    case 'module': return 'Module';
-    case 'party': return 'Party';
-    case 'monster': return 'Monster';
-    case 'encounter': return 'Encounter';
+    case 'note': return t('notes.title');
+    case 'module': return t('modules.title');
+    case 'party': return t('parties.title');
+    case 'monster': return t('monsters.title');
+    case 'encounter': return t('encounters.title');
     default: return props.kind;
   }
 });

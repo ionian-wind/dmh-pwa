@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useModuleStore } from '@/stores/modules';
 import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const moduleStore = useModuleStore();
 
 onMounted(async () => {
@@ -16,7 +18,7 @@ const props = withDefaults(
   }>(),
   {
     modelValue: null,
-    placeholder: 'No Module',
+    placeholder: 'common.noModule',
     allowAnyModule: false,
   },
 );
@@ -34,9 +36,9 @@ const updateValue = (event: Event) => {
 const moduleOptions = computed(() => {
   const options = [];
   if (props.allowAnyModule) {
-    options.push({ id: 'any', name: 'Any Module', value: 'any' });
+    options.push({ id: 'any', name: t('common.anyModule'), value: 'any' });
   }
-  options.push({ id: 'none', name: 'No Module', value: 'none' });
+  options.push({ id: 'none', name: t('common.noModule'), value: 'none' });
   options.push(
     ...moduleStore.items.map((module) => ({
       id: module.id,
@@ -55,7 +57,7 @@ const moduleOptions = computed(() => {
     :options="
       moduleOptions.map((opt) => ({ label: opt.name, value: opt.value }))
     "
-    :label="props.placeholder"
+    :label="t(props.placeholder)"
     emit-value
     map-options
     dense

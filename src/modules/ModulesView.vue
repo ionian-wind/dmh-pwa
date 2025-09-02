@@ -127,9 +127,7 @@ function handleImportCancel() {
       :create-title="t('modules.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
-      @delete="handleDelete"
       @submit="handleSubmit"
-      @view="(module) => router.push(`/modules/${module.id}`)"
       @copy="handleCopy"
     >
       <template #actions>

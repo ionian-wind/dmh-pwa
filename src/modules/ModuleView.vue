@@ -486,7 +486,7 @@ async function saveEditBookmark() {
                         cropTitle(
                           bookmark.title ||
                             noteStore.getById(bookmark.noteId)?.title ||
-                            'Untitled',
+                            t('common.untitled'),
                         )
                       }}
                     </span>
@@ -494,7 +494,7 @@ async function saveEditBookmark() {
                       variant="light"
                       size="small"
                       class="bookmark-edit-btn"
-                      title="Edit bookmark"
+                      :title="t('common.editBookmark')"
                       @click.stop.prevent="openEditBookmark(bookmark)"
                     >
                       <IconPencil />
@@ -503,7 +503,7 @@ async function saveEditBookmark() {
                       variant="light"
                       size="small"
                       class="bookmark-delete-btn"
-                      title="Delete bookmark"
+                      :title="t('common.deleteBookmark')"
                       @click.stop.prevent="
                         bookmarkStore.removeBookmark(
                           bookmark.moduleId,
@@ -537,7 +537,7 @@ async function saveEditBookmark() {
       v-if="editingBookmark"
       :isOpen="!!editingBookmark"
       modalId="edit-bookmark-modal"
-      title="Edit Bookmark"
+      :title="t('common.editBookmark')"
       :showSubmit="true"
       :showCancel="true"
       @update:isOpen="
@@ -549,7 +549,7 @@ async function saveEditBookmark() {
       @cancel="closeEditBookmark"
     >
       <label>
-        Title:
+        {{ t('common.title') }}:
         <QInput
           dense
           outlined

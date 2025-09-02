@@ -89,9 +89,7 @@ async function handleCopy(encounter: Encounter) {
       :create-title="t('encounters.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
-      @delete="handleDelete"
       @submit="handleSubmit"
-      @view="(encounter) => router.push(`/encounters/${encounter.id}`)"
       @run-combat="handleRunCombat"
       @copy="handleCopy"
     />

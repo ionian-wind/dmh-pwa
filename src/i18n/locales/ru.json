@@ -29,7 +29,8 @@
     "export": "Экспортировать",
     "import": "Импортировать",
     "jukebox": "Музыка",
-    "roll": "Кубики"
+    "roll": "Кубики",
+    "calculator": "Калькулятор"
   },
   "navigation": {
     "home": "Главная",
@@ -81,6 +82,7 @@
     "create": "Создать группу",
     "edit": "Редактировать группу",
     "delete": "Удалить группу",
+    "namePlaceholder": "Название группы",
     "fields": {
       "name": "Имя",
       "description": "Описание",
@@ -160,6 +162,9 @@
     "create": "Создать схватку",
     "edit": "Редактировать схватку",
     "delete": "Удалить схватку",
+    "namePlaceholder": "Введите название схватки",
+    "descriptionPlaceholder": "Введите описание схватки",
+    "notesPlaceholder": "Введите заметки о схватке",
     "runCombat": "Начать бой",
     "linkMonsters": "Связать монстров",
     "unlink": "Отвязать",
@@ -190,6 +195,7 @@
       "title": "Монстры",
       "linkAction": "Привязать монстров",
       "linkModalTitle": "Привязка монстров к столкновению",
+      "none": "В этой схватке нет монстров",
       "noneAvailable": "Нет доступных монстров для привязки.",
       "setQuantity": "Установить количество монстров",
       "setQuantityFor": "Установить количество для {monsterName}"
@@ -215,6 +221,8 @@
     "create": "Создать модуль",
     "edit": "Редактировать модуль",
     "delete": "Удалить модуль",
+    "namePlaceholder": "Введите название модуля",
+    "descriptionPlaceholder": "Введите описание модуля",
     "fields": {
       "name": "Имя",
       "description": "Описание"
@@ -223,6 +231,7 @@
   "common": {
     "empty": "Элементы не найдены",
     "emptyModules": "Пока нет модулей. Создайте свой первый модуль, чтобы начать!",
+    "noModules": "Нет модулей",
     "emptyParties": "Пока нет групп. Создайте свою первую группу, чтобы начать!",
     "emptyEncounters": "Пока нет схваток. Создайте свою первую схватку, чтобы начать!",
     "emptyCharacters": "Пока нет персонажей. Создайте своего первого персонажа, чтобы начать!",
@@ -303,9 +312,19 @@
     "userMenu": "Меню пользователя",
     "tableOfContents": "Оглавление",
     "bookmarks": "Закладки",
+    "bookmark": "Закладка",
+    "editBookmark": "Редактировать закладку",
+    "deleteBookmark": "Удалить закладку",
     "noBookmarks": "Пока нет закладок.",
+    "untitled": "Без названия",
+    "title": "Заголовок",
     "name": "Имя",
-    "initiative": "Инициатива"
+    "nameRequired": "Имя обязательно",
+    "initiative": "Инициатива",
+    "quantity": "Количество",
+    "done": "Готово",
+    "module": "Модуль",
+    "moduleRequired": "Модуль обязателен"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",
@@ -356,7 +375,15 @@
     "clearLog": "Очистить журнал",
     "addParticipant": "Добавить участника",
     "addParticipantTitle": "Добавить участников в бой",
-    "allPartyCharactersAdded": "Все персонажи группы уже добавлены в бой."
+    "allPartyCharactersAdded": "Все персонажи группы уже добавлены в бой.",
+    "setInitiative": "Установить инициативу",
+    "setInitiativeFor": "Установить инициативу для {name}",
+    "initiativePlaceholder": "Введите значение инициативы",
+    "participants": "Участники",
+    "participantStatus": {
+      "postponed": "Отложен",
+      "actedThisRound": "Действовал в этом раунде"
+    }
   },
   "encounterCard": {
     "module": "Модуль:",
@@ -379,6 +406,7 @@
     "noPlaylists": "В этом модуле нет плейлистов"
   },
   "playlist": {
+    "title": "Плейлист",
     "none": "Плейлисты не найдены. Пожалуйста, создайте один.",
     "name": "Имя",
     "description": "Описание",
@@ -392,7 +420,8 @@
     "color": "Цвет",
     "icon": "Иконка (необязательно)",
     "add": "Добавить",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "confirmDelete": "Вы уверены, что хотите удалить этот тип заметки?"
   },
   "moduleTreeNode": {
     "untitled": "(без названия)",
@@ -404,6 +433,8 @@
     "description": "Описание",
     "notes": "Заметки",
     "title": "Заголовок",
+    "titleRequired": "Заголовок обязателен",
+    "contentPlaceholder": "Введите содержание здесь...",
     "module": "Модуль",
     "type": "Тип",
     "tags": "Теги"
@@ -417,7 +448,8 @@
     "encounter": "Схватка:",
     "monsters": "Монстры:",
     "selectCharacters": "Выберите персонажей",
-    "selectAtLeastOneCharacter": "Выберите хотя бы одного персонажа для начала боя."
+    "selectAtLeastOneCharacter": "Выберите хотя бы одного персонажа для начала боя.",
+    "startCombat": "Начать бой"
   },
   "language": {
     "english": "Английский",
@@ -465,7 +497,10 @@
     "placeholder": "Пишите здесь... Поддерживается Markdown"
   },
   "mentions": {
-    "empty": "Упоминаний нет."
+    "empty": "Упоминаний нет.",
+    "searchPlaceholder": "Поиск {kind}...",
+    "selectToMention": "Выберите {kind} для упоминания",
+    "noResults": "Нет результатов"
   },
   "modal": {
     "entityDetails": "Детали объекта",
@@ -501,5 +536,34 @@
       "running": "Идёт",
       "finished": "Завершён"
     }
+  },
+  "pwa": {
+    "updateAvailable": "Доступно обновление",
+    "updateMessage": "Доступна новая версия Owlbear's DMH.",
+    "updateNow": "Обновить сейчас",
+    "later": "Позже",
+    "offlineMode": "Автономный режим",
+    "appMode": "Режим приложения"
+  },
+  "importValidation": {
+    "title": "Результаты проверки импорта",
+    "treeMatches": "Структура дерева в module.json соответствует tree.json",
+    "treeMismatch": "Структура дерева в module.json не соответствует tree.json",
+    "missingNoteIds": "Отсутствующие noteIds в папке заметок:",
+    "andMore": "...и еще {count}",
+    "allNoteIdsPresent": "Все noteIds в дереве имеют соответствующие файлы заметок",
+    "orphanedNoteFiles": "Заброшенные файлы заметок (не упоминаются в дереве):",
+    "allNoteFilesReferenced": "Все файлы заметок упоминаются в дереве"
+  },
+  "calculator": {
+    "calculator": "Калькулятор",
+    "converter": "Конвертер",
+    "physicalBase": "Физическая основа",
+    "unit": "Единица"
+  },
+  "jukebox": {
+    "shuffle": "Перемешать",
+    "repeat": "Повтор",
+    "confirmDelete": "Вы уверены, что хотите удалить \"{title}\"?"
   }
 }

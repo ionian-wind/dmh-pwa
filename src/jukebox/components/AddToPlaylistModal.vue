@@ -42,10 +42,10 @@ async function togglePlaylist(playlist: JukeboxPlaylist, value: boolean) {
     :isOpen="modelValue"
     modalId="add-to-playlist"
     @update:isOpen="$emit('update:modelValue', $event)"
-    title="{{ t('common.addToPlaylist') }}"
+    :title="t('common.addToPlaylist')"
     :showSubmit="false"
     :showCancel="true"
-    cancelLabel="Done"
+    :cancelLabel="t('common.done')"
     @cancel="$emit('update:modelValue', false)"
   >
     <div v-if="playlists.length === 0">

@@ -600,8 +600,8 @@ function handleAddParticipants() {
       :title="t('combat.setInitiative')"
       :showSubmit="true"
       :showCancel="true"
-      submitLabel="t('common.save')"
-      cancelLabel="t('common.cancel')"
+      :submitLabel="t('common.save')"
+      :cancelLabel="t('common.cancel')"
     >
       <div class="initiative-modal-content">
         <p v-if="editingParticipant">
@@ -630,8 +630,8 @@ function handleAddParticipants() {
       modal-id="add-participant-modal"
       :show-submit="true"
       :show-cancel="true"
-      submit-label="t('common.add')"
-      cancel-label="t('common.cancel')"
+      :submit-label="t('common.add')"
+      :cancel-label="t('common.cancel')"
     >
       <div v-if="availableCharactersToAdd.length === 0" class="empty-state">
         <p>{{ t('combat.allPartyCharactersAdded') }}</p>

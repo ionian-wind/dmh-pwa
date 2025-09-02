@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import TrackInfo from '@/jukebox/components/TrackInfo.vue';
 import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
@@ -23,6 +24,7 @@ const props = defineProps<{
   showArtwork?: boolean;
   modal?: boolean;
 }>();
+const { t } = useI18n();
 const playerStore = useJukeboxPlayerStore();
 
 const showAnimatedBg = computed(
@@ -51,18 +53,7 @@ const gradientStyle = useAnimatedGradient(
 // Volume popup open state
 const isVolumePopupOpen = ref(false);
 
-function handleVolumeBarClick(event: MouseEvent) {
-  const bar = event.currentTarget as HTMLElement;
-  const rect = bar.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const percent = Math.min(Math.max(x / rect.width, 0), 1);
-  playerStore.setVolume(percent);
-}
 
-function handleVolumeBarDrag(event: MouseEvent) {
-  if (event.buttons !== 1) return;
-  handleVolumeBarClick(event);
-}
 
 function handleVolumeWheel(event: WheelEvent) {
   event.preventDefault();
@@ -138,15 +129,11 @@ const progress = computed(() => playerStore.currentTime / playerStore.duration);
 // Add hover state for progress bar
 const isProgressHovered = ref(false);
 
-// Log and seek to potential progress value on click
-function seekToPotentialProgressValue(event: MouseEvent) {
-  const bar = event.currentTarget as HTMLElement;
-  const rect = bar.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const percent = Math.min(Math.max(x / rect.width, 0), 1);
+// Handle progress change from slider
+function handleProgressChange(value: number) {
+  if (value === null) return;
   const duration = playerStore.duration || 1;
-  const time = percent * duration;
-
+  const time = value * duration;
   playerStore.seek(time);
 }
 </script>
@@ -181,13 +168,17 @@ function seekToPotentialProgressValue(event: MouseEvent) {
         @mouseenter="isProgressHovered = true"
         @mouseleave="isProgressHovered = false"
       >
-        <QLinearProgress
+        <QSlider
+          :model-value="progress"
+          :min="0"
+          :max="1"
+          :step="0.001"
+          :label="false"
+          :markers="false"
+          :color="isProgressHovered ? 'primary' : 'info'"
           :size="isProgressHovered ? 'lg' : 'sm'"
-          :value="progress"
-          color="info"
-          :instant-feedback="true"
           class="progress-bar-transition"
-          @click="seekToPotentialProgressValue"
+          @update:model-value="(value) => value !== null && handleProgressChange(value)"
         />
       </div>
       <div class="progress-bar-time time-duration">
@@ -199,21 +190,21 @@ function seekToPotentialProgressValue(event: MouseEvent) {
       <QBtnGroup flat class="playback-options">
         <QBtn
           flat
-          :class="{ disabled: !playerStore.shuffle }"
+          :class="{ 'text-blue-grey-4': !playerStore.shuffle }"
           @click="playerStore.toggleShuffle"
-          title="Shuffle"
+          :title="t('jukebox.shuffle')"
         >
           <IconShuffle />
         </QBtn>
         <QBtn
           flat
           :class="{
-            disabled:
+            'text-blue-grey-4':
               playerStore.repeatMode !== 'list' &&
               playerStore.repeatMode !== 'track',
           }"
           @click="playerStore.cycleRepeatMode"
-          title="Repeat"
+          :title="t('jukebox.repeat')"
         >
           <IconRepeat v-if="playerStore.repeatMode === 'off'" />
           <IconRepeat v-else-if="playerStore.repeatMode === 'list'" />
@@ -272,17 +263,20 @@ function seekToPotentialProgressValue(event: MouseEvent) {
           >
             <div
               class="volume-popup q-pa-sm"
-              style="width: 120px"
+              style="width: 140px"
               @wheel.prevent="handleVolumeWheel"
             >
-              <QLinearProgress
-                :instant-feedback="true"
-                :value="playerStore.volume"
+              <QSlider
+                :model-value="playerStore.volume"
+                :min="0"
+                :max="1"
+                :step="0.01"
+                :label="false"
+                :markers="false"
                 color="info"
                 size="md"
                 class="volume-bar"
-                @click="handleVolumeBarClick"
-                @mousemove="handleVolumeBarDrag"
+                @update:model-value="(value) => value !== null && playerStore.setVolume(value)"
               />
             </div>
           </QPopupProxy>
@@ -315,5 +309,51 @@ function seekToPotentialProgressValue(event: MouseEvent) {
 
 .jukebox-player-modal .player-controls .playback-controls {
   order: -1;
+}
+
+/* QSlider customizations */
+.progress-bar-seek .q-slider {
+  width: 100%;
+}
+
+.volume-bar.q-slider {
+  width: 100%;
+}
+
+/* Ensure sliders have proper spacing and alignment */
+.q-slider__track-container {
+  margin: 0;
+}
+
+.q-slider__thumb {
+  transition: all 0.2s ease;
+}
+
+.q-slider:hover .q-slider__thumb {
+  transform: scale(1.1);
+}
+
+/* Fix volume popup scrollbar issue */
+.volume-popup {
+  overflow: hidden;
+  padding: 8px 4px;
+}
+
+.volume-popup .q-slider {
+  overflow: visible;
+  width: 100%;
+}
+
+.volume-popup .q-slider__track-container {
+  overflow: visible;
+}
+
+.volume-popup .q-slider__thumb {
+  overflow: visible;
+}
+
+/* Ensure popup has enough space for slider */
+.volume-popup .q-popup-proxy {
+  overflow: hidden;
 }
 </style>

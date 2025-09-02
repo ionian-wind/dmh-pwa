@@ -6,7 +6,6 @@ import {
   computed,
   watch,
   onBeforeUnmount,
-  markRaw,
 } from 'vue';
 import {
   pickAudioFiles,
@@ -33,6 +32,7 @@ import { useI18n } from 'vue-i18n';
 import { debugError } from '@/utils/debug';
 import PlaylistList from './components/PlaylistList.vue';
 import { ComponentInjection } from '@/types';
+import { confirm } from '@/dialogs';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -51,7 +51,16 @@ if (!configStore) {
 const tracks = tracksStore.items;
 
 // configStore.jukeboxActivePlaylistId is always a Ref<string|null>, never null. Only .value can be null.
-const selectedPlaylistId = ref<string | null>(null);
+  const selectedPlaylistId = ref<string | null>(null);
+
+// Add watcher to sync with configStore
+watch(
+  () => configStore.jukeboxActivePlaylistId,
+  (newPlaylistId) => {
+    selectedPlaylistId.value = newPlaylistId;
+  },
+  { immediate: true }
+);
 
 const isAddingTracks = ref(false);
 const isAddToPlaylistModalOpen = ref(false);
@@ -66,37 +75,39 @@ const playerStore = useJukeboxPlayerStore();
 
 function playTrackFromPlaylist(track: JukeboxTrack) {
   // When a track is played, update configStore to match the current selected playlist
-  configStore.jukeboxActivePlaylistId = selectedPlaylistId.value;
+  // configStore.jukeboxActivePlaylistId = selectedPlaylistId.value;
   playerStore.playTrackFromPlaylist(track);
 }
 
 async function removeTrack(track: JukeboxTrack) {
-  await playerStore.removeTrackFromQueue(track);
+  if (await confirm(t('jukebox.confirmDelete', { title: track.title || track.fileId }))) {
+    await playerStore.removeTrackFromQueue(track);
 
-  const playlistsToUpdate = playlistsStore.items.value.filter(
-    (p: JukeboxPlaylist) => p.trackIds.includes(track.id),
-  );
+    const playlistsToUpdate = playlistsStore.items.value.filter(
+      (p: JukeboxPlaylist) => p.trackIds.includes(track.id),
+    );
 
-  await Promise.all(
-    playlistsToUpdate.map((p) =>
-      playlistsStore.update(p.id, {
-        trackIds: p.trackIds.filter((tid: string) => tid !== track.id),
-      }),
-    ),
-  );
+    await Promise.all(
+      playlistsToUpdate.map((p) =>
+        playlistsStore.update(p.id, {
+          trackIds: p.trackIds.filter((tid: string) => tid !== track.id),
+        }),
+      ),
+    );
 
-  await tracksStore.remove(track.id);
+    await tracksStore.remove(track.id);
 
-  if (track.fileId) {
-    try {
-      await deleteJukeboxFile(track.fileId);
-    } catch (e) {
-      debugError(`Failed to delete file handle for track ${track.id}:`, e);
+    if (track.fileId) {
+      try {
+        await deleteJukeboxFile(track.fileId);
+      } catch (e) {
+        debugError(`Failed to delete file handle for track ${track.id}:`, e);
+      }
     }
-  }
-  const trackIndex = draggableTracks.value.findIndex((t) => t.id === track.id);
-  if (trackIndex > -1) {
-    draggableTracks.value.splice(trackIndex, 1);
+    const trackIndex = draggableTracks.value.findIndex((t) => t.id === track.id);
+    if (trackIndex > -1) {
+      draggableTracks.value.splice(trackIndex, 1);
+    }
   }
 }
 

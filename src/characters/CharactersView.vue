@@ -79,9 +79,7 @@ async function handleCopy(character: PlayerCharacter) {
     :create-title="t('characters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    @delete="handleDelete"
     @submit="handleSubmit"
-    @view="(character) => router.push(`/characters/${character.id}`)"
     @copy="handleCopy"
   />
 </template>

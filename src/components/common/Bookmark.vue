@@ -30,7 +30,7 @@ onMounted(() => bookmarkStore.load());
     variant="none"
     :class="{ marked }"
     @click="handleClick"
-    title="Bookmark"
+    :title="t('common.bookmark')"
   >
     <IconBookmark />
   </Button>

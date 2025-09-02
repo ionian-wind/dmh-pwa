@@ -8,13 +8,14 @@ import type { JukeboxPlaylist } from '@/jukebox/types';
 import draggable from 'vuedraggable';
 
 import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
+import { debug } from '@/utils/debug';
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const configStore = useConfigStore();
 const playlists = playlistsStore.items;
 
 const filteredPlaylists = computed(() => playlists.value || []);
-const selectedPlaylistId = ref<string | null>(null);
+const selectedPlaylistId = ref<string | null>(configStore.jukeboxActivePlaylistId);
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
@@ -24,6 +25,14 @@ watch(
   (newPlaylists) =>
     updateSortedPlaylists(newPlaylists, selectedPlaylistId.value),
   { immediate: true, deep: true },
+);
+
+watch(
+  () => configStore.jukeboxActivePlaylistId,
+  (newPlaylistId) => {
+    selectedPlaylistId.value = newPlaylistId;
+  },
+  { immediate: true }
 );
 
 function updateSortedPlaylists(
@@ -60,7 +69,9 @@ function openPlaylistModal(playlist: JukeboxPlaylist | null) {
 }
 
 function setSelectedPlaylist(playlistId: string | null) {
+  debug(playlistId);
   selectedPlaylistId.value = playlistId ?? null;
+  configStore.jukeboxActivePlaylistId = playlistId; // Add this line
 }
 
 async function removePlaylist(playlistId: string) {

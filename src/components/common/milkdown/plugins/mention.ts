@@ -244,16 +244,16 @@ const iconSwords = `
 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-swords"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11z" /><path d="M5 13l6 6" /><path d="M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365" /><path d="M10 5.5l-2 -2.5h-5v5l3 2.5" /></svg>`;
 
 const mentionKinds = [
-  { kind: 'note', label: 'Note', icon: iconNote },
-  { kind: 'module', label: 'Module', icon: iconBook },
-  { kind: 'party', label: 'Party', icon: iconUsers },
-  { kind: 'monster', label: 'Monster', icon: iconGhost },
-  { kind: 'encounter', label: 'Encounter', icon: iconSwords },
+  { kind: 'note', label: 'notes.title', icon: iconNote },
+  { kind: 'module', label: 'modules.title', icon: iconBook },
+  { kind: 'party', label: 'parties.title', icon: iconUsers },
+  { kind: 'monster', label: 'monsters.title', icon: iconGhost },
+  { kind: 'encounter', label: 'encounters.title', icon: iconSwords },
 ];
 
 // Restore buildMentionToolbar for use with buildToolbar callback in Crepe toolbar config
 export const buildMentionToolbar = (groupBuilder: any) => {
-  const mentionGroup = groupBuilder.addGroup('mentions', 'Mentions');
+  const mentionGroup = groupBuilder.addGroup('mentions', 'common.mentions');
   mentionKinds.forEach(({ kind, label, icon }) => {
     mentionGroup.addItem(kind, {
       icon,
@@ -265,7 +265,7 @@ export const buildMentionToolbar = (groupBuilder: any) => {
 
 // Build mentions menu for BlockEdit feature
 export const buildMentionMenu = (builder: any) => {
-  const mentionGroup = builder.addGroup('mentions', 'Mentions');
+  const mentionGroup = builder.addGroup('mentions', 'common.mentions');
   mentionKinds.forEach(({ kind, label, icon }) => {
     mentionGroup.addItem(kind, {
       label,

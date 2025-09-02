@@ -58,9 +58,7 @@ function handleView(monster: Monster) {
     :create-title="t('monsters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    @delete="handleDelete"
     @submit="handleSubmit"
-    @view="handleView"
     @copy="handleCopy"
   />
 </template>

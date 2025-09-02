@@ -40,6 +40,7 @@ const albumArtStyle = computed(() => {
     class="track-item"
     :class="{ 'is-selected': isSelected, 'is-playing': isPlaying }"
     :style="{ '--track-item-color': trackColor }"
+    clickable
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >

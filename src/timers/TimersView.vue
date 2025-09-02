@@ -75,7 +75,6 @@ function handleReset(timer: Timer) {
     :editor-props="editorProps"
     :show-search="false"
     view-style="simple-list"
-    @delete="handleDelete"
     @submit="handleSubmit"
     @start="handleStart"
     @stop="handleStop"

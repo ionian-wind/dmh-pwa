@@ -41,7 +41,7 @@ const handleCreateType = async () => {
 const handleDeleteType = async (noteType: NoteType) => {
   if (
     noteType.id &&
-    await confirm('Are you sure you want to delete this note type?')
+    await confirm(t('noteTypeSelector.confirmDelete'))
   ) {
     await noteTypeStore.remove(noteType.id);
     return true;

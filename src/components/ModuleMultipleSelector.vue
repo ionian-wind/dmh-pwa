@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useModuleStore } from '@/stores/modules';
 import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const moduleStore = useModuleStore();
 onMounted(async () => {
   await moduleStore.load();
@@ -13,7 +15,7 @@ const props = withDefaults(
   }>(),
   {
     modelValue: () => [],
-    placeholder: 'No Modules',
+    placeholder: 'common.noModules',
   },
 );
 
@@ -30,7 +32,7 @@ const updateValue = (event: Event) => {
 };
 
 const moduleOptions = computed(() => [
-  { id: 'none', name: 'No Module', value: 'none' },
+  { id: 'none', name: t('common.noModule'), value: 'none' },
   ...moduleStore.items.map((module) => ({
     id: module.id,
     name: module.name,
@@ -53,7 +55,7 @@ const moduleOptions = computed(() => [
     dense
     outlined
     class="module-multiselect"
-    :label="props.placeholder"
+    :label="t(props.placeholder)"
   />
 </template>
 

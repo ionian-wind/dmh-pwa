@@ -72,11 +72,11 @@ function handleCancel() {
 <template>
   <BaseModal
     :isOpen="isOpen"
-    :title="isEditing ? 'Edit Character' : 'Create Character'"
+    :title="isEditing ? t('characters.edit') : t('characters.create')"
     :showSubmit="true"
     :showCancel="true"
-    submitLabel="Save Character"
-    cancelLabel="Cancel"
+    :submitLabel="t('common.save')"
+    :cancelLabel="t('common.cancel')"
     modalId="character-editor"
     @submit="handleSubmit"
     @cancel="handleCancel"
@@ -97,7 +97,7 @@ function handleCancel() {
         </div>
       </div>
       <div class="q-mb-md">
-        <label>Notes</label>
+        <label>{{ t('common.notes') }}</label>
         <QScrollArea style="height: 300px; width: 100%">
           <QInput
             :type="'textarea'"
