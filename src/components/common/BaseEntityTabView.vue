@@ -25,6 +25,7 @@ interface Props {
   sidePanelVisible?: boolean;
   tabs: Tab[];
   modelValue?: string;
+  headerButtons?: any[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -34,6 +35,7 @@ const props = withDefaults(defineProps<Props>(), {
   isEditing: false,
   sidePanelVisible: true,
   hideHeader: false,
+  headerButtons: [],
   tabs: () => [],
 });
 
@@ -108,12 +110,6 @@ function handleTabAdd() {
     </template>
     <template v-if="$slots.editor" #editor>
       <slot name="editor" />
-    </template>
-    <template v-if="$slots.sub" #sub>
-      <slot name="sub" />
-    </template>
-    <template v-if="$slots.actions" #actions>
-      <slot name="actions" />
     </template>
   </BaseEntityView>
 </template>

@@ -80,7 +80,7 @@ function playTrackFromPlaylist(track: JukeboxTrack) {
 }
 
 async function removeTrack(track: JukeboxTrack) {
-  if (await confirm(t('jukebox.confirmDelete', { title: track.title || track.fileId }))) {
+  if (await confirm(t('common.confirmDelete', { title: track.title || track.fileId }))) {
     await playerStore.removeTrackFromQueue(track);
 
     const playlistsToUpdate = playlistsStore.items.value.filter(

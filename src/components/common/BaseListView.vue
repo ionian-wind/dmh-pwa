@@ -109,16 +109,14 @@ onBeforeUnmount(() => {
         v-model="localItems"
         item-key="id"
         @end="handleSortEnd"
-        tag="ul"
+        tag="div"
         class="q-list simple-list"
       >
         <template #item="{ element: item }">
-          <QItem>
-            <component
-              :is="cardComponent"
-              v-bind="cardPropsWithDraggable(item)"
-            />
-          </QItem>
+          <component
+            :is="cardComponent"
+            v-bind="cardPropsWithDraggable(item)"
+          />
         </template>
       </VueDraggable>
       <div v-else>
@@ -127,63 +125,10 @@ onBeforeUnmount(() => {
           class="q-gutter-md row items-stretch"
         >
           <div
-            v-for="item in items as any[]"
+            v-for="item in items"
             :key="item.id"
             class="col-12 col-sm-6 col-md-4 col-lg-3"
           >
-            <component
-              :is="cardComponent"
-              v-bind="cardPropsWithDraggable(item)"
-              @view="$emit('view', item)"
-              @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
-              @delete="
-                () => {
-                  handleDelete(item);
-                  $emit('delete', item);
-                }
-              "
-              @tag-click="$emit('tag-click', $event)"
-              @copy="$emit('copy', item)"
-            />
-          </div>
-        </div>
-        <div
-          v-else-if="viewStyle === 'grid'"
-          class="q-gutter-md row items-stretch"
-        >
-          <div
-            v-for="item in items as any[]"
-            :key="item.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <component
-              :is="cardComponent"
-              v-bind="cardPropsWithDraggable(item)"
-              @view="$emit('view', item)"
-              @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
-              @delete="
-                () => {
-                  handleDelete(item);
-                  $emit('delete', item);
-                }
-              "
-              @tag-click="$emit('tag-click', $event)"
-              @copy="$emit('copy', item)"
-            />
-          </div>
-        </div>
-        <QList v-else :key="'static'" class="simple-list">
-          <div v-for="item in items as any[]" :key="item.id">
             <component
               :is="cardComponent"
               v-bind="cardPropsWithDraggable(item)"
@@ -199,6 +144,48 @@ onBeforeUnmount(() => {
               @copy="$emit('copy', item)"
             />
           </div>
+        </div>
+        <div
+          v-else-if="viewStyle === 'grid'"
+          class="q-gutter-md row items-stretch"
+        >
+          <div
+            v-for="item in items"
+            :key="item.id"
+            class="col-12 col-sm-6 col-md-4 col-lg-3"
+          >
+            <component
+              :is="cardComponent"
+              v-bind="cardPropsWithDraggable(item)"
+              @view="$emit('view', item)"
+              @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+              @delete="$emit('delete', item)"
+              @tag-click="$emit('tag-click', $event)"
+              @copy="$emit('copy', item)"
+            />
+          </div>
+        </div>
+        <QList separator v-else :key="'static'" class="simple-list">
+          <component
+            v-for="item in items" :key="item.id"
+            :is="cardComponent"
+            v-bind="cardPropsWithDraggable(item)"
+            @view="$emit('view', item)"
+            @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+            @delete="$emit('delete', item)"
+            @tag-click="$emit('tag-click', $event)"
+            @copy="$emit('copy', item)"
+          />
         </QList>
       </div>
     </div>

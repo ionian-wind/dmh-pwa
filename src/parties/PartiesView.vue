@@ -38,7 +38,7 @@ function handleEdit(party: Party) {
 }
 
 async function handleDelete(party: Party) {
-  if (party.id && await confirm(`Are you sure you want to delete ${party.name}?`)) {
+  if (party.id && await confirm(t('common.confirmDelete', { title: party.name }))) {
     await partyStore.remove(party.id);
     return true;
   }

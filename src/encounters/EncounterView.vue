@@ -312,6 +312,9 @@ onBeforeUnmount(() => {
       :loading="loading"
       :tabs="tabs"
       v-model="activeTab"
+      :headerButtons="[
+        { color: 'warning', title: 'common.runCombat', event: handleRunCombat, icon: IconSwords }
+      ]"
     >
       <template #sub>
         <div v-if="encounter?.moduleId" class="module-link">
@@ -319,17 +322,6 @@ onBeforeUnmount(() => {
             {{ getModuleName(encounter.moduleId) }}
           </router-link>
         </div>
-      </template>
-      <template #actions>
-        <QBtn
-          flat
-          v-if="encounter"
-          @click="handleRunCombat"
-          color="'warning'"
-          :title="t('common.runCombat')"
-        >
-          <IconSwords />
-        </QBtn>
       </template>
       <template #information>
         <section class="details-section">
@@ -392,7 +384,7 @@ onBeforeUnmount(() => {
               <tr>
                 <th>{{ t('encounters.combats.party') }}</th>
                 <th>{{ t('encounters.combats.created') }}</th>
-                <th>{{ t('encounters.combats.status') }}</th>
+                <th>{{ t('encounters.combats.statusTitle') }}</th>
                 <th>{{ t('encounters.combats.actions') }}</th>
               </tr>
             </thead>
@@ -407,7 +399,7 @@ onBeforeUnmount(() => {
                       getStatusBadgeClass(combat.status),
                     ]"
                   >
-                    {{ t(`combats.status.${combat.status}`) }}
+                    {{ t(`encounters.combats.status.${combat.status}`) }}
                   </span>
                 </td>
                 <td>

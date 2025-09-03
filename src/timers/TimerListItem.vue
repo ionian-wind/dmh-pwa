@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Button from '@/components/form/Button.vue';
 import {
   IconPlayerPlay,
   IconX,
@@ -11,6 +10,7 @@ import {
 } from '@tabler/icons-vue';
 import type { Timer } from '@/types';
 import { useTimerStore } from '@/stores/timers';
+import {formatTime} from "@/jukebox/utils";
 
 const timerStore = useTimerStore();
 const props = defineProps<{ timer: Timer }>();
@@ -28,18 +28,28 @@ const statusLabel = computed(() => {
   }
 });
 
-const remaining = ref<string | null>(null);
+const time = (elapsed = 0) => formatTime(Math.max(props.timer.duration - elapsed, 0) / 1000)
+
+const remaining = ref<string>(time());
 
 watch(
   () => timerStore.now,
   (now) => {
     if (props.timer.status === 'running') {
-      const elapsed = now - props.timer.startedAt!;
-      const left = Math.max(props.timer.duration - elapsed, 0);
-      const min = Math.floor(left / 60000);
-      const sec = Math.floor((left % 60000) / 1000);
+      remaining.value = time(now - props.timer.startedAt!);
+    }
+  },
+  { immediate: true },
+);
 
-      remaining.value = `${min}:${sec.toString().padStart(2, '0')}`;
+watch(
+  () => props.timer.status,
+  (status) => {
+    if ([
+      'inactive',
+      'finished'
+    ].includes(status)) {
+      remaining.value = time();
     }
   },
   { immediate: true },
@@ -48,7 +58,7 @@ watch(
 
 <template>
   <QItem>
-    <QItemSection>
+    <QItemSection avatar>
       <QBtn
         flat
         v-if="props.timer.status === 'inactive'"
@@ -87,13 +97,7 @@ watch(
         </span>
         <span v-else>
           {{ t('timers.duration') }}:
-          <b
-            >{{ Math.floor(props.timer.duration / 60000) }}:{{
-              ((props.timer.duration % 60000) / 1000)
-                .toString()
-                .padStart(2, '0')
-            }}</b
-          >
+          <b>{{ remaining }}</b>
         </span>
       </div>
     </QItemSection>
@@ -102,23 +106,25 @@ watch(
         statusLabel
       }}</span>
     </QItemSection>
-    <QItemSection>
-      <QBtn
-        flat
-        :color="'positive'"
-        :title="t('timers.edit')"
-        @click="$emit('edit')"
-      >
-        <IconEdit />
-      </QBtn>
-      <QBtn
-        flat
-        :color="'negative'"
-        :title="t('timers.delete')"
-        @click="$emit('delete')"
-      >
-        <IconTrash />
-      </QBtn>
+    <QItemSection side>
+      <QBtnGroup flat>
+        <QBtn
+          flat
+          :color="'positive'"
+          :title="t('timers.edit')"
+          @click="$emit('edit')"
+        >
+          <IconEdit />
+        </QBtn>
+        <QBtn
+          flat
+          :color="'negative'"
+          :title="t('timers.delete')"
+          @click="$emit('delete')"
+        >
+          <IconTrash />
+        </QBtn>
+      </QBtnGroup>
     </QItemSection>
   </QItem>
 </template>

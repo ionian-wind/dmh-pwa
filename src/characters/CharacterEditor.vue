@@ -81,34 +81,33 @@ function handleCancel() {
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
-    <div class="q-pa-md q-gutter-md">
-      <div class="q-mb-md">
-        <div class="row q-col-gutter-md">
-          <div class="col-12">
-            <QInput
-              :label="t('characters.fields.name')"
-              dense
-              outlined
-              v-model="editedCharacter.name"
-              type="text"
-              required
-            />
-          </div>
-        </div>
-      </div>
-      <div class="q-mb-md">
-        <label>{{ t('common.notes') }}</label>
-        <QScrollArea style="height: 300px; width: 100%">
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="form-group">
           <QInput
-            :type="'textarea'"
-            v-model="editedCharacter.notes"
-            :rows="5"
-            autogrow
-            borderless
-            dense
+            :label="t('characters.fields.name')"
+            id="encounter-name"
+            v-model="editedCharacter.name"
+            type="text"
+            required
             outlined
           />
-        </QScrollArea>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="form-group">
+          <QInput
+            :label="t('common.notes')"
+            id="character-description"
+            v-model="editedCharacter.notes"
+            type="textarea"
+            :rows="5"
+            autogrow
+            outlined
+          />
+        </div>
       </div>
     </div>
   </BaseModal>

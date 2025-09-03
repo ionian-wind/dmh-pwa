@@ -20,6 +20,8 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 
 const props = defineProps<{
+  // Toggle between visual editor and raw markdown
+  isWYSIWYGMode?: boolean;
   modelValue: string;
   placeholder?: string;
   rows?: number;
@@ -34,9 +36,6 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 const attrs = useAttrs();
 
-// Toggle between visual editor and raw markdown
-const isWYSIWYGMode = ref(true);
-
 const modelValueProxy = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
@@ -44,7 +43,7 @@ const modelValueProxy = computed({
 
 function getCurrentMarkdown() {
   if (
-    !isWYSIWYGMode.value &&
+    !props.isWYSIWYGMode.value &&
     milkdownWrapperRef.value &&
     milkdownWrapperRef.value.getMarkdown
   ) {
@@ -67,16 +66,8 @@ defineExpose({ getMarkdown });
       {{ t(props.label) }}
     </label>
 
-    <!-- Toggle button for edit mode -->
-    <div class="editor-toggle">
-      <QToggle v-model="isWYSIWYGMode">
-        <span v-if="!isWYSIWYGMode">{{ t('markdownEditor.rawMode') }}</span>
-        <span v-else>{{ t('markdownEditor.visualMode') }}</span>
-      </QToggle>
-    </div>
-
     <!-- Visual Editor (MilkdownCrepe) -->
-    <QCard flat bordered v-if="isWYSIWYGMode">
+    <QCard flat bordered v-if="props.isWYSIWYGMode">
       <QCardSection>
         <MilkdownEditorWrapper
           ref="milkdownWrapperRef"

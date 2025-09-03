@@ -413,6 +413,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     }
 
     if (!hasNextTrack.value) {
+      isPlaying.value = false;
+      resetDuration();
       return;
     }
 

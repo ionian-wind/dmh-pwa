@@ -1,11 +1,28 @@
 <script setup lang="ts">
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
-import { PropType } from 'vue';
+import {onMounted, PropType} from 'vue';
 
 const { t } = useI18n();
 
 const props = defineProps({
+  buttons: {
+    type: Array as PropType<{
+      icon: any;
+      color: string;
+      title: string;
+      disabled?: boolean;
+      event: (
+        evt: Event,
+        go?: (opts?: {
+          to?: any;
+          replace?: boolean;
+          returnRouterError?: boolean;
+        }) => Promise<any>,
+      ) => void;
+    }[]>,
+    default: [],
+  },
   title: {
     type: String,
     default: '',
@@ -38,7 +55,7 @@ const props = defineProps({
   },
   editTitle: {
     type: String,
-    default: 'Create',
+    default: 'Edit',
   },
   onEdit: {
     type: Function as PropType<
@@ -60,7 +77,7 @@ const props = defineProps({
   },
   deleteTitle: {
     type: String,
-    default: 'Create',
+    default: 'Delete',
   },
   onDelete: {
     type: Function as PropType<
@@ -94,12 +111,28 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['create', 'update:searchQuery']);
+
+onMounted(() => console.log(props.buttons));
 </script>
 
 <template>
   <QToolbarTitle v-if="props.title">
     {{ props.title }}
   </QToolbarTitle>
+
+  <QBtnGroup v-if="props.buttons.length > 0">
+    <QBtn
+      v-for="(btn, index) in props.buttons"
+      
+      :color="btn.color"
+      @click="btn.event"
+      :title="t(btn.title)"
+      :aria-label="t(btn.title)"
+      :disable="btn.disabled"
+    >
+      <component :is="btn.icon"></component>
+    </QBtn>
+  </QBtnGroup>
 
   <QBtnGroup>
     <QBtn

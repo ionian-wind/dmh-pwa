@@ -107,58 +107,48 @@ defineExpose({
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="encounter-name">{{ t('common.name') }}</label>
           <QInput
             id="encounter-name"
+            :label="t('encounters.fields.name')"
             v-model="editedEncounter.name"
             type="text"
             required
-            :placeholder="t('encounters.namePlaceholder')"
-            dense
             outlined
           />
         </div>
         <div class="form-group">
-          <label for="encounter-module">{{ t('editor.module') }}</label>
           <ModuleSelector
             id="encounter-module"
             v-model="editedEncounter.moduleId"
-            :placeholder="t('common.noModule')"
+            :placeholder="'encounters.fields.module'"
             :allowAnyModule="false"
             required
+          />
+        </div>
+        <div class="form-group">
+          <QInput
+            :label="t('encounters.fields.description')"
+            id="encounter-description"
+            v-model="editedEncounter.description"
+            type="textarea"
+            :rows="5"
+            autogrow
+            outlined
           />
         </div>
       </div>
     </div>
     <div class="form-section">
-      <h3>{{ t('editor.description') }}</h3>
       <div class="form-group">
-        <label for="encounter-description">{{ t('editor.description') }}</label>
         <QInput
+          :label="t('editor.notes')"
           id="encounter-description"
-          v-model="editedEncounter.description"
-          type="textarea"
-          :rows="3"
-          :placeholder="t('encounters.descriptionPlaceholder')"
-          dense
-          outlined
-        />
-      </div>
-    </div>
-    <div class="form-section">
-      <h3>{{ t('editor.notes') }}</h3>
-      <div class="form-group">
-        <label for="encounter-notes">{{ t('editor.notes') }}</label>
-        <QInput
-          id="encounter-notes"
           v-model="editedEncounter.notes"
           type="textarea"
-          :rows="3"
-          :placeholder="t('encounters.notesPlaceholder')"
-          dense
+          :rows="5"
+          autogrow
           outlined
         />
       </div>

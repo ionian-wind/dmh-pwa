@@ -96,44 +96,39 @@ const moduleIdsProxy = computed<string[]>({
     @cancel="closeEditor"
   >
     <div class="form-section">
-      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="monster-name">{{ t('common.name') }}</label>
           <QInput
+            :label="t('monsters.fields.name')"
             id="monster-name"
             v-model="editedMonster.name"
             type="text"
             required
-            dense
             outlined
+          />
+        </div>
+        <div class="form-group">
+          <ModuleMultipleSelector
+            id="monster-modules"
+            v-model="moduleIdsProxy"
+            :placeholder="t('common.noModules')"
           />
         </div>
       </div>
     </div>
     <div class="form-section">
-      <h3>{{ t('monsterEditor.sections.modules') }}</h3>
-      <div class="form-group">
-        <label for="monster-modules">{{ t('monsterEditor.sections.modules') }}</label>
-        <ModuleMultipleSelector
-          id="monster-modules"
-          v-model="moduleIdsProxy"
-          placeholder="{{ t('monsterEditor.placeholders.noModules') }}"
-        />
-      </div>
-    </div>
-    <div class="form-section">
-      <h3>{{ t('monsterEditor.sections.notes') }}</h3>
-      <div class="form-group">
-        <label for="monster-notes">{{ t('monsterEditor.sections.notes') }}</label>
-        <QInput
-          id="monster-notes"
-          v-model="editedMonster.notes"
-          type="textarea"
-          :rows="3"
-          dense
-          outlined
-        />
+      <div class="form-grid">
+        <div class="form-group">
+          <QInput
+            :label="t('common.notes')"
+            id="monster-notes"
+            v-model="editedMonster.notes"
+            type="textarea"
+            :rows="5"
+            autogrow
+            outlined
+          />
+        </div>
       </div>
     </div>
   </BaseModal>

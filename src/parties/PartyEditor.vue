@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import {computed, ref, watch} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import type { Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
+import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { alert } from '@/dialogs';
+import {UUID} from "@/types";
 
 const { t } = useI18n();
 const moduleStore = useModuleStore();
@@ -27,6 +29,15 @@ const editedParty = ref<PartyForm>({
   notes: '',
   characters: [],
   moduleIds: [],
+});
+
+const moduleIdsProxy = computed<UUID[]>({
+  get() {
+    return editedParty.value.moduleIds ?? [];
+  },
+  set(val: UUID[]) {
+    editedParty.value.moduleIds = val;
+  },
 });
 
 watch(
@@ -77,69 +88,50 @@ const handleCancel = () => {
     @submit="handleSubmit"
     @cancel="handleCancel"
   >
-    <div class="q-pa-md q-gutter-md">
-      <div class="q-mb-md">
-        <h3>{{ t('editor.basicInformation') }}</h3>
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-6">
-            <label for="name">{{ t('common.name') }}</label>
-            <QInput
-              id="name"
-              v-model="editedParty.name"
-              type="text"
-              required
-              :placeholder="t('parties.namePlaceholder')"
-              dense
-              outlined
-            />
-          </div>
-          <div class="col-12 col-md-6">
-            <label for="module">{{ t('common.module') }}</label>
-            <QSelect
-              id="module"
-              v-model="editedParty.moduleIds"
-              :options="
-                moduleStore.items.map((module) => ({
-                  label: module.name,
-                  value: module.id,
-                }))
-              "
-              multiple
-              use-chips
-              dense
-              outlined
-              placeholder="{{ t('partyEditor.placeholders.selectModules') }}"
-            />
-          </div>
-        </div>
-        <div class="q-mb-md">
-          <label for="description">{{ t('common.description') }}</label>
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="form-group">
           <QInput
-            id="description"
+            :label="t('parties.fields.name')"
+            id="party-name"
+            v-model="editedParty.name"
+            type="text"
+            required
+            outlined
+          />
+        </div>
+        <div class="form-group">
+          <ModuleMultipleSelector
+            id="party-modules"
+            v-model="moduleIdsProxy"
+            :placeholder="'parties.fields.modules'"
+          />
+        </div>
+        <div class="form-group">
+          <QInput
+            :label="t('parties.fields.description')"
+            id="party-description"
             v-model="editedParty.description"
             type="textarea"
-            :rows="3"
-            placeholder="Party description"
-            dense
+            :rows="5"
+            autogrow
             outlined
           />
         </div>
       </div>
-      <div class="q-mb-md">
-        <h3>{{ t('common.notes') }}</h3>
+    </div>
+    <div class="form-section">
+      <div class="form-group">
         <QInput
+          :label="t('parties.fields.notes')"
+          id="party-description"
           v-model="editedParty.notes"
           type="textarea"
-          :rows="3"
-          placeholder="{{ t('partyEditor.placeholders.additionalNotes') }}"
-          dense
+          :rows="5"
+          autogrow
           outlined
         />
       </div>
     </div>
   </BaseModal>
 </template>
-
-<style scoped>
-/* Removed custom form-section, form-grid, form-group styles. Use Quasar classes. */
-</style>

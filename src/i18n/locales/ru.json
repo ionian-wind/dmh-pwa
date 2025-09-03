@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "D&D Мастер Помощник",
+    "title": "Owlbear's Dungeon Master Helper",
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успех",
@@ -45,8 +45,8 @@
     "timers": "Таймеры"
   },
   "home": {
-    "title": "Добро пожаловать в D&D Master Helper",
-    "subtitle": "Ваш комплексный инструмент для управления кампаниями D&D",
+    "title": "Добро пожаловать в Dungeon Master Helper",
+    "subtitle": "Ваш комплексный инструмент для управления ролевыми кампаниями",
     "stats": {
       "notes": "Заметки",
       "parties": "Группы",
@@ -74,8 +74,7 @@
       "npc": "NPC",
       "location": "Локация",
       "item": "Предмет"
-    },
-    "confirmDelete": "Вы уверены, что хотите удалить {title}?"
+    }
   },
   "parties": {
     "title": "Группы",
@@ -87,7 +86,8 @@
       "name": "Имя",
       "description": "Описание",
       "characters": "Персонажи",
-      "modules": "Модули"
+      "modules": "Модули",
+      "notes": "Заметки"
     },
     "linkCharacters": "Связать персонажей"
   },
@@ -207,6 +207,7 @@
       "allParticipantsAdded": "Все доступные участники уже в бою.",
       "party": "Группа",
       "created": "Создано",
+      "statusTitle": "Статус",
       "status": {
         "preparing": "Подготовка",
         "active": "Активный",
@@ -239,7 +240,7 @@
     "loading": "Загрузка...",
     "error": "Произошла ошибка",
     "success": "Операция выполнена успешно",
-    "confirmDelete": "Вы уверены, что хотите удалить этот элемент?",
+    "confirmDelete": "Вы уверены, что хотите удалить {title}?",
     "noModule": "Без модуля",
     "unknownModule": "Неизвестный модуль",
     "anyModule": "Любой модуль",
@@ -382,6 +383,7 @@
     "participants": "Участники",
     "participantStatus": {
       "postponed": "Отложен",
+      "wait": "Ждёт хода",
       "actedThisRound": "Действовал в этом раунде"
     }
   },
@@ -408,9 +410,11 @@
   "playlist": {
     "title": "Плейлист",
     "none": "Плейлисты не найдены. Пожалуйста, создайте один.",
-    "name": "Имя",
-    "description": "Описание",
-    "modules": "Модули"
+    "fields": {
+      "name": "Имя",
+      "description": "Описание",
+      "modules": "Модули"
+    }
   },
   "noteTypeSelector": {
     "selectType": "Выберите тип заметки",
@@ -521,11 +525,13 @@
     "edit": "Редактировать таймер",
     "delete": "Удалить таймер",
     "noTitle": "(без названия)",
-    "title": "Название",
-    "titlePlaceholder": "Введите название таймера",
-    "description": "Описание",
-    "descriptionPlaceholder": "Введите описание таймера",
-    "duration": "Длительность",
+    "fields": {
+      "title": "Название",
+      "titlePlaceholder": "Введите название таймера",
+      "description": "Описание",
+      "descriptionPlaceholder": "Введите описание таймера",
+      "duration": "Длительность"
+    },
     "remaining": "Осталось",
     "finished": "Завершён!",
     "start": "Старт",
@@ -564,6 +570,6 @@
   "jukebox": {
     "shuffle": "Перемешать",
     "repeat": "Повтор",
-    "confirmDelete": "Вы уверены, что хотите удалить \"{title}\"?"
+    "allTracks": "Все треки"
   }
 }

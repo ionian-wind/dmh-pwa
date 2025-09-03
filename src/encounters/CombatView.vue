@@ -24,7 +24,10 @@ import {
   IconPlayerPause,
   IconSwords,
   IconTrophy,
+  IconCircleCheck,
+  IconClock,
 } from '@tabler/icons-vue';
+import {S} from "@/utils/dice-roller/plugins/dice/tokens";
 
 const route = useRoute();
 const router = useRouter();
@@ -48,12 +51,12 @@ onMounted(async () => {
 const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
 const notFound = computed(() => combatStore.isLoaded && !combat.value);
+const activeTab = computed(() => combat.value?.status ?? null);
 
 // Add local state for new participant
 const activeParticipantIndex = ref(0);
 
 // Modal state
-const isInitiativeModalOpen = ref(false);
 const editingParticipant = ref<any>(null);
 const newInitiative = ref(0);
 const isAddParticipantModalOpen = ref(false);
@@ -230,6 +233,7 @@ function startCombat() {
   const updatedCombatants = combat.value.combatants
     .map((c) => ({
       ...c,
+      initiative: Number(c.initiative),
       hasActed: false,
       isPostponed: false,
     }))
@@ -317,14 +321,6 @@ function endCombat() {
   combatStore.endCombat(combat.value.id);
 }
 
-function openInitiativeModal(participant: any) {
-  if (combat.value && combat.value.status === 'preparing') {
-    editingParticipant.value = participant;
-    newInitiative.value = participant.initiative;
-    isInitiativeModalOpen.value = true;
-  }
-}
-
 function saveInitiative() {
   if (
     !combat.value ||
@@ -340,13 +336,12 @@ function saveInitiative() {
   if (pIndex > -1) {
     combatants[pIndex] = {
       ...combatants[pIndex],
-      initiative: newInitiative.value,
+      initiative: Number(newInitiative.value),
       updatedAt: Date.now(),
     };
     combatStore.update(combat.value.id, { combatants });
   }
 
-  isInitiativeModalOpen.value = false;
   editingParticipant.value = null;
 }
 
@@ -358,7 +353,8 @@ function handleParticipantToggle(participantId: string, isSelected: boolean) {
 
 function handleInitiativeChange(participantId: string, initiative: number) {
   if (localParticipants.value[participantId]) {
-    localParticipants.value[participantId].initiative = initiative;
+    console.log(localParticipants.value[participantId]);
+    localParticipants.value[participantId].initiative = Number(initiative);
   }
 }
 
@@ -368,18 +364,16 @@ function handleAddParticipants() {
   const now = Date.now();
   const newCombatants = Object.entries(localParticipants.value)
     .filter(([, data]) => data.selected)
-    .map(([characterId, data]) => {
-      return {
-        id: characterId,
-        type: 'player' as const,
-        referenceId: characterId,
-        initiative: data.initiative,
-        hasActed: false,
-        isPostponed: false,
-        createdAt: now,
-        updatedAt: now,
-      };
-    });
+    .map(([characterId, data]) => ({
+      id: characterId,
+      type: 'player' as const,
+      referenceId: characterId,
+      initiative: Number(data.initiative),
+      hasActed: false,
+      isPostponed: false,
+      createdAt: now,
+      updatedAt: now,
+    }));
 
   if (newCombatants.length > 0) {
     const updatedCombatants = [...combat.value.combatants, ...newCombatants];
@@ -388,6 +382,8 @@ function handleAddParticipants() {
 
   isAddParticipantModalOpen.value = false;
 }
+
+const validateInitiative = (val: any) => Number.isInteger(Number(val));
 </script>
 
 <template>
@@ -398,49 +394,40 @@ function handleAddParticipants() {
     :title="combatTitle"
     :not-found="notFound"
     :loading="loading"
+    :headerShowEdit="false"
+    :headerShowDelete="false"
+    :headerButtons="
+      combat && combat.status === 'preparing' 
+      ? [{
+        event: startCombat,
+        color: 'warning',
+        disabled: combat.combatants.length < 1,
+        icon: IconSwords,
+        title: 'Start',
+      }]
+      : (combat && combat.status === 'active' 
+      ? [{
+        event: endCombat,
+        color: 'negative',
+        icon: IconFlag,
+        title: 'End',
+      }]
+      : [])"
   >
-    <template #actions>
-      <Button
-        v-if="combat && combat.status === 'preparing'"
-        variant="primary"
-        @click="startCombat"
-        class="start-btn"
-        :disabled="combat.combatants.length < 1"
-      >
-        <IconSwords /> Start
-      </Button>
-      <Button
-        v-if="combat && combat.status === 'active'"
-        variant="danger"
-        @click="endCombat"
-        class="end-btn"
-      >
-        <IconFlag /> End
-      </Button>
-    </template>
     <!-- Combat Content -->
     <div v-if="combat" class="q-pa-md q-gutter-md">
       <!-- Phase Tabs and Round/Turn Display -->
-      <div class="phase-indicator">
-        <div
-          class="phase-tab"
-          :class="{ active: combat && combat.status === 'preparing' }"
-        >
+      <QTabs v-model="activeTab" class="phase-indicator">
+        <QTab class="phase-tab" name="preparing">
           <IconListNumbers /> Preparation
-        </div>
-        <div
-          class="phase-tab"
-          :class="{ active: combat && combat.status === 'active' }"
-        >
+        </QTab>
+        <QTab class="phase-tab" name="active">
           <IconSwords /> Active
-        </div>
-        <div
-          class="phase-tab"
-          :class="{ active: combat && combat.status === 'completed' }"
-        >
+        </QTab>
+        <QTab class="phase-tab" name="completed">
           <IconTrophy /> Ended
-        </div>
-      </div>
+        </QTab>
+      </QTabs>
 
       <!-- Combat Summary -->
       <div v-if="combat?.status === 'active'" class="q-mb-md">
@@ -471,8 +458,9 @@ function handleAddParticipants() {
 
       <!-- Participants Section -->
       <div class="participants-section">
-        <div class="combat-title">
+        <div class="combat-title row justify-between q-pa-md">
           <h2>Participants: {{ combat.combatants.length }}</h2>
+          
           <Button
             v-if="
               combat &&
@@ -489,17 +477,18 @@ function handleAddParticipants() {
 
         <!-- Participant List -->
         <div v-if="combat.combatants.length" class="participant-list">
-          <div
-            v-for="(participant, index) in combat.combatants"
-            :key="participant.id"
-            @click="openInitiativeModal(participant)"
-            :class="{
+          <QList bordered separator class="rounded-borders">
+            <QItem
+              v-for="(participant, index) in combat.combatants"
+              :clickable="combat.status === 'preparing'"
+              :key="participant.id"
+              :active="combat &&
+                combat.status === 'active' &&
+                activeParticipantIndex === index"
+              :active-class="'bg-secondary'"
+              :class="{
               'participant-row': true,
               preparing: combat && combat.status === 'preparing',
-              active:
-                combat &&
-                combat.status === 'active' &&
-                activeParticipantIndex === index,
               postponed: participant.isPostponed,
               acted:
                 combat &&
@@ -507,80 +496,88 @@ function handleAddParticipants() {
                 participant.hasActed &&
                 !participant.isPostponed,
             }"
-          >
-            <div class="participant-artwork">
-              <template v-if="participant.type === 'player'">
-                <IconUser />
-              </template>
-              <IconGhost3 v-else />
-            </div>
+            >
+              <QPopupEdit
+                v-if="combat.status === 'preparing'"
+                v-model="participant.initiative" 
+                auto-save 
+                v-slot="scope"
+                buttons
+                :validate="validateInitiative"
+                @hide="validateInitiative"
+              >
+                <QInput v-model="scope.value" dense autofocus counter @keyup.enter="scope.set" />
+              </QPopupEdit>
 
-            <div class="participant-info">
-              <div class="participant-name">
+              <QItemSection avatar class="participant-artwork">
+                <IconUser v-if="participant.type === 'player'" />
+                <IconGhost3 v-else />
+              </QItemSection>
+
+              <QItemSection class="participant-name">
                 {{ getCombatantDisplayName(participant) }}
-              </div>
-              <div class="participant-initiative">
+              </QItemSection>
+              <QItemSection side class="participant-initiative">
                 {{ participant.initiative }}
-              </div>
-            </div>
+              </QItemSection>
 
-            <div class="participant-status">
-              <span v-if="combat && combat.status === 'active'">
+              <QItemSection side class="participant-status" v-if="combat && combat.status === 'active'">
                 <span
-                  v-if="participant.isPostponed"
-                  class="participant-badge badge-postponed"
-                >
-                  <i class="fas fa-clock"></i> Postponed
-                </span>
-                <span
-                  v-else-if="participant.hasActed"
+                  v-if="!participant.isPostponed && participant.hasActed"
                   class="participant-badge badge-acted"
+                  :aria-label="t('combat.participantStatus.actedThisRound')"
+                  :title="t('combat.participantStatus.actedThisRound')"
                 >
-                  <IconCheckCircle /> Acted this round
+                    <IconCircleCheck />
+                  </span>
+                <span v-else-if="!participant.isPostponed && activeParticipantIndex !== index">
+                  <IconClock
+                    :aria-label="t('combat.participantStatus.wait')"
+                    :title="t('combat.participantStatus.wait')"
+                  />
                 </span>
-              </span>
-            </div>
+              </QItemSection>
 
-            <div class="participant-actions">
-              <Button
-                v-if="
-                  combat &&
-                  combat.status === 'active' &&
-                  participant.isPostponed
-                "
-                variant="success"
-                size="large"
-                @click="activatePostponed(participant.id)"
-              >
-                <IconBolt />
-              </Button>
-              <div
-                class="controls"
-                v-if="
-                  combat &&
-                  combat.status === 'active' &&
-                  activeParticipantIndex === index
-                "
-              >
-                <Button
-                  size="large"
-                  variant="warning"
-                  @click="postponeCurrent"
-                  :disabled="!currentParticipant"
+              <QItemSection side v-if="combat && combat.status === 'active'" class="participant-actions">
+                <QBtnGroup
+                  v-if="participant.isPostponed"
+                  flat
+                  class="controls"
                 >
-                  <IconPlayerPause />
-                </Button>
-                <Button
-                  size="large"
-                  variant="success"
-                  @click="nextTurn"
-                  :disabled="!currentParticipant"
+                  <QBtn
+                    :color="'info'"
+                    :size="'lg'"
+                    @click="activatePostponed(participant.id)"
+                  >
+                    <IconBolt />
+                  </QBtn>
+                </QBtnGroup>
+                  
+                <QBtnGroup
+                  flat
+                  class="controls"
+                  v-if="activeParticipantIndex === index"
                 >
-                  <IconCheck />
-                </Button>
-              </div>
-            </div>
-          </div>
+                  <QBtn
+                    :size="'lg'"
+                    :color="'warning'"
+                    @click="postponeCurrent"
+                    v-if="index !== (combat.combatants.length - 1)"
+                  >
+                    <IconPlayerPause />
+                  </QBtn>
+                  <QBtn
+                    :size="'lg'"
+                    :color="'positive'"
+                    @click="nextTurn"
+                    :disabled="!currentParticipant"
+                  >
+                    <IconCheck />
+                  </QBtn>
+                </QBtnGroup>
+              </QItemSection>
+            </QItem>
+          </QList>
         </div>
       </div>
 
@@ -592,35 +589,6 @@ function handleAddParticipants() {
     <div v-else>
       <p>{{ t('combat.noActive') }}</p>
     </div>
-    <BaseModal
-      :is-open="isInitiativeModalOpen"
-      @cancel="isInitiativeModalOpen = false"
-      @submit="saveInitiative"
-      modal-id="initiative-modal"
-      :title="t('combat.setInitiative')"
-      :showSubmit="true"
-      :showCancel="true"
-      :submitLabel="t('common.save')"
-      :cancelLabel="t('common.cancel')"
-    >
-      <div class="initiative-modal-content">
-        <p v-if="editingParticipant">
-          {{
-            t('combat.setInitiativeFor', {
-              name: getCombatantDisplayName(editingParticipant),
-            })
-          }}
-        </p>
-        <QInput
-          type="number"
-          v-model.number="newInitiative"
-          class="initiative-input"
-          :placeholder="t('combat.initiativePlaceholder')"
-          dense
-          outlined
-        />
-      </div>
-    </BaseModal>
 
     <BaseModal
       :is-open="isAddParticipantModalOpen"
@@ -662,7 +630,7 @@ function handleAddParticipants() {
                 class="initiative-input"
                 v-model.number="localParticipants[p.id].initiative"
                 @update:model-value="
-                  (val) => handleInitiativeChange(p.id, Number(val))
+                  (val) => handleInitiativeChange(p.id, val)
                 "
                 dense
                 outlined
@@ -674,365 +642,3 @@ function handleAddParticipants() {
     </BaseModal>
   </BaseEntityView>
 </template>
-
-<style scoped>
-.combat-content {
-  display: grid;
-  gap: 2rem;
-}
-
-.combat-header {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.combat-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.info-section h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.info-section p {
-  margin: 0;
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: capitalize;
-}
-
-.status-badge.preparing {
-  background: var(--color-warning);
-  color: var(--color-text-inverse);
-}
-
-.status-badge.active {
-  background: var(--color-success);
-  color: var(--color-text-inverse);
-}
-
-.status-badge.completed {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-.combat-controls {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.combat-tracker-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.combat-tracker-section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.combat-summary {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.combat-summary h3 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: var(--color-background);
-  border-radius: var(--border-radius);
-}
-
-.summary-item label {
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.summary-value {
-  color: var(--color-text);
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.content-section {
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-.content-section h3 {
-  margin: 0 0 1rem 0;
-  color: var(--color-text);
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.notes {
-  color: var(--color-text);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.start-btn {
-  background: var(--color-success);
-  color: var(--color-text-inverse);
-}
-
-.start-btn:hover {
-  background: var(--color-success-dark);
-}
-
-.reset-btn {
-  background: var(--color-warning);
-  color: var(--color-text-inverse);
-}
-
-.reset-btn:hover {
-  background: var(--color-warning-dark);
-}
-
-.end-btn {
-  background: var(--color-danger);
-  color: var(--color-text-inverse);
-}
-
-.end-btn:hover {
-  background: var(--color-danger-dark);
-}
-
-.combat-controls .si {
-  margin-right: 0.5em;
-  vertical-align: middle;
-}
-
-.phase-indicator {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.phase-tab {
-  padding: 0.5rem 1.5rem 0.25rem 1.5rem;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  color: var(--color-text-light);
-  font-weight: 500;
-  font-size: 1.1rem;
-  box-shadow: none;
-  border-radius: 0;
-  cursor: default;
-  transition:
-    color 0.2s,
-    border-bottom 0.2s;
-}
-
-.phase-tab.active {
-  color: var(--color-primary);
-  border-bottom: 3px solid var(--color-primary);
-}
-
-.participant-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.participant-row {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  border-radius: 8px;
-  transition: all 0.2s;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-light);
-  position: relative;
-  overflow: hidden;
-}
-
-.participant-row.preparing {
-  cursor: pointer;
-}
-
-.participant-row::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--track-item-color, transparent);
-  transition: width 0.2s;
-}
-
-.participant-row:hover::before,
-.participant-row.active::before {
-  width: 8px;
-}
-
-.participant-row:hover {
-  box-shadow: var(--shadow-sm);
-}
-
-.participant-row.active {
-  background-color: var(--color-info-light);
-  --track-item-color: var(--color-info);
-}
-
-.participant-row.postponed {
-  --track-item-color: var(--color-warning);
-}
-
-.participant-row.acted {
-  opacity: 0.6;
-}
-
-.participant-artwork {
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-  background-size: cover;
-  background-position: center;
-  margin-right: 1rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-lighter);
-  font-size: 24px;
-  background-color: var(--color-background-mute);
-}
-
-.participant-info {
-  flex-grow: 1;
-  min-width: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.participant-name {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.participant-initiative {
-  font-size: 0.9em;
-  color: var(--color-text-light);
-}
-
-.participant-status {
-  margin-left: 1rem;
-  flex-basis: auto;
-  min-width: 120px;
-  text-align: center;
-}
-
-.participant-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: 1rem;
-}
-
-.participant-list tr.active {
-  background-color: var(--color-info-light);
-}
-
-.initiative-modal-content {
-  padding: 1rem;
-}
-.initiative-input {
-  width: 5em;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background-color: var(--color-background-input);
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.participant-badge.badge-acted {
-  background: var(--color-success-light);
-  color: var(--color-success-dark);
-  padding: 0.1em 0.3em;
-  border-radius: 4px;
-}
-.participant-badge.badge-postponed {
-  background: var(--color-warning-light);
-  color: var(--color-warning-dark);
-  padding: 0.1em 0.3em;
-  border-radius: 4px;
-}
-
-.info-message {
-  padding: 1rem;
-  background-color: var(--color-background-soft);
-  border-bottom: 1px solid var(--color-border);
-  text-align: center;
-  color: var(--color-text-light);
-}
-
-.combat-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.phase-tab .tabler-icon {
-  vertical-align: middle;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-</style>

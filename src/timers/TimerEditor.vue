@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import {computed, ref, watch} from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import type { Timer } from '@/types';
+import {formatTime} from "@/jukebox/utils";
+import {
+  IconClock
+} from '@tabler/icons-vue';
 
 const props = defineProps<{
   timer: Timer | null;
@@ -11,30 +15,32 @@ const props = defineProps<{
 const emit = defineEmits(['submit', 'cancel']);
 const { t } = useI18n();
 
-const form = ref({
+const editedTimer = ref({
   title: '',
   description: '',
   duration: 60000,
 });
 
+const time = computed(() => formatTime(editedTimer.duration / 1000), () => {})
+
 watch(
   () => props.timer,
   (newTimer) => {
     if (newTimer) {
-      form.value = {
+      editedTimer.value = {
         title: newTimer.title || '',
         description: newTimer.description || '',
         duration: newTimer.duration,
       };
     } else {
-      form.value = { title: '', description: '', duration: 60000 };
+      editedTimer.value = { title: '', description: '', duration: 60000 };
     }
   },
   { immediate: true },
 );
 
 function handleSubmit() {
-  emit('submit', { ...form.value });
+  emit('submit', { ...editedTimer.value });
 }
 function handleCancel() {
   emit('cancel');
@@ -52,42 +58,52 @@ function handleCancel() {
     modalId="timer-editor-modal"
   >
     <div class="form-section">
-      <label>{{ t('timers.title') }}</label>
-      <QInput
-        v-model="form.title"
-        type="text"
-        :placeholder="t('timers.titlePlaceholder')"
-        dense
-        outlined
-      />
+      <div class="form-grid">
+        <div class="form-group">
+          <QInput
+            v-model="editedTimer.title"
+            :label="t('timers.fields.title')"
+            :placeholder="t('timers.fields.titlePlaceholder')"
+            type="text"
+            outlined
+          />
+        </div>
+        <div class="form-group">
+          <QInput
+            v-model="editedTimer.description"
+            :label="t('timers.fields.description')"
+            :placeholder="t('timers.fields.descriptionPlaceholder')"
+            type="textarea"
+            autogrow
+            outlined
+          />
+        </div>
+      </div>
     </div>
     <div class="form-section">
-      <label>{{ t('timers.description') }}</label>
-      <QInput
-        v-model="form.description"
-        type="textarea"
-        autogrow
-        :placeholder="t('timers.descriptionPlaceholder')"
-        dense
-        outlined
-      />
-    </div>
-    <div class="form-section">
-      <label>{{ t('timers.duration') }} (ms)</label>
-      <QInput
-        v-model.number="form.duration"
-        type="number"
-        min="1000"
-        step="1000"
-        dense
-        outlined
-      />
+      <div class="form-grid">
+        <div class="form-group">
+          <QInput
+            v-model="time"
+            mask="fulltime"
+            :rules="['fulltime']"
+            :label="t('timers.fields.duration')"
+            outlined
+          >
+            <template v-slot:append>
+              <IconClock>
+                <QPopupProxy cover transition-show="scale" transition-hide="scale">
+                  <QTime v-model="time">
+                    <div class="row items-center justify-end">
+                      <QBtn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                  </QTime>
+                </QPopupProxy>
+              </IconClock>
+            </template>
+          </QInput>
+        </div>
+      </div>
     </div>
   </BaseModal>
 </template>
-
-<style scoped>
-.form-section {
-  margin-bottom: 1em;
-}
-</style>

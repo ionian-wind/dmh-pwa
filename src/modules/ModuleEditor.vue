@@ -68,37 +68,29 @@ const handleCancel = () => {
     @cancel="handleCancel"
   >
     <div class="form-section">
-      <h3>{{ t('editor.basicInformation') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label for="name">{{ t('common.name') }}</label>
           <QInput
-            id="name"
+            id="module-name"
+            :label="t('modules.fields.name')"
             v-model="editedModule.name"
             type="text"
             required
-            :placeholder="t('modules.namePlaceholder')"
-            dense
+            outlined
+          />
+        </div>
+        <div class="form-group">
+          <QInput
+            :label="t('modules.fields.description')"
+            id="module-description"
+            v-model="editedModule.description"
+            type="textarea"
+            :rows="5"
+            autogrow
             outlined
           />
         </div>
       </div>
-      <div class="form-group">
-        <label for="description">{{ t('editor.description') }}</label>
-        <QInput
-          id="description"
-          v-model="editedModule.description"
-          type="textarea"
-          :rows="3"
-          :placeholder="t('modules.descriptionPlaceholder')"
-          dense
-          outlined
-        />
-      </div>
     </div>
   </BaseModal>
 </template>
-
-<style scoped>
-/* No need for .form-section, .form-grid, .form-group, label, input, select, textarea styles here; now in global.css */
-</style>

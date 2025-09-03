@@ -38,7 +38,7 @@ function handleEdit(timer: Timer) {
 }
 
 async function handleDelete(timer: Timer) {
-  if (timer.id && await confirm(`Are you sure you want to delete timer?`)) {
+  if (timer.id && await confirm(t('common.confirmDelete', { title: 'timer' }))) {
     await timerStore.remove(timer.id);
     return true;
   }

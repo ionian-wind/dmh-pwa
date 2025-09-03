@@ -19,6 +19,9 @@ interface Props {
   notFound?: boolean;
   hideHeader?: boolean;
   unwrapContent?: boolean;
+  headerShowEdit?: boolean;
+  headerShowDelete?: boolean;
+  headerButtons?: any[];
 }
 
 const props = withDefaults(
@@ -30,6 +33,9 @@ const props = withDefaults(
     notFound: false,
     isEditing: false,
     hideHeader: false,
+    headerShowEdit: true,
+    headerShowDelete: true,
+    headerButtons: [],
   },
 );
 
@@ -52,44 +58,29 @@ const setTopMenuContent = inject('setTopMenuContent') as (
   arg: ComponentInjection,
 ) => void;
 
-onMounted(async () => {
-  setTopMenuContent(
-    props.hideHeader
-      ? null
-      : {
-          component: ViewHeader,
-          props: {
-            showEdit: true,
-            onEdit: handleEdit,
-            showDelete: true,
-            onDelete: handleDelete,
-            title: props.title || '',
-            subtitle: props.subtitle || '',
-          },
-        },
-  );
-});
+const injectTopMenu = () => setTopMenuContent(
+  props.hideHeader
+    ? null
+    : {
+      component: ViewHeader,
+      props: {
+        buttons: props.headerButtons,
+        showEdit: props.headerShowEdit,
+        onEdit: handleEdit,
+        showDelete: props.headerShowDelete,
+        onDelete: handleDelete,
+        title: props.title || '',
+        subtitle: props.subtitle || '',
+      },
+    },
+);
+
+onMounted(() => injectTopMenu());
 
 // Add a watch to update the header when title, subtitle, or hideHeader change
 watch(
   () => [props.title, props.subtitle, props.hideHeader],
-  () => {
-    setTopMenuContent(
-      props.hideHeader
-        ? null
-        : {
-            component: ViewHeader,
-            props: {
-              showEdit: true,
-              onEdit: handleEdit,
-              showDelete: true,
-              onDelete: handleDelete,
-              title: props.title || '',
-              subtitle: props.subtitle || '',
-            },
-          },
-    );
-  },
+  () => injectTopMenu(),
 );
 
 onBeforeUnmount(() => {

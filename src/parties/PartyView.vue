@@ -60,10 +60,10 @@ const linkedCharacters = computed(() => {
 });
 
 async function handleDeleteParty() {
-  if (party.value && await window.$confirm(`Are you sure you want to delete ${party.value.name}?`)) {
+  if (party.value && await confirm(t('common.confirmDelete', { title: party.value.name }))) {
     await partyStore.remove(party.value.id);
   }
-};
+}
 
 const handleSaveParty = async (
   updatedParty: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>,

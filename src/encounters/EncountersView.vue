@@ -46,7 +46,7 @@ function handleEdit(encounter: Encounter) {
 async function handleDelete(encounter: Encounter) {
   if (
     encounter.id &&
-    await confirm(`Are you sure you want to delete ${encounter.name}?`)
+    await confirm(t('common.', { title: encounter.name }))
   ) {
     await encounterStore.remove(encounter.id);
     return true;

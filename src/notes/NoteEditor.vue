@@ -39,6 +39,7 @@ const editedNote = ref<Note>({
 });
 
 const lastNoteId = ref<string | null>(null);
+const isWYSIWYGMode = ref(true);
 
 const noteContent = computed({
   get: () => editedNote.value.content,
@@ -136,12 +137,20 @@ const handleCancel = () => {
       </div>
       <div class="q-mb-md">
         <h3>{{ t('editor.content') }}</h3>
+        <!-- Toggle button for edit mode -->
+        <div class="editor-toggle">
+          <QToggle v-model="isWYSIWYGMode">
+            <span v-if="!isWYSIWYGMode">{{ t('markdownEditor.rawMode') }}</span>
+            <span v-else>{{ t('markdownEditor.visualMode') }}</span>
+          </QToggle>
+        </div>
         <div class="row q-col-gutter-md">
           <div class="col-12">
             <MarkdownEditor
               ref="markdownEditorRef"
               v-model="noteContent"
               enableMentions
+              :isWYSIWYGMode="isWYSIWYGMode"
               :placeholder="t('editor.contentPlaceholder')"
               :current-entity-id="editedNote.id"
               current-entity-type="note"

@@ -26,7 +26,7 @@ type EditablePlaylist = {
   moduleIds?: string[];
 };
 
-const editablePlaylist: Ref<EditablePlaylist> = ref({
+const editedPlaylist: Ref<EditablePlaylist> = ref({
   name: '',
   description: '',
   trackIds: [],
@@ -37,9 +37,9 @@ watch(
   () => props.playlist,
   (newPlaylist) => {
     if (newPlaylist) {
-      editablePlaylist.value = { ...newPlaylist };
+      editedPlaylist.value = { ...newPlaylist };
     } else {
-      editablePlaylist.value = {
+      editedPlaylist.value = {
         name: '',
         description: '',
         trackIds: [],
@@ -55,7 +55,7 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen && !props.playlist) {
-      editablePlaylist.value = {
+      editedPlaylist.value = {
         name: '',
         description: '',
         trackIds: [],
@@ -65,12 +65,12 @@ watch(
   },
 );
 
-const moduleIdsProxy = computed<string[]>({
+const moduleIdsProxy = computed<UUID[]>({
   get() {
-    return editablePlaylist.value.moduleIds ?? [];
+    return editedPlaylist.value.moduleIds ?? [];
   },
-  set(val) {
-    editablePlaylist.value.moduleIds = val;
+  set(val: UUID[]) {
+    editedPlaylist.value.moduleIds = val;
   },
 });
 
@@ -79,14 +79,14 @@ onMounted(() => moduleStore.load());
 async function save() {
   if (props.playlist && props.playlist.id) {
     const updatedPlaylist = await playlistsStore.update(props.playlist.id, {
-      name: editablePlaylist.value.name,
-      description: editablePlaylist.value.description,
-      trackIds: editablePlaylist.value.trackIds,
-      moduleIds: editablePlaylist.value.moduleIds,
+      name: editedPlaylist.value.name,
+      description: editedPlaylist.value.description,
+      trackIds: editedPlaylist.value.trackIds,
+      moduleIds: editedPlaylist.value.moduleIds,
     });
     emit('saved', updatedPlaylist);
   } else {
-    const newPlaylist = await playlistsStore.create(editablePlaylist.value);
+    const newPlaylist = await playlistsStore.create(editedPlaylist.value);
     emit('saved', newPlaylist);
   }
   emit('update:modelValue', false);
@@ -106,51 +106,41 @@ async function save() {
     @submit="save"
     @cancel="$emit('update:modelValue', false)"
   >
-    <template #title>{{ t('common.playlist') }}</template>
-    <div class="form-group">
-      <label for="playlist-name">{{ t('playlist.name') }}</label>
-      <QInput
-        id="playlist-name"
-        v-model="editablePlaylist.name"
-        type="text"
-        required
-        dense
-        outlined
-      />
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="form-group">
+          <QInput
+            id="playlist-name"
+            v-model="editedPlaylist.name"
+            :label="t('playlist.fields.name')"
+            type="text"
+            required
+            outlined
+          />
+        </div>
+        <div class="form-group">
+          <ModuleMultipleSelector
+            id="playlist-modules"
+            v-model="moduleIdsProxy"
+            :placeholder="t('playlist.fields.modules')"
+          />
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label for="playlist-description">{{ t('playlist.description') }}</label>
-      <QInput
-        id="playlist-description"
-        v-model="editablePlaylist.description"
-        type="textarea"
-        :rows="3"
-        dense
-        outlined
-      />
-    </div>
-    <div class="form-group">
-      <label for="playlist-modules">{{ t('playlist.modules') }}</label>
-      <ModuleMultipleSelector
-        id="playlist-modules"
-        v-model="moduleIdsProxy"
-        :placeholder="t('common.noModules')"
-      />
+    <div class="form-section">
+      <div class="form-grid">
+        <div class="form-group">
+          <QInput
+            id="playlist-description"
+            :label="t('playlist.fields.description')"
+            v-model="editedPlaylist.description"
+            type="textarea"
+            :rows="5"
+            autogrow
+            outlined
+          />
+        </div>
+      </div>
     </div>
   </BaseModal>
 </template>
-
-<style scoped>
-.form-group {
-  margin-bottom: 1em;
-}
-label {
-  display: block;
-  margin-bottom: 0.5em;
-}
-input,
-textarea {
-  width: 100%;
-  padding: 0.5em;
-}
-</style>

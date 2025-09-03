@@ -61,7 +61,7 @@ function handleEdit(note: Note) {
   // handled by BaseListView
 }
 async function handleDelete(note: Note) {
-  if (note.id && await confirm(t('notes.confirmDelete', { title: note.title }))) {
+  if (note.id && await confirm(t('common.confirmDelete', { title: note.title }))) {
     await noteStore.remove(note.id);
     return true;
   }

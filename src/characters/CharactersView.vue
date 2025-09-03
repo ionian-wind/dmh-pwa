@@ -48,7 +48,7 @@ function handleEdit(character: PlayerCharacter) {
 async function handleDelete(character: PlayerCharacter) {
   if (
     character.id &&
-    await confirm(`Are you sure you want to delete ${character.name}?`)
+    await confirm(t('common.', { title: character.name }))
   ) {
     await characterStore.remove(character.id);
     return true;

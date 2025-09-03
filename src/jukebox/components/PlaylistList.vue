@@ -5,10 +5,13 @@ import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import { useConfigStore } from '@/utils/configStore';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
-import draggable from 'vuedraggable';
+import VueDraggable from 'vuedraggable';
 
 import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const configStore = useConfigStore();
@@ -35,10 +38,10 @@ watch(
   { immediate: true }
 );
 
-function updateSortedPlaylists(
+const updateSortedPlaylists = (
   newPlaylists: JukeboxPlaylist[],
   currentPlaylistId: string | null,
-) {
+) => {
   if (!newPlaylists || !Array.isArray(newPlaylists)) {
     sortedPlaylists.value = [];
     return;
@@ -63,18 +66,18 @@ function updateSortedPlaylists(
   sortedPlaylists.value = filteredPlaylists;
 }
 
-function openPlaylistModal(playlist: JukeboxPlaylist | null) {
+const openPlaylistModal = (playlist: JukeboxPlaylist | null) => {
   playlistToEdit.value = playlist;
   isPlaylistModalOpen.value = true;
 }
 
-function setSelectedPlaylist(playlistId: string | null) {
+const setSelectedPlaylist = (playlistId: string | null) => {
   debug(playlistId);
   selectedPlaylistId.value = playlistId ?? null;
   configStore.jukeboxActivePlaylistId = playlistId; // Add this line
 }
 
-async function removePlaylist(playlistId: string) {
+const removePlaylist = async (playlistId: string) => {
   if (selectedPlaylistId.value === playlistId) {
     setSelectedPlaylist(null);
   }
@@ -84,7 +87,7 @@ async function removePlaylist(playlistId: string) {
   await playlistsStore.remove(playlistId);
 }
 
-async function onPlaylistSortEnd(event: any) {
+const onPlaylistSortEnd = async (event: any) => {
   const { newIndex, oldIndex } = event;
   if (newIndex === oldIndex) return;
 
@@ -122,17 +125,18 @@ onMounted(async () => {
         <QItem
           clickable
           :active="selectedPlaylistId === null"
+          :active-class="'bg-secondary'"
           v-ripple
           @click="setSelectedPlaylist(null)"
         >
-          <QItemSection>All Tracks</QItemSection>
+          <QItemSection>{{ t('jukebox.allTracks')}}</QItemSection>
         </QItem>
       </QList>
     </div>
 
     <!-- Scrollable, sortable playlists -->
     <QScrollArea class="q-pa-none q-mb-none col-grow" style="min-height: 0">
-      <draggable
+      <VueDraggable
         v-model="sortedPlaylists"
         tag="div"
         class="playlist-list"
@@ -144,6 +148,7 @@ onMounted(async () => {
           <QItem
             clickable
             :active="selectedPlaylistId === playlist.id"
+            :active-class="'bg-secondary'"
             v-ripple
             @click="setSelectedPlaylist(playlist.id)"
             class="playlist-item"
@@ -151,19 +156,23 @@ onMounted(async () => {
             <QItemSection>
               {{ playlist.name }}
             </QItemSection>
-            <QItemSection side>
+            <QItemSection class="playlist-actions" side>
               <QBtnGroup flat>
-                <QBtn flat @click.stop="openPlaylistModal(playlist)"
-                  ><IconPencil
-                /></QBtn>
-                <QBtn flat @click.stop="removePlaylist(playlist.id)"
-                  ><IconX
-                /></QBtn>
+                <QBtn 
+                  flat
+                  @click.stop="openPlaylistModal(playlist)">
+                  <IconPencil />
+                </QBtn>
+                <QBtn 
+                  flat
+                  @click.stop="removePlaylist(playlist.id)">
+                  <IconX />
+                </QBtn>
               </QBtnGroup>
             </QItemSection>
           </QItem>
         </template>
-      </draggable>
+      </VueDraggable>
     </QScrollArea>
 
     <PlaylistEditor v-model="isPlaylistModalOpen" :playlist="playlistToEdit" />
@@ -171,8 +180,11 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.playlist-list-container {
-  height: 100%;
-  min-height: 0;
+.playlist-actions {
+  display: none;
+}
+
+.playlist-item:hover .playlist-actions {
+  display: flex;
 }
 </style>

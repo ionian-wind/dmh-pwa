@@ -27,12 +27,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string | null): void;
 }>();
 
-const updateValue = (event: Event) => {
-  const select = event.target as HTMLSelectElement;
-  const value = select.value === '' ? null : select.value;
-  emit('update:modelValue', value);
-};
-
 const moduleOptions = computed(() => {
   const options = [];
   if (props.allowAnyModule) {
@@ -57,11 +51,9 @@ const moduleOptions = computed(() => {
     :options="
       moduleOptions.map((opt) => ({ label: opt.name, value: opt.value }))
     "
-    :label="t(props.placeholder)"
     emit-value
     map-options
-    dense
     outlined
-    class="module-selector"
+    :label="t(props.placeholder)"
   />
 </template>

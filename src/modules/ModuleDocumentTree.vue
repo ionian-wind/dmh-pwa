@@ -241,9 +241,14 @@ onMounted(async () => {
   <div class="module-document-tree">
     <div class="tree-controls">
       <slot name="add-root">
-        <Button size="small" variant="light" @click="openAddRootNote"
-          ><IconPlus
-        /></Button>
+        <QBtnGroup flat>
+          <Button
+            size="small"
+            variant="primary"
+            @click="openAddRootNote">
+            <IconPlus />
+          </Button>
+        </QBtnGroup>
       </slot>
     </div>
 
@@ -256,17 +261,27 @@ onMounted(async () => {
       >
         <div class="module-tree-item-content">
           <span class="module-tree-item-title">{{ item.title }}</span>
-          <div class="module-tree-item-controls">
-            <Button size="small" variant="light" @click="openAddNode(item)"
-              ><IconPlus
-            /></Button>
-            <Button size="small" variant="light" @click="openEdit(item)"
-              ><IconPencil
-            /></Button>
-            <Button size="small" variant="light" @click="handleRemove(item)"
-              ><IconX
-            /></Button>
-          </div>
+          <QBtnGroup flat class="module-tree-item-controls">
+            <Button 
+              size="small"
+              variant="primary"
+              @click="openAddNode(item)"
+              >
+              <IconPlus />
+            </Button>
+            <Button
+              size="small"
+              variant="success"
+              @click="openEdit(item)">
+              <IconPencil />
+            </Button>
+            <Button 
+              size="small"
+              variant="danger"
+              @click="handleRemove(item)">
+              <IconX />
+            </Button>
+          </QBtnGroup>
         </div>
       </Tree>
     </div>
@@ -319,13 +334,6 @@ onMounted(async () => {
   font-weight: 500;
   flex: 1;
   font-size: 14px;
-}
-
-.module-tree-item-controls {
-  display: flex;
-  gap: 0.25rem;
-  opacity: 0.7;
-  transition: opacity 0.2s;
 }
 
 .module-tree-item-content:hover .module-tree-item-controls {

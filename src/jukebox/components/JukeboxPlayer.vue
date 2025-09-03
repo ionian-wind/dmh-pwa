@@ -53,8 +53,6 @@ const gradientStyle = useAnimatedGradient(
 // Volume popup open state
 const isVolumePopupOpen = ref(false);
 
-
-
 function handleVolumeWheel(event: WheelEvent) {
   event.preventDefault();
   const delta = event.deltaY;
@@ -130,7 +128,7 @@ const progress = computed(() => playerStore.currentTime / playerStore.duration);
 const isProgressHovered = ref(false);
 
 // Handle progress change from slider
-function handleProgressChange(value: number) {
+const handleProgressChange = (value: number | null) => {
   if (value === null) return;
   const duration = playerStore.duration || 1;
   const time = value * duration;
@@ -171,14 +169,20 @@ function handleProgressChange(value: number) {
         <QSlider
           :model-value="progress"
           :min="0"
+          :disable="playerStore.currentTrack === null"
           :max="1"
           :step="0.001"
           :label="false"
           :markers="false"
-          :color="isProgressHovered ? 'primary' : 'info'"
-          :size="isProgressHovered ? 'lg' : 'sm'"
-          class="progress-bar-transition"
-          @update:model-value="(value) => value !== null && handleProgressChange(value)"
+          :color="
+            playerStore.currentTrack !== null && isProgressHovered
+              ? 'info'
+              : 'primary'
+          "
+          :track-size="isProgressHovered ? '10px' : '5px'"
+          @update:model-value="
+            (value) => value !== null && handleProgressChange(value)
+          "
         />
       </div>
       <div class="progress-bar-time time-duration">
@@ -276,7 +280,9 @@ function handleProgressChange(value: number) {
                 color="info"
                 size="md"
                 class="volume-bar"
-                @update:model-value="(value) => value !== null && playerStore.setVolume(value)"
+                @update:model-value="
+                  (value) => value !== null && playerStore.setVolume(value)
+                "
               />
             </div>
           </QPopupProxy>
@@ -303,7 +309,7 @@ function handleProgressChange(value: number) {
 
 .progress-bar-time.time-current,
 .progress-bar-seek,
-.playback-options .q-btn.disabled {
+.playback-options {
   cursor: pointer !important;
 }
 
@@ -318,19 +324,6 @@ function handleProgressChange(value: number) {
 
 .volume-bar.q-slider {
   width: 100%;
-}
-
-/* Ensure sliders have proper spacing and alignment */
-.q-slider__track-container {
-  margin: 0;
-}
-
-.q-slider__thumb {
-  transition: all 0.2s ease;
-}
-
-.q-slider:hover .q-slider__thumb {
-  transform: scale(1.1);
 }
 
 /* Fix volume popup scrollbar issue */
