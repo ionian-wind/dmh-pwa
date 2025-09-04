@@ -114,36 +114,37 @@ const handleCancel = () => {
           v-model="editedNote.title"
           :label="t('editor.title')"
           required
-          autofocus
-          dense
           outlined
-          :error="!editedNote.title"
-          :error-message="!editedNote.title ? t('editor.titleRequired') : ''"
+          type="text"
         />
       </div>
+<!--      <div class="q-mb-md">-->
+<!--        <NoteTypeSelector-->
+<!--          :allow-create="true"-->
+<!--          v-model="editedNote.typeId"-->
+<!--          :module-id="editedNote.moduleId"-->
+<!--        />-->
+<!--      </div>-->
+<!--      <div class="q-mb-md">-->
+<!--        <TagSelector-->
+<!--          v-model="editedNote.tags"-->
+<!--          :entity-type="'note'"-->
+<!--          :current-entity-id="editedNote.id"-->
+<!--        />-->
+<!--      </div>-->
       <div class="q-mb-md">
-        <NoteTypeSelector
-          :allow-create="true"
-          v-model="editedNote.typeId"
-          :module-id="editedNote.moduleId"
-        />
-      </div>
-      <div class="q-mb-md">
-        <TagSelector
-          v-model="editedNote.tags"
-          :entity-type="'note'"
-          :current-entity-id="editedNote.id"
-        />
-      </div>
-      <div class="q-mb-md">
-        <h3>{{ t('editor.content') }}</h3>
-        <!-- Toggle button for edit mode -->
-        <div class="editor-toggle">
-          <QToggle v-model="isWYSIWYGMode">
-            <span v-if="!isWYSIWYGMode">{{ t('markdownEditor.rawMode') }}</span>
-            <span v-else>{{ t('markdownEditor.visualMode') }}</span>
-          </QToggle>
+        <div class="row justify-between">
+          <!-- Toggle button for edit mode -->
+          <div class="col">
+            <h5>{{ t('editor.content') }}</h5>
+          </div>
+          <div class="editor-toggle text-right col">
+            <QToggle left-label v-model="isWYSIWYGMode">
+              {{ t('markdownEditor.visualMode') }}
+            </QToggle>
+          </div>
         </div>
+       
         <div class="row q-col-gutter-md">
           <div class="col-12">
             <MarkdownEditor
