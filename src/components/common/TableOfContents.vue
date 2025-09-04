@@ -32,7 +32,13 @@ function getIndentClass(level: number): string {
 }
 
 function getActiveClass(itemId: string): string {
-  return (props.activeAnchorId ? props.activeAnchorId === itemId : activeItemId.value === itemId) ? 'active' : '';
+  return (
+    props.activeAnchorId
+      ? props.activeAnchorId === itemId
+      : activeItemId.value === itemId
+  )
+    ? 'active'
+    : '';
 }
 
 // Find the scrollable container that contains the document content
@@ -42,43 +48,47 @@ function findScrollableContainer(): Element | null {
     document.querySelector('.entity-main-column'),
     document.querySelector('.base-entity-view'),
     document.querySelector('.document-markdown'),
-    document.querySelector('.entity-content')
+    document.querySelector('.entity-content'),
   ];
-  
+
   for (const container of containers) {
     if (container && container.scrollHeight > container.clientHeight) {
       return container;
     }
   }
-  
+
   // Fallback to window
   return null;
 }
 
 // Track which section is currently visible
 function updateActiveSection() {
-  const headings = props.items.map(item => ({
-    id: item.anchorId,
-    element: document.getElementById(item.anchorId)
-  })).filter(item => item.element);
+  const headings = props.items
+    .map((item) => ({
+      id: item.anchorId,
+      element: document.getElementById(item.anchorId),
+    }))
+    .filter((item) => item.element);
 
   if (headings.length === 0) return;
 
   const scrollContainer = findScrollableContainer();
   const isWindow = !scrollContainer;
-  
+
   const scrollTop = isWindow ? window.scrollY : scrollContainer!.scrollTop;
-  const containerHeight = isWindow ? window.innerHeight : scrollContainer!.clientHeight;
+  const containerHeight = isWindow
+    ? window.innerHeight
+    : scrollContainer!.clientHeight;
   const threshold = containerHeight * 0.2; // 20% from top
 
   let activeHeading = headings[0];
-  
+
   for (const heading of headings) {
     if (!heading.element) continue;
-    
+
     const rect = heading.element.getBoundingClientRect();
     const elementTop = isWindow ? rect.top + scrollTop : rect.top;
-    
+
     if (elementTop <= threshold) {
       activeHeading = heading;
     } else {
@@ -95,7 +105,7 @@ function updateActiveSection() {
 let scrollTimeout: number | null = null;
 function handleScroll() {
   if (scrollTimeout) return;
-  
+
   scrollTimeout = window.setTimeout(() => {
     updateActiveSection();
     scrollTimeout = null;
@@ -103,20 +113,26 @@ function handleScroll() {
 }
 
 // Clear refs on items change to avoid stale refs
-watch(() => props.items, () => {
-  tocItemRefs.value = {};
-});
+watch(
+  () => props.items,
+  () => {
+    tocItemRefs.value = {};
+  },
+);
 
-watch(() => props.activeAnchorId, (val) => {
-  if (val) activeItemId.value = val;
-  // Scroll the active TOC item into view
-  nextTick(() => {
-    const el = tocItemRefs.value && tocItemRefs.value[val || ''];
-    if (el && tocNavRef.value) {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-  });
-});
+watch(
+  () => props.activeAnchorId,
+  (val) => {
+    if (val) activeItemId.value = val;
+    // Scroll the active TOC item into view
+    nextTick(() => {
+      const el = tocItemRefs.value && tocItemRefs.value[val || ''];
+      if (el && tocNavRef.value) {
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  },
+);
 
 onMounted(async () => {
   await nextTick();
@@ -124,7 +140,9 @@ onMounted(async () => {
   if (!props.activeAnchorId) {
     const scrollContainer = findScrollableContainer();
     if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      scrollContainer.addEventListener('scroll', handleScroll, {
+        passive: true,
+      });
     } else {
       window.addEventListener('scroll', handleScroll, { passive: true });
     }
@@ -146,18 +164,28 @@ onUnmounted(() => {
 });
 
 // Update active section when items change
-watch(() => props.items, async () => {
-  await nextTick();
-  setTimeout(updateActiveSection, 100);
-}, { deep: true });
+watch(
+  () => props.items,
+  async () => {
+    await nextTick();
+    setTimeout(updateActiveSection, 100);
+  },
+  { deep: true },
+);
 
 // Also update on route changes or when document content changes
-watch(() => props.items.length, async () => {
-  await nextTick();
-  setTimeout(updateActiveSection, 100);
-});
+watch(
+  () => props.items.length,
+  async () => {
+    await nextTick();
+    setTimeout(updateActiveSection, 100);
+  },
+);
 
-function setTocItemRef(el: Element | ComponentPublicInstance | null, item: TOCItem) {
+function setTocItemRef(
+  el: Element | ComponentPublicInstance | null,
+  item: TOCItem,
+) {
   if (el && el instanceof HTMLElement) {
     tocItemRefs.value[item.anchorId] = el;
   }
@@ -168,14 +196,18 @@ function setTocItemRef(el: Element | ComponentPublicInstance | null, item: TOCIt
   <div class="table-of-contents">
     <nav class="toc-nav" ref="tocNavRef">
       <ul class="toc-list">
-        <li 
-          v-for="item in items" 
-          :key="item.id" 
-          :class="['toc-item', getIndentClass(item.level), getActiveClass(item.anchorId)]"
-          :ref="el => setTocItemRef(el, item)"
+        <li
+          v-for="item in items"
+          :key="item.id"
+          :class="[
+            'toc-item',
+            getIndentClass(item.level),
+            getActiveClass(item.anchorId),
+          ]"
+          :ref="(el) => setTocItemRef(el, item)"
         >
-          <button 
-            class="toc-link" 
+          <button
+            class="toc-link"
             @click="emit('item-click', item.anchorId)"
             :title="item.title"
           >
@@ -188,8 +220,6 @@ function setTocItemRef(el: Element | ComponentPublicInstance | null, item: TOCIt
 </template>
 
 <style scoped>
-
-
 .toc-list {
   list-style: none;
   margin: 0;
@@ -212,7 +242,9 @@ function setTocItemRef(el: Element | ComponentPublicInstance | null, item: TOCIt
   font-size: 0.9rem;
   padding: 0.25rem 0;
   cursor: pointer;
-  transition: color 0.2s, background-color 0.2s;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
   text-decoration: none;
   border-radius: 4px;
   padding-left: 0.5rem;
@@ -257,4 +289,4 @@ function setTocItemRef(el: Element | ComponentPublicInstance | null, item: TOCIt
 .toc-item .toc-link {
   padding-left: 0.5rem;
 }
-</style> 
+</style>

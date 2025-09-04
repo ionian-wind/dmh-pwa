@@ -6,7 +6,12 @@ import type { ASTNode, EvaluationContext } from '../../../lib/types';
 vi.mock('../../../core', () => ({
   evaluate: vi.fn((ast: ASTNode, context: EvaluationContext) => {
     if (ast.type === 'number') {
-      return { total: (ast as any).value, rolls: [], warnings: [], details: {} };
+      return {
+        total: (ast as any).value,
+        rolls: [],
+        warnings: [],
+        details: {},
+      };
     }
     return { total: 0, rolls: [], warnings: [], details: {} };
   }),
@@ -34,7 +39,7 @@ describe('Macros Plugin > Extraction', () => {
       type: 'arithmetic',
       op: '+',
       left: { type: 'macro', name: 'attack' },
-      right: { type: 'macro', name: 'damage' }
+      right: { type: 'macro', name: 'damage' },
     };
     const macros = extractMacros(ast);
     expect(macros).toEqual([{ name: 'attack' }, { name: 'damage' }]);
@@ -46,8 +51,8 @@ describe('Macros Plugin > Extraction', () => {
       name: 'floor',
       args: [
         { type: 'macro', name: 'attack' },
-        { type: 'macro', name: 'damage' }
-      ]
+        { type: 'macro', name: 'damage' },
+      ],
     };
     const macros = extractMacros(ast);
     expect(macros).toEqual([{ name: 'attack' }, { name: 'damage' }]);
@@ -65,39 +70,48 @@ describe('Macros Plugin > Evaluation', () => {
   it('should evaluate a macro call by expanding it', async () => {
     const node = { type: 'macro', name: 'attack' };
     const macroAst = { type: 'number', value: 15 };
-    const context = { 
-      macroMap: { 
-        attack: macroAst
-      } 
+    const context = {
+      macroMap: {
+        attack: macroAst,
+      },
     } as any;
-    
+
     await evaluateMacroNode(node, context);
 
     // Check that core 'evaluate' was called with the expanded AST
-    expect(evaluate).toHaveBeenCalledWith(macroAst, expect.objectContaining({
-      nestingLevel: 1
-    }));
+    expect(evaluate).toHaveBeenCalledWith(
+      macroAst,
+      expect.objectContaining({
+        nestingLevel: 1,
+      }),
+    );
   });
 
   it('should throw error for missing macro', () => {
     const context = { macroMap: {} } as any;
     const node: ASTNode = { type: 'macro', name: 'missing' };
-    expect(() => evaluateMacroNode(node, context)).toThrow("Macro 'missing' not found");
+    expect(() => evaluateMacroNode(node, context)).toThrow(
+      "Macro 'missing' not found",
+    );
   });
 
   it('should throw error for recursion limit exceeded', () => {
     const context = {
-      macroMap: { 'a': { type: 'macro', name: 'a' } },
+      macroMap: { a: { type: 'macro', name: 'a' } },
       maxNesting: 5,
       nestingLevel: 6,
     } as any;
     const node: ASTNode = { type: 'macro', name: 'a' };
-    expect(() => evaluateMacroNode(node, context)).toThrow('Macro recursion limit exceeded (5 levels)');
+    expect(() => evaluateMacroNode(node, context)).toThrow(
+      'Macro recursion limit exceeded (5 levels)',
+    );
   });
 
   it('should throw error for non-macro node', () => {
     const context = { macroMap: {} } as any;
     const node: ASTNode = { type: 'dice', count: 1, sides: 6, modifiers: [] };
-    expect(() => evaluateMacroNode(node, context)).toThrow('Expected macro node');
+    expect(() => evaluateMacroNode(node, context)).toThrow(
+      'Expected macro node',
+    );
   });
-}); 
+});

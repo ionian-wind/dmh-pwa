@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import PartySelector from '@/components/PartySelector.vue';
+import PartySelector from '../../src/encounters/PartySelector.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/parties', () => ({ usePartyStore: () => ({

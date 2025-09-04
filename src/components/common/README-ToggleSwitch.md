@@ -15,26 +15,26 @@ A customizable toggle switch component with smooth animations, multiple sizes, a
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `modelValue` | `boolean` | `false` | Current state of the toggle (v-model) |
-| `disabled` | `boolean` | `false` | Whether the toggle is disabled |
-| `loading` | `boolean` | `false` | Whether to show loading state |
-| `size` | `'small' \| 'medium' \| 'large'` | `'medium'` | Size of the toggle switch |
-| `label` | `string` | `undefined` | Optional label text |
-| `description` | `string` | `undefined` | Optional description text |
+| Prop          | Type                             | Default     | Description                           |
+| ------------- | -------------------------------- | ----------- | ------------------------------------- |
+| `modelValue`  | `boolean`                        | `false`     | Current state of the toggle (v-model) |
+| `disabled`    | `boolean`                        | `false`     | Whether the toggle is disabled        |
+| `loading`     | `boolean`                        | `false`     | Whether to show loading state         |
+| `size`        | `'small' \| 'medium' \| 'large'` | `'medium'`  | Size of the toggle switch             |
+| `label`       | `string`                         | `undefined` | Optional label text                   |
+| `description` | `string`                         | `undefined` | Optional description text             |
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
+| Event               | Payload   | Description                       |
+| ------------------- | --------- | --------------------------------- |
 | `update:modelValue` | `boolean` | Emitted when toggle state changes |
-| `change` | `boolean` | Emitted when toggle state changes |
+| `change`            | `boolean` | Emitted when toggle state changes |
 
 ## Slots
 
-| Slot | Description |
-|------|-------------|
+| Slot      | Description                                 |
+| --------- | ------------------------------------------- |
 | `default` | Custom label content (overrides label prop) |
 
 ## Usage
@@ -99,22 +99,11 @@ const setting3 = ref(false);
 ```vue
 <template>
   <div class="toggle-states">
-    <ToggleSwitch
-      v-model="enabled"
-      label="Enabled Toggle"
-    />
-    
-    <ToggleSwitch
-      v-model="disabled"
-      :disabled="true"
-      label="Disabled Toggle"
-    />
-    
-    <ToggleSwitch
-      v-model="loading"
-      :loading="true"
-      label="Loading Toggle"
-    />
+    <ToggleSwitch v-model="enabled" label="Enabled Toggle" />
+
+    <ToggleSwitch v-model="disabled" :disabled="true" label="Disabled Toggle" />
+
+    <ToggleSwitch v-model="loading" :loading="true" label="Loading Toggle" />
   </div>
 </template>
 
@@ -165,25 +154,31 @@ const notifications = ref(true);
 ## Sizes
 
 ### Small
+
 ```vue
 <ToggleSwitch size="small" v-model="setting" label="Small Toggle" />
 ```
+
 - **Height**: 1.5rem (24px)
 - **Width**: 2.5rem (40px)
 - **Use for**: Compact interfaces, inline toggles
 
 ### Medium (Default)
+
 ```vue
 <ToggleSwitch size="medium" v-model="setting" label="Medium Toggle" />
 ```
+
 - **Height**: 2rem (32px)
 - **Width**: 3.5rem (56px)
 - **Use for**: Standard toggles, most use cases
 
 ### Large
+
 ```vue
 <ToggleSwitch size="large" v-model="setting" label="Large Toggle" />
 ```
+
 - **Height**: 2.5rem (40px)
 - **Width**: 4.5rem (72px)
 - **Use for**: Prominent toggles, mobile-friendly
@@ -191,26 +186,32 @@ const notifications = ref(true);
 ## States
 
 ### Normal State
+
 ```vue
 <ToggleSwitch v-model="setting" label="Normal Toggle" />
 ```
+
 - Fully interactive
 - Smooth animations
 - Hover effects enabled
 
 ### Disabled State
+
 ```vue
 <ToggleSwitch v-model="setting" :disabled="true" label="Disabled Toggle" />
 ```
+
 - Not interactive
 - Reduced opacity
 - No hover effects
 - Still focusable for accessibility
 
 ### Loading State
+
 ```vue
 <ToggleSwitch v-model="setting" :loading="true" label="Loading Toggle" />
 ```
+
 - Shows loading animation
 - Disabled interaction
 - Maintains toggle size
@@ -270,17 +271,20 @@ The component uses CSS custom properties for theming:
 ## Accessibility
 
 ### Keyboard Navigation
+
 - **Tab**: Navigate to toggle
 - **Space/Enter**: Toggle state
 - **Focus**: Visible focus indicators
 
 ### ARIA Support
+
 - Proper `role="switch"` attribute
 - `aria-checked` for current state
 - `aria-disabled` for disabled state
 - `aria-label` for screen readers
 
 ### Screen Reader Support
+
 - State announcements
 - Label descriptions
 - Loading state announcements
@@ -297,11 +301,12 @@ The component uses CSS custom properties for theming:
 ## Examples
 
 ### Settings Panel
+
 ```vue
 <template>
   <div class="settings-panel">
     <h3>Application Settings</h3>
-    
+
     <div class="setting-item">
       <ToggleSwitch
         v-model="settings.darkMode"
@@ -309,7 +314,7 @@ The component uses CSS custom properties for theming:
         description="Enable dark theme for better eye comfort"
       />
     </div>
-    
+
     <div class="setting-item">
       <ToggleSwitch
         v-model="settings.notifications"
@@ -317,7 +322,7 @@ The component uses CSS custom properties for theming:
         description="Receive notifications for important updates"
       />
     </div>
-    
+
     <div class="setting-item">
       <ToggleSwitch
         v-model="settings.autoSave"
@@ -335,17 +340,18 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 const settings = reactive({
   darkMode: false,
   notifications: true,
-  autoSave: true
+  autoSave: true,
 });
 </script>
 ```
 
 ### Feature Flags
+
 ```vue
 <template>
   <div class="feature-flags">
     <h3>Feature Flags</h3>
-    
+
     <div class="flag-item">
       <ToggleSwitch
         v-model="flags.newUI"
@@ -353,7 +359,7 @@ const settings = reactive({
         description="Enable the redesigned user interface"
       />
     </div>
-    
+
     <div class="flag-item">
       <ToggleSwitch
         v-model="flags.betaFeatures"
@@ -361,7 +367,7 @@ const settings = reactive({
         description="Enable experimental features"
       />
     </div>
-    
+
     <div class="flag-item">
       <ToggleSwitch
         v-model="flags.analytics"
@@ -374,6 +380,7 @@ const settings = reactive({
 ```
 
 ### Form Controls
+
 ```vue
 <template>
   <form @submit.prevent="handleSubmit">
@@ -384,7 +391,7 @@ const settings = reactive({
         description="You must accept the terms to continue"
       />
     </div>
-    
+
     <div class="form-group">
       <ToggleSwitch
         v-model="formData.marketing"
@@ -392,20 +399,19 @@ const settings = reactive({
         description="Get updates about new features and promotions"
       />
     </div>
-    
-    <Button type="submit" :disabled="!formData.terms">
-      Submit
-    </Button>
+
+    <Button type="submit" :disabled="!formData.terms"> Submit </Button>
   </form>
 </template>
 ```
 
 ### Permission Controls
+
 ```vue
 <template>
   <div class="permissions">
     <h3>User Permissions</h3>
-    
+
     <div class="permission-item">
       <ToggleSwitch
         v-model="permissions.read"
@@ -413,7 +419,7 @@ const settings = reactive({
         description="Allow user to view content"
       />
     </div>
-    
+
     <div class="permission-item">
       <ToggleSwitch
         v-model="permissions.write"
@@ -421,7 +427,7 @@ const settings = reactive({
         description="Allow user to create and edit content"
       />
     </div>
-    
+
     <div class="permission-item">
       <ToggleSwitch
         v-model="permissions.admin"
@@ -434,6 +440,7 @@ const settings = reactive({
 ```
 
 ### Loading States
+
 ```vue
 <template>
   <div class="async-toggles">
@@ -446,7 +453,7 @@ const settings = reactive({
         @change="handleSyncToggle"
       />
     </div>
-    
+
     <div class="toggle-item">
       <ToggleSwitch
         v-model="asyncSettings.backup"
@@ -465,7 +472,7 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 
 const asyncSettings = reactive({
   sync: false,
-  backup: true
+  backup: true,
 });
 
 const isSyncing = ref(false);
@@ -489,4 +496,4 @@ const handleBackupToggle = async (value) => {
   }
 };
 </script>
-``` 
+```

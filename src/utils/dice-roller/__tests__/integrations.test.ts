@@ -9,7 +9,7 @@ describe('Dice Roller Integrations', () => {
   beforeAll(async () => {
     // Clear plugins before tests
     (DiceRollerCore as any).plugins.length = 0;
-    
+
     // Register dice and macros plugins
     DiceRollerCore.registerPlugin(dicePlugin);
     DiceRollerCore.registerPlugin(macrosPlugin);
@@ -21,8 +21,8 @@ describe('Dice Roller Integrations', () => {
     it('should handle nested macro evaluation', async () => {
       const context = {
         macroMap: {
-          'a': { type: 'dice', count: 1, sides: 6, modifiers: [] },
-          'b': { type: 'macro', name: 'a' },
+          a: { type: 'dice', count: 1, sides: 6, modifiers: [] },
+          b: { type: 'macro', name: 'a' },
         },
       } as any;
       const ast = DiceRollerCore.parseInput('1d20 + #b');
@@ -38,13 +38,13 @@ describe('Dice Roller Integrations', () => {
       const result = DiceRollerCore.evaluate(ast, {});
       expect(result.total).toBe(6); // 1 + 5
     });
-  
+
     it('should evaluate nested inline rolls', () => {
       const ast = DiceRollerCore.parseInput('1 + [[2 + [[3+4]]]]');
       const result = DiceRollerCore.evaluate(ast, {});
       expect(result.total).toBe(1 + (2 + (3 + 4))); // 1 + 9 = 10
     });
-  
+
     it('should allow $[[N]] to reference inline roll results', () => {
       // Simulate: [[2+3]] + $[[0]]
       // $[[0]] should reference the result of the first inline roll (5)
@@ -52,10 +52,12 @@ describe('Dice Roller Integrations', () => {
       const result = DiceRollerCore.evaluate(ast, {});
       expect(result.total).toBe(10); // 5 + 5
     });
-  
+
     it('should throw for $[[N]] referencing non-existent inline roll', () => {
       const ast = DiceRollerCore.parseInput('$[[99]]');
-      expect(() => DiceRollerCore.evaluate(ast, {})).toThrow("Referenced roll '99' not found");
+      expect(() => DiceRollerCore.evaluate(ast, {})).toThrow(
+        "Referenced roll '99' not found",
+      );
     });
   });
 
@@ -79,9 +81,11 @@ describe('Dice Roller Integrations', () => {
     });
 
     it('should evaluate math functions', () => {
-      const ast = DiceRollerCore.parseInput('floor(2.9) + ceil(2.1) + round(2.5) + abs(-5)');
+      const ast = DiceRollerCore.parseInput(
+        'floor(2.9) + ceil(2.1) + round(2.5) + abs(-5)',
+      );
       const result = DiceRollerCore.evaluate(ast, {});
       expect(result.total).toBe(2 + 3 + 3 + 5);
     });
   });
-}); 
+});

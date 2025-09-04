@@ -4,25 +4,30 @@ import type { Timer } from '@/types';
 import { useStore } from '@/utils/storage';
 import timerSchema from '@/schemas/timer.schema.json';
 import { useI18n } from 'vue-i18n';
-import { toast } from 'vue3-toastify';
-import {debug, debugError} from "@/utils/debug";
+import { debugError } from '@/utils/debug';
+import { Notify } from 'quasar';
 
-function now() {
-  return Date.now();
-}
+const now = () => Date.now();
 
 let counter = false;
 
 function showToast(id: string, message: string) {
-  toast.info(
+  Notify.create({
+    color: 'secondary',
+    textColor: 'primary',
     message,
-    { toastId: id, position: toast.POSITION.TOP_CENTER, autoClose: false }
-  );
+    position: 'top',
+    timeout: 0,
+    closeBtn: true,
+  });
 }
 
 export const useTimerStore = defineStore('timers', () => {
   const { t } = useI18n();
-  const base = useStore<Timer>({ storeName: 'timers', validationSchema: timerSchema });
+  const base = useStore<Timer>({
+    storeName: 'timers',
+    validationSchema: timerSchema,
+  });
   const nowRef = ref<number>(now());
   const running = ref(false);
   // Timer-specific actions
@@ -88,6 +93,6 @@ export const useTimerStore = defineStore('timers', () => {
     stop,
     reset: (id: string) => start(id),
     now: computed(() => nowRef.value),
-    running: computed(() => running.value)
+    running: computed(() => running.value),
   };
 });

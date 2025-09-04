@@ -13,20 +13,20 @@ A flexible and accessible popover panel component that can be triggered by click
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isOpen` | `boolean` | - | Controls the visibility of the popover (required) |
-| `trigger` | `'click' \| 'hover' \| 'focus'` | `'click'` | How the popover is triggered |
-| `placement` | `string` | `'bottom'` | Position relative to trigger (see placement options) |
-| `offset` | `number` | `8` | Distance between trigger and popover in pixels |
-| `showArrow` | `boolean` | `true` | Whether to show the pointing arrow |
-| `closeOnClickOutside` | `boolean` | `true` | Close when clicking outside the popover |
-| `closeOnEscape` | `boolean` | `true` | Close when pressing Escape key |
-| `autoFocus` | `boolean` | `false` | Automatically focus the first focusable element |
-| `trapFocus` | `boolean` | `false` | Trap focus within the popover |
-| `title` | `string` | - | Optional title for the popover header |
-| `maxWidth` | `string` | `'300px'` | Maximum width of the popover |
-| `minWidth` | `string` | `'200px'` | Minimum width of the popover |
+| Prop                  | Type                            | Default    | Description                                          |
+| --------------------- | ------------------------------- | ---------- | ---------------------------------------------------- |
+| `isOpen`              | `boolean`                       | -          | Controls the visibility of the popover (required)    |
+| `trigger`             | `'click' \| 'hover' \| 'focus'` | `'click'`  | How the popover is triggered                         |
+| `placement`           | `string`                        | `'bottom'` | Position relative to trigger (see placement options) |
+| `offset`              | `number`                        | `8`        | Distance between trigger and popover in pixels       |
+| `showArrow`           | `boolean`                       | `true`     | Whether to show the pointing arrow                   |
+| `closeOnClickOutside` | `boolean`                       | `true`     | Close when clicking outside the popover              |
+| `closeOnEscape`       | `boolean`                       | `true`     | Close when pressing Escape key                       |
+| `autoFocus`           | `boolean`                       | `false`    | Automatically focus the first focusable element      |
+| `trapFocus`           | `boolean`                       | `false`    | Trap focus within the popover                        |
+| `title`               | `string`                        | -          | Optional title for the popover header                |
+| `maxWidth`            | `string`                        | `'300px'`  | Maximum width of the popover                         |
+| `minWidth`            | `string`                        | `'200px'`  | Minimum width of the popover                         |
 
 ### Placement Options
 
@@ -47,24 +47,24 @@ The `placement` prop supports the following values:
 
 ## Events
 
-| Event | Description |
-|-------|-------------|
-| `open` | Emitted when the popover opens |
+| Event   | Description                     |
+| ------- | ------------------------------- |
+| `open`  | Emitted when the popover opens  |
 | `close` | Emitted when the popover closes |
 
 ## Slots
 
-| Slot | Description |
-|------|-------------|
+| Slot      | Description                           |
+| --------- | ------------------------------------- |
 | `trigger` | The element that triggers the popover |
-| `default` | The content inside the popover panel |
+| `default` | The content inside the popover panel  |
 
 ## Exposed Methods
 
-| Method | Description |
-|--------|-------------|
-| `open()` | Programmatically open the popover |
-| `close()` | Programmatically close the popover |
+| Method     | Description                          |
+| ---------- | ------------------------------------ |
+| `open()`   | Programmatically open the popover    |
+| `close()`  | Programmatically close the popover   |
 | `toggle()` | Toggle the popover open/closed state |
 
 ## Usage Examples
@@ -75,11 +75,9 @@ The `placement` prop supports the following values:
 <template>
   <PopoverPanel :is-open="isOpen" @close="isOpen = false">
     <template #trigger>
-      <Button @click="isOpen = !isOpen">
-        Click me
-      </Button>
+      <Button @click="isOpen = !isOpen"> Click me </Button>
     </template>
-    
+
     <div>
       <p>This is the popover content!</p>
       <Button @click="isOpen = false">Close</Button>
@@ -100,8 +98,8 @@ const isOpen = ref(false);
 
 ```vue
 <template>
-  <PopoverPanel 
-    :is-open="isOpen" 
+  <PopoverPanel
+    :is-open="isOpen"
     trigger="hover"
     placement="top"
     @open="isOpen = true"
@@ -110,7 +108,7 @@ const isOpen = ref(false);
     <template #trigger>
       <span class="info-icon">ℹ️</span>
     </template>
-    
+
     <div>
       <h4>Help Information</h4>
       <p>This is helpful information that appears on hover.</p>
@@ -123,8 +121,8 @@ const isOpen = ref(false);
 
 ```vue
 <template>
-  <PopoverPanel 
-    :is-open="isOpen" 
+  <PopoverPanel
+    :is-open="isOpen"
     title="User Menu"
     placement="bottom-end"
     :max-width="'250px'"
@@ -138,7 +136,7 @@ const isOpen = ref(false);
         Profile
       </Button>
     </template>
-    
+
     <div class="user-menu">
       <a href="/profile">View Profile</a>
       <a href="/settings">Settings</a>
@@ -152,8 +150,8 @@ const isOpen = ref(false);
 
 ```vue
 <template>
-  <PopoverPanel 
-    :is-open="isOpen" 
+  <PopoverPanel
+    :is-open="isOpen"
     trigger="focus"
     placement="bottom"
     :auto-focus="true"
@@ -161,13 +159,9 @@ const isOpen = ref(false);
     @close="isOpen = false"
   >
     <template #trigger>
-      <input 
-        type="text" 
-        placeholder="Search..."
-        @focus="isOpen = true"
-      />
+      <input type="text" placeholder="Search..." @focus="isOpen = true" />
     </template>
-    
+
     <div class="search-results">
       <div v-for="result in searchResults" :key="result.id">
         {{ result.name }}
@@ -184,16 +178,12 @@ const isOpen = ref(false);
   <div>
     <Button @click="openPopover">Open Popover</Button>
     <Button @click="closePopover">Close Popover</Button>
-    
-    <PopoverPanel 
-      ref="popoverRef"
-      :is-open="isOpen"
-      @close="isOpen = false"
-    >
+
+    <PopoverPanel ref="popoverRef" :is-open="isOpen" @close="isOpen = false">
       <template #trigger>
         <span>Trigger Element</span>
       </template>
-      
+
       <div>Popover content</div>
     </PopoverPanel>
   </div>
@@ -298,4 +288,4 @@ The component includes several accessibility features:
 
 - `BaseModal` - For full-screen modal dialogs
 - `Button` - For trigger elements
-- `BaseCard` - For consistent card styling 
+- `BaseCard` - For consistent card styling

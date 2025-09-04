@@ -14,26 +14,26 @@ A flexible card component that provides a standardized container for displaying 
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `showView` | `boolean` | `false` | Whether to show the "View Details" button |
-| `showEdit` | `boolean` | `false` | Whether to show the edit button |
-| `showDelete` | `boolean` | `false` | Whether to show the delete button |
+| Prop         | Type      | Default | Description                               |
+| ------------ | --------- | ------- | ----------------------------------------- |
+| `showView`   | `boolean` | `false` | Whether to show the "View Details" button |
+| `showEdit`   | `boolean` | `false` | Whether to show the edit button           |
+| `showDelete` | `boolean` | `false` | Whether to show the delete button         |
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `view` | - | Emitted when "View Details" button is clicked |
-| `edit` | - | Emitted when edit button is clicked |
-| `delete` | - | Emitted when delete button is clicked |
+| Event    | Payload | Description                                   |
+| -------- | ------- | --------------------------------------------- |
+| `view`   | -       | Emitted when "View Details" button is clicked |
+| `edit`   | -       | Emitted when edit button is clicked           |
+| `delete` | -       | Emitted when delete button is clicked         |
 
 ## Slots
 
-| Slot | Description |
-|------|-------------|
-| `default` | Main content area |
-| `header` | Optional header section |
+| Slot      | Description                                        |
+| --------- | -------------------------------------------------- |
+| `default` | Main content area                                  |
+| `header`  | Optional header section                            |
 | `actions` | Custom action buttons (overrides built-in buttons) |
 
 ## Usage
@@ -62,7 +62,7 @@ import BaseCard from '@/components/common/BaseCard.vue';
       <h3>Card with Header</h3>
       <span class="card-subtitle">Additional header content</span>
     </template>
-    
+
     <p>This card has a header section with title and subtitle.</p>
     <p>The header is separated from the content with a border.</p>
   </BaseCard>
@@ -114,7 +114,7 @@ const handleDelete = () => {
   <BaseCard>
     <h3>Card with Custom Actions</h3>
     <p>This card has custom action buttons.</p>
-    
+
     <template #actions>
       <Button variant="primary" size="small" @click="handlePrimary">
         Primary Action
@@ -158,7 +158,7 @@ const handleSecondary = () => {
         <span class="character-level">Level {{ character.level }}</span>
       </div>
     </template>
-    
+
     <div class="character-info">
       <p><strong>Race:</strong> {{ character.race }}</p>
       <p><strong>Class:</strong> {{ character.class }}</p>
@@ -175,7 +175,7 @@ const character = ref({
   level: 10,
   race: 'Human',
   class: 'Ranger',
-  background: 'Outlander'
+  background: 'Outlander',
 });
 
 const viewCharacter = () => {
@@ -261,6 +261,7 @@ The component uses CSS custom properties for theming:
 ## Examples
 
 ### Product Card
+
 ```vue
 <BaseCard show-view @view="viewProduct">
   <template #header>
@@ -277,6 +278,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### User Profile Card
+
 ```vue
 <BaseCard show-edit show-delete @edit="editProfile" @delete="deleteProfile">
   <template #header>
@@ -298,6 +300,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Notification Card
+
 ```vue
 <BaseCard>
   <template #header>
@@ -322,6 +325,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Dashboard Widget Card
+
 ```vue
 <BaseCard>
   <template #header>
@@ -348,8 +352,16 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Blog Post Card
+
 ```vue
-<BaseCard show-view show-edit show-delete @view="viewPost" @edit="editPost" @delete="deletePost">
+<BaseCard
+  show-view
+  show-edit
+  show-delete
+  @view="viewPost"
+  @edit="editPost"
+  @delete="deletePost"
+>
   <template #header>
     <div class="post-header">
       <h3>{{ post.title }}</h3>
@@ -366,4 +378,4 @@ The component uses CSS custom properties for theming:
     <span v-for="tag in post.tags" :key="tag" class="tag">{{ tag }}</span>
   </div>
 </BaseCard>
-``` 
+```

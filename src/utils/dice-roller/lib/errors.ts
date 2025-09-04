@@ -2,28 +2,28 @@
 
 export class DiceSyntaxError extends Error {
   constructor(message: string) {
-    super(message)
-    this.name = 'DiceSyntaxError'
+    super(message);
+    this.name = 'DiceSyntaxError';
   }
 }
 
 export class DiceValidationError extends Error {
   constructor(message: string) {
-    super(message)
-    this.name = 'DiceValidationError'
+    super(message);
+    this.name = 'DiceValidationError';
   }
 }
 
 export class DiceMissingDataError extends Error {
   constructor(message: string) {
-    super(message)
-    this.name = 'DiceMissingDataError'
+    super(message);
+    this.name = 'DiceMissingDataError';
   }
 }
 
 export class DiceWarning {
-  message: string
+  message: string;
   constructor(message: string) {
-    this.message = message
+    this.message = message;
   }
-} 
+}

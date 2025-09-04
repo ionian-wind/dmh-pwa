@@ -5,8 +5,8 @@ export function deepUnwrap(obj: any): any {
   if (
     obj &&
     (obj.constructor?.name === 'FileSystemFileHandle' ||
-     obj.constructor?.name === 'FileSystemDirectoryHandle' ||
-     obj instanceof Blob)
+      obj.constructor?.name === 'FileSystemDirectoryHandle' ||
+      obj instanceof Blob)
   ) {
     return obj;
   }
@@ -24,4 +24,4 @@ export function deepUnwrap(obj: any): any {
     return out;
   }
   return obj;
-} 
+}

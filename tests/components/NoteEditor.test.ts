@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { vi } from 'vitest';
-import NoteEditor from '@/components/NoteEditor.vue';
+import NoteEditor from '../../src/notes/NoteEditor.vue';
 
 vi.mock('@/components/ModuleSelector.vue', () => ({
   __esModule: true,

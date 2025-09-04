@@ -7,4 +7,4 @@ export interface MacroAstNode {
 // Macro extraction result type
 export interface MacroExtractionResult {
   name: string;
-} 
+}

@@ -15,7 +15,7 @@ export const initialSchemaMigration: Migration = {
     'indexations_mentions',
     'jukebox_playlists',
     'jukebox_tracks',
-    'jukebox_files'
+    'jukebox_files',
   ],
-  go: async () => {}
-}; 
+  go: async () => {},
+};

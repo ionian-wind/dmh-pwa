@@ -8,7 +8,7 @@ import { computed, Ref } from 'vue';
  */
 export function useAnimatedGradient(
   enabled: Ref<boolean> | (() => boolean),
-  paletteGetter?: () => string[] | undefined
+  paletteGetter?: () => string[] | undefined,
 ) {
   return computed(() => {
     const isEnabled = typeof enabled === 'function' ? enabled() : enabled.value;
@@ -18,11 +18,13 @@ export function useAnimatedGradient(
     let gradient = '';
     if (palette && palette.length > 0) {
       // Use palette for gradient
-      const colors = palette.map(color => `${color}73`); // add alpha
-      const stops = colors.map((color, i) => {
-        const pct = (i / (colors.length - 1)) * 100;
-        return `${color} ${pct}%`;
-      }).join(', ');
+      const colors = palette.map((color) => `${color}73`); // add alpha
+      const stops = colors
+        .map((color, i) => {
+          const pct = (i / (colors.length - 1)) * 100;
+          return `${color} ${pct}%`;
+        })
+        .join(', ');
       gradient = `linear-gradient(45deg, ${stops})`;
     } else {
       // Default gradient (from JukeboxPlayer)
@@ -36,4 +38,4 @@ export function useAnimatedGradient(
     }
     return { '--custom-gradient': gradient };
   });
-} 
+}

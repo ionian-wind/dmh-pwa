@@ -76,12 +76,12 @@ function updateValue(event: MouseEvent | TouchEvent) {
 
   if (props.vertical) {
     const clientY = touch ? touch.clientY : (event as MouseEvent).clientY;
-    percentage = 1 - ((clientY - rect.top) / rect.height);
+    percentage = 1 - (clientY - rect.top) / rect.height;
   } else {
     const clientX = touch ? touch.clientX : (event as MouseEvent).clientX;
     percentage = (clientX - rect.left) / rect.width;
   }
-  
+
   // Clamp percentage
   percentage = Math.max(0, Math.min(1, percentage));
 
@@ -89,7 +89,7 @@ function updateValue(event: MouseEvent | TouchEvent) {
 
   // Apply step
   const steppedValue = Math.round(newValue / props.step) * props.step;
-  
+
   // Clamp to min/max after stepping
   const finalValue = Math.max(props.min, Math.min(props.max, steppedValue));
 
@@ -108,7 +108,11 @@ onBeforeUnmount(() => {
   <div
     ref="sliderContainerRef"
     class="slider-container"
-    :class="{ 'is-disabled': disabled, 'is-vertical': vertical, 'is-horizontal': !vertical }"
+    :class="{
+      'is-disabled': disabled,
+      'is-vertical': vertical,
+      'is-horizontal': !vertical,
+    }"
     @mousedown.prevent="handleInteractionStart"
     @touchstart.prevent="handleInteractionStart"
   >
@@ -159,10 +163,9 @@ onBeforeUnmount(() => {
   border: 2px solid var(--track-fill-color);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.1s ease;
 }
-
 
 .slider-container.is-disabled {
   cursor: not-allowed;
@@ -203,4 +206,4 @@ onBeforeUnmount(() => {
 .slider-container.is-vertical .thumb:hover {
   transform: translate(-50%, 50%) scale(1.1);
 }
-</style> 
+</style>

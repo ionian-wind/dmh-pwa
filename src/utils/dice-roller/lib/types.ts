@@ -43,7 +43,10 @@ export interface EvaluationResult {
 
 // Error types
 export class DiceRollerError extends Error {
-  constructor(message: string, public code?: string) {
+  constructor(
+    message: string,
+    public code?: string,
+  ) {
     super(message);
     this.name = 'DiceRollerError';
   }
@@ -68,4 +71,4 @@ export class MissingDataError extends DiceRollerError {
     super(message, 'MISSING_DATA_ERROR');
     this.name = 'MissingDataError';
   }
-} 
+}

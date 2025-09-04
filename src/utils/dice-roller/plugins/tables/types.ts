@@ -9,4 +9,4 @@ export interface TableAstNode {
 export interface TableExtractionResult {
   name: string;
   count: number;
-} 
+}

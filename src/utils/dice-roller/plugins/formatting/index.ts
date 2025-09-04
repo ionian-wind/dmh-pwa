@@ -1,6 +1,11 @@
 // Formatting plugin
 // Modular dice roller plugin for formatting/markup parsing, extraction, and evaluation
-import type { DiceRollerPlugin, ASTNode, EvaluationContext, EvaluationResult } from '../../core';
+import type {
+  DiceRollerPlugin,
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../core';
 import { debugLog } from '../../lib/utils';
 
 // Formatting AST node type
@@ -46,7 +51,10 @@ export function extractFormatting(ast: ASTNode): string[] {
 }
 
 // --- Evaluation ---
-export function evaluateFormattingNode(node: ASTNode, context: EvaluationContext): EvaluationResult {
+export function evaluateFormattingNode(
+  node: ASTNode,
+  context: EvaluationContext,
+): EvaluationResult {
   if (node.type !== 'formatting') {
     throw new Error('Expected formatting node');
   }
@@ -64,7 +72,7 @@ export function evaluateFormattingNode(node: ASTNode, context: EvaluationContext
     total: 0,
     rolls: [],
     warnings: [],
-    details: { markup, value }
+    details: { markup, value },
   };
 }
 
@@ -80,7 +88,11 @@ export const formattingPlugin: DiceRollerPlugin = {
     return extractFormatting(ast);
   },
   evaluateFormatting(node: any, context: any) {
-    debugLog('formattingPlugin', 'evaluateFormatting called:', JSON.stringify(node));
+    debugLog(
+      'formattingPlugin',
+      'evaluateFormatting called:',
+      JSON.stringify(node),
+    );
     return evaluateFormattingNode(node, context);
   },
 };
@@ -89,4 +101,4 @@ export const formattingPlugin: DiceRollerPlugin = {
  * Formatting Plugin
  * - extractFormatting: returns an array of formatting markups from the AST
  * - evaluateFormatting: evaluates formatting nodes by substituting markup tokens
- */ 
+ */

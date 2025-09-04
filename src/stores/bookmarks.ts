@@ -4,11 +4,19 @@ import { useStore } from '@/utils/storage';
 import bookmarkSchema from '@/schemas/bookmark.schema.json';
 
 export const useBookmarkStore = defineStore('bookmarks', () => {
-  const base = useStore<Bookmark>({ storeName: 'bookmarks', validationSchema: bookmarkSchema });
+  const base = useStore<Bookmark>({
+    storeName: 'bookmarks',
+    validationSchema: bookmarkSchema,
+  });
 
   // Find a bookmark by moduleId and noteId
-  function findByModuleAndAnchor(moduleId: string, noteId: string): Bookmark | undefined {
-    return base.items.value.find(b => b.moduleId === moduleId && b.noteId === noteId);
+  function findByModuleAndAnchor(
+    moduleId: string,
+    noteId: string,
+  ): Bookmark | undefined {
+    return base.items.value.find(
+      (b) => b.moduleId === moduleId && b.noteId === noteId,
+    );
   }
 
   // Check if a heading is bookmarked
@@ -37,4 +45,4 @@ export const useBookmarkStore = defineStore('bookmarks', () => {
     addBookmark,
     removeBookmark,
   };
-}); 
+});

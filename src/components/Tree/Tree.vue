@@ -1,29 +1,29 @@
 <script setup lang="ts" generic="T extends Record<string, unknown>">
-  import { DnDOperations, useDroppable } from '@vue-dnd-kit/core';
-  import TreeItem from './TreeItem.vue';
-  import { TValidItemKeys, TValidNestingKeys } from './types';
-  import { computed } from 'vue';
+import { DnDOperations, useDroppable } from '@vue-dnd-kit/core';
+import TreeItem from './TreeItem.vue';
+import { TValidItemKeys, TValidNestingKeys } from './types';
+import { computed } from 'vue';
 
-  const { data, groups = ['tree'] } = defineProps<{
-    data: T[];
-    itemKey: TValidItemKeys<T>;
-    nestingKey: TValidNestingKeys<T>;
-    groups?: string[];
-  }>();
+const { data, groups = ['tree'] } = defineProps<{
+  data: T[];
+  itemKey: TValidItemKeys<T>;
+  nestingKey: TValidNestingKeys<T>;
+  groups?: string[];
+}>();
 
-  defineSlots<{
-    default: (props: { item: T }) => any;
-  }>();
+defineSlots<{
+  default: (props: { item: T }) => any;
+}>();
 
-  const { elementRef, isOvered } = useDroppable({
-    groups,
-    data: computed(() => ({
-      source: data,
-    })),
-    events: {
-      onDrop: DnDOperations.applyTransfer,
-    },
-  });
+const { elementRef, isOvered } = useDroppable({
+  groups,
+  data: computed(() => ({
+    source: data,
+  })),
+  events: {
+    onDrop: DnDOperations.applyTransfer,
+  },
+});
 </script>
 
 <template>

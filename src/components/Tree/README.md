@@ -107,57 +107,52 @@ No slots available in this component. TreeDragHandle renders a drag handle icon.
 
 ```vue
 <script setup lang="ts">
-  import { ref } from 'vue';
-  import { Tree } from '{your component path}/Tree';
+import { ref } from 'vue';
+import { Tree } from '{your component path}/Tree';
 
-  interface IUser {
-    id: number;
-    name: string;
-    children?: IUser[];
-  }
+interface IUser {
+  id: number;
+  name: string;
+  children?: IUser[];
+}
 
-  const users = ref<IUser[]>([
-    {
-      id: 1,
-      name: 'John',
-      children: [
-        {
-          id: 2,
-          name: 'Victoria',
-          children: [],
-        },
-        {
-          id: 3,
-          name: 'Abraham',
-          children: [
-            {
-              id: 4,
-              name: 'Eliz',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 5,
-      name: 'Sarah',
-      children: [
-        {
-          id: 6,
-          name: 'Michael',
-        },
-      ],
-    },
-  ]);
+const users = ref<IUser[]>([
+  {
+    id: 1,
+    name: 'John',
+    children: [
+      {
+        id: 2,
+        name: 'Victoria',
+        children: [],
+      },
+      {
+        id: 3,
+        name: 'Abraham',
+        children: [
+          {
+            id: 4,
+            name: 'Eliz',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 5,
+    name: 'Sarah',
+    children: [
+      {
+        id: 6,
+        name: 'Michael',
+      },
+    ],
+  },
+]);
 </script>
 
 <template>
-  <Tree
-    :data="users"
-    item-key="id"
-    nesting-key="children"
-    v-slot="{ item }"
-  >
+  <Tree :data="users" item-key="id" nesting-key="children" v-slot="{ item }">
     <div class="tree-item-content">
       <span class="user-name">{{ item.name }}</span>
       <span class="user-id">#{{ item.id }}</span>
@@ -166,20 +161,20 @@ No slots available in this component. TreeDragHandle renders a drag handle icon.
 </template>
 
 <style scoped>
-  .tree-item-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .user-name {
-    font-weight: 500;
-  }
+.user-name {
+  font-weight: 500;
+}
 
-  .user-id {
-    color: #6b7280;
-    font-size: 0.875rem;
-  }
+.user-id {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
 </style>
 ```
 

@@ -30,8 +30,18 @@ export class DiceRollerDiceParser extends CstParser {
       let left = $.SUBRULE($.exponential);
       $.MANY(() => {
         $.OR([
-          { ALT: () => { $.CONSUME(tokens.Plus); $.SUBRULE2($.exponential); } },
-          { ALT: () => { $.CONSUME(tokens.Minus); $.SUBRULE3($.exponential); } },
+          {
+            ALT: () => {
+              $.CONSUME(tokens.Plus);
+              $.SUBRULE2($.exponential);
+            },
+          },
+          {
+            ALT: () => {
+              $.CONSUME(tokens.Minus);
+              $.SUBRULE3($.exponential);
+            },
+          },
         ]);
       });
       return left;
@@ -40,9 +50,24 @@ export class DiceRollerDiceParser extends CstParser {
       let left = $.SUBRULE($.primary);
       $.MANY(() => {
         $.OR([
-          { ALT: () => { $.CONSUME(tokens.Multiply); $.SUBRULE2($.primary); } },
-          { ALT: () => { $.CONSUME(tokens.Divide); $.SUBRULE3($.primary); } },
-          { ALT: () => { $.CONSUME(tokens.Modulo); $.SUBRULE4($.primary); } },
+          {
+            ALT: () => {
+              $.CONSUME(tokens.Multiply);
+              $.SUBRULE2($.primary);
+            },
+          },
+          {
+            ALT: () => {
+              $.CONSUME(tokens.Divide);
+              $.SUBRULE3($.primary);
+            },
+          },
+          {
+            ALT: () => {
+              $.CONSUME(tokens.Modulo);
+              $.SUBRULE4($.primary);
+            },
+          },
         ]);
       });
       return left;
@@ -67,7 +92,7 @@ export class DiceRollerDiceParser extends CstParser {
       $.CONSUME(tokens.LParen);
       $.AT_LEAST_ONE_SEP({
         SEP: tokens.Comma,
-        DEF: () => $.SUBRULE($.expression)
+        DEF: () => $.SUBRULE($.expression),
       });
       $.CONSUME(tokens.RParen);
     });
@@ -81,7 +106,7 @@ export class DiceRollerDiceParser extends CstParser {
       $.CONSUME(tokens.LBrace);
       $.AT_LEAST_ONE_SEP({
         SEP: tokens.Comma,
-        DEF: () => $.SUBRULE($.expression)
+        DEF: () => $.SUBRULE($.expression),
       });
       $.CONSUME(tokens.RBrace);
       $.MANY(() => {
@@ -124,7 +149,7 @@ export class DiceRollerDiceParser extends CstParser {
       $.CONSUME(tokens.LBracket);
       $.AT_LEAST_ONE_SEP({
         SEP: tokens.Comma,
-        DEF: () => $.CONSUME2(tokens.Integer)
+        DEF: () => $.CONSUME2(tokens.Integer),
       });
       $.CONSUME(tokens.RBracket);
       $.MANY(() => {
@@ -217,15 +242,19 @@ export class DiceRollerDiceParser extends CstParser {
         { ALT: () => $.CONSUME(tokens.Integer) },
         { ALT: () => $.CONSUME(tokens.Macro) },
         { ALT: () => $.SUBRULE($.inlineRoll) },
-        { ALT: () => {
-          $.CONSUME(tokens.Minus);
-          $.SUBRULE($.primary);
-        } },
-        { ALT: () => {
-          $.CONSUME(tokens.LParen);
-          $.SUBRULE($.expression);
-          $.CONSUME(tokens.RParen);
-        } },
+        {
+          ALT: () => {
+            $.CONSUME(tokens.Minus);
+            $.SUBRULE($.primary);
+          },
+        },
+        {
+          ALT: () => {
+            $.CONSUME(tokens.LParen);
+            $.SUBRULE($.expression);
+            $.CONSUME(tokens.RParen);
+          },
+        },
       ]);
     });
     $.fudgeDice = $.RULE('fudgeDice', () => {
@@ -281,4 +310,4 @@ export function parseDiceExpression(input: string) {
   parser.input = lexResult.tokens;
   const cst = parser.expression();
   return { cst, lexResult, parser };
-} 
+}

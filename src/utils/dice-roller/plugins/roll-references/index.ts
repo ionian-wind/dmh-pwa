@@ -1,6 +1,11 @@
 // Roll References plugin
 // Modular dice roller plugin for roll reference parsing, extraction, and evaluation
-import type { DiceRollerPlugin, ASTNode, EvaluationContext, EvaluationResult } from '../../core';
+import type {
+  DiceRollerPlugin,
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../core';
 import { debugLog } from '../../lib/utils';
 
 // Roll reference AST node type
@@ -16,7 +21,9 @@ export function parseRollReferenceAst(input: string): ASTNode {
   let match = input.match(/^\$\[\[(\d+)\]\]$/);
   if (match) {
     const ref = match[1];
-    debugLog('rollReferencesPlugin', 'Parsed roll reference (inline):', { ref });
+    debugLog('rollReferencesPlugin', 'Parsed roll reference (inline):', {
+      ref,
+    });
     return { type: 'roll-reference', ref } as ASTNode;
   }
   match = input.match(/^\$\[roll:([a-zA-Z0-9_-]+)\]$/);
@@ -53,13 +60,19 @@ export function extractRollReferences(ast: ASTNode): string[] {
 }
 
 // --- Evaluation ---
-export function evaluateRollReferenceNode(node: ASTNode, context: EvaluationContext): EvaluationResult {
+export function evaluateRollReferenceNode(
+  node: ASTNode,
+  context: EvaluationContext,
+): EvaluationResult {
   if (node.type !== 'roll-reference') {
     throw new Error('Expected roll reference node');
   }
   const ref = (node as any).ref;
   const rolls = (context as any).rolls || {};
-  debugLog('rollReferencesPlugin', 'Evaluating roll reference:', { ref, rolls });
+  debugLog('rollReferencesPlugin', 'Evaluating roll reference:', {
+    ref,
+    rolls,
+  });
   if (!(ref in rolls)) {
     throw new Error(`Referenced roll '${ref}' not found`);
   }
@@ -69,7 +82,7 @@ export function evaluateRollReferenceNode(node: ASTNode, context: EvaluationCont
     total: typeof value === 'number' ? value : 0,
     rolls: Array.isArray(value) ? value : [],
     warnings: [],
-    details: { ref, value }
+    details: { ref, value },
   };
 }
 
@@ -85,7 +98,11 @@ export const rollReferencesPlugin: DiceRollerPlugin = {
     return extractRollReferences(ast);
   },
   evaluateRollReference(node: any, context: any) {
-    debugLog('rollReferencesPlugin', 'evaluateRollReference called:', JSON.stringify(node));
+    debugLog(
+      'rollReferencesPlugin',
+      'evaluateRollReference called:',
+      JSON.stringify(node),
+    );
     return evaluateRollReferenceNode(node, context);
   },
 };
@@ -94,4 +111,4 @@ export const rollReferencesPlugin: DiceRollerPlugin = {
  * Roll References Plugin
  * - extractRolls: returns an array of roll reference IDs from the AST
  * - evaluateRollReference: evaluates roll reference nodes by substituting referenced results
- */ 
+ */

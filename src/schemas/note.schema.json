@@ -2,7 +2,16 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Note",
   "type": "object",
-  "required": ["id", "title", "content", "typeId", "tags", "moduleId", "createdAt", "updatedAt"],
+  "required": [
+    "id",
+    "title",
+    "content",
+    "typeId",
+    "tags",
+    "moduleId",
+    "createdAt",
+    "updatedAt"
+  ],
   "properties": {
     "id": {
       "type": "string",
@@ -58,4 +67,4 @@
       "description": "Timestamp when the note was last updated"
     }
   }
-} 
+}

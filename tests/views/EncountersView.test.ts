@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import EncountersView from '@/views/EncountersView.vue';
+import EncountersView from '../../src/encounters/EncountersView.vue';
 import { setActivePinia, createPinia } from 'pinia';
 import { vi } from 'vitest';
 

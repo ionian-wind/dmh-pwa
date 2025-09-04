@@ -4,15 +4,18 @@ import type { ASTNode, EvaluationContext } from './types';
 import { debug } from '../../debug';
 
 // AST traversal utilities
-export function traverseAST(node: ASTNode, visitor: (node: ASTNode) => void): void {
+export function traverseAST(
+  node: ASTNode,
+  visitor: (node: ASTNode) => void,
+): void {
   visitor(node);
-  
+
   // Recursively visit children
   for (const key of Object.keys(node)) {
     if (key === 'type') continue;
     const value = node[key];
     if (Array.isArray(value)) {
-      value.forEach(child => {
+      value.forEach((child) => {
         if (child && typeof child === 'object' && 'type' in child) {
           traverseAST(child, visitor);
         }
@@ -60,7 +63,12 @@ export function validatePositiveInteger(value: any, name: string): number {
   return num;
 }
 
-export function validateRange(value: number, min: number, max: number, name: string): number {
+export function validateRange(
+  value: number,
+  min: number,
+  max: number,
+  name: string,
+): number {
   if (value < min || value > max) {
     throw new Error(`${name} must be between ${min} and ${max}`);
   }
@@ -98,65 +106,89 @@ export function dropLowest(rolls: number[], count: number): number[] {
 }
 
 // Success counting utilities
-export function countSuccesses(rolls: number[], target: number, operator: '>' | '<' | '>=' | '<=' | '=' | '!='): number {
-  return rolls.filter(roll => {
+export function countSuccesses(
+  rolls: number[],
+  target: number,
+  operator: '>' | '<' | '>=' | '<=' | '=' | '!=',
+): number {
+  return rolls.filter((roll) => {
     switch (operator) {
-      case '>': return roll > target;
-      case '<': return roll < target;
-      case '>=': return roll >= target;
-      case '<=': return roll <= target;
-      case '=': return roll === target;
-      case '!=': return roll !== target;
-      default: return false;
+      case '>':
+        return roll > target;
+      case '<':
+        return roll < target;
+      case '>=':
+        return roll >= target;
+      case '<=':
+        return roll <= target;
+      case '=':
+        return roll === target;
+      case '!=':
+        return roll !== target;
+      default:
+        return false;
     }
   }).length;
 }
 
 // Explosion utilities
 export function explodeDice(
-    rolls: number[], 
-    sides: number, 
-    maxRolls: number = 99, 
-    explosionTarget?: number,
-    operator?: '>' | '<' | '>=' | '<=' | '=' | '!='
-): { rolls: number[], warnings: string[] } {
+  rolls: number[],
+  sides: number,
+  maxRolls: number = 99,
+  explosionTarget?: number,
+  operator?: '>' | '<' | '>=' | '<=' | '=' | '!=',
+): { rolls: number[]; warnings: string[] } {
   const result: number[] = [...rolls];
   const warnings: string[] = [];
   let rollCount = rolls.length;
-  
+
   const target = explosionTarget ?? sides;
   const op = operator ?? '=';
 
   for (let i = 0; i < result.length && rollCount < maxRolls; i++) {
     let currentRoll = result[i];
-    
+
     let shouldExplode = false;
     do {
-        switch (op) {
-            case '>': shouldExplode = currentRoll > target; break;
-            case '<': shouldExplode = currentRoll < target; break;
-            case '>=': shouldExplode = currentRoll >= target; break;
-            case '<=': shouldExplode = currentRoll <= target; break;
-            case '=': shouldExplode = currentRoll === target; break;
-            case '!=': shouldExplode = currentRoll !== target; break;
-            default: shouldExplode = currentRoll === target;
-        }
+      switch (op) {
+        case '>':
+          shouldExplode = currentRoll > target;
+          break;
+        case '<':
+          shouldExplode = currentRoll < target;
+          break;
+        case '>=':
+          shouldExplode = currentRoll >= target;
+          break;
+        case '<=':
+          shouldExplode = currentRoll <= target;
+          break;
+        case '=':
+          shouldExplode = currentRoll === target;
+          break;
+        case '!=':
+          shouldExplode = currentRoll !== target;
+          break;
+        default:
+          shouldExplode = currentRoll === target;
+      }
 
-        if (shouldExplode && rollCount < maxRolls) {
-            const newRoll = rollDie(sides);
-            result.push(newRoll);
-            currentRoll = newRoll;
-            rollCount++;
-        } else {
-            shouldExplode = false;
-        }
+      if (shouldExplode && rollCount < maxRolls) {
+        const newRoll = rollDie(sides);
+        result.push(newRoll);
+        currentRoll = newRoll;
+        rollCount++;
+      } else {
+        shouldExplode = false;
+      }
     } while (shouldExplode);
   }
-  
+
   if (rollCount >= maxRolls) {
     warnings.push('Maximum roll count (99) reached during explosion');
   }
-  
+
   return { rolls: result, warnings };
 }
 
@@ -165,4 +197,4 @@ export function debugLog(module: string, ...args: any[]) {
   if (typeof window === 'undefined') {
     debug(`[${module}]`, ...args);
   }
-} 
+}

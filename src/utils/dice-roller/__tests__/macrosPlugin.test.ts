@@ -13,6 +13,8 @@ describe('Macros Plugin', () => {
   });
 
   it('should throw on evaluateMacro (not implemented)', () => {
-    expect(() => macrosPlugin.evaluateMacro?.({ type: 'macro', name: 'attack' }, {})).toThrow();
+    expect(() =>
+      macrosPlugin.evaluateMacro?.({ type: 'macro', name: 'attack' }, {}),
+    ).toThrow();
   });
-}); 
+});

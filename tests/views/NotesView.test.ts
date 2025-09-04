@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import NotesView from '@/views/NotesView.vue';
+import NotesView from '../../src/notes/NotesView.vue';
 import { setActivePinia, createPinia } from 'pinia';
 import { vi } from 'vitest';
 

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import EncounterCard from '@/components/EncounterCard.vue';
+import EncounterCard from '../../src/encounters/EncounterCard.vue';
 import { vi } from 'vitest';
 
 vi.mock('@/stores/modules', () => ({

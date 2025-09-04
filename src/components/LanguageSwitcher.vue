@@ -7,27 +7,28 @@ import { storeToRefs } from 'pinia';
 const { locale, t } = useI18n();
 const configStore = useConfigStore();
 const { savedLanguage } = storeToRefs(configStore);
-
-const currentLocale = computed(() => locale.value);
-
-const changeLanguage = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  locale.value = target.value;
-  savedLanguage.value = target.value;
-};
 </script>
 
 <template>
   <div class="language-switcher">
-    <select 
-      :value="currentLocale" 
-      @change="changeLanguage"
+    <QSelect
+      v-model="locale"
+      :options="[
+        { label: t('language.english'), value: 'en' },
+        { label: t('language.russian'), value: 'ru' },
+      ]"
+      emit-value
+      map-options
+      dense
+      outlined
       class="language-select"
       aria-label="Select language"
-    >
-      <option value="en">{{ t('language.english') }}</option>
-      <option value="ru">{{ t('language.russian') }}</option>
-    </select>
+      @update:model-value="
+        (val) => {
+          savedLanguage = locale;
+        }
+      "
+    />
   </div>
 </template>
 
@@ -62,4 +63,4 @@ const changeLanguage = (event: Event) => {
   background-color: var(--bg-color);
   color: var(--text-color);
 }
-</style> 
+</style>

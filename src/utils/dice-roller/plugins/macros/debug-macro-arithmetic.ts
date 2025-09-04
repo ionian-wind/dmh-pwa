@@ -43,10 +43,13 @@ function minimalArithmeticTest() {
   debug('[DEBUG] Evaluating minimal arithmetic AST...');
   try {
     const result = DiceRollerCore.evaluate(ast, {});
-    debug('[DEBUG] Minimal arithmetic evaluation result:', JSON.stringify(result, null, 2));
+    debug(
+      '[DEBUG] Minimal arithmetic evaluation result:',
+      JSON.stringify(result, null, 2),
+    );
   } catch (err) {
     debugError('[DEBUG] Minimal arithmetic evaluation error:', err);
   }
 }
 
-minimalArithmeticTest(); 
+minimalArithmeticTest();

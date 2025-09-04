@@ -1,12 +1,22 @@
 // vite.config.js
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
+import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 
 export default defineConfig({
   base: '/dmh-pwa',
   plugins: [
-    vue(),
+    vue({
+      template: { transformAssetUrls }
+    }),
+    quasar({
+      autoImportComponentCase: 'pascal',
+      sassVariables: fileURLToPath(
+        new URL('./src/assets/styles/quasar-variables.sass', import.meta.url)
+      )
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [

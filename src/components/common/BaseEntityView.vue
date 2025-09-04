@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ref, watch } from 'vue';
+import { inject, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Button from '../form/Button.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
-import { IconPencil, IconTrash, IconChevronRight, IconChevronLeft } from '@tabler/icons-vue';
+import { ComponentInjection } from '@/types';
 
 interface Props {
   entity: any | null;
   entityName: string;
   listRoute: string;
-  onDelete?: () => Promise<void>;
+  onDelete?: () => Promise<boolean>;
   onEdit?: () => void;
   isEditing?: boolean;
   title?: string;
@@ -20,27 +19,28 @@ interface Props {
   notFound?: boolean;
   hideHeader?: boolean;
   unwrapContent?: boolean;
+  headerShowEdit?: boolean;
+  headerShowDelete?: boolean;
+  headerButtons?: any[];
 }
 
-const props = withDefaults(defineProps<Props & { sidePanelVisible?: boolean }>(), {
-  unwrapContent: false,
-  subtitle: '',
-  loading: false,
-  notFound: false,
-  isEditing: false,
-  sidePanelVisible: true,
-  hideHeader: false
-});
+const props = withDefaults(
+  defineProps<Props & { sidePanelVisible?: boolean }>(),
+  {
+    unwrapContent: false,
+    subtitle: '',
+    loading: false,
+    notFound: false,
+    isEditing: false,
+    hideHeader: false,
+    headerShowEdit: true,
+    headerShowDelete: true,
+    headerButtons: [],
+  },
+);
 
 const router = useRouter();
 const { t } = useI18n();
-const isSidePanelVisible = ref(props.sidePanelVisible);
-
-watch(() => props.sidePanelVisible, (val) => {
-  isSidePanelVisible.value = val;
-});
-
-const emit = defineEmits(['update:sidePanelVisible']);
 
 const handleEdit = () => {
   if (props.onEdit) {
@@ -49,64 +49,62 @@ const handleEdit = () => {
 };
 
 const handleDelete = async () => {
-  if (props.onDelete && confirm(`Are you sure you want to delete this ${t(props.entityName).toLowerCase()}?`)) {
-    await props.onDelete();
-    router.push(props.listRoute);
+  if (props.onDelete && (await props.onDelete())) {
+    await router.push(props.listRoute);
   }
 };
 
-const toggleSidePanel = () => {
-  isSidePanelVisible.value = !isSidePanelVisible.value;
-  emit('update:sidePanelVisible', isSidePanelVisible.value);
-};
+const setTopMenuContent = inject('setTopMenuContent') as (
+  arg: ComponentInjection,
+) => void;
+
+const injectTopMenu = () => setTopMenuContent(
+  props.hideHeader
+    ? null
+    : {
+      component: ViewHeader,
+      props: {
+        buttons: props.headerButtons,
+        showEdit: props.headerShowEdit,
+        onEdit: handleEdit,
+        showDelete: props.headerShowDelete,
+        onDelete: handleDelete,
+        title: props.title || '',
+        subtitle: props.subtitle || '',
+      },
+    },
+);
+
+onMounted(() => injectTopMenu());
+
+// Add a watch to update the header when title, subtitle, or hideHeader change
+watch(
+  () => [props.title, props.subtitle, props.hideHeader],
+  () => injectTopMenu(),
+);
+
+onBeforeUnmount(() => {
+  setTopMenuContent(null);
+});
 </script>
 
 <template>
-  <div class="base-entity-container">
+  <QLayout view="lHh Lpr lFf" class="base-entity-container">
     <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <NotFoundView v-else-if="notFound" />
+
     <template v-else-if="entity">
-      <ViewHeader v-if="!hideHeader" :title="t(title || '')">
-        <template #subtitle>
-          <div v-if="subtitle" class="entity-subtitle">
-            {{ t(subtitle || '') }}
-          </div>
-          <slot name="sub" />
-        </template>
-        <template #actions>
-          <slot name="actions" />
-          <Button v-if="onEdit" @click="handleEdit" :disabled="isEditing" :title="t('common.edit')">
-            <IconPencil />
-          </Button>
-          <Button v-if="onDelete" variant="danger" @click="handleDelete" :title="t('common.delete')">
-            <IconTrash />
-          </Button>
-        </template>
-      </ViewHeader>
-      <div class="base-entity-layout">
-        <div class="entity-main-column">
-          <div class="base-entity-view">
+      <QPageContainer class="base-entity-layout">
+        <QPage class="entity-main-column">
+          <div class="base-entity-view q-px-lg">
             <slot v-if="props.unwrapContent" />
             <div v-else class="entity-content">
               <slot />
             </div>
             <slot name="editor" />
           </div>
-          <div v-if="$slots['fixed-bottom']" class="entity-fixed-bottom">
-            <slot name="fixed-bottom" />
-          </div>
-        </div>
-        <!-- Side Panel -->
-        <div v-if="$slots.sidepanel" class="sidebar-wrapper" :class="{ collapsed: !isSidePanelVisible }">
-          <div class="side-panel-toggle-handle" @click="toggleSidePanel">
-            <IconChevronRight v-if="isSidePanelVisible" />
-            <IconChevronLeft v-else />
-          </div>
-          <div class="side-panel">
-            <slot name="sidepanel" />
-          </div>
-        </div>
-      </div>
+        </QPage>
+      </QPageContainer>
     </template>
-  </div>
+  </QLayout>
 </template>

@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import PartiesView from '@/views/PartiesView.vue';
+import PartiesView from '../../src/parties/PartiesView.vue';
 import { setActivePinia, createPinia } from 'pinia';
 import { vi } from 'vitest';
 

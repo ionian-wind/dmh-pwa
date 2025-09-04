@@ -7,7 +7,6 @@ const props = defineProps<{
 
 const activeTab = inject('activeTab', { value: '' });
 const isActive = computed(() => props.tabId === activeTab.value);
-
 </script>
 
 <template>
@@ -20,4 +19,4 @@ const isActive = computed(() => props.tabId === activeTab.value);
 .tab-panel {
   padding: 1rem;
 }
-</style> 
+</style>

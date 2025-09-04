@@ -2,6 +2,11 @@
 export type UUID = string;
 export type Timestamp = number;
 
+export type ComponentInjection = {
+  component: any;
+  props?: Record<string, any>;
+} | null;
+
 // Utility types
 export type WithId = { id: UUID };
 export type WithTimestamps = {
@@ -18,7 +23,7 @@ export enum Section {
   MONSTERS = 'monsters',
   CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
-  MODULES = 'modules'
+  MODULES = 'modules',
 }
 
 // Core types
@@ -75,8 +80,7 @@ export interface Character extends WithMetadata {
   notes?: string;
 }
 
-export interface PlayerCharacter extends Character {
-}
+export interface PlayerCharacter extends Character {}
 
 export interface Monster extends Character {
   moduleIds?: UUID[];
@@ -122,3 +126,6 @@ export interface Timer extends WithMetadata {
   startedAt: number | null;
   status: 'inactive' | 'running' | 'finished';
 }
+
+export * from './forms/form-input';
+export * from './forms/form-filed';

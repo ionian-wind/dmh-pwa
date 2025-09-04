@@ -5,7 +5,10 @@ import { useStore } from '@/utils/storage';
 import moduleSchema from '@/schemas/module.schema.json';
 
 export const useModuleStore = defineStore('modules', () => {
-  const base = useStore<Module>({ storeName: 'modules', validationSchema: moduleSchema });
+  const base = useStore<Module>({
+    storeName: 'modules',
+    validationSchema: moduleSchema,
+  });
 
   const searchQuery = ref('');
 
@@ -13,8 +16,8 @@ export const useModuleStore = defineStore('modules', () => {
     let result = base.items.value;
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      result = result.filter(module =>
-        module.name.toLowerCase().includes(query)
+      result = result.filter((module) =>
+        module.name.toLowerCase().includes(query),
       );
     }
     return result;
@@ -24,7 +27,7 @@ export const useModuleStore = defineStore('modules', () => {
 
   const getModuleName = (id: string | null) => {
     if (!id) return 'No Module';
-    const module = base.items.value.find(m => m.id === id);
+    const module = base.items.value.find((m) => m.id === id);
     return module?.name || 'Unknown Module';
   };
 
@@ -33,9 +36,15 @@ export const useModuleStore = defineStore('modules', () => {
     filtered,
     sortedItems,
     getModuleName,
-    setFilter: (query: string) => { searchQuery.value = query; },
-    clearFilter: () => { searchQuery.value = ''; },
-    setSearchQuery: (query: string) => { searchQuery.value = query; },
+    setFilter: (query: string) => {
+      searchQuery.value = query;
+    },
+    clearFilter: () => {
+      searchQuery.value = '';
+    },
+    setSearchQuery: (query: string) => {
+      searchQuery.value = query;
+    },
     searchQuery,
   };
 });

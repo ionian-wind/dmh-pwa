@@ -39,13 +39,13 @@ const activeTab = computed({
     if (value !== props.modelValue) {
       emit('update:modelValue', value);
     }
-  }
+  },
 });
 
 provide('activeTab', activeTab);
 
-const activeTabData = computed(() => 
-  props.tabs.find(tab => tab.id === activeTab.value)
+const activeTabData = computed(() =>
+  props.tabs.find((tab) => tab.id === activeTab.value),
 );
 
 const handleTabClick = (tab: Tab) => {
@@ -66,28 +66,41 @@ const handleAddTab = () => {
 };
 
 // Auto-select first non-disabled tab if current tab is disabled
-watch(() => props.tabs, (newTabs) => {
-  if (newTabs.length > 0 && !newTabs.find(tab => tab.id === activeTab.value)) {
-    const firstEnabledTab = newTabs.find(tab => !tab.disabled);
-    if (firstEnabledTab) {
-      activeTab.value = firstEnabledTab.id;
+watch(
+  () => props.tabs,
+  (newTabs) => {
+    if (
+      newTabs.length > 0 &&
+      !newTabs.find((tab) => tab.id === activeTab.value)
+    ) {
+      const firstEnabledTab = newTabs.find((tab) => !tab.disabled);
+      if (firstEnabledTab) {
+        activeTab.value = firstEnabledTab.id;
+      }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
-  <div class="tab-group" :class="[
-    `tab-group--${variant || 'default'}`,
-    `tab-group--${size || 'md'}`,
-    { 'tab-group--full-width': fullWidth },
-    { 'tab-group--vertical': vertical }
-  ]">
+  <div
+    class="tab-group"
+    :class="[
+      `tab-group--${variant || 'default'}`,
+      `tab-group--${size || 'md'}`,
+      { 'tab-group--full-width': fullWidth },
+      { 'tab-group--vertical': vertical },
+    ]"
+  >
     <!-- Tab Navigation -->
-    <div class="tab-nav" :class="[
-      `tab-nav--${variant || 'default'}`,
-      `tab-nav-align--${props.align || 'left'}`
-    ]">
+    <div
+      class="tab-nav"
+      :class="[
+        `tab-nav--${variant || 'default'}`,
+        `tab-nav-align--${props.align || 'left'}`,
+      ]"
+    >
       <div class="tab-list">
         <button
           v-for="tab in tabs"
@@ -97,7 +110,7 @@ watch(() => props.tabs, (newTabs) => {
             `tab-item--${variant || 'default'}`,
             { 'tab-item--active': tab.id === activeTab },
             { 'tab-item--disabled': tab.disabled },
-            `tab-title-align--${props.titleAlign || 'left'}`
+            `tab-title-align--${props.titleAlign || 'left'}`,
           ]"
           @click="handleTabClick(tab)"
           :disabled="tab.disabled"
@@ -115,12 +128,12 @@ watch(() => props.tabs, (newTabs) => {
           </button>
         </button>
       </div>
-      
+
       <button
         v-if="addable"
         class="tab-add"
         @click="handleAddTab"
-        title="t('common.addNewTab')"
+        :title="t('common.addNewTab')"
       >
         +
       </button>
@@ -361,7 +374,9 @@ watch(() => props.tabs, (newTabs) => {
 /* Tab transition animations */
 .tab-fade-enter-active,
 .tab-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .tab-fade-enter-from {
@@ -409,4 +424,4 @@ watch(() => props.tabs, (newTabs) => {
   justify-content: flex-end;
   text-align: right;
 }
-</style> 
+</style>

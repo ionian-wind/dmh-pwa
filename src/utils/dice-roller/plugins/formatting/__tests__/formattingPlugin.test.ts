@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { parseFormattingAst, extractFormatting, evaluateFormattingNode } from '../index';
+import {
+  parseFormattingAst,
+  extractFormatting,
+  evaluateFormattingNode,
+} from '../index';
 
 // --- Parsing ---
 describe('Formatting Plugin > Parsing', () => {
@@ -14,9 +18,15 @@ describe('Formatting Plugin > Parsing', () => {
   });
 
   it('should throw on invalid formatting markup', () => {
-    expect(() => parseFormattingAst('NEWLINE')).toThrow('Invalid formatting markup syntax');
-    expect(() => parseFormattingAst('%NEWLINE')).toThrow('Invalid formatting markup syntax');
-    expect(() => parseFormattingAst('%%')).toThrow('Invalid formatting markup syntax');
+    expect(() => parseFormattingAst('NEWLINE')).toThrow(
+      'Invalid formatting markup syntax',
+    );
+    expect(() => parseFormattingAst('%NEWLINE')).toThrow(
+      'Invalid formatting markup syntax',
+    );
+    expect(() => parseFormattingAst('%%')).toThrow(
+      'Invalid formatting markup syntax',
+    );
   });
 });
 
@@ -33,8 +43,8 @@ describe('Formatting Plugin > Extraction', () => {
       type: 'group',
       expressions: [
         { type: 'formatting', markup: 'NEWLINE' },
-        { type: 'formatting', markup: 'BOLD' }
-      ]
+        { type: 'formatting', markup: 'BOLD' },
+      ],
     };
     const formatting = extractFormatting(ast);
     expect(formatting).toEqual(['NEWLINE', 'BOLD']);
@@ -68,12 +78,16 @@ describe('Formatting Plugin > Evaluation', () => {
   it('should throw error for unknown formatting markup', () => {
     const node = { type: 'formatting', markup: 'BOLD' };
     const context = {} as any;
-    expect(() => evaluateFormattingNode(node, context)).toThrow('Unknown formatting markup: %BOLD%');
+    expect(() => evaluateFormattingNode(node, context)).toThrow(
+      'Unknown formatting markup: %BOLD%',
+    );
   });
 
   it('should throw error for non-formatting node', () => {
     const node = { type: 'number', value: 5 };
     const context = {} as any;
-    expect(() => evaluateFormattingNode(node, context)).toThrow('Expected formatting node');
+    expect(() => evaluateFormattingNode(node, context)).toThrow(
+      'Expected formatting node',
+    );
   });
-}); 
+});

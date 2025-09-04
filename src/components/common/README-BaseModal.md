@@ -16,28 +16,28 @@ A comprehensive modal dialog component with built-in accessibility features, key
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isOpen` | `boolean` | - | Controls modal visibility |
-| `title` | `string` | - | Modal title displayed in header |
-| `showSubmit` | `boolean` | `false` | Whether to show submit button |
-| `showCancel` | `boolean` | `false` | Whether to show cancel button |
-| `submitLabel` | `string` | `'Save'` | Label for submit button |
-| `cancelLabel` | `string` | `'Cancel'` | Label for cancel button |
-| `modalId` | `string` | `undefined` | Optional ID for global modal state |
+| Prop          | Type      | Default     | Description                        |
+| ------------- | --------- | ----------- | ---------------------------------- |
+| `isOpen`      | `boolean` | -           | Controls modal visibility          |
+| `title`       | `string`  | -           | Modal title displayed in header    |
+| `showSubmit`  | `boolean` | `false`     | Whether to show submit button      |
+| `showCancel`  | `boolean` | `false`     | Whether to show cancel button      |
+| `submitLabel` | `string`  | `'Save'`    | Label for submit button            |
+| `cancelLabel` | `string`  | `'Cancel'`  | Label for cancel button            |
+| `modalId`     | `string`  | `undefined` | Optional ID for global modal state |
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `submit` | - | Emitted when submit button is clicked or form is submitted |
-| `cancel` | - | Emitted when modal is closed (ESC, click outside, cancel button, back button) |
+| Event    | Payload | Description                                                                   |
+| -------- | ------- | ----------------------------------------------------------------------------- |
+| `submit` | -       | Emitted when submit button is clicked or form is submitted                    |
+| `cancel` | -       | Emitted when modal is closed (ESC, click outside, cancel button, back button) |
 
 ## Slots
 
-| Slot | Description |
-|------|-------------|
-| `default` | Main modal content |
+| Slot      | Description                                        |
+| --------- | -------------------------------------------------- |
+| `default` | Main modal content                                 |
 | `actions` | Custom action buttons (overrides built-in buttons) |
 
 ## Usage
@@ -94,7 +94,7 @@ const closeModal = () => {
         <label for="name">Name:</label>
         <input id="name" v-model="form.name" type="text" required />
       </div>
-      
+
       <div class="form-group">
         <label for="email">Email:</label>
         <input id="email" v-model="form.email" type="email" required />
@@ -110,7 +110,7 @@ import BaseModal from '@/components/common/BaseModal.vue';
 const isModalOpen = ref(false);
 const form = ref({
   name: '',
-  email: ''
+  email: '',
 });
 
 const handleSubmit = () => {
@@ -128,23 +128,13 @@ const closeModal = () => {
 
 ```vue
 <template>
-  <BaseModal
-    :is-open="isModalOpen"
-    title="Custom Actions"
-    @cancel="closeModal"
-  >
+  <BaseModal :is-open="isModalOpen" title="Custom Actions" @cancel="closeModal">
     <p>This modal has custom action buttons.</p>
-    
+
     <template #actions>
-      <Button variant="danger" @click="handleDelete">
-        Delete
-      </Button>
-      <Button variant="secondary" @click="handleArchive">
-        Archive
-      </Button>
-      <Button variant="primary" @click="handleSave">
-        Save
-      </Button>
+      <Button variant="danger" @click="handleDelete"> Delete </Button>
+      <Button variant="secondary" @click="handleArchive"> Archive </Button>
+      <Button variant="primary" @click="handleSave"> Save </Button>
     </template>
   </BaseModal>
 </template>
@@ -192,7 +182,7 @@ const closeModal = () => {
         <h3>{{ character.name }}</h3>
         <span class="character-level">Level {{ character.level }}</span>
       </div>
-      
+
       <div class="character-stats">
         <div class="stat-grid">
           <div class="stat-item">
@@ -206,7 +196,7 @@ const closeModal = () => {
           <!-- More stats... -->
         </div>
       </div>
-      
+
       <div class="character-abilities">
         <h4>Abilities</h4>
         <ul>
@@ -241,7 +231,7 @@ The modal integrates with the global modal state system:
 
 ```typescript
 // The modal automatically calls these when opened/closed:
-openModal(modalId);  // When opened
+openModal(modalId); // When opened
 closeModal(modalId); // When closed
 ```
 
@@ -287,6 +277,7 @@ The component uses CSS custom properties for theming:
 ## Examples
 
 ### Confirmation Dialog
+
 ```vue
 <BaseModal
   :is-open="showConfirm"
@@ -303,6 +294,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Settings Modal
+
 ```vue
 <BaseModal
   :is-open="showSettings"
@@ -330,6 +322,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Image Viewer Modal
+
 ```vue
 <BaseModal
   :is-open="showImage"
@@ -345,4 +338,4 @@ The component uses CSS custom properties for theming:
     </div>
   </div>
 </BaseModal>
-``` 
+```

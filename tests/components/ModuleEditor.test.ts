@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import ModuleEditor from '@/components/ModuleEditor.vue';
+import ModuleEditor from '../../src/modules/ModuleEditor.vue';
 import { vi } from 'vitest';
 
 describe('ModuleEditor', () => {

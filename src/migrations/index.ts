@@ -11,4 +11,6 @@ export const migrations: Migration[] = [
 ];
 
 // Sort migrations by version to ensure they run in order
-export const sortedMigrations = migrations.sort((a, b) => a.version - b.version); 
+export const sortedMigrations = migrations.sort(
+  (a, b) => a.version - b.version,
+);

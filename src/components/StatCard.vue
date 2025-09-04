@@ -71,4 +71,4 @@ defineProps<{
   font-size: 0.9rem;
   color: var(--color-text-light);
 }
-</style> 
+</style>

@@ -1,6 +1,11 @@
 // Inline Rolls plugin
 // Modular dice roller plugin for inline roll parsing, extraction, and evaluation
-import type { DiceRollerPlugin, ASTNode, EvaluationContext, EvaluationResult } from '../../core';
+import type {
+  DiceRollerPlugin,
+  ASTNode,
+  EvaluationContext,
+  EvaluationResult,
+} from '../../core';
 import { debugLog } from '../../lib/utils';
 import { parseInput, evaluate } from '../../core';
 
@@ -8,7 +13,7 @@ import { parseInput, evaluate } from '../../core';
 export interface InlineRollNode {
   type: 'inline-roll';
   expression: string; // The dice/math expression inside [[...]]
-  index?: number;     // The index of this inline roll in the parent expression
+  index?: number; // The index of this inline roll in the parent expression
 }
 
 // --- Parsing ---
@@ -66,7 +71,10 @@ export function assignInlineRollIndices(ast: any, counter = { i: 0 }): void {
 }
 
 // --- Evaluation ---
-export function evaluateInlineRollNode(node: ASTNode, context: EvaluationContext): EvaluationResult {
+export function evaluateInlineRollNode(
+  node: ASTNode,
+  context: EvaluationContext,
+): EvaluationResult {
   if (node.type !== 'inline-roll') {
     throw new Error('Expected inline roll node');
   }
@@ -96,7 +104,11 @@ export const inlineRollsPlugin: DiceRollerPlugin = {
     return extractInlineRolls(ast);
   },
   evaluateRollReference(node: any, context: any) {
-    debugLog('inlineRollsPlugin', 'evaluateInlineRoll called:', JSON.stringify(node));
+    debugLog(
+      'inlineRollsPlugin',
+      'evaluateInlineRoll called:',
+      JSON.stringify(node),
+    );
     return evaluateInlineRollNode(node, context);
   },
-}; 
+};

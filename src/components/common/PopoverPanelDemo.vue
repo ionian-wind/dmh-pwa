@@ -17,20 +17,20 @@ const placementOpen = ref<string | null>(null);
 
 const placements = [
   'top',
-  'bottom', 
+  'bottom',
   'left',
   'right',
   'top-start',
   'top-end',
   'bottom-start',
-  'bottom-end'
+  'bottom-end',
 ] as const;
 </script>
 
 <template>
   <div class="popover-demo">
     <h2>{{ t('popoverDemo.title') }}</h2>
-    
+
     <div class="demo-section">
       <h3>{{ t('popoverDemo.basicClick') }}</h3>
       <PopoverPanel :is-open="basicOpen" @close="basicOpen = false">
@@ -39,7 +39,7 @@ const placements = [
             {{ t('popoverDemo.clickToOpen') }}
           </Button>
         </template>
-        
+
         <div>
           <p>{{ t('popoverDemo.basicPopoverText') }}</p>
           <Button @click="basicOpen = false">{{ t('common.close') }}</Button>
@@ -49,8 +49,8 @@ const placements = [
 
     <div class="demo-section">
       <h3>{{ t('popoverDemo.hoverTrigger') }}</h3>
-      <PopoverPanel 
-        :is-open="hoverOpen" 
+      <PopoverPanel
+        :is-open="hoverOpen"
         trigger="hover"
         placement="top"
         @open="hoverOpen = true"
@@ -59,7 +59,7 @@ const placements = [
         <template #trigger>
           <span class="hover-trigger">{{ t('popoverDemo.hoverOverMe') }}</span>
         </template>
-        
+
         <div>
           <h4>{{ t('popoverDemo.helpInformation') }}</h4>
           <p>{{ t('popoverDemo.hoverPopoverText') }}</p>
@@ -69,8 +69,8 @@ const placements = [
 
     <div class="demo-section">
       <h3>{{ t('popoverDemo.withTitleAndPlacement') }}</h3>
-      <PopoverPanel 
-        :is-open="titleOpen" 
+      <PopoverPanel
+        :is-open="titleOpen"
         :title="t('common.userMenu')"
         placement="bottom-end"
         :max-width="'250px'"
@@ -82,7 +82,7 @@ const placements = [
             {{ t('popoverDemo.profileMenu') }}
           </Button>
         </template>
-        
+
         <div class="user-menu">
           <a href="#" class="menu-item">{{ t('popoverDemo.viewProfile') }}</a>
           <a href="#" class="menu-item">{{ t('popoverDemo.settings') }}</a>
@@ -94,8 +94,8 @@ const placements = [
 
     <div class="demo-section">
       <h3>{{ t('popoverDemo.focusTrigger') }}</h3>
-      <PopoverPanel 
-        :is-open="focusOpen" 
+      <PopoverPanel
+        :is-open="focusOpen"
         trigger="focus"
         placement="bottom"
         :auto-focus="true"
@@ -103,13 +103,15 @@ const placements = [
         @close="focusOpen = false"
       >
         <template #trigger>
-          <input 
-            type="text" 
+          <QInput
+            type="text"
             :placeholder="t('popoverDemo.searchPlaceholder')"
             class="search-input"
+            dense
+            outlined
           />
         </template>
-        
+
         <div class="search-results">
           <div class="search-item">{{ t('popoverDemo.searchResult1') }}</div>
           <div class="search-item">{{ t('popoverDemo.searchResult2') }}</div>
@@ -121,21 +123,27 @@ const placements = [
     <div class="demo-section">
       <h3>Different Placements</h3>
       <div class="placement-demo">
-        <PopoverPanel 
-          v-for="placement in placements" 
+        <PopoverPanel
+          v-for="placement in placements"
           :key="placement"
-          :is-open="placementOpen === placement" 
+          :is-open="placementOpen === placement"
           :placement="placement"
           @close="placementOpen = null"
         >
           <template #trigger>
-            <Button @click="placementOpen = placementOpen === placement ? null : placement">
+            <Button
+              @click="
+                placementOpen = placementOpen === placement ? null : placement
+              "
+            >
               {{ placement }}
             </Button>
           </template>
-          
+
           <div>
-            <p>This popover is positioned at: <strong>{{ placement }}</strong></p>
+            <p>
+              This popover is positioned at: <strong>{{ placement }}</strong>
+            </p>
           </div>
         </PopoverPanel>
       </div>
@@ -143,17 +151,15 @@ const placements = [
 
     <div class="demo-section">
       <h3>No Arrow</h3>
-      <PopoverPanel 
-        :is-open="noArrowOpen" 
+      <PopoverPanel
+        :is-open="noArrowOpen"
         :show-arrow="false"
         @close="noArrowOpen = false"
       >
         <template #trigger>
-          <Button @click="noArrowOpen = !noArrowOpen">
-            No Arrow
-          </Button>
+          <Button @click="noArrowOpen = !noArrowOpen"> No Arrow </Button>
         </template>
-        
+
         <div>
           <p>This popover doesn't have an arrow indicator.</p>
         </div>
@@ -162,17 +168,15 @@ const placements = [
 
     <div class="demo-section">
       <h3>Custom Styling</h3>
-      <PopoverPanel 
-        :is-open="customOpen" 
+      <PopoverPanel
+        :is-open="customOpen"
         class="custom-popover"
         @close="customOpen = false"
       >
         <template #trigger>
-          <Button @click="customOpen = !customOpen">
-            Custom Style
-          </Button>
+          <Button @click="customOpen = !customOpen"> Custom Style </Button>
         </template>
-        
+
         <div>
           <p>This popover has custom styling applied.</p>
         </div>
@@ -285,4 +289,4 @@ const placements = [
 .custom-popover :deep(.popover-panel__title) {
   color: var(--color-text-inverse);
 }
-</style> 
+</style>

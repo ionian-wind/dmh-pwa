@@ -2,7 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Party",
   "type": "object",
-  "required": ["id", "name", "characters", "moduleIds", "createdAt", "updatedAt"],
+  "required": [
+    "id",
+    "name",
+    "characters",
+    "moduleIds",
+    "createdAt",
+    "updatedAt"
+  ],
   "properties": {
     "id": {
       "type": "string",
@@ -35,4 +42,4 @@
       "description": "Timestamp when the party was last updated"
     }
   }
-} 
+}

@@ -16,18 +16,18 @@ A customizable floating action button that provides quick access to primary acti
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `position` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'bottom-right'` | Position of the button on screen |
-| `size` | `'small' \| 'medium' \| 'large'` | `'medium'` | Size of the button |
-| `variant` | `'primary' \| 'secondary' \| 'success' \| 'danger' \| 'warning'` | `'primary'` | Color variant of the button |
-| `disabled` | `boolean` | `false` | Whether the button is disabled |
-| `hideOnModal` | `boolean` | `true` | Whether to hide when modals are open |
+| Prop          | Type                                                             | Default          | Description                          |
+| ------------- | ---------------------------------------------------------------- | ---------------- | ------------------------------------ |
+| `position`    | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'`   | `'bottom-right'` | Position of the button on screen     |
+| `size`        | `'small' \| 'medium' \| 'large'`                                 | `'medium'`       | Size of the button                   |
+| `variant`     | `'primary' \| 'secondary' \| 'success' \| 'danger' \| 'warning'` | `'primary'`      | Color variant of the button          |
+| `disabled`    | `boolean`                                                        | `false`          | Whether the button is disabled       |
+| `hideOnModal` | `boolean`                                                        | `true`           | Whether to hide when modals are open |
 
 ## Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
+| Event   | Payload      | Description                    |
+| ------- | ------------ | ------------------------------ |
 | `click` | `MouseEvent` | Emitted when button is clicked |
 
 ## Usage
@@ -36,9 +36,7 @@ A customizable floating action button that provides quick access to primary acti
 
 ```vue
 <template>
-  <FloatActionButton @click="handleClick">
-    +
-  </FloatActionButton>
+  <FloatActionButton @click="handleClick"> + </FloatActionButton>
 </template>
 
 <script setup>
@@ -86,7 +84,7 @@ const addItem = () => {
     >
       ➕
     </FloatActionButton>
-    
+
     <!-- Secondary action -->
     <FloatActionButton
       position="bottom-left"
@@ -146,6 +144,7 @@ const handleAction = async () => {
 The component intelligently handles positioning:
 
 ### Default Behavior
+
 - **Bottom-right**: Standard position, 20px from edges
 - **Footer Avoidance**: Automatically adjusts to stay 50px above footer
 - **Responsive**: Maintains proper spacing on all screen sizes
@@ -206,10 +205,8 @@ The component automatically integrates with the global modal state:
 <template>
   <div>
     <!-- This FAB will automatically hide when any modal is open -->
-    <FloatActionButton @click="openModal">
-      ➕
-    </FloatActionButton>
-    
+    <FloatActionButton @click="openModal"> ➕ </FloatActionButton>
+
     <!-- This FAB will always be visible -->
     <FloatActionButton
       :hide-on-modal="false"
@@ -277,6 +274,7 @@ The component uses CSS custom properties for theming:
 ## Examples
 
 ### E-commerce App
+
 ```vue
 <template>
   <div>
@@ -288,7 +286,7 @@ The component uses CSS custom properties for theming:
     >
       🛒
     </FloatActionButton>
-    
+
     <!-- Wishlist FAB -->
     <FloatActionButton
       position="bottom-left"
@@ -302,6 +300,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Social Media App
+
 ```vue
 <template>
   <div>
@@ -313,7 +312,7 @@ The component uses CSS custom properties for theming:
     >
       ✏️
     </FloatActionButton>
-    
+
     <!-- Camera FAB -->
     <FloatActionButton
       position="top-right"
@@ -327,6 +326,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Dashboard App
+
 ```vue
 <template>
   <div>
@@ -338,7 +338,7 @@ The component uses CSS custom properties for theming:
     >
       ➕
     </FloatActionButton>
-    
+
     <!-- Settings FAB -->
     <FloatActionButton
       position="top-right"
@@ -347,13 +347,9 @@ The component uses CSS custom properties for theming:
     >
       ⚙️
     </FloatActionButton>
-    
+
     <!-- Help FAB -->
-    <FloatActionButton
-      position="top-left"
-      variant="warning"
-      @click="showHelp"
-    >
+    <FloatActionButton position="top-left" variant="warning" @click="showHelp">
       ❓
     </FloatActionButton>
   </div>
@@ -361,6 +357,7 @@ The component uses CSS custom properties for theming:
 ```
 
 ### Task Management App
+
 ```vue
 <template>
   <div>
@@ -372,7 +369,7 @@ The component uses CSS custom properties for theming:
     >
       ✅
     </FloatActionButton>
-    
+
     <!-- Quick note FAB -->
     <FloatActionButton
       position="bottom-left"
@@ -383,4 +380,4 @@ The component uses CSS custom properties for theming:
     </FloatActionButton>
   </div>
 </template>
-``` 
+```
