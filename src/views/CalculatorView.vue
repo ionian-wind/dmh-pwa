@@ -226,7 +226,7 @@ onUnmounted(() => {
             <QCardSection
               class="calculator-result q-pa-sm text-positive"
               aria-live="polite"
-              >{{ result ? '= ' + result : '\u00A0' }}</QCardSection
+              >{{ result ? t('calculator.equals') + ' ' + result : '\u00A0' }}</QCardSection
             >
             <QCardSection
               class="calculator-error q-pa-sm text-negative"
@@ -238,7 +238,7 @@ onUnmounted(() => {
           <QTabPanels v-model="tab" animated>
             <QTabPanel name="calculate" class="q-pa-none">
               <div class="calculator-buttons justify-evenly">
-                <QBtn flat class="operation" @click="clear">AC</QBtn>
+                <QBtn flat class="operation" @click="clear">{{ t('calculator.clear') }}</QBtn>
                 <QBtn flat class="operation" @click="appendBrace"
                   ><IconParentheses
                 /></QBtn>

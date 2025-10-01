@@ -23,21 +23,6 @@ const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
 
-watch(
-  filteredPlaylists,
-  (newPlaylists) =>
-    updateSortedPlaylists(newPlaylists, selectedPlaylistId.value),
-  { immediate: true, deep: true },
-);
-
-watch(
-  () => configStore.jukeboxActivePlaylistId,
-  (newPlaylistId) => {
-    selectedPlaylistId.value = newPlaylistId;
-  },
-  { immediate: true }
-);
-
 const updateSortedPlaylists = (
   newPlaylists: JukeboxPlaylist[],
   currentPlaylistId: string | null,
@@ -65,6 +50,21 @@ const updateSortedPlaylists = (
   }
   sortedPlaylists.value = filteredPlaylists;
 }
+
+watch(
+  filteredPlaylists,
+  (newPlaylists) =>
+    updateSortedPlaylists(newPlaylists, selectedPlaylistId.value),
+  { immediate: true, deep: true },
+);
+
+watch(
+  () => configStore.jukeboxActivePlaylistId,
+  (newPlaylistId) => {
+    selectedPlaylistId.value = newPlaylistId;
+  },
+  { immediate: true }
+);
 
 const openPlaylistModal = (playlist: JukeboxPlaylist | null) => {
   playlistToEdit.value = playlist;

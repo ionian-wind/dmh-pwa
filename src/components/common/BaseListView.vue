@@ -102,77 +102,34 @@ onBeforeUnmount(() => {
     <div v-if="items.length === 0" class="fixed-center text-primary">
       {{ emptyMessage }}
     </div>
+
+    <VueDraggable
+      v-else-if="draggable"
+      :key="'draggable'"
+      v-model="localItems"
+      item-key="id"
+      @end="handleSortEnd"
+      tag="div"
+      class="q-list simple-list"
+    >
+      <template #item="{ element: item }">
+        <component
+          :is="cardComponent"
+          v-bind="cardPropsWithDraggable(item)"
+        />
+      </template>
+    </VueDraggable>
     <div v-else>
-      <VueDraggable
-        v-if="draggable"
-        :key="'draggable'"
-        v-model="localItems"
-        item-key="id"
-        @end="handleSortEnd"
-        tag="div"
-        class="q-list simple-list"
+      <div
+        v-if="viewStyle === 'masonry'"
+        class="q-gutter-md row items-stretch"
       >
-        <template #item="{ element: item }">
-          <component
-            :is="cardComponent"
-            v-bind="cardPropsWithDraggable(item)"
-          />
-        </template>
-      </VueDraggable>
-      <div v-else>
         <div
-          v-if="viewStyle === 'masonry'"
-          class="q-gutter-md row items-stretch"
+          v-for="item in items"
+          :key="item.id"
+          class="col-12 col-sm-6 col-md-4 col-lg-3"
         >
-          <div
-            v-for="item in items"
-            :key="item.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <component
-              :is="cardComponent"
-              v-bind="cardPropsWithDraggable(item)"
-              @view="$emit('view', item)"
-              @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
-              @delete="$emit('delete', item)"
-              @tag-click="$emit('tag-click', $event)"
-              @copy="$emit('copy', item)"
-            />
-          </div>
-        </div>
-        <div
-          v-else-if="viewStyle === 'grid'"
-          class="q-gutter-md row items-stretch"
-        >
-          <div
-            v-for="item in items"
-            :key="item.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <component
-              :is="cardComponent"
-              v-bind="cardPropsWithDraggable(item)"
-              @view="$emit('view', item)"
-              @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
-              @delete="$emit('delete', item)"
-              @tag-click="$emit('tag-click', $event)"
-              @copy="$emit('copy', item)"
-            />
-          </div>
-        </div>
-        <QList separator v-else :key="'static'" class="simple-list">
           <component
-            v-for="item in items" :key="item.id"
             :is="cardComponent"
             v-bind="cardPropsWithDraggable(item)"
             @view="$emit('view', item)"
@@ -186,9 +143,52 @@ onBeforeUnmount(() => {
             @tag-click="$emit('tag-click', $event)"
             @copy="$emit('copy', item)"
           />
-        </QList>
+        </div>
       </div>
+      <div
+        v-else-if="viewStyle === 'grid'"
+        class="q-gutter-md row items-stretch"
+      >
+        <div
+          v-for="item in items"
+          :key="item.id"
+          class="col-12 col-sm-6 col-md-4 col-lg-3"
+        >
+          <component
+            :is="cardComponent"
+            v-bind="cardPropsWithDraggable(item)"
+            @view="$emit('view', item)"
+            @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+            @delete="$emit('delete', item)"
+            @tag-click="$emit('tag-click', $event)"
+            @copy="$emit('copy', item)"
+          />
+        </div>
+      </div>
+      <QList separator v-else :key="'static'" class="simple-list">
+        <component
+          v-for="item in items" :key="item.id"
+          :is="cardComponent"
+          v-bind="cardPropsWithDraggable(item)"
+          @view="$emit('view', item)"
+          @edit="
+                () => {
+                  handleEdit(item);
+                  $emit('edit', item);
+                }
+              "
+          @delete="$emit('delete', item)"
+          @tag-click="$emit('tag-click', $event)"
+          @copy="$emit('copy', item)"
+        />
+      </QList>
     </div>
+
     <component
       v-if="showEditor && editorComponent"
       :is="editorComponent"

@@ -565,7 +565,9 @@
     "calculator": "Калькулятор",
     "converter": "Конвертер",
     "physicalBase": "Физическая основа",
-    "unit": "Единица"
+    "unit": "Единица",
+    "equals": "=",
+    "clear": "AC"
   },
   "jukebox": {
     "shuffle": "Перемешать",

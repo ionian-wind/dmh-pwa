@@ -247,7 +247,7 @@ function toggleTimeDisplay() {
             variant="light"
             :class="{ active: playerStore.shuffle }"
             @click="playerStore.toggleShuffle"
-            title="Shuffle"
+            :title="$t('jukebox.shuffle')"
           >
             <IconShuffle />
           </Button>
@@ -259,7 +259,7 @@ function toggleTimeDisplay() {
                 playerStore.repeatMode === 'track',
             }"
             @click="playerStore.cycleRepeatMode"
-            title="Repeat"
+            :title="$t('jukebox.repeat')"
           >
             <template v-if="playerStore.repeatMode === 'off'">
               <IconRepeat />

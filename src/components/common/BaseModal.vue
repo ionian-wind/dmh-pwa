@@ -119,7 +119,7 @@ function setExpanded(val: boolean) {
             flat
             variant="light"
             @click="$emit('cancel')"
-            aria-label="Close"
+            :aria-label="t('common.close')"
             class="btn-close-modal"
           >
             <IconX />

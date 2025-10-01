@@ -95,7 +95,7 @@ function handleCancel() {
                 <QPopupProxy cover transition-show="scale" transition-hide="scale">
                   <QTime v-model="time">
                     <div class="row items-center justify-end">
-                      <QBtn v-close-popup label="Close" color="primary" flat />
+                      <QBtn v-close-popup :label="t('common.close')" color="primary" flat />
                     </div>
                   </QTime>
                 </QPopupProxy>

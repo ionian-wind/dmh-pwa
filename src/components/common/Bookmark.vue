@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Button from '../form/Button.vue';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import { IconBookmark } from '@tabler/icons-vue';
@@ -10,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const bookmarkStore = useBookmarkStore();
+const { t } = useI18n();
 
 const marked = computed(() =>
   bookmarkStore.isBookmarked(props.moduleId, props.noteId),

@@ -10,6 +10,8 @@ import { useCharacterStore } from '@/stores/characters';
 import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
+import { parseModuleZip, importModuleFromZip } from '@/utils/moduleImportExport';
+import { deepUnwrap } from '@/utils/deepUnwrap';
 import { alert } from '@/dialogs';
 
 const noteStore = useNoteStore();
@@ -139,6 +141,27 @@ async function handleRestore(event: Event) {
   }
   input.value = '';
 }
+
+async function handleModuleImport(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  
+  try {
+    const { module, tree, notes } = await parseModuleZip(file);
+    const result = await importModuleFromZip(deepUnwrap({ module, tree, notes }));
+    await alert(t('backup.moduleImported') + ` ${result.noteCount} notes imported.`);
+    
+    // Reload stores to show new data
+    await Promise.all([
+      moduleStore.load(),
+      noteStore.load()
+    ]);
+  } catch (e) {
+    await alert(t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e));
+  }
+  input.value = '';
+}
 </script>
 
 <template>
@@ -147,7 +170,7 @@ async function handleRestore(event: Event) {
       <div class="q-mb-md flex flex-center column items-center">
         <img
           src="/dmh-pwa/icon-192.png"
-          alt="DMH PWA Icon"
+          :alt="t('project.name') + ' Icon'"
           style="width: 150px; height: 150px"
         />
         <div class="q-mt-md">
@@ -156,6 +179,37 @@ async function handleRestore(event: Event) {
             {{ t('project.subtitle') }}
           </p>
         </div>
+      </div>
+      
+      <!-- Backup/Restore/Import Actions -->
+      <div class="q-mt-lg flex flex-center q-gutter-md">
+        <QBtn
+          color="primary"
+          :label="t('backup.backup')"
+          @click="handleBackup"
+        />
+        <QBtn
+          color="secondary"
+          :label="t('backup.restore')"
+        >
+          <input
+            type="file"
+            accept=".zip"
+            @change="handleRestore"
+            style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer"
+          />
+        </QBtn>
+        <QBtn
+          color="positive"
+          :label="t('backup.importModule')"
+        >
+          <input
+            type="file"
+            accept=".zip"
+            @change="handleModuleImport"
+            style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer"
+          />
+        </QBtn>
       </div>
     </div>
     <BaseListView
@@ -170,7 +224,3 @@ async function handleRestore(event: Event) {
     />
   </div>
 </template>
-
-<style scoped>
-/* Removed custom layout classes. Use Quasar classes. */
-</style>

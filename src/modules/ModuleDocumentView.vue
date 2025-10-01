@@ -6,8 +6,7 @@ import { useBookmarkStore } from '@/stores/bookmarks';
 import { useNoteStore } from '@/stores/notes';
 import { scrollToHeading } from '@/utils/scrollToHeading';
 import { useRouter } from 'vue-router';
-// @ts-ignore: no types for vue-virtual-scroller
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
+import { QVirtualScroll } from 'quasar';
 import Bookmark from '@/components/common/Bookmark.vue';
 import { debug, debugError } from '@/utils/debug';
 
@@ -151,12 +150,12 @@ async function scrollToAnchor(anchorId: string) {
     (chunk) => chunk.noteId === anchorId || chunk.id === anchorId,
   );
   if (idx === -1) return;
-  // Scroll to the chunk using DynamicScroller
+  // Scroll to the chunk using QVirtualScroll
   if (
     scrollerRef.value &&
-    typeof scrollerRef.value.scrollToItem === 'function'
+    typeof scrollerRef.value.scrollTo === 'function'
   ) {
-    scrollerRef.value.scrollToItem(idx);
+    scrollerRef.value.scrollTo(idx);
   }
   // Wait for DOM update, then scroll to heading
   await nextTick();
@@ -167,17 +166,14 @@ async function scrollToAnchor(anchorId: string) {
 }
 
 function handleScrollerUpdate(
-  _startIndex: number,
-  _endIndex: number,
-  visibleStartIndex: number,
-  _visibleEndIndex: number,
+  details: { from: number; to: number; direction: string }
 ) {
-  // Use visibleStartIndex to get the topmost visible chunk
+  // Use the 'from' index to get the topmost visible chunk
   if (
-    typeof visibleStartIndex === 'number' &&
-    chunks.value[visibleStartIndex]
+    typeof details.from === 'number' &&
+    chunks.value[details.from]
   ) {
-    const topChunk = chunks.value[visibleStartIndex];
+    const topChunk = chunks.value[details.from];
     activeAnchorId.value = topChunk.id;
     emit('active-anchor-id', topChunk.id);
   }
@@ -193,42 +189,34 @@ defineExpose({ scrollToAnchor });
       <p>Loading document...</p>
     </div>
     <div v-else class="document-container">
-      <DynamicScroller
+      <QVirtualScroll
         ref="scrollerRef"
         :items="chunks"
-        :minItemSize="500"
-        key-field="id"
+        :virtual-scroll-item-size="500"
+        :virtual-scroll-slice-size="10"
         class="document-scroller"
-        :emitUpdate="true"
-        @update="handleScrollerUpdate"
-        v-slot="{ item, index, active }"
+        @virtual-scroll="handleScrollerUpdate"
+        v-slot="{ item, index }"
       >
-        <DynamicScrollerItem
-          :item="item"
-          :active="active"
-          :index="index"
-          :size-dependencies="[item.content]"
+        <div
+          class="document-chunk with-hover-bookmark"
+          :data-chunk-id="item.id"
           :key="item.id"
+          @click="handleHeadingClick"
         >
-          <div
-            class="document-chunk with-hover-bookmark"
-            :data-chunk-id="item.id"
-            @click="handleHeadingClick"
-          >
-            <Bookmark
-              :note-id="item.noteId"
-              :module-id="moduleId"
-              class="bookmark-float"
-            />
-            <Markdown
-              :content="item.content"
-              :anchorMap="noteAnchorMap"
-              :scrollToAnchor="scrollToAnchor"
-              :enableMentionModal="true"
-            />
-          </div>
-        </DynamicScrollerItem>
-      </DynamicScroller>
+          <Bookmark
+            :note-id="item.noteId"
+            :module-id="moduleId"
+            class="bookmark-float"
+          />
+          <Markdown
+            :content="item.content"
+            :anchorMap="noteAnchorMap"
+            :scrollToAnchor="scrollToAnchor"
+            :enableMentionModal="true"
+          />
+        </div>
+      </QVirtualScroll>
       <div v-if="chunks.length === 0" class="empty-state">
         <p>No content to display</p>
       </div>

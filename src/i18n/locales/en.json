@@ -565,7 +565,9 @@
     "calculator": "Calculator",
     "converter": "Converter",
     "physicalBase": "Physical base",
-    "unit": "Unit"
+    "unit": "Unit",
+    "equals": "=",
+    "clear": "AC"
   },
   "jukebox": {
     "shuffle": "Shuffle",

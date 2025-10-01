@@ -9,8 +9,6 @@ import i18n from './i18n';
 import { setupAnchorScrollHandler } from './utils/anchorScroll';
 import { useConfigStore } from './utils/configStore';
 import { initializeDatabase } from './utils/storage';
-import VueVirtualScroller from 'vue-virtual-scroller';
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 import { debug, debugWarn, debugError } from './utils/debug';
 
@@ -18,7 +16,6 @@ import { Quasar, Dialog, Notify } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 
-import 'normalize.css';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';
@@ -69,7 +66,6 @@ watch(
   { immediate: true },
 );
 
-app.use(VueVirtualScroller);
 
 // Setup anchor scroll handler
 setupAnchorScrollHandler();
