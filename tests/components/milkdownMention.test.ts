@@ -54,13 +54,14 @@ describe('milkdown mention plugin helpers', () => {
     buildMentionToolbar(builder);
 
     expect(builder.addGroup).toHaveBeenCalledWith('mentions', 'common.mentions');
-    expect(group.addItem).toHaveBeenCalledTimes(5);
+    expect(group.addItem).toHaveBeenCalledTimes(6);
     expect(items.map((item) => item.kind)).toEqual([
       'note',
       'module',
       'party',
       'monster',
       'encounter',
+      'map',
     ]);
     expect(items[0].options.active()).toBe(false);
   });
@@ -99,7 +100,7 @@ describe('milkdown mention plugin helpers', () => {
   it('builds block-edit menu items and falls back without a popup', () => {
     const { builder, group, items } = createBuilder();
     buildMentionMenu(builder);
-    expect(group.addItem).toHaveBeenCalledTimes(5);
+    expect(group.addItem).toHaveBeenCalledTimes(6);
 
     const { ctx, editorView, tr } = createContext();
     items[0].options.onRun(ctx);

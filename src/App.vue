@@ -37,6 +37,7 @@ import {
   IconMusic,
   IconCalculator,
   IconSettings,
+  IconMap,
   // IconHeadphones,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
@@ -140,6 +141,12 @@ const sections: SectionItem[] = [
     path: '/timers',
     icon: timerIcon,
     ref: true,
+  },
+  {
+    section: Section.MAPS,
+    label: 'navigation.maps',
+    path: '/maps',
+    icon: IconMap,
   },
   // {
   //   section: Section.AMBIENT_SOUND,

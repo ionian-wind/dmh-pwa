@@ -345,7 +345,7 @@ combat/document literals and add a key-parity CI check.
 
 ## 15. Testing strategy (implemented)
 
-The suite now runs **485 / 485 passing across 62 files** with shared
+The suite now runs **536 / 536 passing across 72 files** with shared
 Pinia/i18n/Quasar setup and `fake-indexeddb`; CI runs type check, the regression
 suite, and the full suite. Remaining: broaden coverage for jukebox playback,
 file handlers, and Milkdown.

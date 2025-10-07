@@ -50,6 +50,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [features/combat.md](features/combat.md) | Combat lifecycle, initiative, turns |
 | [features/timers.md](features/timers.md) | Countdown timers and global timer loop |
 | [features/jukebox.md](features/jukebox.md) | Track import, metadata, playlists, playback |
+| [features/maps.md](features/maps.md) | Map images, locations, entity bindings, markers and icons |
 | [features/calculator.md](features/calculator.md) | Arithmetic and unit converter dialog |
 | [features/dice-roller.md](features/dice-roller.md) | Plugin-based dice parser/evaluator (work in progress, not yet connected) |
 | [features/markdown-and-mentions.md](features/markdown-and-mentions.md) | Markdown pipeline, entity links, mention index |
@@ -122,7 +123,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **485 / 485 passing tests across 62 files** (after replacing obsolete suites
+   **536 / 536 passing tests across 72 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

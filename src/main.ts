@@ -17,6 +17,11 @@ import quasarLangRu from 'quasar/lang/ru';
 import quasarLangEn from 'quasar/lang/en-US';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 
+import 'vue3-openlayers/vue3-openlayers.css';
+
+import Vue3OpenLayers from 'vue3-openlayers';
+import 'rpg-awesome/css/rpg-awesome.css';
+
 // Import Quasar css
 import 'quasar/src/css/index.sass';
 
@@ -84,6 +89,8 @@ watch(
   { immediate: true },
 );
 
+app.use(Vue3OpenLayers);
+
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {
   debugError('Global error:', err);
@@ -100,3 +107,10 @@ app.config.warnHandler = (msg, instance, trace) => {
 
 // Mount app
 app.mount('#q-app');
+
+window.addEventListener('error', (event) => {
+  console.error('Global error handler:', event.error || event.message);
+});
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Global unhandledrejection:', event.reason);
+});

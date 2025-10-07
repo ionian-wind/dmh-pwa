@@ -206,6 +206,84 @@ Defined in `src/jukebox/types.ts` and intentionally **not** schema-validated
 }
 ```
 
+### Map entities
+
+Defined in `src/maps/types.ts`; maps are schema-validated
+(`src/maps/schemas/map.schema.json`). Map files are not schema-validated because
+they may contain `Blob`/`FileSystemFileHandle` sources.
+
+**MapFile** (`map_files` store)
+```ts
+{
+  id, name, size, type, lastModified, createdAt, updatedAt,
+  source:
+    | { kind: 'blob'; blob: Blob }
+    | { kind: 'handle'; handle: FileSystemFileHandle },
+  imageMetadata?: {
+    width, height, naturalWidth?, naturalHeight?, aspectRatio,
+    fileSize?, mimeType?, color?, palette?
+  }
+}
+```
+
+**MapEntity** (`maps` store)
+```ts
+{
+  id, createdAt, updatedAt,
+  title, description?,
+  fileId, // references map_files.id
+  locations: MapLocation[],
+  markers: MapMarker[],
+  areas: MapArea[],
+  points?: unknown[] // legacy, normalized into markers on read
+}
+```
+
+**MapLocation**
+```ts
+{
+  id,
+  name,
+  description?,
+  color?,
+  entities: MapEntityRef[]
+}
+```
+
+**MapMarker**
+```ts
+{
+  id,
+  title,
+  description?,
+  x, y, // image-pixel coordinates
+  locationId?: string | null,
+  entities: MapEntityRef[],
+  icon, // RPG Awesome class without the "ra" prefix
+  color // CSS color
+}
+```
+
+**MapArea**
+```ts
+{
+  id, title, description?,
+  shape: 'polygon' | 'circle' | 'square' | 'freehand',
+  points: [number, number][],
+  center?: [number, number],
+  radius?: number,
+  entities: MapEntityRef[],
+  linkedAreaIds: string[],
+  icon?: string,
+  color
+}
+```
+
+**MapEntityRef**
+```ts
+{ kind: 'note' | 'module' | 'party' | 'monster' | 'encounter' | 'character' | 'map'; id: string }
+```
+
 ## Relationship map
 
 ```mermaid
