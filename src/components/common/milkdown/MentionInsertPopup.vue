@@ -60,6 +60,7 @@ const kindLabel = computed(() => {
     case 'party': return t('parties.title');
     case 'monster': return t('monsters.title');
     case 'encounter': return t('encounters.title');
+    case 'map': return t('maps.title');
     default: return props.kind;
   }
 });

@@ -36,6 +36,7 @@ import {
   IconCalculator,
   IconExternalLink,
   IconX,
+  IconMap,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
@@ -138,6 +139,7 @@ const sections: SectionItem[] = [
     icon: timerIcon,
     ref: true,
   },
+  { section: Section.MAPS, label: 'navigation.maps', path: '/maps', icon: IconMap },
 ];
 
 function isActive(item: SectionItem): boolean {

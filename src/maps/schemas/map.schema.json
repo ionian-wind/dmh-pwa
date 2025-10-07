@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Map",
+  "type": "object",
+  "required": ["id", "title", "createdAt", "updatedAt", "fileId", "points"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the map"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the map"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the map"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the map was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the map was last updated"
+    },
+    "fileId": {
+      "type": "string",
+      "description": "ID of the file in maps_files store"
+    },
+    "points": {
+      "type": "array",
+      "description": "Array of points on the map",
+      "items": {
+        "type": "object",
+        "description": "A point on the map (structure to be defined)"
+      },
+      "default": []
+    }
+  }
+} 

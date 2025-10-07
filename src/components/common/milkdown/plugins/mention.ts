@@ -5,7 +5,7 @@ import { debug } from '@/utils/debug';
 
 // Regex for internal entity links
 const entityLinkRegex =
-  /^(note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)$/;
+  /^(note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)$/;
 
 // 1. Define the mention mark schema
 export const mentionMark = $markSchema('mention', () => ({
@@ -108,17 +108,24 @@ export function registerMentionPopupTrigger(fn: typeof showMentionPopup) {
 
 // Helper to calculate popup position (to be implemented using Crepe/ProseMirror logic)
 function getMentionPopupPosition(editorView: any) {
-  let coords: { top: number; left: number; bottom?: number } = { top: 100, left: 100 };
+  let coords: { top: number; left: number; bottom?: number } = {
+    top: 100,
+    left: 100,
+  };
 
   if (!editorView || !editorView.state || !editorView.dom) {
     return coords;
   }
-  
+
   const { selection } = editorView.state;
-  
+
   try {
     // Use the end of the selection for popup position
-    coords = editorView.coordsAtPos(selection.to) as { top: number; left: number; bottom: number };
+    coords = editorView.coordsAtPos(selection.to) as {
+      top: number;
+      left: number;
+      bottom: number;
+    };
     // Optionally, offset the popup a bit below the cursor
     coords = { top: (coords.bottom ?? coords.top) + 4, left: coords.left };
   } catch (e) {
@@ -242,6 +249,8 @@ const iconGhost = `
 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-ghost-3"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 11a7 7 0 0 1 14 0v7a1.78 1.78 0 0 1 -3.1 1.4a1.65 1.65 0 0 0 -2.6 0a1.65 1.65 0 0 1 -2.6 0a1.65 1.65 0 0 0 -2.6 0a1.78 1.78 0 0 1 -3.1 -1.4v-7" /><path d="M10 10h.01" /><path d="M14 10h.01" /></svg>`;
 const iconSwords = `
 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-swords"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11z" /><path d="M5 13l6 6" /><path d="M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365" /><path d="M10 5.5l-2 -2.5h-5v5l3 2.5" /></svg>`;
+const iconMap = `
+<svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-note"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M13 20l7 -7" /><path d="M13 20v-6a1 1 0 0 1 1 -1h6v-7a2 2 0 0 0 -2 -2h-12a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7" /></svg>`;
 
 const mentionKinds = [
   { kind: 'note', label: 'notes.title', icon: iconNote },
@@ -249,6 +258,7 @@ const mentionKinds = [
   { kind: 'party', label: 'parties.title', icon: iconUsers },
   { kind: 'monster', label: 'monsters.title', icon: iconGhost },
   { kind: 'encounter', label: 'encounters.title', icon: iconSwords },
+  { kind: 'map', label: 'maps.title', icon: iconMap },
 ];
 
 // Restore buildMentionToolbar for use with buildToolbar callback in Crepe toolbar config

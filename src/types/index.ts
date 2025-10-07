@@ -24,6 +24,7 @@ export enum Section {
   CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
   MODULES = 'modules',
+  MAPS = 'maps',
 }
 
 // Core types

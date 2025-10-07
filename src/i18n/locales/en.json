@@ -42,7 +42,8 @@
     "combats": "Combats",
     "modules": "Modules",
     "configuration": "Configuration",
-    "timers": "Timers"
+    "timers": "Timers",
+    "maps": "Maps"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -573,5 +574,32 @@
     "shuffle": "Shuffle",
     "repeat": "Repeat",
     "allTracks": "All Tracks"
+  },
+  "maps": {
+    "title": "Maps",
+    "create": "Create Map",
+    "empty": "No maps yet. Create your first map!",
+    "confirmDelete": "Are you sure you want to delete {title}?",
+    "previewPlaceholder": "Map preview will appear here.",
+    "viewPlaceholder": "Map view placeholder. Image and points will be shown here.",
+    "imageInfo": "Image Information",
+    "dimensions": "Dimensions",
+    "aspectRatio": "Aspect Ratio",
+    "fileSize": "File Size",
+    "dominantColor": "Dominant Color",
+    "colorPalette": "Color Palette",
+    "imageFiles": "Image Files",
+    "selectFile": "Select File",
+    "image": "Image",
+    "titlePlaceholder": "Enter map title",
+    "descriptionPlaceholder": "Enter map description",
+    "points": "Map Points",
+    "pointsPlaceholder": "Map points editing will be implemented here",
+    "titleRequired": "Map title is required",
+    "imageRequired": "Map image is required",
+    "imageProcessingError": "Failed to process image file",
+    "imagePreview": "Image Preview",
+    "interactiveMap": "Interactive Map",
+    "loadingMap": "Loading interactive map..."
   }
 }

@@ -16,12 +16,15 @@ import { Quasar, Dialog, Notify } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 
+import 'vue3-openlayers/vue3-openlayers.css';
+
+import Vue3OpenLayers from 'vue3-openlayers';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';
 
-import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/frame.css";
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/frame.css';
 
 // Import global styles
 import './assets/styles/global.css';
@@ -66,7 +69,6 @@ watch(
   { immediate: true },
 );
 
-
 // Setup anchor scroll handler
 setupAnchorScrollHandler();
 
@@ -84,6 +86,8 @@ app.use(Quasar, {
   iconSet: quasarIconSet,
 });
 
+app.use(Vue3OpenLayers);
+
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {
   debugError('Global error:', err);
@@ -100,3 +104,10 @@ app.config.warnHandler = (msg, instance, trace) => {
 
 // Mount app
 app.mount('#q-app');
+
+window.addEventListener('error', (event) => {
+  console.error('Global error handler:', event.error || event.message);
+});
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Global unhandledrejection:', event.reason);
+});

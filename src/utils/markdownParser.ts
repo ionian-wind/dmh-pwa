@@ -6,10 +6,74 @@ import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
+import { useMapStore } from '@/maps/maps';
+
+const mentionKindMap = new Map([
+  [
+    'note',
+    {
+      useStore: useNoteStore,
+      titleKey: 'title',
+      idKey: 'id',
+      type: 'Note',
+      target: 'notes',
+    },
+  ],
+  [
+    'module',
+    {
+      useStore: useModuleStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Module',
+      target: 'modules',
+    },
+  ],
+  [
+    'party',
+    {
+      useStore: usePartyStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Party',
+      target: 'parties',
+    },
+  ],
+  [
+    'monster',
+    {
+      useStore: useMonsterStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Monster',
+      target: 'monsters',
+    },
+  ],
+  [
+    'encounter',
+    {
+      useStore: useEncounterStore,
+      titleKey: 'name',
+      idKey: 'id',
+      type: 'Encounter',
+      target: 'encounters',
+    },
+  ],
+  [
+    'map',
+    {
+      useStore: useMapStore,
+      titleKey: 'title',
+      idKey: 'id',
+      type: 'Map',
+      target: 'maps',
+    },
+  ],
+]);
 
 // --- Internal Entity Link Plugin for markdown-it ---
 const entityLinkRegex =
-  /^(note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)$/;
+  /^(note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)$/;
 
 const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
   const defaultRender =
@@ -34,22 +98,10 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
         tokens[idx].attrSet('data-id', id);
         tokens[idx].attrJoin('class', `internal-link ${kind}-link`);
         // Set SPA route for href
-        switch (kind) {
-          case 'note':
-            tokens[idx].attrSet('href', `/notes/${id}`);
-            break;
-          case 'module':
-            tokens[idx].attrSet('href', `/modules/${id}`);
-            break;
-          case 'party':
-            tokens[idx].attrSet('href', `/parties/${id}`);
-            break;
-          case 'monster':
-            tokens[idx].attrSet('href', `/monsters/${id}`);
-            break;
-          case 'encounter':
-            tokens[idx].attrSet('href', `/encounters/${id}`);
-            break;
+        const data = mentionKindMap.get(kind);
+
+        if (data) {
+          tokens[idx].attrSet('href', `/${data.target}/${id}`);
         }
       } else if (/^(https?:)?\/\//.test(href)) {
         // External link
@@ -131,7 +183,6 @@ const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
 
 // --- Custom Header Plugin for {#KIND-id} headers ---
 const headerIdRegex = /\s*\{#([a-zA-Z]+)-([a-zA-Z0-9_-]+)\}\s*$/;
-const validKinds = ['note', 'module', 'party', 'monster', 'encounter'];
 
 const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
   // Patch the renderer for heading_open
@@ -155,7 +206,7 @@ const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
       if (match) {
         const kind = match[1];
         const id = match[2];
-        if (validKinds.includes(kind)) {
+        if (mentionKindMap.has(kind)) {
           // Set id, data-id, data-kind attributes
           tokens[idx].attrSet('id', `${kind}-${id}`);
           tokens[idx].attrSet('data-id', id);
@@ -185,9 +236,8 @@ md.use(internalEntityLinkPlugin);
 md.use(checkboxPlugin);
 md.use(customHeaderPlugin);
 
-export function parseMarkdown(text: string, env?: unknown): string {
-  return md.render(text || '', env);
-}
+export const parseMarkdown = (text: string, env?: unknown): string =>
+  md.render(text || '', env);
 
 // Extract all entity mentions of the form [title](type://id) from markdown text
 export interface EntityRef {
@@ -198,7 +248,7 @@ export interface EntityRef {
 export function extractMentionedEntities(text: string): EntityRef[] {
   // Match [title](type://id)
   const entityLinkExtractRegex =
-    /\[[^\]]*\]\((note|module|party|monster|encounter):\/\/([a-zA-Z0-9_-]+)\)/g;
+    /\[[^\]]*\]\((note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)\)/g;
   const results: EntityRef[] = [];
   let match;
   while ((match = entityLinkExtractRegex.exec(text)) !== null) {
@@ -209,41 +259,5 @@ export function extractMentionedEntities(text: string): EntityRef[] {
 
 // --- Mentionable Entities Map ---
 export function getMentionableEntities(kind: string) {
-  return {
-    note: {
-      useStore: useNoteStore,
-      titleKey: 'title',
-      idKey: 'id',
-      type: 'Note',
-      target: 'notes',
-    },
-    module: {
-      useStore: useModuleStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Module',
-      target: 'modules',
-    },
-    party: {
-      useStore: usePartyStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Party',
-      target: 'parties',
-    },
-    monster: {
-      useStore: useMonsterStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Monster',
-      target: 'monsters',
-    },
-    encounter: {
-      useStore: useEncounterStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Encounter',
-      target: 'encounters',
-    },
-  }[kind];
+  return mentionKindMap.get(kind);
 }
