@@ -18,7 +18,9 @@ const configStore = useConfigStore();
 const playlists = playlistsStore.items;
 
 const filteredPlaylists = computed(() => playlists.value || []);
-const selectedPlaylistId = ref<string | null>(configStore.jukeboxActivePlaylistId);
+const selectedPlaylistId = ref<string | null>(
+  configStore.jukeboxActivePlaylistId,
+);
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
@@ -35,7 +37,7 @@ watch(
   (newPlaylistId) => {
     selectedPlaylistId.value = newPlaylistId;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const updateSortedPlaylists = (
@@ -64,18 +66,18 @@ const updateSortedPlaylists = (
     }
   }
   sortedPlaylists.value = filteredPlaylists;
-}
+};
 
 const openPlaylistModal = (playlist: JukeboxPlaylist | null) => {
   playlistToEdit.value = playlist;
   isPlaylistModalOpen.value = true;
-}
+};
 
 const setSelectedPlaylist = (playlistId: string | null) => {
   debug(playlistId);
   selectedPlaylistId.value = playlistId ?? null;
   configStore.jukeboxActivePlaylistId = playlistId; // Add this line
-}
+};
 
 const removePlaylist = async (playlistId: string) => {
   if (selectedPlaylistId.value === playlistId) {
@@ -85,7 +87,7 @@ const removePlaylist = async (playlistId: string) => {
     configStore.jukeboxActivePlaylistId = null;
   }
   await playlistsStore.remove(playlistId);
-}
+};
 
 const onPlaylistSortEnd = async (event: any) => {
   const { newIndex, oldIndex } = event;
@@ -97,7 +99,7 @@ const onPlaylistSortEnd = async (event: any) => {
       playlistsStore.update(playlist.id, { ...playlist, sortOrder: index });
     }),
   );
-}
+};
 
 onMounted(async () => {
   await playlistsStore.load();
@@ -129,7 +131,7 @@ onMounted(async () => {
           v-ripple
           @click="setSelectedPlaylist(null)"
         >
-          <QItemSection>{{ t('jukebox.allTracks')}}</QItemSection>
+          <QItemSection>{{ t('jukebox.allTracks') }}</QItemSection>
         </QItem>
       </QList>
     </div>
@@ -158,15 +160,19 @@ onMounted(async () => {
             </QItemSection>
             <QItemSection class="playlist-actions" side>
               <QBtnGroup flat>
-                <QBtn 
+                <QBtn
+                  :size="'sm'"
                   flat
-                  @click.stop="openPlaylistModal(playlist)">
-                  <IconPencil />
+                  @click.stop="openPlaylistModal(playlist)"
+                >
+                  <IconPencil :size="18" />
                 </QBtn>
-                <QBtn 
+                <QBtn
+                  :size="'sm'"
                   flat
-                  @click.stop="removePlaylist(playlist.id)">
-                  <IconX />
+                  @click.stop="removePlaylist(playlist.id)"
+                >
+                  <IconX :size="18" />
                 </QBtn>
               </QBtnGroup>
             </QItemSection>
