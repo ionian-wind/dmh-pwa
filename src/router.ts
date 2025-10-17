@@ -13,6 +13,8 @@ import EncounterView from '@/encounters/EncounterView.vue';
 import CombatView from '@/encounters/CombatView.vue';
 import ModulesView from '@/modules/ModulesView.vue';
 import ModuleView from '@/modules/ModuleView.vue';
+import SheetView from '@/sheets/SheetView.vue';
+import SheetsView from '@/sheets/SheetsView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import TimersView from '@/timers/TimersView.vue';
@@ -118,6 +120,18 @@ const router = createRouter({
       name: 'timers',
       component: TimersView,
       meta: { exact: true },
+    },
+    // Sheets routes
+    {
+      path: '/sheets',
+      name: 'sheets',
+      component: SheetsView,
+      meta: { exact: true },
+    },
+    {
+      path: '/sheets/:id',
+      name: 'sheet-detail',
+      component: SheetView,
     },
     // 404 route
     {

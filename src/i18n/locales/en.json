@@ -41,6 +41,7 @@
     "encounters": "Encounters",
     "combats": "Combats",
     "modules": "Modules",
+    "sheets": "Sheets",
     "configuration": "Configuration",
     "timers": "Timers"
   },
@@ -157,6 +158,25 @@
       "charisma": "Charisma"
     }
   },
+  "sheets": {
+    "title": "Sheets",
+    "create": "Create Sheet",
+    "edit": "Edit Sheet",
+    "editLayout": "Edit Layout",
+    "delete": "Delete Sheet",
+    "layout": "Layout",
+    "layoutPlaceholder": "Sheet layout will be displayed here",
+    "components": "component | components",
+    "tabs": {
+      "information": "Information",
+      "layout": "Layout Preview",
+      "editor": "Layout Editor"
+    },
+    "fields": {
+      "name": "Name",
+      "gameSystem": "Game System"
+    }
+  },
   "encounters": {
     "title": "Encounters",
     "create": "Create Encounter",
@@ -239,6 +259,7 @@
     "emptyEncounters": "No encounters yet. Create your first encounter to get started!",
     "emptyCharacters": "No characters yet. Create your first character to get started!",
     "emptyTracks": "No tracks to display. Add some tracks to get started!",
+    "emptySheets": "No sheets yet. Create your first sheet to get started!",
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Operation completed successfully",
@@ -359,7 +380,8 @@
     "monsters": "Monsters",
     "characters": "Characters",
     "encounters": "Encounters",
-    "modules": "Modules"
+    "modules": "Modules",
+    "sheets": "Sheets"
   },
   "combat": {
     "encounter": "Encounter",

@@ -37,6 +37,7 @@ import {
   IconCalculator,
   IconExternalLink,
   IconX,
+  IconFileText,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
@@ -131,6 +132,12 @@ const sections: SectionItem[] = [
     label: 'navigation.encounters',
     path: '/encounters',
     icon: IconSwords,
+  },
+  {
+    section: Section.SHEETS,
+    label: 'navigation.sheets',
+    path: '/sheets',
+    icon: IconFileText,
   },
   {
     section: Section.TIMERS,
