@@ -13,6 +13,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import {
   IconMaximize,
   IconMaximizeOff,
+  IconPlaylist,
   IconNote,
   IconUser,
   IconUsers,
@@ -235,20 +236,21 @@ const isCalculatorPopupOpen = ref(false);
   <div>
     <QLayout view="hHh LpR lFr">
       <QHeader bordered class="bg-primary text-white">
-        <QToolbar>
-          <QToolbar class="text-white justify-between">
-            <QBtn dense flat @click="toggleLeftDrawer" class="q-mr-sm">
-              <IconMenu2 />
-            </QBtn>
+        <QToolbar class="text-white justify-between">
+          <QBtn dense flat @click="toggleLeftDrawer" class="q-mr-sm">
+            <IconMenu2 />
+          </QBtn>
 
-            <QSeparator vertical v-if="topMenuContent" />
+          <QSeparator vertical v-if="topMenuContent" />
 
-            <component
-              v-if="topMenuContent"
-              :is="topMenuContent.component"
-              v-bind="topMenuContent.props"
-            />
-          </QToolbar>
+          <component
+            v-if="topMenuContent"
+            :is="topMenuContent.component"
+            v-bind="topMenuContent.props"
+          ></component>
+          <QBtn v-if="rightDrawerContent" dense flat @click="toggleRightDrawer">
+            <IconPlaylist />
+          </QBtn>
         </QToolbar>
       </QHeader>
 
@@ -342,7 +344,10 @@ const isCalculatorPopupOpen = ref(false);
         v-if="rightDrawerContent"
         v-model="rightDrawerOpen"
         side="right"
+        persistent
         bordered
+        show-if-above
+        behavior="desktop"
         class="right-sidebar"
       >
         <component
