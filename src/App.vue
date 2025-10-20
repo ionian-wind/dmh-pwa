@@ -109,6 +109,12 @@ const sections: SectionItem[] = [
     icon: IconUser,
   },
   {
+    section: Section.SHEETS,
+    label: 'navigation.sheets',
+    path: '/sheets',
+    icon: IconPlaylist,
+  },
+  {
     section: Section.PARTIES,
     label: 'navigation.parties',
     path: '/parties',

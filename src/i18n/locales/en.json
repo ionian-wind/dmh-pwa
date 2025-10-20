@@ -38,6 +38,7 @@
     "parties": "Parties",
     "monsters": "Monsters",
     "characters": "Characters",
+    "sheets": "Sheets",
     "encounters": "Encounters",
     "combats": "Combats",
     "modules": "Modules",
@@ -52,6 +53,7 @@
       "parties": "Parties",
       "monsters": "Monsters",
       "characters": "Characters",
+      "sheets": "Sheets",
       "encounters": "Encounters",
       "modules": "Modules"
     }
@@ -86,6 +88,7 @@
       "name": "Name",
       "description": "Description",
       "characters": "Characters",
+    "sheets": "Sheets",
       "modules": "Modules",
       "notes": "Notes"
     },
@@ -328,6 +331,19 @@
     "module": "Module",
     "moduleRequired": "Module is required"
   },
+  "sheets": {
+    "title": "Sheets",
+    "create": "Create Sheet",
+    "edit": "Edit Sheet",
+    "delete": "Delete Sheet",
+    "empty": "No sheets yet. Create your first sheet!",
+    "information": "Information",
+    "rendered": "Rendered",
+    "editor": "Editor",
+    "system": "System",
+    "noLayout": "No layout defined for this sheet",
+    "sheet": "Sheet"
+  },
   "validation": {
     "required": "This field is required",
     "minLength": "Minimum length is {min} characters",
@@ -358,6 +374,7 @@
     "parties": "Parties",
     "monsters": "Monsters",
     "characters": "Characters",
+    "sheets": "Sheets",
     "encounters": "Encounters",
     "modules": "Modules"
   },

@@ -16,6 +16,8 @@ import ModuleView from '@/modules/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import TimersView from '@/timers/TimersView.vue';
+import SheetsList from '@/sheets/SheetsList.vue';
+import SheetView from '@/sheets/SheetView.vue';
 // import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
@@ -118,6 +120,18 @@ const router = createRouter({
       name: 'timers',
       component: TimersView,
       meta: { exact: true },
+    },
+    // Sheets routes
+    {
+      path: '/sheets',
+      name: 'sheets',
+      component: SheetsList,
+      meta: { exact: true },
+    },
+    {
+      path: '/sheets/:id',
+      name: 'sheet-detail',
+      component: SheetView,
     },
     // 404 route
     {

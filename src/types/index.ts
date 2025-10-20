@@ -24,6 +24,7 @@ export enum Section {
   CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
   MODULES = 'modules',
+  SHEETS = 'sheets',
 }
 
 // Core types
@@ -125,6 +126,35 @@ export interface Timer extends WithMetadata {
   duration: number; // milliseconds
   startedAt: number | null;
   status: 'inactive' | 'running' | 'finished';
+}
+
+// Sheet types
+export interface SheetDefinition extends WithMetadata {
+  name: string;
+  description?: string;
+  system?: string; // TTRPG system (optional)
+  layout: SheetRow[]; // Grid layout
+  metadata?: Record<string, unknown>; // Additional metadata
+}
+
+export interface SheetRow {
+  id: string;
+  columns: number; // Total columns in row (max 12)
+  cells: SheetCell[];
+}
+
+export interface SheetCell {
+  id: string;
+  span: number; // Number of grid columns this cell spans (1-12)
+  component?: SheetComponent;
+}
+
+export interface SheetComponent {
+  id: string;
+  type: string; // 'text', 'input', 'number', 'select', etc.
+  props: Record<string, unknown>; // Component-specific properties
+  label?: string;
+  value?: any;
 }
 
 export * from './forms/form-input';

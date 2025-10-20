@@ -38,6 +38,7 @@
     "parties": "Группы",
     "monsters": "Монстры",
     "characters": "Персонажи",
+    "sheets": "Листы",
     "encounters": "Схватки",
     "combats": "Бои",
     "modules": "Модули",
@@ -52,6 +53,7 @@
       "parties": "Группы",
       "monsters": "Монстры",
       "characters": "Персонажи",
+    "sheets": "Листы",
       "encounters": "Столкновения",
       "modules": "Модули"
     }
@@ -86,6 +88,7 @@
       "name": "Имя",
       "description": "Описание",
       "characters": "Персонажи",
+    "sheets": "Листы",
       "modules": "Модули",
       "notes": "Заметки"
     },
@@ -328,6 +331,19 @@
     "module": "Модуль",
     "moduleRequired": "Модуль обязателен"
   },
+  "sheets": {
+    "title": "Листы",
+    "create": "Создать лист",
+    "edit": "Редактировать лист",
+    "delete": "Удалить лист",
+    "empty": "Листы отсутствуют. Создайте первый лист!",
+    "information": "Информация",
+    "rendered": "Отображение",
+    "editor": "Редактор",
+    "system": "Система",
+    "noLayout": "Для этого листа не определена структура",
+    "sheet": "Лист"
+  },
   "validation": {
     "required": "Это поле обязательно для заполнения",
     "minLength": "Минимальная длина {min} символов",
@@ -358,6 +374,7 @@
     "parties": "Группы",
     "monsters": "Монстры",
     "characters": "Персонажи",
+    "sheets": "Листы",
     "encounters": "Схватки",
     "modules": "Модули"
   },
