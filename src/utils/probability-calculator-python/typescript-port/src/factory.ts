@@ -10,7 +10,7 @@ export type T_ifsrt = T_ifsrt_single | Iterable<T_ifsrt>;
 
 export function get_seq(...source: T_ifsrt[]): Seq | StringSeq {
   const flat = [...flatten(source)];
-  const flatRvs = flat.filter(x => is_rv(x));
+  const flatRvs = flat.filter((x) => is_rv(x));
   const flatRvVals: number[] = [];
   for (const rv of flatRvs) {
     flatRvVals.push(...(rv as unknown as RV).vals);
@@ -25,11 +25,11 @@ export function get_seq(...source: T_ifsrt[]): Seq | StringSeq {
       flatElse.push(x as T_if);
     }
   }
-  
+
   if (hasStrings) {
     return new StringSeq([...flatElse, ...flatRvVals] as any);
   }
-  
+
   const res = flatElse.concat(flatRvVals);
   return new Seq(...res);
 }
@@ -49,7 +49,7 @@ export function get_rv(source: T_ifsr): RV {
 
 export function merge_rvs(
   rvs: Iterable<T_ifsr | null>,
-  weights?: Iterable<number> | null
+  weights?: Iterable<number> | null,
 ): MetaRV {
   return RV.from_rvs(rvs, weights);
 }
@@ -61,3 +61,5 @@ export function is_blank_rv(rv: unknown): boolean {
 export function is_rv(rv: unknown): boolean {
   return rv instanceof RV;
 }
+
+export { Seq } from './seq';

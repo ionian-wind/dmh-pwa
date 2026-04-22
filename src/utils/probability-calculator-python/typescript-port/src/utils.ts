@@ -10,10 +10,10 @@ export function flatten<T>(items: Iterable<T> | string): T[] {
     return [items];
   }
   // Check if it's a plain object (not an RV or other special object)
-  if (typeof items === 'object' && !Symbol.iterator in items) {
+  if (typeof items === 'object' && !(Symbol.iterator in items)) {
     // Check for RV-like objects (have vals and probs but not iterables)
-    const obj = items as unknown as { vals?: number[], probs?: number[] };
-    if (obj.vals && obj.probs && !Symbol.iterator in obj) {
+    const obj = items as unknown as { vals?: number[]; probs?: number[] };
+    if (obj.vals && obj.probs && !(Symbol.iterator in obj)) {
       return result;
     }
     return [items as unknown as T];
@@ -23,7 +23,7 @@ export function flatten<T>(items: Iterable<T> | string): T[] {
       continue;
     }
     // Don't recurse into RV objects
-    const xObj = x as unknown as { vals?: number[], probs?: number[] };
+    const xObj = x as unknown as { vals?: number[]; probs?: number[] };
     if (xObj.vals && xObj.probs) {
       result.push(x as T);
       continue;
@@ -53,7 +53,7 @@ export function factorial(n: number): number {
   return _memoized[n];
 }
 
-export function mymatmul(a: unknown, b: unknown): unknown {
+export function myMatmul(a: unknown, b: unknown): unknown {
   if (typeof a === 'number' && typeof b === 'number') {
     const strB = String(b);
     const idx = a - 1;
@@ -65,7 +65,7 @@ export function mymatmul(a: unknown, b: unknown): unknown {
   return (a as any).__matmul__(b);
 }
 
-export function mylen(a: unknown): number {
+export function myLen(a: unknown): number {
   if (typeof a === 'number') {
     return String(Math.abs(a)).length;
   }
@@ -75,23 +75,23 @@ export function mylen(a: unknown): number {
   return 0;
 }
 
-export function myinvert(a: unknown): unknown {
+export function myInvert(a: unknown): unknown {
   if (typeof a === 'number') {
     return a === 0 ? 1 : 0;
   }
   return (a as any).__invert__?.();
 }
 
-export function myand(a: unknown, b: unknown): unknown {
+export function myAnd(a: unknown, b: unknown): unknown {
   if (typeof a === 'number' && typeof b === 'number') {
-    return (a && b) ? 1 : 0;
+    return a && b ? 1 : 0;
   }
   return (a as any).__and__?.(b) ?? (b as any).__rand__?.(a) ?? 0;
 }
 
-export function myor(a: unknown, b: unknown): unknown {
+export function myOr(a: unknown, b: unknown): unknown {
   if (typeof a === 'number' && typeof b === 'number') {
-    return (a || b) ? 1 : 0;
+    return a || b ? 1 : 0;
   }
   return (a as any).__or__?.(b) ?? (b as any).__ror__?.(a) ?? 0;
 }

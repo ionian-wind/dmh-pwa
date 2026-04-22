@@ -2,13 +2,12 @@
 
 ## Project Overview
 
-Port PythonDice library (a dice probability calculator) from Python to TypeScript in `src/utils/probability-calculator-python/typescript-port/`, using TDD approach with tests as source of truth.
+Port PythonDice library (a dice probability calculator) from Python to TypeScript in `./typescript-port/`, using TDD approach with tests as source of truth.
 
 ## How to Run Tests
 
 ```bash
-cd src/utils/probability-calculator-python/typescript-port
-npx vitest run
+npx vitest run ./typescript-port/*
 ```
 
 ## After Each Run

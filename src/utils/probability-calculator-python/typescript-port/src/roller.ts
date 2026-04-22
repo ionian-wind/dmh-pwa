@@ -62,14 +62,14 @@ export function roll(n: T_ifsr | string, d?: T_ifsr | string | null): MetaRV {
   }
 
   if (nVal instanceof RV && dVal instanceof RV) {
-    const dies = nVal.vals.map(v => roll(v as number, dVal as RV));
+    const dies = nVal.vals.map((v) => roll(v as number, dVal as RV));
     const result = RV.from_rvs(dies, nVal.probs);
     result.set_source(1, dVal as RV);
     return result;
   }
 
   if (nVal instanceof RV && typeof dVal === 'number') {
-    const dies = nVal.vals.map(v => roll(v as number, dVal));
+    const dies = nVal.vals.map((v) => roll(v as number, dVal));
     const result = RV.from_rvs(dies, nVal.probs);
     result.set_source(1, RV.from_const(dVal));
     return result;
@@ -216,3 +216,5 @@ function* range(start: number, end: number): Generator<number> {
     }
   }
 }
+
+export const myrange = range;

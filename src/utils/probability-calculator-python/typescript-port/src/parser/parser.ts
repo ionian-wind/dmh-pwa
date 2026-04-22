@@ -1,4 +1,4 @@
-import { Parser, createTokenInstance, Lexer, Token } from 'chevrotain';
+import { createTokenInstance, Lexer, Token, CstParser } from 'chevrotain';
 import {
   OUTPUT,
   FUNCTION,
@@ -47,9 +47,49 @@ export interface Node {
   children?: Node[];
 }
 
-export class CParser extends Parser {
+export class CParser extends CstParser {
   constructor() {
-    super({});
+    super([
+      OUTPUT,
+      FUNCTION,
+      LOOP,
+      OVER,
+      NAMED,
+      SET,
+      TO,
+      IF,
+      ELSE,
+      RESULT,
+      PLUS,
+      MINUS,
+      TIMES,
+      DIVIDE,
+      POWER,
+      COLON,
+      LESS,
+      GREATER,
+      EQUALS,
+      NOTEQUALS,
+      AT,
+      HASH,
+      OR,
+      AND,
+      EXCLAMATION,
+      DOUBLE_DOT,
+      DOT,
+      COMMA,
+      LPAREN,
+      RPAREN,
+      LBRACE,
+      RBRACE,
+      LBRACKET,
+      RBRACKET,
+      UPPERNAME,
+      D_OP,
+      LOWERNAME,
+      NUMBER,
+      INSTRING,
+    ]);
 
     const $ = this;
 
@@ -100,9 +140,7 @@ export class CParser extends Parser {
     });
 
     $.RULE('expression', () => {
-      $.OR([
-        { ALT: () => $.SUBRULE($.additiveExpression) },
-      ]);
+      $.OR([{ ALT: () => $.SUBRULE($.additiveExpression) }]);
     });
 
     $.RULE('additiveExpression', () => {
@@ -122,9 +160,7 @@ export class CParser extends Parser {
     });
 
     $.RULE('unaryExpression', () => {
-      $.OR([
-        { ALT: () => $.SUBRULE($.primaryExpression) },
-      ]);
+      $.OR([{ ALT: () => $.SUBRULE($.primaryExpression) }]);
     });
 
     $.RULE('primaryExpression', () => {
