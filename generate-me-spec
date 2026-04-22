@@ -1,0 +1,42 @@
+review document and give me proposal of parser/evaluator implementation for provided requirements
+
+---
+
+ 
+your proposal should describe without referencing to existing implementations or libraries, it should describe detailed concept
+
+save your proposal in file dice_notation_proposal_2.md
+
+
+-
+
+
+now continue with dice-parser
+
+perhaps, not everything from spec and proposal was implemented, or omplemented not as described - check it
+
+
+implement missing parts
+
+---
+
+start implementing parser in `utils/roller` directory
+parsing should be based on `chevrotain` library usage
+
+source of truth - this three files:
+- `dice_notation.md` contains spec for dice notation parser
+- `requirements_for_proposal.md` contains requirements for overall architecture and key points
+- `dice_notation_proposal_2.md` contains proposal for implementation
+
+each plugin should be in own subdirectory
+be modular, extract shareable code to libraries and reuse them
+add tests and documentation
+while full implementation not done, add debug logs
+at every step run tests to check your work, all tests should pass 
+run tests only for parser related code
+if tests failing, fix
+check tests coverage, try to cover maximum percent of code
+remember: project is written in typescript, so use `import` instead of `requie`
+remember: project usses `vitest` for tests
+
+---
