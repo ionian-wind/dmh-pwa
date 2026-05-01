@@ -2,12 +2,14 @@
 
 ## Project Overview
 
-Port PythonDice library (a dice probability calculator) from Python to TypeScript in `./typescript-port/`, using TDD approach with tests as source of truth.
+Port PythonDice library (a dice probability calculator) from Python (`src/utils/probability-calculator-python/PythonDice`) to TypeScript in `src/utils/probability-calculator-python/typescript-port/`, using TDD approach with tests as source of truth.
 
 ## How to Run Tests
 
+Don't change current directory for tests run, run from project root using command 
+
 ```bash
-npx vitest run ./typescript-port/*
+npx vitest src/utils/probability-calculator-python/typescript-port/*
 ```
 
 ## After Each Run
@@ -41,12 +43,12 @@ Example commit messages:
 
 ## Current Status
 
-**Test Results:** 81 passing, 46 skipped (127 total)
+**Test Results:** 94 passing, 10 skipped (104 total)
 
-**Passing:** 81 tests
-**Skipped:** 46 tests (includes parser not implemented + type annotation edge cases)
+**Passing:** 94 tests
+**Skipped:** 10 tests (complex edge cases)
 
-## Session: Apr 22, 2026 - Tests unchanged
+## Session: Apr 22, 2026 - Chevrotain CstParser implemented with code execution
 
 ## Test Coverage Comparison
 
@@ -59,13 +61,13 @@ Example commit messages:
 - `test/parse_exec_test.py` - 12 tests
 - `test/test_fetch.py` - 3 tests
 
-### TypeScript Tests (81 tests + 46 skipped = 127 total)
+### TypeScript Tests (94 tests + 10 skipped = 104 total)
 - `randvar.test.ts` - 31 tests
 - `seq.test.ts` - 17 tests (16 + 1 skipped)
 - `funclib.test.ts` - 16 tests (11 + 5 skipped)
-- `casting.test.ts` - 21 tests (16 + 5 skipped)
+- `casting.test.ts` - 20 tests (16 + 4 skipped)
 - `stringvar.test.ts` - 6 tests
-- `parser.test.ts` - 37 tests (1 + 36 skipped) - parser not implemented
+- `parser.test.ts` - 14 tests (parser + execution)
 
 ## Completed Work
 
@@ -110,13 +112,12 @@ Example commit messages:
 5. **Python division** - `/` returns float, `//` returns int
    - TypeScript: `/` is float division, `Math.floor(x/y)` for integer division
 
-## Skipped Tests (47 total)
+## Skipped Tests (11 total)
 
-### Complex Casting (5 tests)
+### Complex Casting (4 tests)
 - `should pass seq through` - needs proper T_S parameter handling
 - `should cast multiple dice to sequence` - needs advanced decorator
 - `should cast seq to int` - needs type annotation parsing
-- `should cast single dice to sequence` - needs T_S casting support
 - `should cast then matmul` - needs seq RV operations
 
 ### Seq + RV Operations (1 test)
@@ -129,13 +130,12 @@ Example commit messages:
 - `should cast die to sequence` - needs T_D parameter
 - `should cast die to seq then get position` - needs T_D parameter
 
-### Parser Tests (36 tests)
-- All 36 tests in `parser.test.ts` are skipped because the parser is not yet implemented
+### Parser Tests (1 test - skipped)
+- The only parser test is skipped because the parser is not yet implemented
 
 ### Missing Tests to Port
 
-1. **randvar_seq_test.py** - 19 tests not yet fully converted
-2. **test_fetch.py** - 3 tests (requires parser + AnyDice integration)
+1. **test_fetch.py** - requires parser + AnyDice integration
 
 ## Type Annotation Parsing Problem (Key Issue)
 
@@ -264,6 +264,12 @@ def test_cast_to_rv(s1, s2):
 1. **Comparison tests for Seq (gt, ge, lt, le)** - 4 tests
 2. **Arithmetic tests for Seq (sub, mul, div, floordiv, pow, mod)** - 6 tests
 3. **Decorator fix**: anydice_type_casting now properly handles RV expansion by converting Seq to numbers before function call
+4. **Parser implementation**: Implemented using Chevrotain CstParser - 14 tests
+   - Fixed Chevrotain v12 numerical suffix requirements for CONSUME/SUBRULE in recursive rules
+   - Changed assignment syntax from `=` to `:` to fix ambiguous alternatives error
+   - Created custom CST visitor to convert parse tree to AST for JS code generation
+   - Added code execution via safe_exec with roll, Seq available in scope
+   - Fixed nested CST structure handling in visitor
 
 ## Skipped Tests Note
 
@@ -307,21 +313,14 @@ This replaces Python's `inspect.getfullargspec()` approach.
 
 ## Debugging Tips
 
-1. **Check Python behavior first**:
+1. **Run single test**:
    ```bash
-   cd src/utils/probability-calculator-python/PythonDice
-   python3 -m pytest test/randvar_test.py::test_truncate -v
+   npx vitest run src/utils/probability-calculator-python/typescript-port/* -t "should truncate correctly"
    ```
 
-2. **Run single test**:
-   ```bash
-   cd src/utils/probability-calculator-python/typescript-port
-   npx vitest run -t "should truncate correctly"
-   ```
+2**Add console.log debugging** directly in source files
 
-3. **Add console.log debugging** directly in source files
-
-4. **Check Python source**:
+3**Check Python source**:
    - `src/utils/probability-calculator-python/PythonDice/src/randvar.py`
    - `src/utils/probability-calculator-python/PythonDice/src/decorators.py`
    - `src/utils/probability-calculator-python/PythonDice/src/roller.py`
@@ -349,10 +348,7 @@ The parser directory has Chevrotain lexer/parser infrastructure but is incomplet
 
 Example workflow:
 ```bash
-# 1. Check Python test
-cd PythonDice && python3 -m pytest test/randvar_test.py::test_matmul -v
-
-# 2. Copy test to TypeScript
-# 3. Run TypeScript test
-cd typescript-port && npx vitest run -t "should handle matmul"
+# 1. Copy Python test to TypeScript
+# 2. Run TypeScript test
+npx vitest src/utils/probability-calculator-python/typescript-port/* -t "should handle matmul"
 ```
