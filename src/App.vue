@@ -42,7 +42,7 @@ import {
   IconChevronDown,
   IconSettings,
   IconMap,
-  // IconHeadphones,
+  IconHeadphones,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
@@ -147,12 +147,12 @@ const sections: SectionItem[] = [
     path: '/modules',
     icon: IconBook,
   },
-  // {
-  //   section: Section.AMBIENT_SOUND,
-  //   label: 'navigation.ambientSound',
-  //   path: '/ambient-sound',
-  //   icon: IconHeadphones,
-  // },
+  {
+    section: Section.AMBIENT_SOUND,
+    label: 'navigation.ambientSound',
+    path: '/ambient-sound',
+    icon: IconHeadphones,
+  },
 ];
 
 function isActive(item: SectionItem): boolean {

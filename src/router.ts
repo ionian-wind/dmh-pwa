@@ -16,6 +16,8 @@ import ModuleView from '@/modules/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import TimersView from '@/timers/TimersView.vue';
+import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
+import PackEditorView from '@/ambient-sound/PackEditorView.vue';
 import MapsView from '@/maps/views/MapsView.vue';
 import MapView from '@/maps/views/MapView.vue';
 import LocationView from '@/maps/views/LocationView.vue';
@@ -157,6 +159,19 @@ const router = createRouter({
       path: '/locations/:id',
       name: 'location-detail',
       component: LocationView,
+    },
+    // Ambient Sound route
+    {
+      path: '/ambient-sound',
+      name: 'ambient-sound',
+      component: AmbientSoundView,
+      meta: { exact: true },
+    },
+    // Ambient Sound Pack Editor route
+    {
+      path: '/ambient-sound/editor',
+      name: 'ambient-sound-editor',
+      component: PackEditorView,
     },
     // 404 route
     {
