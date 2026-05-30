@@ -323,6 +323,7 @@ const handleProgressChange = (value: number | null) => {
                 :max="1"
                 :step="0.01"
                 :markers="false"
+                :color="isVolumeHovered ? 'info' : 'primary'"
                 :track-size="isVolumeHovered ? '10px' : '5px'"
                 size="md"
                 class="volume-bar"
