@@ -22,7 +22,7 @@ npm run types-check
 
 | Check | Before | After |
 | --- | --- | --- |
-| `npm test` | 353 / 578 failing | **334 / 334 passing** |
+| `npm test` | 353 / 578 failing | **485 / 485 passing** |
 | `npm run test:regression` | suites did not exist | **18 / 18 pass** |
 | `npx vue-tsc --noEmit` | 46 errors | **0 errors** |
 | `npm run build` | passes | passes |

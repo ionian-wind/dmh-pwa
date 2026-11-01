@@ -1,5 +1,11 @@
 import { vi } from 'vitest';
-import { parseMarkdown, extractMentionedEntities } from '@/utils/markdownParser';
+import {
+  parseMarkdown,
+  extractMentionedEntities,
+  sanitizeMarkdownHtml,
+  sanitizeHtmlContent,
+  getMentionableEntities,
+} from '@/utils/markdownParser';
 
 // Mock the stores
 vi.mock('@/stores/notes', () => ({
@@ -384,6 +390,84 @@ describe('Markdown Parser', () => {
       const input = 'No mentions here!';
       const result = extractMentionedEntities(input);
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('Sanitizer', () => {
+    it('removes dangerous tags, event handlers and unsafe URLs', () => {
+      const html = [
+        '<script>alert(1)</script>',
+        '<iframe src="https://x"></iframe>',
+        '<p onclick="x">Hi</p>',
+        '<a href="javascript:alert(1)">Link</a>',
+        '<img src="https://ok/image.png" onerror="x">',
+        '<input type="text"><input type="checkbox" checked>',
+        '<custom-tag>Text</custom-tag>',
+      ].join('');
+
+      const result = sanitizeMarkdownHtml(html);
+
+      expect(result).not.toContain('<script');
+      expect(result).not.toContain('<iframe');
+      expect(result).not.toContain('onclick');
+      expect(result).not.toContain('onerror');
+      expect(result).not.toContain('javascript:');
+      expect(result).toContain('<a>Link</a>');
+      expect(result).toContain('<img src="https://ok/image.png">');
+      expect(result).not.toContain('type="text"');
+      expect(result).toContain('type="checkbox"');
+      expect(result).toContain('Text');
+      expect(result).not.toContain('<custom-tag>');
+    });
+
+    it('falls back to regex stripping without DOMParser', () => {
+      vi.stubGlobal('DOMParser', undefined);
+      const result = sanitizeMarkdownHtml(
+        '<script>bad()</script><p>Safe</p><style>x</style>',
+      );
+      expect(result).not.toContain('<script');
+      expect(result).not.toContain('<style');
+      expect(result).toContain('<p>Safe</p>');
+      vi.unstubAllGlobals();
+    });
+
+    it('leaves safe HTML untouched and handles empty content', () => {
+      expect(sanitizeMarkdownHtml('<p>Safe</p>')).toBe('<p>Safe</p>');
+      expect(sanitizeHtmlContent('')).toBe('');
+      expect(sanitizeHtmlContent('<strong>Bold</strong>')).toBe(
+        '<strong>Bold</strong>',
+      );
+    });
+  });
+
+  describe('Mentionable entities', () => {
+    it('exposes metadata for every supported kind', () => {
+      expect(getMentionableEntities('note')).toMatchObject({
+        titleKey: 'title',
+        type: 'Note',
+        target: 'notes',
+      });
+      expect(getMentionableEntities('module')).toMatchObject({
+        titleKey: 'name',
+        type: 'Module',
+        target: 'modules',
+      });
+      expect(getMentionableEntities('party')).toMatchObject({
+        titleKey: 'name',
+        type: 'Party',
+        target: 'parties',
+      });
+      expect(getMentionableEntities('monster')).toMatchObject({
+        titleKey: 'name',
+        type: 'Monster',
+        target: 'monsters',
+      });
+      expect(getMentionableEntities('encounter')).toMatchObject({
+        titleKey: 'name',
+        type: 'Encounter',
+        target: 'encounters',
+      });
+      expect(getMentionableEntities('unknown')).toBeUndefined();
     });
   });
 }); 

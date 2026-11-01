@@ -14,6 +14,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
+      thresholds: {
+        statements: 80,
+        branches: 75,
+        functions: 65,
+        lines: 80,
+      },
       exclude: [
         'src/main.ts',
         'src/router.ts',

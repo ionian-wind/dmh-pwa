@@ -6,6 +6,7 @@ import { h, nextTick } from 'vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import TrackCard from '@/jukebox/components/TrackCard.vue';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useJukeboxPlaylistsStore, useJukeboxTracksStore } from '@/jukebox/stores';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
@@ -169,6 +170,49 @@ describe('jukebox store integration', () => {
     expect(wrapper.emitted('play-next')?.[0]).toEqual([track]);
     expect(wrapper.emitted('play-last')?.[0]).toEqual([track]);
     expect(wrapper.emitted('remove')?.[0]).toEqual([track]);
+  });
+
+  it('toggles track membership in an existing playlist', async () => {
+    const track = await seedTrack('Tavern Theme');
+    const playlists = useJukeboxPlaylistsStore();
+    const playlist = await playlists.create({
+      name: 'Set',
+      trackIds: [],
+    });
+
+    const wrapper = mount(AddToPlaylistModal, {
+      props: { modelValue: true, track },
+    });
+    const toggle = wrapper.findComponent(ToggleSwitch);
+    expect(toggle.props('modelValue')).toBe(false);
+
+    await toggle.vm.$emit('update:modelValue', true);
+    await flushPromises();
+    expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]);
+
+    await toggle.vm.$emit('update:modelValue', false);
+    await flushPromises();
+    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
+
+    wrapper.unmount();
+  });
+
+  it('does nothing when toggling without a track', async () => {
+    const playlists = useJukeboxPlaylistsStore();
+    const playlist = await playlists.create({
+      name: 'Set',
+      trackIds: [],
+    });
+    const wrapper = mount(AddToPlaylistModal, {
+      props: { modelValue: true, track: null },
+    });
+
+    await wrapper
+      .findComponent(ToggleSwitch)
+      .vm.$emit('update:modelValue', true);
+    await flushPromises();
+    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
+    wrapper.unmount();
   });
 
   it('publishes the playlist drawer and player footer', async () => {

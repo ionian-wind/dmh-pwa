@@ -38,15 +38,29 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 68 (including dice-roller suites). Total tests: 537.
+Total test files: 62. Total tests: 485.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  38 passed (38)
-Tests       334 passed (334)
+Test Files  62 passed (62)
+Tests       485 passed (485)
 ```
+
+Coverage (V8, `npm run test:coverage`):
+
+```
+Statements  84.07%
+Branches    81.72%
+Functions   69.54%
+Lines       84.07%
+```
+
+Every source module now has tests. The only files below 80% line coverage are the
+large dice-roller AST/plugin files, which have dedicated parser/evaluator suites.
+`vitest.config.ts` enforces global thresholds (80% statements/lines, 75%
+branches, 65% functions) so future changes cannot silently drop coverage.
 
 The maintained regression suite is also green:
 
@@ -92,23 +106,18 @@ registered plugin pipeline.
   unit tests.
 - `tests/regressions/` holds the bug-focused suite added during remediation.
 
-## Suggested new tests
+## Coverage focus
 
-- Backup/restore round-trip including all stores.
-- Mention indexing/backlink behavior across create/update/delete.
-- Jukebox playback/queue transitions (howler mocked).
-- File handler permission and metadata-worker paths.
-- PWA install prompt event handling beyond listener registration.
-- i18n key parity and unused-key checks.
+The suite now includes direct tests for:
 
-## Coverage gaps
+- backup/restore round-trips, IDB CRUD and mention backlinks,
+- file handlers, worker metadata extraction and color/palette extraction,
+- jukebox playback/queue transitions with a mocked Howler,
+- PWA install/update flows and event cleanup,
+- BaseListView/BaseEntityTabView integration, cards, controls and calculators,
+- module import/export, markdown sanitizing/task lists and mention plugin helpers.
 
-There are still no dedicated tests for:
-
-- module document rendering/TOC beyond `buildDocumentChunks`,
-- jukebox player/queue transitions,
-- file handlers,
-- backup/restore round-trip,
-- `BaseEntityView`/`BaseListView` integration beyond smoke tests,
-- `MarkdownEditor`/Milkdown.
+The remaining intentional low-coverage area is the large dice-roller AST/plugin
+implementation; it is exercised by parser, evaluator, macro, table, formatting
+and integration suites rather than line-by-line unit tests.
 

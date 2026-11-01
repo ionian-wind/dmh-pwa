@@ -112,6 +112,34 @@ describe('regression: known bugs', () => {
     expect(gradient).not.toContain('NaN');
   });
 
+  it('builds a default blob gradient without a palette', () => {
+    const style = useAnimatedGradient(
+      computed(() => true),
+      () => undefined,
+    ).value as Record<string, string>;
+
+    expect(style['--custom-gradient']).toContain('radial-gradient');
+    expect(style['--custom-gradient']).toContain('linear-gradient');
+  });
+
+  it('expands short hex colors and passes other colors through', () => {
+    const style = useAnimatedGradient(
+      computed(() => true),
+      () => ['#abc', 'rgb(1, 2, 3)'],
+    ).value as Record<string, string>;
+
+    expect(style['--custom-gradient']).toContain('#aabbcca6');
+    expect(style['--custom-gradient']).toContain('rgb(1, 2, 3)');
+    expect(style['--custom-gradient']).toContain('#aabbcc40');
+  });
+
+  it('returns no style when the gradient is disabled', () => {
+    const enabled = computed(() => false);
+    const style = useAnimatedGradient(enabled, () => ['#ffffff']).value;
+
+    expect(style).toEqual({});
+  });
+
   it('chooses control colours that contrast with the gradient palette', () => {
     expect(getGradientContrastColor(['#f8f8f8', '#ffe9a8'])).toBe('#111827');
     expect(getGradientContrastColor(['#101020', '#22223a'])).toBe('#ffffff');
