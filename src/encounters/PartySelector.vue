@@ -4,18 +4,16 @@ import { usePartyStore } from '@/stores/parties';
 import { useCombatStore } from '@/stores/combats';
 import { useMonsterStore } from '@/stores/monsters';
 import { useCharacterStore } from '@/stores/characters';
+import { generateId } from '@/utils/storage';
 import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import Button from '@/components/form/Button.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
 const monsterStore = useMonsterStore();
 const characterStore = useCharacterStore();
-const router = useRouter();
 const { t } = useI18n();
 
 const props = defineProps<{
@@ -125,16 +123,12 @@ const handleCreateCombat = async () => {
   };
 
   const createdCombat = await combatStore.create(newCombat);
-  router.push(`/combats/${createdCombat.id}`);
+  emit('combat-created', createdCombat);
 };
 
 const handleCancel = () => {
   selectedPartyId.value = '';
   emit('cancel');
-};
-
-const generateId = () => {
-  return Math.random().toString(36).substr(2, 9);
 };
 </script>
 
@@ -233,16 +227,6 @@ const generateId = () => {
         </template>
       </div>
     </div>
-
-    <template #footer>
-      <Button
-        :submitLabel="t('common.startCombat')"
-        :disabled="
-          !selectedPartyId ||
-          Object.values(selectedCharacters).filter(Boolean).length === 0
-        "
-      />
-    </template>
   </BaseModal>
 </template>
 

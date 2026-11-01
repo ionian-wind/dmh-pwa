@@ -9,20 +9,16 @@ import { useRouter } from 'vue-router';
 import { QVirtualScroll } from 'quasar';
 import Bookmark from '@/components/common/Bookmark.vue';
 import { debug, debugError } from '@/utils/debug';
+import {
+  buildDocumentChunks,
+  type DocumentChunk,
+} from '@/utils/documentChunks';
 
 interface TOCItem {
   id: string;
   title: string;
   level: number;
   anchorId: string;
-}
-
-interface DocumentChunk {
-  id: string;
-  title: string;
-  content: string;
-  level: number;
-  noteId: string;
 }
 
 const props = defineProps<{
@@ -52,29 +48,6 @@ const notes = computed(() =>
   ),
 );
 
-function buildChunks(nodes: ModuleTreeNode[], depth = 1): DocumentChunk[] {
-  const result: DocumentChunk[] = [];
-  for (const node of nodes) {
-    // Find the note for this node
-    const note = notes.value.find((n) => n.id === node.noteId);
-
-    if (note) {
-      result.push({
-        id: `note-${note.id}`,
-        title: note.title,
-        content: `${'#'.repeat(depth + 1)} ${note.title} {#note-${note.id}}\n\n${note.content || ''}\n\n`,
-        level: depth + 1,
-        noteId: note.id,
-      });
-    }
-    if (node.children && node.children.length > 0) {
-      const childChunks = buildChunks(node.children, depth + 1);
-      result.push(...childChunks);
-    }
-  }
-  return result;
-}
-
 function buildTOC(chunks: DocumentChunk[]): TOCItem[] {
   return chunks.map((chunk) => ({
     id: chunk.id,
@@ -87,7 +60,7 @@ function buildTOC(chunks: DocumentChunk[]): TOCItem[] {
 function initializeDocument() {
   isLoading.value = true;
   setTimeout(() => {
-    chunks.value = buildChunks(props.noteTree);
+    chunks.value = buildDocumentChunks(props.noteTree, notes.value);
     tocItems.value = buildTOC(chunks.value);
     emit('toc-update', tocItems.value);
     isLoading.value = false;
@@ -140,8 +113,13 @@ function handleHeadingClick(event: Event) {
   }
 }
 
+// Rebuild the document when the tree or the underlying notes change.
+watch([() => props.noteTree, () => notes.value], () => initializeDocument(), {
+  deep: true,
+});
+
 /**
- * Scroll to a chunk and heading by anchorId (note id)
+ * Scroll to a chunk and heading by anchorId (note id or note-<id>).
  */
 async function scrollToAnchor(anchorId: string) {
   debug('scrollToAnchor', { anchorId });
@@ -156,8 +134,13 @@ async function scrollToAnchor(anchorId: string) {
   }
   // Wait for DOM update, then scroll to heading
   await nextTick();
-  // Try to find the heading element with id=anchorId
-  const heading = rootEl.value?.querySelector(`[id='${anchorId}']`);
+  // Heading IDs are prefixed with "note-"; accept both forms.
+  const headingId = anchorId.startsWith('note-')
+    ? anchorId
+    : `note-${anchorId}`;
+  const heading =
+    rootEl.value?.querySelector(`[id='${headingId}']`) ??
+    rootEl.value?.querySelector(`[id='${anchorId}']`);
 
   await scrollToHeading(anchorId, router, heading as HTMLElement);
 }

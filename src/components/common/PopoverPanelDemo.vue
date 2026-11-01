@@ -105,6 +105,7 @@ const placements = [
         <template #trigger>
           <QInput
             type="text"
+            :model-value="''"
             :placeholder="t('popoverDemo.searchPlaceholder')"
             class="search-input"
             dense

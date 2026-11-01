@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, inject, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
-import type { ComponentInjection, Monster } from '@/types';
+import type { Monster } from '@/types';
 import MonsterEditor from '@/monsters/MonsterEditor.vue';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import { useI18n } from 'vue-i18n';
 import MonsterViewSidebar from '@/monsters/MonsterViewSidebar.vue';
+import { confirm } from '@/dialogs';
+import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
@@ -52,25 +54,28 @@ const handleCancel = () => {
 };
 
 const handleDelete = async () => {
-  if (!monster.value) return;
+  if (!monster.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: monster.value.name })))
+  ) {
+    return false;
+  }
   await monsterStore.remove(monster.value.id);
-  await router.push('/monsters');
+  return true;
 };
 
 // Computed properties for BaseEntityView
 const monsterTitle = computed(() => monster.value?.name || '');
 
-const setRightDrawerContent = inject('setRightDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await monsterStore.load();
-  setRightDrawerContent({ component: MonsterViewSidebar, props: { monster } });
+  rightDrawer.set({ component: MonsterViewSidebar, props: { monster } });
 });
 
 onBeforeUnmount(() => {
-  setRightDrawerContent(null);
+  rightDrawer.clear();
 });
 </script>
 

@@ -18,7 +18,9 @@ export const useCombatStore = defineStore('combats', () => {
       result = result.filter(
         (combat) =>
           (combat.notes && combat.notes.toLowerCase().includes(query)) ||
-          combat.combatants.some((c) => c.name.toLowerCase().includes(query)),
+          combat.combatants.some((c) =>
+            (c.referenceId || '').toLowerCase().includes(query),
+          ),
       );
     }
     return result;

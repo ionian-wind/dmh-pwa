@@ -1,80 +1,35 @@
-import { vi } from 'vitest';
-import { setActivePinia, createPinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { useMonsterStore } from '@/stores/monsters';
+import { resetMockStores } from '../helpers/mock-storage';
 
-// Mock dependencies
-vi.mock('@/utils/storage', () => ({
-  useStorage: vi.fn(() => ({ value: [] })),
-  generateId: vi.fn(() => 'test-uuid-monster'),
-  isArray: Array.isArray,
-  hasRequiredFields: () => true
-}));
-vi.mock('@/stores/modules', () => ({
-  useModuleStore: () => ({ matchesModuleFilter: () => true })
-}));
-vi.mock('@/utils/schemaValidator', () => ({
-  registerValidationSchema: vi.fn()
-}));
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-describe('Monster Store', () => {
+describe('monster store', () => {
   beforeEach(() => {
+    resetMockStores();
     setActivePinia(createPinia());
   });
 
-  const baseMonster = {
-    name: 'Goblin',
-    type: 'Humanoid',
-    size: 'Small',
-    alignment: 'CE',
-    armorClass: 13,
-    hitPoints: 7,
-    speed: { walk: 30 },
-    abilities: { strength: 8, dexterity: 14, constitution: 10, intelligence: 10, wisdom: 8, charisma: 8 },
-    senses: [],
-    languages: [],
-    challengeRating: 1,
-    xp: 50,
-    actions: [],
-    moduleId: 'mod-1',
-    createdAt: 0,
-    updatedAt: 0
-  };
-
-  it('creates a monster', () => {
+  it('creates and searches monsters', async () => {
     const store = useMonsterStore();
-    const result = store.createMonster(baseMonster);
-    expect(result.id).toBe('test-uuid-monster');
-    expect(store.items.value).toContainEqual(result);
+    await store.create({ name: 'Goblin', moduleIds: [] });
+    await store.create({ name: 'Dragon', moduleIds: ['m1'] });
+
+    store.setSearchQuery('drag');
+    expect(store.filtered.map((m) => m.name)).toEqual(['Dragon']);
+
+    store.clearFilter();
+    expect(store.filtered).toHaveLength(2);
   });
 
-  it('updates a monster', () => {
+  it('updates and removes a monster', async () => {
     const store = useMonsterStore();
-    const monster = store.createMonster(baseMonster);
-    store.updateMonster(monster.id, { ...baseMonster, name: 'Orc' });
-    expect(store.items.value[0].name).toBe('Orc');
-  });
+    const created = await store.create({ name: 'Goblin' });
+    const updated = await store.update(created.id, { notes: 'Sneaky' });
+    expect(updated.notes).toBe('Sneaky');
 
-  it('deletes a monster', () => {
-    const store = useMonsterStore();
-    const monster = store.createMonster(baseMonster);
-    store.deleteMonster(monster.id);
-    expect(store.items.value).not.toContainEqual(monster);
+    await store.remove(created.id);
+    expect(store.getById(created.id)).toBeNull();
   });
-
-  it('gets monster by id', () => {
-    const store = useMonsterStore();
-    const monster = store.createMonster(baseMonster);
-    expect(store.getMonsterById(monster.id)).toEqual(monster);
-  });
-
-  it('returns null for non-existent monster', () => {
-    const store = useMonsterStore();
-    expect(store.getMonsterById('nope')).toBeNull();
-  });
-
-  it('filteredMonsters returns all if filter always true', () => {
-    const store = useMonsterStore();
-    store.createMonster(baseMonster);
-    expect(store.filteredMonsters.value.length).toBe(store.items.value.length);
-  });
-}); 
+});

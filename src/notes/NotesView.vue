@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch, inject } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
-import type { Note, ComponentInjection } from '@/types';
+import type { Note } from '@/types';
 
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
@@ -86,18 +86,6 @@ async function handleCopy(note: Note) {
   const { id, createdAt, updatedAt, ...rest } = note;
   await noteStore.create({ ...rest, hidden: false });
 }
-
-const setRightDrawerContent = inject('setRightDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
-
-onMounted(async () => {
-  setRightDrawerContent(null);
-});
-
-onBeforeUnmount(() => {
-  setRightDrawerContent(null);
-});
 </script>
 
 <template>
@@ -109,6 +97,10 @@ onBeforeUnmount(() => {
     :create-title="t('notes.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
+    show-search
+    :search-query="noteStore.searchQuery"
+    :search-placeholder="'common.search'"
+    @update:search-query="noteStore.setSearchQuery"
     @submit="handleSubmit"
     @tag-click="handleTagClick"
     @copy="handleCopy"

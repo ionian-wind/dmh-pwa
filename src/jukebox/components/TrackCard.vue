@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { IconPlus, IconX } from '@tabler/icons-vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import {
+  IconArrowBarToDown,
+  IconArrowBarToUp,
+  IconDotsVertical,
+  IconPlaylistAdd,
+  IconTrash,
+} from '@tabler/icons-vue';
 
 import type { JukeboxTrack } from '@/jukebox/types';
 
@@ -18,10 +25,29 @@ const emit = defineEmits<{
   (e: 'add-to-playlist', track: JukeboxTrack): void;
   (e: 'remove', track: JukeboxTrack): void;
   (e: 'play', track: JukeboxTrack): void;
+  (e: 'play-next', track: JukeboxTrack): void;
+  (e: 'play-last', track: JukeboxTrack): void;
 }>();
 
-const handleAddToPlaylist = () => emit('add-to-playlist', props.track);
-const handleRemove = () => emit('remove', props.track);
+const { t } = useI18n();
+const isMenuOpen = ref(false);
+
+const handleAddToPlaylist = () => {
+  emit('add-to-playlist', props.track);
+  isMenuOpen.value = false;
+};
+const handleRemove = () => {
+  emit('remove', props.track);
+  isMenuOpen.value = false;
+};
+const handlePlayNext = () => {
+  emit('play-next', props.track);
+  isMenuOpen.value = false;
+};
+const handlePlayLast = () => {
+  emit('play-last', props.track);
+  isMenuOpen.value = false;
+};
 const handlePlay = () => emit('play', props.track);
 
 const trackColor = computed(() => props.track.color || 'transparent');
@@ -47,10 +73,50 @@ const trackColor = computed(() => props.track.color || 'transparent');
       {{ track.duration ? formatTime(track.duration) : '' }}
     </QItemSection>
     <QItemSection side class="track-actions">
-      <QBtnGroup flat>
-        <QBtn flat @click.stop="handleAddToPlaylist"><IconPlus /></QBtn>
-        <QBtn flat @click.stop="handleRemove"><IconX /></QBtn>
-      </QBtnGroup>
+      <QBtn
+        flat
+        dense
+        round
+        class="track-menu-trigger"
+        :title="t('common.actions')"
+        :aria-label="t('common.actions')"
+        @click.stop
+      >
+        <IconDotsVertical />
+        <QPopupProxy
+          v-model="isMenuOpen"
+          anchor="bottom right"
+          self="top right"
+          :breakpoint="0"
+        >
+          <QList dense class="track-actions-menu">
+            <QItem clickable @click.stop="handleAddToPlaylist">
+              <QItemSection side>
+                <IconPlaylistAdd />
+              </QItemSection>
+              <QItemSection>{{ t('common.addToPlaylist') }}</QItemSection>
+            </QItem>
+            <QItem clickable @click.stop="handlePlayNext">
+              <QItemSection side>
+                <IconArrowBarToDown />
+              </QItemSection>
+              <QItemSection>{{ t('jukebox.playNext') }}</QItemSection>
+            </QItem>
+            <QItem clickable @click.stop="handlePlayLast">
+              <QItemSection side>
+                <IconArrowBarToUp />
+              </QItemSection>
+              <QItemSection>{{ t('jukebox.playLast') }}</QItemSection>
+            </QItem>
+            <QItem clickable @click.stop="handleRemove">
+              <QItemSection side>
+                <IconTrash />
+              </QItemSection>
+              <QItemSection>{{ t('common.remove') }}</QItemSection>
+            </QItem>
+          </QList>
+        </QPopupProxy>
+      </QBtn>
     </QItemSection>
   </QItem>
 </template>
@@ -86,6 +152,10 @@ const trackColor = computed(() => props.track.color || 'transparent');
 
 .track-item:hover .track-actions {
   display: flex;
+}
+
+.track-actions-menu {
+  min-width: 200px;
 }
 
 .track-item.is-selected {

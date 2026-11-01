@@ -15,11 +15,13 @@ const props = withDefaults(
     modelValue: string | null;
     placeholder?: string;
     allowAnyModule?: boolean;
+    allowNone?: boolean;
   }>(),
   {
     modelValue: null,
     placeholder: 'common.noModule',
     allowAnyModule: false,
+    allowNone: true,
   },
 );
 
@@ -28,11 +30,13 @@ const emit = defineEmits<{
 }>();
 
 const moduleOptions = computed(() => {
-  const options = [];
+  const options: Array<{ id: string; name: string; value: string | null }> = [];
   if (props.allowAnyModule) {
     options.push({ id: 'any', name: t('common.anyModule'), value: 'any' });
   }
-  options.push({ id: 'none', name: t('common.noModule'), value: 'none' });
+  if (props.allowNone) {
+    options.push({ id: 'none', name: t('common.noModule'), value: null });
+  }
   options.push(
     ...moduleStore.items.map((module) => ({
       id: module.id,

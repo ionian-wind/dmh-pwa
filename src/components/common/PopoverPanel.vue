@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 interface Props {
   isOpen: boolean;
   triggerEl?: any;
   trigger?: 'click' | 'hover' | 'focus';
   placement?: string;
-  offset?: number;
+  offset?: number | [number, number];
   maxWidth?: string;
   minWidth?: string;
   disableInternalTrigger?: boolean;
@@ -27,6 +27,11 @@ const emit = defineEmits(['close', 'open']);
 
 const isVisible = ref(props.isOpen);
 const triggerRef = ref<HTMLElement | null>(null);
+const offsetValue = computed<[number, number]>(() =>
+  Array.isArray(props.offset)
+    ? props.offset
+    : [props.offset ?? 0, props.offset ?? 0],
+);
 
 watch(
   () => props.isOpen,
@@ -64,7 +69,7 @@ defineExpose({ open, close, toggle });
       :anchor="triggerEl || triggerRef"
       :max-width="maxWidth"
       :min-width="minWidth"
-      :offset="offset"
+      :offset="offsetValue"
       :cover="false"
       :target="triggerEl || triggerRef"
       :anchor-origin="placement"

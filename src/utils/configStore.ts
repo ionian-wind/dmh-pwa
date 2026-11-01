@@ -42,6 +42,8 @@ export type ConfigStore = {
   jukeboxActivePlaylistId: Ref<string | null>;
   jukeboxRepeatMode: Ref<JukeboxRepeatMode>;
   jukeboxShuffle: Ref<boolean>;
+  jukeboxSmoothTrackChange: Ref<boolean>;
+  jukeboxAnimatePlayerBackground: Ref<boolean>;
   savedLanguage: Ref<string>;
 };
 
@@ -63,8 +65,18 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
       getValue('jukeboxRepeatMode', JukeboxRepeatMode.off),
     );
     const jukeboxShuffle = ref<boolean>(getValue('jukeboxShuffle', false));
+    const jukeboxSmoothTrackChange = ref<boolean>(
+      getValue('jukeboxSmoothTrackChange', false),
+    );
+    const jukeboxAnimatePlayerBackground = ref<boolean>(
+      getValue('jukeboxAnimatePlayerBackground', true),
+    );
+    const browserLanguage = window?.navigator?.language ?? 'en';
     const savedLanguage = ref<string>(
-      getValue('savedLanguage', window?.navigator?.language ?? 'en'),
+      getValue(
+        'savedLanguage',
+        browserLanguage.toLowerCase().startsWith('ru') ? 'ru' : 'en',
+      ),
     );
 
     const config: ConfigStore = {
@@ -74,6 +86,8 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
       jukeboxActivePlaylistId,
       jukeboxRepeatMode,
       jukeboxShuffle,
+      jukeboxSmoothTrackChange,
+      jukeboxAnimatePlayerBackground,
       savedLanguage,
     };
 

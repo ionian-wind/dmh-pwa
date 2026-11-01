@@ -124,6 +124,7 @@ defineExpose({
             v-model="editedEncounter.moduleId"
             :placeholder="'encounters.fields.module'"
             :allowAnyModule="false"
+            :allowNone="false"
             required
           />
         </div>

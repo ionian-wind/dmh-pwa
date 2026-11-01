@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
-import { type ComponentInjection, Party, PlayerCharacter } from '@/types';
+import { Party, PlayerCharacter } from '@/types';
 
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
@@ -16,9 +16,10 @@ import Button from '@/components/form/Button.vue';
 
 import PartyEditor from '@/parties/PartyEditor.vue';
 import PartyViewSidebar from '@/parties/PartyViewSidebar.vue';
+import { confirm } from '@/dialogs';
+import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
-const router = useRouter();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const characterStore = useCharacterStore();
@@ -65,7 +66,9 @@ async function handleDeleteParty() {
     (await confirm(t('common.confirmDelete', { title: party.value.name })))
   ) {
     await partyStore.remove(party.value.id);
+    return true;
   }
+  return false;
 }
 
 const handleSaveParty = async (
@@ -114,9 +117,7 @@ const partySubtitle = computed(() => {
 
   return parts.join(' • ');
 });
-const setRightDrawerContent = inject('setRightDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
@@ -124,11 +125,11 @@ onMounted(async () => {
     characterStore.load(),
     moduleStore.load(),
   ]);
-  setRightDrawerContent({ component: PartyViewSidebar, props: { party } });
+  rightDrawer.set({ component: PartyViewSidebar, props: { party } });
 });
 
 onBeforeUnmount(() => {
-  setRightDrawerContent(null);
+  rightDrawer.clear();
 });
 </script>
 

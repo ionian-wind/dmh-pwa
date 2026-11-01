@@ -19,6 +19,7 @@ const props = defineProps<{
   isEditing?: boolean;
   validationError?: string | null;
   hideModuleSelector?: boolean;
+  allowHiddenToggle?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -118,20 +119,35 @@ const handleCancel = () => {
           type="text"
         />
       </div>
-      <!--      <div class="q-mb-md">-->
-      <!--        <NoteTypeSelector-->
-      <!--          :allow-create="true"-->
-      <!--          v-model="editedNote.typeId"-->
-      <!--          :module-id="editedNote.moduleId"-->
-      <!--        />-->
-      <!--      </div>-->
-      <!--      <div class="q-mb-md">-->
-      <!--        <TagSelector-->
-      <!--          v-model="editedNote.tags"-->
-      <!--          :entity-type="'note'"-->
-      <!--          :current-entity-id="editedNote.id"-->
-      <!--        />-->
-      <!--      </div>-->
+      <div class="q-mb-md">
+        <ModuleSelector
+          v-model="editedNote.moduleId"
+          :placeholder="'common.noModule'"
+        />
+      </div>
+      <div class="q-mb-md">
+        <NoteTypeSelector
+          :allow-create="true"
+          v-model="editedNote.typeId"
+          :module-id="editedNote.moduleId"
+        />
+      </div>
+      <div class="q-mb-md">
+        <TagSelector
+          v-model="editedNote.tags"
+          :entity-type="'note'"
+          :current-entity-id="editedNote.id"
+        />
+      </div>
+      <div v-if="allowHiddenToggle && editedNote.id" class="q-mb-md">
+        <QToggle
+          v-model="editedNote.hidden"
+          :label="t('editor.hiddenDocumentNote')"
+        />
+        <div class="text-caption text-grey-7">
+          {{ t('editor.hiddenDocumentNoteHint') }}
+        </div>
+      </div>
       <div class="q-mb-md">
         <div class="row justify-between">
           <!-- Toggle button for edit mode -->

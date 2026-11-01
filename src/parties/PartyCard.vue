@@ -26,7 +26,7 @@ function handleCopy() {
 }
 
 const modules = computed(() =>
-  props.party.moduleIds
+  (props.party.moduleIds ?? [])
     .map((id) => moduleStore.items.find((m) => m.id === id))
     .filter(Boolean),
 );
@@ -36,6 +36,7 @@ const modules = computed(() =>
     showView
     showEdit
     showDelete
+    showCopy
     @view="handleView"
     @edit="handleEdit"
     @delete="handleDelete"

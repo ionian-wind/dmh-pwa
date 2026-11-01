@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import TrackInfo from '@/jukebox/components/TrackInfo.vue';
-import { useAnimatedGradient } from '@/jukebox/useAnimatedGradient';
+import {
+  getGradientContrastColor,
+  useAnimatedGradient,
+} from '@/jukebox/useAnimatedGradient';
 import { formatTime } from '@/jukebox/utils';
 
 // Tabler icons
@@ -15,10 +18,11 @@ import {
   IconArrowsShuffle as IconShuffle,
   IconRepeat,
   IconRepeatOnce,
+  IconSettingsAutomation,
   IconVolume,
   IconVolumeOff,
 } from '@tabler/icons-vue';
-
+import { useConfigStore } from '@/utils/configStore';
 const props = defineProps<{
   animatedBackground?: boolean;
   showArtwork?: boolean;
@@ -26,34 +30,52 @@ const props = defineProps<{
 }>();
 const { t } = useI18n();
 const playerStore = useJukeboxPlayerStore();
+const configStore = useConfigStore();
 
 const showAnimatedBg = computed(
-  () => !!props.animatedBackground && playerStore.isPlaying,
+  () =>
+    !!props.animatedBackground &&
+    playerStore.isPlaying &&
+    configStore.jukeboxAnimatePlayerBackground,
 );
+
+const palette = computed<string[] | undefined>(() => {
+  const track = playerStore.currentTrack;
+  if (track?.palette && track.palette.length > 0) return track.palette;
+  if (track?.color) return [track.color, track.color, track.color];
+  return undefined;
+});
 
 // Use the new composable for the gradient style
 const gradientStyle = useAnimatedGradient(
-  () => !!props.animatedBackground && playerStore.isPlaying,
-  () => {
-    const track = playerStore.currentTrack;
-    if (track?.palette && track.palette.length > 0) {
-      return track.palette;
-    } else if (track?.color) {
-      // Use a simple palette based on the single color
-      // Approach: create a gradient with the color at different stops and alpha
-      // Example: [color, color with more alpha, ...]
-      // We'll use the color at 0% and 100%, and a lighter version at 50%
-      // For simplicity, just repeat the color
-      return [track.color, track.color, track.color];
-    }
-    return undefined;
-  },
+  () =>
+    !!props.animatedBackground &&
+    playerStore.isPlaying &&
+    configStore.jukeboxAnimatePlayerBackground,
+  () => palette.value,
 );
+
+// Keep controls readable over whichever gradient colours are flowing past.
+const controlStyle = computed<Record<string, string>>(() => {
+  const style: Record<string, string> = {};
+  if (
+    !playerStore.isPlaying ||
+    !configStore.jukeboxAnimatePlayerBackground ||
+    !palette.value?.length
+  ) {
+    return style;
+  }
+  const color = getGradientContrastColor(palette.value);
+  style['--jp-control-color'] = color;
+  style['--jp-control-track'] = `${color}33`;
+  return style;
+});
 
 // Volume popup open state
 const isVolumePopupOpen = ref(false);
 const isVolumeHovered = ref(false);
 const isVolumePopupDragging = ref(false);
+const isSettingsPopupOpen = ref(false);
 
 let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -85,74 +107,31 @@ function onVolumeLeave() {
 
 function handleVolumeWheel(event: WheelEvent) {
   event.preventDefault();
+  isVolumePopupOpen.value = true;
   const delta = event.deltaY;
   let newVolume = playerStore.volume - delta * 0.001;
   newVolume = Math.max(0, Math.min(1, newVolume));
   playerStore.setVolume(newVolume);
 }
 
+function setSmoothTrackChange(value: boolean) {
+  configStore.jukeboxSmoothTrackChange = value;
+}
+
+function setAnimatePlayerBackground(value: boolean) {
+  configStore.jukeboxAnimatePlayerBackground = value;
+}
+
 // Theming logic: update CSS variables for JukeboxPlayer based on track color
-const defaultTheme = {
-  '--jp-color-primary': 'var(--color-primary)',
-  '--jp-color-background-soft': 'var(--color-background)',
-  '--jp-color-primary-dark': 'var(--color-primary-dark)',
-  '--jp-color-primary-light': 'var(--color-text-light)',
-  '--jp-color-background': 'var(--color-background)',
-  '--jp-color-text': 'var(--color-text)',
-};
-
-function getContrastColor(color: string | undefined): string {
-  if (typeof color !== 'string') return '#fff';
-  let hex = color.replace('#', '');
-  // Parse r, g, b
-  let r = 0,
-    g = 0,
-    b = 0;
-  if (hex.length === 3) {
-    r = parseInt(hex[0] + hex[0], 16);
-    g = parseInt(hex[1] + hex[1], 16);
-    b = parseInt(hex[2] + hex[2], 16);
-  } else if (hex.length === 6) {
-    r = parseInt(hex.substring(0, 2), 16);
-    g = parseInt(hex.substring(2, 4), 16);
-    b = parseInt(hex.substring(4, 6), 16);
-  }
-  // Calculate luminance
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  // Return dark for light colors, light for dark colors
-  return luminance > 0.6 ? '#1e1e2e' : '#fff';
-}
-
-function setJukeboxTheme(color?: string) {
-  const el = document.querySelector('.jukebox-player') as HTMLElement | null;
-  if (!el) return;
-  if (color) {
-    const contrast = getContrastColor(color);
-    el.style.setProperty('--track-color', contrast + 'cc');
-    el.style.setProperty('--track-fill-color', getContrastColor(contrast));
-
-    el.style.setProperty('--jp-color-primary', contrast + 'cc');
-    el.style.setProperty('--jp-color-primary-dark', contrast);
-    el.style.setProperty('--jp-color-primary-light', contrast + 'cc');
-    el.style.setProperty('--jp-color-text', '#333');
-  } else {
-    Object.entries(defaultTheme).forEach(([key, value]) => {
-      el.style.setProperty(key, value);
-    });
-  }
-}
-
-watchEffect(() => {
-  const color = playerStore.currentTrack?.color;
-  setTimeout(() => setJukeboxTheme(color), 0); // next tick to ensure DOM is ready
-});
-
 const showRemainingTime = ref(false);
 function toggleTimeDisplay() {
   showRemainingTime.value = !showRemainingTime.value;
 }
 
 const progress = computed(() => playerStore.currentTime / playerStore.duration);
+const volumePercent = computed(
+  () => `${Math.round(playerStore.volume * 100)}%`,
+);
 
 // Add hover state for progress bar
 const isProgressHovered = ref(false);
@@ -171,10 +150,12 @@ const handleProgressChange = (value: number | null) => {
     :class="{
       'jukebox-player-modal': props.modal,
       'jukebox-player': true,
+      'animated-gradient-surface': true,
       'with-animated-bg': showAnimatedBg,
     }"
-    :style="gradientStyle"
+    :style="[gradientStyle, controlStyle]"
   >
+    <div class="animated-gradient-layer" aria-hidden="true" />
     <TrackInfo
       :track="playerStore.currentTrack"
       :show-artwork="props.showArtwork"
@@ -204,11 +185,6 @@ const handleProgressChange = (value: number | null) => {
           :step="0.001"
           :label="false"
           :markers="false"
-          :color="
-            playerStore.currentTrack !== null && isProgressHovered
-              ? 'info'
-              : 'primary'
-          "
           :track-size="isProgressHovered ? '10px' : '5px'"
           @update:model-value="
             (value) => value !== null && handleProgressChange(value)
@@ -220,11 +196,11 @@ const handleProgressChange = (value: number | null) => {
       </div>
     </QToolbar>
 
-    <QToolbar class="q-pa-none q-gutter-x-sm justify-between player-controls">
+    <QToolbar class="q-pa-none q-gutter-x-sm player-controls">
       <QBtnGroup flat class="playback-options">
         <QBtn
           flat
-          :class="{ 'text-blue-grey-4': !playerStore.shuffle }"
+          :class="{ 'is-inactive': !playerStore.shuffle }"
           :disable="!playerStore.currentTrack"
           @click="playerStore.toggleShuffle"
           :title="t('jukebox.shuffle')"
@@ -234,7 +210,7 @@ const handleProgressChange = (value: number | null) => {
         <QBtn
           flat
           :class="{
-            'text-blue-grey-4':
+            'is-inactive':
               playerStore.repeatMode !== 'list' &&
               playerStore.repeatMode !== 'track',
           }"
@@ -282,6 +258,8 @@ const handleProgressChange = (value: number | null) => {
           @click="playerStore.toggleMute()"
           @wheel.prevent="handleVolumeWheel"
           class="volume-button"
+          :title="`${t('jukebox.volume')}: ${volumePercent}`"
+          :aria-label="`${t('jukebox.volume')}: ${volumePercent}`"
           @mouseenter="onVolumeEnter"
           @mouseleave="onVolumeLeave"
         >
@@ -313,9 +291,7 @@ const handleProgressChange = (value: number | null) => {
                 :min="0"
                 :max="1"
                 :step="0.01"
-                :label="false"
                 :markers="false"
-                :color="isVolumeHovered ? 'info' : 'primary'"
                 :track-size="isVolumeHovered ? '10px' : '5px'"
                 size="md"
                 class="volume-bar"
@@ -323,6 +299,46 @@ const handleProgressChange = (value: number | null) => {
                   (value) => value !== null && playerStore.setVolume(value)
                 "
               />
+              <span class="volume-popup-value">{{ volumePercent }}</span>
+            </div>
+          </QPopupProxy>
+        </QBtn>
+
+        <QBtn
+          flat
+          class="settings-button"
+          :title="t('jukebox.playerSettings')"
+          :aria-label="t('jukebox.playerSettings')"
+        >
+          <IconSettingsAutomation />
+          <QPopupProxy
+            v-model="isSettingsPopupOpen"
+            anchor="bottom right"
+            self="top right"
+            :breakpoint="0"
+          >
+            <div class="player-settings q-pa-sm">
+              <div class="player-settings-title">
+                {{ t('jukebox.playerSettings') }}
+              </div>
+              <div class="player-settings-row">
+                <span class="player-settings-label">
+                  {{ t('jukebox.smoothTrackChange') }}
+                </span>
+                <QToggle
+                  :model-value="configStore.jukeboxSmoothTrackChange"
+                  @update:model-value="setSmoothTrackChange"
+                />
+              </div>
+              <div class="player-settings-row">
+                <span class="player-settings-label">
+                  {{ t('jukebox.animatePlayerBackground') }}
+                </span>
+                <QToggle
+                  :model-value="configStore.jukeboxAnimatePlayerBackground"
+                  @update:model-value="setAnimatePlayerBackground"
+                />
+              </div>
             </div>
           </QPopupProxy>
         </QBtn>
@@ -332,6 +348,29 @@ const handleProgressChange = (value: number | null) => {
 </template>
 
 <style scoped>
+.jukebox-player {
+  color: var(--jp-control-color, var(--color-text));
+}
+
+.jukebox-player:not(.jukebox-player-modal) {
+  padding-top: 1rem;
+}
+
+.jukebox-player :deep(.q-slider),
+.jukebox-player :deep(.q-slider__track),
+.jukebox-player :deep(.q-slider__thumb) {
+  color: var(--jp-control-color, var(--color-text));
+}
+
+.jukebox-player :deep(.q-slider__track),
+.jukebox-player :deep(.q-slider__inner) {
+  background: var(--jp-control-track, rgba(0, 0, 0, 0.12));
+}
+
+.playback-options .is-inactive {
+  opacity: 0.55;
+}
+
 .progress-bar {
   width: 100%;
   display: flex;
@@ -346,6 +385,29 @@ const handleProgressChange = (value: number | null) => {
   text-align: center;
 }
 
+.player-controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  column-gap: 8px;
+}
+
+.playback-options {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.playback-controls {
+  grid-column: 2;
+  justify-self: center;
+}
+
+.volume-control {
+  grid-column: 3;
+  justify-self: end;
+}
+
 .progress-bar-time.time-current,
 .progress-bar-seek,
 .playback-options {
@@ -353,7 +415,8 @@ const handleProgressChange = (value: number | null) => {
 }
 
 .jukebox-player-modal .player-controls .playback-controls {
-  order: -1;
+  grid-column: 2;
+  order: initial;
 }
 
 /* QSlider customizations */
@@ -368,10 +431,41 @@ const handleProgressChange = (value: number | null) => {
 /* Fix volume popup scrollbar issue */
 .volume-popup {
   overflow: hidden;
-  padding: 8px 24px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
+  gap: 8px;
   height: 52px;
+}
+
+.volume-popup-value {
+  min-width: 38px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.player-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 240px;
+}
+
+.player-settings-title {
+  font-weight: 600;
+}
+
+.player-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.player-settings-label {
+  white-space: nowrap;
 }
 
 .volume-popup .q-slider {

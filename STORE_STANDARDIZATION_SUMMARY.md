@@ -1,5 +1,11 @@
 # DMH PWA Store Standardization Summary
 
+> **Historical document.** The current base store lives in
+> `src/utils/storage.ts` (`useStore`), not `src/stores/createBaseStore.ts`, and
+> the store API is documented in `docs/architecture/persistence-and-state.md`
+> and `docs/stores` references. Use those instead of this file for day-to-day
+> work; the text below is retained for history.
+
 ## Overview
 This document summarizes the comprehensive refactoring of the DMH PWA project's storage and state management approach to use consistent, standardized patterns across all stores, views, and components.
 

@@ -26,6 +26,7 @@ const handleCopy = () => emit('copy', props.monster);
     :show-view="showActions"
     :show-edit="showActions"
     :show-delete="showActions"
+    :show-copy="showActions"
     @view="handleView"
     @edit="handleEdit"
     @delete="handleDelete"

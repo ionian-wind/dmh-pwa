@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconGift,
@@ -34,24 +34,43 @@ const dismissUpdate = () => {
   showUpdatePrompt.value = false;
 };
 
+const handleOnline = () => {
+  isOnline.value = true;
+};
+
+const handleOffline = () => {
+  isOnline.value = false;
+};
+
+const handleControllerChange = () => {
+  hasUpdate.value = true;
+  showUpdatePrompt.value = true;
+};
+
 onMounted(() => {
   checkPWAStatus();
 
   // Listen for online/offline events
-  window.addEventListener('online', () => {
-    isOnline.value = true;
-  });
-
-  window.addEventListener('offline', () => {
-    isOnline.value = false;
-  });
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
 
   // Listen for PWA update events
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      hasUpdate.value = true;
-      showUpdatePrompt.value = true;
-    });
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      handleControllerChange,
+    );
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('online', handleOnline);
+  window.removeEventListener('offline', handleOffline);
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.removeEventListener(
+      'controllerchange',
+      handleControllerChange,
+    );
   }
 });
 </script>

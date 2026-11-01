@@ -25,6 +25,38 @@ export const useModuleStore = defineStore('modules', () => {
 
   const sortedItems = base.sortedItems;
 
+  const treeContains = (nodes: any[], noteId: string): boolean =>
+    nodes.some(
+      (node) =>
+        node.noteId === noteId ||
+        (node.children ? treeContains(node.children, noteId) : false),
+    );
+
+  const addNoteToTree = async (moduleId: string, noteId: string) => {
+    const module = base.getById(moduleId);
+    if (!module) return null;
+    const tree = module.noteTree ?? [];
+    if (treeContains(tree, noteId)) return module;
+    return base.update(moduleId, {
+      noteTree: [...tree, { noteId, children: [] }],
+    });
+  };
+
+  const removeNoteFromTree = async (moduleId: string, noteId: string) => {
+    const module = base.getById(moduleId);
+    if (!module) return null;
+    const prune = (nodes: any[]): any[] =>
+      nodes
+        .filter((node) => node.noteId !== noteId)
+        .map((node) => ({
+          ...node,
+          children: node.children ? prune(node.children) : node.children,
+        }));
+    return base.update(moduleId, {
+      noteTree: prune(module.noteTree ?? []),
+    });
+  };
+
   const getModuleName = (id: string | null) => {
     if (!id) return 'No Module';
     const module = base.items.value.find((m) => m.id === id);
@@ -36,6 +68,8 @@ export const useModuleStore = defineStore('modules', () => {
     filtered,
     sortedItems,
     getModuleName,
+    addNoteToTree,
+    removeNoteFromTree,
     setFilter: (query: string) => {
       searchQuery.value = query;
     },

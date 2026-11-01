@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from 'vue';
+import { computed } from 'vue';
 import { IconMusic } from '@tabler/icons-vue';
 import type { JukeboxTrack } from '@/jukebox/types';
 import { usePictureUrlCacheStore } from '@/jukebox/stores';
@@ -17,11 +17,6 @@ const props = defineProps<{
 // Create computed property for picture style
 const pictureStyle = computed(() => {
   return getPictureStyle(props.track?.picture);
-});
-
-// Clean up created URLs on component unmount
-onBeforeUnmount(() => {
-  pictureUrlCacheStore.clearCache();
 });
 </script>
 

@@ -471,6 +471,22 @@ export function cstToAst(cst: CstNode, lexerTokens?: any[]): DiceAstNode {
       return { type: 'table', name: tableName, count };
     }
     case 'primary': {
+      // Handle roll references ($[[N]] / $[roll:name]) before inline rolls,
+      // since both start with [[.
+      if (cst.children.rollReference && cst.children.rollReference[0]) {
+        const rollRefCst = cst.children.rollReference[0] as CstNode;
+        const token = rollRefCst.children.RollReference?.[0];
+        if (token && isIToken(token)) {
+          const raw = token.image;
+          const ref = raw.startsWith('$[[')
+            ? raw.slice(3, -2)
+            : raw.slice(6, -1);
+          return {
+            type: 'roll-reference',
+            ref,
+          } as unknown as DiceAstNode;
+        }
+      }
       // Handle inlineRoll as a primary expression
       if (cst.children.inlineRoll && cst.children.inlineRoll[0]) {
         const inlineRollCst = cst.children.inlineRoll[0];

@@ -7,6 +7,7 @@ import type {
   EvaluationResult,
 } from '../../core';
 import { debugLog } from '../../lib/utils';
+import { MissingDataError } from '../../lib/types';
 
 // Roll reference AST node type
 interface RollReferenceNode {
@@ -74,7 +75,7 @@ export function evaluateRollReferenceNode(
     rolls,
   });
   if (!(ref in rolls)) {
-    throw new Error(`Referenced roll '${ref}' not found`);
+    throw new MissingDataError(`Referenced roll '${ref}' not found`);
   }
   const value = rolls[ref];
   debugLog('rollReferencesPlugin', 'Roll reference value:', { ref, value });

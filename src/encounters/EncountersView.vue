@@ -46,7 +46,7 @@ function handleEdit(encounter: Encounter) {
 async function handleDelete(encounter: Encounter) {
   if (
     encounter.id &&
-    (await confirm(t('common.', { title: encounter.name })))
+    (await confirm(t('common.confirmDelete', { title: encounter.name })))
   ) {
     await encounterStore.remove(encounter.id);
     return true;
@@ -89,6 +89,9 @@ async function handleCopy(encounter: Encounter) {
       :create-title="t('encounters.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
+      show-search
+      :search-query="encounterStore.searchQuery"
+      @update:search-query="encounterStore.setSearchQuery"
       @submit="handleSubmit"
       @run-combat="handleRunCombat"
       @copy="handleCopy"

@@ -24,6 +24,12 @@ function clamp(val: number) {
   return Math.max(props.min ?? 0, Math.min(val, props.max ?? 99));
 }
 
+function setValue(val: string | number | null) {
+  const numeric = Number(val);
+  if (Number.isNaN(numeric)) return;
+  emit('update:modelValue', clamp(numeric));
+}
+
 function adjust(delta: number) {
   emit('update:modelValue', clamp(props.modelValue + delta));
 }
@@ -76,6 +82,7 @@ onBeforeUnmount(clearHold);
       input-class="spinner-input text-center"
       class="spinner-field"
       type="number"
+      @update:model-value="setValue"
     />
     <QBtn
       flat

@@ -86,7 +86,15 @@ async function save() {
     });
     emit('saved', updatedPlaylist);
   } else {
-    const newPlaylist = await playlistsStore.create(editedPlaylist.value);
+    const sortOrder =
+      playlistsStore.items.value.reduce(
+        (max, playlist) => Math.max(max, playlist.sortOrder ?? 0),
+        0,
+      ) + 1;
+    const newPlaylist = await playlistsStore.create({
+      ...editedPlaylist.value,
+      sortOrder,
+    });
     emit('saved', newPlaylist);
   }
   emit('update:modelValue', false);

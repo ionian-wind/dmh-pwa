@@ -7,6 +7,8 @@ import { deepUnwrap } from '@/utils/deepUnwrap';
 import Button from '@/components/form/Button.vue';
 import NoteEditor from '@/notes/NoteEditor.vue';
 import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
+import { confirm } from '@/dialogs';
+import { useI18n } from 'vue-i18n';
 
 // Extended tree node type that includes note data for the Tree component
 interface ExtendedTreeNode {
@@ -26,6 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const noteStore = useNoteStore();
+const { t } = useI18n();
 
 // Get notes for this module that are hidden (document tree notes)
 const notes = computed(() =>
@@ -199,6 +202,14 @@ function handleCancel() {
 }
 
 async function handleRemove(node: ExtendedTreeNode) {
+  if (
+    !(await confirm(
+      t('common.confirmDelete', { title: node.title || node.noteId }),
+    ))
+  ) {
+    return;
+  }
+
   // Remove node and all descendants
   async function removeRecursive(
     nodes: ExtendedTreeNode[],

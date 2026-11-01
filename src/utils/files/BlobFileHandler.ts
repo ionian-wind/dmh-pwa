@@ -16,9 +16,27 @@ export class BlobFileHandler implements IFileHandler {
       input.multiple = true;
       input.accept = 'audio/*,.mp3,.wav,.ogg,.flac,.aac';
 
+      let settled = false;
+      const finish = (files: AudioFileData[]) => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener('focus', handleFocus);
+        resolve(files);
+      };
+
+      const handleFocus = () => {
+        // Some browsers do not fire `cancel`; when focus returns and no
+        // selection happened, resolve with an empty list.
+        setTimeout(() => {
+          if (!settled && (!input.files || input.files.length === 0)) {
+            finish([]);
+          }
+        }, 500);
+      };
+
       input.onchange = async () => {
         if (!input.files) {
-          resolve([]);
+          finish([]);
           return;
         }
 
@@ -29,8 +47,11 @@ export class BlobFileHandler implements IFileHandler {
             source: { kind: 'blob', blob: file },
           });
         }
-        resolve(files);
+        finish(files);
       };
+
+      input.addEventListener('cancel', () => finish([]));
+      window.addEventListener('focus', handleFocus, { once: true });
 
       input.click();
     });

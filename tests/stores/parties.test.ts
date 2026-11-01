@@ -1,73 +1,41 @@
-import { setActivePinia, createPinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { usePartyStore } from '@/stores/parties';
-import { vi } from 'vitest';
-vi.mock('@/utils/storage', () => ({
-  useStorage: vi.fn(() => ({ value: [] })),
-  generateId: vi.fn(() => 'test-uuid-555')
-}));
-vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilterMultiple: () => true }) }));
-vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
+import { resetMockStores } from '../helpers/mock-storage';
 
-describe('Party Store', () => {
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
+describe('party store', () => {
   beforeEach(() => {
+    resetMockStores();
     setActivePinia(createPinia());
   });
 
-  it('creates a party', () => {
+  it('supports the standard CRUD surface', async () => {
     const store = usePartyStore();
-    const party = {
-      name: 'Heroes',
-      description: 'A party of heroes',
+    const created = await store.create({
+      name: 'The Heroes',
       characters: [],
       moduleIds: [],
-      createdAt: 0,
-      updatedAt: 0
-    };
-    const result = store.createParty(party);
-    expect(result.id).toBe('test-uuid-555');
-    expect(store.items.value).toContainEqual(result);
+    });
+    expect(store.getById(created.id)?.name).toBe('The Heroes');
+
+    const updated = await store.update(created.id, {
+      characters: ['c1'],
+    });
+    expect(updated.characters).toEqual(['c1']);
+
+    await store.remove(created.id);
+    expect(store.items).toHaveLength(0);
   });
 
-  it('updates a party', () => {
+  it('filters parties by name', async () => {
     const store = usePartyStore();
-    const party = store.createParty({
-      name: 'Old', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
-    store.updateParty(party.id, { name: 'New', description: 'Desc', characters: [], moduleIds: [] });
-    expect(store.items.value[0].name).toBe('New');
-    expect(store.items.value[0].description).toBe('Desc');
-  });
+    await store.create({ name: 'Heroes', characters: [], moduleIds: [] });
+    await store.create({ name: 'Villains', characters: [], moduleIds: [] });
 
-  it('deletes a party', () => {
-    const store = usePartyStore();
-    const party = store.createParty({ name: 'Delete', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
-    store.deleteParty(party.id);
-    expect(store.items.value).not.toContainEqual(party);
+    store.setSearchQuery('hero');
+    expect(store.filtered).toHaveLength(1);
+    expect(store.filtered[0].name).toBe('Heroes');
   });
-
-  it('gets a party by id', () => {
-    const store = usePartyStore();
-    const party = store.createParty({ name: 'Find', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
-    const found = store.getPartyById(party.id);
-    expect(found).toEqual(party);
-  });
-
-  it('returns null for non-existent party', () => {
-    const store = usePartyStore();
-    expect(store.getPartyById('non-existent')).toBeNull();
-  });
-
-  it('filteredParties returns all if filter always true', () => {
-    const store = usePartyStore();
-    store.createParty({ name: 'A', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
-    expect(store.filteredParties.value.length).toBe(store.items.value.length);
-  });
-
-  it('addCharacterToParty and removeCharacterFromParty work', () => {
-    const store = usePartyStore();
-    const party = store.createParty({ name: 'P', description: '', characters: [], moduleIds: [], createdAt: 0, updatedAt: 0 });
-    store.addCharacterToParty(party.id, 'char-1');
-    expect(store.getPartyById(party.id)?.characters).toContain('char-1');
-    store.removeCharacterFromParty(party.id, 'char-1');
-    expect(store.getPartyById(party.id)?.characters).not.toContain('char-1');
-  });
-}); 
+});

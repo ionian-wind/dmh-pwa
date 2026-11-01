@@ -16,18 +16,18 @@ const props = defineProps<{
 }>();
 
 const mentions = computed(() =>
-  props.monster.value
+  props.monster
     ? mentionsStore.getLinks({
         kind: 'monster',
-        id: props.monster.value.id,
+        id: props.monster.id,
       })
     : [],
 );
 const mentionedIn = computed(() =>
-  props.monster.value
+  props.monster
     ? mentionsStore.getBacklinks({
         kind: 'monster',
-        id: props.monster.value.id,
+        id: props.monster.id,
       })
     : [],
 );

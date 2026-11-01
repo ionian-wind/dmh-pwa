@@ -10,6 +10,7 @@ import { Notify } from 'quasar';
 const now = () => Date.now();
 
 let counter = false;
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
 function showToast(_id: string, message: string) {
   Notify.create({
@@ -35,6 +36,7 @@ export const useTimerStore = defineStore('timers', () => {
     const timer = base.getById(id);
     if (timer && timer.status !== 'running') {
       await base.update(id, { startedAt: now(), status: 'running' });
+      await checkFinishedTimers();
     }
   }
 
@@ -42,7 +44,16 @@ export const useTimerStore = defineStore('timers', () => {
     const timer = base.getById(id);
     if (timer && timer.status === 'running') {
       await base.update(id, { startedAt: null, status: 'inactive' });
+      await checkFinishedTimers();
     }
+  }
+
+  function schedulePoll() {
+    if (pollTimer !== null) return;
+    pollTimer = setTimeout(async () => {
+      pollTimer = null;
+      await checkFinishedTimers();
+    }, 1000);
   }
 
   async function checkFinishedTimers() {
@@ -67,9 +78,12 @@ export const useTimerStore = defineStore('timers', () => {
       }
     }
 
-    await Promise.all(promises)
-      .catch((error) => debugError(error))
-      .then(() => setTimeout(checkFinishedTimers, 1000));
+    await Promise.all(promises).catch((error) => debugError(error));
+
+    // Only keep polling while at least one timer is running.
+    if (running.value) {
+      schedulePoll();
+    }
   }
 
   const timers = computed(() => {

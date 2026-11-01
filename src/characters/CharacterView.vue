@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
@@ -8,8 +8,7 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import { useMentionsStore } from '@/utils/storage';
 import { useI18n } from 'vue-i18n';
-
-const router = useRouter();
+import { confirm } from '@/dialogs';
 
 const route = useRoute();
 const characterStore = useCharacterStore();
@@ -29,10 +28,14 @@ function editCharacter() {
 }
 
 async function handleDelete() {
-  if (character.value) {
+  if (
+    character.value &&
+    (await confirm(t('common.confirmDelete', { title: character.value.name })))
+  ) {
     await characterStore.remove(character.value.id);
-    await router.push('/characters');
+    return true;
   }
+  return false;
 }
 
 function handleSave(updated: PlayerCharacter) {

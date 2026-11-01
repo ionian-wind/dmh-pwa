@@ -8,6 +8,11 @@ export function registerValidationSchema(
   schemaName: string,
   schema: AnySchema,
 ): void {
+  // Stores can be instantiated more than once (HMR, tests); replace rather
+  // than throw "schema with key or id already exists".
+  if (ajv.getSchema(schemaName)) {
+    ajv.removeSchema(schemaName);
+  }
   ajv.addSchema(schema, schemaName);
 }
 
@@ -60,7 +65,7 @@ export async function validateArray(
   const results = await Promise.all(
     data.map((item) => validateSchema(schemaName, item)),
   );
-  return results.every(Boolean);
+  return results.every((result) => result.valid);
 }
 
 export async function getArrayValidationErrors(

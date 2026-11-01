@@ -28,6 +28,7 @@ import {
   IconClock,
 } from '@tabler/icons-vue';
 import { S } from '@/utils/dice-roller/plugins/dice/tokens';
+import { advanceTurn, rewindTurn, type TurnResult } from '@/utils/combatTurn';
 
 const route = useRoute();
 const router = useRouter();
@@ -163,14 +164,20 @@ function updateCombatFromStore() {
   const found = combatStore.getById(combatId);
   if (found) {
     combat.value = found;
+    if (found.status === 'active') {
+      activeParticipantIndex.value = Math.min(
+        found.currentTurn,
+        Math.max(found.combatants.length - 1, 0),
+      );
+    }
   } else {
-    router.push('/combats');
+    router.push('/encounters');
   }
 }
 
 watch(
   combat,
-  (newCombat) => {
+  async (newCombat) => {
     if (
       newCombat &&
       newCombat.status === 'preparing' &&
@@ -178,7 +185,7 @@ watch(
       allParticipants.value.length > 0
     ) {
       const now = Date.now();
-      newCombat.combatants = allParticipants.value.map((p) => ({
+      const combatants = allParticipants.value.map((p) => ({
         id: p.id,
         type: p.type as 'player' | 'monster',
         referenceId: p.referenceId,
@@ -188,6 +195,8 @@ watch(
         createdAt: now,
         updatedAt: now,
       }));
+      const updated = await combatStore.update(newCombat.id, { combatants });
+      combat.value = updated;
     }
   },
   { immediate: true },
@@ -250,69 +259,83 @@ function startCombat() {
 }
 
 // Next turn
-function nextTurn() {
-  if (!combat.value || combat.value.status !== 'active') return;
-  if (currentParticipant.value) {
-    currentParticipant.value.hasActed = true;
-  }
-  let nextIndex = -1;
-  for (
-    let i = activeParticipantIndex.value + 1;
-    i < combat.value.combatants.length;
-    i++
-  ) {
-    if (
-      !combat.value.combatants[i].hasActed &&
-      !combat.value.combatants[i].isPostponed
-    ) {
-      nextIndex = i;
-      break;
-    }
-  }
-  if (nextIndex !== -1) {
-    activeParticipantIndex.value = nextIndex;
-  } else {
-    startNewRound();
-  }
+async function persistTurnState(result: TurnResult) {
+  if (!combat.value) return;
+  const updated = await combatStore.update(combat.value.id, {
+    combatants: result.combatants,
+    currentTurn: result.currentTurn,
+    currentRound: result.currentRound,
+  });
+  combat.value = updated;
+  activeParticipantIndex.value = result.currentTurn;
 }
 
-// Start new round
-function startNewRound() {
-  if (!combat.value) return;
-  combat.value.combatants.sort((a, b) => b.initiative - a.initiative);
-  combat.value.currentRound++;
-  combat.value.combatants.forEach((p) => {
-    p.hasActed = false;
-    p.isPostponed = false;
+async function nextTurn() {
+  if (!combat.value || combat.value.status !== 'active') return;
+  const result = advanceTurn({
+    combatants: combat.value.combatants,
+    currentTurn: activeParticipantIndex.value,
+    currentRound: combat.value.currentRound,
   });
-  activeParticipantIndex.value = 0;
+  await persistTurnState(result);
+}
+
+async function previousTurn() {
+  if (!combat.value || combat.value.status !== 'active') return;
+  const result = rewindTurn({
+    combatants: combat.value.combatants,
+    currentTurn: activeParticipantIndex.value,
+    currentRound: combat.value.currentRound,
+  });
+  await persistTurnState(result);
 }
 
 // Postpone current
-function postponeCurrent() {
+async function postponeCurrent() {
   if (
     !combat.value ||
     combat.value.status !== 'active' ||
     !currentParticipant.value
   )
     return;
-  currentParticipant.value.isPostponed = true;
-  nextTurn();
+
+  const combatants = combat.value.combatants.map((participant) =>
+    participant.id === currentParticipant.value!.id
+      ? { ...participant, isPostponed: true }
+      : { ...participant },
+  );
+  const result = advanceTurn({
+    combatants,
+    currentTurn: activeParticipantIndex.value,
+    currentRound: combat.value.currentRound,
+  });
+  await persistTurnState(result);
 }
 
 // Activate postponed
-function activatePostponed(id: string) {
+async function activatePostponed(id: string) {
   if (!combat.value) return;
-  const participant = combat.value.combatants.find((p) => p.id === id);
-  if (!participant) return;
-  participant.isPostponed = false;
-  participant.hasActed = false;
-  if (combat.value.status === 'active') {
-    const index = combat.value.combatants.findIndex((p) => p.id === id);
-    if (index !== -1) {
-      activeParticipantIndex.value = index;
-    }
+  const combatants = combat.value.combatants.map((participant) =>
+    participant.id === id
+      ? { ...participant, isPostponed: false, hasActed: false }
+      : { ...participant },
+  );
+  const index = combatants.findIndex((participant) => participant.id === id);
+  if (index === -1) return;
+
+  const updated = await combatStore.update(combat.value.id, { combatants });
+  combat.value = updated;
+  if (updated.status === 'active') {
+    activeParticipantIndex.value = index;
   }
+}
+
+async function persistCombatants() {
+  if (!combat.value) return;
+  const updated = await combatStore.update(combat.value.id, {
+    combatants: combat.value.combatants,
+  });
+  combat.value = updated;
 }
 
 // End battle
@@ -353,7 +376,6 @@ function handleParticipantToggle(participantId: string, isSelected: boolean) {
 
 function handleInitiativeChange(participantId: string, initiative: number) {
   if (localParticipants.value[participantId]) {
-    console.log(localParticipants.value[participantId]);
     localParticipants.value[participantId].initiative = Number(initiative);
   }
 }
@@ -390,7 +412,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
   <BaseEntityView
     :entity="combat"
     entity-name="Combat"
-    list-route="/combats"
+    list-route="/encounters"
     :title="combatTitle"
     :not-found="notFound"
     :loading="loading"
@@ -422,7 +444,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
     <!-- Combat Content -->
     <div v-if="combat" class="q-pa-md q-gutter-md">
       <!-- Phase Tabs and Round/Turn Display -->
-      <QTabs v-model="activeTab" class="phase-indicator">
+      <QTabs :model-value="activeTab" class="phase-indicator">
         <QTab class="phase-tab" name="preparing">
           <IconListNumbers /> Preparation
         </QTab>
@@ -507,7 +529,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 v-slot="scope"
                 buttons
                 :validate="validateInitiative"
-                @hide="validateInitiative"
+                @save="persistCombatants"
               >
                 <QInput
                   v-model="scope.value"
@@ -646,7 +668,9 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 type="number"
                 class="initiative-input"
                 v-model.number="localParticipants[p.id].initiative"
-                @update:model-value="(val) => handleInitiativeChange(p.id, val)"
+                @update:model-value="
+                  (val) => handleInitiativeChange(p.id, Number(val ?? 0))
+                "
                 dense
                 outlined
               />

@@ -62,6 +62,8 @@ export async function deleteJukeboxFile(id: string): Promise<void> {
 export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
   const createdUrls = ref<string[]>([]);
   const pictureUrlCache = ref<Map<string, string>>(new Map());
+  const blobKeys = new WeakMap<Blob, string>();
+  let blobCounter = 0;
 
   /**
    * Get a cached URL for a picture (string or Blob)
@@ -75,8 +77,13 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
       return picture;
     }
 
-    // Create a unique key for this blob based on its content
-    const blobKey = `${picture.size}-${picture.type}`;
+    // Create a stable identity for this Blob instance. Size+type alone can
+    // collide for different images, which showed the wrong artwork.
+    let blobKey = blobKeys.get(picture);
+    if (!blobKey) {
+      blobKey = `blob-${blobCounter++}`;
+      blobKeys.set(picture, blobKey);
+    }
 
     // Check if we already have a URL for this blob
     if (pictureUrlCache.value.has(blobKey)) {

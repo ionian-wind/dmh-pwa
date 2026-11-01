@@ -1,21 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch, inject } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { useMentionsStore } from '@/utils/storage';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import type { Note, ComponentInjection } from '@/types';
+import type { Note } from '@/types';
 import NoteEditor from '@/notes/NoteEditor.vue';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
+import { confirm } from '@/dialogs';
+import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
@@ -66,9 +70,14 @@ const handleEdit = () => {
 };
 
 const handleDelete = async () => {
-  if (!note.value) return;
+  if (!note.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: note.value.title })))
+  ) {
+    return false;
+  }
   await noteStore.remove(note.value.id);
-  await router.push('/notes');
+  return true;
 };
 const handleCancel = () => {
   isEditing.value = false;
@@ -108,7 +117,16 @@ const handleSubmit = async (editedNote: Note) => {
   }
   validationError.value = null;
   if (!note.value) return;
-  await noteStore.update(note.value.id, editedNote);
+  try {
+    if (editedNote.hidden !== note.value.hidden) {
+      await noteStore.setHidden(note.value.id, editedNote.hidden);
+    }
+    await noteStore.update(note.value.id, editedNote);
+  } catch (error) {
+    validationError.value =
+      error instanceof Error ? error.message : String(error);
+    return;
+  }
   isEditing.value = false;
   updateNoteFromStore();
 };
@@ -116,9 +134,7 @@ const handleSubmit = async (editedNote: Note) => {
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title || '');
 
-const setRightDrawerContent = inject('setRightDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await noteStore.load();
@@ -128,11 +144,11 @@ onMounted(async () => {
   await monsterStore.load();
   await encounterStore.load();
 
-  setRightDrawerContent({ component: NoteViewSidebar, props: { note } });
+  rightDrawer.set({ component: NoteViewSidebar, props: { note } });
 });
 
 onBeforeUnmount(() => {
-  setRightDrawerContent(null);
+  rightDrawer.clear();
 });
 </script>
 
@@ -159,6 +175,7 @@ onBeforeUnmount(() => {
         :note="note"
         :is-open="isEditing"
         :validation-error="validationError"
+        :allow-hidden-toggle="true"
         @submit="handleSubmit"
         @cancel="handleCancel"
       />

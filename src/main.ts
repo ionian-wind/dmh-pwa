@@ -14,6 +14,7 @@ import { debug, debugWarn, debugError } from './utils/debug';
 
 import { Quasar, Dialog, Notify } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
+import quasarLangEn from 'quasar/lang/en-US';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 
 // Import Quasar css
@@ -54,17 +55,6 @@ debug('Initial i18n.global.locale.value:', i18n.global.locale.value);
 // Use i18n
 app.use(i18n);
 
-// Sync i18n locale with configStore.savedLanguage
-watch(
-  () => configStore.savedLanguage,
-  (newLang) => {
-    debug('Language changed:', newLang);
-    i18n.global.locale.value = newLang as any;
-    debug('i18n.global.locale.value after change:', i18n.global.locale.value);
-  },
-  { immediate: true },
-);
-
 // Setup anchor scroll handler
 setupAnchorScrollHandler();
 
@@ -81,6 +71,18 @@ app.use(Quasar, {
   lang: quasarLangRu,
   iconSet: quasarIconSet,
 });
+
+// Sync i18n/Quasar locale with configStore.savedLanguage
+watch(
+  () => configStore.savedLanguage,
+  (newLang) => {
+    debug('Language changed:', newLang);
+    i18n.global.locale.value = newLang as any;
+    Quasar.lang.set(newLang === 'ru' ? quasarLangRu : quasarLangEn);
+    debug('i18n.global.locale.value after change:', i18n.global.locale.value);
+  },
+  { immediate: true },
+);
 
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {

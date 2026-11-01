@@ -16,23 +16,29 @@ import {
   IconArrowsMaximize,
 } from '@tabler/icons-vue';
 
-const props = defineProps<{
-  isOpen: boolean;
-  title?: string;
-  showSubmit?: boolean;
-  showCancel?: boolean;
-  submitLabel?: string;
-  cancelLabel?: string;
-  showClose?: boolean;
-  modalId: string;
-  showExpand?: boolean;
-  isExpanded?: boolean;
-  disableSubmit?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    isOpen: boolean;
+    title?: string;
+    showSubmit?: boolean;
+    showCancel?: boolean;
+    submitLabel?: string;
+    cancelLabel?: string;
+    showClose?: boolean;
+    modalId: string;
+    showExpand?: boolean;
+    isExpanded?: boolean;
+    disableSubmit?: boolean;
+  }>(),
+  {
+    showClose: true,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'submit'): void;
   (e: 'cancel'): void;
+  (e: 'update:isOpen', value: boolean): void;
   (e: 'update:isExpanded', value: boolean): void;
 }>();
 
@@ -48,11 +54,19 @@ const hasHeader = computed(
 );
 
 // Only show modal if it's open and is the top of the stack
-const actuallyOpen = computed(
-  () => props.isOpen && currentModalId.value === props.modalId,
-);
+const actuallyOpen = computed({
+  get: () => props.isOpen && currentModalId.value === props.modalId,
+  set: (value: boolean) => {
+    if (!value) requestClose();
+  },
+});
 
 const { t } = useI18n();
+
+function requestClose() {
+  emit('update:isOpen', false);
+  emit('cancel');
+}
 
 watch(
   () => props.isOpen,
@@ -128,9 +142,10 @@ function setExpanded(val: boolean) {
           <slot name="header-actions" />
 
           <QBtn
+            v-if="props.showClose !== false"
             flat
             variant="light"
-            @click="$emit('cancel')"
+            @click="requestClose"
             :aria-label="t('common.close')"
             class="btn-close-modal"
           >
@@ -147,17 +162,13 @@ function setExpanded(val: boolean) {
         </form>
       </QScrollArea>
       <QCardActions
-        v-if="$slots.actions || showSubmit || showCancel"
+        v-if="$slots.footer || $slots.actions || showSubmit || showCancel"
         class="modal-actions"
         align="right"
       >
+        <slot name="footer" />
         <slot name="actions" />
-        <QBtn
-          flat
-          v-if="showCancel"
-          :color="'standard'"
-          @click="$emit('cancel')"
-        >
+        <QBtn flat v-if="showCancel" :color="'standard'" @click="requestClose">
           {{ cancelLabel || t('common.cancel') }}
         </QBtn>
         <QBtn

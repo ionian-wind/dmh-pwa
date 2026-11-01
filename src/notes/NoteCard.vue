@@ -56,6 +56,7 @@ function handleCopy() {
     showView
     showEdit
     showDelete
+    showCopy
     :title="note.title"
     @view="handleView"
     @edit="handleEdit"

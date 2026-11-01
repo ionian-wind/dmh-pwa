@@ -13,7 +13,7 @@ const { t } = useI18n();
 const showFabs = ref(false);
 const fabContainerRef = ref<HTMLElement | null>(null);
 
-let diceBox: DiceBox;
+let diceBox: any;
 
 function toggleFabs() {
   showFabs.value = !showFabs.value;
@@ -65,7 +65,7 @@ onMounted(async () => {
     assetPath: '/dmh-pwa/assets/dice-box/',
     theme: 'default-extras',
     preloadThemes: ['default-extras'],
-    onThemeConfigLoaded: (themeData) => {
+    onThemeConfigLoaded: (themeData: unknown) => {
       debug('Theme loaded:', themeData);
     },
   });

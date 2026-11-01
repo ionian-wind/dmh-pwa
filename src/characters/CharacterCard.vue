@@ -32,6 +32,7 @@ function handleCopy() {
     showView
     showEdit
     showDelete
+    showCopy
     @view="handleView"
     @edit="handleEdit"
     @delete="handleDelete"

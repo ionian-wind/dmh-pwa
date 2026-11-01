@@ -10,12 +10,17 @@ import sanitizeHtml from 'sanitize-html';
 // Parse command line arguments
 const args = process.argv.slice(2);
 let moduleName = '';
+let markdownFile = 'docs/cos.md';
 
-// Parse --name argument
+// Parse --name argument and optional file path
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--name' && i + 1 < args.length) {
     moduleName = args[i + 1];
-    break;
+    i++;
+    continue;
+  }
+  if (!args[i].startsWith('--')) {
+    markdownFile = args[i];
   }
 }
 
@@ -23,9 +28,6 @@ if (!moduleName) {
   console.error('Usage: node markdown-to-json.js --name <module-name> [markdown-file]');
   process.exit(1);
 }
-
-// Get markdown file path
-const markdownFile = args[args.length - 1];
 
 if (!fs.existsSync(markdownFile)) {
   console.error(`Markdown file not found: ${markdownFile}`);
@@ -60,7 +62,7 @@ function parseMarkdownSections(content) {
       if (currentSection) {
         sections.push({
           ...currentSection,
-          content: cleanText(currentContent.join('\n').trim())
+          content: currentContent.join('\n').trim()
         });
       }
       
@@ -86,7 +88,7 @@ function parseMarkdownSections(content) {
   if (currentSection) {
     sections.push({
       ...currentSection,
-      content: cleanText(currentContent.join('\n').trim())
+      content: currentContent.join('\n').trim()
     });
   }
   
@@ -130,9 +132,9 @@ function buildTree(sections) {
 }
 
 // Create module JSON
-function createModuleJson(moduleName, tree) {
+function createModuleJson(moduleName, tree, moduleId) {
   return {
-    id: generateId(),
+    id: moduleId,
     name: moduleName,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -177,7 +179,7 @@ async function main() {
     const moduleId = generateId();
     
     // Create module JSON
-    const moduleJson = createModuleJson(moduleName, tree);
+    const moduleJson = createModuleJson(moduleName, tree, moduleId);
     
     // Create zip archive
     const zip = new JSZip();

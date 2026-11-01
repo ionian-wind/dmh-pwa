@@ -40,19 +40,17 @@ export function hasRequiredFields<T extends object>(
 // --- IndexedDB Helper using idb ---
 const DB_NAME = 'dmh-db';
 const MIGRATIONS_STORE = 'migrations';
+let dbPromise: Promise<IDBPDatabase> | null = null;
 
-export async function openDB(): Promise<IDBPDatabase> {
+async function openAndMigrate(): Promise<IDBPDatabase> {
   const DB_VERSION = Math.max(
     ...sortedMigrations.map(({ version }) => version),
   );
-  let toRun: Migration[] = [];
-  const affectedStores = new Set<string>();
 
-  return idbOpenDB(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion, newVersion, transaction) {
+  const db = await idbOpenDB(DB_NAME, DB_VERSION, {
+    upgrade(db, oldVersion, newVersion) {
       const createStore = (storeName: string) => {
         if (!db.objectStoreNames.contains(storeName)) {
-          affectedStores.add(storeName);
           db.createObjectStore(storeName, {
             keyPath: 'id',
             autoIncrement: false,
@@ -62,51 +60,67 @@ export async function openDB(): Promise<IDBPDatabase> {
 
       createStore(MIGRATIONS_STORE);
 
-      // Use DB_VERSION if newVersion is null
+      // Use DB_VERSION if newVersion is null.
       const effectiveNewVersion = newVersion ?? DB_VERSION;
-      // Run migrations for versions > oldVersion and <= newVersion
-      toRun = sortedMigrations.filter((m) => {
-        if (m.version > oldVersion && m.version <= effectiveNewVersion) {
-          m.affectedStores.forEach((storeName) => createStore(storeName));
-          return true;
-        }
-
-        return false;
-      });
-
-      let chain: Promise<any> = Promise.resolve();
-
-      debug('{{{ MIGRATIONS to run: %i }}}', toRun.length);
-
-      for (const migration of toRun) {
-        chain = chain.then(() => {
-          const info = {
-            id: generateId(),
-            version: migration.version,
-            name: migration.name,
-            appliedAt: Date.now(),
-          };
-
-          debug('{{{ MIGRATION loading %o }}}', info);
-
-          return Promise.resolve(migration.go(transaction)).then(() =>
-            transaction
-              .objectStore(MIGRATIONS_STORE)
-              .put(info)
-              .then(() => debug('{{{ MIGRATION loaded %o }}}', info)),
+      for (const migration of sortedMigrations) {
+        if (
+          migration.version > oldVersion &&
+          migration.version <= effectiveNewVersion
+        ) {
+          migration.affectedStores.forEach((storeName) =>
+            createStore(storeName),
           );
-        });
+        }
       }
-
-      chain
-        .then(() => debug('{{{ MIGRATIONS finished successfully }}}'))
-        .catch((err) => {
-          debug('{{{ MIGRATIONS failed }}}');
-          transaction.abort();
-          throw err;
-        });
     },
   });
+
+  await applyPendingMigrations(db);
+  return db;
+}
+
+export function openDB(): Promise<IDBPDatabase> {
+  if (!dbPromise) {
+    dbPromise = openAndMigrate().catch((error) => {
+      dbPromise = null;
+      throw error;
+    });
+  }
+  return dbPromise;
+}
+
+/**
+ * Run migrations that are not recorded in the migrations store. This happens
+ * after the version-change transaction has completed, so migration code can
+ * use normal read/write transactions instead of the fragile async chain inside
+ * the upgrade callback.
+ */
+export async function applyPendingMigrations(
+  db: IDBPDatabase,
+  migrations: Migration[] = sortedMigrations,
+): Promise<void> {
+  const applied = (await db.getAll(MIGRATIONS_STORE)) as Array<{
+    version: number;
+  }>;
+  const appliedVersions = new Set(applied.map((record) => record.version));
+
+  for (const migration of migrations) {
+    if (appliedVersions.has(migration.version)) continue;
+
+    const info = {
+      id: generateId(),
+      version: migration.version,
+      name: migration.name,
+      appliedAt: Date.now(),
+    };
+
+    const tx = db.transaction(MIGRATIONS_STORE, 'readwrite');
+    await migration.go(tx as any);
+    await tx.objectStore(MIGRATIONS_STORE).put(info);
+    await tx.done;
+    appliedVersions.add(migration.version);
+    debug('{{{ MIGRATION loaded %o }}}', info);
+  }
 }
 
 // --- Per-item CRUD helpers using idb ---
@@ -181,6 +195,13 @@ export interface BaseStore<T extends WithMetadata> {
 
 // This cache will ensure that we create only one store instance per store name.
 const storeCache: Map<string, BaseStore<any>> = new Map();
+
+/** Test helper: clear the in-memory base-store cache. */
+export function resetStoreCache(): void {
+  storeCache.clear();
+  dbPromise = null;
+  isInitialized = false;
+}
 
 export function useStore<T extends WithMetadata>(
   options: StorageOptions,
@@ -450,7 +471,86 @@ export const MAIN_STORE_NAMES = [
   'noteTypes',
   'parties',
   'bookmarks',
+  'timers',
+  'jukebox_playlists',
+  'jukebox_tracks',
+  'jukebox_files',
+  'indexations_mentions',
 ];
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function base64ToBlob(data: string, type: string): Blob {
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type });
+}
+
+async function serializeStoreItems(
+  storeName: string,
+  items: any[],
+): Promise<any[]> {
+  if (storeName !== 'jukebox_files') return items;
+
+  return Promise.all(
+    items.map(async (item) => {
+      const source = item?.source;
+      if (!source) return item;
+      if (source.kind === 'blob' && source.blob instanceof Blob) {
+        return {
+          ...item,
+          source: {
+            kind: 'blob-data',
+            type: source.blob.type,
+            data: arrayBufferToBase64(await source.blob.arrayBuffer()),
+          },
+        };
+      }
+      if (source.kind === 'handle') {
+        return {
+          ...item,
+          source: {
+            kind: 'unavailable',
+            reason: 'FileSystemFileHandle cannot be serialized',
+          },
+        };
+      }
+      return item;
+    }),
+  );
+}
+
+function deserializeStoreItems(storeName: string, items: any[]): any[] {
+  if (storeName !== 'jukebox_files') return items;
+
+  return items.map((item) => {
+    const source = item?.source;
+    if (source?.kind === 'blob-data') {
+      return {
+        ...item,
+        source: {
+          kind: 'blob',
+          blob: base64ToBlob(
+            source.data,
+            source.type || 'application/octet-stream',
+          ),
+        },
+      };
+    }
+    return item;
+  });
+}
 
 /**
  * Backup all main stores as a zip file (returns a Blob)
@@ -459,7 +559,8 @@ export async function backupAllStores(): Promise<Blob> {
   const zip = new JSZip();
   for (const storeName of MAIN_STORE_NAMES) {
     const items = await idbGetAllItems(storeName);
-    zip.file(`${storeName}.json`, JSON.stringify(items, null, 2));
+    const serialized = await serializeStoreItems(storeName, items);
+    zip.file(`${storeName}.json`, JSON.stringify(serialized, null, 2));
   }
   return zip.generateAsync({ type: 'blob' });
 }
@@ -476,7 +577,7 @@ export async function restoreAllStores(zipFile: Blob): Promise<void> {
     const content = await file.async('string');
     let items: any[] = [];
     try {
-      items = JSON.parse(content);
+      items = deserializeStoreItems(storeName, JSON.parse(content));
     } catch (e) {
       // skip invalid JSON
       continue;

@@ -1,22 +1,32 @@
 <script setup lang="ts">
-import { inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import type { PropType } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import VueDraggable from 'vuedraggable';
-import type { ComponentInjection } from '@/types';
+import { useLayout } from '@/composables/useLayout';
 
 const props = defineProps({
-  items: { type: Array, required: true },
+  items: { type: Array as PropType<any[]>, required: true },
   cardComponent: { type: [Object, Function, String], required: true },
   editorComponent: { type: [Object, Function, String], required: false },
   emptyMessage: { type: String, required: true },
   createTitle: { type: String, required: true },
-  cardProps: { type: Function, default: (item: any) => ({}) },
-  editorProps: { type: Function, default: (item: any) => ({}) },
+  cardProps: {
+    type: Function as PropType<(item: any) => any>,
+    default: (item: any) => ({}),
+  },
+  editorProps: {
+    type: Function as PropType<(item: any) => any>,
+    default: (item: any) => ({}),
+  },
   sidePanelVisible: { type: Boolean, default: false },
   viewStyle: { type: String, default: 'masonry' },
   draggable: { type: Boolean, default: false },
   hideHeader: { type: Boolean, default: false },
   rightDrawerIcon: { type: [Object, Function], default: undefined },
+  showSearch: { type: Boolean, default: false },
+  searchQuery: { type: String, default: '' },
+  searchPlaceholder: { type: String, default: 'common.search' },
 });
 
 const showEditor = ref(false);
@@ -89,25 +99,56 @@ const cardPropsWithDraggable = (item: any) => {
   return { ...base, draggable: props.draggable };
 };
 
-const setTopMenuContent = inject('setTopMenuContent') as (
-  arg: ComponentInjection,
-) => void;
+const layout = useLayout();
 
-onMounted(async () => {
-  const headerProps: Record<string, any> = {
+let headerProps: Record<string, any> | null = null;
+
+function syncHeaderProps() {
+  if (!headerProps) return;
+  Object.assign(headerProps, {
     showCreate: true,
     createTitle: props.createTitle,
     onCreate,
-  };
-  if (props.rightDrawerIcon)
+    showSearch: props.showSearch,
+    searchQuery: props.searchQuery,
+    searchPlaceholder: props.searchPlaceholder,
+    'onUpdate:searchQuery': (value: string) =>
+      emit('update:searchQuery', value),
+  });
+}
+
+onMounted(async () => {
+  headerProps = reactive<Record<string, any>>({
+    showCreate: true,
+    createTitle: props.createTitle,
+    onCreate,
+    showSearch: props.showSearch,
+    searchQuery: props.searchQuery,
+    searchPlaceholder: props.searchPlaceholder,
+    'onUpdate:searchQuery': (value: string) =>
+      emit('update:searchQuery', value),
+  });
+  if (props.rightDrawerIcon) {
     headerProps.rightDrawerIcon = props.rightDrawerIcon;
-  setTopMenuContent(
+  }
+  layout.setTopMenuContent(
     props.hideHeader ? null : { component: ViewHeader, props: headerProps },
   );
 });
 
+watch(
+  () => [
+    props.createTitle,
+    props.showSearch,
+    props.searchQuery,
+    props.searchPlaceholder,
+  ],
+  syncHeaderProps,
+);
+
 onBeforeUnmount(() => {
-  setTopMenuContent(null);
+  layout.setTopMenuContent(null);
+  headerProps = null;
 });
 </script>
 
@@ -118,7 +159,7 @@ onBeforeUnmount(() => {
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
   >
-    <div v-if="items.length === 0" class="fixed-center text-primary">
+    <div v-if="items.length === 0" class="empty-state q-pa-xl text-center text-primary">
       {{ emptyMessage }}
     </div>
 
@@ -132,11 +173,24 @@ onBeforeUnmount(() => {
       class="q-list simple-list"
     >
       <template #item="{ element: item }">
-        <component :is="cardComponent" v-bind="cardPropsWithDraggable(item)" />
+        <component
+          :is="cardComponent"
+          v-bind="cardPropsWithDraggable(item)"
+          @view="$emit('view', item)"
+          @edit="
+            () => {
+              handleEdit(item);
+              $emit('edit', item);
+            }
+          "
+          @delete="$emit('delete', item)"
+          @tag-click="$emit('tag-click', $event)"
+          @copy="$emit('copy', item)"
+        />
       </template>
     </VueDraggable>
     <div v-else>
-      <div v-if="viewStyle === 'masonry'" class="q-gutter-md row items-stretch">
+      <div v-if="viewStyle === 'masonry'" class="q-col-gutter-md row items-stretch">
         <div
           v-for="item in items"
           :key="item.id"
@@ -160,12 +214,12 @@ onBeforeUnmount(() => {
       </div>
       <div
         v-else-if="viewStyle === 'grid'"
-        class="q-gutter-md row items-stretch"
+        class="q-col-gutter-md row items-stretch"
       >
         <div
           v-for="item in items"
           :key="item.id"
-          class="col-12 col-sm-6 col-md-4 col-lg-3"
+          class="col-12 col-sm-6 col-md-4 col-lg-4"
         >
           <component
             :is="cardComponent"

@@ -5,7 +5,12 @@ import type {
   DiceRollerPlugin,
   EvaluationResult,
 } from '../lib/types';
-import { SyntaxError, ValidationError, MissingDataError } from '../lib/types';
+import {
+  SyntaxError,
+  ValidationError,
+  MissingDataError,
+  DiceRollerError,
+} from '../lib/types';
 import { traverseAST } from '../lib/utils';
 import { assignInlineRollIndices } from '../plugins/inline-rolls';
 import { debug } from '../../debug';
@@ -84,6 +89,8 @@ export function evaluate(
     JSON.stringify(context),
   );
   const warnings: string[] = context.warnings || [];
+  if (!context.warnings) context.warnings = warnings;
+  if (!context.rolls) context.rolls = {};
 
   if (typeof window === 'undefined') {
     debug('[core] evaluate called with node:', JSON.stringify(ast));
@@ -91,6 +98,7 @@ export function evaluate(
 
   try {
     // Find the appropriate plugin to evaluate this node
+    let lastPluginError: unknown = null;
     for (const plugin of plugins) {
       debugLog(`Trying plugin '${plugin.name}' for node type: ${ast.type}`);
       if (plugin.evaluate) {
@@ -109,6 +117,9 @@ export function evaluate(
             };
           }
         } catch (err) {
+          if (err instanceof DiceRollerError) {
+            lastPluginError = err;
+          }
           debugLog(
             `Plugin '${plugin.name}' threw error for node type: ${ast.type}:`,
             err,
@@ -117,6 +128,11 @@ export function evaluate(
           continue;
         }
       }
+    }
+
+    if (lastPluginError instanceof DiceRollerError) {
+      // Surface intentional domain errors (missing macro/roll, validation).
+      throw lastPluginError;
     }
 
     debugLog('No plugin handled node type:', ast.type);

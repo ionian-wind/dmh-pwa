@@ -75,7 +75,6 @@ function calculate() {
   try {
     // Apply symbol aliases for math.js compatibility
     const expr = applyInputAliases(input.value || '0');
-    console.log(expr);
     result.value = String(evaluate(expr));
     error.value = '';
   } catch (e: any) {

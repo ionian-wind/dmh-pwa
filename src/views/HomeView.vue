@@ -132,15 +132,9 @@ async function handleRestore(event: Event) {
   try {
     await restoreAllStores(file);
     await alert(t('backup.restoreCompleted'));
-    // Optionally reload stores
-    await Promise.all([
-      noteStore.load(),
-      characterStore.load(),
-      partyStore.load(),
-      monsterStore.load(),
-      encounterStore.load(),
-      moduleStore.load(),
-    ]);
+    // Reloading the page is the simplest way to refresh every store,
+    // including timers, bookmarks, jukebox data, and the mention index.
+    window.location.reload();
   } catch (e) {
     await alert(
       t('backup.restoreFailed') + (e instanceof Error ? e.message : e),

@@ -1,105 +1,151 @@
-import { setActivePinia, createPinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { useNoteStore } from '@/stores/notes';
-import { vi } from 'vitest';
-vi.mock('@/utils/storage', () => ({
-  useStorage: vi.fn(() => ({ value: [] })),
-  generateId: vi.fn(() => 'test-uuid-999'),
-  isArray: Array.isArray,
-  hasRequiredFields: vi.fn(),
-  isStorageAvailable: vi.fn(),
-  clearStorage: vi.fn(),
-  getStorageKeys: vi.fn(),
-  getStorageSize: vi.fn(),
-  isStorageQuotaExceeded: vi.fn(),
-  getStorageInfo: vi.fn()
-}));
-vi.mock('@/stores/modules', () => ({ useModuleStore: () => ({ matchesModuleFilter: () => true }) }));
-vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
+import { mentionsMock, resetMockStores } from '../helpers/mock-storage';
 
-describe('Note Store', () => {
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
+describe('note store', () => {
   beforeEach(() => {
+    resetMockStores();
     setActivePinia(createPinia());
   });
 
-  it('creates a note', () => {
+  it('indexes mentions on create/update and clears them on remove', async () => {
     const store = useNoteStore();
-    const note = {
-      title: 'Test Note',
-      content: 'Content',
-      typeId: 'type-1',
-      tags: ['tag1'],
-      moduleId: 'mod-1',
-      createdAt: 0,
-      updatedAt: 0
-    };
-    const result = store.createNote(note);
-    expect(result.id).toBe('test-uuid-999');
-    expect(store.items.value).toContainEqual(result);
-  });
-
-  it('updates a note', () => {
-    const store = useNoteStore();
-    const note = store.createNote({
-      title: 'Old',
-      content: 'Old content',
-      typeId: 'type-1',
-      tags: ['tag1'],
-      moduleId: 'mod-1',
-      createdAt: 0,
-      updatedAt: 0
+    const created = await store.create({
+      title: 'Session',
+      content: 'See [Alice](monster://m1)',
+      typeId: null,
+      tags: ['session'],
+      moduleId: null,
+      hidden: false,
     });
-    store.updateNote(note.id, { ...note, title: 'New', content: 'New content' });
-    expect(store.items.value[0].title).toBe('New');
-    expect(store.items.value[0].content).toBe('New content');
-  });
 
-  it('deletes a note', () => {
-    const store = useNoteStore();
-    const note = store.createNote({
-      title: 'Delete Me',
-      content: 'Content',
-      typeId: 'type-1',
-      tags: ['tag1'],
-      moduleId: 'mod-1',
-      createdAt: 0,
-      updatedAt: 0
+    expect(mentionsMock.setLinks).toHaveBeenCalledWith(
+      { kind: 'note', id: created.id },
+      [{ kind: 'monster', id: 'm1' }],
+    );
+
+    await store.update(created.id, {
+      content: 'See [Bob](note://n2)',
     });
-    store.deleteNote(note.id);
-    expect(store.items.value).not.toContainEqual(note);
-  });
+    expect(mentionsMock.setLinks).toHaveBeenLastCalledWith(
+      { kind: 'note', id: created.id },
+      [{ kind: 'note', id: 'n2' }],
+    );
 
-  it('gets a note by id', () => {
-    const store = useNoteStore();
-    const note = store.createNote({
-      title: 'Find Me',
-      content: 'Content',
-      typeId: 'type-1',
-      tags: ['tag1'],
-      moduleId: 'mod-1',
-      createdAt: 0,
-      updatedAt: 0
+    await store.remove(created.id);
+    expect(mentionsMock.clearLinks).toHaveBeenCalledWith({
+      kind: 'note',
+      id: created.id,
     });
-    const found = store.getById(note.id);
-    expect(found).toEqual(note);
   });
 
-  it('returns null for non-existent note', () => {
+  it('never changes hidden after creation', async () => {
     const store = useNoteStore();
-    expect(store.getById('non-existent')).toBeNull();
+    const created = await store.create({
+      title: 'Hidden doc',
+      content: 'Body',
+      typeId: null,
+      tags: [],
+      moduleId: 'm1',
+      hidden: true,
+    });
+
+    const updated = await store.update(created.id, { hidden: false } as any);
+    expect(updated.hidden).toBe(true);
   });
 
-  it('filtered returns all if filter always true', () => {
+  it('filters by search and tag and exposes all tags', async () => {
     const store = useNoteStore();
-    const note1 = { title: 'A', content: 'A', typeId: 't', tags: [], moduleId: 'm', createdAt: 0, updatedAt: 0 };
-    const note2 = { title: 'B', content: 'B', typeId: 't', tags: ['x', 'y'], moduleId: 'm', createdAt: 0, updatedAt: 0 };
-    store.items.value = [note1, note2];
-    expect(store.filtered.value.length).toBe(store.items.value.length);
+    await store.create({
+      title: 'Combat notes',
+      content: 'Goblin ambush',
+      typeId: null,
+      tags: ['combat'],
+      moduleId: null,
+      hidden: false,
+    });
+    await store.create({
+      title: 'Roleplay',
+      content: 'Tavern scene',
+      typeId: null,
+      tags: ['social'],
+      moduleId: null,
+      hidden: false,
+    });
+
+    store.setSearchQuery('goblin');
+    expect(store.filtered).toHaveLength(1);
+
+    store.clearFilter();
+    store.setTagFilter('social');
+    expect(store.filtered.map((n) => n.title)).toEqual(['Roleplay']);
+    expect(store.allTags.sort()).toEqual(['combat', 'social']);
   });
 
-  it('allTags returns all unique tags', () => {
-    const store = useNoteStore();
-    store.createNote({ title: 'A', content: 'A', typeId: 't', tags: ['x', 'y'], moduleId: 'm', createdAt: 0, updatedAt: 0 });
-    store.createNote({ title: 'B', content: 'B', typeId: 't', tags: ['y', 'z'], moduleId: 'm', createdAt: 0, updatedAt: 0 });
-    expect(store.allTags.value.sort()).toEqual(['x', 'y', 'z']);
+  it('converts a document note to a regular note and detaches it from the tree', async () => {
+    const { useModuleStore } = await import('@/stores/modules');
+    const modules = useModuleStore();
+    const notes = useNoteStore();
+    const note = await notes.create({
+      title: 'Chapter',
+      content: 'Body',
+      typeId: null,
+      tags: [],
+      moduleId: 'm1',
+      hidden: true,
+    });
+    await modules.create({
+      name: 'Book',
+      id: 'm1',
+      noteTree: [{ noteId: note.id, children: [] }],
+    } as any);
+
+    const updated = await notes.setHidden(note.id, false);
+
+    expect(updated.hidden).toBe(false);
+    expect(modules.getById('m1')?.noteTree).toEqual([]);
   });
-}); 
+
+  it('converts a regular note with a module into a document note at the tree root', async () => {
+    const { useModuleStore } = await import('@/stores/modules');
+    const modules = useModuleStore();
+    const notes = useNoteStore();
+    const note = await notes.create({
+      title: 'Chapter',
+      content: 'Body',
+      typeId: null,
+      tags: [],
+      moduleId: 'm2',
+      hidden: false,
+    });
+    await modules.create({
+      name: 'Book',
+      id: 'm2',
+      noteTree: [],
+    } as any);
+
+    const updated = await notes.setHidden(note.id, true);
+
+    expect(updated.hidden).toBe(true);
+    expect(modules.getById('m2')?.noteTree?.[0]?.noteId).toBe(note.id);
+  });
+
+  it('refuses to hide a note that has no module', async () => {
+    const notes = useNoteStore();
+    const note = await notes.create({
+      title: 'Loose',
+      content: 'Body',
+      typeId: null,
+      tags: [],
+      moduleId: null,
+      hidden: false,
+    });
+
+    await expect(notes.setHidden(note.id, true)).rejects.toThrow(
+      'module',
+    );
+  });
+});

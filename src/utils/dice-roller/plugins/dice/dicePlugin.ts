@@ -36,13 +36,19 @@ function debugLog(...args: any[]) {
 
 // Stub implementations for missing dice functions
 function rollCustomDice(count: number, sides: number[]): number[] {
-  return sides.flatMap((side) =>
-    Array.from({ length: count }, () => Math.floor(Math.random() * side) + 1),
+  return Array.from(
+    { length: count },
+    () => sides[Math.floor(Math.random() * sides.length)],
   );
 }
 
 function rollFudgeDice(count: number, variant: string): number[] {
-  const values = variant === 'fudge' ? [-1, 0, 0, 1, 1] : [-1, 0, 1];
+  const values =
+    variant === '1'
+      ? [-1, 0]
+      : variant === '3'
+        ? [-1, -1, 0, 1, 1, 1]
+        : [-1, 0, 1];
   return Array.from(
     { length: count },
     () => values[Math.floor(Math.random() * values.length)],
@@ -571,7 +577,7 @@ export function evaluateDiceNode(
   if (node.type === 'function') {
     debugLog('Evaluating function:', node, context);
     const args = node.args.map(
-      (arg) => evaluate(arg as DiceAstNode, context).total,
+      (arg) => evaluateDiceNode(arg as DiceAstNode, context).total,
     );
     const func = mathFunctions[node.name];
 
@@ -662,14 +668,24 @@ export function evaluateDiceNode(
   if (node.type === 'grouped-roll') {
     // Check for 'o' (roll once) modifier
     const hasRollOnce = node.modifiers.some((m) => m.type === 'o');
-    let results;
-    if (hasRollOnce) {
-      // Roll the group only once
-      results = node.expressions.map((expr) => evaluateDiceNode(expr, context));
-    } else {
-      // Default: roll each expression as usual
-      results = node.expressions.map((expr) => evaluateDiceNode(expr, context));
-    }
+    const evaluateChild = (expr: DiceAstNode): DiceEvaluationResult => {
+      try {
+        const coreResult = evaluate(expr, context) as DiceEvaluationResult;
+        if (
+          coreResult &&
+          ((coreResult.rolls && coreResult.rolls.length > 0) ||
+            coreResult.total !== 0)
+        ) {
+          return coreResult;
+        }
+      } catch {
+        // Fall through to the direct dice evaluator.
+      }
+      return evaluateDiceNode(expr, context);
+    };
+    // Roll each expression once; group modifiers are applied to the combined
+    // results.
+    const results = node.expressions.map(evaluateChild);
     // Combine all rolls
     const allRolls = results.flatMap((r) => r.rolls || []);
     const allWarnings = results.flatMap((r) => r.warnings || []);
@@ -753,6 +769,18 @@ export function evaluateDiceNode(
     };
   }
 
+  if (
+    [
+      'inline-roll',
+      'roll-reference',
+      'roll-query',
+      'table',
+      'formatting',
+    ].includes(node.type)
+  ) {
+    return evaluate(node, context) as DiceEvaluationResult;
+  }
+
   const nodeAny = node as any;
   if (nodeAny.type === 'crit-mod') {
     debugLog('Evaluating crit-mod:', node, context);
@@ -796,4 +824,25 @@ export function evaluateDiceNode(
 // Plugin definition
 export const dicePlugin: DiceRollerPlugin = {
   name: 'dice',
+  parse: parseDiceAst,
+  evaluate(node, context) {
+    // Other plugins own these node types; return undefined so the core can
+    // continue down the registry.
+    if (
+      [
+        'macro',
+        'table',
+        'inline-roll',
+        'roll-reference',
+        'roll-query',
+        'formatting',
+      ].includes(node.type)
+    ) {
+      return undefined;
+    }
+    return evaluateDiceNode(node as DiceAstNode, context);
+  },
+  register() {
+    // Registered by the core registry.
+  },
 };

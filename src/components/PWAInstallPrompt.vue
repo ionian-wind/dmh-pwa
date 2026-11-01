@@ -38,75 +38,29 @@ const dismissPrompt = () => {
   hasShownNativePrompt.value = false;
 };
 
+const handleBeforeInstallPrompt = (e: Event) => {
+  debug('PWAInstallPrompt: beforeinstallprompt event fired');
+  deferredPrompt.value = e;
+  showInstallPrompt.value = true;
+};
+
+const handleAppInstalled = () => {
+  debug('PWAInstallPrompt: PWA was installed');
+  showInstallPrompt.value = false;
+  deferredPrompt.value = null;
+  hasShownNativePrompt.value = false;
+};
+
 onMounted(() => {
-  return;
   debug('PWAInstallPrompt: Component mounted, setting up event listeners');
-
-  // Listen for the beforeinstallprompt event
-  const handleBeforeInstallPrompt = async (e: Event) => {
-    debug('PWAInstallPrompt: beforeinstallprompt event fired');
-
-    // Prevent the mini-infobar from appearing on mobile
-    e.preventDefault();
-    debug('PWAInstallPrompt: preventDefault() called');
-
-    // Store the event for later use
-    deferredPrompt.value = e;
-
-    // Call prompt() immediately to satisfy browser requirements
-    // This prevents the warning about preventDefault() being called without prompt()
-    try {
-      debug('PWAInstallPrompt: Calling native prompt()');
-      await (e as any).prompt();
-      hasShownNativePrompt.value = true;
-      debug('PWAInstallPrompt: Native prompt() called successfully');
-
-      // Wait for user choice
-      const { outcome } = await (e as any).userChoice;
-      debug('PWAInstallPrompt: User choice outcome:', outcome);
-
-      if (outcome === 'accepted') {
-        debug('PWAInstallPrompt: User accepted the native install prompt');
-        // App will be installed, no need to show our custom prompt
-        return;
-      } else {
-        debug(
-          'PWAInstallPrompt: User dismissed the native install prompt, showing custom prompt',
-        );
-        // Show our custom prompt as a fallback
-        showInstallPrompt.value = true;
-      }
-    } catch (error) {
-      debug(
-        'PWAInstallPrompt: Native prompt failed or was not supported, showing custom prompt:',
-        error,
-      );
-      // Show our custom prompt as fallback
-      showInstallPrompt.value = true;
-    }
-  };
-
-  // Listen for the appinstalled event
-  const handleAppInstalled = () => {
-    debug('PWAInstallPrompt: PWA was installed');
-    showInstallPrompt.value = false;
-    deferredPrompt.value = null;
-    hasShownNativePrompt.value = false;
-  };
-
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   window.addEventListener('appinstalled', handleAppInstalled);
-  debug('PWAInstallPrompt: Event listeners added');
+});
 
-  // Cleanup
-  onUnmounted(() => {
-    debug('PWAInstallPrompt: Component unmounting, removing event listeners');
-    window.removeEventListener(
-      'beforeinstallprompt',
-      handleBeforeInstallPrompt,
-    );
-    window.removeEventListener('appinstalled', handleAppInstalled);
-  });
+onUnmounted(() => {
+  debug('PWAInstallPrompt: Component unmounting, removing event listeners');
+  window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  window.removeEventListener('appinstalled', handleAppInstalled);
 });
 </script>
 

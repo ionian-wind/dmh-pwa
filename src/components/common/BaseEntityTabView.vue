@@ -14,7 +14,7 @@ interface Props {
   entity: any | null;
   entityName: string;
   listRoute: string;
-  onDelete?: () => Promise<void>;
+  onDelete?: () => Promise<boolean>;
   onEdit?: () => void;
   isEditing?: boolean;
   title?: string;
@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<Props>(), {
   isEditing: false,
   sidePanelVisible: true,
   hideHeader: false,
-  headerButtons: [],
+  headerButtons: () => [],
   tabs: () => [],
 });
 
@@ -107,6 +107,15 @@ function handleTabAdd() {
           </QTabPanel>
         </QTabPanels>
       </div>
+    </template>
+    <template v-if="$slots.actions" #actions>
+      <slot name="actions" />
+    </template>
+    <template v-if="$slots.sub" #sub>
+      <slot name="sub" />
+    </template>
+    <template v-if="$slots.sidepanel" #sidepanel>
+      <slot name="sidepanel" />
     </template>
     <template v-if="$slots.editor" #editor>
       <slot name="editor" />

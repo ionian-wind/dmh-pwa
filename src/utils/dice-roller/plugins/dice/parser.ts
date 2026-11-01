@@ -18,6 +18,7 @@ export class DiceRollerDiceParser extends CstParser {
   fudgeDice: ParserMethod<[], CstNode> = undefined as any;
   modifiers: ParserMethod<[], CstNode> = undefined as any;
   inlineRoll: ParserMethod<[], CstNode> = undefined as any;
+  rollReference: ParserMethod<[], CstNode> = undefined as any;
 
   constructor() {
     super(tokens.AllTokens, { recoveryEnabled: true });
@@ -230,6 +231,9 @@ export class DiceRollerDiceParser extends CstParser {
     $.inlineRoll = $.RULE('inlineRoll', () => {
       $.CONSUME(tokens.InlineRoll);
     });
+    $.rollReference = $.RULE('rollReference', () => {
+      $.CONSUME(tokens.RollReference);
+    });
     $.primary = $.RULE('primary', () => {
       return $.OR([
         { ALT: () => $.SUBRULE($.functionCall) },
@@ -242,6 +246,7 @@ export class DiceRollerDiceParser extends CstParser {
         { ALT: () => $.CONSUME(tokens.Integer) },
         { ALT: () => $.CONSUME(tokens.Macro) },
         { ALT: () => $.SUBRULE($.inlineRoll) },
+        { ALT: () => $.SUBRULE($.rollReference) },
         {
           ALT: () => {
             $.CONSUME(tokens.Minus);

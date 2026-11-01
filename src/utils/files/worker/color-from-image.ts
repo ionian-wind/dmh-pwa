@@ -19,9 +19,14 @@ type Rgb = [r: number, g: number, b: number];
 
 const getArgs = (
   args?: Partial<Args>,
-): { amount: number; format: 'array'; group: number; sample: number } => ({
+): {
+  amount: number;
+  format: 'array' | 'hex';
+  group: number;
+  sample: number;
+} => ({
   amount: args?.amount ?? 3,
-  format: 'array',
+  format: args?.format ?? 'array',
   group: args?.group ?? 20,
   sample: args?.sample ?? 10,
 });

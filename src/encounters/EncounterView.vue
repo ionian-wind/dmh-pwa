@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, inject, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
@@ -7,7 +7,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useModuleStore } from '@/stores/modules';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
-import type { Encounter, Monster, Combat, ComponentInjection } from '@/types';
+import type { Encounter, Monster, Combat } from '@/types';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -16,7 +16,9 @@ import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
 import { IconSwords } from '@tabler/icons-vue';
 import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
-import { prompt } from '@/dialogs';
+import { prompt, confirm } from '@/dialogs';
+import { sanitizeHtmlContent } from '@/utils/markdownParser';
+import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
@@ -68,9 +70,14 @@ const handleEdit = () => {
 };
 
 const handleDelete = async () => {
-  if (!encounter.value) return;
+  if (!encounter.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: encounter.value.name })))
+  ) {
+    return false;
+  }
   await encounterStore.remove(encounter.value.id);
-  await router.push('/encounters');
+  return true;
 };
 
 const handleSave = async (
@@ -174,6 +181,9 @@ const handlePartySelectorCancel = () => {
 
 // Computed properties for BaseEntityView
 const encounterTitle = computed(() => encounter.value?.name || '');
+const safeDescription = computed(() =>
+  sanitizeHtmlContent(encounter.value?.description || ''),
+);
 
 // Computed property for combats associated with this encounter
 const encounterCombats = computed(() => {
@@ -274,9 +284,7 @@ const openQuantityModal = async (monster: Monster) => {
   await encounterStore.update(encounter.value.id, { monsters });
 };
 
-const setRightDrawerContent = inject('setRightDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
@@ -287,14 +295,14 @@ onMounted(async () => {
     partyStore.load(),
   ]);
 
-  setRightDrawerContent({
+  rightDrawer.set({
     component: EncounterViewSidebar,
     props: { encounter },
   });
 });
 
 onBeforeUnmount(() => {
-  setRightDrawerContent(null);
+  rightDrawer.clear();
 });
 </script>
 
@@ -330,7 +338,7 @@ onBeforeUnmount(() => {
       </template>
       <template #information>
         <section class="details-section">
-          <div v-html="encounter?.description"></div>
+          <div v-html="safeDescription"></div>
         </section>
       </template>
       <template #monsters>

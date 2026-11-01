@@ -14,17 +14,17 @@ const props = defineProps<{
 }>();
 
 const mentions = computed(() => {
-  return props.note.value
-    ? mentionsStore.getLinks({ kind: 'note', id: props.note.value.id })
+  return props.note
+    ? mentionsStore.getLinks({ kind: 'note', id: props.note.id })
     : [];
 });
 
 // Find notes that mention this note using the indexation store
 const mentionedIn = computed(() =>
-  props.note.value
+  props.note
     ? mentionsStore.getBacklinks({
         kind: 'note',
-        id: props.note.value.id,
+        id: props.note.id,
       })
     : [],
 );

@@ -89,6 +89,11 @@ const router = createRouter({
     },
     // Combats routes
     {
+      path: '/combats',
+      name: 'combats',
+      redirect: '/encounters',
+    },
+    {
       path: '/combats/:id',
       name: 'combat-detail',
       component: CombatView,

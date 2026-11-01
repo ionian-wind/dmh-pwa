@@ -66,10 +66,38 @@ export const Macro = createToken({
   pattern: /#[a-zA-Z_][a-zA-Z0-9_-]*/,
 });
 
-// Inline roll token for [[...]]
+// Roll references: $[[0]] or $[roll:name]
+export const RollReference = createToken({
+  name: 'RollReference',
+  pattern: /\$\[\[(\d+)\]\]|\$\[roll:[a-zA-Z0-9_-]+\]/,
+});
+
+// Inline roll token for [[...]], including nested inline rolls.
+function matchInlineRoll(text: string, offset: number): RegExpExecArray | null {
+  if (!text.startsWith('[[', offset)) return null;
+  let depth = 0;
+  for (let i = offset; i < text.length; i++) {
+    if (text.startsWith('[[', i)) {
+      depth++;
+      i++;
+    } else if (text.startsWith(']]', i)) {
+      depth--;
+      i++;
+      if (depth === 0) {
+        const value = text.slice(offset, i + 1);
+        const result = [value] as unknown as RegExpExecArray;
+        result.index = offset;
+        result.input = text;
+        return result;
+      }
+    }
+  }
+  return null;
+}
+
 export const InlineRoll = createToken({
   name: 'InlineRoll',
-  pattern: /\[\[[\s\S]*?\]\]/,
+  pattern: matchInlineRoll as any,
 });
 
 // Table tokens for Nt[table-name]
@@ -145,6 +173,7 @@ export const AllTokens = [
   LParen,
   RParen,
   Macro,
+  RollReference,
   InlineRoll,
   LBracket,
   RBracket,

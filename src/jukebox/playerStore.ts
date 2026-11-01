@@ -5,12 +5,15 @@ import {
   getJukeboxFile,
   useJukeboxPlaylistsStore,
   useJukeboxTracksStore,
+  usePictureUrlCacheStore,
 } from './stores';
 import { JukeboxRepeatMode, useConfigStore } from '@/utils/configStore';
 import { fileHandler } from '@/utils/files';
 import { debug, debugError, debugWarn } from '@/utils/debug';
 import { rng } from '@/utils/random';
 import { Howl, Howler } from 'howler';
+
+const SMOOTH_TRACK_FADE_MS = 1200;
 
 // Helper to handle file permissions
 const verifyFilePermission = async (
@@ -19,10 +22,14 @@ const verifyFilePermission = async (
 ) => {
   // @ts-ignore
   const query = await handle.queryPermission({ mode });
-  // @ts-ignore
-  const request = await handle.requestPermission({ mode });
-
-  return query === 'granted' || request === 'granted';
+  if (query === 'granted') return true;
+  try {
+    // @ts-ignore
+    const request = await handle.requestPermission({ mode });
+    return request === 'granted';
+  } catch {
+    return false;
+  }
 };
 
 const isFileSystemFileHandle = (obj: any): obj is FileSystemFileHandle =>
@@ -38,6 +45,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   // Other Stores
   const tracksStore = useJukeboxTracksStore();
   const playlistsStore = useJukeboxPlaylistsStore();
+  const pictureUrlCacheStore = usePictureUrlCacheStore();
 
   // Core State
   const currentTrack = ref<JukeboxTrack | null>(null);
@@ -50,6 +58,9 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   // Queue State
   const queue = ref<JukeboxTrack[]>([]);
   const queueIndex = ref(0);
+
+  // Guards the automatic pre-end crossfade from being triggered twice.
+  let transitionInProgress = false;
 
   // --- Shuffle/Repeat/History State ---
   const hasPrevTrack = computed(() => {
@@ -139,15 +150,20 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       );
 
       const artwork = [];
-      if (
-        currentTrack.value.picture &&
-        typeof currentTrack.value.picture === 'string'
-      ) {
-        artwork.push({
-          src: currentTrack.value.picture,
-          sizes: '512x512',
-          type: 'image/jpeg',
-        });
+      if (currentTrack.value.picture) {
+        const src = pictureUrlCacheStore.getPictureUrl(
+          currentTrack.value.picture,
+        );
+        if (src) {
+          artwork.push({
+            src,
+            sizes: '512x512',
+            type:
+              typeof currentTrack.value.picture === 'string'
+                ? 'image/jpeg'
+                : currentTrack.value.picture.type || 'image/jpeg',
+          });
+        }
       }
 
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -217,17 +233,27 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   };
 
   function watchPlaylist() {
-    watch(
-      () => configStore.$state.jukeboxActivePlaylistId,
-      (newPlaylistId) => {
-        if (newPlaylistId) {
-          const activePlaylist = playlistsStore.getById(newPlaylistId);
-          if (!activePlaylist) {
-            configStore.jukeboxActivePlaylistId = null;
-            return;
-          }
-        }
+    const queueSignature = () => {
+      const playlistId = configStore.jukeboxActivePlaylistId;
+      const playlist = playlistId ? playlistsStore.getById(playlistId) : null;
+      return JSON.stringify({
+        playlistId,
+        trackIds: playlist?.trackIds ?? null,
+        tracks: tracksStore.items.value.map((track) => [
+          track.id,
+          track.disabled ?? false,
+        ]),
+      });
+    };
 
+    watch(
+      queueSignature,
+      () => {
+        const newPlaylistId = configStore.jukeboxActivePlaylistId;
+        if (newPlaylistId && !playlistsStore.getById(newPlaylistId)) {
+          configStore.jukeboxActivePlaylistId = null;
+          return;
+        }
         actualiseQueue();
       },
       { immediate: true },
@@ -264,11 +290,46 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     queue.value = currentQueue;
   }
 
+  /**
+   * Places a track after the current one or at the end of the queue without
+   * starting playback. An existing occurrence is moved instead of duplicated.
+   */
+  function queueTrack(track: JukeboxTrack, position: 'next' | 'last') {
+    const currentId = queue.value.at(queueIndex.value)?.id;
+    if (currentId === track.id) return;
+
+    const withoutTrack = queue.value.filter(({ id }) => id !== track.id);
+    const currentIndex = currentId
+      ? withoutTrack.findIndex(({ id }) => id === currentId)
+      : -1;
+    const insertIndex =
+      position === 'next'
+        ? currentIndex >= 0
+          ? currentIndex + 1
+          : 0
+        : withoutTrack.length;
+
+    const nextQueue = withoutTrack.toSpliced(insertIndex, 0, track);
+    queue.value = nextQueue;
+    queueIndex.value = currentId
+      ? nextQueue.findIndex(({ id }) => id === currentId)
+      : Math.min(queueIndex.value, Math.max(nextQueue.length - 1, 0));
+  }
+
+  function queueTrackNext(track: JukeboxTrack) {
+    queueTrack(track, 'next');
+  }
+
+  function queueTrackLast(track: JukeboxTrack) {
+    queueTrack(track, 'last');
+  }
+
   // --- Playback Methods ---
 
   const prepareAudioFile = async (
     track: JukeboxTrack,
     seekTo: number = 0,
+    smooth = false,
   ): Promise<boolean> => {
     const fileRecord = await getJukeboxFile(track.fileId);
     if (!fileRecord || !fileRecord.source) {
@@ -303,18 +364,39 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       format = file.name.split('.').pop();
     }
     if (howl) {
-      howl.unload();
+      const previousHowl = howl;
+      if (smooth) {
+        // Detach callbacks so the outgoing sound cannot advance the queue.
+        previousHowl.off();
+        previousHowl.fade(
+          previousHowl.volume() as number,
+          0,
+          SMOOTH_TRACK_FADE_MS,
+        );
+        setTimeout(() => {
+          try {
+            previousHowl.unload();
+          } catch {
+            // The sound may already have been unloaded.
+          }
+        }, SMOOTH_TRACK_FADE_MS + 50);
+      } else {
+        previousHowl.unload();
+      }
       howl = null;
     }
     howl = new Howl({
       src: [src],
       html5: true,
-      volume: volume.value,
+      volume: smooth ? 0 : volume.value,
       format: format ? [format] : undefined,
       onplay: () => {
         isPlaying.value = true;
         duration.value = howl?.duration() || 0;
         startProgressTimer();
+        if (smooth) {
+          howl?.fade(0, volume.value, SMOOTH_TRACK_FADE_MS);
+        }
         debug('🎵 JukeboxPlayer: Howler play event');
       },
       onpause: () => {
@@ -324,6 +406,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       },
       onend: () => {
         stopProgressTimer();
+        if (transitionInProgress) return;
         debug('🎵 JukeboxPlayer: Howler ended event, playing next');
         playNext();
       },
@@ -351,6 +434,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
         }
       },
     });
+    transitionInProgress = false;
     currentTrack.value = track;
     return true;
   };
@@ -365,20 +449,30 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   }
 
   async function playTrack(track: JukeboxTrack) {
-    if (await prepareAudioFile(track)) {
-      configStore.jukeboxLastTrackId = track.id;
-      const isNewTrack = currentTrack.value?.id !== track.id;
-      if (isNewTrack) {
-        debug('🎵 JukeboxPlayer: New track');
-        resetDuration();
-      }
-      try {
-        howl?.play();
-        debug('🎵 JukeboxPlayer: Track playback started successfully (Howler)');
-      } catch (error) {
-        debugError('🎵 JukeboxPlayer: Playback failed (Howler).', error);
-        isPlaying.value = false;
-      }
+    const previousTrackId = currentTrack.value?.id;
+    const smooth =
+      previousTrackId !== undefined &&
+      previousTrackId !== track.id &&
+      configStore.jukeboxSmoothTrackChange;
+
+    const prepared = await prepareAudioFile(track, 0, smooth);
+    if (!prepared) {
+      transitionInProgress = false;
+      return;
+    }
+
+    configStore.jukeboxLastTrackId = track.id;
+    const isNewTrack = previousTrackId !== track.id;
+    if (isNewTrack) {
+      debug('🎵 JukeboxPlayer: New track');
+      resetDuration();
+    }
+    try {
+      howl?.play();
+      debug('🎵 JukeboxPlayer: Track playback started successfully (Howler)');
+    } catch (error) {
+      debugError('🎵 JukeboxPlayer: Playback failed (Howler).', error);
+      isPlaying.value = false;
     }
   }
 
@@ -443,7 +537,9 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
 
     if (queueIndex.value === queue.value.length - 1) {
       if (repeatMode === JukeboxRepeatMode.list) {
-        addToQueue(getPlaylistTracks(configStore.jukeboxShuffle));
+        // Wrap around instead of appending the playlist again; the latter
+        // grows the queue without bound during long sessions.
+        queueIndex.value = -1;
       }
     }
     queueIndex.value += 1;
@@ -460,6 +556,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       howl = null;
     }
     stopProgressTimer();
+    transitionInProgress = false;
     isPlaying.value = false;
     currentTrack.value = null;
     currentTime.value = 0;
@@ -601,6 +698,22 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
         if (howl && isPlaying.value) {
           currentTime.value =
             typeof howl.seek() === 'number' ? (howl.seek() as number) : 0;
+
+          const remaining = duration.value - currentTime.value;
+          if (
+            !transitionInProgress &&
+            configStore.jukeboxSmoothTrackChange &&
+            configStore.jukeboxRepeatMode !== JukeboxRepeatMode.track &&
+            duration.value > SMOOTH_TRACK_FADE_MS / 1000 &&
+            remaining > 0 &&
+            remaining <= SMOOTH_TRACK_FADE_MS / 1000 &&
+            hasNextTrack.value
+          ) {
+            // Start the next track early so it can cross-fade with this one.
+            transitionInProgress = true;
+            playNext();
+          }
+
           progressTimer = requestAnimationFrame(update);
         }
       };
@@ -619,6 +732,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     // State
     currentTrack,
     isPlaying,
+    queue,
+    queueIndex,
 
     // Getters
     hasPrevTrack,
@@ -638,6 +753,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     actualiseQueue,
     resortQueue,
     removeTrackFromQueue,
+    queueTrackNext,
+    queueTrackLast,
 
     playPrev,
     playTrackFromPlaylist,

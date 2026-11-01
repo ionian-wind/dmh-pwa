@@ -185,8 +185,155 @@ md.use(internalEntityLinkPlugin);
 md.use(checkboxPlugin);
 md.use(customHeaderPlugin);
 
+const allowedTags = new Set([
+  'a',
+  'abbr',
+  'b',
+  'blockquote',
+  'br',
+  'code',
+  'del',
+  'details',
+  'div',
+  'em',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'hr',
+  'i',
+  'img',
+  'input',
+  'kbd',
+  'label',
+  'li',
+  'mark',
+  'ol',
+  'p',
+  'pre',
+  's',
+  'span',
+  'strong',
+  'sub',
+  'summary',
+  'sup',
+  'table',
+  'tbody',
+  'td',
+  'th',
+  'thead',
+  'tr',
+  'u',
+  'ul',
+]);
+
+const dangerousTags = new Set([
+  'script',
+  'style',
+  'iframe',
+  'object',
+  'embed',
+  'link',
+  'meta',
+  'base',
+  'form',
+  'button',
+]);
+
+const globalAttributes = ['class', 'id', 'title', 'data-kind', 'data-id'];
+const tagAttributes: Record<string, string[]> = {
+  a: ['href', 'name', 'target', 'rel'],
+  img: ['src', 'alt', 'width', 'height'],
+  input: ['type', 'checked', 'disabled'],
+  code: ['class'],
+  th: ['align'],
+  td: ['align'],
+};
+
+function isSafeUrl(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return !(
+    normalized.startsWith('javascript:') ||
+    normalized.startsWith('vbscript:') ||
+    normalized.startsWith('data:text/html')
+  );
+}
+
+/**
+ * Browser-safe sanitizer for markdown HTML. The fast path leaves ordinary
+ * markdown output untouched; documents containing risky HTML are parsed and
+ * filtered with DOMParser so no Node-only sanitizer is pulled into the bundle.
+ */
+export function sanitizeMarkdownHtml(html: string): string {
+  const dangerous =
+    /<\s*(script|iframe|object|embed|style|link|meta|base|form)\b|on[a-z]+\s*=|javascript:/i;
+  if (!dangerous.test(html)) {
+    return html;
+  }
+
+  if (typeof DOMParser === 'undefined') {
+    return html.replace(
+      /<\s*(script|iframe|object|embed|style|link|meta|base)[\s\S]*?<\s*\/\s*\1\s*>/gi,
+      '',
+    );
+  }
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  const sanitizeNode = (element: Element) => {
+    for (const child of Array.from(element.children)) {
+      const tag = child.tagName.toLowerCase();
+
+      if (dangerousTags.has(tag)) {
+        child.remove();
+        continue;
+      }
+
+      if (!allowedTags.has(tag)) {
+        child.replaceWith(document.createTextNode(child.textContent || ''));
+        continue;
+      }
+
+      if (tag === 'input' && child.getAttribute('type') !== 'checkbox') {
+        child.remove();
+        continue;
+      }
+
+      const allowed = new Set([
+        ...globalAttributes,
+        ...(tagAttributes[tag] || []),
+      ]);
+      for (const attribute of Array.from(child.attributes)) {
+        const name = attribute.name.toLowerCase();
+        if (!allowed.has(name) || name.startsWith('on')) {
+          child.removeAttribute(attribute.name);
+          continue;
+        }
+        if (
+          (name === 'href' || name === 'src') &&
+          !isSafeUrl(attribute.value)
+        ) {
+          child.removeAttribute(attribute.name);
+        }
+      }
+
+      sanitizeNode(child);
+    }
+  };
+
+  sanitizeNode(doc.body);
+  return doc.body.innerHTML;
+}
+
 export function parseMarkdown(text: string, env?: unknown): string {
-  return md.render(text || '', env);
+  return sanitizeMarkdownHtml(md.render(text || '', env));
+}
+
+/** Clean a value that will be inserted as HTML (e.g. encounter descriptions). */
+export function sanitizeHtmlContent(html: string): string {
+  return sanitizeMarkdownHtml(html || '');
 }
 
 // Extract all entity mentions of the form [title](type://id) from markdown text

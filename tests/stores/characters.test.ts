@@ -1,165 +1,38 @@
-import { setActivePinia, createPinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 import { useCharacterStore } from '@/stores/characters';
-import type { PlayerCharacter } from '@/types';
-import { vi } from 'vitest';
+import { resetMockStores } from '../helpers/mock-storage';
 
-// Mock the storage utility
-vi.mock('@/utils/storage', () => ({
-  useStorage: vi.fn(() => ({
-    value: []
-  })),
-  generateId: vi.fn(() => 'test-uuid-789')
-}));
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-// Mock the schema validator
-vi.mock('@/utils/schemaValidator', () => ({ registerValidationSchema: vi.fn() }));
-
-describe('Character Store', () => {
+describe('character store', () => {
   beforeEach(() => {
+    resetMockStores();
     setActivePinia(createPinia());
   });
 
-  it('creates a character', () => {
+  it('creates, updates, and removes characters', async () => {
     const store = useCharacterStore();
-    const character = {
-      name: 'Alice',
-      level: 2,
-      class: 'Rogue',
-      race: 'Halfling',
-      playerName: 'A',
-      stats: { strength: 10, dexterity: 16, constitution: 12, intelligence: 14, wisdom: 10, charisma: 12 },
-      hitPoints: { maximum: 18, current: 18 },
-      armorClass: 14,
-      initiative: 3,
-      speed: 25,
-      proficiencies: [],
-      equipment: []
-    };
-    const result = store.createCharacter(character);
-    expect(result.id).toBe('test-uuid-789');
-    expect(store.items.value).toContainEqual(result);
+    const created = await store.create({ name: 'Alice', notes: '' });
+    expect(created.name).toBe('Alice');
+    expect(store.getById(created.id)?.name).toBe('Alice');
+
+    const updated = await store.update(created.id, { name: 'Alice the Bold' });
+    expect(updated.name).toBe('Alice the Bold');
+
+    await store.remove(created.id);
+    expect(store.getById(created.id)).toBeNull();
   });
 
-  it('updates a character', () => {
+  it('filters by name and clears the filter', async () => {
     const store = useCharacterStore();
-    const char = store.createCharacter({
-      name: 'Bob',
-      level: 1,
-      class: 'Fighter',
-      race: 'Human',
-      playerName: 'B',
-      stats: { strength: 16, dexterity: 12, constitution: 14, intelligence: 10, wisdom: 10, charisma: 8 },
-      hitPoints: { maximum: 20, current: 20 },
-      armorClass: 16,
-      initiative: 1,
-      speed: 30,
-      proficiencies: [],
-      equipment: []
-    });
-    store.updateCharacter(char.id, { name: 'Bob the Brave', level: 2 });
-    expect(store.items.value[0].name).toBe('Bob the Brave');
-    expect(store.items.value[0].level).toBe(2);
-  });
+    await store.create({ name: 'Alice', notes: '' });
+    await store.create({ name: 'Bob', notes: '' });
 
-  it('deletes a character', () => {
-    const store = useCharacterStore();
-    const char = store.createCharacter({
-      name: 'Charlie',
-      level: 1,
-      class: 'Cleric',
-      race: 'Dwarf',
-      playerName: 'C',
-      stats: { strength: 14, dexterity: 10, constitution: 16, intelligence: 12, wisdom: 16, charisma: 8 },
-      hitPoints: { maximum: 22, current: 22 },
-      armorClass: 15,
-      initiative: 0,
-      speed: 25,
-      proficiencies: [],
-      equipment: []
-    });
-    store.deleteCharacter(char.id);
-    expect(store.items.value).not.toContainEqual(char);
-  });
+    store.setSearchQuery('ali');
+    expect(store.filtered.map((c) => c.name)).toEqual(['Alice']);
 
-  it('gets a character by id', () => {
-    const store = useCharacterStore();
-    const char = store.createCharacter({
-      name: 'Dana',
-      level: 3,
-      class: 'Wizard',
-      race: 'Elf',
-      playerName: 'D',
-      stats: { strength: 8, dexterity: 14, constitution: 12, intelligence: 18, wisdom: 10, charisma: 13 },
-      hitPoints: { maximum: 20, current: 15 },
-      armorClass: 12,
-      initiative: 2,
-      speed: 30,
-      proficiencies: [],
-      equipment: []
-    });
-    const found = store.getCharacterById(char.id);
-    expect(found).toEqual(char);
+    store.clearFilter();
+    expect(store.filtered).toHaveLength(2);
   });
-
-  it('returns null for non-existent character', () => {
-    const store = useCharacterStore();
-    expect(store.getCharacterById('non-existent')).toBeNull();
-  });
-
-  it('gets characters by party', () => {
-    const store = useCharacterStore();
-    const char1 = store.createCharacter({
-      name: 'Eve',
-      level: 1,
-      class: 'Bard',
-      race: 'Human',
-      playerName: 'E',
-      partyId: 'party-1',
-      stats: { strength: 10, dexterity: 14, constitution: 12, intelligence: 12, wisdom: 10, charisma: 16 },
-      hitPoints: { maximum: 16, current: 16 },
-      armorClass: 13,
-      initiative: 2,
-      speed: 30,
-      proficiencies: [],
-      equipment: []
-    });
-    const char2 = store.createCharacter({
-      name: 'Frank',
-      level: 1,
-      class: 'Paladin',
-      race: 'Human',
-      playerName: 'F',
-      partyId: 'party-1',
-      stats: { strength: 16, dexterity: 10, constitution: 14, intelligence: 10, wisdom: 12, charisma: 14 },
-      hitPoints: { maximum: 18, current: 18 },
-      armorClass: 17,
-      initiative: 0,
-      speed: 30,
-      proficiencies: [],
-      equipment: []
-    });
-    const result = store.filteredCharacters('party-1').value;
-    expect(result).toContainEqual(char1);
-    expect(result).toContainEqual(char2);
-  });
-
-  it('setParty updates partyId', () => {
-    const store = useCharacterStore();
-    const char = store.createCharacter({
-      name: 'Gina',
-      level: 1,
-      class: 'Druid',
-      race: 'Elf',
-      playerName: 'G',
-      stats: { strength: 8, dexterity: 12, constitution: 14, intelligence: 14, wisdom: 16, charisma: 10 },
-      hitPoints: { maximum: 14, current: 14 },
-      armorClass: 13,
-      initiative: 1,
-      speed: 25,
-      proficiencies: [],
-      equipment: []
-    });
-    store.setParty(char.id, 'party-2');
-    expect(store.getCharacterById(char.id)?.partyId).toBe('party-2');
-  });
-}); 
+});

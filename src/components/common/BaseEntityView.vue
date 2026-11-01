@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { inject, onBeforeUnmount, onMounted, watch } from 'vue';
+import { defineComponent, onBeforeUnmount, onMounted, useSlots, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
+import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { ComponentInjection } from '@/types';
 
 interface Props {
@@ -36,7 +37,7 @@ const props = withDefaults(
     hideHeader: false,
     headerShowEdit: true,
     headerShowDelete: true,
-    headerButtons: [],
+    headerButtons: () => [],
   },
 );
 
@@ -55,9 +56,16 @@ const handleDelete = async () => {
   }
 };
 
-const setTopMenuContent = inject('setTopMenuContent') as (
-  arg: ComponentInjection,
-) => void;
+const layout = useLayout();
+const rightDrawer = useRightDrawer();
+const slots = useSlots();
+
+const SidepanelHost = defineComponent({
+  name: 'EntitySidepanel',
+  setup() {
+    return () => slots.sidepanel?.();
+  },
+});
 
 const injectTopMenu = () => {
   const headerProps: Record<string, any> = {
@@ -67,15 +75,21 @@ const injectTopMenu = () => {
     showDelete: props.headerShowDelete,
     onDelete: handleDelete,
     title: props.title || '',
+    subtitle: props.subtitle || '',
   };
   if (props.rightDrawerIcon)
     headerProps.rightDrawerIcon = props.rightDrawerIcon;
-  setTopMenuContent(
+  layout.setTopMenuContent(
     props.hideHeader ? null : { component: ViewHeader, props: headerProps },
   );
 };
 
-onMounted(() => injectTopMenu());
+onMounted(() => {
+  injectTopMenu();
+  if (slots.sidepanel) {
+    rightDrawer.set({ component: SidepanelHost });
+  }
+});
 
 // Add a watch to update the header when title, subtitle, or hideHeader change
 watch(
@@ -84,7 +98,10 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  setTopMenuContent(null);
+  layout.setTopMenuContent(null);
+  if (slots.sidepanel) {
+    rightDrawer.clear();
+  }
 });
 </script>
 
@@ -96,6 +113,12 @@ onBeforeUnmount(() => {
     <template v-else-if="entity">
       <QPageContainer class="base-entity-layout">
         <QPage class="entity-main-column">
+          <div v-if="$slots.sub" class="entity-sub q-px-lg q-pt-md">
+            <slot name="sub" />
+          </div>
+          <div v-if="$slots.actions" class="entity-actions q-px-lg q-pt-sm">
+            <slot name="actions" />
+          </div>
           <div class="base-entity-view q-px-lg">
             <slot v-if="props.unwrapContent" />
             <div v-else class="entity-content">

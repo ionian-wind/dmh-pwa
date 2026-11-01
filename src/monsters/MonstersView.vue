@@ -7,6 +7,7 @@ import MonsterCard from '@/monsters/MonsterCard.vue';
 import MonsterEditor from '@/monsters/MonsterEditor.vue';
 import type { Monster } from '@/types';
 import { useI18n } from 'vue-i18n';
+import { confirm } from '@/dialogs';
 
 const router = useRouter();
 const monsterStore = useMonsterStore();
@@ -18,18 +19,26 @@ onMounted(async () => {
 
 const cardProps = (monster: Monster) => ({
   monster,
-  showView: true,
-  showEdit: true,
-  showDelete: true,
+  showActions: true,
+  onView: () => handleView(monster),
+  onEdit: () => handleEdit(monster),
+  onDelete: () => handleDelete(monster),
 });
 
 const editorProps = (monster: Monster | null) => ({
   monster,
-  isEditing: !!monster,
+  isOpen: true,
 });
 
 async function handleDelete(monster: Monster) {
-  await monsterStore.remove(monster.id);
+  if (
+    monster.id &&
+    (await confirm(t('common.confirmDelete', { title: monster.name })))
+  ) {
+    await monsterStore.remove(monster.id);
+    return true;
+  }
+  return false;
 }
 
 async function handleSubmit(monster: Monster) {
@@ -40,8 +49,13 @@ async function handleSubmit(monster: Monster) {
   }
 }
 
-function handleCopy(monster: Monster) {
-  // Implementation of handleCopy
+async function handleCopy(monster: Monster) {
+  const { id, createdAt, updatedAt, ...rest } = monster;
+  await monsterStore.create(rest);
+}
+
+function handleEdit(monster: Monster) {
+  // handled by BaseListView
 }
 
 function handleView(monster: Monster) {
@@ -58,7 +72,12 @@ function handleView(monster: Monster) {
     :create-title="t('monsters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
+    show-search
+    :search-query="monsterStore.searchQuery"
+    @update:search-query="monsterStore.setSearchQuery"
     @submit="handleSubmit"
     @copy="handleCopy"
+    @view="handleView"
+    @delete="handleDelete"
   />
 </template>

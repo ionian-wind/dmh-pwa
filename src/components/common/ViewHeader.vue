@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
-import { inject, type Ref, type PropType } from 'vue';
-import { ComponentInjection } from '@/types';
+import { type PropType } from 'vue';
 import IconRightDrawer from '@/components/common/IconRightDrawer.vue';
+import { useLayout } from '@/composables/useLayout';
 
 const { t } = useI18n();
 
@@ -28,6 +28,10 @@ const props = defineProps({
     default: [],
   },
   title: {
+    type: String,
+    default: '',
+  },
+  subtitle: {
     type: String,
     default: '',
   },
@@ -120,16 +124,15 @@ const props = defineProps({
 
 const emit = defineEmits(['create', 'update:searchQuery']);
 
-const rightDrawerContent = inject<Ref<ComponentInjection | null>>(
-  'rightDrawerContent',
-  null,
-);
-const toggleRightDrawer = inject<() => void>('toggleRightDrawer', () => {});
+const { rightDrawerContent, toggleRightDrawer } = useLayout();
 </script>
 
 <template>
-  <QToolbarTitle v-if="props.title">
-    {{ props.title }}
+  <QToolbarTitle v-if="props.title || props.subtitle">
+    <div>{{ props.title }}</div>
+    <div v-if="props.subtitle" class="view-header-subtitle">
+      {{ props.subtitle }}
+    </div>
   </QToolbarTitle>
   <QSpace v-else />
 
@@ -196,3 +199,11 @@ const toggleRightDrawer = inject<() => void>('toggleRightDrawer', () => {});
     </QBtn>
   </QBtnGroup>
 </template>
+
+<style scoped>
+.view-header-subtitle {
+  font-size: 0.75rem;
+  line-height: 1.1;
+  opacity: 0.8;
+}
+</style>

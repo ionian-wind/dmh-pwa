@@ -31,6 +31,7 @@ import ModuleDocumentView from '@/modules/ModuleDocumentView.vue';
 import JSZip from 'jszip';
 import { cropTitle } from '@/utils/cropTitle';
 import BaseModal from '@/components/common/BaseModal.vue';
+import { confirm } from '@/dialogs';
 import {
   IconDownload,
   IconBookmark,
@@ -186,8 +187,14 @@ const handleCancel = () => {
 };
 
 const handleDelete = async () => {
-  if (!module.value) return;
+  if (!module.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: module.value.name })))
+  ) {
+    return false;
+  }
   await moduleStore.remove(module.value.id);
+  return true;
 };
 
 // Computed properties for BaseEntityTabView
@@ -479,7 +486,11 @@ async function saveEditBookmark() {
                   {{ t('common.noBookmarks') }}
                 </div>
                 <ul v-else class="bookmark-list">
-                  <div class="bookmark-list-row">
+                  <div
+                    v-for="bookmark in moduleBookmarks"
+                    :key="bookmark.id"
+                    class="bookmark-list-row"
+                  >
                     <span
                       class="bookmark-link"
                       @click="scrollToBookmark(bookmark.noteId)"

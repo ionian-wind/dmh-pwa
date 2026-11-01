@@ -66,6 +66,7 @@ function handleCopy() {
     showEdit
     showDelete
     showView
+    showCopy
     @view="handleView"
     @edit="handleEdit"
     @delete="handleDelete"

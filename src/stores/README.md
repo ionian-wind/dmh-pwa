@@ -1,5 +1,12 @@
 # Store Architecture Documentation
 
+> **Historical overview.** The concrete base store is
+> `useStore()` in `src/utils/storage.ts`. It exposes `items`, `isLoaded`,
+> `error`, `sortedItems`, `getById`, `create`, `update`, `remove`, `load`,
+> `current`, and `setCurrentId` — there is no `isLoading` or
+> `createBaseStore.ts`. See `docs/architecture/persistence-and-state.md` for
+> the current architecture.
+
 ## Overview
 
 This document describes the standardized store architecture used throughout the DMH PWA application. All stores follow a consistent pattern to ensure maintainability, type safety, and developer experience.

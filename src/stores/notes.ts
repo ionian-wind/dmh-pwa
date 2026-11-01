@@ -5,6 +5,7 @@ import { useStore } from '@/utils/storage';
 import noteSchema from '@/schemas/note.schema.json';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import { useMentionsStore } from '@/utils/storage';
+import { useModuleStore } from './modules';
 import { debug } from '../utils/debug';
 
 export const useNoteStore = defineStore('notes', () => {
@@ -51,6 +52,29 @@ export const useNoteStore = defineStore('notes', () => {
     await indexation.clearLinks(from);
   }
 
+  /**
+   * Explicitly convert a note between the normal note list and a module's
+   * hidden document tree. `update()` intentionally protects `hidden`; this is
+   * the dedicated conversion path.
+   */
+  async function setHidden(id: string, hidden: boolean) {
+    const note = base.getById(id);
+    if (!note) throw new Error(`Note '${id}' not found`);
+
+    if (hidden && !note.moduleId) {
+      throw new Error('A note must belong to a module before it can be hidden');
+    }
+
+    const modules = useModuleStore();
+    if (hidden && note.moduleId) {
+      await modules.addNoteToTree(note.moduleId, id);
+    } else if (!hidden && note.moduleId) {
+      await modules.removeNoteFromTree(note.moduleId, id);
+    }
+
+    return base.update(id, { hidden } as Partial<Note>);
+  }
+
   const filtered = computed(() => {
     let result = base.items.value;
 
@@ -86,6 +110,7 @@ export const useNoteStore = defineStore('notes', () => {
     create,
     update,
     remove,
+    setHidden,
     setFilter: (query: string) => {
       searchQuery.value = query;
     },

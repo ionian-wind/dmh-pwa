@@ -40,7 +40,11 @@ function handleEdit(timer: Timer) {
 async function handleDelete(timer: Timer) {
   if (
     timer.id &&
-    (await confirm(t('common.confirmDelete', { title: 'timer' })))
+    (await confirm(
+      t('common.confirmDelete', {
+        title: timer.title || t('timers.noTitle'),
+      }),
+    ))
   ) {
     await timerStore.remove(timer.id);
     return true;

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { inject, type Ref } from 'vue';
 import {
   IconLayoutSidebarRight,
   IconLayoutSidebarRightFilled,
 } from '@tabler/icons-vue';
+import { useLayout } from '@/composables/useLayout';
 
-const rightDrawerOpen = inject<Ref<boolean> | null>('rightDrawerOpen', null);
+const { rightDrawerOpen } = useLayout();
 </script>
 
 <template>

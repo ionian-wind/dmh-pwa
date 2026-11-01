@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 interface Props {
   modelValue: boolean;
@@ -13,6 +14,10 @@ const props = withDefaults(defineProps<Props>(), {
   label: '',
 });
 
+const displayLabel = computed(() =>
+  props.label && te(props.label) ? t(props.label) : props.label,
+);
+
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>();
@@ -20,9 +25,9 @@ const emit = defineEmits<{
 
 <template>
   <QToggle
-    v-model="props.modelValue"
+    :model-value="props.modelValue"
     :disable="props.disabled"
-    :label="t(props.label)"
+    :label="displayLabel"
     @update:model-value="(val) => emit('update:modelValue', val)"
   />
 </template>

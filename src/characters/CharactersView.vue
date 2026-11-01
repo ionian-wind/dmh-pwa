@@ -48,7 +48,7 @@ function handleEdit(character: PlayerCharacter) {
 async function handleDelete(character: PlayerCharacter) {
   if (
     character.id &&
-    (await confirm(t('common.', { title: character.name })))
+    (await confirm(t('common.confirmDelete', { title: character.name })))
   ) {
     await characterStore.remove(character.id);
     return true;
@@ -79,6 +79,9 @@ async function handleCopy(character: PlayerCharacter) {
     :create-title="t('characters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
+    show-search
+    :search-query="characterStore.searchQuery"
+    @update:search-query="characterStore.setSearchQuery"
     @submit="handleSubmit"
     @copy="handleCopy"
   />

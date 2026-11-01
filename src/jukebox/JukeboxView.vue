@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { fileHandler } from '@/utils/files';
 import {
   useJukeboxTracksStore,
@@ -20,9 +20,9 @@ import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import { useI18n } from 'vue-i18n';
 import { debugError } from '@/utils/debug';
 import PlaylistList from './components/PlaylistList.vue';
-import { ComponentInjection } from '@/types';
 import { confirm } from '@/dialogs';
 import { IconPlaylist } from '@tabler/icons-vue';
+import { useLayout, useRightDrawer } from '@/composables/useLayout';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -92,7 +92,10 @@ async function removeTrack(track: JukeboxTrack) {
 
     await tracksStore.remove(track.id);
 
-    if (track.fileId) {
+    const sharesFile = tracks.value.some(
+      (t) => t.id !== track.id && t.fileId === track.fileId,
+    );
+    if (track.fileId && !sharesFile) {
       try {
         await deleteJukeboxFile(track.fileId);
       } catch (e) {
@@ -140,6 +143,11 @@ async function processFiles(
   for (const { file, source } of files) {
     const fileId = `${file.name}-${file.lastModified}-${file.size}`;
     const existingFile = await getJukeboxFile(fileId);
+    const existingTrack = tracks.value.find((t) => t.fileId === fileId);
+    if (existingTrack) {
+      newTrackIds.push(existingTrack.id);
+      continue;
+    }
     await putJukeboxFile({
       id: fileId,
       source: source,
@@ -150,7 +158,10 @@ async function processFiles(
       createdAt: existingFile?.createdAt || Date.now(),
       updatedAt: Date.now(),
     });
-    const trackMeta = await fileHandler.extractTrackMetadata(file);
+    const trackMeta = (await fileHandler.extractTrackMetadata(file)) as Record<
+      string,
+      any
+    >;
     const newTrackData = {
       fileId,
       title: trackMeta.title || file.name.replace(/\.[^/.]+$/, ''),
@@ -177,7 +188,9 @@ async function processFiles(
       (p: JukeboxPlaylist) => p.id === selectedPlaylistId.value,
     );
     if (playlist) {
-      const updatedTrackIds = [...playlist.trackIds, ...newTrackIds];
+      const updatedTrackIds = [
+        ...new Set([...playlist.trackIds, ...newTrackIds]),
+      ];
       await playlistsStore.update(playlist.id, { trackIds: updatedTrackIds });
     }
   }
@@ -293,6 +306,8 @@ function cardProps(track: JukeboxTrack) {
     onAddToPlaylist: () => openAddToPlaylistModal(track),
     onRemove: () => removeTrack(track),
     onPlay: () => trackClick(track),
+    onPlayNext: () => playerStore.queueTrackNext(track),
+    onPlayLast: () => playerStore.queueTrackLast(track),
   };
 }
 
@@ -311,12 +326,8 @@ async function onTracksSorted(newOrder: JukeboxTrack[]) {
   playerStore.resortQueue(selectedPlaylistId.value);
 }
 
-const setRightDrawerContent = inject('setRightDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
-const setBottomDrawerContent = inject('setBottomDrawerContent') as (
-  arg: ComponentInjection,
-) => void;
+const layout = useLayout();
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
@@ -325,8 +336,8 @@ onMounted(async () => {
     filesStore.load(),
   ]);
 
-  setRightDrawerContent({ component: PlaylistList });
-  setBottomDrawerContent({
+  rightDrawer.set({ component: PlaylistList });
+  layout.setBottomDrawerContent({
     component: JukeboxPlayer,
     props: { animatedBackground: true, showArtwork: false },
   });
@@ -339,8 +350,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   pictureUrlCacheStore.clearCache();
-  setRightDrawerContent(null);
-  setBottomDrawerContent(null);
+  rightDrawer.clear();
+  layout.setBottomDrawerContent(null);
 
   document.removeEventListener('dragenter', onDragEnter);
   document.removeEventListener('dragover', onDragOver);

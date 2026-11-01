@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch, provide, shallowRef } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -7,8 +7,9 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import PWAStatus from '@/components/PWAStatus.vue';
 import CalculatorDialog from '@/calculator/CalculatorView.vue';
 import MentionModalStack from '@/components/common/MentionModalStack.vue';
-import { Section, ComponentInjection } from '@/types';
-import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import { Section } from '@/types';
+import SettingsDialog from '@/components/SettingsDialog.vue';
+import { provideLayout } from '@/composables/useLayout';
 
 import {
   IconMaximize,
@@ -35,11 +36,13 @@ import {
   IconMenu2,
   IconMusic,
   IconCalculator,
+  IconSettings,
   // IconHeadphones,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
 import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
+import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
@@ -206,38 +209,29 @@ onUnmounted(() => {
 });
 
 const leftDrawerOpen = ref(false);
-const rightDrawerOpen = ref(true);
+const miniState = ref(true);
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 
-function toggleRightDrawer() {
-  rightDrawerOpen.value = !rightDrawerOpen.value;
-}
+const {
+  topMenuContent,
+  rightDrawerContent,
+  bottomDrawerContent,
+  rightDrawerOpen,
+  toggleRightDrawer,
+} = provideLayout();
 
-const miniState = ref(true);
-
-const topMenuContent = shallowRef<ComponentInjection>(null);
-provide('setTopMenuContent', (component: ComponentInjection) => {
-  topMenuContent.value = component;
-});
-
-const rightDrawerContent = shallowRef<ComponentInjection>(null);
-provide('setRightDrawerContent', (component: ComponentInjection) => {
-  rightDrawerContent.value = component;
-});
-provide('rightDrawerContent', rightDrawerContent);
-provide('rightDrawerOpen', rightDrawerOpen);
-provide('toggleRightDrawer', toggleRightDrawer);
-
-const bottomDrawerContent = shallowRef<ComponentInjection>(null);
-provide('setBottomDrawerContent', (component: ComponentInjection) => {
-  bottomDrawerContent.value = component;
-});
+// The jukebox player should sit flush in the footer, without the default
+// footer padding, background, or elevated shadow ("gray boundaries").
+const hasJukeboxFooter = computed(
+  () => bottomDrawerContent.value?.component === JukeboxPlayer,
+);
 
 const isJukeboxPopupOpen = ref(false);
 const isCalculatorPopupOpen = ref(false);
+const isSettingsOpen = ref(false);
 </script>
 
 <template>
@@ -345,6 +339,16 @@ const isCalculatorPopupOpen = ref(false);
               <QItemSection side><IconCalculator /></QItemSection>
               <QItemSection>{{ t('app.calculator') }}</QItemSection>
             </QItem>
+            <QItem
+              clickable
+              data-test="open-settings"
+              :active="false"
+              v-ripple
+              @click="isSettingsOpen = true"
+            >
+              <QItemSection side><IconSettings /></QItemSection>
+              <QItemSection>{{ t('navigation.settings') }}</QItemSection>
+            </QItem>
           </QList>
         </div>
       </QDrawer>
@@ -371,8 +375,10 @@ const isCalculatorPopupOpen = ref(false);
 
       <QFooter
         v-if="bottomDrawerContent"
-        elevated
-        class="q-pa-md text-primary bg-secondary"
+        :elevated="!hasJukeboxFooter"
+        :class="
+          hasJukeboxFooter ? 'footer-flush' : 'q-pa-md text-primary bg-secondary'
+        "
       >
         <component
           :is="bottomDrawerContent.component"
@@ -388,6 +394,7 @@ const isCalculatorPopupOpen = ref(false);
       <MentionModalStack />
       <CalculatorDialog v-model="isCalculatorPopupOpen" />
       <JukeboxDialog v-model="isJukeboxPopupOpen" />
+      <SettingsDialog v-model="isSettingsOpen" />
     </div>
   </div>
 </template>
@@ -408,5 +415,29 @@ const isCalculatorPopupOpen = ref(false);
 
 .jukebox-playing {
   animation: jukebox-sway 0.6s ease-in-out infinite;
+}
+
+.footer-flush {
+  padding: 0 !important;
+  background: var(--color-background-soft) !important;
+  border-top: none !important;
+  color: var(--color-text) !important;
+  box-shadow: none !important;
+}
+
+/* Shadow only above the panel; no left, right, or bottom shadow. */
+.footer-flush::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 14px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.16),
+    rgba(15, 23, 42, 0)
+  );
 }
 </style>

@@ -7,12 +7,20 @@ import { storeToRefs } from 'pinia';
 const { locale, t } = useI18n();
 const configStore = useConfigStore();
 const { savedLanguage } = storeToRefs(configStore);
+
+const currentLocale = computed({
+  get: () => (String(locale.value).startsWith('ru') ? 'ru' : 'en'),
+  set: (value: 'en' | 'ru') => {
+    locale.value = value;
+    savedLanguage.value = value;
+  },
+});
 </script>
 
 <template>
   <div class="language-switcher">
     <QSelect
-      v-model="locale"
+      v-model="currentLocale"
       :options="[
         { label: t('language.english'), value: 'en' },
         { label: t('language.russian'), value: 'ru' },
@@ -21,13 +29,10 @@ const { savedLanguage } = storeToRefs(configStore);
       map-options
       dense
       outlined
+      options-dense
+      hide-bottom-space
       class="language-select"
       aria-label="Select language"
-      @update:model-value="
-        (val) => {
-          savedLanguage = locale;
-        }
-      "
     />
   </div>
 </template>
@@ -36,31 +41,15 @@ const { savedLanguage } = storeToRefs(configStore);
 .language-switcher {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 .language-select {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.375rem;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
+  width: 170px;
 }
 
-.language-select:hover {
-  border-color: var(--primary-color);
-}
-
-.language-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px var(--primary-color-alpha);
-}
-
-.language-select option {
-  background-color: var(--bg-color);
-  color: var(--text-color);
+.language-switcher :deep(.q-field__control) {
+  min-height: 36px;
+  border-radius: 8px;
 }
 </style>

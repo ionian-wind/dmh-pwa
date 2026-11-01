@@ -1,196 +1,75 @@
-import { vi } from 'vitest';
-import { registerValidationSchema, validateSchema, getValidationErrors, validateArray, getArrayValidationErrors } from '@/utils/schemaValidator';
+import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  registerValidationSchema,
+  validateSchema,
+  getValidationErrors,
+  validateArray,
+  getArrayValidationErrors,
+  canValidate,
+} from '@/utils/schemaValidator';
 
-describe('Schema Validator', () => {
-  const testSchema = {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-      age: { type: 'number' },
-      email: { type: 'string', format: 'email' }
-    },
-    required: ['name', 'age']
-  };
+const schema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'number' },
+  },
+  required: ['name', 'age'],
+  additionalProperties: false,
+};
 
-  const validData = {
-    name: 'John Doe',
-    age: 30,
-    email: 'john@example.com'
-  };
-
-  const invalidData = {
-    name: 'John Doe',
-    age: 'thirty', // should be number
-    email: 'invalid-email' // invalid email format
-  };
-
+describe('schema validator', () => {
   beforeEach(() => {
-    // Clear any previously registered schemas
-    vi.clearAllMocks();
+    registerValidationSchema('test-schema', schema);
   });
 
-  describe('registerValidationSchema', () => {
-    it('should register a schema without throwing errors', () => {
-      expect(() => {
-        registerValidationSchema('test-schema', testSchema);
-      }).not.toThrow();
-    });
-
-    it('should register multiple schemas with different names', () => {
-      const schema1 = { type: 'string' };
-      const schema2 = { type: 'number' };
-
-      expect(() => {
-        registerValidationSchema('schema1', schema1);
-        registerValidationSchema('schema2', schema2);
-      }).not.toThrow();
-    });
+  it('is idempotent when registering the same key twice', () => {
+    expect(() =>
+      registerValidationSchema('test-schema', schema),
+    ).not.toThrow();
+    expect(canValidate('test-schema')).toBe(true);
   });
 
-  describe('validateSchema', () => {
-    beforeEach(() => {
-      registerValidationSchema('test-schema', testSchema);
-    });
+  it('returns a structured result for valid and invalid data', async () => {
+    await expect(validateSchema('test-schema', { name: 'A', age: 1 })).resolves
+      .toEqual({ valid: true, errors: [] });
 
-    it('should return true for valid data', async () => {
-      const result = await validateSchema('test-schema', validData);
-      expect(result).toBe(true);
+    const invalid = await validateSchema('test-schema', {
+      name: 'A',
+      age: 'old',
     });
-
-    it('should return false for invalid data', async () => {
-      const result = await validateSchema('test-schema', invalidData);
-      expect(result).toBe(false);
-    });
-
-    it('should throw error for non-existent schema', async () => {
-      await expect(validateSchema('non-existent', validData))
-        .rejects
-        .toThrow('Schema "non-existent" not found');
-    });
-
-    it('should handle missing required fields', async () => {
-      const dataWithMissingFields = { name: 'John' }; // missing age
-      const result = await validateSchema('test-schema', dataWithMissingFields);
-      expect(result).toBe(false);
-    });
-
-    it('should handle wrong data types', async () => {
-      const dataWithWrongTypes = {
-        name: 123, // should be string
-        age: 30
-      };
-      const result = await validateSchema('test-schema', dataWithWrongTypes);
-      expect(result).toBe(false);
-    });
+    expect(invalid.valid).toBe(false);
+    expect(invalid.errors.length).toBeGreaterThan(0);
   });
 
-  describe('getValidationErrors', () => {
-    beforeEach(() => {
-      registerValidationSchema('test-schema', testSchema);
-    });
-
-    it('should return empty array for valid data', async () => {
-      const errors = await getValidationErrors('test-schema', validData);
-      expect(errors).toEqual([]);
-    });
-
-    it('should return validation errors for invalid data', async () => {
-      const errors = await getValidationErrors('test-schema', invalidData);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors.some(error => error.includes('age'))).toBe(true);
-      expect(errors.some(error => error.includes('email'))).toBe(true);
-    });
-
-    it('should throw error for non-existent schema', async () => {
-      await expect(getValidationErrors('non-existent', validData))
-        .rejects
-        .toThrow('Schema "non-existent" not found');
-    });
-
-    it('should include field paths in error messages', async () => {
-      const dataWithWrongTypes = {
-        name: 123,
-        age: 'thirty'
-      };
-      const errors = await getValidationErrors('test-schema', dataWithWrongTypes);
-      expect(errors.some(error => error.includes('name'))).toBe(true);
-      expect(errors.some(error => error.includes('age'))).toBe(true);
-    });
+  it('reports missing required fields', async () => {
+    const errors = await getValidationErrors('test-schema', { name: 'A' });
+    expect(errors.join(' ')).toContain('age');
   });
 
-  describe('validateArray', () => {
-    beforeEach(() => {
-      registerValidationSchema('test-schema', testSchema);
-    });
-
-    it('should return true for array with all valid items', async () => {
-      const validArray = [validData, { ...validData, name: 'Jane' }];
-      const result = await validateArray('test-schema', validArray);
-      expect(result).toBe(true);
-    });
-
-    it('should return false for array with invalid items', async () => {
-      const mixedArray = [validData, invalidData];
-      const result = await validateArray('test-schema', mixedArray);
-      expect(result).toBe(false);
-    });
-
-    it('should return false for non-array data', async () => {
-      const result = await validateArray('test-schema', validData);
-      expect(result).toBe(false);
-    });
-
-    it('should return true for empty array', async () => {
-      const result = await validateArray('test-schema', []);
-      expect(result).toBe(true);
-    });
-
-    it('should throw error for non-existent schema', async () => {
-      await expect(validateArray('non-existent', [validData]))
-        .rejects
-        .toThrow('Schema "non-existent" not found');
-    });
+  it('throws for unknown schemas', async () => {
+    await expect(validateSchema('missing-schema', {})).rejects.toThrow(
+      'Schema "missing-schema" not found',
+    );
   });
 
-  describe('getArrayValidationErrors', () => {
-    beforeEach(() => {
-      registerValidationSchema('test-schema', testSchema);
-    });
-
-    it('should return empty array for valid array', async () => {
-      const validArray = [validData, { ...validData, name: 'Jane' }];
-      const errors = await getArrayValidationErrors('test-schema', validArray);
-      expect(errors).toEqual([]);
-    });
-
-    it('should return errors for array with invalid items', async () => {
-      const mixedArray = [validData, invalidData];
-      const errors = await getArrayValidationErrors('test-schema', mixedArray);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors.some(error => error.includes('index 1'))).toBe(true);
-    });
-
-    it('should return error for non-array data', async () => {
-      const errors = await getArrayValidationErrors('test-schema', validData);
-      expect(errors).toEqual(['Data is not an array']);
-    });
-
-    it('should return empty array for empty array', async () => {
-      const errors = await getArrayValidationErrors('test-schema', []);
-      expect(errors).toEqual([]);
-    });
-
-    it('should include index information in error messages', async () => {
-      const arrayWithMultipleErrors = [invalidData, invalidData];
-      const errors = await getArrayValidationErrors('test-schema', arrayWithMultipleErrors);
-      expect(errors.some(error => error.includes('index 0'))).toBe(true);
-      expect(errors.some(error => error.includes('index 1'))).toBe(true);
-    });
-
-    it('should throw error for non-existent schema', async () => {
-      await expect(getArrayValidationErrors('non-existent', [validData]))
-        .rejects
-        .toThrow('Schema "non-existent" not found');
-    });
+  it('validates arrays item by item', async () => {
+    await expect(
+      validateArray('test-schema', [
+        { name: 'A', age: 1 },
+        { name: 'B', age: 2 },
+      ]),
+    ).resolves.toBe(true);
+    await expect(
+      validateArray('test-schema', [{ name: 'A', age: 1 }, { name: 'B' }]),
+    ).resolves.toBe(false);
   });
-}); 
+
+  it('collects array errors with indexes', async () => {
+    const errors = await getArrayValidationErrors('test-schema', [
+      { name: 'A', age: 1 },
+      { name: 'B' },
+    ]);
+    expect(errors.join(' ')).toContain('Item at index 1');
+  });
+});

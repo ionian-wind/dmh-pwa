@@ -68,7 +68,9 @@ async function handleDelete(module: Module) {
 
 async function handleCopy(module: Module) {
   const { id, createdAt, updatedAt, ...rest } = module;
-  await moduleStore.create(rest);
+  // A copied module points at the original document notes; clearing the tree
+  // avoids creating a copy with dangling note references.
+  await moduleStore.create({ ...rest, noteTree: [] });
 }
 
 function handleSubmit(module: Module) {
@@ -132,6 +134,9 @@ function handleImportCancel() {
       :create-title="t('modules.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
+      show-search
+      :search-query="moduleStore.searchQuery"
+      @update:search-query="moduleStore.setSearchQuery"
       @submit="handleSubmit"
       @copy="handleCopy"
     >

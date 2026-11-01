@@ -1,7 +1,7 @@
 export function setupAnchorScrollHandler() {
   function handlePopState() {
-    const { pathname, hash } = window.location;
-    if (pathname === window.location.pathname && hash) {
+    const { hash } = window.location;
+    if (hash) {
       const anchorId = hash.slice(1);
       const anchor = document.getElementById(anchorId);
       if (anchor) {

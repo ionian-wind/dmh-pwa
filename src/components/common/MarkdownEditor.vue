@@ -42,11 +42,7 @@ const modelValueProxy = computed({
 });
 
 function getCurrentMarkdown() {
-  if (
-    !props.isWYSIWYGMode.value &&
-    milkdownWrapperRef.value &&
-    milkdownWrapperRef.value.getMarkdown
-  ) {
+  if (milkdownWrapperRef.value?.getMarkdown) {
     return milkdownWrapperRef.value.getMarkdown();
   }
   return props.modelValue;
@@ -88,8 +84,8 @@ defineExpose({ getMarkdown });
     <div v-else class="raw-editor">
       <QInput
         :type="'textarea'"
-        :value="modelValueProxy"
-        @input="modelValueProxy = ($event.target as HTMLTextAreaElement).value"
+        :model-value="modelValueProxy"
+        @update:model-value="modelValueProxy = String($event ?? '')"
         :placeholder="props.placeholder"
         :rows="props.rows || 10"
         class="raw-textarea"

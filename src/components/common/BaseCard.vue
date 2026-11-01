@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { computed, useSlots, Fragment, Comment } from 'vue';
-import { IconEye, IconPencil, IconTrash } from '@tabler/icons-vue';
+import { IconEye, IconPencil, IconTrash, IconCopy } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
@@ -9,6 +9,7 @@ const props = defineProps({
   showView: { type: Boolean, default: false },
   showEdit: { type: Boolean, default: false },
   showDelete: { type: Boolean, default: false },
+  showCopy: { type: Boolean, default: false },
   title: { type: String, default: '' },
 });
 
@@ -51,7 +52,11 @@ const hasContent = computed(() => {
 
     <QCardActions
       v-if="
-        $slots.actions || props.showView || props.showEdit || props.showDelete
+        $slots.actions ||
+        props.showView ||
+        props.showEdit ||
+        props.showDelete ||
+        props.showCopy
       "
       class="base-card-actions"
       align="between"
@@ -65,13 +70,18 @@ const hasContent = computed(() => {
       <QSpace
         v-if="
           $slots.actions &&
-          (props.showView || props.showEdit || props.showDelete)
+          (props.showView ||
+            props.showEdit ||
+            props.showDelete ||
+            props.showCopy)
         "
       />
 
       <QBtnGroup
         flat
-        v-if="props.showView || props.showEdit || props.showDelete"
+        v-if="
+          props.showView || props.showEdit || props.showDelete || props.showCopy
+        "
       >
         <QBtn
           flat
@@ -92,6 +102,16 @@ const hasContent = computed(() => {
           :title="t('common.edit')"
         >
           <IconPencil />
+        </QBtn>
+        <QBtn
+          flat
+          v-if="props.showCopy"
+          color="primary"
+          size="small"
+          @click="$emit('copy')"
+          :title="t('common.copy')"
+        >
+          <IconCopy />
         </QBtn>
         <QBtn
           flat

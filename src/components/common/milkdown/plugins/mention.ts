@@ -236,7 +236,6 @@ function insertMentionMark(
 // 2. Register the mark in a Crepe feature
 export const mentionFeature = (ctx: any) => {
   ctx.use(mentionMark);
-  console.log(ctx);
 };
 
 const iconNote = `
