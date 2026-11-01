@@ -159,7 +159,10 @@ onBeforeUnmount(() => {
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
   >
-    <div v-if="items.length === 0" class="empty-state q-pa-xl text-center text-primary">
+    <div
+      v-if="items.length === 0"
+      class="empty-state q-pa-xl text-center text-primary"
+    >
       {{ emptyMessage }}
     </div>
 
@@ -190,7 +193,10 @@ onBeforeUnmount(() => {
       </template>
     </VueDraggable>
     <div v-else>
-      <div v-if="viewStyle === 'masonry'" class="q-col-gutter-md row items-stretch">
+      <div
+        v-if="viewStyle === 'masonry'"
+        class="q-col-gutter-md row items-stretch"
+      >
         <div
           v-for="item in items"
           :key="item.id"

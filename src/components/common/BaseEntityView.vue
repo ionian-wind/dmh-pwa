@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { defineComponent, onBeforeUnmount, onMounted, useSlots, watch } from 'vue';
+import {
+  defineComponent,
+  onBeforeUnmount,
+  onMounted,
+  useSlots,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import NotFoundView from '@/views/NotFoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';

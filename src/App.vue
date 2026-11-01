@@ -377,7 +377,9 @@ const isSettingsOpen = ref(false);
         v-if="bottomDrawerContent"
         :elevated="!hasJukeboxFooter"
         :class="
-          hasJukeboxFooter ? 'footer-flush' : 'q-pa-md text-primary bg-secondary'
+          hasJukeboxFooter
+            ? 'footer-flush'
+            : 'q-pa-md text-primary bg-secondary'
         "
       >
         <component
