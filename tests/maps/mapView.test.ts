@@ -4,6 +4,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
 import MapView from '@/maps/views/MapView.vue';
+import { MapActionsControl } from '@/maps/plugins/MapActionsControl';
 import type { MapEntity } from '@/maps/types';
 
 const mocks = vi.hoisted(() => ({
@@ -42,10 +43,47 @@ const BaseEntityViewStub = defineComponent({
   },
 });
 
+const mapHarness = {
+  map: null as any,
+  controls: [] as any[],
+};
+
 const OlMapStub = defineComponent({
   name: 'OlMap',
-  emits: ['click', 'contextmenu'],
-  setup(_, { slots, emit }) {
+  emits: ['click'],
+  setup(_, { slots, emit, expose }) {
+    const listeners = new Map<string, Set<(event: any) => void>>();
+    const map: any = {
+      addControl: vi.fn((control: any) => {
+        mapHarness.controls.push(control);
+        control.setMap(map);
+      }),
+      removeControl: vi.fn((control: any) => {
+        const index = mapHarness.controls.indexOf(control);
+        if (index >= 0) mapHarness.controls.splice(index, 1);
+        control.setMap(null);
+      }),
+      on: vi.fn((type: string, handler: (event: any) => void) => {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type)!.add(handler);
+      }),
+      un: vi.fn((type: string, handler: (event: any) => void) => {
+        listeners.get(type)?.delete(handler);
+      }),
+      dispatchEvent: vi.fn((event: any) => {
+        listeners.get(event.type)?.forEach((handler) => handler(event));
+      }),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      getViewport: () => document.createElement('div'),
+      getOverlayContainerStopEvent: () => document.createElement('div'),
+      getOverlayContainer: () => document.createElement('div'),
+      getCoordinateFromPixel: () => [50, 60],
+      forEachFeatureAtPixel: vi.fn(() => null),
+      render: vi.fn(),
+    };
+    mapHarness.map = map;
+    expose({ map });
     return () =>
       h(
         'div',
@@ -53,15 +91,24 @@ const OlMapStub = defineComponent({
           class: 'ol-map-stub',
           onClick: (event: MouseEvent) =>
             emit('click', { pixel: [10, 20], coordinate: [50, 60], event }),
-          onContextmenu: (event: MouseEvent) =>
-            emit('contextmenu', {
-              pixel: [10, 20],
-              coordinate: [50, 60],
-              originalEvent: event,
-            }),
         },
         slots.default?.(),
       );
+  },
+});
+
+const ContextMenuStub = defineComponent({
+  name: 'OlContextMenuControl',
+  props: {
+    items: Array,
+    defaultItems: Boolean,
+    width: Number,
+  },
+  emits: ['open', 'close', 'beforeopen'],
+  setup(_, { expose }) {
+    const control = { closeMenu: vi.fn() };
+    expose({ control });
+    return () => h('div', { class: 'ol-context-menu-stub' });
   },
 });
 
@@ -187,6 +234,7 @@ async function mountMapView() {
         'ol-source-image-static': PassthroughStub,
         'ol-overlay': PassthroughStub,
         'ol-zoom-control': PassthroughStub,
+        'ol-context-menu-control': ContextMenuStub,
         'ol-zoomslider-control': PassthroughStub,
         'ol-vector-layer': PassthroughStub,
         'ol-source-vector': PassthroughStub,
@@ -212,12 +260,16 @@ async function mountMapView() {
 describe('MapView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mapHarness.map = null;
+    mapHarness.controls.length = 0;
     mocks.mapStore.isLoaded = true;
     mocks.mapStore.getById.mockReturnValue(map);
-    mocks.mapStore.update.mockImplementation(async (_id: string, patch: any) => ({
-      ...map,
-      ...patch,
-    }));
+    mocks.mapStore.update.mockImplementation(
+      async (_id: string, patch: any) => ({
+        ...map,
+        ...patch,
+      }),
+    );
     mocks.getMapFile.mockResolvedValue({
       id: 'file1',
       name: 'world.png',
@@ -303,33 +355,43 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
-  it('exposes actions from a single menu and a map context menu', async () => {
+  it('exposes actions through OpenLayers controls and dispatches dialog events', async () => {
     const wrapper = await mountMapView();
 
-    expect(wrapper.find('.map-actions-control').exists()).toBe(true);
-    await wrapper.find('.map-actions-trigger').trigger('click');
-    expect(wrapper.find('.map-actions-menu').exists()).toBe(true);
+    const actionsControl = mapHarness.controls.find(
+      (control) => control instanceof MapActionsControl,
+    ) as MapActionsControl | undefined;
+    expect(actionsControl).toBeTruthy();
 
-    const toolbarAdd = wrapper
-      .findAll('.map-actions-menu button')
-      .find((button) => button.text().toLowerCase().includes('add marker'));
-    await toolbarAdd!.trigger('click');
+    const element = actionsControl!.getElement();
+    const trigger = element.querySelector(
+      '.ol-map-actions-trigger',
+    ) as HTMLButtonElement;
+    const menu = element.querySelector(
+      '.ol-map-actions-menu',
+    ) as HTMLDivElement;
+    trigger.click();
+    expect(menu.hidden).toBe(false);
+
+    const toolbarAdd = element.querySelector(
+      '[data-action="add-marker"]',
+    ) as HTMLButtonElement;
+    toolbarAdd.click();
     expect((wrapper.vm as any).isAddingMarker).toBe(true);
-    expect(wrapper.find('.map-actions-menu').exists()).toBe(false);
+    expect(menu.hidden).toBe(true);
 
-    await wrapper.find('.ol-map-stub').trigger('contextmenu');
-    expect(wrapper.find('.map-context-menu').exists()).toBe(true);
-
-    const contextAdd = wrapper
-      .findAll('.map-context-menu button')
-      .find((button) => button.text().toLowerCase().includes('add marker'));
-    await contextAdd!.trigger('click');
+    const contextItems = (wrapper.vm as any).contextMenuItems as any[];
+    contextItems[0].callback({ coordinate: [50, 60] }, mapHarness.map);
     await flushPromises();
 
-    expect(wrapper.findComponent(MarkerEditorStub).props('marker')).toMatchObject(
-      { x: 50, y: 40 },
-    );
-    expect(wrapper.find('.map-context-menu').exists()).toBe(false);
+    expect(
+      wrapper.findComponent(MarkerEditorStub).props('marker'),
+    ).toMatchObject({ x: 50, y: 40 });
+
+    contextItems[2].items[0].callback({ coordinate: [50, 60] }, mapHarness.map);
+    await flushPromises();
+    expect((wrapper.vm as any).drawMode).toBe('polygon');
+
     wrapper.unmount();
   });
 
@@ -405,9 +467,9 @@ describe('MapView', () => {
       }),
     );
 
-    expect(
-      wrapper.findComponent(AreasPanelStub).props('areas'),
-    ).toHaveLength(1);
+    expect(wrapper.findComponent(AreasPanelStub).props('areas')).toHaveLength(
+      1,
+    );
     wrapper.unmount();
   });
 

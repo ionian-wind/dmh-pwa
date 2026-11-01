@@ -26,6 +26,7 @@ A reusable layout component that provides a standardized view structure for disp
 | `subtitle`   | `string`              | `''`        | Optional subtitle displayed below the title                 |
 | `loading`    | `boolean`             | `false`     | Whether to show loading state                               |
 | `notFound`   | `boolean`             | `false`     | Whether to show not found state                             |
+| `fill`       | `boolean`             | `false`     | Stretch the layout to the viewport without page scrolling   |
 
 ## Events
 

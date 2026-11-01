@@ -15,6 +15,7 @@ export interface MapEntityKindOption {
   titleField: EntityTitleField;
   useStore: () => {
     items: any[];
+    isLoaded?: boolean;
     load: () => Promise<unknown>;
     getById?: (id: string) => any;
   };

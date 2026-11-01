@@ -16,7 +16,9 @@ export function useMapEntityCatalog() {
 
   onMounted(() => {
     void Promise.all(
-      [...stores.values()].map((store) => store.load().catch(() => undefined)),
+      [...stores.values()].map((store) =>
+        store.isLoaded ? undefined : store.load().catch(() => undefined),
+      ),
     );
   });
 

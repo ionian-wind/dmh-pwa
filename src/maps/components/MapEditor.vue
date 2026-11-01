@@ -58,10 +58,12 @@ async function loadPreview(fileId: string) {
 }
 
 watch(
-  () => props.map,
-  async (newMap) => {
+  () => [props.isOpen, props.map?.id] as const,
+  async ([isOpen]) => {
+    if (!isOpen) return;
     revokePreview();
     pendingMapFile = null;
+    const newMap = props.map;
     if (newMap) {
       const normalized = normalizeMapEntity(newMap);
       editingId = normalized.id;

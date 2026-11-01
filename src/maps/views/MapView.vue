@@ -9,7 +9,8 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { IconPencil } from '@tabler/icons-vue';
+import type { Item } from 'ol-contextmenu';
+import 'ol-contextmenu/ol-contextmenu.css';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import 'vue3-openlayers/vue3-openlayers.css';
 import { getMapFile, useMapStore } from '../maps';
@@ -19,6 +20,16 @@ import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapLocationsPanel from '../components/MapLocationsPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
+import {
+  MapActionsControl,
+  type MapActionsControlLabels,
+} from '../plugins/MapActionsControl';
+import {
+  dispatchMapAction,
+  onMapAction,
+  type MapActionEvent,
+} from '../plugins/mapActionEvents';
+import '../plugins/mapPlugins.css';
 import { getMapFileBlob, revokeMapFileUrl } from '../utils/mapFileUtils';
 import { normalizeMapEntity } from '../utils/normalize';
 import {
@@ -52,7 +63,7 @@ import type { MapArea, MapAreaShape } from '../types';
 const route = useRoute();
 const router = useRouter();
 const mapStore = useMapStore();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const isLoaded = computed(() => mapStore.isLoaded);
 const loading = computed(() => !isLoaded.value);
@@ -65,18 +76,54 @@ const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
 const selectedLocationId = ref<string | null>(null);
 const olMapRef = ref<any>(null);
+const contextMenuRef = ref<any>(null);
 const drawMode = ref<MapAreaShape | null>(null);
 const hoveredAreaId = ref<string | null>(null);
-const isActionMenuOpen = ref(false);
-const contextMenu = ref<{
-  x: number;
-  y: number;
-  coordinate: [number, number];
-} | null>(null);
 const isAreaEditorOpen = ref(false);
 const editingArea = ref<MapArea | null>(null);
 const boxGeometry = createBox();
 const drawShapes: MapAreaShape[] = ['polygon', 'circle', 'square', 'freehand'];
+
+let actionsControl: MapActionsControl | null = null;
+let unbindMapActionListener: (() => void) | null = null;
+let boundMap: any = null;
+
+function actionsControlLabels(): MapActionsControlLabels {
+  return {
+    title: t('maps.mapActions'),
+    addMarker: t('maps.addMarker'),
+    drawArea: t('maps.drawArea'),
+    shapes: {
+      polygon: t('maps.shapes.polygon'),
+      circle: t('maps.shapes.circle'),
+      square: t('maps.shapes.square'),
+      freehand: t('maps.shapes.freehand'),
+    },
+    cancelDrawing: t('maps.cancelDrawing'),
+  };
+}
+
+const contextMenuItems = computed<Item[]>(() => [
+  {
+    text: t('maps.addMarkerHere'),
+    callback: (object, map) => {
+      dispatchMapAction(map, {
+        action: 'add-marker',
+        coordinate: [object.coordinate[0], object.coordinate[1]],
+      });
+    },
+  },
+  '-',
+  {
+    text: t('maps.drawArea'),
+    items: drawShapes.map((shape) => ({
+      text: t(`maps.shapes.${shape}`),
+      callback: (_object, map) => {
+        dispatchMapAction(map, { action: 'draw-area', shape });
+      },
+    })),
+  },
+]);
 
 const drawType = computed(() =>
   drawMode.value === 'circle' || drawMode.value === 'square'
@@ -168,6 +215,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  unbindMapActions();
   releaseImageUrl();
 });
 
@@ -180,23 +228,12 @@ const handleDelete = async () => {
   return true;
 };
 
-function toggleActionMenu() {
-  isActionMenuOpen.value = !isActionMenuOpen.value;
-  contextMenu.value = null;
-}
-
 function startAddMarker() {
   isAddingMarker.value = true;
   drawMode.value = null;
-  isActionMenuOpen.value = false;
-  contextMenu.value = null;
 }
 
 function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
-  if (contextMenu.value) {
-    contextMenu.value = null;
-    return;
-  }
   if (drawMode.value) return;
 
   const feature = event.pixel
@@ -238,23 +275,6 @@ function onMapPointerMove(event: { pixel?: number[] }) {
 function startDrawArea(shape: MapAreaShape) {
   drawMode.value = shape;
   isAddingMarker.value = false;
-  isActionMenuOpen.value = false;
-  contextMenu.value = null;
-}
-
-function openContextMenu(event: {
-  pixel?: number[];
-  coordinate?: number[];
-  originalEvent?: Event;
-}) {
-  if (!event.pixel || !event.coordinate) return;
-  event.originalEvent?.preventDefault();
-  isActionMenuOpen.value = false;
-  contextMenu.value = {
-    x: event.pixel[0],
-    y: event.pixel[1],
-    coordinate: [event.coordinate[0], event.coordinate[1]],
-  };
 }
 
 function createMarkerAtCoordinate(coordinate: [number, number]) {
@@ -262,23 +282,76 @@ function createMarkerAtCoordinate(coordinate: [number, number]) {
   editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y));
   isMarkerEditorOpen.value = true;
   isAddingMarker.value = false;
-  contextMenu.value = null;
 }
 
-function contextAddMarker() {
-  if (contextMenu.value) {
-    createMarkerAtCoordinate(contextMenu.value.coordinate);
+function closeContextMenu() {
+  const exposed = contextMenuRef.value?.control;
+  const control = exposed?.value ?? exposed;
+  control?.closeMenu?.();
+}
+
+function onContextMenuOpen() {
+  actionsControl?.closeMenu();
+}
+
+function handleMapAction(event: MapActionEvent) {
+  if (event.action === 'add-marker') {
+    if (event.coordinate) {
+      createMarkerAtCoordinate(event.coordinate);
+    } else {
+      startAddMarker();
+    }
+  } else if (event.action === 'draw-area' && event.shape) {
+    startDrawArea(event.shape);
+  } else if (event.action === 'cancel-drawing') {
+    cancelDrawing();
   }
+  closeContextMenu();
 }
 
-function contextDrawArea(shape: MapAreaShape) {
-  startDrawArea(shape);
+function bindMapActions(mapInstance: any) {
+  if (!mapInstance || boundMap === mapInstance) return;
+  unbindMapActions();
+  boundMap = mapInstance;
+  actionsControl = new MapActionsControl(actionsControlLabels());
+  actionsControl.setDrawingActive(Boolean(drawMode.value));
+  mapInstance.addControl(actionsControl);
+  unbindMapActionListener = onMapAction(mapInstance, handleMapAction);
 }
+
+function unbindMapActions() {
+  unbindMapActionListener?.();
+  unbindMapActionListener = null;
+  if (boundMap && actionsControl) {
+    boundMap.removeControl(actionsControl);
+  }
+  boundMap = null;
+  actionsControl = null;
+}
+
+watch(
+  () => olMapRef.value?.map,
+  (mapInstance) => {
+    if (mapInstance) {
+      bindMapActions(mapInstance);
+    } else {
+      unbindMapActions();
+    }
+  },
+  { immediate: true, flush: 'post' },
+);
+
+watch(locale, () => {
+  actionsControl?.setLabels(actionsControlLabels());
+});
+
+watch(drawMode, (mode) => {
+  actionsControl?.setDrawingActive(Boolean(mode));
+});
+
 
 function cancelDrawing() {
   drawMode.value = null;
-  isActionMenuOpen.value = false;
-  contextMenu.value = null;
 }
 
 function onAreaDrawn(event: any) {
@@ -420,46 +493,18 @@ function focusLocation(locationId: string) {
     :not-found="notFound"
     :loading="loading"
     :unwrap-content="true"
+    fill
   >
-    <template #actions>
-      <div class="map-toolbar">
-        <QBtn
-          color="primary"
-          :label="t('maps.addMarker')"
-          :class="{ 'is-active': isAddingMarker }"
-          @click="startAddMarker"
-        />
-        <QBtn
-          v-for="shape in drawShapes"
-          :key="shape"
-          outline
-          size="sm"
-          :label="t(`maps.shapes.${shape}`)"
-          :class="{ 'is-active': drawMode === shape }"
-          @click="startDrawArea(shape)"
-        />
-        <QBtn
-          v-if="drawMode"
-          flat
-          color="negative"
-          :label="t('maps.cancelDrawing')"
-          @click="cancelDrawing"
-        />
-        <span v-if="isAddingMarker" class="map-toolbar-hint">
-          {{ t('maps.clickToPlaceMarker') }}
-        </span>
-        <span v-else-if="drawMode" class="map-toolbar-hint">
-          {{ t('maps.drawHint') }}
-        </span>
-      </div>
-    </template>
-
     <div v-if="mapReady" class="map-view-container">
+      <div v-if="isAddingMarker || drawMode" class="map-hint">
+        {{ isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint') }}
+      </div>
+
       <ol-map
         ref="olMapRef"
         :loadTilesWhileAnimating="true"
         :loadTilesWhileInteracting="true"
-        style="height: calc(100vh - 190px)"
+        style="height: 100%"
         @click="onMapClick"
         @pointermove="onMapPointerMove"
       >
@@ -472,7 +517,13 @@ function focusLocation(locationId: string) {
           :extent="extent"
         />
         <ol-zoom-control />
-        <ol-zoomslider-control />
+        <ol-context-menu-control
+          ref="contextMenuRef"
+          :items="contextMenuItems"
+          :default-items="false"
+          :width="200"
+          @open="onContextMenuOpen"
+        />
 
         <ol-image-layer id="map-view">
           <ol-source-image-static
@@ -602,18 +653,27 @@ function focusLocation(locationId: string) {
 </template>
 
 <style scoped>
-.map-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.map-toolbar-hint {
-  color: var(--color-text-light);
-}
-
 .map-view-container {
+  position: relative;
   height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  border-radius: var(--border-radius);
+}
+
+.map-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 25;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.8rem;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .map-marker-button {

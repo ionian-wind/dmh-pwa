@@ -812,6 +812,8 @@
       "square": "Square",
       "freehand": "Freehand"
     },
-    "drawHint": "Click and drag to draw. Double-click to finish a polygon."
+    "drawHint": "Click and drag to draw. Double-click to finish a polygon.",
+    "mapActions": "Map actions",
+    "addMarkerHere": "Add marker here"
   }
 }

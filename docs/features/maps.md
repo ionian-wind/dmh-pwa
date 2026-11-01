@@ -120,6 +120,35 @@ interface MapArea {
   linked entities, and links to other areas.
 - The area list is shown in the right drawer next to locations.
 
+## Map actions and context menu
+
+Map actions are OpenLayers plugins rather than page-level buttons:
+
+- `src/maps/plugins/MapActionsControl.ts` is a custom
+  `ol/control/Control`. It renders the pencil button below the zoom controls
+  and opens the marker/draw action menu.
+- The right-click menu uses `ol-contextmenu` through the
+  `vue3-openlayers` `ol-context-menu-control` component.
+
+Both surfaces emit a custom `map-action` OpenLayers event instead of opening
+editors directly:
+
+```ts
+type MapAction = 'add-marker' | 'draw-area' | 'cancel-drawing';
+
+interface MapActionDetail {
+  action: MapAction;
+  coordinate?: [number, number];
+  shape?: MapAreaShape;
+}
+```
+
+`MapView` listens for `map-action` with `onMapAction(map, handler)` and opens
+the existing marker or area editor. The right-click **Add marker here** action
+carries the clicked map coordinate, so the marker editor opens at the
+right-clicked point. Draw actions from the context menu use an
+`ol-contextmenu` submenu for the area shape.
+
 ## User flows
 
 ### Create/edit a map
@@ -134,7 +163,9 @@ interface MapArea {
 ### Place and edit markers
 
 1. Open a map.
-2. Click **Add marker** and then the map.
+2. Click the pencil action button and choose **Add marker**, then click the map.
+   Alternatively, right-click the map and choose **Add marker here** to place a
+   marker at the clicked point.
 3. Fill in title, description, location, linked entities, icon, and color.
 4. Save. Marker coordinates are stored in the map projection used by the image.
 5. Click an existing marker to edit or delete it.

@@ -30,6 +30,7 @@ interface Props {
   headerShowDelete?: boolean;
   headerButtons?: any[];
   rightDrawerIcon?: any;
+  fill?: boolean;
 }
 
 const props = withDefaults(
@@ -44,6 +45,7 @@ const props = withDefaults(
     headerShowEdit: true,
     headerShowDelete: true,
     headerButtons: () => [],
+    fill: false,
   },
 );
 
@@ -112,7 +114,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <QLayout view="lHh Lpr lFf" class="base-entity-container">
+  <QLayout
+    view="lHh Lpr lFf"
+    :class="['base-entity-container', { 'base-entity-container--fill': fill }]"
+  >
     <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <NotFoundView v-else-if="notFound" />
 
@@ -137,3 +142,20 @@ onBeforeUnmount(() => {
     </template>
   </QLayout>
 </template>
+
+<style scoped>
+.base-entity-container--fill {
+  height: calc(100dvh - 51px);
+  min-height: 0 !important;
+}
+
+.base-entity-container--fill .base-entity-layout,
+.base-entity-container--fill .entity-main-column,
+.base-entity-container--fill .base-entity-view {
+  height: 100%;
+}
+
+.base-entity-container--fill .entity-main-column {
+  min-height: 0 !important;
+}
+</style>

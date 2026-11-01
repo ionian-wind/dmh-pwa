@@ -38,14 +38,14 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 72. Total tests: 536.
+Total test files: 72. Total tests: 537.
 
 ## Current results (measured)
 
 ```
 npm test
 Test Files  72 passed (72)
-Tests       536 passed (536)
+Tests       537 passed (537)
 ```
 
 Coverage (V8, `npm run test:coverage`):
@@ -100,7 +100,7 @@ registered plugin pipeline.
 
 - `tests/setup.ts` installs a fresh Pinia, Vue I18n, Quasar component stubs,
   `fake-indexeddb`, and resets the base-store cache/database per test.
-- `tests/helpers/quasar-stubs.ts` provides light Q* stubs that render slots and
+- `tests/helpers/quasar-stubs.ts` provides light Q\* stubs that render slots and
   emit model updates.
 - `tests/helpers/mock-storage.ts` provides an in-memory base store for store
   unit tests.
@@ -120,4 +120,3 @@ The suite now includes direct tests for:
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting
 and integration suites rather than line-by-line unit tests.
-
