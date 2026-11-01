@@ -36,7 +36,12 @@ const trackColor = computed(() => props.track.color || 'transparent');
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
     <QItemSection>
-      <TrackInfo :artwork-size="'60px'" :track="track" :show-artwork="true" horizontal />
+      <TrackInfo
+        :artwork-size="'60px'"
+        :track="track"
+        :show-artwork="true"
+        horizontal
+      />
     </QItemSection>
     <QItemSection side>
       {{ track.duration ? formatTime(track.duration) : '' }}
@@ -44,7 +49,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
     <QItemSection side class="track-actions">
       <QBtnGroup flat>
         <QBtn flat @click.stop="handleAddToPlaylist"><IconPlus /></QBtn>
-        <QBtn flat @click.stop="handleRemove"><IconX /></QBtn>  
+        <QBtn flat @click.stop="handleRemove"><IconX /></QBtn>
       </QBtnGroup>
     </QItemSection>
   </QItem>

@@ -24,6 +24,7 @@ export enum Section {
   CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
   MODULES = 'modules',
+  AMBIENT_SOUND = 'ambient-sound',
 }
 
 // Core types
@@ -87,6 +88,7 @@ export interface Monster extends Character {
 }
 
 export interface Combatant extends WithMetadata {
+  name: string;
   type: 'player' | 'monster';
   referenceId?: UUID;
   notes?: string;

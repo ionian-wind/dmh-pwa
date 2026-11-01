@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { evaluate, create, all } from 'mathjs';
+import { useDragSnap } from '@/composables/useDragSnap';
 import {
   IconTransform,
   IconCalculator,
@@ -19,9 +20,26 @@ import {
 const { t } = useI18n();
 const math = create(all);
 
+const props = defineProps<{
+  modelValue: boolean;
+}>();
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>();
+
+const model = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value),
+});
+
+const {
+  cardStyle,
+  transitionHide,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onHide,
+} = useDragSnap();
 
 const input = ref('');
 const result = ref('');
@@ -67,6 +85,7 @@ function calculate() {
 }
 
 function handleKey(e: KeyboardEvent) {
+  if (!props.modelValue) return;
   if (e.key.match(/^[0-9\+\-\*\/\.\(\)]$/)) {
     e.preventDefault();
     append(e.key);
@@ -110,36 +129,45 @@ watch(tab, (value) => {
   }
 });
 
-const unitBases = [
-  { label: 'Length', value: 'length' },
-  { label: 'Mass', value: 'mass' },
-  { label: 'Time', value: 'time' },
-  { label: 'Current', value: 'current' },
-  { label: 'Temperature', value: 'temperature' },
-  { label: 'Luminous Intensity', value: 'luminousIntensity' },
-  { label: 'Amount of Substance', value: 'amountOfSubstance' },
-  { label: 'Force', value: 'force' },
-  { label: 'Pressure', value: 'pressure' },
-  { label: 'Energy', value: 'energy' },
-  { label: 'Power', value: 'power' },
-  { label: 'Voltage', value: 'voltage' },
-  { label: 'Electric Charge', value: 'electricCharge' },
-  { label: 'Capacitance', value: 'capacitance' },
-  { label: 'Resistance', value: 'resistance' },
-  { label: 'Conductance', value: 'conductance' },
-  { label: 'Magnetic Flux', value: 'magneticFlux' },
-  { label: 'Magnetic Flux Density', value: 'magneticFluxDensity' },
-  { label: 'Inductance', value: 'inductance' },
-  { label: 'Frequency', value: 'frequency' },
-  { label: 'Angle', value: 'angle' },
-  { label: 'Area', value: 'area' },
-  { label: 'Volume', value: 'volume' },
-  { label: 'Speed', value: 'speed' },
-  { label: 'Acceleration', value: 'acceleration' },
-  { label: 'Density', value: 'density' },
-  { label: 'Flow', value: 'flow' },
-  { label: 'Illuminance', value: 'illuminance' },
-];
+const unitBases = computed(() => [
+  { label: t('calculator.unitBases.length'), value: 'length' },
+  { label: t('calculator.unitBases.mass'), value: 'mass' },
+  { label: t('calculator.unitBases.time'), value: 'time' },
+  { label: t('calculator.unitBases.current'), value: 'current' },
+  { label: t('calculator.unitBases.temperature'), value: 'temperature' },
+  {
+    label: t('calculator.unitBases.luminousIntensity'),
+    value: 'luminousIntensity',
+  },
+  {
+    label: t('calculator.unitBases.amountOfSubstance'),
+    value: 'amountOfSubstance',
+  },
+  { label: t('calculator.unitBases.force'), value: 'force' },
+  { label: t('calculator.unitBases.pressure'), value: 'pressure' },
+  { label: t('calculator.unitBases.energy'), value: 'energy' },
+  { label: t('calculator.unitBases.power'), value: 'power' },
+  { label: t('calculator.unitBases.voltage'), value: 'voltage' },
+  { label: t('calculator.unitBases.electricCharge'), value: 'electricCharge' },
+  { label: t('calculator.unitBases.capacitance'), value: 'capacitance' },
+  { label: t('calculator.unitBases.resistance'), value: 'resistance' },
+  { label: t('calculator.unitBases.conductance'), value: 'conductance' },
+  { label: t('calculator.unitBases.magneticFlux'), value: 'magneticFlux' },
+  {
+    label: t('calculator.unitBases.magneticFluxDensity'),
+    value: 'magneticFluxDensity',
+  },
+  { label: t('calculator.unitBases.inductance'), value: 'inductance' },
+  { label: t('calculator.unitBases.frequency'), value: 'frequency' },
+  { label: t('calculator.unitBases.angle'), value: 'angle' },
+  { label: t('calculator.unitBases.area'), value: 'area' },
+  { label: t('calculator.unitBases.volume'), value: 'volume' },
+  { label: t('calculator.unitBases.speed'), value: 'speed' },
+  { label: t('calculator.unitBases.acceleration'), value: 'acceleration' },
+  { label: t('calculator.unitBases.density'), value: 'density' },
+  { label: t('calculator.unitBases.flow'), value: 'flow' },
+  { label: t('calculator.unitBases.illuminance'), value: 'illuminance' },
+]);
 
 const unitMap: Record<string, string[]> = {
   length: ['m', 'cm', 'mm', 'km', 'in', 'ft', 'yd', 'mi'],
@@ -171,6 +199,14 @@ const unitMap: Record<string, string[]> = {
   flow: ['m3/s', 'l/min'],
   illuminance: ['lx'],
 };
+
+const getUnitOptions = computed(() => (base: string) => {
+  const units = unitMap[base] || [];
+  return units.map((u) => ({
+    label: t(`calculator.unitSymbols.${u}`),
+    value: u,
+  }));
+});
 
 const unitBase = ref('');
 const sourceUnit = ref('');
@@ -205,17 +241,34 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <QDialog seamless position="bottom" class="q-pa-sm">
-    <QCard style="min-width: 350px; min-height: 410px">
-      <QToolbar class="justify-between">
+  <QDialog
+    seamless
+    position="bottom"
+    class="q-pa-sm"
+    v-model="model"
+    :transition-hide="transitionHide"
+    @hide="onHide"
+  >
+    <QCard
+      :style="[cardStyle, { minWidth: '350px', minHeight: '410px' }]"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+    >
+      <QToolbar
+        class="justify-between drag-handle"
+        @pointerdown="onPointerDown"
+      >
         <QTabs class="q-mb-xs" v-model="tab">
-          <QTab name="calculate" :title="t('calculator.calculator')"><IconCalculator /></QTab>
-          <QTab name="convert" :title="t('calculator.converter')"><IconTransform /></QTab>
+          <QTab name="calculate" :title="t('calculator.calculator')"
+            ><IconCalculator
+          /></QTab>
+          <QTab name="convert" :title="t('calculator.converter')"
+            ><IconTransform
+          /></QTab>
         </QTabs>
 
-        <QBtn flat clickable @click="emit('update:modelValue', false)"
-          ><IconX
-        /></QBtn>
+        <QBtn flat clickable @click="model = false"><IconX /></QBtn>
       </QToolbar>
       <QCardSection>
         <div class="calculator-view">
@@ -226,7 +279,9 @@ onUnmounted(() => {
             <QCardSection
               class="calculator-result q-pa-sm text-positive"
               aria-live="polite"
-              >{{ result ? t('calculator.equals') + ' ' + result : '\u00A0' }}</QCardSection
+              >{{
+                result ? t('calculator.equals') + ' ' + result : '\u00A0'
+              }}</QCardSection
             >
             <QCardSection
               class="calculator-error q-pa-sm text-negative"
@@ -238,7 +293,9 @@ onUnmounted(() => {
           <QTabPanels v-model="tab" animated>
             <QTabPanel name="calculate" class="q-pa-none">
               <div class="calculator-buttons justify-evenly">
-                <QBtn flat class="operation" @click="clear">{{ t('calculator.clear') }}</QBtn>
+                <QBtn flat class="operation" @click="clear">{{
+                  t('calculator.clear')
+                }}</QBtn>
                 <QBtn flat class="operation" @click="appendBrace"
                   ><IconParentheses
                 /></QBtn>
@@ -289,7 +346,10 @@ onUnmounted(() => {
                     v-model="unitBase"
                     :options="unitBases"
                     :label="t('calculator.physicalBase')"
+                    option-label="label"
+                    option-value="value"
                     emit-value
+                    map-options
                   />
                 </div>
                 <div class="col">
@@ -297,8 +357,12 @@ onUnmounted(() => {
                     outlined
                     v-if="unitBase"
                     v-model="sourceUnit"
-                    :options="unitMap[unitBase] || []"
+                    :options="getUnitOptions(unitBase)"
                     :label="t('calculator.unit')"
+                    option-label="label"
+                    option-value="value"
+                    emit-value
+                    map-options
                   />
                 </div>
               </div>
@@ -309,14 +373,14 @@ onUnmounted(() => {
                   class="convert-results"
                 >
                   <QItem
-                    v-for="unit in unitMap[unitBase]?.filter(
-                      (u: string) => u !== sourceUnit,
+                    v-for="unit in getUnitOptions(unitBase).filter(
+                      (u: { value: string }) => u.value !== sourceUnit,
                     )"
-                    :key="unit"
+                    :key="unit.value"
                   >
-                    <QItemSection side>{{ unit }}</QItemSection>
-                    <QItemSection>{{
-                      convertResult(result, sourceUnit, unit)
+                    <QItemSection side>{{ unit.label }}</QItemSection>
+                    <QItemSection class="text-right">{{
+                      convertResult(result, sourceUnit, unit.value)
                     }}</QItemSection>
                     <QItemSection side>
                       <QBtn
@@ -324,7 +388,7 @@ onUnmounted(() => {
                         size="sm"
                         @click="
                           copyToClipboard(
-                            convertResult(result, sourceUnit, unit),
+                            convertResult(result, sourceUnit, unit.value),
                           )
                         "
                       >
@@ -365,5 +429,8 @@ onUnmounted(() => {
 }
 .control {
   background-color: var(--color-misc-light);
+}
+.drag-handle {
+  cursor: grab;
 }
 </style>

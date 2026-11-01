@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount } from 'vue';
 import { IconMusic } from '@tabler/icons-vue';
-import type { JukeboxTrack } from "@/jukebox/types";
+import type { JukeboxTrack } from '@/jukebox/types';
 import { usePictureUrlCacheStore } from '@/jukebox/stores';
 
 const pictureUrlCacheStore = usePictureUrlCacheStore();
@@ -36,8 +36,11 @@ onBeforeUnmount(() => {
       :style="pictureStyle"
       class="track-artwork"
     ></div>
-    <div v-else class="track-artwork track-artwork-placeholder">
-      <IconMusic width="80" height="80" />
+    <div
+      v-else
+      class="track-artwork track-artwork-placeholder flex flex-center"
+    >
+      <IconMusic width="40" height="40" />
     </div>
   </QAvatar>
 </template>

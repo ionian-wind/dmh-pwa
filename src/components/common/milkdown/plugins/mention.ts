@@ -108,17 +108,24 @@ export function registerMentionPopupTrigger(fn: typeof showMentionPopup) {
 
 // Helper to calculate popup position (to be implemented using Crepe/ProseMirror logic)
 function getMentionPopupPosition(editorView: any) {
-  let coords: { top: number; left: number; bottom?: number } = { top: 100, left: 100 };
+  let coords: { top: number; left: number; bottom?: number } = {
+    top: 100,
+    left: 100,
+  };
 
   if (!editorView || !editorView.state || !editorView.dom) {
     return coords;
   }
-  
+
   const { selection } = editorView.state;
-  
+
   try {
     // Use the end of the selection for popup position
-    coords = editorView.coordsAtPos(selection.to) as { top: number; left: number; bottom: number };
+    coords = editorView.coordsAtPos(selection.to) as {
+      top: number;
+      left: number;
+      bottom: number;
+    };
     // Optionally, offset the popup a bit below the cursor
     coords = { top: (coords.bottom ?? coords.top) + 4, left: coords.left };
   } catch (e) {

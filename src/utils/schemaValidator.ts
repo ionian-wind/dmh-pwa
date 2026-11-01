@@ -1,5 +1,6 @@
-import Ajv from 'ajv';
-import type { AnySchema } from 'ajv/lib/types';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-ignore - ajv has type issues
+import Ajv, { type AnySchema } from 'ajv';
 
 const ajv = new Ajv({ allErrors: true });
 

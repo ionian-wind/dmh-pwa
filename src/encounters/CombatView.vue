@@ -27,7 +27,7 @@ import {
   IconCircleCheck,
   IconClock,
 } from '@tabler/icons-vue';
-import {S} from "@/utils/dice-roller/plugins/dice/tokens";
+import { S } from '@/utils/dice-roller/plugins/dice/tokens';
 
 const route = useRoute();
 const router = useRouter();
@@ -397,22 +397,27 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
     :headerShowEdit="false"
     :headerShowDelete="false"
     :headerButtons="
-      combat && combat.status === 'preparing' 
-      ? [{
-        event: startCombat,
-        color: 'warning',
-        disabled: combat.combatants.length < 1,
-        icon: IconSwords,
-        title: 'Start',
-      }]
-      : (combat && combat.status === 'active' 
-      ? [{
-        event: endCombat,
-        color: 'negative',
-        icon: IconFlag,
-        title: 'End',
-      }]
-      : [])"
+      combat && combat.status === 'preparing'
+        ? [
+            {
+              event: startCombat,
+              color: 'warning',
+              disabled: combat.combatants.length < 1,
+              icon: IconSwords,
+              title: 'Start',
+            },
+          ]
+        : combat && combat.status === 'active'
+          ? [
+              {
+                event: endCombat,
+                color: 'negative',
+                icon: IconFlag,
+                title: 'End',
+              },
+            ]
+          : []
+    "
   >
     <!-- Combat Content -->
     <div v-if="combat" class="q-pa-md q-gutter-md">
@@ -421,12 +426,8 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
         <QTab class="phase-tab" name="preparing">
           <IconListNumbers /> Preparation
         </QTab>
-        <QTab class="phase-tab" name="active">
-          <IconSwords /> Active
-        </QTab>
-        <QTab class="phase-tab" name="completed">
-          <IconTrophy /> Ended
-        </QTab>
+        <QTab class="phase-tab" name="active"> <IconSwords /> Active </QTab>
+        <QTab class="phase-tab" name="completed"> <IconTrophy /> Ended </QTab>
       </QTabs>
 
       <!-- Combat Summary -->
@@ -460,7 +461,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
       <div class="participants-section">
         <div class="combat-title row justify-between q-pa-md">
           <h2>Participants: {{ combat.combatants.length }}</h2>
-          
+
           <Button
             v-if="
               combat &&
@@ -482,31 +483,39 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               v-for="(participant, index) in combat.combatants"
               :clickable="combat.status === 'preparing'"
               :key="participant.id"
-              :active="combat &&
-                combat.status === 'active' &&
-                activeParticipantIndex === index"
-              :active-class="'bg-secondary'"
-              :class="{
-              'participant-row': true,
-              preparing: combat && combat.status === 'preparing',
-              postponed: participant.isPostponed,
-              acted:
+              :active="
                 combat &&
                 combat.status === 'active' &&
-                participant.hasActed &&
-                !participant.isPostponed,
-            }"
+                activeParticipantIndex === index
+              "
+              :active-class="'bg-secondary'"
+              :class="{
+                'participant-row': true,
+                preparing: combat && combat.status === 'preparing',
+                postponed: participant.isPostponed,
+                acted:
+                  combat &&
+                  combat.status === 'active' &&
+                  participant.hasActed &&
+                  !participant.isPostponed,
+              }"
             >
               <QPopupEdit
                 v-if="combat.status === 'preparing'"
-                v-model="participant.initiative" 
-                auto-save 
+                v-model="participant.initiative"
+                auto-save
                 v-slot="scope"
                 buttons
                 :validate="validateInitiative"
                 @hide="validateInitiative"
               >
-                <QInput v-model="scope.value" dense autofocus counter @keyup.enter="scope.set" />
+                <QInput
+                  v-model="scope.value"
+                  dense
+                  autofocus
+                  counter
+                  @keyup.enter="scope.set"
+                />
               </QPopupEdit>
 
               <QItemSection avatar class="participant-artwork">
@@ -521,16 +530,24 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 {{ participant.initiative }}
               </QItemSection>
 
-              <QItemSection side class="participant-status" v-if="combat && combat.status === 'active'">
+              <QItemSection
+                side
+                class="participant-status"
+                v-if="combat && combat.status === 'active'"
+              >
                 <span
                   v-if="!participant.isPostponed && participant.hasActed"
                   class="participant-badge badge-acted"
                   :aria-label="t('combat.participantStatus.actedThisRound')"
                   :title="t('combat.participantStatus.actedThisRound')"
                 >
-                    <IconCircleCheck />
-                  </span>
-                <span v-else-if="!participant.isPostponed && activeParticipantIndex !== index">
+                  <IconCircleCheck />
+                </span>
+                <span
+                  v-else-if="
+                    !participant.isPostponed && activeParticipantIndex !== index
+                  "
+                >
                   <IconClock
                     :aria-label="t('combat.participantStatus.wait')"
                     :title="t('combat.participantStatus.wait')"
@@ -538,12 +555,12 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 </span>
               </QItemSection>
 
-              <QItemSection side v-if="combat && combat.status === 'active'" class="participant-actions">
-                <QBtnGroup
-                  v-if="participant.isPostponed"
-                  flat
-                  class="controls"
-                >
+              <QItemSection
+                side
+                v-if="combat && combat.status === 'active'"
+                class="participant-actions"
+              >
+                <QBtnGroup v-if="participant.isPostponed" flat class="controls">
                   <QBtn
                     :color="'info'"
                     :size="'lg'"
@@ -552,7 +569,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                     <IconBolt />
                   </QBtn>
                 </QBtnGroup>
-                  
+
                 <QBtnGroup
                   flat
                   class="controls"
@@ -562,7 +579,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                     :size="'lg'"
                     :color="'warning'"
                     @click="postponeCurrent"
-                    v-if="index !== (combat.combatants.length - 1)"
+                    v-if="index !== combat.combatants.length - 1"
                   >
                     <IconPlayerPause />
                   </QBtn>
@@ -629,9 +646,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 type="number"
                 class="initiative-input"
                 v-model.number="localParticipants[p.id].initiative"
-                @update:model-value="
-                  (val) => handleInitiativeChange(p.id, val)
-                "
+                @update:model-value="(val) => handleInitiativeChange(p.id, val)"
                 dense
                 outlined
               />

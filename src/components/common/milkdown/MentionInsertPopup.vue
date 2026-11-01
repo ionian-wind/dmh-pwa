@@ -18,7 +18,9 @@
       @keydown.esc.prevent="onClose"
       autofocus
     />
-    <div class="mention-insert-header">{{ t('mentions.selectToMention', { kind: kindLabel }) }}</div>
+    <div class="mention-insert-header">
+      {{ t('mentions.selectToMention', { kind: kindLabel }) }}
+    </div>
     <ul class="mention-insert-list">
       <li
         v-for="(mention, idx) in filteredMentions"
@@ -27,16 +29,29 @@
         @click="selectMention(mention)"
         @mouseenter="selectedIdx = idx"
       >
-        <span class="mention-insert-title">{{ mention.title || mention.name }}</span>
-        <span v-if="mention.id" class="mention-insert-id">({{ mention.id }})</span>
+        <span class="mention-insert-title">{{
+          mention.title || mention.name
+        }}</span>
+        <span v-if="mention.id" class="mention-insert-id"
+          >({{ mention.id }})</span
+        >
       </li>
-      <li v-if="filteredMentions.length === 0" class="mention-insert-empty">{{ t('mentions.noResults') }}</li>
+      <li v-if="filteredMentions.length === 0" class="mention-insert-empty">
+        {{ t('mentions.noResults') }}
+      </li>
     </ul>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  nextTick,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { StyleValue } from 'vue';
 
@@ -55,12 +70,18 @@ const searchInput = ref<HTMLInputElement | null>(null);
 
 const kindLabel = computed(() => {
   switch (props.kind) {
-    case 'note': return t('notes.title');
-    case 'module': return t('modules.title');
-    case 'party': return t('parties.title');
-    case 'monster': return t('monsters.title');
-    case 'encounter': return t('encounters.title');
-    default: return props.kind;
+    case 'note':
+      return t('notes.title');
+    case 'module':
+      return t('modules.title');
+    case 'party':
+      return t('parties.title');
+    case 'monster':
+      return t('monsters.title');
+    case 'encounter':
+      return t('encounters.title');
+    default:
+      return props.kind;
   }
 });
 
@@ -149,7 +170,7 @@ watch(search, () => {
   background: var(--crepe-popup-bg, #fff);
   border: 1px solid var(--crepe-popup-border, #e0e0e0);
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   padding: 8px 0;
   font-family: inherit;
 }
@@ -201,4 +222,4 @@ watch(search, () => {
   color: #aaa;
   font-style: italic;
 }
-</style> 
+</style>

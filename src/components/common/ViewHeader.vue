@@ -1,26 +1,30 @@
 <script setup lang="ts">
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
-import {onMounted, PropType} from 'vue';
+import { inject, type Ref, type PropType } from 'vue';
+import { ComponentInjection } from '@/types';
+import IconRightDrawer from '@/components/common/IconRightDrawer.vue';
 
 const { t } = useI18n();
 
 const props = defineProps({
   buttons: {
-    type: Array as PropType<{
-      icon: any;
-      color: string;
-      title: string;
-      disabled?: boolean;
-      event: (
-        evt: Event,
-        go?: (opts?: {
-          to?: any;
-          replace?: boolean;
-          returnRouterError?: boolean;
-        }) => Promise<any>,
-      ) => void;
-    }[]>,
+    type: Array as PropType<
+      {
+        icon: any;
+        color: string;
+        title: string;
+        disabled?: boolean;
+        event: (
+          evt: Event,
+          go?: (opts?: {
+            to?: any;
+            replace?: boolean;
+            returnRouterError?: boolean;
+          }) => Promise<any>,
+        ) => void;
+      }[]
+    >,
     default: [],
   },
   title: {
@@ -108,22 +112,42 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  rightDrawerIcon: {
+    type: [Object, Function],
+    default: () => IconRightDrawer,
+  },
 });
 
 const emit = defineEmits(['create', 'update:searchQuery']);
 
-onMounted(() => console.log(props.buttons));
+const rightDrawerContent = inject<Ref<ComponentInjection | null>>(
+  'rightDrawerContent',
+  null,
+);
+const toggleRightDrawer = inject<() => void>('toggleRightDrawer', () => {});
 </script>
 
 <template>
   <QToolbarTitle v-if="props.title">
     {{ props.title }}
   </QToolbarTitle>
+  <QSpace v-else />
+
+  <QInput
+    v-if="props.showSearch"
+    :autofocus="false"
+    :model-value="props.searchQuery"
+    @update:model-value="(val) => emit('update:searchQuery', val)"
+    :placeholder="t(props.searchPlaceholder)"
+    class="search-input"
+    clearable
+    dense
+    outlined
+  />
 
   <QBtnGroup v-if="props.buttons.length > 0">
     <QBtn
       v-for="(btn, index) in props.buttons"
-      
       :color="btn.color"
       @click="btn.event"
       :title="t(btn.title)"
@@ -166,16 +190,9 @@ onMounted(() => console.log(props.buttons));
       <IconTrash />
     </QBtn>
   </QBtnGroup>
-
-  <QInput
-    v-if="props.showSearch"
-    :autofocus="false"
-    :model-value="props.searchQuery"
-    @update:model-value="(val) => emit('update:searchQuery', val)"
-    :placeholder="t(props.searchPlaceholder)"
-    class="search-input"
-    clearable
-    dense
-    outlined
-  />
+  <QBtnGroup>
+    <QBtn v-if="rightDrawerContent" @click="toggleRightDrawer">
+      <component :is="props.rightDrawerIcon" />
+    </QBtn>
+  </QBtnGroup>
 </template>

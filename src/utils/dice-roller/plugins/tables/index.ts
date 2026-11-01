@@ -137,12 +137,15 @@ export const tablesPlugin: DiceRollerPlugin = {
     let found: string[] = [];
     for (const key in ast) {
       if (typeof ast[key] === 'object' && ast[key] !== null) {
-        found = found.concat(tablesPlugin.extractTables(ast[key]));
+        const extractFn = tablesPlugin.extractTables;
+        if (extractFn) {
+          found = found.concat(extractFn(ast[key]));
+        }
       }
     }
     return found;
   },
-  evaluateTable(ast: any, context: any) {
+  evaluateTable(ast: any, _context: any) {
     debug('[tablesPlugin] evaluateTable called:', JSON.stringify(ast));
     throw new Error('Table evaluation not implemented');
   },

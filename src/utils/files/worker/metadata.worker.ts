@@ -7,7 +7,7 @@ import { getColor, getPalette } from './color-from-image';
 (self as any).Buffer = Buffer;
 
 const getImageData = async (pic: IPicture) => {
-  const blob = new Blob([pic.data], { type: pic.format });
+  const blob = new Blob([new Uint8Array(pic.data)], { type: pic.format });
   const bitmap = await createImageBitmap(blob);
 
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
@@ -32,19 +32,23 @@ self.onmessage = async (event: MessageEvent<File>) => {
 
     let picture: Blob | undefined;
     let color: string | undefined;
-    let palette: null | string[];
+    let palette: null | string[] = null;
 
     if (common.picture && common.picture.length > 0) {
       const { image, blob } = await getImageData(common.picture[0]);
       picture = blob;
 
-      color = getColor(image, { sample: 10, group: 30, format: 'hex' });
+      color = getColor(image, {
+        sample: 10,
+        group: 30,
+        format: 'hex',
+      }) as string;
       palette = getPalette(image, {
         sample: 10,
         group: 30,
         amount: 4,
         format: 'hex',
-      });
+      }) as string[] | null;
     }
 
     const extractedData = {

@@ -22,6 +22,7 @@ interface Props {
   headerShowEdit?: boolean;
   headerShowDelete?: boolean;
   headerButtons?: any[];
+  rightDrawerIcon?: any;
 }
 
 const props = withDefaults(
@@ -58,22 +59,21 @@ const setTopMenuContent = inject('setTopMenuContent') as (
   arg: ComponentInjection,
 ) => void;
 
-const injectTopMenu = () => setTopMenuContent(
-  props.hideHeader
-    ? null
-    : {
-      component: ViewHeader,
-      props: {
-        buttons: props.headerButtons,
-        showEdit: props.headerShowEdit,
-        onEdit: handleEdit,
-        showDelete: props.headerShowDelete,
-        onDelete: handleDelete,
-        title: props.title || '',
-        subtitle: props.subtitle || '',
-      },
-    },
-);
+const injectTopMenu = () => {
+  const headerProps: Record<string, any> = {
+    buttons: props.headerButtons,
+    showEdit: props.headerShowEdit,
+    onEdit: handleEdit,
+    showDelete: props.headerShowDelete,
+    onDelete: handleDelete,
+    title: props.title || '',
+  };
+  if (props.rightDrawerIcon)
+    headerProps.rightDrawerIcon = props.rightDrawerIcon;
+  setTopMenuContent(
+    props.hideHeader ? null : { component: ViewHeader, props: headerProps },
+  );
+};
 
 onMounted(() => injectTopMenu());
 

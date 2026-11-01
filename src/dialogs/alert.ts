@@ -7,7 +7,10 @@ export interface AlertOptions {
   // Add more Quasar Dialog options as needed
 }
 
-export function alert(message: string, options: AlertOptions = {}): Promise<void> {
+export function alert(
+  message: string,
+  options: AlertOptions = {},
+): Promise<void> {
   return new Promise((resolve) => {
     Dialog.create({
       message,
@@ -19,4 +22,4 @@ export function alert(message: string, options: AlertOptions = {}): Promise<void
       ...options,
     }).onOk(() => resolve());
   });
-} 
+}

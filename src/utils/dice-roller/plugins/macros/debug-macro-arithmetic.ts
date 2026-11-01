@@ -2,7 +2,7 @@
 import { DiceRollerCore } from '../../core';
 import { macrosPlugin } from './index';
 import { dicePlugin } from '../dice/dicePlugin';
-import { debug, debugError } from '../../debug';
+import { debug, debugError } from '../../../debug';
 
 // Register plugins
 debug('[DEBUG] Registering dice plugin...');

@@ -313,7 +313,12 @@ onBeforeUnmount(() => {
       :tabs="tabs"
       v-model="activeTab"
       :headerButtons="[
-        { color: 'warning', title: 'common.runCombat', event: handleRunCombat, icon: IconSwords }
+        {
+          color: 'warning',
+          title: 'common.runCombat',
+          event: handleRunCombat,
+          icon: IconSwords,
+        },
       ]"
     >
       <template #sub>

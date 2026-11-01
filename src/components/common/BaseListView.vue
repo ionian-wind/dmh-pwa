@@ -16,6 +16,7 @@ const props = defineProps({
   viewStyle: { type: String, default: 'masonry' },
   draggable: { type: Boolean, default: false },
   hideHeader: { type: Boolean, default: false },
+  rightDrawerIcon: { type: [Object, Function], default: undefined },
 });
 
 const showEditor = ref(false);
@@ -41,10 +42,25 @@ const emit = defineEmits([
   'copy',
   'update:sidePanelVisible',
   'sort',
+  'drop',
+  'dragover',
+  'dragleave',
 ]);
 
 function handleSortEnd() {
   emit('sort', localItems.value);
+}
+
+function handleDrop(event: DragEvent) {
+  emit('drop', event);
+}
+
+function handleDragOver(event: DragEvent) {
+  emit('dragover', event);
+}
+
+function handleDragLeave(event: DragEvent) {
+  emit('dragleave', event);
 }
 
 function handleCreate() {
@@ -78,17 +94,15 @@ const setTopMenuContent = inject('setTopMenuContent') as (
 ) => void;
 
 onMounted(async () => {
+  const headerProps: Record<string, any> = {
+    showCreate: true,
+    createTitle: props.createTitle,
+    onCreate,
+  };
+  if (props.rightDrawerIcon)
+    headerProps.rightDrawerIcon = props.rightDrawerIcon;
   setTopMenuContent(
-    props.hideHeader
-      ? null
-      : {
-          component: ViewHeader,
-          props: {
-            showCreate: true,
-            createTitle: props.createTitle,
-            onCreate,
-          },
-        },
+    props.hideHeader ? null : { component: ViewHeader, props: headerProps },
   );
 });
 
@@ -98,7 +112,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="q-pa-lg base-list-container">
+  <div
+    class="q-pa-lg base-list-container"
+    @drop="handleDrop"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+  >
     <div v-if="items.length === 0" class="fixed-center text-primary">
       {{ emptyMessage }}
     </div>
@@ -113,17 +132,11 @@ onBeforeUnmount(() => {
       class="q-list simple-list"
     >
       <template #item="{ element: item }">
-        <component
-          :is="cardComponent"
-          v-bind="cardPropsWithDraggable(item)"
-        />
+        <component :is="cardComponent" v-bind="cardPropsWithDraggable(item)" />
       </template>
     </VueDraggable>
     <div v-else>
-      <div
-        v-if="viewStyle === 'masonry'"
-        class="q-gutter-md row items-stretch"
-      >
+      <div v-if="viewStyle === 'masonry'" class="q-gutter-md row items-stretch">
         <div
           v-for="item in items"
           :key="item.id"
@@ -134,11 +147,11 @@ onBeforeUnmount(() => {
             v-bind="cardPropsWithDraggable(item)"
             @view="$emit('view', item)"
             @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
+              () => {
+                handleEdit(item);
+                $emit('edit', item);
+              }
+            "
             @delete="$emit('delete', item)"
             @tag-click="$emit('tag-click', $event)"
             @copy="$emit('copy', item)"
@@ -159,11 +172,11 @@ onBeforeUnmount(() => {
             v-bind="cardPropsWithDraggable(item)"
             @view="$emit('view', item)"
             @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
+              () => {
+                handleEdit(item);
+                $emit('edit', item);
+              }
+            "
             @delete="$emit('delete', item)"
             @tag-click="$emit('tag-click', $event)"
             @copy="$emit('copy', item)"
@@ -172,16 +185,17 @@ onBeforeUnmount(() => {
       </div>
       <QList separator v-else :key="'static'" class="simple-list">
         <component
-          v-for="item in items" :key="item.id"
+          v-for="item in items"
+          :key="item.id"
           :is="cardComponent"
           v-bind="cardPropsWithDraggable(item)"
           @view="$emit('view', item)"
           @edit="
-                () => {
-                  handleEdit(item);
-                  $emit('edit', item);
-                }
-              "
+            () => {
+              handleEdit(item);
+              $emit('edit', item);
+            }
+          "
           @delete="$emit('delete', item)"
           @tag-click="$emit('tag-click', $event)"
           @copy="$emit('copy', item)"

@@ -151,10 +151,7 @@ async function scrollToAnchor(anchorId: string) {
   );
   if (idx === -1) return;
   // Scroll to the chunk using QVirtualScroll
-  if (
-    scrollerRef.value &&
-    typeof scrollerRef.value.scrollTo === 'function'
-  ) {
+  if (scrollerRef.value && typeof scrollerRef.value.scrollTo === 'function') {
     scrollerRef.value.scrollTo(idx);
   }
   // Wait for DOM update, then scroll to heading
@@ -165,14 +162,13 @@ async function scrollToAnchor(anchorId: string) {
   await scrollToHeading(anchorId, router, heading as HTMLElement);
 }
 
-function handleScrollerUpdate(
-  details: { from: number; to: number; direction: string }
-) {
+function handleScrollerUpdate(details: {
+  from: number;
+  to: number;
+  direction: string;
+}) {
   // Use the 'from' index to get the topmost visible chunk
-  if (
-    typeof details.from === 'number' &&
-    chunks.value[details.from]
-  ) {
+  if (typeof details.from === 'number' && chunks.value[details.from]) {
     const topChunk = chunks.value[details.from];
     activeAnchorId.value = topChunk.id;
     emit('active-anchor-id', topChunk.id);

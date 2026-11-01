@@ -17,12 +17,14 @@ type Output = Hex | Rgb | (Hex | Rgb)[];
 
 type Rgb = [r: number, g: number, b: number];
 
-const getArgs = ({
-  amount = 3,
-  format = 'array',
-  group = 20,
-  sample = 10,
-} = {}): Args => ({ amount, format, group, sample });
+const getArgs = (
+  args?: Partial<Args>,
+): { amount: number; format: 'array'; group: number; sample: number } => ({
+  amount: args?.amount ?? 3,
+  format: 'array',
+  group: args?.group ?? 20,
+  sample: args?.sample ?? 10,
+});
 
 const format = (input: Input, args: Args): Output => {
   const list = input.map((val) => {

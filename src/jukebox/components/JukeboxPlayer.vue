@@ -52,6 +52,36 @@ const gradientStyle = useAnimatedGradient(
 
 // Volume popup open state
 const isVolumePopupOpen = ref(false);
+const isVolumeHovered = ref(false);
+const isVolumePopupDragging = ref(false);
+
+let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function onVolumePointerDown() {
+  isVolumePopupDragging.value = true;
+  document.addEventListener(
+    'pointerup',
+    () => {
+      isVolumePopupDragging.value = false;
+    },
+    { once: true },
+  );
+}
+
+function onVolumeEnter() {
+  if (closeTimeout) {
+    clearTimeout(closeTimeout);
+    closeTimeout = null;
+  }
+  isVolumePopupOpen.value = true;
+}
+
+function onVolumeLeave() {
+  if (isVolumePopupDragging.value) return;
+  closeTimeout = setTimeout(() => {
+    isVolumePopupOpen.value = false;
+  }, 200);
+}
 
 function handleVolumeWheel(event: WheelEvent) {
   event.preventDefault();
@@ -71,9 +101,9 @@ const defaultTheme = {
   '--jp-color-text': 'var(--color-text)',
 };
 
-function getContrastColor(hex: string): string {
-  // Remove # if present
-  hex = hex.replace('#', '');
+function getContrastColor(color: string | undefined): string {
+  if (typeof color !== 'string') return '#fff';
+  let hex = color.replace('#', '');
   // Parse r, g, b
   let r = 0,
     g = 0,
@@ -133,7 +163,7 @@ const handleProgressChange = (value: number | null) => {
   const duration = playerStore.duration || 1;
   const time = value * duration;
   playerStore.seek(time);
-}
+};
 </script>
 
 <template>
@@ -195,6 +225,7 @@ const handleProgressChange = (value: number | null) => {
         <QBtn
           flat
           :class="{ 'text-blue-grey-4': !playerStore.shuffle }"
+          :disable="!playerStore.currentTrack"
           @click="playerStore.toggleShuffle"
           :title="t('jukebox.shuffle')"
         >
@@ -207,6 +238,7 @@ const handleProgressChange = (value: number | null) => {
               playerStore.repeatMode !== 'list' &&
               playerStore.repeatMode !== 'track',
           }"
+          :disable="!playerStore.currentTrack"
           @click="playerStore.cycleRepeatMode"
           :title="t('jukebox.repeat')"
         >
@@ -220,7 +252,7 @@ const handleProgressChange = (value: number | null) => {
         <QBtn
           flat
           @click="playerStore.playPrev()"
-          :disabled="!playerStore.hasPrevTrack"
+          :disabled="!(playerStore.currentTrack && playerStore.hasPrevTrack)"
           class="prev-track"
         >
           <IconPlayerSkipBack />
@@ -228,7 +260,7 @@ const handleProgressChange = (value: number | null) => {
         <QBtn
           flat
           @click="playerStore.togglePlay()"
-          :disabled="!playerStore.canPlay"
+          :disabled="!(playerStore.currentTrack && playerStore.canPlay)"
           class="play-pause"
         >
           <IconPlayerPause v-if="playerStore.isPlaying" />
@@ -250,25 +282,31 @@ const handleProgressChange = (value: number | null) => {
           @click="playerStore.toggleMute()"
           @wheel.prevent="handleVolumeWheel"
           class="volume-button"
-          @mouseenter="isVolumePopupOpen = true"
-          @mouseleave="isVolumePopupOpen = false"
+          @mouseenter="onVolumeEnter"
+          @mouseleave="onVolumeLeave"
         >
           <IconVolume v-if="playerStore.volume > 0" />
           <IconVolumeOff v-else />
           <QPopupProxy
             v-model="isVolumePopupOpen"
-            transition-show="jump-left"
-            transition-hide="jump-right"
             anchor="center left"
             self="center right"
             :breakpoint="0"
-            @mouseleave="isVolumePopupOpen = false"
-            @mouseenter="isVolumePopupOpen = true"
+            no-parent-event
           >
             <div
               class="volume-popup q-pa-sm"
-              style="width: 140px"
+              style="width: 200px"
               @wheel.prevent="handleVolumeWheel"
+              @pointerdown="onVolumePointerDown"
+              @mouseenter="
+                onVolumeEnter();
+                isVolumeHovered = true;
+              "
+              @mouseleave="
+                onVolumeLeave();
+                isVolumeHovered = false;
+              "
             >
               <QSlider
                 :model-value="playerStore.volume"
@@ -277,7 +315,8 @@ const handleProgressChange = (value: number | null) => {
                 :step="0.01"
                 :label="false"
                 :markers="false"
-                color="info"
+                :color="isVolumeHovered ? 'info' : 'primary'"
+                :track-size="isVolumeHovered ? '10px' : '5px'"
                 size="md"
                 class="volume-bar"
                 @update:model-value="
@@ -329,7 +368,10 @@ const handleProgressChange = (value: number | null) => {
 /* Fix volume popup scrollbar issue */
 .volume-popup {
   overflow: hidden;
-  padding: 8px 4px;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  height: 52px;
 }
 
 .volume-popup .q-slider {
@@ -343,10 +385,5 @@ const handleProgressChange = (value: number | null) => {
 
 .volume-popup .q-slider__thumb {
   overflow: visible;
-}
-
-/* Ensure popup has enough space for slider */
-.volume-popup .q-popup-proxy {
-  overflow: hidden;
 }
 </style>

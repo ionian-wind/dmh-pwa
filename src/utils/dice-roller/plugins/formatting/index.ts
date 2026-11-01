@@ -53,7 +53,7 @@ export function extractFormatting(ast: ASTNode): string[] {
 // --- Evaluation ---
 export function evaluateFormattingNode(
   node: ASTNode,
-  context: EvaluationContext,
+  _context: EvaluationContext,
 ): EvaluationResult {
   if (node.type !== 'formatting') {
     throw new Error('Expected formatting node');

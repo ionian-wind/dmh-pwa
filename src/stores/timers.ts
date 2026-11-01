@@ -11,7 +11,7 @@ const now = () => Date.now();
 
 let counter = false;
 
-function showToast(id: string, message: string) {
+function showToast(_id: string, message: string) {
   Notify.create({
     color: 'secondary',
     textColor: 'primary',

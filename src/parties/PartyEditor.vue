@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModuleStore } from '@/stores/modules';
 import type { Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { alert } from '@/dialogs';
-import {UUID} from "@/types";
+import { UUID } from '@/types';
 
 const { t } = useI18n();
 const moduleStore = useModuleStore();
@@ -65,9 +65,9 @@ const handleSubmit = async () => {
     return;
   }
   // Ensure moduleIds is always an array of strings
-  editedParty.value.moduleIds = (editedParty.value.moduleIds || []).map((id: any) =>
-    typeof id === 'string' ? id : id?.id || ''
-  ).filter(Boolean);
+  editedParty.value.moduleIds = (editedParty.value.moduleIds || [])
+    .map((id: any) => (typeof id === 'string' ? id : id?.id || ''))
+    .filter(Boolean);
   emit('submit', editedParty.value);
 };
 

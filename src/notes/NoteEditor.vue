@@ -118,20 +118,20 @@ const handleCancel = () => {
           type="text"
         />
       </div>
-<!--      <div class="q-mb-md">-->
-<!--        <NoteTypeSelector-->
-<!--          :allow-create="true"-->
-<!--          v-model="editedNote.typeId"-->
-<!--          :module-id="editedNote.moduleId"-->
-<!--        />-->
-<!--      </div>-->
-<!--      <div class="q-mb-md">-->
-<!--        <TagSelector-->
-<!--          v-model="editedNote.tags"-->
-<!--          :entity-type="'note'"-->
-<!--          :current-entity-id="editedNote.id"-->
-<!--        />-->
-<!--      </div>-->
+      <!--      <div class="q-mb-md">-->
+      <!--        <NoteTypeSelector-->
+      <!--          :allow-create="true"-->
+      <!--          v-model="editedNote.typeId"-->
+      <!--          :module-id="editedNote.moduleId"-->
+      <!--        />-->
+      <!--      </div>-->
+      <!--      <div class="q-mb-md">-->
+      <!--        <TagSelector-->
+      <!--          v-model="editedNote.tags"-->
+      <!--          :entity-type="'note'"-->
+      <!--          :current-entity-id="editedNote.id"-->
+      <!--        />-->
+      <!--      </div>-->
       <div class="q-mb-md">
         <div class="row justify-between">
           <!-- Toggle button for edit mode -->
@@ -144,7 +144,7 @@ const handleCancel = () => {
             </QToggle>
           </div>
         </div>
-       
+
         <div class="row q-col-gutter-md">
           <div class="col-12">
             <MarkdownEditor

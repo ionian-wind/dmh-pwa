@@ -1,17 +1,6 @@
 <script setup lang="ts">
-import {
-  inject,
-  ref,
-  onMounted,
-  computed,
-  watch,
-  onBeforeUnmount,
-} from 'vue';
-import {
-  pickAudioFiles,
-  getFileFromHandle,
-  extractTrackMetadata,
-} from '@/jukebox/FileSystemUtils';
+import { inject, ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { fileHandler } from '@/utils/files';
 import {
   useJukeboxTracksStore,
   useJukeboxPlaylistsStore,
@@ -33,6 +22,7 @@ import { debugError } from '@/utils/debug';
 import PlaylistList from './components/PlaylistList.vue';
 import { ComponentInjection } from '@/types';
 import { confirm } from '@/dialogs';
+import { IconPlaylist } from '@tabler/icons-vue';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -51,7 +41,7 @@ if (!configStore) {
 const tracks = tracksStore.items;
 
 // configStore.jukeboxActivePlaylistId is always a Ref<string|null>, never null. Only .value can be null.
-  const selectedPlaylistId = ref<string | null>(null);
+const selectedPlaylistId = ref<string | null>(null);
 
 // Add watcher to sync with configStore
 watch(
@@ -59,12 +49,13 @@ watch(
   (newPlaylistId) => {
     selectedPlaylistId.value = newPlaylistId;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const isAddingTracks = ref(false);
 const isAddToPlaylistModalOpen = ref(false);
 const trackToAddToPlaylist = ref<JukeboxTrack | null>(null);
+let dragCounter = 0;
 
 function openAddToPlaylistModal(track: JukeboxTrack) {
   trackToAddToPlaylist.value = track;
@@ -80,7 +71,11 @@ function playTrackFromPlaylist(track: JukeboxTrack) {
 }
 
 async function removeTrack(track: JukeboxTrack) {
-  if (await confirm(t('common.confirmDelete', { title: track.title || track.fileId }))) {
+  if (
+    await confirm(
+      t('common.confirmDelete', { title: track.title || track.fileId }),
+    )
+  ) {
     await playerStore.removeTrackFromQueue(track);
 
     const playlistsToUpdate = playlistsStore.items.value.filter(
@@ -104,7 +99,9 @@ async function removeTrack(track: JukeboxTrack) {
         debugError(`Failed to delete file handle for track ${track.id}:`, e);
       }
     }
-    const trackIndex = draggableTracks.value.findIndex((t) => t.id === track.id);
+    const trackIndex = draggableTracks.value.findIndex(
+      (t) => t.id === track.id,
+    );
     if (trackIndex > -1) {
       draggableTracks.value.splice(trackIndex, 1);
     }
@@ -131,57 +128,69 @@ watch(
   { immediate: true, deep: true },
 );
 
+async function processFiles(
+  files: {
+    file: File;
+    source:
+      | { kind: 'handle'; handle: FileSystemFileHandle }
+      | { kind: 'blob'; blob: Blob };
+  }[],
+) {
+  const newTrackIds: string[] = [];
+  for (const { file, source } of files) {
+    const fileId = `${file.name}-${file.lastModified}-${file.size}`;
+    const existingFile = await getJukeboxFile(fileId);
+    await putJukeboxFile({
+      id: fileId,
+      source: source,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified,
+      createdAt: existingFile?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    });
+    const trackMeta = await fileHandler.extractTrackMetadata(file);
+    const newTrackData = {
+      fileId,
+      title: trackMeta.title || file.name.replace(/\.[^/.]+$/, ''),
+      artist: trackMeta.artist,
+      album: trackMeta.album,
+      duration: trackMeta.duration,
+      picture: trackMeta.picture,
+      color: trackMeta.color,
+      palette: trackMeta.palette,
+      playlistIds: [],
+      genre: trackMeta.genre,
+      year: trackMeta.year,
+      trackNumber: trackMeta.trackNumber,
+      discNumber: trackMeta.discNumber,
+      composer: trackMeta.composer,
+      comment: trackMeta.comment,
+      lyrics: trackMeta.lyrics,
+    };
+    const createdTrack = await tracksStore.create(newTrackData);
+    newTrackIds.push(createdTrack.id);
+  }
+  if (selectedPlaylistId.value) {
+    const playlist = playlistsStore.items.value.find(
+      (p: JukeboxPlaylist) => p.id === selectedPlaylistId.value,
+    );
+    if (playlist) {
+      const updatedTrackIds = [...playlist.trackIds, ...newTrackIds];
+      await playlistsStore.update(playlist.id, { trackIds: updatedTrackIds });
+    }
+  }
+
+  playerStore.actualiseQueue();
+}
+
 async function pickFiles() {
   if (isAddingTracks.value) return;
   isAddingTracks.value = true;
   try {
-    const handles = await pickAudioFiles();
-    const newTrackIds: string[] = [];
-    for (const handle of handles) {
-      const file = await getFileFromHandle(handle);
-      const fileId = `${file.name}-${file.lastModified}-${file.size}`;
-      const existingFile = await getJukeboxFile(fileId);
-      await putJukeboxFile({
-        id: fileId,
-        handle: handle,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        lastModified: file.lastModified,
-        createdAt: existingFile?.createdAt || Date.now(),
-        updatedAt: Date.now(),
-      });
-      const trackMeta = await extractTrackMetadata(file);
-      const newTrackData = {
-        fileId,
-        title: trackMeta.title || file.name.replace(/\.[^/.]+$/, ''),
-        artist: trackMeta.artist,
-        album: trackMeta.album,
-        duration: trackMeta.duration,
-        picture: trackMeta.picture,
-        color: trackMeta.color,
-        palette: trackMeta.palette,
-        playlistIds: [],
-        genre: trackMeta.genre,
-        year: trackMeta.year,
-        trackNumber: trackMeta.trackNumber,
-        discNumber: trackMeta.discNumber,
-        composer: trackMeta.composer,
-        comment: trackMeta.comment,
-        lyrics: trackMeta.lyrics,
-      };
-      const createdTrack = await tracksStore.create(newTrackData);
-      newTrackIds.push(createdTrack.id);
-    }
-    if (selectedPlaylistId.value) {
-      const playlist = playlistsStore.items.value.find(
-        (p: JukeboxPlaylist) => p.id === selectedPlaylistId.value,
-      );
-      if (playlist) {
-        const updatedTrackIds = [...playlist.trackIds, ...newTrackIds];
-        await playlistsStore.update(playlist.id, { trackIds: updatedTrackIds });
-      }
-    }
+    const files = await fileHandler.pickAudioFiles();
+    await processFiles(files);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       // User cancelled file picker, do nothing.
@@ -190,6 +199,83 @@ async function pickFiles() {
     }
   } finally {
     isAddingTracks.value = false;
+  }
+}
+
+const isDragging = ref(false);
+
+async function onDrop(event: DragEvent) {
+  event.preventDefault();
+  isDragging.value = false;
+  dragCounter = 0;
+  if (isAddingTracks.value) return;
+  isAddingTracks.value = true;
+
+  try {
+    const items = event.dataTransfer?.items;
+    if (!items) return;
+
+    const files: {
+      file: File;
+      source:
+        | { kind: 'handle'; handle: FileSystemFileHandle }
+        | { kind: 'blob'; blob: Blob };
+    }[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const handle = await fileHandler.getAsFileSystemHandle(item);
+        if (handle) {
+          const file = await fileHandler.getFile({ kind: 'handle', handle });
+          if (
+            file.type.startsWith('audio/') ||
+            /\.(mp3|wav|ogg|flac|aac)$/i.test(file.name)
+          ) {
+            files.push({ file, source: { kind: 'handle', handle } });
+          }
+        } else {
+          const file = item.getAsFile();
+          if (
+            file &&
+            (file.type.startsWith('audio/') ||
+              /\.(mp3|wav|ogg|flac|aac)$/i.test(file.name))
+          ) {
+            files.push({ file, source: { kind: 'blob', blob: file } });
+          }
+        }
+      }
+    }
+    if (files.length > 0) {
+      await processFiles(files);
+    }
+  } catch (err) {
+    debugError('Error processing dropped files:', err);
+  } finally {
+    isAddingTracks.value = false;
+  }
+}
+
+function onDragEnter(event: DragEvent) {
+  if (!event.dataTransfer?.types.includes('Files')) return;
+  event.preventDefault();
+  dragCounter++;
+  isDragging.value = true;
+}
+
+function onDragOver(event: DragEvent) {
+  if (!event.dataTransfer?.types.includes('Files')) return;
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(event: DragEvent) {
+  if (!event.dataTransfer?.types.includes('Files')) return;
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isDragging.value = false;
   }
 }
 
@@ -244,31 +330,70 @@ onMounted(async () => {
     component: JukeboxPlayer,
     props: { animatedBackground: true, showArtwork: false },
   });
+
+  document.addEventListener('dragenter', onDragEnter);
+  document.addEventListener('dragover', onDragOver);
+  document.addEventListener('dragleave', onDragLeave);
+  document.addEventListener('drop', onDrop);
 });
 
 onBeforeUnmount(() => {
   pictureUrlCacheStore.clearCache();
   setRightDrawerContent(null);
   setBottomDrawerContent(null);
+
+  document.removeEventListener('dragenter', onDragEnter);
+  document.removeEventListener('dragover', onDragOver);
+  document.removeEventListener('dragleave', onDragLeave);
+  document.removeEventListener('drop', onDrop);
 });
 </script>
 
 <template>
-  <BaseListView
-    :items="filteredTracks"
-    :card-component="TrackCard"
-    :empty-message="t('common.emptyTracks')"
-    :create-title="t('common.addTracks')"
-    :card-props="cardProps"
-    :show-search="false"
-    :view-style="'list'"
-    @create="pickFiles"
-    :draggable="selectedPlaylistId !== null"
-    @sort="onTracksSorted"
-  >
-    <AddToPlaylistModal
-      v-model="isAddToPlaylistModalOpen"
-      :track="trackToAddToPlaylist"
-    />
-  </BaseListView>
+  <div class="jukebox-page">
+    <div v-if="isDragging" class="drop-zone-active">
+      {{ t('common.dropAudioFiles') }}
+    </div>
+    <BaseListView
+      :items="filteredTracks"
+      :card-component="TrackCard"
+      :empty-message="t('common.emptyTracks')"
+      :create-title="t('common.addTracks')"
+      :card-props="cardProps"
+      :show-search="false"
+      :view-style="'list'"
+      @create="pickFiles"
+      :draggable="selectedPlaylistId !== null"
+      @sort="onTracksSorted"
+      :right-drawer-icon="IconPlaylist"
+    >
+      <AddToPlaylistModal
+        v-model="isAddToPlaylistModalOpen"
+        :track="trackToAddToPlaylist"
+      />
+    </BaseListView>
+  </div>
 </template>
+
+<style scoped>
+.jukebox-page {
+  position: relative;
+  min-height: 100%;
+}
+.drop-zone-active {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--q-primary);
+  background-color: color-mix(in srgb, var(--q-primary) 10%, transparent);
+  border: 3px dashed var(--q-primary);
+  z-index: 9999;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+</style>

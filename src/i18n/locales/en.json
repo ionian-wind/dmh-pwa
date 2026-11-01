@@ -42,7 +42,8 @@
     "combats": "Combats",
     "modules": "Modules",
     "configuration": "Configuration",
-    "timers": "Timers"
+    "timers": "Timers",
+    "ambientSound": "Ambient Sound"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -81,7 +82,7 @@
     "create": "Create Party",
     "edit": "Edit Party",
     "delete": "Delete Party",
-    "namePlaceholder": "Party name",
+    "namePlaceholder": "Enter party name",
     "fields": {
       "name": "Name",
       "description": "Description",
@@ -215,7 +216,8 @@
         "completed": "Completed"
       },
       "actions": "Actions",
-      "view": "View"
+      "view": "View",
+      "none": "No combats yet"
     }
   },
   "modules": {
@@ -267,6 +269,8 @@
     "expand": "Expand",
     "collapse": "Collapse",
     "close": "Close",
+    "increase": "Increase",
+    "decrease": "Decrease",
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
@@ -326,7 +330,8 @@
     "quantity": "Quantity",
     "done": "Done",
     "module": "Module",
-    "moduleRequired": "Module is required"
+    "moduleRequired": "Module is required",
+    "dropAudioFiles": "Drop audio files here"
   },
   "validation": {
     "required": "This field is required",
@@ -525,6 +530,7 @@
     "edit": "Edit Timer",
     "delete": "Delete Timer",
     "noTitle": "(no title)",
+    "duration": "Duration",
     "fields": {
       "title": "Title",
       "titlePlaceholder": "Enter timer title",
@@ -532,6 +538,9 @@
       "descriptionPlaceholder": "Enter timer description",
       "duration": "Duration"
     },
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s",
     "remaining": "Remaining",
     "finished": "Finished!",
     "start": "Start",
@@ -567,11 +576,100 @@
     "physicalBase": "Physical base",
     "unit": "Unit",
     "equals": "=",
-    "clear": "AC"
+    "clear": "AC",
+    "unitBases": {
+      "length": "Length",
+      "mass": "Mass",
+      "time": "Time",
+      "current": "Current",
+      "temperature": "Temperature",
+      "luminousIntensity": "Luminous Intensity",
+      "amountOfSubstance": "Amount of Substance",
+      "force": "Force",
+      "pressure": "Pressure",
+      "energy": "Energy",
+      "power": "Power",
+      "voltage": "Voltage",
+      "electricCharge": "Electric Charge",
+      "capacitance": "Capacitance",
+      "resistance": "Resistance",
+      "conductance": "Conductance",
+      "magneticFlux": "Magnetic Flux",
+      "magneticFluxDensity": "Magnetic Flux Density",
+      "inductance": "Inductance",
+      "frequency": "Frequency",
+      "angle": "Angle",
+      "area": "Area",
+      "volume": "Volume",
+      "speed": "Speed",
+      "acceleration": "Acceleration",
+      "density": "Density",
+      "flow": "Flow",
+      "illuminance": "Illuminance"
+    },
+    "unitSymbols": {
+      "m": "m", "cm": "cm", "mm": "mm", "km": "km", "in": "in", "ft": "ft", "yd": "yd", "mi": "mi",
+      "kg": "kg", "g": "g", "mg": "mg", "lb": "lb", "oz": "oz",
+      "s": "s", "min": "min", "h": "h", "day": "day", "week": "week",
+      "A": "A", "mA": "mA",
+      "K": "K", "degC": "°C", "degF": "°F",
+      "cd": "cd",
+      "mol": "mol",
+      "N": "N", "lbf": "lbf",
+      "Pa": "Pa", "bar": "bar", "psi": "psi", "atm": "atm",
+      "J": "J", "kJ": "kJ", "cal": "cal", "Wh": "Wh", "kWh": "kWh",
+      "W": "W", "kW": "kW", "MW": "MW", "hp": "hp",
+      "V": "V", "kV": "kV",
+      "C": "C", "mC": "mC",
+      "F": "F", "mF": "mF", "uF": "μF",
+      "ohm": "Ω", "kOhm": "kΩ",
+      "S": "S",
+      "Wb": "Wb",
+      "T": "T", "G": "G",
+      "H": "H",
+      "Hz": "Hz", "kHz": "kHz", "MHz": "MHz",
+      "rad": "rad", "deg": "deg", "grad": "grad",
+      "m2": "m²", "cm2": "cm²", "mm2": "mm²", "km2": "km²", "ft2": "ft²", "in2": "in²",
+      "m3": "m³", "cm3": "cm³", "mm3": "mm³", "l": "l", "ml": "ml", "ft3": "ft³", "in3": "in³",
+      "m/s": "m/s", "km/h": "km/h", "mi/h": "mi/h",
+      "m/s2": "m/s²",
+      "kg/m3": "kg/m³", "g/cm3": "g/cm³",
+      "m3/s": "m³/s", "l/min": "l/min",
+      "lx": "lx"
+    }
   },
   "jukebox": {
     "shuffle": "Shuffle",
     "repeat": "Repeat",
-    "allTracks": "All Tracks"
+    "allTracks": "All Tracks",
+    "noTrackSelected": "No track selected"
+  },
+  "ambientSoundPage": {
+    "title": "Ambient Sound",
+    "selectPack": "Select Sound Pack",
+    "importPack": "Import Pack",
+    "createPack": "Create Pack",
+    "editPack": "Edit Pack",
+    "packInfo": "Pack Information",
+    "loading": "Loading sound pack...",
+    "moodState": "Mood State",
+    "intensity": "Intensity",
+    "ambientLayers": "Ambient Layers",
+    "oneShots": "One-Shot Effects",
+    "weather": "Weather",
+    "all": "All",
+    "combat": "Combat",
+    "exploration": "Exploration",
+    "environmental": "Environmental",
+    "noLayers": "No ambient layers available",
+    "noSfx": "No one-shot effects available",
+    "importHint": "Import a .spk sound pack file to get started",
+    "name": "Name",
+    "icon": "Icon",
+    "volume": "Volume",
+    "category": "Category",
+    "moodStates": "Mood States",
+    "selectFile": "Select file",
+    "selectMusic": "Select music"
   }
 }

@@ -242,10 +242,7 @@ onMounted(async () => {
     <div class="tree-controls">
       <slot name="add-root">
         <QBtnGroup flat>
-          <Button
-            size="small"
-            variant="primary"
-            @click="openAddRootNote">
+          <Button size="small" variant="primary" @click="openAddRootNote">
             <IconPlus />
           </Button>
         </QBtnGroup>
@@ -262,23 +259,13 @@ onMounted(async () => {
         <div class="module-tree-item-content">
           <span class="module-tree-item-title">{{ item.title }}</span>
           <QBtnGroup flat class="module-tree-item-controls">
-            <Button 
-              size="small"
-              variant="primary"
-              @click="openAddNode(item)"
-              >
+            <Button size="small" variant="primary" @click="openAddNode(item)">
               <IconPlus />
             </Button>
-            <Button
-              size="small"
-              variant="success"
-              @click="openEdit(item)">
+            <Button size="small" variant="success" @click="openEdit(item)">
               <IconPencil />
             </Button>
-            <Button 
-              size="small"
-              variant="danger"
-              @click="handleRemove(item)">
+            <Button size="small" variant="danger" @click="handleRemove(item)">
               <IconX />
             </Button>
           </QBtnGroup>

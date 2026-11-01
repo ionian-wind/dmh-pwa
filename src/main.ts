@@ -16,12 +16,11 @@ import { Quasar, Dialog, Notify } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
 import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
 
-
 // Import Quasar css
 import 'quasar/src/css/index.sass';
 
-import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/frame.css";
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/frame.css';
 
 // Import global styles
 import './assets/styles/global.css';
@@ -65,7 +64,6 @@ watch(
   },
   { immediate: true },
 );
-
 
 // Setup anchor scroll handler
 setupAnchorScrollHandler();

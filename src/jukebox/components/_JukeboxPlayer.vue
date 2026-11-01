@@ -174,14 +174,19 @@ function toggleTimeDisplay() {
             :style="pictureStyle"
             class="track-artwork"
           ></div>
-          <div v-else class="track-artwork track-artwork-placeholder">
+          <div
+            v-else
+            class="track-artwork track-artwork-placeholder flex flex-center"
+          >
             <IconMusicNote width="80" height="80" />
           </div>
         </div>
         <!-- Track Info -->
         <div class="track-info-top">
           <div class="title">
-            {{ playerStore.currentTrack?.title || 'No track selected' }}
+            {{
+              playerStore.currentTrack?.title || $t('jukebox.noTrackSelected')
+            }}
           </div>
           <div class="artist">
             {{ playerStore.currentTrack?.artist || '&nbsp;' }}

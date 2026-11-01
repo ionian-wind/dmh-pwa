@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import PWAStatus from '@/components/PWAStatus.vue';
-import CalculatorView from '@/views/CalculatorView.vue';
+import CalculatorDialog from '@/calculator/CalculatorView.vue';
 import MentionModalStack from '@/components/common/MentionModalStack.vue';
 import { Section, ComponentInjection } from '@/types';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
@@ -35,12 +35,11 @@ import {
   IconMenu2,
   IconMusic,
   IconCalculator,
-  IconExternalLink,
-  IconX,
+  // IconHeadphones,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
-import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
+import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
@@ -139,6 +138,12 @@ const sections: SectionItem[] = [
     icon: timerIcon,
     ref: true,
   },
+  // {
+  //   section: Section.AMBIENT_SOUND,
+  //   label: 'navigation.ambientSound',
+  //   path: '/ambient-sound',
+  //   icon: IconHeadphones,
+  // },
 ];
 
 function isActive(item: SectionItem): boolean {
@@ -222,6 +227,9 @@ const rightDrawerContent = shallowRef<ComponentInjection>(null);
 provide('setRightDrawerContent', (component: ComponentInjection) => {
   rightDrawerContent.value = component;
 });
+provide('rightDrawerContent', rightDrawerContent);
+provide('rightDrawerOpen', rightDrawerOpen);
+provide('toggleRightDrawer', toggleRightDrawer);
 
 const bottomDrawerContent = shallowRef<ComponentInjection>(null);
 provide('setBottomDrawerContent', (component: ComponentInjection) => {
@@ -248,9 +256,6 @@ const isCalculatorPopupOpen = ref(false);
             :is="topMenuContent.component"
             v-bind="topMenuContent.props"
           ></component>
-          <QBtn v-if="rightDrawerContent" dense flat @click="toggleRightDrawer">
-            <IconPlaylist />
-          </QBtn>
         </QToolbar>
       </QHeader>
 
@@ -306,7 +311,9 @@ const isCalculatorPopupOpen = ref(false);
               :active-class="'bg-secondary'"
             >
               <QItemSection side>
-                <IconMusic />
+                <IconMusic
+                  :class="{ 'jukebox-playing': playerStore.isPlaying }"
+                />
               </QItemSection>
               <QItemSection>
                 {{ t('app.jukebox') }}
@@ -318,10 +325,12 @@ const isCalculatorPopupOpen = ref(false);
               v-else
               clickable
               v-ripple
-              @click="isJukeboxPopupOpen = true"
+              @click="isJukeboxPopupOpen = !isJukeboxPopupOpen"
             >
               <QItemSection side>
-                <IconMusic />
+                <IconMusic
+                  :class="{ 'jukebox-playing': playerStore.isPlaying }"
+                />
               </QItemSection>
               <QItemSection>
                 {{ t('app.jukebox') }}
@@ -331,7 +340,7 @@ const isCalculatorPopupOpen = ref(false);
               clickable
               :active="false"
               v-ripple
-              @click="isCalculatorPopupOpen = true"
+              @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
             >
               <QItemSection side><IconCalculator /></QItemSection>
               <QItemSection>{{ t('app.calculator') }}</QItemSection>
@@ -377,28 +386,27 @@ const isCalculatorPopupOpen = ref(false);
       <PWAStatus />
       <!-- Global Mention Modal Stack -->
       <MentionModalStack />
-      <CalculatorView
-        v-if="isCalculatorPopupOpen"
-        v-model="isCalculatorPopupOpen"
-      />
-
-      <QDialog v-model="isJukeboxPopupOpen" seamless position="bottom">
-        <QCard>
-          <QToolbar class="justify-between">
-            <QBtn
-              flat
-              clickable
-              @click="isJukeboxPopupOpen = false"
-              :to="'/jukebox'"
-              ><IconExternalLink
-            /></QBtn>
-            <QBtn flat clickable @click="isJukeboxPopupOpen = false"
-              ><IconX
-            /></QBtn>
-          </QToolbar>
-          <JukeboxPlayer :modal="true" :show-artwork="true" />
-        </QCard>
-      </QDialog>
+      <CalculatorDialog v-model="isCalculatorPopupOpen" />
+      <JukeboxDialog v-model="isJukeboxPopupOpen" />
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes jukebox-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-8deg);
+  }
+  75% {
+    transform: rotate(8deg);
+  }
+}
+
+.jukebox-playing {
+  animation: jukebox-sway 0.6s ease-in-out infinite;
+}
+</style>

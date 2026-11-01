@@ -80,7 +80,7 @@ watch(
   (newPlaylistId) => {
     selectedPlaylistId.value = newPlaylistId;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const openPlaylistModal = (playlist: JukeboxPlaylist | null) => {

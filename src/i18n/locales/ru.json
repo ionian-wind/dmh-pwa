@@ -42,7 +42,8 @@
     "combats": "Бои",
     "modules": "Модули",
     "configuration": "Настройки",
-    "timers": "Таймеры"
+    "timers": "Таймеры",
+    "ambientSound": "Амбиент"
   },
   "home": {
     "title": "Добро пожаловать в Dungeon Master Helper",
@@ -81,7 +82,7 @@
     "create": "Создать группу",
     "edit": "Редактировать группу",
     "delete": "Удалить группу",
-    "namePlaceholder": "Название группы",
+    "namePlaceholder": "Введите название группы",
     "fields": {
       "name": "Имя",
       "description": "Описание",
@@ -205,7 +206,7 @@
       "addParticipant": "Добавить участника",
       "addParticipantTitle": "Добавить участников в бой",
       "allParticipantsAdded": "Все доступные участники уже в бою.",
-      "allPartyCharactersAdded": "All party characters are already in the combat.",
+      "allPartyCharactersAdded": "Все персонажи группы уже добавлены в бой.",
       "party": "Группа",
       "created": "Создано",
       "statusTitle": "Статус",
@@ -215,7 +216,8 @@
         "completed": "Завершён"
       },
       "actions": "Действия",
-      "view": "Открыть"
+      "view": "Открыть",
+      "none": "Боев пока нет"
     }
   },
   "modules": {
@@ -267,6 +269,8 @@
     "expand": "Развернуть",
     "collapse": "Свернуть",
     "close": "Закрыть",
+    "increase": "Увеличить",
+    "decrease": "Уменьшить",
     "back": "Назад",
     "next": "Далее",
     "previous": "Предыдущий",
@@ -326,7 +330,8 @@
     "quantity": "Количество",
     "done": "Готово",
     "module": "Модуль",
-    "moduleRequired": "Модуль обязателен"
+    "moduleRequired": "Модуль обязателен",
+    "dropAudioFiles": "Перетащите аудиофайлы сюда"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",
@@ -525,6 +530,7 @@
     "edit": "Редактировать таймер",
     "delete": "Удалить таймер",
     "noTitle": "(без названия)",
+    "duration": "Длительность",
     "fields": {
       "title": "Название",
       "titlePlaceholder": "Введите название таймера",
@@ -532,6 +538,9 @@
       "descriptionPlaceholder": "Введите описание таймера",
       "duration": "Длительность"
     },
+    "hours": "ч",
+    "minutes": "м",
+    "seconds": "с",
     "remaining": "Осталось",
     "finished": "Завершён!",
     "start": "Старт",
@@ -567,11 +576,100 @@
     "physicalBase": "Физическая основа",
     "unit": "Единица",
     "equals": "=",
-    "clear": "AC"
+    "clear": "C",
+    "unitBases": {
+      "length": "Длина",
+      "mass": "Масса",
+      "time": "Время",
+      "current": "Ток",
+      "temperature": "Температура",
+      "luminousIntensity": "Сила света",
+      "amountOfSubstance": "Количество вещества",
+      "force": "Сила",
+      "pressure": "Давление",
+      "energy": "Энергия",
+      "power": "Мощность",
+      "voltage": "Напряжение",
+      "electricCharge": "Электрический заряд",
+      "capacitance": "Ёмкость",
+      "resistance": "Сопротивление",
+      "conductance": "Проводимость",
+      "magneticFlux": "Магнитный поток",
+      "magneticFluxDensity": "Плотность магнитного потока",
+      "inductance": "Индуктивность",
+      "frequency": "Частота",
+      "angle": "Угол",
+      "area": "Площадь",
+      "volume": "Объём",
+      "speed": "Скорость",
+      "acceleration": "Ускорение",
+      "density": "Плотность",
+      "flow": "Расход",
+      "illuminance": "Освещённость"
+    },
+    "unitSymbols": {
+      "m": "м", "cm": "см", "mm": "мм", "km": "км", "in": "дюйм", "ft": "фут", "yd": "ярд", "mi": "миля",
+      "kg": "кг", "g": "г", "mg": "мг", "lb": "фунт", "oz": "унция",
+      "s": "с", "min": "мин", "h": "ч", "day": "день", "week": "неделя",
+      "A": "А", "mA": "мА",
+      "K": "K", "degC": "°C", "degF": "°F",
+      "cd": "кд",
+      "mol": "моль",
+      "N": "Н", "lbf": "фунт-сила",
+      "Pa": "Па", "bar": "бар", "psi": "psi", "atm": "атм",
+      "J": "Дж", "kJ": "кДж", "cal": "кал", "Wh": "Вт·ч", "kWh": "кВт·ч",
+      "W": "Вт", "kW": "кВт", "MW": "МВт", "hp": "л.с.",
+      "V": "В", "kV": "кВ",
+      "C": "Кл", "mC": "мКл",
+      "F": "Ф", "mF": "мФ", "uF": "мкФ",
+      "ohm": "Ом", "kOhm": "кОм",
+      "S": "См",
+      "Wb": "Вб",
+      "T": "Тл", "G": "Гс",
+      "H": "Гн",
+      "Hz": "Гц", "kHz": "кГц", "MHz": "МГц",
+      "rad": "рад", "deg": "°", "grad": "град",
+      "m2": "м²", "cm2": "см²", "mm2": "мм²", "km2": "км²", "ft2": "фут²", "in2": "дюйм²",
+      "m3": "м³", "cm3": "см³", "mm3": "мм³", "l": "л", "ml": "мл", "ft3": "фут³", "in3": "дюйм³",
+      "m/s": "м/с", "km/h": "км/ч", "mi/h": "миль/ч",
+      "m/s2": "м/с²",
+      "kg/m3": "кг/м³", "g/cm3": "г/см³",
+      "m3/s": "м³/с", "l/min": "л/мин",
+      "lx": "лк"
+    }
   },
   "jukebox": {
     "shuffle": "Перемешать",
     "repeat": "Повтор",
-    "allTracks": "Все треки"
+    "allTracks": "Все треки",
+    "noTrackSelected": "Трек не выбран"
+  },
+  "ambientSoundPage": {
+    "title": "Амбиент",
+    "selectPack": "Выбрать звуковой пакет",
+    "importPack": "Импорт пакета",
+    "createPack": "Создать пакет",
+    "editPack": "Редактировать пакет",
+    "packInfo": "Информация о пакете",
+    "loading": "Загрузка звукового пакета...",
+    "moodState": "Состояние",
+    "intensity": "Интенсивность",
+    "ambientLayers": "Слои окружения",
+    "oneShots": "Звуковые эффекты",
+    "weather": "Погода",
+    "all": "Все",
+    "combat": "Бой",
+    "exploration": "Исследование",
+    "environmental": "Окружение",
+    "noLayers": "Нет доступных слоев",
+    "noSfx": "Нет доступных эффектов",
+    "importHint": "Импортируйте файл .spk для начала",
+    "name": "Название",
+    "icon": "Иконка",
+    "volume": "Громкость",
+    "category": "Категория",
+    "moodStates": "Состояния",
+    "selectFile": "Выбрать файл",
+    "selectMusic": "Выбрать музыку"
   }
 }

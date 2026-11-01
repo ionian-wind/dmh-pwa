@@ -1,5 +1,5 @@
-import { debug } from '../utils/debug';
-import { debugError } from '../utils/debug';
+import { debug } from '@/utils/debug';
+import { debugError } from '@/utils/debug';
 
 export async function pickAudioFiles(): Promise<FileSystemFileHandle[]> {
   // Only works in Chromium browsers
@@ -45,7 +45,7 @@ async function getAudioMetadata(file: File): Promise<{ duration: number }> {
 export async function extractTrackMetadata(file: File): Promise<any> {
   const audioMetadata = await getAudioMetadata(file);
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     // Vite specific worker import: `?worker` suffix is not needed with `new URL`
     const worker = new Worker(
       new URL('./worker/metadata.worker.ts', import.meta.url),

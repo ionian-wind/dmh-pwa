@@ -111,7 +111,7 @@ const moduleIdsProxy = computed<string[]>({
           <ModuleMultipleSelector
             id="monster-modules"
             v-model="moduleIdsProxy"
-            :placeholder="t('common.noModules')"
+            :placeholder="'common.noModules'"
           />
         </div>
       </div>

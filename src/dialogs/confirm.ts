@@ -8,7 +8,10 @@ export interface ConfirmOptions {
   // Add more Quasar Dialog options as needed
 }
 
-export function confirm(message: string, options: ConfirmOptions = {}): Promise<boolean> {
+export function confirm(
+  message: string,
+  options: ConfirmOptions = {},
+): Promise<boolean> {
   return new Promise((resolve) => {
     Dialog.create({
       message,
@@ -23,6 +26,8 @@ export function confirm(message: string, options: ConfirmOptions = {}): Promise<
       },
       persistent: true,
       ...options,
-    }).onOk(() => resolve(true)).onCancel(() => resolve(false));
+    })
+      .onOk(() => resolve(true))
+      .onCancel(() => resolve(false));
   });
-} 
+}

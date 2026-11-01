@@ -39,10 +39,7 @@ const handleCreateType = async () => {
 };
 
 const handleDeleteType = async (noteType: NoteType) => {
-  if (
-    noteType.id &&
-    await confirm(t('common.confirmDelete'))
-  ) {
+  if (noteType.id && (await confirm(t('common.confirmDelete')))) {
     await noteTypeStore.remove(noteType.id);
     return true;
   }

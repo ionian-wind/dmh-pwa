@@ -56,7 +56,10 @@ function handleEdit(module: Module) {
 }
 
 async function handleDelete(module: Module) {
-  if (module.id && await confirm(t('common.confirmDelete', { title: module.name }))) {
+  if (
+    module.id &&
+    (await confirm(t('common.confirmDelete', { title: module.name })))
+  ) {
     await moduleStore.remove(module.id);
     return true;
   }
@@ -98,7 +101,9 @@ async function handleImportConfirm() {
   if (!pendingImportData.value) return;
   try {
     const result = await importModuleFromZip(deepUnwrap(pendingImportData));
-    await alert(t('backup.moduleImported') + ` ${result.noteCount} notes imported.`);
+    await alert(
+      t('backup.moduleImported') + ` ${result.noteCount} notes imported.`,
+    );
     await moduleStore.load();
   } catch (e) {
     await alert(
@@ -130,20 +135,20 @@ function handleImportCancel() {
       @submit="handleSubmit"
       @copy="handleCopy"
     >
-<!--      <template #actions>-->
-<!--        <label-->
-<!--          class="btn btn&#45;&#45;success btn&#45;&#45;medium import-module"-->
-<!--          :title="t('backup.importModule')"-->
-<!--        >-->
-<!--          <IconUpload />-->
-<!--          <input-->
-<!--            type="file"-->
-<!--            accept=".zip"-->
-<!--            @change="handleModuleImport"-->
-<!--            style="display: none"-->
-<!--          />-->
-<!--        </label>-->
-<!--      </template>-->
+      <!--      <template #actions>-->
+      <!--        <label-->
+      <!--          class="btn btn&#45;&#45;success btn&#45;&#45;medium import-module"-->
+      <!--          :title="t('backup.importModule')"-->
+      <!--        >-->
+      <!--          <IconUpload />-->
+      <!--          <input-->
+      <!--            type="file"-->
+      <!--            accept=".zip"-->
+      <!--            @change="handleModuleImport"-->
+      <!--            style="display: none"-->
+      <!--          />-->
+      <!--        </label>-->
+      <!--      </template>-->
     </BaseListView>
     <ImportValidationModal
       v-if="showValidationModal && validationResult"

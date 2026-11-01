@@ -34,6 +34,21 @@ function debugLog(...args: any[]) {
   }
 }
 
+// Stub implementations for missing dice functions
+function rollCustomDice(count: number, sides: number[]): number[] {
+  return sides.flatMap((side) =>
+    Array.from({ length: count }, () => Math.floor(Math.random() * side) + 1),
+  );
+}
+
+function rollFudgeDice(count: number, variant: string): number[] {
+  const values = variant === 'fudge' ? [-1, 0, 0, 1, 1] : [-1, 0, 1];
+  return Array.from(
+    { length: count },
+    () => values[Math.floor(Math.random() * values.length)],
+  );
+}
+
 // Parse dice expressions
 export function parseDiceAst(input: string): DiceAstNode {
   debugLog('parseDiceAst: input:', input);
@@ -738,30 +753,31 @@ export function evaluateDiceNode(
     };
   }
 
-  if (node.type === 'crit-mod') {
+  const nodeAny = node as any;
+  if (nodeAny.type === 'crit-mod') {
     debugLog('Evaluating crit-mod:', node, context);
     return {
-      total: 0, // Placeholder
+      total: 0,
       rolls: [],
       warnings: ['Crit-mod node should be handled by parent'],
-      details: { critMod: node.mod },
+      details: { critMod: nodeAny.mod },
     };
-  } else if (node.type === 'function') {
+  } else if (nodeAny.type === 'function') {
     debugLog('Evaluating function:', node, context);
-    const args = node.args.map(
-      (arg) => evaluate(arg as DiceAstNode, context).total,
+    const args = nodeAny.args.map(
+      (arg: any) => evaluate(arg as DiceAstNode, context).total,
     );
-    const func = mathFunctions[node.name];
+    const func = mathFunctions[nodeAny.name as keyof typeof mathFunctions];
 
     if (!func) {
-      throw new Error(`Unknown function: ${node.name}`);
+      throw new Error(`Unknown function: ${nodeAny.name}`);
     }
 
     const total = func.apply(null, args);
-    const rolls: number[] = []; // Functions don't produce dice rolls themselves
+    const rolls: number[] = [];
     const warnings: string[] = [];
     const details = {
-      function: node.name,
+      function: nodeAny.name,
       args: args,
     };
 
@@ -779,5 +795,5 @@ export function evaluateDiceNode(
 
 // Plugin definition
 export const dicePlugin: DiceRollerPlugin = {
-  // ... existing code ...
+  name: 'dice',
 };

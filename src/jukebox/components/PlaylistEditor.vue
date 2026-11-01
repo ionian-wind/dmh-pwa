@@ -122,7 +122,7 @@ async function save() {
           <ModuleMultipleSelector
             id="playlist-modules"
             v-model="moduleIdsProxy"
-            :placeholder="t('playlist.fields.modules')"
+            :placeholder="'playlist.fields.modules'"
           />
         </div>
       </div>

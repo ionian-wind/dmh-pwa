@@ -349,7 +349,10 @@ async function saveEditBookmark() {
         </div>
       </template>
       <template #parties>
-        <div v-if="moduleParties.length === 0" class="empty-state q-pa-md text-grey text-center q-mt-xl">
+        <div
+          v-if="moduleParties.length === 0"
+          class="empty-state q-pa-md text-grey text-center q-mt-xl"
+        >
           {{ t('moduleView.noParties') }}
         </div>
         <div v-else class="content-grid">

@@ -10,7 +10,7 @@ import {
 } from '@tabler/icons-vue';
 import type { Timer } from '@/types';
 import { useTimerStore } from '@/stores/timers';
-import {formatTime} from "@/jukebox/utils";
+import { formatTime } from '@/jukebox/utils';
 
 const timerStore = useTimerStore();
 const props = defineProps<{ timer: Timer }>();
@@ -28,7 +28,8 @@ const statusLabel = computed(() => {
   }
 });
 
-const time = (elapsed = 0) => formatTime(Math.max(props.timer.duration - elapsed, 0) / 1000)
+const time = (elapsed = 0) =>
+  formatTime(Math.max(props.timer.duration - elapsed, 0) / 1000);
 
 const remaining = ref<string>(time());
 
@@ -45,10 +46,7 @@ watch(
 watch(
   () => props.timer.status,
   (status) => {
-    if ([
-      'inactive',
-      'finished'
-    ].includes(status)) {
+    if (['inactive', 'finished'].includes(status)) {
       remaining.value = time();
     }
   },

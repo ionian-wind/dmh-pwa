@@ -96,7 +96,7 @@ const groupedEntities = computed(() => {
 
 <template>
   <div class="mentions-aside">
-    <h5 class="mentions-title">{{ t(title) }}</h5>
+    <h5 class="mentions-title">{{ title }}</h5>
     <template v-if="entities.length">
       <div
         v-for="(group, kind) in groupedEntities"

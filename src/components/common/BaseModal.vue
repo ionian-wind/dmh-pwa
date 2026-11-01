@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted, computed, ref, useSlots } from 'vue';
+import {
+  watch,
+  onMounted,
+  onUnmounted,
+  computed,
+  ref,
+  useSlots,
+  nextTick,
+} from 'vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
 import {
@@ -49,17 +57,21 @@ const { t } = useI18n();
 watch(
   () => props.isOpen,
   (open) => {
-    if (open) {
-      openModal(props.modalId);
-    } else {
-      closeModal(props.modalId);
-    }
+    nextTick(() => {
+      if (open) {
+        openModal(props.modalId);
+      } else {
+        closeModal(props.modalId);
+      }
+    });
   },
 );
 
 onMounted(() => {
   if (props.isOpen) {
-    openModal(props.modalId);
+    nextTick(() => {
+      openModal(props.modalId);
+    });
   }
 });
 
@@ -146,7 +158,7 @@ function setExpanded(val: boolean) {
           :color="'standard'"
           @click="$emit('cancel')"
         >
-          {{ t(cancelLabel || 'common.cancel') }}
+          {{ cancelLabel || t('common.cancel') }}
         </QBtn>
         <QBtn
           flat
@@ -156,7 +168,7 @@ function setExpanded(val: boolean) {
           :disabled="props.disableSubmit"
           @click.prevent="$emit('submit')"
         >
-          {{ t(submitLabel || 'common.save') }}
+          {{ submitLabel || t('common.save') }}
         </QBtn>
       </QCardActions>
     </QCard>

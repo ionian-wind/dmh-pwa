@@ -60,7 +60,10 @@ const linkedCharacters = computed(() => {
 });
 
 async function handleDeleteParty() {
-  if (party.value && await confirm(t('common.confirmDelete', { title: party.value.name }))) {
+  if (
+    party.value &&
+    (await confirm(t('common.confirmDelete', { title: party.value.name })))
+  ) {
     await partyStore.remove(party.value.id);
   }
 }

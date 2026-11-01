@@ -15,10 +15,12 @@
     @submit="$emit('import')"
   >
     <div v-if="result.treeMatchesModule" class="text-success mb-3">
-      <IconCircleCheck class="icon align-middle me-1" /> {{ t('importValidation.treeMatches') }}
+      <IconCircleCheck class="icon align-middle me-1" />
+      {{ t('importValidation.treeMatches') }}
     </div>
     <div v-else class="text-danger mb-3">
-      <IconX class="icon align-middle me-1" /> {{ t('importValidation.treeMismatch') }}
+      <IconX class="icon align-middle me-1" />
+      {{ t('importValidation.treeMismatch') }}
     </div>
 
     <div class="mb-3">
@@ -32,11 +34,16 @@
           <IconX class="icon align-middle me-1" /> {{ id }}
         </li>
         <li v-if="result.missingNoteIds.length > 10">
-          {{ t('importValidation.andMore', { count: result.missingNoteIds.length - 10 }) }}
+          {{
+            t('importValidation.andMore', {
+              count: result.missingNoteIds.length - 10,
+            })
+          }}
         </li>
       </ul>
       <div v-else class="text-success">
-        <IconCircleCheck class="icon align-middle me-1" /> {{ t('importValidation.allNoteIdsPresent') }}
+        <IconCircleCheck class="icon align-middle me-1" />
+        {{ t('importValidation.allNoteIdsPresent') }}
       </div>
     </div>
 
@@ -51,11 +58,16 @@
           <IconAlertTriangle class="icon align-middle me-1" /> {{ id }}
         </li>
         <li v-if="result.orphanedNoteFiles.length > 10">
-          {{ t('importValidation.andMore', { count: result.orphanedNoteFiles.length - 10 }) }}
+          {{
+            t('importValidation.andMore', {
+              count: result.orphanedNoteFiles.length - 10,
+            })
+          }}
         </li>
       </ul>
       <div v-else class="text-success">
-        <IconCircleCheck class="icon align-middle me-1" /> {{ t('importValidation.allNoteFilesReferenced') }}
+        <IconCircleCheck class="icon align-middle me-1" />
+        {{ t('importValidation.allNoteFilesReferenced') }}
       </div>
     </div>
   </BaseModal>

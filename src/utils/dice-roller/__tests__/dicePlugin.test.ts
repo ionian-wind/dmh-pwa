@@ -81,8 +81,8 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('2d6');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(2);
-      expect(result.rolls.every((roll) => roll >= 1 && roll <= 6)).toBe(true);
+      expect(result.rolls!).toHaveLength(2);
+      expect(result.rolls!.every((roll) => roll >= 1 && roll <= 6)).toBe(true);
       expect(result.total).toBeGreaterThanOrEqual(2);
       expect(result.total).toBeLessThanOrEqual(12);
       expect(result.warnings).toEqual([]);
@@ -92,7 +92,7 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('5');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toEqual([]);
+      expect(result.rolls!).toEqual([]);
       expect(result.total).toBe(5);
       expect(result.warnings).toEqual([]);
     });
@@ -101,7 +101,7 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('2d6+3');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(2);
+      expect(result.rolls!).toHaveLength(2);
       expect(result.total).toBeGreaterThanOrEqual(5); // 2+3
       expect(result.total).toBeLessThanOrEqual(15); // 12+3
     });
@@ -110,7 +110,7 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('(2d6+3)*2');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(2);
+      expect(result.rolls!).toHaveLength(2);
       expect(result.total).toBeGreaterThanOrEqual(10); // (2+3)*2
       expect(result.total).toBeLessThanOrEqual(30); // (12+3)*2
     });
@@ -130,7 +130,7 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('4d6kl2');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(2); // Should keep only 2 dice
+      expect(result.rolls!).toHaveLength(2); // Should keep only 2 dice
       expect(result.total).toBeGreaterThanOrEqual(2);
       expect(result.total).toBeLessThanOrEqual(12);
     });
@@ -157,11 +157,11 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('1d6!');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls.length).toBeGreaterThanOrEqual(1);
+      expect(result.rolls!.length).toBeGreaterThanOrEqual(1);
       expect(result.total).toBeGreaterThanOrEqual(1);
       // If we rolled a 6, we should have more than 1 roll
-      if (result.rolls.includes(6)) {
-        expect(result.rolls.length).toBeGreaterThan(1);
+      if (result.rolls!.includes(6)) {
+        expect(result.rolls!.length).toBeGreaterThan(1);
       }
     });
 
@@ -169,8 +169,8 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('3d6mi3');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(3);
-      expect(result.rolls.every((roll) => roll >= 3)).toBe(true);
+      expect(result.rolls!).toHaveLength(3);
+      expect(result.rolls!.every((roll) => roll >= 3)).toBe(true);
       expect(result.total).toBeGreaterThanOrEqual(9); // 3*3
     });
 
@@ -178,8 +178,8 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('3d6ma4');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(3);
-      expect(result.rolls.every((roll) => roll <= 4)).toBe(true);
+      expect(result.rolls!).toHaveLength(3);
+      expect(result.rolls!.every((roll) => roll <= 4)).toBe(true);
       expect(result.total).toBeLessThanOrEqual(12); // 3*4
     });
 
@@ -187,10 +187,10 @@ describe('Dice Plugin', () => {
       const ast = parseDiceAst('4d6sa');
       const result = evaluateDiceNode(ast, {});
 
-      expect(result.rolls).toHaveLength(4);
+      expect(result.rolls!).toHaveLength(4);
       // Check if sorted ascending
-      for (let i = 1; i < result.rolls.length; i++) {
-        expect(result.rolls[i]).toBeGreaterThanOrEqual(result.rolls[i - 1]);
+      for (let i = 1; i < result.rolls!.length; i++) {
+        expect(result.rolls![i]).toBeGreaterThanOrEqual(result.rolls![i - 1]);
       }
     });
   });

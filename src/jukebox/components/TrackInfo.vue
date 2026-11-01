@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { JukeboxTrack } from '@/jukebox/types';
-import AlbumPicture from "@/jukebox/components/AlbumPicture.vue";
+import AlbumPicture from '@/jukebox/components/AlbumPicture.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   track?: JukeboxTrack | null;
@@ -11,20 +14,27 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div :class="{
-    'q-gutter-x-md': true,
-    'row': true,
-    'track-info-row': true,
-    'items-center': true,
-    'justify-start': horizontal,
-    'justify-center': !horizontal,
-  }">
+  <div
+    :class="{
+      'q-gutter-md': true,
+      'track-info-row': true,
+      row: horizontal,
+      column: !horizontal,
+      'items-center': !horizontal,
+      'justify-center': !horizontal,
+    }"
+  >
     <!-- Track Artwork -->
     <AlbumPicture v-if="showArtwork" v-bind="props" />
     <!-- Track Info -->
-    <div class="track-info-top">
+    <div
+      :class="{
+        'track-info-top': true,
+        'text-center': !horizontal,
+      }"
+    >
       <div class="title text-h6">
-        {{ props.track?.title || 'No track selected' }}
+        {{ props.track?.title || t('jukebox.noTrackSelected') }}
       </div>
       <div class="artist text-h7">{{ props.track?.artist || '&nbsp;' }}</div>
     </div>

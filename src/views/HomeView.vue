@@ -10,7 +10,10 @@ import { useCharacterStore } from '@/stores/characters';
 import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
-import { parseModuleZip, importModuleFromZip } from '@/utils/moduleImportExport';
+import {
+  parseModuleZip,
+  importModuleFromZip,
+} from '@/utils/moduleImportExport';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 import { alert } from '@/dialogs';
 
@@ -116,7 +119,9 @@ async function handleBackup() {
     );
     await alert(t('backup.backupCompleted'));
   } catch (e) {
-    await alert(t('backup.backupFailed') + (e instanceof Error ? e.message : e));
+    await alert(
+      t('backup.backupFailed') + (e instanceof Error ? e.message : e),
+    );
   }
 }
 
@@ -137,7 +142,9 @@ async function handleRestore(event: Event) {
       moduleStore.load(),
     ]);
   } catch (e) {
-    await alert(t('backup.restoreFailed') + (e instanceof Error ? e.message : e));
+    await alert(
+      t('backup.restoreFailed') + (e instanceof Error ? e.message : e),
+    );
   }
   input.value = '';
 }
@@ -146,19 +153,22 @@ async function handleModuleImport(event: Event) {
   const input = event.target as HTMLInputElement;
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  
+
   try {
     const { module, tree, notes } = await parseModuleZip(file);
-    const result = await importModuleFromZip(deepUnwrap({ module, tree, notes }));
-    await alert(t('backup.moduleImported') + ` ${result.noteCount} notes imported.`);
-    
+    const result = await importModuleFromZip(
+      deepUnwrap({ module, tree, notes }),
+    );
+    await alert(
+      t('backup.moduleImported') + ` ${result.noteCount} notes imported.`,
+    );
+
     // Reload stores to show new data
-    await Promise.all([
-      moduleStore.load(),
-      noteStore.load()
-    ]);
+    await Promise.all([moduleStore.load(), noteStore.load()]);
   } catch (e) {
-    await alert(t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e));
+    await alert(
+      t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e),
+    );
   }
   input.value = '';
 }
@@ -180,7 +190,7 @@ async function handleModuleImport(event: Event) {
           </p>
         </div>
       </div>
-      
+
       <!-- Backup/Restore/Import Actions -->
       <div class="q-mt-lg flex flex-center q-gutter-md">
         <QBtn
@@ -188,26 +198,32 @@ async function handleModuleImport(event: Event) {
           :label="t('backup.backup')"
           @click="handleBackup"
         />
-        <QBtn
-          color="secondary"
-          :label="t('backup.restore')"
-        >
+        <QBtn color="secondary" :label="t('backup.restore')">
           <input
             type="file"
             accept=".zip"
             @change="handleRestore"
-            style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer"
+            style="
+              position: absolute;
+              opacity: 0;
+              width: 100%;
+              height: 100%;
+              cursor: pointer;
+            "
           />
         </QBtn>
-        <QBtn
-          color="positive"
-          :label="t('backup.importModule')"
-        >
+        <QBtn color="positive" :label="t('backup.importModule')">
           <input
             type="file"
             accept=".zip"
             @change="handleModuleImport"
-            style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer"
+            style="
+              position: absolute;
+              opacity: 0;
+              width: 100%;
+              height: 100%;
+              cursor: pointer;
+            "
           />
         </QBtn>
       </div>

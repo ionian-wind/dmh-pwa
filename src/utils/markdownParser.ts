@@ -14,14 +14,14 @@ const entityLinkRegex =
 const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
   const defaultRender =
     md.renderer.rules.link_open ||
-    function (tokens: any, idx: number, options: any, env: any, self: any) {
+    function (tokens: any, idx: number, options: any, _env: any, self: any) {
       return self.renderToken(tokens, idx, options);
     };
   md.renderer.rules.link_open = function (
     tokens: any,
     idx: number,
     options: any,
-    env: any,
+    _env: any,
     self: any,
   ) {
     const href = tokens[idx].attrGet('href');
@@ -58,21 +58,21 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
         tokens[idx].attrJoin('class', 'external-link');
       }
     }
-    return defaultRender(tokens, idx, options, env, self);
+    return defaultRender(tokens, idx, options, _env, self);
   };
 
   // Optionally, customize link text rendering for internal links
   const defaultTextRender =
     md.renderer.rules.text ||
-    function (tokens: any, idx: number, options: any, env: any, self: any) {
-      return self.renderToken(tokens, idx, options);
+    function (tokens: any, idx: number, _options: any, _env: any, self: any) {
+      return self.renderToken(tokens, idx, _options);
     };
   md.renderer.rules.text = function (
     tokens: any,
     idx: number,
-    options: any,
-    env: any,
-    self: any,
+    _options: any,
+    _env: any,
+    _self: any,
   ) {
     // No-op, let markdown-it handle link text
     return md.utils.escapeHtml(tokens[idx].content);
@@ -85,15 +85,15 @@ const checkboxRegex = /^\s*\[([ xX])\]\s+/;
 const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
   const originalListItemOpen =
     md.renderer.rules.list_item_open ||
-    function (tokens: any, idx: number, options: any, env: any, self: any) {
-      return self.renderToken(tokens, idx, options);
+    function (tokens: any, idx: number, _options: any, _env: any, self: any) {
+      return self.renderToken(tokens, idx, _options);
     };
   md.renderer.rules.list_item_open = function (
     tokens: any,
     idx: number,
-    options: any,
-    env: any,
-    self: any,
+    _options: any,
+    _env: any,
+    _self: any,
   ) {
     const next = tokens[idx + 1];
     if (
@@ -108,14 +108,14 @@ const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
         tokens[idx].attrJoin('class', 'task-list-item');
       }
     }
-    return originalListItemOpen(tokens, idx, options, env, self);
+    return originalListItemOpen(tokens, idx, _options, _env, _self);
   };
   md.renderer.rules.text = function (
     tokens: any,
     idx: number,
-    options: any,
+    _options: any,
     env: any,
-    self: any,
+    _self: any,
   ) {
     const token = tokens[idx];
     const match = checkboxRegex.exec(token.content);
@@ -137,15 +137,15 @@ const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
   // Patch the renderer for heading_open
   const originalHeadingOpen =
     md.renderer.rules.heading_open ||
-    function (tokens: any, idx: number, options: any, env: any, self: any) {
-      return self.renderToken(tokens, idx, options);
+    function (tokens: any, idx: number, _options: any, _env: any, self: any) {
+      return self.renderToken(tokens, idx, _options);
     };
   md.renderer.rules.heading_open = function (
     tokens: any,
     idx: number,
-    options: any,
-    env: any,
-    self: any,
+    _options: any,
+    _env: any,
+    _self: any,
   ) {
     // Find the inline token for this heading
     const inlineToken = tokens[idx + 1];
@@ -172,7 +172,7 @@ const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
         }
       }
     }
-    return originalHeadingOpen(tokens, idx, options, env, self);
+    return originalHeadingOpen(tokens, idx, _options, _env, _self);
   };
 };
 
