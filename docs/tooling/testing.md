@@ -10,6 +10,30 @@
   declarations, configs.
 - Alias `@` → `src`.
 
+## End-to-end tests
+
+- Runner: **Playwright** (`playwright.config.ts`).
+- Projects: `chromium` and `firefox`.
+- Test directory: `tests/e2e` with `*.e2e.ts` files, so Vitest does not pick
+  them up.
+- The config starts Vite on `127.0.0.1:4174` and uses the `/dmh-pwa` base path.
+- Service workers are blocked during E2E runs to keep test state deterministic.
+- `tests/e2e/helpers/seed.ts` writes map/file fixtures directly to IndexedDB
+  after the app has run its migrations.
+
+Commands:
+
+```bash
+npm run test:e2e:install   # once per machine
+npm run test:e2e           # chromium + firefox
+npm run test:e2e:chromium  # chromium only
+npm run test:e2e:firefox   # firefox only
+```
+
+The map E2E suite covers the custom `ol/control/Control` action menu, marker
+placement from a map click, the `ol-contextmenu` right-click menu, its draw
+submenu, and the event-based bridge into the existing marker editor.
+
 `tests/setup.ts`:
 
 - Takes over `window.localStorage` with a mock object of `vi.fn()`s.
@@ -30,6 +54,7 @@ many do not, which is a major source of failures.
 tests/
   components/   # cards, editors, selectors, PWA, RollButton
   composables/  # useModalState
+  e2e/          # Playwright browser tests (chromium + firefox)
   stores/       # one per domain store
   utils/        # formatTime, markdownParser, schemaValidator, storage
   views/        # list/detail/combat pages
@@ -38,23 +63,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 72. Total tests: 537.
+Total test files: 72. Total tests: 538.
 
 ## Current results (measured)
 
 ```
 npm test
 Test Files  72 passed (72)
-Tests       537 passed (537)
+Tests       538 passed (538)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  82.44%
-Branches    81.46%
-Functions   71.02%
-Lines       82.44%
+Statements  82.57%
+Branches    81.58%
+Functions   71.60%
+Lines       82.57%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the

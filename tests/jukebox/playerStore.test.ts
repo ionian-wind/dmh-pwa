@@ -227,6 +227,30 @@ describe('jukebox player store', () => {
     expect(player.queue).toHaveLength(2);
   });
 
+  it('keeps the current track when the active playlist becomes empty', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    mocks.tracks.items.value = [one];
+    mocks.playlists.items.value = [
+      { id: 'p1', trackIds: ['one'] },
+      { id: 'p2', trackIds: [] },
+    ];
+
+    config.jukeboxActivePlaylistId = 'p1';
+    player.actualiseQueue();
+    await player.playTrackFromPlaylist(one);
+    expect(player.isPlaying).toBe(true);
+
+    config.jukeboxActivePlaylistId = 'p2';
+    player.actualiseQueue();
+
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.isPlaying).toBe(true);
+    expect(player.queue).toEqual([]);
+    expect(player.hasNextTrack).toBe(false);
+  });
+
   it('removes tracks from the queue and stops playback', async () => {
     const player = useJukeboxPlayerStore();
     const one = track('one');

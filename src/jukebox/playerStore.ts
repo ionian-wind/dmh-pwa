@@ -646,7 +646,10 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
         ? queue.value.findIndex(({ id }) => id === currentTrack.value!.id)
         : 0;
     } else {
-      currentTrack.value = null;
+      // An empty playlist must not clear the track that is currently playing.
+      // The queue becomes empty, so next/previous are disabled, but the player
+      // keeps showing and playing the existing track.
+      queueIndex.value = -1;
     }
   }
 

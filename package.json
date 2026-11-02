@@ -16,6 +16,10 @@
     "test:regression": "vitest run tests/regressions --printConsoleTrace=true --silent=false",
     "test:ui": "vitest --ui --printConsoleTrace=true --silent=false",
     "test:coverage": "vitest run --printConsoleTrace=true --silent=false --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:firefox": "playwright test --project=firefox",
+    "test:e2e:install": "playwright install chromium firefox",
     "migration:generate": "node generate-migration.js",
     "pack:sound": "node scripts/pack-sound-pack.js",
     "unpack:sound": "node scripts/unpack-sound-pack.js",
@@ -74,6 +78,7 @@
     "vuedraggable": "4.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@quasar/vite-plugin": "1.12.0",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/vue": "8.1.0",

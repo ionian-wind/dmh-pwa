@@ -349,7 +349,6 @@ watch(drawMode, (mode) => {
   actionsControl?.setDrawingActive(Boolean(mode));
 });
 
-
 function cancelDrawing() {
   drawMode.value = null;
 }
