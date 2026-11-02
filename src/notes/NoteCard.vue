@@ -112,7 +112,7 @@ function handleDownload() {
     <template #actions>
       <QBtn
         flat
-        color="primary"
+        color="warning"
         :title="t('common.download')"
         :aria-label="t('common.download')"
         :disable="isDrawing && !note.preview"

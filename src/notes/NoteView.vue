@@ -78,7 +78,7 @@ const handleDownload = () => {
 
 const headerButtons = computed(() => [
   {
-    color: 'primary',
+    color: 'warning',
     title: 'common.download',
     icon: IconFileDownload,
     event: handleDownload,
