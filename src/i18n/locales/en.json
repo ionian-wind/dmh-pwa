@@ -440,7 +440,6 @@
     }
   },
   "noteTypeSelector": {
-    "selectType": "Select note type",
     "createNew": "Create New Type",
     "name": "Name",
     "description": "Description",

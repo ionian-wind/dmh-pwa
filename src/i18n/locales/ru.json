@@ -441,7 +441,6 @@
     }
   },
   "noteTypeSelector": {
-    "selectType": "Выберите тип заметки",
     "createNew": "Создать новый тип",
     "name": "Имя",
     "description": "Описание",

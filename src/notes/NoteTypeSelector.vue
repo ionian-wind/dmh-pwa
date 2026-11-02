@@ -8,9 +8,8 @@ import ColorPicker from '@/components/common/ColorPicker.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
 import { MAP_MARKER_ICONS, markerIconClass } from '@/maps/icons';
 
-const { modelValue, placeholder, allowCreate } = defineProps<{
+const { modelValue, allowCreate } = defineProps<{
   modelValue: string | null;
-  placeholder?: string;
   allowCreate?: boolean;
 }>();
 
@@ -71,9 +70,6 @@ const handleDeleteType = async (noteType: NoteType) => {
     >
       <template #header>
         <QItemSection>
-          {{ t('editor.type') }}
-        </QItemSection>
-        <QItemSection>
           <QSelect
             :model-value="modelValue"
             @update:model-value="emit('update:modelValue', $event)"
@@ -83,7 +79,7 @@ const handleDeleteType = async (noteType: NoteType) => {
                 value: type.id,
               }))
             "
-            :label="t(placeholder || 'noteTypeSelector.selectType')"
+            :label="t('editor.type')"
             emit-value
             map-options
             dense
