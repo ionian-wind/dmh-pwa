@@ -3,7 +3,9 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import EntityLinksEditor from '@/maps/components/EntityLinksEditor.vue';
-import MapIconPicker from '@/maps/components/MapIconPicker.vue';
+import IconPicker from '@/components/common/IconPicker.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
+import { MAP_MARKER_ICONS } from '@/maps/icons';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
 import MapLocationEditor from '@/maps/components/MapLocationEditor.vue';
 import MapLocationCard from '@/maps/components/MapLocationCard.vue';
@@ -91,24 +93,30 @@ describe('map entity links editor', () => {
 
 describe('map icon picker', () => {
   it('filters icons and selects one', async () => {
-    const wrapper = mount(MapIconPicker, {
-      props: { modelValue: 'ra-castle-emblem' },
+    const wrapper = mount(IconPicker, {
+      props: {
+        modelValue: 'ra:ra-castle-emblem',
+        icons: MAP_MARKER_ICONS,
+        collection: 'ra',
+      },
     });
 
-    expect(wrapper.findAll('.map-icon-option').length).toBeGreaterThan(20);
+    expect(wrapper.findAll('.icon-picker-option').length).toBeGreaterThan(20);
     expect(wrapper.find('[data-icon="ra-castle-emblem"]').classes()).toContain(
       'is-selected',
     );
 
-    await wrapper.find('.map-icon-search').setValue('sword');
-    expect(wrapper.findAll('.map-icon-option').length).toBeLessThan(20);
+    await wrapper.find('.icon-picker-search').setValue('sword');
+    expect(wrapper.findAll('.icon-picker-option').length).toBeLessThan(20);
 
     const sword = wrapper.find('[data-icon="ra-sword"]');
     expect(sword.exists()).toBe(true);
     await sword.trigger('click');
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['ra-sword']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+      'ra:ra-sword',
+    ]);
 
-    await wrapper.find('.map-icon-none').trigger('click');
+    await wrapper.find('.icon-picker-none').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['']);
   });
 });
@@ -127,7 +135,7 @@ const EntityLinksStub = defineComponent({
 });
 
 const IconPickerStub = defineComponent({
-  name: 'MapIconPicker',
+  name: 'IconPicker',
   props: { modelValue: String },
   emits: ['update:modelValue'],
   setup(props) {
@@ -143,7 +151,7 @@ describe('map marker editor', () => {
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,
-          MapIconPicker: IconPickerStub,
+          IconPicker: IconPickerStub,
         },
       },
     });
@@ -161,8 +169,8 @@ describe('map marker editor', () => {
       .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
     wrapper
       .findComponent(IconPickerStub)
-      .vm.$emit('update:modelValue', 'ra-sword');
-    await wrapper.find('#marker-color').setValue('#00ff00');
+      .vm.$emit('update:modelValue', 'ra:ra-sword');
+    wrapper.findComponent(ColorPicker).vm.$emit('update:modelValue', '#00ff00');
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
@@ -176,7 +184,7 @@ describe('map marker editor', () => {
       y: 200,
       locationId: 'l1',
       entities: [{ kind: 'map', id: 'map2' }],
-      icon: 'ra-sword',
+      icon: 'ra:ra-sword',
       color: '#00ff00',
     });
   });
@@ -187,7 +195,7 @@ describe('map marker editor', () => {
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,
-          MapIconPicker: IconPickerStub,
+          IconPicker: IconPickerStub,
         },
       },
     });
@@ -248,7 +256,10 @@ describe('map location editor', () => {
 
     await wrapper.find('#location-name').setValue('Capital');
     await wrapper.find('#location-description').setValue('Large city');
-    await wrapper.find('#location-color').setValue('#00ff00');
+    await wrapper
+      .findComponent(ColorPicker)
+      .vm.$emit('update:modelValue', '#00ff00');
+    await nextTick();
     wrapper
       .findComponent(EntityLinksStub)
       .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);

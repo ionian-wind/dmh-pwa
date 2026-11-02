@@ -2,11 +2,12 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
+import IconPicker from '@/components/common/IconPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
-import MapIconPicker from './MapIconPicker.vue';
 import type { MapEntityRef, MapLocation, MapMarker } from '../types';
 import { normalizeMarker } from '../utils/normalize';
-import { markerIconClass } from '../icons';
+import { MAP_MARKER_ICONS, markerIconClass } from '../icons';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -110,12 +111,10 @@ function remove() {
     <div class="form-section">
       <div class="form-grid">
         <div class="form-group">
-          <label for="marker-color">{{ t('maps.markerColor') }}</label>
-          <input
+          <ColorPicker
             id="marker-color"
             v-model="draft.color"
-            type="color"
-            class="marker-color-input"
+            :label="t('maps.markerColor')"
           />
         </div>
         <div class="form-group">
@@ -133,7 +132,13 @@ function remove() {
 
     <div class="form-section">
       <label>{{ t('maps.markerIcon') }}</label>
-      <MapIconPicker v-model="draft.icon" />
+      <IconPicker
+        v-model="draft.icon"
+        :icons="MAP_MARKER_ICONS"
+        collection="ra"
+        :search-placeholder="t('maps.searchIcons')"
+        :no-icon-label="t('maps.noIcon')"
+      />
     </div>
 
     <div class="form-section">
@@ -156,15 +161,6 @@ function remove() {
   </BaseModal>
 </template>
 <style scoped>
-.marker-color-input {
-  width: 48px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: transparent;
-}
-
 .marker-preview {
   display: inline-flex;
   align-items: center;

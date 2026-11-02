@@ -504,5 +504,8 @@ export const DEFAULT_MARKER_COLOR = '#b23b3b';
 export function markerIconClass(icon: string): string {
   const value = icon?.trim();
   if (!value) return '';
-  return value.startsWith('ra-') ? value : `ra-${value}`;
+  const separator = value.indexOf(':');
+  const iconName = separator >= 0 ? value.slice(separator + 1) : value;
+  if (!iconName) return '';
+  return iconName.startsWith('ra-') ? iconName : `ra-${iconName}`;
 }

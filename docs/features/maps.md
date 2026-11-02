@@ -274,8 +274,12 @@ read-only lists.
 `src/maps/icons.ts` exposes `MAP_MARKER_ICONS`, generated from the RPG Awesome
 CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no icon) and `DEFAULT_MARKER_COLOR`.
 
-`MapIconPicker` provides searchable icon selection plus a “No icon” option. The
-stylesheet is imported once from `src/main.ts`.
+`src/components/common/IconPicker.vue` provides searchable icon selection plus
+a “No icon” option. It is configurable with an icon array and collection name;
+selected values are stored as `collection:icon`, for example
+`ra:ra-castle-emblem`. The stylesheet is imported once from `src/main.ts`.
+
+Colours use the shared `ColorPicker` component, backed by Quasar `QColor`.
 
 ## Coordinate model
 

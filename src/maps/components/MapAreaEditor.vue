@@ -2,11 +2,12 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
+import IconPicker from '@/components/common/IconPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
-import MapIconPicker from './MapIconPicker.vue';
 import type { MapArea, MapEntityRef } from '../types';
 import { normalizeArea } from '../utils/normalize';
-import { markerIconClass } from '../icons';
+import { MAP_MARKER_ICONS, markerIconClass } from '../icons';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -106,12 +107,10 @@ function remove() {
     <div class="form-section">
       <div class="form-grid">
         <div class="form-group">
-          <label for="area-color">{{ t('maps.areaColor') }}</label>
-          <input
+          <ColorPicker
             id="area-color"
             v-model="draft.color"
-            type="color"
-            class="area-color-input"
+            :label="t('maps.areaColor')"
           />
         </div>
         <div class="form-group">
@@ -129,8 +128,12 @@ function remove() {
 
     <div class="form-section">
       <label>{{ t('maps.areaIcon') }}</label>
-      <MapIconPicker
+      <IconPicker
         :model-value="draft.icon || ''"
+        :icons="MAP_MARKER_ICONS"
+        collection="ra"
+        :search-placeholder="t('maps.searchIcons')"
+        :no-icon-label="t('maps.noIcon')"
         @update:model-value="draft.icon = $event"
       />
     </div>
@@ -171,15 +174,6 @@ function remove() {
 .area-shape {
   color: var(--color-text-light);
   text-transform: capitalize;
-}
-
-.area-color-input {
-  width: 48px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: transparent;
 }
 
 .area-preview {

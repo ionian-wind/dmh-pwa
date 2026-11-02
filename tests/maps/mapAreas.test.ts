@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils';
 
 import MapAreaEditor from '@/maps/components/MapAreaEditor.vue';
 import MapAreasPanel from '@/maps/components/MapAreasPanel.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
 import type { MapArea } from '@/maps/types';
 import { quasarStubs } from '../helpers/quasar-stubs';
 import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
@@ -49,7 +50,7 @@ const EntityLinksStub = defineComponent({
 });
 
 const IconPickerStub = defineComponent({
-  name: 'MapIconPicker',
+  name: 'IconPicker',
   props: { modelValue: String },
   emits: ['update:modelValue'],
   setup(props) {
@@ -68,7 +69,7 @@ describe('MapAreaEditor', () => {
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,
-          MapIconPicker: IconPickerStub,
+          IconPicker: IconPickerStub,
         },
       },
     });
@@ -83,8 +84,8 @@ describe('MapAreaEditor', () => {
       .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
     wrapper
       .findComponent(IconPickerStub)
-      .vm.$emit('update:modelValue', 'ra-tree');
-    await wrapper.find('#area-color').setValue('#00ff00');
+      .vm.$emit('update:modelValue', 'ra:ra-tree');
+    wrapper.findComponent(ColorPicker).vm.$emit('update:modelValue', '#00ff00');
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
@@ -98,7 +99,7 @@ describe('MapAreaEditor', () => {
       points: area.points,
       linkedAreaIds: ['a2'],
       entities: [{ kind: 'map', id: 'map2' }],
-      icon: 'ra-tree',
+      icon: 'ra:ra-tree',
       color: '#00ff00',
     });
   });
@@ -109,7 +110,7 @@ describe('MapAreaEditor', () => {
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,
-          MapIconPicker: IconPickerStub,
+          IconPicker: IconPickerStub,
         },
       },
     });

@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
 import type { MapEntityRef, MapLocation } from '../types';
 import { DEFAULT_MARKER_COLOR } from '../utils/normalize';
@@ -92,12 +93,10 @@ function remove() {
           />
         </div>
         <div class="form-group">
-          <label for="location-color">{{ t('maps.locationColor') }}</label>
-          <input
+          <ColorPicker
             id="location-color"
             v-model="draft.color"
-            type="color"
-            class="location-color-input"
+            :label="t('maps.locationColor')"
           />
         </div>
       </div>
@@ -130,14 +129,3 @@ function remove() {
     </div>
   </BaseModal>
 </template>
-
-<style scoped>
-.location-color-input {
-  width: 48px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: transparent;
-}
-</style>
