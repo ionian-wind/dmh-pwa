@@ -88,6 +88,8 @@ const loading = computed(() => !isLoaded.value);
 const map = ref<MapEntity | null>(null);
 const notFound = computed(() => isLoaded.value && !map.value);
 const mapReady = ref(false);
+const imageLoaded = ref(false);
+const imageLoadFailed = ref(false);
 const isMapEditorOpen = ref(false);
 const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
@@ -274,6 +276,8 @@ function releaseImageUrl() {
 
 async function loadMapImage() {
   mapReady.value = false;
+  imageLoaded.value = false;
+  imageLoadFailed.value = false;
   releaseImageUrl();
   if (!map.value?.fileId) return;
 
@@ -292,7 +296,22 @@ async function loadMapImage() {
     mapReady.value = true;
   } catch {
     mapReady.value = false;
+    imageLoadFailed.value = true;
   }
+}
+
+function onImageLoadStart() {
+  imageLoaded.value = false;
+  imageLoadFailed.value = false;
+}
+
+function onImageLoadEnd() {
+  imageLoaded.value = true;
+}
+
+function onImageLoadError() {
+  imageLoaded.value = false;
+  imageLoadFailed.value = true;
 }
 
 watch(
@@ -874,41 +893,46 @@ watch(isEditMode, (editing) => {
             :projection="projection"
             :wrapX="false"
             :wrapY="false"
+            @imageloadstart="onImageLoadStart"
+            @imageloadend="onImageLoadEnd"
+            @imageloaderror="onImageLoadError"
           />
         </ol-image-layer>
 
-        <ol-vector-layer
-          v-for="(layer, layerIndex) in layers"
-          :key="layer.id"
-          :z-index="layerIndex"
-          :visible="!isLayerHidden(layer.id)"
-          :style="mapFeatureStyle"
-        >
-          <ol-source-vector>
-            <ol-feature
-              v-for="marker in markersForLayer(layer.id)"
-              :key="`marker-${marker.id}`"
-              :properties="{ kind: 'marker', markerId: marker.id }"
-            >
-              <ol-geom-point :coordinates="markerMapPosition(marker)" />
-            </ol-feature>
-            <ol-feature
-              v-for="area in areasForLayer(layer.id)"
-              :key="area.id"
-              :properties="{ kind: 'area', areaId: area.id }"
-            >
-              <ol-geom-polygon
-                v-if="area.shape !== 'circle'"
-                :coordinates="areaPolygonCoordinates(area)"
-              />
-              <ol-geom-circle
-                v-else
-                :center="areaCircleMapCenter(area)"
-                :radius="area.radius"
-              />
-            </ol-feature>
-          </ol-source-vector>
-        </ol-vector-layer>
+        <template v-if="imageLoaded">
+          <ol-vector-layer
+            v-for="(layer, layerIndex) in layers"
+            :key="layer.id"
+            :z-index="layerIndex"
+            :visible="!isLayerHidden(layer.id)"
+            :style="mapFeatureStyle"
+          >
+            <ol-source-vector>
+              <ol-feature
+                v-for="marker in markersForLayer(layer.id)"
+                :key="`marker-${marker.id}`"
+                :properties="{ kind: 'marker', markerId: marker.id }"
+              >
+                <ol-geom-point :coordinates="markerMapPosition(marker)" />
+              </ol-feature>
+              <ol-feature
+                v-for="area in areasForLayer(layer.id)"
+                :key="area.id"
+                :properties="{ kind: 'area', areaId: area.id }"
+              >
+                <ol-geom-polygon
+                  v-if="area.shape !== 'circle'"
+                  :coordinates="areaPolygonCoordinates(area)"
+                />
+                <ol-geom-circle
+                  v-else
+                  :center="areaCircleMapCenter(area)"
+                  :radius="area.radius"
+                />
+              </ol-feature>
+            </ol-source-vector>
+          </ol-vector-layer>
+        </template>
 
         <ol-interaction-draw
           v-if="drawMode"
@@ -919,7 +943,7 @@ watch(isEditMode, (editing) => {
         />
 
         <ol-overlay
-          v-if="!hideLabels"
+          v-if="imageLoaded && !hideLabels"
           v-for="area in visibleAreas"
           :key="`area-label-${area.id}`"
           :position="areaMapCenter(area)"
@@ -1007,7 +1031,18 @@ watch(isEditMode, (editing) => {
         </ol-overlay>
       </ol-map>
 
-      <div class="map-accessible-markers">
+      <div
+        v-if="!imageLoaded && !imageLoadFailed"
+        class="absolute-full flex flex-center bg-white z-top"
+      >
+        <QSpinner
+          color="primary"
+          size="3em"
+          :aria-label="t('common.loading')"
+        />
+      </div>
+
+      <div v-if="imageLoaded" class="map-accessible-markers">
         <button
           v-for="marker in visibleMarkers"
           :key="`accessible-${marker.id}`"

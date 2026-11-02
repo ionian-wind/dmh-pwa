@@ -93,6 +93,9 @@ geometry and marker points. Layer visibility uses the native
 the RPGAwesome font, with their titles as text labels. A visually hidden list of
 marker buttons preserves keyboard/screen-reader access.
 
+Marker and area layers are created only after the base map image finishes
+loading. A spinner is shown over the map while the image loads.
+
 The map page starts in **View mode**. In view mode layer visibility can be
 temporarily toggled with the eye buttons, and hidden layers remove their
 markers/areas from the map. **Edit mode** enables the map action menu, item

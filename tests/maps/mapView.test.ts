@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, onMounted } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
@@ -56,6 +56,7 @@ const BaseEntityViewStub = defineComponent({
 const mapHarness = {
   map: null as any,
   controls: [] as any[],
+  deferImageLoad: false,
 };
 
 const OlMapStub = defineComponent({
@@ -126,6 +127,30 @@ const PassthroughStub = defineComponent({
   name: 'Passthrough',
   setup(_, { slots }) {
     return () => h('div', slots.default?.());
+  },
+});
+
+const imageSourceEmitter = {
+  loadEnd: null as null | (() => void),
+};
+
+const ImageSourceStub = defineComponent({
+  name: 'OlSourceImageStatic',
+  emits: ['imageloadstart', 'imageloadend', 'imageloaderror'],
+  setup(_, { emit }) {
+    imageSourceEmitter.loadEnd = () => emit('imageloadend');
+    onMounted(() => {
+      if (!mapHarness.deferImageLoad) emit('imageloadend');
+    });
+    return () => h('div', { class: 'ol-source-image-stub' });
+  },
+});
+
+const VectorLayerStub = defineComponent({
+  name: 'OlVectorLayer',
+  props: { visible: { type: Boolean, default: true }, zIndex: Number },
+  setup(_, { slots }) {
+    return () => h('div', { class: 'ol-vector-layer-stub' }, slots.default?.());
   },
 });
 
@@ -255,12 +280,12 @@ async function mountMapView() {
         'ol-map': OlMapStub,
         'ol-view': PassthroughStub,
         'ol-image-layer': PassthroughStub,
-        'ol-source-image-static': PassthroughStub,
+        'ol-source-image-static': ImageSourceStub,
         'ol-overlay': PassthroughStub,
         'ol-zoom-control': PassthroughStub,
         'ol-context-menu-control': ContextMenuStub,
         'ol-zoomslider-control': PassthroughStub,
-        'ol-vector-layer': PassthroughStub,
+        'ol-vector-layer': VectorLayerStub,
         'ol-source-vector': PassthroughStub,
         'ol-feature': PassthroughStub,
         'ol-geom-polygon': PassthroughStub,
@@ -287,6 +312,7 @@ describe('MapView', () => {
     vi.clearAllMocks();
     mapHarness.map = null;
     mapHarness.controls.length = 0;
+    mapHarness.deferImageLoad = false;
     mocks.mapStore.isLoaded = true;
     mocks.mapStore.getById.mockReturnValue(map);
     mocks.locationStore.items = [location];
@@ -320,6 +346,26 @@ describe('MapView', () => {
       expect.objectContaining({ id: 'm1', title: 'Castle' }),
     ]);
     expect(wrapper.findComponent(MarkerEditorStub).exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('waits for the image before rendering layers', async () => {
+    mapHarness.deferImageLoad = true;
+    const wrapper = await mountMapView();
+
+    expect(wrapper.find('[data-stub="QSpinner"]').exists()).toBe(true);
+    expect(wrapper.findAll('.ol-vector-layer-stub')).toHaveLength(0);
+    expect(wrapper.find('.map-marker-accessible').exists()).toBe(false);
+    expect(wrapper.find('.map-area-label').exists()).toBe(false);
+
+    imageSourceEmitter.loadEnd?.();
+    await flushPromises();
+
+    expect(wrapper.find('[data-stub="QSpinner"]').exists()).toBe(false);
+    expect(wrapper.findAll('.ol-vector-layer-stub')).toHaveLength(1);
+    expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
+    expect(wrapper.find('.map-area-label').exists()).toBe(true);
+
     wrapper.unmount();
   });
 
