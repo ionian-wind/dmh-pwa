@@ -155,9 +155,15 @@ function remove() {
       />
     </div>
 
-    <div v-if="!isNew" class="form-section">
-      <QBtn flat color="negative" :label="t('common.delete')" @click="remove" />
-    </div>
+    <template #actions>
+      <QBtn
+        v-if="!isNew"
+        flat
+        color="negative"
+        :label="t('common.delete')"
+        @click="remove"
+      />
+    </template>
   </BaseModal>
 </template>
 
