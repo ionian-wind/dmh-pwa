@@ -14,6 +14,7 @@ used as hidden document sections inside modules.
 | `src/notes/NotesView.vue` | List page |
 | `src/notes/NoteCard.vue` | Card with rendered Markdown and expand/collapse |
 | `src/notes/NoteEditor.vue` | Create/edit modal |
+| `src/notes/NoteCanvas.vue` | Quickdraw canvas for `draw` notes |
 | `src/notes/NoteView.vue` | Detail page |
 | `src/notes/NoteTypeSelector.vue` | Note type management (mounted in `NoteEditor`) |
 | `src/notes/NoteViewSidebar.vue` | Tags + mentions sidebar |
@@ -28,6 +29,9 @@ used as hidden document sections inside modules.
   never appear in the general notes list.
 - Card props pass `onView`, `onEdit`, `onDelete`, and `moduleName` (always
   `undefined`).
+- The header has a second create action: a warning-coloured `IconBrush` button
+  that opens the editor with `contentType: 'draw'`. The regular create button
+  opens a `text` note.
 - Delete uses the app confirm dialog with `common.confirmDelete`.
 - Copy strips `id/createdAt/updatedAt`, forces `hidden: false`, and creates a
   duplicate.
@@ -35,9 +39,24 @@ used as hidden document sections inside modules.
 - A `watch` on `route.query.tag` sets the store's tag filter. The filter is
   the only list filter that is reachable from the UI.
 
+## Content types
+
+A note has an internal `contentType` field with two values:
+
+| Value  | Meaning                                      |
+| ------ | -------------------------------------------- |
+| `text` | Markdown content, the default and legacy type |
+| `draw` | Infinite-canvas drawing stored as a Quickdraw snapshot |
+
+Existing notes are migrated to `contentType: 'text'`. The type is not directly
+editable in the note form; it is chosen by the create action.
+
 ## Card (`NoteCard.vue`)
 
-- Displays the rendered Markdown inside a `600px` clamp.
+- Shows a gray type icon next to the title: `IconFileText` for text notes and
+  `IconBrush` for drawing notes.
+- Drawing notes show their saved PNG preview instead of a text placeholder.
+- Displays the rendered Markdown inside a `600px` clamp for text notes.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
 - Renders tags as clickable `#tag` labels that emit `tag-click`.
@@ -49,15 +68,21 @@ The 600px clamp is hard-coded and does not account for viewport size.
 
 Fields:
 - Title (required; empty triggers `alert(t('editor.titleRequired'))`).
-- Content (Milkdown WYSIWYG by default, with a toggle to raw Markdown).
-- Module selector, note type selector, and tag selector.
+- Content, rendered through a named `content` slot:
+  - `text` notes use the Milkdown editor and its raw/visual toggle.
+  - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
+    Quickdraw editor.
+- Note type selector and tag selector. The module link lives in the dialog's
+  linked-entities tab.
 
 Behavior:
 - `editedNote` is initialized from `props.note` when its `id` changes; a
   `lastNoteId` guard prevents re-initializing while typing.
-- On submit it asks the editor ref for the latest Markdown
-  (`markdownEditorRef.getMarkdown()`) before emitting.
-- New notes are created by the parent with `hidden: false`.
+- On submit, text notes read the latest Markdown from the Milkdown ref; draw
+  notes read a Quickdraw JSON snapshot and generate a small PNG preview using
+  `editor.exportImage()`.
+- New notes are created by the parent with `hidden: false`; drawing notes keep
+  `contentType: 'draw'`.
 
 A note created from the list can now carry `moduleId`, `typeId`, and tags. Notes
 created inside a module's document tree are still forced to `hidden: true` by
@@ -66,6 +91,8 @@ created inside a module's document tree are still forced to `hidden: true` by
 ## Detail page (`NoteView.vue`)
 
 - Loads notes, modules, the mention index, parties, monsters, encounters.
+- Renders Markdown for text notes and a read-only `NoteCanvas` for drawing
+  notes.
 - Resolves the note from `noteStore.getById(route.params.id)`; redirects to
   `/notes` if missing after load.
 - Renders the note with `Markdown` and `taskCheckboxEnabled`.

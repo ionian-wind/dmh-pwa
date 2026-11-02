@@ -32,8 +32,16 @@ const EditorStub = defineComponent({
   setup(_props, { emit }) {
     return () =>
       h('div', { class: 'editor-stub' }, [
-        h('button', { class: 'submit', onClick: () => emit('submit', { id: 'new' }) }, 'submit'),
-        h('button', { class: 'cancel', onClick: () => emit('cancel') }, 'cancel'),
+        h(
+          'button',
+          { class: 'submit', onClick: () => emit('submit', { id: 'new' }) },
+          'submit',
+        ),
+        h(
+          'button',
+          { class: 'cancel', onClick: () => emit('cancel') },
+          'cancel',
+        ),
       ]);
   },
 });
@@ -98,6 +106,18 @@ describe('BaseListView', () => {
     expect(wrapper.emitted('delete')?.[0]).toEqual([{ id: 'a' }]);
     expect(wrapper.emitted('copy')?.[0]).toEqual([{ id: 'a' }]);
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['tag']);
+  });
+
+  it('does not double-fire delete through card props', async () => {
+    const onDelete = vi.fn();
+    const { wrapper } = mountList({
+      cardProps: (item: any) => ({ item, onDelete }),
+    });
+
+    await wrapper.find('.card-stub .delete').trigger('click');
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(wrapper.emitted('delete')?.[0]).toEqual([{ id: 'a' }]);
   });
 
   it('supports grid and list layouts and forwards drag events', async () => {

@@ -255,6 +255,7 @@ async function handleExportModule() {
     id: note.id,
     title: note.title,
     content: note.content,
+    contentType: note.contentType ?? 'text',
     typeId: note.typeId || null,
     tags: note.tags || [],
     moduleId: note.moduleId,

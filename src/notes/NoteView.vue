@@ -13,6 +13,7 @@ import NoteEditor from '@/notes/NoteEditor.vue';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Markdown from '@/components/common/Markdown.vue';
+import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import { confirm } from '@/dialogs';
 import { useRightDrawer } from '@/composables/useLayout';
@@ -84,7 +85,10 @@ const handleCancel = () => {
 };
 const handleSubmit = async (editedNote: Note) => {
   // Validate mentions
-  const mentions = extractMentionedEntities(editedNote.content);
+  const mentions =
+    editedNote.contentType === 'draw'
+      ? []
+      : extractMentionedEntities(editedNote.content);
   const missing: string[] = [];
   for (const mention of mentions) {
     let exists = false;
@@ -167,7 +171,13 @@ async function handleEditorDelete() {
     :title="noteTitle"
     :not-found="notFound"
   >
+    <NoteCanvas
+      v-if="note?.contentType === 'draw'"
+      :model-value="noteContent"
+      readonly
+    />
     <Markdown
+      v-else
       :taskCheckboxEnabled="true"
       :content="noteContent"
       @update:content="handleMarkdownContentChange"

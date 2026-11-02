@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import { useConfigStore } from '@/utils/configStore';
 
 defineProps<{
   modelValue: boolean;
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const configStore = useConfigStore();
 
 function close() {
   emit('update:modelValue', false);
@@ -29,39 +31,60 @@ function close() {
     @cancel="close"
     @update:is-open="emit('update:modelValue', $event)"
   >
-    <section class="settings-section" data-test="settings-language">
-      <div>
-        <h5>{{ t('settings.language') }}</h5>
-        <p class="text-caption text-grey-7 q-mb-sm">
-          {{ t('settings.languageHint') }}
-        </p>
-      </div>
-      <LanguageSwitcher />
+    <section class="q-mb-lg" data-test="settings-interface">
+      <h5 class="q-mt-none q-mb-sm">{{ t('settings.interface') }}</h5>
+      <QList separator>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('settings.language') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.languageHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <LanguageSwitcher />
+          </QItemSection>
+        </QItem>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('settings.confirmDeletion') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.confirmDeletionHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.confirmDelete" />
+          </QItemSection>
+        </QItem>
+      </QList>
+    </section>
+
+    <section data-test="settings-player">
+      <h5 class="q-mt-none q-mb-sm">{{ t('settings.player') }}</h5>
+      <QList separator>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('jukebox.smoothTrackChange') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.smoothTrackChangeHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.jukeboxSmoothTrackChange" />
+          </QItemSection>
+        </QItem>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('jukebox.animatePlayerBackground') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.animatePlayerBackgroundHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.jukeboxAnimatePlayerBackground" />
+          </QItemSection>
+        </QItem>
+      </QList>
     </section>
   </BaseModal>
 </template>
-
-<style scoped>
-.settings-section {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.settings-section h5 {
-  margin: 0 0 0.25rem;
-}
-
-@media (max-width: 600px) {
-  .settings-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .settings-section :deep(.language-select) {
-    width: 100%;
-  }
-}
-</style>

@@ -32,6 +32,18 @@ vi.mock('@/dialogs', () => ({
   alert: vi.fn().mockResolvedValue(undefined),
   prompt: vi.fn(),
 }));
+vi.mock('@/notes/NoteCanvas.vue', async () => {
+  const { defineComponent, h } = await import('vue');
+  return {
+    default: defineComponent({
+      name: 'NoteCanvas',
+      setup() {
+        return () => h('div', { class: 'note-canvas-stub' });
+      },
+    }),
+  };
+});
+
 vi.mock('@/utils/moduleImportExport', () => ({
   parseModuleZip: vi.fn(),
   validateModuleImport: vi.fn(),
@@ -45,6 +57,8 @@ const BaseListViewStub = defineComponent({
     cardProps: { type: Function, required: true },
     editorProps: { type: Function, required: true },
     searchQuery: { type: String, default: '' },
+    headerButtons: { type: Array, default: () => [] },
+    emptyMessage: { type: String, default: '' },
   },
   emits: [
     'update:searchQuery',
@@ -58,7 +72,8 @@ const BaseListViewStub = defineComponent({
     'reset',
     'run-combat',
   ],
-  setup(_, { slots }) {
+  setup(_, { slots, expose }) {
+    expose({ openCreate: vi.fn() });
     return () => h('div', { 'data-stub': 'BaseListView' }, slots.default?.());
   },
 });
@@ -251,8 +266,25 @@ describe('list views', () => {
     expect(router.currentRoute.value.path).toBe('/notes/n1');
     card.onEdit();
 
+    expect(list(wrapper).props('emptyMessage')).toContain(
+      'Create your first note',
+    );
+    const headerButtons = list(wrapper).props('headerButtons') as any[];
+    expect(headerButtons[0]).toMatchObject({
+      color: 'warning',
+      title: 'notes.createDrawing',
+    });
+    headerButtons[0].event();
+    expect((list(wrapper).props('editorProps') as any)(null).contentType).toBe(
+      'draw',
+    );
+
     list(wrapper).vm.$emit('submit', note);
     list(wrapper).vm.$emit('submit', { title: 'New note' });
+    list(wrapper).vm.$emit('submit', {
+      title: 'Sketch',
+      contentType: 'draw',
+    });
     list(wrapper).vm.$emit('copy', note);
     list(wrapper).vm.$emit('tag-click', 'combat');
     await flushPromises();
@@ -263,6 +295,13 @@ describe('list views', () => {
     );
     expect(store.create).toHaveBeenCalledWith(
       expect.objectContaining({ hidden: false, title: 'Session' }),
+    );
+    expect(store.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hidden: false,
+        title: 'Sketch',
+        contentType: 'draw',
+      }),
     );
     expect(router.currentRoute.value.query.tag).toBe('combat');
 

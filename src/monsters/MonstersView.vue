@@ -68,7 +68,7 @@ function handleView(monster: Monster) {
     :items="monsterStore.filtered"
     :card-component="MonsterCard"
     :editor-component="MonsterEditor"
-    :empty-message="t('common.empty')"
+    :empty-message="t('common.emptyMonsters')"
     :create-title="t('monsters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"

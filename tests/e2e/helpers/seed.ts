@@ -7,7 +7,7 @@ async function waitForAppDatabase(page: Page) {
     if (!('databases' in indexedDB)) return false;
     const databases = await indexedDB.databases();
     const database = databases.find((entry) => entry.name === 'dmh-db');
-    return Boolean(database && (database.version ?? 0) >= 7);
+    return Boolean(database && (database.version ?? 0) >= 8);
   });
 }
 
@@ -80,6 +80,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         id: 'note-1',
         title: 'E2E Note',
         content: '',
+        contentType: 'text',
         tags: [],
         moduleId: null,
         typeId: null,
@@ -91,6 +92,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         id: 'note-2',
         title: 'E2E Other',
         content: '',
+        contentType: 'text',
         tags: [],
         moduleId: null,
         typeId: null,

@@ -2,8 +2,9 @@
 import { onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { IconBrush } from '@tabler/icons-vue';
 
-import type { Note } from '@/types';
+import type { Note, NoteContentType } from '@/types';
 
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
@@ -23,6 +24,8 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const moduleStore = useModuleStore();
 const noteTypeStore = useNoteTypeStore();
+const listRef = ref<{ openCreate: () => void } | null>(null);
+const pendingDrawNote = ref(false);
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
@@ -51,11 +54,28 @@ function cardProps(note: Note) {
 }
 
 function editorProps(note: Note | null) {
+  const contentType: NoteContentType | undefined =
+    !note && pendingDrawNote.value ? 'draw' : undefined;
   return {
     note,
     isOpen: true,
+    contentType,
   };
 }
+
+function createDrawNote() {
+  pendingDrawNote.value = true;
+  listRef.value?.openCreate();
+}
+
+const headerButtons = [
+  {
+    icon: IconBrush,
+    color: 'warning',
+    title: 'notes.createDrawing',
+    event: createDrawNote,
+  },
+];
 
 function handleEdit(note: Note) {
   // handled by BaseListView
@@ -71,10 +91,15 @@ async function handleDelete(note: Note) {
   return false;
 }
 function handleSubmit(note: Note) {
+  pendingDrawNote.value = false;
   if (note.id) {
     noteStore.update(note.id, note);
   } else {
-    noteStore.create({ ...note, hidden: false });
+    noteStore.create({
+      ...note,
+      hidden: false,
+      contentType: note.contentType ?? 'text',
+    });
   }
 }
 function handleTagClick(tag: string) {
@@ -90,10 +115,12 @@ async function handleCopy(note: Note) {
 
 <template>
   <BaseListView
+    ref="listRef"
+    :header-buttons="headerButtons"
     :items="noteStore.filtered.filter((n) => !n.hidden)"
     :card-component="NoteCard"
     :editor-component="NoteEditor"
-    :empty-message="t('common.empty')"
+    :empty-message="t('common.emptyNotes')"
     :create-title="t('notes.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
@@ -102,6 +129,7 @@ async function handleCopy(note: Note) {
     :search-placeholder="'common.search'"
     @update:search-query="noteStore.setSearchQuery"
     @submit="handleSubmit"
+    @cancel="pendingDrawNote = false"
     @delete="handleDelete"
     @tag-click="handleTagClick"
     @copy="handleCopy"

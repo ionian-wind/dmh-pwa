@@ -62,6 +62,7 @@
   "notes": {
     "title": "Notes",
     "create": "Create Note",
+    "createDrawing": "Create drawing note",
     "edit": "Edit Note",
     "delete": "Delete Note",
     "fields": {
@@ -239,6 +240,8 @@
     "linkedEntities": "Linked entities",
     "confirmDelete": "Are you sure you want to delete {title}?",
     "empty": "No items found",
+    "emptyNotes": "No notes yet. Create your first note to get started!",
+    "emptyMonsters": "No monsters yet. Create your first monster to get started!",
     "emptyModules": "No modules yet. Create your first module to get started!",
     "noModules": "No Modules",
     "emptyParties": "No parties yet. Create your first party to get started!",
@@ -437,7 +440,6 @@
     }
   },
   "noteTypeSelector": {
-    "selectType": "Select note type",
     "createNew": "Create New Type",
     "name": "Name",
     "description": "Description",
@@ -483,7 +485,13 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
-    "languageHint": "Choose the language used by the application and Quasar UI."
+    "interface": "Interface",
+    "confirmDeletion": "Confirm deletion",
+    "confirmDeletionHint": "Ask before deleting notes, maps, tracks, and other entities.",
+    "player": "Player",
+    "smoothTrackChangeHint": "Cross-fade between the outgoing and incoming track.",
+    "animatePlayerBackgroundHint": "Show an animated album-colour gradient behind the player.",
+    "languageHint": "Choose the language used by the application."
   },
   "tags": {
     "title": "Tags"
@@ -546,7 +554,7 @@
     "hash": "#"
   },
   "timers": {
-    "empty": "No timers yet. Create your first timer!",
+    "empty": "No timers yet. Create your first timer to get started!",
     "create": "Create Timer",
     "edit": "Edit Timer",
     "delete": "Delete Timer",
@@ -786,7 +794,7 @@
     "locationName": "Location name",
     "locationNameRequired": "Location name is required",
     "locationDescription": "Location description",
-    "noLocations": "No locations yet.",
+    "noLocations": "No locations yet. Create your first location to get started!",
     "untitledLocation": "Untitled location",
     "openLinkedMap": "Open linked map",
     "openLinkedLocation": "Open linked location",

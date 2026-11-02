@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, nextTick } from 'vue';
-import type { Note } from '@/types';
+import type { Note, NoteContentType } from '@/types';
 import TagSelector from '../components/common/TagSelector.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
+import NoteCanvas from './NoteCanvas.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
 import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
@@ -19,6 +20,7 @@ const props = defineProps<{
   isEditing?: boolean;
   validationError?: string | null;
   hideModuleSelector?: boolean;
+  contentType?: NoteContentType;
 }>();
 
 const emit = defineEmits<{
@@ -33,6 +35,7 @@ const editedNote = ref<Note>({
   id: '',
   title: '',
   content: '',
+  contentType: props.contentType ?? 'text',
   tags: [],
   moduleId: null,
   typeId: null,
@@ -55,6 +58,7 @@ watch(
     if (newNote && newNote.id !== lastNoteId.value) {
       editedNote.value = {
         ...newNote,
+        contentType: newNote.contentType ?? 'text',
         moduleId: newNote.moduleId ?? null,
         typeId: newNote.typeId ?? null,
       };
@@ -66,6 +70,7 @@ watch(
         id: '',
         title: '',
         content: '',
+        contentType: props.contentType ?? 'text',
         tags: [],
         moduleId: null,
         typeId: null,
@@ -91,14 +96,18 @@ function setLinkedModule(links: MapEntityRef[]) {
 }
 
 const markdownEditorRef = ref<any>(null);
+const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 const handleSubmit = async () => {
   if (!editedNote.value.title) {
     await alert(t('editor.titleRequired'));
     return;
   }
-  // Get latest markdown from editor instance (Milkdown/Crepe form integration)
-  if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
+  if (editedNote.value.contentType === 'draw') {
+    editedNote.value.content = canvasRef.value?.getSnapshot() ?? '';
+    editedNote.value.preview =
+      (await canvasRef.value?.getPreview()) || undefined;
+  } else if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
     editedNote.value.content = markdownEditorRef.value.getMarkdown();
   }
   emit('submit', editedNote.value);
@@ -155,8 +164,10 @@ function handleDelete() {
           />
         </div>
         <div class="q-mb-md">
-          <div class="row justify-between">
-            <!-- Toggle button for edit mode -->
+          <div
+            v-if="editedNote.contentType === 'text'"
+            class="row justify-between"
+          >
             <div class="col">
               <h5>{{ t('editor.content') }}</h5>
             </div>
@@ -166,20 +177,34 @@ function handleDelete() {
               </QToggle>
             </div>
           </div>
+          <h5 v-else>{{ t('editor.content') }}</h5>
 
-          <div class="row q-col-gutter-md">
-            <div class="col-12">
-              <MarkdownEditor
-                ref="markdownEditorRef"
-                v-model="noteContent"
-                enableMentions
-                :isWYSIWYGMode="isWYSIWYGMode"
-                :placeholder="t('editor.contentPlaceholder')"
-                :current-entity-id="editedNote.id"
-                current-entity-type="note"
-              />
+          <slot
+            name="content"
+            :note="editedNote"
+            :content-type="editedNote.contentType"
+            :update-content="(value: string) => (noteContent = value)"
+          >
+            <div class="row q-col-gutter-md">
+              <div class="col-12">
+                <NoteCanvas
+                  v-if="editedNote.contentType === 'draw'"
+                  ref="canvasRef"
+                  :model-value="editedNote.content"
+                />
+                <MarkdownEditor
+                  v-else
+                  ref="markdownEditorRef"
+                  v-model="noteContent"
+                  enableMentions
+                  :isWYSIWYGMode="isWYSIWYGMode"
+                  :placeholder="t('editor.contentPlaceholder')"
+                  :current-entity-id="editedNote.id"
+                  current-entity-type="note"
+                />
+              </div>
             </div>
-          </div>
+          </slot>
         </div>
       </div>
     </template>

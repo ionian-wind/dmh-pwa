@@ -2,10 +2,15 @@
 import type { Note } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { computed, ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useI18n } from 'vue-i18n';
-import { IconChevronUp, IconChevronDown } from '@tabler/icons-vue';
+import {
+  IconBrush,
+  IconChevronDown,
+  IconChevronUp,
+  IconFileText,
+} from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
@@ -16,6 +21,7 @@ const clamped = ref(false);
 const expanded = ref(false);
 
 const { t } = useI18n();
+const isDrawing = computed(() => props.note.contentType === 'draw');
 
 function checkClamped() {
   if (contentRef.value) {
@@ -57,14 +63,28 @@ function handleCopy() {
     showEdit
     showDelete
     showCopy
-    :title="note.title"
     @view="handleView"
     @edit="handleEdit"
     @delete="handleDelete"
     @copy="handleCopy"
   >
-    <div v-if="note.content?.length > 0 || note.tags?.length > 0">
+    <template #header>
+      <div class="row items-center q-gutter-xs">
+        <IconBrush v-if="isDrawing" :size="18" class="text-grey-7" />
+        <IconFileText v-else :size="18" class="text-grey-7" />
+        <h5 class="q-ma-none">{{ note.title }}</h5>
+      </div>
+    </template>
+
+    <div v-if="isDrawing || note.content?.length > 0 || note.tags?.length > 0">
+      <img
+        v-if="isDrawing && note.preview"
+        :src="note.preview"
+        :alt="note.title"
+        class="note-drawing-preview"
+      />
       <div
+        v-else
         ref="contentRef"
         :class="['note-card-content', { clamped: clamped && !expanded }]"
       >
@@ -98,6 +118,13 @@ function handleCopy() {
   </BaseCard>
 </template>
 <style scoped>
+.note-drawing-preview {
+  width: 100%;
+  max-height: 180px;
+  border-radius: var(--border-radius);
+  object-fit: contain;
+}
+
 .tag {
   cursor: pointer;
   text-decoration: underline dotted;

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from 'quasar';
 
 import i18n from '@/i18n';
+import { useConfigStore } from '@/utils/configStore';
 import { confirm } from '@/dialogs/confirm';
 import { prompt } from '@/dialogs/prompt';
 
@@ -44,6 +45,16 @@ describe('dialog helpers', () => {
         }),
       }),
     );
+  });
+
+  it('skips confirmation when deletion confirmation is disabled', async () => {
+    const config = useConfigStore();
+    config.confirmDelete = false;
+
+    await expect(confirm('Delete this?')).resolves.toBe(true);
+    expect(Dialog.create).not.toHaveBeenCalled();
+
+    config.confirmDelete = true;
   });
 
   it('uses the current locale for confirm defaults', async () => {

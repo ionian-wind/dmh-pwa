@@ -136,7 +136,13 @@ function navigateToJukebox() {
 
 <style scoped>
 .jukebox-dialog-card {
+  background-color: var(--color-background-soft);
   color: var(--jp-control-color, var(--color-text));
+}
+
+.jukebox-dialog-card :deep(.jukebox-player) {
+  position: relative;
+  z-index: 1;
 }
 
 .drag-handle {

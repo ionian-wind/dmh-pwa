@@ -5,6 +5,7 @@ import { mount } from '@vue/test-utils';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
+import { IconBrush, IconFileText } from '@tabler/icons-vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
@@ -82,6 +83,36 @@ describe('domain cards', () => {
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['combat']);
   });
 
+  it('shows the note content-type icon', () => {
+    const note = {
+      id: 'n1',
+      title: 'Sketch',
+      content: '',
+      contentType: 'draw',
+      preview: 'data:image/png;base64,preview',
+      tags: [],
+      typeId: null,
+      moduleId: null,
+      hidden: false,
+      createdAt: 0,
+      updatedAt: 0,
+    } as any;
+
+    const drawing = mount(NoteCard, { props: { note } });
+    expect(drawing.findComponent(IconBrush).exists()).toBe(true);
+    expect(drawing.findComponent(IconBrush).classes()).toContain('text-grey-7');
+    expect(drawing.find('img').attributes('src')).toBe(
+      'data:image/png;base64,preview',
+    );
+
+    const text = mount(NoteCard, {
+      props: { note: { ...note, contentType: 'text' } },
+    });
+    expect(text.findComponent(IconFileText).exists()).toBe(true);
+    expect(text.findComponent(IconFileText).classes()).toContain('text-grey-7');
+    expect(text.findComponent(IconBrush).exists()).toBe(false);
+  });
+
   it('NoteCard expands clamped content', async () => {
     const note = {
       id: 'n1',
@@ -136,9 +167,7 @@ describe('domain cards', () => {
     await buttons[0].trigger('mousedown');
     vi.advanceTimersByTime(400);
     vi.advanceTimersByTime(160);
-    expect(
-      wrapper.emitted('update:modelValue')?.length,
-    ).toBeGreaterThan(4);
+    expect(wrapper.emitted('update:modelValue')?.length).toBeGreaterThan(4);
     await buttons[0].trigger('mouseup');
 
     await buttons[0].trigger('mouseenter');

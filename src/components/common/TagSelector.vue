@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import { IconX } from '@tabler/icons-vue';
 
@@ -32,65 +31,29 @@ const removeTag = (index: number) => {
 </script>
 
 <template>
-  <div class="tag-selector">
-    <div class="tag-input">
-      <label>{{ t('editor.tags') }}</label>
+  <div class="column q-gutter-sm q-mb-md">
+    <div class="row items-center q-gutter-sm">
       <QInput
         v-model="newTag"
+        :label="t('editor.tags')"
         :placeholder="t('tagSelector.addTag')"
         @keydown.enter.prevent="addTag"
-        dense
         outlined
+        class="col"
       />
-      <QBtn flat size="small" @click.prevent="addTag">{{
-        t('tagSelector.add')
-      }}</QBtn>
+      <QBtn
+        flat
+        color="primary"
+        :label="t('tagSelector.add')"
+        @click.prevent="addTag"
+      />
     </div>
 
-    <div class="tags-list">
-      <QChip dense v-for="(tag, index) in modelValue" :key="index" class="tag">
+    <div v-if="modelValue.length > 0" class="row q-gutter-xs">
+      <QChip dense v-for="(tag, index) in modelValue" :key="index">
         {{ tag }}
         <IconX @click="removeTag(index)" />
       </QChip>
     </div>
   </div>
 </template>
-
-<style scoped>
-.tag-selector {
-  margin-bottom: 1rem;
-}
-
-.tag-input {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.tag-input input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tag {
-  background: var(--color-background-soft);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--border-radius);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-text);
-  font-size: 0.9rem;
-}
-</style>
