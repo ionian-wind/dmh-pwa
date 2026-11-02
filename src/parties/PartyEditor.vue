@@ -18,6 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>): void;
+  (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -74,6 +75,10 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   emit('cancel');
 };
+
+function handleDelete() {
+  if (props.party) emit('delete', props.party.id);
+}
 </script>
 
 <template>
@@ -82,10 +87,12 @@ const handleCancel = () => {
     :title="party ? t('parties.edit') : t('parties.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!party"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="party-editor-modal"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="handleCancel"
   >
     <div class="form-section">

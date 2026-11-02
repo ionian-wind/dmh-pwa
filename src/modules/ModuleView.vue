@@ -315,6 +315,13 @@ async function saveEditBookmark() {
     closeEditBookmark();
   }
 }
+
+async function handleEditorDelete() {
+  if (await handleDelete()) {
+    showEditor.value = false;
+    await router.push('/modules');
+  }
+}
 </script>
 
 <template>
@@ -455,6 +462,7 @@ async function saveEditBookmark() {
           :module="module"
           :is-open="showEditor"
           @submit="handleSubmit"
+          @delete="handleEditorDelete"
           @cancel="handleCancel"
         />
       </template>

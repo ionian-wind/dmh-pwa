@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { Party, PlayerCharacter } from '@/types';
 
@@ -20,6 +20,7 @@ import { confirm } from '@/dialogs';
 import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
+const router = useRouter();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const characterStore = useCharacterStore();
@@ -131,6 +132,13 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
+
+async function handleEditorDelete() {
+  if (await handleDeleteParty()) {
+    showEditor.value = false;
+    await router.push('/parties');
+  }
+}
 </script>
 
 <template>
@@ -200,6 +208,7 @@ onBeforeUnmount(() => {
           :party="party"
           :isOpen="showEditor"
           @submit="handleSaveParty"
+          @delete="handleEditorDelete"
           @cancel="handlePartyCancel"
         />
       </template>

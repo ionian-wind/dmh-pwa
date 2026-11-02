@@ -69,10 +69,12 @@ function remove() {
     :title="isNew ? t('maps.addArea') : t('maps.editArea')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!isNew"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="map-area-editor-modal"
     @submit="submit"
+    @delete="remove"
     @cancel="emit('cancel')"
   >
     <div class="form-section">
@@ -161,15 +163,5 @@ function remove() {
         clearable
       />
     </div>
-
-    <template #actions>
-      <QBtn
-        v-if="!isNew"
-        flat
-        color="negative"
-        :label="t('common.delete')"
-        @click="remove"
-      />
-    </template>
   </BaseModal>
 </template>

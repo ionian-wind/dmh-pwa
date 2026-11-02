@@ -93,6 +93,7 @@ async function handleCopy(encounter: Encounter) {
       :search-query="encounterStore.searchQuery"
       @update:search-query="encounterStore.setSearchQuery"
       @submit="handleSubmit"
+      @delete="handleDelete"
       @run-combat="handleRunCombat"
       @copy="handleCopy"
     />

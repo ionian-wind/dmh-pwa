@@ -279,6 +279,7 @@ function openMap(mapId: string) {
         :location="location || null"
         :is-open="showEditor"
         @save="handleSubmit"
+        @delete="handleDelete"
         @cancel="showEditor = false"
       />
     </template>

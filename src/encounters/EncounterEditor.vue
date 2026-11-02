@@ -16,6 +16,7 @@ const emit = defineEmits<{
     e: 'submit',
     encounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>,
   ): void;
+  (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -92,6 +93,10 @@ defineExpose({
     }
   },
 });
+
+function handleDelete() {
+  if (props.encounter) emit('delete', props.encounter.id);
+}
 </script>
 
 <template>
@@ -100,10 +105,12 @@ defineExpose({
     :title="isEditing ? t('encounters.edit') : t('encounters.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="isEditing"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="encounter-editor-modal"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="closeEditor"
   >
     <div class="form-section">

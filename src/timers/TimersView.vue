@@ -83,6 +83,7 @@ function handleReset(timer: Timer) {
     :show-search="false"
     view-style="simple-list"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @start="handleStart"
     @stop="handleStop"
     @reset="handleReset"

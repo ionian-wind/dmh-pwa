@@ -280,6 +280,12 @@ onBeforeUnmount(() => {
           $emit('cancel');
         }
       "
+      @delete="
+        () => {
+          $emit('delete', editingItem);
+          showEditor = false;
+        }
+      "
     />
 
     <slot />

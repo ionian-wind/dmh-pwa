@@ -75,6 +75,7 @@ async function handleCopy(party: Party) {
     :search-query="partyStore.searchQuery"
     @update:search-query="partyStore.setSearchQuery"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @copy="handleCopy"
   />
 </template>

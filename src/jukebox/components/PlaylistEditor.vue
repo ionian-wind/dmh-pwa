@@ -13,7 +13,7 @@ const props = defineProps<{
   playlist: JukeboxPlaylist | null;
 }>();
 
-const emit = defineEmits(['update:modelValue', 'saved']);
+const emit = defineEmits(['update:modelValue', 'saved', 'delete']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const moduleStore = useModuleStore();
@@ -99,6 +99,10 @@ async function save() {
   }
   emit('update:modelValue', false);
 }
+
+function handleDelete() {
+  if (props.playlist) emit('delete', props.playlist.id);
+}
 </script>
 
 <template>
@@ -109,9 +113,11 @@ async function save() {
     :title="t('playlist.title')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!playlist"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     @submit="save"
+    @delete="handleDelete"
     @cancel="$emit('update:modelValue', false)"
   >
     <div class="form-section">

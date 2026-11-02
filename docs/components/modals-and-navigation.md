@@ -13,12 +13,27 @@ Props:
 | `modalId` | required | Stack identity |
 | `title` | — | Header text/translation key |
 | `showSubmit` / `showCancel` | — | Action buttons |
-| `submitLabel` / `cancelLabel` | — | Override labels |
+| `showDelete` | — | Standard delete action (editing existing entities) |
+| `submitLabel` / `cancelLabel` / `deleteLabel` | — | Override labels |
 | `showClose` | — | Whether the header exists (combined with title/expand) |
 | `showExpand` / `isExpanded` | — | Maximize toggle |
 | `disableSubmit` | — | Disable submit button |
 
-Emits: `submit`, `cancel`, `update:isExpanded`.
+Emits: `submit`, `cancel`, `delete`, `update:isOpen`, `update:isExpanded`.
+
+### Editor action buttons (required)
+
+Every entity editor dialog must expose **Delete**, **Cancel**, and **Save** from
+the standard `BaseModal` action area:
+
+- Pass `showSubmit`, `showCancel`, and `showDelete` to `BaseModal`.
+- Use `showDelete` only when editing an existing entity; new entities have
+  nothing to delete yet.
+- Handle `@delete` in the editor and emit the entity id to the parent.
+- Do **not** place a delete button inside the dialog body or a custom content
+  section. Custom `#actions` content is reserved for non-standard actions.
+- The map metadata editor is intentionally the exception: maps are deleted from
+  the maps list, so its dialog has no delete action.
 
 Behavior:
 
@@ -34,9 +49,8 @@ Behavior:
   modal has a header.
 - The dialog is read-only-computed for `v-model`; Quasar cannot write it closed,
   but `persistent` prevents user-initiated close anyway.
-- There is no `footer` slot and no `update:isOpen` emit, although consumers use
-  both (`PartySelector`, `PlaylistEditor`, `AddToPlaylistModal`,
-  `ModuleView`'s bookmark modal). Those handlers are dead.
+- `footer` and `actions` slots render before the standard action buttons;
+  `update:isOpen` is emitted when the shell requests closing.
 
 ### Nested-modal support
 

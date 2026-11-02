@@ -24,6 +24,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', note: Note): void;
+  (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -94,6 +95,10 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   emit('cancel');
 };
+
+function handleDelete() {
+  if (props.note) emit('delete', props.note.id);
+}
 </script>
 
 <template>
@@ -102,11 +107,13 @@ const handleCancel = () => {
     :title="isEditing ? t('common.editNote') : t('common.createNote')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!note"
     :showExpand="true"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="note-editor"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="handleCancel"
   >
     <div class="q-pa-md q-gutter-md">
