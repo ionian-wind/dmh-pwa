@@ -125,8 +125,9 @@ types and map layers keep their dedicated selectors.
 
 ### `TagSelector.vue`
 
-- Add/remove string tags.
-- Used only by the commented-out note UI; effectively dormant.
+- Adds and removes string tags with a standard outlined `QInput` and `QChip`
+  list.
+- Used by the note editor.
 - Duplicate/whitespace checks are minimal.
 
 ### `TagChip.vue`

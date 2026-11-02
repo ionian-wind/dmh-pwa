@@ -110,7 +110,6 @@ const handleDeleteType = async (noteType: NoteType) => {
               type="text"
               :placeholder="t('noteTypeSelector.name')"
               @keydown.enter.prevent="handleCreateType"
-              dense
               outlined
             />
           </div>
@@ -123,7 +122,6 @@ const handleDeleteType = async (noteType: NoteType) => {
               v-model="newType.description"
               type="text"
               :placeholder="t('noteTypeSelector.description')"
-              dense
               outlined
             />
           </div>
@@ -233,21 +231,6 @@ const handleDeleteType = async (noteType: NoteType) => {
 .form-group label {
   font-size: 0.9rem;
   color: var(--color-text);
-}
-
-.form-group input {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  font-size: 1rem;
-}
-
-.form-group input[type='color'] {
-  padding: 0.25rem;
-  width: 100%;
-  height: 2.5rem;
 }
 
 .type-editor-actions {

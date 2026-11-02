@@ -6,16 +6,17 @@
     @keydown.esc="onClose"
     @mousedown.stop
   >
-    <input
+    <QInput
       ref="searchInput"
       v-model="search"
-      class="mention-insert-search"
-      type="text"
+      class="q-mx-sm q-mt-sm"
       :placeholder="t('mentions.searchPlaceholder', { kind: kindLabel })"
       @keydown.down.prevent="moveSelection(1)"
       @keydown.up.prevent="moveSelection(-1)"
       @keydown.enter.prevent="selectCurrentMention"
       @keydown.esc.prevent="onClose"
+      dense
+      outlined
       autofocus
     />
     <div class="mention-insert-header">
@@ -66,7 +67,7 @@ const props = defineProps<{
 const { t } = useI18n();
 const selectedIdx = ref(0);
 const search = ref('');
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchInput = ref<any>(null);
 
 const kindLabel = computed(() => {
   switch (props.kind) {
@@ -181,16 +182,6 @@ watch(search, () => {
   padding: 8px 16px 4px 16px;
   color: var(--crepe-popup-header, #333);
   font-size: 14px;
-}
-.mention-insert-search {
-  width: 90%;
-  margin: 8px 5%;
-  padding: 6px 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
-  font-size: 15px;
-  margin-bottom: 6px;
-  outline: none;
 }
 .mention-insert-list {
   list-style: none;
