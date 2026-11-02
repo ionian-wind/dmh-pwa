@@ -449,7 +449,6 @@ function focusArea(areaId: string) {
   if (!area) return;
   center.value = areaMapCenter(area);
   hoveredAreaId.value = areaId;
-  olMapRef.value?.map?.renderSync?.();
 }
 
 async function deleteAreaFromList(areaId: string) {
@@ -583,8 +582,22 @@ function hoverMarker(markerId: string | null) {
 
 function hoverArea(areaId: string | null) {
   hoveredAreaId.value = areaId;
-  olMapRef.value?.map?.renderSync?.();
 }
+
+function refreshAreaHighlight() {
+  void nextTick(() => {
+    const mapInstance = olMapRef.value?.map;
+    const layers = mapInstance?.getLayers?.();
+    layers?.forEach?.((layer: any) => layer.changed?.());
+    if (mapInstance?.renderSync) {
+      mapInstance.renderSync();
+    } else {
+      mapInstance?.render?.();
+    }
+  });
+}
+
+watch(hoveredAreaId, refreshAreaHighlight);
 </script>
 
 <template>
