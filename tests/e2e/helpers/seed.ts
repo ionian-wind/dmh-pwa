@@ -118,6 +118,6 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
 }
 
 export async function enterMapEditMode(page: Page) {
-  await page.getByRole('switch').click();
+  await page.locator('.map-mode-toggle [role="switch"]').click();
   await page.getByRole('button', { name: 'Add layer' }).waitFor();
 }

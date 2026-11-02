@@ -14,7 +14,6 @@ import type { Item } from 'ol-contextmenu';
 import 'ol-contextmenu/ol-contextmenu.css';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { confirm, prompt } from '@/dialogs';
 import 'vue3-openlayers/vue3-openlayers.css';
 import { getMapFile, useMapStore } from '../maps';
@@ -1133,14 +1132,25 @@ watch(isEditMode, (editing) => {
           </div>
 
           <div class="map-label-toggle">
-            <ToggleSwitch v-model="hideLabels" label="maps.hideLabels" />
+            <div class="map-toggle-row">
+              <span class="map-toggle-title">{{ t('maps.hideLabels') }}</span>
+              <QToggle
+                :model-value="hideLabels"
+                @update:model-value="hideLabels = $event"
+              />
+            </div>
           </div>
 
           <div class="map-mode-toggle">
-            <ToggleSwitch
-              v-model="isEditMode"
-              :label="isEditMode ? 'maps.editMode' : 'maps.viewMode'"
-            />
+            <div class="map-toggle-row">
+              <span class="map-toggle-title">
+                {{ isEditMode ? t('maps.editMode') : t('maps.viewMode') }}
+              </span>
+              <QToggle
+                :model-value="isEditMode"
+                @update:model-value="isEditMode = $event"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1235,7 +1245,6 @@ watch(isEditMode, (editing) => {
 
 .map-mode-toggle {
   display: flex;
-  justify-content: center;
   padding: 0.75rem;
   border-top: 1px solid var(--color-border);
   background: var(--color-background-soft);
@@ -1243,9 +1252,21 @@ watch(isEditMode, (editing) => {
 
 .map-label-toggle {
   display: flex;
-  justify-content: center;
   padding: 0.6rem 0.75rem;
   border-top: 1px solid var(--color-border);
+}
+
+.map-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.map-toggle-title {
+  color: var(--color-text);
+  font-size: 0.9rem;
 }
 
 .map-hint {
