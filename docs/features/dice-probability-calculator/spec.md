@@ -2,6 +2,16 @@
 
 A comprehensive, language-agnostic blueprint for building a dice probability calculator with the same functionality and power as AnyDice. This document is based on and aligns with the official AnyDice documentation.
 
+## Implementation status
+
+The maintained implementation lives in
+`src/utils/dice-probability-calculator/`. Parts 1–4 (distribution mechanics,
+language, types and built-in functions) and the parser/evaluator are
+implemented. Output views and any UI remain intentionally out of scope; exact
+memoization/FFT optimisation from Part 6 is not implemented yet. See
+[README.md](README.md) for the validation matrix and [library.md](library.md)
+for the current API and limitations.
+
 ## Table of Contents
 
 1. [Part 1: Core Probability Computation Mechanics](#part-1-core-probability-computation-mechanics)
@@ -682,20 +692,19 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 
 ### 6.5. Summary Implementation Roadmap
 
-1. **Phase 1: Core Math Engine**
-   - Implement <code>Die</code> class with sparse/dense representation.
-   - Implement basic arithmetic and comparison operators.
-   - Build convolution and caching layer.
-2. **Phase 2: Parser and Evaluator**
-   - Lexer and parser for the full language grammar.
-   - Semantic analyzer with type system.
-   - Evaluator with support for variables, functions, and control flow.
-3. **Phase 3: Built-in Library**
-   - Implement <code>@</code>, <code>#</code>, <code>count</code>, <code>explode</code>, <code>highest</code>, <code>lowest</code>, etc.
-4. **Phase 4: Frontend and Integration**
-   - CLI tool, web server with JSON API, HTML/JS interface.
-5. **Phase 5: Optimization and Polish**
-   - FFT convolution for large pools, performance tuning, comprehensive test suite.
+1. **Phase 1: Core Math Engine** — implemented with exact bigint weights.
+   - <code>Die</code> representation, arithmetic, comparisons and convolution.
+   - Memoization is still open.
+2. **Phase 2: Parser and Evaluator** — implemented.
+   - Chevrotain lexer/parser, typed AST, evaluator, variables, functions and
+     control flow.
+3. **Phase 3: Built-in Library** — implemented, including the full official
+   function library and multi-pool variants.
+4. **Phase 4: Frontend and Integration** — out of scope for the library.
+   - Any UI or API layer belongs to the application.
+5. **Phase 5: Optimization and Polish** — partially complete.
+   - Exact tests and official-doc/article regressions are in place.
+   - FFT convolution, caching and output-view helpers remain future work.
 
 ---
 

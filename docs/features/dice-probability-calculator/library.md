@@ -38,7 +38,9 @@ for (const output of result.outputs) {
   applies the `position order` setting.
 - Variables and reassignment: `NAME: expression`
 - Functions with typed parameters: `function: name A:n B:s { ... }`
-- `result: expression` for early function returns
+- `result: expression` for early function returns; `output` and `set` are not
+  allowed inside functions
+- Function-depth truncation returns the empty die
 - `if` / `else if` / `else`
 - `loop NAME over SEQUENCE { ... }`
 - `output expression [named "name"]` with `[VARIABLE]` interpolation
@@ -90,8 +92,10 @@ returned distributions directly.
 npx vitest run src/utils/dice-probability-calculator
 ```
 
-The tests cover parsing, arithmetic, sequences, order statistics, built-ins,
-function casting, loops, conditionals, settings, recursion and error handling.
+The probability-calculator suite currently contains **104 tests across 5
+files**. They cover parsing, arithmetic, sequences, order statistics,
+built-ins, function casting, loops, conditionals, settings, recursion and
+error handling.
 `__tests__/articles.test.ts` mirrors the programs and published results from
 the official AnyDice articles. `__tests__/official-docs.test.ts` covers every
 page of the official documentation.

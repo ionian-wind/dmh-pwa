@@ -28,35 +28,15 @@ result.outputs[0].outcomes; // [{ value, weight, probability }, ...]
 
 ## Documentation set
 
-| Document                               | Contents                                                     |
-| -------------------------------------- | ------------------------------------------------------------ |
-| [requirements.md](requirements.md)     | Original feature request and reference links                 |
-| [spec.md](spec.md)                     | Detailed language, data-model and architecture specification |
-| [implementation.md](implementation.md) | Implementation approach and TDD instructions                 |
-| [library.md](library.md)               | Library README, syntax coverage and usage                    |
-| [continuation.md](continuation.md)     | Current state and next steps                                 |
+| Document                 | Contents                                                     |
+| ------------------------ | ------------------------------------------------------------ |
+| [spec.md](spec.md)       | Detailed language, data-model and architecture specification |
+| [library.md](library.md) | Library syntax, casting rules, module map and tests          |
 
-## Architecture
+## Implementation overview
 
-| File           | Responsibility                                                  |
-| -------------- | --------------------------------------------------------------- |
-| `tokens.ts`    | Chevrotain tokens, comments, keywords, operators                |
-| `parser.ts`    | Chevrotain grammar for statements and expressions               |
-| `toAst.ts`     | CST-to-AST conversion                                           |
-| `ast.ts`       | AST and statement types                                         |
-| `seq.ts`       | Ordered numeric sequences                                       |
-| `die.ts`       | Exact PMFs, convolution, order statistics and mixed-pool access |
-| `builtins.ts`  | Native AnyDice function library                                 |
-| `evaluator.ts` | Interpreter, function casting, scoping and settings             |
-| `index.ts`     | Public `parse()` and `calculate()` API                          |
-
-Tests live in `__tests__/`:
-
-- `parser.test.ts` — grammar and AST shape
-- `evaluator.test.ts` — core distributions and operators
-- `language.test.ts` — functions, loops, conditionals, settings
-- `articles.test.ts` — all official AnyDice articles
-- `official-docs.test.ts` — examples from every official documentation page
+Implementation details, supported syntax, function parameter casting, the
+module map and the test layout are documented in [library.md](library.md).
 
 ## Validation against official AnyDice documentation
 
