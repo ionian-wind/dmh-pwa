@@ -778,10 +778,16 @@ watch(isEditMode, (editing) => {
           />
         </ol-image-layer>
 
-        <ol-vector-layer :style="areaStyle">
+        <ol-vector-layer
+          v-for="(layer, layerIndex) in layers"
+          :key="layer.id"
+          :z-index="layerIndex"
+          :visible="!isLayerHidden(layer.id)"
+          :style="areaStyle"
+        >
           <ol-source-vector>
             <ol-feature
-              v-for="area in visibleAreas"
+              v-for="area in areasForLayer(layer.id)"
               :key="area.id"
               :properties="{ areaId: area.id }"
             >

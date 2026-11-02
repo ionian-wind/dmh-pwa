@@ -87,6 +87,11 @@ Every map has a permanent base layer (`base`) plus any number of user-defined
 layers. Markers and areas store a `layerId`. Users can add, rename, and delete
 layers; deleting a layer moves its children to the base layer.
 
+Each logical layer is backed by its own OpenLayers vector layer for area
+geometry, and layer visibility is toggled through the native
+`layer.setVisible(...)` behavior. Markers are rendered as map overlays and
+follow the same visibility state.
+
 The map page starts in **View mode**. In view mode layer visibility can be
 temporarily toggled with the eye buttons, and hidden layers remove their
 markers/areas from the map. **Edit mode** enables the map action menu, item
