@@ -38,6 +38,7 @@ test('opens the probability calculator from the main menu', async ({
 }) => {
   await page.goto('/dmh-pwa/');
   await page.locator('.q-drawer').first().hover();
+  await page.getByText('Tools', { exact: true }).click();
   await page.getByText('Probability Calculator', { exact: true }).click();
   await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator$/);
   await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });

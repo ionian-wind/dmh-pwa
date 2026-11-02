@@ -37,6 +37,7 @@ import {
   IconMusic,
   IconCalculator,
   IconChartLine,
+  IconTool,
   IconSettings,
   IconMap,
   // IconHeadphones,
@@ -50,6 +51,7 @@ const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
 
 const leftMenuMinimized = ref(false);
+const toolsExpanded = ref(false);
 const animationFrame = ref(0);
 
 const hours = [
@@ -142,13 +144,6 @@ const sections: SectionItem[] = [
     path: '/encounters',
     icon: IconSwords,
   },
-  {
-    section: Section.TIMERS,
-    label: 'navigation.timers',
-    path: '/timers',
-    icon: timerIcon,
-    ref: true,
-  },
   // {
   //   section: Section.AMBIENT_SOUND,
   //   label: 'navigation.ambientSound',
@@ -170,6 +165,21 @@ function isJukeboxActive(): boolean {
 function isProbabilityCalculatorActive(): boolean {
   return router.currentRoute.value.path.startsWith('/probability-calculator');
 }
+
+function isToolsRoute(): boolean {
+  const path = router.currentRoute.value.path;
+  return (
+    path.startsWith('/timers') || path.startsWith('/probability-calculator')
+  );
+}
+
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    if (isToolsRoute()) toolsExpanded.value = true;
+  },
+  { immediate: true },
+);
 
 const isFullscreen = ref(false);
 
@@ -304,6 +314,54 @@ const isSettingsOpen = ref(false);
                 </QItemSection>
               </QItem>
             </template>
+            <QExpansionItem
+              v-model="toolsExpanded"
+              expand-separator
+              dense
+              toggle
+            >
+              <template #header>
+                <QItemSection side>
+                  <IconTool />
+                </QItemSection>
+                <QItemSection>
+                  {{ t('navigation.tools') }}
+                </QItemSection>
+              </template>
+              <QItem
+                clickable
+                v-ripple
+                :active="router.currentRoute.value.path.startsWith('/timers')"
+                :active-class="'bg-secondary'"
+                :to="'/timers'"
+              >
+                <QItemSection side>
+                  <component :is="timerIcon" :key="animationFrame" />
+                </QItemSection>
+                <QItemSection>{{ t('navigation.timers') }}</QItemSection>
+              </QItem>
+              <QItem
+                clickable
+                v-ripple
+                :active="false"
+                @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
+              >
+                <QItemSection side><IconCalculator /></QItemSection>
+                <QItemSection>{{ t('app.calculator') }}</QItemSection>
+              </QItem>
+              <QItem
+                clickable
+                v-ripple
+                :to="'/probability-calculator'"
+                :active="isProbabilityCalculatorActive()"
+                :active-class="'bg-secondary'"
+              >
+                <QItemSection side><IconChartLine /></QItemSection>
+                <QItemSection>
+                  {{ t('navigation.probabilityCalculator') }}
+                </QItemSection>
+              </QItem>
+            </QExpansionItem>
           </QList>
         </div>
         <div>
@@ -340,27 +398,6 @@ const isSettingsOpen = ref(false);
               </QItemSection>
               <QItemSection>
                 {{ t('app.jukebox') }}
-              </QItemSection>
-            </QItem>
-            <QItem
-              clickable
-              :active="false"
-              v-ripple
-              @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
-            >
-              <QItemSection side><IconCalculator /></QItemSection>
-              <QItemSection>{{ t('app.calculator') }}</QItemSection>
-            </QItem>
-            <QItem
-              clickable
-              v-ripple
-              :to="'/probability-calculator'"
-              :active="isProbabilityCalculatorActive()"
-              :active-class="'bg-secondary'"
-            >
-              <QItemSection side><IconChartLine /></QItemSection>
-              <QItemSection>
-                {{ t('navigation.probabilityCalculator') }}
               </QItemSection>
             </QItem>
             <QItem

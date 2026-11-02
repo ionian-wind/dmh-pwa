@@ -13,7 +13,8 @@ using integer (`bigint`) weights. A Vue page under
 - Route: `/probability-calculator` (lazy loaded).
 - Syntax reference: `/probability-calculator/syntax`, linked from the
   calculator header and translated into English and Russian.
-- Main menu: directly below Calculator, using `IconChartLine`.
+- Main menu: inside the expandable **Tools** section, using `IconChartLine`.
+  Timers and Calculator are grouped there as well.
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
   Monarch syntax highlighter and autocomplete for keywords, snippets,
   built-in functions and variables.
