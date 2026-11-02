@@ -35,6 +35,7 @@ describe('settings dialog', () => {
 
     expect(wrapper.text()).toContain('Settings');
     expect(wrapper.text()).toContain('Language');
+    expect(wrapper.text()).not.toContain('Quasar');
     expect(wrapper.findComponent(LanguageSwitcher).exists()).toBe(true);
 
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
@@ -57,6 +58,8 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Interface');
     expect(wrapper.text()).toContain('Player');
     expect(wrapper.text()).toContain('Confirm deletion');
+    expect(wrapper.text()).toContain('Cross-fade');
+    expect(wrapper.text()).toContain('animated album-colour gradient');
 
     const toggles = wrapper.findAllComponents(QToggleStub);
     expect(toggles).toHaveLength(3);

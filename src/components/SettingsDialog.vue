@@ -65,6 +65,9 @@ function close() {
         <QItem>
           <QItemSection>
             <div>{{ t('jukebox.smoothTrackChange') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.smoothTrackChangeHint') }}
+            </div>
           </QItemSection>
           <QItemSection side>
             <QToggle v-model="configStore.jukeboxSmoothTrackChange" />
@@ -73,6 +76,9 @@ function close() {
         <QItem>
           <QItemSection>
             <div>{{ t('jukebox.animatePlayerBackground') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.animatePlayerBackgroundHint') }}
+            </div>
           </QItemSection>
           <QItemSection side>
             <QToggle v-model="configStore.jukeboxAnimatePlayerBackground" />
