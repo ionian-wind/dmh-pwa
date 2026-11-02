@@ -831,6 +831,15 @@
     },
     "drawHint": "Click and drag to draw. Double-click to finish a polygon.",
     "mapActions": "Map actions",
-    "addMarkerHere": "Add marker here"
+    "addMarkerHere": "Add marker here",
+    "layer": "Layer",
+    "layerName": "Layer name",
+    "addLayer": "Add layer",
+    "editLayer": "Edit layer",
+    "deleteLayer": "Delete layer",
+    "viewMode": "View mode",
+    "editMode": "Edit mode",
+    "showLayer": "Show layer",
+    "hideLayer": "Hide layer"
   }
 }

@@ -5,9 +5,17 @@ import EntityLinkList from './EntityLinkList.vue';
 import type { MapMarker } from '../types';
 import { markerIconClass } from '../icons';
 
-defineProps<{
-  markers: MapMarker[];
-}>();
+withDefaults(
+  defineProps<{
+    markers: MapMarker[];
+    editable?: boolean;
+    hideEmpty?: boolean;
+  }>(),
+  {
+    editable: true,
+    hideEmpty: false,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'select-marker', markerId: string): void;
@@ -21,7 +29,7 @@ const { t } = useI18n();
 
 <template>
   <div class="map-markers-panel">
-    <p v-if="markers.length === 0" class="map-markers-empty">
+    <p v-if="markers.length === 0 && !hideEmpty" class="map-markers-empty">
       {{ t('maps.noMarkers') }}
     </p>
 
@@ -55,7 +63,7 @@ const { t } = useI18n();
           :links="marker.entities"
         />
       </span>
-      <span class="map-marker-actions">
+      <span v-if="editable !== false" class="map-marker-actions">
         <button
           type="button"
           class="map-marker-action"

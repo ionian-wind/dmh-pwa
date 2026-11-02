@@ -9,9 +9,13 @@ withDefaults(
   defineProps<{
     areas: MapArea[];
     showTitle?: boolean;
+    editable?: boolean;
+    hideEmpty?: boolean;
   }>(),
   {
     showTitle: true,
+    editable: true,
+    hideEmpty: false,
   },
 );
 
@@ -29,7 +33,7 @@ const { t } = useI18n();
   <div class="map-areas-panel">
     <h4 v-if="showTitle" class="map-areas-title">{{ t('maps.areas') }}</h4>
 
-    <p v-if="areas.length === 0" class="map-areas-empty">
+    <p v-if="areas.length === 0 && !hideEmpty" class="map-areas-empty">
       {{ t('maps.noAreas') }}
     </p>
 
@@ -63,7 +67,7 @@ const { t } = useI18n();
           :links="area.entities"
         />
       </span>
-      <span class="map-area-actions">
+      <span v-if="editable" class="map-area-actions">
         <button
           type="button"
           class="map-area-action"

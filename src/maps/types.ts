@@ -27,6 +27,11 @@ export interface MapLocation extends WithMetadata {
   entities: MapEntityRef[];
 }
 
+export interface MapLayer {
+  id: string;
+  title: string;
+}
+
 export interface MapMarker {
   id: string;
   title: string;
@@ -34,6 +39,7 @@ export interface MapMarker {
   x: number;
   y: number;
   locationId?: string | null;
+  layerId: string;
   entities: MapEntityRef[];
   /** RPG Awesome class without the `ra` prefix, e.g. `ra-castle`. */
   icon: string;
@@ -51,6 +57,7 @@ export interface MapArea {
   center?: [number, number];
   radius?: number;
   locationId?: string | null;
+  layerId: string;
   entities: MapEntityRef[];
   icon?: string;
   color: string;
@@ -75,6 +82,7 @@ export interface MapEntity extends WithMetadata {
   description?: string;
   fileId: string;
   locationId?: string | null;
+  layers: MapLayer[];
   /** @deprecated Embedded locations from older records; migrated to map_locations. */
   locations?: MapLocation[];
   markers: MapMarker[];

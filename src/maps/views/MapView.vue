@@ -9,11 +9,13 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { IconEye, IconEyeOff, IconPencil, IconTrash } from '@tabler/icons-vue';
 import type { Item } from 'ol-contextmenu';
 import 'ol-contextmenu/ol-contextmenu.css';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
-import { confirm } from '@/dialogs';
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import { confirm, prompt } from '@/dialogs';
 import 'vue3-openlayers/vue3-openlayers.css';
 import { getMapFile, useMapStore } from '../maps';
 import type { MapEntity, MapEntityForm, MapMarker } from '../types';
@@ -49,6 +51,7 @@ import {
   removeArea,
   upsertArea,
 } from '../utils/mapAreas';
+import { MAP_BASE_LAYER_ID, createLayer } from '../utils/mapLayers';
 import {
   imageToMapPoint,
   imageToMapPoints,
@@ -60,7 +63,7 @@ import { createBox } from 'ol/interaction/Draw';
 import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
-import type { MapArea, MapAreaShape } from '../types';
+import type { MapArea, MapAreaShape, MapLayer } from '../types';
 
 const route = useRoute();
 const router = useRouter();
@@ -77,7 +80,9 @@ const isMapEditorOpen = ref(false);
 const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
+const isEditMode = ref(false);
 const sidePanelTab = ref('markers');
+const hiddenLayerIds = ref<Set<string>>(new Set());
 const olMapRef = ref<any>(null);
 const contextMenuRef = ref<any>(null);
 const drawMode = ref<MapAreaShape | null>(null);
@@ -94,6 +99,30 @@ const boxGeometry = createBox();
 const drawShapes: MapAreaShape[] = ['polygon', 'circle', 'square', 'freehand'];
 
 const allLocations = computed(() => locationStore.items);
+
+function isLayerHidden(layerId: string) {
+  return !isEditMode.value && hiddenLayerIds.value.has(layerId);
+}
+
+const layers = computed(() => map.value?.layers ?? []);
+
+const visibleMarkers = computed(() =>
+  (map.value?.markers ?? []).filter((marker) => !isLayerHidden(marker.layerId)),
+);
+
+const visibleAreas = computed(() =>
+  (map.value?.areas ?? []).filter((area) => !isLayerHidden(area.layerId)),
+);
+
+function markersForLayer(layerId: string) {
+  return (map.value?.markers ?? []).filter(
+    (marker) => marker.layerId === layerId,
+  );
+}
+
+function areasForLayer(layerId: string) {
+  return (map.value?.areas ?? []).filter((area) => area.layerId === layerId);
+}
 
 let actionsControl: MapActionsControl | null = null;
 let unbindMapActionListener: (() => void) | null = null;
@@ -159,16 +188,13 @@ const infoPosition = computed<[number, number] | undefined>(() => {
   return undefined;
 });
 
-const infoLocationName = computed(() => {
-  if (!infoMarker.value?.locationId) return '';
-  return locationStore.getById(infoMarker.value.locationId)?.name ?? '';
-});
-
 const infoLocation = computed(() => {
   const locationId =
     infoMarker.value?.locationId || infoArea.value?.locationId || null;
   return locationId ? locationStore.getById(locationId) : null;
 });
+
+const infoLocationName = computed(() => infoLocation.value?.name ?? '');
 
 function goToInfoLocation() {
   if (!infoLocation.value) return;
@@ -305,6 +331,7 @@ function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
     return;
   }
 
+  if (!isEditMode.value) return;
   if (!isAddingMarker.value || !event.coordinate) return;
   const [x, y] = mapToImagePoint(
     [event.coordinate[0], event.coordinate[1]],
@@ -358,6 +385,7 @@ function bindMapActions(mapInstance: any) {
   boundMap = mapInstance;
   actionsControl = new MapActionsControl(actionsControlLabels());
   actionsControl.setDrawingActive(Boolean(drawMode.value));
+  actionsControl.setVisible(isEditMode.value);
   mapInstance.addControl(actionsControl);
   unbindMapActionListener = onMapAction(mapInstance, handleMapAction);
 }
@@ -610,6 +638,88 @@ function refreshAreaHighlight() {
 }
 
 watch(hoveredAreaId, refreshAreaHighlight);
+
+function toggleLayerVisibility(layerId: string) {
+  const next = new Set(hiddenLayerIds.value);
+  if (next.has(layerId)) {
+    next.delete(layerId);
+  } else {
+    next.add(layerId);
+  }
+  hiddenLayerIds.value = next;
+  if (isLayerHidden(layerId)) {
+    const selected = infoMarker.value || infoArea.value;
+    if (selected?.layerId === layerId) closeMapInfo();
+  }
+}
+
+async function persistLayers(updatedLayers: MapLayer[]) {
+  if (!map.value) return;
+  const updated = await mapStore.update(map.value.id, {
+    layers: updatedLayers,
+  });
+  map.value = normalizeMapEntity(updated);
+}
+
+async function addLayer() {
+  const title = await prompt(t('maps.layerName'), {
+    title: t('maps.addLayer'),
+  });
+  if (!title?.trim()) return;
+  await persistLayers([...layers.value, createLayer(title)]);
+}
+
+async function editLayer(layer: MapLayer) {
+  const title = await prompt(t('maps.layerName'), {
+    title: t('maps.editLayer'),
+    modelValue: layer.title,
+  });
+  if (!title?.trim()) return;
+  await persistLayers(
+    layers.value.map((entry) =>
+      entry.id === layer.id ? { ...entry, title: title.trim() } : entry,
+    ),
+  );
+}
+
+async function deleteLayer(layer: MapLayer) {
+  if (!map.value || layer.id === MAP_BASE_LAYER_ID) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: layer.title,
+      }),
+    ))
+  ) {
+    return;
+  }
+
+  const updated = await mapStore.update(map.value.id, {
+    layers: layers.value.filter((entry) => entry.id !== layer.id),
+    markers: map.value.markers.map((marker) =>
+      marker.layerId === layer.id
+        ? { ...marker, layerId: MAP_BASE_LAYER_ID }
+        : marker,
+    ),
+    areas: map.value.areas.map((area) =>
+      area.layerId === layer.id
+        ? { ...area, layerId: MAP_BASE_LAYER_ID }
+        : area,
+    ),
+  });
+  map.value = normalizeMapEntity(updated);
+}
+
+watch(isEditMode, (editing) => {
+  actionsControl?.setVisible(editing);
+  if (!editing) {
+    drawMode.value = null;
+    isAddingMarker.value = false;
+    closeMarkerEditor();
+    closeAreaEditor();
+    closeMapInfo();
+  }
+});
 </script>
 
 <template>
@@ -623,6 +733,8 @@ watch(hoveredAreaId, refreshAreaHighlight);
     :not-found="notFound"
     :loading="loading"
     :unwrap-content="true"
+    :header-show-edit="isEditMode"
+    :header-show-delete="isEditMode"
     fill
   >
     <div v-if="mapReady" class="map-view-container">
@@ -647,6 +759,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
         />
         <ol-zoom-control />
         <ol-context-menu-control
+          v-if="isEditMode"
           ref="contextMenuRef"
           :items="contextMenuItems"
           :default-items="false"
@@ -668,7 +781,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
         <ol-vector-layer :style="areaStyle">
           <ol-source-vector>
             <ol-feature
-              v-for="area in map?.areas || []"
+              v-for="area in visibleAreas"
               :key="area.id"
               :properties="{ areaId: area.id }"
             >
@@ -694,7 +807,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
         />
 
         <ol-overlay
-          v-for="marker in map?.markers || []"
+          v-for="marker in visibleMarkers"
           :key="marker.id"
           :position="markerMapPosition(marker)"
           positioning="center-center"
@@ -718,7 +831,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
         </ol-overlay>
 
         <ol-overlay
-          v-for="area in map?.areas || []"
+          v-for="area in visibleAreas"
           :key="`area-label-${area.id}`"
           :position="areaMapCenter(area)"
           positioning="center-center"
@@ -793,6 +906,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
                 {{ t('maps.goToLocation') }}
               </button>
               <button
+                v-if="isEditMode"
                 type="button"
                 class="map-info-edit"
                 @click.stop="editInfoItem"
@@ -813,25 +927,132 @@ watch(hoveredAreaId, refreshAreaHighlight);
         align="justify"
       >
         <div v-show="sidePanelTab === 'markers'">
-          <MapMarkersPanel
-            :markers="map?.markers || []"
-            @select-marker="selectMarker"
-            @edit="editMarker"
-            @delete="deleteMarkerFromList"
-            @hover="hoverMarker"
-          />
+          <div
+            v-for="layer in layers"
+            :key="`marker-layer-${layer.id}`"
+            class="map-layer-group"
+          >
+            <div class="map-layer-header">
+              <span class="map-layer-title">{{ layer.title }}</span>
+              <span class="map-layer-actions">
+                <template v-if="!isEditMode">
+                  <QBtn
+                    flat
+                    size="sm"
+                    :title="
+                      isLayerHidden(layer.id)
+                        ? t('maps.showLayer')
+                        : t('maps.hideLayer')
+                    "
+                    @click="toggleLayerVisibility(layer.id)"
+                  >
+                    <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                    <IconEye v-else />
+                  </QBtn>
+                </template>
+                <template v-else>
+                  <QBtn
+                    flat
+                    size="sm"
+                    :title="t('maps.editLayer')"
+                    @click="editLayer(layer)"
+                  >
+                    <IconPencil :size="16" />
+                  </QBtn>
+                  <QBtn
+                    v-if="layer.id !== MAP_BASE_LAYER_ID"
+                    flat
+                    size="sm"
+                    color="negative"
+                    :title="t('maps.deleteLayer')"
+                    @click="deleteLayer(layer)"
+                  >
+                    <IconTrash :size="16" />
+                  </QBtn>
+                </template>
+              </span>
+            </div>
+            <MapMarkersPanel
+              :markers="markersForLayer(layer.id)"
+              :editable="isEditMode"
+              hide-empty
+              @select-marker="selectMarker"
+              @edit="editMarker"
+              @delete="deleteMarkerFromList"
+              @hover="hoverMarker"
+            />
+          </div>
         </div>
         <div v-show="sidePanelTab === 'areas'">
-          <MapAreasPanel
-            :areas="map?.areas || []"
-            :show-title="false"
-            @select-area="focusArea"
-            @edit="editArea"
-            @delete="deleteAreaFromList"
-            @hover="hoverArea"
-          />
+          <div
+            v-for="layer in layers"
+            :key="`area-layer-${layer.id}`"
+            class="map-layer-group"
+          >
+            <div class="map-layer-header">
+              <span class="map-layer-title">{{ layer.title }}</span>
+              <span class="map-layer-actions">
+                <template v-if="!isEditMode">
+                  <QBtn
+                    flat
+                    size="sm"
+                    :title="
+                      isLayerHidden(layer.id)
+                        ? t('maps.showLayer')
+                        : t('maps.hideLayer')
+                    "
+                    @click="toggleLayerVisibility(layer.id)"
+                  >
+                    <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                    <IconEye v-else />
+                  </QBtn>
+                </template>
+                <template v-else>
+                  <QBtn
+                    flat
+                    size="sm"
+                    :title="t('maps.editLayer')"
+                    @click="editLayer(layer)"
+                  >
+                    <IconPencil :size="16" />
+                  </QBtn>
+                  <QBtn
+                    v-if="layer.id !== MAP_BASE_LAYER_ID"
+                    flat
+                    size="sm"
+                    color="negative"
+                    :title="t('maps.deleteLayer')"
+                    @click="deleteLayer(layer)"
+                  >
+                    <IconTrash :size="16" />
+                  </QBtn>
+                </template>
+              </span>
+            </div>
+            <MapAreasPanel
+              :areas="areasForLayer(layer.id)"
+              :show-title="false"
+              :editable="isEditMode"
+              hide-empty
+              @select-area="focusArea"
+              @edit="editArea"
+              @delete="deleteAreaFromList"
+              @hover="hoverArea"
+            />
+          </div>
         </div>
       </TabGroup>
+
+      <div v-if="isEditMode" class="map-layer-add">
+        <QBtn color="primary" :label="t('maps.addLayer')" @click="addLayer" />
+      </div>
+
+      <div class="map-mode-toggle">
+        <ToggleSwitch
+          v-model="isEditMode"
+          :label="isEditMode ? 'maps.editMode' : 'maps.viewMode'"
+        />
+      </div>
     </template>
 
     <template #editor>
@@ -844,6 +1065,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
       <MapMarkerEditor
         :marker="editingMarker"
         :locations="allLocations"
+        :layers="map?.layers || []"
         :is-open="isMarkerEditorOpen"
         @save="saveMarker"
         @delete="deleteMarker"
@@ -852,6 +1074,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
       <MapAreaEditor
         :area="editingArea"
         :locations="allLocations"
+        :layers="map?.layers || []"
         :is-open="isAreaEditorOpen"
         @save="saveArea"
         @delete="deleteArea"
@@ -868,6 +1091,44 @@ watch(hoveredAreaId, refreshAreaHighlight);
   min-height: 320px;
   overflow: hidden;
   border-radius: var(--border-radius);
+}
+
+.map-layer-group {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.map-layer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem 0;
+}
+
+.map-layer-title {
+  color: var(--color-text-light);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.map-layer-actions {
+  display: flex;
+  align-items: center;
+}
+
+.map-layer-add {
+  padding: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.map-mode-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background-soft);
 }
 
 .map-hint {

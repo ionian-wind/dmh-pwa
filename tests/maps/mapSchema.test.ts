@@ -12,6 +12,7 @@ const validMap = {
   description: 'Campaign map',
   fileId: 'file1',
   locationId: 'l1',
+  layers: [{ id: 'base', title: 'Base' }],
   locations: [
     {
       id: 'l1',
@@ -29,6 +30,7 @@ const validMap = {
       x: 100,
       y: 200,
       locationId: 'l1',
+      layerId: 'base',
       entities: [
         { kind: 'monster', id: 'mon1' },
         { kind: 'map', id: 'map2' },
@@ -50,6 +52,7 @@ const validMap = {
       ],
       entities: [{ kind: 'note', id: 'n1' }],
       locationId: 'l1',
+      layerId: 'base',
       icon: 'ra-forest',
       color: '#336699',
     },

@@ -64,6 +64,7 @@ const existingMap: MapEntity = {
   description: 'Campaign',
   fileId: 'file1',
   locationId: 'l1',
+  layers: [{ id: 'base', title: 'Base' }],
   markers: [
     {
       id: 'm1',
@@ -71,6 +72,7 @@ const existingMap: MapEntity = {
       x: 10,
       y: 20,
       locationId: 'l1',
+      layerId: 'base',
       entities: [],
       icon: 'ra-castle',
       color: '#cc3333',

@@ -25,6 +25,7 @@ const editedMap = ref<MapEntityForm>({
   description: '',
   fileId: '',
   locationId: null,
+  layers: [],
   markers: [],
   areas: [],
 });
@@ -73,6 +74,7 @@ watch(
         description: normalized.description,
         fileId: normalized.fileId,
         locationId: normalized.locationId ?? null,
+        layers: structuredClone(normalized.layers),
         markers: structuredClone(normalized.markers),
         areas: structuredClone(normalized.areas),
       };
@@ -85,6 +87,7 @@ watch(
         description: '',
         fileId: '',
         locationId: null,
+        layers: [],
         markers: [],
         areas: [],
       };

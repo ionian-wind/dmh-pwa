@@ -7,7 +7,7 @@ async function waitForAppDatabase(page: Page) {
     if (!('databases' in indexedDB)) return false;
     const databases = await indexedDB.databases();
     const database = databases.find((entry) => entry.name === 'dmh-db');
-    return Boolean(database && (database.version ?? 0) >= 6);
+    return Boolean(database && (database.version ?? 0) >= 7);
   });
 }
 
@@ -83,6 +83,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         description: 'Playwright map',
         fileId,
         locationId: 'location-1',
+        layers: [{ id: 'base', title: 'Base' }],
         markers: [
           {
             id: 'marker-1',
@@ -90,6 +91,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
             x: 50,
             y: 50,
             locationId: 'location-1',
+            layerId: 'base',
             entities: [],
             icon: 'ra-castle-emblem',
             color: '#cc3333',
@@ -112,5 +114,10 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
 
   await page.goto(`${APP_PATH}/maps/${id}`);
   await dismissInstallPrompt(page);
-  await page.locator('.ol-map-actions-trigger').waitFor();
+  await page.locator('.ol-map-actions-trigger').waitFor({ state: 'attached' });
+}
+
+export async function enterMapEditMode(page: Page) {
+  await page.getByRole('switch').click();
+  await page.getByRole('button', { name: 'Add layer' }).waitFor();
 }

@@ -114,6 +114,11 @@ export class MapActionsControl extends Control {
     );
   }
 
+  setVisible(visible: boolean): void {
+    this.element.style.display = visible ? '' : 'none';
+    if (!visible) this.closeMenu();
+  }
+
   private buildMenu(): void {
     const addMarkerButton = this.createItem('add-marker');
     this.addMarkerLabel = document.createElement('span');

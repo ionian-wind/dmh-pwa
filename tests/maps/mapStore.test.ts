@@ -44,6 +44,7 @@ describe('map store', () => {
       description: 'Campaign',
       fileId: 'file1',
       locationId: null,
+      layers: [{ id: 'base', title: 'Base' }],
       markers: [],
       areas: [],
     } as any);

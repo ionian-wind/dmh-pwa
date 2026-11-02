@@ -1,5 +1,6 @@
 import { generateId } from '@/utils/storage';
 import { DEFAULT_MARKER_COLOR } from '../icons';
+import { MAP_BASE_LAYER_ID } from './mapLayers';
 import type { MapArea, MapAreaShape } from '../types';
 
 export function createAreaDraft(
@@ -20,6 +21,7 @@ export function createAreaDraft(
     center: geometry.center,
     radius: geometry.radius,
     locationId: null,
+    layerId: MAP_BASE_LAYER_ID,
     entities: [],
     icon: '',
     color: DEFAULT_MARKER_COLOR,

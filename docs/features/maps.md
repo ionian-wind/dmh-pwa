@@ -14,6 +14,7 @@ interface MapEntity extends WithMetadata {
   description?: string;
   fileId: string;
   locationId?: string | null;
+  layers: MapLayer[];
   markers: MapMarker[];
   areas: MapArea[];
 }
@@ -21,6 +22,7 @@ interface MapEntity extends WithMetadata {
 
 - `fileId` references a `MapFile` in the `map_files` store.
 - `locationId` optionally links the map to one global `MapLocation` record.
+- `layers` organize markers and areas. The base layer always exists.
 - `markers` are placed at image-pixel coordinates `(x, y)`.
 - `areas` are drawn shapes stored with the map.
 
@@ -72,6 +74,24 @@ Each location has its own detail page with tabs for linked notes, modules,
 parties, monsters, encounters, and characters. The right drawer lists the maps
 that link to that location.
 
+### Layers
+
+```ts
+interface MapLayer {
+  id: string;
+  title: string;
+}
+```
+
+Every map has a permanent base layer (`base`) plus any number of user-defined
+layers. Markers and areas store a `layerId`. Users can add, rename, and delete
+layers; deleting a layer moves its children to the base layer.
+
+The map page starts in **View mode**. In view mode layer visibility can be
+temporarily toggled with the eye buttons, and hidden layers remove their
+markers/areas from the map. **Edit mode** enables the map action menu, item
+editing, drawing, and layer management.
+
 ### Markers
 
 ```ts
@@ -82,6 +102,7 @@ interface MapMarker {
   x: number;
   y: number;
   locationId?: string | null;
+  layerId: string;
   entities: MapEntityRef[];
   icon: string; // RPG Awesome class, e.g. "ra-castle-emblem"
   color: string; // CSS color for the marker icon
@@ -110,6 +131,7 @@ interface MapArea {
   center?: [number, number]; // circle
   radius?: number; // circle
   locationId?: string | null; // optional single global location
+  layerId: string;
   entities: MapEntityRef[];
   icon?: string;
   color: string;
@@ -175,15 +197,21 @@ references.
 The map detail page no longer has top tabs. It contains:
 
 - The map itself.
-- Right sidebar tabs: **Markers** and **Areas**.
+- Right sidebar tabs: **Markers** and **Areas**, grouped by layer.
+  - Layers show their title with visibility controls.
   - Rows use a coloured left edge like jukebox tracks.
   - Areas do not show their shape type in the list.
-  - Each row has edit and delete actions.
+  - In edit mode rows have edit/delete actions and each layer has
+    rename/delete controls. The base layer cannot be deleted.
   - Hovering a row highlights the marker or area on the map.
+- **Add layer** appears below the tabbed lists only in edit mode.
+- The **View mode / Edit mode** toggle is fixed at the bottom of the sidebar.
+- In view mode the map action menu, context menu, header edit/delete actions,
+  row edit/delete actions, and popup edit action are hidden.
 
 Clicking a marker or area opens an information popup instead of the editor. The
 popup shows the title, description, marker location, and linked entities, with
-an Edit action for opening the full editor.
+an Edit action in edit mode and a Go to location action when linked.
 
 ## Location detail layout
 

@@ -223,6 +223,7 @@ const map: MapEntity = {
   description: 'Campaign',
   fileId: 'file1',
   locationId: 'l1',
+  layers: [{ id: 'base', title: 'Base' }],
   markers: [
     {
       id: 'm1',
@@ -230,6 +231,7 @@ const map: MapEntity = {
       x: 10,
       y: 20,
       locationId: 'l1',
+      layerId: 'base',
       entities: [],
       icon: 'ra-castle',
       color: '#cc3333',
@@ -247,6 +249,7 @@ const map: MapEntity = {
       ],
       entities: [],
       locationId: null,
+      layerId: 'base',
       icon: '',
       color: '#336699',
     },
@@ -419,6 +422,7 @@ describe('MapView', () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
+    vm.isEditMode = true;
     vm.startAddMarker();
     wrapper.find('.ol-map-stub').trigger('click');
     await flushPromises();
@@ -474,6 +478,31 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
+  it('toggles view/edit mode and layer visibility', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    const actionsControl = mapHarness.controls.find(
+      (control) => control instanceof MapActionsControl,
+    ) as MapActionsControl;
+    expect(actionsControl.getElement().style.display).toBe('none');
+    expect(wrapper.find('.map-layer-add').exists()).toBe(false);
+    expect(wrapper.find('.map-marker-button').exists()).toBe(true);
+
+    vm.toggleLayerVisibility('base');
+    await flushPromises();
+    expect(vm.isLayerHidden('base')).toBe(true);
+    expect(wrapper.find('.map-marker-button').exists()).toBe(false);
+
+    vm.isEditMode = true;
+    await flushPromises();
+    expect(actionsControl.getElement().style.display).toBe('');
+    expect(wrapper.find('.map-layer-add').exists()).toBe(true);
+    expect(wrapper.find('.map-marker-button').exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
   it('exposes actions through OpenLayers controls and dispatches dialog events', async () => {
     const wrapper = await mountMapView();
 
@@ -519,6 +548,7 @@ describe('MapView', () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
+    vm.isEditMode = true;
     vm.startDrawArea('polygon');
     expect(vm.drawMode).toBe('polygon');
 
@@ -588,6 +618,7 @@ describe('MapView', () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
+    vm.isEditMode = true;
     vm.startDrawArea('circle');
     vm.onAreaDrawn({
       feature: {

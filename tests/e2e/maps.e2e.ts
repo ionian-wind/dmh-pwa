@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { seedMap } from './helpers/seed';
+import { enterMapEditMode, seedMap } from './helpers/seed';
 
 test.beforeEach(async ({ page }) => {
   await seedMap(page);
 });
 
 test('renders map actions as a sized OpenLayers control', async ({ page }) => {
+  await enterMapEditMode(page);
   const trigger = page.locator('.ol-map-actions-trigger');
   await expect(trigger).toBeVisible();
 
@@ -40,7 +41,10 @@ test('keeps marker and area sidebar tabs and shows map item popups', async ({
   await expect(page.locator('.map-marker-item')).toContainText('Castle');
 
   await page.locator('.tab-item', { hasText: 'Areas' }).click();
-  await expect(page.locator('.map-areas-empty')).toContainText('No areas');
+  await expect(page.locator('.tab-item', { hasText: 'Areas' })).toHaveClass(
+    /tab-item--active/,
+  );
+  await expect(page.locator('.map-area-item')).toHaveCount(0);
 
   await page.locator('.tab-item', { hasText: 'Markers' }).click();
   await page.locator('.map-marker-item').hover();
@@ -77,6 +81,7 @@ test('shows map and location tabs and opens location details', async ({
 });
 
 test('adds a marker from the action menu and map click', async ({ page }) => {
+  await enterMapEditMode(page);
   await page.locator('.ol-map-actions-trigger').click();
   await page
     .locator('.ol-map-actions-menu')
@@ -100,6 +105,7 @@ test('adds a marker from the action menu and map click', async ({ page }) => {
 test('opens the context menu with a draw submenu and adds a marker', async ({
   page,
 }) => {
+  await enterMapEditMode(page);
   const viewport = page.locator('.ol-viewport');
   await viewport.click({
     button: 'right',

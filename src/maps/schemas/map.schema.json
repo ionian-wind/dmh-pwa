@@ -9,6 +9,7 @@
     "updatedAt",
     "fileId",
     "locationId",
+    "layers",
     "markers",
     "areas"
   ],
@@ -35,6 +36,22 @@
     },
     "locationId": {
       "type": ["string", "null"]
+    },
+    "layers": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      }
     },
     "locations": {
       "type": "array",
@@ -69,7 +86,16 @@
       "default": [],
       "items": {
         "type": "object",
-        "required": ["id", "title", "x", "y", "entities", "icon", "color"],
+        "required": [
+          "id",
+          "title",
+          "x",
+          "y",
+          "entities",
+          "layerId",
+          "icon",
+          "color"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -88,6 +114,9 @@
           },
           "locationId": {
             "type": ["string", "null"]
+          },
+          "layerId": {
+            "type": "string"
           },
           "entities": {
             "type": "array",
@@ -110,7 +139,15 @@
       "default": [],
       "items": {
         "type": "object",
-        "required": ["id", "title", "shape", "points", "entities", "color"],
+        "required": [
+          "id",
+          "title",
+          "shape",
+          "points",
+          "entities",
+          "layerId",
+          "color"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -149,6 +186,9 @@
           },
           "locationId": {
             "type": ["string", "null"]
+          },
+          "layerId": {
+            "type": "string"
           },
           "entities": {
             "type": "array",

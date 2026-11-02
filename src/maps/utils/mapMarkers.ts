@@ -1,5 +1,6 @@
 import { generateId } from '@/utils/storage';
 import { DEFAULT_MARKER_COLOR, DEFAULT_MARKER_ICON } from '../icons';
+import { MAP_BASE_LAYER_ID } from './mapLayers';
 import type { MapMarker } from '../types';
 
 export function createMarkerDraft(
@@ -14,6 +15,7 @@ export function createMarkerDraft(
     x,
     y,
     locationId: null,
+    layerId: MAP_BASE_LAYER_ID,
     entities: [],
     icon: DEFAULT_MARKER_ICON,
     color: DEFAULT_MARKER_COLOR,

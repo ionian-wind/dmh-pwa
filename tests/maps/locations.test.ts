@@ -60,6 +60,7 @@ describe('map location store', () => {
       description: '',
       fileId: 'file1',
       locationId: location.id,
+      layers: [{ id: 'base', title: 'Base' }],
       markers: [
         {
           id: 'm1',
@@ -67,6 +68,7 @@ describe('map location store', () => {
           x: 10,
           y: 20,
           locationId: location.id,
+          layerId: 'base',
           entities: [],
           icon: 'ra-castle',
           color: '#cc3333',
@@ -83,6 +85,7 @@ describe('map location store', () => {
             [10, 10],
           ],
           locationId: location.id,
+          layerId: 'base',
           entities: [],
           icon: '',
           color: '#336699',

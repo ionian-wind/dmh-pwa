@@ -27,7 +27,7 @@ const migration: Migration = {
     const mapsStore = tx.objectStore('maps');
     const locationsStore = tx.objectStore('map_locations');
     const maps = (await mapsStore.getAll()) as Array<
-      MapEntity & { locations?: MapLocation[] }
+      MapEntity & { locations?: MapLocation[]; locationIds?: string[] }
     >;
     const extracted = new Map<string, MapLocation>();
 

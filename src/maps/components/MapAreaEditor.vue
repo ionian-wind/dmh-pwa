@@ -5,7 +5,7 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
-import type { MapArea, MapEntityRef, MapLocation } from '../types';
+import type { MapArea, MapEntityRef, MapLayer, MapLocation } from '../types';
 import { normalizeArea } from '../utils/normalize';
 import { MAP_MARKER_ICONS } from '../icons';
 
@@ -13,6 +13,7 @@ const props = defineProps<{
   isOpen: boolean;
   area: MapArea | null;
   locations: MapLocation[];
+  layers: MapLayer[];
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +40,10 @@ const locationOptions = computed(() =>
     label: location.name,
     value: location.id,
   })),
+);
+
+const layerOptions = computed(() =>
+  props.layers.map((layer) => ({ label: layer.title, value: layer.id })),
 );
 
 function setMarkerLinks(links: MapEntityRef[]) {
@@ -88,6 +93,17 @@ function remove() {
           </span>
         </div>
       </div>
+    </div>
+
+    <div class="form-section">
+      <QSelect
+        v-model="draft.layerId"
+        :options="layerOptions"
+        :label="t('maps.layer')"
+        outlined
+        emit-value
+        map-options
+      />
     </div>
 
     <div class="form-section">

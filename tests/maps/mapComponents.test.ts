@@ -34,6 +34,8 @@ const location: MapLocation = {
   entities: [{ kind: 'note', id: 'n1' }],
 };
 
+const layers = [{ id: 'base', title: 'Base' }];
+
 const marker: MapMarker = {
   id: 'm1',
   title: 'Castle',
@@ -41,6 +43,7 @@ const marker: MapMarker = {
   x: 100,
   y: 200,
   locationId: 'l1',
+  layerId: 'base',
   entities: [{ kind: 'monster', id: 'mon1' }],
   icon: 'ra-castle-emblem',
   color: '#cc3333',
@@ -153,7 +156,7 @@ const IconPickerStub = defineComponent({
 describe('map marker editor', () => {
   it('edits marker fields, links and icon then saves', async () => {
     const wrapper = mount(MapMarkerEditor, {
-      props: { isOpen: true, marker, locations: [location] },
+      props: { isOpen: true, marker, locations: [location], layers },
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,
@@ -197,7 +200,7 @@ describe('map marker editor', () => {
 
   it('validates the title, deletes and cancels', async () => {
     const wrapper = mount(MapMarkerEditor, {
-      props: { isOpen: true, marker, locations: [location] },
+      props: { isOpen: true, marker, locations: [location], layers },
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,

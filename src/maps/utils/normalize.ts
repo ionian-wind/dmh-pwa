@@ -4,6 +4,7 @@ import {
   DEFAULT_MARKER_ICON,
   markerIconClass,
 } from '../icons';
+import { MAP_BASE_LAYER_ID, normalizeLayers } from './mapLayers';
 import type {
   MapArea,
   MapAreaShape,
@@ -56,6 +57,7 @@ export function normalizeMarker(
     x: Number.isFinite(Number(marker.x)) ? Number(marker.x) : 0,
     y: Number.isFinite(Number(marker.y)) ? Number(marker.y) : 0,
     locationId: marker.locationId || null,
+    layerId: marker.layerId || MAP_BASE_LAYER_ID,
     entities: normalizeEntities(marker.entities),
     icon: markerIconClass(marker.icon || DEFAULT_MARKER_ICON),
     color: marker.color || DEFAULT_MARKER_COLOR,
@@ -96,6 +98,7 @@ export function normalizeArea(
       ? Number(area.radius)
       : undefined,
     locationId: area.locationId || null,
+    layerId: area.layerId || MAP_BASE_LAYER_ID,
     entities: normalizeEntities(area.entities),
     icon: markerIconClass(area.icon || ''),
     color: area.color || DEFAULT_MARKER_COLOR,
@@ -128,9 +131,16 @@ function legacyPointsToMarkers(points: unknown): MapMarker[] {
 export function normalizeMapEntity(
   map: Partial<MapEntity> & Record<string, any>,
 ): MapEntity {
-  const markers = Array.isArray(map.markers)
-    ? map.markers.map(normalizeMarker)
-    : legacyPointsToMarkers(map.points);
+  const layers = normalizeLayers(map.layers);
+  const layerIds = new Set(layers.map((layer) => layer.id));
+  const withValidLayer = <T extends { layerId: string }>(item: T): T =>
+    layerIds.has(item.layerId) ? item : { ...item, layerId: MAP_BASE_LAYER_ID };
+
+  const markers = (
+    Array.isArray(map.markers)
+      ? map.markers.map(normalizeMarker)
+      : legacyPointsToMarkers(map.points)
+  ).map(withValidLayer);
 
   const legacyLocationIds = Array.isArray(map.locationIds)
     ? map.locationIds.filter(
@@ -151,8 +161,11 @@ export function normalizeMapEntity(
       typeof map.locationId === 'string' && map.locationId
         ? map.locationId
         : (legacyLocationIds[0] ?? null),
+    layers,
     markers,
-    areas: Array.isArray(map.areas) ? map.areas.map(normalizeArea) : [],
+    areas: Array.isArray(map.areas)
+      ? map.areas.map(normalizeArea).map(withValidLayer)
+      : [],
     createdAt: Number(map.createdAt) || Date.now(),
     updatedAt: Number(map.updatedAt) || Date.now(),
   };

@@ -247,10 +247,19 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
   id, createdAt, updatedAt,
   title, description?,
   fileId, // references map_files.id
-  locations: MapLocation[],
+  locationId?: string | null,
+  layers: MapLayer[],
   markers: MapMarker[],
   areas: MapArea[],
   points?: unknown[] // legacy, normalized into markers on read
+}
+```
+
+**MapLayer**
+
+```ts
+{
+  (id, title);
 }
 ```
 
@@ -275,6 +284,7 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
   description?,
   x, y, // image-pixel coordinates
   locationId?: string | null,
+  layerId: string,
   entities: MapEntityRef[],
   icon, // RPG Awesome class without the "ra" prefix
   color // CSS color
@@ -291,6 +301,7 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
   center?: [number, number],
   radius?: number,
   locationId?: string | null,
+  layerId: string,
   entities: MapEntityRef[],
   icon?: string,
   color
