@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'submit', module: Omit<Module, 'id'>): void;
+  (e: 'submit', module: Module): void;
   (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
@@ -46,7 +46,8 @@ const handleSubmit = async () => {
   }
   emit('submit', {
     ...editedModule.value,
-    createdAt: Date.now(),
+    id: props.module?.id ?? '',
+    createdAt: props.module?.createdAt ?? Date.now(),
     updatedAt: Date.now(),
   });
 };

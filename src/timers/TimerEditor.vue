@@ -67,7 +67,10 @@ watch(
 );
 
 function handleSubmit() {
-  emit('submit', { ...editedTimer.value });
+  emit('submit', {
+    ...editedTimer.value,
+    id: props.timer?.id ?? '',
+  });
 }
 function handleCancel() {
   emit('cancel');

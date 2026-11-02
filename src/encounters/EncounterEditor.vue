@@ -14,10 +14,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (
-    e: 'submit',
-    encounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>,
-  ): void;
+  (e: 'submit', encounter: Encounter): void;
   (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
@@ -87,7 +84,12 @@ const handleSubmit = async () => {
     return;
   }
 
-  emit('submit', editedEncounter.value);
+  emit('submit', {
+    ...editedEncounter.value,
+    id: props.encounter?.id ?? '',
+    createdAt: props.encounter?.createdAt ?? Date.now(),
+    updatedAt: Date.now(),
+  });
   closeEditor();
 };
 

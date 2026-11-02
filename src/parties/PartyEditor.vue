@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'submit', party: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>): void;
+  (e: 'submit', party: Party): void;
   (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
@@ -81,7 +81,12 @@ const handleSubmit = async () => {
   editedParty.value.moduleIds = (editedParty.value.moduleIds || [])
     .map((id: any) => (typeof id === 'string' ? id : id?.id || ''))
     .filter(Boolean);
-  emit('submit', editedParty.value);
+  emit('submit', {
+    ...editedParty.value,
+    id: props.party?.id ?? '',
+    createdAt: props.party?.createdAt ?? Date.now(),
+    updatedAt: Date.now(),
+  });
 };
 
 const handleCancel = () => {
