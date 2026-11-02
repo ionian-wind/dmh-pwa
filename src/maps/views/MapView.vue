@@ -15,6 +15,7 @@ import {
   IconEyeOff,
   IconLiveView,
   IconPencil,
+  IconPlus,
   IconTrash,
 } from '@tabler/icons-vue';
 import type { Item } from 'ol-contextmenu';
@@ -1193,13 +1194,16 @@ watch(isEditMode, (editing) => {
 
         <QSeparator />
         <div class="map-sidepanel-controls bg-white">
-          <div v-if="isEditMode" class="map-layer-add q-pa-sm">
-            <QBtn
-              color="primary"
-              :label="t('maps.addLayer')"
-              @click="addLayer"
-            />
-          </div>
+          <QList v-if="isEditMode" class="map-layer-add">
+            <QItem clickable v-ripple @click="addLayer">
+              <QItemSection>
+                {{ t('maps.addLayer') }}
+              </QItemSection>
+              <QItemSection side>
+                <IconPlus :size="18" />
+              </QItemSection>
+            </QItem>
+          </QList>
 
           <div class="q-pa-sm">
             <div class="row items-center justify-between q-gutter-x-md">

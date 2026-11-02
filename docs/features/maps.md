@@ -216,7 +216,8 @@ The map detail page no longer has top tabs. It contains:
   - In edit mode rows have edit/delete actions and each layer has
     rename/delete controls. The base layer cannot be deleted.
   - Hovering a row highlights the marker or area on the map.
-- **Add layer** appears below the tabbed lists only in edit mode.
+- **Add layer** is a menu-style row below the tabbed lists, shown only in edit
+  mode.
 - A **Hide labels** toggle hides marker labels and area label overlays while
   keeping marker icons and area fills visible.
 - The **View mode / Edit mode** control is an icon-only button group fixed at the
