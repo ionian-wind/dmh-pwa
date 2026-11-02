@@ -19,6 +19,17 @@ const QInput = quasarStubs.QInput;
 describe('domain cards', () => {
   beforeEach(() => {
     resetMockStores();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:test'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+      () => undefined,
+    );
   });
 
   it('CharacterCard emits all BaseCard actions with the character', async () => {

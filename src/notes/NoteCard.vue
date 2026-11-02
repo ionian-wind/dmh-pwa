@@ -10,8 +10,10 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconFileText,
+  IconFileDownload,
 } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
+import { downloadNote } from '@/notes/downloadNote';
 
 const props = defineProps<{ note: Note; moduleName?: string }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
@@ -55,6 +57,10 @@ function toggleExpand() {
 function handleCopy() {
   debug('NoteCard handleCopy', props.note);
   emit('copy', props.note);
+}
+
+function handleDownload() {
+  downloadNote(props.note);
 }
 </script>
 <template>
@@ -104,6 +110,16 @@ function handleCopy() {
       </div>
     </div>
     <template #actions>
+      <QBtn
+        flat
+        color="primary"
+        :title="t('common.download')"
+        :aria-label="t('common.download')"
+        :disable="isDrawing && !note.preview"
+        @click.stop="handleDownload"
+      >
+        <IconFileDownload />
+      </QBtn>
       <Button
         v-if="clamped"
         size="small"
