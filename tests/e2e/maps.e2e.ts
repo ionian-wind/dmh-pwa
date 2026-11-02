@@ -86,6 +86,33 @@ test('shows map and location tabs and opens location details', async ({
   await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
 });
 
+test('links multiple notes from the location detail tab', async ({ page }) => {
+  await page.goto('/dmh-pwa/locations/location-1');
+  await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
+  await expect(page.getByText('No linked entities.')).toBeVisible();
+
+  const panel = page.locator('.q-tab-panel:visible');
+  await panel.getByRole('button', { name: 'Add', exact: true }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByPlaceholder('Search').fill('E2E');
+  await dialog.getByText('E2E Note', { exact: true }).click();
+  await dialog.getByText('E2E Other', { exact: true }).click();
+  await dialog.getByRole('button', { name: 'Add', exact: true }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(panel.getByText('E2E Note', { exact: true })).toBeVisible();
+  await expect(panel.getByText('E2E Other', { exact: true })).toBeVisible();
+
+  await panel
+    .getByRole('button', { name: 'Remove', exact: true })
+    .first()
+    .click();
+  await expect(panel.getByText('E2E Note', { exact: true })).toHaveCount(0);
+  await expect(panel.getByText('E2E Other', { exact: true })).toBeVisible();
+});
+
 test('adds a marker from the action menu and map click', async ({ page }) => {
   await enterMapEditMode(page);
   await page.locator('.ol-map-actions-trigger').click();

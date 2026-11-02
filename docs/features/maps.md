@@ -235,7 +235,9 @@ A location detail page follows the module detail pattern:
 - If the location is linked to a map, a **Map** tab is shown with that map card.
 - Top tabs for each linkable entity kind: notes, modules, parties, monsters,
   encounters, and characters.
-- Each tab lists linked entities and allows adding/removing links.
+- Each tab uses the reusable `EntitiesLinking` component: the entity-type title
+  and add button sit above a linked list with remove actions. Adding opens a
+  searchable modal that supports selecting multiple entities at once.
 - The right drawer has the same **Markers** and **Areas** tabs as the map view.
   It lists markers and areas linked to this location from all maps, grouped by
   map title with separators between groups.
