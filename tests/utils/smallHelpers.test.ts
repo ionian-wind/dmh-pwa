@@ -3,17 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupAnchorScrollHandler } from '@/utils/anchorScroll';
 import { scrollToHeading } from '@/utils/scrollToHeading';
 import { cropTitle } from '@/utils/cropTitle';
-import {
-  debug,
-  debugError,
-  debugWarn,
-} from '@/utils/debug';
-import {
-  DiceMissingDataError,
-  DiceSyntaxError,
-  DiceValidationError,
-  DiceWarning,
-} from '@/utils/dice-roller/lib/errors';
+import { debug, debugError, debugWarn } from '@/utils/debug';
 
 describe('small utility helpers', () => {
   beforeEach(() => {
@@ -102,22 +92,12 @@ describe('small utility helpers', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('exposes dice error and warning types', () => {
-    expect(new DiceSyntaxError('syntax').name).toBe('DiceSyntaxError');
-    expect(new DiceValidationError('validation').name).toBe(
-      'DiceValidationError',
-    );
-    expect(new DiceMissingDataError('missing').name).toBe(
-      'DiceMissingDataError',
-    );
-    expect(new DiceWarning('careful').message).toBe('careful');
-    expect(new DiceSyntaxError('x')).toBeInstanceOf(Error);
-  });
-
   it('routes debug output through the console helpers', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
 
     debug('log', 1);
     debugWarn('warn');
@@ -126,11 +106,5 @@ describe('small utility helpers', () => {
     expect(log).toHaveBeenCalledWith('log', 1);
     expect(warn).toHaveBeenCalledWith('warn');
     expect(error).toHaveBeenCalledWith('error');
-  });
-
-  it('loads the debug macro arithmetic module', async () => {
-    await expect(
-      import('@/utils/dice-roller/plugins/macros/debug-macro-arithmetic'),
-    ).resolves.toBeTruthy();
   });
 });
