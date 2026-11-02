@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { Chart, Grid, Line, Responsive, Tooltip } from 'vue3-charts';
 import {
+  IconBook2,
   IconCheck,
   IconCopy,
   IconDice,
@@ -41,6 +43,7 @@ type DataModeChoice = DataMode | 'transposed' | 'summary';
 const STORAGE_KEY = 'dmh-probability-calculator:source';
 const DEFAULT_SOURCE = 'output 3d6';
 const { t } = useI18n();
+const router = useRouter();
 
 function loadSource(): string {
   try {
@@ -203,12 +206,16 @@ onMounted(() => {
   <div class="q-pa-md probability-calculator-page">
     <div class="row items-center no-wrap q-gutter-sm q-mb-md">
       <IconChartLine :size="30" class="text-primary" />
-      <div>
+      <div class="col">
         <div class="text-h5">{{ t('probabilityCalculator.title') }}</div>
         <div class="text-caption text-grey-7">
           {{ t('probabilityCalculator.subtitle') }}
         </div>
       </div>
+      <QBtn flat no-caps @click="router.push('/probability-calculator/syntax')">
+        <IconBook2 class="q-mr-xs" :size="18" />
+        {{ t('probabilityCalculator.syntax') }}
+      </QBtn>
     </div>
 
     <QCard flat bordered class="q-mb-md">

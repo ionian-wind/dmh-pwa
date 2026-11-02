@@ -42,3 +42,13 @@ test('opens the probability calculator from the main menu', async ({
   await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator$/);
   await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });
 });
+
+test('opens the syntax reference from the calculator', async ({ page }) => {
+  await page.goto('/dmh-pwa/probability-calculator');
+  await page.getByRole('button', { name: 'Syntax reference' }).click();
+  await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator\/syntax$/);
+  await expect(page.getByText('AnyDice Syntax Reference')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Back to calculator' }).click();
+  await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator$/);
+});

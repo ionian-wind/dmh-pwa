@@ -856,6 +856,7 @@
   "probabilityCalculator": {
     "title": "Dice Probability Calculator",
     "subtitle": "AnyDice-compatible probability distributions",
+    "syntax": "Syntax reference",
     "source": "Source",
     "syntaxHint": "AnyDice syntax · comments use \\ … \\",
     "shortcutHint": "Runs locally in your browser",
