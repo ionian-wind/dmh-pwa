@@ -19,6 +19,10 @@ import CharacterEditor from '@/characters/CharacterEditor.vue';
 import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseListView from '@/components/common/BaseListView.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import NoteTypeSelector from '@/notes/NoteTypeSelector.vue';
+import IconPicker from '@/components/common/IconPicker.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
+import { MAP_MARKER_ICONS } from '@/maps/icons';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
@@ -524,6 +528,20 @@ describe('current editors', () => {
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await nextTick();
     expect(wrapper.emitted('submit')).toBeFalsy();
+  });
+
+  it('NoteTypeSelector uses the shared color and icon pickers', () => {
+    const wrapper = mount(NoteTypeSelector, {
+      props: { modelValue: null, allowCreate: true },
+    });
+
+    const color = wrapper.findComponent(ColorPicker);
+    const icon = wrapper.findComponent(IconPicker);
+    expect(color.exists()).toBe(true);
+    expect(color.props('label')).toBe('Color');
+    expect(icon.exists()).toBe(true);
+    expect(icon.props('collection')).toBe('ra');
+    expect(icon.props('icons')).toBe(MAP_MARKER_ICONS);
   });
 
   it('ModuleEditor submits name and description', async () => {

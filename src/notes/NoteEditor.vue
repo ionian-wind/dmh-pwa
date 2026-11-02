@@ -129,7 +129,7 @@ function handleDelete() {
       <div class="q-mb-md">
         <ModuleSelector
           v-model="editedNote.moduleId"
-          :placeholder="'common.noModule'"
+          :placeholder="'editor.module'"
         />
       </div>
       <div class="q-mb-md">

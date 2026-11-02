@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
-    modelValue: string;
+    modelValue?: string;
     icons: readonly string[];
     collection: string;
     searchPlaceholder?: string;

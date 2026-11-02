@@ -4,6 +4,9 @@ import { useNoteTypeStore } from '@/stores/noteTypes';
 import type { NoteType } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
+import ColorPicker from '@/components/common/ColorPicker.vue';
+import IconPicker from '@/components/common/IconPicker.vue';
+import { MAP_MARKER_ICONS, markerIconClass } from '@/maps/icons';
 
 const { modelValue, placeholder, allowCreate } = defineProps<{
   modelValue: string | null;
@@ -21,7 +24,7 @@ const newType = ref<Partial<NoteType>>({
   name: '',
   description: '',
   color: '#4a90e2',
-  icon: undefined,
+  icon: '',
   fields: [],
 });
 const { t } = useI18n();
@@ -37,6 +40,15 @@ const handleCreateType = async () => {
     showTypeEditor.value = false;
   }
 };
+
+function noteTypeIconClasses(icon: string): string[] {
+  const value = icon.trim();
+  if (!value) return [];
+  if (value.includes(':') || value.startsWith('ra-')) {
+    return ['ra', markerIconClass(value)];
+  }
+  return value.split(/\s+/);
+}
 
 const handleDeleteType = async (noteType: NoteType) => {
   if (noteType.id && (await confirm(t('common.confirmDelete')))) {
@@ -115,26 +127,24 @@ const handleDeleteType = async (noteType: NoteType) => {
               outlined
             />
           </div>
-          <div class="form-group">
-            <label for="type-color">{{ t('noteTypeSelector.color') }}</label>
-            <QInput
-              dense
-              outlined
-              id="type-color"
-              v-model="newType.color"
-              type="text"
-            />
-          </div>
-          <div class="form-group">
-            <label for="type-icon">{{ t('noteTypeSelector.icon') }}</label>
-            <QInput
-              id="type-icon"
-              v-model="newType.icon"
-              type="text"
-              :placeholder="t('noteTypeSelector.iconPlaceholder')"
-              dense
-              outlined
-            />
+          <div class="form-grid">
+            <div class="form-group">
+              <ColorPicker
+                id="type-color"
+                v-model="newType.color"
+                :label="t('noteTypeSelector.color')"
+              />
+            </div>
+            <div class="form-group">
+              <label>{{ t('noteTypeSelector.icon') }}</label>
+              <IconPicker
+                v-model="newType.icon"
+                :icons="MAP_MARKER_ICONS"
+                collection="ra"
+                :search-placeholder="t('noteTypeSelector.searchIcons')"
+                :no-icon-label="t('noteTypeSelector.noIcon')"
+              />
+            </div>
           </div>
           <div class="type-editor-actions">
             <QBtn flat size="small" @click="handleCreateType">{{
@@ -154,7 +164,13 @@ const handleDeleteType = async (noteType: NoteType) => {
 
     <div v-if="noteTypeStore.items.length > 0" class="type-list">
       <div v-for="type in noteTypeStore.items" :key="type.id" class="type-item">
-        <span v-if="type.icon" class="type-icon" :class="type.icon"></span>
+        <i
+          v-if="type.icon"
+          class="type-icon"
+          :class="noteTypeIconClasses(type.icon)"
+          :style="{ color: type.color }"
+          aria-hidden="true"
+        ></i>
         <span
           v-else
           class="type-color"

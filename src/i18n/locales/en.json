@@ -442,7 +442,8 @@
     "description": "Description",
     "color": "Color",
     "icon": "Icon (optional)",
-    "iconPlaceholder": "Icon name or class",
+    "searchIcons": "Search icons",
+    "noIcon": "No icon",
     "add": "Add",
     "cancel": "Cancel"
   },
