@@ -1,20 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconCodeblock, IconPencil, IconTrash } from '@tabler/icons-vue';
+import { IconPencil, IconTrash } from '@tabler/icons-vue';
+import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { CodeLibraryPanelState, CodePiece } from './codeLibrary';
 
 defineProps<{ state: CodeLibraryPanelState }>();
 
 const { t } = useI18n();
-
-function firstLine(code: string): string {
-  return (
-    code
-      .split('\n')
-      .find((line) => line.trim())
-      ?.trim() ?? ''
-  );
-}
 
 function load(state: CodeLibraryPanelState, piece: CodePiece) {
   state.onLoad(piece);
@@ -38,35 +30,27 @@ function load(state: CodeLibraryPanelState, piece: CodePiece) {
     </div>
 
     <QList class="code-library-list col q-py-sm">
-      <QItem
+      <SidebarItem
         v-for="piece in state.pieces"
         :key="piece.id"
-        clickable
-        class="code-library-item q-mx-sm q-mb-sm q-pa-sm bg-white rounded-borders"
+        :title="piece.name"
+        class="code-library-item"
         :class="{ 'is-selected': state.selectedId === piece.id }"
-        :style="{ borderLeft: '4px solid var(--color-primary)' }"
         @click="load(state, piece)"
         @keydown.enter="load(state, piece)"
       >
-        <QItemSection>
-          <div class="row items-center q-gutter-xs text-weight-bold">
-            <QCheckbox
-              v-model="piece.include"
-              dense
-              size="sm"
-              class="code-library-checkbox"
-              :title="t('probabilityCalculator.library.include')"
-              @click.stop
-            />
-            <IconCodeblock :size="16" class="text-primary" aria-hidden="true" />
-            <span class="ellipsis">{{ piece.name }}</span>
-          </div>
-          <div class="text-caption text-grey-7 ellipsis">
-            {{ firstLine(piece.code) }}
-          </div>
-        </QItemSection>
+        <template #left>
+          <QCheckbox
+            v-model="piece.include"
+            dense
+            size="sm"
+            class="code-library-checkbox"
+            :title="t('probabilityCalculator.library.include')"
+            @click.stop
+          />
+        </template>
 
-        <QItemSection side class="row items-center">
+        <template #actions>
           <QBtn
             flat
             dense
@@ -91,8 +75,8 @@ function load(state: CodeLibraryPanelState, piece: CodePiece) {
           >
             <IconTrash :size="16" />
           </QBtn>
-        </QItemSection>
-      </QItem>
+        </template>
+      </SidebarItem>
     </QList>
   </div>
 </template>
