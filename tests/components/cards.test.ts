@@ -89,6 +89,7 @@ describe('domain cards', () => {
       title: 'Sketch',
       content: '',
       contentType: 'draw',
+      preview: 'data:image/png;base64,preview',
       tags: [],
       typeId: null,
       moduleId: null,
@@ -99,12 +100,16 @@ describe('domain cards', () => {
 
     const drawing = mount(NoteCard, { props: { note } });
     expect(drawing.findComponent(IconBrush).exists()).toBe(true);
-    expect(drawing.text()).toContain('Drawing note');
+    expect(drawing.findComponent(IconBrush).classes()).toContain('text-grey-7');
+    expect(drawing.find('img').attributes('src')).toBe(
+      'data:image/png;base64,preview',
+    );
 
     const text = mount(NoteCard, {
       props: { note: { ...note, contentType: 'text' } },
     });
     expect(text.findComponent(IconFileText).exists()).toBe(true);
+    expect(text.findComponent(IconFileText).classes()).toContain('text-grey-7');
     expect(text.findComponent(IconBrush).exists()).toBe(false);
   });
 

@@ -12,9 +12,13 @@ test('creates a drawing note from the brush action', async ({ page }) => {
   await expect(dialog.locator('.qd-root')).toBeVisible({ timeout: 30000 });
   await expect(dialog.locator('.qd-root button svg').first()).toBeVisible();
 
+  await dialog.locator('button[title="Shape — G"]').click();
+  await dialog.locator('.qd-canvas').click({ position: { x: 120, y: 100 } });
+
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(page.getByText('Sketch', { exact: true })).toBeVisible();
+  await expect(page.locator('.note-drawing-preview')).toBeVisible();
 
   const note = await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -32,7 +36,8 @@ test('creates a drawing note from the brush action', async ({ page }) => {
   });
 
   expect(note.contentType).toBe('draw');
-  expect(note.content).toContain('document');
+  expect(note.content).toContain('shape:');
+  expect(note.preview).toContain('data:image/png');
 });
 
 test('localizes Quickdraw chrome from the app locale', async ({ page }) => {

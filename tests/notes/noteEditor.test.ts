@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 
 import NoteEditor from '@/notes/NoteEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -17,7 +17,10 @@ vi.mock('@/notes/NoteCanvas.vue', async () => {
       name: 'NoteCanvas',
       props: { modelValue: String, readonly: Boolean },
       setup(_, { expose }) {
-        expose({ getSnapshot: () => '{"document":"snapshot"}' });
+        expose({
+          getSnapshot: () => '{"document":"snapshot"}',
+          getPreview: () => Promise.resolve('data:image/png;base64,preview'),
+        });
         return () => h('div', { class: 'note-canvas-stub' });
       },
     }),
@@ -93,9 +96,11 @@ describe('NoteEditor content types', () => {
     expect(wrapper.findComponent(MarkdownEditorStub).exists()).toBe(false);
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       contentType: 'draw',
       content: '{"document":"snapshot"}',
+      preview: 'data:image/png;base64,preview',
     });
   });
 

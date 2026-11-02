@@ -31,6 +31,10 @@
       "enum": ["text", "draw"],
       "description": "Note content kind"
     },
+    "preview": {
+      "type": "string",
+      "description": "Small PNG data URL preview for drawing notes"
+    },
     "typeId": {
       "oneOf": [
         {

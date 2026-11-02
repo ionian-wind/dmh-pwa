@@ -70,16 +70,19 @@ function handleCopy() {
   >
     <template #header>
       <div class="row items-center q-gutter-xs">
-        <IconBrush v-if="isDrawing" :size="18" />
-        <IconFileText v-else :size="18" />
+        <IconBrush v-if="isDrawing" :size="18" class="text-grey-7" />
+        <IconFileText v-else :size="18" class="text-grey-7" />
         <h5 class="q-ma-none">{{ note.title }}</h5>
       </div>
     </template>
 
     <div v-if="isDrawing || note.content?.length > 0 || note.tags?.length > 0">
-      <div v-if="isDrawing" class="text-caption text-grey-7">
-        {{ t('notes.drawingNote') }}
-      </div>
+      <img
+        v-if="isDrawing && note.preview"
+        :src="note.preview"
+        :alt="note.title"
+        class="note-drawing-preview"
+      />
       <div
         v-else
         ref="contentRef"
@@ -115,6 +118,13 @@ function handleCopy() {
   </BaseCard>
 </template>
 <style scoped>
+.note-drawing-preview {
+  width: 100%;
+  max-height: 180px;
+  border-radius: var(--border-radius);
+  object-fit: contain;
+}
+
 .tag {
   cursor: pointer;
   text-decoration: underline dotted;

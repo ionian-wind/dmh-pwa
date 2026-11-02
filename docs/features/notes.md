@@ -53,8 +53,9 @@ editable in the note form; it is chosen by the create action.
 
 ## Card (`NoteCard.vue`)
 
-- Shows a type icon next to the title: `IconFileText` for text notes and
+- Shows a gray type icon next to the title: `IconFileText` for text notes and
   `IconBrush` for drawing notes.
+- Drawing notes show their saved PNG preview instead of a text placeholder.
 - Displays the rendered Markdown inside a `600px` clamp for text notes.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
@@ -78,7 +79,8 @@ Behavior:
 - `editedNote` is initialized from `props.note` when its `id` changes; a
   `lastNoteId` guard prevents re-initializing while typing.
 - On submit, text notes read the latest Markdown from the Milkdown ref; draw
-  notes read a Quickdraw JSON snapshot from `NoteCanvas`.
+  notes read a Quickdraw JSON snapshot and generate a small PNG preview using
+  `editor.exportImage()`.
 - New notes are created by the parent with `hidden: false`; drawing notes keep
   `contentType: 'draw'`.
 

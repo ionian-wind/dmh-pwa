@@ -105,6 +105,8 @@ const handleSubmit = async () => {
   }
   if (editedNote.value.contentType === 'draw') {
     editedNote.value.content = canvasRef.value?.getSnapshot() ?? '';
+    editedNote.value.preview =
+      (await canvasRef.value?.getPreview()) || undefined;
   } else if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
     editedNote.value.content = markdownEditorRef.value.getMarkdown();
   }

@@ -35,6 +35,8 @@ export interface Note extends WithMetadata {
   title: string;
   content: string;
   contentType: NoteContentType;
+  /** Small PNG data URL preview for drawing notes. */
+  preview?: string;
   typeId: UUID | null;
   tags: string[];
   moduleId: UUID | null;

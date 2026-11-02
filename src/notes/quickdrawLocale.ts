@@ -135,6 +135,12 @@ function translateTree(root: HTMLElement, locale: string) {
     node = walker.nextNode();
   }
 
+  root
+    .querySelectorAll<HTMLButtonElement>('button:not([type])')
+    .forEach((el) => {
+      el.type = 'button';
+    });
+
   root.querySelectorAll<HTMLElement>('[title], [aria-label]').forEach((el) => {
     for (const attribute of ['title', 'aria-label'] as const) {
       const value = el.getAttribute(attribute);

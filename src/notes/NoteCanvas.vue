@@ -59,7 +59,23 @@ function getSnapshot(): string {
     : (props.modelValue ?? '');
 }
 
-defineExpose({ getSnapshot });
+async function getPreview(): Promise<string> {
+  if (!board) return '';
+  const blob = await board.editor.exportImage({
+    background: true,
+    scale: 0.5,
+    margin: 8,
+  });
+  if (!blob) return '';
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(blob);
+  });
+}
+
+defineExpose({ getSnapshot, getPreview });
 </script>
 
 <template>
