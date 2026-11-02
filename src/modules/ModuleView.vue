@@ -112,15 +112,15 @@ const moduleBookmarks = computed(() => {
   return bookmarkStore.items.filter((b) => b.moduleId === module.value!.id);
 });
 
-const entityTabs = [
-  { id: 'document', label: 'Book' },
-  { id: 'parties', label: 'Parties' },
-  { id: 'monsters', label: 'Monsters' },
-  { id: 'encounters', label: 'Encounters' },
-  { id: 'notes', label: 'Notes' },
-  { id: 'playlists', label: 'Playlists' },
-  { id: 'noteTree', label: 'Book Tree' },
-];
+const entityTabs = computed(() => [
+  { id: 'document', label: t('moduleView.book') },
+  { id: 'parties', label: t('navigation.parties') },
+  { id: 'monsters', label: t('navigation.monsters') },
+  { id: 'encounters', label: t('navigation.encounters') },
+  { id: 'notes', label: t('navigation.notes') },
+  { id: 'playlists', label: t('moduleView.playlists') },
+  { id: 'noteTree', label: t('moduleView.bookTree') },
+]);
 
 const activeTab = ref('document');
 const sidePanelTab = ref('toc');

@@ -131,7 +131,7 @@ onMounted(async () => {
     <div>
       <QList class="q-pa-none q-mb-none">
         <QItem>
-          <QItemSection> Playlists </QItemSection>
+          <QItemSection>{{ t('playlist.list') }}</QItemSection>
           <QItemSection side>
             <QBtn flat @click="openPlaylistModal(null)" variant="light"
               ><IconPlus

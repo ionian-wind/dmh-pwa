@@ -410,6 +410,9 @@
     "unlink": "Unlink"
   },
   "moduleView": {
+    "book": "Book",
+    "bookTree": "Book Tree",
+    "playlists": "Playlists",
     "noDocument": "No document structure defined for this module.",
     "noParties": "No parties in this module",
     "noMonsters": "No monsters in this module",
@@ -419,6 +422,7 @@
   },
   "playlist": {
     "title": "Playlist",
+    "list": "Playlists",
     "none": "No playlists found. Please create one first.",
     "createNew": "New playlist",
     "namePlaceholder": "Playlist name",
