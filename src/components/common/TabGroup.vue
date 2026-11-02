@@ -31,7 +31,12 @@ const emit = defineEmits<{
   (e: 'tab-add'): void;
 }>();
 
-const { t } = useI18n();
+const { t, te } = useI18n();
+
+function tabLabel(label: string): string {
+  // Labels may be translation keys or already-translated strings.
+  return te(label) ? t(label) : label;
+}
 
 const activeTab = computed({
   get: () => props.modelValue || props.tabs[0]?.id || '',
@@ -116,7 +121,7 @@ watch(
           :disabled="tab.disabled"
         >
           <span v-if="tab.icon" class="tab-icon">{{ tab.icon }}</span>
-          <span class="tab-label">{{ t(tab.label) }}</span>
+          <span class="tab-label">{{ tabLabel(tab.label) }}</span>
           <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
           <button
             v-if="closable && !tab.disabled"
