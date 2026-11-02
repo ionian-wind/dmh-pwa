@@ -984,6 +984,22 @@
     "rollAmount": "Number of rolls",
     "roll": "Roll",
     "rollHint": "Choose an output and roll it.",
+    "save": "Save",
+    "library": {
+      "title": "Code library",
+      "empty": "No saved code pieces yet.",
+      "namePrompt": "Name for this code piece",
+      "saveTitle": "Save code piece",
+      "editTitle": "Rename code piece",
+      "editPrompt": "New name",
+      "deleteTitle": "Delete code piece",
+      "deleteConfirm": "Delete “{name}”?",
+      "loadTitle": "Load code piece",
+      "replaceConfirm": "The editor has unsaved changes. Replace them with “{name}”?",
+      "include": "Include in current namespace",
+      "rename": "Rename",
+      "delete": "Delete"
+    },
     "zoomIn": "Zoom in chart",
     "zoomOut": "Zoom out chart",
     "zoomReset": "Reset chart zoom"

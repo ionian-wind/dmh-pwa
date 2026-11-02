@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 
+const promptMock = vi.hoisted(() => vi.fn());
+const confirmMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@/dialogs', () => ({ prompt: promptMock, confirm: confirmMock }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 vi.mock('vue3-charts', async () => {
@@ -68,6 +72,7 @@ vi.mock('../anydiceLanguage', () => ({
 
 import ProbabilityCalculatorView from '../ProbabilityCalculatorView.vue';
 import { encodeSource } from '../shareLink';
+import { CODE_LIBRARY_STORAGE_KEY } from '../codeLibrary';
 
 async function settle() {
   await nextTick();
@@ -84,6 +89,9 @@ async function mountPage() {
 
 describe('ProbabilityCalculatorView', () => {
   beforeEach(() => {
+    vi.mocked(localStorage.getItem).mockReset();
+    promptMock.mockReset();
+    confirmMock.mockReset();
     history.replaceState(null, '', '/dmh-pwa/probability-calculator');
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -226,6 +234,90 @@ describe('ProbabilityCalculatorView', () => {
           .element as HTMLInputElement
       ).value,
     ).toContain('#code=');
+    wrapper.unmount();
+  });
+
+  it('saves, renames, loads and deletes library pieces', async () => {
+    promptMock.mockResolvedValueOnce('My piece');
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save')!
+      .trigger('click');
+    await settle();
+
+    expect(wrapper.text()).toContain('My piece');
+    const item = wrapper.find('.code-library-item');
+    expect(item.exists()).toBe(true);
+
+    promptMock.mockResolvedValueOnce('Renamed piece');
+    await wrapper.find('button[aria-label="Rename"]').trigger('click');
+    await settle();
+    expect(wrapper.text()).toContain('Renamed piece');
+
+    promptMock.mockResolvedValueOnce('Another piece');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save')!
+      .trigger('click');
+    await settle();
+
+    confirmMock.mockResolvedValueOnce(true);
+    await wrapper.findAll('button[aria-label="Delete"]')[0].trigger('click');
+    await settle();
+    expect(wrapper.findAll('.code-library-item')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('confirms before replacing dirty editor content with a library piece', async () => {
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+      key === CODE_LIBRARY_STORAGE_KEY
+        ? JSON.stringify([
+            {
+              id: 'piece-1',
+              name: 'Piece',
+              code: 'output 1d4',
+              include: false,
+            },
+          ])
+        : null,
+    );
+    const wrapper = await mountPage();
+    const editor = wrapper.find('textarea.monaco-editor-stub');
+
+    await editor.setValue('output 1d8');
+    confirmMock.mockResolvedValueOnce(false);
+    await wrapper.find('.code-library-item').trigger('click');
+    await settle();
+    expect((editor.element as HTMLTextAreaElement).value).toBe('output 1d8');
+
+    confirmMock.mockResolvedValueOnce(true);
+    await wrapper.find('.code-library-item').trigger('click');
+    await settle();
+    expect((editor.element as HTMLTextAreaElement).value).toBe('output 1d4');
+    expect(wrapper.text()).toContain('Run a calculation');
+    wrapper.unmount();
+  });
+
+  it('includes checked library pieces in the calculation namespace', async () => {
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+      key === CODE_LIBRARY_STORAGE_KEY
+        ? JSON.stringify([
+            { id: 'piece-1', name: 'Variable', code: 'A: 1', include: true },
+          ])
+        : null,
+    );
+    const wrapper = await mountPage();
+    await wrapper.find('textarea.monaco-editor-stub').setValue('output A');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Calculate')!
+      .trigger('click');
+    await settle();
+
+    expect(wrapper.findAll('.probability-table tbody tr')).toHaveLength(1);
+    expect(wrapper.find('.probability-table tbody').text()).toContain('1');
     wrapper.unmount();
   });
 

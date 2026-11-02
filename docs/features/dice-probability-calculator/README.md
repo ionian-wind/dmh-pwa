@@ -24,6 +24,9 @@ using integer (`bigint`) weights. A Vue page under
 - Share links encode the source in the URL hash (`#code=<base64>`); opening a
   link restores the program. Editing the source clears the generated link.
 - The source program is persisted in `localStorage`.
+- Code library sidebar: save named snippets, include selected snippets in the
+  calculation namespace, rename/delete them, and load them with an unsaved-
+  changes confirmation. Library contents persist in `localStorage`.
 
 UI coverage is split between `src/probability-calculator/__tests__/`,
 `src/components/common/__tests__/MonacoEditor.test.ts`, and
