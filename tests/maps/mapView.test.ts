@@ -286,6 +286,7 @@ async function mountMapView() {
         'ol-feature': PassthroughStub,
         'ol-geom-polygon': PassthroughStub,
         'ol-geom-circle': PassthroughStub,
+        'ol-geom-point': PassthroughStub,
         'ol-interaction-draw': PassthroughStub,
       },
       stubs: {
@@ -337,7 +338,7 @@ describe('MapView', () => {
 
     expect(mocks.getMapFile).toHaveBeenCalledWith('file1');
     expect(wrapper.find('.ol-map-stub').exists()).toBe(true);
-    expect(wrapper.find('.map-marker-button').exists()).toBe(true);
+    expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
     expect(wrapper.findComponent(MarkersPanelStub).props('markers')).toEqual([
       expect.objectContaining({ id: 'm1', title: 'Castle' }),
     ]);
@@ -362,13 +363,21 @@ describe('MapView', () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
-    await wrapper.find('.map-marker-button').trigger('click');
+    await wrapper.find('.map-marker-accessible').trigger('click');
     expect(wrapper.find('.map-info-popup').exists()).toBe(true);
     expect(wrapper.find('.map-info-title').text()).toContain('Castle');
     expect(wrapper.find('.map-info-actions').text()).toContain(
       'Go to location',
     );
     expect(wrapper.findComponent(MarkerEditorStub).props('isOpen')).toBe(false);
+
+    mapHarness.map.forEachFeatureAtPixel.mockReturnValueOnce({
+      get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
+    });
+    vm.closeMapInfo();
+    vm.onMapClick({ pixel: [1, 1], coordinate: [50, 50] });
+    await flushPromises();
+    expect(wrapper.find('.map-info-title').text()).toContain('Castle');
 
     vm.closeMapInfo();
     vm.showAreaInfo(map.areas[0]);
@@ -382,12 +391,12 @@ describe('MapView', () => {
 
   it('highlights map items when their sidebar rows are hovered', async () => {
     const wrapper = await mountMapView();
-    const markerButton = wrapper.find('.map-marker-button');
+    const markerButton = wrapper.find('.map-marker-accessible');
     expect(markerButton.classes()).not.toContain('is-hovered');
 
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', 'm1');
     await flushPromises();
-    expect(wrapper.find('.map-marker-button').classes()).toContain(
+    expect(wrapper.find('.map-marker-accessible').classes()).toContain(
       'is-hovered',
     );
 
@@ -487,18 +496,18 @@ describe('MapView', () => {
     ) as MapActionsControl;
     expect(actionsControl.getElement().style.display).toBe('none');
     expect(wrapper.find('.map-layer-add').exists()).toBe(false);
-    expect(wrapper.find('.map-marker-button').exists()).toBe(true);
+    expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
 
     vm.toggleLayerVisibility('base');
     await flushPromises();
     expect(vm.isLayerHidden('base')).toBe(true);
-    expect(wrapper.find('.map-marker-button').exists()).toBe(false);
+    expect(wrapper.find('.map-marker-accessible').exists()).toBe(false);
 
     vm.isEditMode = true;
     await flushPromises();
     expect(actionsControl.getElement().style.display).toBe('');
     expect(wrapper.find('.map-layer-add').exists()).toBe(true);
-    expect(wrapper.find('.map-marker-button').exists()).toBe(true);
+    expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
 
     wrapper.unmount();
   });

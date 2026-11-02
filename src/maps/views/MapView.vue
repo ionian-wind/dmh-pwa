@@ -58,11 +58,13 @@ import {
   mapToImagePoint,
   mapToImagePoints,
 } from '../utils/mapCoordinates';
-import { markerIconClass } from '../icons';
+import { markerIconClass, markerIconGlyph } from '../icons';
 import { createBox } from 'ol/interaction/Draw';
 import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
+import Circle from 'ol/style/Circle';
+import Text from 'ol/style/Text';
 import type { MapArea, MapAreaShape, MapLayer } from '../types';
 
 const route = useRoute();
@@ -293,6 +295,10 @@ watch(
 onMounted(async () => {
   await Promise.all([mapStore.load(), locationStore.load()]);
   updateMapFromStore();
+  void document.fonts
+    ?.load('20px RPGAwesome')
+    .then(() => olMapRef.value?.map?.render?.())
+    .catch(() => undefined);
 });
 
 onBeforeUnmount(() => {
@@ -319,11 +325,18 @@ function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
   closeMapInfo();
 
   const feature = event.pixel
-    ? olMapRef.value?.forEachFeatureAtPixel?.(
+    ? olMapRef.value?.map?.forEachFeatureAtPixel?.(
         event.pixel,
         (candidate: any) => candidate,
       )
     : null;
+  const markerId = feature?.get?.('markerId');
+  if (markerId) {
+    const marker = map.value?.markers.find((entry) => entry.id === markerId);
+    if (marker) showMarkerInfo(marker);
+    return;
+  }
+
   const areaId = feature?.get?.('areaId');
   if (areaId) {
     const area = map.value?.areas.find((entry) => entry.id === areaId);
@@ -529,6 +542,61 @@ function areaStyle(feature: any) {
   });
 }
 
+function markerStyle(feature: any) {
+  const markerId = feature?.get?.('markerId');
+  const marker = map.value?.markers.find((entry) => entry.id === markerId);
+  if (!marker) return undefined;
+
+  const hovered = hoveredMarkerId.value === marker.id;
+  const glyph = markerIconGlyph(marker.icon);
+  const styles: Style[] = [];
+
+  if (glyph) {
+    styles.push(
+      new Style({
+        text: new Text({
+          text: glyph,
+          font: `${hovered ? 24 : 20}px RPGAwesome`,
+          fill: new Fill({ color: marker.color }),
+          textAlign: 'center',
+          textBaseline: 'middle',
+        }),
+      }),
+    );
+  } else {
+    styles.push(
+      new Style({
+        image: new Circle({
+          radius: hovered ? 8 : 6,
+          fill: new Fill({ color: marker.color }),
+          stroke: new Stroke({ color: '#fff', width: 2 }),
+        }),
+      }),
+    );
+  }
+
+  styles.push(
+    new Style({
+      text: new Text({
+        text: marker.title || t('maps.untitledMarker'),
+        font: `${hovered ? 700 : 600} 12px sans-serif`,
+        fill: new Fill({ color: '#333' }),
+        backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.9)' }),
+        padding: [2, 6, 2, 6],
+        textAlign: 'center',
+        textBaseline: 'middle',
+        offsetY: glyph ? 20 : 14,
+      }),
+    }),
+  );
+
+  return styles;
+}
+
+function mapFeatureStyle(feature: any) {
+  return feature?.get?.('markerId') ? markerStyle(feature) : areaStyle(feature);
+}
+
 function editMarker(marker: MapMarker) {
   editingMarker.value = marker;
   isMarkerEditorOpen.value = true;
@@ -637,7 +705,7 @@ function refreshAreaHighlight() {
   });
 }
 
-watch(hoveredAreaId, refreshAreaHighlight);
+watch([hoveredAreaId, hoveredMarkerId], refreshAreaHighlight);
 
 function toggleLayerVisibility(layerId: string) {
   const next = new Set(hiddenLayerIds.value);
@@ -783,13 +851,20 @@ watch(isEditMode, (editing) => {
           :key="layer.id"
           :z-index="layerIndex"
           :visible="!isLayerHidden(layer.id)"
-          :style="areaStyle"
+          :style="mapFeatureStyle"
         >
           <ol-source-vector>
             <ol-feature
+              v-for="marker in markersForLayer(layer.id)"
+              :key="`marker-${marker.id}`"
+              :properties="{ kind: 'marker', markerId: marker.id }"
+            >
+              <ol-geom-point :coordinates="markerMapPosition(marker)" />
+            </ol-feature>
+            <ol-feature
               v-for="area in areasForLayer(layer.id)"
               :key="area.id"
-              :properties="{ areaId: area.id }"
+              :properties="{ kind: 'area', areaId: area.id }"
             >
               <ol-geom-polygon
                 v-if="area.shape !== 'circle'"
@@ -811,30 +886,6 @@ watch(isEditMode, (editing) => {
           :geometry-function="drawGeometryFunction"
           @drawend="onAreaDrawn"
         />
-
-        <ol-overlay
-          v-for="marker in visibleMarkers"
-          :key="marker.id"
-          :position="markerMapPosition(marker)"
-          positioning="center-center"
-          :stop-event="true"
-        >
-          <button
-            type="button"
-            class="map-marker-button"
-            :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
-            :style="{ color: marker.color }"
-            :title="marker.title"
-            @click.stop="showMarkerInfo(marker)"
-          >
-            <i
-              v-if="marker.icon"
-              :class="['ra', markerIconClass(marker.icon)]"
-              aria-hidden="true"
-            ></i>
-            <span class="map-marker-label">{{ marker.title }}</span>
-          </button>
-        </ol-overlay>
 
         <ol-overlay
           v-for="area in visibleAreas"
@@ -923,6 +974,19 @@ watch(isEditMode, (editing) => {
           </div>
         </ol-overlay>
       </ol-map>
+
+      <div class="map-accessible-markers">
+        <button
+          v-for="marker in visibleMarkers"
+          :key="`accessible-${marker.id}`"
+          type="button"
+          class="map-marker-accessible"
+          :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
+          @click.stop="showMarkerInfo(marker)"
+        >
+          {{ marker.title || t('maps.untitledMarker') }}
+        </button>
+      </div>
     </div>
 
     <template #sidepanel>
@@ -934,121 +998,121 @@ watch(isEditMode, (editing) => {
             size="sm"
             align="justify"
           >
-        <div v-show="sidePanelTab === 'markers'">
-          <div
-            v-for="layer in layers"
-            :key="`marker-layer-${layer.id}`"
-            class="map-layer-group"
-          >
-            <div class="map-layer-header">
-              <span class="map-layer-title">{{ layer.title }}</span>
-              <span class="map-layer-actions">
-                <template v-if="!isEditMode">
-                  <QBtn
-                    flat
-                    size="sm"
-                    :title="
-                      isLayerHidden(layer.id)
-                        ? t('maps.showLayer')
-                        : t('maps.hideLayer')
-                    "
-                    @click="toggleLayerVisibility(layer.id)"
-                  >
-                    <IconEyeOff v-if="isLayerHidden(layer.id)" />
-                    <IconEye v-else />
-                  </QBtn>
-                </template>
-                <template v-else>
-                  <QBtn
-                    flat
-                    size="sm"
-                    :title="t('maps.editLayer')"
-                    @click="editLayer(layer)"
-                  >
-                    <IconPencil :size="16" />
-                  </QBtn>
-                  <QBtn
-                    v-if="layer.id !== MAP_BASE_LAYER_ID"
-                    flat
-                    size="sm"
-                    color="negative"
-                    :title="t('maps.deleteLayer')"
-                    @click="deleteLayer(layer)"
-                  >
-                    <IconTrash :size="16" />
-                  </QBtn>
-                </template>
-              </span>
+            <div v-show="sidePanelTab === 'markers'">
+              <div
+                v-for="layer in layers"
+                :key="`marker-layer-${layer.id}`"
+                class="map-layer-group"
+              >
+                <div class="map-layer-header">
+                  <span class="map-layer-title">{{ layer.title }}</span>
+                  <span class="map-layer-actions">
+                    <template v-if="!isEditMode">
+                      <QBtn
+                        flat
+                        size="sm"
+                        :title="
+                          isLayerHidden(layer.id)
+                            ? t('maps.showLayer')
+                            : t('maps.hideLayer')
+                        "
+                        @click="toggleLayerVisibility(layer.id)"
+                      >
+                        <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                        <IconEye v-else />
+                      </QBtn>
+                    </template>
+                    <template v-else>
+                      <QBtn
+                        flat
+                        size="sm"
+                        :title="t('maps.editLayer')"
+                        @click="editLayer(layer)"
+                      >
+                        <IconPencil :size="16" />
+                      </QBtn>
+                      <QBtn
+                        v-if="layer.id !== MAP_BASE_LAYER_ID"
+                        flat
+                        size="sm"
+                        color="negative"
+                        :title="t('maps.deleteLayer')"
+                        @click="deleteLayer(layer)"
+                      >
+                        <IconTrash :size="16" />
+                      </QBtn>
+                    </template>
+                  </span>
+                </div>
+                <MapMarkersPanel
+                  :markers="markersForLayer(layer.id)"
+                  :editable="isEditMode"
+                  hide-empty
+                  @select-marker="selectMarker"
+                  @edit="editMarker"
+                  @delete="deleteMarkerFromList"
+                  @hover="hoverMarker"
+                />
+              </div>
             </div>
-            <MapMarkersPanel
-              :markers="markersForLayer(layer.id)"
-              :editable="isEditMode"
-              hide-empty
-              @select-marker="selectMarker"
-              @edit="editMarker"
-              @delete="deleteMarkerFromList"
-              @hover="hoverMarker"
-            />
-          </div>
-        </div>
-        <div v-show="sidePanelTab === 'areas'">
-          <div
-            v-for="layer in layers"
-            :key="`area-layer-${layer.id}`"
-            class="map-layer-group"
-          >
-            <div class="map-layer-header">
-              <span class="map-layer-title">{{ layer.title }}</span>
-              <span class="map-layer-actions">
-                <template v-if="!isEditMode">
-                  <QBtn
-                    flat
-                    size="sm"
-                    :title="
-                      isLayerHidden(layer.id)
-                        ? t('maps.showLayer')
-                        : t('maps.hideLayer')
-                    "
-                    @click="toggleLayerVisibility(layer.id)"
-                  >
-                    <IconEyeOff v-if="isLayerHidden(layer.id)" />
-                    <IconEye v-else />
-                  </QBtn>
-                </template>
-                <template v-else>
-                  <QBtn
-                    flat
-                    size="sm"
-                    :title="t('maps.editLayer')"
-                    @click="editLayer(layer)"
-                  >
-                    <IconPencil :size="16" />
-                  </QBtn>
-                  <QBtn
-                    v-if="layer.id !== MAP_BASE_LAYER_ID"
-                    flat
-                    size="sm"
-                    color="negative"
-                    :title="t('maps.deleteLayer')"
-                    @click="deleteLayer(layer)"
-                  >
-                    <IconTrash :size="16" />
-                  </QBtn>
-                </template>
-              </span>
+            <div v-show="sidePanelTab === 'areas'">
+              <div
+                v-for="layer in layers"
+                :key="`area-layer-${layer.id}`"
+                class="map-layer-group"
+              >
+                <div class="map-layer-header">
+                  <span class="map-layer-title">{{ layer.title }}</span>
+                  <span class="map-layer-actions">
+                    <template v-if="!isEditMode">
+                      <QBtn
+                        flat
+                        size="sm"
+                        :title="
+                          isLayerHidden(layer.id)
+                            ? t('maps.showLayer')
+                            : t('maps.hideLayer')
+                        "
+                        @click="toggleLayerVisibility(layer.id)"
+                      >
+                        <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                        <IconEye v-else />
+                      </QBtn>
+                    </template>
+                    <template v-else>
+                      <QBtn
+                        flat
+                        size="sm"
+                        :title="t('maps.editLayer')"
+                        @click="editLayer(layer)"
+                      >
+                        <IconPencil :size="16" />
+                      </QBtn>
+                      <QBtn
+                        v-if="layer.id !== MAP_BASE_LAYER_ID"
+                        flat
+                        size="sm"
+                        color="negative"
+                        :title="t('maps.deleteLayer')"
+                        @click="deleteLayer(layer)"
+                      >
+                        <IconTrash :size="16" />
+                      </QBtn>
+                    </template>
+                  </span>
+                </div>
+                <MapAreasPanel
+                  :areas="areasForLayer(layer.id)"
+                  :show-title="false"
+                  :editable="isEditMode"
+                  hide-empty
+                  @select-area="focusArea"
+                  @edit="editArea"
+                  @delete="deleteAreaFromList"
+                  @hover="hoverArea"
+                />
+              </div>
             </div>
-            <MapAreasPanel
-              :areas="areasForLayer(layer.id)"
-              :show-title="false"
-              :editable="isEditMode"
-              hide-empty
-              @select-area="focusArea"
-              @edit="editArea"
-              @delete="deleteAreaFromList"
-              @hover="hoverArea"
-            />
-          </div>
-        </div>
           </TabGroup>
         </div>
 
@@ -1181,36 +1245,12 @@ watch(isEditMode, (editing) => {
   white-space: nowrap;
 }
 
-.map-marker-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.4rem;
-  border: none;
-  background: rgba(255, 255, 255, 0.88);
-  border-radius: 999px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-  cursor: pointer;
-  font-size: 1.25rem;
-  transform: translateY(-50%);
-  transition:
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
-}
-
-.map-marker-button.is-hovered {
-  box-shadow:
-    0 0 0 3px var(--color-primary),
-    0 2px 8px rgba(0, 0, 0, 0.4);
-  transform: translateY(-50%) scale(1.12);
-}
-
-.map-marker-label {
-  max-width: 140px;
+.map-accessible-markers {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  color: var(--color-text);
-  font-size: 0.75rem;
-  text-overflow: ellipsis;
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 

@@ -87,10 +87,11 @@ Every map has a permanent base layer (`base`) plus any number of user-defined
 layers. Markers and areas store a `layerId`. Users can add, rename, and delete
 layers; deleting a layer moves its children to the base layer.
 
-Each logical layer is backed by its own OpenLayers vector layer for area
-geometry, and layer visibility is toggled through the native
-`layer.setVisible(...)` behavior. Markers are rendered as map overlays and
-follow the same visibility state.
+Each logical layer is backed by its own OpenLayers vector layer for both area
+geometry and marker points. Layer visibility uses the native
+`layer.setVisible(...)` behavior. Marker icons are rendered as canvas text using
+the RPGAwesome font, with their titles as text labels. A visually hidden list of
+marker buttons preserves keyboard/screen-reader access.
 
 The map page starts in **View mode**. In view mode layer visibility can be
 temporarily toggled with the eye buttons, and hidden layers remove their

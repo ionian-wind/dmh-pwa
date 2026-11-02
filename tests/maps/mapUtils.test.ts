@@ -7,6 +7,7 @@ import {
   normalizeMapEntity,
   normalizeMarker,
 } from '@/maps/utils/normalize';
+import { markerIconGlyph } from '@/maps/icons';
 import {
   createMarkerDraft,
   markerCenter,
@@ -171,6 +172,12 @@ describe('map marker helpers', () => {
       color: DEFAULT_MARKER_COLOR,
     });
     expect(draft.id).toBeTruthy();
+  });
+
+  it('resolves RPG Awesome icon glyphs', () => {
+    expect(markerIconGlyph('ra:ra-castle-emblem')).toBeTruthy();
+    expect(markerIconGlyph('ra-castle-emblem')).toBeTruthy();
+    expect(markerIconGlyph('')).toBe('');
   });
 
   it('upserts, removes and filters markers', () => {

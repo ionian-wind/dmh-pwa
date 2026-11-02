@@ -48,9 +48,15 @@ test('keeps marker and area sidebar tabs and shows map item popups', async ({
 
   await page.locator('.tab-item', { hasText: 'Markers' }).click();
   await page.locator('.map-marker-item').hover();
-  await expect(page.locator('.map-marker-button.is-hovered')).toBeVisible();
+  await expect(page.locator('.map-marker-accessible.is-hovered')).toHaveCount(
+    1,
+  );
 
-  await page.locator('.map-marker-button').click();
+  await page.evaluate(() =>
+    document
+      .querySelector<HTMLButtonElement>('.map-marker-accessible')
+      ?.click(),
+  );
   await expect(page.locator('.map-info-popup')).toContainText('Castle');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
@@ -98,7 +104,7 @@ test('adds a marker from the action menu and map click', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(
-    page.locator('.map-marker-button', { hasText: 'E2E Marker' }),
+    page.locator('.map-marker-item', { hasText: 'E2E Marker' }),
   ).toBeVisible();
 });
 
@@ -134,7 +140,7 @@ test('opens the context menu with a draw submenu and adds a marker', async ({
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(
-    page.locator('.map-marker-button', { hasText: 'Context Marker' }),
+    page.locator('.map-marker-item', { hasText: 'Context Marker' }),
   ).toBeVisible();
 
   const marker = await page.evaluate(async () => {

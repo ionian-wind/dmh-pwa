@@ -1,3 +1,5 @@
+import { MAP_ICON_GLYPHS } from './iconGlyphs';
+
 // Generated from rpg-awesome/css/rpg-awesome.css
 export const MAP_MARKER_ICONS = [
   'ra-acid',
@@ -508,4 +510,9 @@ export function markerIconClass(icon: string): string {
   const iconName = separator >= 0 ? value.slice(separator + 1) : value;
   if (!iconName) return '';
   return iconName.startsWith('ra-') ? iconName : `ra-${iconName}`;
+}
+
+export function markerIconGlyph(icon: string): string {
+  const className = markerIconClass(icon);
+  return className ? (MAP_ICON_GLYPHS[className] ?? '') : '';
 }
