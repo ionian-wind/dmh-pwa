@@ -5,7 +5,7 @@ import {
   IconPlayerPlay,
   IconX,
   IconRefresh,
-  IconEdit,
+  IconPencil,
   IconTrash,
 } from '@tabler/icons-vue';
 import type { Timer } from '@/types';
@@ -112,7 +112,7 @@ watch(
           :title="t('timers.edit')"
           @click="$emit('edit')"
         >
-          <IconEdit />
+          <IconPencil />
         </QBtn>
         <QBtn
           flat
