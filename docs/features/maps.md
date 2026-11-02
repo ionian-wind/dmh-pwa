@@ -108,8 +108,8 @@ interface MapArea {
   points: [number, number][]; // polygon/freehand/square vertices
   center?: [number, number]; // circle
   radius?: number; // circle
+  locationId?: string | null; // optional single global location
   entities: MapEntityRef[];
-  linkedAreaIds: string[]; // other areas on the same map
   icon?: string;
   color: string;
 }
@@ -122,8 +122,9 @@ interface MapArea {
   - freehand: drag a closed freehand shape.
 - Areas render as semi-transparent fills with a stronger stroke on hover.
 - Clicking an area opens the area editor.
-- Each area supports title, description, optional RPG Awesome icon, color,
-  linked entities, and links to other areas.
+- Each area supports title, description, optional RPG Awesome icon, colour,
+  one optional location, and any number of linked entities. Areas are not
+  linked to other areas or to markers.
 - The area list is shown in the right sidebar **Areas** tab and supports
   editing and deleting directly from the list.
 
@@ -223,8 +224,8 @@ A location detail page follows the module detail pattern:
    - circle: drag from the centre;
    - square: drag a bounding box;
    - freehand: drag a closed path.
-3. Fill in the area title, description, icon, colour, linked entities and any
-   linked areas.
+3. Fill in the area title, description, icon, colour, one optional location,
+   and linked entities.
 4. Save. Click an area or its label to edit it again.
 5. The right sidebar **Areas** tab lists areas for editing and deletion.
 

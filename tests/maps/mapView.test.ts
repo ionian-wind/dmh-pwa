@@ -246,7 +246,7 @@ const map: MapEntity = {
         [30, 30],
       ],
       entities: [],
-      linkedAreaIds: [],
+      locationId: null,
       icon: '',
       color: '#336699',
     },

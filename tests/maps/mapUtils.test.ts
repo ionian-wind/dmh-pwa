@@ -213,7 +213,7 @@ describe('map area helpers', () => {
         [10, 10],
       ],
       entities: [],
-      linkedAreaIds: [],
+      locationId: null,
       icon: '',
       color: '#336699',
       ...overrides,
@@ -229,7 +229,7 @@ describe('map area helpers', () => {
       shape: 'polygon',
       points: [],
       entities: [],
-      linkedAreaIds: [],
+      locationId: null,
       color: '#abc',
     });
 

@@ -819,8 +819,6 @@
     "areaColor": "Цвет области",
     "areaIcon": "Иконка области",
     "areaTitleRequired": "Название области обязательно",
-    "linkedAreas": "Связанные области",
-    "linkedAreaCount": "Связанных областей: {count}",
     "untitledArea": "Область без названия",
     "drawArea": "Нарисовать область",
     "cancelDrawing": "Отменить рисование",

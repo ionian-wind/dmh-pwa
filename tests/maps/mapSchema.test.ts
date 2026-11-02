@@ -49,7 +49,7 @@ const validMap = {
         [100, 100],
       ],
       entities: [{ kind: 'note', id: 'n1' }],
-      linkedAreaIds: ['a2'],
+      locationId: 'l1',
       icon: 'ra-forest',
       color: '#336699',
     },

@@ -114,15 +114,7 @@
       "default": [],
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "title",
-          "shape",
-          "points",
-          "entities",
-          "linkedAreaIds",
-          "color"
-        ],
+        "required": ["id", "title", "shape", "points", "entities", "color"],
         "properties": {
           "id": {
             "type": "string"
@@ -159,16 +151,13 @@
           "radius": {
             "type": "number"
           },
+          "locationId": {
+            "type": ["string", "null"]
+          },
           "entities": {
             "type": "array",
             "items": {
               "$ref": "#/definitions/entityRef"
-            }
-          },
-          "linkedAreaIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
             }
           },
           "icon": {

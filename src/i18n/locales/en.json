@@ -818,8 +818,6 @@
     "areaColor": "Area color",
     "areaIcon": "Area icon",
     "areaTitleRequired": "Area title is required",
-    "linkedAreas": "Linked areas",
-    "linkedAreaCount": "{count} linked area(s)",
     "untitledArea": "Untitled area",
     "drawArea": "Draw area",
     "cancelDrawing": "Cancel drawing",

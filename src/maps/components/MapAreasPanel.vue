@@ -62,9 +62,6 @@ const { t } = useI18n();
           v-if="area.entities.length > 0"
           :links="area.entities"
         />
-        <span v-if="area.linkedAreaIds.length > 0" class="map-area-links">
-          {{ t('maps.linkedAreaCount', { count: area.linkedAreaIds.length }) }}
-        </span>
       </span>
       <span class="map-area-actions">
         <button
@@ -154,8 +151,7 @@ const { t } = useI18n();
   font-weight: 600;
 }
 
-.map-area-description,
-.map-area-links {
+.map-area-description {
   color: var(--color-text-light);
   font-size: 0.85rem;
 }

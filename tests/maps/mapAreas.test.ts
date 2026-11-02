@@ -23,10 +23,20 @@ const area: MapArea = {
     [100, 0],
     [100, 100],
   ],
+  locationId: null,
   entities: [{ kind: 'note', id: 'n1' }],
-  linkedAreaIds: [],
   icon: 'ra-forest',
   color: '#336699',
+};
+
+const location = {
+  id: 'l1',
+  name: 'Town',
+  description: '',
+  color: '#336699',
+  entities: [],
+  createdAt: 1,
+  updatedAt: 1,
 };
 
 const area2: MapArea = {
@@ -65,7 +75,7 @@ const IconPickerStub = defineComponent({
 describe('MapAreaEditor', () => {
   it('edits area fields, links, icon and color then saves', async () => {
     const wrapper = mount(MapAreaEditor, {
-      props: { isOpen: true, area, areas: [area, area2] },
+      props: { isOpen: true, area, locations: [location] },
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,
@@ -77,8 +87,8 @@ describe('MapAreaEditor', () => {
     await wrapper.find('#area-title').setValue('New forest');
     await wrapper.find('#area-description').setValue('Deep woods');
 
-    const linkedAreas = wrapper.findComponent(QSelect);
-    linkedAreas.vm.$emit('update:modelValue', ['a2']);
+    const locationSelect = wrapper.findComponent(QSelect);
+    locationSelect.vm.$emit('update:modelValue', 'l1');
     wrapper
       .findComponent(EntityLinksStub)
       .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
@@ -97,7 +107,7 @@ describe('MapAreaEditor', () => {
       description: 'Deep woods',
       shape: 'polygon',
       points: area.points,
-      linkedAreaIds: ['a2'],
+      locationId: 'l1',
       entities: [{ kind: 'map', id: 'map2' }],
       icon: 'ra:ra-tree',
       color: '#00ff00',
@@ -106,7 +116,7 @@ describe('MapAreaEditor', () => {
 
   it('validates the title, deletes and cancels', async () => {
     const wrapper = mount(MapAreaEditor, {
-      props: { isOpen: true, area, areas: [area, area2] },
+      props: { isOpen: true, area, locations: [location] },
       global: {
         stubs: {
           EntityLinksEditor: EntityLinksStub,

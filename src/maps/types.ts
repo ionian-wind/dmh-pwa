@@ -50,8 +50,8 @@ export interface MapArea {
   points: Array<[number, number]>;
   center?: [number, number];
   radius?: number;
+  locationId?: string | null;
   entities: MapEntityRef[];
-  linkedAreaIds: string[];
   icon?: string;
   color: string;
 }

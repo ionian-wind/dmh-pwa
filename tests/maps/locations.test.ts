@@ -72,7 +72,22 @@ describe('map location store', () => {
           color: '#cc3333',
         },
       ],
-      areas: [],
+      areas: [
+        {
+          id: 'a1',
+          title: 'Forest',
+          shape: 'polygon',
+          points: [
+            [0, 0],
+            [10, 0],
+            [10, 10],
+          ],
+          locationId: location.id,
+          entities: [],
+          icon: '',
+          color: '#336699',
+        },
+      ],
     });
 
     await deleteMapLocation(location.id);
@@ -80,5 +95,6 @@ describe('map location store', () => {
     expect(locationStore.getById(location.id)).toBeNull();
     expect(mapStore.getById(map.id)?.locationIds).toEqual([]);
     expect(mapStore.getById(map.id)?.markers[0].locationId).toBeNull();
+    expect(mapStore.getById(map.id)?.areas[0].locationId).toBeNull();
   });
 });

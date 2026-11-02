@@ -831,7 +831,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
       />
       <MapAreaEditor
         :area="editingArea"
-        :areas="map?.areas || []"
+        :locations="mapLocations"
         :is-open="isAreaEditorOpen"
         @save="saveArea"
         @delete="deleteArea"

@@ -59,6 +59,10 @@ export async function detachLocationFromMaps(locationId: string) {
           locationId:
             marker.locationId === locationId ? null : marker.locationId,
         })),
+        areas: map.areas.map((area) => ({
+          ...area,
+          locationId: area.locationId === locationId ? null : area.locationId,
+        })),
       }),
     ),
   );

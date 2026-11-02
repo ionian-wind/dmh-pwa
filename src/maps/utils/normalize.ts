@@ -95,12 +95,8 @@ export function normalizeArea(
     radius: Number.isFinite(Number(area.radius))
       ? Number(area.radius)
       : undefined,
+    locationId: area.locationId || null,
     entities: normalizeEntities(area.entities),
-    linkedAreaIds: Array.isArray(area.linkedAreaIds)
-      ? area.linkedAreaIds.filter(
-          (id: unknown): id is string => typeof id === 'string',
-        )
-      : [],
     icon: markerIconClass(area.icon || ''),
     color: area.color || DEFAULT_MARKER_COLOR,
   };

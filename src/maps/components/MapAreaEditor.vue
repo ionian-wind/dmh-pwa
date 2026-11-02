@@ -5,14 +5,14 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
-import type { MapArea, MapEntityRef } from '../types';
+import type { MapArea, MapEntityRef, MapLocation } from '../types';
 import { normalizeArea } from '../utils/normalize';
 import { MAP_MARKER_ICONS } from '../icons';
 
 const props = defineProps<{
   isOpen: boolean;
   area: MapArea | null;
-  areas: MapArea[];
+  locations: MapLocation[];
 }>();
 
 const emit = defineEmits<{
@@ -34,13 +34,11 @@ watch(
   { immediate: true, deep: true },
 );
 
-const linkedAreaOptions = computed(() =>
-  props.areas
-    .filter((area) => area.id !== draft.value.id)
-    .map((area) => ({
-      label: area.title || t('maps.untitledArea'),
-      value: area.id,
-    })),
+const locationOptions = computed(() =>
+  props.locations.map((location) => ({
+    label: location.name,
+    value: location.id,
+  })),
 );
 
 function setMarkerLinks(links: MapEntityRef[]) {
@@ -138,13 +136,13 @@ function remove() {
 
     <div class="form-section">
       <QSelect
-        v-model="draft.linkedAreaIds"
-        :options="linkedAreaOptions"
-        :label="t('maps.linkedAreas')"
+        v-model="draft.locationId"
+        :options="locationOptions"
+        :label="t('maps.location')"
         outlined
-        multiple
         emit-value
         map-options
+        clearable
       />
     </div>
 
