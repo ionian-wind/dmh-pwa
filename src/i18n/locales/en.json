@@ -425,7 +425,6 @@
   },
   "playlist": {
     "title": "Playlist",
-    "list": "Playlists",
     "none": "No playlists found. Please create one first.",
     "createNew": "New playlist",
     "namePlaceholder": "Playlist name",

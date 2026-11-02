@@ -135,13 +135,9 @@ onMounted(async () => {
   <div
     class="q-pa-none q-gutter-none q-mb-none playlist-list-container column full-height"
   >
-    <!-- Fixed header and 'All Tracks' -->
+    <!-- Fixed 'All Tracks' entry -->
     <div>
       <QList class="q-pa-none q-mb-none">
-        <QItem>
-          <QItemSection>{{ t('playlist.list') }}</QItemSection>
-        </QItem>
-        <QSeparator />
         <QItem
           clickable
           :active="selectedPlaylistId === null"
@@ -152,6 +148,7 @@ onMounted(async () => {
           <QItemSection>{{ t('jukebox.allTracks') }}</QItemSection>
         </QItem>
       </QList>
+      <QSeparator />
     </div>
 
     <!-- Scrollable, sortable playlists -->
