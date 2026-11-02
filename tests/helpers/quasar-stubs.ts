@@ -178,6 +178,7 @@ const passthroughNames = [
   'QSlider',
   'QExpansionItem',
   'QCheckbox',
+  'QRadio',
   'QField',
   'QForm',
   'QBadge',

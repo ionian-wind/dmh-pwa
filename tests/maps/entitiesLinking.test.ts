@@ -69,6 +69,31 @@ describe('EntitiesLinking', () => {
     ]);
   });
 
+  it('limits selection to one entity when multiple is false', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: { kind: 'note', modelValue: [], multiple: false },
+      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
+    });
+
+    await wrapper.find('button[aria-label="Add"]').trigger('click');
+
+    const optionRows = wrapper
+      .findAll('[data-stub="QItem"]')
+      .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
+
+    await optionRows[0].trigger('click');
+    await optionRows[1].trigger('click');
+
+    const addButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add');
+    await addButton!.trigger('click');
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      [{ kind: 'note', id: 'n2' }],
+    ]);
+  });
+
   it('filters the search modal and adds multiple selected entities', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },

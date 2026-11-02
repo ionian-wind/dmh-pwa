@@ -7,10 +7,14 @@ import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 import { dedupeEntityRefs } from '@/maps/utils/entityRefs';
 import { useMapEntityCatalog } from '@/maps/composables/useMapEntityCatalog';
 
-const props = defineProps<{
-  kind: MapEntityKind;
-  modelValue: MapEntityRef[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    kind: MapEntityKind;
+    modelValue: MapEntityRef[];
+    multiple?: boolean;
+  }>(),
+  { multiple: true },
+);
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: MapEntityRef[]): void;
@@ -54,6 +58,10 @@ function openModal() {
 }
 
 function toggleOption(id: string) {
+  if (!props.multiple) {
+    selectedIds.value = [id];
+    return;
+  }
   selectedIds.value = selectedIds.value.includes(id)
     ? selectedIds.value.filter((selected) => selected !== id)
     : [...selectedIds.value, id];
@@ -166,7 +174,15 @@ function removeLink(ref: MapEntityRef) {
             <QItem clickable @click="toggleOption(option.id)">
               <QItemSection side>
                 <QCheckbox
+                  v-if="multiple"
                   :model-value="selectedIds.includes(option.id)"
+                  @update:model-value="toggleOption(option.id)"
+                  @click.stop
+                />
+                <QRadio
+                  v-else
+                  :model-value="selectedIds[0]"
+                  :val="option.id"
                   @update:model-value="toggleOption(option.id)"
                   @click.stop
                 />

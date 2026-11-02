@@ -237,7 +237,9 @@ A location detail page follows the module detail pattern:
   encounters, and characters.
 - Each tab uses the reusable `EntitiesLinking` component: the entity-type title
   and add button sit above a linked list with remove actions. Both the linked
-  list and the searchable multi-select modal use virtual-scroll lists.
+  list and the searchable modal use virtual-scroll lists. The component's
+  `multiple` prop (default `true`) switches between checkbox multi-select and
+  radio single-select.
 - The right drawer has the same **Markers** and **Areas** tabs as the map view.
   It lists markers and areas linked to this location from all maps, grouped by
   map title with separators between groups.
