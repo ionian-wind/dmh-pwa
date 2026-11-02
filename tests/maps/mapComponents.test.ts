@@ -102,6 +102,12 @@ describe('map icon picker', () => {
     });
 
     expect(wrapper.findAll('.icon-picker-option').length).toBeGreaterThan(20);
+    expect(wrapper.find('.icon-picker-trigger i').classes()).toContain(
+      'ra-castle-emblem',
+    );
+    expect(wrapper.find('.icon-picker-preview-name').text()).toContain(
+      'ra-castle-emblem',
+    );
     expect(wrapper.find('[data-icon="ra-castle-emblem"]').classes()).toContain(
       'is-selected',
     );

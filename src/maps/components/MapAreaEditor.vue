@@ -7,7 +7,7 @@ import IconPicker from '@/components/common/IconPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
 import type { MapArea, MapEntityRef } from '../types';
 import { normalizeArea } from '../utils/normalize';
-import { MAP_MARKER_ICONS, markerIconClass } from '../icons';
+import { MAP_MARKER_ICONS } from '../icons';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -113,16 +113,6 @@ function remove() {
             :label="t('maps.areaColor')"
           />
         </div>
-        <div class="form-group">
-          <span class="area-preview">
-            <i
-              v-if="draft.icon"
-              :class="['ra', markerIconClass(draft.icon)]"
-              :style="{ color: draft.color }"
-              aria-hidden="true"
-            ></i>
-          </span>
-        </div>
       </div>
     </div>
 
@@ -174,14 +164,5 @@ function remove() {
 .area-shape {
   color: var(--color-text-light);
   text-transform: capitalize;
-}
-
-.area-preview {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  font-size: 1.6rem;
 }
 </style>
