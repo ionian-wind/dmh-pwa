@@ -24,6 +24,7 @@ export function confirm(
       cancel: {
         label: options.cancelText || i18n.global.t('common.cancel'),
         color: options.color || 'secondary',
+        textColor: 'dark',
       },
       persistent: true,
       ...options,

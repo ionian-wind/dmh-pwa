@@ -168,7 +168,13 @@ function setExpanded(val: boolean) {
       >
         <slot name="footer" />
         <slot name="actions" />
-        <QBtn flat v-if="showCancel" :color="'standard'" @click="requestClose">
+        <QBtn
+          flat
+          v-if="showCancel"
+          color="standard"
+          text-color="dark"
+          @click="requestClose"
+        >
           {{ cancelLabel || t('common.cancel') }}
         </QBtn>
         <QBtn
