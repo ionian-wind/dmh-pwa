@@ -37,6 +37,7 @@ import {
 } from '../plugins/mapActionEvents';
 import '../plugins/mapPlugins.css';
 import { getMapFileBlob, revokeMapFileUrl } from '../utils/mapFileUtils';
+import { enableFrequentHitDetectionReads } from '../utils/canvasReadback';
 import { normalizeMapEntity } from '../utils/normalize';
 import {
   createMarkerDraft,
@@ -72,6 +73,8 @@ const router = useRouter();
 const mapStore = useMapStore();
 const locationStore = useMapLocationStore();
 const { t, locale } = useI18n();
+
+enableFrequentHitDetectionReads();
 
 const isLoaded = computed(() => mapStore.isLoaded);
 const loading = computed(() => !isLoaded.value);
