@@ -20,12 +20,15 @@ Props:
 | `disableSubmit` | — | Disable submit button |
 | `tabs` | — | Header tab definitions (`{ name, title, icon }`) |
 | `activeTab` | first tab | Controlled active tab |
+| `useModalStack` | `true` | Set `false` for pickers nested inside another modal |
 
 Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
 `update:isExpanded`.
 
-When `tabs` is provided, `BaseModal` renders a `QTabs` row in the header and
-renders the matching named slot as the dialog body. A tab definition is:
+When `tabs` is provided, `BaseModal` renders the tabs inside the header toolbar,
+centered between the expand/close controls, and renders the matching named slot
+as the dialog body. The text title is hidden while tabs are shown. A tab
+definition is:
 
 ```ts
 {
@@ -38,6 +41,10 @@ renders the matching named slot as the dialog body. A tab definition is:
 
 Tab content uses named slots (`<template #main>`, `<template #links>`, …). The
 default slot is used only when no tabs are supplied.
+
+`useModalStack: false` keeps a dialog outside the global modal stack. Use it for
+a picker dialog that opens from inside another `BaseModal` (for example the
+`EntitiesLinking` search modal), so the parent dialog stays mounted.
 
 ### Editor action buttons (required)
 

@@ -7,7 +7,10 @@ import JukeboxView from '@/jukebox/JukeboxView.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import TrackCard from '@/jukebox/components/TrackCard.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import { useJukeboxPlaylistsStore, useJukeboxTracksStore } from '@/jukebox/stores';
+import {
+  useJukeboxPlaylistsStore,
+  useJukeboxTracksStore,
+} from '@/jukebox/stores';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
@@ -156,9 +159,7 @@ describe('jukebox store integration', () => {
     expect(trigger.exists()).toBe(true);
     expect(trigger.attributes('title')).toBe('Actions');
 
-    const items = wrapper.findAll(
-      '.track-actions-menu [data-stub="QItem"]',
-    );
+    const items = wrapper.findAll('.track-actions-menu [data-stub="QItem"]');
     expect(items).toHaveLength(4);
 
     await items[0].trigger('click');
@@ -188,11 +189,17 @@ describe('jukebox store integration', () => {
 
     await toggle.vm.$emit('update:modelValue', true);
     await flushPromises();
-    expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]);
+    await vi.waitFor(() =>
+      expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]),
+    );
 
-    await toggle.vm.$emit('update:modelValue', false);
+    await wrapper
+      .findComponent(ToggleSwitch)
+      .vm.$emit('update:modelValue', false);
     await flushPromises();
-    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
+    await vi.waitFor(() =>
+      expect(playlists.getById(playlist.id)?.trackIds).toEqual([]),
+    );
 
     wrapper.unmount();
   });

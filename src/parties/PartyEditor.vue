@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useModuleStore } from '@/stores/modules';
 import type { Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
-import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { alert } from '@/dialogs';
 import { UUID } from '@/types';
+import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import type { MapEntityRef } from '@/maps/types';
 
 const { t } = useI18n();
-const moduleStore = useModuleStore();
 
 const props = defineProps<{
   party: Party | null;
@@ -32,14 +32,26 @@ const editedParty = ref<PartyForm>({
   moduleIds: [],
 });
 
-const moduleIdsProxy = computed<UUID[]>({
-  get() {
-    return editedParty.value.moduleIds ?? [];
-  },
-  set(val: UUID[]) {
-    editedParty.value.moduleIds = val;
-  },
-});
+const editorTabs = useEntityEditorTabs();
+
+const linkedModules = computed<MapEntityRef[]>(() =>
+  (editedParty.value.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
+);
+
+const linkedCharacters = computed<MapEntityRef[]>(() =>
+  (editedParty.value.characters ?? []).map((id) => ({
+    kind: 'character',
+    id,
+  })),
+);
+
+function setLinkedModules(links: MapEntityRef[]) {
+  editedParty.value.moduleIds = links.map((link) => link.id);
+}
+
+function setLinkedCharacters(links: MapEntityRef[]) {
+  editedParty.value.characters = links.map((link) => link.id);
+}
 
 watch(
   () => props.party,
@@ -90,35 +102,44 @@ function handleDelete() {
     :showDelete="!!party"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="party-editor-modal"
     @submit="handleSubmit"
     @delete="handleDelete"
     @cancel="handleCancel"
   >
-    <div class="form-section">
-      <div class="form-grid">
+    <template #main>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              :label="t('parties.fields.name')"
+              id="party-name"
+              v-model="editedParty.name"
+              type="text"
+              required
+              outlined
+            />
+          </div>
+          <div class="form-group">
+            <QInput
+              :label="t('parties.fields.description')"
+              id="party-description"
+              v-model="editedParty.description"
+              type="textarea"
+              :rows="5"
+              autogrow
+              outlined
+            />
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
         <div class="form-group">
           <QInput
-            :label="t('parties.fields.name')"
-            id="party-name"
-            v-model="editedParty.name"
-            type="text"
-            required
-            outlined
-          />
-        </div>
-        <div class="form-group">
-          <ModuleMultipleSelector
-            id="party-modules"
-            v-model="moduleIdsProxy"
-            :placeholder="'parties.fields.modules'"
-          />
-        </div>
-        <div class="form-group">
-          <QInput
-            :label="t('parties.fields.description')"
+            :label="t('parties.fields.notes')"
             id="party-description"
-            v-model="editedParty.description"
+            v-model="editedParty.notes"
             type="textarea"
             :rows="5"
             autogrow
@@ -126,19 +147,21 @@ function handleDelete() {
           />
         </div>
       </div>
-    </div>
-    <div class="form-section">
-      <div class="form-group">
-        <QInput
-          :label="t('parties.fields.notes')"
-          id="party-description"
-          v-model="editedParty.notes"
-          type="textarea"
-          :rows="5"
-          autogrow
-          outlined
+    </template>
+
+    <template #links>
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          kind="module"
+          :model-value="linkedModules"
+          @update:model-value="setLinkedModules"
+        />
+        <EntitiesLinking
+          kind="character"
+          :model-value="linkedCharacters"
+          @update:model-value="setLinkedCharacters"
         />
       </div>
-    </div>
+    </template>
   </BaseModal>
 </template>

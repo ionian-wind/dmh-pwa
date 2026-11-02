@@ -3,10 +3,12 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import type { MapEntity, MapEntityForm, MapFile } from '../types';
+import type { MapEntityRef } from '../types';
 import { createMapFileFromFile, getMapFileBlob } from '../utils/mapFileUtils';
 import { deleteMapFile, getMapFile, putMapFile } from '../maps';
-import { useMapLocationStore } from '../locations';
 import { normalizeMapEntity } from '../utils/normalize';
+import EntitiesLinking from './EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 
 const props = defineProps<{
   map: MapEntity | null;
@@ -20,7 +22,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const locationStore = useMapLocationStore();
 const editedMap = ref<MapEntityForm>({
   title: '',
   description: '',
@@ -65,7 +66,6 @@ watch(
     if (!isOpen) return;
     revokePreview();
     pendingMapFile = null;
-    void locationStore.load();
     const newMap = props.map;
     if (newMap) {
       const normalized = normalizeMapEntity(newMap);
@@ -131,12 +131,17 @@ async function onImageSelected(event: Event) {
   }
 }
 
-const locationOptions = computed(() =>
-  locationStore.items.map((location) => ({
-    label: location.name,
-    value: location.id,
-  })),
+const editorTabs = useEntityEditorTabs();
+
+const linkedLocation = computed<MapEntityRef[]>(() =>
+  editedMap.value.locationId
+    ? [{ kind: 'location', id: editedMap.value.locationId }]
+    : [],
 );
+
+function setLinkedLocation(links: MapEntityRef[]) {
+  editedMap.value.locationId = links[0]?.id ?? null;
+}
 
 async function handleSubmit() {
   if (!editedMap.value.title.trim()) {
@@ -177,81 +182,77 @@ function handleDelete() {
     :showDelete="!!map"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="map-editor-modal"
     @submit="handleSubmit"
     @delete="handleDelete"
     @cancel="emit('cancel')"
   >
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            id="map-title"
-            v-model="editedMap.title"
-            :label="t('maps.title')"
-            type="text"
-            required
-            outlined
-          />
-        </div>
-        <div class="form-group map-image-field">
-          <label>{{ t('maps.image') }}</label>
-          <div class="row items-center q-gutter-sm">
-            <QBtn
-              flat
-              color="primary"
-              :loading="isProcessingImage"
-              :label="t('maps.selectFile')"
-              @click="chooseImage"
+    <template #main>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              id="map-title"
+              v-model="editedMap.title"
+              :label="t('maps.title')"
+              type="text"
+              required
+              outlined
             />
-            <span v-if="selectedFileName" class="selected-file">
-              {{ selectedFileName }}
-            </span>
           </div>
-          <input
-            ref="fileInput"
-            class="hidden"
-            type="file"
-            accept="image/*"
-            @change="onImageSelected"
-          />
-          <img
-            v-if="previewUrl"
-            :src="previewUrl"
-            :alt="t('maps.imagePreview')"
-            class="map-image-preview"
-          />
+          <div class="form-group map-image-field">
+            <label>{{ t('maps.image') }}</label>
+            <div class="row items-center q-gutter-sm">
+              <QBtn
+                flat
+                color="primary"
+                :loading="isProcessingImage"
+                :label="t('maps.selectFile')"
+                @click="chooseImage"
+              />
+              <span v-if="selectedFileName" class="selected-file">
+                {{ selectedFileName }}
+              </span>
+            </div>
+            <input
+              ref="fileInput"
+              class="hidden"
+              type="file"
+              accept="image/*"
+              @change="onImageSelected"
+            />
+            <img
+              v-if="previewUrl"
+              :src="previewUrl"
+              :alt="t('maps.imagePreview')"
+              class="map-image-preview"
+            />
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="form-section">
-      <QInput
-        id="map-description"
-        v-model="editedMap.description"
-        :label="t('maps.description')"
-        type="textarea"
-        :rows="4"
-        autogrow
-        outlined
-      />
-    </div>
-
-    <div class="form-section">
-      <div class="row items-center justify-between q-gutter-md">
-        <h3>{{ t('maps.location') }}</h3>
+      <div class="form-section">
+        <QInput
+          id="map-description"
+          v-model="editedMap.description"
+          :label="t('maps.description')"
+          type="textarea"
+          :rows="4"
+          autogrow
+          outlined
+        />
       </div>
+    </template>
 
-      <QSelect
-        v-model="editedMap.locationId"
-        :options="locationOptions"
-        :label="t('maps.location')"
-        outlined
-        emit-value
-        map-options
-        clearable
+    <template #links>
+      <EntitiesLinking
+        kind="location"
+        :multiple="false"
+        :model-value="linkedLocation"
+        @update:model-value="setLinkedLocation"
       />
-    </div>
+    </template>
   </BaseModal>
 </template>
 

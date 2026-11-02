@@ -174,6 +174,7 @@ describe('current shared components', () => {
       props: {
         isOpen: true,
         modalId: 'tabs-modal',
+        title: 'Dialog title',
         tabs: [
           { name: 'main', title: 'Main editor', icon: TabIcon },
           { name: 'links', title: 'Links', icon: TabIcon },
@@ -195,6 +196,7 @@ describe('current shared components', () => {
 
     expect(wrapper.findAll('[data-stub="QTab"]')).toHaveLength(2);
     expect(wrapper.findAll('.tab-icon')).toHaveLength(2);
+    expect(wrapper.text()).not.toContain('Dialog title');
     expect(wrapper.text()).toContain('MAIN CONTENT');
     expect(wrapper.text()).toContain('LINKS CONTENT');
     expect(wrapper.findComponent(QTabPanelsStub).props('modelValue')).toBe(

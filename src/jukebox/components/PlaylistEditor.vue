@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, type Ref, computed, onMounted } from 'vue';
+import { ref, watch, type Ref, computed } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
-import { useModuleStore } from '@/stores/modules';
 import type { JukeboxPlaylist } from '../types';
 import type { UUID } from '@/types';
 import { useI18n } from 'vue-i18n';
+import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import type { MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -16,7 +17,6 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'saved', 'delete']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
-const moduleStore = useModuleStore();
 const { t } = useI18n();
 
 type EditablePlaylist = {
@@ -65,16 +65,15 @@ watch(
   },
 );
 
-const moduleIdsProxy = computed<UUID[]>({
-  get() {
-    return editedPlaylist.value.moduleIds ?? [];
-  },
-  set(val: UUID[]) {
-    editedPlaylist.value.moduleIds = val;
-  },
-});
+const editorTabs = useEntityEditorTabs();
 
-onMounted(() => moduleStore.load());
+const linkedModules = computed<MapEntityRef[]>(() =>
+  (editedPlaylist.value.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
+);
+
+function setLinkedModules(links: MapEntityRef[]) {
+  editedPlaylist.value.moduleIds = links.map((link) => link.id);
+}
 
 async function save() {
   if (props.playlist && props.playlist.id) {
@@ -116,45 +115,49 @@ function handleDelete() {
     :showDelete="!!playlist"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     @submit="save"
     @delete="handleDelete"
     @cancel="$emit('update:modelValue', false)"
   >
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            id="playlist-name"
-            v-model="editedPlaylist.name"
-            :label="t('playlist.fields.name')"
-            type="text"
-            required
-            outlined
-          />
-        </div>
-        <div class="form-group">
-          <ModuleMultipleSelector
-            id="playlist-modules"
-            v-model="moduleIdsProxy"
-            :placeholder="'playlist.fields.modules'"
-          />
+    <template #main>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              id="playlist-name"
+              v-model="editedPlaylist.name"
+              :label="t('playlist.fields.name')"
+              type="text"
+              required
+              outlined
+            />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            id="playlist-description"
-            :label="t('playlist.fields.description')"
-            v-model="editedPlaylist.description"
-            type="textarea"
-            :rows="5"
-            autogrow
-            outlined
-          />
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              id="playlist-description"
+              :label="t('playlist.fields.description')"
+              v-model="editedPlaylist.description"
+              type="textarea"
+              :rows="5"
+              autogrow
+              outlined
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <template #links>
+      <EntitiesLinking
+        kind="module"
+        :model-value="linkedModules"
+        @update:model-value="setLinkedModules"
+      />
+    </template>
   </BaseModal>
 </template>

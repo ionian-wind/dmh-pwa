@@ -354,6 +354,7 @@ describe('map entity references', () => {
       'encounter',
       'character',
       'map',
+      'location',
     ]);
     expect(getEntityKindOption('map')).toMatchObject({
       kind: 'map',

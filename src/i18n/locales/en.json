@@ -235,6 +235,8 @@
     }
   },
   "common": {
+    "mainEditor": "Main editor",
+    "linkedEntities": "Linked entities",
     "confirmDelete": "Are you sure you want to delete {title}?",
     "empty": "No items found",
     "emptyModules": "No modules yet. Create your first module to get started!",

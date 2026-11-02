@@ -44,7 +44,6 @@ vi.mock('@/maps/utils/mapFileUtils', () => ({
 }));
 
 const QInput = quasarStubs.QInput;
-const QSelect = quasarStubs.QSelect;
 
 const mapFile: MapFile = {
   id: 'file1',
@@ -81,18 +80,25 @@ const existingMap: MapEntity = {
   updatedAt: 2,
 };
 
-const EntityLinksStub = defineComponent({
-  name: 'EntityLinksEditor',
-  props: { modelValue: Array },
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: { kind: String, modelValue: Array },
   emits: ['update:modelValue'],
   setup(props) {
     return () =>
       h('div', {
-        class: 'entity-links-stub',
+        class: 'entities-linking-stub',
+        'data-kind': props.kind,
         'data-count': props.modelValue?.length ?? 0,
       });
   },
 });
+
+function linkingBlock(wrapper: ReturnType<typeof mount>, kind: string) {
+  return wrapper
+    .findAllComponents(EntitiesLinkingStub)
+    .find((entry) => entry.props('kind') === kind)!;
+}
 
 describe('MapEditor', () => {
   beforeEach(() => {
@@ -105,7 +111,7 @@ describe('MapEditor', () => {
   it('creates a map with a selected image and locations', async () => {
     const wrapper = mount(MapEditor, {
       props: { map: null, isOpen: true },
-      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
 
     expect(
@@ -125,8 +131,9 @@ describe('MapEditor', () => {
     await nextTick();
     expect(createMapFileFromFile).toHaveBeenCalledWith(image);
 
-    const locationSelect = wrapper.findComponent(QSelect);
-    locationSelect.vm.$emit('update:modelValue', 'l1');
+    linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
+      { kind: 'location', id: 'l1' },
+    ]);
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
@@ -145,7 +152,7 @@ describe('MapEditor', () => {
   it('edits an existing map and keeps markers', async () => {
     const wrapper = mount(MapEditor, {
       props: { map: existingMap, isOpen: true },
-      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
     await vi.waitFor(() => {
       expect(getMapFile).toHaveBeenCalledWith('file1');
@@ -175,13 +182,15 @@ describe('MapEditor', () => {
   it('validates title and image and supports cancelling', async () => {
     const wrapper = mount(MapEditor, {
       props: { map: null, isOpen: true },
-      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(wrapper.emitted('submit')).toBeUndefined();
 
-    wrapper.findComponent(QSelect).vm.$emit('update:modelValue', 'l1');
+    linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
+      { kind: 'location', id: 'l1' },
+    ]);
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('cancel');

@@ -314,12 +314,14 @@ type MapEntityKind =
   | 'monster'
   | 'encounter'
   | 'character'
-  | 'map';
+  | 'map'
+  | 'location';
 ```
 
-`EntityLinksEditor` loads each entity store, shows selectable entities, and
-deduplicates `kind:id` pairs. `EntityLinkList` resolves display labels for
-read-only lists.
+`EntitiesLinking` loads each entity store, shows one linking block per entity
+type, and deduplicates `kind:id` pairs. `EntityLinkList` resolves display labels
+for read-only lists. Map, marker, area, and location editors use `BaseModal`
+header tabs to separate their own fields from linked entities.
 
 ## Icons
 

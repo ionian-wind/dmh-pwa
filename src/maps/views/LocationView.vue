@@ -29,7 +29,9 @@ const loading = computed(() => !locationStore.isLoaded);
 const notFound = computed(() => locationStore.isLoaded && !location.value);
 
 const linkableGroups = computed(() =>
-  groups.value.filter((group) => group.kind !== 'map'),
+  groups.value.filter(
+    (group) => group.kind !== 'map' && group.kind !== 'location',
+  ),
 );
 
 const linkedMap = computed(

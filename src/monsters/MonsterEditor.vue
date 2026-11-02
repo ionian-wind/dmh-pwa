@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useModuleStore } from '@/stores/modules';
 import type { Monster } from '@/types';
-import ModuleMultipleSelector from '@/components/ModuleMultipleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { alert } from '@/dialogs';
+import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import type { MapEntityRef } from '@/maps/types';
 
 const { t } = useI18n();
-const moduleStore = useModuleStore();
 
 const props = defineProps<{
   monster: Monster | null;
@@ -74,14 +74,15 @@ const closeEditor = () => {
   emit('cancel');
 };
 
-const moduleIdsProxy = computed<string[]>({
-  get() {
-    return editedMonster.value.moduleIds ?? [];
-  },
-  set(val) {
-    editedMonster.value.moduleIds = val;
-  },
-});
+const editorTabs = useEntityEditorTabs();
+
+const linkedModules = computed<MapEntityRef[]>(() =>
+  (editedMonster.value.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
+);
+
+function setLinkedModules(links: MapEntityRef[]) {
+  editedMonster.value.moduleIds = links.map((link) => link.id);
+}
 
 function handleDelete() {
   if (props.monster) emit('delete', props.monster.id);
@@ -97,47 +98,51 @@ function handleDelete() {
     :showDelete="!!monster"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="monster-editor-modal"
     @submit="saveMonster"
     @delete="handleDelete"
     @cancel="closeEditor"
   >
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            :label="t('monsters.fields.name')"
-            id="monster-name"
-            v-model="editedMonster.name"
-            type="text"
-            required
-            outlined
-          />
-        </div>
-        <div class="form-group">
-          <ModuleMultipleSelector
-            id="monster-modules"
-            v-model="moduleIdsProxy"
-            :placeholder="'common.noModules'"
-          />
+    <template #main>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              :label="t('monsters.fields.name')"
+              id="monster-name"
+              v-model="editedMonster.name"
+              type="text"
+              required
+              outlined
+            />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            :label="t('common.notes')"
-            id="monster-notes"
-            v-model="editedMonster.notes"
-            type="textarea"
-            :rows="5"
-            autogrow
-            outlined
-          />
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              :label="t('common.notes')"
+              id="monster-notes"
+              v-model="editedMonster.notes"
+              type="textarea"
+              :rows="5"
+              autogrow
+              outlined
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <template #links>
+      <EntitiesLinking
+        kind="module"
+        :model-value="linkedModules"
+        @update:model-value="setLinkedModules"
+      />
+    </template>
   </BaseModal>
 </template>
 

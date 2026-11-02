@@ -224,7 +224,8 @@
             "monster",
             "encounter",
             "character",
-            "map"
+            "map",
+            "location"
           ]
         },
         "id": {

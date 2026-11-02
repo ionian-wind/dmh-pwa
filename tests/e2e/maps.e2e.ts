@@ -135,6 +135,57 @@ test('adds a marker from the action menu and map click', async ({ page }) => {
   ).toBeVisible();
 });
 
+test('links a note from the marker editor links tab', async ({ page }) => {
+  await enterMapEditMode(page);
+  await page.locator('.ol-map-actions-trigger').click();
+  await page
+    .locator('.ol-map-actions-menu')
+    .getByRole('button', { name: 'Add marker', exact: true })
+    .click();
+
+  await page.locator('.ol-viewport').click({ position: { x: 400, y: 260 } });
+
+  const dialog = page.getByRole('dialog').first();
+  await dialog.getByLabel('Marker title').fill('Linked Marker');
+
+  await expect(dialog.getByRole('tab', { name: 'Main editor' })).toBeVisible();
+  await expect(
+    dialog.getByRole('tab', { name: 'Linked entities' }),
+  ).toBeVisible();
+
+  await dialog.getByRole('tab', { name: 'Linked entities' }).click();
+
+  const noteBlock = dialog.locator('.q-list').filter({ hasText: 'Notes' });
+  await noteBlock.getByRole('button', { name: 'Add', exact: true }).click();
+  const linkDialog = page.getByRole('dialog').last();
+  await linkDialog.getByPlaceholder('Search').fill('E2E Note');
+  await linkDialog.getByText('E2E Note', { exact: true }).click();
+  await linkDialog.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByPlaceholder('Search')).toHaveCount(0);
+  await expect(dialog.getByText('E2E Note', { exact: true })).toBeVisible();
+
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+
+  const marker = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('dmh-db');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const maps = await new Promise<any[]>((resolve, reject) => {
+      const request = db.transaction('maps').objectStore('maps').getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return maps[0].markers.find(
+      (entry: any) => entry.title === 'Linked Marker',
+    );
+  });
+
+  expect(marker.entities).toContainEqual({ kind: 'note', id: 'note-1' });
+});
+
 test('opens the context menu with a draw submenu and adds a marker', async ({
   page,
 }) => {

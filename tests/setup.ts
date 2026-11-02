@@ -97,7 +97,7 @@ const i18n = createI18n({
 
 // Every component test gets Pinia, i18n, and Quasar stubs unless it overrides them.
 config.global.plugins = [createPinia(), i18n] as any;
-config.global.stubs = { ...quasarStubs };
+config.global.stubs = { ...quasarStubs, teleport: true };
 config.global.directives = { ripple: {} };
 
 beforeAll(async () => {
@@ -121,7 +121,7 @@ beforeEach(async () => {
   const pinia = createPinia();
   setActivePinia(pinia);
   config.global.plugins = [pinia, i18n] as any;
-  config.global.stubs = { ...quasarStubs };
+  config.global.stubs = { ...quasarStubs, teleport: true };
   config.global.directives = { ripple: {} };
   config.global.provide = { [LayoutKey]: createLayoutStore() } as any;
 });

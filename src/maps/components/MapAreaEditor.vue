@@ -4,10 +4,17 @@ import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
-import EntityLinksEditor from './EntityLinksEditor.vue';
-import type { MapArea, MapEntityRef, MapLayer, MapLocation } from '../types';
+import EntitiesLinking from './EntitiesLinking.vue';
+import type {
+  MapArea,
+  MapEntityKind,
+  MapEntityRef,
+  MapLayer,
+  MapLocation,
+} from '../types';
 import { normalizeArea } from '../utils/normalize';
 import { MAP_MARKER_ICONS } from '../icons';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -35,16 +42,30 @@ watch(
   { immediate: true, deep: true },
 );
 
-const locationOptions = computed(() =>
-  props.locations.map((location) => ({
-    label: location.name,
-    value: location.id,
-  })),
-);
-
 const layerOptions = computed(() =>
   props.layers.map((layer) => ({ label: layer.title, value: layer.id })),
 );
+
+const editorTabs = useEntityEditorTabs();
+const linkKinds: MapEntityKind[] = [
+  'note',
+  'module',
+  'party',
+  'monster',
+  'encounter',
+  'character',
+  'map',
+];
+
+const linkedLocation = computed<MapEntityRef[]>(() =>
+  draft.value.locationId
+    ? [{ kind: 'location', id: draft.value.locationId }]
+    : [],
+);
+
+function setLinkedLocation(links: MapEntityRef[]) {
+  draft.value.locationId = links[0]?.id ?? null;
+}
 
 function setMarkerLinks(links: MapEntityRef[]) {
   draft.value.entities = links;
@@ -72,96 +93,97 @@ function remove() {
     :showDelete="!isNew"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="map-area-editor-modal"
     @submit="submit"
     @delete="remove"
     @cancel="emit('cancel')"
   >
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            id="area-title"
-            v-model="draft.title"
-            :label="t('maps.areaTitle')"
-            type="text"
-            outlined
-            required
-          />
-        </div>
-        <div class="form-group">
-          <span class="text-caption text-grey-7 text-capitalize">
-            {{ t(`maps.shapes.${draft.shape}`) }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <QSelect
-        v-model="draft.layerId"
-        :options="layerOptions"
-        :label="t('maps.layer')"
-        outlined
-        emit-value
-        map-options
-      />
-    </div>
-
-    <div class="form-section">
-      <QInput
-        id="area-description"
-        v-model="draft.description"
-        :label="t('maps.areaDescription')"
-        type="textarea"
-        :rows="3"
-        autogrow
-        outlined
-      />
-    </div>
-
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <ColorPicker
-            id="area-color"
-            v-model="draft.color"
-            :label="t('maps.areaColor')"
-          />
+    <template #main>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              id="area-title"
+              v-model="draft.title"
+              :label="t('maps.areaTitle')"
+              type="text"
+              outlined
+              required
+            />
+          </div>
+          <div class="form-group">
+            <span class="text-caption text-grey-7 text-capitalize">
+              {{ t(`maps.shapes.${draft.shape}`) }}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="form-section">
-      <label>{{ t('maps.areaIcon') }}</label>
-      <IconPicker
-        :model-value="draft.icon || ''"
-        :icons="MAP_MARKER_ICONS"
-        collection="ra"
-        :search-placeholder="t('maps.searchIcons')"
-        :no-icon-label="t('maps.noIcon')"
-        @update:model-value="draft.icon = $event"
-      />
-    </div>
+      <div class="form-section">
+        <QSelect
+          v-model="draft.layerId"
+          :options="layerOptions"
+          :label="t('maps.layer')"
+          outlined
+          emit-value
+          map-options
+        />
+      </div>
 
-    <div class="form-section">
-      <label>{{ t('maps.linkedEntities') }}</label>
-      <EntityLinksEditor
-        :model-value="draft.entities"
-        @update:model-value="setMarkerLinks"
-      />
-    </div>
+      <div class="form-section">
+        <QInput
+          id="area-description"
+          v-model="draft.description"
+          :label="t('maps.areaDescription')"
+          type="textarea"
+          :rows="3"
+          autogrow
+          outlined
+        />
+      </div>
 
-    <div class="form-section">
-      <QSelect
-        v-model="draft.locationId"
-        :options="locationOptions"
-        :label="t('maps.location')"
-        outlined
-        emit-value
-        map-options
-        clearable
-      />
-    </div>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <ColorPicker
+              id="area-color"
+              v-model="draft.color"
+              :label="t('maps.areaColor')"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label>{{ t('maps.areaIcon') }}</label>
+        <IconPicker
+          :model-value="draft.icon || ''"
+          :icons="MAP_MARKER_ICONS"
+          collection="ra"
+          :search-placeholder="t('maps.searchIcons')"
+          :no-icon-label="t('maps.noIcon')"
+          @update:model-value="draft.icon = $event"
+        />
+      </div>
+    </template>
+
+    <template #links>
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          kind="location"
+          :multiple="false"
+          :model-value="linkedLocation"
+          @update:model-value="setLinkedLocation"
+        />
+        <EntitiesLinking
+          v-for="kind in linkKinds"
+          :key="kind"
+          :kind="kind"
+          :model-value="draft.entities"
+          @update:model-value="setMarkerLinks"
+        />
+      </div>
+    </template>
   </BaseModal>
 </template>

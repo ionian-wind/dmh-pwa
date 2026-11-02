@@ -100,6 +100,21 @@ const QToggle = defineComponent({
   },
 });
 
+const QVirtualScroll = defineComponent({
+  name: 'QVirtualScroll',
+  props: { items: { type: Array, default: () => [] } },
+  setup(props, { attrs, slots }) {
+    return () =>
+      h(
+        'div',
+        { ...attrs, 'data-stub': 'QVirtualScroll' },
+        (props.items as any[]).flatMap(
+          (item) => slots.default?.({ item }) ?? [],
+        ),
+      );
+  },
+});
+
 const QDialog = defineComponent({
   name: 'QDialog',
   props: { modelValue: Boolean },
@@ -194,7 +209,6 @@ const passthroughNames = [
   'QSkeleton',
   'QNoSsr',
   'QMarkupTable',
-  'QVirtualScroll',
   'QScrollArea',
   'QHeader',
   'QFooter',
@@ -211,6 +225,7 @@ export const quasarStubs: Record<string, any> = {
   QColor,
   QPopupEdit,
   QPopupProxy,
+  QVirtualScroll,
 };
 
 for (const name of passthroughNames) {

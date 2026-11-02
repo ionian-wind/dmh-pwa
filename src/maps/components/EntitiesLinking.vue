@@ -149,6 +149,7 @@ function removeLink(ref: MapEntityRef) {
       :submitLabel="t('common.add')"
       :cancelLabel="t('common.cancel')"
       :disableSubmit="selectedIds.length === 0"
+      :use-modal-stack="false"
       :modalId="`entities-linking-${kind}-${instanceId}`"
       @submit="addSelected"
       @cancel="isModalOpen = false"

@@ -1,10 +1,10 @@
 # Editor Dialog Pattern
 
-> **Status: tab infrastructure implemented; editor migration in progress.**
+> **Status: implemented for editors with main-entity links.**
 >
-> `BaseModal` now supports header tabs and named tab slots. Existing editors
-> still mix root fields, internal options, and entity links in one form; use
-> this document as the specification for the migration.
+> `BaseModal` supports header tabs and named tab slots. Editors with linking
+> ability now separate their form from typed linking blocks; editors without
+> main-entity links keep a single form and no tabs.
 
 ## Purpose
 
@@ -65,8 +65,9 @@ configure them stay in the main editor form.
 ### Header tabs
 
 If the entity supports linking to main entities, the dialog header shows two
-tabs, following the calculator dialog pattern (`QTabs` inside the dialog
-toolbar with icon-only `QTab`s and accessible titles):
+tabs in the same toolbar line as the expand and close buttons, centered between
+them. The text title is hidden while tabs are shown. This follows the calculator
+dialog pattern (`QTabs` with icon-only `QTab`s and accessible titles):
 
 | Order | Tab             | Icon            | Content                             |
 | ----- | --------------- | --------------- | ----------------------------------- |
@@ -80,6 +81,9 @@ Rules:
   editor with no links keeps a single form and no tabs.
 - Header tabs are navigation only. They must not add their own submit, cancel,
   or delete buttons.
+- The tab row is part of the header toolbar, not a second row below it.
+- When tabs are present, the dialog title is not rendered as text; the active
+  tab title/accessible label identifies the dialog context.
 - Switching tabs preserves the current draft, validation state, and any edits
   made in either tab.
 - The standard dialog actions (Delete / Cancel / Save) remain visible for both
@@ -140,6 +144,25 @@ Every entity editor dialog keeps the standard action bar:
 Delete and Save apply to the whole draft, including links edited in the second
 tab. The action bar is provided by `BaseModal`; editors must not put delete or
 save buttons inside tab content.
+
+## Implementation status
+
+Linkable editors already use the tab layout:
+
+| Editor                | Link blocks                                                     |
+| --------------------- | --------------------------------------------------------------- |
+| `NoteEditor`          | Modules                                                         |
+| `PartyEditor`         | Modules, Characters                                             |
+| `MonsterEditor`       | Modules                                                         |
+| `EncounterEditor`     | Modules                                                         |
+| `PlaylistEditor`      | Modules                                                         |
+| `MapEditor`           | Locations                                                       |
+| `MapLocationEditor`   | Notes, Modules, Parties, Monsters, Encounters, Characters        |
+| `MapMarkerEditor`     | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
+| `MapAreaEditor`       | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
+
+`CharacterEditor`, `ModuleEditor`, and `TimerEditor` have no main-entity links,
+so they keep a single form without tabs. Combat has no editor yet.
 
 ## Acceptance checklist
 
