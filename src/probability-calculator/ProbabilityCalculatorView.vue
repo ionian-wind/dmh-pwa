@@ -11,6 +11,9 @@ import {
   IconDownload,
   IconPlayerPlay,
   IconChartLine,
+  IconZoomIn,
+  IconZoomOut,
+  IconZoomReset,
 } from '@tabler/icons-vue';
 import MonacoEditor from '@/components/common/MonacoEditor.vue';
 import {
@@ -63,6 +66,10 @@ const copied = ref(false);
 const rollerOutputIndex = ref(0);
 const rollerAmount = ref(6);
 const rollerResults = ref<number[]>([]);
+const chartZoom = ref(1);
+const MIN_CHART_ZOOM = 0.5;
+const MAX_CHART_ZOOM = 3;
+const CHART_ZOOM_STEP = 0.25;
 
 watch(source, (value) => {
   try {
@@ -183,6 +190,17 @@ function downloadExport() {
   anchor.download = 'anydice-output.csv';
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function zoomChart(delta: number) {
+  chartZoom.value = Math.min(
+    MAX_CHART_ZOOM,
+    Math.max(MIN_CHART_ZOOM, chartZoom.value + delta),
+  );
+}
+
+function resetChartZoom() {
+  chartZoom.value = 1;
 }
 
 function roll() {
@@ -370,15 +388,58 @@ onMounted(() => {
 
       <QCard v-else-if="viewMode === 'graph'" flat bordered>
         <QCardSection>
+          <div class="row items-center justify-end q-gutter-xs q-mb-sm">
+            <QBtn
+              flat
+              dense
+              round
+              :aria-label="t('probabilityCalculator.zoomOut')"
+              :disable="chartZoom <= MIN_CHART_ZOOM"
+              @click="zoomChart(-CHART_ZOOM_STEP)"
+            >
+              <IconZoomOut :size="18" />
+            </QBtn>
+            <span class="text-caption text-grey-7 zoom-label">
+              {{ Math.round(chartZoom * 100) }}%
+            </span>
+            <QBtn
+              flat
+              dense
+              round
+              :aria-label="t('probabilityCalculator.zoomIn')"
+              :disable="chartZoom >= MAX_CHART_ZOOM"
+              @click="zoomChart(CHART_ZOOM_STEP)"
+            >
+              <IconZoomIn :size="18" />
+            </QBtn>
+            <QBtn
+              flat
+              dense
+              round
+              :aria-label="t('probabilityCalculator.zoomReset')"
+              :disable="chartZoom === 1"
+              @click="resetChartZoom"
+            >
+              <IconZoomReset :size="18" />
+            </QBtn>
+          </div>
           <div
             v-if="chart && chart.rows.length"
             class="probability-chart-wrapper"
           >
-            <Responsive class="probability-chart-responsive">
+            <Responsive
+              class="probability-chart-responsive"
+              :style="{
+                height: `${Math.round(440 * chartZoom)}px`,
+              }"
+            >
               <template #main="{ width, height }">
                 <Chart
                   :data="chart.rows"
-                  :size="{ width, height }"
+                  :size="{
+                    width: Math.round(width * chartZoom),
+                    height: Math.round(height),
+                  }"
                   :margin="{ top: 20, right: 24, bottom: 36, left: 56 }"
                   :axis="{
                     primary: {
@@ -615,6 +676,13 @@ onMounted(() => {
 
 .probability-chart-wrapper {
   min-height: 440px;
+  max-height: 680px;
+  overflow: auto;
+}
+
+.zoom-label {
+  min-width: 3.5rem;
+  text-align: center;
 }
 
 .chart-legend-swatch {

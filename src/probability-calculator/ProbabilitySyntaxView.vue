@@ -1,110 +1,134 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { IconArrowLeft, IconBook2 } from '@tabler/icons-vue';
 
 const router = useRouter();
+const { t, tm } = useI18n();
 
 interface OperatorRow {
   syntax: string;
-  meaning: string;
+  meaningKey: string;
   example: string;
 }
 
 interface FunctionRow {
   syntax: string;
-  meaning: string;
+  meaningKey: string;
 }
 
 interface Example {
-  title: string;
+  titleKey: string;
   code: string;
 }
 
 const operators: OperatorRow[] = [
   {
     syntax: '+ - * /',
-    meaning: 'Arithmetic. Integer division rounds toward zero.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.arithmetic',
     example: 'output 2d6 + 3',
   },
   {
     syntax: '^',
-    meaning: 'Exponentiation with a non-negative integer exponent.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.exponentiation',
     example: 'output 2 ^ 3',
   },
   {
     syntax: '= != < > <= >=',
-    meaning: 'Comparison. Produces a 0/1 die when applied to dice.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.comparison',
     example: 'output 3d6 >= 15',
   },
   {
     syntax: '& | !',
-    meaning:
-      'Boolean and, or and not. Zero is false; any other number is true.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.boolean',
     example: 'output 1d6 > 3 & 1d6 != 6',
   },
   {
     syntax: '@',
-    meaning: 'Position access on a sequence, dice collection or number digits.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.access',
     example: 'output 1@3d6',
   },
   {
     syntax: '#',
-    meaning:
-      'Length of a sequence or dice collection; number of digits for a number.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.length',
     example: 'output #(3d6)',
   },
   {
     syntax: 'd',
-    meaning: 'Creates a die or a collection of dice.',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.dice',
     example: 'output 4d6',
+  },
+  {
+    syntax: '..',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.range',
+    example: '{1..6}',
+  },
+  {
+    syntax: ':',
+    meaningKey: 'probabilityCalculator.syntaxPage.operators.colon',
+    example: '{1:4}  X: 3',
   },
 ];
 
 const functions: FunctionRow[] = [
-  { syntax: 'absolute NUMBER', meaning: 'Absolute value.' },
+  {
+    syntax: 'absolute NUMBER',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.absolute',
+  },
   {
     syntax: 'SEQUENCE contains NUMBER',
-    meaning: '1 if the number occurs in the sequence, otherwise 0.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.contains',
   },
   {
     syntax: 'count VALUES in SEQUENCE',
-    meaning: 'Counts occurrences; repeated values are counted repeatedly.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.count',
   },
   {
     syntax: 'explode DIE',
-    meaning: 'Keeps rolling when the maximum value is rolled.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.explode',
   },
   {
     syntax: 'highest N of DICE',
-    meaning: 'Sum of the highest N values. Supports multiple pools with and.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.highest',
   },
   {
     syntax: 'lowest N of DICE',
-    meaning: 'Sum of the lowest N values. Supports multiple pools with and.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.lowest',
   },
-  { syntax: 'middle N of DICE', meaning: 'Sum of the middle N values.' },
+  {
+    syntax: 'middle N of DICE',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.middle',
+  },
   {
     syntax: 'highest of A and B',
-    meaning: 'Higher of two numbers; dice are expanded per outcome.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.highestOf',
   },
   {
     syntax: 'lowest of A and B',
-    meaning: 'Lower of two numbers; dice are expanded per outcome.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.lowestOf',
   },
   {
     syntax: 'maximum of DIE',
-    meaning: 'Highest possible value on a die (0 for an empty die).',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.maximum',
   },
-  { syntax: 'reverse SEQUENCE', meaning: 'Reverses the sequence order.' },
+  {
+    syntax: 'minimum of DIE',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.minimum',
+  },
+  {
+    syntax: 'reverse SEQUENCE',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.reverse',
+  },
   {
     syntax: 'sort SEQUENCE',
-    meaning: 'Sorts using the position order setting.',
+    meaningKey: 'probabilityCalculator.syntaxPage.functionMeanings.sort',
   },
 ];
 
 const examples: Example[] = [
   {
-    title: '4d6 drop lowest',
+    titleKey: 'probabilityCalculator.syntaxPage.exampleTitles.dropLowest',
     code: `output [highest 3 of 4d6] named "4d6 drop lowest"
 
 ABILITIES: 6 d [highest 3 of 4d6]
@@ -113,7 +137,7 @@ loop P over {1..6} {
 }`,
   },
   {
-    title: 'Blades in the Dark',
+    titleKey: 'probabilityCalculator.syntaxPage.exampleTitles.blades',
     code: `function: blades ROLL:s {
   if 1@ROLL = 6 {
     result: 2 + (2@ROLL = 6)
@@ -127,13 +151,13 @@ loop P over {1..7} {
 }`,
   },
   {
-    title: 'Exploding dice',
+    titleKey: 'probabilityCalculator.syntaxPage.exampleTitles.exploding',
     code: `set "explode depth" to 3
 output [explode d6] named "one exploding d6"
 output 2d[explode d6] named "two independent exploding dice"`,
   },
   {
-    title: 'Functions and type casting',
+    titleKey: 'probabilityCalculator.syntaxPage.exampleTitles.casting',
     code: `function: double N:n if above B:n {
   if N > B { result: N + N }
   result: N
@@ -148,6 +172,20 @@ function: ROLL:s count fives and above and subtract ones {
 output [3d6 count fives and above and subtract ones]`,
   },
 ];
+
+const basicsBullets = computed(
+  () =>
+    tm(
+      'probabilityCalculator.syntaxPage.basics.bullets',
+    ) as unknown as string[],
+);
+
+const parameterBullets = computed(
+  () =>
+    tm(
+      'probabilityCalculator.syntaxPage.functions.params',
+    ) as unknown as string[],
+);
 </script>
 
 <template>
@@ -156,16 +194,18 @@ output [3d6 count fives and above and subtract ones]`,
       <QBtn
         flat
         round
-        aria-label="Back to calculator"
+        :aria-label="t('probabilityCalculator.syntaxPage.back')"
         @click="router.push('/probability-calculator')"
       >
         <IconArrowLeft />
       </QBtn>
       <IconBook2 :size="28" class="text-primary" />
       <div>
-        <div class="text-h5">AnyDice Syntax Reference</div>
+        <div class="text-h5">
+          {{ t('probabilityCalculator.syntaxPage.title') }}
+        </div>
         <div class="text-caption text-grey-7">
-          Supported syntax for the dice probability calculator
+          {{ t('probabilityCalculator.syntaxPage.subtitle') }}
         </div>
       </div>
     </div>
@@ -173,13 +213,9 @@ output [3d6 count fives and above and subtract ones]`,
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          Program basics
+          {{ t('probabilityCalculator.syntaxPage.sections.basics') }}
         </div>
-        <p>
-          A program is a sequence of statements. Variables are uppercase words
-          and are assigned with <code>:</code>. Use <code>output</code> to add a
-          result and <code>named</code> to give it a title.
-        </p>
+        <p>{{ t('probabilityCalculator.syntaxPage.basics.description') }}</p>
         <pre v-pre class="syntax-code">
 X: 3
 output X + 1 named "four"
@@ -188,9 +224,9 @@ DAMAGE: 2d6 + 3
 output DAMAGE named "sword damage"</pre
         >
         <ul class="q-mt-sm">
-          <li>Comments use backslashes: <code>\ this is ignored \</code></li>
-          <li>Variables can be reassigned and are evaluated in order.</li>
-          <li><code>0</code> is false; any non-zero number is true.</li>
+          <li v-for="(bullet, index) in basicsBullets" :key="index">
+            {{ bullet }}
+          </li>
         </ul>
       </QCardSection>
     </QCard>
@@ -198,14 +234,14 @@ output DAMAGE named "sword damage"</pre
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          Numbers, dice and operators
+          {{ t('probabilityCalculator.syntaxPage.sections.operators') }}
         </div>
         <QMarkupTable dense flat class="syntax-table">
           <thead>
             <tr>
-              <th>Syntax</th>
-              <th>Meaning</th>
-              <th>Example</th>
+              <th>{{ t('probabilityCalculator.syntaxPage.table.syntax') }}</th>
+              <th>{{ t('probabilityCalculator.syntaxPage.table.meaning') }}</th>
+              <th>{{ t('probabilityCalculator.syntaxPage.table.example') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -213,31 +249,25 @@ output DAMAGE named "sword damage"</pre
               <td>
                 <code>{{ operator.syntax }}</code>
               </td>
-              <td>{{ operator.meaning }}</td>
+              <td>{{ t(operator.meaningKey) }}</td>
               <td>
                 <code>{{ operator.example }}</code>
               </td>
             </tr>
           </tbody>
         </QMarkupTable>
-        <p class="q-mt-md q-mb-xs">
-          <code>d6</code> is one six-sided die, <code>3d6</code> is a collection
-          of three dice that are summed, and <code>d%</code> is a d100. Custom
-          dice use a sequence: <code>d{1,2,4,4}</code>. Any expression can
-          provide the faces: <code>2d(1d4)</code>.
+        <p class="q-mt-md q-mb-none">
+          {{ t('probabilityCalculator.syntaxPage.dice.description') }}
         </p>
       </QCardSection>
     </QCard>
 
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">Sequences</div>
-        <p>
-          Sequences are written with braces. They preserve their written order;
-          use <code>sort</code> when you want the position-order setting
-          applied. Mathematical and boolean operations sum all elements of a
-          sequence.
-        </p>
+        <div class="text-subtitle1 text-weight-medium q-mb-sm">
+          {{ t('probabilityCalculator.syntaxPage.sections.sequences') }}
+        </div>
+        <p>{{ t('probabilityCalculator.syntaxPage.sequences.description') }}</p>
         <pre v-pre class="syntax-code">
 {1, 2, 3}
 {1..6}
@@ -247,19 +277,21 @@ output DAMAGE named "sword damage"</pre
 {d6}
 {}</pre
         >
-        <div class="text-subtitle2 q-mt-md q-mb-xs">Position and length</div>
+        <div class="text-subtitle2 q-mt-md q-mb-xs">
+          {{ t('probabilityCalculator.syntaxPage.sections.position') }}
+        </div>
         <pre v-pre class="syntax-code">
 1 @ {2,4,6}    \ 2 \
 3 @ {2,4,6}    \ 6 \
 {1,3} @ {2,4,6} \ 8 \
 # {2,4,6}      \ 3 \
 1 @ 246        \ 2 \
-# (3d6)        \ 3 \</pre
+# 1234         \ 4 \
+# (3d6)        \ 3 \
+{1,2} @ 3d6</pre
         >
         <p class="q-mb-none">
-          <code>set "position order" to "lowest first"</code> reverses dice
-          positions and digit positions. It does not reorder sequence literals
-          until <code>sort</code> is used.
+          {{ t('probabilityCalculator.syntaxPage.sequences.positionOrder') }}
         </p>
       </QCardSection>
     </QCard>
@@ -267,7 +299,7 @@ output DAMAGE named "sword damage"</pre
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          Loops and conditionals
+          {{ t('probabilityCalculator.syntaxPage.sections.flow') }}
         </div>
         <pre v-pre class="syntax-code">
 loop N over {1..4} {
@@ -278,27 +310,25 @@ X: 1
 if X = 1 {
   output 1
 }
+else if X = 2 {
+  output 2
+}
 else {
   output 1d6
 }</pre
         >
         <p class="q-mb-none">
-          Conditions can use comparisons and boolean operators. A die cannot be
-          used directly as an <code>if</code> condition; pass it to a function
-          with a typed parameter when you need to expand it.
+          {{ t('probabilityCalculator.syntaxPage.flow.note') }}
         </p>
       </QCardSection>
     </QCard>
 
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">Functions</div>
-        <p>
-          Function names are made of lowercase words and uppercase parameter
-          variables. Invoke a function by putting its name and arguments in
-          square brackets. A function returns as soon as <code>result:</code>
-          is reached; without a result it returns the empty die.
-        </p>
+        <div class="text-subtitle1 text-weight-medium q-mb-sm">
+          {{ t('probabilityCalculator.syntaxPage.sections.functions') }}
+        </div>
+        <p>{{ t('probabilityCalculator.syntaxPage.functions.description') }}</p>
         <pre v-pre class="syntax-code">
 function: add A to B {
   result: A + B
@@ -307,26 +337,14 @@ function: add A to B {
 output [add 1 to 2]
 output [add d4 to d6]</pre
         >
-        <p>Parameter types control how values are converted:</p>
+        <p>{{ t('probabilityCalculator.syntaxPage.functions.paramsIntro') }}</p>
         <ul>
-          <li>
-            <code>:n</code> — numbers. A sequence is summed; a die is expanded
-            once per outcome.
-          </li>
-          <li>
-            <code>:d</code> — dice. A number becomes a constant die; a sequence
-            is summed and becomes a constant die.
-          </li>
-          <li>
-            <code>:s</code> — sequences. A number becomes a one-element
-            sequence; dice are expanded into all possible sorted rolls.
+          <li v-for="(bullet, index) in parameterBullets" :key="index">
+            {{ bullet }}
           </li>
         </ul>
         <p class="q-mb-none">
-          Functions can recurse. The maximum depth is controlled with
-          <code>set "maximum function depth" to N</code>.
-          <code>output</code> and <code>set</code> are not allowed inside a
-          function.
+          {{ t('probabilityCalculator.syntaxPage.functions.recursion') }}
         </p>
       </QCardSection>
     </QCard>
@@ -334,13 +352,15 @@ output [add d4 to d6]</pre
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          Function library
+          {{ t('probabilityCalculator.syntaxPage.sections.library') }}
         </div>
         <QMarkupTable dense flat class="syntax-table">
           <thead>
             <tr>
-              <th>Function</th>
-              <th>Meaning</th>
+              <th>
+                {{ t('probabilityCalculator.syntaxPage.table.function') }}
+              </th>
+              <th>{{ t('probabilityCalculator.syntaxPage.table.meaning') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -348,7 +368,7 @@ output [add d4 to d6]</pre
               <td>
                 <code>[{{ fn.syntax }}]</code>
               </td>
-              <td>{{ fn.meaning }}</td>
+              <td>{{ t(fn.meaningKey) }}</td>
             </tr>
           </tbody>
         </QMarkupTable>
@@ -357,7 +377,9 @@ output [add d4 to d6]</pre
 
     <QCard flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">Settings</div>
+        <div class="text-subtitle1 text-weight-medium q-mb-sm">
+          {{ t('probabilityCalculator.syntaxPage.sections.settings') }}
+        </div>
         <pre v-pre class="syntax-code">
 set "position order" to "highest first"
 set "position order" to "lowest first"
@@ -365,18 +387,25 @@ set "explode depth" to 2
 set "maximum function depth" to 5</pre
         >
         <p class="q-mb-none">
-          Settings apply to the statements that follow them. The default
-          position order is highest first.
+          {{ t('probabilityCalculator.syntaxPage.settings.note') }}
         </p>
       </QCardSection>
     </QCard>
 
     <QCard flat bordered>
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">Examples</div>
-        <div v-for="example in examples" :key="example.title" class="q-mb-lg">
-          <div class="text-subtitle2 q-mb-xs">{{ example.title }}</div>
-          <pre v-pre class="syntax-code">{{ example.code }}</pre>
+        <div class="text-subtitle1 text-weight-medium q-mb-sm">
+          {{ t('probabilityCalculator.syntaxPage.sections.examples') }}
+        </div>
+        <div
+          v-for="example in examples"
+          :key="example.titleKey"
+          class="q-mb-lg"
+        >
+          <div class="text-subtitle2 q-mb-xs">
+            {{ t(example.titleKey) }}
+          </div>
+          <pre class="syntax-code">{{ example.code }}</pre>
         </div>
       </QCardSection>
     </QCard>

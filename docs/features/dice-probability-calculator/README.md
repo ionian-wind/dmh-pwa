@@ -12,14 +12,14 @@ using integer (`bigint`) weights. A Vue page under
 
 - Route: `/probability-calculator` (lazy loaded).
 - Syntax reference: `/probability-calculator/syntax`, linked from the
-  calculator header.
+  calculator header and translated into English and Russian.
 - Main menu: directly below Calculator, using `IconChartLine`.
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
   Monarch syntax highlighter.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,
-  and graphs rendered with `vue3-charts`.
+  and graphs rendered with `vue3-charts`, including zoom in/out/reset controls.
 - The link input from AnyDice is intentionally omitted for now.
 - The source program is persisted in `localStorage`.
 

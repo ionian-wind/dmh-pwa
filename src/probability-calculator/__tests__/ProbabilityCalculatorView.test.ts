@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 
+vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 vi.mock('vue3-charts', async () => {
   const { defineComponent, h } = await import('vue');
   const layerStub = (name: string) =>
@@ -114,6 +116,13 @@ describe('ProbabilityCalculatorView', () => {
       .trigger('click');
     expect(wrapper.find('.probability-chart-wrapper').exists()).toBe(true);
     expect(wrapper.find('[data-chart-stub="Chart"]').exists()).toBe(true);
+
+    await wrapper.find('button[aria-label="Zoom in chart"]').trigger('click');
+    expect(wrapper.text()).toContain('125%');
+    await wrapper
+      .find('button[aria-label="Reset chart zoom"]')
+      .trigger('click');
+    expect(wrapper.text()).toContain('100%');
 
     await wrapper
       .findAll('button')
