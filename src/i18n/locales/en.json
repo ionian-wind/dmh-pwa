@@ -240,6 +240,8 @@
     "linkedEntities": "Linked entities",
     "confirmDelete": "Are you sure you want to delete {title}?",
     "empty": "No items found",
+    "emptyNotes": "No notes yet. Create your first note to get started!",
+    "emptyMonsters": "No monsters yet. Create your first monster to get started!",
     "emptyModules": "No modules yet. Create your first module to get started!",
     "noModules": "No Modules",
     "emptyParties": "No parties yet. Create your first party to get started!",
@@ -553,7 +555,7 @@
     "hash": "#"
   },
   "timers": {
-    "empty": "No timers yet. Create your first timer!",
+    "empty": "No timers yet. Create your first timer to get started!",
     "create": "Create Timer",
     "edit": "Edit Timer",
     "delete": "Delete Timer",
@@ -793,7 +795,7 @@
     "locationName": "Location name",
     "locationNameRequired": "Location name is required",
     "locationDescription": "Location description",
-    "noLocations": "No locations yet.",
+    "noLocations": "No locations yet. Create your first location to get started!",
     "untitledLocation": "Untitled location",
     "openLinkedMap": "Open linked map",
     "openLinkedLocation": "Open linked location",

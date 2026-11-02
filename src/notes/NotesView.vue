@@ -120,7 +120,7 @@ async function handleCopy(note: Note) {
     :items="noteStore.filtered.filter((n) => !n.hidden)"
     :card-component="NoteCard"
     :editor-component="NoteEditor"
-    :empty-message="t('common.empty')"
+    :empty-message="t('common.emptyNotes')"
     :create-title="t('notes.create')"
     :card-props="cardProps"
     :editor-props="editorProps"

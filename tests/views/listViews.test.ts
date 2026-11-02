@@ -58,6 +58,7 @@ const BaseListViewStub = defineComponent({
     editorProps: { type: Function, required: true },
     searchQuery: { type: String, default: '' },
     headerButtons: { type: Array, default: () => [] },
+    emptyMessage: { type: String, default: '' },
   },
   emits: [
     'update:searchQuery',
@@ -265,6 +266,9 @@ describe('list views', () => {
     expect(router.currentRoute.value.path).toBe('/notes/n1');
     card.onEdit();
 
+    expect(list(wrapper).props('emptyMessage')).toContain(
+      'Create your first note',
+    );
     const headerButtons = list(wrapper).props('headerButtons') as any[];
     expect(headerButtons[0]).toMatchObject({
       color: 'warning',
