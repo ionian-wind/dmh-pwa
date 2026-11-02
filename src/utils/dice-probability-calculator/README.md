@@ -89,6 +89,8 @@ npx vitest run src/utils/dice-probability-calculator
 
 The tests cover parsing, arithmetic, sequences, order statistics, built-ins,
 function casting, loops, conditionals, settings, recursion and error handling.
+`__tests__/articles.test.ts` additionally mirrors the programs and published
+results from the official AnyDice articles.
 
 ## Current limitations
 

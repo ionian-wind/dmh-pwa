@@ -421,7 +421,8 @@ export class Evaluator {
       candidates.push({
         signature: definition.signature,
         score: signatureScore(definition.signature, args),
-        invoke: (values) => this.invokeUserFunction(definition, values),
+        invoke: (values) =>
+          this.invokeUserFunction(definition, values, environment),
       });
     }
     for (const builtin of builtins) {
@@ -448,6 +449,7 @@ export class Evaluator {
   private invokeUserFunction(
     definition: FunctionDefinition,
     args: Value[],
+    caller: Environment,
   ): Value {
     if (this.callDepth >= this.settings.maxFunctionDepth) {
       return Die.empty();
@@ -456,7 +458,11 @@ export class Evaluator {
     this.callDepth++;
     try {
       const scope = new Environment(definition.closure);
+      // AnyDice functions can see the variables of their caller. This is what
+      // makes idioms such as `[qin ... vs ...]` delegating to a helper that
+      // reads MODIFIER/TARGET work.
       definition.closure.copyVisibleVariablesInto(scope);
+      caller.copyVisibleVariablesInto(scope);
       const parameterNames = definition.signature.filter(
         (part): part is Extract<SignaturePart, { kind: 'param' }> =>
           part.kind === 'param',
@@ -555,18 +561,32 @@ export class Evaluator {
 
     visit(0, baseArgs, 1n);
 
+    // A function may return a die (for example HITDAMAGE). Each returned die
+    // has its own total weight, so bring all results onto a common denominator
+    // before merging them.
+    let scale = 1n;
+    for (const result of results) {
+      if (result.value instanceof Die) {
+        const total = result.value.totalWeight;
+        if (total > 0n) scale = lcm(scale, total);
+      }
+    }
+
     const weights = new Map<number, bigint>();
     for (const result of results) {
       if (result.value instanceof Die) {
+        const total = result.value.totalWeight;
+        if (total === 0n) continue;
+        const factor = result.weight * (scale / total);
         for (const outcome of result.value.outcomes()) {
           weights.set(
             outcome.value,
-            (weights.get(outcome.value) ?? 0n) + outcome.weight * result.weight,
+            (weights.get(outcome.value) ?? 0n) + outcome.weight * factor,
           );
         }
       } else {
         const value = toNumber(result.value);
-        weights.set(value, (weights.get(value) ?? 0n) + result.weight);
+        weights.set(value, (weights.get(value) ?? 0n) + result.weight * scale);
       }
     }
     return new Die(weights);
@@ -891,6 +911,22 @@ function callName(items: ResolvedItem[]): string {
   return items
     .map((item) => (item.kind === 'word' ? item.value : `<expression>`))
     .join(' ');
+}
+
+function gcd(a: bigint, b: bigint): bigint {
+  let x = a < 0n ? -a : a;
+  let y = b < 0n ? -b : b;
+  while (y !== 0n) {
+    const remainder = x % y;
+    x = y;
+    y = remainder;
+  }
+  return x;
+}
+
+function lcm(a: bigint, b: bigint): bigint {
+  if (a === 0n || b === 0n) return 0n;
+  return (a / gcd(a, b)) * b;
 }
 
 function compareNumbers(
