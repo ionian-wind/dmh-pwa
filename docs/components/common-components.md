@@ -169,7 +169,7 @@ value.
 ### `RangeSlider.vue`
 
 Custom pointer/touch slider with horizontal/vertical modes. Clamps and steps
-values. Only used by the unused `_JukeboxPlayer.vue`.
+values. Currently exercised by tests only.
 
 ### `TabGroup.vue` / `TabPanel.vue`
 
