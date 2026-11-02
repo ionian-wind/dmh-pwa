@@ -64,29 +64,31 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 95. Total tests: 730.
+Total test files: 98. Total tests: 738.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  88 passed (88)
-Tests       730 passed (730)
+Test Files  98 passed (98)
+Tests       738 passed (738)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  81.73%
-Branches    82.27%
-Functions    72.94%
-Lines       81.73%
+Statements  91.61%
+Branches    85.04%
+Functions    80.75%
+Lines       91.61%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
 large dice-roller AST/plugin files, which have dedicated parser/evaluator suites.
-`vitest.config.ts` enforces global thresholds (80% statements/lines, 75%
-branches, 65% functions) so future changes cannot silently drop coverage.
+`vitest.config.ts` enforces global thresholds (87% statements/lines, 80%
+branches, 75% functions) so future changes cannot silently drop coverage.
+Generated output (`dist/`, `dev-dist/`, service workers) and standalone
+scripts are excluded from coverage.
 
 The maintained regression suite is also green:
 
@@ -141,7 +143,11 @@ The suite now includes direct tests for:
 - jukebox playback/queue transitions with a mocked Howler,
 - PWA install/update flows and event cleanup,
 - BaseListView/BaseEntityTabView integration, cards, controls and calculators,
-- module import/export, markdown sanitizing/task lists and mention plugin helpers.
+- module import/export, markdown sanitizing/task lists and mention plugin helpers,
+- map canvas readback patching and the map-layers migration,
+- Monaco environment setup and the probability calculator page, code library,
+  syntax page, editor completions, sharing, chart zoom and syntax markers,
+- note Markdown/PNG downloads and the shared `SidebarItem` component.
 
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting

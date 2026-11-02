@@ -34,6 +34,30 @@ Variations:
 - `CharacterCard` only shows the title.
 - `TrackCard` is a `QItem` with artwork, duration, add/remove actions.
 
+### `SidebarItem.vue`
+
+Reusable card-style sidebar row used by map markers/areas and the probability
+calculator code library.
+
+Props: `title`, `color` (optional side-border color).
+Slots: `left`, default, `actions`.
+
+- `left` holds an icon, checkbox or other control.
+- `actions` holds edit/delete buttons and is only revealed on hover or keyboard
+  focus.
+- Omit `color` for no colored side border.
+
+### `MonacoEditor.vue`
+
+Thin Monaco wrapper used by the probability calculator.
+
+Props: `modelValue`, `language`, `theme`, `readonly`, `height`, `options`.
+Emits: `update:modelValue`, `ready`.
+
+- Creates the editor on mount and disposes it on unmount.
+- Watches external value, language and readonly changes.
+- Exposes `focus()` and `getEditor()` for marker integration.
+
 ## Lists
 
 ### `BaseListView.vue`
@@ -169,6 +193,9 @@ Custom pointer/touch slider with horizontal/vertical modes. Clamps and steps
 values. Currently exercised by tests only.
 
 ### `TabGroup.vue` / `TabPanel.vue`
+
+Labels may be translation keys or already-translated strings; keys are resolved
+with `te()` before translation.
 
 A non-Quasar tab system:
 
