@@ -130,6 +130,9 @@
           "color": {
             "type": "string",
             "minLength": 1
+          },
+          "backgroundColor": {
+            "type": "string"
           }
         }
       }

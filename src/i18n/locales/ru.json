@@ -805,6 +805,8 @@
     "markerTitle": "Название метки",
     "markerDescription": "Описание метки",
     "markerColor": "Цвет метки",
+    "markerBackgroundColor": "Фон метки",
+    "transparent": "Прозрачный",
     "markerIcon": "Иконка метки",
     "noIcon": "Без иконки",
     "markerTitleRequired": "Название метки обязательно",

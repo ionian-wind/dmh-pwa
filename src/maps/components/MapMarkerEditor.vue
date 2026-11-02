@@ -133,6 +133,15 @@ function remove() {
             :label="t('maps.markerColor')"
           />
         </div>
+        <div class="form-group">
+          <ColorPicker
+            id="marker-background-color"
+            v-model="draft.backgroundColor"
+            :label="t('maps.markerBackgroundColor')"
+            clearable
+            :clear-label="t('maps.transparent')"
+          />
+        </div>
       </div>
     </div>
 

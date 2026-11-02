@@ -287,7 +287,8 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
   layerId: string,
   entities: MapEntityRef[],
   icon, // RPG Awesome class without the "ra" prefix
-  color // CSS color
+  color, // CSS color
+  backgroundColor? // optional badge colour, empty for transparent
 }
 ```
 

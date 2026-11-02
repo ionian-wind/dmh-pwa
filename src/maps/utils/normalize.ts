@@ -61,6 +61,7 @@ export function normalizeMarker(
     entities: normalizeEntities(marker.entities),
     icon: markerIconClass(marker.icon || DEFAULT_MARKER_ICON),
     color: marker.color || DEFAULT_MARKER_COLOR,
+    backgroundColor: marker.backgroundColor || '',
   };
 }
 
@@ -124,6 +125,7 @@ function legacyPointsToMarkers(points: unknown): MapMarker[] {
         entities: point.entities,
         icon: point.icon,
         color: point.color,
+        backgroundColor: point.backgroundColor,
       }),
     );
 }

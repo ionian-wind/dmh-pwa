@@ -177,7 +177,9 @@ describe('map marker editor', () => {
     wrapper
       .findComponent(IconPickerStub)
       .vm.$emit('update:modelValue', 'ra:ra-sword');
-    wrapper.findComponent(ColorPicker).vm.$emit('update:modelValue', '#00ff00');
+    const colorPickers = wrapper.findAllComponents(ColorPicker);
+    colorPickers[0].vm.$emit('update:modelValue', '#00ff00');
+    colorPickers[1].vm.$emit('update:modelValue', '#ffffff');
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
@@ -193,6 +195,7 @@ describe('map marker editor', () => {
       entities: [{ kind: 'map', id: 'map2' }],
       icon: 'ra:ra-sword',
       color: '#00ff00',
+      backgroundColor: '#ffffff',
     });
   });
 

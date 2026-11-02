@@ -804,6 +804,8 @@
     "markerTitle": "Marker title",
     "markerDescription": "Marker description",
     "markerColor": "Marker color",
+    "markerBackgroundColor": "Marker background",
+    "transparent": "Transparent",
     "markerIcon": "Marker icon",
     "noIcon": "No icon",
     "markerTitleRequired": "Marker title is required",

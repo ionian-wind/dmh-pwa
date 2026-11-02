@@ -64,6 +64,7 @@ describe('map normalization', () => {
       y: 8,
       icon: DEFAULT_MARKER_ICON,
       color: DEFAULT_MARKER_COLOR,
+      backgroundColor: '',
       entities: [],
     });
     expect(normalized.locationId).toBeNull();
@@ -75,12 +76,14 @@ describe('map normalization', () => {
         y: 2,
         icon: 'ra-sword',
         color: '#fff',
+        backgroundColor: '#123456',
         entities: [{ kind: 'note', id: 'n1' }],
         locationId: 'l1',
       }),
     ).toMatchObject({
       icon: 'ra-sword',
       color: '#fff',
+      backgroundColor: '#123456',
       entities: [{ kind: 'note', id: 'n1' }],
       locationId: 'l1',
     });

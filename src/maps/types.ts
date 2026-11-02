@@ -44,6 +44,8 @@ export interface MapMarker {
   /** RPG Awesome class without the `ra` prefix, e.g. `ra-castle`. */
   icon: string;
   color: string;
+  /** Optional badge colour behind the marker; empty means transparent. */
+  backgroundColor?: string;
 }
 
 export type MapAreaShape = 'polygon' | 'circle' | 'square' | 'freehand';

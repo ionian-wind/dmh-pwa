@@ -213,6 +213,7 @@ const map: MapEntity = {
       entities: [],
       icon: 'ra-castle-emblem',
       color: '#cc3333',
+      backgroundColor: '#ffffff',
     },
   ],
   areas: [
@@ -372,16 +373,19 @@ describe('MapView', () => {
     const markerFeature = {
       get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
     };
-    const idleStyle = (wrapper.vm as any).markerStyle(markerFeature)[0];
-    expect(idleStyle.getText().getStroke()).toBeNull();
+    const idleStyles = (wrapper.vm as any).markerStyle(markerFeature);
+    expect(idleStyles[0].getImage().getRadius()).toBe(15);
+    expect(idleStyles[0].getImage().getFill().getColor()).toBe('#ffffff');
+    expect(idleStyles[1].getText().getStroke()).toBeNull();
 
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', 'm1');
     await flushPromises();
     expect(wrapper.find('.map-marker-accessible').classes()).toContain(
       'is-hovered',
     );
-    const hoveredStyle = (wrapper.vm as any).markerStyle(markerFeature)[0];
-    expect(hoveredStyle.getText().getStroke().getColor()).toBe('#ffffff');
+    const hoveredStyles = (wrapper.vm as any).markerStyle(markerFeature);
+    expect(hoveredStyles[0].getImage().getRadius()).toBe(17);
+    expect(hoveredStyles[1].getText().getStroke().getColor()).toBe('#ffffff');
 
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', null);
     wrapper.findComponent(AreasPanelStub).vm.$emit('hover', 'a1');
@@ -488,7 +492,7 @@ describe('MapView', () => {
     const hiddenLabelStyles = vm.markerStyle({
       get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
     });
-    expect(hiddenLabelStyles).toHaveLength(1);
+    expect(hiddenLabelStyles).toHaveLength(2);
 
     vm.hideLabels = false;
     await flushPromises();
@@ -504,6 +508,26 @@ describe('MapView', () => {
     expect(actionsControl.getElement().style.display).toBe('');
     expect(wrapper.find('.map-layer-add').exists()).toBe(true);
     expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it('switches map modes from the icon button group', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    const viewButton = wrapper.find('.map-mode-view');
+    const editButton = wrapper.find('.map-mode-edit');
+    expect(viewButton.attributes('title')).toBe('View mode');
+    expect(editButton.attributes('title')).toBe('Edit mode');
+    expect(viewButton.text()).toBe('');
+    expect(editButton.text()).toBe('');
+    expect(vm.isEditMode).toBe(false);
+
+    await editButton.trigger('click');
+    expect(vm.isEditMode).toBe(true);
+    await viewButton.trigger('click');
+    expect(vm.isEditMode).toBe(false);
 
     wrapper.unmount();
   });

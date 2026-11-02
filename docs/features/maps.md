@@ -112,6 +112,7 @@ interface MapMarker {
   entities: MapEntityRef[];
   icon: string; // RPG Awesome class, e.g. "ra-castle-emblem"
   color: string; // CSS color for the marker icon
+  backgroundColor?: string; // optional badge colour, empty for transparent
 }
 ```
 
@@ -124,6 +125,8 @@ interface MapMarker {
   The stored value is the class without the `ra` prefix (`ra-castle-emblem`); rendering
   uses `class="ra ra-castle-emblem"`.
 - The icon color is stored per marker and rendered inline.
+- Markers can also have an optional background badge colour behind the icon.
+  It is transparent by default and can be cleared from the marker editor.
 
 ### Areas
 
@@ -213,7 +216,8 @@ The map detail page no longer has top tabs. It contains:
 - **Add layer** appears below the tabbed lists only in edit mode.
 - A **Hide labels** toggle hides marker labels and area label overlays while
   keeping marker icons and area fills visible.
-- The **View mode / Edit mode** toggle is fixed at the bottom of the sidebar.
+- The **View mode / Edit mode** control is an icon-only button group fixed at the
+  bottom of the sidebar.
 - In view mode the map action menu, context menu, header edit/delete actions,
   row edit/delete actions, and popup edit action are hidden.
 

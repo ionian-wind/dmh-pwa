@@ -19,6 +19,7 @@ export function createMarkerDraft(
     entities: [],
     icon: DEFAULT_MARKER_ICON,
     color: DEFAULT_MARKER_COLOR,
+    backgroundColor: '',
     ...overrides,
   };
 }

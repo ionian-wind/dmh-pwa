@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { IconX } from '@tabler/icons-vue';
 
 const props = defineProps<{
   modelValue?: string;
   label?: string;
   id?: string;
+  clearable?: boolean;
+  clearLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -20,17 +23,32 @@ const color = computed({
 <template>
   <div class="color-picker">
     <label v-if="label" :for="id">{{ label }}</label>
-    <QBtn
-      :id="id"
-      flat
-      class="color-picker-trigger"
-      :style="{ backgroundColor: color }"
-      :aria-label="label"
-    >
-      <QMenu>
-        <QColor v-model="color" default-view="spectrum" format-model="hex" />
-      </QMenu>
-    </QBtn>
+    <div class="row items-center q-gutter-xs">
+      <QBtn
+        :id="id"
+        flat
+        class="color-picker-trigger"
+        :style="{ backgroundColor: color }"
+        :aria-label="label"
+      >
+        <QMenu>
+          <QColor v-model="color" default-view="spectrum" format-model="hex" />
+        </QMenu>
+      </QBtn>
+      <QBtn
+        v-if="clearable && color"
+        flat
+        dense
+        round
+        size="sm"
+        color="grey-7"
+        :title="clearLabel"
+        :aria-label="clearLabel"
+        @click="color = ''"
+      >
+        <IconX :size="16" />
+      </QBtn>
+    </div>
   </div>
 </template>
 

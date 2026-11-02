@@ -9,7 +9,14 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { IconEye, IconEyeOff, IconPencil, IconTrash } from '@tabler/icons-vue';
+import {
+  IconEdit,
+  IconEye,
+  IconEyeOff,
+  IconLiveView,
+  IconPencil,
+  IconTrash,
+} from '@tabler/icons-vue';
 import type { Item } from 'ol-contextmenu';
 import 'ol-contextmenu/ol-contextmenu.css';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
@@ -554,6 +561,18 @@ function markerStyle(feature: any) {
   const hovered = hoveredMarkerId.value === marker.id;
   const glyph = markerIconGlyph(marker.icon);
   const styles: Style[] = [];
+
+  const background = marker.backgroundColor?.trim();
+  if (background && background !== 'transparent') {
+    styles.push(
+      new Style({
+        image: new Circle({
+          radius: glyph ? (hovered ? 17 : 15) : hovered ? 12 : 10,
+          fill: new Fill({ color: background }),
+        }),
+      }),
+    );
+  }
 
   if (glyph) {
     styles.push(
@@ -1162,10 +1181,30 @@ watch(isEditMode, (editing) => {
               <span class="text-body2">
                 {{ isEditMode ? t('maps.editMode') : t('maps.viewMode') }}
               </span>
-              <QToggle
-                :model-value="isEditMode"
-                @update:model-value="isEditMode = $event"
-              />
+              <QBtnGroup>
+                <QBtn
+                  class="map-mode-view"
+                  color="primary"
+                  :outline="isEditMode"
+                  :title="t('maps.viewMode')"
+                  :aria-label="t('maps.viewMode')"
+                  :aria-pressed="!isEditMode"
+                  @click="isEditMode = false"
+                >
+                  <IconLiveView :size="18" />
+                </QBtn>
+                <QBtn
+                  class="map-mode-edit"
+                  color="primary"
+                  :outline="!isEditMode"
+                  :title="t('maps.editMode')"
+                  :aria-label="t('maps.editMode')"
+                  :aria-pressed="isEditMode"
+                  @click="isEditMode = true"
+                >
+                  <IconEdit :size="18" />
+                </QBtn>
+              </QBtnGroup>
             </div>
           </div>
         </div>
