@@ -194,7 +194,7 @@ The language has three primary data types:
 | :------------- | :-------- | :---------------- | :---------- | :------------------------------------------------------------------------------- |
 | <code>+</code> | Number    | Number            | Number      | Integer addition.                                                                |
 | <code>+</code> | Die       | Die               | Die         | Convolution (sum of independent dice).                                           |
-| <code>+</code> | Sequence  | Number            | Sequence    | The number is appended to the sequence.                                          |
+| <code>+</code> | Sequence  | Number            | Number      | The sequence is summed, then added to the number.                                |
 | <code>@</code> | Number    | Sequence          | Number      | **Element Access**. <code>N@SEQ</code> retrieves the Nth element (1-indexed).    |
 | <code>@</code> | Sequence  | Sequence          | Number      | The elements at the given positions are retrieved and summed.                    |
 | <code>#</code> | Unary     | Sequence          | Number      | **Length Operator**. Returns the number of elements in the sequence.             |
@@ -227,7 +227,7 @@ The language has three primary data types:
 
 ### 2.6. Functions
 
-- **Definition:** <code>function: NAME(parameters) { BODY }</code>
+- **Definition:** <code>function: NAME PARAMETER... { BODY }</code>. The name is made of lowercase words and parameter variables; parameters may have a <code>:n</code>, <code>:d</code> or <code>:s</code> suffix. This matches the official AnyDice syntax (which does not use parentheses).
 - **Return Value:** The <code>result: VALUE</code> statement immediately terminates the function and returns <code>VALUE</code>. If no <code>result:</code> is reached, the function returns the "empty die".
 - **Invocation:** A function is called by placing its name and arguments in square brackets: <code>[function arg1 arg2 ...]</code>
 - **Recursion:** Functions can call themselves. A <code>set "maximum function depth" to X</code> directive controls the recursion limit to prevent infinite loops. The default maximum function depth is 10.
@@ -288,7 +288,7 @@ A sequence is an **ordered collection of numbers**.
 **Internal Representation:**
 
 - **Data Structure:** A dynamic array (vector) of 64-bit integers.
-- **Ordering:** **Always stored according to the <code>position order</code> setting.** By default, this is descending order (largest first).
+- **Ordering:** **Sequences preserve their written order.** <code>sort</code> applies the <code>position order</code> setting, and position order also controls dice-collection and digit access. This follows the official introspection examples (<code>1@{2,4,6} = 2</code>).
 - **Immutability:** Sequences are **immutable** data structures.
 
 **Sequence Definition Syntax:**
@@ -304,7 +304,7 @@ A sequence is an **ordered collection of numbers**.
 **Operations and Complexity:**
 | Operation | Internal Action | Complexity |
 | :--- | :--- | :--- |
-| <code>SEQ + N</code> | Copy array, insert <code>N</code> maintaining sort order. | <code>O(n)</code> |
+| <code>SEQ + N</code> | Mathematical operations sum all sequence values, so this behaves as <code>SUM(SEQ) + N</code>. | <code>O(n)</code> |
 | <code>N @ SEQ</code> | Direct index access <code>SEQ[N-1]</code> (1-indexed). | <code>O(1)</code> |
 | <code>#SEQ</code> | Return length of vector. | <code>O(1)</code> |
 
@@ -360,9 +360,10 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 
 #### 3.4.3. Argument is Sequence, Parameter expects Die (<code>:d</code>)
 
-**Behavior:** The Sequence is interpreted as a **Custom Die Definition**.
+**Behavior:** The Sequence is **summed and treated as a number**, then promoted to a constant die.
 
-- The Sequence <code>[5, 2, 2]</code> becomes a die where Outcome 5 has weight 1 and Outcome 2 has weight 2.
+- The Sequence <code>[5, 2, 2]</code> becomes the constant die with outcome <code>9</code>.
+- This follows the official Functions documentation for a die parameter receiving a sequence.
 
 #### 3.4.4. Argument is Number, Parameter expects Die/Sequence
 
@@ -377,7 +378,7 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 | **Number**    | <code>:d</code>       | Wrap integer in a single-outcome die (weight 1).                                      |
 | **Sequence**  | <code>:n</code>       | Sum the sequence and pass as a number.                                                |
 | **Sequence**  | <code>:s</code>       | Pass sequence directly.                                                               |
-| **Sequence**  | <code>:d</code>       | Convert sequence to die (elements become faces).                                      |
+| **Sequence**  | <code>:d</code>       | Sum the sequence, then wrap it in a single-outcome die.                               |
 | **Die**       | <code>:n</code>       | Iterate over all outcomes; call function per outcome; collect results.                |
 | **Die**       | <code>:s</code>       | Enumerate all possible sorted sequences; call function per sequence; collect results. |
 | **Die**       | <code>:d</code>       | Pass die directly.                                                                    |
@@ -393,8 +394,8 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 | <code>+</code>     | Addition              | <code>Number + Number</code>     | Number          | Integer addition.                                                                                                   |
 |                    |                       | <code>Die + Die</code>           | Die             | **Convolution** (sum of independent dice).                                                                          |
 |                    |                       | <code>Die + Number</code>        | Die             | **Shift**. Adds constant to all outcomes.                                                                           |
-|                    |                       | <code>Sequence + Number</code>   | Sequence        | Appends the number and re-sorts according to position order.                                                        |
-|                    |                       | <code>Sequence + Sequence</code> | Sequence        | **Concatenation** and re-sorts.                                                                                     |
+|                    |                       | <code>Sequence + Number</code>   | Number          | Mathematical operations sum all sequence values first.                                                              |
+|                    |                       | <code>Sequence + Sequence</code> | Number          | Both sequences are summed, then added as numbers.                                                                   |
 | <code>-</code>     | Subtraction           | <code>Number - Number</code>     | Number          | Integer subtraction.                                                                                                |
 |                    |                       | <code>Die - Die</code>           | Die             | Convolution with negative right operand.                                                                            |
 |                    |                       | <code>Die - Number</code>        | Die             | Shift outcomes by <code>-N</code>.                                                                                  |
@@ -447,14 +448,14 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 
 #### 4.2.2. <code>highest NUMBER of DICE</code>
 
-- **Syntax:** <code>[highest NUMBER of DICE]</code>
-- **Implementation:** <code>{1..NUMBER}@DICE</code>
-- **Example:** <code>[highest 3 of 4d6]</code> sums the highest three rolls of 4d6.
+- **Syntax:** <code>[highest NUMBER of DICE]</code> or <code>[highest NUMBER of DICE and DICE ...]</code>
+- **Implementation:** <code>{1..NUMBER}@DICE</code>; mixed pools select from all dice together.
+- **Example:** <code>[highest 3 of 4d6]</code> sums the highest three rolls of 4d6. <code>[highest 3 of 3d6 and 1d8]</code> selects the highest three values across all four dice.
 
 #### 4.2.3. <code>lowest NUMBER of DICE</code>
 
-- **Syntax:** <code>[lowest NUMBER of DICE]</code>
-- **Implementation:** <code>{(#DICE - NUMBER + 1)..#DICE}@DICE</code>
+- **Syntax:** <code>[lowest NUMBER of DICE]</code> or <code>[lowest NUMBER of DICE and DICE ...]</code>
+- **Implementation:** <code>{(#DICE - NUMBER + 1)..#DICE}@DICE</code>; mixed pools select from all dice together.
 - **Example:** <code>[lowest 3 of 4d6]</code> sums the lowest three rolls of 4d6.
 
 #### 4.2.4. <code>middle NUMBER of DICE</code>
@@ -496,7 +497,7 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 #### 4.2.10. <code>count VALUES in SEQUENCE</code>
 
 - **Syntax:** <code>[count VALUES in SEQUENCE]</code>
-- **Behavior:** Counts how often any of the listed <code>VALUES</code> occur in the <code>SEQUENCE</code>.
+- **Behavior:** Counts how often any of the listed <code>VALUES</code> occur in the <code>SEQUENCE</code>. Repeated values in <code>VALUES</code> are counted repeatedly (for example, <code>{4..6, 6}</code> counts 6 twice).
 - **Example:** <code>[count {5,6} in 11d6]</code> is a standard dice pool success counter.
 
 #### 4.2.11. <code>explode DIE</code>

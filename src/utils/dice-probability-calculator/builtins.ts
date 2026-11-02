@@ -9,6 +9,8 @@ export interface BuiltinContext {
 
 export interface Builtin {
   signature: SignaturePart[];
+  /** Additional repeated `and <pool>` arguments, for the multi-pool variants. */
+  variadicTail?: SignaturePart[];
   fn: (args: Value[], context: BuiltinContext) => Value;
 }
 
@@ -26,8 +28,10 @@ export function toSequence(value: Value): Seq {
 
 export function toDie(value: Value): Die {
   if (value instanceof Die) return value;
+  // Official AnyDice documentation: when a die parameter receives a
+  // sequence, the sequence is summed and treated as a constant die.
+  if (value instanceof Seq) return Die.constant(value.sum());
   if (typeof value === 'number') return Die.constant(value);
-  if (value instanceof Seq) return Die.fromFaces(value.elements);
   throw new Error('Expected a die');
 }
 
@@ -43,6 +47,86 @@ function positions(from: number, to: number): number[] {
   const result: number[] = [];
   for (let i = from; i <= to; i++) result.push(i);
   return result;
+}
+
+const MAX_MULTI_POOL_COMBINATIONS = 2_000_000;
+
+/**
+ * Sum the highest or lowest `count` values from one or more dice pools.
+ *
+ * A single homogeneous pool uses the exact order-statistic path. Mixed pools
+ * such as `3d6 and 1d8` are enumerated because their dice have different
+ * distributions.
+ */
+function selectFromPools(
+  pools: Die[],
+  count: number,
+  mode: 'highest' | 'lowest',
+): Die {
+  if (count <= 0 || pools.length === 0) return Die.constant(0);
+
+  if (pools.length === 1 && pools[0].pool) {
+    return pools[0].select(
+      positions(1, count),
+      mode === 'highest' ? 'highest first' : 'lowest first',
+    );
+  }
+
+  const dice: Die[] = [];
+  for (const pool of pools) {
+    if (pool.pool && pool.pool.count > 0) {
+      for (let i = 0; i < pool.pool.count; i++) dice.push(pool.pool.die);
+    } else {
+      dice.push(pool);
+    }
+  }
+
+  if (dice.length === 0) return Die.constant(0);
+
+  if (count >= dice.length) {
+    let sum = Die.constant(0);
+    for (const die of dice) sum = sum.add(die);
+    return sum;
+  }
+
+  const choices = dice.map((die) => die.outcomes());
+  let combinations = 1;
+  for (const faces of choices) combinations *= faces.length;
+  if (combinations > MAX_MULTI_POOL_COMBINATIONS) {
+    throw new Error(
+      `Too many mixed-pool rolls (${combinations} combinations); ` +
+        'reduce the pool size',
+    );
+  }
+
+  const weights = new Map<number, bigint>();
+  const current = new Array<number>(dice.length).fill(0);
+
+  const add = (value: number, weight: bigint) => {
+    weights.set(value, (weights.get(value) ?? 0n) + weight);
+  };
+
+  const sortDirection =
+    mode === 'highest'
+      ? (a: number, b: number) => b - a
+      : (a: number, b: number) => a - b;
+
+  const visit = (index: number, weight: bigint) => {
+    if (index === dice.length) {
+      const sorted = [...current].sort(sortDirection);
+      let total = 0;
+      for (let i = 0; i < count; i++) total += sorted[i] ?? 0;
+      add(total, weight);
+      return;
+    }
+    for (const outcome of choices[index]) {
+      current[index] = outcome.value;
+      visit(index + 1, weight * outcome.weight);
+    }
+  };
+
+  visit(0, 1n);
+  return new Die(weights);
 }
 
 export function explodeDie(die: Die, depth: number): Die {
@@ -116,12 +200,10 @@ export const builtins: Builtin[] = [
       word('of'),
       param('DICE', 'd'),
     ],
-    fn: ([number, dice], context) => {
+    variadicTail: [word('and'), param('DICE', 'd')],
+    fn: ([number, ...dice], context) => {
       const count = toNumber(number);
-      return toDie(dice).select(
-        positions(1, count),
-        context.settings.positionOrder,
-      );
+      return selectFromPools(dice.map(toDie), count, 'highest');
     },
   },
   {
@@ -131,13 +213,10 @@ export const builtins: Builtin[] = [
       word('of'),
       param('DICE', 'd'),
     ],
-    fn: ([number, dice], context) => {
+    variadicTail: [word('and'), param('DICE', 'd')],
+    fn: ([number, ...dice], context) => {
       const count = toNumber(number);
-      const pool = toDie(dice);
-      return pool.select(
-        positions(pool.collectionSize - count + 1, pool.collectionSize),
-        context.settings.positionOrder,
-      );
+      return selectFromPools(dice.map(toDie), count, 'lowest');
     },
   },
   {

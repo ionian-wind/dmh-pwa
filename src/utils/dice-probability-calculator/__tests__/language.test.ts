@@ -51,7 +51,7 @@ describe('dice probability calculator language features', () => {
     });
 
     it('implements reverse and sort', () => {
-      expect(one('output 1@[reverse {1..4}]').outcomes[0].value).toBe(1);
+      expect(one('output 1@[reverse {1..4}]').outcomes[0].value).toBe(4);
       const sorted = one('output 1@[sort {1,4,2}]');
       expect(sorted.outcomes[0].value).toBe(4);
     });
@@ -198,7 +198,7 @@ describe('dice probability calculator language features', () => {
         }
       `);
       expect(result.map((output) => output.outcomes[0].value)).toEqual([
-        3, 2, 1,
+        1, 2, 3,
       ]);
     });
 

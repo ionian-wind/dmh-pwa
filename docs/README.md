@@ -39,22 +39,23 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 
 ### Feature parts
 
-| Document                                                               | Covers                                                                   |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [features/notes.md](features/notes.md)                                 | Note list, editor, detail page, tags, hidden notes                       |
-| [features/modules-and-documents.md](features/modules-and-documents.md) | Modules, document tree, book rendering, TOC, bookmarks                   |
-| [features/module-import-export.md](features/module-import-export.md)   | Module ZIP format, validation, import, export                            |
-| [features/characters.md](features/characters.md)                       | Player characters                                                        |
-| [features/parties.md](features/parties.md)                             | Parties and character membership                                         |
-| [features/monsters.md](features/monsters.md)                           | Monsters and module membership                                           |
-| [features/encounters.md](features/encounters.md)                       | Encounter definitions and monster rosters                                |
-| [features/combat.md](features/combat.md)                               | Combat lifecycle, initiative, turns                                      |
-| [features/timers.md](features/timers.md)                               | Countdown timers and global timer loop                                   |
-| [features/jukebox.md](features/jukebox.md)                             | Track import, metadata, playlists, playback                              |
-| [features/maps.md](features/maps.md)                                   | Map images, locations, entity bindings, markers and icons                |
-| [features/calculator.md](features/calculator.md)                       | Arithmetic and unit converter dialog                                     |
-| [features/dice-roller.md](features/dice-roller.md)                     | Plugin-based dice parser/evaluator (work in progress, not yet connected) |
-| [features/markdown-and-mentions.md](features/markdown-and-mentions.md) | Markdown pipeline, entity links, mention index                           |
+| Document                                                                           | Covers                                                                   |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [features/notes.md](features/notes.md)                                             | Note list, editor, detail page, tags, hidden notes                       |
+| [features/modules-and-documents.md](features/modules-and-documents.md)             | Modules, document tree, book rendering, TOC, bookmarks                   |
+| [features/module-import-export.md](features/module-import-export.md)               | Module ZIP format, validation, import, export                            |
+| [features/characters.md](features/characters.md)                                   | Player characters                                                        |
+| [features/parties.md](features/parties.md)                                         | Parties and character membership                                         |
+| [features/monsters.md](features/monsters.md)                                       | Monsters and module membership                                           |
+| [features/encounters.md](features/encounters.md)                                   | Encounter definitions and monster rosters                                |
+| [features/combat.md](features/combat.md)                                           | Combat lifecycle, initiative, turns                                      |
+| [features/timers.md](features/timers.md)                                           | Countdown timers and global timer loop                                   |
+| [features/jukebox.md](features/jukebox.md)                                         | Track import, metadata, playlists, playback                              |
+| [features/maps.md](features/maps.md)                                               | Map images, locations, entity bindings, markers and icons                |
+| [features/calculator.md](features/calculator.md)                                   | Arithmetic and unit converter dialog                                     |
+| [features/dice-roller.md](features/dice-roller.md)                                 | Plugin-based dice parser/evaluator (work in progress, not yet connected) |
+| [features/dice-probability-calculator.md](features/dice-probability-calculator.md) | AnyDice-compatible probability library, docs validation matrix           |
+| [features/markdown-and-mentions.md](features/markdown-and-mentions.md)             | Markdown pipeline, entity links, mention index                           |
 
 ### Components and utilities
 
@@ -110,6 +111,7 @@ src/
   utils/markdownParser.ts          markdown-it renderer + entity link parsing
   utils/files/                     File System Access / Blob + audio worker
   utils/dice-roller/               dice engine (work in progress)
+  utils/dice-probability-calculator/ AnyDice-compatible probability library
   components/                      shared UI + Tree + PWA + dialogs
   <domain>/                        one folder per feature domain
   i18n/locales/{en,ru}.json        translations
@@ -124,7 +126,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **577 / 577 passing tests across 78 files** (after replacing obsolete suites
+   **681 / 681 passing tests across 83 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

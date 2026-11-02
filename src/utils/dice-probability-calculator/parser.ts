@@ -331,20 +331,12 @@ export class DiceParser extends CstParser {
   private sequenceElement = this.RULE('sequenceElement', () => {
     this.SUBRULE(this.expression, { LABEL: 'value' });
     this.OPTION(() => {
-      this.OR([
-        {
-          ALT: () => {
-            this.CONSUME(DoubleDot);
-            this.SUBRULE2(this.expression, { LABEL: 'rangeEnd' });
-          },
-        },
-        {
-          ALT: () => {
-            this.CONSUME(Colon);
-            this.SUBRULE3(this.expression, { LABEL: 'repeat' });
-          },
-        },
-      ]);
+      this.CONSUME(DoubleDot);
+      this.SUBRULE2(this.expression, { LABEL: 'rangeEnd' });
+    });
+    this.OPTION2(() => {
+      this.CONSUME(Colon);
+      this.SUBRULE3(this.expression, { LABEL: 'repeat' });
     });
   });
 

@@ -44,8 +44,17 @@ export class Seq {
   }
 
   count(values: Iterable<number>): number {
-    const wanted = new Set(values);
-    return this.elements.filter((value) => wanted.has(value)).length;
+    // Repeated values in `values` count repeatedly. This matches AnyDice's
+    // `[count {4..6, 6} in d6]` example, where 6 is counted twice.
+    return [...values].reduce(
+      (total, wanted) =>
+        total +
+        this.elements.reduce(
+          (matches, value) => matches + (value === wanted ? 1 : 0),
+          0,
+        ),
+      0,
+    );
   }
 
   reverse(): Seq {

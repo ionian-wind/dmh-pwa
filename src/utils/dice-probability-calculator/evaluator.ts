@@ -87,6 +87,7 @@ interface WeightedResult {
 
 interface InvocationCandidate {
   signature: SignaturePart[];
+  args: Value[];
   score: number;
   invoke: (args: Value[]) => Value;
 }
@@ -139,6 +140,9 @@ export class Evaluator {
         return NORMAL;
 
       case 'output': {
+        if (this.callDepth > 0) {
+          throw new Error('output cannot be used inside a function');
+        }
         const value = this.evalExpression(statement.value, environment);
         this.outputs.push({
           value,
@@ -150,6 +154,9 @@ export class Evaluator {
       }
 
       case 'set':
+        if (this.callDepth > 0) {
+          throw new Error('set cannot be used inside a function');
+        }
         this.applySetting(
           statement.name,
           typeof statement.value === 'string'
@@ -369,6 +376,7 @@ export class Evaluator {
     for (const element of elements) {
       const value = this.evalExpression(element.value, environment);
 
+      let rangeValues: number[] | null = null;
       if (element.rangeEnd) {
         const start = toNumber(value);
         const end = toNumber(
@@ -377,12 +385,12 @@ export class Evaluator {
         if (!Number.isInteger(start) || !Number.isInteger(end)) {
           throw new Error('A sequence range must use integers');
         }
+        rangeValues = [];
         const step = start <= end ? 1 : -1;
         for (let current = start; ; current += step) {
-          values.push(current);
+          rangeValues.push(current);
           if (current === end) break;
         }
-        continue;
       }
 
       if (element.repeat) {
@@ -394,14 +402,23 @@ export class Evaluator {
             'A sequence repetition count must be a non-negative integer',
           );
         }
-        for (let i = 0; i < count; i++) appendValue(value);
+        for (let i = 0; i < count; i++) {
+          if (rangeValues) values.push(...rangeValues);
+          else appendValue(value);
+        }
         continue;
       }
 
-      appendValue(value);
+      if (rangeValues) {
+        values.push(...rangeValues);
+      } else {
+        appendValue(value);
+      }
     }
 
-    return Seq.ordered(values, this.settings.positionOrder);
+    // Sequence literals preserve their written order. `sort` is the explicit
+    // operation that applies the position order setting.
+    return new Seq(values);
   }
 
   private evalCall(items: CallItem[], environment: Environment): Value {
@@ -420,17 +437,25 @@ export class Evaluator {
       if (!args) continue;
       candidates.push({
         signature: definition.signature,
+        args,
         score: signatureScore(definition.signature, args),
         invoke: (values) =>
           this.invokeUserFunction(definition, values, environment),
       });
     }
     for (const builtin of builtins) {
-      const args = matchSignature(builtin.signature, resolved);
-      if (!args) continue;
+      const match = builtin.variadicTail
+        ? matchVariadicSignature(
+            builtin.signature,
+            builtin.variadicTail,
+            resolved,
+          )
+        : fixedMatch(builtin.signature, resolved);
+      if (!match) continue;
       candidates.push({
-        signature: builtin.signature,
-        score: signatureScore(builtin.signature, args),
+        signature: match.signature,
+        args: match.args,
+        score: signatureScore(match.signature, match.args),
         invoke: (values) => builtin.fn(values, { settings: this.settings }),
       });
     }
@@ -441,9 +466,7 @@ export class Evaluator {
 
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
-    const args = matchSignature(best.signature, resolved);
-    if (!args) throw new Error('Function arguments changed unexpectedly');
-    return this.invokeWithSignature(best.signature, args, best.invoke);
+    return this.invokeWithSignature(best.signature, best.args, best.invoke);
   }
 
   private invokeUserFunction(
@@ -860,6 +883,56 @@ function valueToDie(value: Value): Die {
   if (value instanceof Seq) return Die.fromFaces(value.elements);
   if (typeof value === 'number') return Die.constant(value);
   throw new Error('A string cannot be output');
+}
+
+function fixedMatch(
+  signature: SignaturePart[],
+  items: ResolvedItem[],
+): { signature: SignaturePart[]; args: Value[] } | null {
+  const args = matchSignature(signature, items);
+  return args ? { signature, args } : null;
+}
+
+function matchVariadicSignature(
+  base: SignaturePart[],
+  tail: SignaturePart[],
+  items: ResolvedItem[],
+): { signature: SignaturePart[]; args: Value[] } | null {
+  if (items.length < base.length) return null;
+  const args: Value[] = [];
+  const signature: SignaturePart[] = [];
+  let index = 0;
+
+  for (const part of base) {
+    const item = items[index++];
+    if (part.kind === 'word') {
+      if (item.kind !== 'word' || item.value.toLowerCase() !== part.value) {
+        return null;
+      }
+    } else {
+      if (item.kind !== 'expression') return null;
+      args.push(item.value);
+    }
+    signature.push(part);
+  }
+
+  while (index < items.length) {
+    for (const part of tail) {
+      const item = items[index++];
+      if (!item) return null;
+      if (part.kind === 'word') {
+        if (item.kind !== 'word' || item.value.toLowerCase() !== part.value) {
+          return null;
+        }
+      } else {
+        if (item.kind !== 'expression') return null;
+        args.push(item.value);
+      }
+      signature.push(part);
+    }
+  }
+
+  return { signature, args };
 }
 
 function matchSignature(

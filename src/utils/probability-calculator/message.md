@@ -31,11 +31,14 @@ npm run test:probability-calculator
 2. Optimize multiple position selectors (`{1,2}@20d6`). Single selectors use an
    exact order-statistic formula; multiple selectors still enumerate sorted
    rolls and have a safety limit.
-3. Add the remaining AnyDice function-library entries and edge cases as they
-   are needed by the UI.
+3. Expose evaluator warnings (currently only function-depth truncation returns
+   the empty die silently).
 4. Add output view helpers (at-least/at-most/normal/export) outside the core
    evaluator if the UI needs them.
-5. Validate against the external `../python_dice` engine with a reference
+5. Cross-check against the external `../python_dice` engine with a reference
    script corpus.
 6. Wire the library into a probability calculator view. Keep UI work separate
    from this package.
+
+The official-docs validation matrix is maintained in
+`docs/features/dice-probability-calculator.md`.
