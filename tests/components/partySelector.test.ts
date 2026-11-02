@@ -1,20 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
-import { nextTick } from 'vue';
 
 import PartySelector from '@/encounters/PartySelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import { useCombatStore } from '@/stores/combats';
-import { quasarStubs } from '../helpers/quasar-stubs';
-import {
-  resetMockStores,
-  seedMockStore,
-} from '../helpers/mock-storage';
+import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-const QSelect = quasarStubs.QSelect;
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: {
+    kind: String,
+    label: String,
+    modelValue: Array,
+    options: Array,
+  },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
+  },
+});
+
+function linkBlock(wrapper: ReturnType<typeof mount>, kind: string) {
+  return wrapper
+    .findAllComponents(EntitiesLinkingStub)
+    .find((entry) => entry.props('kind') === kind)!;
+}
 
 const encounter = {
   id: 'e1',
@@ -25,6 +38,7 @@ const encounter = {
 async function mountSelector(overrides: Record<string, any> = {}) {
   const wrapper = mount(PartySelector, {
     props: { isOpen: true, encounter, ...overrides },
+    global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
   });
   await flushPromises();
   return wrapper;
@@ -47,19 +61,25 @@ describe('PartySelector', () => {
     seedMockStore('combats', []);
   });
 
-  it('selects a party, toggles characters and creates a combat', async () => {
+  it('selects a party, links characters and creates a combat', async () => {
     const wrapper = await mountSelector();
-    const select = wrapper.findComponent(QSelect);
-    select.vm.$emit('update:modelValue', 'p1');
+    linkBlock(wrapper, 'party').vm.$emit('update:modelValue', [
+      { kind: 'party', id: 'p1' },
+    ]);
     await nextTick();
+    await flushPromises();
 
     expect(wrapper.text()).toContain('Heroes');
     expect(wrapper.text()).toContain('Ambush');
+    expect(linkBlock(wrapper, 'character').props('options')).toHaveLength(2);
 
-    const toggles = wrapper.findAllComponents(ToggleSwitch);
-    expect(toggles).toHaveLength(2);
-    await toggles[1].vm.$emit('update:modelValue', false);
+    linkBlock(wrapper, 'character').vm.$emit('update:modelValue', [
+      { kind: 'character', id: 'c1' },
+    ]);
     await nextTick();
+    expect(linkBlock(wrapper, 'character').props('modelValue')).toEqual([
+      { kind: 'character', id: 'c1' },
+    ]);
 
     const combatStore = useCombatStore();
     const create = vi.spyOn(combatStore, 'create');
@@ -83,14 +103,14 @@ describe('PartySelector', () => {
     wrapper.unmount();
   });
 
-  it('shows a hint when all characters are deselected and cancels', async () => {
+  it('shows a hint when all characters are unlinked and cancels', async () => {
     const wrapper = await mountSelector();
-    wrapper.findComponent(QSelect).vm.$emit('update:modelValue', 'p1');
+    linkBlock(wrapper, 'party').vm.$emit('update:modelValue', [
+      { kind: 'party', id: 'p1' },
+    ]);
     await nextTick();
 
-    const toggles = wrapper.findAllComponents(ToggleSwitch);
-    await toggles[0].vm.$emit('update:modelValue', false);
-    await toggles[1].vm.$emit('update:modelValue', false);
+    linkBlock(wrapper, 'character').vm.$emit('update:modelValue', []);
     await nextTick();
     expect(wrapper.text()).toContain('Select at least one character');
 
@@ -114,7 +134,9 @@ describe('PartySelector', () => {
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     expect(wrapper.emitted('combat-created')).toBeUndefined();
 
-    wrapper.findComponent(QSelect).vm.$emit('update:modelValue', 'missing');
+    linkBlock(wrapper, 'party').vm.$emit('update:modelValue', [
+      { kind: 'party', id: 'missing' },
+    ]);
     await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();

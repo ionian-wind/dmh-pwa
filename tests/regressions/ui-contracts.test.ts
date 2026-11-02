@@ -24,7 +24,6 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
-import ModuleSelector from '@/components/ModuleSelector.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
@@ -263,18 +262,6 @@ describe('regression: UI contracts', () => {
     await nextTick();
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([7]);
-  });
-
-  it('hides the "No Module" option when allowNone is false', () => {
-    const wrapper = mount(ModuleSelector, {
-      props: { modelValue: null, allowNone: false },
-      global: { plugins: [i18n], stubs: quasarStubs },
-    });
-
-    const options = wrapper
-      .findComponent(QSelectStub)
-      .props('options') as any[];
-    expect(options.some((o) => o.value === 'none')).toBe(false);
   });
 
   it('renders a legacy party without moduleIds', () => {

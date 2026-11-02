@@ -11,7 +11,6 @@ import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-const QSelect = quasarStubs.QSelect;
 
 const area: MapArea = {
   id: 'a1',
@@ -49,18 +48,25 @@ const area2: MapArea = {
   entities: [],
 };
 
-const EntityLinksStub = defineComponent({
-  name: 'EntityLinksEditor',
-  props: { modelValue: Array },
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: { kind: String, modelValue: Array },
   emits: ['update:modelValue'],
   setup(props) {
     return () =>
       h('div', {
-        class: 'entity-links-stub',
+        class: 'entities-linking-stub',
+        'data-kind': props.kind,
         'data-count': props.modelValue?.length ?? 0,
       });
   },
 });
+
+function linkingBlock(wrapper: ReturnType<typeof mount>, kind: string) {
+  return wrapper
+    .findAllComponents(EntitiesLinkingStub)
+    .find((entry) => entry.props('kind') === kind)!;
+}
 
 const IconPickerStub = defineComponent({
   name: 'IconPicker',
@@ -81,7 +87,7 @@ describe('MapAreaEditor', () => {
       props: { isOpen: true, area, locations: [location], layers },
       global: {
         stubs: {
-          EntityLinksEditor: EntityLinksStub,
+          EntitiesLinking: EntitiesLinkingStub,
           IconPicker: IconPickerStub,
         },
       },
@@ -90,11 +96,12 @@ describe('MapAreaEditor', () => {
     await wrapper.find('#area-title').setValue('New forest');
     await wrapper.find('#area-description').setValue('Deep woods');
 
-    const locationSelect = wrapper.findAllComponents(QSelect)[1];
-    locationSelect.vm.$emit('update:modelValue', 'l1');
-    wrapper
-      .findComponent(EntityLinksStub)
-      .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
+    linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
+      { kind: 'location', id: 'l1' },
+    ]);
+    linkingBlock(wrapper, 'map').vm.$emit('update:modelValue', [
+      { kind: 'map', id: 'map2' },
+    ]);
     wrapper
       .findComponent(IconPickerStub)
       .vm.$emit('update:modelValue', 'ra:ra-tree');
@@ -122,7 +129,7 @@ describe('MapAreaEditor', () => {
       props: { isOpen: true, area, locations: [location], layers },
       global: {
         stubs: {
-          EntityLinksEditor: EntityLinksStub,
+          EntitiesLinking: EntitiesLinkingStub,
           IconPicker: IconPickerStub,
         },
       },

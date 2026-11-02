@@ -2,10 +2,11 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
-import EntityLinksEditor from './EntityLinksEditor.vue';
-import type { MapEntityRef, MapLocation } from '../types';
+import EntitiesLinking from './EntitiesLinking.vue';
+import type { MapEntityKind, MapEntityRef, MapLocation } from '../types';
 import { generateId } from '@/utils/storage';
 import { deepUnwrap } from '@/utils/deepUnwrap';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 
 const props = defineProps<{
   location: MapLocation | null;
@@ -46,7 +47,17 @@ watch(
   { immediate: true, deep: true },
 );
 
-function setLocationLinks(links: MapEntityRef[]) {
+const editorTabs = useEntityEditorTabs();
+const linkKinds: MapEntityKind[] = [
+  'note',
+  'module',
+  'party',
+  'monster',
+  'encounter',
+  'character',
+];
+
+function setLinks(links: MapEntityRef[]) {
   draft.value.entities = links;
 }
 
@@ -74,42 +85,49 @@ function remove() {
     :showDelete="!isNew"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="map-location-editor-modal"
     @submit="submit"
     @delete="remove"
     @cancel="emit('cancel')"
   >
-    <div class="form-section">
-      <QInput
-        id="location-name"
-        v-model="draft.name"
-        :label="t('maps.locationName')"
-        type="text"
-        outlined
-        required
-      />
-    </div>
-
-    <div class="form-section">
-      <div class="form-group">
+    <template #main>
+      <div class="form-section">
         <QInput
-          id="location-description"
-          v-model="draft.description"
-          :label="t('maps.locationDescription')"
-          type="textarea"
-          :rows="3"
-          autogrow
+          id="location-name"
+          v-model="draft.name"
+          :label="t('maps.locationName')"
+          type="text"
           outlined
+          required
         />
       </div>
-    </div>
 
-    <div class="form-section">
-      <label>{{ t('maps.linkedEntities') }}</label>
-      <EntityLinksEditor
-        :model-value="draft.entities"
-        @update:model-value="setLocationLinks"
-      />
-    </div>
+      <div class="form-section">
+        <div class="form-group">
+          <QInput
+            id="location-description"
+            v-model="draft.description"
+            :label="t('maps.locationDescription')"
+            type="textarea"
+            :rows="3"
+            autogrow
+            outlined
+          />
+        </div>
+      </div>
+    </template>
+
+    <template #links>
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-for="kind in linkKinds"
+          :key="kind"
+          :kind="kind"
+          :model-value="draft.entities"
+          @update:model-value="setLinks"
+        />
+      </div>
+    </template>
   </BaseModal>
 </template>

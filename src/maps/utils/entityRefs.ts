@@ -5,6 +5,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMapStore } from '../maps';
+import { useMapLocationStore } from '../locations';
 import type { MapEntityKind, MapEntityRef } from '../types';
 
 export type EntityTitleField = 'title' | 'name';
@@ -63,6 +64,12 @@ export const MAP_ENTITY_KIND_OPTIONS: MapEntityKindOption[] = [
     labelKey: 'maps.title',
     titleField: 'title',
     useStore: useMapStore,
+  },
+  {
+    kind: 'location',
+    labelKey: 'maps.locations',
+    titleField: 'name',
+    useStore: useMapLocationStore,
   },
 ];
 

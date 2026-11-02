@@ -13,19 +13,19 @@ continuous, virtualized document with a table of contents and bookmark controls.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/modules.ts` | Module store (`noteTree` is just part of the record) |
-| `src/modules/ModulesView.vue` | Module list |
-| `src/modules/ModuleCard.vue` | Module card |
-| `src/modules/ModuleEditor.vue` | Create/edit modal |
-| `src/modules/ModuleView.vue` | Detail page with tabs, TOC, bookmarks, export |
-| `src/modules/ModuleDocumentTree.vue` | Editable tree tab |
-| `src/modules/ModuleDocumentView.vue` | Virtualized book renderer |
-| `src/components/Tree/*` | Recursive drag-and-drop tree |
-| `src/stores/bookmarks.ts` | Bookmark CRUD |
-| `src/components/common/Bookmark.vue` | Bookmark toggle rendered over each chunk |
-| `src/components/common/TableOfContents.vue` | TOC list and scroll spy |
+| File                                        | Role                                                 |
+| ------------------------------------------- | ---------------------------------------------------- |
+| `src/stores/modules.ts`                     | Module store (`noteTree` is just part of the record) |
+| `src/modules/ModulesView.vue`               | Module list                                          |
+| `src/modules/ModuleCard.vue`                | Module card                                          |
+| `src/modules/ModuleEditor.vue`              | Create/edit modal                                    |
+| `src/modules/ModuleView.vue`                | Detail page with tabs, TOC, bookmarks, export        |
+| `src/modules/ModuleDocumentTree.vue`        | Editable tree tab                                    |
+| `src/modules/ModuleDocumentView.vue`        | Virtualized book renderer                            |
+| `src/components/Tree/*`                     | Recursive drag-and-drop tree                         |
+| `src/stores/bookmarks.ts`                   | Bookmark CRUD                                        |
+| `src/components/common/Bookmark.vue`        | Bookmark toggle rendered over each chunk             |
+| `src/components/common/TableOfContents.vue` | TOC list and scroll spy                              |
 
 ## Module list (`ModulesView.vue`)
 
@@ -42,6 +42,7 @@ Loads modules, parties, monsters, encounters, notes, playlists, tracks, the
 mention index, and bookmarks.
 
 Computed collections:
+
 - `moduleParties` — parties whose `moduleIds` include this module.
 - `moduleMonsters` — monsters whose `moduleIds` include this module.
 - `moduleEncounters` — encounters whose `moduleId` equals this module.
@@ -60,6 +61,7 @@ Export (`handleExportModule`) builds a ZIP in memory containing:
 non-alphanumerics replaced by `_`, suffixed `_module.zip`.
 
 Other behavior:
+
 - `handleHashChange` scrolls to a hash anchor but only while the Book tab is
   active.
 - `handleSaveNoteTree` persists a new `noteTree` via `moduleStore.update`.
@@ -80,12 +82,13 @@ The bookmark list iterates `moduleBookmarks` with a keyed `v-for`.
 
 - Computes `notes` = notes in this module with `hidden === true`.
 - Converts `ModuleTreeNode[]` to `ExtendedTreeNode[]` with `{id, noteId, title,
-  children}` for the generic Tree component.
+children}` for the generic Tree component.
 - Watches `noteTree` and notes deeply; rebuilds local state when they change.
 - Watches local tree deeply and emits `update:noteTree` when JSON differs from
   the prop, so drag/reorder/nesting changes persist.
 - Add root / add child opens `NoteEditor` with `hidden: true` and the current
-  module pre-set (`hideModuleSelector` is passed but unused).
+  module pre-set; `hideModuleSelector` removes the module/link tabs for that
+  fixed-module flow.
 - On create, persists the note, then pushes a node at root or under the chosen
   parent. The local-tree watcher emits the new tree.
 - On edit, persists the note and updates the node title.

@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, nextTick } from 'vue';
 import type { Note } from '@/types';
-import ModuleSelector from '../components/ModuleSelector.vue';
 import TagSelector from '../components/common/TagSelector.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import { useModuleStore } from '@/stores/modules';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
+import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import type { MapEntityRef } from '@/maps/types';
 
-const moduleStore = useModuleStore();
 const { t } = useI18n();
 
 const props = defineProps<{
@@ -77,6 +77,19 @@ watch(
   { immediate: true },
 );
 
+const editorTabs = useEntityEditorTabs();
+const tabs = computed(() => (props.hideModuleSelector ? [] : editorTabs.value));
+
+const linkedModule = computed<MapEntityRef[]>(() =>
+  editedNote.value.moduleId
+    ? [{ kind: 'module', id: editedNote.value.moduleId }]
+    : [],
+);
+
+function setLinkedModule(links: MapEntityRef[]) {
+  editedNote.value.moduleId = links[0]?.id ?? null;
+}
+
 const markdownEditorRef = ref<any>(null);
 
 const handleSubmit = async () => {
@@ -110,69 +123,76 @@ function handleDelete() {
     :showExpand="true"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="tabs"
     modalId="note-editor"
     @submit="handleSubmit"
     @delete="handleDelete"
     @cancel="handleCancel"
   >
-    <div class="q-pa-md q-gutter-md">
-      <div class="q-mb-md">
-        <QInput
-          v-model="editedNote.title"
-          :label="t('editor.title')"
-          required
-          outlined
-          type="text"
-        />
-      </div>
-      <div class="q-mb-md">
-        <ModuleSelector
-          v-model="editedNote.moduleId"
-          :placeholder="'editor.module'"
-        />
-      </div>
-      <div class="q-mb-md">
-        <NoteTypeSelector
-          :allow-create="true"
-          v-model="editedNote.typeId"
-          :module-id="editedNote.moduleId"
-        />
-      </div>
-      <div class="q-mb-md">
-        <TagSelector
-          v-model="editedNote.tags"
-          :entity-type="'note'"
-          :current-entity-id="editedNote.id"
-        />
-      </div>
-      <div class="q-mb-md">
-        <div class="row justify-between">
-          <!-- Toggle button for edit mode -->
-          <div class="col">
-            <h5>{{ t('editor.content') }}</h5>
-          </div>
-          <div class="editor-toggle text-right col">
-            <QToggle left-label v-model="isWYSIWYGMode">
-              {{ t('markdownEditor.visualMode') }}
-            </QToggle>
-          </div>
+    <template #main>
+      <div class="q-pa-md q-gutter-md">
+        <div class="q-mb-md">
+          <QInput
+            v-model="editedNote.title"
+            :label="t('editor.title')"
+            required
+            outlined
+            type="text"
+          />
         </div>
+        <div class="q-mb-md">
+          <NoteTypeSelector
+            :allow-create="true"
+            v-model="editedNote.typeId"
+            :module-id="editedNote.moduleId"
+          />
+        </div>
+        <div class="q-mb-md">
+          <TagSelector
+            v-model="editedNote.tags"
+            :entity-type="'note'"
+            :current-entity-id="editedNote.id"
+          />
+        </div>
+        <div class="q-mb-md">
+          <div class="row justify-between">
+            <!-- Toggle button for edit mode -->
+            <div class="col">
+              <h5>{{ t('editor.content') }}</h5>
+            </div>
+            <div class="editor-toggle text-right col">
+              <QToggle left-label v-model="isWYSIWYGMode">
+                {{ t('markdownEditor.visualMode') }}
+              </QToggle>
+            </div>
+          </div>
 
-        <div class="row q-col-gutter-md">
-          <div class="col-12">
-            <MarkdownEditor
-              ref="markdownEditorRef"
-              v-model="noteContent"
-              enableMentions
-              :isWYSIWYGMode="isWYSIWYGMode"
-              :placeholder="t('editor.contentPlaceholder')"
-              :current-entity-id="editedNote.id"
-              current-entity-type="note"
-            />
+          <div class="row q-col-gutter-md">
+            <div class="col-12">
+              <MarkdownEditor
+                ref="markdownEditorRef"
+                v-model="noteContent"
+                enableMentions
+                :isWYSIWYGMode="isWYSIWYGMode"
+                :placeholder="t('editor.contentPlaceholder')"
+                :current-entity-id="editedNote.id"
+                current-entity-type="note"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <template #links>
+      <EntitiesLinking
+        kind="module"
+        :multiple="false"
+        :model-value="linkedModule"
+        @update:model-value="setLinkedModule"
+      />
+    </template>
+
     <div
       v-if="validationError"
       class="q-mt-md q-mb-md text-negative bg-grey-1 q-pa-sm rounded-borders"

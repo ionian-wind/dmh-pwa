@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 import { Encounter } from '@/types';
-import ModuleSelector from '../components/ModuleSelector.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
+import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import type { MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -12,10 +14,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (
-    e: 'submit',
-    encounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>,
-  ): void;
+  (e: 'submit', encounter: Encounter): void;
   (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
@@ -31,6 +30,17 @@ const editedEncounter = ref<EncounterFormData>({
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
+const editorTabs = useEntityEditorTabs();
+
+const linkedModule = computed<MapEntityRef[]>(() =>
+  editedEncounter.value.moduleId
+    ? [{ kind: 'module', id: editedEncounter.value.moduleId }]
+    : [],
+);
+
+function setLinkedModule(links: MapEntityRef[]) {
+  editedEncounter.value.moduleId = links[0]?.id ?? '';
+}
 
 const { t } = useI18n();
 
@@ -74,7 +84,12 @@ const handleSubmit = async () => {
     return;
   }
 
-  emit('submit', editedEncounter.value);
+  emit('submit', {
+    ...editedEncounter.value,
+    id: props.encounter?.id ?? '',
+    createdAt: props.encounter?.createdAt ?? Date.now(),
+    updatedAt: Date.now(),
+  });
   closeEditor();
 };
 
@@ -108,38 +123,44 @@ function handleDelete() {
     :showDelete="isEditing"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="encounter-editor-modal"
     @submit="handleSubmit"
     @delete="handleDelete"
     @cancel="closeEditor"
   >
-    <div class="form-section">
-      <div class="form-grid">
+    <template #main>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="form-group">
+            <QInput
+              id="encounter-name"
+              :label="t('encounters.fields.name')"
+              v-model="editedEncounter.name"
+              type="text"
+              required
+              outlined
+            />
+          </div>
+          <div class="form-group">
+            <QInput
+              :label="t('encounters.fields.description')"
+              id="encounter-description"
+              v-model="editedEncounter.description"
+              type="textarea"
+              :rows="5"
+              autogrow
+              outlined
+            />
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
         <div class="form-group">
           <QInput
-            id="encounter-name"
-            :label="t('encounters.fields.name')"
-            v-model="editedEncounter.name"
-            type="text"
-            required
-            outlined
-          />
-        </div>
-        <div class="form-group">
-          <ModuleSelector
-            id="encounter-module"
-            v-model="editedEncounter.moduleId"
-            :placeholder="'encounters.fields.module'"
-            :allowAnyModule="false"
-            :allowNone="false"
-            required
-          />
-        </div>
-        <div class="form-group">
-          <QInput
-            :label="t('encounters.fields.description')"
+            :label="t('editor.notes')"
             id="encounter-description"
-            v-model="editedEncounter.description"
+            v-model="editedEncounter.notes"
             type="textarea"
             :rows="5"
             autogrow
@@ -147,19 +168,15 @@ function handleDelete() {
           />
         </div>
       </div>
-    </div>
-    <div class="form-section">
-      <div class="form-group">
-        <QInput
-          :label="t('editor.notes')"
-          id="encounter-description"
-          v-model="editedEncounter.notes"
-          type="textarea"
-          :rows="5"
-          autogrow
-          outlined
-        />
-      </div>
-    </div>
+    </template>
+
+    <template #links>
+      <EntitiesLinking
+        kind="module"
+        :multiple="false"
+        :model-value="linkedModule"
+        @update:model-value="setLinkedModule"
+      />
+    </template>
   </BaseModal>
 </template>

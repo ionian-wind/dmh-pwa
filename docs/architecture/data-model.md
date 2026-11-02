@@ -318,7 +318,8 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
     'monster' |
     'encounter' |
     'character' |
-    'map';
+    'map' |
+    'location';
   id: string;
 }
 ```

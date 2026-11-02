@@ -6,7 +6,7 @@ import BaseCard from '@/components/common/BaseCard.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
-import LocationEntityLinksTab from '../components/LocationEntityLinksTab.vue';
+import EntitiesLinking from '../components/EntitiesLinking.vue';
 import MapLocationEditor from '../components/MapLocationEditor.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';
 import { useMapStore } from '../maps';
@@ -29,7 +29,9 @@ const loading = computed(() => !locationStore.isLoaded);
 const notFound = computed(() => locationStore.isLoaded && !location.value);
 
 const linkableGroups = computed(() =>
-  groups.value.filter((group) => group.kind !== 'map'),
+  groups.value.filter(
+    (group) => group.kind !== 'map' && group.kind !== 'location',
+  ),
 );
 
 const linkedMap = computed(
@@ -85,29 +87,11 @@ function linksFor(kind: MapEntityKind) {
   );
 }
 
-function optionsFor(kind: MapEntityKind) {
-  return groups.value.find((group) => group.kind === kind)?.items ?? [];
-}
-
 async function updateLinks(entities: MapEntityRef[]) {
   if (!location.value) return;
   await locationStore.update(location.value.id, {
     entities: dedupeEntityRefs(entities),
   });
-}
-
-function addLink(ref: MapEntityRef) {
-  if (!location.value) return;
-  void updateLinks([...location.value.entities, ref]);
-}
-
-function removeLink(ref: MapEntityRef) {
-  if (!location.value) return;
-  void updateLinks(
-    location.value.entities.filter(
-      (entity) => !(entity.kind === ref.kind && entity.id === ref.id),
-    ),
-  );
 }
 
 async function handleDelete() {
@@ -171,12 +155,10 @@ function openMap(mapId: string) {
     </template>
 
     <template v-for="group in linkableGroups" :key="group.kind" #[group.kind]>
-      <LocationEntityLinksTab
+      <EntitiesLinking
         :kind="group.kind"
-        :links="linksFor(group.kind)"
-        :options="optionsFor(group.kind)"
-        @add="addLink"
-        @remove="removeLink"
+        :model-value="location?.entities ?? []"
+        @update:model-value="updateLinks"
       />
     </template>
 

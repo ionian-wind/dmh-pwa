@@ -48,7 +48,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
       const fileId = `file-${mapId}`;
       const now = Date.now();
       const transaction = db.transaction(
-        ['maps', 'map_files', 'map_locations'],
+        ['maps', 'map_files', 'map_locations', 'notes'],
         'readwrite',
       );
       transaction.objectStore('map_files').put({
@@ -73,6 +73,28 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         name: 'Town',
         description: '',
         entities: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+      transaction.objectStore('notes').put({
+        id: 'note-1',
+        title: 'E2E Note',
+        content: '',
+        tags: [],
+        moduleId: null,
+        typeId: null,
+        hidden: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+      transaction.objectStore('notes').put({
+        id: 'note-2',
+        title: 'E2E Other',
+        content: '',
+        tags: [],
+        moduleId: null,
+        typeId: null,
+        hidden: false,
         createdAt: now,
         updatedAt: now,
       });

@@ -25,6 +25,7 @@ Thin wrappers that forward events:
 `EncounterCard`, `TrackCard` (jukebox, custom layout).
 
 Variations:
+
 - `NoteCard` renders Markdown, clamps at 600px, and has tag chips.
 - `ModuleCard`/`PartyCard` show descriptions and metadata.
 - `MonsterCard` hides all actions unless `showActions` is passed (no caller
@@ -47,6 +48,7 @@ Emits: `create`, `edit`, `delete`, `submit`, `cancel`, `update:searchQuery`,
 `dragover`, `dragleave`.
 
 Behavior:
+
 - Clones `items` into `localItems` for optional `vuedraggable` sorting.
 - Emits `sort(localItems)` on drag end.
 - Internally opens the editor when a card emits `edit`; create resets the
@@ -96,6 +98,7 @@ Wraps `BaseEntityView` with `QTabs`/`QTabPanels`.
 ### `ViewHeader.vue`
 
 Renders:
+
 - title or spacer,
 - optional search `QInput`,
 - `buttons[]` (icon, color, title key, disabled, event),
@@ -113,19 +116,12 @@ icon.
 
 ## Selectors and chips
 
-### `ModuleSelector.vue`
+### Entity linking
 
-- Single-select `QSelect` of modules.
-- Always adds a `{ value: 'none', label: 'No Module' }` option, plus `any`
-  when `allowAnyModule`.
-- Selecting "No Module" yields the string `'none'`, not `null`; this leaks into
-  records (notably encounters, which require a real module ID).
-- Loads modules on mount.
-
-### `ModuleMultipleSelector.vue`
-
-- Multi-select with chips, `v-model: string[]`.
-- Normalizes values in callers (PartyEditor/MonsterEditor/PlaylistEditor).
+Main-entity references are edited with `EntitiesLinking` blocks in editor
+dialogs, not with standalone dropdown selectors. Each block owns one entity
+type and provides its own searchable add flow. Internal options such as note
+types and map layers keep their dedicated selectors.
 
 ### `TagSelector.vue`
 
@@ -174,6 +170,7 @@ values. Currently exercised by tests only.
 ### `TabGroup.vue` / `TabPanel.vue`
 
 A non-Quasar tab system:
+
 - `TabGroup` renders buttons from `tabs`, manages `activeTab`, provides it, and
   renders the default slot.
 - `TabPanel` injects `activeTab` and renders its slot only when `tabId`

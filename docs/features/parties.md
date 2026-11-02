@@ -7,14 +7,14 @@ It is the roster used to start a combat.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/parties.ts` | Store + name search |
-| `src/parties/PartiesView.vue` | List page |
-| `src/parties/PartyCard.vue` | Card |
-| `src/parties/PartyEditor.vue` | Create/edit modal |
-| `src/parties/PartyView.vue` | Detail page |
-| `src/parties/PartyViewSidebar.vue` | Mentions sidebar |
+| File                               | Role                |
+| ---------------------------------- | ------------------- |
+| `src/stores/parties.ts`            | Store + name search |
+| `src/parties/PartiesView.vue`      | List page           |
+| `src/parties/PartyCard.vue`        | Card                |
+| `src/parties/PartyEditor.vue`      | Create/edit modal   |
+| `src/parties/PartyView.vue`        | Detail page         |
+| `src/parties/PartyViewSidebar.vue` | Mentions sidebar    |
 
 ## Data
 
@@ -26,8 +26,8 @@ interface Party {
   name: string;
   description?: string;
   notes?: string;
-  characters: string[];   // character IDs
-  moduleIds: string[];    // module IDs
+  characters: string[]; // character IDs
+  moduleIds: string[]; // module IDs
 }
 ```
 
@@ -51,13 +51,12 @@ count uses `(party.characters || []).length`; module lookup assumes
 ## Editor
 
 - Name (required).
-- Multi-select `ModuleMultipleSelector`.
 - Description and notes textareas.
-- `moduleIdsProxy` computed normalizes values to IDs.
-- Submit filters empty IDs.
+- The **Linked entities** tab contains separate `EntitiesLinking` blocks for
+  modules and characters.
+- Submit filters empty module IDs.
 
-Character membership is **not** editable here; it is managed on the detail
-page.
+Character membership can also be managed from the party detail page.
 
 ## Detail page (`PartyView.vue`)
 

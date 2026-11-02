@@ -18,8 +18,33 @@ Props:
 | `showClose` | — | Whether the header exists (combined with title/expand) |
 | `showExpand` / `isExpanded` | — | Maximize toggle |
 | `disableSubmit` | — | Disable submit button |
+| `tabs` | — | Header tab definitions (`{ name, title, icon }`) |
+| `activeTab` | first tab | Controlled active tab |
+| `useModalStack` | `true` | Set `false` for pickers nested inside another modal |
 
-Emits: `submit`, `cancel`, `delete`, `update:isOpen`, `update:isExpanded`.
+Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
+`update:isExpanded`.
+
+When `tabs` is provided, `BaseModal` renders the tabs inside the header toolbar,
+centered between the expand/close controls, and renders the matching named slot
+as the dialog body. The text title is hidden while tabs are shown. A tab
+definition is:
+
+```ts
+{
+  name: string;   // named-slot key
+  title?: string; // tooltip/accessible label
+  label?: string; // fallback visible label
+  icon?: Component;
+}
+```
+
+Tab content uses named slots (`<template #main>`, `<template #links>`, …). The
+default slot is used only when no tabs are supplied.
+
+`useModalStack: false` keeps a dialog outside the global modal stack. Use it for
+a picker dialog that opens from inside another `BaseModal` (for example the
+`EntitiesLinking` search modal), so the parent dialog stays mounted.
 
 ### Editor action buttons (required)
 
@@ -32,6 +57,9 @@ the standard `BaseModal` action area:
 - Handle `@delete` in the editor and emit the entity id to the parent.
 - Do **not** place a delete button inside the dialog body or a custom content
   section. Custom `#actions` content is reserved for non-standard actions.
+
+Entity editors must also follow the layout and tab requirements in
+[editor-dialog-pattern.md](../architecture/editor-dialog-pattern.md).
 
 Behavior:
 

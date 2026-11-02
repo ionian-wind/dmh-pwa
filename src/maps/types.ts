@@ -8,7 +8,8 @@ export type MapEntityKind =
   | 'monster'
   | 'encounter'
   | 'character'
-  | 'map';
+  | 'map'
+  | 'location';
 
 export interface MapEntityRef {
   kind: MapEntityKind;

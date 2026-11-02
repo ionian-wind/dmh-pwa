@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
-import EntityLinksEditor from '@/maps/components/EntityLinksEditor.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
 import { MAP_MARKER_ICONS } from '@/maps/icons';
@@ -22,7 +21,6 @@ vi.mock('@/maps/utils/mapFileUtils', () => ({
 }));
 
 const QInput = quasarStubs.QInput;
-const QSelect = quasarStubs.QSelect;
 
 const location: MapLocation = {
   id: 'l1',
@@ -45,51 +43,6 @@ const marker: MapMarker = {
   icon: 'ra-castle-emblem',
   color: '#cc3333',
 };
-
-describe('map entity links editor', () => {
-  beforeEach(() => {
-    resetMockStores();
-    seedMockStore('notes', [{ id: 'n1', title: 'Session note' }]);
-    seedMockStore('monsters', [{ id: 'mon1', name: 'Goblin' }]);
-    seedMockStore('maps', [{ id: 'map2', title: 'Region map' }]);
-  });
-
-  it('adds and removes deduplicated entity links', async () => {
-    const wrapper = mount(EntityLinksEditor, {
-      props: { modelValue: [] },
-    });
-    await nextTick();
-
-    const selects = wrapper.findAllComponents(QSelect);
-    selects[0].vm.$emit('update:modelValue', 'monster');
-    await nextTick();
-    selects[1].vm.$emit('update:modelValue', 'mon1');
-    await nextTick();
-
-    const addButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().toLowerCase().includes('add'));
-    await addButton!.trigger('click');
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
-      [{ kind: 'monster', id: 'mon1' }],
-    ]);
-
-    await wrapper.setProps({
-      modelValue: [
-        { kind: 'monster', id: 'mon1' },
-        { kind: 'map', id: 'map2' },
-      ],
-    });
-    expect(wrapper.text()).toContain('Goblin');
-    expect(wrapper.text()).toContain('Region map');
-
-    const removeButtons = wrapper.findAll('.entity-link-remove');
-    await removeButtons[0].trigger('click');
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
-      [{ kind: 'map', id: 'map2' }],
-    ]);
-  });
-});
 
 describe('map icon picker', () => {
   it('filters icons and selects one', async () => {
@@ -127,18 +80,25 @@ describe('map icon picker', () => {
   });
 });
 
-const EntityLinksStub = defineComponent({
-  name: 'EntityLinksEditor',
-  props: { modelValue: Array },
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: { kind: String, modelValue: Array },
   emits: ['update:modelValue'],
   setup(props) {
     return () =>
       h('div', {
-        class: 'entity-links-stub',
+        class: 'entities-linking-stub',
+        'data-kind': props.kind,
         'data-count': props.modelValue?.length ?? 0,
       });
   },
 });
+
+function linkingBlock(wrapper: ReturnType<typeof mount>, kind: string) {
+  return wrapper
+    .findAllComponents(EntitiesLinkingStub)
+    .find((entry) => entry.props('kind') === kind)!;
+}
 
 const IconPickerStub = defineComponent({
   name: 'IconPicker',
@@ -156,7 +116,7 @@ describe('map marker editor', () => {
       props: { isOpen: true, marker, locations: [location], layers },
       global: {
         stubs: {
-          EntityLinksEditor: EntityLinksStub,
+          EntitiesLinking: EntitiesLinkingStub,
           IconPicker: IconPickerStub,
         },
       },
@@ -166,13 +126,12 @@ describe('map marker editor', () => {
     await title.setValue('New castle');
     await wrapper.find('#marker-description').setValue('Updated description');
 
-    const locationSelect = wrapper.findComponent(QSelect);
-    locationSelect.vm.$emit('update:modelValue', 'l1');
-    await nextTick();
-
-    wrapper
-      .findComponent(EntityLinksStub)
-      .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
+    linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
+      { kind: 'location', id: 'l1' },
+    ]);
+    linkingBlock(wrapper, 'map').vm.$emit('update:modelValue', [
+      { kind: 'map', id: 'map2' },
+    ]);
     wrapper
       .findComponent(IconPickerStub)
       .vm.$emit('update:modelValue', 'ra:ra-sword');
@@ -203,7 +162,7 @@ describe('map marker editor', () => {
       props: { isOpen: true, marker, locations: [location], layers },
       global: {
         stubs: {
-          EntityLinksEditor: EntityLinksStub,
+          EntitiesLinking: EntitiesLinkingStub,
           IconPicker: IconPickerStub,
         },
       },
@@ -260,14 +219,14 @@ describe('map location editor', () => {
   it('edits location fields and links then saves', async () => {
     const wrapper = mount(MapLocationEditor, {
       props: { isOpen: true, location },
-      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
 
     await wrapper.find('#location-name').setValue('Capital');
     await wrapper.find('#location-description').setValue('Large city');
-    wrapper
-      .findComponent(EntityLinksStub)
-      .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
+    linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n1' },
+    ]);
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
@@ -277,14 +236,14 @@ describe('map location editor', () => {
       id: 'l1',
       name: 'Capital',
       description: 'Large city',
-      entities: [{ kind: 'map', id: 'map2' }],
+      entities: [{ kind: 'note', id: 'n1' }],
     });
   });
 
   it('validates the name, deletes and cancels', async () => {
     const wrapper = mount(MapLocationEditor, {
       props: { isOpen: true, location },
-      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
 
     await wrapper.find('#location-name').setValue('   ');

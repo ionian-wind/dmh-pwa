@@ -235,7 +235,11 @@ A location detail page follows the module detail pattern:
 - If the location is linked to a map, a **Map** tab is shown with that map card.
 - Top tabs for each linkable entity kind: notes, modules, parties, monsters,
   encounters, and characters.
-- Each tab lists linked entities and allows adding/removing links.
+- Each tab uses the reusable `EntitiesLinking` component: the entity-type title
+  and add button sit above a linked list with remove actions. Both the linked
+  list and the searchable modal use virtual-scroll lists. The component's
+  `multiple` prop (default `true`) switches between checkbox multi-select and
+  radio single-select.
 - The right drawer has the same **Markers** and **Areas** tabs as the map view.
   It lists markers and areas linked to this location from all maps, grouped by
   map title with separators between groups.
@@ -310,12 +314,14 @@ type MapEntityKind =
   | 'monster'
   | 'encounter'
   | 'character'
-  | 'map';
+  | 'map'
+  | 'location';
 ```
 
-`EntityLinksEditor` loads each entity store, shows selectable entities, and
-deduplicates `kind:id` pairs. `EntityLinkList` resolves display labels for
-read-only lists.
+`EntitiesLinking` loads each entity store, shows one linking block per entity
+type, and deduplicates `kind:id` pairs. `EntityLinkList` resolves display labels
+for read-only lists. Map, marker, area, and location editors use `BaseModal`
+header tabs to separate their own fields from linked entities.
 
 ## Icons
 

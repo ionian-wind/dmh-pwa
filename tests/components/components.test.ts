@@ -7,7 +7,6 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import TagSelector from '@/components/common/TagSelector.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import ModuleSelector from '@/components/ModuleSelector.vue';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
@@ -116,6 +115,100 @@ describe('current shared components', () => {
     expect(deleteButton).toBeTruthy();
     await deleteButton!.trigger('click');
     expect(wrapper.emitted('delete')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('BaseModal renders header tabs with icons and switches tab content', async () => {
+    const TabIcon = defineComponent({
+      name: 'TabIcon',
+      setup() {
+        return () => h('span', { class: 'tab-icon' });
+      },
+    });
+    const QTabsStub = defineComponent({
+      name: 'QTabs',
+      props: { modelValue: String },
+      emits: ['update:modelValue'],
+      setup(_, { slots, emit }) {
+        return () =>
+          h('div', { class: 'tabs-stub' }, [
+            h(
+              'button',
+              {
+                class: 'switch-tab',
+                onClick: () => emit('update:modelValue', 'links'),
+              },
+              'switch',
+            ),
+            slots.default?.(),
+          ]);
+      },
+    });
+    const QTabPanelsStub = defineComponent({
+      name: 'QTabPanels',
+      props: { modelValue: String },
+      setup(props, { slots }) {
+        return () =>
+          h(
+            'div',
+            { class: 'panels-stub', 'data-active': props.modelValue },
+            slots.default?.(),
+          );
+      },
+    });
+    const QTabPanelStub = defineComponent({
+      name: 'QTabPanel',
+      props: { name: String },
+      setup(props, { slots }) {
+        return () =>
+          h(
+            'div',
+            { class: 'panel-stub', 'data-name': props.name },
+            slots.default?.(),
+          );
+      },
+    });
+
+    const wrapper = mount(BaseModal, {
+      props: {
+        isOpen: true,
+        modalId: 'tabs-modal',
+        title: 'Dialog title',
+        tabs: [
+          { name: 'main', title: 'Main editor', icon: TabIcon },
+          { name: 'links', title: 'Links', icon: TabIcon },
+        ],
+      },
+      slots: {
+        main: 'MAIN CONTENT',
+        links: 'LINKS CONTENT',
+      },
+      global: {
+        stubs: {
+          QTabs: QTabsStub,
+          QTabPanels: QTabPanelsStub,
+          QTabPanel: QTabPanelStub,
+        },
+      },
+    });
+    await nextTick();
+
+    expect(wrapper.findAll('[data-stub="QTab"]')).toHaveLength(2);
+    expect(wrapper.findAll('.tab-icon')).toHaveLength(2);
+    expect(wrapper.text()).not.toContain('Dialog title');
+    expect(wrapper.text()).toContain('MAIN CONTENT');
+    expect(wrapper.text()).toContain('LINKS CONTENT');
+    expect(wrapper.findComponent(QTabPanelsStub).props('modelValue')).toBe(
+      'main',
+    );
+
+    await wrapper.find('.switch-tab').trigger('click');
+    await nextTick();
+
+    expect(wrapper.emitted('update:activeTab')?.[0]).toEqual(['links']);
+    expect(wrapper.findComponent(QTabPanelsStub).props('modelValue')).toBe(
+      'links',
+    );
     wrapper.unmount();
   });
 
@@ -451,14 +544,6 @@ describe('current shared components', () => {
       props: { modelValue: false, label: 'Road trip' },
     });
     expect(dynamic.text()).toContain('Road trip');
-  });
-
-  it('ModuleSelector hides the none option when requested', () => {
-    const wrapper = mount(ModuleSelector, {
-      props: { modelValue: null, allowNone: false },
-    });
-    const options = wrapper.findComponent(quasarStubs.QSelect).props('options');
-    expect(options.some((option: any) => option.value === null)).toBe(false);
   });
 
   it('TagSelector adds and removes tags', async () => {
