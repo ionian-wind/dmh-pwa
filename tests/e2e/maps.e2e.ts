@@ -36,7 +36,18 @@ test('separates map, locations and sidebar marker/area lists into tabs', async (
   await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
 
   await page.getByRole('tab', { name: 'Locations' }).click();
-  await expect(page.locator('.map-location-item')).toContainText('Town');
+  await expect(page.locator('.map-location-card')).toContainText('Town');
+  await expect(
+    page.getByRole('button', { name: 'Add location' }),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add location' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Location name').fill('Port');
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(
+    page.locator('.map-location-card', { hasText: 'Port' }),
+  ).toBeVisible();
 
   const markersTab = page.locator('.tab-item', { hasText: 'Markers' });
   await expect(markersTab).toHaveClass(/tab-item--active/);

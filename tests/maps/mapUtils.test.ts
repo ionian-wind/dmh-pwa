@@ -22,6 +22,7 @@ import {
   removeArea,
   upsertArea,
 } from '@/maps/utils/mapAreas';
+import { removeLocation, upsertLocation } from '@/maps/utils/mapLocations';
 import {
   imageToMapPoint,
   imageToMapPoints,
@@ -128,6 +129,38 @@ describe('map normalization', () => {
   });
 });
 
+describe('map location helpers', () => {
+  const location = {
+    id: 'l1',
+    name: 'Town',
+    description: '',
+    color: '#336699',
+    entities: [],
+  };
+
+  it('upserts new and existing locations', () => {
+    expect(upsertLocation([], location)).toEqual([location]);
+
+    const updated = upsertLocation([location], {
+      ...location,
+      name: 'Capital',
+    });
+    expect(updated).toHaveLength(1);
+    expect(updated[0].name).toBe('Capital');
+
+    const added = upsertLocation(updated, { ...location, id: 'l2' });
+    expect(added.map((entry) => entry.id)).toEqual(['l1', 'l2']);
+  });
+
+  it('removes locations by id', () => {
+    expect(
+      removeLocation([location, { ...location, id: 'l2' }], 'l1').map(
+        (entry) => entry.id,
+      ),
+    ).toEqual(['l2']);
+  });
+});
+
 describe('map marker helpers', () => {
   it('creates a draft with overrides', () => {
     const draft = createMarkerDraft(12, 34, {
@@ -222,14 +255,18 @@ describe('map area helpers', () => {
   });
 
   it('creates, upserts and removes areas', () => {
-    const draft = createAreaDraft('square', {
-      points: [
-        [0, 0],
-        [20, 0],
-        [20, 20],
-        [0, 20],
-      ],
-    }, { title: 'Courtyard' });
+    const draft = createAreaDraft(
+      'square',
+      {
+        points: [
+          [0, 0],
+          [20, 0],
+          [20, 20],
+          [0, 20],
+        ],
+      },
+      { title: 'Courtyard' },
+    );
 
     expect(draft).toMatchObject({
       title: 'Courtyard',

@@ -157,6 +157,9 @@ The map detail page uses two levels of tabs:
 - Top tabs: **Map** and **Locations**. The map stays mounted while the
   Locations tab is open. Selecting a location centres the map and returns to
   the Map tab.
+- The Locations tab uses the same card grid pattern as the other entity lists,
+  with add, view, edit, and delete actions. Deleting a location clears that
+  location from any markers that referenced it.
 - Right sidebar tabs: **Markers** and **Areas**. Each row has edit and delete
   actions, so markers and areas can be managed without opening them on the
   map first.
@@ -197,9 +200,10 @@ The map detail page uses two levels of tabs:
 
 ### Browse locations
 
-The top **Locations** tab lists all locations, their descriptions, linked
-entities, and the number of markers assigned to each location. Selecting a
-location centres the map on its markers and switches back to the Map tab.
+The top **Locations** tab shows locations as cards with add, view, edit, and
+delete actions. Selecting a location centres the map on its markers and
+switches back to the Map tab. Each card shows the location description, linked
+entities, and marker count.
 
 ## Stores and files
 

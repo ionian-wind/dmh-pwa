@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import EntityLinkList from './EntityLinkList.vue';
+import MapLocationCard from './MapLocationCard.vue';
 import type { MapLocation, MapMarker } from '../types';
 import { markersForLocation } from '../utils/mapMarkers';
 
@@ -18,6 +18,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'select-location', locationId: string): void;
+  (e: 'edit', location: MapLocation): void;
+  (e: 'delete', location: MapLocation): void;
+  (e: 'add'): void;
 }>();
 
 const { t } = useI18n();
@@ -32,39 +35,32 @@ const rows = computed(() =>
 
 <template>
   <div class="map-locations-panel">
-    <h4 v-if="props.showTitle" class="map-locations-title">
-      {{ t('maps.locations') }}
-    </h4>
+    <div class="map-locations-header">
+      <h4 v-if="showTitle" class="map-locations-title">
+        {{ t('maps.locations') }}
+      </h4>
+      <QBtn
+        color="primary"
+        :label="t('maps.addLocation')"
+        @click="emit('add')"
+      />
+    </div>
 
     <p v-if="rows.length === 0" class="map-locations-empty">
       {{ t('maps.noLocations') }}
     </p>
 
-    <button
-      v-for="row in rows"
-      :key="row.location.id"
-      type="button"
-      class="map-location-item"
-      @click="emit('select-location', row.location.id)"
-    >
-      <span
-        class="map-location-color"
-        :style="{ background: row.location.color || 'var(--color-primary)' }"
-      ></span>
-      <span class="map-location-content">
-        <span class="map-location-name">{{ row.location.name }}</span>
-        <span v-if="row.location.description" class="map-location-description">
-          {{ row.location.description }}
-        </span>
-        <EntityLinkList
-          v-if="row.location.entities.length > 0"
-          :links="row.location.entities"
-        />
-        <span class="map-location-markers">
-          {{ t('maps.markerCount', { count: row.markers.length }) }}
-        </span>
-      </span>
-    </button>
+    <div v-else class="map-locations-grid">
+      <MapLocationCard
+        v-for="row in rows"
+        :key="row.location.id"
+        :location="row.location"
+        :marker-count="row.markers.length"
+        @view="emit('select-location', row.location.id)"
+        @edit="emit('edit', row.location)"
+        @delete="emit('delete', row.location)"
+      />
+    </div>
   </div>
 </template>
 
@@ -76,6 +72,13 @@ const rows = computed(() =>
   padding: 0.75rem;
 }
 
+.map-locations-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .map-locations-title {
   margin: 0;
 }
@@ -85,44 +88,9 @@ const rows = computed(() =>
   font-size: 0.9rem;
 }
 
-.map-location-item {
-  display: flex;
-  gap: 0.6rem;
-  width: 100%;
-  padding: 0.6rem;
-  text-align: left;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  cursor: pointer;
-}
-
-.map-location-item:hover {
-  background: var(--color-background-soft);
-}
-
-.map-location-color {
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  margin-top: 0.3rem;
-  border-radius: 50%;
-}
-
-.map-location-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-.map-location-name {
-  font-weight: 600;
-}
-
-.map-location-description,
-.map-location-markers {
-  color: var(--color-text-light);
-  font-size: 0.85rem;
+.map-locations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
 }
 </style>

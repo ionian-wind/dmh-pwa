@@ -5,6 +5,8 @@ import { mount } from '@vue/test-utils';
 import EntityLinksEditor from '@/maps/components/EntityLinksEditor.vue';
 import MapIconPicker from '@/maps/components/MapIconPicker.vue';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
+import MapLocationEditor from '@/maps/components/MapLocationEditor.vue';
+import MapLocationCard from '@/maps/components/MapLocationCard.vue';
 import MapLocationsPanel from '@/maps/components/MapLocationsPanel.vue';
 import MapMarkersPanel from '@/maps/components/MapMarkersPanel.vue';
 import type { MapLocation, MapMarker } from '@/maps/types';
@@ -232,8 +234,56 @@ describe('map markers panel', () => {
   });
 });
 
+describe('map location editor', () => {
+  it('edits location fields and links then saves', async () => {
+    const wrapper = mount(MapLocationEditor, {
+      props: { isOpen: true, location },
+      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+    });
+
+    await wrapper.find('#location-name').setValue('Capital');
+    await wrapper.find('#location-description').setValue('Large city');
+    await wrapper.find('#location-color').setValue('#00ff00');
+    wrapper
+      .findComponent(EntityLinksStub)
+      .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
+    await nextTick();
+
+    wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
+    await nextTick();
+
+    expect(wrapper.emitted('save')?.[0][0]).toMatchObject({
+      id: 'l1',
+      name: 'Capital',
+      description: 'Large city',
+      color: '#00ff00',
+      entities: [{ kind: 'map', id: 'map2' }],
+    });
+  });
+
+  it('validates the name, deletes and cancels', async () => {
+    const wrapper = mount(MapLocationEditor, {
+      props: { isOpen: true, location },
+      global: { stubs: { EntityLinksEditor: EntityLinksStub } },
+    });
+
+    await wrapper.find('#location-name').setValue('   ');
+    wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
+    expect(wrapper.emitted('save')).toBeUndefined();
+
+    const deleteButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().toLowerCase().includes('delete'));
+    await deleteButton!.trigger('click');
+    expect(wrapper.emitted('delete')?.[0]).toEqual(['l1']);
+
+    wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('cancel');
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
+  });
+});
+
 describe('map locations panel', () => {
-  it('lists locations, linked entities and marker counts', async () => {
+  it('lists locations as cards and emits list actions', async () => {
     const wrapper = mount(MapLocationsPanel, {
       props: {
         locations: [location],
@@ -247,8 +297,21 @@ describe('map locations panel', () => {
     expect(wrapper.text()).toContain('2');
     expect(wrapper.text()).toContain('Session note');
 
-    await wrapper.find('.map-location-item').trigger('click');
+    const card = wrapper.findComponent(MapLocationCard);
+    card.vm.$emit('view', location);
     expect(wrapper.emitted('select-location')?.[0]).toEqual(['l1']);
+
+    card.vm.$emit('edit', location);
+    expect(wrapper.emitted('edit')?.[0]).toEqual([location]);
+
+    card.vm.$emit('delete', location);
+    expect(wrapper.emitted('delete')?.[0]).toEqual([location]);
+
+    const addButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().toLowerCase().includes('add location'));
+    await addButton!.trigger('click');
+    expect(wrapper.emitted('add')).toHaveLength(1);
   });
 
   it('shows an empty state', () => {

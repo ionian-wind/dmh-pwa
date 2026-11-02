@@ -178,9 +178,22 @@ const MarkersPanelStub = defineComponent({
 const LocationsPanelStub = defineComponent({
   name: 'MapLocationsPanel',
   props: { locations: Array, markers: Array, showTitle: Boolean },
-  emits: ['select-location'],
+  emits: ['select-location', 'add', 'edit', 'delete'],
   setup() {
     return () => h('div', { class: 'locations-panel-stub' });
+  },
+});
+
+const LocationEditorStub = defineComponent({
+  name: 'MapLocationEditor',
+  props: { isOpen: Boolean, location: Object },
+  emits: ['save', 'delete', 'cancel'],
+  setup(props) {
+    return () =>
+      h('div', {
+        class: 'location-editor-stub',
+        'data-open': String(props.isOpen),
+      });
   },
 });
 
@@ -256,6 +269,7 @@ async function mountMapView() {
         BaseEntityView: BaseEntityViewStub,
         MapEditor: MapEditorStub,
         MapMarkerEditor: MarkerEditorStub,
+        MapLocationEditor: LocationEditorStub,
         MapAreaEditor: AreaEditorStub,
         MapLocationsPanel: LocationsPanelStub,
         MapMarkersPanel: MarkersPanelStub,
@@ -380,6 +394,44 @@ describe('MapView', () => {
     vm.openMapEditor();
     await flushPromises();
     expect(wrapper.findComponent(MapEditorStub).props('isOpen')).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('adds and edits locations from the locations tab', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    vm.openAddLocation();
+    expect(vm.isLocationEditorOpen).toBe(true);
+    expect(vm.editingLocation).toBeNull();
+
+    await vm.saveLocation({
+      id: 'l2',
+      name: 'Port',
+      description: 'Harbour',
+      color: '#123456',
+      entities: [],
+    });
+
+    expect(mocks.mapStore.update).toHaveBeenCalledWith(
+      'map1',
+      expect.objectContaining({
+        locations: expect.arrayContaining([
+          expect.objectContaining({ id: 'l2', name: 'Port' }),
+        ]),
+      }),
+    );
+    expect(vm.isLocationEditorOpen).toBe(false);
+
+    vm.editLocation(map.locations[0]);
+    expect(vm.editingLocation).toEqual(map.locations[0]);
+
+    await vm.deleteLocation('l1');
+    expect(mocks.mapStore.update).toHaveBeenLastCalledWith('map1', {
+      locations: [expect.objectContaining({ id: 'l2' })],
+      markers: [expect.objectContaining({ id: 'm1', locationId: null })],
+    });
+
     wrapper.unmount();
   });
 

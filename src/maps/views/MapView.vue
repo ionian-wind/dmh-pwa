@@ -20,6 +20,7 @@ import type { MapEntity, MapEntityForm, MapMarker } from '../types';
 import MapEditor from '../components/MapEditor.vue';
 import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
+import MapLocationEditor from '../components/MapLocationEditor.vue';
 import MapLocationsPanel from '../components/MapLocationsPanel.vue';
 import MapMarkersPanel from '../components/MapMarkersPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
@@ -50,6 +51,7 @@ import {
   removeArea,
   upsertArea,
 } from '../utils/mapAreas';
+import { upsertLocation, removeLocation } from '../utils/mapLocations';
 import {
   imageToMapPoint,
   imageToMapPoints,
@@ -61,7 +63,7 @@ import { createBox } from 'ol/interaction/Draw';
 import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
-import type { MapArea, MapAreaShape } from '../types';
+import type { MapArea, MapAreaShape, MapLocation } from '../types';
 
 const route = useRoute();
 const router = useRouter();
@@ -76,6 +78,8 @@ const mapReady = ref(false);
 const isMapEditorOpen = ref(false);
 const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
+const isLocationEditorOpen = ref(false);
+const editingLocation = ref<MapLocation | null>(null);
 const isAddingMarker = ref(false);
 const selectedLocationId = ref<string | null>(null);
 const activeTopTab = ref('map');
@@ -540,6 +544,62 @@ function selectLocation(locationId: string) {
   focusLocation(locationId);
   activeTopTab.value = 'map';
 }
+
+function openAddLocation() {
+  editingLocation.value = null;
+  isLocationEditorOpen.value = true;
+}
+
+function editLocation(location: MapLocation) {
+  editingLocation.value = location;
+  isLocationEditorOpen.value = true;
+}
+
+function closeLocationEditor() {
+  isLocationEditorOpen.value = false;
+  editingLocation.value = null;
+}
+
+async function persistLocations(locations: MapLocation[]) {
+  if (!map.value) return;
+  const updated = await mapStore.update(map.value.id, {
+    locations,
+    markers: map.value.markers.map((marker) => ({
+      ...marker,
+      locationId: locations.some(
+        (location) => location.id === marker.locationId,
+      )
+        ? marker.locationId
+        : null,
+    })),
+  });
+  map.value = normalizeMapEntity(updated);
+}
+
+async function saveLocation(location: MapLocation) {
+  if (!map.value) return;
+  await persistLocations(upsertLocation(map.value.locations, location));
+  closeLocationEditor();
+}
+
+async function deleteLocation(locationId: string) {
+  if (!map.value) return;
+  await persistLocations(removeLocation(map.value.locations, locationId));
+  closeLocationEditor();
+}
+
+async function deleteLocationFromList(location: MapLocation) {
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: location.name || t('maps.untitledLocation'),
+      }),
+    ))
+  ) {
+    return;
+  }
+  await deleteLocation(location.id);
+}
 </script>
 
 <template>
@@ -709,6 +769,9 @@ function selectLocation(locationId: string) {
             :markers="map?.markers || []"
             :show-title="false"
             @select-location="selectLocation"
+            @add="openAddLocation"
+            @edit="editLocation"
+            @delete="deleteLocationFromList"
           />
         </div>
       </div>
@@ -755,6 +818,13 @@ function selectLocation(locationId: string) {
         @save="saveMarker"
         @delete="deleteMarker"
         @cancel="closeMarkerEditor"
+      />
+      <MapLocationEditor
+        :location="editingLocation"
+        :is-open="isLocationEditorOpen"
+        @save="saveLocation"
+        @delete="deleteLocation"
+        @cancel="closeLocationEditor"
       />
       <MapAreaEditor
         :area="editingArea"
