@@ -262,7 +262,6 @@ onMounted(() => {
     </div>
 
     <div class="row items-center no-wrap q-gutter-sm q-mb-md">
-      <IconShare :size="22" class="text-grey-7" />
       <QInput
         :model-value="shareLink"
         readonly
@@ -276,11 +275,13 @@ onMounted(() => {
       <QBtn
         color="primary"
         outline
-        no-caps
+        round
         data-test="create-share-link"
+        :title="t('probabilityCalculator.clickToCreateLink')"
+        :aria-label="t('probabilityCalculator.clickToCreateLink')"
         @click="createShareLink"
       >
-        {{ t('probabilityCalculator.clickToCreateLink') }}
+        <IconShare :size="18" />
       </QBtn>
     </div>
 
