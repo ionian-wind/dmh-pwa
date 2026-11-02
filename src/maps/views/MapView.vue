@@ -920,12 +920,14 @@ watch(isEditMode, (editing) => {
     </div>
 
     <template #sidepanel>
-      <TabGroup
-        v-model="sidePanelTab"
-        :tabs="sideTabs"
-        size="sm"
-        align="justify"
-      >
+      <div class="map-sidepanel">
+        <div class="map-sidepanel-content">
+          <TabGroup
+            v-model="sidePanelTab"
+            :tabs="sideTabs"
+            size="sm"
+            align="justify"
+          >
         <div v-show="sidePanelTab === 'markers'">
           <div
             v-for="layer in layers"
@@ -1041,17 +1043,25 @@ watch(isEditMode, (editing) => {
             />
           </div>
         </div>
-      </TabGroup>
+          </TabGroup>
+        </div>
 
-      <div v-if="isEditMode" class="map-layer-add">
-        <QBtn color="primary" :label="t('maps.addLayer')" @click="addLayer" />
-      </div>
+        <div class="map-sidepanel-controls">
+          <div v-if="isEditMode" class="map-layer-add">
+            <QBtn
+              color="primary"
+              :label="t('maps.addLayer')"
+              @click="addLayer"
+            />
+          </div>
 
-      <div class="map-mode-toggle">
-        <ToggleSwitch
-          v-model="isEditMode"
-          :label="isEditMode ? 'maps.editMode' : 'maps.viewMode'"
-        />
+          <div class="map-mode-toggle">
+            <ToggleSwitch
+              v-model="isEditMode"
+              :label="isEditMode ? 'maps.editMode' : 'maps.viewMode'"
+            />
+          </div>
+        </div>
       </div>
     </template>
 
@@ -1095,6 +1105,25 @@ watch(isEditMode, (editing) => {
 
 .map-layer-group {
   border-bottom: 1px solid var(--color-border);
+}
+
+.map-sidepanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-sidepanel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.map-sidepanel-controls {
+  flex: 0 0 auto;
+  margin-top: auto;
+  background: var(--color-background);
 }
 
 .map-layer-header {
