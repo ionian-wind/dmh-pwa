@@ -566,6 +566,13 @@ describe('MapView', () => {
 
     const viewButton = wrapper.find('.map-mode-view');
     const editButton = wrapper.find('.map-mode-edit');
+    const controlsList = wrapper.find(
+      '.map-sidepanel-controls [data-stub="QList"]',
+    );
+    expect(controlsList.exists()).toBe(true);
+    expect(controlsList.find('.map-label-toggle').exists()).toBe(true);
+    expect(controlsList.find('.map-mode-toggle').exists()).toBe(true);
+    expect(controlsList.find('.map-layer-add').exists()).toBe(false);
     expect(viewButton.attributes('title')).toBe('View mode');
     expect(editButton.attributes('title')).toBe('Edit mode');
     expect(viewButton.text()).toBe('');
@@ -574,6 +581,7 @@ describe('MapView', () => {
 
     await editButton.trigger('click');
     expect(vm.isEditMode).toBe(true);
+    expect(controlsList.find('.map-layer-add').exists()).toBe(true);
     await viewButton.trigger('click');
     expect(vm.isEditMode).toBe(false);
 

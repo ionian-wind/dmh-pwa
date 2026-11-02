@@ -1194,8 +1194,14 @@ watch(isEditMode, (editing) => {
 
         <QSeparator />
         <div class="map-sidepanel-controls bg-white">
-          <QList v-if="isEditMode" class="map-layer-add">
-            <QItem clickable v-ripple @click="addLayer">
+          <QList>
+            <QItem
+              v-if="isEditMode"
+              class="map-layer-add"
+              clickable
+              v-ripple
+              @click="addLayer"
+            >
               <QItemSection>
                 {{ t('maps.addLayer') }}
               </QItemSection>
@@ -1203,49 +1209,51 @@ watch(isEditMode, (editing) => {
                 <IconPlus :size="18" />
               </QItemSection>
             </QItem>
-          </QList>
 
-          <div class="q-pa-sm">
-            <div class="row items-center justify-between q-gutter-x-md">
-              <span class="text-body2">{{ t('maps.hideLabels') }}</span>
-              <QToggle
-                :model-value="hideLabels"
-                @update:model-value="hideLabels = $event"
-              />
-            </div>
-          </div>
+            <QItem class="map-label-toggle">
+              <QItemSection>
+                {{ t('maps.hideLabels') }}
+              </QItemSection>
+              <QItemSection side>
+                <QToggle
+                  :model-value="hideLabels"
+                  @update:model-value="hideLabels = $event"
+                />
+              </QItemSection>
+            </QItem>
 
-          <div class="map-mode-toggle q-pa-sm bg-grey-2">
-            <div class="row items-center justify-between q-gutter-x-md">
-              <span class="text-body2">
+            <QItem class="map-mode-toggle">
+              <QItemSection>
                 {{ isEditMode ? t('maps.editMode') : t('maps.viewMode') }}
-              </span>
-              <QBtnGroup>
-                <QBtn
-                  class="map-mode-view"
-                  color="primary"
-                  :outline="isEditMode"
-                  :title="t('maps.viewMode')"
-                  :aria-label="t('maps.viewMode')"
-                  :aria-pressed="!isEditMode"
-                  @click="isEditMode = false"
-                >
-                  <IconLiveView :size="18" />
-                </QBtn>
-                <QBtn
-                  class="map-mode-edit"
-                  color="primary"
-                  :outline="!isEditMode"
-                  :title="t('maps.editMode')"
-                  :aria-label="t('maps.editMode')"
-                  :aria-pressed="isEditMode"
-                  @click="isEditMode = true"
-                >
-                  <IconEdit :size="18" />
-                </QBtn>
-              </QBtnGroup>
-            </div>
-          </div>
+              </QItemSection>
+              <QItemSection side>
+                <QBtnGroup>
+                  <QBtn
+                    class="map-mode-view"
+                    color="primary"
+                    :outline="isEditMode"
+                    :title="t('maps.viewMode')"
+                    :aria-label="t('maps.viewMode')"
+                    :aria-pressed="!isEditMode"
+                    @click="isEditMode = false"
+                  >
+                    <IconLiveView :size="18" />
+                  </QBtn>
+                  <QBtn
+                    class="map-mode-edit"
+                    color="primary"
+                    :outline="!isEditMode"
+                    :title="t('maps.editMode')"
+                    :aria-label="t('maps.editMode')"
+                    :aria-pressed="isEditMode"
+                    @click="isEditMode = true"
+                  >
+                    <IconEdit :size="18" />
+                  </QBtn>
+                </QBtnGroup>
+              </QItemSection>
+            </QItem>
+          </QList>
         </div>
       </div>
     </template>
