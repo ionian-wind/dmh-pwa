@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', map: MapEntityForm): void;
+  (e: 'delete', mapId: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -161,6 +162,10 @@ async function handleSubmit() {
     locationId: editedMap.value.locationId || null,
   });
 }
+
+function handleDelete() {
+  if (props.map) emit('delete', props.map.id);
+}
 </script>
 
 <template>
@@ -169,10 +174,12 @@ async function handleSubmit() {
     :title="map ? t('maps.edit') : t('maps.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!map"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="map-editor-modal"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="emit('cancel')"
   >
     <div class="form-section">

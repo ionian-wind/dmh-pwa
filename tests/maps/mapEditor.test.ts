@@ -108,6 +108,10 @@ describe('MapEditor', () => {
       global: { stubs: { EntityLinksEditor: EntityLinksStub } },
     });
 
+    expect(
+      wrapper.findComponent({ name: 'BaseModal' }).props('showDelete'),
+    ).toBe(false);
+
     await wrapper.find('#map-title').setValue('New world');
     await wrapper.find('#map-description').setValue('Description');
 
@@ -151,10 +155,10 @@ describe('MapEditor', () => {
     });
     expect(wrapper.find('#map-title').element.value).toBe('World');
     expect(
-      wrapper
-        .findAll('button')
-        .some((button) => button.text().toLowerCase().includes('delete')),
-    ).toBe(false);
+      wrapper.findComponent({ name: 'BaseModal' }).props('showDelete'),
+    ).toBe(true);
+    wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('delete');
+    expect(wrapper.emitted('delete')?.[0]).toEqual(['map1']);
 
     await wrapper.find('#map-title').setValue('Renamed');
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');

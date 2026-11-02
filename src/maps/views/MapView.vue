@@ -711,6 +711,11 @@ async function submitMapEditor(form: MapEntityForm) {
   isMapEditorOpen.value = false;
 }
 
+async function deleteMapFromEditor() {
+  isMapEditorOpen.value = false;
+  await handleDelete();
+}
+
 function showMarkerInfo(marker: MapMarker) {
   infoSelection.value = { kind: 'marker', id: marker.id };
 }
@@ -1260,6 +1265,7 @@ watch(isEditMode, (editing) => {
         :map="map"
         :is-open="isMapEditorOpen"
         @submit="submitMapEditor"
+        @delete="deleteMapFromEditor"
         @cancel="isMapEditorOpen = false"
       />
       <MapMarkerEditor

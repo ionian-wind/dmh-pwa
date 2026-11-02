@@ -32,8 +32,6 @@ the standard `BaseModal` action area:
 - Handle `@delete` in the editor and emit the entity id to the parent.
 - Do **not** place a delete button inside the dialog body or a custom content
   section. Custom `#actions` content is reserved for non-standard actions.
-- The map metadata editor is intentionally the exception: maps are deleted from
-  the maps list, so its dialog has no delete action.
 
 Behavior:
 
