@@ -303,19 +303,6 @@ function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
   isAddingMarker.value = false;
 }
 
-function onMapPointerMove(event: { pixel?: number[] }) {
-  if (drawMode.value || !event.pixel) return;
-  const feature = olMapRef.value?.forEachFeatureAtPixel?.(
-    event.pixel,
-    (candidate: any) => candidate,
-  );
-  const areaId = feature?.get?.('areaId') ?? null;
-  if (areaId !== hoveredAreaId.value) {
-    hoveredAreaId.value = areaId;
-    olMapRef.value?.map?.render();
-  }
-}
-
 function startDrawArea(shape: MapAreaShape) {
   drawMode.value = shape;
   isAddingMarker.value = false;
@@ -612,7 +599,6 @@ function hoverArea(areaId: string | null) {
         :loadTilesWhileInteracting="true"
         style="height: 100%"
         @click="onMapClick"
-        @pointermove="onMapPointerMove"
       >
         <ol-view
           :center="center"
