@@ -385,6 +385,13 @@ describe('MapView', () => {
       'is-hovered',
     );
 
+    wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', null);
+    wrapper.findComponent(AreasPanelStub).vm.$emit('hover', 'a1');
+    await flushPromises();
+    const styles = (wrapper.vm as any).areaStyle({ get: () => 'a1' });
+    expect(Array.isArray(styles)).toBe(true);
+    expect(styles).toHaveLength(2);
+
     wrapper.unmount();
   });
 

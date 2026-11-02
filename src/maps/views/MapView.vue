@@ -449,7 +449,7 @@ function focusArea(areaId: string) {
   if (!area) return;
   center.value = areaMapCenter(area);
   hoveredAreaId.value = areaId;
-  olMapRef.value?.map?.render();
+  olMapRef.value?.map?.renderSync?.();
 }
 
 async function deleteAreaFromList(areaId: string) {
@@ -473,9 +473,20 @@ function areaStyle(feature: any) {
   const area = map.value?.areas.find((entry) => entry.id === areaId);
   if (!area) return undefined;
   const hovered = hoveredAreaId.value === area.id;
+  if (hovered) {
+    return [
+      new Style({
+        stroke: new Stroke({ color: 'rgba(255, 255, 255, 0.95)', width: 7 }),
+      }),
+      new Style({
+        fill: new Fill({ color: areaFillColor(area.color, 0.55) }),
+        stroke: new Stroke({ color: area.color, width: 4 }),
+      }),
+    ];
+  }
   return new Style({
-    fill: new Fill({ color: areaFillColor(area.color, hovered ? 0.6 : 0.22) }),
-    stroke: new Stroke({ color: area.color, width: hovered ? 4 : 2 }),
+    fill: new Fill({ color: areaFillColor(area.color, 0.22) }),
+    stroke: new Stroke({ color: area.color, width: 2 }),
   });
 }
 
@@ -572,7 +583,7 @@ function hoverMarker(markerId: string | null) {
 
 function hoverArea(areaId: string | null) {
   hoveredAreaId.value = areaId;
-  olMapRef.value?.map?.render();
+  olMapRef.value?.map?.renderSync?.();
 }
 </script>
 
@@ -691,7 +702,6 @@ function hoverArea(areaId: string | null) {
           <button
             type="button"
             class="map-area-label"
-            :class="{ 'is-hovered': hoveredAreaId === area.id }"
             :style="{
               backgroundColor: areaFillColor(area.color, 0.82),
               color: areaTextColor(area.color),
@@ -884,12 +894,6 @@ function hoverArea(areaId: string | null) {
   cursor: pointer;
   font-size: 0.8rem;
   pointer-events: auto;
-}
-
-.map-area-label.is-hovered {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-  transform: scale(1.06);
 }
 
 .is-active {
