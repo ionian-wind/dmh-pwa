@@ -18,8 +18,8 @@ using integer (`bigint`) weights. A Vue page under
 - Main menu: inside the expandable **Tools** section, using `IconChartLine`.
   Timers and Calculator are grouped there as well.
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
-  Monarch syntax highlighter and autocomplete for keywords, snippets,
-  built-in functions and variables.
+  Monarch syntax highlighter, autocomplete for keywords, snippets, built-in
+  functions and variables, and Monaco markers for syntax-error ranges.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,
@@ -27,6 +27,8 @@ using integer (`bigint`) weights. A Vue page under
 - Share links encode the source in the URL hash (`#code=<base64>`); opening a
   link restores the program. Editing the source clears the generated link.
 - The source program is persisted in `localStorage`.
+- Unsaved editor changes trigger confirmation when leaving the page and a
+  browser `beforeunload` warning when closing/reloading the tab.
 - Code library sidebar: a right drawer toggled with `IconCodeblock` from the top
   header. Items use the same colored-border card layout as map marker/area
   items in the map sidebar. Save named snippets, include selected snippets in the calculation

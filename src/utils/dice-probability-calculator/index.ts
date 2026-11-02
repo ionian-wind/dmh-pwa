@@ -6,6 +6,7 @@ import { Seq } from './seq';
 import { buildProgram } from './toAst';
 import type { CalculationResult, Outcome, OutputResult } from './types';
 
+export { DiceSyntaxError } from './errors';
 export { Die, Seq, Evaluator };
 export type {
   CallItem,

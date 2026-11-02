@@ -9,6 +9,11 @@ const layoutMock = vi.hoisted(() => ({
   setRightDrawer: vi.fn(),
   clearRightDrawer: vi.fn(),
 }));
+const routeGuard = vi.hoisted(() => ({ handler: null as null | (() => any) }));
+const markerState = vi.hoisted(() => ({
+  model: { id: 'model' },
+  setModelMarkers: vi.fn(),
+}));
 
 vi.mock('@/dialogs', () => ({ prompt: promptMock, confirm: confirmMock }));
 vi.mock('@/composables/useLayout', () => ({
@@ -18,7 +23,18 @@ vi.mock('@/composables/useLayout', () => ({
     clear: layoutMock.clearRightDrawer,
   }),
 }));
-vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/components/common/monaco', () => ({
+  monaco: {
+    editor: { setModelMarkers: markerState.setModelMarkers },
+    MarkerSeverity: { Error: 8 },
+  },
+}));
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  onBeforeRouteLeave: (handler: () => any) => {
+    routeGuard.handler = handler;
+  },
+}));
 
 vi.mock('vue3-charts', async () => {
   const { defineComponent, h } = await import('vue');
@@ -61,7 +77,10 @@ vi.mock('@/components/common/MonacoEditor.vue', async () => {
       name: 'MonacoEditor',
       props: { modelValue: { type: String, default: '' } },
       emits: ['update:modelValue'],
-      setup(props, { emit }) {
+      setup(props, { emit, expose }) {
+        expose({
+          getEditor: () => ({ getModel: () => markerState.model }),
+        });
         return () =>
           h('textarea', {
             class: 'monaco-editor-stub',
@@ -107,6 +126,7 @@ function libraryState() {
 describe('ProbabilityCalculatorView', () => {
   beforeEach(() => {
     vi.mocked(localStorage.getItem).mockReset();
+    routeGuard.handler = null;
     promptMock.mockReset();
     confirmMock.mockReset();
     history.replaceState(null, '', '/dmh-pwa/probability-calculator');
@@ -321,6 +341,69 @@ describe('ProbabilityCalculatorView', () => {
 
     expect(wrapper.findAll('.probability-table tbody tr')).toHaveLength(1);
     expect(wrapper.find('.probability-table tbody').text()).toContain('1');
+    wrapper.unmount();
+  });
+
+  it('confirms when leaving with unsaved editor changes', async () => {
+    const listenerSpy = vi.spyOn(window, 'addEventListener');
+    const wrapper = await mountPage();
+    const editor = wrapper.find('textarea.monaco-editor-stub');
+    const beforeUnload = listenerSpy.mock.calls.find(
+      ([eventName]) => String(eventName) === 'beforeunload',
+    )?.[1] as (event: { preventDefault: () => void }) => void;
+
+    const cleanEvent = { preventDefault: vi.fn() };
+    beforeUnload(cleanEvent);
+    expect(cleanEvent.preventDefault).not.toHaveBeenCalled();
+
+    await editor.setValue('output 1d8');
+    const dirtyEvent = { preventDefault: vi.fn() };
+    beforeUnload(dirtyEvent);
+    expect(dirtyEvent.preventDefault).toHaveBeenCalled();
+
+    confirmMock.mockResolvedValueOnce(false);
+    expect(await routeGuard.handler!()).toBe(false);
+
+    confirmMock.mockResolvedValueOnce(true);
+    expect(await routeGuard.handler!()).toBe(true);
+    wrapper.unmount();
+    listenerSpy.mockRestore();
+  });
+
+  it('clears and highlights syntax errors in the editor', async () => {
+    const wrapper = await mountPage();
+    const editor = wrapper.find('textarea.monaco-editor-stub');
+
+    expect(markerState.setModelMarkers).toHaveBeenCalledWith(
+      markerState.model,
+      'probability-calculator',
+      [],
+    );
+
+    await editor.setValue('output 1 +');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Calculate')!
+      .trigger('click');
+    await settle();
+
+    const markerCall = markerState.setModelMarkers.mock.calls.at(-1)!;
+    expect(markerCall[0]).toBe(markerState.model);
+    expect(markerCall[1]).toBe('probability-calculator');
+    expect(markerCall[2]).toEqual([
+      expect.objectContaining({
+        startLineNumber: 1,
+        severity: 8,
+      }),
+    ]);
+
+    await editor.setValue('output 1d4');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Calculate')!
+      .trigger('click');
+    await settle();
+    expect(markerState.setModelMarkers.mock.calls.at(-1)?.[2]).toEqual([]);
     wrapper.unmount();
   });
 

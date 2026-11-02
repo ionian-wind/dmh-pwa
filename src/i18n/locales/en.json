@@ -950,7 +950,6 @@
     },
     "source": "Source",
     "syntaxHint": "AnyDice syntax · comments use \\ … \\",
-    "shortcutHint": "Runs locally in your browser",
     "calculate": "Calculate",
     "calculating": "Calculating…",
     "view": "View",
@@ -1001,7 +1000,9 @@
       "replaceConfirm": "The editor has unsaved changes. Replace them with “{name}”?",
       "include": "Include in current namespace",
       "rename": "Rename",
-      "delete": "Delete"
+      "delete": "Delete",
+      "unsavedTitle": "Unsaved changes",
+      "leaveConfirm": "The editor has unsaved changes. Leave this page?"
     },
     "zoomIn": "Zoom in chart",
     "zoomOut": "Zoom out chart",

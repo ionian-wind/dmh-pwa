@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parse } from '../index';
+import { DiceSyntaxError, parse } from '../index';
 
 describe('dice probability calculator parser', () => {
   it('parses output expressions with dice and arithmetic', () => {
@@ -99,6 +99,19 @@ describe('dice probability calculator parser', () => {
         value: { kind: 'number', value: 2 },
       },
     ]);
+  });
+
+  it('reports syntax error locations for editor markers', () => {
+    try {
+      parse('output 1 +');
+      throw new Error('Expected parse to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DiceSyntaxError);
+      const syntaxError = error as DiceSyntaxError;
+      expect(syntaxError.line).toBe(1);
+      expect(syntaxError.column).toBeGreaterThan(0);
+      expect(syntaxError.endColumn).toBeGreaterThan(syntaxError.column);
+    }
   });
 
   it('parses function call items in source order', () => {

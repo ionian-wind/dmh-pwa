@@ -9,7 +9,7 @@ import {
   watch,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { Chart, Grid, Line, Responsive, Tooltip } from 'vue3-charts';
 import {
   IconHelpCircle,
@@ -26,11 +26,13 @@ import {
   IconCodeblock,
 } from '@tabler/icons-vue';
 import MonacoEditor from '@/components/common/MonacoEditor.vue';
+import { monaco } from '@/components/common/monaco';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { confirm, prompt } from '@/dialogs';
 import {
   calculate,
+  DiceSyntaxError,
   type CalculationResult,
   type OutputResult,
 } from '@/utils/dice-probability-calculator';
@@ -89,6 +91,8 @@ const libraryState = reactive<CodeLibraryPanelState>({
   onRename: () => undefined,
   onDelete: () => undefined,
 });
+const editorRef = ref<InstanceType<typeof MonacoEditor> | null>(null);
+const MARKER_OWNER = 'probability-calculator';
 const result = ref<CalculationResult | null>(null);
 const error = ref<string | null>(null);
 const isCalculating = ref(false);
@@ -210,10 +214,31 @@ function outcomesFor(output: OutputResult) {
   return displayOutcomes(output, effectiveDataMode.value);
 }
 
+function clearSyntaxMarkers() {
+  const model = editorRef.value?.getEditor()?.getModel();
+  if (model) monaco.editor.setModelMarkers(model, MARKER_OWNER, []);
+}
+
+function markSyntaxError(caught: DiceSyntaxError) {
+  const model = editorRef.value?.getEditor()?.getModel();
+  if (!model) return;
+  monaco.editor.setModelMarkers(model, MARKER_OWNER, [
+    {
+      startLineNumber: caught.line,
+      startColumn: caught.column,
+      endLineNumber: caught.endLine,
+      endColumn: caught.endColumn,
+      message: caught.message,
+      severity: monaco.MarkerSeverity.Error,
+    },
+  ]);
+}
+
 async function runCalculation() {
   if (isCalculating.value) return;
   isCalculating.value = true;
   error.value = null;
+  clearSyntaxMarkers();
   await nextTick();
   // Let the loading state paint before the synchronous evaluator runs.
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -224,6 +249,7 @@ async function runCalculation() {
     rollerResults.value = [];
   } catch (caught) {
     result.value = null;
+    if (caught instanceof DiceSyntaxError) markSyntaxError(caught);
     error.value = caught instanceof Error ? caught.message : String(caught);
   } finally {
     isCalculating.value = false;
@@ -352,6 +378,19 @@ libraryState.onLoad = loadCodePiece;
 libraryState.onRename = renameCodePiece;
 libraryState.onDelete = deleteCodePiece;
 
+onBeforeRouteLeave(async () => {
+  if (!isSourceDirty.value) return true;
+  return confirm(t('probabilityCalculator.library.leaveConfirm'), {
+    title: t('probabilityCalculator.library.unsavedTitle'),
+  });
+});
+
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  if (!isSourceDirty.value) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
+
 const layout = useLayout();
 const rightDrawer = useRightDrawer();
 
@@ -375,10 +414,12 @@ onMounted(() => {
     component: CodeLibraryPanel,
     props: { state: libraryState },
   });
+  window.addEventListener('beforeunload', handleBeforeUnload);
   void runCalculation();
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
   layout.setTopMenuContent(null);
   rightDrawer.clear();
 });
@@ -419,6 +460,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <MonacoEditor
+        ref="editorRef"
         v-model="source"
         :language="ANYDICE_LANGUAGE_ID"
         height="340px"
@@ -433,9 +475,6 @@ onBeforeUnmount(() => {
             <IconDeviceFloppy class="q-mr-xs" :size="18" />
             {{ t('probabilityCalculator.save') }}
           </QBtn>
-          <div class="text-caption text-grey-7">
-            {{ t('probabilityCalculator.shortcutHint') }}
-          </div>
         </div>
         <QBtn
           color="positive"

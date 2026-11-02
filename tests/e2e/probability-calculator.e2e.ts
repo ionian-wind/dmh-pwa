@@ -65,3 +65,24 @@ test('creates a share link with the source in the hash', async ({ page }) => {
   expect(value).toContain('#code=');
   expect(page.url()).toContain('#code=');
 });
+
+test('highlights syntax errors and clears them before the next calculation', async ({
+  page,
+}) => {
+  await page.goto('/dmh-pwa/probability-calculator');
+  await page.locator('.monaco-editor').waitFor({ timeout: 30_000 });
+  const editor = page.locator('.monaco-editor');
+  await editor.click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('output 1 +');
+  await page.getByRole('button', { name: 'Calculate' }).click();
+  await expect(page.locator('.squiggly-error').first()).toBeVisible({
+    timeout: 10_000,
+  });
+
+  await editor.click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('output 1d4');
+  await page.getByRole('button', { name: 'Calculate' }).click();
+  await expect(page.locator('.squiggly-error')).toHaveCount(0);
+});

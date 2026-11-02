@@ -158,6 +158,9 @@ export const lexer = new Lexer(allTokens);
 export interface TokenizationError {
   message: string;
   offset: number;
+  line: number;
+  column: number;
+  length: number;
 }
 
 export function tokenize(input: string): {
@@ -170,6 +173,9 @@ export function tokenize(input: string): {
     errors: result.errors.map((error) => ({
       message: error.message,
       offset: error.offset,
+      line: error.line ?? 1,
+      column: error.column ?? 1,
+      length: error.length ?? 1,
     })),
   };
 }

@@ -1,4 +1,5 @@
 import { CstParser } from 'chevrotain';
+import { DiceSyntaxError } from './errors';
 import {
   allTokens,
   And,
@@ -350,16 +351,50 @@ export class DiceParser extends CstParser {
 export function parseCst(input: string) {
   const { tokens, errors } = tokenize(input);
   if (errors.length > 0) {
-    throw new SyntaxError(errors.map((error) => error.message).join('; '));
+    const first = errors[0];
+    throw new DiceSyntaxError(
+      errors.map((error) => error.message).join('; '),
+      first.line,
+      first.column,
+      first.line,
+      first.column + Math.max(1, first.length),
+    );
   }
   const parser = new DiceParser();
   parser.input = tokens;
   const cst = parser.program();
   if (parser.errors.length > 0) {
-    throw new SyntaxError(
+    const first = parser.errors[0];
+    const token = first.token;
+    const previous = (first as { previousToken?: typeof token }).previousToken;
+    const line = Number.isFinite(token?.startLine)
+      ? (token!.startLine as number)
+      : (previous?.endLine ?? 1);
+    const column = Number.isFinite(token?.startColumn)
+      ? (token!.startColumn as number)
+      : (previous?.endColumn ?? 0) + 1;
+    const endLine = Number.isFinite(token?.endLine)
+      ? (token!.endLine as number)
+      : line;
+    const endColumn = Number.isFinite(token?.endColumn)
+      ? (token!.endColumn as number) + 1
+      : column + 1;
+
+    throw new DiceSyntaxError(
       parser.errors
-        .map((error) => `${error.message} (line ${error.token.startLine})`)
+        .map(
+          (error) =>
+            `${error.message} (line ${
+              Number.isFinite(error.token?.startLine)
+                ? error.token!.startLine
+                : line
+            })`,
+        )
         .join('; '),
+      line,
+      column,
+      endLine,
+      endColumn,
     );
   }
   return cst;
