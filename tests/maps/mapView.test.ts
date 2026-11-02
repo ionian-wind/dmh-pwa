@@ -532,7 +532,7 @@ describe('MapView', () => {
     expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
 
     expect(wrapper.find('.map-area-label').exists()).toBe(true);
-    vm.hideLabels = true;
+    vm.showLabels = false;
     await flushPromises();
     expect(wrapper.find('.map-area-label').exists()).toBe(false);
     const hiddenLabelStyles = vm.markerStyle({
@@ -540,7 +540,7 @@ describe('MapView', () => {
     });
     expect(hiddenLabelStyles).toHaveLength(2);
 
-    vm.hideLabels = false;
+    vm.showLabels = true;
     await flushPromises();
     expect(wrapper.find('.map-area-label').exists()).toBe(true);
 
@@ -573,6 +573,10 @@ describe('MapView', () => {
     expect(controlsList.find('.map-label-toggle').exists()).toBe(true);
     expect(controlsList.find('.map-mode-toggle').exists()).toBe(true);
     expect(controlsList.find('.map-layer-add').exists()).toBe(false);
+    const modeGroup = wrapper.find('[data-stub="QBtnGroup"]');
+    expect(wrapper.find('.map-mode-toggle').text()).toBe('');
+    expect(modeGroup.classes()).toContain('full-width');
+    expect(modeGroup.attributes()).toHaveProperty('spread');
     expect(viewButton.attributes('title')).toBe('View mode');
     expect(editButton.attributes('title')).toBe('Edit mode');
     expect(viewButton.text()).toBe('');

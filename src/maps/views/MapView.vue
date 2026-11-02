@@ -96,7 +96,7 @@ const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
 const isEditMode = ref(false);
-const hideLabels = ref(false);
+const showLabels = ref(true);
 const sidePanelTab = ref('markers');
 const hiddenLayerIds = ref<Set<string>>(new Set());
 const olMapRef = ref<any>(null);
@@ -624,7 +624,7 @@ function markerStyle(feature: any) {
     );
   }
 
-  if (!hideLabels.value) {
+  if (showLabels.value) {
     styles.push(
       new Style({
         text: new Text({
@@ -756,7 +756,7 @@ function refreshAreaHighlight() {
   });
 }
 
-watch([hoveredAreaId, hoveredMarkerId, hideLabels], refreshAreaHighlight);
+watch([hoveredAreaId, hoveredMarkerId, showLabels], refreshAreaHighlight);
 
 function toggleLayerVisibility(layerId: string) {
   const next = new Set(hiddenLayerIds.value);
@@ -944,7 +944,7 @@ watch(isEditMode, (editing) => {
         />
 
         <ol-overlay
-          v-if="imageLoaded && !hideLabels"
+          v-if="imageLoaded && showLabels"
           v-for="area in visibleAreas"
           :key="`area-label-${area.id}`"
           :position="areaMapCenter(area)"
@@ -1212,22 +1212,19 @@ watch(isEditMode, (editing) => {
 
             <QItem class="map-label-toggle">
               <QItemSection>
-                {{ t('maps.hideLabels') }}
+                {{ t('maps.showLabels') }}
               </QItemSection>
               <QItemSection side>
                 <QToggle
-                  :model-value="hideLabels"
-                  @update:model-value="hideLabels = $event"
+                  :model-value="showLabels"
+                  @update:model-value="showLabels = $event"
                 />
               </QItemSection>
             </QItem>
 
             <QItem class="map-mode-toggle">
               <QItemSection>
-                {{ isEditMode ? t('maps.editMode') : t('maps.viewMode') }}
-              </QItemSection>
-              <QItemSection side>
-                <QBtnGroup>
+                <QBtnGroup spread class="full-width">
                   <QBtn
                     class="map-mode-view"
                     color="primary"

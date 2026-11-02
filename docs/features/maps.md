@@ -218,8 +218,8 @@ The map detail page no longer has top tabs. It contains:
   - Hovering a row highlights the marker or area on the map.
 - **Add layer** is a menu-style row below the tabbed lists, shown only in edit
   mode.
-- A **Hide labels** toggle hides marker labels and area label overlays while
-  keeping marker icons and area fills visible.
+- A **Show labels** toggle (on by default) hides marker labels and area label
+  overlays when turned off, keeping marker icons and area fills visible.
 - The **View mode / Edit mode** control is an icon-only button group fixed at the
   bottom of the sidebar.
 - In view mode the map action menu, context menu, header edit/delete actions,
