@@ -786,7 +786,6 @@
     "locationName": "Location name",
     "locationNameRequired": "Location name is required",
     "locationDescription": "Location description",
-    "locationColor": "Location color",
     "noLocations": "No locations yet.",
     "untitledLocation": "Untitled location",
     "openLinkedMap": "Open linked map",

@@ -131,7 +131,6 @@ describe('map location helpers', () => {
     id: 'l1',
     name: 'Town',
     description: '',
-    color: '#336699',
     entities: [],
   };
 

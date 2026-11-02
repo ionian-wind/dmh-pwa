@@ -214,7 +214,6 @@ const location = {
   id: 'l1',
   name: 'Town',
   description: '',
-  color: '#336699',
   entities: [],
   createdAt: 1,
   updatedAt: 1,

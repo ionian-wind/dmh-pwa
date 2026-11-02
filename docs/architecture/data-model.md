@@ -270,7 +270,6 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
   id,
   name,
   description?,
-  color?,
   entities: MapEntityRef[]
 }
 ```

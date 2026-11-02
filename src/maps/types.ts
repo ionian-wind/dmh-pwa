@@ -23,7 +23,6 @@ export interface MapPoint {
 export interface MapLocation extends WithMetadata {
   name: string;
   description?: string;
-  color?: string;
   entities: MapEntityRef[];
 }
 

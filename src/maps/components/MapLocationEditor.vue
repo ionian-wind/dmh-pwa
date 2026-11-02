@@ -2,10 +2,8 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
-import ColorPicker from '@/components/common/ColorPicker.vue';
 import EntityLinksEditor from './EntityLinksEditor.vue';
 import type { MapEntityRef, MapLocation } from '../types';
-import { DEFAULT_MARKER_COLOR } from '../utils/normalize';
 import { generateId } from '@/utils/storage';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 
@@ -31,7 +29,6 @@ function createLocation(): MapLocation {
     id: generateId(),
     name: '',
     description: '',
-    color: DEFAULT_MARKER_COLOR,
     entities: [],
     createdAt: now,
     updatedAt: now,
@@ -81,25 +78,14 @@ function remove() {
     @cancel="emit('cancel')"
   >
     <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            id="location-name"
-            v-model="draft.name"
-            :label="t('maps.locationName')"
-            type="text"
-            outlined
-            required
-          />
-        </div>
-        <div class="form-group">
-          <ColorPicker
-            id="location-color"
-            v-model="draft.color"
-            :label="t('maps.locationColor')"
-          />
-        </div>
-      </div>
+      <QInput
+        id="location-name"
+        v-model="draft.name"
+        :label="t('maps.locationName')"
+        type="text"
+        outlined
+        required
+      />
     </div>
 
     <div class="form-section">
@@ -124,8 +110,14 @@ function remove() {
       />
     </div>
 
-    <div v-if="!isNew" class="form-section">
-      <QBtn flat color="negative" :label="t('common.delete')" @click="remove" />
-    </div>
+    <template #actions>
+      <QBtn
+        v-if="!isNew"
+        flat
+        color="negative"
+        :label="t('common.delete')"
+        @click="remove"
+      />
+    </template>
   </BaseModal>
 </template>

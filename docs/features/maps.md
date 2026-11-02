@@ -61,7 +61,6 @@ Image metadata (dimensions, MIME type, dominant color, palette) is extracted by
 interface MapLocation extends WithMetadata {
   name: string;
   description?: string;
-  color?: string;
   entities: MapEntityRef[];
 }
 ```

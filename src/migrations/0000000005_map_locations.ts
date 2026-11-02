@@ -7,7 +7,6 @@ function asLocation(location: MapLocation): MapLocation {
     id: location.id,
     name: location.name || '',
     description: location.description || '',
-    color: location.color || undefined,
     entities: Array.isArray(location.entities) ? location.entities : [],
     createdAt: Number(location.createdAt) || Date.now(),
     updatedAt: Number(location.updatedAt) || Date.now(),

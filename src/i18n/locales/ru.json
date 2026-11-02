@@ -787,7 +787,6 @@
     "locationName": "Название локации",
     "locationNameRequired": "Название локации обязательно",
     "locationDescription": "Описание локации",
-    "locationColor": "Цвет локации",
     "noLocations": "Локаций пока нет.",
     "untitledLocation": "Локация без названия",
     "openLinkedMap": "Открыть связанную карту",

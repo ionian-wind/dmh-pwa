@@ -18,7 +18,6 @@ const validMap = {
       id: 'l1',
       name: 'Town',
       description: 'Starting town',
-      color: '#336699',
       entities: [{ kind: 'note', id: 'n1' }],
     },
   ],

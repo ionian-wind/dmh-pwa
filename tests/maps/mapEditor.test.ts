@@ -20,7 +20,6 @@ const locationMocks = vi.hoisted(() => {
     id: 'l1',
     name: 'Town',
     description: '',
-    color: '#336699',
     entities: [{ kind: 'note', id: 'n1' }],
     createdAt: 1,
     updatedAt: 1,
@@ -151,6 +150,11 @@ describe('MapEditor', () => {
       expect(wrapper.text()).toContain('world.png');
     });
     expect(wrapper.find('#map-title').element.value).toBe('World');
+    expect(
+      wrapper
+        .findAll('button')
+        .some((button) => button.text().toLowerCase().includes('delete')),
+    ).toBe(false);
 
     await wrapper.find('#map-title').setValue('Renamed');
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');

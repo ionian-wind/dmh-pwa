@@ -57,14 +57,12 @@ async function handleSubmit(location: MapLocation) {
     await locationStore.update(location.id, {
       name: location.name,
       description: location.description,
-      color: location.color,
       entities: location.entities,
     });
   } else {
     await locationStore.create({
       name: location.name,
       description: location.description,
-      color: location.color,
       entities: location.entities,
     });
   }

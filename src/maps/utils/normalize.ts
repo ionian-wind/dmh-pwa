@@ -40,7 +40,6 @@ export function normalizeLocation(
     id: location.id || generateId(),
     name: location.name || '',
     description: location.description || '',
-    color: location.color || undefined,
     entities: normalizeEntities(location.entities),
     createdAt: Number(location.createdAt) || Date.now(),
     updatedAt: Number(location.updatedAt) || Date.now(),

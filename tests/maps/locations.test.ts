@@ -26,7 +26,6 @@ describe('map location store', () => {
     const location = await store.create({
       name: 'Town',
       description: 'Starting town',
-      color: '#336699',
       entities: [],
     });
 
@@ -52,7 +51,6 @@ describe('map location store', () => {
     const location = await locationStore.create({
       name: 'Town',
       description: '',
-      color: '#336699',
       entities: [],
     });
     const map = await mapStore.create({

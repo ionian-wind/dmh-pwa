@@ -131,7 +131,6 @@ function handleSubmit(updated: typeof location.value) {
   void locationStore.update(updated.id, {
     name: updated.name,
     description: updated.description,
-    color: updated.color,
     entities: updated.entities,
   });
   showEditor.value = false;

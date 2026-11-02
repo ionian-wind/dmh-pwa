@@ -72,7 +72,6 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         id: 'location-1',
         name: 'Town',
         description: '',
-        color: '#336699',
         entities: [],
         createdAt: now,
         updatedAt: now,

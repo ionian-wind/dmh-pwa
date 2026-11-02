@@ -28,7 +28,6 @@ const location: MapLocation = {
   id: 'l1',
   name: 'Town',
   description: 'Starting town',
-  color: '#336699',
   entities: [{ kind: 'note', id: 'n1' }],
 };
 
@@ -266,10 +265,6 @@ describe('map location editor', () => {
 
     await wrapper.find('#location-name').setValue('Capital');
     await wrapper.find('#location-description').setValue('Large city');
-    await wrapper
-      .findComponent(ColorPicker)
-      .vm.$emit('update:modelValue', '#00ff00');
-    await nextTick();
     wrapper
       .findComponent(EntityLinksStub)
       .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
@@ -282,7 +277,6 @@ describe('map location editor', () => {
       id: 'l1',
       name: 'Capital',
       description: 'Large city',
-      color: '#00ff00',
       entities: [{ kind: 'map', id: 'map2' }],
     });
   });
@@ -300,6 +294,7 @@ describe('map location editor', () => {
     const deleteButton = wrapper
       .findAll('button')
       .find((button) => button.text().toLowerCase().includes('delete'));
+    expect(deleteButton!.element.closest('.modal-actions')).not.toBeNull();
     await deleteButton!.trigger('click');
     expect(wrapper.emitted('delete')?.[0]).toEqual(['l1']);
 
