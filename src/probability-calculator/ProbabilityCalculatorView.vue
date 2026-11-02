@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Chart, Grid, Line, Responsive, Tooltip } from 'vue3-charts';
 import {
-  IconBook2,
+  IconHelpCircle,
   IconCheck,
   IconCopy,
   IconDice,
@@ -363,7 +363,7 @@ onMounted(() => {
       rightDrawerIcon: IconCodeblock,
       buttons: [
         {
-          icon: IconBook2,
+          icon: IconHelpCircle,
           color: 'primary',
           title: 'probabilityCalculator.syntax',
           event: () => router.push('/probability-calculator/syntax'),

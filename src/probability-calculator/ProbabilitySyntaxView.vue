@@ -199,7 +199,6 @@ const parameterBullets = computed(
       >
         <IconArrowLeft />
       </QBtn>
-      <IconBook2 :size="28" class="text-primary" />
       <div>
         <div class="text-h5">
           {{ t('probabilityCalculator.syntaxPage.title') }}
