@@ -130,6 +130,12 @@ const sections: SectionItem[] = [
     icon: IconGhost3,
   },
   {
+    section: Section.MAPS,
+    label: 'navigation.maps',
+    path: '/maps',
+    icon: IconMap,
+  },
+  {
     section: Section.ENCOUNTERS,
     label: 'navigation.encounters',
     path: '/encounters',
@@ -141,12 +147,6 @@ const sections: SectionItem[] = [
     path: '/timers',
     icon: timerIcon,
     ref: true,
-  },
-  {
-    section: Section.MAPS,
-    label: 'navigation.maps',
-    path: '/maps',
-    icon: IconMap,
   },
   // {
   //   section: Section.AMBIENT_SOUND,
