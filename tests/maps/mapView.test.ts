@@ -388,6 +388,23 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
+  it('does not open the map info popup when a sidebar item is clicked', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    vm.selectMarker('m1');
+    await flushPromises();
+    expect(wrapper.find('.map-info-popup').exists()).toBe(false);
+    expect(vm.hoveredMarkerId).toBe('m1');
+
+    vm.focusArea('a1');
+    await flushPromises();
+    expect(wrapper.find('.map-info-popup').exists()).toBe(false);
+    expect(vm.hoveredAreaId).toBe('a1');
+
+    wrapper.unmount();
+  });
+
   it('places a marker from a map click and saves it', async () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;

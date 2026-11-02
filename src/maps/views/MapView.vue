@@ -448,7 +448,8 @@ function focusArea(areaId: string) {
   const area = map.value.areas.find((entry) => entry.id === areaId);
   if (!area) return;
   center.value = areaMapCenter(area);
-  showAreaInfo(area);
+  hoveredAreaId.value = areaId;
+  olMapRef.value?.map?.render();
 }
 
 async function deleteAreaFromList(areaId: string) {
@@ -473,8 +474,8 @@ function areaStyle(feature: any) {
   if (!area) return undefined;
   const hovered = hoveredAreaId.value === area.id;
   return new Style({
-    fill: new Fill({ color: areaFillColor(area.color, hovered ? 0.45 : 0.22) }),
-    stroke: new Stroke({ color: area.color, width: hovered ? 3 : 2 }),
+    fill: new Fill({ color: areaFillColor(area.color, hovered ? 0.6 : 0.22) }),
+    stroke: new Stroke({ color: area.color, width: hovered ? 4 : 2 }),
   });
 }
 
@@ -488,7 +489,7 @@ function selectMarker(markerId: string) {
   const marker = map.value.markers.find((entry) => entry.id === markerId);
   if (!marker) return;
   center.value = imageToMapPoint([marker.x, marker.y], size.value[1]);
-  showMarkerInfo(marker);
+  hoveredMarkerId.value = markerId;
 }
 
 async function deleteMarkerFromList(markerId: string) {
@@ -690,6 +691,7 @@ function hoverArea(areaId: string | null) {
           <button
             type="button"
             class="map-area-label"
+            :class="{ 'is-hovered': hoveredAreaId === area.id }"
             :style="{
               backgroundColor: areaFillColor(area.color, 0.82),
               color: areaTextColor(area.color),
@@ -882,6 +884,12 @@ function hoverArea(areaId: string | null) {
   cursor: pointer;
   font-size: 0.8rem;
   pointer-events: auto;
+}
+
+.map-area-label.is-hovered {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  transform: scale(1.06);
 }
 
 .is-active {
