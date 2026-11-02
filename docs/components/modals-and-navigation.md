@@ -33,6 +33,9 @@ the standard `BaseModal` action area:
 - Do **not** place a delete button inside the dialog body or a custom content
   section. Custom `#actions` content is reserved for non-standard actions.
 
+Entity editors must also follow the layout and tab requirements in
+[editor-dialog-pattern.md](../architecture/editor-dialog-pattern.md).
+
 Behavior:
 
 - Uses `useModalState().openModal/closeModal` on mount, on `isOpen` change, and
