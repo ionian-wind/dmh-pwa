@@ -1,4 +1,5 @@
 import { Dialog } from 'quasar';
+import i18n from '@/i18n';
 
 export interface AlertOptions {
   title?: string;
@@ -14,9 +15,9 @@ export function alert(
   return new Promise((resolve) => {
     Dialog.create({
       message,
-      title: options.title || 'Alert',
+      title: options.title || i18n.global.t('common.alert'),
       ok: {
-        label: options.okText || 'OK',
+        label: options.okText || i18n.global.t('common.ok'),
         color: options.color || 'primary',
       },
       ...options,

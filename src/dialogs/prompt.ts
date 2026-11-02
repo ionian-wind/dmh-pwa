@@ -1,4 +1,5 @@
 import { Dialog, PromptInputType } from 'quasar';
+import i18n from '@/i18n';
 
 export interface PromptOptions {
   title?: string;
@@ -17,17 +18,17 @@ export function prompt(
   return new Promise((resolve) => {
     Dialog.create({
       message,
-      title: options.title || 'Prompt',
+      title: options.title || i18n.global.t('common.prompt'),
       prompt: {
         model: options.modelValue || '',
         type: options.inputType || 'text',
       },
       ok: {
-        label: options.okText || 'OK',
+        label: options.okText || i18n.global.t('common.ok'),
         color: options.color || 'primary',
       },
       cancel: {
-        label: options.cancelText || 'Cancel',
+        label: options.cancelText || i18n.global.t('common.cancel'),
         color: options.color || 'secondary',
       },
       persistent: true,
