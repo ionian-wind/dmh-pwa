@@ -498,6 +498,19 @@ describe('MapView', () => {
     expect(wrapper.find('.map-layer-add').exists()).toBe(false);
     expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
 
+    expect(wrapper.find('.map-area-label').exists()).toBe(true);
+    vm.hideLabels = true;
+    await flushPromises();
+    expect(wrapper.find('.map-area-label').exists()).toBe(false);
+    const hiddenLabelStyles = vm.markerStyle({
+      get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
+    });
+    expect(hiddenLabelStyles).toHaveLength(1);
+
+    vm.hideLabels = false;
+    await flushPromises();
+    expect(wrapper.find('.map-area-label').exists()).toBe(true);
+
     vm.toggleLayerVisibility('base');
     await flushPromises();
     expect(vm.isLayerHidden('base')).toBe(true);

@@ -86,6 +86,7 @@ const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
 const isEditMode = ref(false);
+const hideLabels = ref(false);
 const sidePanelTab = ref('markers');
 const hiddenLayerIds = ref<Set<string>>(new Set());
 const olMapRef = ref<any>(null);
@@ -578,20 +579,22 @@ function markerStyle(feature: any) {
     );
   }
 
-  styles.push(
-    new Style({
-      text: new Text({
-        text: marker.title || t('maps.untitledMarker'),
-        font: `${hovered ? 700 : 600} 12px sans-serif`,
-        fill: new Fill({ color: '#333' }),
-        backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.9)' }),
-        padding: [2, 6, 2, 6],
-        textAlign: 'center',
-        textBaseline: 'middle',
-        offsetY: glyph ? 20 : 14,
+  if (!hideLabels.value) {
+    styles.push(
+      new Style({
+        text: new Text({
+          text: marker.title || t('maps.untitledMarker'),
+          font: `${hovered ? 700 : 600} 12px sans-serif`,
+          fill: new Fill({ color: '#333' }),
+          backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.9)' }),
+          padding: [2, 6, 2, 6],
+          textAlign: 'center',
+          textBaseline: 'middle',
+          offsetY: glyph ? 20 : 14,
+        }),
       }),
-    }),
-  );
+    );
+  }
 
   return styles;
 }
@@ -708,7 +711,7 @@ function refreshAreaHighlight() {
   });
 }
 
-watch([hoveredAreaId, hoveredMarkerId], refreshAreaHighlight);
+watch([hoveredAreaId, hoveredMarkerId, hideLabels], refreshAreaHighlight);
 
 function toggleLayerVisibility(layerId: string) {
   const next = new Set(hiddenLayerIds.value);
@@ -891,6 +894,7 @@ watch(isEditMode, (editing) => {
         />
 
         <ol-overlay
+          v-if="!hideLabels"
           v-for="area in visibleAreas"
           :key="`area-label-${area.id}`"
           :position="areaMapCenter(area)"
@@ -1128,6 +1132,10 @@ watch(isEditMode, (editing) => {
             />
           </div>
 
+          <div class="map-label-toggle">
+            <ToggleSwitch v-model="hideLabels" label="maps.hideLabels" />
+          </div>
+
           <div class="map-mode-toggle">
             <ToggleSwitch
               v-model="isEditMode"
@@ -1231,6 +1239,13 @@ watch(isEditMode, (editing) => {
   padding: 0.75rem;
   border-top: 1px solid var(--color-border);
   background: var(--color-background-soft);
+}
+
+.map-label-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .map-hint {

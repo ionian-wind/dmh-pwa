@@ -211,6 +211,8 @@ The map detail page no longer has top tabs. It contains:
     rename/delete controls. The base layer cannot be deleted.
   - Hovering a row highlights the marker or area on the map.
 - **Add layer** appears below the tabbed lists only in edit mode.
+- A **Hide labels** toggle hides marker labels and area label overlays while
+  keeping marker icons and area fills visible.
 - The **View mode / Edit mode** toggle is fixed at the bottom of the sidebar.
 - In view mode the map action menu, context menu, header edit/delete actions,
   row edit/delete actions, and popup edit action are hidden.
