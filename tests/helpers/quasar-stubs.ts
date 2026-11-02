@@ -215,6 +215,23 @@ const passthroughNames = [
   'QToolbar',
 ];
 
+const QCheckbox = defineComponent({
+  name: 'QCheckbox',
+  inheritAttrs: false,
+  props: { modelValue: Boolean },
+  emits: ['update:modelValue'],
+  setup(props, { attrs, emit }) {
+    return () =>
+      h('input', {
+        ...attrs,
+        type: 'checkbox',
+        checked: props.modelValue,
+        onChange: (event: Event) =>
+          emit('update:modelValue', (event.target as HTMLInputElement).checked),
+      });
+  },
+});
+
 export const quasarStubs: Record<string, any> = {
   QBtn,
   QInput,
@@ -231,3 +248,5 @@ export const quasarStubs: Record<string, any> = {
 for (const name of passthroughNames) {
   quasarStubs[name] = slotStub(name);
 }
+
+quasarStubs.QCheckbox = QCheckbox;

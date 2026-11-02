@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Chart, Grid, Line, Responsive, Tooltip } from 'vue3-charts';
@@ -10,16 +18,16 @@ import {
   IconDice,
   IconDownload,
   IconPlayerPlay,
-  IconChartLine,
   IconZoomIn,
   IconZoomOut,
   IconZoomReset,
   IconShare,
   IconDeviceFloppy,
-  IconPencil,
-  IconTrash,
+  IconCodeblock,
 } from '@tabler/icons-vue';
 import MonacoEditor from '@/components/common/MonacoEditor.vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
+import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { confirm, prompt } from '@/dialogs';
 import {
   calculate,
@@ -31,10 +39,12 @@ import {
   ANYDICE_LANGUAGE_ID,
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
+import CodeLibraryPanel from './CodeLibraryPanel.vue';
 import {
   createCodePiece,
   loadCodeLibrary,
   saveCodeLibrary,
+  type CodeLibraryPanelState,
   type CodePiece,
 } from './codeLibrary';
 import {
@@ -72,8 +82,13 @@ const sharedSource = sourceFromHash(window.location.hash);
 const source = ref(sharedSource ?? storedSource());
 const cleanSource = ref(source.value);
 const shareLink = ref(sharedSource === null ? '' : window.location.href);
-const library = ref<CodePiece[]>(loadCodeLibrary());
-const selectedPieceId = ref<string | null>(null);
+const libraryState = reactive<CodeLibraryPanelState>({
+  pieces: loadCodeLibrary(),
+  selectedId: null,
+  onLoad: () => undefined,
+  onRename: () => undefined,
+  onDelete: () => undefined,
+});
 const result = ref<CalculationResult | null>(null);
 const error = ref<string | null>(null);
 const isCalculating = ref(false);
@@ -98,7 +113,7 @@ watch(source, (value) => {
 });
 
 watch(
-  library,
+  () => libraryState.pieces,
   (pieces) => {
     saveCodeLibrary(pieces);
   },
@@ -124,7 +139,7 @@ const dataOptions: Array<{
 ];
 
 const selectedLibraryCode = computed(() =>
-  library.value
+  libraryState.pieces
     .filter((piece) => piece.include && piece.code.trim())
     .map((piece) => piece.code),
 );
@@ -235,15 +250,6 @@ async function createShareLink() {
   }
 }
 
-function firstLine(code: string): string {
-  return (
-    code
-      .split('\n')
-      .find((line) => line.trim())
-      ?.trim() ?? ''
-  );
-}
-
 async function saveCodePiece() {
   const name = await prompt(t('probabilityCalculator.library.namePrompt'), {
     title: t('probabilityCalculator.library.saveTitle'),
@@ -253,8 +259,8 @@ async function saveCodePiece() {
   if (!trimmed) return;
 
   const piece = createCodePiece(trimmed, source.value);
-  library.value = [...library.value, piece];
-  selectedPieceId.value = piece.id;
+  libraryState.pieces.push(piece);
+  libraryState.selectedId = piece.id;
   cleanSource.value = source.value;
 }
 
@@ -276,8 +282,9 @@ async function deleteCodePiece(piece: CodePiece) {
   );
   if (!confirmed) return;
 
-  library.value = library.value.filter((entry) => entry.id !== piece.id);
-  if (selectedPieceId.value === piece.id) selectedPieceId.value = null;
+  const index = libraryState.pieces.findIndex((entry) => entry.id === piece.id);
+  if (index >= 0) libraryState.pieces.splice(index, 1);
+  if (libraryState.selectedId === piece.id) libraryState.selectedId = null;
 }
 
 async function loadCodePiece(piece: CodePiece) {
@@ -291,7 +298,7 @@ async function loadCodePiece(piece: CodePiece) {
 
   source.value = piece.code;
   cleanSource.value = piece.code;
-  selectedPieceId.value = piece.id;
+  libraryState.selectedId = piece.id;
   result.value = null;
   error.value = null;
   rollerResults.value = [];
@@ -341,544 +348,465 @@ watch(rollerOutputIndex, () => {
   rollerResults.value = [];
 });
 
+libraryState.onLoad = loadCodePiece;
+libraryState.onRename = renameCodePiece;
+libraryState.onDelete = deleteCodePiece;
+
+const layout = useLayout();
+const rightDrawer = useRightDrawer();
+
 onMounted(() => {
+  layout.setTopMenuContent({
+    component: ViewHeader,
+    props: {
+      title: t('probabilityCalculator.title'),
+      rightDrawerIcon: IconCodeblock,
+      buttons: [
+        {
+          icon: IconBook2,
+          color: 'primary',
+          title: 'probabilityCalculator.syntax',
+          event: () => router.push('/probability-calculator/syntax'),
+        },
+      ],
+    },
+  });
+  rightDrawer.set({
+    component: CodeLibraryPanel,
+    props: { state: libraryState },
+  });
   void runCalculation();
+});
+
+onBeforeUnmount(() => {
+  layout.setTopMenuContent(null);
+  rightDrawer.clear();
 });
 </script>
 
 <template>
   <div class="q-pa-md probability-calculator-page">
-    <div class="row items-center no-wrap q-gutter-sm q-mb-md">
-      <IconChartLine :size="30" class="text-primary" />
-      <div class="col">
-        <div class="text-h5">{{ t('probabilityCalculator.title') }}</div>
-        <div class="text-caption text-grey-7">
-          {{ t('probabilityCalculator.subtitle') }}
-        </div>
-      </div>
-      <QBtn flat no-caps @click="router.push('/probability-calculator/syntax')">
-        <IconBook2 class="q-mr-xs" :size="18" />
-        {{ t('probabilityCalculator.syntax') }}
+    <div class="row items-center no-wrap q-gutter-sm q-mb-lg">
+      <QInput
+        :model-value="shareLink"
+        readonly
+        outlined
+        dense
+        class="col share-link-input"
+        data-test="share-link-input"
+        :aria-label="t('probabilityCalculator.shareLinkLabel')"
+        :placeholder="t('probabilityCalculator.clickToCreateLink')"
+      />
+      <QBtn
+        flat
+        no-caps
+        data-test="create-share-link"
+        :title="t('probabilityCalculator.clickToCreateLink')"
+        :aria-label="t('probabilityCalculator.clickToCreateLink')"
+        @click="createShareLink"
+      >
+        <IconShare :size="18" />
       </QBtn>
     </div>
 
-    <div class="probability-layout">
-      <div class="probability-main">
-        <div class="row items-center no-wrap q-gutter-sm q-mb-md">
-          <QInput
-            :model-value="shareLink"
-            readonly
-            outlined
-            dense
-            class="col share-link-input"
-            data-test="share-link-input"
-            :aria-label="t('probabilityCalculator.shareLinkLabel')"
-            :placeholder="t('probabilityCalculator.clickToCreateLink')"
-          />
-          <QBtn
-            flat
-            no-caps
-            data-test="create-share-link"
-            :title="t('probabilityCalculator.clickToCreateLink')"
-            :aria-label="t('probabilityCalculator.clickToCreateLink')"
-            @click="createShareLink"
-          >
-            <IconShare :size="18" />
-          </QBtn>
+    <section class="q-mb-lg">
+      <div class="row items-center justify-between q-mb-xs">
+        <div class="text-subtitle2">
+          {{ t('probabilityCalculator.source') }}
         </div>
-
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection class="q-pb-xs row items-center justify-between">
-            <div class="text-subtitle2">
-              {{ t('probabilityCalculator.source') }}
-            </div>
-            <div class="text-caption text-grey-7">
-              {{ t('probabilityCalculator.syntaxHint') }}
-            </div>
-          </QCardSection>
-          <QCardSection class="q-pt-xs">
-            <MonacoEditor
-              v-model="source"
-              :language="ANYDICE_LANGUAGE_ID"
-              height="340px"
-              :options="{
-                ariaLabel: t('probabilityCalculator.source'),
-                scrollbar: { verticalScrollbarSize: 10 },
-              }"
-            />
-          </QCardSection>
-          <QCardSection
-            class="q-pt-none row items-center justify-between q-gutter-md"
-          >
-            <div class="row items-center q-gutter-sm">
-              <QBtn flat no-caps @click="saveCodePiece">
-                <IconDeviceFloppy class="q-mr-xs" :size="18" />
-                {{ t('probabilityCalculator.save') }}
-              </QBtn>
-              <div class="text-caption text-grey-7">
-                {{ t('probabilityCalculator.shortcutHint') }}
-              </div>
-            </div>
-            <QBtn
-              color="primary"
-              unelevated
-              no-caps
-              :loading="isCalculating"
-              @click="runCalculation"
-            >
-              <template #loading>
-                {{ t('probabilityCalculator.calculating') }}
-              </template>
-              <template #default>
-                <IconPlayerPlay class="q-mr-sm" :size="18" />
-                {{ t('probabilityCalculator.calculate') }}
-              </template>
-            </QBtn>
-          </QCardSection>
-        </QCard>
-
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection class="row wrap items-start q-col-gutter-md">
-            <div class="col-auto">
-              <div class="text-caption text-grey-7 q-mb-xs">
-                {{ t('probabilityCalculator.view') }}
-              </div>
-              <QBtnGroup>
-                <QBtn
-                  v-for="option in viewOptions"
-                  :key="option.value"
-                  no-caps
-                  size="sm"
-                  :outline="viewMode !== option.value"
-                  :color="viewMode === option.value ? 'primary' : 'grey-8'"
-                  :label="t(option.label)"
-                  @click="viewMode = option.value"
-                />
-              </QBtnGroup>
-            </div>
-            <div class="col-auto">
-              <div class="text-caption text-grey-7 q-mb-xs">
-                {{ t('probabilityCalculator.data') }}
-              </div>
-              <QBtnGroup>
-                <QBtn
-                  v-for="option in dataOptions"
-                  :key="option.value"
-                  no-caps
-                  size="sm"
-                  :outline="dataMode !== option.value"
-                  :color="dataMode === option.value ? 'primary' : 'grey-8'"
-                  :label="t(option.label)"
-                  @click="dataMode = option.value"
-                />
-              </QBtnGroup>
-            </div>
-          </QCardSection>
-        </QCard>
-
-        <QBanner
-          v-if="error"
-          class="q-mb-md"
-          inline-actions
-          rounded
-          bg-color="negative"
-          text-color="white"
+        <div class="text-caption text-grey-7">
+          {{ t('probabilityCalculator.syntaxHint') }}
+        </div>
+      </div>
+      <MonacoEditor
+        v-model="source"
+        :language="ANYDICE_LANGUAGE_ID"
+        height="340px"
+        :options="{
+          ariaLabel: t('probabilityCalculator.source'),
+          scrollbar: { verticalScrollbarSize: 10 },
+        }"
+      />
+      <div class="row items-center justify-between q-gutter-md q-mt-sm">
+        <div class="row items-center q-gutter-sm">
+          <QBtn flat no-caps @click="saveCodePiece">
+            <IconDeviceFloppy class="q-mr-xs" :size="18" />
+            {{ t('probabilityCalculator.save') }}
+          </QBtn>
+          <div class="text-caption text-grey-7">
+            {{ t('probabilityCalculator.shortcutHint') }}
+          </div>
+        </div>
+        <QBtn
+          color="positive"
+          unelevated
+          no-caps
+          :loading="isCalculating"
+          @click="runCalculation"
         >
-          <template #avatar>
-            <span class="text-weight-bold">!</span>
-          </template>
-          <div>
-            <div class="text-weight-medium">
-              {{ t('probabilityCalculator.errorTitle') }}
-            </div>
-            <div class="text-caption">{{ error }}</div>
-          </div>
-        </QBanner>
-
-        <QCard v-if="isCalculating && !result" flat bordered class="q-pa-xl">
-          <div class="flex flex-center text-grey-7">
-            <QSpinner class="q-mr-sm" />
+          <template #loading>
             {{ t('probabilityCalculator.calculating') }}
-          </div>
-        </QCard>
+          </template>
+          <template #default>
+            <IconPlayerPlay class="q-mr-sm" :size="18" />
+            {{ t('probabilityCalculator.calculate') }}
+          </template>
+        </QBtn>
+      </div>
+    </section>
 
-        <QCard v-else-if="!result" flat bordered class="q-pa-xl text-center">
-          <div class="text-grey-7">{{ t('probabilityCalculator.empty') }}</div>
-        </QCard>
+    <section class="row wrap items-start q-col-gutter-md q-mb-md">
+      <div class="col-auto">
+        <div class="text-caption text-grey-7 q-mb-xs">
+          {{ t('probabilityCalculator.view') }}
+        </div>
+        <QBtnGroup>
+          <QBtn
+            v-for="option in viewOptions"
+            :key="option.value"
+            no-caps
+            size="sm"
+            :outline="viewMode !== option.value"
+            :color="viewMode === option.value ? 'primary' : 'grey-8'"
+            :label="t(option.label)"
+            @click="viewMode = option.value"
+          />
+        </QBtnGroup>
+      </div>
+      <div class="col-auto">
+        <div class="text-caption text-grey-7 q-mb-xs">
+          {{ t('probabilityCalculator.data') }}
+        </div>
+        <QBtnGroup>
+          <QBtn
+            v-for="option in dataOptions"
+            :key="option.value"
+            no-caps
+            size="sm"
+            :outline="dataMode !== option.value"
+            :color="dataMode === option.value ? 'primary' : 'grey-8'"
+            :label="t(option.label)"
+            @click="dataMode = option.value"
+          />
+        </QBtnGroup>
+      </div>
+    </section>
 
-        <template v-else>
-          <div v-if="showSummary" class="row q-col-gutter-md">
-            <div
-              v-for="summary in summaries"
-              :key="summary.label"
-              class="col-12 col-md-6"
-            >
-              <QCard flat bordered>
-                <QCardSection>
-                  <div class="text-subtitle1 text-weight-medium q-mb-sm">
-                    {{ summary.label }}
-                  </div>
-                  <div class="summary-grid">
-                    <span>{{ t('probabilityCalculator.mean') }}</span>
-                    <strong>{{ formatNumber(summary.mean, 3) }}</strong>
-                    <span>{{ t('probabilityCalculator.stddev') }}</span>
-                    <strong>{{ formatNumber(summary.stddev, 3) }}</strong>
-                    <span>{{ t('probabilityCalculator.min') }}</span>
-                    <strong>{{ summary.min }}</strong>
-                    <span>{{ t('probabilityCalculator.max') }}</span>
-                    <strong>{{ summary.max }}</strong>
-                    <span>{{ t('probabilityCalculator.outcomes') }}</span>
-                    <strong>{{ summary.outcomeCount }}</strong>
-                    <span>{{ t('probabilityCalculator.mostLikely') }}</span>
-                    <strong>
-                      <template v-if="summary.mostLikely">
-                        {{ summary.mostLikely.value }}
-                        ({{
-                          formatProbability(summary.mostLikely.probability)
-                        }})
-                      </template>
-                      <template v-else>—</template>
-                    </strong>
-                  </div>
-                </QCardSection>
-              </QCard>
+    <QBanner
+      v-if="error"
+      class="q-mb-md"
+      inline-actions
+      rounded
+      bg-color="negative"
+      text-color="white"
+    >
+      <template #avatar>
+        <span class="text-weight-bold">!</span>
+      </template>
+      <div>
+        <div class="text-weight-medium">
+          {{ t('probabilityCalculator.errorTitle') }}
+        </div>
+        <div class="text-caption">{{ error }}</div>
+      </div>
+    </QBanner>
+
+    <div
+      v-if="isCalculating && !result"
+      class="q-pa-lg text-grey-7 flex flex-center"
+    >
+      <QSpinner class="q-mr-sm" />
+      {{ t('probabilityCalculator.calculating') }}
+    </div>
+
+    <div v-else-if="!result" class="q-pa-lg text-center text-grey-7">
+      {{ t('probabilityCalculator.empty') }}
+    </div>
+
+    <template v-else>
+      <div v-if="showSummary" class="row q-col-gutter-md">
+        <div
+          v-for="summary in summaries"
+          :key="summary.label"
+          class="col-12 col-md-6"
+        >
+          <div class="summary-block q-pa-sm">
+            <div class="text-subtitle1 text-weight-medium q-mb-sm">
+              {{ summary.label }}
+            </div>
+            <div class="summary-grid">
+              <span>{{ t('probabilityCalculator.mean') }}</span>
+              <strong>{{ formatNumber(summary.mean, 3) }}</strong>
+              <span>{{ t('probabilityCalculator.stddev') }}</span>
+              <strong>{{ formatNumber(summary.stddev, 3) }}</strong>
+              <span>{{ t('probabilityCalculator.min') }}</span>
+              <strong>{{ summary.min }}</strong>
+              <span>{{ t('probabilityCalculator.max') }}</span>
+              <strong>{{ summary.max }}</strong>
+              <span>{{ t('probabilityCalculator.outcomes') }}</span>
+              <strong>{{ summary.outcomeCount }}</strong>
+              <span>{{ t('probabilityCalculator.mostLikely') }}</span>
+              <strong>
+                <template v-if="summary.mostLikely">
+                  {{ summary.mostLikely.value }}
+                  ({{ formatProbability(summary.mostLikely.probability) }})
+                </template>
+                <template v-else>—</template>
+              </strong>
             </div>
           </div>
-
-          <QCard v-else-if="viewMode === 'graph'" flat bordered>
-            <QCardSection>
-              <div class="row items-center justify-end q-gutter-xs q-mb-sm">
-                <QBtn
-                  flat
-                  dense
-                  round
-                  :aria-label="t('probabilityCalculator.zoomOut')"
-                  :disable="chartZoom <= MIN_CHART_ZOOM"
-                  @click="zoomChart(-CHART_ZOOM_STEP)"
-                >
-                  <IconZoomOut :size="18" />
-                </QBtn>
-                <span class="text-caption text-grey-7 zoom-label">
-                  {{ Math.round(chartZoom * 100) }}%
-                </span>
-                <QBtn
-                  flat
-                  dense
-                  round
-                  :aria-label="t('probabilityCalculator.zoomIn')"
-                  :disable="chartZoom >= MAX_CHART_ZOOM"
-                  @click="zoomChart(CHART_ZOOM_STEP)"
-                >
-                  <IconZoomIn :size="18" />
-                </QBtn>
-                <QBtn
-                  flat
-                  dense
-                  round
-                  :aria-label="t('probabilityCalculator.zoomReset')"
-                  :disable="chartZoom === 1"
-                  @click="resetChartZoom"
-                >
-                  <IconZoomReset :size="18" />
-                </QBtn>
-              </div>
-              <div
-                v-if="chart && chart.rows.length"
-                class="probability-chart-wrapper"
-              >
-                <Responsive
-                  class="probability-chart-responsive"
-                  :style="{
-                    height: `${Math.round(440 * chartZoom)}px`,
-                  }"
-                >
-                  <template #main="{ width, height }">
-                    <Chart
-                      :data="chart.rows"
-                      :size="{
-                        width: Math.round(width * chartZoom),
-                        height: Math.round(height),
-                      }"
-                      :margin="{ top: 20, right: 24, bottom: 36, left: 56 }"
-                      :axis="{
-                        primary: {
-                          format: (value: unknown) => String(Number(value)),
-                        },
-                        secondary: {
-                          format: (value: unknown) =>
-                            formatProbability(Number(value), 0),
-                        },
-                      }"
-                    >
-                      <template #layers>
-                        <Grid strokeDasharray="2,2" />
-                        <Line
-                          v-for="series in chart.series"
-                          :key="series.key"
-                          :data-keys="['value', series.key]"
-                          :line-style="{ stroke: series.color, strokeWidth: 2 }"
-                          :dot-style="{ fill: series.color }"
-                          :hide-dot="chart.rows.length > 40"
-                        />
-                        <Tooltip />
-                      </template>
-                    </Chart>
-                  </template>
-                </Responsive>
-              </div>
-              <div v-else class="text-grey-7">
-                {{ t('probabilityCalculator.noOutcomes') }}
-              </div>
-              <div class="row q-gutter-md q-mt-sm">
-                <div
-                  v-for="series in chart?.series ?? []"
-                  :key="series.key"
-                  class="row items-center q-gutter-xs text-caption"
-                >
-                  <span
-                    class="chart-legend-swatch"
-                    :style="{ backgroundColor: series.color }"
-                  ></span>
-                  {{ series.label }}
-                </div>
-              </div>
-            </QCardSection>
-          </QCard>
-
-          <QCard v-else-if="viewMode === 'export'" flat bordered>
-            <QCardSection class="row items-center justify-between">
-              <div class="text-subtitle2">
-                {{ t('probabilityCalculator.exportTitle') }}
-              </div>
-              <div class="row q-gutter-sm">
-                <QBtn flat dense no-caps @click="copyExport">
-                  <IconCheck v-if="copied" class="q-mr-xs" :size="18" />
-                  <IconCopy v-else class="q-mr-xs" :size="18" />
-                  {{
-                    copied
-                      ? t('probabilityCalculator.copied')
-                      : t('probabilityCalculator.copy')
-                  }}
-                </QBtn>
-                <QBtn flat dense no-caps @click="downloadExport">
-                  <IconDownload class="q-mr-xs" :size="18" />
-                  {{ t('probabilityCalculator.download') }}
-                </QBtn>
-              </div>
-            </QCardSection>
-            <QCardSection class="q-pt-none">
-              <QInput
-                :model-value="exportText"
-                type="textarea"
-                readonly
-                outlined
-                data-test="export-output"
-                input-class="probability-export-text"
-                :input-style="{ minHeight: '260px' }"
-              />
-            </QCardSection>
-          </QCard>
-
-          <QCard v-else-if="viewMode === 'roller'" flat bordered>
-            <QCardSection class="row items-end q-col-gutter-md">
-              <div class="col-12 col-sm-5">
-                <QSelect
-                  v-model="rollerOutputIndex"
-                  outlined
-                  dense
-                  emit-value
-                  map-options
-                  :options="rollerOptions"
-                  :label="t('probabilityCalculator.rollerOutput')"
-                />
-              </div>
-              <div class="col-auto">
-                <QInput
-                  v-model.number="rollerAmount"
-                  outlined
-                  dense
-                  type="number"
-                  min="1"
-                  max="100"
-                  :label="t('probabilityCalculator.rollAmount')"
-                />
-              </div>
-              <div class="col-auto">
-                <QBtn color="primary" unelevated no-caps @click="roll">
-                  <IconDice class="q-mr-xs" :size="18" />
-                  {{ t('probabilityCalculator.roll') }}
-                </QBtn>
-              </div>
-            </QCardSection>
-            <QCardSection class="q-pt-none">
-              <div v-if="rollerResults.length" class="roller-results">
-                <span
-                  v-for="(value, index) in rollerResults"
-                  :key="index"
-                  class="roller-result"
-                >
-                  {{ value }}
-                </span>
-              </div>
-              <div v-else class="text-grey-7">
-                {{ t('probabilityCalculator.rollHint') }}
-              </div>
-            </QCardSection>
-          </QCard>
-
-          <template v-else-if="showTransposedTable && transposed">
-            <QCard flat bordered>
-              <QCardSection>
-                <QMarkupTable dense flat bordered class="probability-table">
-                  <thead>
-                    <tr>
-                      <th>{{ t('probabilityCalculator.value') }}</th>
-                      <th v-for="column in transposed.columns" :key="column">
-                        {{ column }}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="row in transposed.rows" :key="row.value">
-                      <td>{{ row.value }}</td>
-                      <td
-                        v-for="(probability, index) in row.probabilities"
-                        :key="index"
-                      >
-                        {{ probability ? formatProbability(probability) : '—' }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </QMarkupTable>
-              </QCardSection>
-            </QCard>
-          </template>
-
-          <template v-else-if="showNormalTable">
-            <QCard
-              v-for="(output, outputIndex) in outputs"
-              :key="outputIndex"
-              flat
-              bordered
-              class="q-mb-md"
-            >
-              <QCardSection class="q-pb-xs">
-                <div class="row items-baseline justify-between">
-                  <div class="text-subtitle1 text-weight-medium">
-                    {{ outputLabel(output, outputIndex) }}
-                  </div>
-                  <div class="text-caption text-grey-7">
-                    {{ t('probabilityCalculator.mean') }}
-                    {{ formatNumber(output.mean, 3) }} ·
-                    {{ t('probabilityCalculator.stddev') }}
-                    {{ formatNumber(output.stddev, 3) }}
-                  </div>
-                </div>
-              </QCardSection>
-              <QCardSection class="q-pt-xs">
-                <QMarkupTable dense flat class="probability-table">
-                  <thead>
-                    <tr>
-                      <th>{{ t('probabilityCalculator.value') }}</th>
-                      <th>{{ t('probabilityCalculator.probability') }}</th>
-                      <th class="probability-bar-column"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="outcome in outcomesFor(output)"
-                      :key="outcome.value"
-                    >
-                      <td>{{ outcome.value }}</td>
-                      <td>{{ formatProbability(outcome.probability) }}</td>
-                      <td class="probability-bar-column">
-                        <div class="probability-bar-track">
-                          <div
-                            class="probability-bar-fill"
-                            :style="{
-                              width: `${Math.min(100, outcome.probability * 100)}%`,
-                            }"
-                          ></div>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr v-if="output.outcomes.length === 0">
-                      <td colspan="3" class="text-grey-7">
-                        {{ t('probabilityCalculator.noOutcomes') }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </QMarkupTable>
-              </QCardSection>
-            </QCard>
-          </template>
-        </template>
+        </div>
       </div>
 
-      <aside class="probability-sidebar">
-        <QCard flat bordered class="code-library-card">
-          <QCardSection class="row items-center justify-between q-pb-xs">
+      <section v-else-if="viewMode === 'graph'" class="q-mb-md">
+        <div class="row items-center justify-end q-gutter-xs q-mb-sm">
+          <QBtn
+            flat
+            dense
+            round
+            :aria-label="t('probabilityCalculator.zoomOut')"
+            :disable="chartZoom <= MIN_CHART_ZOOM"
+            @click="zoomChart(-CHART_ZOOM_STEP)"
+          >
+            <IconZoomOut :size="18" />
+          </QBtn>
+          <span class="text-caption text-grey-7 zoom-label">
+            {{ Math.round(chartZoom * 100) }}%
+          </span>
+          <QBtn
+            flat
+            dense
+            round
+            :aria-label="t('probabilityCalculator.zoomIn')"
+            :disable="chartZoom >= MAX_CHART_ZOOM"
+            @click="zoomChart(CHART_ZOOM_STEP)"
+          >
+            <IconZoomIn :size="18" />
+          </QBtn>
+          <QBtn
+            flat
+            dense
+            round
+            :aria-label="t('probabilityCalculator.zoomReset')"
+            :disable="chartZoom === 1"
+            @click="resetChartZoom"
+          >
+            <IconZoomReset :size="18" />
+          </QBtn>
+        </div>
+        <div
+          v-if="chart && chart.rows.length"
+          class="probability-chart-wrapper"
+        >
+          <Responsive
+            class="probability-chart-responsive"
+            :style="{ height: `${Math.round(440 * chartZoom)}px` }"
+          >
+            <template #main="{ width, height }">
+              <Chart
+                :data="chart.rows"
+                :size="{
+                  width: Math.round(width * chartZoom),
+                  height: Math.round(height),
+                }"
+                :margin="{ top: 20, right: 24, bottom: 36, left: 56 }"
+                :axis="{
+                  primary: {
+                    format: (value: unknown) => String(Number(value)),
+                  },
+                  secondary: {
+                    format: (value: unknown) =>
+                      formatProbability(Number(value), 0),
+                  },
+                }"
+              >
+                <template #layers>
+                  <Grid strokeDasharray="2,2" />
+                  <Line
+                    v-for="series in chart.series"
+                    :key="series.key"
+                    :data-keys="['value', series.key]"
+                    :line-style="{ stroke: series.color, strokeWidth: 2 }"
+                    :dot-style="{ fill: series.color }"
+                    :hide-dot="chart.rows.length > 40"
+                  />
+                  <Tooltip />
+                </template>
+              </Chart>
+            </template>
+          </Responsive>
+        </div>
+        <div v-else class="text-grey-7">
+          {{ t('probabilityCalculator.noOutcomes') }}
+        </div>
+        <div class="row q-gutter-md q-mt-sm">
+          <div
+            v-for="series in chart?.series ?? []"
+            :key="series.key"
+            class="row items-center q-gutter-xs text-caption"
+          >
+            <span
+              class="chart-legend-swatch"
+              :style="{ backgroundColor: series.color }"
+            ></span>
+            {{ series.label }}
+          </div>
+        </div>
+      </section>
+
+      <section v-else-if="viewMode === 'export'" class="q-mb-md">
+        <div class="row items-center justify-between q-mb-sm">
+          <div class="text-subtitle2">
+            {{ t('probabilityCalculator.exportTitle') }}
+          </div>
+          <div class="row q-gutter-sm">
+            <QBtn flat dense no-caps @click="copyExport">
+              <IconCheck v-if="copied" class="q-mr-xs" :size="18" />
+              <IconCopy v-else class="q-mr-xs" :size="18" />
+              {{
+                copied
+                  ? t('probabilityCalculator.copied')
+                  : t('probabilityCalculator.copy')
+              }}
+            </QBtn>
+            <QBtn flat dense no-caps @click="downloadExport">
+              <IconDownload class="q-mr-xs" :size="18" />
+              {{ t('probabilityCalculator.download') }}
+            </QBtn>
+          </div>
+        </div>
+        <QInput
+          :model-value="exportText"
+          type="textarea"
+          readonly
+          outlined
+          data-test="export-output"
+          input-class="probability-export-text"
+          :input-style="{ minHeight: '260px' }"
+        />
+      </section>
+
+      <section v-else-if="viewMode === 'roller'" class="q-mb-md">
+        <div class="row items-end q-col-gutter-md">
+          <div class="col-12 col-sm-5">
+            <QSelect
+              v-model="rollerOutputIndex"
+              outlined
+              dense
+              emit-value
+              map-options
+              :options="rollerOptions"
+              :label="t('probabilityCalculator.rollerOutput')"
+            />
+          </div>
+          <div class="col-auto">
+            <QInput
+              v-model.number="rollerAmount"
+              outlined
+              dense
+              type="number"
+              min="1"
+              max="100"
+              :label="t('probabilityCalculator.rollAmount')"
+            />
+          </div>
+          <div class="col-auto">
+            <QBtn color="primary" unelevated no-caps @click="roll">
+              <IconDice class="q-mr-xs" :size="18" />
+              {{ t('probabilityCalculator.roll') }}
+            </QBtn>
+          </div>
+        </div>
+        <div class="q-mt-md">
+          <div v-if="rollerResults.length" class="roller-results">
+            <span
+              v-for="(value, index) in rollerResults"
+              :key="index"
+              class="roller-result"
+            >
+              {{ value }}
+            </span>
+          </div>
+          <div v-else class="text-grey-7">
+            {{ t('probabilityCalculator.rollHint') }}
+          </div>
+        </div>
+      </section>
+
+      <template v-else-if="showTransposedTable && transposed">
+        <QMarkupTable dense flat bordered class="probability-table">
+          <thead>
+            <tr>
+              <th>{{ t('probabilityCalculator.value') }}</th>
+              <th v-for="column in transposed.columns" :key="column">
+                {{ column }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in transposed.rows" :key="row.value">
+              <td>{{ row.value }}</td>
+              <td
+                v-for="(probability, index) in row.probabilities"
+                :key="index"
+              >
+                {{ probability ? formatProbability(probability) : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </QMarkupTable>
+      </template>
+
+      <template v-else-if="showNormalTable">
+        <section
+          v-for="(output, outputIndex) in outputs"
+          :key="outputIndex"
+          class="q-mb-lg"
+        >
+          <div class="row items-baseline justify-between q-mb-xs">
             <div class="text-subtitle1 text-weight-medium">
-              {{ t('probabilityCalculator.library.title') }}
+              {{ outputLabel(output, outputIndex) }}
             </div>
-            <QBadge color="grey-7" outline>
-              {{ library.length }}
-            </QBadge>
-          </QCardSection>
-          <QSeparator />
-          <QCardSection class="code-library-list q-pt-sm">
-            <div
-              v-if="library.length === 0"
-              class="text-caption text-grey-7 q-pa-sm"
-            >
-              {{ t('probabilityCalculator.library.empty') }}
+            <div class="text-caption text-grey-7">
+              {{ t('probabilityCalculator.mean') }}
+              {{ formatNumber(output.mean, 3) }} ·
+              {{ t('probabilityCalculator.stddev') }}
+              {{ formatNumber(output.stddev, 3) }}
             </div>
-            <div
-              v-for="piece in library"
-              :key="piece.id"
-              class="code-library-item"
-              :class="{ 'is-selected': selectedPieceId === piece.id }"
-              @click="loadCodePiece(piece)"
-            >
-              <QCheckbox
-                v-model="piece.include"
-                dense
-                size="sm"
-                class="code-library-checkbox"
-                :title="t('probabilityCalculator.library.include')"
-                @click.stop
-              />
-              <div class="col min-width-0">
-                <div class="text-body2 ellipsis">{{ piece.name }}</div>
-                <div class="text-caption text-grey-7 ellipsis">
-                  {{ firstLine(piece.code) }}
-                </div>
-              </div>
-              <QBtn
-                flat
-                dense
-                round
-                :title="t('probabilityCalculator.library.rename')"
-                :aria-label="t('probabilityCalculator.library.rename')"
-                @click.stop="renameCodePiece(piece)"
-              >
-                <IconPencil :size="16" />
-              </QBtn>
-              <QBtn
-                flat
-                dense
-                round
-                :title="t('probabilityCalculator.library.delete')"
-                :aria-label="t('probabilityCalculator.library.delete')"
-                @click.stop="deleteCodePiece(piece)"
-              >
-                <IconTrash :size="16" />
-              </QBtn>
-            </div>
-          </QCardSection>
-        </QCard>
-      </aside>
-    </div>
+          </div>
+          <QMarkupTable dense flat class="probability-table">
+            <thead>
+              <tr>
+                <th>{{ t('probabilityCalculator.value') }}</th>
+                <th>{{ t('probabilityCalculator.probability') }}</th>
+                <th class="probability-bar-column"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="outcome in outcomesFor(output)" :key="outcome.value">
+                <td>{{ outcome.value }}</td>
+                <td>{{ formatProbability(outcome.probability) }}</td>
+                <td class="probability-bar-column">
+                  <div class="probability-bar-track">
+                    <div
+                      class="probability-bar-fill"
+                      :style="{
+                        width: `${Math.min(100, outcome.probability * 100)}%`,
+                      }"
+                    ></div>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="output.outcomes.length === 0">
+                <td colspan="3" class="text-grey-7">
+                  {{ t('probabilityCalculator.noOutcomes') }}
+                </td>
+              </tr>
+            </tbody>
+          </QMarkupTable>
+        </section>
+      </template>
+    </template>
   </div>
 </template>
 

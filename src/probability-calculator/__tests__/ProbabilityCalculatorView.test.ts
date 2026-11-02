@@ -4,8 +4,20 @@ import { nextTick } from 'vue';
 
 const promptMock = vi.hoisted(() => vi.fn());
 const confirmMock = vi.hoisted(() => vi.fn());
+const layoutMock = vi.hoisted(() => ({
+  setTopMenuContent: vi.fn(),
+  setRightDrawer: vi.fn(),
+  clearRightDrawer: vi.fn(),
+}));
 
 vi.mock('@/dialogs', () => ({ prompt: promptMock, confirm: confirmMock }));
+vi.mock('@/composables/useLayout', () => ({
+  useLayout: () => ({ setTopMenuContent: layoutMock.setTopMenuContent }),
+  useRightDrawer: () => ({
+    set: layoutMock.setRightDrawer,
+    clear: layoutMock.clearRightDrawer,
+  }),
+}));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 vi.mock('vue3-charts', async () => {
@@ -85,6 +97,11 @@ async function mountPage() {
   const wrapper = mount(ProbabilityCalculatorView);
   await settle();
   return wrapper;
+}
+
+function libraryState() {
+  const content = layoutMock.setRightDrawer.mock.calls.at(-1)?.[0] as any;
+  return content.props.state;
 }
 
 describe('ProbabilityCalculatorView', () => {
@@ -237,9 +254,10 @@ describe('ProbabilityCalculatorView', () => {
     wrapper.unmount();
   });
 
-  it('saves, renames, loads and deletes library pieces', async () => {
+  it('saves a library piece and selects it', async () => {
     promptMock.mockResolvedValueOnce('My piece');
     const wrapper = await mountPage();
+    const state = libraryState();
 
     await wrapper
       .findAll('button')
@@ -247,26 +265,10 @@ describe('ProbabilityCalculatorView', () => {
       .trigger('click');
     await settle();
 
-    expect(wrapper.text()).toContain('My piece');
-    const item = wrapper.find('.code-library-item');
-    expect(item.exists()).toBe(true);
-
-    promptMock.mockResolvedValueOnce('Renamed piece');
-    await wrapper.find('button[aria-label="Rename"]').trigger('click');
-    await settle();
-    expect(wrapper.text()).toContain('Renamed piece');
-
-    promptMock.mockResolvedValueOnce('Another piece');
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Save')!
-      .trigger('click');
-    await settle();
-
-    confirmMock.mockResolvedValueOnce(true);
-    await wrapper.findAll('button[aria-label="Delete"]')[0].trigger('click');
-    await settle();
-    expect(wrapper.findAll('.code-library-item')).toHaveLength(1);
+    expect(state.pieces).toHaveLength(1);
+    expect(state.pieces[0].name).toBe('My piece');
+    expect(state.pieces[0].code).toBe('output 3d6');
+    expect(state.selectedId).toBe(state.pieces[0].id);
     wrapper.unmount();
   });
 
@@ -284,16 +286,17 @@ describe('ProbabilityCalculatorView', () => {
         : null,
     );
     const wrapper = await mountPage();
+    const state = libraryState();
     const editor = wrapper.find('textarea.monaco-editor-stub');
 
     await editor.setValue('output 1d8');
     confirmMock.mockResolvedValueOnce(false);
-    await wrapper.find('.code-library-item').trigger('click');
+    await state.onLoad(state.pieces[0]);
     await settle();
     expect((editor.element as HTMLTextAreaElement).value).toBe('output 1d8');
 
     confirmMock.mockResolvedValueOnce(true);
-    await wrapper.find('.code-library-item').trigger('click');
+    await state.onLoad(state.pieces[0]);
     await settle();
     expect((editor.element as HTMLTextAreaElement).value).toBe('output 1d4');
     expect(wrapper.text()).toContain('Run a calculation');

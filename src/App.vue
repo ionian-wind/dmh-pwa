@@ -121,12 +121,6 @@ const sections: SectionItem[] = [
     icon: IconUsers,
   },
   {
-    section: Section.MODULES,
-    label: 'navigation.modules',
-    path: '/modules',
-    icon: IconBook,
-  },
-  {
     section: Section.MONSTERS,
     label: 'navigation.monsters',
     path: '/monsters',
@@ -143,6 +137,12 @@ const sections: SectionItem[] = [
     label: 'navigation.encounters',
     path: '/encounters',
     icon: IconSwords,
+  },
+  {
+    section: Section.MODULES,
+    label: 'navigation.modules',
+    path: '/modules',
+    icon: IconBook,
   },
   // {
   //   section: Section.AMBIENT_SOUND,
@@ -314,12 +314,7 @@ const isSettingsOpen = ref(false);
                 </QItemSection>
               </QItem>
             </template>
-            <QExpansionItem
-              v-model="toolsExpanded"
-              expand-separator
-              dense
-              toggle
-            >
+            <QExpansionItem v-model="toolsExpanded" toggle>
               <template #header>
                 <QItemSection side>
                   <IconTool />

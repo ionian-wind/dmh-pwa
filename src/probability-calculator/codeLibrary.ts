@@ -6,6 +6,14 @@ export interface CodePiece {
   include: boolean;
 }
 
+export interface CodeLibraryPanelState {
+  pieces: CodePiece[];
+  selectedId: string | null;
+  onLoad: (piece: CodePiece) => void;
+  onRename: (piece: CodePiece) => void;
+  onDelete: (piece: CodePiece) => void;
+}
+
 export const CODE_LIBRARY_STORAGE_KEY = 'dmh-probability-calculator:library';
 
 interface CodeLibraryStorage {

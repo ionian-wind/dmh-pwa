@@ -11,8 +11,10 @@ using integer (`bigint`) weights. A Vue page under
 ## Application integration
 
 - Route: `/probability-calculator` (lazy loaded).
-- Syntax reference: `/probability-calculator/syntax`, linked from the
-  calculator header and translated into English and Russian.
+- Syntax reference: `/probability-calculator/syntax`, linked from the top
+  header and translated into English and Russian.
+- Page title and syntax action are rendered in the application top header via
+  `ViewHeader`; there is no in-page title block.
 - Main menu: inside the expandable **Tools** section, using `IconChartLine`.
   Timers and Calculator are grouped there as well.
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
@@ -25,9 +27,10 @@ using integer (`bigint`) weights. A Vue page under
 - Share links encode the source in the URL hash (`#code=<base64>`); opening a
   link restores the program. Editing the source clears the generated link.
 - The source program is persisted in `localStorage`.
-- Code library sidebar: save named snippets, include selected snippets in the
-  calculation namespace, rename/delete them, and load them with an unsaved-
-  changes confirmation. Library contents persist in `localStorage`.
+- Code library sidebar: a right drawer toggled with `IconCodeblock` from the top
+  header. Save named snippets, include selected snippets in the calculation
+  namespace, rename/delete them, and load them with an unsaved-changes
+  confirmation. Library contents persist in `localStorage`.
 
 UI coverage is split between `src/probability-calculator/__tests__/`,
 `src/components/common/__tests__/MonacoEditor.test.ts`, and
