@@ -211,7 +211,7 @@ const map: MapEntity = {
       locationId: 'l1',
       layerId: 'base',
       entities: [],
-      icon: 'ra-castle',
+      icon: 'ra-castle-emblem',
       color: '#cc3333',
     },
   ],
@@ -369,11 +369,19 @@ describe('MapView', () => {
     const markerButton = wrapper.find('.map-marker-accessible');
     expect(markerButton.classes()).not.toContain('is-hovered');
 
+    const markerFeature = {
+      get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
+    };
+    const idleStyle = (wrapper.vm as any).markerStyle(markerFeature)[0];
+    expect(idleStyle.getText().getStroke()).toBeNull();
+
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', 'm1');
     await flushPromises();
     expect(wrapper.find('.map-marker-accessible').classes()).toContain(
       'is-hovered',
     );
+    const hoveredStyle = (wrapper.vm as any).markerStyle(markerFeature)[0];
+    expect(hoveredStyle.getText().getStroke().getColor()).toBe('#ffffff');
 
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', null);
     wrapper.findComponent(AreasPanelStub).vm.$emit('hover', 'a1');

@@ -37,6 +37,7 @@ import {
 import '../plugins/mapPlugins.css';
 import { getMapFileBlob, revokeMapFileUrl } from '../utils/mapFileUtils';
 import { enableFrequentHitDetectionReads } from '../utils/canvasReadback';
+import { contrastTextColor } from '../utils/colors';
 import { normalizeMapEntity } from '../utils/normalize';
 import {
   createMarkerDraft,
@@ -561,6 +562,9 @@ function markerStyle(feature: any) {
           text: glyph,
           font: `${hovered ? 24 : 20}px RPGAwesome`,
           fill: new Fill({ color: marker.color }),
+          stroke: hovered
+            ? new Stroke({ color: contrastTextColor(marker.color), width: 3 })
+            : undefined,
           textAlign: 'center',
           textBaseline: 'middle',
         }),
@@ -572,7 +576,10 @@ function markerStyle(feature: any) {
         image: new Circle({
           radius: hovered ? 8 : 6,
           fill: new Fill({ color: marker.color }),
-          stroke: new Stroke({ color: '#fff', width: 2 }),
+          stroke: new Stroke({
+            color: hovered ? contrastTextColor(marker.color) : '#fff',
+            width: hovered ? 3 : 2,
+          }),
         }),
       }),
     );

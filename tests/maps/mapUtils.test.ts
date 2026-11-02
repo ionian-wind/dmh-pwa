@@ -24,6 +24,7 @@ import {
   upsertArea,
 } from '@/maps/utils/mapAreas';
 import { removeLocation, upsertLocation } from '@/maps/utils/mapLocations';
+import { contrastTextColor, parseHexColor } from '@/maps/utils/colors';
 import {
   imageToMapPoint,
   imageToMapPoints,
@@ -329,6 +330,15 @@ describe('map area helpers', () => {
     expect(areaTextColor('#336699')).toBe('#ffffff');
     expect(areaTextColor('#f8f8f8')).toBe('#111827');
     expect(areaTextColor('red')).toBe('#111827');
+  });
+
+  it('parses colours and picks a contrasting outline', () => {
+    expect(parseHexColor('#abc')).toEqual([170, 187, 204]);
+    expect(parseHexColor('#336699')).toEqual([51, 102, 153]);
+    expect(parseHexColor('not-a-colour')).toBeNull();
+    expect(contrastTextColor('#cc3333')).toBe('#ffffff');
+    expect(contrastTextColor('#f8f8f8')).toBe('#111827');
+    expect(contrastTextColor('currentColor')).toBe('#111827');
   });
 });
 
