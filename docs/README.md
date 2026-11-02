@@ -39,23 +39,23 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 
 ### Feature parts
 
-| Document                                                                           | Covers                                                                   |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [features/notes.md](features/notes.md)                                             | Note list, editor, detail page, tags, hidden notes                       |
-| [features/modules-and-documents.md](features/modules-and-documents.md)             | Modules, document tree, book rendering, TOC, bookmarks                   |
-| [features/module-import-export.md](features/module-import-export.md)               | Module ZIP format, validation, import, export                            |
-| [features/characters.md](features/characters.md)                                   | Player characters                                                        |
-| [features/parties.md](features/parties.md)                                         | Parties and character membership                                         |
-| [features/monsters.md](features/monsters.md)                                       | Monsters and module membership                                           |
-| [features/encounters.md](features/encounters.md)                                   | Encounter definitions and monster rosters                                |
-| [features/combat.md](features/combat.md)                                           | Combat lifecycle, initiative, turns                                      |
-| [features/timers.md](features/timers.md)                                           | Countdown timers and global timer loop                                   |
-| [features/jukebox.md](features/jukebox.md)                                         | Track import, metadata, playlists, playback                              |
-| [features/maps.md](features/maps.md)                                               | Map images, locations, entity bindings, markers and icons                |
-| [features/calculator.md](features/calculator.md)                                   | Arithmetic and unit converter dialog                                     |
-| [features/dice-roller.md](features/dice-roller.md)                                 | Plugin-based dice parser/evaluator (work in progress, not yet connected) |
-| [features/dice-probability-calculator.md](features/dice-probability-calculator.md) | AnyDice-compatible probability library, docs validation matrix           |
-| [features/markdown-and-mentions.md](features/markdown-and-mentions.md)             | Markdown pipeline, entity links, mention index                           |
+| Document                                                                                         | Covers                                                                   |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [features/notes.md](features/notes.md)                                                           | Note list, editor, detail page, tags, hidden notes                       |
+| [features/modules-and-documents.md](features/modules-and-documents.md)                           | Modules, document tree, book rendering, TOC, bookmarks                   |
+| [features/module-import-export.md](features/module-import-export.md)                             | Module ZIP format, validation, import, export                            |
+| [features/characters.md](features/characters.md)                                                 | Player characters                                                        |
+| [features/parties.md](features/parties.md)                                                       | Parties and character membership                                         |
+| [features/monsters.md](features/monsters.md)                                                     | Monsters and module membership                                           |
+| [features/encounters.md](features/encounters.md)                                                 | Encounter definitions and monster rosters                                |
+| [features/combat.md](features/combat.md)                                                         | Combat lifecycle, initiative, turns                                      |
+| [features/timers.md](features/timers.md)                                                         | Countdown timers and global timer loop                                   |
+| [features/jukebox.md](features/jukebox.md)                                                       | Track import, metadata, playlists, playback                              |
+| [features/maps.md](features/maps.md)                                                             | Map images, locations, entity bindings, markers and icons                |
+| [features/calculator.md](features/calculator.md)                                                 | Arithmetic and unit converter dialog                                     |
+| [features/dice-roller.md](features/dice-roller.md)                                               | Plugin-based dice parser/evaluator (work in progress, not yet connected) |
+| [features/dice-probability-calculator/README.md](features/dice-probability-calculator/README.md) | AnyDice-compatible probability library, spec, validation matrix          |
+| [features/markdown-and-mentions.md](features/markdown-and-mentions.md)                           | Markdown pipeline, entity links, mention index                           |
 
 ### Components and utilities
 

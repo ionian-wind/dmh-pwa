@@ -14,4 +14,4 @@ do not implement actual functionality, just empty methods
 
 for now tests will fail, so it's ok
 
-at the end - create message.md file and write instructions for next session that will allow you to continue your work
+at the end - create a continuation file and write instructions for the next session

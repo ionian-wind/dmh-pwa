@@ -26,6 +26,16 @@ result.outputs[0].outcomes; // [{ value, weight, probability }, ...]
 
 `parse(script)` returns the typed AST when only parsing is needed.
 
+## Documentation set
+
+| Document                               | Contents                                                     |
+| -------------------------------------- | ------------------------------------------------------------ |
+| [requirements.md](requirements.md)     | Original feature request and reference links                 |
+| [spec.md](spec.md)                     | Detailed language, data-model and architecture specification |
+| [implementation.md](implementation.md) | Implementation approach and TDD instructions                 |
+| [library.md](library.md)               | Library README, syntax coverage and usage                    |
+| [continuation.md](continuation.md)     | Current state and next steps                                 |
+
 ## Architecture
 
 | File           | Responsibility                                                  |

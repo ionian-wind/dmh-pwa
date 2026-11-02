@@ -96,8 +96,8 @@ function casting, loops, conditionals, settings, recursion and error handling.
 the official AnyDice articles. `__tests__/official-docs.test.ts` covers every
 page of the official documentation.
 
-See [docs/features/dice-probability-calculator.md](../../../docs/features/dice-probability-calculator.md)
-for the full documentation-validation matrix and known gaps.
+See [README.md](README.md) for the full documentation-validation matrix and
+known gaps, and [spec.md](spec.md) for the detailed specification.
 
 ## Current limitations
 

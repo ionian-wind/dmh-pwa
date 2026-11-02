@@ -68,6 +68,7 @@ export const <name>Migration: Migration = {
 - Prints follow-up instructions (implement logic, add to index, test).
 
 Caveats:
+
 - The template's follow-up text says "implement in the `up()` method", but the
   interface uses `go()`.
 - Filenames with the same numeric prefix sort lexically; the next version
@@ -141,9 +142,9 @@ single source of the manifest and service worker.
 - Keep the WIP dice feature clearly marked rather than treating its current
   state as a defect.
 
-## Out of scope: reference project
+## Probability calculator
 
-`src/utils/probability-calculator-python/` contains the Python `PythonDice`
-reference implementation for a separate, planned probability feature. It is
-intentionally not integrated or documented as part of this application and is
-excluded from the bug and proposal lists.
+The former `src/utils/probability-calculator-python/` reference port has been
+removed. The maintained implementation is
+`src/utils/dice-probability-calculator/`; its documentation lives in
+[features/dice-probability-calculator/](../features/dice-probability-calculator/README.md).

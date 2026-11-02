@@ -41,4 +41,4 @@ npm run test:probability-calculator
    from this package.
 
 The official-docs validation matrix is maintained in
-`docs/features/dice-probability-calculator.md`.
+[README.md](README.md).
