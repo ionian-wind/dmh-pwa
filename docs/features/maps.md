@@ -13,6 +13,7 @@ interface MapEntity extends WithMetadata {
   title: string;
   description?: string;
   fileId: string;
+  entities: MapEntityRef[];
   locationId?: string | null;
   layers: MapLayer[];
   markers: MapMarker[];
@@ -21,6 +22,8 @@ interface MapEntity extends WithMetadata {
 ```
 
 - `fileId` references a `MapFile` in the `map_files` store.
+- `entities` links the map itself to modules and other entities. The map editor
+  exposes module linking alongside location linking.
 - `locationId` optionally links the map to one global `MapLocation` record.
 - `layers` organize markers and areas. The base layer always exists.
 - `markers` are placed at image-pixel coordinates `(x, y)`.
@@ -192,6 +195,9 @@ right-clicked point. Draw actions from the context menu use an
 `ol-contextmenu` submenu for the area shape.
 
 ## Maps section
+
+Module detail pages now expose **Maps** and **Locations** tabs that list the
+maps/locations whose `entities` include the current module.
 
 The Maps section has two top-level tabs:
 

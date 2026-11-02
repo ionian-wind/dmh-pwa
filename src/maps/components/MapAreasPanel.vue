@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n';
 import { IconPencil, IconTrash } from '@tabler/icons-vue';
 import EntityLinkList from './EntityLinkList.vue';
+import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { MapArea } from '../types';
 import { markerIconClass } from '../icons';
 
@@ -42,39 +43,32 @@ const { t } = useI18n();
       {{ t('maps.noAreas') }}
     </div>
 
-    <QItem
+    <SidebarItem
       v-for="area in areas"
       :key="area.id"
-      clickable
-      class="map-area-item q-mx-sm q-mb-sm q-pa-sm bg-white rounded-borders"
-      :style="{
-        borderLeft: `4px solid ${area.color || 'var(--color-primary)'}`,
-      }"
+      :color="area.color"
+      :title="area.title || t('maps.untitledArea')"
+      class="map-area-item"
       @click="emit('select-area', area.id)"
       @keydown.enter="emit('select-area', area.id)"
       @mouseenter="emit('hover', area.id)"
       @mouseleave="emit('hover', null)"
     >
-      <QItemSection>
-        <div class="row items-center q-gutter-xs text-weight-bold">
-          <i
-            v-if="area.icon"
-            :class="['ra', markerIconClass(area.icon)]"
-            :style="{ color: area.color }"
-            aria-hidden="true"
-          ></i>
-          <span>{{ area.title || t('maps.untitledArea') }}</span>
-        </div>
-        <div v-if="area.description" class="text-caption text-grey-7">
-          {{ area.description }}
-        </div>
-        <EntityLinkList
-          v-if="area.entities.length > 0"
-          :links="area.entities"
-        />
-      </QItemSection>
+      <template #left>
+        <i
+          v-if="area.icon"
+          :class="['ra', markerIconClass(area.icon)]"
+          :style="{ color: area.color }"
+          aria-hidden="true"
+        ></i>
+      </template>
 
-      <QItemSection v-if="editable" side class="row items-center">
+      <div v-if="area.description" class="text-caption text-grey-7">
+        {{ area.description }}
+      </div>
+      <EntityLinkList v-if="area.entities.length > 0" :links="area.entities" />
+
+      <template v-if="editable" #actions>
         <QBtn
           flat
           dense
@@ -101,7 +95,7 @@ const { t } = useI18n();
         >
           <IconTrash :size="16" />
         </QBtn>
-      </QItemSection>
-    </QItem>
+      </template>
+    </SidebarItem>
   </QList>
 </template>

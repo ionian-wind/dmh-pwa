@@ -85,6 +85,8 @@ export interface MapEntity extends WithMetadata {
   fileId: string;
   locationId?: string | null;
   layers: MapLayer[];
+  /** Module and other entity links for the map itself. */
+  entities: MapEntityRef[];
   /** @deprecated Embedded locations from older records; migrated to map_locations. */
   locations?: MapLocation[];
   markers: MapMarker[];

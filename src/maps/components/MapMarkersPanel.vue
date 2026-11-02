@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n';
 import { IconPencil, IconTrash } from '@tabler/icons-vue';
 import EntityLinkList from './EntityLinkList.vue';
+import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { MapMarker } from '../types';
 import { markerIconClass } from '../icons';
 
@@ -36,39 +37,35 @@ const { t } = useI18n();
       {{ t('maps.noMarkers') }}
     </div>
 
-    <QItem
+    <SidebarItem
       v-for="marker in markers"
       :key="marker.id"
-      clickable
-      class="map-marker-item q-mx-sm q-mb-sm q-pa-sm bg-white rounded-borders"
-      :style="{
-        borderLeft: `4px solid ${marker.color || 'var(--color-primary)'}`,
-      }"
+      :color="marker.color"
+      :title="marker.title || t('maps.untitledMarker')"
+      class="map-marker-item"
       @click="emit('select-marker', marker.id)"
       @keydown.enter="emit('select-marker', marker.id)"
       @mouseenter="emit('hover', marker.id)"
       @mouseleave="emit('hover', null)"
     >
-      <QItemSection>
-        <div class="row items-center q-gutter-xs text-weight-bold">
-          <i
-            v-if="marker.icon"
-            :class="['ra', markerIconClass(marker.icon)]"
-            :style="{ color: marker.color }"
-            aria-hidden="true"
-          ></i>
-          <span>{{ marker.title || t('maps.untitledMarker') }}</span>
-        </div>
-        <div v-if="marker.description" class="text-caption text-grey-7">
-          {{ marker.description }}
-        </div>
-        <EntityLinkList
-          v-if="marker.entities.length > 0"
-          :links="marker.entities"
-        />
-      </QItemSection>
+      <template #left>
+        <i
+          v-if="marker.icon"
+          :class="['ra', markerIconClass(marker.icon)]"
+          :style="{ color: marker.color }"
+          aria-hidden="true"
+        ></i>
+      </template>
 
-      <QItemSection v-if="editable" side class="row items-center">
+      <div v-if="marker.description" class="text-caption text-grey-7">
+        {{ marker.description }}
+      </div>
+      <EntityLinkList
+        v-if="marker.entities.length > 0"
+        :links="marker.entities"
+      />
+
+      <template v-if="editable" #actions>
         <QBtn
           flat
           dense
@@ -95,7 +92,7 @@ const { t } = useI18n();
         >
           <IconTrash :size="16" />
         </QBtn>
-      </QItemSection>
-    </QItem>
+      </template>
+    </SidebarItem>
   </QList>
 </template>

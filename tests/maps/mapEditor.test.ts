@@ -149,6 +149,26 @@ describe('MapEditor', () => {
     });
   });
 
+  it('links a map to a module', async () => {
+    const wrapper = mount(MapEditor, {
+      props: { map: existingMap, isOpen: true },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+    await vi.waitFor(() => {
+      expect(getMapFile).toHaveBeenCalledWith('file1');
+    });
+
+    linkingBlock(wrapper, 'module').vm.$emit('update:modelValue', [
+      { kind: 'module', id: 'mod1' },
+    ]);
+    wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
+    await nextTick();
+
+    expect(wrapper.emitted('submit')?.[0][0]).toMatchObject({
+      entities: [{ kind: 'module', id: 'mod1' }],
+    });
+  });
+
   it('edits an existing map and keeps markers', async () => {
     const wrapper = mount(MapEditor, {
       props: { map: existingMap, isOpen: true },

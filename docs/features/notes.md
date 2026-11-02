@@ -8,18 +8,18 @@ used as hidden document sections inside modules.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/notes.ts` | Store, search/tag filtering, mention index sync |
-| `src/notes/NotesView.vue` | List page |
-| `src/notes/NoteCard.vue` | Card with rendered Markdown and expand/collapse |
-| `src/notes/NoteEditor.vue` | Create/edit modal |
-| `src/notes/NoteCanvas.vue` | Quickdraw canvas for `draw` notes |
-| `src/notes/NoteView.vue` | Detail page |
-| `src/notes/NoteTypeSelector.vue` | Note type management (mounted in `NoteEditor`) |
-| `src/notes/NoteViewSidebar.vue` | Tags + mentions sidebar |
-| `src/components/common/MarkdownEditor.vue` | Editor used by NoteEditor |
-| `src/components/common/Markdown.vue` | Renderer used by cards and detail |
+| File                                       | Role                                            |
+| ------------------------------------------ | ----------------------------------------------- |
+| `src/stores/notes.ts`                      | Store, search/tag filtering, mention index sync |
+| `src/notes/NotesView.vue`                  | List page                                       |
+| `src/notes/NoteCard.vue`                   | Card with rendered Markdown and expand/collapse |
+| `src/notes/NoteEditor.vue`                 | Create/edit modal                               |
+| `src/notes/NoteCanvas.vue`                 | Quickdraw canvas for `draw` notes               |
+| `src/notes/NoteView.vue`                   | Detail page                                     |
+| `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteEditor`)  |
+| `src/notes/NoteViewSidebar.vue`            | Tags + mentions sidebar                         |
+| `src/components/common/MarkdownEditor.vue` | Editor used by NoteEditor                       |
+| `src/components/common/Markdown.vue`       | Renderer used by cards and detail               |
 
 ## List page (`NotesView.vue`)
 
@@ -43,9 +43,9 @@ used as hidden document sections inside modules.
 
 A note has an internal `contentType` field with two values:
 
-| Value  | Meaning                                      |
-| ------ | -------------------------------------------- |
-| `text` | Markdown content, the default and legacy type |
+| Value  | Meaning                                                |
+| ------ | ------------------------------------------------------ |
+| `text` | Markdown content, the default and legacy type          |
 | `draw` | Infinite-canvas drawing stored as a Quickdraw snapshot |
 
 Existing notes are migrated to `contentType: 'text'`. The type is not directly
@@ -60,13 +60,19 @@ editable in the note form; it is chosen by the create action.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
 - Renders tags as clickable `#tag` labels that emit `tag-click`.
+- Has an `IconFileDownload` action: text notes download as `.md`, drawing
+  notes download their PNG preview. Drawings without a preview are disabled.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
+
+The note detail header shows the same download action immediately before the
+edit/delete buttons.
 
 The 600px clamp is hard-coded and does not account for viewport size.
 
 ## Editor (`NoteEditor.vue`)
 
 Fields:
+
 - Title (required; empty triggers `alert(t('editor.titleRequired'))`).
 - Content, rendered through a named `content` slot:
   - `text` notes use the Milkdown editor and its raw/visual toggle.
@@ -76,6 +82,7 @@ Fields:
   linked-entities tab.
 
 Behavior:
+
 - `editedNote` is initialized from `props.note` when its `id` changes; a
   `lastNoteId` guard prevents re-initializing while typing.
 - On submit, text notes read the latest Markdown from the Milkdown ref; draw
@@ -119,15 +126,15 @@ checkboxes in the read view write directly.
 Adds to the base store:
 
 ```ts
-searchQuery: Ref<string>      // unused by UI
-tagFilter: Ref<string | null> // used by route query
-filtered: ComputedRef<Note[]> // tag filter + title/content/tag search
-allTags: ComputedRef<string[]>
-setFilter, clearFilter, setSearchQuery,
-setTagFilter, clearTagFilter
+searchQuery: Ref<string>; // unused by UI
+tagFilter: Ref<string | null>; // used by route query
+filtered: ComputedRef<Note[]>; // tag filter + title/content/tag search
+allTags: ComputedRef<string[]>;
+(setFilter, clearFilter, setSearchQuery, setTagFilter, clearTagFilter);
 ```
 
 Overrides:
+
 - `create(note)` → `base.create` + `indexation.setLinks({kind:'note', id}, mentions)`.
 - `update(id, patch)` → forcibly restores the original `hidden` value, then
   reindexes mentions.

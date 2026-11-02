@@ -127,6 +127,20 @@ const router = createRouter({
       component: TimersView,
       meta: { exact: true },
     },
+    // Probability calculator
+    {
+      path: '/probability-calculator',
+      name: 'probability-calculator',
+      component: () =>
+        import('@/probability-calculator/ProbabilityCalculatorView.vue'),
+      meta: { exact: true },
+    },
+    {
+      path: '/probability-calculator/syntax',
+      name: 'probability-calculator-syntax',
+      component: () =>
+        import('@/probability-calculator/ProbabilitySyntaxView.vue'),
+    },
     // Maps routes
     {
       path: '/maps',

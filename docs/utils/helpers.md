@@ -5,10 +5,10 @@ Small, mostly pure helpers used across the app.
 ## `src/utils/debug.ts`
 
 ```ts
-debug(...args)       // console.log
-debugWarn(...args)   // console.warn
-debugError(...args)  // console.error
-exposeConsole()      // replaces global console with node:console (tests)
+debug(...args); // console.log
+debugWarn(...args); // console.warn
+debugError(...args); // console.error
+exposeConsole(); // replaces global console with node:console (tests)
 ```
 
 Every module uses these instead of `console.*`; the remaining direct `console`
@@ -21,6 +21,7 @@ Recursively converts Vue reactive/proxy/ref values into plain objects before
 persistence.
 
 Rules:
+
 - Preserves `Blob` and anything whose constructor name is
   `FileSystemFileHandle`/`FileSystemDirectoryHandle`.
 - Arrays map recursively.
@@ -30,6 +31,7 @@ Rules:
 - Other objects are shallow-copied with recursively unwrapped values.
 
 Caveats:
+
 - `Date`, `Map`, `Set`, `File`, and typed arrays are not special-cased (only
   `Blob`); they are turned into plain objects or lose their prototype.
 - The `typeof obj === 'function'` check is inside the object branch, so actual
@@ -74,7 +76,7 @@ scrollToHeading(id, router, heading?)
 ## `src/utils/cropTitle.ts`
 
 ```ts
-cropTitle(title, max = 25)
+cropTitle(title, (max = 25));
 ```
 
 Returns the title unchanged if short, otherwise the first `max` characters plus
@@ -120,11 +122,11 @@ See [utils/files.md](files.md).
 
 See [features/dice-roller.md](../features/dice-roller.md).
 
-## `src/utils/probability-calculator-python/`
+## `src/utils/dice-probability-calculator/*`
 
-Out of scope for this documentation. This is a reference project (`PythonDice`,
-the `dice-calc` package) for a separate, planned probability feature. It is not
-imported by the application and is intentionally left as-is.
+See [features/dice-probability-calculator/](../features/dice-probability-calculator/README.md).
+This is the maintained AnyDice-compatible probability library. It is not yet
+connected to the UI.
 
 ## Composables
 

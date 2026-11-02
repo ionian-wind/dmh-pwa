@@ -26,6 +26,7 @@ const editedMap = ref<MapEntityForm>({
   title: '',
   description: '',
   fileId: '',
+  entities: [],
   locationId: null,
   layers: [],
   markers: [],
@@ -74,6 +75,7 @@ watch(
         title: normalized.title,
         description: normalized.description,
         fileId: normalized.fileId,
+        entities: structuredClone(normalized.entities),
         locationId: normalized.locationId ?? null,
         layers: structuredClone(normalized.layers),
         markers: structuredClone(normalized.markers),
@@ -87,6 +89,7 @@ watch(
         title: '',
         description: '',
         fileId: '',
+        entities: [],
         locationId: null,
         layers: [],
         markers: [],
@@ -138,6 +141,10 @@ const linkedLocation = computed<MapEntityRef[]>(() =>
     ? [{ kind: 'location', id: editedMap.value.locationId }]
     : [],
 );
+
+function setLinkedModules(links: MapEntityRef[]) {
+  editedMap.value.entities = links;
+}
 
 function setLinkedLocation(links: MapEntityRef[]) {
   editedMap.value.locationId = links[0]?.id ?? null;
@@ -246,12 +253,19 @@ function handleDelete() {
     </template>
 
     <template #links>
-      <EntitiesLinking
-        kind="location"
-        :multiple="false"
-        :model-value="linkedLocation"
-        @update:model-value="setLinkedLocation"
-      />
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          kind="module"
+          :model-value="editedMap.entities"
+          @update:model-value="setLinkedModules"
+        />
+        <EntitiesLinking
+          kind="location"
+          :multiple="false"
+          :model-value="linkedLocation"
+          @update:model-value="setLinkedLocation"
+        />
+      </div>
     </template>
   </BaseModal>
 </template>

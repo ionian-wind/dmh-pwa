@@ -15,6 +15,8 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
+import { downloadNote } from '@/notes/downloadNote';
+import { IconFileDownload } from '@tabler/icons-vue';
 import { confirm } from '@/dialogs';
 import { useRightDrawer } from '@/composables/useLayout';
 
@@ -69,6 +71,20 @@ function handleMarkdownContentChange(newContent: string) {
 const handleEdit = () => {
   isEditing.value = true;
 };
+
+const handleDownload = () => {
+  if (note.value) downloadNote(note.value);
+};
+
+const headerButtons = computed(() => [
+  {
+    color: 'warning',
+    title: 'common.download',
+    icon: IconFileDownload,
+    event: handleDownload,
+    disabled: note.value?.contentType === 'draw' && !note.value?.preview,
+  },
+]);
 
 const handleDelete = async () => {
   if (!note.value) return false;
@@ -170,6 +186,7 @@ async function handleEditorDelete() {
     :is-editing="isEditing"
     :title="noteTitle"
     :not-found="notFound"
+    :header-buttons="headerButtons"
   >
     <NoteCanvas
       v-if="note?.contentType === 'draw'"

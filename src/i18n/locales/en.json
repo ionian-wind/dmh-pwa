@@ -44,8 +44,10 @@
     "configuration": "Configuration",
     "settings": "Settings",
     "timers": "Timers",
+    "tools": "Tools",
     "ambientSound": "Ambient Sound",
-    "maps": "Maps"
+    "maps": "Maps",
+    "probabilityCalculator": "Probability Calculator"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -426,7 +428,9 @@
     "noMonsters": "No monsters in this module",
     "noEncounters": "No encounters in this module",
     "noNotes": "No notes in this module",
-    "noPlaylists": "No playlists in this module"
+    "noPlaylists": "No playlists in this module",
+    "noMaps": "No maps in this module",
+    "noLocations": "No locations in this module"
   },
   "playlist": {
     "title": "Playlist",
@@ -851,5 +855,157 @@
     "showLayer": "Show layer",
     "hideLayer": "Hide layer",
     "showLabels": "Show labels"
+  },
+  "probabilityCalculator": {
+    "title": "Dice Probability Calculator",
+    "subtitle": "AnyDice-compatible probability distributions",
+    "syntax": "Syntax reference",
+    "clickToCreateLink": "click to create link",
+    "shareLinkLabel": "Share link",
+    "syntaxPage": {
+      "title": "AnyDice Syntax Reference",
+      "subtitle": "Supported syntax for the dice probability calculator",
+      "back": "Back to calculator",
+      "sections": {
+        "basics": "Program basics",
+        "operators": "Numbers, dice and operators",
+        "sequences": "Sequences",
+        "position": "Position and length",
+        "flow": "Loops and conditionals",
+        "functions": "Functions",
+        "library": "Function library",
+        "settings": "Settings",
+        "examples": "Examples"
+      },
+      "table": {
+        "syntax": "Syntax",
+        "meaning": "Meaning",
+        "example": "Example",
+        "function": "Function"
+      },
+      "basics": {
+        "description": "A program is a sequence of statements. Variables are uppercase words and are assigned with a colon. Use output to add a result and named to give it a title.",
+        "bullets": [
+          "Comments use backslashes: \\ this is ignored \\",
+          "Variables can be reassigned and are evaluated in order.",
+          "0 is false; any non-zero number is true.",
+          "Named outputs support [VARIABLE] interpolation, for example named \"ability [P]\"."
+        ]
+      },
+      "operators": {
+        "arithmetic": "Arithmetic. Integer division rounds toward zero.",
+        "exponentiation": "Exponentiation with a non-negative integer exponent.",
+        "comparison": "Comparison. Produces a 0/1 die when applied to dice.",
+        "boolean": "Boolean and, or and not. Zero is false; any other number is true.",
+        "access": "Position access on a sequence, dice collection or number digits.",
+        "length": "Length of a sequence or dice collection; number of digits for a number.",
+        "dice": "Creates a die or a collection of dice.",
+        "range": "Inclusive range inside a sequence literal.",
+        "colon": "Sequence repetition count, and the separator between a variable name and its value."
+      },
+      "dice": {
+        "description": "d6 is one six-sided die, 3d6 is a collection of three dice that are summed, and d% is a d100. Custom dice use a sequence such as d{'{'}1,2,4,4{'}'}. Any expression can provide the faces, for example 2d(1d4). The empty die is written d{'{'}{'}'}."
+      },
+      "sequences": {
+        "description": "Sequences are written with braces. They preserve their written order; use sort when you want the position-order setting applied. Mathematical and boolean operations sum all elements of a sequence.",
+        "positionOrder": "set \"position order\" to \"lowest first\" reverses dice positions and digit positions. It does not reorder sequence literals until sort is used."
+      },
+      "flow": {
+        "note": "Conditions can use comparisons and boolean operators. else if is supported. A die cannot be used directly as an if condition; pass it to a function with a typed parameter when you need to expand it. Loops iterate over series or dice values."
+      },
+      "functions": {
+        "description": "Function names are made of lowercase words and uppercase parameter variables. Invoke a function by putting its name and arguments in square brackets. A function returns as soon as result: is reached; without a result it returns the empty die.",
+        "paramsIntro": "Parameter types control how values are converted. A parameter without a type receives the value unchanged:",
+        "params": [
+          ":n — numbers. A sequence is summed; a die is expanded once per outcome.",
+          ":d — dice. A number becomes a constant die; a sequence is summed and becomes a constant die.",
+          ":s — sequences. A number becomes a one-element sequence; dice are expanded into all possible sorted rolls."
+        ],
+        "recursion": "Functions can recurse. The maximum depth is controlled with set \"maximum function depth\" to N. output and set are not allowed inside a function."
+      },
+      "functionMeanings": {
+        "absolute": "Absolute value.",
+        "contains": "1 if the number occurs in the sequence, otherwise 0.",
+        "count": "Counts occurrences; repeated values are counted repeatedly.",
+        "explode": "Keeps rolling when the maximum value is rolled.",
+        "highest": "Sum of the highest N values. Supports multiple pools with and.",
+        "lowest": "Sum of the lowest N values. Supports multiple pools with and.",
+        "middle": "Sum of the middle N values.",
+        "highestOf": "Higher of two numbers; dice are expanded per outcome.",
+        "lowestOf": "Lower of two numbers; dice are expanded per outcome.",
+        "maximum": "Highest possible value on a die (0 for an empty die).",
+        "minimum": "Lowest possible value on a die (engine extension).",
+        "reverse": "Reverses the sequence order.",
+        "sort": "Sorts using the position order setting."
+      },
+      "settings": {
+        "note": "Settings apply to the statements that follow them. The default position order is highest first."
+      },
+      "exampleTitles": {
+        "dropLowest": "4d6 drop lowest",
+        "blades": "Blades in the Dark",
+        "exploding": "Exploding dice",
+        "casting": "Functions and type casting"
+      }
+    },
+    "source": "Source",
+    "syntaxHint": "AnyDice syntax · comments use \\ … \\",
+    "calculate": "Calculate",
+    "calculating": "Calculating…",
+    "view": "View",
+    "data": "Data",
+    "views": {
+      "table": "Table",
+      "graph": "Graph",
+      "export": "Export",
+      "roller": "Roller"
+    },
+    "modes": {
+      "normal": "Normal",
+      "atLeast": "At Least",
+      "atMost": "At Most",
+      "transposed": "Transposed",
+      "summary": "Summary"
+    },
+    "errorTitle": "Calculation error",
+    "empty": "Run a calculation to see results.",
+    "noOutcomes": "No possible outcomes.",
+    "value": "Value",
+    "probability": "Probability",
+    "mean": "Mean",
+    "stddev": "Std. deviation",
+    "min": "Minimum",
+    "max": "Maximum",
+    "outcomes": "Outcomes",
+    "mostLikely": "Most likely",
+    "exportTitle": "Export results",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download CSV",
+    "rollerOutput": "Output",
+    "rollAmount": "Number of rolls",
+    "roll": "Roll",
+    "rollHint": "Choose an output and roll it.",
+    "save": "Save",
+    "library": {
+      "title": "Code library",
+      "empty": "No saved code pieces yet.",
+      "namePrompt": "Name for this code piece",
+      "saveTitle": "Save code piece",
+      "editTitle": "Rename code piece",
+      "editPrompt": "New name",
+      "deleteTitle": "Delete code piece",
+      "deleteConfirm": "Delete “{name}”?",
+      "loadTitle": "Load code piece",
+      "replaceConfirm": "The editor has unsaved changes. Replace them with “{name}”?",
+      "include": "Include in current namespace",
+      "rename": "Rename",
+      "delete": "Delete",
+      "unsavedTitle": "Unsaved changes",
+      "leaveConfirm": "The editor has unsaved changes. Leave this page?"
+    },
+    "zoomIn": "Zoom in chart",
+    "zoomOut": "Zoom out chart",
+    "zoomReset": "Reset chart zoom"
   }
 }

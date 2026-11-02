@@ -36,6 +36,9 @@ import {
   IconMenu2,
   IconMusic,
   IconCalculator,
+  IconChartLine,
+  IconTool,
+  IconChevronDown,
   IconSettings,
   IconMap,
   // IconHeadphones,
@@ -49,6 +52,7 @@ const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
 
 const leftMenuMinimized = ref(false);
+const toolsExpanded = ref(false);
 const animationFrame = ref(0);
 
 const hours = [
@@ -118,12 +122,6 @@ const sections: SectionItem[] = [
     icon: IconUsers,
   },
   {
-    section: Section.MODULES,
-    label: 'navigation.modules',
-    path: '/modules',
-    icon: IconBook,
-  },
-  {
     section: Section.MONSTERS,
     label: 'navigation.monsters',
     path: '/monsters',
@@ -142,11 +140,10 @@ const sections: SectionItem[] = [
     icon: IconSwords,
   },
   {
-    section: Section.TIMERS,
-    label: 'navigation.timers',
-    path: '/timers',
-    icon: timerIcon,
-    ref: true,
+    section: Section.MODULES,
+    label: 'navigation.modules',
+    path: '/modules',
+    icon: IconBook,
   },
   // {
   //   section: Section.AMBIENT_SOUND,
@@ -165,6 +162,25 @@ function isJukeboxActive(): boolean {
   const currentPath = router.currentRoute.value.path;
   return currentPath === '/jukebox';
 }
+
+function isProbabilityCalculatorActive(): boolean {
+  return router.currentRoute.value.path.startsWith('/probability-calculator');
+}
+
+function isToolsRoute(): boolean {
+  const path = router.currentRoute.value.path;
+  return (
+    path.startsWith('/timers') || path.startsWith('/probability-calculator')
+  );
+}
+
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    if (isToolsRoute()) toolsExpanded.value = true;
+  },
+  { immediate: true },
+);
 
 const isFullscreen = ref(false);
 
@@ -299,6 +315,59 @@ const isSettingsOpen = ref(false);
                 </QItemSection>
               </QItem>
             </template>
+            <QItem
+              clickable
+              v-ripple
+              :active="false"
+              @click="toolsExpanded = !toolsExpanded"
+            >
+              <QItemSection side><IconTool /></QItemSection>
+              <QItemSection>{{ t('navigation.tools') }}</QItemSection>
+              <QItemSection side>
+                <IconChevronDown
+                  :size="18"
+                  class="tools-caret"
+                  :class="{ 'tools-caret--open': toolsExpanded }"
+                />
+              </QItemSection>
+            </QItem>
+            <QSlideTransition>
+              <div v-show="toolsExpanded">
+                <QItem
+                  clickable
+                  v-ripple
+                  :active="router.currentRoute.value.path.startsWith('/timers')"
+                  :active-class="'bg-secondary'"
+                  :to="'/timers'"
+                >
+                  <QItemSection side>
+                    <component :is="timerIcon" :key="animationFrame" />
+                  </QItemSection>
+                  <QItemSection>{{ t('navigation.timers') }}</QItemSection>
+                </QItem>
+                <QItem
+                  clickable
+                  v-ripple
+                  :active="false"
+                  @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
+                >
+                  <QItemSection side><IconCalculator /></QItemSection>
+                  <QItemSection>{{ t('app.calculator') }}</QItemSection>
+                </QItem>
+                <QItem
+                  clickable
+                  v-ripple
+                  :to="'/probability-calculator'"
+                  :active="isProbabilityCalculatorActive()"
+                  :active-class="'bg-secondary'"
+                >
+                  <QItemSection side><IconChartLine /></QItemSection>
+                  <QItemSection>
+                    {{ t('navigation.probabilityCalculator') }}
+                  </QItemSection>
+                </QItem>
+              </div>
+            </QSlideTransition>
           </QList>
         </div>
         <div>
@@ -336,15 +405,6 @@ const isSettingsOpen = ref(false);
               <QItemSection>
                 {{ t('app.jukebox') }}
               </QItemSection>
-            </QItem>
-            <QItem
-              clickable
-              :active="false"
-              v-ripple
-              @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
-            >
-              <QItemSection side><IconCalculator /></QItemSection>
-              <QItemSection>{{ t('app.calculator') }}</QItemSection>
             </QItem>
             <QItem
               clickable
@@ -449,5 +509,12 @@ const isSettingsOpen = ref(false);
     rgba(15, 23, 42, 0.16),
     rgba(15, 23, 42, 0)
   );
+}
+.tools-caret {
+  transition: transform 0.2s ease;
+}
+
+.tools-caret--open {
+  transform: rotate(180deg);
 }
 </style>
