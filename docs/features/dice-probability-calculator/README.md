@@ -20,7 +20,8 @@ using integer (`bigint`) weights. A Vue page under
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,
   and graphs rendered with `vue3-charts`, including zoom in/out/reset controls.
-- The link input from AnyDice is intentionally omitted for now.
+- Share links encode the source in the URL hash (`#code=<base64>`); opening a
+  link restores the program. Editing the source clears the generated link.
 - The source program is persisted in `localStorage`.
 
 UI coverage is split between `src/probability-calculator/__tests__/`,

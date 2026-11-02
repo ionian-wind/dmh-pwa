@@ -857,6 +857,8 @@
     "title": "Dice Probability Calculator",
     "subtitle": "AnyDice-compatible probability distributions",
     "syntax": "Syntax reference",
+    "clickToCreateLink": "click to create link",
+    "shareLinkLabel": "Share link",
     "syntaxPage": {
       "title": "AnyDice Syntax Reference",
       "subtitle": "Supported syntax for the dice probability calculator",

@@ -52,3 +52,15 @@ test('opens the syntax reference from the calculator', async ({ page }) => {
   await page.getByRole('button', { name: 'Back to calculator' }).click();
   await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator$/);
 });
+
+test('creates a share link with the source in the hash', async ({ page }) => {
+  await page.goto('/dmh-pwa/probability-calculator');
+  await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole('button', { name: 'click to create link' }).click();
+  const linkInput = page.getByLabel('Share link');
+  await expect(linkInput).not.toHaveValue('');
+  const value = await linkInput.inputValue();
+  expect(value).toContain('#code=');
+  expect(page.url()).toContain('#code=');
+});

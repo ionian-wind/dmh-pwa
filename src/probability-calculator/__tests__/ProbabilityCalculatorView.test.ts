@@ -67,6 +67,7 @@ vi.mock('../anydiceLanguage', () => ({
 }));
 
 import ProbabilityCalculatorView from '../ProbabilityCalculatorView.vue';
+import { encodeSource } from '../shareLink';
 
 async function settle() {
   await nextTick();
@@ -83,6 +84,7 @@ async function mountPage() {
 
 describe('ProbabilityCalculatorView', () => {
   beforeEach(() => {
+    history.replaceState(null, '', '/dmh-pwa/probability-calculator');
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -134,7 +136,7 @@ describe('ProbabilityCalculatorView', () => {
       .findAll('button')
       .find((button) => button.text() === 'Export')!
       .trigger('click');
-    const exportInput = wrapper.find('input[readonly]');
+    const exportInput = wrapper.find('[data-test="export-output"]');
     expect(exportInput.exists()).toBe(true);
     expect((exportInput.element as HTMLInputElement).value).toContain(
       'Output,Value,Probability',
@@ -185,6 +187,45 @@ describe('ProbabilityCalculatorView', () => {
       .trigger('click');
 
     expect(wrapper.findAll('.roller-result').length).toBeGreaterThan(0);
+    wrapper.unmount();
+  });
+
+  it('creates a share link and clears it when the source changes', async () => {
+    const wrapper = await mountPage();
+    const input = () => wrapper.find('[data-test="share-link-input"]');
+
+    await wrapper.find('[data-test="create-share-link"]').trigger('click');
+    await settle();
+
+    const link = (input().element as HTMLInputElement).value;
+    expect(link).toContain('#code=');
+    expect(window.location.hash).toContain('#code=');
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(link);
+
+    await wrapper.find('textarea.monaco-editor-stub').setValue('output 1d8');
+    await settle();
+
+    expect((input().element as HTMLInputElement).value).toBe('');
+    expect(window.location.hash).toBe('');
+    wrapper.unmount();
+  });
+
+  it('loads a program from a shared link', async () => {
+    history.replaceState(null, '', `#code=${encodeSource('output 1d4')}`);
+    const wrapper = await mountPage();
+
+    expect(
+      (
+        wrapper.find('textarea.monaco-editor-stub')
+          .element as HTMLTextAreaElement
+      ).value,
+    ).toBe('output 1d4');
+    expect(
+      (
+        wrapper.find('[data-test="share-link-input"]')
+          .element as HTMLInputElement
+      ).value,
+    ).toContain('#code=');
     wrapper.unmount();
   });
 

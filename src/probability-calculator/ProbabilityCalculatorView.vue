@@ -14,6 +14,7 @@ import {
   IconZoomIn,
   IconZoomOut,
   IconZoomReset,
+  IconShare,
 } from '@tabler/icons-vue';
 import MonacoEditor from '@/components/common/MonacoEditor.vue';
 import {
@@ -25,6 +26,7 @@ import {
   registerAnyDiceLanguage,
   ANYDICE_LANGUAGE_ID,
 } from './anydiceLanguage';
+import { buildShareUrl, sourceFromHash } from './shareLink';
 import {
   buildChartData,
   buildExportText,
@@ -48,7 +50,7 @@ const DEFAULT_SOURCE = 'output 3d6';
 const { t } = useI18n();
 const router = useRouter();
 
-function loadSource(): string {
+function storedSource(): string {
   try {
     return localStorage.getItem(STORAGE_KEY) ?? DEFAULT_SOURCE;
   } catch {
@@ -56,7 +58,9 @@ function loadSource(): string {
   }
 }
 
-const source = ref(loadSource());
+const sharedSource = sourceFromHash(window.location.hash);
+const source = ref(sharedSource ?? storedSource());
+const shareLink = ref(sharedSource === null ? '' : window.location.href);
 const result = ref<CalculationResult | null>(null);
 const error = ref<string | null>(null);
 const isCalculating = ref(false);
@@ -77,6 +81,7 @@ watch(source, (value) => {
   } catch {
     // Storage can be unavailable in private browsing; calculation still works.
   }
+  clearShareLink();
 });
 
 const viewOptions: Array<{ value: ViewMode; label: string }> = [
@@ -172,6 +177,26 @@ async function runCalculation() {
   }
 }
 
+function clearShareLink() {
+  shareLink.value = '';
+  const url = new URL(window.location.href);
+  if (url.hash) {
+    url.hash = '';
+    history.replaceState(null, '', url.toString());
+  }
+}
+
+async function createShareLink() {
+  const url = buildShareUrl(source.value, window.location.href);
+  history.replaceState(null, '', url);
+  shareLink.value = url;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // Keep the link visible even if clipboard access is unavailable.
+  }
+}
+
 async function copyExport() {
   try {
     await navigator.clipboard.writeText(exportText.value);
@@ -233,6 +258,29 @@ onMounted(() => {
       <QBtn flat no-caps @click="router.push('/probability-calculator/syntax')">
         <IconBook2 class="q-mr-xs" :size="18" />
         {{ t('probabilityCalculator.syntax') }}
+      </QBtn>
+    </div>
+
+    <div class="row items-center no-wrap q-gutter-sm q-mb-md">
+      <IconShare :size="22" class="text-grey-7" />
+      <QInput
+        :model-value="shareLink"
+        readonly
+        outlined
+        dense
+        class="col share-link-input"
+        data-test="share-link-input"
+        :aria-label="t('probabilityCalculator.shareLinkLabel')"
+        :placeholder="t('probabilityCalculator.clickToCreateLink')"
+      />
+      <QBtn
+        color="primary"
+        outline
+        no-caps
+        data-test="create-share-link"
+        @click="createShareLink"
+      >
+        {{ t('probabilityCalculator.clickToCreateLink') }}
       </QBtn>
     </div>
 
@@ -513,6 +561,7 @@ onMounted(() => {
             type="textarea"
             readonly
             outlined
+            data-test="export-output"
             input-class="probability-export-text"
             :input-style="{ minHeight: '260px' }"
           />
