@@ -9,7 +9,9 @@ test('creates a drawing note from the brush action', async ({ page }) => {
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await dialog.getByLabel('Title').fill('Sketch');
-  await expect(dialog.locator('.tl-container')).toBeVisible();
+  await expect(dialog.locator('.qd-root')).toBeVisible({ timeout: 30000 });
+  await expect(dialog.locator('.qd-root button svg').first()).toBeVisible();
+
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(page.getByText('Sketch', { exact: true })).toBeVisible();

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
-import type { Root } from 'react-dom/client';
-import type { Editor, TLEditorSnapshot } from 'tldraw';
-import 'tldraw/tldraw.css';
+import { createQuickdraw, type QuickdrawInstance } from '@quickdrawjs/core';
+import '@quickdrawjs/core/quickdraw.css';
 
 const props = defineProps<{
   modelValue?: string;
@@ -10,11 +9,9 @@ const props = defineProps<{
 }>();
 
 const container = useTemplateRef<HTMLDivElement>('container');
-let root: Root | null = null;
-let editor: Editor | null = null;
-let unmounted = false;
+let board: QuickdrawInstance | null = null;
 
-function parseSnapshot(value?: string): TLEditorSnapshot | null {
+function parseSnapshot(value?: string): object | null {
   if (!value?.trim()) return null;
   try {
     const parsed = JSON.parse(value);
@@ -24,41 +21,34 @@ function parseSnapshot(value?: string): TLEditorSnapshot | null {
   }
 }
 
-onMounted(async () => {
-  const [{ createElement }, { createRoot }, { Tldraw }] = await Promise.all([
-    import('react'),
-    import('react-dom/client'),
-    import('tldraw'),
-  ]);
-  if (unmounted || !container.value) return;
+onMounted(() => {
+  if (!container.value) return;
 
-  root = createRoot(container.value);
-  root.render(
-    createElement(Tldraw, {
-      onMount: (instance: Editor) => {
-        editor = instance;
-        if (props.readonly) {
-          instance.updateInstanceState({ isReadonly: true });
-        }
-        const snapshot = parseSnapshot(props.modelValue);
-        if (snapshot) {
-          instance.loadSnapshot(snapshot);
-        }
-      },
-    }),
-  );
+  board = createQuickdraw({
+    container: container.value,
+    theme: 'light',
+    grid: 'lines',
+    hideUi: props.readonly,
+    watermark: false,
+  });
+
+  const snapshot = parseSnapshot(props.modelValue);
+  if (snapshot) {
+    board.editor.store.loadSnapshot(snapshot as never);
+  }
+  if (props.readonly) {
+    board.editor.setReadonly(true);
+  }
 });
 
 onBeforeUnmount(() => {
-  unmounted = true;
-  root?.unmount();
-  root = null;
-  editor = null;
+  board?.destroy();
+  board = null;
 });
 
 function getSnapshot(): string {
-  return editor
-    ? JSON.stringify(editor.getSnapshot())
+  return board
+    ? JSON.stringify(board.editor.store.getSnapshot())
     : (props.modelValue ?? '');
 }
 

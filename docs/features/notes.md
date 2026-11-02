@@ -14,7 +14,7 @@ used as hidden document sections inside modules.
 | `src/notes/NotesView.vue` | List page |
 | `src/notes/NoteCard.vue` | Card with rendered Markdown and expand/collapse |
 | `src/notes/NoteEditor.vue` | Create/edit modal |
-| `src/notes/NoteCanvas.vue` | tldraw canvas for `draw` notes |
+| `src/notes/NoteCanvas.vue` | Quickdraw canvas for `draw` notes |
 | `src/notes/NoteView.vue` | Detail page |
 | `src/notes/NoteTypeSelector.vue` | Note type management (mounted in `NoteEditor`) |
 | `src/notes/NoteViewSidebar.vue` | Tags + mentions sidebar |
@@ -46,7 +46,7 @@ A note has an internal `contentType` field with two values:
 | Value  | Meaning                                      |
 | ------ | -------------------------------------------- |
 | `text` | Markdown content, the default and legacy type |
-| `draw` | Infinite-canvas drawing stored as a tldraw snapshot |
+| `draw` | Infinite-canvas drawing stored as a Quickdraw snapshot |
 
 Existing notes are migrated to `contentType: 'text'`. The type is not directly
 editable in the note form; it is chosen by the create action.
@@ -69,8 +69,8 @@ Fields:
 - Title (required; empty triggers `alert(t('editor.titleRequired'))`).
 - Content, rendered through a named `content` slot:
   - `text` notes use the Milkdown editor and its raw/visual toggle.
-  - `draw` notes use `NoteCanvas`, a Vue wrapper that mounts the React tldraw
-    editor.
+  - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
+    Quickdraw editor.
 - Note type selector and tag selector. The module link lives in the dialog's
   linked-entities tab.
 
@@ -78,7 +78,7 @@ Behavior:
 - `editedNote` is initialized from `props.note` when its `id` changes; a
   `lastNoteId` guard prevents re-initializing while typing.
 - On submit, text notes read the latest Markdown from the Milkdown ref; draw
-  notes read a tldraw JSON snapshot from `NoteCanvas`.
+  notes read a Quickdraw JSON snapshot from `NoteCanvas`.
 - New notes are created by the parent with `hidden: false`; drawing notes keep
   `contentType: 'draw'`.
 

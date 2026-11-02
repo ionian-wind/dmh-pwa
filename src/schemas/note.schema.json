@@ -24,7 +24,7 @@
     },
     "content": {
       "type": "string",
-      "description": "Markdown source or a tldraw snapshot JSON string"
+      "description": "Markdown source or a Quickdraw snapshot JSON string"
     },
     "contentType": {
       "type": "string",
