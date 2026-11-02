@@ -69,6 +69,24 @@ describe('EntitiesLinking', () => {
     ]);
   });
 
+  it('accepts a custom label and option source', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        label: 'Custom notes',
+        options: [{ id: 'x1', label: 'External note' }],
+        modelValue: [],
+      },
+      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
+    });
+
+    expect(wrapper.text()).toContain('Custom notes');
+    await wrapper.find('button[aria-label="Add"]').trigger('click');
+
+    expect(wrapper.text()).toContain('External note');
+    expect(wrapper.text()).not.toContain('Alpha note');
+  });
+
   it('limits selection to one entity when multiple is false', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [], multiple: false },

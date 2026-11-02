@@ -7,7 +7,6 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import TagSelector from '@/components/common/TagSelector.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import ModuleSelector from '@/components/ModuleSelector.vue';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
@@ -545,14 +544,6 @@ describe('current shared components', () => {
       props: { modelValue: false, label: 'Road trip' },
     });
     expect(dynamic.text()).toContain('Road trip');
-  });
-
-  it('ModuleSelector hides the none option when requested', () => {
-    const wrapper = mount(ModuleSelector, {
-      props: { modelValue: null, allowNone: false },
-    });
-    const options = wrapper.findComponent(quasarStubs.QSelect).props('options');
-    expect(options.some((option: any) => option.value === null)).toBe(false);
   });
 
   it('TagSelector adds and removes tags', async () => {

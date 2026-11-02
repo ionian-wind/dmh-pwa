@@ -7,15 +7,15 @@ quantities. It is the template from which a combat is created.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/encounters.ts` | Store + name search |
-| `src/encounters/EncountersView.vue` | List page |
-| `src/encounters/EncounterCard.vue` | Card with "run combat" action |
-| `src/encounters/EncounterEditor.vue` | Create/edit modal |
-| `src/encounters/EncounterView.vue` | Detail page (information/monsters/combats) |
-| `src/encounters/EncounterViewSidebar.vue` | Mentions sidebar |
-| `src/encounters/PartySelector.vue` | Party/character selection → combat |
+| File                                      | Role                                       |
+| ----------------------------------------- | ------------------------------------------ |
+| `src/stores/encounters.ts`                | Store + name search                        |
+| `src/encounters/EncountersView.vue`       | List page                                  |
+| `src/encounters/EncounterCard.vue`        | Card with "run combat" action              |
+| `src/encounters/EncounterEditor.vue`      | Create/edit modal                          |
+| `src/encounters/EncounterView.vue`        | Detail page (information/monsters/combats) |
+| `src/encounters/EncounterViewSidebar.vue` | Mentions sidebar                           |
+| `src/encounters/PartySelector.vue`        | Party/character selection → combat         |
 
 ## Data
 
@@ -60,11 +60,10 @@ the schema.
 ## Editor
 
 - Name (required).
-- Module single-select (`ModuleSelector`, `allowAnyModule: false`).
+- The module link is edited in the **Linked entities** tab through an
+  `EntitiesLinking` block.
 - Description and notes.
 - Validation requires both name and a real `moduleId`.
-- `ModuleSelector` now supports `allowNone`; encounters disable it, so the
-  selector cannot store the literal `'none'`.
 - `handleSubmit` emits and then calls `closeEditor`, which resets the form and
   emits `cancel`. Parents also close on submit; double-close is harmless but
   means the reset happens before the parent reads the emitted object (the

@@ -12,6 +12,8 @@ const props = withDefaults(
     kind: MapEntityKind;
     modelValue: MapEntityRef[];
     multiple?: boolean;
+    label?: string;
+    options?: Array<{ id: string; label: string }>;
   }>(),
   { multiple: true },
 );
@@ -31,17 +33,28 @@ const group = computed(() =>
   groups.value.find((entry) => entry.kind === props.kind),
 );
 
-const kindLabel = computed(() => (group.value ? t(group.value.labelKey) : ''));
+const kindLabel = computed(
+  () => props.label || (group.value ? t(group.value.labelKey) : ''),
+);
 
 const linkedRefs = computed(() =>
   props.modelValue.filter((ref) => ref.kind === props.kind),
 );
 
+const sourceOptions = computed(() => props.options ?? group.value?.items ?? []);
+
 const availableOptions = computed(() =>
-  (group.value?.items ?? []).filter(
+  sourceOptions.value.filter(
     (item) => !linkedRefs.value.some((ref) => ref.id === item.id),
   ),
 );
+
+function labelFor(ref: MapEntityRef): string {
+  if (props.options) {
+    return props.options.find((item) => item.id === ref.id)?.label ?? ref.id;
+  }
+  return getLabel(ref);
+}
 
 const filteredOptions = computed(() => {
   const query = search.value.trim().toLowerCase();
@@ -119,7 +132,7 @@ function removeLink(ref: MapEntityRef) {
     >
       <template #default="{ item: ref }">
         <QItem>
-          <QItemSection>{{ getLabel(ref) }}</QItemSection>
+          <QItemSection>{{ labelFor(ref) }}</QItemSection>
           <QItemSection side>
             <QBtn
               flat

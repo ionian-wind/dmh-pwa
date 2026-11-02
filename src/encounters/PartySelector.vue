@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { usePartyStore } from '@/stores/parties';
 import { useCombatStore } from '@/stores/combats';
 import { useMonsterStore } from '@/stores/monsters';
@@ -8,7 +8,8 @@ import { generateId } from '@/utils/storage';
 import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import type { MapEntityRef } from '@/maps/types';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
@@ -28,6 +29,41 @@ const emit = defineEmits<{
 
 const selectedPartyId = ref<string>('');
 const selectedCharacters = ref<Record<string, boolean>>({});
+
+const partyOptions = computed(() =>
+  partyStore.filtered.map((party) => ({ id: party.id, label: party.name })),
+);
+
+const selectedPartyLinks = computed<MapEntityRef[]>(() =>
+  selectedPartyId.value ? [{ kind: 'party', id: selectedPartyId.value }] : [],
+);
+
+const characterOptions = computed(() => {
+  if (!selectedPartyId.value) return [];
+  const party = partyStore.getById(selectedPartyId.value);
+  return (party?.characters ?? []).map((id) => ({
+    id,
+    label: characterStore.getById(id)?.name || id,
+  }));
+});
+
+const selectedCharacterLinks = computed<MapEntityRef[]>(() =>
+  Object.entries(selectedCharacters.value)
+    .filter(([, selected]) => selected)
+    .map(([id]) => ({ kind: 'character', id })),
+);
+
+function setPartyLinks(links: MapEntityRef[]) {
+  selectedPartyId.value = links[0]?.id ?? '';
+}
+
+function setCharacterLinks(links: MapEntityRef[]) {
+  const next: Record<string, boolean> = {};
+  characterOptions.value.forEach((option) => {
+    next[option.id] = links.some((link) => link.id === option.id);
+  });
+  selectedCharacters.value = next;
+}
 
 onMounted(async () => {
   await Promise.all([
@@ -180,51 +216,28 @@ const handleCancel = () => {
       </div>
 
       <div class="form-section">
-        <QSelect
-          v-model="selectedPartyId"
-          :options="
-            partyStore.filtered.map((party) => ({
-              label: party.name,
-              value: party.id,
-            }))
-          "
-          :label="t('partySelector.chooseParty')"
-          emit-value
-          map-options
-          dense
-          outlined
-          required
+        <EntitiesLinking
+          kind="party"
+          :multiple="false"
+          :label="t('partySelector.party')"
+          :options="partyOptions"
+          :model-value="selectedPartyLinks"
+          @update:model-value="setPartyLinks"
         />
       </div>
 
       <div v-if="selectedPartyId">
-        <template v-if="partyStore.getById(selectedPartyId)">
-          <h4>{{ t('partySelector.selectCharacters') }}</h4>
-          <div
-            v-if="
-              Object.values(selectedCharacters).filter(Boolean).length === 0
-            "
-            class="info-text"
-          >
-            {{ t('partySelector.selectAtLeastOneCharacter') }}
-          </div>
-          <div class="character-list">
-            <div
-              v-for="charId in partyStore.getById(selectedPartyId)
-                ?.characters || []"
-              :key="charId"
-              class="character-toggle-row"
-            >
-              <ToggleSwitch
-                :model-value="selectedCharacters[charId]"
-                @update:model-value="
-                  (val) => (selectedCharacters[charId] = val)
-                "
-                :label="characterStore.getById(charId)?.name || charId"
-              />
-            </div>
-          </div>
-        </template>
+        <h4>{{ t('partySelector.selectCharacters') }}</h4>
+        <div v-if="selectedCharacterLinks.length === 0" class="info-text">
+          {{ t('partySelector.selectAtLeastOneCharacter') }}
+        </div>
+        <EntitiesLinking
+          kind="character"
+          :label="t('partySelector.characters')"
+          :options="characterOptions"
+          :model-value="selectedCharacterLinks"
+          @update:model-value="setCharacterLinks"
+        />
       </div>
     </div>
   </BaseModal>
