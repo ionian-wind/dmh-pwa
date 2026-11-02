@@ -153,9 +153,9 @@ saved from the UI has:
 
 ## Limitations and known problems
 
-- Notes can be converted between regular and document notes in the detail
-  editor. Hiding adds the note to the module tree root; showing removes it from
-  the tree. A note without a module cannot be hidden.
+- Document-note status (`hidden`) is internal: it is set by the module
+  document flow, not by a user-facing editor control. A note without a module
+  cannot be hidden.
 - Deleting a note does not remove its node from `module.noteTree` or its
   bookmark.
 - The note list has search and URL tag filtering, but no tag-chip filter bar.

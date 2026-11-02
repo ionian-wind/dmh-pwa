@@ -118,9 +118,6 @@ const handleSubmit = async (editedNote: Note) => {
   validationError.value = null;
   if (!note.value) return;
   try {
-    if (editedNote.hidden !== note.value.hidden) {
-      await noteStore.setHidden(note.value.id, editedNote.hidden);
-    }
     await noteStore.update(note.value.id, editedNote);
   } catch (error) {
     validationError.value =
@@ -182,7 +179,6 @@ async function handleEditorDelete() {
         :note="note"
         :is-open="isEditing"
         :validation-error="validationError"
-        :allow-hidden-toggle="true"
         @submit="handleSubmit"
         @delete="handleEditorDelete"
         @cancel="handleCancel"

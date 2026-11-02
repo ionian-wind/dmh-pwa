@@ -461,9 +461,7 @@
     "contentPlaceholder": "Enter content here...",
     "module": "Module",
     "type": "Type",
-    "tags": "Tags",
-    "hiddenDocumentNote": "Document note (hidden from the note list)",
-    "hiddenDocumentNoteHint": "Document notes belong to a module's book. Hiding a note adds it to the module tree; showing it removes it from the tree."
+    "tags": "Tags"
   },
   "partySelector": {
     "chooseParty": "Choose a party...",
