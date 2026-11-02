@@ -76,8 +76,8 @@ interface MapMarker {
   y: number;
   locationId?: string | null;
   entities: MapEntityRef[];
-  icon: string;   // RPG Awesome class, e.g. "ra-castle-emblem"
-  color: string;  // CSS color for the marker icon
+  icon: string; // RPG Awesome class, e.g. "ra-castle-emblem"
+  color: string; // CSS color for the marker icon
 }
 ```
 
@@ -100,10 +100,10 @@ interface MapArea {
   description?: string;
   shape: 'polygon' | 'circle' | 'square' | 'freehand';
   points: [number, number][]; // polygon/freehand/square vertices
-  center?: [number, number];  // circle
-  radius?: number;            // circle
+  center?: [number, number]; // circle
+  radius?: number; // circle
   entities: MapEntityRef[];
-  linkedAreaIds: string[];    // other areas on the same map
+  linkedAreaIds: string[]; // other areas on the same map
   icon?: string;
   color: string;
 }
@@ -118,7 +118,8 @@ interface MapArea {
 - Clicking an area opens the area editor.
 - Each area supports title, description, optional RPG Awesome icon, color,
   linked entities, and links to other areas.
-- The area list is shown in the right drawer next to locations.
+- The area list is shown in the right sidebar **Areas** tab and supports
+  editing and deleting directly from the list.
 
 ## Map actions and context menu
 
@@ -148,6 +149,17 @@ the existing marker or area editor. The right-click **Add marker here** action
 carries the clicked map coordinate, so the marker editor opens at the
 right-clicked point. Draw actions from the context menu use an
 `ol-contextmenu` submenu for the area shape.
+
+## Detail layout
+
+The map detail page uses two levels of tabs:
+
+- Top tabs: **Map** and **Locations**. The map stays mounted while the
+  Locations tab is open. Selecting a location centres the map and returns to
+  the Map tab.
+- Right sidebar tabs: **Markers** and **Areas**. Each row has edit and delete
+  actions, so markers and areas can be managed without opening them on the
+  map first.
 
 ## User flows
 
@@ -185,9 +197,9 @@ right-clicked point. Draw actions from the context menu use an
 
 ### Browse locations
 
-The right drawer lists all locations, their descriptions, linked entities, and
-the number of markers assigned to each location. Selecting a location centres
-the map on its markers.
+The top **Locations** tab lists all locations, their descriptions, linked
+entities, and the number of markers assigned to each location. Selecting a
+location centres the map on its markers and switches back to the Map tab.
 
 ## Stores and files
 

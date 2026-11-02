@@ -6,6 +6,7 @@ import EntityLinksEditor from '@/maps/components/EntityLinksEditor.vue';
 import MapIconPicker from '@/maps/components/MapIconPicker.vue';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
 import MapLocationsPanel from '@/maps/components/MapLocationsPanel.vue';
+import MapMarkersPanel from '@/maps/components/MapMarkersPanel.vue';
 import type { MapLocation, MapMarker } from '@/maps/types';
 import { quasarStubs } from '../helpers/quasar-stubs';
 import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
@@ -128,7 +129,8 @@ const IconPickerStub = defineComponent({
   props: { modelValue: String },
   emits: ['update:modelValue'],
   setup(props) {
-    return () => h('div', { class: 'icon-picker-stub', 'data-icon': props.modelValue });
+    return () =>
+      h('div', { class: 'icon-picker-stub', 'data-icon': props.modelValue });
   },
 });
 
@@ -152,13 +154,12 @@ describe('map marker editor', () => {
     locationSelect.vm.$emit('update:modelValue', 'l1');
     await nextTick();
 
-    wrapper.findComponent(EntityLinksStub).vm.$emit('update:modelValue', [
-      { kind: 'map', id: 'map2' },
-    ]);
-    wrapper.findComponent(IconPickerStub).vm.$emit(
-      'update:modelValue',
-      'ra-sword',
-    );
+    wrapper
+      .findComponent(EntityLinksStub)
+      .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
+    wrapper
+      .findComponent(IconPickerStub)
+      .vm.$emit('update:modelValue', 'ra-sword');
     await wrapper.find('#marker-color').setValue('#00ff00');
     await nextTick();
 
@@ -201,6 +202,33 @@ describe('map marker editor', () => {
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('cancel');
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+  });
+});
+
+describe('map markers panel', () => {
+  it('lists markers and emits select, edit and delete actions', async () => {
+    const wrapper = mount(MapMarkersPanel, {
+      props: { markers: [marker] },
+    });
+    await nextTick();
+
+    expect(wrapper.text()).toContain('Castle');
+    expect(wrapper.text()).toContain('Old castle');
+
+    await wrapper.find('.map-marker-item').trigger('click');
+    expect(wrapper.emitted('select-marker')?.[0]).toEqual(['m1']);
+
+    const actions = wrapper.findAll('.map-marker-action');
+    await actions[0].trigger('click');
+    expect(wrapper.emitted('edit')?.[0]?.[0]).toMatchObject({ id: 'm1' });
+
+    await actions[1].trigger('click');
+    expect(wrapper.emitted('delete')?.[0]).toEqual(['m1']);
+  });
+
+  it('shows an empty state', () => {
+    const wrapper = mount(MapMarkersPanel, { props: { markers: [] } });
+    expect(wrapper.text()).toContain('No markers');
   });
 });
 

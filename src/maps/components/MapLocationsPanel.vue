@@ -5,10 +5,16 @@ import EntityLinkList from './EntityLinkList.vue';
 import type { MapLocation, MapMarker } from '../types';
 import { markersForLocation } from '../utils/mapMarkers';
 
-const props = defineProps<{
-  locations: MapLocation[];
-  markers: MapMarker[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    locations: MapLocation[];
+    markers: MapMarker[];
+    showTitle?: boolean;
+  }>(),
+  {
+    showTitle: true,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'select-location', locationId: string): void;
@@ -26,7 +32,9 @@ const rows = computed(() =>
 
 <template>
   <div class="map-locations-panel">
-    <h4 class="map-locations-title">{{ t('maps.locations') }}</h4>
+    <h4 v-if="props.showTitle" class="map-locations-title">
+      {{ t('maps.locations') }}
+    </h4>
 
     <p v-if="rows.length === 0" class="map-locations-empty">
       {{ t('maps.noLocations') }}

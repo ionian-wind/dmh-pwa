@@ -159,16 +159,25 @@ const AreaEditorStub = defineComponent({
 
 const AreasPanelStub = defineComponent({
   name: 'MapAreasPanel',
-  props: { areas: Array },
-  emits: ['select-area'],
+  props: { areas: Array, showTitle: Boolean },
+  emits: ['select-area', 'edit', 'delete'],
   setup() {
     return () => h('div', { class: 'areas-panel-stub' });
   },
 });
 
+const MarkersPanelStub = defineComponent({
+  name: 'MapMarkersPanel',
+  props: { markers: Array },
+  emits: ['select-marker', 'edit', 'delete'],
+  setup() {
+    return () => h('div', { class: 'markers-panel-stub' });
+  },
+});
+
 const LocationsPanelStub = defineComponent({
   name: 'MapLocationsPanel',
-  props: { locations: Array, markers: Array },
+  props: { locations: Array, markers: Array, showTitle: Boolean },
   emits: ['select-location'],
   setup() {
     return () => h('div', { class: 'locations-panel-stub' });
@@ -249,6 +258,7 @@ async function mountMapView() {
         MapMarkerEditor: MarkerEditorStub,
         MapAreaEditor: AreaEditorStub,
         MapLocationsPanel: LocationsPanelStub,
+        MapMarkersPanel: MarkersPanelStub,
         MapAreasPanel: AreasPanelStub,
       },
     },
@@ -293,6 +303,24 @@ describe('MapView', () => {
       expect.objectContaining({ id: 'l1', name: 'Town', entities: [] }),
     ]);
     expect(wrapper.findComponent(MarkerEditorStub).exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('exposes map and location tabs with marker and area sidebar tabs', async () => {
+    const wrapper = await mountMapView();
+
+    expect(wrapper.find('.map-top-tabs').exists()).toBe(true);
+    const topTabs = wrapper.findAll('.map-top-tabs [data-stub="QTab"]');
+    expect(topTabs.map((tab) => tab.attributes('label'))).toEqual([
+      'Map',
+      'Locations',
+    ]);
+    expect(wrapper.text()).toContain('Markers');
+    expect(wrapper.text()).toContain('Areas');
+    expect(wrapper.findComponent(LocationsPanelStub).exists()).toBe(true);
+    expect(wrapper.findComponent(MarkersPanelStub).exists()).toBe(true);
+    expect(wrapper.findComponent(AreasPanelStub).exists()).toBe(true);
+
     wrapper.unmount();
   });
 

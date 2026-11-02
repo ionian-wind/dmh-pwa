@@ -12,6 +12,8 @@ import { useI18n } from 'vue-i18n';
 import type { Item } from 'ol-contextmenu';
 import 'ol-contextmenu/ol-contextmenu.css';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import TabGroup from '@/components/common/TabGroup.vue';
+import { confirm } from '@/dialogs';
 import 'vue3-openlayers/vue3-openlayers.css';
 import { getMapFile, useMapStore } from '../maps';
 import type { MapEntity, MapEntityForm, MapMarker } from '../types';
@@ -19,6 +21,7 @@ import MapEditor from '../components/MapEditor.vue';
 import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapLocationsPanel from '../components/MapLocationsPanel.vue';
+import MapMarkersPanel from '../components/MapMarkersPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
 import {
   MapActionsControl,
@@ -75,6 +78,8 @@ const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
 const selectedLocationId = ref<string | null>(null);
+const activeTopTab = ref('map');
+const sidePanelTab = ref('markers');
 const olMapRef = ref<any>(null);
 const contextMenuRef = ref<any>(null);
 const drawMode = ref<MapAreaShape | null>(null);
@@ -123,6 +128,16 @@ const contextMenuItems = computed<Item[]>(() => [
       },
     })),
   },
+]);
+
+const topTabs = computed(() => [
+  { id: 'map', label: t('maps.mapTab') },
+  { id: 'locations', label: t('maps.locations') },
+]);
+
+const sideTabs = computed(() => [
+  { id: 'markers', label: 'maps.markers' },
+  { id: 'areas', label: 'maps.areas' },
 ]);
 
 const drawType = computed(() =>
@@ -416,8 +431,25 @@ function focusArea(areaId: string) {
   if (!map.value) return;
   const area = map.value.areas.find((entry) => entry.id === areaId);
   if (!area) return;
+  activeTopTab.value = 'map';
   center.value = areaMapCenter(area);
   editArea(area);
+}
+
+async function deleteAreaFromList(areaId: string) {
+  if (!map.value) return;
+  const area = map.value.areas.find((entry) => entry.id === areaId);
+  if (!area) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: area.title || t('maps.untitledArea'),
+      }),
+    ))
+  ) {
+    return;
+  }
+  await deleteArea(areaId);
 }
 
 function areaStyle(feature: any) {
@@ -434,6 +466,30 @@ function areaStyle(feature: any) {
 function editMarker(marker: MapMarker) {
   editingMarker.value = marker;
   isMarkerEditorOpen.value = true;
+}
+
+function selectMarker(markerId: string) {
+  if (!map.value) return;
+  const marker = map.value.markers.find((entry) => entry.id === markerId);
+  if (!marker) return;
+  activeTopTab.value = 'map';
+  center.value = imageToMapPoint([marker.x, marker.y], size.value[1]);
+}
+
+async function deleteMarkerFromList(markerId: string) {
+  if (!map.value) return;
+  const marker = map.value.markers.find((entry) => entry.id === markerId);
+  if (!marker) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: marker.title || t('maps.untitledMarker'),
+      }),
+    ))
+  ) {
+    return;
+  }
+  await deleteMarker(markerId);
 }
 
 function closeMarkerEditor() {
@@ -479,6 +535,11 @@ function focusLocation(locationId: string) {
   );
   center.value = imageToMapPoint(imageCenter, size.value[1]);
 }
+
+function selectLocation(locationId: string) {
+  focusLocation(locationId);
+  activeTopTab.value = 'map';
+}
 </script>
 
 <template>
@@ -494,134 +555,190 @@ function focusLocation(locationId: string) {
     :unwrap-content="true"
     fill
   >
-    <div v-if="mapReady" class="map-view-container">
-      <div v-if="isAddingMarker || drawMode" class="map-hint">
-        {{ isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint') }}
-      </div>
-
-      <ol-map
-        ref="olMapRef"
-        :loadTilesWhileAnimating="true"
-        :loadTilesWhileInteracting="true"
-        style="height: 100%"
-        @click="onMapClick"
-        @pointermove="onMapPointerMove"
+    <div class="map-page">
+      <QTabs
+        v-model="activeTopTab"
+        dense
+        align="left"
+        active-color="primary"
+        indicator-color="primary"
+        class="map-top-tabs"
       >
-        <ol-view
-          :center="center"
-          :zoom="2"
-          :min-zoom="1"
-          :max-zoom="6"
-          :projection="projection"
-          :extent="extent"
+        <QTab
+          v-for="tab in topTabs"
+          :key="tab.id"
+          :name="tab.id"
+          :label="tab.label"
         />
-        <ol-zoom-control />
-        <ol-context-menu-control
-          ref="contextMenuRef"
-          :items="contextMenuItems"
-          :default-items="false"
-          :width="200"
-          @open="onContextMenuOpen"
-        />
+      </QTabs>
 
-        <ol-image-layer id="map-view">
-          <ol-source-image-static
-            :url="imageUrl"
-            :imageSize="size"
-            :imageExtent="extent"
-            :projection="projection"
-            :wrapX="false"
-            :wrapY="false"
-          />
-        </ol-image-layer>
+      <div class="map-tab-content">
+        <div v-show="activeTopTab === 'map'" class="map-tab-panel">
+          <div v-if="mapReady" class="map-view-container">
+            <div v-if="isAddingMarker || drawMode" class="map-hint">
+              {{
+                isAddingMarker
+                  ? t('maps.clickToPlaceMarker')
+                  : t('maps.drawHint')
+              }}
+            </div>
 
-        <ol-vector-layer :style="areaStyle">
-          <ol-source-vector>
-            <ol-feature
-              v-for="area in map?.areas || []"
-              :key="area.id"
-              :properties="{ areaId: area.id }"
+            <ol-map
+              ref="olMapRef"
+              :loadTilesWhileAnimating="true"
+              :loadTilesWhileInteracting="true"
+              style="height: 100%"
+              @click="onMapClick"
+              @pointermove="onMapPointerMove"
             >
-              <ol-geom-polygon
-                v-if="area.shape !== 'circle'"
-                :coordinates="areaPolygonCoordinates(area)"
+              <ol-view
+                :center="center"
+                :zoom="2"
+                :min-zoom="1"
+                :max-zoom="6"
+                :projection="projection"
+                :extent="extent"
               />
-              <ol-geom-circle
-                v-else
-                :center="areaCircleMapCenter(area)"
-                :radius="area.radius"
+              <ol-zoom-control />
+              <ol-context-menu-control
+                ref="contextMenuRef"
+                :items="contextMenuItems"
+                :default-items="false"
+                :width="200"
+                @open="onContextMenuOpen"
               />
-            </ol-feature>
-          </ol-source-vector>
-        </ol-vector-layer>
 
-        <ol-interaction-draw
-          v-if="drawMode"
-          :type="drawType"
-          :freehand="drawFreehand"
-          :geometry-function="drawGeometryFunction"
-          @drawend="onAreaDrawn"
-        />
+              <ol-image-layer id="map-view">
+                <ol-source-image-static
+                  :url="imageUrl"
+                  :imageSize="size"
+                  :imageExtent="extent"
+                  :projection="projection"
+                  :wrapX="false"
+                  :wrapY="false"
+                />
+              </ol-image-layer>
 
-        <ol-overlay
-          v-for="marker in map?.markers || []"
-          :key="marker.id"
-          :position="markerMapPosition(marker)"
-          positioning="center-center"
-          :stop-event="true"
+              <ol-vector-layer :style="areaStyle">
+                <ol-source-vector>
+                  <ol-feature
+                    v-for="area in map?.areas || []"
+                    :key="area.id"
+                    :properties="{ areaId: area.id }"
+                  >
+                    <ol-geom-polygon
+                      v-if="area.shape !== 'circle'"
+                      :coordinates="areaPolygonCoordinates(area)"
+                    />
+                    <ol-geom-circle
+                      v-else
+                      :center="areaCircleMapCenter(area)"
+                      :radius="area.radius"
+                    />
+                  </ol-feature>
+                </ol-source-vector>
+              </ol-vector-layer>
+
+              <ol-interaction-draw
+                v-if="drawMode"
+                :type="drawType"
+                :freehand="drawFreehand"
+                :geometry-function="drawGeometryFunction"
+                @drawend="onAreaDrawn"
+              />
+
+              <ol-overlay
+                v-for="marker in map?.markers || []"
+                :key="marker.id"
+                :position="markerMapPosition(marker)"
+                positioning="center-center"
+                :stop-event="true"
+              >
+                <button
+                  type="button"
+                  class="map-marker-button"
+                  :style="{ color: marker.color }"
+                  :title="marker.title"
+                  @click.stop="editMarker(marker)"
+                >
+                  <i
+                    v-if="marker.icon"
+                    :class="['ra', markerIconClass(marker.icon)]"
+                    aria-hidden="true"
+                  ></i>
+                  <span class="map-marker-label">{{ marker.title }}</span>
+                </button>
+              </ol-overlay>
+
+              <ol-overlay
+                v-for="area in map?.areas || []"
+                :key="`area-label-${area.id}`"
+                :position="areaMapCenter(area)"
+                positioning="center-center"
+                :stop-event="true"
+              >
+                <button
+                  type="button"
+                  class="map-area-label"
+                  :style="{
+                    backgroundColor: areaFillColor(area.color, 0.82),
+                    color: areaTextColor(area.color),
+                  }"
+                  :title="area.title"
+                  @click.stop="editArea(area)"
+                >
+                  <i
+                    v-if="area.icon"
+                    :class="['ra', markerIconClass(area.icon)]"
+                    :style="{ color: area.color }"
+                    aria-hidden="true"
+                  ></i>
+                  {{ area.title }}
+                </button>
+              </ol-overlay>
+            </ol-map>
+          </div>
+        </div>
+
+        <div
+          v-show="activeTopTab === 'locations'"
+          class="map-tab-panel map-tab-panel--locations"
         >
-          <button
-            type="button"
-            class="map-marker-button"
-            :style="{ color: marker.color }"
-            :title="marker.title"
-            @click.stop="editMarker(marker)"
-          >
-            <i
-              v-if="marker.icon"
-              :class="['ra', markerIconClass(marker.icon)]"
-              aria-hidden="true"
-            ></i>
-            <span class="map-marker-label">{{ marker.title }}</span>
-          </button>
-        </ol-overlay>
-
-        <ol-overlay
-          v-for="area in map?.areas || []"
-          :key="`area-label-${area.id}`"
-          :position="areaMapCenter(area)"
-          positioning="center-center"
-          :stop-event="true"
-        >
-          <button
-            type="button"
-            class="map-area-label"
-            :style="{
-              backgroundColor: areaFillColor(area.color, 0.82),
-              color: areaTextColor(area.color),
-            }"
-            :title="area.title"
-            @click.stop="editArea(area)"
-          >
-            <i
-              v-if="area.icon"
-              :class="['ra', markerIconClass(area.icon)]"
-              :style="{ color: area.color }"
-              aria-hidden="true"
-            ></i>
-            {{ area.title }}
-          </button>
-        </ol-overlay>
-      </ol-map>
+          <MapLocationsPanel
+            :locations="map?.locations || []"
+            :markers="map?.markers || []"
+            :show-title="false"
+            @select-location="selectLocation"
+          />
+        </div>
+      </div>
     </div>
 
     <template #sidepanel>
-      <MapLocationsPanel
-        :locations="map?.locations || []"
-        :markers="map?.markers || []"
-        @select-location="focusLocation"
-      />
-      <MapAreasPanel :areas="map?.areas || []" @select-area="focusArea" />
+      <TabGroup
+        v-model="sidePanelTab"
+        :tabs="sideTabs"
+        size="sm"
+        align="justify"
+      >
+        <div v-show="sidePanelTab === 'markers'">
+          <MapMarkersPanel
+            :markers="map?.markers || []"
+            @select-marker="selectMarker"
+            @edit="editMarker"
+            @delete="deleteMarkerFromList"
+          />
+        </div>
+        <div v-show="sidePanelTab === 'areas'">
+          <MapAreasPanel
+            :areas="map?.areas || []"
+            :show-title="false"
+            @select-area="focusArea"
+            @edit="editArea"
+            @delete="deleteAreaFromList"
+          />
+        </div>
+      </TabGroup>
     </template>
 
     <template #editor>
@@ -652,6 +769,31 @@ function focusLocation(locationId: string) {
 </template>
 
 <style scoped>
+.map-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-top-tabs {
+  flex: 0 0 auto;
+}
+
+.map-tab-content {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.map-tab-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.map-tab-panel--locations {
+  overflow-y: auto;
+}
+
 .map-view-container {
   position: relative;
   height: 100%;

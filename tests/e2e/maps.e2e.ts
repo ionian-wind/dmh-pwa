@@ -30,6 +30,22 @@ test('renders map actions as a sized OpenLayers control', async ({ page }) => {
   await expect(menu.getByText('Polygon', { exact: true })).toBeVisible();
 });
 
+test('separates map, locations and sidebar marker/area lists into tabs', async ({
+  page,
+}) => {
+  await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Locations' }).click();
+  await expect(page.locator('.map-location-item')).toContainText('Town');
+
+  const markersTab = page.locator('.tab-item', { hasText: 'Markers' });
+  await expect(markersTab).toHaveClass(/tab-item--active/);
+  await expect(page.locator('.map-marker-item')).toContainText('Castle');
+
+  await page.locator('.tab-item', { hasText: 'Areas' }).click();
+  await expect(page.locator('.map-areas-empty')).toContainText('No areas');
+});
+
 test('adds a marker from the action menu and map click', async ({ page }) => {
   await page.locator('.ol-map-actions-trigger').click();
   await page

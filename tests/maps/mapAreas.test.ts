@@ -78,13 +78,12 @@ describe('MapAreaEditor', () => {
 
     const linkedAreas = wrapper.findComponent(QSelect);
     linkedAreas.vm.$emit('update:modelValue', ['a2']);
-    wrapper.findComponent(EntityLinksStub).vm.$emit('update:modelValue', [
-      { kind: 'map', id: 'map2' },
-    ]);
-    wrapper.findComponent(IconPickerStub).vm.$emit(
-      'update:modelValue',
-      'ra-tree',
-    );
+    wrapper
+      .findComponent(EntityLinksStub)
+      .vm.$emit('update:modelValue', [{ kind: 'map', id: 'map2' }]);
+    wrapper
+      .findComponent(IconPickerStub)
+      .vm.$emit('update:modelValue', 'ra-tree');
     await wrapper.find('#area-color').setValue('#00ff00');
     await nextTick();
 
@@ -148,6 +147,13 @@ describe('MapAreasPanel', () => {
 
     await wrapper.find('.map-area-item').trigger('click');
     expect(wrapper.emitted('select-area')?.[0]).toEqual(['a1']);
+
+    const actions = wrapper.findAll('.map-area-action');
+    await actions[0].trigger('click');
+    expect(wrapper.emitted('edit')?.[0]?.[0]).toMatchObject({ id: 'a1' });
+
+    await actions[1].trigger('click');
+    expect(wrapper.emitted('delete')?.[0]).toEqual(['a1']);
   });
 
   it('shows an empty state', () => {
