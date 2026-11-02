@@ -116,11 +116,8 @@ export class MapActionsControl extends Control {
 
   private buildMenu(): void {
     const addMarkerButton = this.createItem('add-marker');
-    const addMarkerIcon = document.createElement('i');
-    addMarkerIcon.className = 'ra ra-castle-emblem';
-    addMarkerIcon.setAttribute('aria-hidden', 'true');
     this.addMarkerLabel = document.createElement('span');
-    addMarkerButton.append(addMarkerIcon, this.addMarkerLabel);
+    addMarkerButton.append(this.addMarkerLabel);
     this.menuElement.append(addMarkerButton);
 
     this.menuElement.append(this.createDivider());

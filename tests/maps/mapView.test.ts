@@ -376,6 +376,7 @@ describe('MapView', () => {
     const toolbarAdd = element.querySelector(
       '[data-action="add-marker"]',
     ) as HTMLButtonElement;
+    expect(toolbarAdd.querySelector('.ra')).toBeNull();
     toolbarAdd.click();
     expect((wrapper.vm as any).isAddingMarker).toBe(true);
     expect(menu.hidden).toBe(true);
