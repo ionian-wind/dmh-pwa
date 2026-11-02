@@ -1,12 +1,29 @@
 # Dice Probability Calculator
 
-Status: **library implemented, not yet connected to the UI**.
+Status: **library and UI implemented**.
 
-The probability calculator is a standalone TypeScript library under
+The probability calculator engine is a standalone TypeScript library under
 `src/utils/dice-probability-calculator/`. It parses an AnyDice-compatible
 script with Chevrotain and evaluates exact discrete probability distributions
-using integer (`bigint`) weights. It intentionally contains no Vue components,
-CLI or output rendering.
+using integer (`bigint`) weights. A Vue page under
+`src/probability-calculator/` connects it to the application.
+
+## Application integration
+
+- Route: `/probability-calculator` (lazy loaded).
+- Main menu: directly below Calculator, using `IconChartLine`.
+- Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
+  Monarch syntax highlighter.
+- Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
+  Transposed and Summary.
+- Results: probability tables, CSV export, exact summary statistics, a roller,
+  and graphs rendered with `vue3-charts`.
+- The link input from AnyDice is intentionally omitted for now.
+- The source program is persisted in `localStorage`.
+
+UI coverage is split between `src/probability-calculator/__tests__/`,
+`src/components/common/__tests__/MonacoEditor.test.ts`, and
+`tests/e2e/probability-calculator.e2e.ts`.
 
 ## Public API
 

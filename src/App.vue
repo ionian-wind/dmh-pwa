@@ -36,6 +36,7 @@ import {
   IconMenu2,
   IconMusic,
   IconCalculator,
+  IconChartLine,
   IconSettings,
   IconMap,
   // IconHeadphones,
@@ -164,6 +165,10 @@ function isActive(item: SectionItem): boolean {
 function isJukeboxActive(): boolean {
   const currentPath = router.currentRoute.value.path;
   return currentPath === '/jukebox';
+}
+
+function isProbabilityCalculatorActive(): boolean {
+  return router.currentRoute.value.path.startsWith('/probability-calculator');
 }
 
 const isFullscreen = ref(false);
@@ -345,6 +350,18 @@ const isSettingsOpen = ref(false);
             >
               <QItemSection side><IconCalculator /></QItemSection>
               <QItemSection>{{ t('app.calculator') }}</QItemSection>
+            </QItem>
+            <QItem
+              clickable
+              v-ripple
+              :to="'/probability-calculator'"
+              :active="isProbabilityCalculatorActive()"
+              :active-class="'bg-secondary'"
+            >
+              <QItemSection side><IconChartLine /></QItemSection>
+              <QItemSection>
+                {{ t('navigation.probabilityCalculator') }}
+              </QItemSection>
             </QItem>
             <QItem
               clickable

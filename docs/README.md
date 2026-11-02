@@ -112,6 +112,7 @@ src/
   utils/files/                     File System Access / Blob + audio worker
   utils/dice-roller/               dice engine (work in progress)
   utils/dice-probability-calculator/ AnyDice-compatible probability library
+  probability-calculator/          probability calculator page, Monaco + charts
   components/                      shared UI + Tree + PWA + dialogs
   <domain>/                        one folder per feature domain
   i18n/locales/{en,ru}.json        translations
@@ -126,7 +127,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **681 / 681 passing tests across 83 files** (after replacing obsolete suites
+   **697 / 697 passing tests across 87 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

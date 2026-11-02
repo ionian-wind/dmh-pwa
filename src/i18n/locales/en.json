@@ -45,7 +45,8 @@
     "settings": "Settings",
     "timers": "Timers",
     "ambientSound": "Ambient Sound",
-    "maps": "Maps"
+    "maps": "Maps",
+    "probabilityCalculator": "Probability Calculator"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -851,5 +852,48 @@
     "showLayer": "Show layer",
     "hideLayer": "Hide layer",
     "showLabels": "Show labels"
+  },
+  "probabilityCalculator": {
+    "title": "Dice Probability Calculator",
+    "subtitle": "AnyDice-compatible probability distributions",
+    "source": "Source",
+    "syntaxHint": "AnyDice syntax · comments use \\ … \\",
+    "shortcutHint": "Runs locally in your browser",
+    "calculate": "Calculate",
+    "calculating": "Calculating…",
+    "view": "View",
+    "data": "Data",
+    "views": {
+      "table": "Table",
+      "graph": "Graph",
+      "export": "Export",
+      "roller": "Roller"
+    },
+    "modes": {
+      "normal": "Normal",
+      "atLeast": "At Least",
+      "atMost": "At Most",
+      "transposed": "Transposed",
+      "summary": "Summary"
+    },
+    "errorTitle": "Calculation error",
+    "empty": "Run a calculation to see results.",
+    "noOutcomes": "No possible outcomes.",
+    "value": "Value",
+    "probability": "Probability",
+    "mean": "Mean",
+    "stddev": "Std. deviation",
+    "min": "Minimum",
+    "max": "Maximum",
+    "outcomes": "Outcomes",
+    "mostLikely": "Most likely",
+    "exportTitle": "Export results",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download CSV",
+    "rollerOutput": "Output",
+    "rollAmount": "Number of rolls",
+    "roll": "Roll",
+    "rollHint": "Choose an output and roll it."
   }
 }

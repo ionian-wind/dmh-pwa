@@ -1,0 +1,196 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
+
+vi.mock('vue3-charts', async () => {
+  const { defineComponent, h } = await import('vue');
+  const layerStub = (name: string) =>
+    defineComponent({
+      name,
+      setup(_, { slots }) {
+        return () => h('div', { 'data-chart-stub': name }, slots.default?.());
+      },
+    });
+
+  return {
+    Chart: defineComponent({
+      name: 'Chart',
+      setup(_, { slots }) {
+        return () => h('div', { 'data-chart-stub': 'Chart' }, slots.layers?.());
+      },
+    }),
+    Grid: layerStub('Grid'),
+    Line: layerStub('Line'),
+    Tooltip: layerStub('Tooltip'),
+    Responsive: defineComponent({
+      name: 'Responsive',
+      setup(_, { slots }) {
+        return () =>
+          h(
+            'div',
+            { 'data-chart-stub': 'Responsive' },
+            slots.main?.({ width: 800, height: 400 }),
+          );
+      },
+    }),
+  };
+});
+
+vi.mock('@/components/common/MonacoEditor.vue', async () => {
+  const { defineComponent, h } = await import('vue');
+  return {
+    default: defineComponent({
+      name: 'MonacoEditor',
+      props: { modelValue: { type: String, default: '' } },
+      emits: ['update:modelValue'],
+      setup(props, { emit }) {
+        return () =>
+          h('textarea', {
+            class: 'monaco-editor-stub',
+            value: props.modelValue,
+            onInput: (event: Event) =>
+              emit(
+                'update:modelValue',
+                (event.target as HTMLTextAreaElement).value,
+              ),
+          });
+      },
+    }),
+  };
+});
+
+vi.mock('../anydiceLanguage', () => ({
+  ANYDICE_LANGUAGE_ID: 'anydice',
+  registerAnyDiceLanguage: vi.fn(),
+}));
+
+import ProbabilityCalculatorView from '../ProbabilityCalculatorView.vue';
+
+async function settle() {
+  await nextTick();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
+  await nextTick();
+}
+
+async function mountPage() {
+  const wrapper = mount(ProbabilityCalculatorView);
+  await settle();
+  return wrapper;
+}
+
+describe('ProbabilityCalculatorView', () => {
+  beforeEach(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:test'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
+  });
+
+  it('calculates the default program and shows a table', async () => {
+    const wrapper = await mountPage();
+
+    expect(wrapper.findAll('.probability-table tbody tr')).toHaveLength(16);
+    expect(wrapper.text()).toContain('Mean');
+    expect(wrapper.text()).toContain('10.500');
+    expect(wrapper.text()).toContain('12.50%');
+    wrapper.unmount();
+  });
+
+  it('switches to graph, summary and export views', async () => {
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Graph')!
+      .trigger('click');
+    expect(wrapper.find('.probability-chart-wrapper').exists()).toBe(true);
+    expect(wrapper.find('[data-chart-stub="Chart"]').exists()).toBe(true);
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Summary')!
+      .trigger('click');
+    expect(wrapper.text()).toContain('Most likely');
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Export')!
+      .trigger('click');
+    const exportInput = wrapper.find('input[readonly]');
+    expect(exportInput.exists()).toBe(true);
+    expect((exportInput.element as HTMLInputElement).value).toContain(
+      'Output,Value,Probability',
+    );
+
+    const copyButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Copy'))!;
+    await copyButton.trigger('click');
+    await settle();
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+
+    const downloadButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Download'))!;
+    await downloadButton.trigger('click');
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it('switches to transposed and at-least tables', async () => {
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Transposed')!
+      .trigger('click');
+    expect(wrapper.text()).toContain('Output 1');
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'At Least')!
+      .trigger('click');
+    expect(wrapper.text()).toContain('100.00%');
+    wrapper.unmount();
+  });
+
+  it('rolls the selected output', async () => {
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Roller')!
+      .trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Roll')!
+      .trigger('click');
+
+    expect(wrapper.findAll('.roller-result').length).toBeGreaterThan(0);
+    wrapper.unmount();
+  });
+
+  it('shows calculation errors', async () => {
+    const wrapper = await mountPage();
+    const editor = wrapper.find('textarea.monaco-editor-stub');
+    await editor.setValue('output 1 +');
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Calculate')!
+      .trigger('click');
+    await settle();
+
+    expect(wrapper.text()).toContain('Calculation error');
+    wrapper.unmount();
+  });
+});
