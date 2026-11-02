@@ -38,6 +38,7 @@ import {
   IconCalculator,
   IconChartLine,
   IconTool,
+  IconChevronDown,
   IconSettings,
   IconMap,
   // IconHeadphones,
@@ -314,49 +315,59 @@ const isSettingsOpen = ref(false);
                 </QItemSection>
               </QItem>
             </template>
-            <QExpansionItem v-model="toolsExpanded" toggle>
-              <template #header>
-                <QItemSection side>
-                  <IconTool />
-                </QItemSection>
-                <QItemSection>
-                  {{ t('navigation.tools') }}
-                </QItemSection>
-              </template>
-              <QItem
-                clickable
-                v-ripple
-                :active="router.currentRoute.value.path.startsWith('/timers')"
-                :active-class="'bg-secondary'"
-                :to="'/timers'"
-              >
-                <QItemSection side>
-                  <component :is="timerIcon" :key="animationFrame" />
-                </QItemSection>
-                <QItemSection>{{ t('navigation.timers') }}</QItemSection>
-              </QItem>
-              <QItem
-                clickable
-                v-ripple
-                :active="false"
-                @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
-              >
-                <QItemSection side><IconCalculator /></QItemSection>
-                <QItemSection>{{ t('app.calculator') }}</QItemSection>
-              </QItem>
-              <QItem
-                clickable
-                v-ripple
-                :to="'/probability-calculator'"
-                :active="isProbabilityCalculatorActive()"
-                :active-class="'bg-secondary'"
-              >
-                <QItemSection side><IconChartLine /></QItemSection>
-                <QItemSection>
-                  {{ t('navigation.probabilityCalculator') }}
-                </QItemSection>
-              </QItem>
-            </QExpansionItem>
+            <QItem
+              clickable
+              v-ripple
+              :active="false"
+              @click="toolsExpanded = !toolsExpanded"
+            >
+              <QItemSection side><IconTool /></QItemSection>
+              <QItemSection>{{ t('navigation.tools') }}</QItemSection>
+              <QItemSection side>
+                <IconChevronDown
+                  :size="18"
+                  class="tools-caret"
+                  :class="{ 'tools-caret--open': toolsExpanded }"
+                />
+              </QItemSection>
+            </QItem>
+            <QSlideTransition>
+              <div v-show="toolsExpanded">
+                <QItem
+                  clickable
+                  v-ripple
+                  :active="router.currentRoute.value.path.startsWith('/timers')"
+                  :active-class="'bg-secondary'"
+                  :to="'/timers'"
+                >
+                  <QItemSection side>
+                    <component :is="timerIcon" :key="animationFrame" />
+                  </QItemSection>
+                  <QItemSection>{{ t('navigation.timers') }}</QItemSection>
+                </QItem>
+                <QItem
+                  clickable
+                  v-ripple
+                  :active="false"
+                  @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
+                >
+                  <QItemSection side><IconCalculator /></QItemSection>
+                  <QItemSection>{{ t('app.calculator') }}</QItemSection>
+                </QItem>
+                <QItem
+                  clickable
+                  v-ripple
+                  :to="'/probability-calculator'"
+                  :active="isProbabilityCalculatorActive()"
+                  :active-class="'bg-secondary'"
+                >
+                  <QItemSection side><IconChartLine /></QItemSection>
+                  <QItemSection>
+                    {{ t('navigation.probabilityCalculator') }}
+                  </QItemSection>
+                </QItem>
+              </div>
+            </QSlideTransition>
           </QList>
         </div>
         <div>
@@ -498,5 +509,12 @@ const isSettingsOpen = ref(false);
     rgba(15, 23, 42, 0.16),
     rgba(15, 23, 42, 0)
   );
+}
+.tools-caret {
+  transition: transform 0.2s ease;
+}
+
+.tools-caret--open {
+  transform: rotate(180deg);
 }
 </style>

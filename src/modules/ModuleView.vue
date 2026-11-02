@@ -9,6 +9,8 @@ import { useNoteStore } from '@/stores/notes';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useJukeboxTracksStore } from '@/jukebox/stores';
+import { useMapStore } from '@/maps/maps';
+import { useMapLocationStore } from '@/maps/locations';
 import { useConfigStore } from '@/utils/configStore';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Module, Bookmark } from '@/types';
@@ -24,6 +26,9 @@ import MonsterCard from '@/monsters/MonsterCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
+import MapCard from '@/maps/components/MapCard.vue';
+import LocationCard from '@/maps/components/LocationCard.vue';
+import type { MapEntity, MapLocation } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/form/Button.vue';
 import ModuleDocumentTree from '@/modules/ModuleDocumentTree.vue';
@@ -55,6 +60,8 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const noteStore = useNoteStore();
 const playlistsStore = useJukeboxPlaylistsStore();
+const mapStore = useMapStore();
+const locationStore = useMapLocationStore();
 const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
 const mentionsStore = useMentionsStore();
@@ -98,6 +105,50 @@ const modulePlaylists = computed(() =>
   ),
 );
 
+const moduleMaps = computed(() =>
+  mapStore.items.filter((map) =>
+    map.entities?.some(
+      (entity) =>
+        entity.kind === 'module' && entity.id === (route.params.id as string),
+    ),
+  ),
+);
+
+const moduleLocations = computed(() =>
+  locationStore.items.filter((location) =>
+    location.entities?.some(
+      (entity) =>
+        entity.kind === 'module' && entity.id === (route.params.id as string),
+    ),
+  ),
+);
+
+function moduleMapProps(map: MapEntity) {
+  return {
+    map,
+    linkedLocation: map.locationId
+      ? (locationStore.getById(map.locationId) ?? null)
+      : null,
+    onView: () => router.push(`/maps/${map.id}`),
+    onEdit: () => router.push(`/maps/${map.id}`),
+    onDelete: () => undefined,
+    onOpenLocation: (locationId: string) =>
+      router.push(`/locations/${locationId}`),
+  };
+}
+
+function moduleLocationProps(location: MapLocation) {
+  return {
+    location,
+    linkedMap:
+      mapStore.items.find((map) => map.locationId === location.id) ?? null,
+    onView: () => router.push(`/locations/${location.id}`),
+    onEdit: () => router.push(`/locations/${location.id}`),
+    onDelete: () => undefined,
+    onOpenMap: (mapId: string) => router.push(`/maps/${mapId}`),
+  };
+}
+
 const mentionedEntities = computed(() => {
   if (!module.value) return [];
   return mentionsStore.getLinks({ kind: 'module', id: module.value.id });
@@ -114,6 +165,8 @@ const moduleBookmarks = computed(() => {
 
 const entityTabs = computed(() => [
   { id: 'document', label: t('moduleView.book') },
+  { id: 'maps', label: t('maps.title') },
+  { id: 'locations', label: t('maps.locations') },
   { id: 'parties', label: t('navigation.parties') },
   { id: 'monsters', label: t('navigation.monsters') },
   { id: 'encounters', label: t('navigation.encounters') },
@@ -142,6 +195,8 @@ onMounted(async () => {
     tracksStore.load(),
     mentionsStore.load(),
     bookmarkStore.load(),
+    mapStore.load(),
+    locationStore.load(),
   ]);
   // Listen for hash changes
   window.addEventListener('hashchange', handleHashChange);
@@ -361,6 +416,40 @@ async function handleEditorDelete() {
         />
         <div v-else class="empty-state">
           <p>{{ t('moduleView.noDocument') }}</p>
+        </div>
+      </template>
+      <template #maps>
+        <div
+          v-if="moduleMaps.length === 0"
+          class="q-pa-md text-grey text-center q-mt-xl"
+        >
+          {{ t('moduleView.noMaps') }}
+        </div>
+        <div v-else class="row q-gutter-md">
+          <div
+            v-for="map in moduleMaps"
+            :key="map.id"
+            class="col-12 col-sm-6 col-md-4 col-lg-3"
+          >
+            <MapCard v-bind="moduleMapProps(map)" />
+          </div>
+        </div>
+      </template>
+      <template #locations>
+        <div
+          v-if="moduleLocations.length === 0"
+          class="q-pa-md text-grey text-center q-mt-xl"
+        >
+          {{ t('moduleView.noLocations') }}
+        </div>
+        <div v-else class="row q-gutter-md">
+          <div
+            v-for="location in moduleLocations"
+            :key="location.id"
+            class="col-12 col-sm-6 col-md-4 col-lg-3"
+          >
+            <LocationCard v-bind="moduleLocationProps(location)" />
+          </div>
         </div>
       </template>
       <template #parties>

@@ -111,6 +111,19 @@ describe('map normalization', () => {
     expect(map.points).toBeUndefined();
   });
 
+  it('preserves module links on a map', () => {
+    const map = normalizeMapEntity({
+      id: 'map1',
+      title: 'World',
+      fileId: 'file1',
+      entities: [{ kind: 'module', id: 'mod1' }],
+      createdAt: 1,
+      updatedAt: 2,
+    } as any);
+
+    expect(map.entities).toEqual([{ kind: 'module', id: 'mod1' }]);
+  });
+
   it('prefers existing markers over legacy points', () => {
     const map = normalizeMapEntity({
       id: 'map1',

@@ -34,6 +34,13 @@
       "type": "string",
       "minLength": 1
     },
+    "entities": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/entityRef"
+      }
+    },
     "locationId": {
       "type": ["string", "null"]
     },

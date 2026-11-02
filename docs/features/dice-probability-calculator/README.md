@@ -28,7 +28,8 @@ using integer (`bigint`) weights. A Vue page under
   link restores the program. Editing the source clears the generated link.
 - The source program is persisted in `localStorage`.
 - Code library sidebar: a right drawer toggled with `IconCodeblock` from the top
-  header. Save named snippets, include selected snippets in the calculation
+  header. Items use the same colored-border card layout as map marker/area
+  items in the map sidebar. Save named snippets, include selected snippets in the calculation
   namespace, rename/delete them, and load them with an unsaved-changes
   confirmation. Library contents persist in `localStorage`.
 

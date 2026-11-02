@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconPencil, IconTrash } from '@tabler/icons-vue';
+import { IconCodeblock, IconPencil, IconTrash } from '@tabler/icons-vue';
 import type { CodeLibraryPanelState, CodePiece } from './codeLibrary';
 
 defineProps<{ state: CodeLibraryPanelState }>();
@@ -37,50 +37,63 @@ function load(state: CodeLibraryPanelState, piece: CodePiece) {
       {{ t('probabilityCalculator.library.empty') }}
     </div>
 
-    <div class="code-library-list col">
-      <div
+    <QList class="code-library-list col q-py-sm">
+      <QItem
         v-for="piece in state.pieces"
         :key="piece.id"
-        class="code-library-item"
+        clickable
+        class="code-library-item q-mx-sm q-mb-sm q-pa-sm bg-white rounded-borders"
         :class="{ 'is-selected': state.selectedId === piece.id }"
+        :style="{ borderLeft: '4px solid var(--color-primary)' }"
         @click="load(state, piece)"
+        @keydown.enter="load(state, piece)"
       >
-        <QCheckbox
-          v-model="piece.include"
-          dense
-          size="sm"
-          class="code-library-checkbox"
-          :title="t('probabilityCalculator.library.include')"
-          @click.stop
-        />
-        <div class="col min-width-0">
-          <div class="text-body2 ellipsis">{{ piece.name }}</div>
+        <QItemSection>
+          <div class="row items-center q-gutter-xs text-weight-bold">
+            <QCheckbox
+              v-model="piece.include"
+              dense
+              size="sm"
+              class="code-library-checkbox"
+              :title="t('probabilityCalculator.library.include')"
+              @click.stop
+            />
+            <IconCodeblock :size="16" class="text-primary" aria-hidden="true" />
+            <span class="ellipsis">{{ piece.name }}</span>
+          </div>
           <div class="text-caption text-grey-7 ellipsis">
             {{ firstLine(piece.code) }}
           </div>
-        </div>
-        <QBtn
-          flat
-          dense
-          round
-          :title="t('probabilityCalculator.library.rename')"
-          :aria-label="t('probabilityCalculator.library.rename')"
-          @click.stop="state.onRename(piece)"
-        >
-          <IconPencil :size="16" />
-        </QBtn>
-        <QBtn
-          flat
-          dense
-          round
-          :title="t('probabilityCalculator.library.delete')"
-          :aria-label="t('probabilityCalculator.library.delete')"
-          @click.stop="state.onDelete(piece)"
-        >
-          <IconTrash :size="16" />
-        </QBtn>
-      </div>
-    </div>
+        </QItemSection>
+
+        <QItemSection side class="row items-center">
+          <QBtn
+            flat
+            dense
+            round
+            size="sm"
+            color="positive"
+            :title="t('probabilityCalculator.library.rename')"
+            :aria-label="t('probabilityCalculator.library.rename')"
+            @click.stop="state.onRename(piece)"
+          >
+            <IconPencil :size="16" />
+          </QBtn>
+          <QBtn
+            flat
+            dense
+            round
+            size="sm"
+            color="negative"
+            :title="t('probabilityCalculator.library.delete')"
+            :aria-label="t('probabilityCalculator.library.delete')"
+            @click.stop="state.onDelete(piece)"
+          >
+            <IconTrash :size="16" />
+          </QBtn>
+        </QItemSection>
+      </QItem>
+    </QList>
   </div>
 </template>
 
@@ -91,19 +104,6 @@ function load(state: CodeLibraryPanelState, piece: CodePiece) {
 
 .code-library-list {
   overflow-y: auto;
-}
-
-.code-library-item {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 4px 6px 2px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.code-library-item:hover {
-  background: var(--q-grey-2, #f5f5f5);
 }
 
 .code-library-item.is-selected {

@@ -158,6 +158,7 @@ export function normalizeMapEntity(
     title: map.title || '',
     description: map.description || '',
     fileId: map.fileId || '',
+    entities: normalizeEntities(map.entities),
     locationId:
       typeof map.locationId === 'string' && map.locationId
         ? map.locationId

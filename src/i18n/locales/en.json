@@ -428,7 +428,9 @@
     "noMonsters": "No monsters in this module",
     "noEncounters": "No encounters in this module",
     "noNotes": "No notes in this module",
-    "noPlaylists": "No playlists in this module"
+    "noPlaylists": "No playlists in this module",
+    "noMaps": "No maps in this module",
+    "noLocations": "No locations in this module"
   },
   "playlist": {
     "title": "Playlist",
