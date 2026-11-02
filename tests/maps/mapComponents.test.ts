@@ -220,6 +220,11 @@ describe('map markers panel', () => {
     await wrapper.find('.map-marker-item').trigger('click');
     expect(wrapper.emitted('select-marker')?.[0]).toEqual(['m1']);
 
+    await wrapper.find('.map-marker-item').trigger('mouseenter');
+    expect(wrapper.emitted('hover')?.[0]).toEqual(['m1']);
+    await wrapper.find('.map-marker-item').trigger('mouseleave');
+    expect(wrapper.emitted('hover')?.[1]).toEqual([null]);
+
     const actions = wrapper.findAll('.map-marker-action');
     await actions[0].trigger('click');
     expect(wrapper.emitted('edit')?.[0]?.[0]).toMatchObject({ id: 'm1' });

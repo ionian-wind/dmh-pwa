@@ -15,12 +15,37 @@ vi.mock('@/maps/maps', () => ({
   useMapStore: vi.fn(),
 }));
 
+const locationMocks = vi.hoisted(() => {
+  const location = {
+    id: 'l1',
+    name: 'Town',
+    description: '',
+    color: '#336699',
+    entities: [{ kind: 'note', id: 'n1' }],
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  return {
+    location,
+    store: {
+      items: [location],
+      getById: (id: string) => (id === location.id ? location : undefined),
+      load: vi.fn().mockResolvedValue(undefined),
+    },
+  };
+});
+
+vi.mock('@/maps/locations', () => ({
+  useMapLocationStore: () => locationMocks.store,
+}));
+
 vi.mock('@/maps/utils/mapFileUtils', () => ({
   createMapFileFromFile: vi.fn(),
   getMapFileBlob: vi.fn().mockResolvedValue(new Blob(['image'])),
 }));
 
 const QInput = quasarStubs.QInput;
+const QSelect = quasarStubs.QSelect;
 
 const mapFile: MapFile = {
   id: 'file1',
@@ -38,14 +63,7 @@ const existingMap: MapEntity = {
   title: 'World',
   description: 'Campaign',
   fileId: 'file1',
-  locations: [
-    {
-      id: 'l1',
-      name: 'Town',
-      description: '',
-      entities: [{ kind: 'note', id: 'n1' }],
-    },
-  ],
+  locationIds: ['l1'],
   markers: [
     {
       id: 'm1',
@@ -105,15 +123,13 @@ describe('MapEditor', () => {
     const addLocation = wrapper
       .findAll('button')
       .find((button) => button.text().toLowerCase().includes('add location'));
+    const locationSelect = wrapper.findComponent(QSelect);
+    locationSelect.vm.$emit('update:modelValue', 'l1');
+    await nextTick();
     await addLocation!.trigger('click');
     await nextTick();
 
-    await wrapper.find('#location-name-0').setValue('Town');
-    await wrapper.find('#location-description-0').setValue('Starting town');
-    wrapper
-      .findComponent(EntityLinksStub)
-      .vm.$emit('update:modelValue', [{ kind: 'note', id: 'n1' }]);
-    await nextTick();
+    expect(wrapper.text()).toContain('Town');
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     await nextTick();
@@ -124,13 +140,7 @@ describe('MapEditor', () => {
       description: 'Description',
       fileId: 'file1',
       markers: [],
-      locations: [
-        expect.objectContaining({
-          name: 'Town',
-          description: 'Starting town',
-          entities: [{ kind: 'note', id: 'n1' }],
-        }),
-      ],
+      locationIds: ['l1'],
     });
   });
 
@@ -155,7 +165,7 @@ describe('MapEditor', () => {
     expect(wrapper.emitted('submit')?.[0][0]).toMatchObject({
       title: 'Renamed',
       markers: [expect.objectContaining({ id: 'm1' })],
-      locations: [expect.objectContaining({ id: 'l1' })],
+      locationIds: ['l1'],
     });
   });
 
@@ -171,14 +181,18 @@ describe('MapEditor', () => {
     const addLocation = wrapper
       .findAll('button')
       .find((button) => button.text().toLowerCase().includes('add location'));
+    wrapper.findComponent(QSelect).vm.$emit('update:modelValue', 'l1');
+    await nextTick();
     await addLocation!.trigger('click');
     await nextTick();
+    expect(wrapper.find('.map-linked-location').exists()).toBe(true);
+
     const remove = wrapper
       .findAll('button')
       .find((button) => button.text().toLowerCase().includes('remove'));
     await remove!.trigger('click');
     await nextTick();
-    expect(wrapper.find('#location-name-0').exists()).toBe(false);
+    expect(wrapper.find('.map-linked-location').exists()).toBe(false);
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('cancel');
     expect(wrapper.emitted('cancel')).toHaveLength(1);

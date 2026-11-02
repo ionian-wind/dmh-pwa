@@ -141,12 +141,17 @@ describe('MapAreasPanel', () => {
 
     expect(wrapper.text()).toContain('Forest');
     expect(wrapper.text()).toContain('Dark woods');
-    expect(wrapper.text()).toContain('Polygon');
+    expect(wrapper.text()).not.toContain('Polygon');
     expect(wrapper.text()).toContain('Session note');
     expect(wrapper.text()).toContain('Lake');
 
     await wrapper.find('.map-area-item').trigger('click');
     expect(wrapper.emitted('select-area')?.[0]).toEqual(['a1']);
+
+    await wrapper.find('.map-area-item').trigger('mouseenter');
+    expect(wrapper.emitted('hover')?.[0]).toEqual(['a1']);
+    await wrapper.find('.map-area-item').trigger('mouseleave');
+    expect(wrapper.emitted('hover')?.[1]).toEqual([null]);
 
     const actions = wrapper.findAll('.map-area-action');
     await actions[0].trigger('click');

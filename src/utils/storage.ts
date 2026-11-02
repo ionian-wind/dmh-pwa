@@ -114,7 +114,15 @@ export async function applyPendingMigrations(
       appliedAt: Date.now(),
     };
 
-    const tx = db.transaction(MIGRATIONS_STORE, 'readwrite');
+    const storeNames = Array.from(
+      new Set([
+        MIGRATIONS_STORE,
+        ...migration.affectedStores.filter((storeName) =>
+          db.objectStoreNames.contains(storeName),
+        ),
+      ]),
+    );
+    const tx = db.transaction(storeNames, 'readwrite');
     await migration.go(tx as any);
     await tx.objectStore(MIGRATIONS_STORE).put(info);
     await tx.done;

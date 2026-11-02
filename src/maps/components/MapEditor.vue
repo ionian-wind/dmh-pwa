@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
-import EntityLinksEditor from './EntityLinksEditor.vue';
-import type { MapEntity, MapEntityForm, MapEntityRef, MapFile } from '../types';
+import type { MapEntity, MapEntityForm, MapFile } from '../types';
 import { createMapFileFromFile, getMapFileBlob } from '../utils/mapFileUtils';
 import { deleteMapFile, getMapFile, putMapFile } from '../maps';
-import { DEFAULT_MARKER_COLOR, normalizeMapEntity } from '../utils/normalize';
-import { generateId } from '@/utils/storage';
+import { useMapLocationStore } from '../locations';
+import { normalizeMapEntity } from '../utils/normalize';
 
 const props = defineProps<{
   map: MapEntity | null;
@@ -20,14 +19,16 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const locationStore = useMapLocationStore();
 const editedMap = ref<MapEntityForm>({
   title: '',
   description: '',
   fileId: '',
-  locations: [],
+  locationIds: [],
   markers: [],
   areas: [],
 });
+const newLocationId = ref<string | null>(null);
 const selectedFileName = ref('');
 const previewUrl = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -63,6 +64,8 @@ watch(
     if (!isOpen) return;
     revokePreview();
     pendingMapFile = null;
+    newLocationId.value = null;
+    void locationStore.load();
     const newMap = props.map;
     if (newMap) {
       const normalized = normalizeMapEntity(newMap);
@@ -71,7 +74,7 @@ watch(
         title: normalized.title,
         description: normalized.description,
         fileId: normalized.fileId,
-        locations: structuredClone(normalized.locations),
+        locationIds: [...normalized.locationIds],
         markers: structuredClone(normalized.markers),
         areas: structuredClone(normalized.areas),
       };
@@ -83,7 +86,7 @@ watch(
         title: '',
         description: '',
         fileId: '',
-        locations: [],
+        locationIds: [],
         markers: [],
         areas: [],
       };
@@ -126,23 +129,30 @@ async function onImageSelected(event: Event) {
   }
 }
 
-function addLocation() {
-  editedMap.value.locations.push({
-    id: generateId(),
-    name: '',
-    description: '',
-    color: DEFAULT_MARKER_COLOR,
-    entities: [],
-  });
+const linkedLocations = computed(() =>
+  editedMap.value.locationIds
+    .map((id) => locationStore.getById(id))
+    .filter(Boolean),
+);
+
+const availableLocations = computed(() =>
+  locationStore.items
+    .filter((location) => !editedMap.value.locationIds.includes(location.id))
+    .map((location) => ({ label: location.name, value: location.id })),
+);
+
+function addLinkedLocation() {
+  if (!newLocationId.value) return;
+  if (!editedMap.value.locationIds.includes(newLocationId.value)) {
+    editedMap.value.locationIds.push(newLocationId.value);
+  }
+  newLocationId.value = null;
 }
 
-function removeLocation(index: number) {
-  editedMap.value.locations.splice(index, 1);
-}
-
-function setLocationLinks(index: number, links: MapEntityRef[]) {
-  const location = editedMap.value.locations[index];
-  if (location) location.entities = links;
+function removeLinkedLocation(locationId: string) {
+  editedMap.value.locationIds = editedMap.value.locationIds.filter(
+    (id) => id !== locationId,
+  );
 }
 
 async function handleSubmit() {
@@ -166,10 +176,7 @@ async function handleSubmit() {
     ...(editingId ? { id: editingId } : {}),
     ...editedMap.value,
     title: editedMap.value.title.trim(),
-    locations: editedMap.value.locations.map((location) => ({
-      ...location,
-      name: location.name.trim(),
-    })),
+    locationIds: [...new Set(editedMap.value.locationIds)],
   });
 }
 </script>
@@ -244,63 +251,46 @@ async function handleSubmit() {
     <div class="form-section">
       <div class="map-section-header">
         <h3>{{ t('maps.locations') }}</h3>
-        <QBtn
-          flat
-          color="primary"
-          :label="t('maps.addLocation')"
-          @click="addLocation"
-        />
       </div>
 
-      <p v-if="editedMap.locations.length === 0" class="map-section-empty">
+      <p v-if="linkedLocations.length === 0" class="map-section-empty">
         {{ t('maps.noLocations') }}
       </p>
 
-      <div
-        v-for="(location, index) in editedMap.locations"
-        :key="location.id"
-        class="map-location-editor"
-      >
-        <div class="form-grid">
-          <div class="form-group">
-            <QInput
-              :id="`location-name-${index}`"
-              v-model="location.name"
-              :label="t('maps.locationName')"
-              outlined
-            />
-          </div>
-          <div class="form-group">
-            <label :for="`location-color-${index}`">
-              {{ t('maps.locationColor') }}
-            </label>
-            <input
-              :id="`location-color-${index}`"
-              v-model="location.color"
-              type="color"
-              class="marker-color-input"
-            />
-          </div>
+      <div class="map-linked-locations">
+        <div
+          v-for="location in linkedLocations"
+          :key="location!.id"
+          class="map-location-editor map-linked-location"
+        >
+          <span
+            class="map-linked-location-color"
+            :style="{ background: location!.color || 'var(--color-primary)' }"
+          ></span>
+          <span class="map-linked-location-name">{{ location!.name }}</span>
+          <QBtn
+            flat
+            color="negative"
+            :label="t('common.remove')"
+            @click="removeLinkedLocation(location!.id)"
+          />
         </div>
-        <QInput
-          :id="`location-description-${index}`"
-          v-model="location.description"
-          :label="t('maps.locationDescription')"
-          type="textarea"
-          :rows="2"
-          autogrow
+      </div>
+
+      <div class="map-location-link-row">
+        <QSelect
+          v-model="newLocationId"
+          :options="availableLocations"
+          :label="t('maps.location')"
           outlined
-        />
-        <label>{{ t('maps.linkedEntities') }}</label>
-        <EntityLinksEditor
-          :model-value="location.entities"
-          @update:model-value="(links) => setLocationLinks(index, links)"
+          emit-value
+          map-options
         />
         <QBtn
-          flat
-          color="negative"
-          :label="t('maps.removeLocation')"
-          @click="removeLocation(index)"
+          color="primary"
+          :label="t('maps.addLocation')"
+          :disable="!newLocationId"
+          @click="addLinkedLocation"
         />
       </div>
     </div>
@@ -345,6 +335,39 @@ async function handleSubmit() {
   margin-top: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
+}
+
+.map-linked-locations {
+  display: flex;
+  flex-direction: column;
+}
+
+.map-linked-location {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.map-linked-location-color {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.map-linked-location-name {
+  flex: 1;
+}
+
+.map-location-link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.map-location-link-row > :first-child {
+  flex: 1;
 }
 
 .marker-color-input {

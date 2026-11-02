@@ -30,24 +30,10 @@ test('renders map actions as a sized OpenLayers control', async ({ page }) => {
   await expect(menu.getByText('Polygon', { exact: true })).toBeVisible();
 });
 
-test('separates map, locations and sidebar marker/area lists into tabs', async ({
+test('keeps marker and area sidebar tabs and shows map item popups', async ({
   page,
 }) => {
-  await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
-
-  await page.getByRole('tab', { name: 'Locations' }).click();
-  await expect(page.locator('.map-location-card')).toContainText('Town');
-  await expect(
-    page.getByRole('button', { name: 'Add location' }),
-  ).toBeVisible();
-
-  await page.getByRole('button', { name: 'Add location' }).click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Location name').fill('Port');
-  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(
-    page.locator('.map-location-card', { hasText: 'Port' }),
-  ).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Map' })).toHaveCount(0);
 
   const markersTab = page.locator('.tab-item', { hasText: 'Markers' });
   await expect(markersTab).toHaveClass(/tab-item--active/);
@@ -55,6 +41,29 @@ test('separates map, locations and sidebar marker/area lists into tabs', async (
 
   await page.locator('.tab-item', { hasText: 'Areas' }).click();
   await expect(page.locator('.map-areas-empty')).toContainText('No areas');
+
+  await page.locator('.tab-item', { hasText: 'Markers' }).click();
+  await page.locator('.map-marker-item').hover();
+  await expect(page.locator('.map-marker-button.is-hovered')).toBeVisible();
+
+  await page.locator('.map-marker-button').click();
+  await expect(page.locator('.map-info-popup')).toContainText('Castle');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('shows map and location tabs and opens location details', async ({
+  page,
+}) => {
+  await page.goto('/dmh-pwa/maps');
+
+  await expect(page.getByRole('tab', { name: 'Maps' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Locations' }).click();
+  await expect(page.locator('.location-card')).toContainText('Town');
+
+  await page.locator('.location-card h5').click();
+  await expect(page).toHaveURL(/\/locations\/location-1/);
+  await expect(page.locator('.location-maps-panel')).toContainText('E2E World');
+  await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
 });
 
 test('adds a marker from the action menu and map click', async ({ page }) => {

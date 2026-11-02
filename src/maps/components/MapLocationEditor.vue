@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'save', location: MapLocation): void;
+  (e: 'submit', location: MapLocation): void;
   (e: 'delete', locationId: string): void;
   (e: 'cancel'): void;
 }>();
@@ -24,12 +25,15 @@ const draft = ref<MapLocation>(createLocation());
 const isNew = ref(true);
 
 function createLocation(): MapLocation {
+  const now = Date.now();
   return {
     id: generateId(),
     name: '',
     description: '',
     color: DEFAULT_MARKER_COLOR,
     entities: [],
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
@@ -53,7 +57,9 @@ function submit() {
     alert(t('maps.locationNameRequired'));
     return;
   }
-  emit('save', { ...draft.value, name: draft.value.name.trim() });
+  const location = { ...draft.value, name: draft.value.name.trim() };
+  emit('save', location);
+  emit('submit', location);
 }
 
 function remove() {

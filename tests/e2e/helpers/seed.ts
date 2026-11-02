@@ -7,7 +7,7 @@ async function waitForAppDatabase(page: Page) {
     if (!('databases' in indexedDB)) return false;
     const databases = await indexedDB.databases();
     const database = databases.find((entry) => entry.name === 'dmh-db');
-    return Boolean(database && (database.version ?? 0) >= 4);
+    return Boolean(database && (database.version ?? 0) >= 5);
   });
 }
 
@@ -47,7 +47,10 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
 
       const fileId = `file-${mapId}`;
       const now = Date.now();
-      const transaction = db.transaction(['maps', 'map_files'], 'readwrite');
+      const transaction = db.transaction(
+        ['maps', 'map_files', 'map_locations'],
+        'readwrite',
+      );
       transaction.objectStore('map_files').put({
         id: fileId,
         name: 'world.svg',
@@ -65,12 +68,21 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         createdAt: now,
         updatedAt: now,
       });
+      transaction.objectStore('map_locations').put({
+        id: 'location-1',
+        name: 'Town',
+        description: '',
+        color: '#336699',
+        entities: [],
+        createdAt: now,
+        updatedAt: now,
+      });
       transaction.objectStore('maps').put({
         id: mapId,
         title: mapTitle,
         description: 'Playwright map',
         fileId,
-        locations: [{ id: 'location-1', name: 'Town', entities: [] }],
+        locationIds: ['location-1'],
         markers: [
           {
             id: 'marker-1',

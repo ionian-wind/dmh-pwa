@@ -8,7 +8,7 @@
     "createdAt",
     "updatedAt",
     "fileId",
-    "locations",
+    "locationIds",
     "markers",
     "areas"
   ],
@@ -33,16 +33,19 @@
       "type": "string",
       "minLength": 1
     },
+    "locationIds": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
     "locations": {
       "type": "array",
       "default": [],
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "entities"
-        ],
+        "required": ["id", "name", "entities"],
         "properties": {
           "id": {
             "type": "string"
@@ -70,15 +73,7 @@
       "default": [],
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "title",
-          "x",
-          "y",
-          "entities",
-          "icon",
-          "color"
-        ],
+        "required": ["id", "title", "x", "y", "entities", "icon", "color"],
         "properties": {
           "id": {
             "type": "string"
@@ -96,10 +91,7 @@
             "type": "number"
           },
           "locationId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "entities": {
             "type": "array",
@@ -143,12 +135,7 @@
           },
           "shape": {
             "type": "string",
-            "enum": [
-              "polygon",
-              "circle",
-              "square",
-              "freehand"
-            ]
+            "enum": ["polygon", "circle", "square", "freehand"]
           },
           "points": {
             "type": "array",
@@ -198,10 +185,7 @@
   "definitions": {
     "entityRef": {
       "type": "object",
-      "required": [
-        "kind",
-        "id"
-      ],
+      "required": ["kind", "id"],
       "properties": {
         "kind": {
           "type": "string",

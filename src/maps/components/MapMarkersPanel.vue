@@ -13,6 +13,7 @@ const emit = defineEmits<{
   (e: 'select-marker', markerId: string): void;
   (e: 'edit', marker: MapMarker): void;
   (e: 'delete', markerId: string): void;
+  (e: 'hover', markerId: string | null): void;
 }>();
 
 const { t } = useI18n();
@@ -30,13 +31,12 @@ const { t } = useI18n();
       class="map-marker-item"
       role="button"
       tabindex="0"
+      :style="{ '--map-item-color': marker.color || 'var(--color-primary)' }"
       @click="emit('select-marker', marker.id)"
       @keydown.enter="emit('select-marker', marker.id)"
+      @mouseenter="emit('hover', marker.id)"
+      @mouseleave="emit('hover', null)"
     >
-      <span
-        class="map-marker-color"
-        :style="{ background: marker.color || 'var(--color-primary)' }"
-      ></span>
       <span class="map-marker-content">
         <span class="map-marker-name">
           <i
@@ -93,11 +93,13 @@ const { t } = useI18n();
 }
 
 .map-marker-item {
+  position: relative;
   display: flex;
   gap: 0.6rem;
   align-items: flex-start;
   width: 100%;
-  padding: 0.6rem;
+  padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+  overflow: hidden;
   text-align: left;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
@@ -105,16 +107,21 @@ const { t } = useI18n();
   cursor: pointer;
 }
 
-.map-marker-item:hover {
-  background: var(--color-background-soft);
+.map-marker-item::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--map-item-color, transparent);
+  transition: width 0.2s;
 }
 
-.map-marker-color {
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  margin-top: 0.35rem;
-  border-radius: 50%;
+.map-marker-item:hover::before {
+  width: 6px;
+}
+
+.map-marker-item:hover {
+  background: var(--color-background-soft);
 }
 
 .map-marker-content {

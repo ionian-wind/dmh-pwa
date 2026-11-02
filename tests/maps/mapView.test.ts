@@ -16,6 +16,12 @@ const mocks = vi.hoisted(() => ({
     update: vi.fn(),
     remove: vi.fn().mockResolvedValue(undefined),
   },
+  locationStore: {
+    isLoaded: true,
+    items: [] as any[],
+    getById: vi.fn(),
+    load: vi.fn().mockResolvedValue(undefined),
+  },
   getMapFile: vi.fn(),
   getMapFileBlob: vi.fn(),
 }));
@@ -23,6 +29,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/maps/maps', () => ({
   useMapStore: () => mocks.mapStore,
   getMapFile: mocks.getMapFile,
+}));
+
+vi.mock('@/maps/locations', () => ({
+  useMapLocationStore: () => mocks.locationStore,
 }));
 
 vi.mock('@/maps/utils/mapFileUtils', () => ({
@@ -160,7 +170,7 @@ const AreaEditorStub = defineComponent({
 const AreasPanelStub = defineComponent({
   name: 'MapAreasPanel',
   props: { areas: Array, showTitle: Boolean },
-  emits: ['select-area', 'edit', 'delete'],
+  emits: ['select-area', 'edit', 'delete', 'hover'],
   setup() {
     return () => h('div', { class: 'areas-panel-stub' });
   },
@@ -169,7 +179,7 @@ const AreasPanelStub = defineComponent({
 const MarkersPanelStub = defineComponent({
   name: 'MapMarkersPanel',
   props: { markers: Array },
-  emits: ['select-marker', 'edit', 'delete'],
+  emits: ['select-marker', 'edit', 'delete', 'hover'],
   setup() {
     return () => h('div', { class: 'markers-panel-stub' });
   },
@@ -197,12 +207,22 @@ const LocationEditorStub = defineComponent({
   },
 });
 
+const location = {
+  id: 'l1',
+  name: 'Town',
+  description: '',
+  color: '#336699',
+  entities: [],
+  createdAt: 1,
+  updatedAt: 1,
+};
+
 const map: MapEntity = {
   id: 'map1',
   title: 'World',
   description: 'Campaign',
   fileId: 'file1',
-  locations: [{ id: 'l1', name: 'Town', entities: [] }],
+  locationIds: ['l1'],
   markers: [
     {
       id: 'm1',
@@ -288,6 +308,10 @@ describe('MapView', () => {
     mapHarness.controls.length = 0;
     mocks.mapStore.isLoaded = true;
     mocks.mapStore.getById.mockReturnValue(map);
+    mocks.locationStore.items = [location];
+    mocks.locationStore.getById.mockImplementation((id: string) =>
+      id === location.id ? location : undefined,
+    );
     mocks.mapStore.update.mockImplementation(
       async (_id: string, patch: any) => ({
         ...map,
@@ -305,35 +329,61 @@ describe('MapView', () => {
     (URL as any).revokeObjectURL = vi.fn();
   });
 
-  it('loads the base image and renders markers and locations', async () => {
+  it('loads the base image and renders markers in the sidebar', async () => {
     const wrapper = await mountMapView();
 
     expect(mocks.getMapFile).toHaveBeenCalledWith('file1');
     expect(wrapper.find('.ol-map-stub').exists()).toBe(true);
     expect(wrapper.find('.map-marker-button').exists()).toBe(true);
-    expect(
-      wrapper.findComponent(LocationsPanelStub).props('locations'),
-    ).toEqual([
-      expect.objectContaining({ id: 'l1', name: 'Town', entities: [] }),
+    expect(wrapper.findComponent(MarkersPanelStub).props('markers')).toEqual([
+      expect.objectContaining({ id: 'm1', title: 'Castle' }),
     ]);
     expect(wrapper.findComponent(MarkerEditorStub).exists()).toBe(true);
     wrapper.unmount();
   });
 
-  it('exposes map and location tabs with marker and area sidebar tabs', async () => {
+  it('uses marker and area sidebar tabs without top tabs', async () => {
     const wrapper = await mountMapView();
 
-    expect(wrapper.find('.map-top-tabs').exists()).toBe(true);
-    const topTabs = wrapper.findAll('.map-top-tabs [data-stub="QTab"]');
-    expect(topTabs.map((tab) => tab.attributes('label'))).toEqual([
-      'Map',
-      'Locations',
-    ]);
+    expect(wrapper.find('.map-top-tabs').exists()).toBe(false);
     expect(wrapper.text()).toContain('Markers');
     expect(wrapper.text()).toContain('Areas');
-    expect(wrapper.findComponent(LocationsPanelStub).exists()).toBe(true);
     expect(wrapper.findComponent(MarkersPanelStub).exists()).toBe(true);
     expect(wrapper.findComponent(AreasPanelStub).exists()).toBe(true);
+    expect(wrapper.findComponent(LocationsPanelStub).exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it('shows info popups for markers and areas instead of opening editors', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    await wrapper.find('.map-marker-button').trigger('click');
+    expect(wrapper.find('.map-info-popup').exists()).toBe(true);
+    expect(wrapper.find('.map-info-title').text()).toContain('Castle');
+    expect(wrapper.findComponent(MarkerEditorStub).props('isOpen')).toBe(false);
+
+    vm.closeMapInfo();
+    vm.showAreaInfo(map.areas[0]);
+    await flushPromises();
+    expect(wrapper.find('.map-info-popup').exists()).toBe(true);
+    expect(wrapper.find('.map-info-title').text()).toContain('Forest');
+    expect(wrapper.findComponent(AreaEditorStub).props('isOpen')).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it('highlights map items when their sidebar rows are hovered', async () => {
+    const wrapper = await mountMapView();
+    const markerButton = wrapper.find('.map-marker-button');
+    expect(markerButton.classes()).not.toContain('is-hovered');
+
+    wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', 'm1');
+    await flushPromises();
+    expect(wrapper.find('.map-marker-button').classes()).toContain(
+      'is-hovered',
+    );
 
     wrapper.unmount();
   });
@@ -397,44 +447,6 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
-  it('adds and edits locations from the locations tab', async () => {
-    const wrapper = await mountMapView();
-    const vm = wrapper.vm as any;
-
-    vm.openAddLocation();
-    expect(vm.isLocationEditorOpen).toBe(true);
-    expect(vm.editingLocation).toBeNull();
-
-    await vm.saveLocation({
-      id: 'l2',
-      name: 'Port',
-      description: 'Harbour',
-      color: '#123456',
-      entities: [],
-    });
-
-    expect(mocks.mapStore.update).toHaveBeenCalledWith(
-      'map1',
-      expect.objectContaining({
-        locations: expect.arrayContaining([
-          expect.objectContaining({ id: 'l2', name: 'Port' }),
-        ]),
-      }),
-    );
-    expect(vm.isLocationEditorOpen).toBe(false);
-
-    vm.editLocation(map.locations[0]);
-    expect(vm.editingLocation).toEqual(map.locations[0]);
-
-    await vm.deleteLocation('l1');
-    expect(mocks.mapStore.update).toHaveBeenLastCalledWith('map1', {
-      locations: [expect.objectContaining({ id: 'l2' })],
-      markers: [expect.objectContaining({ id: 'm1', locationId: null })],
-    });
-
-    wrapper.unmount();
-  });
-
   it('exposes actions through OpenLayers controls and dispatches dialog events', async () => {
     const wrapper = await mountMapView();
 
@@ -473,15 +485,6 @@ describe('MapView', () => {
     await flushPromises();
     expect((wrapper.vm as any).drawMode).toBe('polygon');
 
-    wrapper.unmount();
-  });
-
-  it('centres on a selected location', async () => {
-    const wrapper = await mountMapView();
-    const vm = wrapper.vm as any;
-    vm.focusLocation('l1');
-    await flushPromises();
-    expect(vm.center).toEqual([10, 80]);
     wrapper.unmount();
   });
 

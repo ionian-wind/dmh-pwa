@@ -20,8 +20,7 @@ export interface MapPoint {
   [key: string]: unknown;
 }
 
-export interface MapLocation {
-  id: string;
+export interface MapLocation extends WithMetadata {
   name: string;
   description?: string;
   color?: string;
@@ -75,7 +74,9 @@ export interface MapEntity extends WithMetadata {
   title: string;
   description?: string;
   fileId: string;
-  locations: MapLocation[];
+  locationIds: string[];
+  /** @deprecated Embedded locations from older records; migrated to map_locations. */
+  locations?: MapLocation[];
   markers: MapMarker[];
   areas: MapArea[];
   /** @deprecated Use markers. Converted by normalizeMapEntity. */

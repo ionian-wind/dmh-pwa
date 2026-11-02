@@ -13,18 +13,20 @@ interface MapEntity extends WithMetadata {
   title: string;
   description?: string;
   fileId: string;
-  locations: MapLocation[];
+  locationIds: string[];
   markers: MapMarker[];
+  areas: MapArea[];
 }
 ```
 
 - `fileId` references a `MapFile` in the `map_files` store.
-- `locations` are reusable places on the map. Entities can be bound to a
-  location once and referenced by any number of markers.
+- `locationIds` reference global `MapLocation` records in `map_locations`.
 - `markers` are placed at image-pixel coordinates `(x, y)`.
+- `areas` are drawn shapes stored with the map.
 
 Legacy records with `points` are normalized on read: points with `x`/`y` become
-markers, and missing arrays are filled with empty arrays.
+markers, and missing arrays are filled with empty arrays. Legacy embedded
+`locations` are migrated into `map_locations` and replaced with `locationIds`.
 
 ### Map file
 
@@ -53,8 +55,7 @@ Image metadata (dimensions, MIME type, dominant color, palette) is extracted by
 ### Locations
 
 ```ts
-interface MapLocation {
-  id: string;
+interface MapLocation extends WithMetadata {
   name: string;
   description?: string;
   color?: string;
@@ -62,8 +63,13 @@ interface MapLocation {
 }
 ```
 
-Locations are managed from the map editor. Each location can link to notes,
-modules, parties, monsters, encounters, characters, and other maps.
+Locations are global entities stored in `map_locations`, independent of any
+single map. Maps link to them through `locationIds`, and markers reference one
+through `locationId`.
+
+Each location has its own detail page with tabs for linked notes, modules,
+parties, monsters, encounters, and characters. The right drawer lists the maps
+that link to that location.
 
 ### Markers
 
@@ -150,19 +156,43 @@ carries the clicked map coordinate, so the marker editor opens at the
 right-clicked point. Draw actions from the context menu use an
 `ol-contextmenu` submenu for the area shape.
 
-## Detail layout
+## Maps section
 
-The map detail page uses two levels of tabs:
+The Maps section has two top-level tabs:
 
-- Top tabs: **Map** and **Locations**. The map stays mounted while the
-  Locations tab is open. Selecting a location centres the map and returns to
-  the Map tab.
-- The Locations tab uses the same card grid pattern as the other entity lists,
-  with add, view, edit, and delete actions. Deleting a location clears that
-  location from any markers that referenced it.
-- Right sidebar tabs: **Markers** and **Areas**. Each row has edit and delete
-  actions, so markers and areas can be managed without opening them on the
-  map first.
+- **Maps** — card list of map entities.
+- **Locations** — card list of global location entities, with add, view, edit,
+  and delete actions.
+
+Location cards show the number of maps that link to them. Deleting a location
+also removes it from every map and clears marker references.
+
+## Map detail layout
+
+The map detail page no longer has top tabs. It contains:
+
+- The map itself.
+- Right sidebar tabs: **Markers** and **Areas**.
+  - Rows use a coloured left edge like jukebox tracks.
+  - Areas do not show their shape type in the list.
+  - Each row has edit and delete actions.
+  - Hovering a row highlights the marker or area on the map.
+
+Clicking a marker or area opens an information popup instead of the editor. The
+popup shows the title, description, marker location, and linked entities, with
+an Edit action for opening the full editor.
+
+## Location detail layout
+
+A location detail page follows the module detail pattern:
+
+- Top tabs for each linkable entity kind: notes, modules, parties, monsters,
+  encounters, and characters.
+- Each tab lists linked entities and allows adding/removing links.
+- The right drawer contains the **Maps** panel, listing maps linked to this
+  location.
+- The header edit action opens the global location editor; delete removes the
+  location everywhere.
 
 ## User flows
 
@@ -171,7 +201,7 @@ The map detail page uses two levels of tabs:
 1. Open **Maps** in the left navigation.
 2. Create a map or edit an existing one.
 3. Choose a title and a base image.
-4. Optionally add locations and bind entities to them.
+4. Optionally link global locations and bind their entities.
 5. Save. The image file is written to `map_files` only when the map is saved.
    Replacing an image deletes the previous `map_files` record.
 
@@ -196,14 +226,14 @@ The map detail page uses two levels of tabs:
 3. Fill in the area title, description, icon, colour, linked entities and any
    linked areas.
 4. Save. Click an area or its label to edit it again.
-5. The right drawer lists areas alongside locations.
+5. The right sidebar **Areas** tab lists areas for editing and deletion.
 
 ### Browse locations
 
-The top **Locations** tab shows locations as cards with add, view, edit, and
-delete actions. Selecting a location centres the map on its markers and
-switches back to the Map tab. Each card shows the location description, linked
-entities, and marker count.
+Locations are global entities. Open the **Locations** tab on the Maps page to
+see location cards with linked-map counts and add/edit/delete actions. Select a
+location card to open its detail page, where you can manage links to other
+entities and see which maps use it.
 
 ## Stores and files
 
@@ -257,7 +287,8 @@ pixels. Overlays are positioned with `:position="[marker.x, marker.y]"`.
 
 - Pure helpers: `normalize`, marker upsert/remove/centroid, entity label lookup.
 - File helpers: file/blob creation, metadata fallback, URL lifecycle.
-- Schema: locations/markers/entity refs validate.
-- Components: map editor, marker editor, icon picker, entity links editor,
-  locations panel.
+- Schema: locations/markers/entity refs validate, including migration of
+  embedded locations into the global `map_locations` store.
+- Components: map editor, marker editor, location editor, icon picker, entity
+  links editor, location cards, marker/area sidebar panels.
 - Integration: map store file helpers, map view marker placement/editing.

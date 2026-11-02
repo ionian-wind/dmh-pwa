@@ -41,6 +41,8 @@ export function normalizeLocation(
     description: location.description || '',
     color: location.color || undefined,
     entities: normalizeEntities(location.entities),
+    createdAt: Number(location.createdAt) || Date.now(),
+    updatedAt: Number(location.updatedAt) || Date.now(),
   };
 }
 
@@ -134,14 +136,22 @@ export function normalizeMapEntity(
     ? map.markers.map(normalizeMarker)
     : legacyPointsToMarkers(map.points);
 
+  const locationIds = Array.isArray(map.locationIds)
+    ? map.locationIds.filter(
+        (id: unknown): id is string => typeof id === 'string',
+      )
+    : Array.isArray(map.locations)
+      ? map.locations
+          .map((location: Partial<MapLocation>) => location.id)
+          .filter((id): id is string => typeof id === 'string')
+      : [];
+
   return {
     id: map.id || generateId(),
     title: map.title || '',
     description: map.description || '',
     fileId: map.fileId || '',
-    locations: Array.isArray(map.locations)
-      ? map.locations.map(normalizeLocation)
-      : [],
+    locationIds,
     markers,
     areas: Array.isArray(map.areas) ? map.areas.map(normalizeArea) : [],
     createdAt: Number(map.createdAt) || Date.now(),

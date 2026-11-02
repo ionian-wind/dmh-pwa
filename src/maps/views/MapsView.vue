@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useMapStore, deleteMapFile } from '../maps';
 import BaseListView from '@/components/common/BaseListView.vue';
 import MapCard from '../components/MapCard.vue';
 import MapEditor from '../components/MapEditor.vue';
+import LocationsListView from './LocationsListView.vue';
 import type { MapEntity, MapEntityForm } from '../types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 import { normalizeMapEntity } from '../utils/normalize';
 
 const mapStore = useMapStore();
+const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const activeTab = ref(route.query.tab === 'locations' ? 'locations' : 'maps');
 
 onMounted(async () => {
   await mapStore.load();
@@ -64,16 +67,32 @@ async function handleSubmit(form: MapEntityForm) {
 </script>
 
 <template>
-  <BaseListView
-    :items="mapStore.filtered"
-    :card-component="MapCard"
-    :editor-component="MapEditor"
-    :empty-message="t('maps.empty')"
-    :create-title="t('maps.create')"
-    :card-props="cardProps"
-    :editor-props="editorProps"
-    @delete="handleDelete"
-    @submit="handleSubmit"
-    @view="(map: MapEntity) => router.push(`/maps/${map.id}`)"
-  />
+  <div>
+    <QTabs
+      v-model="activeTab"
+      dense
+      align="left"
+      active-color="primary"
+      indicator-color="primary"
+      class="q-px-lg q-pt-md"
+    >
+      <QTab name="maps" :label="t('maps.title')" />
+      <QTab name="locations" :label="t('maps.locations')" />
+    </QTabs>
+
+    <BaseListView
+      v-if="activeTab === 'maps'"
+      :items="mapStore.filtered"
+      :card-component="MapCard"
+      :editor-component="MapEditor"
+      :empty-message="t('maps.empty')"
+      :create-title="t('maps.create')"
+      :card-props="cardProps"
+      :editor-props="editorProps"
+      @delete="handleDelete"
+      @submit="handleSubmit"
+      @view="(map: MapEntity) => router.push(`/maps/${map.id}`)"
+    />
+    <LocationsListView v-else />
+  </div>
 </template>

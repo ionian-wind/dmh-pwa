@@ -99,15 +99,7 @@ describe('map normalization', () => {
       updatedAt: 2,
     } as any);
 
-    expect(map.locations).toEqual([
-      {
-        id: 'l1',
-        name: 'Town',
-        description: '',
-        color: undefined,
-        entities: [],
-      },
-    ]);
+    expect(map.locationIds).toEqual(['l1']);
     expect(map.markers).toHaveLength(2);
     expect(map.markers[0]).toMatchObject({ x: 10, y: 20, title: 'Old point' });
     expect(map.markers[1]).toMatchObject({ x: 30, y: 40 });

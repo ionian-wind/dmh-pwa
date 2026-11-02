@@ -19,6 +19,7 @@ const emit = defineEmits<{
   (e: 'select-area', areaId: string): void;
   (e: 'edit', area: MapArea): void;
   (e: 'delete', areaId: string): void;
+  (e: 'hover', areaId: string | null): void;
 }>();
 
 const { t } = useI18n();
@@ -38,13 +39,12 @@ const { t } = useI18n();
       class="map-area-item"
       role="button"
       tabindex="0"
+      :style="{ '--map-item-color': area.color || 'var(--color-primary)' }"
       @click="emit('select-area', area.id)"
       @keydown.enter="emit('select-area', area.id)"
+      @mouseenter="emit('hover', area.id)"
+      @mouseleave="emit('hover', null)"
     >
-      <span
-        class="map-area-color"
-        :style="{ background: area.color || 'var(--color-primary)' }"
-      ></span>
       <span class="map-area-content">
         <span class="map-area-name">
           <i
@@ -54,9 +54,6 @@ const { t } = useI18n();
             aria-hidden="true"
           ></i>
           {{ area.title || t('maps.untitledArea') }}
-        </span>
-        <span class="map-area-shape">
-          {{ t(`maps.shapes.${area.shape}`) }}
         </span>
         <span v-if="area.description" class="map-area-description">
           {{ area.description }}
@@ -111,11 +108,13 @@ const { t } = useI18n();
 }
 
 .map-area-item {
+  position: relative;
   display: flex;
   gap: 0.6rem;
   align-items: flex-start;
   width: 100%;
-  padding: 0.6rem;
+  padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+  overflow: hidden;
   text-align: left;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
@@ -123,16 +122,21 @@ const { t } = useI18n();
   cursor: pointer;
 }
 
-.map-area-item:hover {
-  background: var(--color-background-soft);
+.map-area-item::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--map-item-color, transparent);
+  transition: width 0.2s;
 }
 
-.map-area-color {
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  margin-top: 0.3rem;
-  border-radius: 50%;
+.map-area-item:hover::before {
+  width: 6px;
+}
+
+.map-area-item:hover {
+  background: var(--color-background-soft);
 }
 
 .map-area-content {
@@ -150,7 +154,6 @@ const { t } = useI18n();
   font-weight: 600;
 }
 
-.map-area-shape,
 .map-area-description,
 .map-area-links {
   color: var(--color-text-light);
