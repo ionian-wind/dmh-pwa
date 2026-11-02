@@ -34,3 +34,17 @@ test('creates a drawing note from the brush action', async ({ page }) => {
   expect(note.contentType).toBe('draw');
   expect(note.content).toContain('document');
 });
+
+test('localizes Quickdraw chrome from the app locale', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('dmh-config:savedLanguage', JSON.stringify('ru'));
+  });
+  await page.goto('/dmh-pwa/notes');
+
+  await page.getByRole('button', { name: 'Создать заметку-рисунок' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('.qd-root')).toBeVisible({ timeout: 30000 });
+  await expect(
+    dialog.locator('.qd-root button[title="Рисовать — D"]'),
+  ).toBeVisible();
+});
