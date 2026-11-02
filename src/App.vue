@@ -397,7 +397,8 @@ const isSettingsOpen = ref(false);
     </QLayout>
     <div>
       <!-- PWA Components -->
-      <PWAInstallPrompt />
+      <!-- Install prompt temporarily disabled while the flow is being finished. -->
+      <PWAInstallPrompt :enabled="false" />
       <PWAStatus />
       <!-- Global Mention Modal Stack -->
       <MentionModalStack />

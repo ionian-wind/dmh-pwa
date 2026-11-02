@@ -9,16 +9,13 @@ const QBannerStub = defineComponent({
   name: 'QBanner',
   setup(_, { slots }) {
     return () =>
-      h('div', [
-        slots.avatar?.(),
-        slots.default?.(),
-        slots.action?.(),
-      ]);
+      h('div', [slots.avatar?.(), slots.default?.(), slots.action?.()]);
   },
 });
 
-function mountInstall() {
+function mountInstall(props: { enabled?: boolean } = {}) {
   return mount(PWAInstallPrompt, {
+    props,
     global: { stubs: { QBanner: QBannerStub } },
   });
 }
@@ -75,6 +72,15 @@ describe('PWA components', () => {
       'beforeinstallprompt',
       expect.any(Function),
     );
+  });
+
+  it('stays hidden when the install prompt is disabled', async () => {
+    const wrapper = mountInstall({ enabled: false });
+    window.dispatchEvent(installEvent());
+    await flushPromises();
+
+    expect(wrapper.text()).toBe('');
+    wrapper.unmount();
   });
 
   it('dismisses the banner and closes it after appinstalled', async () => {
