@@ -10,6 +10,7 @@ const languages = vi.hoisted(() => {
     }),
     setLanguageConfiguration: vi.fn(),
     setMonarchTokensProvider: vi.fn(),
+    registerCompletionItemProvider: vi.fn(),
   };
 });
 

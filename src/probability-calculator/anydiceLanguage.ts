@@ -1,4 +1,5 @@
 import { monaco } from '@/components/common/monaco';
+import { registerAnyDiceCompletions } from './anydiceCompletions';
 
 export const ANYDICE_LANGUAGE_ID = 'anydice';
 
@@ -88,22 +89,24 @@ let registered = false;
 
 /** Register the AnyDice language and its syntax highlighter once. */
 export function registerAnyDiceLanguage(): void {
+  if (registered) return;
+
   if (
-    registered ||
-    monaco.languages.getLanguages().some(({ id }) => id === ANYDICE_LANGUAGE_ID)
+    !monaco.languages
+      .getLanguages()
+      .some(({ id }) => id === ANYDICE_LANGUAGE_ID)
   ) {
-    registered = true;
-    return;
+    monaco.languages.register({ id: ANYDICE_LANGUAGE_ID });
+    monaco.languages.setLanguageConfiguration(
+      ANYDICE_LANGUAGE_ID,
+      anydiceConfiguration,
+    );
+    monaco.languages.setMonarchTokensProvider(
+      ANYDICE_LANGUAGE_ID,
+      anydiceLanguage,
+    );
   }
 
-  monaco.languages.register({ id: ANYDICE_LANGUAGE_ID });
-  monaco.languages.setLanguageConfiguration(
-    ANYDICE_LANGUAGE_ID,
-    anydiceConfiguration,
-  );
-  monaco.languages.setMonarchTokensProvider(
-    ANYDICE_LANGUAGE_ID,
-    anydiceLanguage,
-  );
+  registerAnyDiceCompletions();
   registered = true;
 }

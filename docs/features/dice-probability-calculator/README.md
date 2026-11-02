@@ -15,7 +15,8 @@ using integer (`bigint`) weights. A Vue page under
   calculator header and translated into English and Russian.
 - Main menu: directly below Calculator, using `IconChartLine`.
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
-  Monarch syntax highlighter.
+  Monarch syntax highlighter and autocomplete for keywords, snippets,
+  built-in functions and variables.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,
