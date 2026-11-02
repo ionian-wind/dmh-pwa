@@ -99,30 +99,39 @@ function removeLink(ref: MapEntityRef) {
           </QBtn>
         </QItemSection>
       </QItem>
-
-      <QItem v-for="ref in linkedRefs" :key="ref.id">
-        <QItemSection>{{ getLabel(ref) }}</QItemSection>
-        <QItemSection side>
-          <QBtn
-            flat
-            dense
-            round
-            color="negative"
-            :title="t('common.remove')"
-            :aria-label="t('common.remove')"
-            @click="removeLink(ref)"
-          >
-            <IconX :size="16" />
-          </QBtn>
-        </QItemSection>
-      </QItem>
-
-      <QItem v-if="linkedRefs.length === 0">
-        <QItemSection class="text-caption text-grey-7">
-          {{ t('maps.noLinkedEntities') }}
-        </QItemSection>
-      </QItem>
     </QList>
+
+    <QVirtualScroll
+      v-if="linkedRefs.length > 0"
+      :items="linkedRefs"
+      type="list"
+      virtual-scroll-item-size="48"
+      class="q-pa-none"
+      style="max-height: 320px"
+    >
+      <template #default="{ item: ref }">
+        <QItem>
+          <QItemSection>{{ getLabel(ref) }}</QItemSection>
+          <QItemSection side>
+            <QBtn
+              flat
+              dense
+              round
+              color="negative"
+              :title="t('common.remove')"
+              :aria-label="t('common.remove')"
+              @click="removeLink(ref)"
+            >
+              <IconX :size="16" />
+            </QBtn>
+          </QItemSection>
+        </QItem>
+      </template>
+    </QVirtualScroll>
+
+    <div v-else class="text-caption text-grey-7 q-pa-sm">
+      {{ t('maps.noLinkedEntities') }}
+    </div>
 
     <BaseModal
       :isOpen="isModalOpen"
