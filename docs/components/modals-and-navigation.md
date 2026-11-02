@@ -159,11 +159,18 @@ clears it on unmount.
 ## Settings dialog
 
 `SettingsDialog.vue` is a `BaseModal` opened from the left navigation’s
-Settings item. It currently contains:
+Settings item. It currently has two sections:
 
-- **Language** — the `LanguageSwitcher` (`en` / `ru`), persisted in
-  `configStore.savedLanguage`; Quasar’s locale follows the selection.
+- **Interface**
+  - **Language** — the `LanguageSwitcher` (`en` / `ru`), persisted in
+    `configStore.savedLanguage`; Quasar’s locale follows the selection.
+  - **Confirm deletion** — default `true`. When off, `confirm()` resolves
+    `true` immediately without opening a confirmation dialog.
+- **Player**
+  - Smooth track change.
+  - Animate player background.
 
+The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits
 `update:modelValue`.
 

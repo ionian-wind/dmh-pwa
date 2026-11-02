@@ -1,5 +1,6 @@
 import { Dialog } from 'quasar';
 import i18n from '@/i18n';
+import { useConfigStore } from '@/utils/configStore';
 
 export interface ConfirmOptions {
   title?: string;
@@ -13,6 +14,10 @@ export function confirm(
   message: string,
   options: ConfirmOptions = {},
 ): Promise<boolean> {
+  if (!useConfigStore().confirmDelete) {
+    return Promise.resolve(true);
+  }
+
   return new Promise((resolve) => {
     Dialog.create({
       message,

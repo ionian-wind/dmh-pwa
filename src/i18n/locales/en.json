@@ -484,6 +484,10 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "interface": "Interface",
+    "confirmDeletion": "Confirm deletion",
+    "confirmDeletionHint": "Ask before deleting notes, maps, tracks, and other entities.",
+    "player": "Player",
     "languageHint": "Choose the language used by the application and Quasar UI."
   },
   "tags": {

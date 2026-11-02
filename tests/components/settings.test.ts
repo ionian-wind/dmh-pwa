@@ -9,6 +9,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import App from '@/App.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
+const QToggleStub = quasarStubs.QToggle;
 
 vi.mock('@/jukebox/playerStore', () => ({
   useJukeboxPlayerStore: () => ({
@@ -39,6 +40,42 @@ describe('settings dialog', () => {
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
     await nextTick();
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+    wrapper.unmount();
+  });
+
+  it('updates interface and player options', async () => {
+    const config = useConfigStore();
+    config.confirmDelete = true;
+    config.jukeboxSmoothTrackChange = false;
+    config.jukeboxAnimatePlayerBackground = true;
+
+    const wrapper = mount(SettingsDialog, {
+      props: { modelValue: true },
+    });
+    await nextTick();
+
+    expect(wrapper.text()).toContain('Interface');
+    expect(wrapper.text()).toContain('Player');
+    expect(wrapper.text()).toContain('Confirm deletion');
+
+    const toggles = wrapper.findAllComponents(QToggleStub);
+    expect(toggles).toHaveLength(3);
+
+    toggles[0].vm.$emit('update:modelValue', false);
+    await nextTick();
+    expect(config.confirmDelete).toBe(false);
+
+    wrapper
+      .findAllComponents(QToggleStub)[1]
+      .vm.$emit('update:modelValue', true);
+    await nextTick();
+    expect(config.jukeboxSmoothTrackChange).toBe(true);
+
+    wrapper
+      .findAllComponents(QToggleStub)[2]
+      .vm.$emit('update:modelValue', false);
+    await nextTick();
+    expect(config.jukeboxAnimatePlayerBackground).toBe(false);
     wrapper.unmount();
   });
 

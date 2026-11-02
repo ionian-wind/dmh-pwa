@@ -103,7 +103,7 @@ function onCreate() {
 }
 
 const cardPropsWithDraggable = (item: any) => {
-  const base = props.cardProps(item);
+  const { onDelete: _onDelete, ...base } = props.cardProps(item);
   return { ...base, draggable: props.draggable };
 };
 

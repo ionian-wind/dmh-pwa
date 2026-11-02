@@ -485,6 +485,10 @@
   "settings": {
     "title": "Настройки",
     "language": "Язык",
+    "interface": "Интерфейс",
+    "confirmDeletion": "Подтверждать удаление",
+    "confirmDeletionHint": "Спрашивать перед удалением заметок, карт, треков и других сущностей.",
+    "player": "Плеер",
     "languageHint": "Выберите язык интерфейса приложения и Quasar."
   },
   "tags": {
