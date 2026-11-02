@@ -1006,13 +1006,16 @@ watch(isEditMode, (editing) => {
           >
             <div v-show="sidePanelTab === 'markers'">
               <div
-                v-for="layer in layers"
+                v-for="(layer, layerIndex) in layers"
                 :key="`marker-layer-${layer.id}`"
-                class="map-layer-group"
+                class="q-mb-sm"
               >
-                <div class="map-layer-header">
-                  <span class="map-layer-title">{{ layer.title }}</span>
-                  <span class="map-layer-actions">
+                <div class="row items-center justify-between q-px-sm q-pt-sm">
+                  <span
+                    class="text-caption text-uppercase text-weight-bold text-grey-7"
+                    >{{ layer.title }}</span
+                  >
+                  <span class="row items-center">
                     <template v-if="!isEditMode">
                       <QBtn
                         flat
@@ -1059,17 +1062,21 @@ watch(isEditMode, (editing) => {
                   @delete="deleteMarkerFromList"
                   @hover="hoverMarker"
                 />
+                <QSeparator v-if="layerIndex < layers.length - 1" />
               </div>
             </div>
             <div v-show="sidePanelTab === 'areas'">
               <div
-                v-for="layer in layers"
+                v-for="(layer, layerIndex) in layers"
                 :key="`area-layer-${layer.id}`"
-                class="map-layer-group"
+                class="q-mb-sm"
               >
-                <div class="map-layer-header">
-                  <span class="map-layer-title">{{ layer.title }}</span>
-                  <span class="map-layer-actions">
+                <div class="row items-center justify-between q-px-sm q-pt-sm">
+                  <span
+                    class="text-caption text-uppercase text-weight-bold text-grey-7"
+                    >{{ layer.title }}</span
+                  >
+                  <span class="row items-center">
                     <template v-if="!isEditMode">
                       <QBtn
                         flat
@@ -1117,13 +1124,15 @@ watch(isEditMode, (editing) => {
                   @delete="deleteAreaFromList"
                   @hover="hoverArea"
                 />
+                <QSeparator v-if="layerIndex < layers.length - 1" />
               </div>
             </div>
           </TabGroup>
         </div>
 
-        <div class="map-sidepanel-controls">
-          <div v-if="isEditMode" class="map-layer-add">
+        <QSeparator />
+        <div class="map-sidepanel-controls bg-white">
+          <div v-if="isEditMode" class="map-layer-add q-pa-sm">
             <QBtn
               color="primary"
               :label="t('maps.addLayer')"
@@ -1131,9 +1140,9 @@ watch(isEditMode, (editing) => {
             />
           </div>
 
-          <div class="map-label-toggle">
-            <div class="map-toggle-row">
-              <span class="map-toggle-title">{{ t('maps.hideLabels') }}</span>
+          <div class="q-pa-sm">
+            <div class="row items-center justify-between q-gutter-x-md">
+              <span class="text-body2">{{ t('maps.hideLabels') }}</span>
               <QToggle
                 :model-value="hideLabels"
                 @update:model-value="hideLabels = $event"
@@ -1141,9 +1150,9 @@ watch(isEditMode, (editing) => {
             </div>
           </div>
 
-          <div class="map-mode-toggle">
-            <div class="map-toggle-row">
-              <span class="map-toggle-title">
+          <div class="map-mode-toggle q-pa-sm bg-grey-2">
+            <div class="row items-center justify-between q-gutter-x-md">
+              <span class="text-body2">
                 {{ isEditMode ? t('maps.editMode') : t('maps.viewMode') }}
               </span>
               <QToggle
@@ -1194,10 +1203,6 @@ watch(isEditMode, (editing) => {
   border-radius: var(--border-radius);
 }
 
-.map-layer-group {
-  border-bottom: 1px solid var(--color-border);
-}
-
 .map-sidepanel {
   display: flex;
   flex-direction: column;
@@ -1215,58 +1220,6 @@ watch(isEditMode, (editing) => {
   flex: 0 0 auto;
   margin-top: auto;
   background: var(--color-background);
-}
-
-.map-layer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.6rem 0.75rem 0;
-}
-
-.map-layer-title {
-  color: var(--color-text-light);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.map-layer-actions {
-  display: flex;
-  align-items: center;
-}
-
-.map-layer-add {
-  padding: 0.75rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.map-mode-toggle {
-  display: flex;
-  padding: 0.75rem;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-background-soft);
-}
-
-.map-label-toggle {
-  display: flex;
-  padding: 0.6rem 0.75rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.map-toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-}
-
-.map-toggle-title {
-  color: var(--color-text);
-  font-size: 0.9rem;
 }
 
 .map-hint {

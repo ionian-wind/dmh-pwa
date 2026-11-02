@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { IconX } from '@tabler/icons-vue';
 import type { MapEntityRef } from '../types';
 import {
   MAP_ENTITY_KIND_OPTIONS,
@@ -36,57 +37,28 @@ const resolved = computed(() =>
 </script>
 
 <template>
-  <div class="entity-link-list">
+  <div class="row q-gutter-xs">
     <span
       v-for="link in resolved"
       :key="`${link.ref.kind}:${link.ref.id}`"
-      class="entity-link-chip"
+      class="row items-center q-gutter-xs q-px-sm q-py-xs bg-grey-2 rounded-borders"
       :title="`${link.kindLabel}: ${link.label}`"
     >
-      <span class="entity-link-kind">{{ link.kindLabel }}</span>
-      <span class="entity-link-label">{{ link.label }}</span>
-      <button
+      <span class="text-caption text-grey-7">{{ link.kindLabel }}</span>
+      <span>{{ link.label }}</span>
+      <QBtn
         v-if="removable"
-        type="button"
+        flat
+        dense
+        round
+        size="xs"
+        color="negative"
         class="entity-link-remove"
         :aria-label="t('common.remove')"
         @click.stop="emit('remove', link.ref)"
       >
-        ×
-      </button>
+        <IconX :size="14" />
+      </QBtn>
     </span>
   </div>
 </template>
-
-<style scoped>
-.entity-link-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.entity-link-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-soft);
-  font-size: 0.8rem;
-}
-
-.entity-link-kind {
-  color: var(--color-text-light);
-}
-
-.entity-link-remove {
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--color-danger);
-  font-size: 1rem;
-  line-height: 1;
-  padding: 0;
-}
-</style>

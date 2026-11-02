@@ -88,7 +88,7 @@ function remove() {
           />
         </div>
         <div class="form-group">
-          <span class="area-shape">
+          <span class="text-caption text-grey-7 text-capitalize">
             {{ t(`maps.shapes.${draft.shape}`) }}
           </span>
         </div>
@@ -173,10 +173,3 @@ function remove() {
     </template>
   </BaseModal>
 </template>
-
-<style scoped>
-.area-shape {
-  color: var(--color-text-light);
-  text-transform: capitalize;
-}
-</style>

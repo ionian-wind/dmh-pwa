@@ -189,7 +189,7 @@ async function handleSubmit() {
         </div>
         <div class="form-group map-image-field">
           <label>{{ t('maps.image') }}</label>
-          <div class="map-image-row">
+          <div class="row items-center q-gutter-sm">
             <QBtn
               flat
               color="primary"
@@ -203,7 +203,7 @@ async function handleSubmit() {
           </div>
           <input
             ref="fileInput"
-            class="map-image-input"
+            class="hidden"
             type="file"
             accept="image/*"
             @change="onImageSelected"
@@ -231,7 +231,7 @@ async function handleSubmit() {
     </div>
 
     <div class="form-section">
-      <div class="map-section-header">
+      <div class="row items-center justify-between q-gutter-md">
         <h3>{{ t('maps.location') }}</h3>
       </div>
 
@@ -249,28 +249,11 @@ async function handleSubmit() {
 </template>
 
 <style scoped>
-.map-image-input {
-  display: none;
-}
-
-.map-image-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .map-image-preview {
   max-width: 100%;
   max-height: 220px;
   margin-top: 0.5rem;
   border-radius: var(--border-radius-sm);
   object-fit: contain;
-}
-
-.map-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
 }
 </style>

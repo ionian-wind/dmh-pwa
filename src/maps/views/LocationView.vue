@@ -162,7 +162,10 @@ function openMap(mapId: string) {
         :title="linkedMap.title"
         @view="openMap(linkedMap.id)"
       >
-        <p v-if="linkedMap.description" class="location-map-description">
+        <p
+          v-if="linkedMap.description"
+          class="text-body2 text-grey-7 q-mb-none"
+        >
           {{ linkedMap.description }}
         </p>
       </BaseCard>
@@ -188,67 +191,85 @@ function openMap(mapId: string) {
         size="sm"
         align="justify"
       >
-        <div v-show="sidePanelTab === 'markers'" class="location-linked-panel">
-          <p v-if="markerGroups.length === 0" class="location-linked-empty">
+        <div v-show="sidePanelTab === 'markers'" class="q-pa-sm">
+          <div
+            v-if="markerGroups.length === 0"
+            class="text-caption text-grey-7"
+          >
             {{ t('maps.noMarkers') }}
-          </p>
+          </div>
           <div
             v-for="(group, index) in markerGroups"
             :key="group.map.id"
-            class="location-linked-group"
+            class="q-mb-sm"
           >
-            <h5 class="location-linked-group-title">{{ group.map.title }}</h5>
-            <button
-              v-for="marker in group.markers"
-              :key="marker.id"
-              type="button"
-              class="location-linked-item"
-              :style="{
-                '--map-item-color': marker.color || 'var(--color-primary)',
-              }"
-              @click="openMap(group.map.id)"
-            >
-              <i
-                v-if="marker.icon"
-                :class="['ra', markerIconClass(marker.icon)]"
-                :style="{ color: marker.color }"
-                aria-hidden="true"
-              ></i>
-              {{ marker.title }}
-            </button>
             <div
+              class="location-linked-group-title text-caption text-uppercase text-grey-7 q-mb-xs"
+            >
+              {{ group.map.title }}
+            </div>
+            <QList>
+              <QItem
+                v-for="marker in group.markers"
+                :key="marker.id"
+                clickable
+                class="location-linked-item q-mb-xs bg-white rounded-borders"
+                :style="{
+                  borderLeft: `4px solid ${marker.color || 'var(--color-primary)'}`,
+                }"
+                @click="openMap(group.map.id)"
+              >
+                <QItemSection>
+                  <div class="row items-center q-gutter-xs">
+                    <i
+                      v-if="marker.icon"
+                      :class="['ra', markerIconClass(marker.icon)]"
+                      :style="{ color: marker.color }"
+                      aria-hidden="true"
+                    ></i>
+                    <span>{{ marker.title }}</span>
+                  </div>
+                </QItemSection>
+              </QItem>
+            </QList>
+            <QSeparator
               v-if="index < markerGroups.length - 1"
-              class="location-linked-divider"
-            ></div>
+              class="q-my-sm"
+            />
           </div>
         </div>
 
-        <div v-show="sidePanelTab === 'areas'" class="location-linked-panel">
-          <p v-if="areaGroups.length === 0" class="location-linked-empty">
+        <div v-show="sidePanelTab === 'areas'" class="q-pa-sm">
+          <div v-if="areaGroups.length === 0" class="text-caption text-grey-7">
             {{ t('maps.noAreas') }}
-          </p>
+          </div>
           <div
             v-for="(group, index) in areaGroups"
             :key="group.map.id"
-            class="location-linked-group"
+            class="q-mb-sm"
           >
-            <h5 class="location-linked-group-title">{{ group.map.title }}</h5>
-            <button
-              v-for="area in group.areas"
-              :key="area.id"
-              type="button"
-              class="location-linked-item"
-              :style="{
-                '--map-item-color': area.color || 'var(--color-primary)',
-              }"
-              @click="openMap(group.map.id)"
-            >
-              {{ area.title || t('maps.untitledArea') }}
-            </button>
             <div
-              v-if="index < areaGroups.length - 1"
-              class="location-linked-divider"
-            ></div>
+              class="location-linked-group-title text-caption text-uppercase text-grey-7 q-mb-xs"
+            >
+              {{ group.map.title }}
+            </div>
+            <QList>
+              <QItem
+                v-for="area in group.areas"
+                :key="area.id"
+                clickable
+                class="location-linked-item q-mb-xs bg-white rounded-borders"
+                :style="{
+                  borderLeft: `4px solid ${area.color || 'var(--color-primary)'}`,
+                }"
+                @click="openMap(group.map.id)"
+              >
+                <QItemSection>
+                  {{ area.title || t('maps.untitledArea') }}
+                </QItemSection>
+              </QItem>
+            </QList>
+            <QSeparator v-if="index < areaGroups.length - 1" class="q-my-sm" />
           </div>
         </div>
       </TabGroup>
@@ -264,68 +285,3 @@ function openMap(mapId: string) {
     </template>
   </BaseEntityTabView>
 </template>
-
-<style scoped>
-.location-map-description {
-  margin: 0;
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.location-linked-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem;
-}
-
-.location-linked-empty {
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.location-linked-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.location-linked-group-title {
-  margin: 0;
-  color: var(--color-text-light);
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.location-linked-item {
-  position: relative;
-  width: 100%;
-  padding: 0.55rem 0.65rem 0.55rem 0.9rem;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  cursor: pointer;
-  text-align: left;
-}
-
-.location-linked-item::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: var(--map-item-color, transparent);
-}
-
-.location-linked-item:hover {
-  background: var(--color-background-soft);
-}
-
-.location-linked-divider {
-  height: 1px;
-  margin: 0.25rem 0;
-  background: var(--color-border);
-}
-</style>

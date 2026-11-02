@@ -30,12 +30,15 @@ const { t } = useI18n();
     @edit="emit('edit', props.location)"
     @delete="emit('delete', props.location)"
   >
-    <p v-if="location.description" class="location-description">
+    <p
+      v-if="location.description"
+      class="text-body2 text-grey-7 q-mt-none q-mb-sm"
+    >
       {{ location.description }}
     </p>
-    <span v-if="linkedMap" class="location-map-name">
+    <div v-if="linkedMap" class="text-primary text-caption text-weight-bold">
       {{ linkedMap.title }}
-    </span>
+    </div>
     <template v-if="linkedMap" #actions>
       <QBtn
         flat
@@ -48,18 +51,3 @@ const { t } = useI18n();
     </template>
   </BaseCard>
 </template>
-
-<style scoped>
-.location-description {
-  margin: 0 0 0.75rem;
-  color: var(--color-text-light);
-  font-size: 0.9rem;
-}
-
-.location-map-name {
-  display: block;
-  color: var(--color-primary);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-</style>

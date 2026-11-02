@@ -8,8 +8,6 @@ import ColorPicker from '@/components/common/ColorPicker.vue';
 import { MAP_MARKER_ICONS } from '@/maps/icons';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
 import MapLocationEditor from '@/maps/components/MapLocationEditor.vue';
-import MapLocationCard from '@/maps/components/MapLocationCard.vue';
-import MapLocationsPanel from '@/maps/components/MapLocationsPanel.vue';
 import MapMarkersPanel from '@/maps/components/MapMarkersPanel.vue';
 import type { MapLocation, MapMarker } from '@/maps/types';
 import { quasarStubs } from '../helpers/quasar-stubs';
@@ -304,45 +302,5 @@ describe('map location editor', () => {
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('cancel');
     expect(wrapper.emitted('cancel')).toHaveLength(1);
-  });
-});
-
-describe('map locations panel', () => {
-  it('lists locations as cards and emits list actions', async () => {
-    const wrapper = mount(MapLocationsPanel, {
-      props: {
-        locations: [location],
-        markers: [marker, { ...marker, id: 'm2', locationId: 'l1' }],
-      },
-    });
-    await nextTick();
-
-    expect(wrapper.text()).toContain('Town');
-    expect(wrapper.text()).toContain('Starting town');
-    expect(wrapper.text()).toContain('2');
-    expect(wrapper.text()).toContain('Session note');
-
-    const card = wrapper.findComponent(MapLocationCard);
-    card.vm.$emit('view', location);
-    expect(wrapper.emitted('select-location')?.[0]).toEqual(['l1']);
-
-    card.vm.$emit('edit', location);
-    expect(wrapper.emitted('edit')?.[0]).toEqual([location]);
-
-    card.vm.$emit('delete', location);
-    expect(wrapper.emitted('delete')?.[0]).toEqual([location]);
-
-    const addButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().toLowerCase().includes('add location'));
-    await addButton!.trigger('click');
-    expect(wrapper.emitted('add')).toHaveLength(1);
-  });
-
-  it('shows an empty state', () => {
-    const wrapper = mount(MapLocationsPanel, {
-      props: { locations: [], markers: [] },
-    });
-    expect(wrapper.text()).toContain('No locations');
   });
 });

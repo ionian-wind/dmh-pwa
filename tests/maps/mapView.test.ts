@@ -185,28 +185,6 @@ const MarkersPanelStub = defineComponent({
   },
 });
 
-const LocationsPanelStub = defineComponent({
-  name: 'MapLocationsPanel',
-  props: { locations: Array, markers: Array, showTitle: Boolean },
-  emits: ['select-location', 'add', 'edit', 'delete'],
-  setup() {
-    return () => h('div', { class: 'locations-panel-stub' });
-  },
-});
-
-const LocationEditorStub = defineComponent({
-  name: 'MapLocationEditor',
-  props: { isOpen: Boolean, location: Object },
-  emits: ['save', 'delete', 'cancel'],
-  setup(props) {
-    return () =>
-      h('div', {
-        class: 'location-editor-stub',
-        'data-open': String(props.isOpen),
-      });
-  },
-});
-
 const location = {
   id: 'l1',
   name: 'Town',
@@ -293,9 +271,7 @@ async function mountMapView() {
         BaseEntityView: BaseEntityViewStub,
         MapEditor: MapEditorStub,
         MapMarkerEditor: MarkerEditorStub,
-        MapLocationEditor: LocationEditorStub,
         MapAreaEditor: AreaEditorStub,
-        MapLocationsPanel: LocationsPanelStub,
         MapMarkersPanel: MarkersPanelStub,
         MapAreasPanel: AreasPanelStub,
       },
@@ -354,7 +330,6 @@ describe('MapView', () => {
     expect(wrapper.text()).toContain('Areas');
     expect(wrapper.findComponent(MarkersPanelStub).exists()).toBe(true);
     expect(wrapper.findComponent(AreasPanelStub).exists()).toBe(true);
-    expect(wrapper.findComponent(LocationsPanelStub).exists()).toBe(false);
 
     wrapper.unmount();
   });

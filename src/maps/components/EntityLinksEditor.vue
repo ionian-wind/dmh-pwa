@@ -66,10 +66,10 @@ function removeLink(ref: MapEntityRef) {
 </script>
 
 <template>
-  <div class="entity-links-editor">
+  <div class="column q-gutter-sm">
     <EntityLinkList :links="modelValue" removable @remove="removeLink" />
 
-    <div class="entity-links-add">
+    <div class="row items-center q-gutter-sm">
       <QSelect
         v-model="kind"
         :options="kindOptions"
@@ -78,7 +78,7 @@ function removeLink(ref: MapEntityRef) {
         outlined
         emit-value
         map-options
-        class="entity-kind-select"
+        class="col-3"
       />
       <QSelect
         v-model="selectedId"
@@ -88,7 +88,7 @@ function removeLink(ref: MapEntityRef) {
         outlined
         emit-value
         map-options
-        class="entity-value-select"
+        class="col"
       />
       <QBtn
         flat
@@ -100,26 +100,3 @@ function removeLink(ref: MapEntityRef) {
     </div>
   </div>
 </template>
-
-<style scoped>
-.entity-links-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.entity-links-add {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.entity-kind-select {
-  width: 170px;
-}
-
-.entity-value-select {
-  flex: 1 1 auto;
-  min-width: 180px;
-}
-</style>

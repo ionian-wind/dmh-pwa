@@ -35,8 +35,8 @@ function add() {
 </script>
 
 <template>
-  <div class="location-links-tab">
-    <div class="location-link-add">
+  <div class="column q-gutter-md">
+    <div class="row items-center q-gutter-sm">
       <QSelect
         v-model="selectedId"
         :options="selectOptions"
@@ -44,6 +44,7 @@ function add() {
         outlined
         emit-value
         map-options
+        class="col"
       />
       <QBtn
         color="primary"
@@ -53,60 +54,27 @@ function add() {
       />
     </div>
 
-    <p v-if="links.length === 0" class="location-links-empty">
+    <div v-if="links.length === 0" class="text-caption text-grey-7">
       {{ t('maps.noLinkedEntities') }}
-    </p>
-
-    <div v-else class="location-link-list">
-      <div v-for="link in links" :key="link.id" class="location-link-item">
-        <span>{{ labelFor(link.id) }}</span>
-        <QBtn
-          flat
-          color="negative"
-          size="sm"
-          :label="t('common.remove')"
-          @click="emit('remove', link)"
-        />
-      </div>
     </div>
+
+    <QList v-else>
+      <QItem
+        v-for="link in links"
+        :key="link.id"
+        class="q-mb-xs bg-white rounded-borders"
+      >
+        <QItemSection>{{ labelFor(link.id) }}</QItemSection>
+        <QItemSection side>
+          <QBtn
+            flat
+            color="negative"
+            size="sm"
+            :label="t('common.remove')"
+            @click="emit('remove', link)"
+          />
+        </QItemSection>
+      </QItem>
+    </QList>
   </div>
 </template>
-
-<style scoped>
-.location-links-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.location-link-add {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.location-link-add > :first-child {
-  flex: 1;
-}
-
-.location-links-empty {
-  color: var(--color-text-light);
-}
-
-.location-link-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.location-link-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-}
-</style>
