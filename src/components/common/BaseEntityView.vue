@@ -99,10 +99,18 @@ onMounted(() => {
   }
 });
 
-// Add a watch to update the header when title, subtitle, or hideHeader change
+// Add a watch to update the header when its visible actions change.
 watch(
-  () => [props.title, props.subtitle, props.hideHeader],
+  () => [
+    props.title,
+    props.subtitle,
+    props.hideHeader,
+    props.headerShowEdit,
+    props.headerShowDelete,
+    props.headerButtons,
+  ],
   () => injectTopMenu(),
+  { deep: true },
 );
 
 onBeforeUnmount(() => {
