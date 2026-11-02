@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { defineComponent, h } from 'vue';
 import { mount } from '@vue/test-utils';
 
 const catalog = vi.hoisted(() => ({
@@ -27,10 +28,26 @@ vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
 
 import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
 
+const QVirtualScrollStub = defineComponent({
+  name: 'QVirtualScroll',
+  props: { items: { type: Array, default: () => [] } },
+  setup(props, { slots }) {
+    return () =>
+      h(
+        'div',
+        { class: 'q-virtual-scroll-stub' },
+        (props.items as any[]).flatMap(
+          (item) => slots.default?.({ item }) ?? [],
+        ),
+      );
+  },
+});
+
 describe('EntitiesLinking', () => {
   it('shows the entity type title, linked entities and removes links', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },
+      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
     });
 
     expect(wrapper.text()).toContain('Notes');
@@ -55,9 +72,11 @@ describe('EntitiesLinking', () => {
   it('filters the search modal and adds multiple selected entities', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },
+      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
     });
 
     await wrapper.find('button[aria-label="Add"]').trigger('click');
+    expect(wrapper.findComponent(QVirtualScrollStub).exists()).toBe(true);
 
     const search = wrapper.find('input');
     await search.setValue('beta');

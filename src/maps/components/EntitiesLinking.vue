@@ -145,23 +145,27 @@ function removeLink(ref: MapEntityRef) {
           clearable
         />
 
-        <QList v-if="filteredOptions.length > 0" separator>
-          <QItem
-            v-for="option in filteredOptions"
-            :key="option.id"
-            clickable
-            @click="toggleOption(option.id)"
-          >
-            <QItemSection side>
-              <QCheckbox
-                :model-value="selectedIds.includes(option.id)"
-                @update:model-value="toggleOption(option.id)"
-                @click.stop
-              />
-            </QItemSection>
-            <QItemSection>{{ option.label }}</QItemSection>
-          </QItem>
-        </QList>
+        <QVirtualScroll
+          v-if="filteredOptions.length > 0"
+          :items="filteredOptions"
+          type="list"
+          virtual-scroll-item-size="48"
+          class="q-pa-none"
+          style="max-height: 320px"
+        >
+          <template #default="{ item: option }">
+            <QItem clickable @click="toggleOption(option.id)">
+              <QItemSection side>
+                <QCheckbox
+                  :model-value="selectedIds.includes(option.id)"
+                  @update:model-value="toggleOption(option.id)"
+                  @click.stop
+                />
+              </QItemSection>
+              <QItemSection>{{ option.label }}</QItemSection>
+            </QItem>
+          </template>
+        </QVirtualScroll>
         <div v-else class="text-caption text-grey-7">
           {{ t('common.empty') }}
         </div>
