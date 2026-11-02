@@ -159,11 +159,23 @@ h6 {
   filter: blur(26px) saturate(1.25);
   transform: rotate(-2deg) scale(1.03);
   will-change: background-position, background-size, transform;
+  animation: jukebox-gradient-morph 18s ease-in-out infinite;
+  animation-play-state: paused;
 }
 
 .animated-gradient-surface.has-gradient-bg.with-animated-bg
   > .animated-gradient-layer::before {
-  animation: jukebox-gradient-morph 18s ease-in-out infinite;
+  animation-play-state: running;
+}
+
+.jukebox-gradient-fade-enter-active,
+.jukebox-gradient-fade-leave-active {
+  transition: opacity 1.1s ease;
+}
+
+.jukebox-gradient-fade-enter-from,
+.jukebox-gradient-fade-leave-to {
+  opacity: 0;
 }
 
 @keyframes jukebox-gradient-morph {

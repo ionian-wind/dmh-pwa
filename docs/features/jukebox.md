@@ -229,8 +229,9 @@ unmount. The `filesStore` is loaded but unused.
     tracks over ~1.2 s when the track changes.
   - **Animate player background** (on by default): shows the album-colour
     gradient in both the footer player and the dialog card. The gradient is
-    static when playback is paused and morphs only while playing; turning the
-    setting off removes the gradient entirely.
+    static when playback is paused and morphs only while playing; pausing keeps
+    the animation phase so resuming continues from the same point instead of
+    restarting. Turning the setting off removes the gradient entirely.
 - Album-colour background: when enabled with `animatedBackground`, a
   `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
   `track.palette` or `track.color`, both derived from the album cover). The
@@ -241,6 +242,8 @@ unmount. The `filesStore` is loaded but unused.
   `QCard` itself owns the surface, so the header toolbar and player content
   share a single background; the embedded player is rendered without its own
   gradient.
+- Track changes crossfade the outgoing and incoming gradient layers. If the next
+  track has no cover palette, the current gradient fades out instead.
 - Controls inherit `--jp-control-color`, derived from the palette with the best
   worst-case contrast (dark or white). Sliders, time labels, buttons, and the
   track title therefore stay readable over the gradient, whether static or

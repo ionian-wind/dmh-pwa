@@ -165,7 +165,9 @@ describe('current shared components', () => {
     expect(wrapper.classes()).toContain('animated-gradient-surface');
     expect(wrapper.classes()).toContain('has-gradient-bg');
     expect(wrapper.classes()).toContain('with-animated-bg');
-    expect(wrapper.attributes('style')).toContain('--custom-gradient');
+    expect(
+      wrapper.find('.animated-gradient-layer').attributes('style'),
+    ).toContain('--custom-gradient');
     expect(wrapper.attributes('style')).toContain(
       '--jp-control-color: #ffffff',
     );
@@ -191,11 +193,9 @@ describe('current shared components', () => {
     expect(wrapper.classes()).toContain('animated-gradient-surface');
     expect(wrapper.classes()).not.toContain('has-gradient-bg');
     expect(wrapper.classes()).not.toContain('with-animated-bg');
+    expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false);
     expect(wrapper.attributes('style') ?? '').not.toContain(
       '--jp-control-color',
-    );
-    expect(wrapper.attributes('style') ?? '').not.toContain(
-      '--custom-gradient',
     );
 
     player.isPlaying = false;
@@ -219,8 +219,69 @@ describe('current shared components', () => {
     expect(wrapper.classes()).toContain('has-gradient-bg');
     expect(wrapper.classes()).not.toContain('with-animated-bg');
     expect(wrapper.attributes('style')).toContain('--jp-control-color');
-    expect(wrapper.attributes('style')).toContain('--custom-gradient');
+    expect(
+      wrapper.find('.animated-gradient-layer').attributes('style'),
+    ).toContain('--custom-gradient');
 
+    player.currentTrack = null;
+  });
+
+  it('JukeboxPlayer keeps the same gradient layer across pause and resume', async () => {
+    const player = useJukeboxPlayerStore();
+    player.isPlaying = true;
+    player.currentTrack = {
+      id: 'track-pause',
+      title: 'Track',
+      palette: ['#101020', '#22223a'],
+      color: '#101020',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { animatedBackground: true },
+    });
+    const layer = wrapper.find('.animated-gradient-layer').element;
+
+    player.isPlaying = false;
+    await nextTick();
+    expect(wrapper.classes()).not.toContain('with-animated-bg');
+    expect(wrapper.find('.animated-gradient-layer').element).toBe(layer);
+
+    player.isPlaying = true;
+    await nextTick();
+    expect(wrapper.classes()).toContain('with-animated-bg');
+    expect(wrapper.find('.animated-gradient-layer').element).toBe(layer);
+
+    player.isPlaying = false;
+    player.currentTrack = null;
+  });
+
+  it('JukeboxPlayer fades the gradient out when the next track has no palette', async () => {
+    const player = useJukeboxPlayerStore();
+    player.isPlaying = true;
+    player.currentTrack = {
+      id: 'track-with-palette',
+      title: 'Track',
+      palette: ['#101020', '#22223a'],
+      color: '#101020',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { animatedBackground: true },
+    });
+    expect(wrapper.find('.animated-gradient-layer').exists()).toBe(true);
+
+    player.currentTrack = {
+      id: 'track-without-palette',
+      title: 'Next track',
+    } as any;
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await nextTick();
+
+    expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false);
+    expect(wrapper.classes()).not.toContain('has-gradient-bg');
+
+    player.isPlaying = false;
     player.currentTrack = null;
   });
 
@@ -242,9 +303,7 @@ describe('current shared components', () => {
 
     expect(wrapper.classes()).not.toContain('has-gradient-bg');
     expect(wrapper.classes()).not.toContain('with-animated-bg');
-    expect(wrapper.attributes('style') ?? '').not.toContain(
-      '--custom-gradient',
-    );
+    expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false);
 
     config.jukeboxAnimatePlayerBackground = true;
     player.currentTrack = null;

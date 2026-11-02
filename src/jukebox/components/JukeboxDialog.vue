@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { IconExternalLink, IconX } from '@tabler/icons-vue';
 import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
@@ -40,6 +40,20 @@ const isAnimatedBg = computed(
 // The card is the single gradient canvas: its pseudo-element sits behind the
 // toolbar and the player, so the header and content share one background.
 const gradientStyle = useAnimatedGradient(hasGradientBg, () => palette.value);
+const gradientKey = computed(() => palette.value?.join('|') ?? '');
+const gradientVisible = ref(false);
+
+watch(
+  hasGradientBg,
+  (visible) => {
+    if (visible) gradientVisible.value = true;
+  },
+  { immediate: true },
+);
+
+function onGradientAfterLeave() {
+  if (!hasGradientBg.value) gradientVisible.value = false;
+}
 
 const controlStyle = computed<Record<string, string>>(() => {
   const style: Record<string, string> = {};
@@ -84,15 +98,26 @@ function navigateToJukebox() {
       :class="{
         'jukebox-dialog-card': true,
         'animated-gradient-surface': true,
-        'has-gradient-bg': hasGradientBg,
+        'has-gradient-bg': gradientVisible,
         'with-animated-bg': isAnimatedBg,
       }"
-      :style="[cardStyle, gradientStyle, controlStyle]"
+      :style="[cardStyle, controlStyle]"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
     >
-      <div class="animated-gradient-layer" aria-hidden="true" />
+      <Transition
+        name="jukebox-gradient-fade"
+        @after-leave="onGradientAfterLeave"
+      >
+        <div
+          v-if="hasGradientBg"
+          :key="gradientKey"
+          class="animated-gradient-layer"
+          aria-hidden="true"
+          :style="gradientStyle"
+        />
+      </Transition>
       <QToolbar
         class="justify-between drag-handle"
         @pointerdown="onPointerDown"

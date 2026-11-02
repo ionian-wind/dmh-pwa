@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import TrackInfo from '@/jukebox/components/TrackInfo.vue';
@@ -50,8 +50,21 @@ const isAnimatedBg = computed(
   () => hasGradientBg.value && playerStore.isPlaying,
 );
 
-// Use the new composable for the gradient style.
 const gradientStyle = useAnimatedGradient(hasGradientBg, () => palette.value);
+const gradientKey = computed(() => palette.value?.join('|') ?? '');
+const gradientVisible = ref(false);
+
+watch(
+  hasGradientBg,
+  (visible) => {
+    if (visible) gradientVisible.value = true;
+  },
+  { immediate: true },
+);
+
+function onGradientAfterLeave() {
+  if (!hasGradientBg.value) gradientVisible.value = false;
+}
 
 // Keep controls readable over the gradient, static or animated.
 const controlStyle = computed<Record<string, string>>(() => {
@@ -145,12 +158,23 @@ const handleProgressChange = (value: number | null) => {
       'jukebox-player-modal': props.modal,
       'jukebox-player': true,
       'animated-gradient-surface': true,
-      'has-gradient-bg': hasGradientBg,
+      'has-gradient-bg': gradientVisible,
       'with-animated-bg': isAnimatedBg,
     }"
-    :style="[gradientStyle, controlStyle]"
+    :style="controlStyle"
   >
-    <div class="animated-gradient-layer" aria-hidden="true" />
+    <Transition
+      name="jukebox-gradient-fade"
+      @after-leave="onGradientAfterLeave"
+    >
+      <div
+        v-if="hasGradientBg"
+        :key="gradientKey"
+        class="animated-gradient-layer"
+        aria-hidden="true"
+        :style="gradientStyle"
+      />
+    </Transition>
     <TrackInfo
       :track="playerStore.currentTrack"
       :show-artwork="props.showArtwork"
