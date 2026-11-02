@@ -1,357 +1,374 @@
-// parser.ts
-import { createToken, CstParser, IToken } from 'chevrotain';
+import { CstParser } from 'chevrotain';
 import {
-  NumberLiteral,
-  D,
-  Percent,
-  VariableIdentifier,
-  FunctionIdentifier,
-  StringLiteral,
-  OutputKeyword,
-  NamedKeyword,
-  FunctionKeyword,
-  IfKeyword,
-  ElseKeyword,
-  LoopKeyword,
-  OverKeyword,
-  ResultKeyword,
-  SetKeyword,
-  ToKeyword,
-  Plus,
-  Minus,
-  Star,
-  Slash,
-  Caret,
-  Equal,
-  NotEqual,
-  LessThan,
-  GreaterThan,
-  LessEqual,
-  GreaterEqual,
+  allTokens,
   And,
-  Or,
-  Not,
   At,
-  Hash,
   Colon,
   Comma,
-  LBracket,
-  RBracket,
+  D,
+  DoubleDot,
+  ElseKeyword,
+  Equal,
+  FunctionKeyword,
+  Greater,
+  GreaterEqual,
+  Hash,
+  IfKeyword,
   LCurly,
-  RCurly,
+  LBracket,
+  Less,
+  LessEqual,
+  LoopKeyword,
   LParen,
+  Minus,
+  NamedKeyword,
+  Not,
+  NotEqual,
+  NumberLiteral,
+  Or,
+  OutputKeyword,
+  OverKeyword,
+  Percent,
+  Plus,
+  Power,
+  RCurly,
+  RBracket,
+  ResultKeyword,
   RParen,
-  Semicolon,
-  TypeIdentifier,
-} from './lexer';
-
-// Type identifier tokens for function parameters
-const TypeN = { name: 'TypeN', pattern: /n/ } as const;
-const TypeD = { name: 'TypeD', pattern: /d/ } as const;
-const TypeS = { name: 'TypeS', pattern: /s/ } as const;
+  SetKeyword,
+  Slash,
+  Star,
+  StringLiteral,
+  ToKeyword,
+  VarName,
+  Word,
+  tokenize,
+  wordTokens,
+} from './tokens';
 
 export class DiceParser extends CstParser {
-  constructor(tokenVector: IToken[]) {
-    super(tokenVector); // Pass token vector to base class
+  constructor() {
+    super(allTokens, {
+      recoveryEnabled: false,
+      nodeLocationTracking: 'full',
+    });
     this.performSelfAnalysis();
   }
 
-  // Root rule: program = statement*
   public program = this.RULE('program', () => {
-    this.MANY(() => {
-      this.SUBRULE(this.statement);
+    this.MANY(() => this.SUBRULE(this.statement));
+  });
+
+  private statement = this.RULE('statement', () => {
+    this.OR([
+      { ALT: () => this.SUBRULE(this.functionStatement) },
+      { ALT: () => this.SUBRULE(this.loopStatement) },
+      { ALT: () => this.SUBRULE(this.ifStatement) },
+      { ALT: () => this.SUBRULE(this.resultStatement) },
+      { ALT: () => this.SUBRULE(this.setStatement) },
+      { ALT: () => this.SUBRULE(this.outputStatement) },
+      { ALT: () => this.SUBRULE(this.assignmentStatement) },
+    ]);
+  });
+
+  public functionStatement = this.RULE('functionStatement', () => {
+    this.CONSUME(FunctionKeyword);
+    this.CONSUME(Colon);
+    this.SUBRULE(this.functionSignature);
+    this.SUBRULE(this.block);
+  });
+
+  private functionSignature = this.RULE('functionSignature', () => {
+    this.AT_LEAST_ONE(() => {
+      this.OR([
+        ...wordTokens.map((token) => ({
+          ALT: () => this.CONSUME(token, { LABEL: 'word' }),
+        })),
+        { ALT: () => this.SUBRULE(this.functionParameter, { LABEL: 'param' }) },
+      ]);
     });
   });
 
-  // rule for dice expressions
-  private diceExpression = this.RULE('diceExpression', () => {
+  private functionParameter = this.RULE('functionParameter', () => {
+    this.CONSUME(VarName, { LABEL: 'name' });
     this.OPTION(() => {
-      this.CONSUME(NumberLiteral, { LABEL: 'count' });
+      this.CONSUME(Colon);
+      this.OR([
+        { ALT: () => this.CONSUME(Word, { LABEL: 'type' }) },
+        { ALT: () => this.CONSUME(D, { LABEL: 'type' }) },
+      ]);
     });
-    this.CONSUME(D, { LABEL: 'd' });
+  });
+
+  private outputStatement = this.RULE('outputStatement', () => {
+    this.CONSUME(OutputKeyword);
+    this.SUBRULE(this.expression, { LABEL: 'value' });
+    this.OPTION(() => {
+      this.CONSUME(NamedKeyword);
+      this.CONSUME(StringLiteral, { LABEL: 'outputName' });
+    });
+  });
+
+  private setStatement = this.RULE('setStatement', () => {
+    this.CONSUME(SetKeyword);
+    this.CONSUME(StringLiteral, { LABEL: 'setting' });
+    this.CONSUME(ToKeyword);
     this.OR([
-      { ALT: () => this.CONSUME(Percent, { LABEL: 'percent' }) },
-      { ALT: () => this.CONSUME(NumberLiteral, { LABEL: 'sides' }) },
-      { ALT: () => this.SUBRULE(this.sequenceLiteral, { LABEL: 'sequence' }) },
       {
-        ALT: () => {
-          this.CONSUME(LParen);
-          this.SUBRULE(this.expression, { LABEL: 'expr' });
-          this.CONSUME(RParen);
-        },
+        ALT: () => this.CONSUME2(StringLiteral, { LABEL: 'stringValue' }),
+      },
+      {
+        ALT: () => this.SUBRULE(this.expression, { LABEL: 'value' }),
       },
     ]);
   });
 
-  // statement = variableAssignment | outputStatement | functionDefinition | setDirective | ifStatement | loopStatement | resultStatement
-  private statement = this.RULE('statement', () => {
-    this.OR([
-      { ALT: () => this.SUBRULE(this.variableAssignment) },
-      { ALT: () => this.SUBRULE(this.outputStatement) },
-      { ALT: () => this.SUBRULE(this.functionDefinition) },
-      { ALT: () => this.SUBRULE(this.setDirective) },
-      { ALT: () => this.SUBRULE(this.ifStatement) },
-      { ALT: () => this.SUBRULE(this.loopStatement) },
-      { ALT: () => this.SUBRULE(this.resultStatement) },
-    ]);
-  });
-
-  // variableAssignment = identifier ":" expression
-  private variableAssignment = this.RULE('variableAssignment', () => {
-    this.CONSUME(VariableIdentifier, { LABEL: 'name' });
-    this.CONSUME(Colon);
-    this.SUBRULE(this.expression, { LABEL: 'value' });
-  });
-
-  // outputStatement = "output" expression ("named" stringLiteral)?
-  private outputStatement = this.RULE('outputStatement', () => {
-    this.CONSUME(OutputKeyword);
-    this.SUBRULE(this.expression, { LABEL: 'expr' });
-    this.OPTION(() => {
-      this.CONSUME(NamedKeyword);
-      this.CONSUME(StringLiteral, { LABEL: 'name' });
-    });
-  });
-
-  // functionDefinition = "function" ":" identifier "(" parameterList ")" "{" statement* "}"
-  private functionDefinition = this.RULE('functionDefinition', () => {
-    this.CONSUME(FunctionKeyword);
-    this.CONSUME(Colon);
-    this.CONSUME(FunctionIdentifier, { LABEL: 'name' });
-    this.CONSUME(LParen);
-    this.SUBRULE(this.parameterList);
-    this.CONSUME(RParen);
-    this.CONSUME(LCurly);
-    this.MANY(() => {
-      this.SUBRULE(this.statement);
-    });
-    this.CONSUME(RCurly);
-  });
-
-  // parameterList = (parameter ("," parameter)*)?
-  private parameterList = this.RULE('parameterList', () => {
-    this.OPTION(() => {
-      this.SUBRULE(this.parameter, { LABEL: 'first' });
-      this.MANY(() => {
-        this.CONSUME(Comma);
-        this.SUBRULE(this.parameter, { LABEL: 'next' });
-      });
-    });
-  });
-
-  // parameter = identifier ":" type
-  private parameter = this.RULE('parameter', () => {
-    this.CONSUME(VariableIdentifier, { LABEL: 'name' });
-    this.CONSUME(Colon);
-    this.CONSUME(TypeIdentifier, { LABEL: 'type' }); // Fixed: use TypeIdentifier
-  });
-
-  // setDirective = "set" stringLiteral "to" expression
-  private setDirective = this.RULE('setDirective', () => {
-    this.CONSUME(SetKeyword);
-    this.CONSUME(StringLiteral, { LABEL: 'setting' });
-    this.CONSUME(ToKeyword);
-    this.SUBRULE(this.expression, { LABEL: 'value' });
-  });
-
-  // ifStatement = "if" expression block ("else" block)?
-  private ifStatement = this.RULE('ifStatement', () => {
-    this.CONSUME(IfKeyword);
-    this.SUBRULE(this.expression, { LABEL: 'condition' });
-    this.SUBRULE(this.block, { LABEL: 'thenBlock' });
-    this.OPTION(() => {
-      this.CONSUME(ElseKeyword);
-      this.SUBRULE(this.block, { LABEL: 'elseBlock' });
-    });
-  });
-
-  // loopStatement = "loop" identifier "over" expression block
   private loopStatement = this.RULE('loopStatement', () => {
     this.CONSUME(LoopKeyword);
-    this.CONSUME(VariableIdentifier, { LABEL: 'var' });
+    this.CONSUME(VarName, { LABEL: 'variable' });
     this.CONSUME(OverKeyword);
     this.SUBRULE(this.expression, { LABEL: 'range' });
     this.SUBRULE(this.block, { LABEL: 'body' });
   });
 
-  // resultStatement = "result" ":" expression
+  private ifStatement = this.RULE('ifStatement', () => {
+    this.CONSUME(IfKeyword);
+    this.SUBRULE(this.expression, { LABEL: 'condition' });
+    this.SUBRULE(this.block, { LABEL: 'body' });
+    this.OPTION(() => {
+      this.CONSUME(ElseKeyword);
+      this.OR([
+        { ALT: () => this.SUBRULE(this.ifStatement, { LABEL: 'elseIf' }) },
+        { ALT: () => this.SUBRULE2(this.block, { LABEL: 'elseBody' }) },
+      ]);
+    });
+  });
+
   private resultStatement = this.RULE('resultStatement', () => {
     this.CONSUME(ResultKeyword);
     this.CONSUME(Colon);
     this.SUBRULE(this.expression, { LABEL: 'value' });
   });
 
-  // block = "{" statement* "}"
+  private assignmentStatement = this.RULE('assignmentStatement', () => {
+    this.CONSUME(VarName, { LABEL: 'name' });
+    this.CONSUME(Colon);
+    this.SUBRULE(this.expression, { LABEL: 'value' });
+  });
+
   private block = this.RULE('block', () => {
     this.CONSUME(LCurly);
-    this.MANY(() => {
-      this.SUBRULE(this.statement);
-    });
+    this.MANY(() => this.SUBRULE(this.statement));
     this.CONSUME(RCurly);
   });
 
-  // Expression rules (unchanged, but removed if/loop from primaryExpression)
   private expression = this.RULE('expression', () => {
-    this.SUBRULE(this.logicalOrExpression);
+    this.SUBRULE(this.logicalOr);
   });
 
-  private logicalOrExpression = this.RULE('logicalOrExpression', () => {
-    this.SUBRULE(this.logicalAndExpression, { LABEL: 'lhs' });
+  private logicalOr = this.RULE('logicalOr', () => {
+    this.SUBRULE(this.logicalAnd, { LABEL: 'operand' });
     this.MANY(() => {
-      this.CONSUME(Or);
-      this.SUBRULE2(this.logicalAndExpression, { LABEL: 'rhs' });
+      this.CONSUME(Or, { LABEL: 'operator' });
+      this.SUBRULE2(this.logicalAnd, { LABEL: 'operand' });
     });
   });
 
-  private logicalAndExpression = this.RULE('logicalAndExpression', () => {
-    this.SUBRULE(this.comparisonExpression, { LABEL: 'lhs' });
+  private logicalAnd = this.RULE('logicalAnd', () => {
+    this.SUBRULE(this.comparison, { LABEL: 'operand' });
     this.MANY(() => {
-      this.CONSUME(And);
-      this.SUBRULE2(this.comparisonExpression, { LABEL: 'rhs' });
+      this.CONSUME(And, { LABEL: 'operator' });
+      this.SUBRULE2(this.comparison, { LABEL: 'operand' });
     });
   });
 
-  private comparisonExpression = this.RULE('comparisonExpression', () => {
-    this.SUBRULE(this.additiveExpression, { LABEL: 'lhs' });
-    this.OPTION(() => {
-      this.OR([
-        { ALT: () => this.CONSUME(Equal) },
-        { ALT: () => this.CONSUME(NotEqual) },
-        { ALT: () => this.CONSUME(LessThan) },
-        { ALT: () => this.CONSUME(GreaterThan) },
-        { ALT: () => this.CONSUME(LessEqual) },
-        { ALT: () => this.CONSUME(GreaterEqual) },
-      ]);
-      this.SUBRULE2(this.additiveExpression, { LABEL: 'rhs' });
-    });
-  });
-
-  private additiveExpression = this.RULE('additiveExpression', () => {
-    this.SUBRULE(this.multiplicativeExpression, { LABEL: 'lhs' });
+  private comparison = this.RULE('comparison', () => {
+    this.SUBRULE(this.additive, { LABEL: 'operand' });
     this.MANY(() => {
       this.OR([
-        { ALT: () => this.CONSUME(Plus) },
-        { ALT: () => this.CONSUME(Minus) },
+        { ALT: () => this.CONSUME(Equal, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(NotEqual, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(Less, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(Greater, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(LessEqual, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(GreaterEqual, { LABEL: 'operator' }) },
       ]);
-      this.SUBRULE2(this.multiplicativeExpression, { LABEL: 'rhs' });
+      this.SUBRULE2(this.additive, { LABEL: 'operand' });
     });
   });
 
-  private multiplicativeExpression = this.RULE(
-    'multiplicativeExpression',
-    () => {
-      this.SUBRULE(this.exponentiationExpression, { LABEL: 'lhs' });
-      this.MANY(() => {
-        this.OR([
-          { ALT: () => this.CONSUME(Star) },
-          { ALT: () => this.CONSUME(Slash) },
-        ]);
-        this.SUBRULE2(this.exponentiationExpression, { LABEL: 'rhs' });
-      });
-    },
-  );
+  private additive = this.RULE('additive', () => {
+    this.SUBRULE(this.multiplicative, { LABEL: 'operand' });
+    this.MANY(() => {
+      this.OR([
+        { ALT: () => this.CONSUME(Plus, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(Minus, { LABEL: 'operator' }) },
+      ]);
+      this.SUBRULE2(this.multiplicative, { LABEL: 'operand' });
+    });
+  });
 
-  private exponentiationExpression = this.RULE(
-    'exponentiationExpression',
-    () => {
-      this.SUBRULE(this.unaryExpression, { LABEL: 'lhs' });
-      this.OPTION(() => {
-        this.CONSUME(Caret);
-        this.SUBRULE2(this.unaryExpression, { LABEL: 'rhs' });
-      });
-    },
-  );
+  private multiplicative = this.RULE('multiplicative', () => {
+    this.SUBRULE(this.exponent, { LABEL: 'operand' });
+    this.MANY(() => {
+      this.OR([
+        { ALT: () => this.CONSUME(Star, { LABEL: 'operator' }) },
+        { ALT: () => this.CONSUME(Slash, { LABEL: 'operator' }) },
+      ]);
+      this.SUBRULE2(this.exponent, { LABEL: 'operand' });
+    });
+  });
 
-  private unaryExpression = this.RULE('unaryExpression', () => {
+  private exponent = this.RULE('exponent', () => {
+    this.SUBRULE(this.access, { LABEL: 'operand' });
+    this.MANY(() => {
+      this.CONSUME(Power, { LABEL: 'operator' });
+      this.SUBRULE2(this.access, { LABEL: 'operand' });
+    });
+  });
+
+  private access = this.RULE('access', () => {
+    this.SUBRULE(this.dice, { LABEL: 'operand' });
+    this.MANY(() => {
+      this.CONSUME(At, { LABEL: 'operator' });
+      this.SUBRULE2(this.dice, { LABEL: 'operand' });
+    });
+  });
+
+  private dice = this.RULE('dice', () => {
     this.OR([
-      { ALT: () => this.SUBRULE(this.primaryExpression) },
       {
         ALT: () => {
-          this.CONSUME(Not);
-          this.SUBRULE(this.unaryExpression, { LABEL: 'operand' });
+          this.CONSUME(D);
+          this.SUBRULE(this.diceOperand, { LABEL: 'faces' });
         },
       },
       {
         ALT: () => {
-          this.CONSUME(Hash);
-          this.SUBRULE(this.unaryExpression, { LABEL: 'operand' });
+          this.SUBRULE(this.unary, { LABEL: 'count' });
+          this.OPTION(() => {
+            this.CONSUME2(D);
+            this.SUBRULE3(this.diceOperand, { LABEL: 'faces' });
+          });
+        },
+      },
+    ]);
+  });
+
+  private diceOperand = this.RULE('diceOperand', () => {
+    this.OR([
+      { ALT: () => this.CONSUME(Percent, { LABEL: 'percent' }) },
+      { ALT: () => this.SUBRULE(this.unary, { LABEL: 'value' }) },
+    ]);
+  });
+
+  private unary = this.RULE('unary', () => {
+    this.OR([
+      {
+        ALT: () => {
+          this.CONSUME(Plus);
+          this.SUBRULE(this.unary);
         },
       },
       {
         ALT: () => {
           this.CONSUME(Minus);
-          this.SUBRULE(this.unaryExpression, { LABEL: 'operand' });
+          this.SUBRULE2(this.unary);
         },
       },
+      {
+        ALT: () => {
+          this.CONSUME(Not);
+          this.SUBRULE3(this.unary);
+        },
+      },
+      {
+        ALT: () => {
+          this.CONSUME(Hash);
+          this.SUBRULE4(this.unary);
+        },
+      },
+      { ALT: () => this.SUBRULE5(this.term) },
     ]);
   });
 
-  private primaryExpression = this.RULE('primaryExpression', () => {
+  private term = this.RULE('term', () => {
     this.OR([
       { ALT: () => this.CONSUME(NumberLiteral, { LABEL: 'number' }) },
-      { ALT: () => this.SUBRULE(this.diceExpression) }, // add this
-      { ALT: () => this.CONSUME(VariableIdentifier, { LABEL: 'variable' }) },
-      { ALT: () => this.SUBRULE(this.functionInvocation) },
-      { ALT: () => this.SUBRULE(this.sequenceLiteral) },
-      { ALT: () => this.SUBRULE(this.parenthesizedExpression) },
+      { ALT: () => this.CONSUME(VarName, { LABEL: 'variable' }) },
+      { ALT: () => this.SUBRULE(this.callExpression, { LABEL: 'call' }) },
+      { ALT: () => this.SUBRULE(this.sequenceLiteral, { LABEL: 'sequence' }) },
+      { ALT: () => this.SUBRULE(this.parenthesized, { LABEL: 'group' }) },
     ]);
   });
 
-  private functionInvocation = this.RULE('functionInvocation', () => {
+  private callExpression = this.RULE('callExpression', () => {
     this.CONSUME(LBracket);
-    this.CONSUME(FunctionIdentifier, { LABEL: 'name' });
-    this.MANY(() => {
-      this.SUBRULE(this.expression, { LABEL: 'args' });
+    this.AT_LEAST_ONE(() => {
+      this.OR([
+        ...wordTokens.map((token) => ({
+          ALT: () => this.CONSUME(token, { LABEL: 'word' }),
+        })),
+        { ALT: () => this.SUBRULE(this.expression, { LABEL: 'argument' }) },
+      ]);
     });
     this.CONSUME(RBracket);
   });
 
   private sequenceLiteral = this.RULE('sequenceLiteral', () => {
     this.CONSUME(LCurly);
-    this.SUBRULE(this.sequenceElements);
+    this.OPTION(() => {
+      this.SUBRULE(this.sequenceElement, { LABEL: 'element' });
+      this.MANY(() => {
+        this.CONSUME(Comma);
+        this.SUBRULE2(this.sequenceElement, { LABEL: 'element' });
+      });
+      this.OPTION2(() => this.CONSUME2(Comma));
+    });
     this.CONSUME(RCurly);
   });
 
-  private sequenceElements = this.RULE('sequenceElements', () => {
-    this.AT_LEAST_ONE(() => {
-      this.SUBRULE(this.sequenceElement);
-      this.OPTION(() => this.CONSUME(Comma));
+  private sequenceElement = this.RULE('sequenceElement', () => {
+    this.SUBRULE(this.expression, { LABEL: 'value' });
+    this.OPTION(() => {
+      this.OR([
+        {
+          ALT: () => {
+            this.CONSUME(DoubleDot);
+            this.SUBRULE2(this.expression, { LABEL: 'rangeEnd' });
+          },
+        },
+        {
+          ALT: () => {
+            this.CONSUME(Colon);
+            this.SUBRULE3(this.expression, { LABEL: 'repeat' });
+          },
+        },
+      ]);
     });
   });
 
-  private sequenceElement = this.RULE('sequenceElement', () => {
-    this.OR([
-      { ALT: () => this.SUBRULE(this.expression) },
-      {
-        ALT: () => {
-          this.SUBRULE(this.expression, { LABEL: 'value' });
-          this.CONSUME(Colon);
-          this.SUBRULE(this.expression, { LABEL: 'count' });
-        },
-      },
-      {
-        ALT: () => {
-          this.CONSUME(DiceLiteral, { LABEL: 'dieToSeq' });
-        },
-      },
-    ]);
-  });
-
-  private parenthesizedExpression = this.RULE('parenthesizedExpression', () => {
+  private parenthesized = this.RULE('parenthesized', () => {
     this.CONSUME(LParen);
     this.SUBRULE(this.expression);
     this.CONSUME(RParen);
   });
 }
 
-// Export parse function
-export function parse(tokens: IToken[]) {
-  const parser = new DiceParser(tokens);
-  parser.program();
+export function parseCst(input: string) {
+  const { tokens, errors } = tokenize(input);
+  if (errors.length > 0) {
+    throw new SyntaxError(errors.map((error) => error.message).join('; '));
+  }
+  const parser = new DiceParser();
+  parser.input = tokens;
+  const cst = parser.program();
   if (parser.errors.length > 0) {
-    throw new Error(
-      `Parsing errors: ${parser.errors.map((e) => e.message).join(', ')}`,
+    throw new SyntaxError(
+      parser.errors
+        .map((error) => `${error.message} (line ${error.token.startLine})`)
+        .join('; '),
     );
   }
-  return parser;
+  return cst;
 }

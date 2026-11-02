@@ -16,6 +16,7 @@
     "test:regression": "vitest run tests/regressions --printConsoleTrace=true --silent=false",
     "test:ui": "vitest --ui --printConsoleTrace=true --silent=false",
     "test:coverage": "vitest run --printConsoleTrace=true --silent=false --coverage",
+    "test:probability-calculator": "vitest run src/utils/dice-probability-calculator",
     "test:e2e": "playwright test",
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:firefox": "playwright test --project=firefox",
