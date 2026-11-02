@@ -29,24 +29,21 @@ const palette = computed<string[] | undefined>(() => {
   return undefined;
 });
 
-const showAnimatedBg = computed(
-  () => playerStore.isPlaying && configStore.jukeboxAnimatePlayerBackground,
+const hasGradientBg = computed(
+  () => configStore.jukeboxAnimatePlayerBackground && !!palette.value?.length,
 );
 
-// The card is the single animated canvas: its pseudo-element sits behind the
-// toolbar and the player, so the header and content share one animation.
-const gradientStyle = useAnimatedGradient(
-  () => playerStore.isPlaying && configStore.jukeboxAnimatePlayerBackground,
-  () => palette.value,
+const isAnimatedBg = computed(
+  () => hasGradientBg.value && playerStore.isPlaying,
 );
+
+// The card is the single gradient canvas: its pseudo-element sits behind the
+// toolbar and the player, so the header and content share one background.
+const gradientStyle = useAnimatedGradient(hasGradientBg, () => palette.value);
 
 const controlStyle = computed<Record<string, string>>(() => {
   const style: Record<string, string> = {};
-  if (
-    !playerStore.isPlaying ||
-    !configStore.jukeboxAnimatePlayerBackground ||
-    !palette.value?.length
-  ) {
+  if (!hasGradientBg.value || !palette.value?.length) {
     return style;
   }
   const color = getGradientContrastColor(palette.value);
@@ -87,7 +84,8 @@ function navigateToJukebox() {
       :class="{
         'jukebox-dialog-card': true,
         'animated-gradient-surface': true,
-        'with-animated-bg': showAnimatedBg,
+        'has-gradient-bg': hasGradientBg,
+        'with-animated-bg': isAnimatedBg,
       }"
       :style="[cardStyle, gradientStyle, controlStyle]"
       @pointermove="onPointerMove"

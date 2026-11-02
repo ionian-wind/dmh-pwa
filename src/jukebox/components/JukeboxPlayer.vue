@@ -32,13 +32,6 @@ const { t } = useI18n();
 const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();
 
-const showAnimatedBg = computed(
-  () =>
-    !!props.animatedBackground &&
-    playerStore.isPlaying &&
-    configStore.jukeboxAnimatePlayerBackground,
-);
-
 const palette = computed<string[] | undefined>(() => {
   const track = playerStore.currentTrack;
   if (track?.palette && track.palette.length > 0) return track.palette;
@@ -46,23 +39,24 @@ const palette = computed<string[] | undefined>(() => {
   return undefined;
 });
 
-// Use the new composable for the gradient style
-const gradientStyle = useAnimatedGradient(
+const hasGradientBg = computed(
   () =>
     !!props.animatedBackground &&
-    playerStore.isPlaying &&
-    configStore.jukeboxAnimatePlayerBackground,
-  () => palette.value,
+    configStore.jukeboxAnimatePlayerBackground &&
+    !!palette.value?.length,
 );
 
-// Keep controls readable over whichever gradient colours are flowing past.
+const isAnimatedBg = computed(
+  () => hasGradientBg.value && playerStore.isPlaying,
+);
+
+// Use the new composable for the gradient style.
+const gradientStyle = useAnimatedGradient(hasGradientBg, () => palette.value);
+
+// Keep controls readable over the gradient, static or animated.
 const controlStyle = computed<Record<string, string>>(() => {
   const style: Record<string, string> = {};
-  if (
-    !playerStore.isPlaying ||
-    !configStore.jukeboxAnimatePlayerBackground ||
-    !palette.value?.length
-  ) {
+  if (!hasGradientBg.value || !palette.value?.length) {
     return style;
   }
   const color = getGradientContrastColor(palette.value);
@@ -151,7 +145,8 @@ const handleProgressChange = (value: number | null) => {
       'jukebox-player-modal': props.modal,
       'jukebox-player': true,
       'animated-gradient-surface': true,
-      'with-animated-bg': showAnimatedBg,
+      'has-gradient-bg': hasGradientBg,
+      'with-animated-bg': isAnimatedBg,
     }"
     :style="[gradientStyle, controlStyle]"
   >

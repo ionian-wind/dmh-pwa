@@ -163,6 +163,7 @@ describe('current shared components', () => {
     });
 
     expect(wrapper.classes()).toContain('animated-gradient-surface');
+    expect(wrapper.classes()).toContain('has-gradient-bg');
     expect(wrapper.classes()).toContain('with-animated-bg');
     expect(wrapper.attributes('style')).toContain('--custom-gradient');
     expect(wrapper.attributes('style')).toContain(
@@ -188,17 +189,20 @@ describe('current shared components', () => {
     });
 
     expect(wrapper.classes()).toContain('animated-gradient-surface');
+    expect(wrapper.classes()).not.toContain('has-gradient-bg');
     expect(wrapper.classes()).not.toContain('with-animated-bg');
-    expect(wrapper.attributes('style')).toContain(
-      '--jp-control-color: #111827',
+    expect(wrapper.attributes('style') ?? '').not.toContain(
+      '--jp-control-color',
     );
-    expect(wrapper.attributes('style')).not.toContain('--custom-gradient');
+    expect(wrapper.attributes('style') ?? '').not.toContain(
+      '--custom-gradient',
+    );
 
     player.isPlaying = false;
     player.currentTrack = null;
   });
 
-  it('JukeboxPlayer uses theme colours while the gradient is hidden', () => {
+  it('JukeboxPlayer keeps a static gradient from album colours while paused', () => {
     const player = useJukeboxPlayerStore();
     player.isPlaying = false;
     player.currentTrack = {
@@ -212,14 +216,37 @@ describe('current shared components', () => {
       props: { animatedBackground: true },
     });
 
+    expect(wrapper.classes()).toContain('has-gradient-bg');
     expect(wrapper.classes()).not.toContain('with-animated-bg');
-    expect(wrapper.attributes('style') ?? '').not.toContain(
-      '--jp-control-color',
-    );
+    expect(wrapper.attributes('style')).toContain('--jp-control-color');
+    expect(wrapper.attributes('style')).toContain('--custom-gradient');
+
+    player.currentTrack = null;
+  });
+
+  it('JukeboxPlayer removes the gradient when the setting is off', () => {
+    const config = useConfigStore();
+    const player = useJukeboxPlayerStore();
+    config.jukeboxAnimatePlayerBackground = false;
+    player.isPlaying = true;
+    player.currentTrack = {
+      id: 'track-4',
+      title: 'Track',
+      palette: ['#101020', '#22223a'],
+      color: '#101020',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { animatedBackground: true },
+    });
+
+    expect(wrapper.classes()).not.toContain('has-gradient-bg');
+    expect(wrapper.classes()).not.toContain('with-animated-bg');
     expect(wrapper.attributes('style') ?? '').not.toContain(
       '--custom-gradient',
     );
 
+    config.jukeboxAnimatePlayerBackground = true;
     player.currentTrack = null;
   });
 

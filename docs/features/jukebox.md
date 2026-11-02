@@ -227,22 +227,24 @@ unmount. The `filesStore` is loaded but unused.
 - Settings button next to volume opens a menu with persisted player options:
   - **Smooth track change** (off by default): cross-fades outgoing/incoming
     tracks over ~1.2 s when the track changes.
-  - **Animate player background** (on by default): enables the album-colour
-    morph gradient in both the footer player and the dialog card.
-- Animated album-colour background: while playing with `animatedBackground`,
-  a `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
-  `track.palette` or `track.color`) and drifts/zooms via the
-  `jukebox-gradient-morph` animation. The gradient is built from one blurred
-  radial blob per palette colour over a soft base gradient, so colours flow
-  into each other instead of sweeping in a single linear direction. The worker
-  requests four palette colours.
-- The bottom-drawer player is one animated surface. In the jukebox dialog the
+  - **Animate player background** (on by default): shows the album-colour
+    gradient in both the footer player and the dialog card. The gradient is
+    static when playback is paused and morphs only while playing; turning the
+    setting off removes the gradient entirely.
+- Album-colour background: when enabled with `animatedBackground`, a
+  `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
+  `track.palette` or `track.color`, both derived from the album cover). The
+  gradient is built from one blurred radial blob per palette colour over a soft
+  base gradient, so colours flow into each other instead of sweeping in a
+  single linear direction. The worker requests four palette colours.
+- The bottom-drawer player is one gradient surface. In the jukebox dialog the
   `QCard` itself owns the surface, so the header toolbar and player content
-  share a single animation; the embedded player is rendered without its own
-  background animation.
+  share a single background; the embedded player is rendered without its own
+  gradient.
 - Controls inherit `--jp-control-color`, derived from the palette with the best
   worst-case contrast (dark or white). Sliders, time labels, buttons, and the
-  track title therefore stay readable as the gradient animates.
+  track title therefore stay readable over the gradient, whether static or
+  animating.
 - The jukebox footer has no extra padding, so the player fills it, but keeps the
   grey player-panel background and an external drop shadow above its top edge.
 - The gradient renders in an absolutely positioned, clipped layer (`.animated-gradient-layer`)
