@@ -29,9 +29,12 @@ export enum Section {
 }
 
 // Core types
+export type NoteContentType = 'text' | 'draw';
+
 export interface Note extends WithMetadata {
   title: string;
   content: string;
+  contentType: NoteContentType;
   typeId: UUID | null;
   tags: string[];
   moduleId: UUID | null;

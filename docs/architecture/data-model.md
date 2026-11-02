@@ -27,7 +27,8 @@
 | Field      | Type             | Notes                                                       |
 | ---------- | ---------------- | ----------------------------------------------------------- |
 | `title`    | `string`         | Required by schema and UI                                   |
-| `content`  | `string`         | Markdown source                                             |
+| `content`  | `string`         | Markdown source, or a tldraw JSON snapshot for draw notes   |
+| `contentType` | `'text' \| 'draw'` | Note content kind; defaults to `text`                   |
 | `typeId`   | `string \| null` | References a `NoteType`; UI for setting it is commented out |
 | `tags`     | `string[]`       | Used for card chips and route-based tag filtering           |
 | `moduleId` | `string \| null` | Owning module, or null for free notes                       |

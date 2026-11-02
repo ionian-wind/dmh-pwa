@@ -107,6 +107,7 @@ async function openAddNode(node: ExtendedTreeNode | null) {
     id: '',
     title: '',
     content: '',
+    contentType: 'text',
     tags: [],
     moduleId: props.moduleId,
     typeId: null,

@@ -6,6 +6,7 @@
     "id",
     "title",
     "content",
+    "contentType",
     "typeId",
     "tags",
     "moduleId",
@@ -23,7 +24,12 @@
     },
     "content": {
       "type": "string",
-      "description": "Content of the note in markdown format"
+      "description": "Markdown source or a tldraw snapshot JSON string"
+    },
+    "contentType": {
+      "type": "string",
+      "enum": ["text", "draw"],
+      "description": "Note content kind"
     },
     "typeId": {
       "oneOf": [

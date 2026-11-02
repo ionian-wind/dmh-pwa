@@ -54,6 +54,39 @@ describe('database migrations', () => {
     db.close();
   });
 
+  it('adds a default text contentType to existing notes', async () => {
+    await deleteDatabase();
+    const db = await openDB();
+    const now = Date.now();
+    const tx = db.transaction(['notes', 'migrations'], 'readwrite');
+    tx.objectStore('notes').put({
+      id: 'note1',
+      title: 'Legacy',
+      content: 'Body',
+      typeId: null,
+      tags: [],
+      moduleId: null,
+      hidden: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const applied = (await tx.objectStore('migrations').getAll()) as Array<{
+      id: string;
+      version: number;
+    }>;
+    const migration8 = applied.find((entry) => entry.version === 8);
+    expect(migration8).toBeTruthy();
+    tx.objectStore('migrations').delete(migration8!.id);
+    await tx.done;
+    db.close();
+
+    resetStoreCache();
+    const reopened = await openDB();
+    const note = await reopened.get('notes', 'note1');
+    expect(note.contentType).toBe('text');
+    reopened.close();
+  });
+
   it('extracts embedded map locations into the global store', async () => {
     await deleteDatabase();
     const db = await openDB();

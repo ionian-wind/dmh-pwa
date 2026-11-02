@@ -27,6 +27,12 @@ const props = defineProps({
   showSearch: { type: Boolean, default: false },
   searchQuery: { type: String, default: '' },
   searchPlaceholder: { type: String, default: 'common.search' },
+  headerButtons: {
+    type: Array as PropType<
+      Array<{ icon: any; color: string; title: string; event: Function }>
+    >,
+    default: () => [],
+  },
 });
 
 const showEditor = ref(false);
@@ -89,6 +95,8 @@ function handleCancel() {
   showEditor.value = false;
 }
 
+defineExpose({ openCreate: handleCreate });
+
 function onCreate() {
   handleCreate();
   emit('create');
@@ -112,6 +120,7 @@ function syncHeaderProps() {
     showSearch: props.showSearch,
     searchQuery: props.searchQuery,
     searchPlaceholder: props.searchPlaceholder,
+    buttons: props.headerButtons,
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -125,6 +134,7 @@ onMounted(async () => {
     showSearch: props.showSearch,
     searchQuery: props.searchQuery,
     searchPlaceholder: props.searchPlaceholder,
+    buttons: props.headerButtons,
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });

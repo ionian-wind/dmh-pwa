@@ -173,6 +173,7 @@ export function remapImportedModule({
       ...(note as Note),
       id: idMap.get(note.id) ?? generateId(),
       moduleId,
+      contentType: note.contentType ?? 'text',
       hidden: note.hidden ?? true,
       createdAt: note.createdAt ?? now,
       updatedAt: note.updatedAt ?? now,
