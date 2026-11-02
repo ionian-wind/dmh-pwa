@@ -736,6 +736,8 @@ watch(hoveredAreaId, refreshAreaHighlight);
           v-if="infoSelection && infoPosition"
           :position="infoPosition"
           positioning="bottom-center"
+          :offset="[0, -18]"
+          class-name="map-info-overlay"
           :stop-event="true"
         >
           <div class="map-info-popup">
@@ -916,6 +918,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
 
 .map-info-popup {
   position: relative;
+  z-index: 1000;
   min-width: 220px;
   max-width: 320px;
   padding: 0.75rem 2rem 0.75rem 0.9rem;
@@ -923,6 +926,10 @@ watch(hoveredAreaId, refreshAreaHighlight);
   border-radius: var(--border-radius);
   background: var(--color-background);
   box-shadow: var(--shadow-lg);
+}
+
+:global(.map-info-overlay) {
+  z-index: 1000;
 }
 
 .map-info-close {
