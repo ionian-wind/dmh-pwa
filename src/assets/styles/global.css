@@ -81,6 +81,16 @@
   --header-height: calc(var(--footer-height) * 4);
 }
 
+/*
+ * Quasar's $secondary palette entry is a light neutral surface colour. Colored
+ * buttons automatically receive `text-white`, which is unreadable on it, so
+ * keep secondary buttons on a dark text colour.
+ */
+.q-btn.bg-secondary,
+button.bg-secondary {
+  color: var(--color-text) !important;
+}
+
 .text-h1,
 h1 {
   font-size: 3rem;

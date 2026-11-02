@@ -32,7 +32,8 @@ npm run test:e2e:firefox   # firefox only
 
 The map E2E suite covers the custom `ol/control/Control` action menu, marker
 placement from a map click, the `ol-contextmenu` right-click menu, its draw
-submenu, and the event-based bridge into the existing marker editor.
+submenu, and the event-based bridge into the existing marker editor. A theme
+check also verifies that secondary buttons keep sufficient text contrast.
 
 `tests/setup.ts`:
 
