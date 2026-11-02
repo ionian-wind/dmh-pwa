@@ -3,9 +3,27 @@ describe('Tokenizer Coordination', () => {
   it('delegates to plugins in order', () => {
     const calls: string[] = [];
     const plugins = [
-      { name: 'pluginA', match: (input: string) => { calls.push('A'); return false; } },
-      { name: 'pluginB', match: (input: string) => { calls.push('B'); return true; } },
-      { name: 'pluginC', match: (input: string) => { calls.push('C'); return false; } },
+      {
+        name: 'pluginA',
+        match: (input: string) => {
+          calls.push('A');
+          return false;
+        },
+      },
+      {
+        name: 'pluginB',
+        match: (input: string) => {
+          calls.push('B');
+          return true;
+        },
+      },
+      {
+        name: 'pluginC',
+        match: (input: string) => {
+          calls.push('C');
+          return false;
+        },
+      },
     ];
     // Simulate coordination logic
     let matched = false;
@@ -22,8 +40,14 @@ describe('Tokenizer Coordination', () => {
   it('collects errors from plugins', () => {
     const errors: string[] = [];
     const plugins = [
-      { name: 'pluginA', match: () => { errors.push('errorA'); return false; } },
-      { name: 'pluginB', match: () => false },
+      {
+        name: 'pluginA',
+        match: () => {
+          errors.push('errorA');
+          return false;
+        },
+      },
+      { name: 'pluginB', match: (_input: string) => false },
     ];
     for (const plugin of plugins) {
       plugin.match('test');
@@ -34,12 +58,22 @@ describe('Tokenizer Coordination', () => {
   it('collects warnings from plugins', () => {
     const warnings: string[] = [];
     const plugins = [
-      { name: 'pluginA', warn: () => { warnings.push('warnA'); } },
-      { name: 'pluginB', warn: () => { warnings.push('warnB'); } },
+      {
+        name: 'pluginA',
+        warn: () => {
+          warnings.push('warnA');
+        },
+      },
+      {
+        name: 'pluginB',
+        warn: () => {
+          warnings.push('warnB');
+        },
+      },
     ];
     for (const plugin of plugins) {
       plugin.warn();
     }
     expect(warnings).toEqual(['warnA', 'warnB']);
   });
-}); 
+});
