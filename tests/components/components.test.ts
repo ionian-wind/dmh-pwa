@@ -119,6 +119,98 @@ describe('current shared components', () => {
     wrapper.unmount();
   });
 
+  it('BaseModal renders header tabs with icons and switches tab content', async () => {
+    const TabIcon = defineComponent({
+      name: 'TabIcon',
+      setup() {
+        return () => h('span', { class: 'tab-icon' });
+      },
+    });
+    const QTabsStub = defineComponent({
+      name: 'QTabs',
+      props: { modelValue: String },
+      emits: ['update:modelValue'],
+      setup(_, { slots, emit }) {
+        return () =>
+          h('div', { class: 'tabs-stub' }, [
+            h(
+              'button',
+              {
+                class: 'switch-tab',
+                onClick: () => emit('update:modelValue', 'links'),
+              },
+              'switch',
+            ),
+            slots.default?.(),
+          ]);
+      },
+    });
+    const QTabPanelsStub = defineComponent({
+      name: 'QTabPanels',
+      props: { modelValue: String },
+      setup(props, { slots }) {
+        return () =>
+          h(
+            'div',
+            { class: 'panels-stub', 'data-active': props.modelValue },
+            slots.default?.(),
+          );
+      },
+    });
+    const QTabPanelStub = defineComponent({
+      name: 'QTabPanel',
+      props: { name: String },
+      setup(props, { slots }) {
+        return () =>
+          h(
+            'div',
+            { class: 'panel-stub', 'data-name': props.name },
+            slots.default?.(),
+          );
+      },
+    });
+
+    const wrapper = mount(BaseModal, {
+      props: {
+        isOpen: true,
+        modalId: 'tabs-modal',
+        tabs: [
+          { name: 'main', title: 'Main editor', icon: TabIcon },
+          { name: 'links', title: 'Links', icon: TabIcon },
+        ],
+      },
+      slots: {
+        main: 'MAIN CONTENT',
+        links: 'LINKS CONTENT',
+      },
+      global: {
+        stubs: {
+          QTabs: QTabsStub,
+          QTabPanels: QTabPanelsStub,
+          QTabPanel: QTabPanelStub,
+        },
+      },
+    });
+    await nextTick();
+
+    expect(wrapper.findAll('[data-stub="QTab"]')).toHaveLength(2);
+    expect(wrapper.findAll('.tab-icon')).toHaveLength(2);
+    expect(wrapper.text()).toContain('MAIN CONTENT');
+    expect(wrapper.text()).toContain('LINKS CONTENT');
+    expect(wrapper.findComponent(QTabPanelsStub).props('modelValue')).toBe(
+      'main',
+    );
+
+    await wrapper.find('.switch-tab').trigger('click');
+    await nextTick();
+
+    expect(wrapper.emitted('update:activeTab')?.[0]).toEqual(['links']);
+    expect(wrapper.findComponent(QTabPanelsStub).props('modelValue')).toBe(
+      'links',
+    );
+    wrapper.unmount();
+  });
+
   it('LanguageSwitcher normalizes and persists supported locales', async () => {
     const config = useConfigStore();
     config.savedLanguage = 'en';

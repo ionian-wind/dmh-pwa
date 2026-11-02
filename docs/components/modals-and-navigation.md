@@ -18,8 +18,26 @@ Props:
 | `showClose` | — | Whether the header exists (combined with title/expand) |
 | `showExpand` / `isExpanded` | — | Maximize toggle |
 | `disableSubmit` | — | Disable submit button |
+| `tabs` | — | Header tab definitions (`{ name, title, icon }`) |
+| `activeTab` | first tab | Controlled active tab |
 
-Emits: `submit`, `cancel`, `delete`, `update:isOpen`, `update:isExpanded`.
+Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
+`update:isExpanded`.
+
+When `tabs` is provided, `BaseModal` renders a `QTabs` row in the header and
+renders the matching named slot as the dialog body. A tab definition is:
+
+```ts
+{
+  name: string;   // named-slot key
+  title?: string; // tooltip/accessible label
+  label?: string; // fallback visible label
+  icon?: Component;
+}
+```
+
+Tab content uses named slots (`<template #main>`, `<template #links>`, …). The
+default slot is used only when no tabs are supplied.
 
 ### Editor action buttons (required)
 

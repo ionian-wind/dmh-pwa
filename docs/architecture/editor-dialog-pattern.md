@@ -1,10 +1,10 @@
 # Editor Dialog Pattern
 
-> **Status: design requirement — not implemented yet.**
+> **Status: tab infrastructure implemented; editor migration in progress.**
 >
-> This document describes the target structure for every entity editor dialog.
-> Existing editors still mix root fields, internal options, and entity links in
-> one form; use this document as the specification for the migration.
+> `BaseModal` now supports header tabs and named tab slots. Existing editors
+> still mix root fields, internal options, and entity links in one form; use
+> this document as the specification for the migration.
 
 ## Purpose
 

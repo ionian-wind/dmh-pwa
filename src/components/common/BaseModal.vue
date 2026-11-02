@@ -7,6 +7,7 @@ import {
   ref,
   useSlots,
   nextTick,
+  type Component,
 } from 'vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
@@ -31,6 +32,13 @@ const props = withDefaults(
     showExpand?: boolean;
     isExpanded?: boolean;
     disableSubmit?: boolean;
+    tabs?: Array<{
+      name: string;
+      title?: string;
+      label?: string;
+      icon?: Component;
+    }>;
+    activeTab?: string;
   }>(),
   {
     showClose: true,
@@ -41,6 +49,7 @@ const emit = defineEmits<{
   (e: 'submit'): void;
   (e: 'cancel'): void;
   (e: 'delete'): void;
+  (e: 'update:activeTab', value: string): void;
   (e: 'update:isOpen', value: boolean): void;
   (e: 'update:isExpanded', value: boolean): void;
 }>();
@@ -53,8 +62,37 @@ const hasHeader = computed(
     !!props.title ||
     !!slots['header-actions'] ||
     !!props.showExpand ||
-    !!props.showClose,
+    !!props.showClose ||
+    !!props.tabs?.length,
 );
+
+const internalTab = ref(props.activeTab ?? props.tabs?.[0]?.name ?? '');
+
+watch(
+  () => props.activeTab,
+  (value) => {
+    if (value !== undefined) internalTab.value = value;
+  },
+);
+
+watch(
+  () => props.tabs,
+  (tabs) => {
+    if (!tabs?.length) return;
+    if (!tabs.some((tab) => tab.name === internalTab.value)) {
+      internalTab.value = tabs[0].name;
+    }
+  },
+  { immediate: true, deep: true },
+);
+
+const currentTab = computed({
+  get: () => internalTab.value,
+  set: (value: string) => {
+    internalTab.value = value;
+    emit('update:activeTab', value);
+  },
+});
 
 // Only show modal if it's open and is the top of the stack
 const actuallyOpen = computed({
@@ -155,13 +193,42 @@ function setExpanded(val: boolean) {
             <IconX />
           </QBtn>
         </QToolbar>
+
+        <QTabs
+          v-if="props.tabs?.length"
+          v-model="currentTab"
+          dense
+          align="left"
+        >
+          <QTab
+            v-for="tab in props.tabs"
+            :key="tab.name"
+            :name="tab.name"
+            :title="tab.title || tab.label || tab.name"
+            :aria-label="tab.title || tab.label || tab.name"
+          >
+            <component :is="tab.icon" v-if="tab.icon" />
+          </QTab>
+        </QTabs>
       </QCardSection>
       <QScrollArea class="fit q-pa-sm">
         <form
           @submit.prevent="$emit('submit')"
           class="modal-form q-gutter-y-md"
         >
-          <slot />
+          <template v-if="props.tabs?.length">
+            <QTabPanels v-model="currentTab" animated class="q-pa-none">
+              <QTabPanel
+                v-for="tab in props.tabs"
+                :key="tab.name"
+                :name="tab.name"
+                class="q-pa-none"
+              >
+                <slot :name="tab.name" />
+              </QTabPanel>
+            </QTabPanels>
+          </template>
+          <slot v-else />
         </form>
       </QScrollArea>
       <QCardActions
