@@ -9,7 +9,7 @@ const props = defineProps<{
   timer: Timer | null;
   isOpen: boolean;
 }>();
-const emit = defineEmits(['submit', 'cancel']);
+const emit = defineEmits(['submit', 'cancel', 'delete']);
 const { t } = useI18n();
 
 const editedTimer = ref({
@@ -72,6 +72,10 @@ function handleSubmit() {
 function handleCancel() {
   emit('cancel');
 }
+
+function handleDelete() {
+  if (props.timer) emit('delete', props.timer.id);
+}
 </script>
 
 <template>
@@ -80,7 +84,9 @@ function handleCancel() {
     :title="props.timer ? t('timers.edit') : t('timers.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!timer"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="handleCancel"
     modalId="timer-editor-modal"
   >

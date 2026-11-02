@@ -18,6 +18,10 @@ lerna-debug.log*
 /coverage
 /test/coverage
 /.nyc_output
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
 
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"

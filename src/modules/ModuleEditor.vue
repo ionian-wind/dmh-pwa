@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', module: Omit<Module, 'id'>): void;
+  (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -53,6 +54,10 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   emit('cancel');
 };
+
+function handleDelete() {
+  if (props.module) emit('delete', props.module.id);
+}
 </script>
 
 <template>
@@ -61,10 +66,12 @@ const handleCancel = () => {
     :title="module ? t('modules.edit') : t('modules.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!module"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="module-editor-modal"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="handleCancel"
   >
     <div class="form-section">

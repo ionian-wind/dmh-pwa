@@ -3,6 +3,15 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { IconDownload, IconX } from '@tabler/icons-vue';
 import { debug, debugError } from '@/utils/debug';
 
+const props = withDefaults(
+  defineProps<{
+    enabled?: boolean;
+  }>(),
+  {
+    enabled: true,
+  },
+);
+
 const showInstallPrompt = ref(false);
 const deferredPrompt = ref<any>(null);
 const hasShownNativePrompt = ref(false);
@@ -39,6 +48,7 @@ const dismissPrompt = () => {
 };
 
 const handleBeforeInstallPrompt = (e: Event) => {
+  if (!props.enabled) return;
   debug('PWAInstallPrompt: beforeinstallprompt event fired');
   deferredPrompt.value = e;
   showInstallPrompt.value = true;
@@ -66,7 +76,7 @@ onUnmounted(() => {
 
 <template>
   <div
-    v-if="showInstallPrompt"
+    v-if="props.enabled && showInstallPrompt"
     class="pwa-install-banner-float shadow-1 absolute-bottom"
   >
     <QBanner :class="'bg-secondary'">

@@ -80,6 +80,8 @@ const kindLabel = computed(() => {
       return t('monsters.title');
     case 'encounter':
       return t('encounters.title');
+    case 'map':
+      return t('maps.title');
     default:
       return props.kind;
   }

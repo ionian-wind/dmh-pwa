@@ -184,6 +184,19 @@ describe('regression: UI contracts', () => {
     await nextTick();
 
     expect(layout.topMenuContent.value?.props?.subtitle).toBe('Subtitle');
+    expect(layout.topMenuContent.value?.props?.showEdit).toBe(true);
+    expect(layout.topMenuContent.value?.props?.showDelete).toBe(true);
+
+    await wrapper.setProps({ headerShowEdit: false, headerShowDelete: false });
+    await nextTick();
+    expect(layout.topMenuContent.value?.props?.showEdit).toBe(false);
+    expect(layout.topMenuContent.value?.props?.showDelete).toBe(false);
+
+    await wrapper.setProps({ headerShowEdit: true, headerShowDelete: true });
+    await nextTick();
+    expect(layout.topMenuContent.value?.props?.showEdit).toBe(true);
+    expect(layout.topMenuContent.value?.props?.showDelete).toBe(true);
+
     expect(layout.rightDrawerContent.value).not.toBeNull();
     wrapper.unmount();
   });

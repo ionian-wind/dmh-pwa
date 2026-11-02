@@ -138,6 +138,7 @@ function handleImportCancel() {
       :search-query="moduleStore.searchQuery"
       @update:search-query="moduleStore.setSearchQuery"
       @submit="handleSubmit"
+      @delete="handleDelete"
       @copy="handleCopy"
     >
       <!--      <template #actions>-->

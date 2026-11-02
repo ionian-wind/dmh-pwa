@@ -17,6 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'submit', monster: Monster): void;
+  (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -81,6 +82,10 @@ const moduleIdsProxy = computed<string[]>({
     editedMonster.value.moduleIds = val;
   },
 });
+
+function handleDelete() {
+  if (props.monster) emit('delete', props.monster.id);
+}
 </script>
 
 <template>
@@ -89,10 +94,12 @@ const moduleIdsProxy = computed<string[]>({
     :title="isEditing ? t('monsters.edit') : t('monsters.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!monster"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="monster-editor-modal"
     @submit="saveMonster"
+    @delete="handleDelete"
     @cancel="closeEditor"
   >
     <div class="form-section">

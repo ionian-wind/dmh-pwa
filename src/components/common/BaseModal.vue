@@ -22,8 +22,10 @@ const props = withDefaults(
     title?: string;
     showSubmit?: boolean;
     showCancel?: boolean;
+    showDelete?: boolean;
     submitLabel?: string;
     cancelLabel?: string;
+    deleteLabel?: string;
     showClose?: boolean;
     modalId: string;
     showExpand?: boolean;
@@ -38,6 +40,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'submit'): void;
   (e: 'cancel'): void;
+  (e: 'delete'): void;
   (e: 'update:isOpen', value: boolean): void;
   (e: 'update:isExpanded', value: boolean): void;
 }>();
@@ -168,7 +171,20 @@ function setExpanded(val: boolean) {
       >
         <slot name="footer" />
         <slot name="actions" />
-        <QBtn flat v-if="showCancel" :color="'standard'" @click="requestClose">
+        <QBtn
+          flat
+          v-if="showDelete"
+          color="negative"
+          :label="deleteLabel || t('common.delete')"
+          @click="$emit('delete')"
+        />
+        <QBtn
+          flat
+          v-if="showCancel"
+          color="standard"
+          text-color="dark"
+          @click="requestClose"
+        >
           {{ cancelLabel || t('common.cancel') }}
         </QBtn>
         <QBtn

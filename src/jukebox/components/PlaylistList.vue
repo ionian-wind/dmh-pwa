@@ -94,6 +94,14 @@ const setSelectedPlaylist = (playlistId: string | null) => {
   configStore.jukeboxActivePlaylistId = playlistId; // Add this line
 };
 
+const handleEditorDelete = async () => {
+  if (!playlistToEdit.value) return;
+  const playlistId = playlistToEdit.value.id;
+  isPlaylistModalOpen.value = false;
+  playlistToEdit.value = null;
+  await removePlaylist(playlistId);
+};
+
 const removePlaylist = async (playlistId: string) => {
   if (selectedPlaylistId.value === playlistId) {
     setSelectedPlaylist(null);
@@ -131,7 +139,7 @@ onMounted(async () => {
     <div>
       <QList class="q-pa-none q-mb-none">
         <QItem>
-          <QItemSection> Playlists </QItemSection>
+          <QItemSection>{{ t('playlist.list') }}</QItemSection>
           <QItemSection side>
             <QBtn flat @click="openPlaylistModal(null)" variant="light"
               ><IconPlus
@@ -196,7 +204,11 @@ onMounted(async () => {
       </VueDraggable>
     </QScrollArea>
 
-    <PlaylistEditor v-model="isPlaylistModalOpen" :playlist="playlistToEdit" />
+    <PlaylistEditor
+      v-model="isPlaylistModalOpen"
+      :playlist="playlistToEdit"
+      @delete="handleEditorDelete"
+    />
   </div>
 </template>
 

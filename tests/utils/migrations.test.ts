@@ -53,4 +53,44 @@ describe('database migrations', () => {
     );
     db.close();
   });
+
+  it('extracts embedded map locations into the global store', async () => {
+    await deleteDatabase();
+    const db = await openDB();
+    const now = Date.now();
+    const tx = db.transaction(['maps', 'migrations'], 'readwrite');
+    tx.objectStore('maps').put({
+      id: 'map1',
+      title: 'World',
+      fileId: 'file1',
+      locations: [{ id: 'l1', name: 'Town', entities: [] }],
+      markers: [],
+      areas: [],
+      createdAt: now,
+      updatedAt: now,
+    });
+    const applied = (await tx.objectStore('migrations').getAll()) as Array<{
+      id: string;
+      version: number;
+    }>;
+    const migration5 = applied.find((entry) => entry.version === 5);
+    const migration6 = applied.find((entry) => entry.version === 6);
+    expect(migration5).toBeTruthy();
+    expect(migration6).toBeTruthy();
+    tx.objectStore('migrations').delete(migration5!.id);
+    tx.objectStore('migrations').delete(migration6!.id);
+    await tx.done;
+    db.close();
+
+    resetStoreCache();
+    const reopened = await openDB();
+    const map = await reopened.get('maps', 'map1');
+    const location = await reopened.get('map_locations', 'l1');
+
+    expect(map.locationId).toEqual('l1');
+    expect(map.locationIds).toBeUndefined();
+    expect(map.locations).toBeUndefined();
+    expect(location).toMatchObject({ id: 'l1', name: 'Town' });
+    reopened.close();
+  });
 });

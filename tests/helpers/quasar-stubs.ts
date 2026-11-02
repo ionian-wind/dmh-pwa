@@ -122,7 +122,11 @@ const QPopupEdit = defineComponent({
   emits: ['save', 'hide'],
   setup(_, { slots }) {
     return () =>
-      h('div', { 'data-stub': 'QPopupEdit' }, slots.default?.({ value: 0, set: () => {} }));
+      h(
+        'div',
+        { 'data-stub': 'QPopupEdit' },
+        slots.default?.({ value: 0, set: () => {} }),
+      );
   },
 });
 
@@ -130,6 +134,21 @@ const QPopupProxy = defineComponent({
   name: 'QPopupProxy',
   setup(_, { slots }) {
     return () => h('div', { 'data-stub': 'QPopupProxy' }, slots.default?.());
+  },
+});
+
+const QColor = defineComponent({
+  name: 'QColor',
+  props: { modelValue: { type: String, default: '' } },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    return () =>
+      h('input', {
+        class: 'q-color-stub',
+        value: props.modelValue,
+        onInput: (event: Event) =>
+          emit('update:modelValue', (event.target as HTMLInputElement).value),
+      });
   },
 });
 
@@ -188,6 +207,7 @@ export const quasarStubs: Record<string, any> = {
   QToggle,
   QDialog,
   QMenu,
+  QColor,
   QPopupEdit,
   QPopupProxy,
 };

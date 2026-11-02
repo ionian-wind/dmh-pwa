@@ -37,6 +37,7 @@ import {
   IconMusic,
   IconCalculator,
   IconSettings,
+  IconMap,
   // IconHeadphones,
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
@@ -127,6 +128,12 @@ const sections: SectionItem[] = [
     label: 'navigation.monsters',
     path: '/monsters',
     icon: IconGhost3,
+  },
+  {
+    section: Section.MAPS,
+    label: 'navigation.maps',
+    path: '/maps',
+    icon: IconMap,
   },
   {
     section: Section.ENCOUNTERS,
@@ -390,7 +397,8 @@ const isSettingsOpen = ref(false);
     </QLayout>
     <div>
       <!-- PWA Components -->
-      <PWAInstallPrompt />
+      <!-- Install prompt temporarily disabled while the flow is being finished. -->
+      <PWAInstallPrompt :enabled="false" />
       <PWAStatus />
       <!-- Global Mention Modal Stack -->
       <MentionModalStack />

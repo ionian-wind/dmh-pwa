@@ -10,6 +10,31 @@
   declarations, configs.
 - Alias `@` → `src`.
 
+## End-to-end tests
+
+- Runner: **Playwright** (`playwright.config.ts`).
+- Projects: `chromium` and `firefox`.
+- Test directory: `tests/e2e` with `*.e2e.ts` files, so Vitest does not pick
+  them up.
+- The config starts Vite on `127.0.0.1:4174` and uses the `/dmh-pwa` base path.
+- Service workers are blocked during E2E runs to keep test state deterministic.
+- `tests/e2e/helpers/seed.ts` writes map/file fixtures directly to IndexedDB
+  after the app has run its migrations.
+
+Commands:
+
+```bash
+npm run test:e2e:install   # once per machine
+npm run test:e2e           # chromium + firefox
+npm run test:e2e:chromium  # chromium only
+npm run test:e2e:firefox   # firefox only
+```
+
+The map E2E suite covers the custom `ol/control/Control` action menu, marker
+placement from a map click, the `ol-contextmenu` right-click menu, its draw
+submenu, and the event-based bridge into the existing marker editor. A theme
+check also verifies that secondary buttons keep sufficient text contrast.
+
 `tests/setup.ts`:
 
 - Takes over `window.localStorage` with a mock object of `vi.fn()`s.
@@ -30,6 +55,7 @@ many do not, which is a major source of failures.
 tests/
   components/   # cards, editors, selectors, PWA, RollButton
   composables/  # useModalState
+  e2e/          # Playwright browser tests (chromium + firefox)
   stores/       # one per domain store
   utils/        # formatTime, markdownParser, schemaValidator, storage
   views/        # list/detail/combat pages
@@ -38,23 +64,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 62. Total tests: 485.
+Total test files: 73. Total tests: 560.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  62 passed (62)
-Tests       485 passed (485)
+Test Files  73 passed (73)
+Tests       560 passed (560)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  84.07%
-Branches    81.72%
-Functions   69.54%
-Lines       84.07%
+Statements  83.02%
+Branches    81.32%
+Functions   70.84%
+Lines       83.02%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
@@ -100,7 +126,7 @@ registered plugin pipeline.
 
 - `tests/setup.ts` installs a fresh Pinia, Vue I18n, Quasar component stubs,
   `fake-indexeddb`, and resets the base-store cache/database per test.
-- `tests/helpers/quasar-stubs.ts` provides light Q* stubs that render slots and
+- `tests/helpers/quasar-stubs.ts` provides light Q\* stubs that render slots and
   emit model updates.
 - `tests/helpers/mock-storage.ts` provides an in-memory base store for store
   unit tests.
@@ -120,4 +146,3 @@ The suite now includes direct tests for:
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting
 and integration suites rather than line-by-line unit tests.
-

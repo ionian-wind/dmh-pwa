@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { JukeboxRepeatMode, useConfigStore } from '@/utils/configStore';
 
@@ -134,6 +135,7 @@ describe('jukebox player store', () => {
     const player = useJukeboxPlayerStore();
     const config = useConfigStore();
     const song = track('one');
+    mocks.tracks.items.value = [song];
     player.queue = [song];
     player.queueIndex = 0;
 
@@ -177,6 +179,7 @@ describe('jukebox player store', () => {
     const config = useConfigStore();
     const one = track('one');
     const two = track('two');
+    mocks.tracks.items.value = [one, two];
     player.queue = [one, two];
 
     await player.playTrackFromPlaylist(one);
@@ -227,10 +230,80 @@ describe('jukebox player store', () => {
     expect(player.queue).toHaveLength(2);
   });
 
+  it('binds the queue to the current track playlist when browsing changes', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    mocks.playlists.items.value = [
+      { id: 'p1', trackIds: ['one', 'two'] },
+      { id: 'p2', trackIds: [] },
+    ];
+
+    config.jukeboxActivePlaylistId = 'p1';
+    player.actualiseQueue();
+    await player.playTrackFromPlaylist(one);
+    expect(player.isPlaying).toBe(true);
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+
+    // Browsing an empty playlist must not steal the playback controls.
+    config.jukeboxActivePlaylistId = 'p2';
+    player.actualiseQueue();
+
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.isPlaying).toBe(true);
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+
+    await player.playNext();
+    expect(player.currentTrack?.id).toBe('two');
+  });
+
+  it('keeps the queue on the playing track playlist when browsing changes', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    mocks.playlists.items.value = [
+      { id: 'p1', trackIds: ['one', 'two'] },
+      { id: 'p2', trackIds: [] },
+    ];
+    config.jukeboxActivePlaylistId = 'p1';
+    config.jukeboxLastTrackId = 'one';
+
+    await player.init();
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+
+    config.jukeboxActivePlaylistId = 'p2';
+    await nextTick();
+
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+    expect(player.currentTrack?.id).toBe('one');
+  });
+
+  it('uses all tracks when the current track has no playlist', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const orphan = track('orphan');
+    mocks.tracks.items.value = [one, orphan];
+    mocks.playlists.items.value = [{ id: 'p1', trackIds: ['one'] }];
+
+    config.jukeboxActivePlaylistId = 'p1';
+    player.actualiseQueue();
+    await player.playTrackFromPlaylist(orphan);
+
+    expect(player.currentTrack?.id).toBe('orphan');
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'orphan']);
+  });
+
   it('removes tracks from the queue and stops playback', async () => {
     const player = useJukeboxPlayerStore();
     const one = track('one');
     const two = track('two');
+    mocks.tracks.items.value = [one, two];
     player.queue = [one, two];
     player.queueIndex = 0;
     await player.playTrackFromPlaylist(one);
@@ -274,6 +347,7 @@ describe('jukebox player store', () => {
     config.jukeboxSmoothTrackChange = true;
     const one = track('one');
     const two = track('two');
+    mocks.tracks.items.value = [one, two];
     player.queue = [one, two];
     player.queueIndex = 0;
 
@@ -338,6 +412,7 @@ describe('jukebox player store', () => {
   it('skips playback when the file record is missing', async () => {
     const player = useJukeboxPlayerStore();
     const one = track('one');
+    mocks.tracks.items.value = [one];
     player.queue = [one];
     mocks.getJukeboxFile.mockResolvedValue(undefined);
 
@@ -351,6 +426,7 @@ describe('jukebox player store', () => {
     const player = useJukeboxPlayerStore();
     const one = track('one');
     const two = track('two');
+    mocks.tracks.items.value = [one, two];
     player.queue = [one, two];
     mocks.getFile.mockRejectedValueOnce(
       Object.assign(new Error('missing'), { name: 'NotFoundError' }),
@@ -367,6 +443,7 @@ describe('jukebox player store', () => {
   it('handles Howler callbacks for pause, seek, load errors and missing tracks', async () => {
     const player = useJukeboxPlayerStore();
     const one = track('one');
+    mocks.tracks.items.value = [one];
     player.queue = [one];
     await player.playTrackFromPlaylist(one);
 

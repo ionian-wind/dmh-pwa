@@ -150,6 +150,13 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
+
+async function handleEditorDelete() {
+  if (await handleDelete()) {
+    isEditing.value = false;
+    await router.push('/notes');
+  }
+}
 </script>
 
 <template>
@@ -177,6 +184,7 @@ onBeforeUnmount(() => {
         :validation-error="validationError"
         :allow-hidden-toggle="true"
         @submit="handleSubmit"
+        @delete="handleEditorDelete"
         @cancel="handleCancel"
       />
     </template>

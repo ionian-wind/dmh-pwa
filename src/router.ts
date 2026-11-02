@@ -16,6 +16,9 @@ import ModuleView from '@/modules/ModuleView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import TimersView from '@/timers/TimersView.vue';
+import MapsView from '@/maps/views/MapsView.vue';
+import MapView from '@/maps/views/MapView.vue';
+import LocationView from '@/maps/views/LocationView.vue';
 // import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
@@ -123,6 +126,23 @@ const router = createRouter({
       name: 'timers',
       component: TimersView,
       meta: { exact: true },
+    },
+    // Maps routes
+    {
+      path: '/maps',
+      name: 'maps',
+      component: MapsView,
+      meta: { exact: true },
+    },
+    {
+      path: '/maps/:id',
+      name: 'map-detail',
+      component: MapView,
+    },
+    {
+      path: '/locations/:id',
+      name: 'location-detail',
+      component: LocationView,
     },
     // 404 route
     {

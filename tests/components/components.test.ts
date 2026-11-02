@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 
 import BaseCard from '@/components/common/BaseCard.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -93,6 +93,28 @@ describe('current shared components', () => {
     wrapper.unmount();
   });
 
+  it('BaseModal renders the standard delete action', async () => {
+    const wrapper = mount(BaseModal, {
+      props: {
+        isOpen: true,
+        modalId: 'delete-modal',
+        title: 'Modal',
+        showDelete: true,
+        showCancel: true,
+        showSubmit: true,
+      },
+    });
+    await nextTick();
+
+    const deleteButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Delete');
+    expect(deleteButton).toBeTruthy();
+    await deleteButton!.trigger('click');
+    expect(wrapper.emitted('delete')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
   it('LanguageSwitcher normalizes and persists supported locales', async () => {
     const config = useConfigStore();
     config.savedLanguage = 'en';
@@ -139,7 +161,9 @@ describe('current shared components', () => {
     expect(wrapper.classes()).toContain('animated-gradient-surface');
     expect(wrapper.classes()).toContain('with-animated-bg');
     expect(wrapper.attributes('style')).toContain('--custom-gradient');
-    expect(wrapper.attributes('style')).toContain('--jp-control-color: #ffffff');
+    expect(wrapper.attributes('style')).toContain(
+      '--jp-control-color: #ffffff',
+    );
 
     player.isPlaying = false;
     player.currentTrack = null;
@@ -161,7 +185,9 @@ describe('current shared components', () => {
 
     expect(wrapper.classes()).toContain('animated-gradient-surface');
     expect(wrapper.classes()).not.toContain('with-animated-bg');
-    expect(wrapper.attributes('style')).toContain('--jp-control-color: #111827');
+    expect(wrapper.attributes('style')).toContain(
+      '--jp-control-color: #111827',
+    );
     expect(wrapper.attributes('style')).not.toContain('--custom-gradient');
 
     player.isPlaying = false;
@@ -226,7 +252,8 @@ describe('current shared components', () => {
     player.currentTrack = null;
   });
 
-  it('BaseListView grid uses column gutters and three large columns', () => {    const DummyCard = {
+  it('BaseListView grid uses column gutters and three large columns', () => {
+    const DummyCard = {
       name: 'DummyCard',
       props: ['item'],
       template: '<div>{{ item.id }}</div>',
@@ -247,6 +274,54 @@ describe('current shared components', () => {
     expect(wrapper.find('.col-12.col-sm-6.col-md-4.col-lg-4').exists()).toBe(
       true,
     );
+  });
+
+  it('BaseListView forwards editor delete to the parent', async () => {
+    const DummyCard = defineComponent({
+      name: 'DummyCard',
+      props: { item: Object },
+      emits: ['edit'],
+      setup(_, { emit }) {
+        return () =>
+          h(
+            'button',
+            { class: 'edit-card', onClick: () => emit('edit') },
+            'Edit',
+          );
+      },
+    });
+    const DummyEditor = defineComponent({
+      name: 'DummyEditor',
+      props: { item: Object },
+      emits: ['delete'],
+      setup(_, { emit }) {
+        return () =>
+          h(
+            'button',
+            { class: 'editor-delete', onClick: () => emit('delete') },
+            'Delete',
+          );
+      },
+    });
+    const wrapper = mount(BaseListView, {
+      props: {
+        items: [{ id: 'a' }],
+        cardComponent: DummyCard,
+        editorComponent: DummyEditor,
+        editorProps: (item: any) => ({ item }),
+        emptyMessage: '',
+        createTitle: '',
+        hideHeader: true,
+      },
+      global: { stubs: { ViewHeader: true } },
+    });
+
+    await wrapper.find('.edit-card').trigger('click');
+    expect(wrapper.find('.editor-delete').exists()).toBe(true);
+
+    await wrapper.find('.editor-delete').trigger('click');
+    expect(wrapper.emitted('delete')?.[0]).toEqual([{ id: 'a' }]);
+    expect(wrapper.find('.editor-delete').exists()).toBe(false);
   });
 
   it('NumberSpinner accepts typed values and clamps them', async () => {
@@ -423,6 +498,23 @@ describe('current editors', () => {
       name: 'Alice',
       notes: 'Notes',
     });
+  });
+
+  it('CharacterEditor exposes delete for an existing character', async () => {
+    const character = {
+      id: 'c1',
+      name: 'Alice',
+      notes: '',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    const wrapper = mount(CharacterEditor, {
+      props: { isOpen: true, character },
+    });
+
+    expect(wrapper.findComponent(BaseModal).props('showDelete')).toBe(true);
+    wrapper.findComponent(BaseModal).vm.$emit('delete');
+    expect(wrapper.emitted('delete')?.[0]).toEqual(['c1']);
   });
 
   it('CharacterEditor refuses to submit without a name', async () => {

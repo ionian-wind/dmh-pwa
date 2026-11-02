@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from 'quasar';
 
+import i18n from '@/i18n';
 import { confirm } from '@/dialogs/confirm';
 import { prompt } from '@/dialogs/prompt';
 
@@ -22,6 +23,7 @@ function mockDialog(mode: 'ok' | 'cancel', value?: any) {
 describe('dialog helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    i18n.global.locale.value = 'en';
   });
 
   it('resolves confirm to true and forwards defaults', async () => {
@@ -38,6 +40,26 @@ describe('dialog helpers', () => {
         cancel: expect.objectContaining({
           label: 'Cancel',
           color: 'secondary',
+          textColor: 'dark',
+        }),
+      }),
+    );
+  });
+
+  it('uses the current locale for confirm defaults', async () => {
+    i18n.global.locale.value = 'ru';
+    mockDialog('ok');
+
+    await expect(confirm('Удалить запись?')).resolves.toBe(true);
+
+    expect(Dialog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Подтвердить',
+        ok: expect.objectContaining({ label: 'ОК', color: 'primary' }),
+        cancel: expect.objectContaining({
+          label: 'Отмена',
+          color: 'secondary',
+          textColor: 'dark',
         }),
       }),
     );
@@ -59,7 +81,11 @@ describe('dialog helpers', () => {
       expect.objectContaining({
         title: 'Custom',
         ok: expect.objectContaining({ label: 'Yes', color: 'warning' }),
-        cancel: expect.objectContaining({ label: 'No', color: 'warning' }),
+        cancel: expect.objectContaining({
+          label: 'No',
+          color: 'warning',
+          textColor: 'dark',
+        }),
       }),
     );
   });
@@ -100,6 +126,7 @@ describe('dialog helpers', () => {
         cancel: expect.objectContaining({
           label: 'Discard',
           color: 'secondary',
+          textColor: 'dark',
         }),
       }),
     );

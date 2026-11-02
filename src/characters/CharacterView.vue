@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 
 const route = useRoute();
+const router = useRouter();
 const characterStore = useCharacterStore();
 const mentionsStore = useMentionsStore();
 const { t } = useI18n();
@@ -69,6 +70,13 @@ onMounted(async () => {
   await characterStore.load();
   await mentionsStore.load();
 });
+
+async function handleEditorDelete() {
+  if (await handleDelete()) {
+    showEditor.value = false;
+    await router.push('/characters');
+  }
+}
 </script>
 
 <template>
@@ -98,6 +106,7 @@ onMounted(async () => {
         :isOpen="showEditor"
         :character="character"
         @submit="handleSave"
+        @delete="handleEditorDelete"
         @cancel="closeEditor"
       />
     </template>

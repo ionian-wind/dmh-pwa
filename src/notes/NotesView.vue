@@ -102,6 +102,7 @@ async function handleCopy(note: Note) {
     :search-placeholder="'common.search'"
     @update:search-query="noteStore.setSearchQuery"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @tag-click="handleTagClick"
     @copy="handleCopy"
   >

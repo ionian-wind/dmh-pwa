@@ -304,6 +304,13 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
+
+async function handleEditorDelete() {
+  if (await handleDelete()) {
+    isEditorOpen.value = false;
+    await router.push('/encounters');
+  }
+}
 </script>
 
 <template>
@@ -435,6 +442,7 @@ onBeforeUnmount(() => {
           :isOpen="isEditorOpen"
           :encounter="encounter"
           @submit="handleSave"
+          @delete="handleEditorDelete"
           @cancel="handleCancel"
         />
       </template>

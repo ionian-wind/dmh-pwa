@@ -9,23 +9,23 @@ API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/jukebox/types.ts` | `JukeboxFile`, `JukeboxTrack`, `JukeboxPlaylist` |
-| `src/jukebox/stores.ts` | Three stores + file helpers + picture URL cache |
-| `src/jukebox/playerStore.ts` | Playback engine, queue, shuffle/repeat, media session |
-| `src/jukebox/JukeboxView.vue` | Library/playlist page |
-| `src/jukebox/components/JukeboxPlayer.vue` | Player controls |
-| `src/jukebox/components/JukeboxDialog.vue` | Draggable mini-player dialog |
-| `src/jukebox/components/PlaylistList.vue` | Right-drawer playlist navigator |
-| `src/jukebox/components/PlaylistEditor.vue` | Playlist create/edit |
-| `src/jukebox/components/TrackCard.vue` | Track row |
-| `src/jukebox/components/TrackInfo.vue` | Title/artist/artwork |
-| `src/jukebox/components/AlbumPicture.vue` | Artwork with URL cache |
+| File                                            | Role                                                     |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| `src/jukebox/types.ts`                          | `JukeboxFile`, `JukeboxTrack`, `JukeboxPlaylist`         |
+| `src/jukebox/stores.ts`                         | Three stores + file helpers + picture URL cache          |
+| `src/jukebox/playerStore.ts`                    | Playback engine, queue, shuffle/repeat, media session    |
+| `src/jukebox/JukeboxView.vue`                   | Library/playlist page                                    |
+| `src/jukebox/components/JukeboxPlayer.vue`      | Player controls                                          |
+| `src/jukebox/components/JukeboxDialog.vue`      | Draggable mini-player dialog                             |
+| `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                          |
+| `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                     |
+| `src/jukebox/components/TrackCard.vue`          | Track row                                                |
+| `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                     |
+| `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                   |
 | `src/jukebox/components/AddToPlaylistModal.vue` | Playlist membership toggles and inline playlist creation |
-| `src/jukebox/useAnimatedGradient.ts` | Palette-based background |
-| `src/jukebox/utils.ts` | `formatTime` |
-| `src/utils/files/*` | File access + metadata extraction |
+| `src/jukebox/useAnimatedGradient.ts`            | Palette-based background                                 |
+| `src/jukebox/utils.ts`                          | `formatTime`                                             |
+| `src/utils/files/*`                             | File access + metadata extraction                        |
 
 ## Data model
 
@@ -83,7 +83,7 @@ track that shares the same `fileId`.
 
 ```
 currentTrack, isPlaying, currentTime, duration, volume, lastVolume
-queue: JukeboxTrack[], queueIndex: number
+queue: JukeboxTrack[], queueIndex: number, queuePlaylistId: string | null
 ```
 
 Shuffle, repeat mode, active playlist, and last track are stored in
@@ -115,17 +115,27 @@ exists.
 
 `getPlaylistTracks(shuffle)`:
 
-- If `configStore.jukeboxActivePlaylistId` points to a playlist, map its
-  `trackIds` through the tracks store.
-- Otherwise use all tracks.
+- Uses the queue's playback playlist (`queuePlaylistId`), not the playlist
+  currently being browsed.
+- If that playlist exists, map its `trackIds` through the tracks store.
+- Otherwise use all tracks. A track that belongs to no playlist therefore
+  falls back to the all-tracks queue.
 - Filter `disabled`.
 - If shuffle, `.toSorted(() => 0.5 - rng())` (a biased random comparator).
 
-`actualiseQueue()` rebuilds the queue when the active playlist changes, when
-shuffle toggles, or explicitly after import/remove/sort. `watchPlaylist()`
-watches the active playlist ID plus the playlist track IDs and track/disabled
-signature, so adding/removing tracks or disabling a track rebuilds the queue
-automatically.
+`queuePlaylistId` is captured when a track starts:
+
+- Prefer the currently browsed playlist when it contains the track.
+- Otherwise use the first playlist that contains the track.
+- Otherwise `null`, meaning all tracks.
+
+`actualiseQueue()` rebuilds the queue when the playback playlist changes,
+shuffle toggles, playlist contents change, or explicitly after
+import/remove/sort. `watchPlaylist()` watches the playback playlist ID plus the
+playlist track IDs and track/disabled signature. Browsing another playlist
+does not rebuild the queue while a track is current, so previous/next stay
+bound to the playing track's playlist. Selecting a playlist only seeds the
+queue when nothing is playing.
 
 ### Next/previous
 
@@ -189,8 +199,9 @@ position until `onplay/onseek` updates it.
 - Play next/last reorder the live queue without interrupting the current track.
 - Remove deletes the track, removes it from every playlist, deletes the file
   record, and updates the local list.
-- Selecting a playlist writes `configStore.jukeboxActivePlaylistId`, which
-  triggers the player's queue rebuild.
+- Selecting a playlist only changes the browsed track list. While a track is
+  current, playback controls stay bound to that track's playlist; the queue
+  switches when another track is started.
 
 The page also registers document-level drag listeners and removes them on
 unmount. The `filesStore` is loaded but unused.

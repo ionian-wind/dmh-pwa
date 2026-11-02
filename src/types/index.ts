@@ -25,6 +25,7 @@ export enum Section {
   ENCOUNTERS = 'encounters',
   MODULES = 'modules',
   AMBIENT_SOUND = 'ambient-sound',
+  MAPS = 'maps',
 }
 
 // Core types

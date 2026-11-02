@@ -18,6 +18,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'submit', character: PlayerCharacter): void;
+  (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
 
@@ -67,6 +68,10 @@ function handleCancel() {
   resetForm();
   emit('cancel');
 }
+
+function handleDelete() {
+  if (props.character) emit('delete', props.character.id);
+}
 </script>
 
 <template>
@@ -75,10 +80,12 @@ function handleCancel() {
     :title="isEditing ? t('characters.edit') : t('characters.create')"
     :showSubmit="true"
     :showCancel="true"
+    :showDelete="!!character"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     modalId="character-editor"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @cancel="handleCancel"
   >
     <div class="form-section">

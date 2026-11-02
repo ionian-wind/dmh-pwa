@@ -58,6 +58,13 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   // Queue State
   const queue = ref<JukeboxTrack[]>([]);
   const queueIndex = ref(0);
+  // Playlist that owns the current playback queue. `null` means all tracks.
+  const queuePlaylistId = ref<string | null>(
+    configStore.jukeboxActivePlaylistId ?? null,
+  );
+  // Keeps queue rebuilds anchored to a track that is being started while the
+  // async audio preparation is still in progress.
+  let queueAnchorTrackId: string | null = null;
 
   // Guards the automatic pre-end crossfade from being triggered twice.
   let transitionInProgress = false;
@@ -181,6 +188,21 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     }
   });
 
+  function resolvePlaylistIdForTrack(
+    track: JukeboxTrack,
+    preferredPlaylistId: string | null = null,
+  ): string | null {
+    if (preferredPlaylistId) {
+      const preferred = playlistsStore.getById(preferredPlaylistId);
+      if (preferred?.trackIds.includes(track.id)) return preferredPlaylistId;
+    }
+
+    const containing = playlistsStore.items.value.find((playlist) =>
+      playlist.trackIds.includes(track.id),
+    );
+    return containing?.id ?? null;
+  }
+
   async function restoreLastTrack() {
     debug('🎵 JukeboxPlayer: Attempting to restore last track');
     debug(
@@ -209,15 +231,26 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       return;
     }
 
-    if (
-      await prepareAudioFile(lastTrack, configStore.jukeboxLastTrackProgress)
-    ) {
-      debug('🎵 JukeboxPlayer: Restored last track with Howler');
+    queuePlaylistId.value = resolvePlaylistIdForTrack(
+      lastTrack,
+      configStore.jukeboxActivePlaylistId,
+    );
+    queueAnchorTrackId = lastTrack.id;
+    actualiseQueue();
+
+    try {
+      if (
+        await prepareAudioFile(lastTrack, configStore.jukeboxLastTrackProgress)
+      ) {
+        debug('🎵 JukeboxPlayer: Restored last track with Howler');
+      }
+    } finally {
+      queueAnchorTrackId = null;
     }
   }
 
   const getPlaylistTracks = (shuffleOutput: boolean): JukeboxTrack[] => {
-    const currentPlaylistId = configStore.jukeboxActivePlaylistId;
+    const currentPlaylistId = queuePlaylistId.value;
     const playlist = currentPlaylistId
       ? playlistsStore.getById(currentPlaylistId)
       : null;
@@ -234,7 +267,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
 
   function watchPlaylist() {
     const queueSignature = () => {
-      const playlistId = configStore.jukeboxActivePlaylistId;
+      const playlistId = queuePlaylistId.value;
       const playlist = playlistId ? playlistsStore.getById(playlistId) : null;
       return JSON.stringify({
         playlistId,
@@ -249,14 +282,30 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     watch(
       queueSignature,
       () => {
-        const newPlaylistId = configStore.jukeboxActivePlaylistId;
-        if (newPlaylistId && !playlistsStore.getById(newPlaylistId)) {
-          configStore.jukeboxActivePlaylistId = null;
-          return;
+        if (
+          queuePlaylistId.value &&
+          !playlistsStore.getById(queuePlaylistId.value)
+        ) {
+          queuePlaylistId.value = null;
         }
         actualiseQueue();
       },
       { immediate: true },
+    );
+
+    // Changing the browsed playlist must not rebuild the queue while a track is
+    // playing. The controls stay bound to the current track's playlist.
+    watch(
+      () => configStore.jukeboxActivePlaylistId,
+      (newPlaylistId) => {
+        if (currentTrack.value) return;
+        if (newPlaylistId && !playlistsStore.getById(newPlaylistId)) {
+          configStore.jukeboxActivePlaylistId = null;
+          return;
+        }
+        queuePlaylistId.value = newPlaylistId ?? null;
+        actualiseQueue();
+      },
     );
   }
   // -- END -- MEDIA SESSION
@@ -477,9 +526,21 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   }
 
   async function playTrackFromPlaylist(track: JukeboxTrack) {
-    queueIndex.value = queue.value.findIndex(({ id }) => id === track.id);
+    queuePlaylistId.value = resolvePlaylistIdForTrack(
+      track,
+      configStore.jukeboxActivePlaylistId,
+    );
+    queueAnchorTrackId = track.id;
+    actualiseQueue(track.id);
 
-    await playTrack(track);
+    try {
+      await playTrack(track);
+    } finally {
+      queueAnchorTrackId = null;
+    }
+
+    const index = queue.value.findIndex(({ id }) => id === track.id);
+    queueIndex.value = index >= 0 ? index : 0;
   }
 
   async function togglePlay() {
@@ -619,7 +680,20 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     );
   }
 
-  function actualiseQueue() {
+  function actualiseQueue(anchorTrackId?: string) {
+    const resolvedAnchorId =
+      anchorTrackId ?? queueAnchorTrackId ?? currentTrack.value?.id ?? null;
+
+    if (
+      !resolvedAnchorId &&
+      queuePlaylistId.value !== (configStore.jukeboxActivePlaylistId ?? null)
+    ) {
+      queuePlaylistId.value = configStore.jukeboxActivePlaylistId ?? null;
+    }
+
+    const anchorTrack = resolvedAnchorId
+      ? tracksStore.getById(resolvedAnchorId)
+      : null;
     const shuffle = configStore.jukeboxShuffle;
     const tracks = getPlaylistTracks(shuffle);
 
@@ -628,31 +702,32 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
 
     if (tracks.length > 0) {
       if (shuffle) {
-        if (currentTrack.value) {
-          addToQueue([currentTrack.value]);
+        if (anchorTrack) {
+          addToQueue([anchorTrack]);
         }
 
         addToQueue(
-          tracks.filter(
-            ({ id }) =>
-              id !== (currentTrack.value ? currentTrack.value.id : ''),
-          ),
+          tracks.filter(({ id }) => id !== (anchorTrack ? anchorTrack.id : '')),
         );
       } else {
         addToQueue(tracks);
       }
 
-      queueIndex.value = currentTrack.value
-        ? queue.value.findIndex(({ id }) => id === currentTrack.value!.id)
+      const anchorIndex = anchorTrack
+        ? queue.value.findIndex(({ id }) => id === anchorTrack.id)
         : 0;
+      queueIndex.value = anchorIndex >= 0 ? anchorIndex : 0;
     } else {
-      currentTrack.value = null;
+      // An empty playlist must not clear the track that is currently playing.
+      // The queue becomes empty, so next/previous are disabled, but the player
+      // keeps showing and playing the existing track.
+      queueIndex.value = -1;
     }
   }
 
   function resortQueue(selectedPlaylistId: string) {
     if (
-      configStore.jukeboxActivePlaylistId === selectedPlaylistId &&
+      queuePlaylistId.value === selectedPlaylistId &&
       !configStore.jukeboxShuffle &&
       currentTrack.value
     ) {

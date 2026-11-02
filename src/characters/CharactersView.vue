@@ -83,6 +83,7 @@ async function handleCopy(character: PlayerCharacter) {
     :search-query="characterStore.searchQuery"
     @update:search-query="characterStore.setSearchQuery"
     @submit="handleSubmit"
+    @delete="handleDelete"
     @copy="handleCopy"
   />
 </template>
