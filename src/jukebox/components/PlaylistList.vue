@@ -140,11 +140,6 @@ onMounted(async () => {
       <QList class="q-pa-none q-mb-none">
         <QItem>
           <QItemSection>{{ t('playlist.list') }}</QItemSection>
-          <QItemSection side>
-            <QBtn flat @click="openPlaylistModal(null)" variant="light"
-              ><IconPlus
-            /></QBtn>
-          </QItemSection>
         </QItem>
         <QSeparator />
         <QItem
@@ -203,6 +198,16 @@ onMounted(async () => {
         </template>
       </VueDraggable>
     </QScrollArea>
+
+    <QSeparator />
+    <QList>
+      <QItem clickable v-ripple @click="openPlaylistModal(null)">
+        <QItemSection>{{ t('playlist.createNew') }}</QItemSection>
+        <QItemSection side>
+          <IconPlus :size="18" />
+        </QItemSection>
+      </QItem>
+    </QList>
 
     <PlaylistEditor
       v-model="isPlaylistModalOpen"
