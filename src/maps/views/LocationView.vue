@@ -2,13 +2,16 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import BaseCard from '@/components/common/BaseCard.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
 import LocationEntityLinksTab from '../components/LocationEntityLinksTab.vue';
 import MapLocationEditor from '../components/MapLocationEditor.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';
 import { useMapStore } from '../maps';
 import { useMapEntityCatalog } from '../composables/useMapEntityCatalog';
+import { markerIconClass } from '../icons';
 import type { MapEntityKind, MapEntityRef } from '../types';
 import { dedupeEntityRefs } from '../utils/entityRefs';
 
@@ -29,22 +32,48 @@ const linkableGroups = computed(() =>
   groups.value.filter((group) => group.kind !== 'map'),
 );
 
-const entityTabs = computed(() =>
-  linkableGroups.value.map((group) => ({
+const linkedMap = computed(
+  () =>
+    mapStore.items.find((map) => map.locationId === location.value?.id) ?? null,
+);
+
+const entityTabs = computed(() => {
+  const tabs = linkableGroups.value.map((group) => ({
     id: group.kind,
     label: t(group.labelKey),
     badge: linksFor(group.kind).length || undefined,
-  })),
-);
+  }));
+  if (linkedMap.value) {
+    tabs.unshift({ id: 'map', label: t('maps.mapTab'), badge: undefined });
+  }
+  return tabs;
+});
 
-const linkedMaps = computed(() =>
-  mapStore.items.filter((map) =>
-    map.locationIds.includes(location.value?.id ?? ''),
-  ),
-);
+const markerGroups = computed(() => {
+  const locationId = location.value?.id;
+  if (!locationId) return [];
+  return mapStore.items
+    .map((map) => ({
+      map,
+      markers: map.markers.filter((marker) => marker.locationId === locationId),
+    }))
+    .filter((group) => group.markers.length > 0);
+});
+
+const areaGroups = computed(() => {
+  const locationId = location.value?.id;
+  if (!locationId) return [];
+  return mapStore.items
+    .map((map) => ({
+      map,
+      areas: map.areas.filter((area) => area.locationId === locationId),
+    }))
+    .filter((group) => group.areas.length > 0);
+});
 
 const showEditor = ref(false);
 const activeTab = ref('note');
+const sidePanelTab = ref('markers');
 
 onMounted(async () => {
   await Promise.all([locationStore.load(), mapStore.load()]);
@@ -107,6 +136,10 @@ function handleSubmit(updated: typeof location.value) {
   });
   showEditor.value = false;
 }
+
+function openMap(mapId: string) {
+  void router.push(`/maps/${mapId}`);
+}
 </script>
 
 <template>
@@ -122,6 +155,19 @@ function handleSubmit(updated: typeof location.value) {
     :tabs="entityTabs"
     v-model="activeTab"
   >
+    <template #map>
+      <BaseCard
+        v-if="linkedMap"
+        showView
+        :title="linkedMap.title"
+        @view="openMap(linkedMap.id)"
+      >
+        <p v-if="linkedMap.description" class="location-map-description">
+          {{ linkedMap.description }}
+        </p>
+      </BaseCard>
+    </template>
+
     <template v-for="group in linkableGroups" :key="group.kind" #[group.kind]>
       <LocationEntityLinksTab
         :kind="group.kind"
@@ -133,21 +179,79 @@ function handleSubmit(updated: typeof location.value) {
     </template>
 
     <template #sidepanel>
-      <div class="location-maps-panel">
-        <h4>{{ t('maps.title') }}</h4>
-        <p v-if="linkedMaps.length === 0" class="location-maps-empty">
-          {{ t('maps.noLinkedMaps') }}
-        </p>
-        <button
-          v-for="map in linkedMaps"
-          :key="map.id"
-          type="button"
-          class="location-map-item"
-          @click="router.push(`/maps/${map.id}`)"
-        >
-          {{ map.title }}
-        </button>
-      </div>
+      <TabGroup
+        v-model="sidePanelTab"
+        :tabs="[
+          { id: 'markers', label: 'maps.markers' },
+          { id: 'areas', label: 'maps.areas' },
+        ]"
+        size="sm"
+        align="justify"
+      >
+        <div v-show="sidePanelTab === 'markers'" class="location-linked-panel">
+          <p v-if="markerGroups.length === 0" class="location-linked-empty">
+            {{ t('maps.noMarkers') }}
+          </p>
+          <div
+            v-for="(group, index) in markerGroups"
+            :key="group.map.id"
+            class="location-linked-group"
+          >
+            <h5 class="location-linked-group-title">{{ group.map.title }}</h5>
+            <button
+              v-for="marker in group.markers"
+              :key="marker.id"
+              type="button"
+              class="location-linked-item"
+              :style="{
+                '--map-item-color': marker.color || 'var(--color-primary)',
+              }"
+              @click="openMap(group.map.id)"
+            >
+              <i
+                v-if="marker.icon"
+                :class="['ra', markerIconClass(marker.icon)]"
+                :style="{ color: marker.color }"
+                aria-hidden="true"
+              ></i>
+              {{ marker.title }}
+            </button>
+            <div
+              v-if="index < markerGroups.length - 1"
+              class="location-linked-divider"
+            ></div>
+          </div>
+        </div>
+
+        <div v-show="sidePanelTab === 'areas'" class="location-linked-panel">
+          <p v-if="areaGroups.length === 0" class="location-linked-empty">
+            {{ t('maps.noAreas') }}
+          </p>
+          <div
+            v-for="(group, index) in areaGroups"
+            :key="group.map.id"
+            class="location-linked-group"
+          >
+            <h5 class="location-linked-group-title">{{ group.map.title }}</h5>
+            <button
+              v-for="area in group.areas"
+              :key="area.id"
+              type="button"
+              class="location-linked-item"
+              :style="{
+                '--map-item-color': area.color || 'var(--color-primary)',
+              }"
+              @click="openMap(group.map.id)"
+            >
+              {{ area.title || t('maps.untitledArea') }}
+            </button>
+            <div
+              v-if="index < areaGroups.length - 1"
+              class="location-linked-divider"
+            ></div>
+          </div>
+        </div>
+      </TabGroup>
     </template>
 
     <template #editor>
@@ -162,25 +266,43 @@ function handleSubmit(updated: typeof location.value) {
 </template>
 
 <style scoped>
-.location-maps-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
-}
-
-.location-maps-panel h4 {
+.location-map-description {
   margin: 0;
-}
-
-.location-maps-empty {
   color: var(--color-text-light);
   font-size: 0.9rem;
 }
 
-.location-map-item {
+.location-linked-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.location-linked-empty {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.location-linked-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.location-linked-group-title {
+  margin: 0;
+  color: var(--color-text-light);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.location-linked-item {
+  position: relative;
   width: 100%;
-  padding: 0.6rem;
+  padding: 0.55rem 0.65rem 0.55rem 0.9rem;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-background);
@@ -189,7 +311,21 @@ function handleSubmit(updated: typeof location.value) {
   text-align: left;
 }
 
-.location-map-item:hover {
+.location-linked-item::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--map-item-color, transparent);
+}
+
+.location-linked-item:hover {
   background: var(--color-background-soft);
+}
+
+.location-linked-divider {
+  height: 1px;
+  margin: 0.25rem 0;
+  background: var(--color-border);
 }
 </style>

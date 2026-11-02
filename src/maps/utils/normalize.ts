@@ -132,7 +132,7 @@ export function normalizeMapEntity(
     ? map.markers.map(normalizeMarker)
     : legacyPointsToMarkers(map.points);
 
-  const locationIds = Array.isArray(map.locationIds)
+  const legacyLocationIds = Array.isArray(map.locationIds)
     ? map.locationIds.filter(
         (id: unknown): id is string => typeof id === 'string',
       )
@@ -147,7 +147,10 @@ export function normalizeMapEntity(
     title: map.title || '',
     description: map.description || '',
     fileId: map.fileId || '',
-    locationIds,
+    locationId:
+      typeof map.locationId === 'string' && map.locationId
+        ? map.locationId
+        : (legacyLocationIds[0] ?? null),
     markers,
     areas: Array.isArray(map.areas) ? map.areas.map(normalizeArea) : [],
     createdAt: Number(map.createdAt) || Date.now(),

@@ -46,14 +46,16 @@ export async function detachLocationFromMaps(locationId: string) {
   const mapStore = useMapStore();
   if (!mapStore.isLoaded) await mapStore.load();
 
-  const affectedMaps = mapStore.items.filter((map) =>
-    map.locationIds.includes(locationId),
+  const affectedMaps = mapStore.items.filter(
+    (map) =>
+      map.locationId === locationId ||
+      (map as any).locationIds?.includes?.(locationId),
   );
 
   await Promise.all(
     affectedMaps.map((map) =>
       mapStore.update(map.id, {
-        locationIds: map.locationIds.filter((id) => id !== locationId),
+        locationId: null,
         markers: map.markers.map((marker) => ({
           ...marker,
           locationId:

@@ -11,7 +11,7 @@ const validMap = {
   title: 'World',
   description: 'Campaign map',
   fileId: 'file1',
-  locationIds: ['l1'],
+  locationId: 'l1',
   locations: [
     {
       id: 'l1',

@@ -13,20 +13,21 @@ interface MapEntity extends WithMetadata {
   title: string;
   description?: string;
   fileId: string;
-  locationIds: string[];
+  locationId?: string | null;
   markers: MapMarker[];
   areas: MapArea[];
 }
 ```
 
 - `fileId` references a `MapFile` in the `map_files` store.
-- `locationIds` reference global `MapLocation` records in `map_locations`.
+- `locationId` optionally links the map to one global `MapLocation` record.
 - `markers` are placed at image-pixel coordinates `(x, y)`.
 - `areas` are drawn shapes stored with the map.
 
 Legacy records with `points` are normalized on read: points with `x`/`y` become
 markers, and missing arrays are filled with empty arrays. Legacy embedded
-`locations` are migrated into `map_locations` and replaced with `locationIds`.
+`locations` are migrated into `map_locations`; a location can be linked to at
+most one map.
 
 ### Map file
 
@@ -64,8 +65,8 @@ interface MapLocation extends WithMetadata {
 ```
 
 Locations are global entities stored in `map_locations`, independent of any
-single map. Maps link to them through `locationIds`, and markers reference one
-through `locationId`.
+single map. Maps link to them through `locationId`, and markers and areas
+reference one through `locationId`.
 
 Each location has its own detail page with tabs for linked notes, modules,
 parties, monsters, encounters, and characters. The right drawer lists the maps
@@ -165,8 +166,9 @@ The Maps section has two top-level tabs:
 - **Locations** — card list of global location entities, with add, view, edit,
   and delete actions.
 
-Location cards show the number of maps that link to them. Deleting a location
-also removes it from every map and clears marker references.
+Location cards show their linked map, if any, and provide a button to open it.
+Deleting a location also removes it from its map and clears marker/area
+references.
 
 ## Map detail layout
 
@@ -187,11 +189,13 @@ an Edit action for opening the full editor.
 
 A location detail page follows the module detail pattern:
 
+- If the location is linked to a map, a **Map** tab is shown with that map card.
 - Top tabs for each linkable entity kind: notes, modules, parties, monsters,
   encounters, and characters.
 - Each tab lists linked entities and allows adding/removing links.
-- The right drawer contains the **Maps** panel, listing maps linked to this
-  location.
+- The right drawer has the same **Markers** and **Areas** tabs as the map view.
+  It lists markers and areas linked to this location from all maps, grouped by
+  map title with separators between groups.
 - The header edit action opens the global location editor; delete removes the
   location everywhere.
 
@@ -202,7 +206,7 @@ A location detail page follows the module detail pattern:
 1. Open **Maps** in the left navigation.
 2. Create a map or edit an existing one.
 3. Choose a title and a base image.
-4. Optionally link global locations and bind their entities.
+4. Optionally link one global location to the map.
 5. Save. The image file is written to `map_files` only when the map is saved.
    Replacing an image deletes the previous `map_files` record.
 
@@ -232,9 +236,9 @@ A location detail page follows the module detail pattern:
 ### Browse locations
 
 Locations are global entities. Open the **Locations** tab on the Maps page to
-see location cards with linked-map counts and add/edit/delete actions. Select a
-location card to open its detail page, where you can manage links to other
-entities and see which maps use it.
+see location cards with add/edit/delete actions and a shortcut to the linked
+map. Select a location card to open its detail page, where you can manage links
+to other entities and see markers/areas from all maps.
 
 ## Stores and files
 

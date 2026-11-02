@@ -7,7 +7,7 @@ async function waitForAppDatabase(page: Page) {
     if (!('databases' in indexedDB)) return false;
     const databases = await indexedDB.databases();
     const database = databases.find((entry) => entry.name === 'dmh-db');
-    return Boolean(database && (database.version ?? 0) >= 5);
+    return Boolean(database && (database.version ?? 0) >= 6);
   });
 }
 
@@ -82,7 +82,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         title: mapTitle,
         description: 'Playwright map',
         fileId,
-        locationIds: ['location-1'],
+        locationId: 'location-1',
         markers: [
           {
             id: 'marker-1',

@@ -60,7 +60,7 @@ import { createBox } from 'ol/interaction/Draw';
 import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
-import type { MapArea, MapAreaShape, MapLocation } from '../types';
+import type { MapArea, MapAreaShape } from '../types';
 
 const route = useRoute();
 const router = useRouter();
@@ -93,11 +93,7 @@ const infoSelection = ref<MapInfoSelection>(null);
 const boxGeometry = createBox();
 const drawShapes: MapAreaShape[] = ['polygon', 'circle', 'square', 'freehand'];
 
-const mapLocations = computed(() =>
-  (map.value?.locationIds ?? [])
-    .map((id) => locationStore.getById(id))
-    .filter((location): location is MapLocation => Boolean(location)),
-);
+const allLocations = computed(() => locationStore.items);
 
 let actionsControl: MapActionsControl | null = null;
 let unbindMapActionListener: (() => void) | null = null;
@@ -167,6 +163,22 @@ const infoLocationName = computed(() => {
   if (!infoMarker.value?.locationId) return '';
   return locationStore.getById(infoMarker.value.locationId)?.name ?? '';
 });
+
+const infoLocation = computed(() => {
+  const locationId =
+    infoMarker.value?.locationId || infoArea.value?.locationId || null;
+  return locationId ? locationStore.getById(locationId) : null;
+});
+
+function goToInfoLocation() {
+  if (!infoLocation.value) return;
+  const linkedMap = mapStore.items.find(
+    (entry) => entry.locationId === infoLocation.value?.id,
+  );
+  void router.push(
+    linkedMap ? `/maps/${linkedMap.id}` : `/locations/${infoLocation.value.id}`,
+  );
+}
 
 const drawType = computed(() =>
   drawMode.value === 'circle' || drawMode.value === 'square'
@@ -773,6 +785,14 @@ watch(hoveredAreaId, refreshAreaHighlight);
             />
             <div class="map-info-actions">
               <button
+                v-if="infoLocation"
+                type="button"
+                class="map-info-edit"
+                @click.stop="goToInfoLocation"
+              >
+                {{ t('maps.goToLocation') }}
+              </button>
+              <button
                 type="button"
                 class="map-info-edit"
                 @click.stop="editInfoItem"
@@ -823,7 +843,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
       />
       <MapMarkerEditor
         :marker="editingMarker"
-        :locations="mapLocations"
+        :locations="allLocations"
         :is-open="isMarkerEditorOpen"
         @save="saveMarker"
         @delete="deleteMarker"
@@ -831,7 +851,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
       />
       <MapAreaEditor
         :area="editingArea"
-        :locations="mapLocations"
+        :locations="allLocations"
         :is-open="isAreaEditorOpen"
         @save="saveArea"
         @delete="deleteArea"
@@ -966,6 +986,7 @@ watch(hoveredAreaId, refreshAreaHighlight);
 .map-info-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.4rem;
   margin-top: 0.5rem;
 }
 

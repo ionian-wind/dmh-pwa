@@ -59,7 +59,7 @@ describe('map location store', () => {
       title: 'World',
       description: '',
       fileId: 'file1',
-      locationIds: [location.id],
+      locationId: location.id,
       markers: [
         {
           id: 'm1',
@@ -93,7 +93,7 @@ describe('map location store', () => {
     await deleteMapLocation(location.id);
 
     expect(locationStore.getById(location.id)).toBeNull();
-    expect(mapStore.getById(map.id)?.locationIds).toEqual([]);
+    expect(mapStore.getById(map.id)?.locationId).toBeNull();
     expect(mapStore.getById(map.id)?.markers[0].locationId).toBeNull();
     expect(mapStore.getById(map.id)?.areas[0].locationId).toBeNull();
   });

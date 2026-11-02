@@ -222,7 +222,7 @@ const map: MapEntity = {
   title: 'World',
   description: 'Campaign',
   fileId: 'file1',
-  locationIds: ['l1'],
+  locationId: 'l1',
   markers: [
     {
       id: 'm1',
@@ -362,6 +362,9 @@ describe('MapView', () => {
     await wrapper.find('.map-marker-button').trigger('click');
     expect(wrapper.find('.map-info-popup').exists()).toBe(true);
     expect(wrapper.find('.map-info-title').text()).toContain('Castle');
+    expect(wrapper.find('.map-info-actions').text()).toContain(
+      'Go to location',
+    );
     expect(wrapper.findComponent(MarkerEditorStub).props('isOpen')).toBe(false);
 
     vm.closeMapInfo();

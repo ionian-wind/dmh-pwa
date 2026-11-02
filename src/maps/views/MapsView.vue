@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMapStore, deleteMapFile } from '../maps';
+import { useMapLocationStore } from '../locations';
 import BaseListView from '@/components/common/BaseListView.vue';
 import MapCard from '../components/MapCard.vue';
 import MapEditor from '../components/MapEditor.vue';
@@ -12,21 +13,27 @@ import { confirm } from '@/dialogs';
 import { normalizeMapEntity } from '../utils/normalize';
 
 const mapStore = useMapStore();
+const locationStore = useMapLocationStore();
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const activeTab = ref(route.query.tab === 'locations' ? 'locations' : 'maps');
 
 onMounted(async () => {
-  await mapStore.load();
+  await Promise.all([mapStore.load(), locationStore.load()]);
 });
 
 function cardProps(map: MapEntity) {
   return {
     map,
+    linkedLocation: map.locationId
+      ? (locationStore.getById(map.locationId) ?? null)
+      : null,
     onView: () => router.push(`/maps/${map.id}`),
     onEdit: () => handleEdit(map),
     onDelete: () => handleDelete(map),
+    onOpenLocation: (locationId: string) =>
+      router.push(`/locations/${locationId}`),
   };
 }
 
@@ -56,10 +63,25 @@ async function handleDelete(map: MapEntity) {
   return true;
 }
 
+async function unlinkOtherMaps(
+  locationId: string | null | undefined,
+  keepId?: string,
+) {
+  if (!locationId) return;
+  const others = mapStore.items.filter(
+    (map) => map.id !== keepId && map.locationId === locationId,
+  );
+  await Promise.all(
+    others.map((map) => mapStore.update(map.id, { locationId: null })),
+  );
+}
+
 async function handleSubmit(form: MapEntityForm) {
   if (form.id) {
+    await unlinkOtherMaps(form.locationId, form.id);
     await mapStore.update(form.id, form);
   } else {
+    await unlinkOtherMaps(form.locationId);
     const created = await mapStore.create(normalizeMapEntity(form));
     await router.push(`/maps/${created.id}`);
   }

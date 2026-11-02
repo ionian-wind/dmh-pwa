@@ -63,7 +63,7 @@ const existingMap: MapEntity = {
   title: 'World',
   description: 'Campaign',
   fileId: 'file1',
-  locationIds: ['l1'],
+  locationId: 'l1',
   markers: [
     {
       id: 'm1',
@@ -120,16 +120,9 @@ describe('MapEditor', () => {
     await nextTick();
     expect(createMapFileFromFile).toHaveBeenCalledWith(image);
 
-    const addLocation = wrapper
-      .findAll('button')
-      .find((button) => button.text().toLowerCase().includes('add location'));
     const locationSelect = wrapper.findComponent(QSelect);
     locationSelect.vm.$emit('update:modelValue', 'l1');
     await nextTick();
-    await addLocation!.trigger('click');
-    await nextTick();
-
-    expect(wrapper.text()).toContain('Town');
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     await nextTick();
@@ -140,7 +133,7 @@ describe('MapEditor', () => {
       description: 'Description',
       fileId: 'file1',
       markers: [],
-      locationIds: ['l1'],
+      locationId: 'l1',
     });
   });
 
@@ -165,11 +158,11 @@ describe('MapEditor', () => {
     expect(wrapper.emitted('submit')?.[0][0]).toMatchObject({
       title: 'Renamed',
       markers: [expect.objectContaining({ id: 'm1' })],
-      locationIds: ['l1'],
+      locationId: 'l1',
     });
   });
 
-  it('validates title and image and supports cancelling/removing locations', async () => {
+  it('validates title and image and supports cancelling', async () => {
     const wrapper = mount(MapEditor, {
       props: { map: null, isOpen: true },
       global: { stubs: { EntityLinksEditor: EntityLinksStub } },
@@ -178,21 +171,8 @@ describe('MapEditor', () => {
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(wrapper.emitted('submit')).toBeUndefined();
 
-    const addLocation = wrapper
-      .findAll('button')
-      .find((button) => button.text().toLowerCase().includes('add location'));
     wrapper.findComponent(QSelect).vm.$emit('update:modelValue', 'l1');
     await nextTick();
-    await addLocation!.trigger('click');
-    await nextTick();
-    expect(wrapper.find('.map-linked-location').exists()).toBe(true);
-
-    const remove = wrapper
-      .findAll('button')
-      .find((button) => button.text().toLowerCase().includes('remove'));
-    await remove!.trigger('click');
-    await nextTick();
-    expect(wrapper.find('.map-linked-location').exists()).toBe(false);
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('cancel');
     expect(wrapper.emitted('cancel')).toHaveLength(1);

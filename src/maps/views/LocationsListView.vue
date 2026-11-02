@@ -22,12 +22,12 @@ onMounted(async () => {
 function cardProps(location: MapLocation) {
   return {
     location,
-    linkedMapCount: mapStore.items.filter((map) =>
-      map.locationIds.includes(location.id),
-    ).length,
+    linkedMap:
+      mapStore.items.find((map) => map.locationId === location.id) ?? null,
     onView: () => router.push(`/locations/${location.id}`),
     onEdit: () => undefined,
     onDelete: () => handleDelete(location),
+    onOpenMap: (mapId: string) => router.push(`/maps/${mapId}`),
   };
 }
 

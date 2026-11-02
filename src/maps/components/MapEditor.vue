@@ -24,11 +24,10 @@ const editedMap = ref<MapEntityForm>({
   title: '',
   description: '',
   fileId: '',
-  locationIds: [],
+  locationId: null,
   markers: [],
   areas: [],
 });
-const newLocationId = ref<string | null>(null);
 const selectedFileName = ref('');
 const previewUrl = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -64,7 +63,6 @@ watch(
     if (!isOpen) return;
     revokePreview();
     pendingMapFile = null;
-    newLocationId.value = null;
     void locationStore.load();
     const newMap = props.map;
     if (newMap) {
@@ -74,7 +72,7 @@ watch(
         title: normalized.title,
         description: normalized.description,
         fileId: normalized.fileId,
-        locationIds: [...normalized.locationIds],
+        locationId: normalized.locationId ?? null,
         markers: structuredClone(normalized.markers),
         areas: structuredClone(normalized.areas),
       };
@@ -86,7 +84,7 @@ watch(
         title: '',
         description: '',
         fileId: '',
-        locationIds: [],
+        locationId: null,
         markers: [],
         areas: [],
       };
@@ -129,31 +127,12 @@ async function onImageSelected(event: Event) {
   }
 }
 
-const linkedLocations = computed(() =>
-  editedMap.value.locationIds
-    .map((id) => locationStore.getById(id))
-    .filter(Boolean),
+const locationOptions = computed(() =>
+  locationStore.items.map((location) => ({
+    label: location.name,
+    value: location.id,
+  })),
 );
-
-const availableLocations = computed(() =>
-  locationStore.items
-    .filter((location) => !editedMap.value.locationIds.includes(location.id))
-    .map((location) => ({ label: location.name, value: location.id })),
-);
-
-function addLinkedLocation() {
-  if (!newLocationId.value) return;
-  if (!editedMap.value.locationIds.includes(newLocationId.value)) {
-    editedMap.value.locationIds.push(newLocationId.value);
-  }
-  newLocationId.value = null;
-}
-
-function removeLinkedLocation(locationId: string) {
-  editedMap.value.locationIds = editedMap.value.locationIds.filter(
-    (id) => id !== locationId,
-  );
-}
 
 async function handleSubmit() {
   if (!editedMap.value.title.trim()) {
@@ -176,7 +155,7 @@ async function handleSubmit() {
     ...(editingId ? { id: editingId } : {}),
     ...editedMap.value,
     title: editedMap.value.title.trim(),
-    locationIds: [...new Set(editedMap.value.locationIds)],
+    locationId: editedMap.value.locationId || null,
   });
 }
 </script>
@@ -250,49 +229,18 @@ async function handleSubmit() {
 
     <div class="form-section">
       <div class="map-section-header">
-        <h3>{{ t('maps.locations') }}</h3>
+        <h3>{{ t('maps.location') }}</h3>
       </div>
 
-      <p v-if="linkedLocations.length === 0" class="map-section-empty">
-        {{ t('maps.noLocations') }}
-      </p>
-
-      <div class="map-linked-locations">
-        <div
-          v-for="location in linkedLocations"
-          :key="location!.id"
-          class="map-location-editor map-linked-location"
-        >
-          <span
-            class="map-linked-location-color"
-            :style="{ background: location!.color || 'var(--color-primary)' }"
-          ></span>
-          <span class="map-linked-location-name">{{ location!.name }}</span>
-          <QBtn
-            flat
-            color="negative"
-            :label="t('common.remove')"
-            @click="removeLinkedLocation(location!.id)"
-          />
-        </div>
-      </div>
-
-      <div class="map-location-link-row">
-        <QSelect
-          v-model="newLocationId"
-          :options="availableLocations"
-          :label="t('maps.location')"
-          outlined
-          emit-value
-          map-options
-        />
-        <QBtn
-          color="primary"
-          :label="t('maps.addLocation')"
-          :disable="!newLocationId"
-          @click="addLinkedLocation"
-        />
-      </div>
+      <QSelect
+        v-model="editedMap.locationId"
+        :options="locationOptions"
+        :label="t('maps.location')"
+        outlined
+        emit-value
+        map-options
+        clearable
+      />
     </div>
   </BaseModal>
 </template>
@@ -321,61 +269,5 @@ async function handleSubmit() {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-}
-
-.map-section-empty {
-  color: var(--color-text-light);
-}
-
-.map-location-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.8rem;
-  margin-top: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-}
-
-.map-linked-locations {
-  display: flex;
-  flex-direction: column;
-}
-
-.map-linked-location {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.map-linked-location-color {
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.map-linked-location-name {
-  flex: 1;
-}
-
-.map-location-link-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.map-location-link-row > :first-child {
-  flex: 1;
-}
-
-.marker-color-input {
-  width: 48px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: transparent;
 }
 </style>

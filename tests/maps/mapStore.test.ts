@@ -43,7 +43,7 @@ describe('map store', () => {
       title: 'World',
       description: 'Campaign',
       fileId: 'file1',
-      locationIds: [],
+      locationId: null,
       markers: [],
       areas: [],
     } as any);

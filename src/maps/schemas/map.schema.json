@@ -8,7 +8,7 @@
     "createdAt",
     "updatedAt",
     "fileId",
-    "locationIds",
+    "locationId",
     "markers",
     "areas"
   ],
@@ -33,12 +33,8 @@
       "type": "string",
       "minLength": 1
     },
-    "locationIds": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "string"
-      }
+    "locationId": {
+      "type": ["string", "null"]
     },
     "locations": {
       "type": "array",

@@ -57,12 +57,22 @@ test('shows map and location tabs and opens location details', async ({
   await page.goto('/dmh-pwa/maps');
 
   await expect(page.getByRole('tab', { name: 'Maps' })).toBeVisible();
+  await expect(
+    page.locator('.base-list-container [title="Open linked location"]'),
+  ).toBeVisible();
   await page.getByRole('tab', { name: 'Locations' }).click();
   await expect(page.locator('.location-card')).toContainText('Town');
+  await expect(
+    page.locator('.location-card [title="Open linked map"]'),
+  ).toBeVisible();
 
   await page.locator('.location-card h5').click();
   await expect(page).toHaveURL(/\/locations\/location-1/);
-  await expect(page.locator('.location-maps-panel')).toContainText('E2E World');
+  await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
+  await expect(page.locator('.location-linked-group-title')).toContainText(
+    'E2E World',
+  );
+  await expect(page.locator('.location-linked-item')).toContainText('Castle');
   await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
 });
 

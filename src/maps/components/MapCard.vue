@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { IconCurrentLocation } from '@tabler/icons-vue';
+import { useI18n } from 'vue-i18n';
 import BaseCard from '@/components/common/BaseCard.vue';
-import type { MapEntity } from '../types';
+import type { MapEntity, MapLocation } from '../types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   map: MapEntity;
+  linkedLocation?: MapLocation | null;
 }>();
 
 const emit = defineEmits<{
@@ -11,6 +16,7 @@ const emit = defineEmits<{
   (e: 'edit', map: MapEntity): void;
   (e: 'delete', map: MapEntity): void;
   (e: 'copy', map: MapEntity): void;
+  (e: 'open-location', locationId: string): void;
 }>();
 
 function handleView() {
@@ -39,6 +45,16 @@ function handleCopy() {
   >
     <template #header>
       <h3>{{ map.title }}</h3>
+    </template>
+    <template v-if="linkedLocation" #actions>
+      <QBtn
+        flat
+        color="warning"
+        :title="t('maps.openLinkedLocation')"
+        @click="emit('open-location', linkedLocation.id)"
+      >
+        <IconCurrentLocation />
+      </QBtn>
     </template>
   </BaseCard>
 </template>
