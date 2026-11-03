@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
 import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
@@ -130,6 +130,7 @@ describe('SoundControlDialog', () => {
 
   it('switches between bottom panel and floating dialog by drag position', async () => {
     const { wrapper } = await mountDialog();
+    const viewportHeight = window.innerHeight;
     const card = wrapper.find('.sound-control-card');
     const cardElement = card.element as HTMLElement;
     const handleElement = wrapper.find('.drag-handle').element as HTMLElement;
@@ -140,11 +141,11 @@ describe('SoundControlDialog', () => {
 
     vi.spyOn(cardElement, 'getBoundingClientRect').mockReturnValue({
       x: 0,
-      y: 300,
+      y: viewportHeight - 230,
       left: 0,
-      top: 300,
+      top: viewportHeight - 230,
       right: 600,
-      bottom: 500,
+      bottom: viewportHeight - 30,
       width: 600,
       height: 200,
       toJSON: () => ({}),
@@ -177,12 +178,12 @@ describe('SoundControlDialog', () => {
 
     startDrag(1);
     dispatch('pointermove', 0, -30);
-    await nextTick();
+    await flushPromises();
 
     expect(card.attributes('data-mode')).toBe('dialog');
 
     dispatch('pointerup', 0, -30, 1);
-    await nextTick();
+    await flushPromises();
     expect(card.classes()).toContain('is-dialog');
 
     const frame = wrapper.find('.sound-control-frame');
@@ -192,11 +193,11 @@ describe('SoundControlDialog', () => {
 
     vi.spyOn(cardElement, 'getBoundingClientRect').mockReturnValue({
       x: 0,
-      y: 700,
+      y: viewportHeight - 200,
       left: 0,
-      top: 700,
+      top: viewportHeight - 200,
       right: 600,
-      bottom: 900,
+      bottom: viewportHeight,
       width: 600,
       height: 200,
       toJSON: () => ({}),
@@ -204,13 +205,90 @@ describe('SoundControlDialog', () => {
 
     startDrag(2);
     dispatch('pointermove', 0, 100);
-    await nextTick();
+    await flushPromises();
 
     expect(card.attributes('data-mode')).toBe('panel');
 
     dispatch('pointerup', 0, 100, 2);
-    await nextTick();
+    await flushPromises();
     expect(card.classes()).not.toContain('is-dialog');
+    wrapper.unmount();
+  });
+
+  it('does not dock until the detached dialog leaves the detach zone', async () => {
+    const { wrapper } = await mountDialog();
+    const viewportHeight = window.innerHeight;
+    const card = wrapper.find('.sound-control-card');
+    const cardElement = card.element as HTMLElement;
+    const handleElement = wrapper.find('.drag-handle').element as HTMLElement;
+    Object.defineProperty(handleElement, 'setPointerCapture', {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    const dockedTop = viewportHeight - 200;
+    const setTop = (top: number) => {
+      vi.spyOn(cardElement, 'getBoundingClientRect').mockReturnValue({
+        x: 0,
+        y: top,
+        left: 0,
+        top,
+        right: 600,
+        bottom: top + 200,
+        width: 600,
+        height: 200,
+        toJSON: () => ({}),
+      });
+    };
+
+    const dispatch = (
+      type: string,
+      clientX: number,
+      clientY: number,
+      pointerId = 1,
+    ) => {
+      const event = new MouseEvent(type, {
+        bubbles: true,
+        clientX,
+        clientY,
+      });
+      Object.defineProperty(event, 'pointerId', { value: pointerId });
+      cardElement.dispatchEvent(event);
+    };
+
+    const startDrag = (pointerId: number) => {
+      const event = new MouseEvent('pointerdown', {
+        bubbles: true,
+        clientX: 0,
+        clientY: 0,
+      });
+      Object.defineProperty(event, 'pointerId', { value: pointerId });
+      handleElement.dispatchEvent(event);
+    };
+
+    setTop(dockedTop - 6);
+    startDrag(1);
+    dispatch('pointermove', 0, -6);
+    await flushPromises();
+    expect(card.attributes('data-mode')).toBe('dialog');
+
+    // Still inside the 20px detach zone: dragging down must not dock.
+    dispatch('pointermove', 0, 100);
+    await flushPromises();
+    expect(card.attributes('data-mode')).toBe('dialog');
+
+    // Leaving the detach zone arms the snap catcher.
+    setTop(dockedTop - 40);
+    dispatch('pointermove', 0, -10);
+    await flushPromises();
+
+    setTop(dockedTop - 10);
+    dispatch('pointermove', 0, 100);
+    await flushPromises();
+    expect(card.attributes('data-mode')).toBe('panel');
+
+    dispatch('pointerup', 0, 100, 1);
+    await flushPromises();
     wrapper.unmount();
   });
 

@@ -76,6 +76,22 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     resetPosition();
   }
 
+  /** Moves the card without animating, e.g. to compensate for a layout change. */
+  function setPosition(x: number, y: number) {
+    hasTransition.value = false;
+    translateX.value = x;
+    translateY.value = y;
+  }
+
+  /** Keeps the current offset but makes the next pointer move relative to it. */
+  function rebaseDragOrigin() {
+    startX = lastX;
+    startY = lastY;
+    startTranslateX = translateX.value;
+    startTranslateY = translateY.value;
+    hasTransition.value = false;
+  }
+
   function onHide() {
     hasTransition.value = false;
     translateX.value = 0;
@@ -104,5 +120,7 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     onHide,
     resetPosition,
     rebaseDrag,
+    setPosition,
+    rebaseDragOrigin,
   };
 }

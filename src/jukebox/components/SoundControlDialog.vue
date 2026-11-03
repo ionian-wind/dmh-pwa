@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   computed,
+  nextTick,
   onMounted,
   onUnmounted,
   ref,
@@ -92,7 +93,11 @@ const model = computed({
 
 const displayMode = ref<'panel' | 'dialog'>('panel');
 const cardRef = ref<ComponentPublicInstance | null>(null);
-const MODE_SWITCH_THRESHOLD = 20;
+const isRepositioning = ref(false);
+const canDock = ref(false);
+const PANEL_DETACH_DISTANCE = 5;
+const DIALOG_DOCK_DISTANCE = 20;
+let repositioning = false;
 
 const viewportWidth = ref(
   typeof window === 'undefined' ? 0 : window.innerWidth,
@@ -105,33 +110,87 @@ function updateViewportWidth() {
 onMounted(() => window.addEventListener('resize', updateViewportWidth));
 onUnmounted(() => window.removeEventListener('resize', updateViewportWidth));
 
-function isNearViewportBottom(): boolean {
+function distanceFromViewportBottom(): number | null {
   const element = cardRef.value?.$el as HTMLElement | undefined;
-  if (!element) return true;
+  if (!element) return null;
 
-  const rect = element.getBoundingClientRect();
-  return window.innerHeight - rect.bottom <= MODE_SWITCH_THRESHOLD;
+  return window.innerHeight - element.getBoundingClientRect().bottom;
 }
 
-function setDisplayMode(mode: 'panel' | 'dialog') {
+function hasLeftDockZone(): boolean {
+  const distance = distanceFromViewportBottom();
+  return distance !== null && distance > DIALOG_DOCK_DISTANCE;
+}
+
+function isWithinDockZone(): boolean {
+  const distance = distanceFromViewportBottom();
+  return distance !== null && distance <= DIALOG_DOCK_DISTANCE;
+}
+
+async function setDisplayMode(
+  mode: 'panel' | 'dialog',
+  preservePosition = false,
+) {
   if (displayMode.value === mode) return;
-  displayMode.value = mode;
-  rebaseDrag();
-}
 
-function handleDragRelease() {
-  if (displayMode.value === 'panel') {
-    if (!isNearViewportBottom()) setDisplayMode('dialog');
+  const element = cardRef.value?.$el as HTMLElement | undefined;
+  const previousRect = element?.getBoundingClientRect();
+
+  canDock.value = false;
+
+  if (!preservePosition || !isDragging.value) {
+    displayMode.value = mode;
+    rebaseDrag();
     return;
   }
 
-  if (isNearViewportBottom()) setDisplayMode('panel');
+  if (repositioning) return;
+  repositioning = true;
+  isRepositioning.value = true;
+
+  const previousX = translateX.value;
+  const previousY = translateY.value;
+
+  displayMode.value = mode;
+  await nextTick();
+
+  if (element && previousRect) {
+    const nextRect = element.getBoundingClientRect();
+    setPosition(
+      previousX + previousRect.left - nextRect.left,
+      previousY + previousRect.top - nextRect.top,
+    );
+    rebaseDragOrigin();
+  }
+
+  await nextTick();
+
+  if (mode === 'dialog' && hasLeftDockZone()) {
+    canDock.value = true;
+  }
+
+  isRepositioning.value = false;
+  repositioning = false;
+}
+
+function handleDragRelease() {
+  if (repositioning) return;
+
+  if (displayMode.value === 'panel') {
+    if (translateY.value < -PANEL_DETACH_DISTANCE) {
+      setDisplayMode('dialog');
+    }
+    return;
+  }
+
+  if (canDock.value && isWithinDockZone()) setDisplayMode('panel');
 }
 
 const {
   cardStyle,
   transitionHide,
   isDragging,
+  translateX,
   translateY,
   onPointerDown,
   onPointerMove,
@@ -139,25 +198,34 @@ const {
   onHide,
   resetPosition,
   rebaseDrag,
+  setPosition,
+  rebaseDragOrigin,
 } = useDragSnap({
   snapBack: () => displayMode.value === 'panel',
   onRelease: handleDragRelease,
 });
 
 watch([isDragging, translateY], ([dragging, offsetY]) => {
-  if (!dragging) return;
+  if (!dragging || repositioning) return;
 
   if (displayMode.value === 'panel') {
-    if (offsetY < -MODE_SWITCH_THRESHOLD) setDisplayMode('dialog');
+    if (offsetY < -PANEL_DETACH_DISTANCE) void setDisplayMode('dialog', true);
     return;
   }
 
-  if (isNearViewportBottom()) setDisplayMode('panel');
+  if (hasLeftDockZone()) {
+    canDock.value = true;
+  }
+
+  if (canDock.value && isWithinDockZone()) {
+    setDisplayMode('panel');
+  }
 });
 
 function handleHide() {
   onHide();
   displayMode.value = 'panel';
+  canDock.value = false;
 }
 
 watch(
@@ -165,6 +233,7 @@ watch(
   (open) => {
     if (open) {
       displayMode.value = 'panel';
+      canDock.value = false;
       resetPosition();
     }
   },
@@ -209,7 +278,11 @@ function navigateToJukebox() {
     class="sound-control-dialog"
     @hide="handleHide"
   >
-    <div class="sound-control-frame" :style="frameStyle">
+    <div
+      class="sound-control-frame"
+      :class="{ 'no-mode-transition': isRepositioning }"
+      :style="frameStyle"
+    >
       <QCard
         ref="cardRef"
         :data-mode="displayMode"
@@ -288,6 +361,10 @@ function navigateToJukebox() {
   max-width: 100%;
   overflow: visible;
   transition: transform 0.3s ease;
+}
+
+.sound-control-frame.no-mode-transition {
+  transition: none;
 }
 
 .sound-control-card {

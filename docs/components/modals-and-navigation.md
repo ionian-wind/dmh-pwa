@@ -189,8 +189,10 @@ with `useDragSnap`:
 - `SoundControlDialog` has a docked bottom-panel mode and a floating dialog
   mode. Dragging it up from the bottom switches to the floating layout; dragging
   it back near the viewport bottom docks it again. The transition begins as
-  soon as the drag crosses the detach/dock threshold. In dialog mode the card
-  can be moved freely across the page.
+  soon as the drag crosses the detach/dock threshold. Detaching happens after a
+  5 px upward drag; docking uses a 20 px snap area measured from the dialog's
+  bottom edge, and only becomes active after the dialog leaves that area. In
+  dialog mode the card can be moved freely across the page.
 - Both are opened from the left nav and are mounted for the app lifetime.
 
 ## Toast notifications

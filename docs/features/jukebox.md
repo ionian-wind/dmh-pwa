@@ -257,7 +257,10 @@ unmount. The `filesStore` is loaded but unused.
   above the track details. Dragging the floating dialog back near the bottom
   docks it again, while anywhere else it can be moved freely across the page.
   The mode transition starts when the drag crosses the detach or dock
-  threshold, not when the pointer is released.
+  threshold, not when the pointer is released. The panel detaches after a
+  5 px upward drag; the dock snap area is measured from the floating dialog's
+  bottom edge and is 20 px deep. The snap catcher is armed only after the
+  dialog has left that bottom area.
 - Track changes crossfade the outgoing and incoming gradient layers. If the next
   track has no cover palette, the current gradient fades out instead.
 - Controls inherit `--jp-control-color`, derived from the palette with the best
