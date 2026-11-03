@@ -4,8 +4,10 @@ import { useModuleStore } from '@/stores/modules';
 import { useMonsterStore } from '@/stores/monsters';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
+import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useMapStore } from '../maps';
 import { useMapLocationStore } from '../locations';
+import type { Ref } from 'vue';
 import type { MapEntityKind, MapEntityRef } from '../types';
 
 export type EntityTitleField = 'title' | 'name';
@@ -15,8 +17,8 @@ export interface MapEntityKindOption {
   labelKey: string;
   titleField: EntityTitleField;
   useStore: () => {
-    items: any[];
-    isLoaded?: boolean;
+    items: any[] | Ref<any[]>;
+    isLoaded?: boolean | Ref<boolean>;
     load: () => Promise<unknown>;
     getById?: (id: string) => any;
   };
@@ -70,6 +72,12 @@ export const MAP_ENTITY_KIND_OPTIONS: MapEntityKindOption[] = [
     labelKey: 'maps.locations',
     titleField: 'name',
     useStore: useMapLocationStore,
+  },
+  {
+    kind: 'playlist',
+    labelKey: 'playlist.title',
+    titleField: 'name',
+    useStore: useJukeboxPlaylistsStore,
   },
 ];
 

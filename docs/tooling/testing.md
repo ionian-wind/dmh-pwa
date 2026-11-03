@@ -66,23 +66,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 114. Total tests: 858.
+Total test files: 115. Total tests: 859.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  114 passed (114)
-Tests       858 passed (858)
+Test Files  115 passed (115)
+Tests       859 passed (859)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.14%
-Branches    87.66%
+Statements  92.15%
+Branches    87.65%
 Functions    89.24%
-Lines       92.14%
+Lines       92.15%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
@@ -160,6 +160,7 @@ The suite now includes direct tests for:
   spy, hash updates and the header toggle that hides/reopens the sidebar,
 - AnyDice completion definitions from included code pieces, including
   function parameter snippets and source-piece labels,
+- map entity catalog/link blocks including jukebox playlists,
 - localized completion labels/details for built-in snippets, program
   variables, keywords and code-piece definitions.
 

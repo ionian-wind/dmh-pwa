@@ -1,4 +1,4 @@
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, toValue } from 'vue';
 import {
   MAP_ENTITY_KIND_OPTIONS,
   type MapEntityKindOption,
@@ -17,7 +17,9 @@ export function useMapEntityCatalog() {
   onMounted(() => {
     void Promise.all(
       [...stores.values()].map((store) =>
-        store.isLoaded ? undefined : store.load().catch(() => undefined),
+        toValue(store.isLoaded)
+          ? undefined
+          : store.load().catch(() => undefined),
       ),
     );
   });
@@ -25,10 +27,13 @@ export function useMapEntityCatalog() {
   const groups = computed<MapEntityCatalogGroup[]>(() =>
     MAP_ENTITY_KIND_OPTIONS.map((option) => {
       const store = stores.get(option.kind);
-      const items = ((store?.items as unknown as any[]) ?? []).map((item) => ({
-        id: item.id,
-        label: String(item[option.titleField] || item.id),
-      }));
+      const storedItems = toValue(store?.items as any);
+      const items = (Array.isArray(storedItems) ? storedItems : []).map(
+        (item) => ({
+          id: item.id,
+          label: String(item[option.titleField] || item.id),
+        }),
+      );
       return { ...option, items };
     }),
   );

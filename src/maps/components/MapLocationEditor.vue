@@ -55,6 +55,7 @@ const linkKinds: MapEntityKind[] = [
   'monster',
   'encounter',
   'character',
+  'playlist',
 ];
 
 function setLinks(links: MapEntityRef[]) {

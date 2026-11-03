@@ -24,18 +24,18 @@
 
 ### Note
 
-| Field      | Type             | Notes                                                       |
-| ---------- | ---------------- | ----------------------------------------------------------- |
-| `title`    | `string`         | Required by schema and UI                                   |
-| `content`  | `string`         | Markdown source, or a Quickdraw JSON snapshot for draw notes |
-| `contentType` | `'text' \| 'draw'` | Note content kind; defaults to `text`                   |
-| `preview`  | `string?`        | Small PNG data URL preview for drawing notes                 |
-| `typeId`   | `string \| null` | References a `NoteType`; UI for setting it is commented out |
-| `tags`     | `string[]`       | Used for card chips and route-based tag filtering           |
-| `moduleId` | `string \| null` | Owning module, or null for free notes                       |
-| `parentId` | `string?`        | Declared in TS, not persisted by schemas/UI                 |
-| `metadata` | `object?`        | Declared in TS, unused                                      |
-| `hidden`   | `boolean`        | `true` = document-tree note, excluded from normal note list |
+| Field         | Type               | Notes                                                        |
+| ------------- | ------------------ | ------------------------------------------------------------ |
+| `title`       | `string`           | Required by schema and UI                                    |
+| `content`     | `string`           | Markdown source, or a Quickdraw JSON snapshot for draw notes |
+| `contentType` | `'text' \| 'draw'` | Note content kind; defaults to `text`                        |
+| `preview`     | `string?`          | Small PNG data URL preview for drawing notes                 |
+| `typeId`      | `string \| null`   | References a `NoteType`; UI for setting it is commented out  |
+| `tags`        | `string[]`         | Used for card chips and route-based tag filtering            |
+| `moduleId`    | `string \| null`   | Owning module, or null for free notes                        |
+| `parentId`    | `string?`          | Declared in TS, not persisted by schemas/UI                  |
+| `metadata`    | `object?`          | Declared in TS, unused                                       |
+| `hidden`      | `boolean`          | `true` = document-tree note, excluded from normal note list  |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
 `typeId`, `tags`, `moduleId`, `createdAt`, `updatedAt`. `hidden` is not listed
@@ -321,7 +321,8 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
     'encounter' |
     'character' |
     'map' |
-    'location';
+    'location' |
+    'playlist';
   id: string;
 }
 ```

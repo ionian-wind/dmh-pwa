@@ -18,7 +18,10 @@ const validMap = {
       id: 'l1',
       name: 'Town',
       description: 'Starting town',
-      entities: [{ kind: 'note', id: 'n1' }],
+      entities: [
+        { kind: 'note', id: 'n1' },
+        { kind: 'playlist', id: 'p1' },
+      ],
     },
   ],
   markers: [

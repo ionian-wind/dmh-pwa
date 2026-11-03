@@ -376,7 +376,13 @@ describe('map entity references', () => {
       'character',
       'map',
       'location',
+      'playlist',
     ]);
+    expect(getEntityKindOption('playlist')).toMatchObject({
+      kind: 'playlist',
+      labelKey: 'playlist.title',
+      titleField: 'name',
+    });
     expect(getEntityKindOption('map')).toMatchObject({
       kind: 'map',
       labelKey: 'maps.title',

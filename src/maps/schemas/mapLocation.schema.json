@@ -41,7 +41,8 @@
             "encounter",
             "character",
             "map",
-            "location"
+            "location",
+            "playlist"
           ]
         },
         "id": {

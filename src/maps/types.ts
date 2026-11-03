@@ -9,7 +9,8 @@ export type MapEntityKind =
   | 'encounter'
   | 'character'
   | 'map'
-  | 'location';
+  | 'location'
+  | 'playlist';
 
 export interface MapEntityRef {
   kind: MapEntityKind;

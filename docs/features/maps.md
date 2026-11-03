@@ -240,7 +240,7 @@ A location detail page follows the module detail pattern:
 
 - If the location is linked to a map, a **Map** tab is shown with that map card.
 - Top tabs for each linkable entity kind: notes, modules, parties, monsters,
-  encounters, and characters.
+  encounters, characters, and jukebox playlists.
 - Each tab uses the reusable `EntitiesLinking` component: the entity-type title
   and add button sit above a linked list with remove actions. Both the linked
   list and the searchable modal use virtual-scroll lists. The component's
@@ -321,7 +321,8 @@ type MapEntityKind =
   | 'encounter'
   | 'character'
   | 'map'
-  | 'location';
+  | 'location'
+  | 'playlist';
 ```
 
 `EntitiesLinking` loads each entity store, shows one linking block per entity

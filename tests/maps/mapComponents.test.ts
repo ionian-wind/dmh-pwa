@@ -227,6 +227,10 @@ describe('map location editor', () => {
     linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
       { kind: 'note', id: 'n1' },
     ]);
+    linkingBlock(wrapper, 'playlist').vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n1' },
+      { kind: 'playlist', id: 'p1' },
+    ]);
     await nextTick();
 
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
@@ -236,7 +240,10 @@ describe('map location editor', () => {
       id: 'l1',
       name: 'Capital',
       description: 'Large city',
-      entities: [{ kind: 'note', id: 'n1' }],
+      entities: [
+        { kind: 'note', id: 'n1' },
+        { kind: 'playlist', id: 'p1' },
+      ],
     });
   });
 

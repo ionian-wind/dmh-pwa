@@ -25,16 +25,16 @@ make entity relationships consistent across the application.
 A **main entity** is a persisted domain object with its own routed detail page.
 Main entities are the only entities that can appear in the **Links** tab.
 
-| Entity    | Detail route      | Editor today      |
-| --------- | ----------------- | ----------------- |
-| Note      | `/notes/:id`      | `NoteEditor`      |
-| Party     | `/parties/:id`    | `PartyEditor`     |
-| Monster   | `/monsters/:id`   | `MonsterEditor`   |
-| Character | `/characters/:id` | `CharacterEditor` |
-| Encounter | `/encounters/:id` | `EncounterEditor` |
-| Combat    | `/combats/:id`    | no editor yet     |
-| Module    | `/modules/:id`    | `ModuleEditor`    |
-| Map       | `/maps/:id`       | `MapEditor`       |
+| Entity    | Detail route      | Editor today        |
+| --------- | ----------------- | ------------------- |
+| Note      | `/notes/:id`      | `NoteEditor`        |
+| Party     | `/parties/:id`    | `PartyEditor`       |
+| Monster   | `/monsters/:id`   | `MonsterEditor`     |
+| Character | `/characters/:id` | `CharacterEditor`   |
+| Encounter | `/encounters/:id` | `EncounterEditor`   |
+| Combat    | `/combats/:id`    | no editor yet       |
+| Module    | `/modules/:id`    | `ModuleEditor`      |
+| Map       | `/maps/:id`       | `MapEditor`         |
 | Location  | `/locations/:id`  | `MapLocationEditor` |
 
 A main entity may have no editor yet (currently Combat). If an editor is added
@@ -45,17 +45,17 @@ later, it must follow this pattern.
 An **internal entity** is stored for a feature but has no independent detail
 route. It is created and edited inside a parent page or dialog.
 
-| Internal entity  | Parent feature                    |
-| ---------------- | --------------------------------- |
-| Note type        | Notes / `NoteEditor`              |
-| Timer            | Timers list                       |
-| Jukebox track    | Jukebox                           |
-| Jukebox playlist | Jukebox sidebar                   |
-| Map file         | Map editor                        |
-| Map layer        | Map sidebar / map editor          |
-| Map marker       | Map view                          |
-| Map area         | Map view                          |
-| Combatant        | Combat view                       |
+| Internal entity  | Parent feature           |
+| ---------------- | ------------------------ |
+| Note type        | Notes / `NoteEditor`     |
+| Timer            | Timers list              |
+| Jukebox track    | Jukebox                  |
+| Jukebox playlist | Jukebox sidebar          |
+| Map file         | Map editor               |
+| Map layer        | Map sidebar / map editor |
+| Map marker       | Map view                 |
+| Map area         | Map view                 |
+| Combatant        | Combat view              |
 
 Internal entities never appear in the main-entity linking UI. Options that
 configure them stay in the main editor form.
@@ -69,10 +69,10 @@ tabs in the same toolbar line as the expand and close buttons, centered between
 them. The text title is hidden while tabs are shown. This follows the calculator
 dialog pattern (`QTabs` with icon-only `QTab`s and accessible titles):
 
-| Order | Tab             | Icon            | Content                             |
-| ----- | --------------- | --------------- | ----------------------------------- |
-| 1     | Main editor     | `IconForms`     | Entity fields + internal options    |
-| 2     | Main entity links | `IconAffiliate` | Links to other main entities      |
+| Order | Tab               | Icon            | Content                          |
+| ----- | ----------------- | --------------- | -------------------------------- |
+| 1     | Main editor       | `IconForms`     | Entity fields + internal options |
+| 2     | Main entity links | `IconAffiliate` | Links to other main entities     |
 
 Rules:
 
@@ -107,7 +107,8 @@ Do not place main-entity links in this tab.
 
 The links tab contains only references to main entities.
 
-- Group links by entity type.
+- Group links by entity type. Map locations also offer jukebox playlists
+  alongside the other main entity kinds.
 - Each type uses the shared `EntitiesLinking` component:
   - entity-type title on the left,
   - add button on the right,
@@ -121,12 +122,12 @@ The links tab contains only references to main entities.
 
 Use the following rule when deciding whether something moves to the Links tab.
 
-| Data shape                                                    | Where it goes                          |
-| ------------------------------------------------------------- | -------------------------------------- |
-| Scalar fields owned by the entity                             | Main editor, first section             |
-| Options pointing at internal entities                         | Main editor, second section            |
-| Optional single main-entity reference (`moduleId`, `locationId`) | Links tab, single-select              |
-| `MapEntityRef[]`-style cross-entity links                     | Links tab, grouped by entity type      |
+| Data shape                                                                                                            | Where it goes                                      |
+| --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Scalar fields owned by the entity                                                                                     | Main editor, first section                         |
+| Options pointing at internal entities                                                                                 | Main editor, second section                        |
+| Optional single main-entity reference (`moduleId`, `locationId`)                                                      | Links tab, single-select                           |
+| `MapEntityRef[]`-style cross-entity links                                                                             | Links tab, grouped by entity type                  |
 | Owned structures with extra per-relation data (party members, encounter monster roster, module note tree, map layers) | Main editor, because they define the entity itself |
 
 The last row is important: not every reference is a generic link. If the
@@ -149,17 +150,17 @@ save buttons inside tab content.
 
 Linkable editors already use the tab layout:
 
-| Editor                | Link blocks                                                     |
-| --------------------- | --------------------------------------------------------------- |
-| `NoteEditor`          | Modules                                                         |
-| `PartyEditor`         | Modules, Characters                                             |
-| `MonsterEditor`       | Modules                                                         |
-| `EncounterEditor`     | Modules                                                         |
-| `PlaylistEditor`      | Modules                                                         |
-| `MapEditor`           | Locations                                                       |
-| `MapLocationEditor`   | Notes, Modules, Parties, Monsters, Encounters, Characters        |
-| `MapMarkerEditor`     | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
-| `MapAreaEditor`       | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
+| Editor              | Link blocks                                                                 |
+| ------------------- | --------------------------------------------------------------------------- |
+| `NoteEditor`        | Modules                                                                     |
+| `PartyEditor`       | Modules, Characters                                                         |
+| `MonsterEditor`     | Modules                                                                     |
+| `EncounterEditor`   | Modules                                                                     |
+| `PlaylistEditor`    | Modules                                                                     |
+| `MapEditor`         | Locations                                                                   |
+| `MapLocationEditor` | Notes, Modules, Parties, Monsters, Encounters, Characters                   |
+| `MapMarkerEditor`   | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
+| `MapAreaEditor`     | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
 
 `CharacterEditor`, `ModuleEditor`, and `TimerEditor` have no main-entity links,
 so they keep a single form without tabs. Combat has no editor yet.
