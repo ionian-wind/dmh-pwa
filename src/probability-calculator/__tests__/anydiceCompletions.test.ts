@@ -29,7 +29,9 @@ import {
   extractCodePieceDefinitions,
   registerAnyDiceCompletions,
   setAnyDiceCompletionCodePieces,
+  setAnyDiceCompletionTranslator,
 } from '../anydiceCompletions';
+import ru from '@/i18n/locales/ru.json';
 
 function modelFor(text: string) {
   return {
@@ -55,6 +57,14 @@ function position(column: number) {
   return { lineNumber: 1, column };
 }
 
+function ruTranslate(key: string, named?: Record<string, unknown>): string {
+  const value = key.split('.').reduce<any>((node, part) => node?.[part], ru);
+  if (typeof value !== 'string') return key;
+  return value.replace(/\{(\w+)\}/g, (_match, name: string) =>
+    String(named?.[name] ?? ''),
+  );
+}
+
 const libraryPiece = {
   name: 'Combat library',
   include: true,
@@ -70,6 +80,7 @@ function: always seven {
 describe('AnyDice completions', () => {
   afterEach(() => {
     setAnyDiceCompletionCodePieces([]);
+    setAnyDiceCompletionTranslator(null);
   });
 
   it('extracts definitions and their source code piece', () => {
@@ -196,6 +207,56 @@ describe('AnyDice completions', () => {
       (suggestion) => suggestion.label === 'highest N of DICE',
     );
     expect(highest.insertText.endsWith(']')).toBe(false);
+  });
+
+  it('localizes system, pre-defined and code-piece suggestions', () => {
+    setAnyDiceCompletionTranslator(ruTranslate);
+    setAnyDiceCompletionCodePieces([libraryPiece]);
+    const provider = createAnyDiceCompletionProvider();
+    const result = provider.provideCompletionItems(
+      modelFor('X: 1\nout') as any,
+      position(8) as any,
+      {} as any,
+      {} as any,
+    ) as { suggestions: any[] };
+
+    const highest = result.suggestions.find(
+      (suggestion) => suggestion.label === 'highest N of DICE',
+    );
+    expect(highest.detail).toBe(
+      'Сумма N наибольших значений. Поддерживает несколько наборов через and.',
+    );
+
+    const dicePool = result.suggestions.find(
+      (suggestion) => suggestion.label === 'набор кубиков',
+    );
+    expect(dicePool).toMatchObject({
+      filterText: 'dice pool',
+      detail: 'Создать набор кубиков',
+    });
+
+    const outputSnippet = result.suggestions.find(
+      (suggestion) => suggestion.label === 'output' && suggestion.kind === 15,
+    );
+    expect(outputSnippet.detail).toBe('Добавить вывод');
+
+    const keyword = result.suggestions.find(
+      (suggestion) => suggestion.label === 'output' && suggestion.kind === 18,
+    );
+    expect(keyword.detail).toBe('Ключевое слово');
+
+    const programVariable = result.suggestions.find(
+      (suggestion) => suggestion.label === 'X',
+    );
+    expect(programVariable.detail).toBe('Переменная из этой программы');
+
+    const damage = result.suggestions.find(
+      (suggestion) => suggestion.label === 'DAMAGE',
+    );
+    expect(damage).toMatchObject({
+      detail: 'Из фрагмента кода: Combat library',
+      documentation: 'Определено во фрагменте кода «Combat library».',
+    });
   });
 
   it('registers the completion provider once', () => {

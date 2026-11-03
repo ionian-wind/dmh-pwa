@@ -105,6 +105,37 @@ function: double N:n if above B:n {
   await expect(suggestions).toContainText('DAMAGE');
 });
 
+test('localizes composer suggestions in Russian', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('dmh-config:savedLanguage', JSON.stringify('ru'));
+    localStorage.setItem(
+      'dmh-probability-calculator:library',
+      JSON.stringify([
+        {
+          id: 'library-piece-ru',
+          name: 'Боевая библиотека',
+          include: true,
+          code: 'DAMAGE: 2d6 + 3',
+        },
+      ]),
+    );
+  });
+  await page.goto('/dmh-pwa/probability-calculator');
+  await page.locator('.monaco-editor').waitFor({ timeout: 30_000 });
+
+  const editor = page.locator('.monaco-editor');
+  await editor.click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('DAM');
+
+  const suggestions = page.locator('.suggest-widget');
+  await expect(suggestions).toBeVisible({ timeout: 10_000 });
+  await expect(suggestions).toContainText(
+    'Из фрагмента кода: Боевая библиотека',
+  );
+  await expect(suggestions).not.toContainText('From code piece');
+});
+
 test('shows a hideable syntax TOC with anchor links', async ({ page }) => {
   await page.goto('/dmh-pwa/probability-calculator/syntax');
 

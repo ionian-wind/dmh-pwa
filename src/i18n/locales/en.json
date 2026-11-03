@@ -858,6 +858,33 @@
     "showLabels": "Show labels"
   },
   "probabilityCalculator": {
+    "completions": {
+      "keyword": "Keyword",
+      "variableFromProgram": "Variable from this program",
+      "fromCodePiece": "From code piece: {name}",
+      "definedInCodePiece": "Defined in code piece “{name}”.",
+      "statementDetails": {
+        "output": "Add an output",
+        "outputNamed": "Add a named output",
+        "function": "Define a function",
+        "loop": "Loop over a sequence",
+        "ifElse": "Conditional block",
+        "setPositionOrder": "Change sequence/digit position order",
+        "setExplodeDepth": "Change the explode depth",
+        "setMaximumFunctionDepth": "Change the recursion limit",
+        "dicePool": "Create a dice pool",
+        "sequenceRange": "Create a sequence range",
+        "customDie": "Create a custom die",
+        "comment": "Backslash comment"
+      },
+      "labels": {
+        "loopOver": "loop over",
+        "dicePool": "dice pool",
+        "sequenceRange": "sequence range",
+        "customDie": "custom die",
+        "comment": "comment"
+      }
+    },
     "title": "Dice Probability Calculator",
     "subtitle": "AnyDice-compatible probability distributions",
     "syntax": "Syntax reference",

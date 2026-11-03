@@ -25,7 +25,8 @@ using integer (`bigint`) weights. A Vue page under
   Monarch syntax highlighter, autocomplete for keywords, snippets, built-in
   functions and variables, definitions from code pieces included in the current
   namespace (variables and functions, labelled with the source piece name), and
-  Monaco markers for syntax-error ranges.
+  Monaco markers for syntax-error ranges. Completion labels/details and
+  code-piece source labels follow the current UI language.
 - Syntax errors are structured by the parser (unexpected token/character,
   expected token types, source range), formatted into human-readable localized
   text, and shown in the error banner with a clickable `line N, column M` link

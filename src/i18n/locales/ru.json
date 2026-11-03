@@ -859,6 +859,33 @@
     "showLabels": "Показать подписи"
   },
   "probabilityCalculator": {
+    "completions": {
+      "keyword": "Ключевое слово",
+      "variableFromProgram": "Переменная из этой программы",
+      "fromCodePiece": "Из фрагмента кода: {name}",
+      "definedInCodePiece": "Определено во фрагменте кода «{name}».",
+      "statementDetails": {
+        "output": "Добавить вывод",
+        "outputNamed": "Добавить именованный вывод",
+        "function": "Определить функцию",
+        "loop": "Цикл по последовательности",
+        "ifElse": "Условный блок",
+        "setPositionOrder": "Изменить порядок позиций",
+        "setExplodeDepth": "Изменить глубину взрыва",
+        "setMaximumFunctionDepth": "Изменить предел рекурсии",
+        "dicePool": "Создать набор кубиков",
+        "sequenceRange": "Создать диапазон последовательности",
+        "customDie": "Создать нестандартный кубик",
+        "comment": "Комментарий обратными слэшами"
+      },
+      "labels": {
+        "loopOver": "цикл",
+        "dicePool": "набор кубиков",
+        "sequenceRange": "диапазон последовательности",
+        "customDie": "нестандартный кубик",
+        "comment": "комментарий"
+      }
+    },
     "title": "Калькулятор вероятностей кубиков",
     "subtitle": "Распределения вероятностей в синтаксисе AnyDice",
     "syntax": "Справка по синтаксису",

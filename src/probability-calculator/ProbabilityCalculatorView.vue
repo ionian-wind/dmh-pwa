@@ -42,7 +42,10 @@ import {
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
 import { formatDiceSyntaxError } from './syntaxErrors';
-import { setAnyDiceCompletionCodePieces } from './anydiceCompletions';
+import {
+  setAnyDiceCompletionCodePieces,
+  setAnyDiceCompletionTranslator,
+} from './anydiceCompletions';
 import CodeLibraryPanel from './CodeLibraryPanel.vue';
 import {
   createCodePiece,
@@ -73,6 +76,7 @@ const STORAGE_KEY = 'dmh-probability-calculator:source';
 const DEFAULT_SOURCE = 'output 3d6';
 const { t } = useI18n();
 const router = useRouter();
+setAnyDiceCompletionTranslator((key, named) => t(key, named as any));
 
 function storedSource(): string {
   try {
@@ -454,6 +458,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload);
   setAnyDiceCompletionCodePieces([]);
+  setAnyDiceCompletionTranslator(null);
   layout.setTopMenuContent(null);
   rightDrawer.clear();
 });
