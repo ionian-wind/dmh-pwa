@@ -366,6 +366,11 @@ The ambient-sound section is a first-class app page with a package sidebar:
 - Use the existing `ViewHeader`, `QCard`, `TabGroup`, `BaseModal`,
   `SidebarItem`, `IconPicker` and `EmptyState` components.
 - The package sidebar is the right drawer. The main page owns the left content.
+- The Scenes / Ambiences / One-shots tabs stay sticky below the app header while
+  the list scrolls.
+- The page uses the same player layout as the jukebox: the ambient player panel
+  is registered in the app footer, so it stays fixed at the bottom while the
+  scene and gallery lists scroll.
 - “All packages” is the default filter. Selecting a package filters the active
   tab to that package; selecting it again clears the filter.
 - Package rows show package icon, name and category. Hover/focus shows delete.
@@ -493,15 +498,15 @@ Deleting the entity or its package removes the affected links.
 
 ### 4.8 Global sound panel
 
-A persistent panel, available on every page, showing the current scene.
+A persistent player panel on the ambient-sound page, showing the current scene.
+It mirrors the jukebox player and lives in the app footer.
 
 **Docked mode**
 
-- Anchored to the bottom, width equal to the page-content area.
+- Anchored to the bottom as a flush app footer, width equal to the
+  page-content area.
 - Shows scene icon, scene name, package name and play/pause state.
-- Play/pause, stop, master volume, music/ambience/one-shot volume access.
-- “Open ambient page” action.
-- Quick one-shot tray for the active scene’s one-shots.
+- Music toggle, play/pause, stop and master volume access.
 - No scene cover art; scene identity is icon + name.
 
 **Floating dialog mode**
@@ -531,6 +536,7 @@ A persistent panel, available on every page, showing the current scene.
 - Right package sidebar persistent.
 - Scenes and gallery rows in a comfortable 1–2 column layout.
 - Scene player dialog max width around 760 px.
+- Tabs stay sticky below the app header; the lists scroll independently.
 - Docked sound panel matches the page-content width.
 
 **Tablet (600–1023 px)**
@@ -541,10 +547,11 @@ A persistent panel, available on every page, showing the current scene.
 
 **Mobile (<600 px)**
 
-- Tabs scroll horizontally; package sidebar opens as a drawer.
+- Tabs stay sticky below the app header and shrink to fit narrow screens;
+  the package sidebar opens as a drawer.
 - Scenes are full-width rows; gallery is a single-column list.
 - Scene player opens full-screen or as a bottom sheet.
-- Sound panel docks as a bottom sheet; floating mode uses the available width.
+- Sound panel docks as the app footer; the list scrolls above it.
 - Touch targets are at least 44×44 px; hover-only actions are also available from
   an overflow menu.
 
@@ -565,14 +572,14 @@ A persistent panel, available on every page, showing the current scene.
 
 ### 4.11 Component and state mapping
 
-| UI component        | Responsibility                                       | Main state/actions                            |
-| ------------------- | ---------------------------------------------------- | --------------------------------------------- |
-| `AmbientSoundView`  | Page layout, tabs, package filter, now-playing slot  | `currentPackage`, `activeScene`, `play/pause` |
-| `PackageSidebar`    | Package list, import/delete, filter                  | `packages`, `selectedPackageId`               |
-| `SceneList`         | Scene rows, search and opening the player            | `scenes`, `activeSceneId`                     |
-| `GlobalGallery`     | Ambience/one-shot browsing                           | `galleryEntries`, `search`, `category`        |
-| `EntityScenesPanel` | Linked scenes in location/module/encounter/character | `links`, `add/remove`, `play`                 |
-| `SoundControlPanel` | Docked/floating playback and quick one-shots         | `activeScene`, `playback`, `volumes`          |
+| UI component           | Responsibility                                            | Main state/actions                           |
+| ---------------------- | --------------------------------------------------------- | -------------------------------------------- |
+| `AmbientSoundView`     | Page layout, sticky tabs, package filter, content         | `currentPackage`, `activeTab`, `activeScene` |
+| `PackageSidebar`       | Package list, import/delete, filter                       | `packages`, `selectedPackageId`              |
+| `SceneList`            | Scene rows, search and opening the player                 | `scenes`, `activeSceneId`                    |
+| `GlobalGallery`        | Ambience/one-shot browsing                                | `galleryEntries`, `search`, `category`       |
+| `EntityScenesPanel`    | Linked scenes in location/module/encounter/character      | `links`, `add/remove`, `play`                |
+| `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume | `activeScene`, `playback`, `masterVolume`    |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

@@ -9,25 +9,15 @@
     </div>
 
     <template v-else-if="store.storedPacks.length">
-      <QCard flat bordered class="q-mb-md">
-        <QCardSection><AmbientGlobalControl /></QCardSection>
-      </QCard>
+      <div class="ambient-tabs-sticky" :style="{ top: `${headerOffset}px` }">
+        <TabGroup v-model="activeTab" :tabs="tabs" size="md" align="justify" />
+      </div>
 
-      <QCard flat bordered>
-        <QCardSection>
-          <TabGroup
-            v-model="activeTab"
-            :tabs="tabs"
-            size="md"
-            align="justify"
-            class="q-mb-md"
-          />
-
-          <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
-          <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
-          <OneShotGallery v-else />
-        </QCardSection>
-      </QCard>
+      <div class="ambient-tab-body">
+        <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
+        <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
+        <OneShotGallery v-else />
+      </div>
     </template>
 
     <EmptyState
@@ -71,6 +61,15 @@ const activeTab = ref('scenes');
 const playerOpen = ref(false);
 const playerPackId = ref('');
 const playerSceneId = ref('');
+// The app header is fixed above the page, so the sticky tabs must stop below it
+// instead of sliding underneath. Quasar sizes the page container to match.
+const headerOffset = ref(0);
+let headerResizeObserver: ResizeObserver | null = null;
+
+function syncHeaderOffset() {
+  const header = document.querySelector<HTMLElement>('.q-header');
+  headerOffset.value = header?.offsetHeight ?? 0;
+}
 
 const tabs = computed(() => [
   { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
@@ -90,12 +89,24 @@ onMounted(async () => {
     props: { title: t('ambientSoundPage.title') },
   });
   rightDrawer.set({ component: SoundPackSidebar });
+  layout.setBottomDrawerContent({
+    component: AmbientGlobalControl,
+  });
+  syncHeaderOffset();
+  const header = document.querySelector<HTMLElement>('.q-header');
+  if (header && typeof ResizeObserver !== 'undefined') {
+    headerResizeObserver = new ResizeObserver(syncHeaderOffset);
+    headerResizeObserver.observe(header);
+  }
   await store.loadStoredPacks();
 });
 
 onUnmounted(() => {
+  headerResizeObserver?.disconnect();
+  headerResizeObserver = null;
   layout.setTopMenuContent(null);
   rightDrawer.clear();
+  layout.setBottomDrawerContent(null);
   store.stopPreview();
 });
 </script>
@@ -104,5 +115,18 @@ onUnmounted(() => {
 .ambient-sound-page {
   max-width: 1100px;
   margin: 0 auto;
+}
+
+.ambient-tabs-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0.5rem 0;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ambient-tab-body {
+  padding-top: 1rem;
 }
 </style>

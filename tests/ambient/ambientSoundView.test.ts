@@ -22,6 +22,7 @@ const storeMock = vi.hoisted(() => ({
 
 const layoutMock = vi.hoisted(() => ({
   setTopMenuContent: vi.fn(),
+  setBottomDrawerContent: vi.fn(),
 }));
 
 const rightDrawerMock = vi.hoisted(() => ({
@@ -33,17 +34,20 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => storeMock,
 }));
 vi.mock('@/composables/useLayout', () => ({
-  useLayout: () => ({ setTopMenuContent: layoutMock.setTopMenuContent }),
+  useLayout: () => ({
+    setTopMenuContent: layoutMock.setTopMenuContent,
+    setBottomDrawerContent: layoutMock.setBottomDrawerContent,
+  }),
   useRightDrawer: () => rightDrawerMock,
 }));
 
 import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
+import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalControl.vue';
 
 const stubs = {
   QSpinnerDots: true,
-  AmbientGlobalControl: true,
   SceneList: true,
   AmbienceGallery: true,
   OneShotGallery: true,
@@ -69,6 +73,7 @@ describe('AmbientSoundView', () => {
       storeMock.loadStoredPacks,
       storeMock.stopPreview,
       layoutMock.setTopMenuContent,
+      layoutMock.setBottomDrawerContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
     ]) {
@@ -86,6 +91,9 @@ describe('AmbientSoundView', () => {
     expect(rightDrawerMock.set).toHaveBeenCalledWith({
       component: SoundPackSidebar,
     });
+    expect(layoutMock.setBottomDrawerContent).toHaveBeenCalledWith({
+      component: AmbientGlobalControl,
+    });
 
     expect(wrapper.text()).toContain('Scenes');
     expect(wrapper.text()).toContain('Ambiences');
@@ -94,6 +102,7 @@ describe('AmbientSoundView', () => {
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
+    expect(layoutMock.setBottomDrawerContent).toHaveBeenLastCalledWith(null);
     expect(rightDrawerMock.clear).toHaveBeenCalled();
     expect(storeMock.stopPreview).toHaveBeenCalled();
   });

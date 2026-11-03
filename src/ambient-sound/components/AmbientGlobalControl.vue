@@ -1,8 +1,8 @@
 <template>
   <div class="ambient-player">
     <div class="ambient-player-header">
-      <QAvatar rounded size="72px" class="ambient-artwork">
-        <AmbientIcon :icon="store.activeScene?.scene.icon || '🎵'" :size="36" />
+      <QAvatar rounded size="48px" class="ambient-artwork">
+        <AmbientIcon :icon="store.activeScene?.scene.icon || '🎵'" :size="24" />
       </QAvatar>
       <div class="col">
         <div class="text-caption text-grey-7">
@@ -197,7 +197,8 @@ function handleVolumeWheel(event: WheelEvent) {
 .ambient-player {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem 0.75rem;
 }
 
 .ambient-player-header {

@@ -49,6 +49,7 @@ import { useTimerStore } from './stores/timers';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
+import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalControl.vue';
 import { usePageContentRect } from '@/composables/usePageContentRect';
 
 const playerStore = useJukeboxPlayerStore();
@@ -247,11 +248,13 @@ const {
   toggleRightDrawer,
 } = provideLayout();
 
-// The jukebox player should sit flush in the footer, without the default
-// footer padding, background, or elevated shadow ("gray boundaries").
-const hasJukeboxFooter = computed(
-  () => bottomDrawerContent.value?.component === JukeboxPlayer,
-);
+// Player panels (jukebox and ambient sound) should sit flush in the footer,
+// without the default footer padding, background, or elevated shadow
+// ("gray boundaries").
+const hasPlayerFooter = computed(() => {
+  const component = bottomDrawerContent.value?.component;
+  return component === JukeboxPlayer || component === AmbientGlobalControl;
+});
 
 const pageContentRect = usePageContentRect();
 const isSoundControlOpen = ref(false);
@@ -479,11 +482,9 @@ function openJukebox() {
 
       <QFooter
         v-if="bottomDrawerContent"
-        :elevated="!hasJukeboxFooter"
+        :elevated="!hasPlayerFooter"
         :class="
-          hasJukeboxFooter
-            ? 'footer-flush'
-            : 'q-pa-md text-primary bg-secondary'
+          hasPlayerFooter ? 'footer-flush' : 'q-pa-md text-primary bg-secondary'
         "
       >
         <component
