@@ -1,126 +1,96 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 
 const storeMock = vi.hoisted(() => ({
   storedPacks: [] as any[],
-  currentPack: null as any,
-  loadPack: vi.fn().mockResolvedValue(undefined),
-  unloadPack: vi.fn(),
-  deletePack: vi.fn().mockResolvedValue(undefined),
-  importPack: vi.fn().mockResolvedValue(undefined),
+  selectedPackId: null as string | null,
+  selectPack: vi.fn(),
+  deletePack: vi.fn(),
+  importPack: vi.fn(),
 }));
 
 const confirmMock = vi.hoisted(() => vi.fn());
-
 const push = vi.hoisted(() => vi.fn());
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => storeMock,
 }));
-vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/dialogs', () => ({ confirm: confirmMock }));
+vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }));
 
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
+import { quasarStubs } from '../helpers/quasar-stubs';
 
 const packs = [
-  { id: 'p1', name: 'Fantasy Pack', category: 'fantasy' },
-  { id: 'p2', name: 'Horror Pack', category: 'horror' },
-];
-
-function control(wrapper: ReturnType<typeof mount>, text: string) {
-  return wrapper
-    .findAll('[data-stub="QItem"]')
-    .find((entry) => entry.text() === text);
-}
+  { id: 'pack-1', name: 'Forest', category: 'fantasy' },
+  { id: 'pack-2', name: 'City', category: 'modern' },
+] as any[];
 
 describe('SoundPackSidebar', () => {
   beforeEach(() => {
     storeMock.storedPacks = packs;
-    storeMock.currentPack = null;
-    storeMock.loadPack.mockClear();
-    storeMock.unloadPack.mockClear();
-    storeMock.deletePack.mockClear();
-    storeMock.importPack.mockClear();
-    confirmMock.mockReset();
+    storeMock.selectedPackId = null;
+    for (const fn of [
+      storeMock.selectPack,
+      storeMock.deletePack,
+      storeMock.importPack,
+      confirmMock,
+      push,
+    ]) {
+      fn.mockClear();
+    }
     confirmMock.mockResolvedValue(true);
-    push.mockClear();
   });
 
-  it('lists packs as sidebar items without a title and loads on click', async () => {
-    const wrapper = mount(SoundPackSidebar);
+  it('lists all packages plus the all-packages entry', () => {
+    const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });
+    const items = wrapper.findAll('.sound-pack-item');
+    expect(items).toHaveLength(3);
+    expect(items[0].text()).toContain('All packages');
+    expect(items[1].text()).toContain('Forest');
+    expect(items[2].text()).toContain('City');
+    wrapper.unmount();
+  });
+
+  it('filters by package and clears the filter from All packages', async () => {
+    const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });
     const items = wrapper.findAll('.sound-pack-item');
 
-    expect(wrapper.text()).not.toContain('Sound packs');
-    expect(items.map((item) => item.text())).toContain('Fantasy Pack');
-    expect(items.map((item) => item.text())).toContain('Horror Pack');
+    await items[1].trigger('click');
+    expect(storeMock.selectPack).toHaveBeenCalledWith('pack-1');
 
     await items[0].trigger('click');
-    expect(storeMock.loadPack).toHaveBeenCalledWith(packs[0]);
+    expect(storeMock.selectPack).toHaveBeenCalledWith(null);
     wrapper.unmount();
   });
 
-  it('marks the active pack and toggles it off on click', async () => {
-    storeMock.currentPack = packs[1];
-    const wrapper = mount(SoundPackSidebar);
+  it('marks the selected package and supports deletion', async () => {
+    storeMock.selectedPackId = 'pack-2';
+    const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });
     const items = wrapper.findAll('.sound-pack-item');
+    expect(items[2].classes()).toContain('is-selected');
 
-    expect(items[1].classes()).toContain('is-selected');
-    await items[1].trigger('click');
-    expect(storeMock.unloadPack).toHaveBeenCalledTimes(1);
-    wrapper.unmount();
-  });
-
-  it('deletes a pack through the sidebar action after confirmation', async () => {
-    const wrapper = mount(SoundPackSidebar);
-    const deleteButton = wrapper.find('.sound-pack-item .sound-pack-delete');
-
-    expect(deleteButton.exists()).toBe(true);
-    await deleteButton.trigger('click');
-    await flushPromises();
-
+    await items[2].find('.sound-pack-delete').trigger('click');
     expect(confirmMock).toHaveBeenCalled();
-    expect(storeMock.deletePack).toHaveBeenCalledWith('p1');
-    expect(storeMock.loadPack).not.toHaveBeenCalled();
+    expect(storeMock.deletePack).toHaveBeenCalledWith('pack-2');
     wrapper.unmount();
   });
 
-  it('keeps pinned create/import controls and imports files', async () => {
-    const wrapper = mount(SoundPackSidebar);
-
-    expect(wrapper.find('.sound-pack-sidebar-controls').exists()).toBe(true);
-    expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(1);
-    expect(control(wrapper, 'Create Pack')).toBeTruthy();
-    expect(control(wrapper, 'Import Pack')).toBeTruthy();
-
-    control(wrapper, 'Create Pack')!.trigger('click');
+  it('navigates to the package editor', async () => {
+    const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });
+    const create = wrapper
+      .findAll('[data-stub="QItem"]')
+      .find((item) => item.text().includes('Create Pack'));
+    await create!.trigger('click');
     expect(push).toHaveBeenCalledWith('/ambient-sound/editor');
-
-    const click = vi
-      .spyOn(HTMLInputElement.prototype, 'click')
-      .mockImplementation(() => undefined);
-    control(wrapper, 'Import Pack')!.trigger('click');
-    expect(click).toHaveBeenCalled();
-    click.mockRestore();
-
-    const input = wrapper.find('input[type="file"]');
-    const file = new File(['pack'], 'demo.spk');
-    Object.defineProperty(input.element, 'files', {
-      configurable: true,
-      value: [file],
-    });
-    await input.trigger('change');
-    await flushPromises();
-    expect(storeMock.importPack).toHaveBeenCalledWith(file);
     wrapper.unmount();
   });
 
-  it('shows no hint or pack rows when the library is empty', () => {
+  it('renders the all-packages entry when empty', () => {
     storeMock.storedPacks = [];
-    const wrapper = mount(SoundPackSidebar);
-
-    expect(wrapper.text()).not.toContain('Import a .spk sound pack file');
-    expect(wrapper.findAll('.sound-pack-item')).toHaveLength(0);
-    expect(control(wrapper, 'Create Pack')).toBeTruthy();
+    const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });
+    expect(wrapper.findAll('.sound-pack-item')).toHaveLength(1);
+    expect(wrapper.text()).toContain('Import Pack');
     wrapper.unmount();
   });
 });

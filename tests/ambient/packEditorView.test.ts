@@ -55,7 +55,7 @@ describe('PackEditorView package management', () => {
     mocks.pickAudioFiles.mockResolvedValue([audio('sound.mp3')]);
   });
 
-  it('creates layers with variations, effects and mood music', async () => {
+  it('creates ambiences with variations and effects', async () => {
     const wrapper = mount(PackEditorView);
 
     await wrapper
@@ -78,7 +78,6 @@ describe('PackEditorView package management', () => {
     await nextTick();
 
     await button(wrapper, 'Select file').trigger('click');
-    await buttons(wrapper, 'Add music')[0].trigger('click');
     await flushPromises();
 
     await buttons(wrapper, 'Save')[0].trigger('click');
@@ -92,22 +91,17 @@ describe('PackEditorView package management', () => {
       category: 'fantasy',
       defaultIntensity: 50,
     });
-    expect(manifest.layers).toHaveLength(1);
-    expect(manifest.layers[0].category).toBe('Ambient');
-    expect(manifest.layers[0].variations).toHaveLength(2);
-    expect(manifest.layers[0].variations[0].samples).toEqual(['sound.mp3']);
+    expect(manifest.ambiences).toHaveLength(1);
+    expect(manifest.ambiences[0].category).toBe('Ambient');
+    expect(manifest.ambiences[0].variations).toHaveLength(2);
+    expect(manifest.ambiences[0].variations[0].samples).toEqual([
+      'ambiences/sound.mp3',
+    ]);
     expect(manifest.oneShots).toHaveLength(1);
-    expect(manifest.oneShots[0].file).toBe('sound.mp3');
-    expect(manifest.moodStates).toHaveLength(4);
-    expect(manifest.moodStates[0].musicFiles).toEqual(['sound.mp3']);
-    expect(manifest.moodStates[0].mode).toBe('continual');
-    expect(manifest.weatherSystems).toBeUndefined();
+    expect(manifest.oneShots[0].file).toBe('one-shots/sound.mp3');
+    expect(manifest.scenes).toEqual([]);
     expect([...audioFiles.keys()]).toEqual(
-      expect.arrayContaining([
-        'layers/sound.mp3',
-        'sfx/sound.mp3',
-        'music/sound.mp3',
-      ]),
+      expect.arrayContaining(['ambiences/sound.mp3', 'one-shots/sound.mp3']),
     );
     expect(mocks.exportSoundPackAsFile).toHaveBeenCalled();
     expect(mocks.push).toHaveBeenCalledWith('/ambient-sound');
@@ -142,7 +136,6 @@ describe('PackEditorView package management', () => {
     await nextTick();
 
     expect(wrapper.findAll('.item-card')).toHaveLength(2);
-    expect(wrapper.findAll('.mood-state-card')).toHaveLength(4);
 
     const layer = wrapper.find('.item-card');
     await layer.find('button[aria-label="Delete"]').trigger('click');
@@ -150,7 +143,7 @@ describe('PackEditorView package management', () => {
     wrapper.unmount();
   });
 
-  it('removes variations, samples, effects and mood music', async () => {
+  it('removes variations, samples and effects', async () => {
     const wrapper = mount(PackEditorView);
     await buttons(wrapper, 'Add')[0].trigger('click');
     await nextTick();
@@ -181,19 +174,6 @@ describe('PackEditorView package management', () => {
       .find('.item-card button[aria-label="Delete"]')
       .trigger('click');
     expect(wrapper.findAll('.item-card')).toHaveLength(0);
-    wrapper.unmount();
-  });
-
-  it('removes a mood music file', async () => {
-    const wrapper = mount(PackEditorView);
-    await buttons(wrapper, 'Add music')[0].trigger('click');
-    await flushPromises();
-
-    expect(wrapper.findAll('.mood-state-card .sample-row')).toHaveLength(1);
-    await wrapper
-      .find('.mood-state-card .sample-row button[aria-label="Delete"]')
-      .trigger('click');
-    expect(wrapper.findAll('.mood-state-card .sample-row')).toHaveLength(0);
     wrapper.unmount();
   });
 

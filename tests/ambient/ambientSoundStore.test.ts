@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     getPackAudioBlobs: vi.fn(),
     importSoundPack: vi.fn(),
     deletePack: vi.fn(),
+    updatePackManifest: vi.fn(),
   },
   audioEngine: {
     loadLayer: vi.fn(),
@@ -19,11 +20,9 @@ const mocks = vi.hoisted(() => ({
     setLayerVolume: vi.fn(),
     playMusic: vi.fn(),
     pauseAll: vi.fn(),
-    transitionToMusic: vi.fn(),
     setMusicVolume: vi.fn(),
     playOneShot: vi.fn(),
     stopMusic: vi.fn(),
-    setMusicEndHandler: vi.fn(),
   },
 }));
 
@@ -33,16 +32,17 @@ vi.mock('@/ambient-sound/utils/audioEngine', () => ({
 }));
 
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import type { SoundPackManifest } from '@/ambient-sound/types';
+import { normalizeSoundPack } from '@/ambient-sound/utils/packData';
+import type { SceneDef, SoundPackManifest } from '@/ambient-sound/types';
 
 const manifest: SoundPackManifest = {
-  version: '1',
-  id: 'pack-1',
-  name: 'Campaign',
+  version: '2.0',
+  id: 'forest',
+  name: 'Forest',
   description: '',
   category: 'fantasy',
-  defaultIntensity: 65,
-  layers: [
+  defaultIntensity: 60,
+  ambiences: [
     {
       id: 'rain',
       name: 'Rain',
@@ -51,12 +51,8 @@ const manifest: SoundPackManifest = {
       defaultVolume: 40,
       loop: true,
       variations: [
-        {
-          id: 'light',
-          name: 'Light rain',
-          samples: ['light.mp3', 'light-2.mp3'],
-        },
-        { id: 'heavy', name: 'Heavy rain', samples: ['heavy.mp3'] },
+        { id: 'light', name: 'Light', samples: ['ambiences/light.mp3'] },
+        { id: 'heavy', name: 'Heavy', samples: ['ambiences/heavy.mp3'] },
       ],
     },
   ],
@@ -65,53 +61,31 @@ const manifest: SoundPackManifest = {
       id: 'thunder',
       name: 'Thunder',
       icon: 'ra-bell',
-      file: 'thunder.mp3',
+      file: 'one-shots/thunder.mp3',
       category: 'weather',
       volume: 80,
     },
   ],
-  moodStates: [
+  scenes: [
     {
-      state: 'explore',
-      name: 'Explore',
-      icon: 'ra-horn-call',
-      mode: 'continual',
-      musicFiles: ['explore.mp3'],
-    },
-    {
-      state: 'combat',
-      name: 'Combat',
-      icon: 'ra-swords',
-      mode: 'continual',
-      musicFiles: ['combat.mp3', 'combat-2.mp3'],
-    },
-    {
-      state: 'victory',
-      name: 'Victory',
-      icon: 'ra-trophy',
-      mode: 'temporary',
-      musicFile: 'victory.mp3',
-    },
-    {
-      state: 'rest',
-      name: 'Rest',
-      icon: 'ra-campfire',
-      mode: 'continual',
-      musicFiles: ['rest.mp3'],
+      id: 'tavern',
+      name: 'Tavern',
+      icon: 'ra-beer',
+      intensity: 70,
+      ambiences: [{ ambienceId: 'rain', variationId: 'light', volume: 40 }],
+      oneShotIds: ['thunder'],
+      music: { files: ['scenes/tavern/music/theme.mp3'], loop: true },
     },
   ],
 };
 
+const pack = normalizeSoundPack(manifest);
+
 const blobs = {
-  'layers/light.mp3': new Blob(['light'], { type: 'light' }),
-  'layers/light-2.mp3': new Blob(['light2'], { type: 'light2' }),
-  'layers/heavy.mp3': new Blob(['heavy'], { type: 'heavy' }),
-  'sfx/thunder.mp3': new Blob(['thunder'], { type: 'thunder' }),
-  'music/explore.mp3': new Blob(['explore'], { type: 'explore' }),
-  'music/combat.mp3': new Blob(['combat'], { type: 'combat' }),
-  'music/combat-2.mp3': new Blob(['combat2'], { type: 'combat2' }),
-  'music/victory.mp3': new Blob(['victory'], { type: 'victory' }),
-  'music/rest.mp3': new Blob(['rest'], { type: 'rest' }),
+  'ambiences/light.mp3': new Blob(['light'], { type: 'light' }),
+  'ambiences/heavy.mp3': new Blob(['heavy'], { type: 'heavy' }),
+  'one-shots/thunder.mp3': new Blob(['thunder'], { type: 'thunder' }),
+  'scenes/tavern/music/theme.mp3': new Blob(['theme'], { type: 'theme' }),
 };
 
 function createStore() {
@@ -123,8 +97,12 @@ describe('ambient sound store', () => {
   beforeEach(() => {
     for (const fn of Object.values(mocks.packManager)) fn.mockReset();
     for (const fn of Object.values(mocks.audioEngine)) fn.mockReset();
-    mocks.packManager.getStoredPacks.mockResolvedValue([manifest]);
+    mocks.packManager.getStoredPacks.mockResolvedValue([pack]);
     mocks.packManager.getPackAudioBlobs.mockResolvedValue(blobs);
+    mocks.packManager.updatePackManifest.mockImplementation(
+      async (_id: string, updated: SoundPackManifest) =>
+        normalizeSoundPack(updated),
+    );
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       value: vi.fn((blob: Blob) => `blob:${blob.type}`),
@@ -134,212 +112,200 @@ describe('ambient sound store', () => {
       value: vi.fn(),
     });
     vi.spyOn(Math, 'random').mockReturnValue(0);
+    localStorage.clear();
   });
 
-  it('loads stored packs and prepares layer/music samples', async () => {
+  it('loads packages into scenes and the global gallery', async () => {
     const store = createStore();
     await store.loadStoredPacks();
-    expect(store.storedPacks).toEqual([manifest]);
 
-    await store.loadPack(manifest);
-    expect(store.loading).toBe(false);
-    expect(store.currentPack).toEqual(manifest);
-    expect(store.intensity).toBe(65);
-    expect(store.currentMoodState).toBe('explore');
-    expect(store.layerVariationSelections.get('rain')).toBe('light');
-    expect(URL.createObjectURL).toHaveBeenCalledTimes(9);
-    expect(mocks.audioEngine.setMasterVolume).toHaveBeenCalledWith(0.8);
-    expect(mocks.audioEngine.loadLayer).not.toHaveBeenCalled();
-    expect(mocks.audioEngine.loadMusic).not.toHaveBeenCalled();
-
-    await store.loadPack(manifest);
-    expect(mocks.packManager.getPackAudioBlobs).toHaveBeenCalledTimes(1);
+    expect(store.storedPacks).toHaveLength(1);
+    expect(store.allScenes).toHaveLength(1);
+    expect(store.galleryAmbiences).toHaveLength(1);
+    expect(store.galleryOneShots).toHaveLength(1);
+    expect(store.selectedPack).toBeNull();
+    expect(mocks.audioEngine.loadOneShot).not.toHaveBeenCalled();
   });
 
-  it('imports, deletes and unloads packs', async () => {
+  it('plays a scene with its own music and ambience config', async () => {
     const store = createStore();
-    const file = new File(['pack'], 'pack.spk');
-    mocks.packManager.importSoundPack.mockResolvedValue(manifest);
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
 
-    await store.importPack(file);
-    expect(mocks.packManager.importSoundPack).toHaveBeenCalledWith(file);
-    expect(store.currentPack).toEqual(manifest);
-
-    mocks.packManager.getStoredPacks.mockResolvedValue([]);
-    await store.deletePack('pack-1');
-    expect(mocks.packManager.deletePack).toHaveBeenCalledWith('pack-1');
-    expect(store.currentPack).toBeNull();
-    expect(mocks.audioEngine.stopAll).toHaveBeenCalled();
-    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(9);
-  });
-
-  it('toggles layers, variations, volume and playback', async () => {
-    const store = createStore();
-    await store.loadPack(manifest);
-    store.play();
-    expect(mocks.audioEngine.loadMusic).toHaveBeenCalledWith(
-      'explore',
-      'blob:explore',
-      true,
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeScene?.scene.id).toBe('tavern');
+    expect(store.intensity).toBe(70);
+    expect(mocks.audioEngine.loadOneShot).toHaveBeenCalledWith(
+      'oneShot:forest:thunder',
+      'blob:thunder',
+      ['mp3'],
     );
-    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.65);
-
-    store.toggleLayer('rain');
-    expect(store.activeLayers.get('rain')).toMatchObject({
-      variationId: 'light',
-      sampleIndex: 0,
-      volume: 0.4,
-    });
     expect(mocks.audioEngine.loadLayer).toHaveBeenCalledWith(
-      'rain',
+      'forest:rain',
       'blob:light',
       true,
+      ['mp3'],
     );
-    expect(mocks.audioEngine.playLayer).toHaveBeenCalledWith('rain', 0.4);
-
-    store.setLayerVariation('rain', 'heavy');
-    expect(store.activeLayers.get('rain')?.variationId).toBe('heavy');
-    expect(mocks.audioEngine.stopLayer).toHaveBeenCalledWith('rain');
-    expect(mocks.audioEngine.loadLayer).toHaveBeenCalledWith(
-      'rain',
-      'blob:heavy',
+    expect(mocks.audioEngine.playLayer).toHaveBeenCalledWith(
+      'forest:rain',
+      0.4,
+    );
+    expect(mocks.audioEngine.loadMusic).toHaveBeenCalledWith(
+      'forest::tavern',
+      'blob:theme',
       true,
+      ['mp3'],
     );
-
-    store.setLayerVolume('rain', 0.2);
-    expect(store.activeLayers.get('rain')?.volume).toBe(0.2);
-    expect(mocks.audioEngine.setLayerVolume).toHaveBeenCalledWith('rain', 0.2);
-
-    store.toggleLayer('rain');
-    expect(store.activeLayers.has('rain')).toBe(false);
-    store.toggleLayer('missing');
+    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.7);
 
     store.pause();
     expect(store.isPlaying).toBe(false);
     expect(mocks.audioEngine.pauseAll).toHaveBeenCalled();
-    store.togglePlayPause();
+
+    store.play();
     expect(store.isPlaying).toBe(true);
+    store.stop();
+    expect(store.activeScene).toBeNull();
+    expect(mocks.audioEngine.stopAll).toHaveBeenCalled();
   });
 
-  it('switches continual moods, keeps same mood running and randomizes music', async () => {
+  it('toggles and changes ambience independently', async () => {
     const store = createStore();
-    await store.loadPack(manifest);
-    store.play();
-    mocks.audioEngine.transitionToMusic.mockClear();
+    await store.loadStoredPacks();
 
-    store.setMoodState('combat');
-    expect(store.currentMoodState).toBe('combat');
-    expect(mocks.audioEngine.transitionToMusic).toHaveBeenCalledWith(
-      'combat',
-      'blob:combat',
-      0.65,
+    await store.toggleAmbience('forest', 'rain');
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'light',
+      volume: 0.4,
+    });
+    expect(mocks.audioEngine.loadLayer).toHaveBeenLastCalledWith(
+      'forest:rain',
+      'blob:light',
       true,
+      ['mp3'],
     );
 
-    mocks.audioEngine.transitionToMusic.mockClear();
-    store.setMoodState('combat');
-    expect(mocks.audioEngine.transitionToMusic).not.toHaveBeenCalled();
-
-    vi.mocked(Math.random).mockReturnValue(0.99);
-    store.setMoodState('rest');
-    store.setMoodState('combat');
-    expect(mocks.audioEngine.transitionToMusic).toHaveBeenLastCalledWith(
-      'combat',
-      'blob:combat2',
-      0.65,
+    await store.setAmbienceVariation('forest', 'rain', 'heavy');
+    expect(mocks.audioEngine.stopLayer).toHaveBeenCalledWith('forest:rain');
+    expect(mocks.audioEngine.loadLayer).toHaveBeenLastCalledWith(
+      'forest:rain',
+      'blob:heavy',
       true,
+      ['mp3'],
     );
+
+    store.setAmbienceVolume('forest', 'rain', 0.2);
+    expect(store.activeLayers.get('forest:rain')?.volume).toBe(0.2);
+    expect(mocks.audioEngine.setLayerVolume).toHaveBeenCalledWith(
+      'forest:rain',
+      0.2,
+    );
+
+    await store.toggleAmbience('forest', 'rain');
+    expect(store.activeLayers.has('forest:rain')).toBe(false);
+  });
+
+  it('plays one-shots independently of ambient volume and transport', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    store.setMasterVolume(0);
+    store.pause();
+
+    await store.playOneShot('forest', 'thunder');
+
+    expect(mocks.audioEngine.playOneShot).toHaveBeenCalledWith(
+      'oneShot:forest:thunder',
+      0.8,
+    );
+    expect(store.isPlaying).toBe(false);
+  });
+
+  it('handles selection, transport toggles, music and previews', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    store.selectPack('forest');
+    expect(store.selectedPack?.id).toBe('forest');
+    store.selectPack('forest');
+    expect(store.selectedPack).toBeNull();
+
+    await store.playScene('forest', 'tavern');
+    store.togglePlayPause();
+    expect(store.isPlaying).toBe(false);
+    store.togglePlayPause();
+    expect(store.isPlaying).toBe(true);
 
     store.setIntensity(120);
     expect(store.intensity).toBe(100);
     expect(mocks.audioEngine.setMusicVolume).toHaveBeenCalledWith(1);
-    store.setIntensity(-10);
-    expect(store.intensity).toBe(0);
 
-    store.setMasterVolume(200);
-    expect(store.masterVolume).toBe(100);
-    expect(mocks.audioEngine.setMasterVolume).toHaveBeenCalledWith(1);
-    store.setMasterVolume(-5);
-    expect(store.masterVolume).toBe(0);
-  });
+    store.setMusicEnabled(false);
+    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
+    store.toggleMusic();
+    expect(store.musicEnabled).toBe(true);
+    expect(mocks.audioEngine.loadMusic).toHaveBeenCalled();
 
-  it('reverts temporary moods after their music ends', async () => {
-    const store = createStore();
-    await store.loadPack(manifest);
-    store.play();
-    store.setMoodState('victory');
-
-    expect(store.currentMoodState).toBe('victory');
-    expect(store.previousMoodState).toBe('explore');
-    expect(store.temporaryMusicActive).toBe(true);
-    expect(mocks.audioEngine.transitionToMusic).toHaveBeenLastCalledWith(
-      'victory',
-      'blob:victory',
-      0.65,
+    await store.previewAmbience('forest', 'rain', 'heavy');
+    expect(mocks.audioEngine.loadLayer).toHaveBeenLastCalledWith(
+      'preview:forest:rain',
+      'blob:heavy',
+      true,
+      ['mp3'],
+    );
+    store.stopPreview();
+    expect(mocks.audioEngine.stopLayer).toHaveBeenCalledWith(
+      'preview:forest:rain',
       false,
     );
-
-    const endHandler = mocks.audioEngine.setMusicEndHandler.mock.calls[0][0];
-    endHandler();
-    expect(store.currentMoodState).toBe('explore');
-    expect(store.previousMoodState).toBeNull();
-    expect(store.temporaryMusicActive).toBe(false);
-    expect(mocks.audioEngine.transitionToMusic).toHaveBeenLastCalledWith(
-      'explore',
-      'blob:explore',
-      0.65,
-      true,
-    );
   });
 
-  it('toggles ambient music independently of playback', async () => {
+  it('imports and deletes packages while cleaning links and playback', async () => {
     const store = createStore();
-    expect(store.musicEnabled).toBe(true);
-    await store.loadPack(manifest);
-    store.play();
-    expect(mocks.audioEngine.playMusic).toHaveBeenCalled();
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
+    store.addSceneLink('forest', 'tavern', 'encounter', 'enc-1');
 
-    mocks.audioEngine.playMusic.mockClear();
-    store.setMusicEnabled(false);
-    expect(store.musicEnabled).toBe(false);
-    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
+    mocks.packManager.getStoredPacks.mockResolvedValueOnce([]);
+    await store.deletePack('forest');
 
-    store.setMoodState('combat');
-    expect(mocks.audioEngine.transitionToMusic).not.toHaveBeenCalled();
+    expect(mocks.audioEngine.stopAll).toHaveBeenCalled();
+    expect(store.storedPacks).toEqual([]);
+    expect(store.linksForEntity('encounter', 'enc-1')).toEqual([]);
 
-    store.play();
-    expect(mocks.audioEngine.playMusic).not.toHaveBeenCalled();
-
-    store.setMusicEnabled(true);
-    expect(mocks.audioEngine.loadMusic).toHaveBeenCalledWith(
-      'explore',
-      'blob:explore',
-      true,
-    );
-    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.65);
-
-    store.toggleMusic();
-    expect(store.musicEnabled).toBe(false);
-    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledTimes(2);
+    mocks.packManager.importSoundPack.mockResolvedValue(pack);
+    mocks.packManager.getStoredPacks.mockResolvedValue([pack]);
+    await store.importPack(new File(['pack'], 'forest.spk'));
+    expect(mocks.packManager.importSoundPack).toHaveBeenCalled();
+    expect(store.selectedPackId).toBe('forest');
   });
 
-  it('plays one-shots and ignores actions without a pack', () => {
-    const empty = createStore();
-    empty.toggleLayer('rain');
-    empty.play();
-    empty.setMoodState('combat');
-    empty.playOneShot('thunder');
-    expect(empty.hasActiveLayers).toBe(false);
-    expect(mocks.audioEngine.playLayer).not.toHaveBeenCalled();
-
+  it('creates, updates and deletes scenes and links', async () => {
     const store = createStore();
-    return store.loadPack(manifest).then(() => {
-      store.playOneShot('thunder');
-      expect(mocks.audioEngine.playOneShot).toHaveBeenCalledWith(
-        'thunder',
-        0.8,
-      );
-      store.playOneShot('missing');
-    });
+    await store.loadStoredPacks();
+
+    const scene: SceneDef = {
+      ...manifest.scenes![0],
+      id: 'shop',
+      name: 'Shop',
+      music: { files: [], loop: true },
+    };
+    await store.saveScene('forest', scene);
+    expect(mocks.packManager.updatePackManifest).toHaveBeenCalled();
+    expect(store.storedPacks[0].scenes.map((entry) => entry.id)).toContain(
+      'shop',
+    );
+
+    store.addSceneLink('forest', 'shop', 'location', 'loc-1');
+    expect(store.linksForEntity('location', 'loc-1')).toEqual([
+      { packageId: 'forest', sceneId: 'shop' },
+    ]);
+
+    store.removeSceneLink(store.linksForScene('forest', 'shop')[0].id);
+    expect(store.linksForEntity('location', 'loc-1')).toEqual([]);
+
+    await store.deleteScene('forest', 'shop');
+    expect(store.storedPacks[0].scenes.map((entry) => entry.id)).not.toContain(
+      'shop',
+    );
   });
 });

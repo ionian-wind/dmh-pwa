@@ -7,6 +7,7 @@ import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
 import EntitiesLinking from '../components/EntitiesLinking.vue';
+import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import MapLocationEditor from '../components/MapLocationEditor.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';
 import { useMapStore } from '../maps';
@@ -254,6 +255,12 @@ function openMap(mapId: string) {
           </div>
         </div>
       </TabGroup>
+      <QSeparator class="q-my-sm" />
+      <EntityScenesPanel
+        v-if="location"
+        entity-type="location"
+        :entity-id="location.id"
+      />
     </template>
 
     <template #editor>

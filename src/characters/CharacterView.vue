@@ -6,6 +6,7 @@ import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Mentions from '@/components/common/Mentions.vue';
+import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import { useMentionsStore } from '@/utils/storage';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
@@ -116,6 +117,12 @@ async function handleEditorDelete() {
       <Mentions
         :title="t('common.mentionedIn')"
         :entities="mentionedInEntities"
+      />
+      <QSeparator class="q-my-sm" />
+      <EntityScenesPanel
+        v-if="character"
+        entity-type="character"
+        :entity-id="character.id"
       />
     </template>
   </BaseEntityView>

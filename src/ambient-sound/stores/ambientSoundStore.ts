@@ -1,326 +1,296 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import type {
-  SoundPackManifest,
-  MoodState,
   ActiveLayer,
+  GalleryAmbience,
+  GalleryOneShot,
   LayerDef,
+  NormalizedSoundPack,
   OneShotDef,
+  SceneDef,
+  SceneEntityLink,
+  SceneLinkEntityType,
+  SceneRef,
 } from '../types';
 import { audioEngine } from '../utils/audioEngine';
 import * as packManager from '../utils/packManager';
 import {
+  getAudioFormat,
   getLayerVariations,
-  getMoodMode,
-  getMoodMusicFiles,
+  getSceneMusicFile,
 } from '../utils/packData';
 
+const LINKS_STORAGE_KEY = 'dmh-ambient-scene-links';
+
+function sceneKey(packId: string, sceneId: string): string {
+  return `${packId}::${sceneId}`;
+}
+
+function audioKey(packId: string, path: string): string {
+  return `${packId}:${path}`;
+}
+
+function layerKey(packId: string, ambienceId: string): string {
+  return `${packId}:${ambienceId}`;
+}
+
+function oneShotKey(packId: string, oneShotId: string): string {
+  return `oneShot:${packId}:${oneShotId}`;
+}
+
+function randomIndex(length: number): number {
+  return length > 0 ? Math.floor(Math.random() * length) : 0;
+}
+
+function loadLinks(): SceneEntityLink[] {
+  try {
+    const raw = localStorage.getItem(LINKS_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SceneEntityLink[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLinks(links: SceneEntityLink[]): void {
+  localStorage.setItem(LINKS_STORAGE_KEY, JSON.stringify(links));
+}
+
 export const useAmbientSoundStore = defineStore('ambient-sound', () => {
-  const currentPack = ref<SoundPackManifest | null>(null);
+  const storedPacks = ref<NormalizedSoundPack[]>([]);
+  const selectedPackId = ref<string | null>(null);
+  const activeSceneKey = ref<string | null>(null);
   const activeLayers = ref<Map<string, ActiveLayer>>(new Map());
-  const layerVariationSelections = ref<Map<string, string>>(new Map());
-  const currentMoodState = ref<MoodState>('explore');
-  const previousMoodState = ref<MoodState | null>(null);
-  const temporaryMusicActive = ref(false);
-  const intensity = ref(50);
-  const masterVolume = ref(80);
+  const sceneLinks = ref<SceneEntityLink[]>(loadLinks());
   const isPlaying = ref(false);
   const musicEnabled = ref(true);
-  const storedPacks = ref<SoundPackManifest[]>([]);
+  const intensity = ref(50);
+  const masterVolume = ref(80);
   const loading = ref(false);
+  const loadedPackIds = ref<Set<string>>(new Set());
   const loadedAudioUrls = ref<Map<string, string>>(new Map());
+  const previewLayerId = ref<string | null>(null);
+
+  const selectedPack = computed(
+    () =>
+      storedPacks.value.find((pack) => pack.id === selectedPackId.value) ??
+      null,
+  );
+
+  const allScenes = computed(() =>
+    storedPacks.value.flatMap((pack) =>
+      pack.scenes.map((scene) => ({ pack, scene })),
+    ),
+  );
+
+  const galleryAmbiences = computed<GalleryAmbience[]>(() =>
+    storedPacks.value.flatMap((pack) =>
+      pack.ambiences.map((ambience) => ({
+        packageId: pack.id,
+        pack,
+        ambience,
+      })),
+    ),
+  );
+
+  const galleryOneShots = computed<GalleryOneShot[]>(() =>
+    storedPacks.value.flatMap((pack) =>
+      pack.oneShots.map((oneShot) => ({
+        packageId: pack.id,
+        pack,
+        oneShot,
+      })),
+    ),
+  );
+
+  const activeScene = computed(() => {
+    if (!activeSceneKey.value) return null;
+    return (
+      allScenes.value.find(
+        ({ pack, scene }) =>
+          sceneKey(pack.id, scene.id) === activeSceneKey.value,
+      ) ?? null
+    );
+  });
 
   const hasActiveLayers = computed(() => activeLayers.value.size > 0);
 
-  function layerByVariationId(layer: LayerDef) {
-    const variations = getLayerVariations(layer);
-    return variations.length > 0 ? variations : [];
+  function findPack(packId: string): NormalizedSoundPack | null {
+    return storedPacks.value.find((pack) => pack.id === packId) ?? null;
   }
 
-  function selectedVariation(layer: LayerDef) {
-    const variations = layerByVariationId(layer);
-    const selectedId = layerVariationSelections.value.get(layer.id);
+  function findScene(packId: string, sceneId: string) {
+    const pack = findPack(packId);
+    const scene = pack?.scenes.find((entry) => entry.id === sceneId);
+    return pack && scene ? { pack, scene } : null;
+  }
+
+  function findAmbience(packId: string, ambienceId: string) {
+    const pack = findPack(packId);
+    const ambience = pack?.ambiences.find((entry) => entry.id === ambienceId);
+    return ambience ?? null;
+  }
+
+  function findOneShot(packId: string, oneShotId: string) {
+    const pack = findPack(packId);
+    return pack?.oneShots.find((entry) => entry.id === oneShotId) ?? null;
+  }
+
+  function audioUrl(packId: string, path: string): string | undefined {
+    return loadedAudioUrls.value.get(audioKey(packId, path));
+  }
+
+  function getVariation(ambience: LayerDef, variationId?: string) {
+    const variations = getLayerVariations(ambience);
     return (
-      variations.find((variation) => variation.id === selectedId) ??
+      variations.find((variation) => variation.id === variationId) ??
       variations[0] ??
       null
     );
   }
 
-  function layerSampleUrl(
-    layerId: string,
-    variationId: string,
-    sampleIndex: number,
-  ) {
-    return loadedAudioUrls.value.get(
-      `layer:${layerId}:${variationId}:${sampleIndex}`,
-    );
-  }
+  async function ensurePackAudio(pack: NormalizedSoundPack): Promise<void> {
+    if (loadedPackIds.value.has(pack.id)) return;
 
-  function loadLayerSample(
-    layer: LayerDef,
-    variationId: string,
-    sampleIndex: number,
-  ) {
-    const url = layerSampleUrl(layer.id, variationId, sampleIndex);
-    if (!url) return false;
-    audioEngine.loadLayer(layer.id, url, true);
-    return true;
-  }
+    const blobs = await packManager.getPackAudioBlobs(pack.id);
 
-  function randomSampleIndex(samples: string[]) {
-    return samples.length > 0 ? Math.floor(Math.random() * samples.length) : 0;
-  }
-
-  function musicSampleFor(state: MoodState) {
-    const mood = currentPack.value?.moodStates.find(
-      (entry) => entry.state === state,
-    );
-    if (!mood) return null;
-    const files = getMoodMusicFiles(mood);
-    if (files.length === 0) return null;
-    const index = randomSampleIndex(files);
-    return {
-      mood,
-      url: loadedAudioUrls.value.get(`music:${state}:${index}`),
-      loop: getMoodMode(mood) !== 'temporary',
-    };
-  }
-
-  function playMoodMusic(useTransition: boolean) {
-    if (!isPlaying.value || !musicEnabled.value || !currentPack.value) return;
-    const sample = musicSampleFor(currentMoodState.value);
-    if (!sample?.url) return;
-
-    if (useTransition) {
-      audioEngine.transitionToMusic(
-        currentMoodState.value,
-        sample.url,
-        intensity.value / 100,
-        sample.loop,
-      );
-    } else {
-      audioEngine.loadMusic(currentMoodState.value, sample.url, sample.loop);
-      audioEngine.playMusic(intensity.value / 100);
-    }
-  }
-
-  function applyMood(
-    state: MoodState,
-    rememberPrevious: boolean,
-    useTransition: boolean,
-  ) {
-    if (!currentPack.value) return;
-    const mood = currentPack.value.moodStates.find(
-      (entry) => entry.state === state,
-    );
-    if (!mood) return;
-
-    const previous = currentMoodState.value;
-    currentMoodState.value = state;
-    if (rememberPrevious) {
-      previousMoodState.value =
-        previous !== state ? previous : previousMoodState.value;
-    } else {
-      previousMoodState.value = null;
-    }
-    temporaryMusicActive.value =
-      getMoodMode(mood) === 'temporary' && isPlaying.value;
-
-    if (isPlaying.value && musicEnabled.value) {
-      playMoodMusic(useTransition);
-    }
-  }
-
-  function handleMusicEnd() {
-    if (!temporaryMusicActive.value || !previousMoodState.value) return;
-    const previous = previousMoodState.value;
-    temporaryMusicActive.value = false;
-    applyMood(previous, false, true);
-  }
-
-  async function loadStoredPacks(): Promise<void> {
-    storedPacks.value = await packManager.getStoredPacks();
-  }
-
-  async function loadPack(pack: SoundPackManifest): Promise<void> {
-    if (currentPack.value?.id === pack.id) {
-      return;
-    }
-
-    loading.value = true;
-
-    try {
-      currentPack.value = pack;
-      activeLayers.value.clear();
-      layerVariationSelections.value.clear();
-      currentMoodState.value = 'explore';
-      previousMoodState.value = null;
-      temporaryMusicActive.value = false;
-      intensity.value = pack.defaultIntensity || 50;
-      loadedAudioUrls.value.clear();
-
-      const audioBlobs = await packManager.getPackAudioBlobs(pack.id);
-
-      for (const layer of pack.layers) {
-        const variations = getLayerVariations(layer);
-        if (variations[0]) {
-          layerVariationSelections.value.set(layer.id, variations[0].id);
-        }
-        for (const variation of variations) {
-          variation.samples.forEach((sample, index) => {
-            const blob = audioBlobs[`layers/${sample}`];
-            if (blob) {
-              loadedAudioUrls.value.set(
-                `layer:${layer.id}:${variation.id}:${index}`,
-                URL.createObjectURL(blob),
-              );
-            }
-          });
-        }
-      }
-
-      for (const sfx of pack.oneShots) {
-        const blob = audioBlobs[`sfx/${sfx.file}`];
-        if (blob) {
-          loadedAudioUrls.value.set(`sfx:${sfx.id}`, URL.createObjectURL(blob));
-        }
-      }
-
-      for (const mood of pack.moodStates) {
-        getMoodMusicFiles(mood).forEach((musicFile, index) => {
-          const blob = audioBlobs[`music/${musicFile}`];
+    for (const ambience of pack.ambiences) {
+      for (const variation of getLayerVariations(ambience)) {
+        for (const sample of variation.samples) {
+          const blob = blobs[sample];
           if (blob) {
             loadedAudioUrls.value.set(
-              `music:${mood.state}:${index}`,
+              audioKey(pack.id, sample),
               URL.createObjectURL(blob),
             );
           }
-        });
+        }
       }
-
-      audioEngine.setMasterVolume(masterVolume.value / 100);
-    } finally {
-      loading.value = false;
     }
-  }
 
-  async function importPack(file: File): Promise<void> {
-    loading.value = true;
-    try {
-      const manifest = await packManager.importSoundPack(file);
-      storedPacks.value = await packManager.getStoredPacks();
-      await loadPack(manifest);
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  async function deletePack(packId: string): Promise<void> {
-    await packManager.deletePack(packId);
-    if (currentPack.value?.id === packId) {
-      unloadPack();
-    }
-    storedPacks.value = await packManager.getStoredPacks();
-  }
-
-  function unloadPack(): void {
-    if (currentPack.value) {
-      for (const [, url] of loadedAudioUrls.value) {
-        URL.revokeObjectURL(url);
+    for (const oneShot of pack.oneShots) {
+      const blob = blobs[oneShot.file];
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        loadedAudioUrls.value.set(audioKey(pack.id, oneShot.file), url);
+        audioEngine.loadOneShot(
+          oneShotKey(pack.id, oneShot.id),
+          url,
+          getAudioFormat(oneShot.file),
+        );
       }
-      loadedAudioUrls.value.clear();
-      audioEngine.stopAll();
-      activeLayers.value.clear();
-      layerVariationSelections.value.clear();
-      currentPack.value = null;
-      previousMoodState.value = null;
-      temporaryMusicActive.value = false;
-      isPlaying.value = false;
     }
+
+    for (const scene of pack.scenes) {
+      for (const file of scene.music.files) {
+        const path = getSceneMusicFile(scene.id, file);
+        const blob = blobs[path] ?? blobs[file];
+        if (blob) {
+          loadedAudioUrls.value.set(
+            audioKey(pack.id, path),
+            URL.createObjectURL(blob),
+          );
+        }
+      }
+    }
+
+    loadedPackIds.value = new Set([...loadedPackIds.value, pack.id]);
   }
 
-  function toggleLayer(layerId: string, variationId?: string): void {
-    if (!currentPack.value) return;
+  function stopLayer(key: string): void {
+    audioEngine.stopLayer(key);
+    activeLayers.value.delete(key);
+  }
 
-    const layer = currentPack.value.layers.find(
-      (entry) => entry.id === layerId,
-    );
-    if (!layer) return;
+  function startAmbience(
+    packId: string,
+    ambience: LayerDef,
+    variationId: string | undefined,
+    volumePercent: number,
+  ): boolean {
+    const variation = getVariation(ambience, variationId);
+    if (!variation?.samples.length) return false;
 
-    const active = activeLayers.value.get(layerId);
-    if (active) {
-      activeLayers.value.delete(layerId);
-      audioEngine.stopLayer(layerId);
-      return;
-    }
+    const index = randomIndex(variation.samples.length);
+    const sample = variation.samples[index];
+    const url = audioUrl(packId, sample);
+    if (!url) return false;
 
-    const variation = variationId
-      ? layerByVariationId(layer).find((entry) => entry.id === variationId)
-      : selectedVariation(layer);
-    if (!variation) return;
-
-    const sampleIndex = randomSampleIndex(variation.samples);
-    layerVariationSelections.value.set(layerId, variation.id);
-    loadLayerSample(layer, variation.id, sampleIndex);
-
-    const volume = layer.defaultVolume / 100;
-    activeLayers.value.set(layerId, {
-      layerId,
+    const key = layerKey(packId, ambience.id);
+    audioEngine.loadLayer(key, url, true, getAudioFormat(sample));
+    const volume = Math.max(0, Math.min(1, volumePercent / 100));
+    activeLayers.value.set(key, {
+      layerId: ambience.id,
       variationId: variation.id,
-      sampleIndex,
+      sampleIndex: index,
       volume,
       isPlaying: true,
     });
-    if (isPlaying.value) {
-      audioEngine.playLayer(layerId, volume);
-    }
+    if (isPlaying.value) audioEngine.playLayer(key, volume);
+    return true;
   }
 
-  function setLayerVariation(layerId: string, variationId: string): void {
-    const layer = currentPack.value?.layers.find(
-      (entry) => entry.id === layerId,
+  function startSceneMusic(packId: string, scene: SceneDef): void {
+    if (!musicEnabled.value || scene.music.files.length === 0) {
+      audioEngine.stopMusic(false);
+      return;
+    }
+
+    const index = randomIndex(scene.music.files.length);
+    const rawFile = scene.music.files[index];
+    const path = getSceneMusicFile(scene.id, rawFile);
+    const url = audioUrl(packId, path) ?? audioUrl(packId, rawFile);
+    if (!url) return;
+
+    audioEngine.loadMusic(
+      sceneKey(packId, scene.id),
+      url,
+      scene.music.loop,
+      getAudioFormat(rawFile),
     );
-    if (!layer) return;
-    const variation = layerByVariationId(layer).find(
-      (entry) => entry.id === variationId,
-    );
-    if (!variation) return;
+    audioEngine.playMusic(intensity.value / 100);
+  }
 
-    layerVariationSelections.value.set(layerId, variation.id);
-    const active = activeLayers.value.get(layerId);
-    if (!active) return;
+  async function playScene(packId: string, sceneId: string): Promise<void> {
+    const found = findScene(packId, sceneId);
+    if (!found) return;
 
-    audioEngine.stopLayer(layerId);
-    const sampleIndex = randomSampleIndex(variation.samples);
-    active.variationId = variation.id;
-    active.sampleIndex = sampleIndex;
-    loadLayerSample(layer, variation.id, sampleIndex);
-    if (isPlaying.value) {
-      audioEngine.playLayer(layerId, active.volume);
+    const key = sceneKey(packId, sceneId);
+    if (activeSceneKey.value === key && isPlaying.value) return;
+
+    loading.value = true;
+    try {
+      await ensurePackAudio(found.pack);
+      activeSceneKey.value = key;
+      intensity.value = found.scene.intensity;
+      activeLayers.value.clear();
+      audioEngine.stopAll();
+
+      for (const selection of found.scene.ambiences) {
+        const ambience = findAmbience(packId, selection.ambienceId);
+        if (ambience) {
+          startAmbience(
+            packId,
+            ambience,
+            selection.variationId,
+            selection.volume,
+          );
+        }
+      }
+
+      isPlaying.value = true;
+      startSceneMusic(packId, found.scene);
+      for (const [layer, active] of activeLayers.value) {
+        audioEngine.playLayer(layer, active.volume);
+      }
+    } finally {
+      loading.value = false;
     }
   }
 
-  function setLayerVolume(layerId: string, volume: number): void {
-    const active = activeLayers.value.get(layerId);
-    if (active) {
-      active.volume = volume;
-      audioEngine.setLayerVolume(layerId, volume);
-    }
-  }
-
-  function play(): void {
-    if (!currentPack.value) return;
-
-    isPlaying.value = true;
-
-    for (const [layerId, active] of activeLayers.value) {
-      audioEngine.playLayer(layerId, active.volume);
-    }
-
-    if (musicEnabled.value) {
-      playMoodMusic(false);
-    }
+  async function selectScene(packId: string, sceneId: string): Promise<void> {
+    const key = sceneKey(packId, sceneId);
+    if (activeSceneKey.value === key && isPlaying.value) return;
+    await playScene(packId, sceneId);
   }
 
   function pause(): void {
@@ -328,24 +298,74 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     audioEngine.pauseAll();
   }
 
-  function togglePlayPause(): void {
-    if (isPlaying.value) {
-      pause();
-    } else {
-      play();
+  function play(): void {
+    if (!activeScene.value) return;
+    isPlaying.value = true;
+    for (const [layer, active] of activeLayers.value) {
+      audioEngine.playLayer(layer, active.volume);
+    }
+    if (musicEnabled.value) {
+      startSceneMusic(activeScene.value.pack.id, activeScene.value.scene);
     }
   }
 
-  function setMoodState(state: MoodState): void {
-    if (!currentPack.value) return;
-    if (
-      state === currentMoodState.value &&
-      isPlaying.value &&
-      musicEnabled.value
-    ) {
+  function togglePlayPause(): void {
+    if (isPlaying.value) pause();
+    else play();
+  }
+
+  function stop(): void {
+    audioEngine.stopAll();
+    activeLayers.value.clear();
+    activeSceneKey.value = null;
+    isPlaying.value = false;
+  }
+
+  async function toggleAmbience(
+    packId: string,
+    ambienceId: string,
+    variationId?: string,
+  ): Promise<void> {
+    const key = layerKey(packId, ambienceId);
+    if (activeLayers.value.has(key)) {
+      stopLayer(key);
       return;
     }
-    applyMood(state, true, true);
+
+    const pack = findPack(packId);
+    const ambience = findAmbience(packId, ambienceId);
+    if (!pack || !ambience) return;
+    await ensurePackAudio(pack);
+    startAmbience(packId, ambience, variationId, ambience.defaultVolume ?? 50);
+  }
+
+  async function setAmbienceVariation(
+    packId: string,
+    ambienceId: string,
+    variationId: string,
+  ): Promise<void> {
+    const key = layerKey(packId, ambienceId);
+    const active = activeLayers.value.get(key);
+    if (!active) return;
+
+    const pack = findPack(packId);
+    const ambience = findAmbience(packId, ambienceId);
+    if (!pack || !ambience) return;
+    await ensurePackAudio(pack);
+    stopLayer(key);
+    startAmbience(packId, ambience, variationId, active.volume * 100);
+  }
+
+  function setAmbienceVolume(
+    packId: string,
+    ambienceId: string,
+    volume: number,
+  ): void {
+    const key = layerKey(packId, ambienceId);
+    const active = activeLayers.value.get(key);
+    if (!active) return;
+    active.volume = Math.max(0, Math.min(1, volume));
+    audioEngine.setLayerVolume(key, active.volume);
   }
 
   function setIntensity(value: number): void {
@@ -355,8 +375,8 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     }
   }
 
-  function setMasterVolume(volume: number): void {
-    masterVolume.value = Math.max(0, Math.min(100, volume));
+  function setMasterVolume(value: number): void {
+    masterVolume.value = Math.max(0, Math.min(100, value));
     audioEngine.setMasterVolume(masterVolume.value / 100);
   }
 
@@ -366,55 +386,257 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       audioEngine.stopMusic(false);
       return;
     }
-    if (!isPlaying.value) return;
-    playMoodMusic(false);
+    if (activeScene.value) {
+      startSceneMusic(activeScene.value.pack.id, activeScene.value.scene);
+    }
   }
 
   function toggleMusic(): void {
     setMusicEnabled(!musicEnabled.value);
   }
 
-  function playOneShot(sfxId: string): void {
-    if (!currentPack.value) return;
+  async function playOneShot(packId: string, oneShotId: string): Promise<void> {
+    const pack = findPack(packId);
+    const oneShot = findOneShot(packId, oneShotId);
+    if (!pack || !oneShot) return;
+    await ensurePackAudio(pack);
+    audioEngine.playOneShot(
+      oneShotKey(packId, oneShot.id),
+      oneShot.volume / 100,
+    );
+  }
 
-    const sfx = currentPack.value.oneShots.find((s) => s.id === sfxId);
-    if (sfx) {
-      audioEngine.playOneShot(sfxId, sfx.volume / 100);
+  async function previewAmbience(
+    packId: string,
+    ambienceId: string,
+    variationId?: string,
+  ): Promise<void> {
+    const pack = findPack(packId);
+    const ambience = findAmbience(packId, ambienceId);
+    if (!pack || !ambience) return;
+    await ensurePackAudio(pack);
+
+    if (previewLayerId.value) {
+      audioEngine.stopLayer(previewLayerId.value, false);
+      previewLayerId.value = null;
+    }
+
+    const variation = getVariation(ambience, variationId);
+    if (!variation?.samples.length) return;
+    const sample = variation.samples[0];
+    const url = audioUrl(packId, sample);
+    if (!url) return;
+    const key = `preview:${packId}:${ambience.id}`;
+    previewLayerId.value = key;
+    audioEngine.loadLayer(key, url, true, getAudioFormat(sample));
+    audioEngine.playLayer(key, (ambience.defaultVolume ?? 50) / 100);
+  }
+
+  function stopPreview(): void {
+    if (!previewLayerId.value) return;
+    audioEngine.stopLayer(previewLayerId.value, false);
+    previewLayerId.value = null;
+  }
+
+  async function loadStoredPacks(): Promise<void> {
+    loading.value = true;
+    try {
+      storedPacks.value = await packManager.getStoredPacks();
+      sceneLinks.value = loadLinks();
+      if (
+        selectedPackId.value &&
+        !storedPacks.value.some((pack) => pack.id === selectedPackId.value)
+      ) {
+        selectedPackId.value = null;
+      }
+    } finally {
+      loading.value = false;
     }
   }
 
-  audioEngine.setMusicEndHandler(handleMusicEnd);
+  async function importPack(file: File): Promise<void> {
+    loading.value = true;
+    try {
+      const pack = await packManager.importSoundPack(file);
+      clearPackAudio(pack.id);
+      await loadStoredPacks();
+      selectedPackId.value = pack.id;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  function clearPackAudio(packId: string): void {
+    for (const [key, url] of loadedAudioUrls.value) {
+      if (key.startsWith(`${packId}:`)) {
+        URL.revokeObjectURL(url);
+        loadedAudioUrls.value.delete(key);
+      }
+    }
+    loadedPackIds.value = new Set(
+      [...loadedPackIds.value].filter((id) => id !== packId),
+    );
+  }
+
+  async function deletePack(packId: string): Promise<void> {
+    await packManager.deletePack(packId);
+    if (activeScene.value?.pack.id === packId) stop();
+    clearPackAudio(packId);
+    if (selectedPackId.value === packId) selectedPackId.value = null;
+    sceneLinks.value = sceneLinks.value.filter(
+      (link) => link.packageId !== packId,
+    );
+    saveLinks(sceneLinks.value);
+    await loadStoredPacks();
+  }
+
+  function selectPack(packId: string | null): void {
+    selectedPackId.value = selectedPackId.value === packId ? null : packId;
+  }
+
+  function addSceneLink(
+    packageId: string,
+    sceneId: string,
+    entityType: SceneLinkEntityType,
+    entityId: string,
+  ): void {
+    const existing = sceneLinks.value.find(
+      (link) =>
+        link.packageId === packageId &&
+        link.sceneId === sceneId &&
+        link.entityType === entityType &&
+        link.entityId === entityId,
+    );
+    if (existing) return;
+
+    const now = Date.now();
+    sceneLinks.value = [
+      ...sceneLinks.value,
+      {
+        id: `${packageId}-${sceneId}-${entityType}-${entityId}`,
+        packageId,
+        sceneId,
+        entityType,
+        entityId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+    saveLinks(sceneLinks.value);
+  }
+
+  function removeSceneLink(linkId: string): void {
+    sceneLinks.value = sceneLinks.value.filter((link) => link.id !== linkId);
+    saveLinks(sceneLinks.value);
+  }
+
+  function linksForScene(packageId: string, sceneId: string) {
+    return sceneLinks.value.filter(
+      (link) => link.packageId === packageId && link.sceneId === sceneId,
+    );
+  }
+
+  function linksForEntity(
+    entityType: SceneLinkEntityType,
+    entityId: string,
+  ): SceneRef[] {
+    return sceneLinks.value
+      .filter(
+        (link) => link.entityType === entityType && link.entityId === entityId,
+      )
+      .map((link) => ({ packageId: link.packageId, sceneId: link.sceneId }));
+  }
+
+  async function saveScene(
+    packId: string,
+    scene: SceneDef,
+    audioFiles: Map<string, Blob> = new Map(),
+  ): Promise<void> {
+    const pack = findPack(packId);
+    if (!pack) return;
+
+    const scenes = pack.scenes.some((entry) => entry.id === scene.id)
+      ? pack.scenes.map((entry) => (entry.id === scene.id ? scene : entry))
+      : [...pack.scenes, scene];
+    const manifest = { ...pack, scenes };
+
+    if (audioFiles.size > 0) {
+      const existing = await packManager.getPackAudioBlobs(packId);
+      const merged = new Map<string, Blob>(Object.entries(existing));
+      for (const [path, blob] of audioFiles) merged.set(path, blob);
+      await packManager.saveSoundPack(manifest, merged);
+      clearPackAudio(packId);
+    }
+
+    const updated = await packManager.updatePackManifest(packId, manifest);
+    storedPacks.value = storedPacks.value.map((entry) =>
+      entry.id === packId ? updated : entry,
+    );
+    if (activeSceneKey.value === sceneKey(packId, scene.id)) {
+      activeSceneKey.value = sceneKey(packId, scene.id);
+    }
+  }
+
+  async function deleteScene(packId: string, sceneId: string): Promise<void> {
+    const pack = findPack(packId);
+    if (!pack) return;
+    if (activeSceneKey.value === sceneKey(packId, sceneId)) stop();
+    const scenes = pack.scenes.filter((scene) => scene.id !== sceneId);
+    const updated = await packManager.updatePackManifest(packId, {
+      ...pack,
+      scenes,
+    });
+    storedPacks.value = storedPacks.value.map((entry) =>
+      entry.id === packId ? updated : entry,
+    );
+    sceneLinks.value = sceneLinks.value.filter(
+      (link) => !(link.packageId === packId && link.sceneId === sceneId),
+    );
+    saveLinks(sceneLinks.value);
+  }
 
   return {
-    currentPack,
+    storedPacks,
+    selectedPackId,
+    selectedPack,
+    allScenes,
+    galleryAmbiences,
+    galleryOneShots,
+    activeSceneKey,
+    activeScene,
     activeLayers,
-    layerVariationSelections,
-    currentMoodState,
-    previousMoodState,
-    temporaryMusicActive,
-    intensity,
-    masterVolume,
+    sceneLinks,
     isPlaying,
     musicEnabled,
-    storedPacks,
+    intensity,
+    masterVolume,
     loading,
     hasActiveLayers,
     loadStoredPacks,
-    loadPack,
     importPack,
     deletePack,
-    unloadPack,
-    toggleLayer,
-    setLayerVariation,
-    setLayerVolume,
-    play,
+    selectPack,
+    playScene,
+    selectScene,
     pause,
+    play,
     togglePlayPause,
-    setMoodState,
+    stop,
+    toggleAmbience,
+    setAmbienceVariation,
+    setAmbienceVolume,
     setIntensity,
     setMasterVolume,
     setMusicEnabled,
     toggleMusic,
     playOneShot,
+    previewAmbience,
+    stopPreview,
+    addSceneLink,
+    removeSceneLink,
+    linksForScene,
+    linksForEntity,
+    saveScene,
+    deleteScene,
   };
 });

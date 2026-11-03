@@ -2,14 +2,23 @@
   <div class="sound-pack-sidebar">
     <div class="sound-pack-sidebar-content">
       <SidebarItem
+        title="All packages"
+        class="sound-pack-item"
+        :class="{ 'is-selected': store.selectedPackId === null }"
+        @click="store.selectPack(null)"
+      >
+        <template #left>
+          <IconFolder :size="18" />
+        </template>
+      </SidebarItem>
+
+      <SidebarItem
         v-for="pack in store.storedPacks"
         :key="pack.id"
         :title="pack.name"
         class="sound-pack-item"
-        :class="{
-          'is-selected': store.currentPack?.id === pack.id,
-        }"
-        @click="togglePack(pack)"
+        :class="{ 'is-selected': store.selectedPackId === pack.id }"
+        @click="store.selectPack(pack.id)"
       >
         <template #left>
           <component :is="categoryIcon(pack.category)" :size="18" />
@@ -82,7 +91,7 @@ import {
 import SidebarItem from '@/components/common/SidebarItem.vue';
 import { confirm } from '@/dialogs';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import type { SoundPackManifest } from '@/ambient-sound/types';
+import type { NormalizedSoundPack } from '@/ambient-sound/types';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -101,15 +110,7 @@ function categoryIcon(category: string): Component {
   return categoryIcons[category] || IconFolder;
 }
 
-async function togglePack(pack: SoundPackManifest) {
-  if (store.currentPack?.id === pack.id) {
-    store.unloadPack();
-    return;
-  }
-  await store.loadPack(pack);
-}
-
-async function removePack(pack: SoundPackManifest) {
+async function removePack(pack: NormalizedSoundPack) {
   if (
     !(await confirm(
       t('ambientSoundPage.deletePackConfirm', { name: pack.name }),

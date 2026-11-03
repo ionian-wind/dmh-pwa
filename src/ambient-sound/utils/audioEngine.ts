@@ -1,4 +1,4 @@
-import { Howl, Howler } from 'howler';
+import { Howl } from 'howler';
 
 export class AudioEngine {
   private layers: Map<string, Howl> = new Map();
@@ -11,14 +11,18 @@ export class AudioEngine {
 
   setMasterVolume(volume: number): void {
     this.masterVolume = Math.max(0, Math.min(1, volume));
-    Howler.volume(this.masterVolume);
   }
 
   getMasterVolume(): number {
     return this.masterVolume;
   }
 
-  loadLayer(layerId: string, audioUrl: string, replace = false): void {
+  loadLayer(
+    layerId: string,
+    audioUrl: string,
+    replace = false,
+    format?: string[],
+  ): void {
     if (this.layers.has(layerId)) {
       if (!replace) return;
       this.layers.get(layerId)?.unload();
@@ -30,6 +34,7 @@ export class AudioEngine {
       volume: 0,
       html5: true,
       preload: true,
+      ...(format ? { format } : {}),
     });
     this.layers.set(layerId, howl);
   }
@@ -82,7 +87,7 @@ export class AudioEngine {
     return layer ? layer.playing() : false;
   }
 
-  loadOneShot(sfxId: string, audioUrl: string): void {
+  loadOneShot(sfxId: string, audioUrl: string, format?: string[]): void {
     if (this.oneShots.has(sfxId)) {
       return;
     }
@@ -91,6 +96,7 @@ export class AudioEngine {
       volume: 1,
       html5: true,
       preload: true,
+      ...(format ? { format } : {}),
     });
     this.oneShots.set(sfxId, howl);
   }
@@ -98,12 +104,18 @@ export class AudioEngine {
   playOneShot(sfxId: string, volume: number = 1): void {
     const sfx = this.oneShots.get(sfxId);
     if (sfx) {
-      sfx.volume(volume * this.masterVolume);
+      // One-shots use their own volume and are independent of ambient buses.
+      sfx.volume(Math.max(0, Math.min(1, volume)));
       sfx.play();
     }
   }
 
-  loadMusic(moodState: string, audioUrl: string, loop = true): void {
+  loadMusic(
+    moodState: string,
+    audioUrl: string,
+    loop = true,
+    format?: string[],
+  ): void {
     if (this.musicTrack && this.currentMoodState === moodState) {
       return;
     }
@@ -115,6 +127,7 @@ export class AudioEngine {
       html5: true,
       preload: true,
       onend: () => this.handleMusicEnd(),
+      ...(format ? { format } : {}),
     });
     this.currentMoodState = moodState;
   }
@@ -155,6 +168,7 @@ export class AudioEngine {
     newAudioUrl: string,
     volume: number = 0.5,
     loop = true,
+    format?: string[],
   ): void {
     if (this.musicTrack) {
       this.musicTrack.fade(this.musicTrack.volume(), 0, 1000);
@@ -168,13 +182,14 @@ export class AudioEngine {
           html5: true,
           preload: true,
           onend: () => this.handleMusicEnd(),
+          ...(format ? { format } : {}),
         });
         this.currentMoodState = newMoodState;
         this.musicTrack.play();
         this.musicTrack.fade(0, volume * this.masterVolume, 1000);
       }, 1000);
     } else {
-      this.loadMusic(newMoodState, newAudioUrl, loop);
+      this.loadMusic(newMoodState, newAudioUrl, loop, format);
       this.playMusic(volume);
     }
   }

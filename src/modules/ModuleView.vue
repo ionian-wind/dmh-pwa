@@ -27,6 +27,7 @@ import EncounterCard from '@/encounters/EncounterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
 import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
 import MapCard from '@/maps/components/MapCard.vue';
+import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import LocationCard from '@/maps/components/LocationCard.vue';
 import type { MapEntity, MapLocation } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
@@ -641,6 +642,12 @@ async function handleEditorDelete() {
             :entities="mentionedInEntities"
           />
         </div>
+        <QSeparator class="q-my-sm" />
+        <EntityScenesPanel
+          v-if="module"
+          entity-type="module"
+          :entity-id="module.id"
+        />
       </template>
     </BaseEntityTabView>
 

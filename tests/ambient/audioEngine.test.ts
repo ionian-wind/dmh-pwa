@@ -81,12 +81,12 @@ describe('ambient audio engine', () => {
     vi.useRealTimers();
   });
 
-  it('clamps and applies the master volume', () => {
+  it('clamps the master volume without changing the global Howler volume', () => {
     engine.setMasterVolume(2);
     expect(engine.getMasterVolume()).toBe(1);
     engine.setMasterVolume(-1);
     expect(engine.getMasterVolume()).toBe(0);
-    expect(howler.volume).toHaveBeenLastCalledWith(0);
+    expect(howler.volume).not.toHaveBeenCalled();
   });
 
   it('loads, fades, plays and stops layers', () => {

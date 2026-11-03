@@ -49,10 +49,10 @@
         </div>
       </template>
 
-      <template #layers>
+      <template #ambiences>
         <div class="section-header">
           <div class="text-subtitle1 text-weight-medium">
-            {{ t('ambientSoundPage.ambientLayers') }}
+            {{ t('ambientSoundPage.ambiences') }}
           </div>
           <QBtn
             flat
@@ -241,64 +241,6 @@
           </div>
         </div>
       </template>
-
-      <template #moods>
-        <div class="section-header">
-          <div class="text-subtitle1 text-weight-medium">
-            {{ t('ambientSoundPage.moodStates') }}
-          </div>
-        </div>
-
-        <div class="mood-states-grid">
-          <div
-            v-for="mood in packData.moodStates"
-            :key="mood.state"
-            class="mood-state-card"
-          >
-            <div class="mood-state-header">
-              <IconPicker
-                v-model="mood.icon"
-                :icons="MAP_MARKER_ICONS"
-                collection="ra"
-                :search-placeholder="t('ambientSoundPage.searchIcons')"
-                :no-icon-label="t('ambientSoundPage.noIcon')"
-              />
-              <QInput v-model="mood.name" dense outlined />
-              <QSelect
-                v-model="mood.mode"
-                :options="moodModeOptions"
-                :label="t('ambientSoundPage.mode')"
-                dense
-                outlined
-              />
-            </div>
-            <div
-              v-for="(music, index) in mood.musicFiles"
-              :key="`${music.file}-${index}`"
-              class="sample-row"
-            >
-              <span class="ellipsis">{{ music.file }}</span>
-              <QBtn
-                flat
-                dense
-                round
-                color="negative"
-                :title="t('common.delete')"
-                :aria-label="t('common.delete')"
-                @click="removeMoodFile(mood, index)"
-              >
-                <IconX :size="14" />
-              </QBtn>
-            </div>
-            <QBtn
-              flat
-              size="sm"
-              :label="t('ambientSoundPage.addMusic')"
-              @click="addMoodFiles(mood)"
-            />
-          </div>
-        </div>
-      </template>
     </BaseModal>
   </div>
 </template>
@@ -319,9 +261,6 @@ import {
 } from '@/ambient-sound/utils/packManager';
 import type {
   LayerDef,
-  MoodMode,
-  MoodState,
-  MoodStateDef,
   OneShotDef,
   SoundPackManifest,
 } from '@/ambient-sound/types';
@@ -359,14 +298,6 @@ interface OneShotFormData {
   handle?: FileSystemFileHandle;
 }
 
-interface MoodFormData {
-  state: MoodState;
-  name: string;
-  icon: string;
-  mode: MoodMode;
-  musicFiles: FileForm[];
-}
-
 interface PackFormData {
   id: string;
   name: string;
@@ -375,7 +306,6 @@ interface PackFormData {
   defaultIntensity: number;
   layers: LayerFormData[];
   oneShots: OneShotFormData[];
-  moodStates: MoodFormData[];
 }
 
 const { t } = useI18n();
@@ -389,43 +319,12 @@ const packData = ref<PackFormData>({
   defaultIntensity: 50,
   layers: [],
   oneShots: [],
-  moodStates: [
-    {
-      state: 'explore',
-      name: 'Explore',
-      icon: 'ra-horn-call',
-      mode: 'continual',
-      musicFiles: [],
-    },
-    {
-      state: 'combat',
-      name: 'Combat',
-      icon: 'ra-crossed-swords',
-      mode: 'continual',
-      musicFiles: [],
-    },
-    {
-      state: 'victory',
-      name: 'Victory',
-      icon: 'ra-trophy',
-      mode: 'temporary',
-      musicFiles: [],
-    },
-    {
-      state: 'rest',
-      name: 'Rest',
-      icon: 'ra-campfire',
-      mode: 'continual',
-      musicFiles: [],
-    },
-  ],
 });
 
 const editorTabs = computed(() => [
   { name: 'main', label: t('ambientSoundPage.packInfo') },
-  { name: 'layers', label: t('ambientSoundPage.ambientLayers') },
+  { name: 'ambiences', label: t('ambientSoundPage.ambiences') },
   { name: 'oneShots', label: t('ambientSoundPage.oneShots') },
-  { name: 'moods', label: t('ambientSoundPage.moodStates') },
 ]);
 
 const categoryOptions = [
@@ -442,11 +341,6 @@ const sfxCategoryOptions = [
   { label: 'Environmental', value: 'environmental' },
   { label: 'Weather', value: 'weather' },
 ];
-
-const moodModeOptions = computed(() => [
-  { label: t('ambientSoundPage.continual'), value: 'continual' },
-  { label: t('ambientSoundPage.temporary'), value: 'temporary' },
-]);
 
 async function pickFiles(): Promise<FileForm[]> {
   if (!fileHandler.isSupported()) {
@@ -533,15 +427,6 @@ async function pickOneShotFile(sfx: OneShotFormData) {
   sfx.handle = file.handle;
 }
 
-async function addMoodFiles(mood: MoodFormData) {
-  const files = await pickFiles();
-  mood.musicFiles.push(...files);
-}
-
-function removeMoodFile(mood: MoodFormData, index: number) {
-  mood.musicFiles.splice(index, 1);
-}
-
 function goBack() {
   router.push('/ambient-sound');
 }
@@ -567,19 +452,13 @@ async function savePack() {
   for (const layer of packData.value.layers) {
     for (const variation of layer.variations) {
       for (const sample of variation.samples) {
-        await collectAudio(audioFiles, 'layers', sample);
+        await collectAudio(audioFiles, 'ambiences', sample);
       }
     }
   }
   for (const sfx of packData.value.oneShots) {
-    if (sfx.file) await collectAudio(audioFiles, 'sfx', sfx);
+    if (sfx.file) await collectAudio(audioFiles, 'one-shots', sfx);
   }
-  for (const mood of packData.value.moodStates) {
-    for (const music of mood.musicFiles) {
-      await collectAudio(audioFiles, 'music', music);
-    }
-  }
-
   const packId = packData.value.id || `pack_${Date.now()}`;
 
   const layers: LayerDef[] = packData.value.layers.map((layer) => ({
@@ -592,7 +471,7 @@ async function savePack() {
     variations: layer.variations.map((variation) => ({
       id: variation.id,
       name: variation.name,
-      samples: variation.samples.map((sample) => sample.file),
+      samples: variation.samples.map((sample) => `ambiences/${sample.file}`),
     })),
   }));
 
@@ -600,29 +479,21 @@ async function savePack() {
     id: sfx.id,
     name: sfx.name,
     icon: sfx.icon,
-    file: sfx.file,
+    file: sfx.file ? `one-shots/${sfx.file}` : '',
     category: sfx.category,
     volume: sfx.volume,
   }));
 
-  const moodStates: MoodStateDef[] = packData.value.moodStates.map((mood) => ({
-    state: mood.state,
-    name: mood.name,
-    icon: mood.icon,
-    mode: mood.mode,
-    musicFiles: mood.musicFiles.map((music) => music.file),
-  }));
-
   const manifest: SoundPackManifest = {
-    version: '1.0',
+    version: '2.0',
     id: packId,
     name: packData.value.name,
     description: packData.value.description,
     category: packData.value.category,
     defaultIntensity: packData.value.defaultIntensity,
-    layers,
+    ambiences: layers,
     oneShots,
-    moodStates,
+    scenes: [],
   };
 
   await saveSoundPack(manifest, audioFiles);
@@ -726,26 +597,5 @@ async function downloadPack(packId: string) {
   text-align: center;
   color: var(--color-text-light);
   padding: 1rem;
-}
-
-.mood-states-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.75rem;
-}
-
-.mood-state-card {
-  border: 1px solid var(--color-border);
-  padding: 0.75rem;
-  border-radius: var(--border-radius);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.mood-state-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 </style>

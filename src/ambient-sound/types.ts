@@ -4,12 +4,84 @@ export interface SoundPackManifest {
   name: string;
   description: string;
   author?: string;
+  icon?: string;
   category: 'fantasy' | 'scifi' | 'horror' | 'modern' | 'custom';
-  defaultIntensity: number;
-  layers: LayerDef[];
+  defaultIntensity?: number;
+  /** New package model: ambience entries. */
+  ambiences?: LayerDef[];
+  /** New package model: scene configurations. */
+  scenes?: SceneDef[];
+  /** Legacy field, normalized into `ambiences`. */
+  layers?: LayerDef[];
   oneShots: OneShotDef[];
+  /** Legacy pre-scene music model, normalized into scenes. */
+  moodStates?: MoodStateDef[];
+  /** Legacy weather entries, normalized into ambience categories. */
   weatherSystems?: WeatherDef[];
-  moodStates: MoodStateDef[];
+}
+
+export type AmbienceDef = LayerDef;
+
+export interface SceneAmbience {
+  ambienceId: string;
+  variationId: string;
+  volume: number;
+}
+
+export interface SceneMusic {
+  files: string[];
+  loop: boolean;
+}
+
+export interface SceneDef {
+  id: string;
+  name: string;
+  description?: string;
+  icon: string;
+  intensity: number;
+  ambiences: SceneAmbience[];
+  oneShotIds: string[];
+  /** Music owned by this scene; never shared with another scene. */
+  music: SceneMusic;
+}
+
+export interface NormalizedSoundPack extends SoundPackManifest {
+  ambiences: LayerDef[];
+  layers: LayerDef[];
+  scenes: SceneDef[];
+}
+
+export type SceneLinkEntityType =
+  | 'location'
+  | 'module'
+  | 'encounter'
+  | 'character';
+
+export interface SceneEntityLink {
+  id: string;
+  packageId: string;
+  sceneId: string;
+  entityType: SceneLinkEntityType;
+  entityId: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SceneRef {
+  packageId: string;
+  sceneId: string;
+}
+
+export interface GalleryAmbience {
+  packageId: string;
+  pack: NormalizedSoundPack;
+  ambience: LayerDef;
+}
+
+export interface GalleryOneShot {
+  packageId: string;
+  pack: NormalizedSoundPack;
+  oneShot: OneShotDef;
 }
 
 export interface LayerVariation {
