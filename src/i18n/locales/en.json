@@ -748,7 +748,12 @@
     "masterVolume": "Master volume",
     "off": "Off",
     "noPacks": "No packs available",
-    "moods": {"explore": "Explore", "combat": "Combat", "victory": "Victory", "rest": "Rest"},
+    "moods": {
+      "explore": "Explore",
+      "combat": "Combat",
+      "victory": "Victory",
+      "rest": "Rest"
+    },
     "importPack": "Import Pack",
     "createPack": "Create Pack",
     "editPack": "Edit Pack",
@@ -772,7 +777,8 @@
     "category": "Category",
     "moodStates": "Mood States",
     "selectFile": "Select file",
-    "selectMusic": "Select music"
+    "selectMusic": "Select music",
+    "downloadPrompt": "Pack saved. Download it as a .spk file?"
   },
   "maps": {
     "title": "Maps",

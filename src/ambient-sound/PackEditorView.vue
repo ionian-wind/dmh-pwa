@@ -262,7 +262,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { confirm } from '@/dialogs';
 import { IconX, IconDownload } from '@tabler/icons-vue';
 import { fileHandler } from '@/utils/files';
 import {
@@ -278,6 +280,7 @@ import type {
 } from '@/ambient-sound/types';
 
 const router = useRouter();
+const { t } = useI18n();
 
 const isEditing = ref(false);
 
@@ -582,13 +585,11 @@ async function savePack() {
   await saveSoundPack(manifest, audioFiles);
   console.log('Pack saved to IndexedDB:', manifest.id);
 
-  showDownloadOption(manifest.id);
+  await showDownloadOption(manifest.id);
 }
 
-function showDownloadOption(packId: string) {
-  const download = confirm(
-    'Pack saved! Do you want to download it as .spk file?',
-  );
+async function showDownloadOption(packId: string) {
+  const download = await confirm(t('ambientSoundPage.downloadPrompt'));
   if (download) {
     downloadPack(packId);
   } else {

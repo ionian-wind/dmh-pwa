@@ -189,6 +189,7 @@ const passthroughNames = [
   'QTabPanel',
   'QItem',
   'QItemSection',
+  'QItemLabel',
   'QList',
   'QSlider',
   'QExpansionItem',

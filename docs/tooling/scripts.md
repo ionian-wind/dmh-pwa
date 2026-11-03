@@ -87,9 +87,12 @@ set. Not wired into the build.
 
 ## `scripts/pack-sound-pack.js` / `unpack-sound-pack.js`
 
-Used by `npm run pack:sound` / `unpack:sound`. These relate to the planned
-ambient-sound configurator (`docs/ambient-sound-configurator.md`) and are not
-imported by the app. `public/assets/dice-box` is unrelated (3D dice assets).
+Used by `npm run pack:sound` / `unpack:sound` for the implemented ambient-sound
+feature. Both scripts are thin CLI wrappers around
+`scripts/sound-pack-archive.js`, which provides reusable recursive packing,
+archive writing and safe unpacking helpers. Covered by
+`tests/scripts/soundPackArchive.test.ts`. `public/assets/dice-box` is unrelated
+(3D dice assets).
 
 ## `scripts/test-import.js`
 
@@ -104,7 +107,9 @@ this repository (there is no `docs/cos.md`).
 
 ## `content/`
 
-Empty directory. No content packaging pipeline currently uses it.
+Git-ignored local content area. The ambient-sound sample pack is generated here
+with `sample-ambient-pack/` plus `sample-ambient-pack.spk`; see its
+`ATTRIBUTION.md` and `README.md`. Nothing in this directory is versioned.
 
 ## `docs/`
 

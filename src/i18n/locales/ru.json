@@ -773,7 +773,8 @@
     "category": "Категория",
     "moodStates": "Состояния",
     "selectFile": "Выбрать файл",
-    "selectMusic": "Выбрать музыку"
+    "selectMusic": "Выбрать музыку",
+    "downloadPrompt": "Пакет сохранён. Скачать его как файл .spk?"
   },
   "maps": {
     "title": "Карты",
