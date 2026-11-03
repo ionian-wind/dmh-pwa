@@ -34,8 +34,9 @@
           :model-value="store.intensity / 100"
           :min="0"
           :max="1"
-          :step="0.01"
-          :markers="false"
+          :step="0.25"
+          snap
+          :markers="true"
           :color="isIntensityHovered ? 'info' : 'primary'"
           :track-size="isIntensityHovered ? '10px' : '5px'"
           @update:model-value="
@@ -224,6 +225,11 @@ function handleVolumeWheel(event: WheelEvent) {
 
 .intensity-slider {
   flex: 1 1 auto;
+}
+
+.intensity-slider :deep(.q-slider__markers) {
+  color: var(--color-text-light);
+  opacity: 0.9;
 }
 
 .intensity-label {

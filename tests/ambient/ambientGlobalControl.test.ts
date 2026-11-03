@@ -11,7 +11,7 @@ const storeMock = vi.hoisted(() => ({
   masterVolume: 50,
   isPlaying: true,
   musicEnabled: true,
-  intensity: 55,
+  intensity: 75,
   toggleMusic: vi.fn(),
   togglePlayPause: vi.fn(),
   setIntensity: vi.fn(),
@@ -35,7 +35,7 @@ describe('AmbientGlobalControl', () => {
     storeMock.masterVolume = 50;
     storeMock.isPlaying = true;
     storeMock.musicEnabled = true;
-    storeMock.intensity = 55;
+    storeMock.intensity = 75;
     for (const fn of [
       storeMock.toggleMusic,
       storeMock.togglePlayPause,
@@ -75,9 +75,9 @@ describe('AmbientGlobalControl', () => {
 
     const sliders = wrapper.findAllComponents(quasarStubs.QSlider);
     expect(sliders).toHaveLength(2);
-    sliders[0].vm.$emit('update:modelValue', 0.55);
-    expect(storeMock.setIntensity).toHaveBeenCalledWith(55);
-    expect(wrapper.find('.intensity-value').text()).toBe('55%');
+    sliders[0].vm.$emit('update:modelValue', 0.75);
+    expect(storeMock.setIntensity).toHaveBeenCalledWith(75);
+    expect(wrapper.find('.intensity-value').text()).toBe('75%');
     wrapper.unmount();
   });
 

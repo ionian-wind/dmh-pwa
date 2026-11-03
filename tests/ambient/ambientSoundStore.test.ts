@@ -165,7 +165,7 @@ describe('ambient sound store', () => {
 
     expect(store.isPlaying).toBe(true);
     expect(store.activeScene?.scene.id).toBe('tavern');
-    expect(store.intensity).toBe(70);
+    expect(store.intensity).toBe(75);
     expect(mocks.audioEngine.loadOneShot).toHaveBeenCalledWith(
       'oneShot:forest:thunder',
       'blob:thunder',
@@ -189,7 +189,7 @@ describe('ambient sound store', () => {
       false,
     );
     expect(store.activeMusicPresetId).toBe('explore');
-    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.7);
+    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.75);
 
     store.pause();
     expect(store.isPlaying).toBe(false);
@@ -363,6 +363,10 @@ describe('ambient sound store', () => {
 
     store.setIntensity(120);
     expect(store.intensity).toBe(100);
+    store.setIntensity(60);
+    expect(store.intensity).toBe(50);
+    store.setIntensity(65);
+    expect(store.intensity).toBe(75);
     expect(mocks.audioEngine.setMusicVolume).toHaveBeenCalledWith(1);
 
     store.setMusicEnabled(false);

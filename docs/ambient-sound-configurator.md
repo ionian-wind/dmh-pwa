@@ -63,7 +63,8 @@ A scene is a saved playback configuration owned by a package. It defines:
 - which ambience entries are active;
 - which variation and volume each active ambience uses;
 - which one-shot entries belong to the scene;
-- the scene intensity and mix settings;
+- the scene intensity and mix settings; intensity has five fixed levels:
+  0, 25, 50, 75 and 100;
 - the scene's own music.
 
 Scenes have no cover art or icon in this model. The package icon represents the
@@ -312,6 +313,7 @@ export interface SceneDef {
   id: string;
   name: string;
   description?: string;
+  /** One of 0, 25, 50, 75 or 100. */
   intensity: number;
   ambiences: SceneAmbience[];
   oneShotIds: string[];
@@ -510,6 +512,7 @@ It mirrors the jukebox player and lives in the app footer.
   page-content area.
 - Shows the scene name, package name and play/pause state.
 - An intensity slider occupies the same slot as the jukebox track-progress bar.
+  It has five steps (0/25/50/75/100), snaps to them and shows tick marks.
 - Music toggle, play/pause and master volume access.
 - No scene icon, cover art, “Now playing” caption or stop button.
 

@@ -42,6 +42,13 @@ function randomIndex(length: number): number {
   return length > 0 ? Math.floor(Math.random() * length) : 0;
 }
 
+const INTENSITY_STEP = 25;
+
+function snapIntensity(value: number): number {
+  const clamped = Math.max(0, Math.min(100, value));
+  return Math.round(clamped / INTENSITY_STEP) * INTENSITY_STEP;
+}
+
 function loadLinks(): SceneEntityLink[] {
   try {
     const raw = localStorage.getItem(LINKS_STORAGE_KEY);
@@ -291,7 +298,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     try {
       await ensurePackAudio(found.pack);
       activeSceneKey.value = key;
-      intensity.value = found.scene.intensity;
+      intensity.value = snapIntensity(found.scene.intensity);
       activeMusicPresetId.value = found.scene.musicPresets[0]?.id ?? null;
       musicEnabled.value = !!activeMusicPresetId.value;
       activeLayers.value.clear();
@@ -408,7 +415,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   }
 
   function setIntensity(value: number): void {
-    intensity.value = Math.max(0, Math.min(100, value));
+    intensity.value = snapIntensity(value);
     if (isPlaying.value && musicEnabled.value) {
       audioEngine.setMusicVolume(intensity.value / 100);
     }
