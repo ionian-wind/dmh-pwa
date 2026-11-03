@@ -7,7 +7,7 @@ import SettingsDialog from '@/components/SettingsDialog.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import App from '@/App.vue';
-import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
+import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
@@ -65,7 +65,7 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Cross-fade');
     expect(wrapper.text()).toContain('animated album-colour gradient');
     expect(wrapper.text()).toContain('Display cover while playing');
-    expect(wrapper.text()).toContain('Use mini player');
+    expect(wrapper.text()).toContain('Show player dialog');
 
     const toggles = wrapper.findAllComponents(QToggleStub);
     expect(toggles).toHaveLength(5);
@@ -191,11 +191,13 @@ describe('settings dialog', () => {
     const jukeboxButton = wrapper.find('.jukebox-button');
     await jukeboxButton.trigger('click');
     await nextTick();
-    expect(wrapper.findComponent(JukeboxDialog).props('modelValue')).toBe(true);
+    expect(wrapper.findComponent(SoundControlDialog).props('modelValue')).toBe(
+      true,
+    );
 
     await jukeboxButton.trigger('click');
     await nextTick();
-    expect(wrapper.findComponent(JukeboxDialog).props('modelValue')).toBe(
+    expect(wrapper.findComponent(SoundControlDialog).props('modelValue')).toBe(
       false,
     );
 
@@ -204,7 +206,7 @@ describe('settings dialog', () => {
     await flushPromises();
 
     expect(router.currentRoute.value.path).toBe('/jukebox');
-    expect(wrapper.findComponent(JukeboxDialog).props('modelValue')).toBe(
+    expect(wrapper.findComponent(SoundControlDialog).props('modelValue')).toBe(
       false,
     );
     wrapper.unmount();

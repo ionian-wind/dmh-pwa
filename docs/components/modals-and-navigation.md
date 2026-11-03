@@ -171,7 +171,8 @@ Settings item. It currently has two sections:
   - Smooth track change.
   - Animate player background.
   - Display cover while playing.
-  - Use mini player (off → the Jukebox menu item opens `/jukebox`).
+  - Show player dialog (off → the Jukebox menu item opens `/jukebox`). This
+    only controls the music player dialog, not future ambient controls.
 
 The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits
@@ -179,7 +180,7 @@ The dialog closes through the modal cancel/close path and emits
 
 ## Bottom sheets
 
-`JukeboxDialog.vue` and `CalculatorView.vue` are `QDialog position="bottom"`
+`SoundControlDialog.vue` and `CalculatorView.vue` are `QDialog position="bottom"`
 with `useDragSnap`:
 
 - Drag the toolbar; the card follows the pointer.

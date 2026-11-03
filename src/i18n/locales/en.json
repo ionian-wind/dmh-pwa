@@ -497,7 +497,7 @@
     "smoothTrackChangeHint": "Cross-fade between the outgoing and incoming track.",
     "animatePlayerBackgroundHint": "Show an animated album-colour gradient behind the player.",
     "displayCoverWhilePlayingHint": "Show album artwork in the expanded player.",
-    "useMiniPlayerHint": "Open the mini player dialog. Turn off to open the full jukebox page instead.",
+    "useMiniPlayerHint": "Show the music player dialog when opening Jukebox. Turn off to open the full Jukebox page instead.",
     "languageHint": "Choose the language used by the application."
   },
   "tags": {
@@ -736,11 +736,13 @@
     "smoothTrackChange": "Smooth track change",
     "animatePlayerBackground": "Animate player background",
     "displayCoverWhilePlaying": "Display cover while playing",
-    "useMiniPlayer": "Use mini player",
+    "useMiniPlayer": "Show player dialog",
     "playNext": "Play next",
     "playLast": "Play last",
     "allTracks": "All Tracks",
-    "noTrackSelected": "No track selected"
+    "noTrackSelected": "No track selected",
+    "soundControl": "Sound control",
+    "openJukebox": "Open Jukebox"
   },
   "ambientSoundPage": {
     "title": "Ambient Sound",

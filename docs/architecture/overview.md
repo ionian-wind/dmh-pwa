@@ -88,13 +88,13 @@ Cross-cutting modules used from every layer:
 
 `QLayout view="hHh LpR lFr"` defines five regions:
 
-| Region | Implementation | Content source |
-| --- | --- | --- |
-| Header | `QHeader` + `QToolbar` | `layout.topMenuContent` |
-| Left navigation | `QDrawer`, hover-mini | Hard-coded `sections` array |
-| Right drawer | `QDrawer`, persistent | `layout.rightDrawerContent` |
-| Page | `QPageContainer` + `router-view` | Route components |
-| Footer | `QFooter` | `layout.bottomDrawerContent` |
+| Region          | Implementation                   | Content source               |
+| --------------- | -------------------------------- | ---------------------------- |
+| Header          | `QHeader` + `QToolbar`           | `layout.topMenuContent`      |
+| Left navigation | `QDrawer`, hover-mini            | Hard-coded `sections` array  |
+| Right drawer    | `QDrawer`, persistent            | `layout.rightDrawerContent`  |
+| Page            | `QPageContainer` + `router-view` | Route components             |
+| Footer          | `QFooter`                        | `layout.bottomDrawerContent` |
 
 ### Header injection protocol
 
@@ -132,7 +132,7 @@ routes highlight their list section. Jukebox is active only on `/jukebox`.
 
 - `PWAInstallPrompt` and `PWAStatus` are always mounted.
 - `MentionModalStack` renders the topmost mention modal globally.
-- `CalculatorDialog` and `JukeboxDialog` are draggable bottom sheets opened from
+- `CalculatorDialog` and `SoundControlDialog` are snapable bottom sheets opened from
   the left nav.
 
 ## Routing (`src/router.ts`)
@@ -140,25 +140,25 @@ routes highlight their list section. Jukebox is active only on `/jukebox`.
 `createWebHistory('/dmh-pwa/')` — the app assumes it is hosted under
 `/dmh-pwa`. Core routes:
 
-| Path | Name | Component |
-| --- | --- | --- |
-| `/` | home | HomeView |
-| `/notes` | notes | NotesView |
-| `/notes/:id` | note-detail | NoteView |
-| `/parties` | parties | PartiesView |
-| `/parties/:id` | party-detail | PartyView |
-| `/monsters` | monsters | MonstersView |
-| `/monsters/:id` | monster-detail | MonsterView |
-| `/characters` | characters | CharactersView |
-| `/characters/:id` | character-detail | CharacterView |
-| `/encounters` | encounters | EncountersView |
-| `/encounters/:id` | encounter-detail | EncounterView |
-| `/combats/:id` | combat-detail | CombatView |
-| `/modules` | modules | ModulesView |
-| `/modules/:id` | module-detail | ModuleView |
-| `/jukebox` | jukebox | JukeboxView |
-| `/timers` | timers | TimersView |
-| `/:catchAll(.*)` | — | NotFoundView |
+| Path              | Name             | Component      |
+| ----------------- | ---------------- | -------------- |
+| `/`               | home             | HomeView       |
+| `/notes`          | notes            | NotesView      |
+| `/notes/:id`      | note-detail      | NoteView       |
+| `/parties`        | parties          | PartiesView    |
+| `/parties/:id`    | party-detail     | PartyView      |
+| `/monsters`       | monsters         | MonstersView   |
+| `/monsters/:id`   | monster-detail   | MonsterView    |
+| `/characters`     | characters       | CharactersView |
+| `/characters/:id` | character-detail | CharacterView  |
+| `/encounters`     | encounters       | EncountersView |
+| `/encounters/:id` | encounter-detail | EncounterView  |
+| `/combats/:id`    | combat-detail    | CombatView     |
+| `/modules`        | modules          | ModulesView    |
+| `/modules/:id`    | module-detail    | ModuleView     |
+| `/jukebox`        | jukebox          | JukeboxView    |
+| `/timers`         | timers           | TimersView     |
+| `/:catchAll(.*)`  | —                | NotFoundView   |
 
 List routes carry `meta.exact: true`; this is metadata only and is not used by
 the router or guards.

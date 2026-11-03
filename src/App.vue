@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -47,8 +47,9 @@ import {
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
+import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
+import { usePageContentRect } from '@/composables/usePageContentRect';
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
@@ -252,13 +253,21 @@ const hasJukeboxFooter = computed(
   () => bottomDrawerContent.value?.component === JukeboxPlayer,
 );
 
-const isJukeboxPopupOpen = ref(false);
+const pageContentRect = usePageContentRect();
+const isSoundControlOpen = ref(false);
+
+// The drawer widths are animated with CSS, so ResizeObserver does the steady
+// work. These watchers also cover the initial frame and browsers without
+// ResizeObserver.
+watch([rightDrawerOpen, leftDrawerOpen, miniState, rightDrawerContent], () => {
+  void nextTick(pageContentRect.update);
+});
 const isCalculatorPopupOpen = ref(false);
 const isSettingsOpen = ref(false);
 
 function openJukebox() {
   if (configStore.jukeboxUseMiniPlayer) {
-    isJukeboxPopupOpen.value = !isJukeboxPopupOpen.value;
+    isSoundControlOpen.value = !isSoundControlOpen.value;
     return;
   }
   router.push('/jukebox');
@@ -491,7 +500,11 @@ function openJukebox() {
       <!-- Global Mention Modal Stack -->
       <MentionModalStack />
       <CalculatorDialog v-model="isCalculatorPopupOpen" />
-      <JukeboxDialog v-model="isJukeboxPopupOpen" />
+      <SoundControlDialog
+        v-model="isSoundControlOpen"
+        :content-left="pageContentRect.left.value"
+        :content-width="pageContentRect.width.value"
+      />
       <SettingsDialog v-model="isSettingsOpen" />
     </div>
   </div>

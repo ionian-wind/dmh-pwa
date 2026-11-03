@@ -16,7 +16,7 @@ API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 | `src/jukebox/playerStore.ts`                    | Playback engine, queue, shuffle/repeat, media session    |
 | `src/jukebox/JukeboxView.vue`                   | Library/playlist page                                    |
 | `src/jukebox/components/JukeboxPlayer.vue`      | Player controls                                          |
-| `src/jukebox/components/JukeboxDialog.vue`      | Draggable mini-player dialog                             |
+| `src/jukebox/components/SoundControlDialog.vue` | Snapable global sound-control panel (music player now)   |
 | `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                          |
 | `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                     |
 | `src/jukebox/components/TrackCard.vue`          | Track row                                                |
@@ -228,26 +228,31 @@ unmount. The `filesStore` is loaded but unused.
   - **Smooth track change** (off by default): cross-fades outgoing/incoming
     tracks over ~1.2 s when the track changes.
   - **Animate player background** (on by default): shows the album-colour
-    gradient in both the footer player and the dialog card. The gradient is
+    gradient in both the footer player and the sound-control panel. The gradient is
     static when playback is paused and morphs only while playing; pausing keeps
     the animation phase so resuming continues from the same point instead of
     restarting. Turning the setting off removes the gradient entirely.
   - **Display cover while playing** (on by default): controls the album artwork
-    in the expanded jukebox dialog. The footer player stays compact and does not
-    render artwork.
-  - **Use mini player** (on by default): the app-menu Jukebox item opens the
-    draggable mini-player dialog. When off, the item navigates to `/jukebox`
-    instead.
+    in the sound-control panel. The footer player stays compact and does not
+    render artwork. When shown in the panel, the artwork sits to the left of the
+    track details, progress bar and transport controls.
+  - **Show player dialog** (on by default): the app-menu Jukebox item opens
+    the snapable sound-control panel containing the music player. When off, the
+    item navigates to `/jukebox` instead. This setting only governs the music
+    player dialog; future ambient controls are not affected by it.
 - Album-colour background: when enabled with `animatedBackground`, a
   `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
   `track.palette` or `track.color`, both derived from the album cover). The
   gradient is built from one blurred radial blob per palette colour over a soft
   base gradient, so colours flow into each other instead of sweeping in a
   single linear direction. The worker requests four palette colours.
-- The bottom-drawer player is one gradient surface. In the jukebox dialog the
-  `QCard` itself owns the surface, so the header toolbar and player content
+- The bottom-drawer player is one gradient surface. In the sound-control panel
+  the `QCard` itself owns the surface, so the header toolbar and player content
   share a single background; the embedded player is rendered without its own
-  gradient.
+  gradient. The panel is a snapable bottom dialog whose width and horizontal
+  position follow the page-content area, excluding the left menu and right
+  sidebar. In panel layout the album cover sits to the left of the progress and
+  transport controls.
 - Track changes crossfade the outgoing and incoming gradient layers. If the next
   track has no cover palette, the current gradient fades out instead.
 - Controls inherit `--jp-control-color`, derived from the palette with the best

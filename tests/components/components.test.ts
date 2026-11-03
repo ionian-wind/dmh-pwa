@@ -402,6 +402,59 @@ describe('current shared components', () => {
     player.currentTrack = null;
   });
 
+  it('JukeboxPlayer places artwork on the left in panel layout', () => {
+    const config = useConfigStore();
+    const player = useJukeboxPlayerStore();
+    config.jukeboxDisplayCoverWhilePlaying = true;
+    player.currentTrack = {
+      id: 'track-panel',
+      title: 'Panel track',
+      picture: 'data:image/png;base64,abc',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { layout: 'panel', showArtwork: true },
+    });
+
+    expect(wrapper.find('.jukebox-player-content').classes()).toContain(
+      'is-panel',
+    );
+    expect(wrapper.find('.panel-artwork').exists()).toBe(true);
+    expect(wrapper.find('.track-info-row').classes()).toContain('row');
+    expect(
+      wrapper.find('.panel-artwork.track-artwork-container').exists(),
+    ).toBe(true);
+
+    player.currentTrack = null;
+    wrapper.unmount();
+  });
+
+  it('JukeboxPlayer keeps artwork above the controls in bar layout', () => {
+    const config = useConfigStore();
+    const player = useJukeboxPlayerStore();
+    config.jukeboxDisplayCoverWhilePlaying = true;
+    player.currentTrack = {
+      id: 'track-bar',
+      title: 'Bar track',
+      picture: 'data:image/png;base64,abc',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { layout: 'bar', showArtwork: true },
+    });
+
+    expect(wrapper.find('.jukebox-player-content').classes()).not.toContain(
+      'is-panel',
+    );
+    expect(wrapper.find('.panel-artwork').exists()).toBe(false);
+    expect(
+      wrapper.find('.track-info-row .track-artwork-container').exists(),
+    ).toBe(true);
+
+    player.currentTrack = null;
+    wrapper.unmount();
+  });
+
   it('JukeboxPlayer exposes persisted player settings', async () => {
     const config = useConfigStore();
     const player = useJukeboxPlayerStore();
