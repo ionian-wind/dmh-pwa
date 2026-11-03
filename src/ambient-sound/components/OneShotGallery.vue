@@ -12,8 +12,6 @@
             :key="`${entry.packageId}:${entry.oneShot.id}`"
             :pack-id="entry.packageId"
             :one-shot="entry.oneShot"
-            :pack-name="entry.pack.name"
-            :used-in="usedIn(entry.packageId, entry.oneShot.id)"
           />
         </div>
       </EntityGroup>
@@ -57,13 +55,6 @@ const groups = computed(() => {
   }
   return [...grouped].map(([category, items]) => ({ category, items }));
 });
-
-function usedIn(packId: string, oneShotId: string) {
-  return store.allScenes.filter(
-    ({ pack, scene }) =>
-      scene.oneShotIds.includes(oneShotId) && pack.id === packId,
-  ).length;
-}
 </script>
 
 <style scoped>

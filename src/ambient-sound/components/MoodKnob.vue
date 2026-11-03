@@ -1,7 +1,17 @@
 <template>
-  <div class="mood-knob" :class="{ 'is-active': active }">
+  <div
+    class="mood-knob"
+    :class="{ 'is-active': active, 'is-disabled': disabled }"
+    role="button"
+    :tabindex="disabled ? -1 : 0"
+    :aria-label="label"
+    :aria-disabled="disabled"
+    @click="select"
+    @keydown.enter.prevent="select"
+    @keydown.space.prevent="select"
+  >
     <QKnob
-      :model-value="progress"
+      v-model="progress"
       :min="0"
       :max="100"
       :thickness="0.18"
@@ -10,14 +20,10 @@
       track-color="grey-4"
       show-value
       readonly
+      :instant-feedback="true"
+      :no-pointer-events="true"
       :disable="disabled"
       class="mood-knob-control"
-      role="button"
-      tabindex="0"
-      :aria-label="label"
-      @click="emit('select')"
-      @keydown.enter.prevent="emit('select')"
-      @keydown.space.prevent="emit('select')"
     >
       <span class="mood-knob-label">{{ label }}</span>
     </QKnob>
@@ -68,6 +74,10 @@ const cancelRaf =
 
 let frame: number | null = null;
 
+function select() {
+  if (!props.disabled) emit('select');
+}
+
 function tick() {
   if (!shouldTrack.value) {
     progress.value = 0;
@@ -105,17 +115,22 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-}
-
-.mood-knob-control {
   cursor: pointer;
   outline: none;
 }
 
-.mood-knob-control:focus-visible {
+.mood-knob.is-disabled {
+  cursor: default;
+}
+
+.mood-knob:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 4px;
-  border-radius: 50%;
+  border-radius: var(--border-radius);
+}
+
+.mood-knob-control {
+  pointer-events: none;
 }
 
 .mood-knob-label {

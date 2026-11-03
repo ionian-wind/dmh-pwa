@@ -63,8 +63,10 @@ describe('OneShotGallery', () => {
     const cards = wrapper.findAll('.one-shot-control');
     expect(cards).toHaveLength(2);
     expect(cards[0].find('.one-shot-knob').exists()).toBe(true);
+    expect(wrapper.text()).not.toContain('Forest');
+    expect(wrapper.text()).not.toContain('scenes');
 
-    await cards[0].find('.one-shot-knob').trigger('click');
+    await cards[0].trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });

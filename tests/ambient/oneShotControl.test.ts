@@ -41,9 +41,13 @@ describe('OneShotControl', () => {
     const knob = wrapper.find('.one-shot-knob');
     expect(knob.exists()).toBe(true);
     expect(knob.attributes('aria-readonly')).toBe('true');
+    expect(knob.attributes('min')).toBe('0');
+    expect(knob.attributes('max')).toBe('100');
+    expect(knob.attributes('instant-feedback')).toBeDefined();
+    expect(knob.attributes('no-pointer-events')).toBeDefined();
     expect(knob.find('i').classes()).toContain('fa-cloud-bolt');
 
-    await knob.trigger('click');
+    await wrapper.find('.one-shot-control').trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });

@@ -548,7 +548,11 @@ A global content gallery for one-shot entries.
   allowed, and the knob tracks progress of the most recent still-playing
   instance.
 - The knob is highlighted while any instance of the one-shot is playing.
-- Each entry also shows icon, name, category, package and “Used in N scenes”.
+- Knobs bind progress with `v-model` in the 0–100 range, use `min=0` / `max=100`,
+  `instant-feedback`, and disable pointer events on the knob itself. A wrapping
+  control handles clicks and keyboard activation.
+- Each entry shows only its name below the knob; the knob slot contains the
+  one-shot icon. Package, category and scene-count metadata are not displayed.
 - Triggering a one-shot from the scene player/playback panel is independent of
   ambient playback, scene music and ambient volume settings.
 - One-shot cards remain visible and playable even when no scene is active.

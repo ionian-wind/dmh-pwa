@@ -133,10 +133,10 @@ describe('ScenePlayerView', () => {
 
     const knob = (label: string) =>
       wrapper.findAll('.mood-knob').find((entry) => entry.text() === label);
-    await knob('Off')!.find('.mood-knob-control').trigger('click');
+    await knob('Off')!.trigger('click');
     expect(storeMock.setMusicPreset).toHaveBeenCalledWith(null);
 
-    await knob('Combat')!.find('.mood-knob-control').trigger('click');
+    await knob('Combat')!.trigger('click');
     expect(storeMock.setMusicPreset).toHaveBeenCalledWith('combat');
     wrapper.unmount();
   });
@@ -157,7 +157,7 @@ describe('ScenePlayerView', () => {
     const explore = wrapper
       .findAll('.mood-knob')
       .find((entry) => entry.text() === 'Explore');
-    await explore!.find('.mood-knob-control').trigger('click');
+    await explore!.trigger('click');
     expect(storeMock.playScene).toHaveBeenCalledWith('pack-1', 'scene-1');
     expect(storeMock.setMusicPreset).toHaveBeenCalledWith('explore');
     wrapper.unmount();
@@ -191,7 +191,7 @@ describe('ScenePlayerView', () => {
       .findAll('.one-shot-control')
       .find((card) => card.text().includes('Thunder'));
     expect(thunder!.attributes('disabled')).toBeUndefined();
-    await thunder!.find('.one-shot-knob').trigger('click');
+    await thunder!.trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });
@@ -286,7 +286,7 @@ describe('ScenePlayerView', () => {
     const thunder = wrapper
       .findAll('.one-shot-control')
       .find((card) => card.text().includes('Thunder'));
-    await thunder!.find('.one-shot-knob').trigger('click');
+    await thunder!.trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });

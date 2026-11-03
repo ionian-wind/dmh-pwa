@@ -27,10 +27,13 @@ describe('MoodKnob', () => {
     });
 
     expect(wrapper.find('.mood-knob-label').text()).toBe('Combat');
-    expect(wrapper.find('.mood-knob-control').attributes('aria-readonly')).toBe(
-      'true',
-    );
-    await wrapper.find('.mood-knob-control').trigger('click');
+    const knob = wrapper.find('.mood-knob-control');
+    expect(knob.attributes('aria-readonly')).toBe('true');
+    expect(knob.attributes('min')).toBe('0');
+    expect(knob.attributes('max')).toBe('100');
+    expect(knob.attributes('instant-feedback')).toBeDefined();
+    expect(knob.attributes('no-pointer-events')).toBeDefined();
+    await wrapper.find('.mood-knob').trigger('click');
     expect(wrapper.emitted('select')).toHaveLength(1);
     wrapper.unmount();
   });
