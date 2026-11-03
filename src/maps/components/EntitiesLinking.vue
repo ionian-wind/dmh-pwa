@@ -174,6 +174,7 @@ function removeLink(ref: MapEntityRef) {
               dense
               round
               color="negative"
+              class="linked-entity-remove"
               :title="t('common.remove')"
               :aria-label="t('common.remove')"
               @click="removeLink(ref)"
@@ -294,5 +295,17 @@ function removeLink(ref: MapEntityRef) {
 .linked-entity-item:hover,
 .linked-entity-item:focus-within {
   background: var(--color-background-soft);
+}
+
+.linked-entity-remove {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.linked-entity-item:hover .linked-entity-remove,
+.linked-entity-item:focus-within .linked-entity-remove {
+  opacity: 1;
+  pointer-events: auto;
 }
 </style>
