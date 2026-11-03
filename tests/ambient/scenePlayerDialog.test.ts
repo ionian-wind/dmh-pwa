@@ -121,17 +121,22 @@ describe('ScenePlayerDialog', () => {
     wrapper.unmount();
   });
 
-  it('handles inactive scenes, missing scenes and empty content', async () => {
+  it('opens an inactive scene without starting playback', async () => {
     storeMock.activeSceneKey = 'other::scene';
-    const inactive = mount(ScenePlayerDialog, {
+    storeMock.isPlaying = false;
+    const wrapper = mount(ScenePlayerDialog, {
       props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
-    await vi.waitFor(() =>
-      expect(storeMock.playScene).toHaveBeenCalledWith('pack-1', 'scene-1'),
-    );
-    inactive.unmount();
 
+    expect(storeMock.playScene).not.toHaveBeenCalled();
+
+    await wrapper.find('button[aria-label="Play"]').trigger('click');
+    expect(storeMock.playScene).toHaveBeenCalledWith('pack-1', 'scene-1');
+    wrapper.unmount();
+  });
+
+  it('renders nothing for a missing scene', () => {
     storeMock.allScenes = [];
     const missing = mount(ScenePlayerDialog, {
       props: { isOpen: true, packId: 'pack-1', sceneId: 'missing' },

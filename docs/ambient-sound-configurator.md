@@ -455,8 +455,8 @@ Package content is imported, not authored in the app.
 
 ### 4.6 Scene player dialog
 
-Opening a scene row opens the scene player dialog and starts the scene. It
-contains:
+Opening a scene row shows the scene player dialog without starting playback.
+Playback starts only from an explicit play action. The dialog contains:
 
 - **Global play/pause** — controls the scene music and linked ambiences. It does
   not block one-shots.

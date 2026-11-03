@@ -307,12 +307,9 @@ async function toggleVariant(
 
 watch(
   () => [props.isOpen, props.packId, props.sceneId],
-  async () => {
+  () => {
     if (!props.isOpen) return;
     activeTab.value = 'ambiences';
-    if (!sceneIsActive()) {
-      await store.playScene(props.packId, props.sceneId);
-    }
   },
   { immediate: true },
 );
