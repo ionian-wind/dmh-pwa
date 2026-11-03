@@ -11,7 +11,6 @@
         @click="emit('open', entry.pack.id, entry.scene.id)"
       >
         <QCardSection class="row items-center q-gutter-sm">
-          <AmbientIcon :icon="entry.scene.icon" :size="24" />
           <div class="col">
             <div class="row items-center q-gutter-xs">
               <span class="text-subtitle1 text-weight-medium">
@@ -31,29 +30,6 @@
               {{ t('ambientSoundPage.links') }}
             </div>
           </div>
-          <QBtn
-            round
-            flat
-            color="primary"
-            :title="
-              t(
-                isPlaying(entry.pack.id, entry.scene.id)
-                  ? 'common.pause'
-                  : 'common.play',
-              )
-            "
-            :aria-label="
-              t(
-                isPlaying(entry.pack.id, entry.scene.id)
-                  ? 'common.pause'
-                  : 'common.play',
-              )
-            "
-            @click.stop="toggleScene(entry.pack.id, entry.scene.id)"
-          >
-            <IconPlayerPause v-if="isPlaying(entry.pack.id, entry.scene.id)" />
-            <IconPlayerPlay v-else />
-          </QBtn>
         </QCardSection>
       </QCard>
     </div>
@@ -78,9 +54,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconMusic, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
+import { IconMusic } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
-import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 const emit = defineEmits<{
@@ -110,18 +85,6 @@ function isPlaying(packId: string, sceneId: string) {
 
 function linkCount(packId: string, sceneId: string) {
   return store.linksForScene(packId, sceneId).length;
-}
-
-async function toggleScene(packId: string, sceneId: string) {
-  if (isPlaying(packId, sceneId)) {
-    store.pause();
-    return;
-  }
-  if (isActive(packId, sceneId) && store.activeScene) {
-    store.play();
-    return;
-  }
-  await store.playScene(packId, sceneId);
 }
 </script>
 

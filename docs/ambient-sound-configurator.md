@@ -28,7 +28,9 @@ not an independent global preset that can mix entries from multiple packages.
 
 An ambience entry is a loopable background sound. Each entry has:
 
-- a stable ID, name, icon and category;
+- a stable ID, name and category;
+- an icon in the icon-picker format (`collection:name`, for example
+  `fa-solid:cloud-rain`), rendered with Font Awesome;
 - a default volume, loop flag and optional fade time;
 - one or more **variations**;
 - a **sample pool** for each variation.
@@ -42,8 +44,9 @@ an ambience category, not as a separate weather system.
 ### 2.3 One-shot entry
 
 A one-shot entry is a triggerable sound that plays once. Entries are categorized
-(combat, exploration, environmental, weather, and so on), have an icon, a volume
-and an optional cooldown. One-shot entries can be referenced by multiple scenes
+(combat, exploration, environmental, weather, and so on), have an icon in the
+icon-picker format (`collection:name`, for example `fa-solid:cloud-bolt`), a
+volume and an optional cooldown. One-shot entries can be referenced by multiple scenes
 from the same package.
 
 One-shots are **independent of ambient playback state and mix settings**. They
@@ -63,8 +66,8 @@ A scene is a saved playback configuration owned by a package. It defines:
 - the scene intensity and mix settings;
 - the scene's own music.
 
-Scenes have no cover art in this model. The package icon represents the package;
-a scene is identified by its name and icon.
+Scenes have no cover art or icon in this model. The package icon represents the
+package; a scene is identified by its name.
 
 **Scene music is strictly bound to the scene.** A scene contains one or more
 music presets by type — for example Explore, Combat and Victory. Each preset owns
@@ -187,7 +190,7 @@ directory or mood-state track shared by scenes.
     {
       "id": "rain",
       "name": "Rain",
-      "icon": "ra-rain",
+      "icon": "fa-solid:cloud-rain",
       "category": "Weather",
       "defaultVolume": 45,
       "loop": true,
@@ -210,7 +213,7 @@ directory or mood-state track shared by scenes.
     {
       "id": "thunder",
       "name": "Thunder",
-      "icon": "ra-bell",
+      "icon": "fa-solid:cloud-bolt",
       "file": "one-shots/thunder.mp3",
       "category": "weather",
       "volume": 80,
@@ -222,7 +225,6 @@ directory or mood-state track shared by scenes.
       "id": "tavern",
       "name": "Tavern",
       "description": "A warm, busy roadside inn",
-      "icon": "ra-beer",
       "intensity": 60,
       "ambiences": [
         { "ambienceId": "rain", "variationId": "light", "volume": 35 }
@@ -310,7 +312,6 @@ export interface SceneDef {
   id: string;
   name: string;
   description?: string;
-  icon: string;
   intensity: number;
   ambiences: SceneAmbience[];
   oneShotIds: string[];
@@ -391,16 +392,14 @@ The Scenes tab is the default landing view.
 
 Each scene is a row in a `QCard`/list, not a cover grid. It shows:
 
-- scene icon, name and description preview;
+- scene name and description preview;
 - package name;
 - link count (for example, “3 links”);
 - last updated time;
-- active badge and playing/paused state;
-- action: play/pause.
+- active badge and playing/paused state.
 
-Clicking the row opens the scene player. Clicking the play button starts the
-scene. Clicking the active scene must not restart its music; it toggles
-play/pause instead.
+Clicking the row opens the scene player view. The list has no play button;
+playback starts from the scene view.
 
 **States**
 
@@ -490,7 +489,7 @@ The same reusable `EntityScenesPanel` appears in the side panel/detail area of:
 Panel contents:
 
 - header “Scenes” with an add action;
-- list of linked scenes: scene icon, name, package, active state;
+- list of linked scenes: name, package, active state;
 - play/pause action for each linked scene;
 - remove-link action;
 - empty state: “No scenes linked”;
@@ -1350,7 +1349,7 @@ triggerable and are not gated by ambient playback or scene state.
 
 Present on all pages, not only the ambient page:
 
-- scene icon, scene name and playing/paused state;
+- scene name and playing/paused state;
 - play/pause, stop with fade and a quick master volume;
 - tap to open the full mixer;
 - optional previous/next scene once a scene queue exists.
@@ -1463,7 +1462,6 @@ on entity open or combat start is a separate opt-in feature.
    stay strictly package-local? The current model keeps scenes package-local.
 2. Should “Preview” play the scene quietly in place, or temporarily replace the
    current playback and restore it on stop?
-3. Do we need scene icons beyond the shared icon picker?
-4. Is Party EQ required, or is simple music ducking during one-shots enough?
-5. Should scene changes participate in undo/redo, or is a simple confirmation
+3. Is Party EQ required, or is simple music ducking during one-shots enough?
+4. Should scene changes participate in undo/redo, or is a simple confirmation
    dialog sufficient?

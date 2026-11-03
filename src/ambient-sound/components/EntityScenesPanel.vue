@@ -26,9 +26,6 @@
         :class="{ 'is-active': isActive(entry.pack.id, entry.scene.id) }"
         @click="toggleScene(entry.pack.id, entry.scene.id)"
       >
-        <QItemSection side>
-          <AmbientIcon :icon="entry.scene.icon" :size="20" />
-        </QItemSection>
         <QItemSection>
           <div>{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
@@ -77,9 +74,6 @@
           clickable
           @click="linkScene(entry.pack.id, entry.scene.id)"
         >
-          <QItemSection side>
-            <AmbientIcon :icon="entry.scene.icon" :size="20" />
-          </QItemSection>
           <QItemSection>
             <div>{{ entry.scene.name }}</div>
             <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
@@ -104,7 +98,6 @@ import {
   IconX,
 } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
 

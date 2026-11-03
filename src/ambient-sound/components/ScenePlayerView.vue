@@ -14,7 +14,6 @@
       </QBtn>
       <template v-if="entry">
         <QSeparator vertical />
-        <AmbientIcon :icon="entry.scene.icon" :size="28" />
         <div class="col">
           <div class="text-h6">{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>

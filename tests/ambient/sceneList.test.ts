@@ -31,7 +31,6 @@ const scene = {
   id: 'scene-1',
   name: 'Tavern',
   description: 'A warm inn',
-  icon: '🍺',
 };
 
 describe('SceneList', () => {
@@ -94,7 +93,7 @@ describe('SceneList', () => {
     wrapper.unmount();
   });
 
-  it('shows only playback controls and does not expose edit or delete actions', () => {
+  it('does not expose row actions or scene icons', () => {
     storeMock.selectedPackId = 'local-pack';
     const wrapper = mount(SceneList, {
       global: { stubs: quasarStubs },
@@ -102,25 +101,12 @@ describe('SceneList', () => {
 
     const row = wrapper.find('.scene-row');
     expect(row.find('.imported-mark').exists()).toBe(false);
+    expect(row.find('.ra').exists()).toBe(false);
     expect(row.find('button[aria-label="Edit"]').exists()).toBe(false);
     expect(row.find('button[aria-label="Delete"]').exists()).toBe(false);
-    expect(row.find('button[aria-label="Play"]').exists()).toBe(true);
+    expect(row.find('button[aria-label="Play"]').exists()).toBe(false);
+    expect(row.find('button[aria-label="Pause"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain('New scene');
-    wrapper.unmount();
-  });
-
-  it('pauses the active scene', async () => {
-    storeMock.selectedPackId = 'local-pack';
-    storeMock.activeSceneKey = 'local-pack::scene-2';
-    storeMock.isPlaying = true;
-    storeMock.activeScene = { pack: createdPack, scene: { id: 'scene-2' } };
-    const wrapper = mount(SceneList, {
-      global: { stubs: quasarStubs },
-    });
-
-    const row = wrapper.find('.scene-row');
-    await row.find('button[aria-label="Pause"]').trigger('click');
-    expect(storeMock.pause).toHaveBeenCalled();
     wrapper.unmount();
   });
 });

@@ -56,7 +56,7 @@ describe('ScenePlayerView', () => {
             {
               id: 'rain',
               name: 'Rain',
-              icon: '🌧️',
+              icon: 'fa-solid:cloud-rain',
               category: 'Weather',
               defaultVolume: 40,
               loop: true,
@@ -70,7 +70,7 @@ describe('ScenePlayerView', () => {
             {
               id: 'thunder',
               name: 'Thunder',
-              icon: '⛈️',
+              icon: 'fa-solid:cloud-bolt',
               category: 'weather',
               file: 't.mp3',
               volume: 80,
@@ -80,7 +80,6 @@ describe('ScenePlayerView', () => {
         scene: {
           id: 'scene-1',
           name: 'Tavern Evening',
-          icon: '🍺',
           ambiences: [{ ambienceId: 'rain', variationId: 'light', volume: 40 }],
           oneShotIds: ['thunder'],
           musicPresets: [

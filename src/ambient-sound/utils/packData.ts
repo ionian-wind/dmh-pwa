@@ -119,7 +119,6 @@ export function normalizeSoundPack(
       id: `mood-${mood.state}`,
       name: mood.name,
       description: '',
-      icon: mood.icon,
       intensity: manifest.defaultIntensity ?? 50,
       ambiences: ambiences.map((ambience) => ({
         ambienceId: ambience.id,
@@ -142,7 +141,6 @@ export function normalizeSoundPack(
   const scenes = (manifest.scenes?.length ? manifest.scenes : legacyScenes).map(
     (scene) => ({
       ...scene,
-      icon: scene.icon || 'ra-horn-call',
       intensity: scene.intensity ?? manifest.defaultIntensity ?? 50,
       ambiences: scene.ambiences ?? [],
       oneShotIds: scene.oneShotIds ?? [],

@@ -1,7 +1,7 @@
 <template>
   <i
-    v-if="isRpgIcon"
-    :class="['ra', markerIconClass(props.icon)]"
+    v-if="iconClasses"
+    :class="iconClasses"
     :style="{ fontSize: `${props.size}px` }"
     aria-hidden="true"
   ></i>
@@ -22,7 +22,26 @@ const props = withDefaults(
   { icon: '', size: 20 },
 );
 
-const isRpgIcon = computed(
-  () => props.icon.startsWith('ra-') || props.icon.includes(':ra-'),
-);
+/**
+ * Icons stored in the icon-picker format (`collection:name`) are rendered as
+ * classes. RPG Awesome keeps its historical `ra-*` support; Font Awesome
+ * collections such as `fa-solid`, `fa-regular` and `fa-brands` map to
+ * `fa-*` classes. Anything else falls back to text (legacy emoji icons).
+ */
+const iconClasses = computed<string[] | null>(() => {
+  const raw = (props.icon ?? '').trim();
+  if (!raw) return null;
+
+  const separator = raw.indexOf(':');
+  const collection = separator >= 0 ? raw.slice(0, separator) : '';
+  const name = separator >= 0 ? raw.slice(separator + 1) : raw;
+
+  if (collection.startsWith('fa-')) {
+    return [collection, name.startsWith('fa-') ? name : `fa-${name}`];
+  }
+  if (collection === 'ra' || name.startsWith('ra-')) {
+    return ['ra', markerIconClass(raw)];
+  }
+  return null;
+});
 </script>

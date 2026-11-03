@@ -78,7 +78,6 @@ describe('ambient pack data', () => {
         {
           id: 'grove',
           name: 'Grove',
-          icon: 'ra-tree',
           intensity: 50,
           ambiences: [],
           oneShotIds: [],
@@ -113,7 +112,6 @@ describe('ambient pack data', () => {
         {
           id: 'grove',
           name: 'Grove',
-          icon: 'ra-tree',
           intensity: 50,
           ambiences: [],
           oneShotIds: [],

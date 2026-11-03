@@ -83,7 +83,6 @@ const manifest: SoundPackManifest = {
     {
       id: 'tavern',
       name: 'Tavern',
-      icon: 'ra-beer',
       intensity: 70,
       ambiences: [{ ambienceId: 'rain', variationId: 'light', volume: 40 }],
       oneShotIds: ['thunder'],

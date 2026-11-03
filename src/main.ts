@@ -21,6 +21,7 @@ import 'vue3-openlayers/vue3-openlayers.css';
 
 import Vue3OpenLayers from 'vue3-openlayers';
 import 'rpg-awesome/css/rpg-awesome.css';
+import '@quasar/extras/fontawesome-v6/fontawesome-v6.css';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';

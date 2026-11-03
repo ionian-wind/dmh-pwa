@@ -44,7 +44,6 @@ export interface SceneDef {
   id: string;
   name: string;
   description?: string;
-  icon: string;
   intensity: number;
   ambiences: SceneAmbience[];
   oneShotIds: string[];

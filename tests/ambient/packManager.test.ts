@@ -72,7 +72,6 @@ const modernManifest: SoundPackManifest = {
     {
       id: 'grove',
       name: 'Grove',
-      icon: 'ra-tree',
       intensity: 55,
       ambiences: [{ ambienceId: 'wind', variationId: 'soft', volume: 40 }],
       oneShotIds: ['bell'],

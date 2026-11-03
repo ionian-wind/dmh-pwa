@@ -12,6 +12,17 @@ describe('AmbientIcon', () => {
     wrapper.unmount();
   });
 
+  it('renders Font Awesome icons in icon-picker format', () => {
+    const wrapper = mount(AmbientIcon, {
+      props: { icon: 'fa-solid:cloud-rain', size: 24 },
+    });
+    const icon = wrapper.find('i');
+    expect(icon.classes()).toContain('fa-solid');
+    expect(icon.classes()).toContain('fa-cloud-rain');
+    expect(wrapper.text()).toBe('');
+    wrapper.unmount();
+  });
+
   it('renders emoji and default icons as text', () => {
     const emoji = mount(AmbientIcon, { props: { icon: '🌧️' } });
     expect(emoji.text()).toBe('🌧️');
