@@ -461,7 +461,9 @@ starts only from an explicit play action. A Back button in the view header
 returns to the scene/gallery tabs. The view contains:
 
 - **Global play/pause** — controls the scene music and linked ambiences. It does
-  not block one-shots.
+  not block one-shots. While the scene is paused or not the active scene, music
+  preset buttons and ambience variation buttons are disabled; one-shots remain
+  available.
 - **Music preset bar** — an Off button plus one button per scene music preset
   (for example Explore, Combat, Victory). Only one preset can be active; the Off
   button stops scene music without stopping ambiences. Within a preset the next

@@ -49,6 +49,7 @@
           <QBtn
             :color="musicOff ? 'primary' : 'grey-7'"
             :outline="!musicOff"
+            :disable="!sceneControlsEnabled"
             :label="t('ambientSoundPage.off')"
             size="sm"
             @click="store.setMusicPreset(null)"
@@ -58,6 +59,7 @@
             :key="preset.id"
             :color="activePresetId === preset.id ? 'primary' : 'grey-7'"
             :outline="activePresetId !== preset.id"
+            :disable="!sceneControlsEnabled"
             :label="preset.name"
             size="sm"
             @click="store.setMusicPreset(preset.id)"
@@ -105,6 +107,7 @@
                           row.activeVariationId === variation.id,
                       }"
                       :outline="row.activeVariationId !== variation.id"
+                      :disable="!sceneControlsEnabled"
                       :label="variation.name"
                       size="sm"
                       @click="toggleVariant(row, variation.id)"
@@ -236,6 +239,8 @@ const musicOff = computed(
 function sceneIsActive() {
   return store.activeSceneKey === `${props.packId}::${props.sceneId}`;
 }
+
+const sceneControlsEnabled = computed(() => store.isPlaying && sceneIsActive());
 
 async function togglePlayback() {
   if (!sceneIsActive()) {

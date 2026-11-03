@@ -42,6 +42,7 @@ describe('ScenePlayerView', () => {
     storeMock.activeMusicPresetId = 'explore';
     storeMock.musicEnabled = true;
     storeMock.isPlaying = true;
+    storeMock.activeSceneKey = 'pack-1::scene-1';
     storeMock.isOneShotPlaying.mockReturnValue(false);
     storeMock.activeLayers = new Map([
       ['pack-1:rain', { variationId: 'light', volume: 0.4 }],
@@ -146,6 +147,32 @@ describe('ScenePlayerView', () => {
 
     await wrapper.find('button[aria-label="Play"]').trigger('click');
     expect(storeMock.playScene).toHaveBeenCalledWith('pack-1', 'scene-1');
+    wrapper.unmount();
+  });
+
+  it('disables scene music and ambience controls while playback is paused', async () => {
+    storeMock.isPlaying = false;
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs: quasarStubs },
+    });
+
+    const button = (label: string) =>
+      wrapper.findAll('button').find((entry) => entry.text() === label);
+    expect(button('Off')!.attributes('disabled')).toBeDefined();
+    expect(button('Explore')!.attributes('disabled')).toBeDefined();
+    expect(button('Light')!.attributes('disabled')).toBeDefined();
+
+    const oneShotsTab = wrapper
+      .findAll('button')
+      .find((entry) => entry.text() === 'One-shots');
+    await oneShotsTab!.trigger('click');
+    const thunder = wrapper
+      .findAll('.one-shot-card')
+      .find((card) => card.text().includes('Thunder'));
+    expect(thunder!.attributes('disabled')).toBeUndefined();
+    await thunder!.trigger('click');
+    expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });
 
