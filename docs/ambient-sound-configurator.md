@@ -522,7 +522,6 @@ Each scene is a row in a `QCard`/list, not a cover grid. It shows:
 
 - scene name and description preview;
 - package name;
-- link count (for example, “3 links”);
 - a “Playing” badge while the scene is playing.
 
 Clicking the row opens the scene player view. The list has no icon or play

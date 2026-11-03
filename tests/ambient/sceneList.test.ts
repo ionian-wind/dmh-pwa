@@ -8,7 +8,6 @@ const storeMock = vi.hoisted(() => ({
   activeSceneKey: null as string | null,
   isPlaying: false,
   activeScene: null as any,
-  linksForScene: vi.fn(() => []),
   playScene: vi.fn(),
   play: vi.fn(),
   pause: vi.fn(),
@@ -35,15 +34,9 @@ const scene = {
 
 describe('SceneList', () => {
   beforeEach(() => {
-    for (const fn of [
-      storeMock.linksForScene,
-      storeMock.playScene,
-      storeMock.play,
-      storeMock.pause,
-    ]) {
+    for (const fn of [storeMock.playScene, storeMock.play, storeMock.pause]) {
       fn.mockReset();
     }
-    storeMock.linksForScene.mockReturnValue([]);
     storeMock.selectedPackId = null;
     storeMock.storedPacks = [importedPack, createdPack];
     storeMock.allScenes = [

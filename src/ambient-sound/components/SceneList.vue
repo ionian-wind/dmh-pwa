@@ -25,10 +25,6 @@
             <div class="text-caption text-grey-7">
               {{ entry.pack.name }} · {{ entry.scene.description || '' }}
             </div>
-            <div class="text-caption text-grey-6">
-              {{ linkCount(entry.pack.id, entry.scene.id) }}
-              {{ t('ambientSoundPage.links') }}
-            </div>
           </div>
         </QCardSection>
       </QCard>
@@ -81,10 +77,6 @@ function isActive(packId: string, sceneId: string) {
 
 function isPlaying(packId: string, sceneId: string) {
   return isActive(packId, sceneId) && store.isPlaying;
-}
-
-function linkCount(packId: string, sceneId: string) {
-  return store.linksForScene(packId, sceneId).length;
 }
 </script>
 
