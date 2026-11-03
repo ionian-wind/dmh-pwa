@@ -29,6 +29,7 @@
         :key="`${entry.packageId}:${entry.ambience.id}`"
         flat
         bordered
+        :class="{ 'is-active': isActive(entry.packageId, entry.ambience.id) }"
       >
         <QCardSection class="row items-center q-gutter-sm">
           <AmbientIcon :icon="entry.ambience.icon" :size="24" />
@@ -71,17 +72,39 @@
             class="variation-select"
             @update:model-value="
               (value: string | null) =>
-                value && setVariation(entry.packageId, entry.ambience.id, value)
+                value &&
+                selectVariation(entry.packageId, entry.ambience.id, value)
             "
           />
           <QBtn
             flat
             round
-            :title="t('ambientSoundPage.preview')"
-            :aria-label="t('ambientSoundPage.preview')"
-            @click="preview(entry)"
+            :color="
+              isActive(entry.packageId, entry.ambience.id)
+                ? 'primary'
+                : undefined
+            "
+            :title="
+              t(
+                isActive(entry.packageId, entry.ambience.id)
+                  ? 'common.pause'
+                  : 'common.play',
+              )
+            "
+            :aria-label="
+              t(
+                isActive(entry.packageId, entry.ambience.id)
+                  ? 'common.pause'
+                  : 'common.play',
+              )
+            "
+            @click="toggle(entry)"
           >
-            <IconPlayerPlay :size="18" />
+            <IconPlayerPause
+              v-if="isActive(entry.packageId, entry.ambience.id)"
+              :size="18"
+            />
+            <IconPlayerPlay v-else :size="18" />
           </QBtn>
           <QBtn
             flat
@@ -111,6 +134,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconPackageImport,
+  IconPlayerPause,
   IconPlayerPlay,
   IconPlus,
   IconSearch,
@@ -185,16 +209,36 @@ function usedIn(packId: string, ambienceId: string) {
   ).length;
 }
 
-function preview(entry: GalleryAmbience) {
-  void store.previewAmbience(
+function isActive(packId: string, ambienceId: string) {
+  return store.activeLayers.has(`${packId}:${ambienceId}`);
+}
+
+function toggle(entry: GalleryAmbience) {
+  void store.toggleAmbience(
     entry.packageId,
     entry.ambience.id,
     variationFor(entry.packageId, entry.ambience.id),
   );
 }
+
+function selectVariation(
+  packId: string,
+  ambienceId: string,
+  variationId: string,
+) {
+  setVariation(packId, ambienceId, variationId);
+  if (isActive(packId, ambienceId)) {
+    void store.setAmbienceVariation(packId, ambienceId, variationId);
+  }
+}
 </script>
 
 <style scoped>
+.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-background-soft);
+}
+
 .imported-mark {
   color: var(--color-text-light);
 }

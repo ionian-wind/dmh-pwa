@@ -12,6 +12,7 @@ const storeMock = vi.hoisted(() => ({
     scene: { id: 'scene-1', name: 'Tavern' },
   },
   activeSceneKey: 'pack-1::scene-1',
+  hasActiveLayers: false,
   togglePlayPause: vi.fn(),
   toggleMusic: vi.fn(),
   setMasterVolume: vi.fn(),
@@ -55,6 +56,7 @@ describe('AmbientSoundView', () => {
     storeMock.masterVolume = 50;
     storeMock.musicEnabled = true;
     storeMock.isPlaying = false;
+    storeMock.hasActiveLayers = false;
     storeMock.storedPacks = [{ id: 'pack-1', name: 'Campaign' }] as any;
     storeMock.activeScene = {
       pack: { id: 'pack-1', name: 'Campaign' },
@@ -109,6 +111,20 @@ describe('AmbientSoundView', () => {
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
     expect(rightDrawerMock.clear).toHaveBeenCalled();
     expect(storeMock.stopPreview).toHaveBeenCalled();
+  });
+
+  it('toggles ambient playback when only gallery tracks are active', async () => {
+    storeMock.activeScene = null as any;
+    storeMock.hasActiveLayers = true;
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Ambient mix');
+    const play = wrapper.find('button[aria-label="Play"]');
+    expect(play.attributes('disabled')).toBeUndefined();
+    await play.trigger('click');
+    expect(storeMock.togglePlayPause).toHaveBeenCalled();
+    wrapper.unmount();
   });
 
   it('switches tabs between scenes and the global galleries', async () => {

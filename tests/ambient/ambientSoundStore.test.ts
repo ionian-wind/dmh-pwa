@@ -55,6 +55,17 @@ const manifest: SoundPackManifest = {
         { id: 'heavy', name: 'Heavy', samples: ['ambiences/heavy.mp3'] },
       ],
     },
+    {
+      id: 'wind',
+      name: 'Wind',
+      icon: 'ra-wind',
+      category: 'Weather',
+      defaultVolume: 30,
+      loop: true,
+      variations: [
+        { id: 'default', name: 'Default', samples: ['ambiences/wind.mp3'] },
+      ],
+    },
   ],
   oneShots: [
     {
@@ -84,6 +95,7 @@ const pack = normalizeSoundPack(manifest);
 const blobs = {
   'ambiences/light.mp3': new Blob(['light'], { type: 'light' }),
   'ambiences/heavy.mp3': new Blob(['heavy'], { type: 'heavy' }),
+  'ambiences/wind.mp3': new Blob(['wind'], { type: 'wind' }),
   'one-shots/thunder.mp3': new Blob(['thunder'], { type: 'thunder' }),
   'scenes/tavern/music/theme.mp3': new Blob(['theme'], { type: 'theme' }),
 };
@@ -121,7 +133,7 @@ describe('ambient sound store', () => {
 
     expect(store.storedPacks).toHaveLength(1);
     expect(store.allScenes).toHaveLength(1);
-    expect(store.galleryAmbiences).toHaveLength(1);
+    expect(store.galleryAmbiences).toHaveLength(2);
     expect(store.galleryOneShots).toHaveLength(1);
     expect(store.selectedPack).toBeNull();
     expect(mocks.audioEngine.loadOneShot).not.toHaveBeenCalled();
@@ -203,6 +215,31 @@ describe('ambient sound store', () => {
 
     await store.toggleAmbience('forest', 'rain');
     expect(store.activeLayers.has('forest:rain')).toBe(false);
+  });
+
+  it('plays multiple ambience tracks together and toggles them globally', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.toggleAmbience('forest', 'rain');
+    await store.toggleAmbience('forest', 'wind');
+
+    expect(store.activeLayers.size).toBe(2);
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeScene).toBeNull();
+    expect(mocks.audioEngine.playLayer).toHaveBeenCalledWith(
+      'forest:wind',
+      0.3,
+    );
+
+    store.togglePlayPause();
+    expect(store.isPlaying).toBe(false);
+    store.togglePlayPause();
+    expect(store.isPlaying).toBe(true);
+    expect(mocks.audioEngine.playLayer).toHaveBeenCalledWith(
+      'forest:rain',
+      0.4,
+    );
   });
 
   it('plays one-shots independently of ambient volume and transport', async () => {

@@ -299,12 +299,12 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   }
 
   function play(): void {
-    if (!activeScene.value) return;
+    if (!activeScene.value && activeLayers.value.size === 0) return;
     isPlaying.value = true;
     for (const [layer, active] of activeLayers.value) {
       audioEngine.playLayer(layer, active.volume);
     }
-    if (musicEnabled.value) {
+    if (activeScene.value && musicEnabled.value) {
       startSceneMusic(activeScene.value.pack.id, activeScene.value.scene);
     }
   }
@@ -329,6 +329,9 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     const key = layerKey(packId, ambienceId);
     if (activeLayers.value.has(key)) {
       stopLayer(key);
+      if (activeLayers.value.size === 0 && !activeScene.value) {
+        isPlaying.value = false;
+      }
       return;
     }
 
@@ -336,7 +339,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     const ambience = findAmbience(packId, ambienceId);
     if (!pack || !ambience) return;
     await ensurePackAudio(pack);
+    const shouldResume = !isPlaying.value;
+    isPlaying.value = true;
     startAmbience(packId, ambience, variationId, ambience.defaultVolume ?? 50);
+    if (shouldResume) play();
   }
 
   async function setAmbienceVariation(

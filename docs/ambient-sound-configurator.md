@@ -35,8 +35,9 @@ An ambience entry is a loopable background sound. Each entry has:
 
 Only one sample from the selected variation plays at a time. Switching variation
 switches the active sample pool; switching the selected sample restarts only that
-ambience layer. Weather is represented as an ambience category, not as a separate
-weather system.
+ambience layer. Multiple ambience entries can play together, both as part of a
+scene and as additional gallery tracks layered on top. Weather is represented as
+an ambience category, not as a separate weather system.
 
 ### 2.3 One-shot entry
 
@@ -409,8 +410,9 @@ A global content gallery for ambience entries from all loaded packages.
 - Package name.
 - Number of variations and total samples.
 - “Used in N scenes” badge.
-- Preview button.
-- Variation dropdown for previewing a specific variation.
+- Play/pause toggle; toggling one entry starts it without stopping other active
+  ambience entries, so several tracks can play together.
+- Variation dropdown; changing it while active swaps that track's sample pool.
 - “Add to scene” action.
 - Active-in-current-scene indicator.
 

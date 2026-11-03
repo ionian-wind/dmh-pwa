@@ -837,7 +837,8 @@
     "noLinkEntities": "No entities available to link",
     "importedPackage": "Imported package",
     "importedSceneReadOnly": "Imported scenes are read-only",
-    "importedReadOnlyHint": "Imported packages are read-only. Duplicate or create a new package to edit content."
+    "importedReadOnlyHint": "Imported packages are read-only. Duplicate or create a new package to edit content.",
+    "ambientMix": "Ambient mix"
   },
   "maps": {
     "title": "Maps",

@@ -15,7 +15,7 @@
             round
             color="primary"
             size="lg"
-            :disable="!store.activeScene"
+            :disable="!store.activeScene && !store.hasActiveLayers"
             :title="t(store.isPlaying ? 'common.pause' : 'common.play')"
             :aria-label="t(store.isPlaying ? 'common.pause' : 'common.play')"
             @click="store.togglePlayPause()"
@@ -29,7 +29,10 @@
             </div>
             <div class="text-subtitle1">
               {{
-                store.activeScene?.scene.name || t('ambientSoundPage.noScene')
+                store.activeScene?.scene.name ||
+                (store.hasActiveLayers
+                  ? t('ambientSoundPage.ambientMix')
+                  : t('ambientSoundPage.noScene'))
               }}
             </div>
             <div class="text-caption text-grey-6">
