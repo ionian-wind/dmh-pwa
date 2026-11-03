@@ -166,7 +166,7 @@ function removeLink(ref: MapEntityRef) {
       style="max-height: 320px"
     >
       <template #default="{ item: ref }">
-        <QItem>
+        <QItem class="linked-entity-item">
           <QItemSection>{{ labelFor(ref) }}</QItemSection>
           <QItemSection side>
             <QBtn
@@ -284,3 +284,15 @@ function removeLink(ref: MapEntityRef) {
     />
   </div>
 </template>
+
+<style scoped>
+.linked-entity-item {
+  border-radius: var(--border-radius-sm);
+  transition: background-color 0.15s ease;
+}
+
+.linked-entity-item:hover,
+.linked-entity-item:focus-within {
+  background: var(--color-background-soft);
+}
+</style>

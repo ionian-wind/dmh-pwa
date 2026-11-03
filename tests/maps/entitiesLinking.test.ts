@@ -75,6 +75,7 @@ describe('EntitiesLinking', () => {
     });
 
     expect(wrapper.text()).toContain('Alpha note');
+    expect(wrapper.findAll('.linked-entity-item')).toHaveLength(1);
     expect(wrapper.findAll('button[aria-label="Remove"]')).toHaveLength(1);
 
     await wrapper.find('button[aria-label="Remove"]').trigger('click');
