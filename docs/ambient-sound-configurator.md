@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This document describes the Ambient Sound Configurator feature for DMH PWA, inspired by reference applications Syrinscape, Tabletone, and Pocket Bard. The feature enables Game Masters to create immersive soundscapes for tabletop RPG sessions by layering ambient sounds, triggering one-shot effects, and switching between package-defined scenes.
+This document describes the Ambient Sound Configurator feature for DMH PWA, inspired by common tabletop ambience workflows. The feature enables Game Masters to create immersive soundscapes for tabletop RPG sessions by layering ambient sounds, triggering one-shot effects, and switching between package-defined scenes.
 
 ## 2. Core Concepts
 
@@ -326,71 +326,288 @@ export interface SceneEntityLink {
 
 ## 4. User Interface
 
-### 4.1 Main layout
+### 4.1 Layout and navigation
 
-The ambient-sound area has three primary surfaces:
+The ambient-sound section is a first-class app page with a package sidebar:
 
-- **Scenes list** — all scenes from loaded packages. Selecting a scene applies
-  its configuration and starts its scene-bound music.
-- **Global gallery** — all ambience and one-shot entries from loaded packages,
-  grouped by package and category. Entries are content; they do not play just
-  because they are visible.
-- **Scene detail/editor** — the mix for one package-owned scene: active
-  ambience entries, variations, volumes, one-shot selection, intensity, music
-  and linked DMH entities.
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Header: Ambient Sound                    [search] [sidebar]  │
+├───────────────────────────────────────────┬──────────────────┤
+│ Tabs: Scenes | Ambiences | One-shots       │ Packages         │
+│                                           │ ──────────────── │
+│ Content for the selected tab              │ All packages     │
+│                                           │ Forest           │
+│                                           │ Tavern           │
+│                                           │ ...              │
+│                                           │ ──────────────── │
+│                                           │ Create pack      │
+│                                           │ Import pack      │
+├───────────────────────────────────────────┴──────────────────┤
+│ Now Playing / sound control panel                            │
+└──────────────────────────────────────────────────────────────┘
+```
 
-A persistent **Now Playing / sound control panel** shows the current scene and
-provides playback, quick volume and expand/detach controls.
+- Use the existing `ViewHeader`, `QCard`, `TabGroup`, `BaseModal`,
+  `SidebarItem`, `IconPicker` and `EmptyState` components.
+- The package sidebar is the right drawer. The main page owns the left content.
+- “All packages” is the default filter. Selecting a package filters the active
+  tab to that package; selecting it again clears the filter.
+- Package rows show package icon, name and category. Hover/focus shows delete.
+- Create/Import are pinned footer actions, matching the map sidebar pattern.
+- The global sound panel is mounted in the app shell, not inside the page.
 
-### 4.2 Scenes list
+### 4.2 Scenes tab
 
-- Shows package scenes with icon, name, package name and last updated time.
-- Selecting a scene starts it; selecting the active scene does not restart its
-  music.
-- Scene actions: play, edit, duplicate (as a new scene in the same package) and
-  delete.
-- Removing a package removes its scenes from this list.
+The Scenes tab is the default landing view.
 
-### 4.3 Global gallery
+**Toolbar**
 
-- Combines ambience and one-shot entries from all loaded packages.
-- Groups by package and then by entry category.
-- Supports search, preview and “add to scene”.
-- Adding an entry to a scene creates a reference; it does not copy audio.
-- Entries remain bound to their source package.
+- Search by scene name, package name or description.
+- Filter chips: All packages / current package / linked only.
+- Sort: recently updated, name, package.
+- “New scene” action is enabled only when a package is selected.
 
-### 4.4 Scene editor
+**Scene row/card**
 
-- Main info: name, description, icon, intensity.
-- Ambience tab: selected ambience entries, variation, volume per entry.
-- One-shots tab: selected one-shot entries available to trigger in the scene.
-- Music tab: files owned by this scene. Music is always scene-bound; it cannot
-  be reused as a global mood track.
-- Links tab: linked locations, modules, encounters and characters.
-- Uses the standard tabbed `BaseModal`/editor pattern and the shared
-  `IconPicker`.
+Each scene is a row in a `QCard`/list, not a cover grid. It shows:
 
-### 4.5 Entity links
+- scene icon, name and description preview;
+- package name;
+- link count (for example, “3 links”);
+- last updated time;
+- active badge and playing/paused state;
+- actions: play/pause, edit, duplicate, delete.
 
-Links are available from both sides:
+Clicking the row opens the scene editor/read-only detail. Clicking the play
+button starts the scene. Clicking the active scene must not restart its music;
+it toggles play/pause instead.
 
-- **Scene detail/editor** — a “Linked to” section lists linked locations,
-  modules, encounters and characters, with add/remove controls.
-- **Location, module, encounter and character views** — a “Scenes” section lists
-  scenes linked to that entity. Selecting a linked scene starts it.
-- Removing a link affects only the local association; it does not modify the
-  package or delete the scene.
-- Deleting a package or linked entity removes the affected links.
+**States**
 
-### 4.6 Playback controls
+- No packages: empty state with “Import package”.
+- Packages but no scenes: “This package has no scenes”.
+- No search results: compact empty state with “Clear filters”.
+- Loading/importing: spinner and disabled package actions.
 
-- Scene play/pause and stop.
-- Master, music, ambience and one-shot volume buses.
-- Per-ambience toggle and volume; one sample per ambience plays at a time.
-- One-shot trigger grid, always active regardless of ambient transport state,
-  active scene, music enabled state or ambient volume settings.
-- Scene switching crossfades or stops the old scene music and starts the new
-  scene's music.
+### 4.3 Ambiences tab
+
+A global content gallery for ambience entries from all loaded packages.
+
+**Toolbar**
+
+- Search by name, package or category.
+- Package filter (synced with the sidebar filter).
+- Category chips built from the available categories; include “All”.
+- View toggle: grouped list (default) or compact table.
+
+**Ambience row**
+
+- Icon, name and category.
+- Package name.
+- Number of variations and total samples.
+- “Used in N scenes” badge.
+- Preview button.
+- Variation dropdown for previewing a specific variation.
+- “Add to scene” action.
+- Active-in-current-scene indicator.
+
+Preview plays a short, low-volume audition and does not modify the active scene.
+“Add to scene” opens the scene picker described in 4.6. Removing an entry from a
+scene never deletes it from the gallery.
+
+### 4.4 One-shots tab
+
+A global content gallery for one-shot entries.
+
+- Search and package/category filters behave like the Ambiences tab.
+- Group by package, then by category.
+- Each row/card shows icon, name, category, package and “Used in N scenes”.
+- Primary action is “Preview”; secondary action is “Add to scene”.
+- Triggering a one-shot from the scene editor/playback panel is independent of
+  ambient playback, scene music and ambient volume settings.
+- One-shot rows remain visible and playable even when no scene is active.
+
+### 4.5 Scene editor
+
+The scene editor is a standard tabbed `BaseModal` opened from the Scenes tab.
+It edits one package-owned scene.
+
+**Tabs**
+
+| Tab           | Fields and controls                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| **Main**      | Name (required), description, icon via `IconPicker`, intensity slider, package (read-only) |
+| **Ambiences** | Selected ambience entries, variation selector, volume slider, remove, add entry            |
+| **One-shots** | Selected one-shot entries, category grouping, preview, remove, add entry                   |
+| **Music**     | Scene-owned music files, preview, loop toggle, replace/remove                              |
+| **Links**     | Linked locations, modules, encounters and characters; add/remove links                     |
+
+**Ambiences tab**
+
+- Only ambience entries from the scene’s package can be added.
+- Each selected row shows icon, name, variation dropdown, volume slider and
+  remove action.
+- Volume uses 0–100 with the existing wheel adjustment behavior.
+- “Add ambience” opens a filtered gallery picker. Already-selected entries are
+  disabled or shown as selected.
+- Empty state: “No ambiences in this scene”.
+- A variation change swaps the sample pool for that ambience only.
+
+**One-shots tab**
+
+- Only one-shot entries from the scene’s package can be added.
+- Rows are grouped by category; each has preview and remove.
+- Empty state: “No one-shots in this scene”.
+- Adding a one-shot does not start ambient playback.
+
+**Music tab**
+
+- Lists only music files owned by this scene. Music from another scene or from a
+  global gallery is not selectable.
+- Each file has preview, loop toggle and remove. The scene may have zero files.
+- There is no “music mood” selector; scene music is part of the scene itself.
+- Empty state: “This scene has no music”.
+
+**Links tab**
+
+- Four sections: Locations, Modules, Encounters, Characters.
+- “Add link” opens an entity picker with search, grouped by entity type.
+- Linked items show type icon, entity name and remove action.
+- Entity names link to the entity view.
+- Empty state per section: “No linked locations”, etc.
+
+**Footer and validation**
+
+- Save is disabled when the scene name is empty.
+- Cancel discards unsaved changes after the standard unsaved-changes guard.
+- Duplicate copies the scene configuration and music references but not local
+  entity links.
+- Delete asks for confirmation, removes links and stops the scene if active.
+
+### 4.6 Add-to-scene picker
+
+Used from Ambiences and One-shots galleries.
+
+- Modal/dialog with search.
+- Lists scenes from the same package only.
+- Shows scene icon, name and whether the entry is already present.
+- Already-present entries are disabled.
+- If the package has no scenes, show “Create a scene first” with a shortcut.
+- Confirming adds the reference and closes the picker; a toast confirms the
+  action.
+- Does not copy audio and does not change the currently playing scene.
+
+### 4.7 Entity views: linked scenes
+
+The same reusable `EntityScenesPanel` appears in the side panel/detail area of:
+
+- locations (`LocationView`);
+- modules (`ModuleView`);
+- encounters (`EncounterView`);
+- characters (`CharacterView`).
+
+Panel contents:
+
+- header “Scenes” with an add action;
+- list of linked scenes: scene icon, name, package, active state;
+- play/pause action for each linked scene;
+- remove-link action;
+- empty state: “No scenes linked”;
+- current scene highlighted.
+
+The scene picker searches all loaded packages and groups scenes by package.
+Selecting a scene starts it; it does not navigate away from the entity view.
+Deleting the entity or its package removes the affected links.
+
+### 4.8 Global sound panel
+
+A persistent panel, available on every page, showing the current scene.
+
+**Docked mode**
+
+- Anchored to the bottom, width equal to the page-content area.
+- Shows scene icon, scene name, package name and play/pause state.
+- Play/pause, stop, master volume, music/ambience/one-shot volume access.
+- “Open ambient page” action.
+- Quick one-shot tray for the active scene’s one-shots.
+- No scene cover art; scene identity is icon + name.
+
+**Floating dialog mode**
+
+- Dragging the panel up detaches it into a centred floating dialog.
+- The dialog header centre is positioned under the pointer at detach.
+- Detaching begins after a 5 px upward drag.
+- The snap/dock zone is 10 px from the page bottom, measured from the dialog’s
+  bottom edge.
+- The snap catcher arms only after the dialog leaves the bottom zone.
+- Docking ends the drag gesture.
+- The floating dialog is draggable anywhere on the page and remains within a
+  usable viewport area.
+- Closing the panel returns it to the docked state.
+
+**One-shot behavior in the panel**
+
+- The quick one-shot tray remains usable when ambient playback is paused.
+- Triggering a one-shot does not change the active scene, music or ambience mix.
+- One-shots are attenuated by the one-shot bus only, never by ambient master,
+  music or ambience buses.
+
+### 4.9 Responsive behavior
+
+**Desktop (≥1024 px)**
+
+- Right package sidebar persistent.
+- Scenes and gallery rows in a comfortable 1–2 column layout.
+- Scene editor max width around 900 px.
+- Docked sound panel matches the page-content width.
+
+**Tablet (600–1023 px)**
+
+- Package sidebar becomes an overlay drawer.
+- Scene cards/rows remain list-first; gallery uses 2 columns.
+- Scene editor uses most of the viewport height.
+
+**Mobile (<600 px)**
+
+- Tabs scroll horizontally; package sidebar opens as a drawer.
+- Scenes are full-width rows; gallery is a single-column list.
+- Scene editor opens full-screen or as a bottom sheet.
+- Sound panel docks as a bottom sheet; floating mode uses the available width.
+- Touch targets are at least 44×44 px; hover-only actions are also available from
+  an overflow menu.
+
+### 4.10 Feedback, accessibility and edge states
+
+- Package import: loading spinner, validation error message, retry action.
+- Package delete: confirmation includes the number of scenes and entries removed.
+- Active scene: visible badge and pulsing state in the app menu/sound panel.
+- Paused: play icon and “Paused” status; music disabled: muted music indicator.
+- Empty states cover: no packages, no scenes, no gallery entries, no search
+  results, no linked entities, no music.
+- All icon buttons have `title`/`aria-label`; sliders have accessible labels and
+  current values.
+- Keyboard: tab order follows the visual order; Escape closes modals/dialogs;
+  sliders support arrow keys.
+- Respect `prefers-reduced-motion` for pulsing icons and scene transitions.
+- Toasts confirm add/remove link, add-to-scene, package import and duplicate.
+
+### 4.11 Component and state mapping
+
+| UI component        | Responsibility                                       | Main state/actions                            |
+| ------------------- | ---------------------------------------------------- | --------------------------------------------- |
+| `AmbientSoundView`  | Page layout, tabs, package filter, now-playing slot  | `currentPackage`, `activeScene`, `play/pause` |
+| `PackageSidebar`    | Package list, import/create/delete, filter           | `packages`, `selectedPackageId`               |
+| `SceneList`         | Scene rows, search, sort, actions                    | `scenes`, `activeSceneId`                     |
+| `SceneEditor`       | Tabbed scene configuration                           | `draftScene`, `save/cancel/duplicate`         |
+| `GlobalGallery`     | Ambience/one-shot browsing                           | `galleryEntries`, `search`, `category`        |
+| `AddToScenePicker`  | Add gallery entry to a package scene                 | `entryId`, `scenes`                           |
+| `EntityScenesPanel` | Linked scenes in location/module/encounter/character | `links`, `add/remove`, `play`                 |
+| `SoundControlPanel` | Docked/floating playback and quick one-shots         | `activeScene`, `playback`, `volumes`          |
+
+The implementation should keep scene content (package-owned) separate from
+local links and playback state. UI components read from the store selectors and
+emit intent actions rather than mutating package manifests directly.
 
 ## 5. Audio Engine
 
@@ -1078,23 +1295,22 @@ To create an ambient sound package:
 5. Import the `.spk` file in the app; its scenes appear in the scenes list and
    its entries appear in the global gallery.
 
-## 14. Pocket Bard-Inspired Proposals
+## 14. Scene-Centric UX Proposals
 
 > **Status:** proposal only — none of this section is implemented yet.
-> Based on the reference screenshots in `content/pocketbard/` and the current
-> ambient-sound implementation.
+> Based on the package, gallery and scene model described above.
 
-### 14.1 What to borrow from Pocket Bard
+### 14.1 Adopted scene-centric patterns
 
-The screenshots show a scene-centric product rather than a pack-centric mixer:
+The intended experience is scene-centric rather than a pack-centric mixer:
 
 - **Scenes** are the primary library object, with description, Preview/Play and
   last-updated metadata. DMH does not use scene cover art.
 - **Ambiences** and **One-shots** are separate libraries with category chips.
 - **Scene editing** is a checklist: “Added to scene”, grouped by category, with
   Remove All and a clear empty/complete state.
-- **Table controls** are fast: mood pills, an intensity slider, per-layer
-  I/II/III buttons and a variation dropdown.
+- **Table controls** are fast: scene music controls, an intensity slider,
+  per-layer I/II/III buttons and a variation dropdown.
 - **A persistent now-playing bar** keeps the current scene visible everywhere.
 - **Audio settings are global**: master/music/ambience/one-shots volume, presets,
   reset and an optional Party EQ.
@@ -1166,7 +1382,7 @@ rather than a large centred modal.
 
 #### Scene detail and scene editing
 
-Mirror the Pocket Bard scene detail screen:
+The scene detail/editor should provide:
 
 - description and last updated;
 - Preview and Play buttons;
@@ -1202,7 +1418,7 @@ scenes and per-layer controls feel coherent.
 
 ### 14.4 DMH-specific extension: link scenes to entities
 
-Pocket Bard stops at scenes. DMH connects package scenes to local campaign data:
+DMH connects package scenes to local campaign data:
 
 - **locations** — map locations;
 - **modules**;
@@ -1246,8 +1462,8 @@ on entity open or combat start is a separate opt-in feature.
 
 - A Discover/Profile-style marketplace navigation. The application is
   local-first; Packs and Scenes are enough unless shared content is introduced.
-- Copying Pocket Bard’s exact parchment visual style. The layout and hierarchy
-  can be borrowed while keeping the existing dark Quasar theme.
+- Copying a third-party visual style. Keep the existing dark Quasar theme and
+  use the layout and hierarchy described above.
 - Automatic scene switching without user confirmation.
 
 ### 14.8 Open questions
