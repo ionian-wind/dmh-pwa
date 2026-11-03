@@ -269,7 +269,9 @@ describe('dice probability calculator language features', () => {
     });
 
     it('reports parse errors', () => {
-      expect(() => calculate('output 1 +')).toThrow(/SyntaxError|expecting/i);
+      expect(() => calculate('output 1 +')).toThrow(
+        /Unexpected end of input\. Expected/i,
+      );
     });
   });
 });

@@ -5,6 +5,9 @@ import { mount } from '@vue/test-utils';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
+import ModuleCard from '@/modules/ModuleCard.vue';
+import MonsterCard from '@/monsters/MonsterCard.vue';
+import EncounterCard from '@/encounters/EncounterCard.vue';
 import { IconBrush, IconFileText } from '@tabler/icons-vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
@@ -154,6 +157,111 @@ describe('domain cards', () => {
     expect(wrapper.find('.note-card-content').classes()).not.toContain(
       'clamped',
     );
+  });
+
+  it('ModuleCard forwards every action with the module', async () => {
+    const module = { id: 'mod', name: 'Module', description: 'Desc' } as any;
+    const wrapper = mount(ModuleCard, { props: { module } });
+
+    const buttons = wrapper.findComponent(BaseCard).findAll('button');
+    for (const button of buttons) await button.trigger('click');
+
+    expect(wrapper.emitted('view')?.[0]).toEqual([module]);
+    expect(wrapper.emitted('edit')?.[0]).toEqual([module]);
+    expect(wrapper.emitted('delete')?.[0]).toEqual([module]);
+    expect(wrapper.emitted('copy')?.[0]).toEqual([module]);
+  });
+
+  it('ModuleCard omits an empty description', () => {
+    const wrapper = mount(ModuleCard, {
+      props: { module: { id: 'mod', name: 'Module' } as any },
+    });
+    expect(wrapper.find('.description').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('MonsterCard forwards actions and deletes by id', async () => {
+    const monster = { id: 'mon', name: 'Goblin' } as any;
+    const wrapper = mount(MonsterCard, {
+      props: { monster, showActions: true },
+    });
+
+    const buttons = wrapper.findComponent(BaseCard).findAll('button');
+    for (const button of buttons) await button.trigger('click');
+
+    expect(wrapper.emitted('view')?.[0]).toEqual([monster]);
+    expect(wrapper.emitted('edit')?.[0]).toEqual([monster]);
+    expect(wrapper.emitted('delete')?.[0]).toEqual(['mon']);
+    expect(wrapper.emitted('copy')?.[0]).toEqual([monster]);
+  });
+
+  it('EncounterCard forwards actions and starts combat', async () => {
+    const encounter = {
+      id: 'enc',
+      name: 'Ambush',
+      description: 'Goblins',
+      monsters: { goblin: 2, ogre: 1 },
+      moduleId: null,
+    } as any;
+    const wrapper = mount(EncounterCard, { props: { encounter } });
+    await nextTick();
+
+    const baseButtons = wrapper.findComponent(BaseCard).findAll('button');
+    for (const button of baseButtons) await button.trigger('click');
+    await wrapper.find('button[title="Run Combat"]').trigger('click');
+
+    expect(wrapper.emitted('view')?.[0]).toEqual([encounter]);
+    expect(wrapper.emitted('edit')?.[0]).toEqual([encounter]);
+    expect(wrapper.emitted('delete')?.[0]).toEqual([encounter]);
+    expect(wrapper.emitted('copy')?.[0]).toEqual([encounter]);
+    expect(wrapper.emitted('run-combat')?.[0]).toEqual([encounter]);
+    expect(wrapper.text()).toContain('No Module');
+    expect(wrapper.text()).toContain('2 (3)');
+  });
+
+  it('EncounterCard resolves modules and counts monsters defensively', async () => {
+    seedMockStore('modules', [{ id: 'mod', name: 'Curse of Strahd' }]);
+
+    const known = mount(EncounterCard, {
+      props: {
+        encounter: {
+          id: 'e1',
+          name: 'Known',
+          monsters: { goblin: 'many', ogre: 2 },
+          moduleId: 'mod',
+        },
+      },
+    });
+    await nextTick();
+    expect(known.text()).toContain('Curse of Strahd');
+    expect(known.text()).toContain('2 (2)');
+
+    const unknown = mount(EncounterCard, {
+      props: {
+        encounter: {
+          id: 'e2',
+          name: 'Unknown',
+          moduleId: 'missing',
+        },
+      },
+    });
+    await nextTick();
+    expect(unknown.text()).toContain('Unknown Module');
+    expect(unknown.text()).toContain('0 (0)');
+
+    const noMonsters = mount(EncounterCard, {
+      props: {
+        encounter: {
+          id: 'e3',
+          name: 'Empty',
+          monsters: null,
+          moduleId: '',
+        },
+      },
+    });
+    await nextTick();
+    expect(noMonsters.text()).toContain('No Module');
+    expect(noMonsters.text()).toContain('0 (0)');
   });
 
   it('NumberSpinner clamps input, adjusts buttons and repeats while held', async () => {

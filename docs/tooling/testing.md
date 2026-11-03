@@ -7,7 +7,8 @@
 - Globals enabled (`describe/it/expect` without imports).
 - Setup file: `tests/setup.ts`.
 - Coverage: V8, excludes `main.ts`, `router.ts`, i18n, types, schemas, tests,
-  declarations, configs.
+  generated output (`dist/`, `dev-dist/`, service workers), `scripts/`,
+  declarations and configs.
 - Alias `@` → `src`.
 
 ## End-to-end tests
@@ -45,9 +46,10 @@ check also verifies that secondary buttons keep sufficient text contrast.
   printed).
 - Clears mocks before each test.
 
-There is no global Pinia, Vue I18n, Quasar, or router installation. Components
-that use `useI18n()` or Quasar components must mock or install them per test;
-many do not, which is a major source of failures.
+Each test gets a fresh Pinia, Vue I18n, Quasar component stubs, a layout-store
+provide and `fake-indexeddb`; tests only override these globals when they need
+different behaviour. Router-dependent components install a memory router in the
+test itself.
 
 ## Test layout
 
@@ -64,29 +66,31 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 95. Total tests: 730.
+Total test files: 112. Total tests: 844.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  88 passed (88)
-Tests       730 passed (730)
+Test Files  112 passed (112)
+Tests       844 passed (844)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  81.73%
-Branches    82.27%
-Functions    72.94%
-Lines       81.73%
+Statements  92.23%
+Branches    87.81%
+Functions    89.22%
+Lines       92.23%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
 large dice-roller AST/plugin files, which have dedicated parser/evaluator suites.
-`vitest.config.ts` enforces global thresholds (80% statements/lines, 75%
-branches, 65% functions) so future changes cannot silently drop coverage.
+`vitest.config.ts` enforces global thresholds (92% statements/lines, 87%
+branches, 89% functions) so future changes cannot silently drop coverage.
+Generated output (`dist/`, `dev-dist/`, service workers) and standalone
+scripts are excluded from coverage.
 
 The maintained regression suite is also green:
 
@@ -141,7 +145,17 @@ The suite now includes direct tests for:
 - jukebox playback/queue transitions with a mocked Howler,
 - PWA install/update flows and event cleanup,
 - BaseListView/BaseEntityTabView integration, cards, controls and calculators,
-- module import/export, markdown sanitizing/task lists and mention plugin helpers.
+- module import/export, markdown sanitizing/task lists and mention plugin helpers,
+- map canvas readback patching and the map-layers migration,
+- Monaco environment setup and the probability calculator page, code library,
+  syntax page, editor completions, sharing, chart zoom and syntax markers,
+- note Markdown/PNG downloads and the shared `SidebarItem` component,
+- drag-and-drop and ordering paths: `BaseListView` sort events and drop
+  handlers, playlist `sortOrder` persistence, jukebox file drops and track
+  reordering, the `Tree` drag handles/drop target wiring, and tree reorder
+  propagation from `ModuleDocumentTree`,
+- structured Chevrotain error providers, human-readable localized syntax
+  messages, and the error banner's line/column link to the editor position.
 
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting

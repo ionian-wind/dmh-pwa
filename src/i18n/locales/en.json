@@ -968,6 +968,23 @@
       "summary": "Summary"
     },
     "errorTitle": "Calculation error",
+    "syntaxErrors": {
+      "unexpectedToken": "Unexpected {found}. Expected {expected}.",
+      "unexpectedTokenNoExpected": "Unexpected {found}.",
+      "unexpectedCharacter": "Unexpected character {found}.",
+      "unexpectedEnd": "Unexpected end of input. Expected {expected}.",
+      "unexpectedEndNoExpected": "Unexpected end of input.",
+      "invalid": "The expression contains a syntax error.",
+      "location": "line {line}, column {column}",
+      "tokens": {
+        "number": "a number",
+        "string": "text",
+        "variable": "a variable",
+        "word": "a word",
+        "endOfInput": "end of input",
+        "unknown": "an unknown token"
+      }
+    },
     "empty": "Run a calculation to see results.",
     "noOutcomes": "No possible outcomes.",
     "value": "Value",

@@ -71,17 +71,19 @@ The evaluator follows AnyDice's function-casting rules:
 
 ## Architecture
 
-| File           | Responsibility                                  |
-| -------------- | ----------------------------------------------- |
-| `tokens.ts`    | Chevrotain token definitions                    |
-| `parser.ts`    | Chevrotain grammar                              |
-| `toAst.ts`     | CST to AST conversion                           |
-| `ast.ts`       | AST and statement types                         |
-| `seq.ts`       | Ordered numeric sequences                       |
-| `die.ts`       | Weighted PMFs, convolution and order statistics |
-| `builtins.ts`  | Built-in AnyDice function library               |
-| `evaluator.ts` | AST interpreter and type-casting rules          |
-| `index.ts`     | Public `parse` / `calculate` API                |
+| File                     | Responsibility                                  |
+| ------------------------ | ----------------------------------------------- |
+| `tokens.ts`              | Chevrotain token definitions                    |
+| `parser.ts`              | Chevrotain grammar and structured syntax errors |
+| `errors.ts`              | `DiceSyntaxError` with source range/details     |
+| `syntaxErrorProvider.ts` | Chevrotain parser/lexer error providers         |
+| `toAst.ts`               | CST to AST conversion                           |
+| `ast.ts`                 | AST and statement types                         |
+| `seq.ts`                 | Ordered numeric sequences                       |
+| `die.ts`                 | Weighted PMFs, convolution and order statistics |
+| `builtins.ts`            | Built-in AnyDice function library               |
+| `evaluator.ts`           | AST interpreter and type-casting rules          |
+| `index.ts`               | Public `parse` / `calculate` API                |
 
 The engine intentionally has no UI or CLI. The application can consume the
 returned distributions directly.
@@ -92,10 +94,12 @@ returned distributions directly.
 npx vitest run src/utils/dice-probability-calculator
 ```
 
-The probability-calculator suite currently contains **104 tests across 5
-files**. They cover parsing, arithmetic, sequences, order statistics,
-built-ins, function casting, loops, conditionals, settings, recursion and
-error handling.
+The probability-calculator suite covers parsing, arithmetic, sequences, order
+statistics, built-ins, function casting, loops, conditionals, settings,
+recursion and structured error handling. Parser errors expose a stable code,
+expected token types, found text and a 1-based source range for editor markers;
+`src/probability-calculator/syntaxErrors.ts` turns those details into localized
+UI text.
 `__tests__/articles.test.ts` mirrors the programs and published results from
 the official AnyDice articles. `__tests__/official-docs.test.ts` covers every
 page of the official documentation.

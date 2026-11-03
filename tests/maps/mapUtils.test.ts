@@ -7,7 +7,7 @@ import {
   normalizeMapEntity,
   normalizeMarker,
 } from '@/maps/utils/normalize';
-import { markerIconGlyph } from '@/maps/icons';
+import { markerIconClass, markerIconGlyph } from '@/maps/icons';
 import {
   createMarkerDraft,
   markerCenter,
@@ -194,6 +194,14 @@ describe('map marker helpers', () => {
     expect(markerIconGlyph('ra:ra-castle-emblem')).toBeTruthy();
     expect(markerIconGlyph('ra-castle-emblem')).toBeTruthy();
     expect(markerIconGlyph('')).toBe('');
+    expect(markerIconGlyph('ra:')).toBe('');
+  });
+
+  it('normalizes icon names and trims empty values', () => {
+    expect(markerIconClass('  ')).toBe('');
+    expect(markerIconClass('ra:')).toBe('');
+    expect(markerIconClass('shield')).toBe('ra-shield');
+    expect(markerIconClass('ra-sword')).toBe('ra-sword');
   });
 
   it('upserts, removes and filters markers', () => {

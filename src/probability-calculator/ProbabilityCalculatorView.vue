@@ -41,6 +41,7 @@ import {
   ANYDICE_LANGUAGE_ID,
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
+import { formatDiceSyntaxError } from './syntaxErrors';
 import CodeLibraryPanel from './CodeLibraryPanel.vue';
 import {
   createCodePiece,
@@ -95,6 +96,12 @@ const editorRef = ref<InstanceType<typeof MonacoEditor> | null>(null);
 const MARKER_OWNER = 'probability-calculator';
 const result = ref<CalculationResult | null>(null);
 const error = ref<string | null>(null);
+const syntaxError = ref<DiceSyntaxError | null>(null);
+const errorMessage = computed(() =>
+  syntaxError.value
+    ? formatDiceSyntaxError(syntaxError.value, t)
+    : (error.value ?? ''),
+);
 const isCalculating = ref(false);
 const viewMode = ref<ViewMode>('table');
 const dataMode = ref<DataModeChoice>('normal');
@@ -157,6 +164,7 @@ const isSourceDirty = computed(() => source.value !== cleanSource.value);
 watch(selectedLibraryCode, () => {
   result.value = null;
   error.value = null;
+  syntaxError.value = null;
 });
 
 const effectiveDataMode = computed<DataMode>(() =>
@@ -228,7 +236,10 @@ function markSyntaxError(caught: DiceSyntaxError) {
       startColumn: caught.column,
       endLineNumber: caught.endLine,
       endColumn: caught.endColumn,
-      message: caught.message,
+      message: `${formatDiceSyntaxError(caught, t)} (${t(
+        'probabilityCalculator.syntaxErrors.location',
+        { line: caught.line, column: caught.column },
+      )})`,
       severity: monaco.MarkerSeverity.Error,
     },
   ]);
@@ -238,6 +249,7 @@ async function runCalculation() {
   if (isCalculating.value) return;
   isCalculating.value = true;
   error.value = null;
+  syntaxError.value = null;
   clearSyntaxMarkers();
   await nextTick();
   // Let the loading state paint before the synchronous evaluator runs.
@@ -249,11 +261,24 @@ async function runCalculation() {
     rollerResults.value = [];
   } catch (caught) {
     result.value = null;
-    if (caught instanceof DiceSyntaxError) markSyntaxError(caught);
+    if (caught instanceof DiceSyntaxError) {
+      syntaxError.value = caught;
+      markSyntaxError(caught);
+    }
     error.value = caught instanceof Error ? caught.message : String(caught);
   } finally {
     isCalculating.value = false;
   }
+}
+
+function focusSyntaxError() {
+  const caught = syntaxError.value;
+  if (!caught) return;
+  const editor = editorRef.value?.getEditor();
+  if (!editor) return;
+  editor.revealLineInCenter(caught.line);
+  editor.setPosition({ lineNumber: caught.line, column: caught.column });
+  editor.focus();
 }
 
 function clearShareLink() {
@@ -327,6 +352,7 @@ async function loadCodePiece(piece: CodePiece) {
   libraryState.selectedId = piece.id;
   result.value = null;
   error.value = null;
+  syntaxError.value = null;
   rollerResults.value = [];
   clearShareLink();
 }
@@ -532,7 +558,7 @@ onBeforeUnmount(() => {
     </section>
 
     <QBanner
-      v-if="error"
+      v-if="errorMessage"
       class="q-mb-md"
       inline-actions
       rounded
@@ -546,7 +572,24 @@ onBeforeUnmount(() => {
         <div class="text-weight-medium">
           {{ t('probabilityCalculator.errorTitle') }}
         </div>
-        <div class="text-caption">{{ error }}</div>
+        <div class="text-caption">
+          {{ errorMessage }}
+          <template v-if="syntaxError">
+            ·
+            <button
+              type="button"
+              class="syntax-error-location"
+              @click="focusSyntaxError"
+            >
+              {{
+                t('probabilityCalculator.syntaxErrors.location', {
+                  line: syntaxError.line,
+                  column: syntaxError.column,
+                })
+              }}
+            </button>
+          </template>
+        </div>
       </div>
     </QBanner>
 
@@ -996,5 +1039,15 @@ onBeforeUnmount(() => {
 .probability-export-text {
   font-family: monospace;
   font-size: 12px;
+}
+
+.syntax-error-location {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>

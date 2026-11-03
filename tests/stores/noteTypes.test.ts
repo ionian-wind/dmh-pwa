@@ -24,6 +24,13 @@ describe('note type store', () => {
     store.setSearchQuery('loc');
     expect(store.filtered.map((t) => t.name)).toEqual(['Location']);
 
+    store.setFilter('npc');
+    expect(store.filtered.map((t) => t.name)).toEqual(['NPC']);
+
+    store.clearFilter();
+    expect(store.searchQuery).toBe('');
+    expect(store.filtered).toHaveLength(2);
+
     await store.remove(created.id);
     expect(store.getById(created.id)).toBeNull();
   });

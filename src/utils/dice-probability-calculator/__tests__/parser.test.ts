@@ -111,6 +111,53 @@ describe('dice probability calculator parser', () => {
       expect(syntaxError.line).toBe(1);
       expect(syntaxError.column).toBeGreaterThan(0);
       expect(syntaxError.endColumn).toBeGreaterThan(syntaxError.column);
+      expect(syntaxError.code).toBe('unexpected-end-of-input');
+      expect(syntaxError.expected).toContain('NumberLiteral');
+      expect(syntaxError.message).not.toContain('-->');
+    }
+  });
+
+  it('reports unexpected tokens with the expected token type', () => {
+    try {
+      parse('output {1 2}');
+      throw new Error('Expected parse to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DiceSyntaxError);
+      const syntaxError = error as DiceSyntaxError;
+      expect(syntaxError.code).toBe('unexpected-token');
+      expect(syntaxError.found).toBe('2');
+      expect(syntaxError.expected).toContain('RCurly');
+      expect(syntaxError.line).toBe(1);
+      expect(syntaxError.column).toBe(11);
+      expect(syntaxError.message).toContain('Expected }');
+    }
+  });
+
+  it('reports redundant input against the end of input', () => {
+    try {
+      parse('output 1\nrrewr');
+      throw new Error('Expected parse to fail');
+    } catch (error) {
+      const syntaxError = error as DiceSyntaxError;
+      expect(syntaxError.code).toBe('unexpected-token');
+      expect(syntaxError.found).toBe('rrewr');
+      expect(syntaxError.expected).toEqual(['EOF']);
+      expect(syntaxError.line).toBe(2);
+      expect(syntaxError.column).toBe(1);
+    }
+  });
+
+  it('reports unexpected characters from the lexer', () => {
+    try {
+      parse('output "x');
+      throw new Error('Expected parse to fail');
+    } catch (error) {
+      const syntaxError = error as DiceSyntaxError;
+      expect(syntaxError.code).toBe('unexpected-character');
+      expect(syntaxError.found).toBe('"');
+      expect(syntaxError.line).toBe(1);
+      expect(syntaxError.column).toBe(8);
+      expect(syntaxError.message).not.toContain('skipped');
     }
   });
 
