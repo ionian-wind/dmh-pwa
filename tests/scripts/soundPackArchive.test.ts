@@ -47,9 +47,12 @@ describe('sound pack archive helpers', () => {
         'docs/notes.txt',
       ]),
     );
-    expect(await zip.file('pack.json')?.async('string')).toContain(
-      '"id":"demo"',
+    const manifest = JSON.parse(
+      (await zip.file('pack.json')?.async('string')) ?? '{}',
     );
+    expect(manifest.name).toBe('demo');
+    expect(manifest.id).toMatch(/^[a-f0-9]{64}$/);
+    expect(manifest.id).not.toBe('demo');
   });
 
   it('writes an archive and unpacks it into a new directory', async () => {
@@ -68,9 +71,10 @@ describe('sound pack archive helpers', () => {
     await expect(
       readFile(path.join(outputDir, 'docs', 'notes.txt'), 'utf8'),
     ).resolves.toBe('notes');
-    await expect(
-      readFile(path.join(outputDir, 'pack.json'), 'utf8'),
-    ).resolves.toContain('"id":"demo"');
+    const manifest = JSON.parse(
+      await readFile(path.join(outputDir, 'pack.json'), 'utf8'),
+    );
+    expect(manifest.id).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('unpacks from a buffer', async () => {
@@ -81,6 +85,158 @@ describe('sound pack archive helpers', () => {
 
     expect(files).toHaveLength(3);
     expect(files.every((file) => file.startsWith(outputDir))).toBe(true);
+  });
+
+  async function makeModernPack(name, ids) {
+    const packDir = path.join(root, name);
+    await mkdir(path.join(packDir, 'ambiences'), { recursive: true });
+    await mkdir(path.join(packDir, 'one-shots'), { recursive: true });
+    await mkdir(path.join(packDir, 'scenes', ids.scene, 'music'), {
+      recursive: true,
+    });
+    await writeFile(path.join(packDir, 'ambiences', 'rain.mp3'), 'rain');
+    await writeFile(path.join(packDir, 'one-shots', 'thunder.mp3'), 'boom');
+    await writeFile(
+      path.join(packDir, 'scenes', ids.scene, 'music', 'theme.mp3'),
+      'theme',
+    );
+    await writeFile(
+      path.join(packDir, 'pack.json'),
+      JSON.stringify({
+        version: '2.0',
+        id: ids.package,
+        name: 'Hashed pack',
+        description: '',
+        category: 'fantasy',
+        ambiences: [
+          {
+            id: ids.ambience,
+            name: 'Rain',
+            icon: 'fa-solid:cloud-rain',
+            category: 'Weather',
+            defaultVolume: 40,
+            loop: true,
+            variations: [
+              {
+                id: ids.variation,
+                name: 'Light',
+                samples: ['ambiences/rain.mp3'],
+              },
+            ],
+          },
+        ],
+        oneShots: [
+          {
+            id: ids.oneShot,
+            name: 'Thunder',
+            icon: 'fa-solid:cloud-bolt',
+            file: 'one-shots/thunder.mp3',
+            category: 'weather',
+            volume: 80,
+          },
+        ],
+        scenes: [
+          {
+            id: ids.scene,
+            name: 'Tavern',
+            intensity: 50,
+            ambiences: [
+              {
+                ambienceId: ids.ambience,
+                variationId: ids.variation,
+                volume: 40,
+              },
+            ],
+            oneShotIds: [ids.oneShot],
+            musicPresets: [
+              {
+                id: ids.preset,
+                name: 'Explore',
+                files: [`scenes/${ids.scene}/music/theme.mp3`],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    return packDir;
+  }
+
+  it('hashes entity content, excludes ids and rewrites references', async () => {
+    const first = await makeModernPack('one', {
+      package: 'demo-one',
+      ambience: 'rain',
+      variation: 'light',
+      oneShot: 'thunder',
+      scene: 'tavern',
+      preset: 'explore',
+    });
+    const second = await makeModernPack('two', {
+      package: 'demo-two',
+      ambience: 'rain-2',
+      variation: 'light',
+      oneShot: 'thunder-2',
+      scene: 'tavern-2',
+      preset: 'explore',
+    });
+
+    const firstZip = await JSZip.loadAsync(await createSoundPackBuffer(first));
+    const secondZip = await JSZip.loadAsync(
+      await createSoundPackBuffer(second),
+    );
+    const firstManifest = JSON.parse(
+      (await firstZip.file('pack.json')?.async('string')) ?? '{}',
+    );
+    const secondManifest = JSON.parse(
+      (await secondZip.file('pack.json')?.async('string')) ?? '{}',
+    );
+
+    expect(firstManifest.id).toBe(secondManifest.id);
+    expect(firstManifest.ambiences[0].id).toBe(secondManifest.ambiences[0].id);
+    expect(firstManifest.oneShots[0].id).toBe(secondManifest.oneShots[0].id);
+    expect(firstManifest.scenes[0].id).toBe(secondManifest.scenes[0].id);
+
+    const scene = firstManifest.scenes[0];
+    expect(scene.ambiences[0].ambienceId).toBe(firstManifest.ambiences[0].id);
+    expect(scene.oneShotIds[0]).toBe(firstManifest.oneShots[0].id);
+    expect(firstManifest.ambiences[0].variations[0].samples[0]).toMatch(
+      /^ambiences\/[a-f0-9]{64}\.mp3$/,
+    );
+    expect(firstManifest.oneShots[0].file).toMatch(
+      /^one-shots\/[a-f0-9]{64}\.mp3$/,
+    );
+    const outputMusic = scene.musicPresets[0].files[0];
+    expect(outputMusic).toMatch(
+      new RegExp(`^scenes/${scene.id}/music/[a-f0-9]{64}\\.mp3$`),
+    );
+    expect(firstZip.file(outputMusic)).toBeTruthy();
+    expect(firstZip.file('scenes/tavern/music/theme.mp3')).toBeFalsy();
+  });
+
+  it('changes entity and package hashes when file content changes', async () => {
+    const packDir = await makeModernPack('change', {
+      package: 'demo',
+      ambience: 'rain',
+      variation: 'light',
+      oneShot: 'thunder',
+      scene: 'tavern',
+      preset: 'explore',
+    });
+    const before = JSON.parse(
+      (await (await JSZip.loadAsync(await createSoundPackBuffer(packDir)))
+        .file('pack.json')
+        ?.async('string')) ?? '{}',
+    );
+    await writeFile(path.join(packDir, 'ambiences', 'rain.mp3'), 'different');
+    const after = JSON.parse(
+      (await (await JSZip.loadAsync(await createSoundPackBuffer(packDir)))
+        .file('pack.json')
+        ?.async('string')) ?? '{}',
+    );
+
+    expect(after.ambiences[0].id).not.toBe(before.ambiences[0].id);
+    expect(after.scenes[0].id).not.toBe(before.scenes[0].id);
+    expect(after.id).not.toBe(before.id);
   });
 
   it('rejects directories without pack.json', async () => {

@@ -183,7 +183,25 @@ my-pack.spk
 Scene music lives under the owning scene. There is no package-wide `music/`
 directory or mood-state track shared by scenes.
 
-**pack.json schema:**
+**Content identity and hashes**
+
+Source packages may use readable IDs. The pack script replaces them with
+content-derived SHA-256 identifiers when building the `.spk`:
+
+- Every ambience, one-shot and scene gets its own hash. The hash covers the
+  canonical metadata with **all `id` keys removed** plus the content hashes of
+  its referenced files.
+- Every audio file is stored under its content hash, preserving the extension:
+  `ambiences/<file-hash>.mp3`, `one-shots/<file-hash>.mp3`, and
+  `scenes/<scene-hash>/music/<file-hash>.mp3`.
+- Scene references, `oneShotIds` and variations are rewritten to the computed
+  hashes before the archive is written.
+- The package ID is the SHA-256 of the combined, sorted ambience, one-shot and
+  scene hashes. Re-importing identical content therefore produces the same
+  package ID.
+- Scene links and entity links use these hashed package/scene IDs.
+
+**pack.json schema (source form):**
 
 ```json
 {
@@ -269,13 +287,15 @@ directory or mood-state track shared by scenes.
 - `ambiences/` holds the shared ambience sample pools referenced by
   `ambiences[].variations[].samples`.
 - `one-shots/` holds one-shot files referenced by `oneShots[].file`.
-- `scenes/<scene-id>/music/` holds music owned by that scene. A preset's `files`
-  entries are resolved relative to the package root; bare filenames are
-  normalized to `scenes/<scene-id>/music/<name>`.
+- `scenes/<scene-id>/music/` holds music owned by that scene in the source
+  package. A preset's `files` entries are resolved relative to the package
+  root; the built archive writes them as
+  `scenes/<scene-hash>/music/<file-hash>.<ext>`.
 - `icon.png` is an optional package thumbnail. It is not the scene icon (scenes
   have no icon).
 - Audio paths may be absolute from the package root or bare filenames; the
-  importer normalizes them into the canonical folders.
+  importer normalizes them into the canonical folders. The pack script rewrites
+  them to hash-based archive paths.
 - Importing a package never starts audio. Playback begins only from an explicit
   play action.
 
@@ -570,9 +590,11 @@ Package content is imported, not authored in the app.
 ### 4.6 Scene player view
 
 Opening a scene row replaces the ambient page content with the scene player
-view while the package sidebar and bottom player panel stay in place. Playback
-starts only from an explicit play action. A Back button in the view header
-returns to the scene/gallery tabs. The view contains:
+view while the package sidebar and bottom player panel stay in place. The scene
+view URL is `/ambient-sound/scenes/<scene-id>`, so the hashed scene ID is
+shareable and survives a reload. Playback starts only from an explicit play
+action. A Back button in the view header returns to the scene/gallery tabs. The
+view contains:
 
 - **Mood knobs** — a knob row containing Off plus one knob per scene music preset
   (for example Explore, Combat, Victory). Clicking a mood knob starts the scene

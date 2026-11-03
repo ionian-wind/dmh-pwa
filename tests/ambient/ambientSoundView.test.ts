@@ -32,6 +32,19 @@ const rightDrawerMock = vi.hoisted(() => ({
   clear: vi.fn(),
 }));
 
+const routeMock = vi.hoisted(() => ({
+  params: {} as Record<string, string>,
+}));
+
+const routerMock = vi.hoisted(() => ({
+  push: vi.fn(),
+}));
+
+vi.mock('vue-router', () => ({
+  useRoute: () => routeMock,
+  useRouter: () => routerMock,
+}));
+
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => storeMock,
 }));
@@ -68,6 +81,13 @@ describe('AmbientSoundView', () => {
       pack: { id: 'pack-1', name: 'Campaign' },
       scene: { id: 'scene-1', name: 'Tavern' },
     } as any;
+    storeMock.allScenes = [
+      {
+        pack: { id: 'pack-1', name: 'Campaign' },
+        scene: { id: 'scene-1', name: 'Tavern' },
+      },
+    ] as any;
+    routeMock.params = {};
     for (const fn of [
       storeMock.togglePlayPause,
       storeMock.toggleMusic,
@@ -80,6 +100,7 @@ describe('AmbientSoundView', () => {
       layoutMock.setBottomDrawerContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
+      routerMock.push,
     ]) {
       fn.mockClear();
     }
@@ -135,12 +156,22 @@ describe('AmbientSoundView', () => {
     wrapper.unmount();
   });
 
-  it('replaces the page content with the scene view and returns with back', async () => {
-    const wrapper = mount(AmbientSoundView, { global: { stubs } });
+  it('pushes scene routes and renders the scene view from the URL', async () => {
+    const listWrapper = mount(AmbientSoundView, { global: { stubs } });
     await flushPromises();
 
-    const sceneList = wrapper.findComponent({ name: 'SceneList' });
-    sceneList.vm.$emit('open', 'pack-1', 'scene-1');
+    listWrapper
+      .findComponent({ name: 'SceneList' })
+      .vm.$emit('open', 'pack-1', 'scene-1');
+    await flushPromises();
+    expect(routerMock.push).toHaveBeenCalledWith({
+      name: 'ambient-scene',
+      params: { sceneId: 'scene-1' },
+    });
+    listWrapper.unmount();
+
+    routeMock.params = { sceneId: 'scene-1' };
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
     await flushPromises();
 
     const sceneView = wrapper.findComponent({ name: 'ScenePlayerView' });
@@ -152,12 +183,9 @@ describe('AmbientSoundView', () => {
 
     sceneView.vm.$emit('back');
     await flushPromises();
-
-    expect(wrapper.findComponent({ name: 'ScenePlayerView' }).exists()).toBe(
-      false,
-    );
-    expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(true);
-    expect(wrapper.find('.ambient-tabs-sticky').exists()).toBe(true);
+    expect(routerMock.push).toHaveBeenLastCalledWith({
+      name: 'ambient-sound',
+    });
     wrapper.unmount();
   });
 

@@ -166,6 +166,11 @@ const router = createRouter({
       component: AmbientSoundView,
       meta: { exact: true },
     },
+    {
+      path: '/ambient-sound/scenes/:sceneId',
+      name: 'ambient-scene',
+      component: AmbientSoundView,
+    },
     // 404 route
     {
       path: '/:catchAll(.*)',

@@ -104,6 +104,12 @@ This writes `content/sample-ambient-pack.spk`. With no arguments the script pack
 every directory under `sound-packs/` into `dist/sound-packs/`. Package creation and
 editing are intentionally script-only; there is no in-app package editor.
 
+At pack time the script assigns SHA-256 content IDs: each ambience, one-shot and
+scene is hashed from its metadata (with all `id` keys excluded) and its files,
+each audio file is named by its content hash, and the package ID is the hash of
+the combined entity hashes. References are rewritten before the archive is
+written.
+
 ## `scripts/test-import.js`
 
 A standalone harness for the module import format. It likely exercises

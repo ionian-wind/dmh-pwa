@@ -13,7 +13,7 @@
         v-if="selectedScene"
         :pack-id="selectedScene.packId"
         :scene-id="selectedScene.sceneId"
-        @back="selectedScene = null"
+        @back="goBack"
       />
 
       <template v-else>
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -63,9 +64,18 @@ const { t } = useI18n();
 const store = useAmbientSoundStore();
 const layout = useLayout();
 const rightDrawer = useRightDrawer();
+const route = useRoute();
+const router = useRouter();
 
 const activeTab = ref('scenes');
-const selectedScene = ref<{ packId: string; sceneId: string } | null>(null);
+
+const selectedScene = computed(() => {
+  const sceneId =
+    typeof route.params.sceneId === 'string' ? route.params.sceneId : '';
+  if (!sceneId) return null;
+  const match = store.allScenes.find(({ scene }) => scene.id === sceneId);
+  return { packId: match?.pack.id ?? '', sceneId };
+});
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);
@@ -82,8 +92,12 @@ const tabs = computed(() => [
   { id: 'oneShots', label: t('ambientSoundPage.oneShotsTab') },
 ]);
 
-function openScenePlayer(packId: string, sceneId: string) {
-  selectedScene.value = { packId, sceneId };
+function openScenePlayer(_packId: string, sceneId: string) {
+  void router.push({ name: 'ambient-scene', params: { sceneId } });
+}
+
+function goBack() {
+  void router.push({ name: 'ambient-sound' });
 }
 
 onMounted(async () => {
