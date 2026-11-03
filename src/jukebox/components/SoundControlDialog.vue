@@ -92,6 +92,7 @@ const model = computed({
 
 const displayMode = ref<'panel' | 'dialog'>('panel');
 const cardRef = ref<ComponentPublicInstance | null>(null);
+const DETACH_THRESHOLD = 200;
 
 const viewportWidth = ref(
   typeof window === 'undefined' ? 0 : window.innerWidth,
@@ -112,32 +113,46 @@ function isNearViewportBottom(): boolean {
   return window.innerHeight - rect.bottom <= 140;
 }
 
+function setDisplayMode(mode: 'panel' | 'dialog') {
+  if (displayMode.value === mode) return;
+  displayMode.value = mode;
+  rebaseDrag();
+}
+
 function handleDragRelease() {
   if (displayMode.value === 'panel') {
-    if (!isNearViewportBottom()) {
-      displayMode.value = 'dialog';
-      resetPosition();
-    }
+    if (!isNearViewportBottom()) setDisplayMode('dialog');
     return;
   }
 
-  if (isNearViewportBottom()) {
-    displayMode.value = 'panel';
-    resetPosition();
-  }
+  if (isNearViewportBottom()) setDisplayMode('panel');
 }
 
 const {
   cardStyle,
   transitionHide,
+  isDragging,
+  translateY,
   onPointerDown,
   onPointerMove,
   onPointerUp,
   onHide,
   resetPosition,
+  rebaseDrag,
 } = useDragSnap({
   snapBack: () => displayMode.value === 'panel',
   onRelease: handleDragRelease,
+});
+
+watch([isDragging, translateY], ([dragging, offsetY]) => {
+  if (!dragging) return;
+
+  if (displayMode.value === 'panel') {
+    if (offsetY < -DETACH_THRESHOLD) setDisplayMode('dialog');
+    return;
+  }
+
+  if (isNearViewportBottom()) setDisplayMode('panel');
 });
 
 function handleHide() {
@@ -272,6 +287,7 @@ function navigateToJukebox() {
   width: 100%;
   max-width: 100%;
   overflow: visible;
+  transition: transform 0.3s ease;
 }
 
 .sound-control-card {

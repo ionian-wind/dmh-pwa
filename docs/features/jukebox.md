@@ -256,6 +256,8 @@ unmount. The `filesStore` is loaded but unused.
   bottom switches it to a floating dialog with the larger album cover centred
   above the track details. Dragging the floating dialog back near the bottom
   docks it again, while anywhere else it can be moved freely across the page.
+  The mode transition starts when the drag crosses the detach or dock
+  threshold, not when the pointer is released.
 - Track changes crossfade the outgoing and incoming gradient layers. If the next
   track has no cover palette, the current gradient fades out instead.
 - Controls inherit `--jp-control-color`, derived from the palette with the best

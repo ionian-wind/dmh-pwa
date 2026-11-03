@@ -19,6 +19,8 @@ export function useDragSnap(options: DragSnapOptions = {}) {
   let startY = 0;
   let startTranslateX = 0;
   let startTranslateY = 0;
+  let lastX = 0;
+  let lastY = 0;
 
   function onPointerDown(e: PointerEvent) {
     isDragging.value = true;
@@ -27,11 +29,15 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     startY = e.clientY;
     startTranslateX = translateX.value;
     startTranslateY = translateY.value;
+    lastX = e.clientX;
+    lastY = e.clientY;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!isDragging.value) return;
+    lastX = e.clientX;
+    lastY = e.clientY;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     translateX.value = startTranslateX + dx;
@@ -55,6 +61,19 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     hasTransition.value = true;
     translateX.value = 0;
     translateY.value = 0;
+  }
+
+  /**
+   * Starts a new drag offset from the current pointer position. Used when the
+   * layout changes mid-drag so the card can animate to the new base position
+   * without the next pointer move snapping back to the old origin.
+   */
+  function rebaseDrag() {
+    startX = lastX;
+    startY = lastY;
+    startTranslateX = 0;
+    startTranslateY = 0;
+    resetPosition();
   }
 
   function onHide() {
@@ -84,5 +103,6 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     onPointerUp,
     onHide,
     resetPosition,
+    rebaseDrag,
   };
 }

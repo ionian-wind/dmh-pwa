@@ -177,10 +177,12 @@ describe('SoundControlDialog', () => {
 
     startDrag(1);
     dispatch('pointermove', 0, -250);
-    dispatch('pointerup', 0, -250, 1);
     await nextTick();
 
     expect(card.attributes('data-mode')).toBe('dialog');
+
+    dispatch('pointerup', 0, -250, 1);
+    await nextTick();
     expect(card.classes()).toContain('is-dialog');
 
     const frame = wrapper.find('.sound-control-frame');
@@ -202,10 +204,12 @@ describe('SoundControlDialog', () => {
 
     startDrag(2);
     dispatch('pointermove', 0, 100);
-    dispatch('pointerup', 0, 100, 2);
     await nextTick();
 
     expect(card.attributes('data-mode')).toBe('panel');
+
+    dispatch('pointerup', 0, 100, 2);
+    await nextTick();
     expect(card.classes()).not.toContain('is-dialog');
     wrapper.unmount();
   });

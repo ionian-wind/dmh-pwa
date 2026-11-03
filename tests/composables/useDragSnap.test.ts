@@ -89,6 +89,27 @@ describe('useDragSnap', () => {
     expect(drag.cardStyle.value.transition).toBe('transform 0.3s ease');
   });
 
+  it('rebases the drag origin after a layout change', () => {
+    const drag = mountComposable();
+    const target = document.createElement('div');
+    target.setPointerCapture = vi.fn();
+
+    drag.onPointerDown({
+      clientX: 100,
+      clientY: 100,
+      pointerId: 1,
+      target,
+    } as any);
+    drag.onPointerMove({ clientX: 100, clientY: 0 } as PointerEvent);
+    expect(drag.cardStyle.value.transform).toBe('translate(0px, -100px)');
+
+    drag.rebaseDrag();
+    expect(drag.cardStyle.value.transform).toBe('translate(0px, 0px)');
+
+    drag.onPointerMove({ clientX: 100, clientY: 50 } as PointerEvent);
+    expect(drag.cardStyle.value.transform).toBe('translate(0px, 50px)');
+  });
+
   it('ignores moves before dragging starts and resets on hide', () => {
     const drag = mountComposable();
 

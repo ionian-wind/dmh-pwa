@@ -188,8 +188,9 @@ with `useDragSnap`:
 - `transitionHide` switches between `fade` and default based on drag offset.
 - `SoundControlDialog` has a docked bottom-panel mode and a floating dialog
   mode. Dragging it up from the bottom switches to the floating layout; dragging
-  it back near the viewport bottom docks it again. In dialog mode the card can
-  be moved freely across the page.
+  it back near the viewport bottom docks it again. The transition begins as
+  soon as the drag crosses the detach/dock threshold. In dialog mode the card
+  can be moved freely across the page.
 - Both are opened from the left nav and are mounted for the app lifetime.
 
 ## Toast notifications
