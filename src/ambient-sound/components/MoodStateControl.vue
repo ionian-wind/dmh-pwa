@@ -1,7 +1,25 @@
 <template>
   <div class="mood-state-control">
-    <div class="text-subtitle1 text-weight-medium q-mb-sm">
-      {{ $t('ambientSoundPage.moodState') }}
+    <div class="row items-center justify-between q-mb-sm">
+      <div class="text-subtitle1 text-weight-medium">
+        {{ $t('ambientSoundPage.moodState') }}
+      </div>
+      <div class="row items-center q-gutter-xs">
+        <IconMusic v-if="store.musicEnabled" :size="18" />
+        <IconMusicOff v-else :size="18" />
+        <span class="text-caption">{{ $t('ambientSoundPage.music') }}</span>
+        <QToggle
+          :model-value="store.musicEnabled"
+          :title="
+            t(
+              store.musicEnabled
+                ? 'ambientSoundPage.musicOff'
+                : 'ambientSoundPage.musicOn',
+            )
+          "
+          @update:model-value="store.setMusicEnabled"
+        />
+      </div>
     </div>
     <div class="mood-buttons">
       <QBtn
@@ -23,10 +41,12 @@
 import { computed, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  IconCampfire,
+  IconMusic,
+  IconMusicOff,
   IconSearch,
   IconSwords,
   IconTrophy,
-  IconCampfire,
 } from '@tabler/icons-vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { MoodState } from '@/ambient-sound/types';

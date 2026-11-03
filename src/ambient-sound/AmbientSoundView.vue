@@ -23,29 +23,6 @@
               <IconPlayerPause v-if="store.isPlaying" />
               <IconPlayerPlay v-else />
             </QBtn>
-            <QBtn
-              flat
-              round
-              :color="store.musicEnabled ? 'primary' : 'grey-7'"
-              :title="
-                t(
-                  store.musicEnabled
-                    ? 'ambientSoundPage.musicOff'
-                    : 'ambientSoundPage.musicOn',
-                )
-              "
-              :aria-label="
-                t(
-                  store.musicEnabled
-                    ? 'ambientSoundPage.musicOff'
-                    : 'ambientSoundPage.musicOn',
-                )
-              "
-              @click="store.toggleMusic()"
-            >
-              <IconMusic v-if="store.musicEnabled" />
-              <IconMusicOff v-else />
-            </QBtn>
             <IconVolume :size="22" />
             <div class="col" @wheel.prevent="handleMasterVolumeWheel">
               <div class="text-caption text-grey-7 q-mb-xs">
@@ -99,7 +76,6 @@ import { onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconMusic,
-  IconMusicOff,
   IconPlayerPause,
   IconPlayerPlay,
   IconVolume,

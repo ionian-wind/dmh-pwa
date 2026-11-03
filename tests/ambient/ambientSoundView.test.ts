@@ -13,9 +13,7 @@ const storeMock = vi.hoisted(() => ({
     weatherSystems: [],
   },
   isPlaying: false,
-  musicEnabled: true,
   togglePlayPause: vi.fn(),
-  toggleMusic: vi.fn(),
   setMasterVolume: vi.fn(),
   loadStoredPacks: vi.fn().mockResolvedValue(undefined),
   importPack: vi.fn().mockResolvedValue(undefined),
@@ -75,9 +73,7 @@ describe('AmbientSoundView', () => {
     storeMock.setMasterVolume.mockClear();
     storeMock.importPack.mockClear();
     storeMock.togglePlayPause.mockClear();
-    storeMock.toggleMusic.mockClear();
     storeMock.isPlaying = false;
-    storeMock.musicEnabled = true;
   });
 
   it('uses the shared header and card layout', async () => {
@@ -105,9 +101,6 @@ describe('AmbientSoundView', () => {
       .find('.master-volume-slider')
       .trigger('wheel', { deltaY: 100 });
     expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
-
-    await wrapper.find('button[aria-label="Turn music off"]').trigger('click');
-    expect(storeMock.toggleMusic).toHaveBeenCalledTimes(1);
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);

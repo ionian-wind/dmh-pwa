@@ -930,9 +930,10 @@ Add route to router:
   play/pause, a separate music on/off button, and master volume; ambient layers
   keep their own layer toggles and volume sliders. With no pack selected, only
   the shared empty state is shown (no overall-control card or surrounding card).
-- Ambient music can be disabled independently of ambient layers. Disabling it
-  stops the mood-music track; re-enabling it resumes the current mood music
-  while playback is active.
+- Ambient music can be disabled independently of ambient layers using the music
+  switch in the mood-state block. Disabling it immediately stops the currently
+  playing music track; re-enabling it resumes the current mood music while
+  playback is active.
 - Ambient layers are grouped by category. Each layer has one or more variations,
   each with its own sample pool; selecting a variation switches the samples used
   and only one sample per layer plays at a time. Weather is represented as a

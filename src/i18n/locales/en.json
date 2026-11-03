@@ -749,6 +749,7 @@
     "sidebarHint": "Open the sound pack sidebar to choose, import, or create a pack.",
     "deletePackConfirm": "Delete “{name}”?",
     "musicOff": "Turn music off",
+    "music": "Music",
     "musicOn": "Turn music on",
     "variation": "Variation",
     "addVariation": "Add variation",
