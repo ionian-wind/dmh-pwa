@@ -543,8 +543,10 @@ A global content gallery for one-shot entries.
 - Each entry is a Quasar knob with the one-shot icon in the knob slot.
 - The knob is a round button with a read-only progress arc. It cannot be dragged
   to scrub; clicking it plays the one-shot.
-- Clicking the knob again retriggers the one-shot.
-- The knob is highlighted while the one-shot is playing.
+- Clicking the knob again retriggers the one-shot; overlapping instances are
+  allowed, and the knob tracks progress of the most recent still-playing
+  instance.
+- The knob is highlighted while any instance of the one-shot is playing.
 - Each entry also shows icon, name, category, package and “Used in N scenes”.
 - Triggering a one-shot from the scene player/playback panel is independent of
   ambient playback, scene music and ambient volume settings.
@@ -637,6 +639,8 @@ It mirrors the jukebox player and lives in the app footer.
   footer panel.
 - One-shots use their own entry volume and are independent of ambient playback
   and volume state.
+- A single one-shot may be retriggered while already playing; overlapping
+  instances are supported up to the audio engine's one-shot pool.
 
 ### 4.9 Responsive behavior
 

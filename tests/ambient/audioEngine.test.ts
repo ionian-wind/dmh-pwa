@@ -4,6 +4,7 @@ const howler = vi.hoisted(() => {
   class FakeHowl {
     opts: any;
     unloaded = false;
+    private playId = 0;
     private currentVolume: number;
     private isPlaying = false;
 
@@ -25,7 +26,8 @@ const howler = vi.hoisted(() => {
 
     play() {
       this.isPlaying = true;
-      return 1;
+      this.playId += 1;
+      return this.playId;
     }
 
     pause() {
@@ -147,6 +149,22 @@ describe('ambient audio engine', () => {
 
     engine.musicTrack = null;
     expect(engine.getMusicProgress()).toBe(0);
+  });
+
+  it('allows the same one-shot to overlap with itself', () => {
+    engine.loadOneShot('thunder', 'blob:thunder');
+    const howl = instance(0);
+    expect(howl.opts.pool).toBe(8);
+    expect(engine.playOneShot('thunder')).toBe(true);
+    expect(engine.playOneShot('thunder')).toBe(true);
+    howl.seek = (id?: number) => (id === 2 ? 8 : 4);
+    expect(engine.getOneShotProgress('thunder')).toBe(0.8);
+
+    howl.opts.onend(1);
+    expect(engine.getOneShotProgress('thunder')).toBe(0.8);
+
+    howl.opts.onend(2);
+    expect(engine.getOneShotProgress('thunder')).toBe(0);
   });
 
   it('returns zero one-shot progress when duration is unavailable', () => {

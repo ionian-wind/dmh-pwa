@@ -5,7 +5,7 @@ export class AudioEngine {
   private musicTrack: Howl | null = null;
   private weatherTrack: Howl | null = null;
   private oneShots: Map<string, Howl> = new Map();
-  private oneShotPlayIds: Map<string, number> = new Map();
+  private oneShotPlayIds: Map<string, number[]> = new Map();
   private masterVolume: number = 0.8;
   private currentMoodState: string = 'explore';
   private musicEndHandler: (() => void) | null = null;
@@ -102,12 +102,18 @@ export class AudioEngine {
       volume: 1,
       html5: true,
       preload: true,
+      // Allow the same one-shot to overlap with itself.
+      pool: 8,
       onend: (soundId?: number) => {
-        if (
-          soundId === undefined ||
-          this.oneShotPlayIds.get(sfxId) === soundId
-        ) {
-          this.oneShotPlayIds.delete(sfxId);
+        const activeIds = this.oneShotPlayIds.get(sfxId);
+        if (activeIds) {
+          if (soundId === undefined) {
+            activeIds.length = 0;
+          } else {
+            const index = activeIds.indexOf(soundId);
+            if (index >= 0) activeIds.splice(index, 1);
+          }
+          if (activeIds.length === 0) this.oneShotPlayIds.delete(sfxId);
         }
         this.oneShotEndHandler?.(sfxId);
       },
@@ -123,19 +129,22 @@ export class AudioEngine {
     sfx.volume(Math.max(0, Math.min(1, volume)));
     const soundId = sfx.play();
     if (soundId === undefined) return false;
-    this.oneShotPlayIds.set(sfxId, soundId);
+    const activeIds = this.oneShotPlayIds.get(sfxId) ?? [];
+    activeIds.push(soundId);
+    this.oneShotPlayIds.set(sfxId, activeIds);
     return true;
   }
 
   getOneShotProgress(sfxId: string): number {
     const sfx = this.oneShots.get(sfxId);
     if (!sfx) return 0;
+    const activeIds = this.oneShotPlayIds.get(sfxId);
+    const soundId = activeIds?.at(-1);
+    if (soundId === undefined) return 0;
     try {
-      const soundId = this.oneShotPlayIds.get(sfxId);
-      const duration =
-        soundId !== undefined ? sfx.duration(soundId) : sfx.duration();
+      const duration = sfx.duration(soundId);
+      const seek = sfx.seek(soundId);
       if (!Number.isFinite(duration) || duration <= 0) return 0;
-      const seek = soundId !== undefined ? sfx.seek(soundId) : sfx.seek();
       if (typeof seek !== 'number' || !Number.isFinite(seek)) return 0;
       return Math.max(0, Math.min(1, seek / duration));
     } catch {
