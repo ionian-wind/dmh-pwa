@@ -110,6 +110,29 @@ describe('useDragSnap', () => {
     expect(drag.cardStyle.value.transform).toBe('translate(0px, 50px)');
   });
 
+  it('can end a drag and release pointer capture early', () => {
+    const drag = mountComposable();
+    const target = document.createElement('div');
+    target.setPointerCapture = vi.fn();
+    target.releasePointerCapture = vi.fn();
+
+    drag.onPointerDown({
+      clientX: 0,
+      clientY: 0,
+      pointerId: 7,
+      target,
+    } as any);
+    drag.onPointerMove({ clientX: 0, clientY: -40 } as PointerEvent);
+    expect(drag.isDragging.value).toBe(true);
+
+    drag.endDrag();
+    expect(drag.isDragging.value).toBe(false);
+    expect(target.releasePointerCapture).toHaveBeenCalledWith(7);
+
+    drag.onPointerMove({ clientX: 0, clientY: -120 } as PointerEvent);
+    expect(drag.cardStyle.value.transform).toBe('translate(0px, -40px)');
+  });
+
   it('ignores moves before dragging starts and resets on hide', () => {
     const drag = mountComposable();
 

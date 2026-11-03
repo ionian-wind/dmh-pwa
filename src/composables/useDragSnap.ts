@@ -21,6 +21,8 @@ export function useDragSnap(options: DragSnapOptions = {}) {
   let startTranslateY = 0;
   let lastX = 0;
   let lastY = 0;
+  let captureTarget: HTMLElement | null = null;
+  let capturePointerId: number | null = null;
 
   function onPointerDown(e: PointerEvent) {
     isDragging.value = true;
@@ -31,7 +33,9 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     startTranslateY = translateY.value;
     lastX = e.clientX;
     lastY = e.clientY;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    captureTarget = e.target as HTMLElement;
+    capturePointerId = e.pointerId;
+    captureTarget.setPointerCapture(e.pointerId);
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -44,9 +48,26 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     translateY.value = startTranslateY + dy;
   }
 
+  function releaseCapture() {
+    if (
+      captureTarget &&
+      capturePointerId !== null &&
+      typeof captureTarget.releasePointerCapture === 'function'
+    ) {
+      try {
+        captureTarget.releasePointerCapture(capturePointerId);
+      } catch {
+        // The pointer may already have been released by the browser.
+      }
+    }
+    captureTarget = null;
+    capturePointerId = null;
+  }
+
   function onPointerUp() {
     if (!isDragging.value) return;
     isDragging.value = false;
+    releaseCapture();
 
     if ((options.snapBack?.() ?? true) && translateY.value > -SNAP_THRESHOLD) {
       hasTransition.value = true;
@@ -55,6 +76,13 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     }
 
     options.onRelease?.();
+  }
+
+  /** Stops the current drag without waiting for pointer-up. */
+  function endDrag() {
+    if (!isDragging.value) return;
+    isDragging.value = false;
+    releaseCapture();
   }
 
   function resetPosition() {
@@ -93,6 +121,7 @@ export function useDragSnap(options: DragSnapOptions = {}) {
   }
 
   function onHide() {
+    releaseCapture();
     hasTransition.value = false;
     translateX.value = 0;
     translateY.value = 0;
@@ -118,6 +147,7 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     onPointerMove,
     onPointerUp,
     onHide,
+    endDrag,
     resetPosition,
     rebaseDrag,
     setPosition,

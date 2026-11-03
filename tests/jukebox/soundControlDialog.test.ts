@@ -287,6 +287,11 @@ describe('SoundControlDialog', () => {
     await flushPromises();
     expect(card.attributes('data-mode')).toBe('panel');
 
+    // Docking ends the gesture; further pointer movement must not re-detach it.
+    dispatch('pointermove', 0, -120, 1);
+    await flushPromises();
+    expect(card.attributes('data-mode')).toBe('panel');
+
     dispatch('pointerup', 0, 100, 1);
     await flushPromises();
     wrapper.unmount();

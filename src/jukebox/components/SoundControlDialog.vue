@@ -141,6 +141,7 @@ async function setDisplayMode(
   if (!preservePosition || !isDragging.value) {
     displayMode.value = mode;
     rebaseDrag();
+    if (mode === 'panel') endDrag();
     return;
   }
 
@@ -168,6 +169,8 @@ async function setDisplayMode(
   if (mode === 'dialog' && hasLeftDockZone()) {
     canDock.value = true;
   }
+
+  if (mode === 'panel') endDrag();
 
   isRepositioning.value = false;
   repositioning = false;
@@ -200,6 +203,7 @@ const {
   rebaseDrag,
   setPosition,
   rebaseDragOrigin,
+  endDrag,
 } = useDragSnap({
   snapBack: () => displayMode.value === 'panel',
   onRelease: handleDragRelease,
