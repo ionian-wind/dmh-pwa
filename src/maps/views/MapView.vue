@@ -1039,7 +1039,7 @@ watch(isEditMode, (editing) => {
 
       <div
         v-if="!imageLoaded && !imageLoadFailed"
-        class="absolute-full flex flex-center bg-white z-top"
+        class="map-loading-overlay absolute-full flex flex-center"
       >
         <QSpinner
           color="primary"
@@ -1297,6 +1297,11 @@ watch(isEditMode, (editing) => {
   min-height: 320px;
   overflow: hidden;
   border-radius: var(--border-radius);
+}
+
+.map-loading-overlay {
+  z-index: 40;
+  background: var(--color-background);
 }
 
 .map-sidepanel {

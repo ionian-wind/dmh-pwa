@@ -353,6 +353,10 @@ describe('MapView', () => {
     const wrapper = await mountMapView();
 
     expect(wrapper.find('[data-stub="QSpinner"]').exists()).toBe(true);
+    expect(wrapper.find('.map-loading-overlay').exists()).toBe(true);
+    expect(wrapper.find('.map-loading-overlay').classes()).not.toContain(
+      'z-top',
+    );
     expect(wrapper.findAll('.ol-vector-layer-stub')).toHaveLength(0);
     expect(wrapper.find('.map-marker-accessible').exists()).toBe(false);
     expect(wrapper.find('.map-area-label').exists()).toBe(false);
@@ -361,6 +365,7 @@ describe('MapView', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-stub="QSpinner"]').exists()).toBe(false);
+    expect(wrapper.find('.map-loading-overlay').exists()).toBe(false);
     expect(wrapper.findAll('.ol-vector-layer-stub')).toHaveLength(1);
     expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
     expect(wrapper.find('.map-area-label').exists()).toBe(true);
