@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 const push = vi.hoisted(() => vi.fn());
@@ -15,6 +16,11 @@ vi.mock('@/composables/useLayout', () => ({
     clear: layoutMock.clearRightDrawer,
   }),
 }));
+
+Object.defineProperty(Element.prototype, 'scrollIntoView', {
+  configurable: true,
+  value: vi.fn(),
+});
 
 import ru from '@/i18n/locales/ru.json';
 import ProbabilitySyntaxView from '../ProbabilitySyntaxView.vue';
@@ -67,6 +73,11 @@ describe('ProbabilitySyntaxView', () => {
       expect(wrapper.find(`#${anchor}`).exists()).toBe(true);
     }
 
+    const sectionLinks = wrapper.findAll('a.syntax-section-link');
+    expect(sectionLinks).toHaveLength(9);
+    expect(sectionLinks[0].attributes('href')).toBe('#basics');
+    expect(sectionLinks[0].attributes('title')).toBe('Link to this section');
+
     wrapper.unmount();
     expect(layoutMock.clearRightDrawer).toHaveBeenCalled();
   });
@@ -76,7 +87,6 @@ describe('ProbabilitySyntaxView', () => {
     const drawer = layoutMock.setRightDrawer.mock.calls.at(-1)?.[0];
 
     expect(drawer.component).toBe(TableOfContents);
-    expect(drawer.props.title).toBe('On this page');
     expect(drawer.props.items.map((item: any) => item.anchorId)).toEqual([
       'basics',
       'operators',
@@ -93,6 +103,18 @@ describe('ProbabilitySyntaxView', () => {
         ?.level,
     ).toBe(3);
     expect(drawer.props.onItemClick).toEqual(expect.any(Function));
+    wrapper.unmount();
+  });
+
+  it('keeps the active TOC anchor in sync when a header is clicked', async () => {
+    const wrapper = mount(ProbabilitySyntaxView);
+    const drawer = layoutMock.setRightDrawer.mock.calls.at(-1)?.[0];
+
+    await wrapper.findAll('a.syntax-section-link')[5].trigger('click');
+    await nextTick();
+
+    expect(drawer.props.activeAnchorId).toBe('functions');
+    expect(window.location.hash).toBe('#functions');
     wrapper.unmount();
   });
 });

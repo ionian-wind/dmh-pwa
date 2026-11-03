@@ -71,11 +71,14 @@ test('shows a hideable syntax TOC with anchor links', async ({ page }) => {
 
   const toc = page.locator('.table-of-contents');
   await expect(toc).toBeVisible();
-  await expect(toc).toContainText('On this page');
 
-  await toc.locator('a.toc-link', { hasText: 'Functions' }).click();
+  await page.locator('a.syntax-section-link', { hasText: 'Functions' }).click();
   await expect(page).toHaveURL(/#functions$/);
   await expect(page.locator('#functions')).toBeVisible();
+  await expect(toc.locator('.toc-item.active')).toContainText('Functions');
+
+  await page.locator('#examples').scrollIntoViewIfNeeded();
+  await expect(toc.locator('.toc-item.active')).toContainText('Examples');
 
   const toggle = page.getByRole('button', { name: 'Toggle sidebar' });
   await toggle.click();

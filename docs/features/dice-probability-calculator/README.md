@@ -13,8 +13,10 @@ using integer (`bigint`) weights. A Vue page under
 - Route: `/probability-calculator` (lazy loaded).
 - Syntax reference: `/probability-calculator/syntax`, linked from the top
   header and translated into English and Russian. Its title/back action live in
-  the application header; the right drawer contains a hideable, scroll-spying
-  TOC whose entries are real `#anchor` links to the section cards.
+  the application header; the right drawer contains a hideable TOC whose
+  entries are real `#anchor` links to the section cards. Section headings are
+  anchor links too, so their URLs can be copied. The TOC highlights the section
+  currently in view and updates as the page is scrolled.
 - Page title and syntax action are rendered in the application top header via
   `ViewHeader`; there is no in-page title block.
 - Main menu: inside the expandable **Tools** section, using `IconChartLine`.

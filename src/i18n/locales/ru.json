@@ -240,6 +240,7 @@
   },
   "common": {
     "mainEditor": "Основной редактор",
+    "tableOfContents": "Оглавление",
     "toggleSidebar": "Переключить боковую панель",
     "linkedEntities": "Связанные сущности",
     "confirmDelete": "Вы уверены, что хотите удалить {title}?",
@@ -331,7 +332,6 @@
     "closeTab": "Закрыть вкладку",
     "addNewTab": "Добавить новую вкладку",
     "userMenu": "Меню пользователя",
-    "tableOfContents": "Оглавление",
     "bookmarks": "Закладки",
     "bookmark": "Закладка",
     "editBookmark": "Редактировать закладку",
@@ -867,7 +867,7 @@
     "syntaxPage": {
       "title": "Справка по синтаксису AnyDice",
       "subtitle": "Поддерживаемый синтаксис калькулятора вероятностей",
-      "tableOfContents": "На этой странице",
+      "copySectionLink": "Ссылка на этот раздел",
       "back": "Вернуться к калькулятору",
       "sections": {
         "basics": "Основы программы",

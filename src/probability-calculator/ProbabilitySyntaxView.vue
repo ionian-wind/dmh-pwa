@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { IconArrowLeft } from '@tabler/icons-vue';
+import { IconArrowLeft, IconLink } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
@@ -254,24 +261,121 @@ const tocItems = computed<TOCItem[]>(() => [
   },
 ]);
 
+const SECTION_IDS = tocItems.value.map((item) => item.anchorId);
+const initialHash = window.location.hash.replace(/^#/, '');
+const activeAnchorId = ref(
+  SECTION_IDS.includes(initialHash) ? initialHash : SECTION_IDS[0],
+);
+
 function scrollToSection(anchorId: string) {
+  activeAnchorId.value = anchorId;
+  if (window.location.hash !== `#${anchorId}`) {
+    history.replaceState(null, '', `#${anchorId}`);
+  }
   document.getElementById(anchorId)?.scrollIntoView({
     behavior: 'smooth',
     block: 'start',
   });
 }
 
+function scrollContainer(): HTMLElement | null {
+  for (const selector of [
+    '.q-page-container',
+    '.entity-main-column',
+    '.base-entity-view',
+    '.entity-content',
+  ]) {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element && element.scrollHeight > element.clientHeight) {
+      return element;
+    }
+  }
+  return null;
+}
+
+function isNearBottom(container: HTMLElement | null) {
+  if (container) {
+    return (
+      container.scrollTop + container.clientHeight >= container.scrollHeight - 8
+    );
+  }
+  const page = document.scrollingElement ?? document.documentElement;
+  return window.innerHeight + window.scrollY >= page.scrollHeight - 8;
+}
+
+function updateActiveAnchor() {
+  const headings = SECTION_IDS.map((id) => ({
+    id,
+    element: document.getElementById(id),
+  })).filter(
+    (heading): heading is { id: string; element: HTMLElement } =>
+      heading.element !== null,
+  );
+  if (headings.length === 0) return;
+
+  const container = scrollContainer();
+  const threshold = (container?.getBoundingClientRect().top ?? 0) + 96;
+  let active = headings[0].id;
+
+  for (const heading of headings) {
+    if (heading.element.getBoundingClientRect().top <= threshold) {
+      active = heading.id;
+    } else {
+      break;
+    }
+  }
+
+  if (isNearBottom(container)) {
+    active = headings[headings.length - 1].id;
+  }
+  if (activeAnchorId.value !== active) activeAnchorId.value = active;
+}
+
+let spyFrame: number | null = null;
+let spyContainer: HTMLElement | null = null;
+
+function handleScroll() {
+  if (spyFrame !== null) return;
+  spyFrame = window.requestAnimationFrame(() => {
+    spyFrame = null;
+    updateActiveAnchor();
+  });
+}
+
+function setupScrollSpy() {
+  spyContainer = scrollContainer();
+  if (spyContainer) {
+    spyContainer.addEventListener('scroll', handleScroll, { passive: true });
+  } else {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+  }
+  updateActiveAnchor();
+}
+
+function teardownScrollSpy() {
+  if (spyFrame !== null) {
+    window.cancelAnimationFrame(spyFrame);
+    spyFrame = null;
+  }
+  if (spyContainer) {
+    spyContainer.removeEventListener('scroll', handleScroll);
+  } else {
+    window.removeEventListener('scroll', handleScroll);
+  }
+  spyContainer = null;
+}
+
 const sidebarProps = reactive({
   items: tocItems.value,
-  title: t('probabilityCalculator.syntaxPage.tableOfContents'),
+  activeAnchorId: activeAnchorId.value,
   onItemClick: scrollToSection,
 });
 
 watch(
-  [tocItems, () => t('probabilityCalculator.syntaxPage.tableOfContents')],
-  ([items, title]) => {
+  [tocItems, activeAnchorId],
+  ([items, active]) => {
     sidebarProps.items = items;
-    sidebarProps.title = title;
+    sidebarProps.activeAnchorId = active;
   },
   { immediate: true },
 );
@@ -296,9 +400,11 @@ onMounted(() => {
     },
   });
   rightDrawer.set({ component: TableOfContents, props: sidebarProps });
+  setupScrollSpy();
 });
 
 onBeforeUnmount(() => {
+  teardownScrollSpy();
   layout.setTopMenuContent(null);
   rightDrawer.clear();
 });
@@ -308,9 +414,17 @@ onBeforeUnmount(() => {
   <div class="q-pa-md syntax-doc-page">
     <QCard id="basics" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.basics') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#basics"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('basics')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.basics')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <p>{{ t('probabilityCalculator.syntaxPage.basics.description') }}</p>
         <pre v-pre class="syntax-code">
 X: 3
@@ -329,9 +443,17 @@ output DAMAGE named "sword damage"</pre
 
     <QCard id="operators" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.operators') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#operators"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('operators')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.operators')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <QMarkupTable dense flat class="syntax-table">
           <thead>
             <tr>
@@ -360,9 +482,17 @@ output DAMAGE named "sword damage"</pre
 
     <QCard id="sequences" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.sequences') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#sequences"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('sequences')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.sequences')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <p>{{ t('probabilityCalculator.syntaxPage.sequences.description') }}</p>
         <pre v-pre class="syntax-code">
 {1, 2, 3}
@@ -373,9 +503,18 @@ output DAMAGE named "sword damage"</pre
 {d6}
 {}</pre
         >
-        <div id="position" class="text-subtitle2 q-mt-md q-mb-xs">
-          {{ t('probabilityCalculator.syntaxPage.sections.position') }}
-        </div>
+        <a
+          id="position"
+          class="syntax-section-link syntax-section-link--sub text-subtitle2 q-mt-md q-mb-xs"
+          href="#position"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('position')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.position')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <pre v-pre class="syntax-code">
 1 @ {2,4,6}    \ 2 \
 3 @ {2,4,6}    \ 6 \
@@ -394,9 +533,15 @@ output DAMAGE named "sword damage"</pre
 
     <QCard id="flow" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.flow') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#flow"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('flow')"
+        >
+          <span>{{ t('probabilityCalculator.syntaxPage.sections.flow') }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <pre v-pre class="syntax-code">
 loop N over {1..4} {
   output Nd4 named "[N]d4"
@@ -421,9 +566,17 @@ else {
 
     <QCard id="functions" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.functions') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#functions"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('functions')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.functions')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <p>{{ t('probabilityCalculator.syntaxPage.functions.description') }}</p>
         <pre v-pre class="syntax-code">
 function: add A to B {
@@ -447,9 +600,17 @@ output [add d4 to d6]</pre
 
     <QCard id="library" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.library') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#library"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('library')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.library')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <QMarkupTable dense flat class="syntax-table">
           <thead>
             <tr>
@@ -473,9 +634,17 @@ output [add d4 to d6]</pre
 
     <QCard id="settings" flat bordered class="q-mb-md">
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.settings') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#settings"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('settings')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.settings')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <pre v-pre class="syntax-code">
 set "position order" to "highest first"
 set "position order" to "lowest first"
@@ -490,9 +659,17 @@ set "maximum function depth" to 5</pre
 
     <QCard id="examples" flat bordered>
       <QCardSection>
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">
-          {{ t('probabilityCalculator.syntaxPage.sections.examples') }}
-        </div>
+        <a
+          class="syntax-section-link text-subtitle1 text-weight-medium q-mb-sm"
+          href="#examples"
+          :title="t('probabilityCalculator.syntaxPage.copySectionLink')"
+          @click.prevent="scrollToSection('examples')"
+        >
+          <span>{{
+            t('probabilityCalculator.syntaxPage.sections.examples')
+          }}</span>
+          <IconLink class="syntax-section-anchor-icon" :size="16" />
+        </a>
         <div
           v-for="example in examples"
           :key="example.titleKey"
@@ -516,6 +693,30 @@ set "maximum function depth" to 5</pre
 
 .syntax-doc-page [id] {
   scroll-margin-top: 1rem;
+}
+
+.syntax-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.syntax-section-link:hover,
+.syntax-section-link:focus-visible {
+  color: var(--color-primary);
+}
+
+.syntax-section-anchor-icon {
+  flex: none;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+
+.syntax-section-link:hover .syntax-section-anchor-icon,
+.syntax-section-link:focus-visible .syntax-section-anchor-icon {
+  opacity: 0.9;
 }
 
 .syntax-code {

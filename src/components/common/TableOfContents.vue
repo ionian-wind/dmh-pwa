@@ -12,7 +12,6 @@ interface TOCItem {
 const props = defineProps<{
   items: TOCItem[];
   activeAnchorId?: string | null;
-  title?: string;
 }>();
 
 const activeItemId = ref<string | null>(null);
@@ -201,8 +200,7 @@ function setTocItemRef(
 
 <template>
   <div class="table-of-contents">
-    <div v-if="title" class="toc-title">{{ title }}</div>
-    <nav class="toc-nav" ref="tocNavRef" :aria-label="title">
+    <nav class="toc-nav" ref="tocNavRef">
       <ul class="toc-list">
         <li
           v-for="item in items"
@@ -229,14 +227,6 @@ function setTocItemRef(
 </template>
 
 <style scoped>
-.toc-title {
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 0.25rem;
-}
-
 .toc-list {
   list-style: none;
   margin: 0;

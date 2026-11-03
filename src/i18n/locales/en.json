@@ -239,6 +239,7 @@
   },
   "common": {
     "mainEditor": "Main editor",
+    "tableOfContents": "Table of Contents",
     "toggleSidebar": "Toggle sidebar",
     "linkedEntities": "Linked entities",
     "confirmDelete": "Are you sure you want to delete {title}?",
@@ -330,7 +331,6 @@
     "closeTab": "Close tab",
     "addNewTab": "Add new tab",
     "userMenu": "User Menu",
-    "tableOfContents": "Table of Contents",
     "bookmarks": "Bookmarks",
     "bookmark": "Bookmark",
     "editBookmark": "Edit bookmark",
@@ -866,7 +866,7 @@
     "syntaxPage": {
       "title": "AnyDice Syntax Reference",
       "subtitle": "Supported syntax for the dice probability calculator",
-      "tableOfContents": "On this page",
+      "copySectionLink": "Link to this section",
       "back": "Back to calculator",
       "sections": {
         "basics": "Program basics",

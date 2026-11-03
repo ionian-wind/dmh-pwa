@@ -229,9 +229,9 @@ translation keys that do not exist.
 ## Other common components
 
 - `Mentions.vue` — groups `{kind,id}` refs by kind and links to detail routes.
-- `TableOfContents.vue` — TOC with scroll-spy and optional title. Entries are
-  real `#anchor` links that also emit `item-click`; used by the module and
-  probability-syntax sidepanels.
+- `TableOfContents.vue` — TOC with scroll-spy. Entries are real `#anchor` links
+  that also emit `item-click`; used by the module and probability-syntax
+  sidepanels.
 - `Bookmark.vue` — toggles a bookmark for a note in a module.
 - `BaseModal.vue` — see [modals-and-navigation.md](modals-and-navigation.md).
 - `Markdown.vue`, `MarkdownEditor.vue` — see
