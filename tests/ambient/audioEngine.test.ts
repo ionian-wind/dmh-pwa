@@ -126,6 +126,21 @@ describe('ambient audio engine', () => {
     engine.playOneShot('missing');
   });
 
+  it('replaces layer samples and reports temporary music end', () => {
+    engine.loadLayer('rain', 'blob:one');
+    engine.loadLayer('rain', 'blob:two', true);
+    expect(instance(0).unloaded).toBe(true);
+    expect(howler.instances).toHaveLength(2);
+
+    const onEnd = vi.fn();
+    engine.setMusicEndHandler(onEnd);
+    engine.loadMusic('victory', 'blob:victory', false);
+    const music = instance(2);
+    expect(music.opts.loop).toBe(false);
+    music.opts.onend();
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+
   it('manages music tracks and transitions', () => {
     engine.loadMusic('explore', 'blob:explore');
     engine.loadMusic('explore', 'blob:explore');

@@ -52,7 +52,6 @@ const stubs = {
   IntensitySlider: true,
   AmbientMixer: true,
   OneShotPanel: true,
-  WeatherPanel: true,
 };
 
 describe('AmbientSoundView', () => {
@@ -95,7 +94,7 @@ describe('AmbientSoundView', () => {
       component: SoundPackSidebar,
     });
 
-    expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(6);
+    expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(5);
     expect(wrapper.text()).not.toContain('Overall control');
     expect(wrapper.text()).toContain('Master volume');
     expect(wrapper.text()).toContain('50%');

@@ -12,14 +12,28 @@ export interface SoundPackManifest {
   moodStates: MoodStateDef[];
 }
 
+export interface LayerVariation {
+  id: string;
+  name: string;
+  /** File paths relative to the pack's `layers/` directory. */
+  samples: string[];
+}
+
 export interface LayerDef {
   id: string;
   name: string;
   icon: string;
-  file: string;
+  /** Group heading used by the ambient mixer. */
+  category?: string;
   defaultVolume: number;
   loop: boolean;
   fadeTime?: number;
+  /** Legacy single-file layer. */
+  file?: string;
+  /** Multiple samples for a single flat variation. */
+  samples?: string[];
+  /** Named variations; each variation has its own sample pool. */
+  variations?: LayerVariation[];
 }
 
 export interface OneShotDef {
@@ -40,11 +54,18 @@ export interface WeatherDef {
   affectsLayers: string[];
 }
 
+export type MoodMode = 'temporary' | 'continual';
+
 export interface MoodStateDef {
   state: MoodState;
   name: string;
   icon: string;
+  /** Temporary music switches back to the previous mood when it ends. */
+  mode?: MoodMode;
+  /** Legacy single music file. */
   musicFile?: string;
+  /** Several files are picked randomly. */
+  musicFiles?: string[];
   transitionsTo?: MoodState[];
 }
 
@@ -52,6 +73,8 @@ export type MoodState = 'explore' | 'combat' | 'victory' | 'rest';
 
 export interface ActiveLayer {
   layerId: string;
+  variationId: string;
+  sampleIndex: number;
   volume: number;
   isPlaying: boolean;
 }
@@ -74,6 +97,5 @@ export interface AmbientSoundState {
   intensity: number;
   masterVolume: number;
   isPlaying: boolean;
-  weatherActive: WeatherDef | null;
   storedPacks: SoundPackManifest[];
 }

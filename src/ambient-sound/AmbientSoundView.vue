@@ -83,9 +83,6 @@
       <QCard flat bordered class="q-mb-md">
         <QCardSection><OneShotPanel /></QCardSection>
       </QCard>
-      <QCard flat bordered class="q-mb-md">
-        <QCardSection><WeatherPanel /></QCardSection>
-      </QCard>
     </template>
 
     <EmptyState
@@ -116,7 +113,6 @@ import MoodStateControl from '@/ambient-sound/components/MoodStateControl.vue';
 import IntensitySlider from '@/ambient-sound/components/IntensitySlider.vue';
 import AmbientMixer from '@/ambient-sound/components/AmbientMixer.vue';
 import OneShotPanel from '@/ambient-sound/components/OneShotPanel.vue';
-import WeatherPanel from '@/ambient-sound/components/WeatherPanel.vue';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();

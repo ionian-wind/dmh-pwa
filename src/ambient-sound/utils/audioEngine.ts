@@ -7,6 +7,7 @@ export class AudioEngine {
   private oneShots: Map<string, Howl> = new Map();
   private masterVolume: number = 0.8;
   private currentMoodState: string = 'explore';
+  private musicEndHandler: (() => void) | null = null;
 
   setMasterVolume(volume: number): void {
     this.masterVolume = Math.max(0, Math.min(1, volume));
@@ -17,9 +18,11 @@ export class AudioEngine {
     return this.masterVolume;
   }
 
-  loadLayer(layerId: string, audioUrl: string): void {
+  loadLayer(layerId: string, audioUrl: string, replace = false): void {
     if (this.layers.has(layerId)) {
-      return;
+      if (!replace) return;
+      this.layers.get(layerId)?.unload();
+      this.layers.delete(layerId);
     }
     const howl = new Howl({
       src: [audioUrl],
@@ -29,6 +32,14 @@ export class AudioEngine {
       preload: true,
     });
     this.layers.set(layerId, howl);
+  }
+
+  setMusicEndHandler(handler: (() => void) | null): void {
+    this.musicEndHandler = handler;
+  }
+
+  private handleMusicEnd(): void {
+    this.musicEndHandler?.();
   }
 
   playLayer(layerId: string, volume: number = 0.5): void {
@@ -92,17 +103,18 @@ export class AudioEngine {
     }
   }
 
-  loadMusic(moodState: string, audioUrl: string): void {
+  loadMusic(moodState: string, audioUrl: string, loop = true): void {
     if (this.musicTrack && this.currentMoodState === moodState) {
       return;
     }
     this.musicTrack?.unload();
     this.musicTrack = new Howl({
       src: [audioUrl],
-      loop: true,
+      loop,
       volume: 0,
       html5: true,
       preload: true,
+      onend: () => this.handleMusicEnd(),
     });
     this.currentMoodState = moodState;
   }
@@ -142,6 +154,7 @@ export class AudioEngine {
     newMoodState: string,
     newAudioUrl: string,
     volume: number = 0.5,
+    loop = true,
   ): void {
     if (this.musicTrack) {
       this.musicTrack.fade(this.musicTrack.volume(), 0, 1000);
@@ -150,17 +163,18 @@ export class AudioEngine {
         this.musicTrack?.unload();
         this.musicTrack = new Howl({
           src: [newAudioUrl],
-          loop: true,
+          loop,
           volume: 0,
           html5: true,
           preload: true,
+          onend: () => this.handleMusicEnd(),
         });
         this.currentMoodState = newMoodState;
         this.musicTrack.play();
         this.musicTrack.fade(0, volume * this.masterVolume, 1000);
       }, 1000);
     } else {
-      this.loadMusic(newMoodState, newAudioUrl);
+      this.loadMusic(newMoodState, newAudioUrl, loop);
       this.playMusic(volume);
     }
   }

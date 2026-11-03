@@ -1,6 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import JSZip from 'jszip';
 import type { SoundPackManifest } from '../types';
+import { getLayerVariations, getMoodMusicFiles } from './packData';
 
 const DB_NAME = 'dmh-ambient-sound';
 const DB_VERSION = 1;
@@ -50,9 +51,13 @@ export async function importSoundPack(
   const audioBlobs: Record<string, Blob> = {};
 
   for (const layer of manifest.layers) {
-    const file = zip.file(`layers/${layer.file}`);
-    if (file) {
-      audioBlobs[`layers/${layer.file}`] = await file.async('blob');
+    for (const variation of getLayerVariations(layer)) {
+      for (const sample of variation.samples) {
+        const file = zip.file(`layers/${sample}`);
+        if (file) {
+          audioBlobs[`layers/${sample}`] = await file.async('blob');
+        }
+      }
     }
   }
 
@@ -64,10 +69,10 @@ export async function importSoundPack(
   }
 
   for (const mood of manifest.moodStates) {
-    if (mood.musicFile) {
-      const file = zip.file(`music/${mood.musicFile}`);
+    for (const musicFile of getMoodMusicFiles(mood)) {
+      const file = zip.file(`music/${musicFile}`);
       if (file) {
-        audioBlobs[`music/${mood.musicFile}`] = await file.async('blob');
+        audioBlobs[`music/${musicFile}`] = await file.async('blob');
       }
     }
   }

@@ -4,28 +4,140 @@ import type {
   SoundPackManifest,
   MoodState,
   ActiveLayer,
-  WeatherDef,
   LayerDef,
   OneShotDef,
-  MoodStateDef,
 } from '../types';
 import { audioEngine } from '../utils/audioEngine';
 import * as packManager from '../utils/packManager';
+import {
+  getLayerVariations,
+  getMoodMode,
+  getMoodMusicFiles,
+} from '../utils/packData';
 
 export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   const currentPack = ref<SoundPackManifest | null>(null);
   const activeLayers = ref<Map<string, ActiveLayer>>(new Map());
+  const layerVariationSelections = ref<Map<string, string>>(new Map());
   const currentMoodState = ref<MoodState>('explore');
+  const previousMoodState = ref<MoodState | null>(null);
+  const temporaryMusicActive = ref(false);
   const intensity = ref(50);
   const masterVolume = ref(80);
   const isPlaying = ref(false);
-  const weatherActive = ref<WeatherDef | null>(null);
   const musicEnabled = ref(true);
   const storedPacks = ref<SoundPackManifest[]>([]);
   const loading = ref(false);
   const loadedAudioUrls = ref<Map<string, string>>(new Map());
 
   const hasActiveLayers = computed(() => activeLayers.value.size > 0);
+
+  function layerByVariationId(layer: LayerDef) {
+    const variations = getLayerVariations(layer);
+    return variations.length > 0 ? variations : [];
+  }
+
+  function selectedVariation(layer: LayerDef) {
+    const variations = layerByVariationId(layer);
+    const selectedId = layerVariationSelections.value.get(layer.id);
+    return (
+      variations.find((variation) => variation.id === selectedId) ??
+      variations[0] ??
+      null
+    );
+  }
+
+  function layerSampleUrl(
+    layerId: string,
+    variationId: string,
+    sampleIndex: number,
+  ) {
+    return loadedAudioUrls.value.get(
+      `layer:${layerId}:${variationId}:${sampleIndex}`,
+    );
+  }
+
+  function loadLayerSample(
+    layer: LayerDef,
+    variationId: string,
+    sampleIndex: number,
+  ) {
+    const url = layerSampleUrl(layer.id, variationId, sampleIndex);
+    if (!url) return false;
+    audioEngine.loadLayer(layer.id, url, true);
+    return true;
+  }
+
+  function randomSampleIndex(samples: string[]) {
+    return samples.length > 0 ? Math.floor(Math.random() * samples.length) : 0;
+  }
+
+  function musicSampleFor(state: MoodState) {
+    const mood = currentPack.value?.moodStates.find(
+      (entry) => entry.state === state,
+    );
+    if (!mood) return null;
+    const files = getMoodMusicFiles(mood);
+    if (files.length === 0) return null;
+    const index = randomSampleIndex(files);
+    return {
+      mood,
+      url: loadedAudioUrls.value.get(`music:${state}:${index}`),
+      loop: getMoodMode(mood) !== 'temporary',
+    };
+  }
+
+  function playMoodMusic(useTransition: boolean) {
+    if (!isPlaying.value || !musicEnabled.value || !currentPack.value) return;
+    const sample = musicSampleFor(currentMoodState.value);
+    if (!sample?.url) return;
+
+    if (useTransition) {
+      audioEngine.transitionToMusic(
+        currentMoodState.value,
+        sample.url,
+        intensity.value / 100,
+        sample.loop,
+      );
+    } else {
+      audioEngine.loadMusic(currentMoodState.value, sample.url, sample.loop);
+      audioEngine.playMusic(intensity.value / 100);
+    }
+  }
+
+  function applyMood(
+    state: MoodState,
+    rememberPrevious: boolean,
+    useTransition: boolean,
+  ) {
+    if (!currentPack.value) return;
+    const mood = currentPack.value.moodStates.find(
+      (entry) => entry.state === state,
+    );
+    if (!mood) return;
+
+    const previous = currentMoodState.value;
+    currentMoodState.value = state;
+    if (rememberPrevious) {
+      previousMoodState.value =
+        previous !== state ? previous : previousMoodState.value;
+    } else {
+      previousMoodState.value = null;
+    }
+    temporaryMusicActive.value =
+      getMoodMode(mood) === 'temporary' && isPlaying.value;
+
+    if (isPlaying.value && musicEnabled.value) {
+      playMoodMusic(useTransition);
+    }
+  }
+
+  function handleMusicEnd() {
+    if (!temporaryMusicActive.value || !previousMoodState.value) return;
+    const previous = previousMoodState.value;
+    temporaryMusicActive.value = false;
+    applyMood(previous, false, true);
+  }
 
   async function loadStoredPacks(): Promise<void> {
     storedPacks.value = await packManager.getStoredPacks();
@@ -41,51 +153,50 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     try {
       currentPack.value = pack;
       activeLayers.value.clear();
+      layerVariationSelections.value.clear();
       currentMoodState.value = 'explore';
+      previousMoodState.value = null;
+      temporaryMusicActive.value = false;
       intensity.value = pack.defaultIntensity || 50;
-      weatherActive.value = null;
       loadedAudioUrls.value.clear();
 
       const audioBlobs = await packManager.getPackAudioBlobs(pack.id);
 
       for (const layer of pack.layers) {
-        const blobKey = `layers/${layer.file}`;
-        if (audioBlobs[blobKey]) {
-          const url = URL.createObjectURL(audioBlobs[blobKey]);
-          loadedAudioUrls.value.set(`layer:${layer.id}`, url);
-          audioEngine.loadLayer(layer.id, url);
+        const variations = getLayerVariations(layer);
+        if (variations[0]) {
+          layerVariationSelections.value.set(layer.id, variations[0].id);
+        }
+        for (const variation of variations) {
+          variation.samples.forEach((sample, index) => {
+            const blob = audioBlobs[`layers/${sample}`];
+            if (blob) {
+              loadedAudioUrls.value.set(
+                `layer:${layer.id}:${variation.id}:${index}`,
+                URL.createObjectURL(blob),
+              );
+            }
+          });
         }
       }
 
       for (const sfx of pack.oneShots) {
-        const blobKey = `sfx/${sfx.file}`;
-        if (audioBlobs[blobKey]) {
-          const url = URL.createObjectURL(audioBlobs[blobKey]);
-          loadedAudioUrls.value.set(`sfx:${sfx.id}`, url);
-          audioEngine.loadOneShot(sfx.id, url);
+        const blob = audioBlobs[`sfx/${sfx.file}`];
+        if (blob) {
+          loadedAudioUrls.value.set(`sfx:${sfx.id}`, URL.createObjectURL(blob));
         }
       }
 
-      const exploreMood = pack.moodStates.find((m) => m.state === 'explore');
-      if (exploreMood?.musicFile) {
-        const blobKey = `music/${exploreMood.musicFile}`;
-        if (audioBlobs[blobKey]) {
-          const url = URL.createObjectURL(audioBlobs[blobKey]);
-          loadedAudioUrls.value.set(`music:explore`, url);
-          audioEngine.loadMusic('explore', url);
-        }
-      }
-
-      if (pack.weatherSystems && pack.weatherSystems.length > 0) {
-        const weather = pack.weatherSystems[0];
-        if (weather.file) {
-          const blobKey = `weather/${weather.file}`;
-          if (audioBlobs[blobKey]) {
-            const url = URL.createObjectURL(audioBlobs[blobKey]);
-            loadedAudioUrls.value.set(`weather:${weather.id}`, url);
-            audioEngine.loadWeather(weather.id, url);
+      for (const mood of pack.moodStates) {
+        getMoodMusicFiles(mood).forEach((musicFile, index) => {
+          const blob = audioBlobs[`music/${musicFile}`];
+          if (blob) {
+            loadedAudioUrls.value.set(
+              `music:${mood.state}:${index}`,
+              URL.createObjectURL(blob),
+            );
           }
-        }
+        });
       }
 
       audioEngine.setMasterVolume(masterVolume.value / 100);
@@ -121,31 +232,72 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       loadedAudioUrls.value.clear();
       audioEngine.stopAll();
       activeLayers.value.clear();
+      layerVariationSelections.value.clear();
       currentPack.value = null;
-      weatherActive.value = null;
+      previousMoodState.value = null;
+      temporaryMusicActive.value = false;
       isPlaying.value = false;
     }
   }
 
-  function toggleLayer(layerId: string): void {
+  function toggleLayer(layerId: string, variationId?: string): void {
     if (!currentPack.value) return;
 
-    const layer = currentPack.value.layers.find((l) => l.id === layerId);
+    const layer = currentPack.value.layers.find(
+      (entry) => entry.id === layerId,
+    );
     if (!layer) return;
 
     const active = activeLayers.value.get(layerId);
     if (active) {
       activeLayers.value.delete(layerId);
       audioEngine.stopLayer(layerId);
-    } else {
-      activeLayers.value.set(layerId, {
-        layerId,
-        volume: layer.defaultVolume / 100,
-        isPlaying: true,
-      });
-      if (isPlaying.value) {
-        audioEngine.playLayer(layerId, layer.defaultVolume / 100);
-      }
+      return;
+    }
+
+    const variation = variationId
+      ? layerByVariationId(layer).find((entry) => entry.id === variationId)
+      : selectedVariation(layer);
+    if (!variation) return;
+
+    const sampleIndex = randomSampleIndex(variation.samples);
+    layerVariationSelections.value.set(layerId, variation.id);
+    loadLayerSample(layer, variation.id, sampleIndex);
+
+    const volume = layer.defaultVolume / 100;
+    activeLayers.value.set(layerId, {
+      layerId,
+      variationId: variation.id,
+      sampleIndex,
+      volume,
+      isPlaying: true,
+    });
+    if (isPlaying.value) {
+      audioEngine.playLayer(layerId, volume);
+    }
+  }
+
+  function setLayerVariation(layerId: string, variationId: string): void {
+    const layer = currentPack.value?.layers.find(
+      (entry) => entry.id === layerId,
+    );
+    if (!layer) return;
+    const variation = layerByVariationId(layer).find(
+      (entry) => entry.id === variationId,
+    );
+    if (!variation) return;
+
+    layerVariationSelections.value.set(layerId, variation.id);
+    const active = activeLayers.value.get(layerId);
+    if (!active) return;
+
+    audioEngine.stopLayer(layerId);
+    const sampleIndex = randomSampleIndex(variation.samples);
+    active.variationId = variation.id;
+    active.sampleIndex = sampleIndex;
+    loadLayerSample(layer, variation.id, sampleIndex);
+    if (isPlaying.value) {
+      audioEngine.playLayer(layerId, active.volume);
     }
   }
 
@@ -163,23 +315,11 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     isPlaying.value = true;
 
     for (const [layerId, active] of activeLayers.value) {
-      const layer = currentPack.value.layers.find((l) => l.id === layerId);
-      if (layer) {
-        audioEngine.playLayer(layerId, active.volume);
-      }
+      audioEngine.playLayer(layerId, active.volume);
     }
 
     if (musicEnabled.value) {
-      const mood = currentPack.value.moodStates.find(
-        (m) => m.state === currentMoodState.value,
-      );
-      if (mood?.musicFile) {
-        audioEngine.playMusic(intensity.value / 100);
-      }
-    }
-
-    if (weatherActive.value) {
-      audioEngine.playWeather(0.5);
+      playMoodMusic(false);
     }
   }
 
@@ -198,28 +338,14 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
 
   function setMoodState(state: MoodState): void {
     if (!currentPack.value) return;
-
-    currentMoodState.value = state;
-
-    if (!isPlaying.value || !musicEnabled.value) return;
-
-    const mood = currentPack.value.moodStates.find((m) => m.state === state);
-    if (mood?.musicFile) {
-      const musicKey = `music:${state}`;
-      const url = loadedAudioUrls.value.get(musicKey);
-      if (url) {
-        audioEngine.transitionToMusic(state, url, intensity.value / 100);
-      } else {
-        packManager.getPackAudioBlobs(currentPack.value.id).then((blobs) => {
-          const blobKey = `music/${mood.musicFile}`;
-          if (blobs[blobKey]) {
-            const newUrl = URL.createObjectURL(blobs[blobKey]);
-            loadedAudioUrls.value.set(musicKey, newUrl);
-            audioEngine.transitionToMusic(state, newUrl, intensity.value / 100);
-          }
-        });
-      }
+    if (
+      state === currentMoodState.value &&
+      isPlaying.value &&
+      musicEnabled.value
+    ) {
+      return;
     }
+    applyMood(state, true, true);
   }
 
   function setIntensity(value: number): void {
@@ -229,6 +355,11 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     }
   }
 
+  function setMasterVolume(volume: number): void {
+    masterVolume.value = Math.max(0, Math.min(100, volume));
+    audioEngine.setMasterVolume(masterVolume.value / 100);
+  }
+
   function setMusicEnabled(value: boolean): void {
     musicEnabled.value = value;
     if (!value) {
@@ -236,40 +367,11 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       return;
     }
     if (!isPlaying.value) return;
-
-    const mood = currentPack.value?.moodStates.find(
-      (m) => m.state === currentMoodState.value,
-    );
-    if (mood?.musicFile) {
-      audioEngine.playMusic(intensity.value / 100);
-    }
+    playMoodMusic(false);
   }
 
   function toggleMusic(): void {
     setMusicEnabled(!musicEnabled.value);
-  }
-
-  function setMasterVolume(volume: number): void {
-    masterVolume.value = Math.max(0, Math.min(100, volume));
-    audioEngine.setMasterVolume(masterVolume.value / 100);
-  }
-
-  function toggleWeather(weather: WeatherDef | null): void {
-    if (!currentPack.value) return;
-
-    if (weatherActive.value?.id === weather?.id) {
-      weatherActive.value = null;
-      audioEngine.stopWeather();
-    } else {
-      weatherActive.value = weather;
-      if (isPlaying.value && weather) {
-        const weatherKey = `weather:${weather.id}`;
-        const url = loadedAudioUrls.value.get(weatherKey);
-        if (url) {
-          audioEngine.playWeather(0.5);
-        }
-      }
-    }
   }
 
   function playOneShot(sfxId: string): void {
@@ -281,14 +383,18 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     }
   }
 
+  audioEngine.setMusicEndHandler(handleMusicEnd);
+
   return {
     currentPack,
     activeLayers,
+    layerVariationSelections,
     currentMoodState,
+    previousMoodState,
+    temporaryMusicActive,
     intensity,
     masterVolume,
     isPlaying,
-    weatherActive,
     musicEnabled,
     storedPacks,
     loading,
@@ -299,6 +405,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     deletePack,
     unloadPack,
     toggleLayer,
+    setLayerVariation,
     setLayerVolume,
     play,
     pause,
@@ -306,9 +413,8 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     setMoodState,
     setIntensity,
     setMasterVolume,
-    toggleWeather,
-    playOneShot,
     setMusicEnabled,
     toggleMusic,
+    playOneShot,
   };
 });

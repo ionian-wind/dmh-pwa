@@ -1,238 +1,254 @@
 <template>
-  <QPage class="pack-editor-page">
-    <div class="page-header">
-      <h1 class="page-title">
-        {{
-          isEditing
-            ? $t('ambientSoundPage.editPack')
-            : $t('ambientSoundPage.createPack')
-        }}
-      </h1>
-      <div class="header-actions">
-        <QBtn flat :label="$t('app.cancel')" @click="goBack" />
-        <QBtn
-          color="primary"
-          :label="$t('app.save')"
-          @click="savePack"
-          :disable="!isValid"
-        />
-      </div>
-    </div>
-
-    <div class="editor-content">
-      <div class="editor-section">
-        <h3>{{ $t('ambientSoundPage.packInfo') }}</h3>
-        <QInput
-          v-model="packData.name"
-          :label="$t('notes.fields.title')"
-          outlined
-          dense
-        />
-        <QInput
-          v-model="packData.description"
-          :label="$t('notes.fields.content')"
-          type="textarea"
-          outlined
-          rows="3"
-        />
-        <QSelect
-          v-model="packData.category"
-          :options="categoryOptions"
-          :label="$t('ambientSoundPage.category')"
-          outlined
-          dense
-        />
-        <div class="intensity-input">
-          <span
-            >{{ $t('ambientSoundPage.intensity') }}:
-            {{ packData.defaultIntensity }}%</span
-          >
-          <QSlider
-            v-model="packData.defaultIntensity"
-            :min="0"
-            :max="100"
-            color="primary"
+  <div class="pack-editor-page">
+    <BaseModal
+      :is-open="true"
+      modal-id="ambient-pack-editor"
+      :title="t('ambientSoundPage.createPack')"
+      :show-submit="true"
+      :show-cancel="true"
+      :submit-label="t('common.save')"
+      :cancel-label="t('common.cancel')"
+      :tabs="editorTabs"
+      @submit="savePack"
+      @cancel="goBack"
+    >
+      <template #main>
+        <div class="column q-gutter-md">
+          <QInput
+            v-model="packData.name"
+            :label="t('notes.fields.title')"
+            outlined
+            dense
           />
+          <QInput
+            v-model="packData.description"
+            :label="t('notes.fields.content')"
+            type="textarea"
+            outlined
+            rows="3"
+          />
+          <QSelect
+            v-model="packData.category"
+            :options="categoryOptions"
+            :label="t('ambientSoundPage.category')"
+            outlined
+            dense
+          />
+          <div>
+            <div class="text-caption text-grey-7 q-mb-xs">
+              {{ t('ambientSoundPage.intensity') }}:
+              {{ packData.defaultIntensity }}%
+            </div>
+            <QSlider
+              v-model="packData.defaultIntensity"
+              :min="0"
+              :max="100"
+              color="primary"
+            />
+          </div>
         </div>
-      </div>
+      </template>
 
-      <div class="editor-section">
+      <template #layers>
         <div class="section-header">
-          <h3>{{ $t('ambientSoundPage.ambientLayers') }}</h3>
+          <div class="text-subtitle1 text-weight-medium">
+            {{ t('ambientSoundPage.ambientLayers') }}
+          </div>
           <QBtn
             flat
             size="sm"
             color="primary"
-            :label="$t('app.add')"
+            :label="t('common.add')"
             @click="addLayer"
           />
         </div>
+
         <div class="items-list">
           <div
-            v-for="(layer, index) in packData.layers"
-            :key="index"
-            class="item-card"
+            v-for="layer in packData.layers"
+            :key="layer.id"
+            class="item-card column"
           >
             <div class="item-fields">
               <QInput
                 v-model="layer.name"
-                :label="$t('ambientSoundPage.name')"
+                :label="t('ambientSoundPage.name')"
                 dense
                 outlined
               />
               <QInput
-                v-model="layer.icon"
-                :label="$t('ambientSoundPage.icon')"
+                v-model="layer.category"
+                :label="t('ambientSoundPage.category')"
                 dense
                 outlined
-                style="width: 80px"
+              />
+              <IconPicker
+                v-model="layer.icon"
+                :icons="MAP_MARKER_ICONS"
+                collection="ra"
+                :search-placeholder="t('ambientSoundPage.searchIcons')"
+                :no-icon-label="t('ambientSoundPage.noIcon')"
               />
               <QInput
                 v-model.number="layer.defaultVolume"
                 type="number"
-                :label="$t('ambientSoundPage.volume')"
+                :label="t('ambientSoundPage.volume')"
                 dense
                 outlined
-                style="width: 100px"
+                class="number-input"
               />
-            </div>
-            <div class="item-file">
               <QBtn
                 flat
-                size="sm"
-                :label="
-                  layer.file
-                    ? getFileName(layer.file)
-                    : $t('ambientSoundPage.selectFile')
-                "
-                @click="pickLayerFile(index)"
+                dense
+                round
+                color="negative"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
+                @click="removeLayer(layer.id)"
+              >
+                <IconTrash :size="16" />
+              </QBtn>
+            </div>
+
+            <div class="variations-list q-mt-sm">
+              <div
+                v-for="variation in layer.variations"
+                :key="variation.id"
+                class="variation-card"
+              >
+                <div class="item-fields">
+                  <QInput
+                    v-model="variation.name"
+                    :label="t('ambientSoundPage.variation')"
+                    dense
+                    outlined
+                  />
+                  <QBtn
+                    flat
+                    dense
+                    :label="t('ambientSoundPage.addSample')"
+                    @click="addLayerSamples(layer, variation)"
+                  />
+                  <QBtn
+                    flat
+                    dense
+                    round
+                    color="negative"
+                    :title="t('common.delete')"
+                    :aria-label="t('common.delete')"
+                    @click="removeVariation(layer, variation.id)"
+                  >
+                    <IconTrash :size="16" />
+                  </QBtn>
+                </div>
+                <div
+                  v-for="(sample, index) in variation.samples"
+                  :key="`${sample.file}-${index}`"
+                  class="sample-row"
+                >
+                  <span class="ellipsis">{{ sample.file }}</span>
+                  <QBtn
+                    flat
+                    dense
+                    round
+                    color="negative"
+                    :title="t('common.delete')"
+                    :aria-label="t('common.delete')"
+                    @click="removeSample(variation, index)"
+                  >
+                    <IconX :size="14" />
+                  </QBtn>
+                </div>
+              </div>
+              <QBtn
+                flat
+                dense
+                :label="t('ambientSoundPage.addVariation')"
+                @click="addVariation(layer)"
               />
             </div>
-            <QBtn flat round size="sm" @click="removeLayer(index)">
-              <IconX size="18" />
-            </QBtn>
           </div>
           <div v-if="packData.layers.length === 0" class="empty-message">
-            {{ $t('ambientSoundPage.noLayers') }}
+            {{ t('ambientSoundPage.noLayers') }}
           </div>
         </div>
-      </div>
+      </template>
 
-      <div class="editor-section">
+      <template #oneShots>
         <div class="section-header">
-          <h3>{{ $t('ambientSoundPage.oneShots') }}</h3>
+          <div class="text-subtitle1 text-weight-medium">
+            {{ t('ambientSoundPage.oneShots') }}
+          </div>
           <QBtn
             flat
             size="sm"
             color="primary"
-            :label="$t('app.add')"
+            :label="t('common.add')"
             @click="addOneShot"
           />
         </div>
+
         <div class="items-list">
-          <div
-            v-for="(sfx, index) in packData.oneShots"
-            :key="index"
-            class="item-card"
-          >
+          <div v-for="sfx in packData.oneShots" :key="sfx.id" class="item-card">
             <div class="item-fields">
               <QInput
                 v-model="sfx.name"
-                :label="$t('ambientSoundPage.name')"
+                :label="t('ambientSoundPage.name')"
                 dense
                 outlined
+              />
+              <IconPicker
+                v-model="sfx.icon"
+                :icons="MAP_MARKER_ICONS"
+                collection="ra"
+                :search-placeholder="t('ambientSoundPage.searchIcons')"
+                :no-icon-label="t('ambientSoundPage.noIcon')"
               />
               <QSelect
                 v-model="sfx.category"
                 :options="sfxCategoryOptions"
-                :label="$t('ambientSoundPage.category')"
+                :label="t('ambientSoundPage.category')"
                 dense
                 outlined
-                style="width: 140px"
               />
               <QInput
                 v-model.number="sfx.volume"
                 type="number"
-                :label="$t('ambientSoundPage.volume')"
+                :label="t('ambientSoundPage.volume')"
                 dense
                 outlined
-                style="width: 100px"
+                class="number-input"
               />
             </div>
             <div class="item-file">
               <QBtn
                 flat
                 size="sm"
-                :label="
-                  sfx.file
-                    ? getFileName(sfx.file)
-                    : $t('ambientSoundPage.selectFile')
-                "
-                @click="pickSfxFile(index)"
+                :label="sfx.file || t('ambientSoundPage.selectFile')"
+                @click="pickOneShotFile(sfx)"
               />
             </div>
-            <QBtn flat round size="sm" @click="removeOneShot(index)">
-              <IconX size="18" />
+            <QBtn
+              flat
+              round
+              size="sm"
+              :title="t('common.delete')"
+              :aria-label="t('common.delete')"
+              @click="removeOneShot(sfx.id)"
+            >
+              <IconX :size="18" />
             </QBtn>
           </div>
         </div>
-      </div>
+      </template>
 
-      <div class="editor-section">
+      <template #moods>
         <div class="section-header">
-          <h3>{{ $t('ambientSoundPage.weather') }}</h3>
-          <QBtn
-            flat
-            size="sm"
-            color="primary"
-            :label="$t('app.add')"
-            @click="addWeather"
-          />
-        </div>
-        <div class="items-list">
-          <div
-            v-for="(weather, index) in packData.weatherSystems"
-            :key="index"
-            class="item-card"
-          >
-            <div class="item-fields">
-              <QInput
-                v-model="weather.name"
-                :label="$t('ambientSoundPage.name')"
-                dense
-                outlined
-              />
-              <QInput
-                v-model="weather.icon"
-                :label="$t('ambientSoundPage.icon')"
-                dense
-                outlined
-                style="width: 80px"
-              />
-            </div>
-            <div class="item-file">
-              <QBtn
-                flat
-                size="sm"
-                :label="
-                  weather.file
-                    ? getFileName(weather.file)
-                    : $t('ambientSoundPage.selectFile')
-                "
-                @click="pickWeatherFile(index)"
-              />
-            </div>
-            <QBtn flat round size="sm" @click="removeWeather(index)">
-              <IconX size="18" />
-            </QBtn>
+          <div class="text-subtitle1 text-weight-medium">
+            {{ t('ambientSoundPage.moodStates') }}
           </div>
         </div>
-      </div>
 
-      <div class="editor-section">
-        <div class="section-header">
-          <h3>{{ $t('ambientSoundPage.moodStates') }}</h3>
-        </div>
         <div class="mood-states-grid">
           <div
             v-for="mood in packData.moodStates"
@@ -240,32 +256,62 @@
             class="mood-state-card"
           >
             <div class="mood-state-header">
-              <span class="mood-icon">{{ mood.icon }}</span>
+              <IconPicker
+                v-model="mood.icon"
+                :icons="MAP_MARKER_ICONS"
+                collection="ra"
+                :search-placeholder="t('ambientSoundPage.searchIcons')"
+                :no-icon-label="t('ambientSoundPage.noIcon')"
+              />
               <QInput v-model="mood.name" dense outlined />
+              <QSelect
+                v-model="mood.mode"
+                :options="moodModeOptions"
+                :label="t('ambientSoundPage.mode')"
+                dense
+                outlined
+              />
+            </div>
+            <div
+              v-for="(music, index) in mood.musicFiles"
+              :key="`${music.file}-${index}`"
+              class="sample-row"
+            >
+              <span class="ellipsis">{{ music.file }}</span>
+              <QBtn
+                flat
+                dense
+                round
+                color="negative"
+                :title="t('common.delete')"
+                :aria-label="t('common.delete')"
+                @click="removeMoodFile(mood, index)"
+              >
+                <IconX :size="14" />
+              </QBtn>
             </div>
             <QBtn
               flat
               size="sm"
-              :label="
-                mood.musicFile
-                  ? getFileName(mood.musicFile)
-                  : $t('ambientSoundPage.selectMusic')
-              "
-              @click="pickMusicFile(mood.state)"
+              :label="t('ambientSoundPage.addMusic')"
+              @click="addMoodFiles(mood)"
             />
           </div>
         </div>
-      </div>
-    </div>
-  </QPage>
+      </template>
+    </BaseModal>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { IconTrash, IconX } from '@tabler/icons-vue';
+import BaseModal from '@/components/common/BaseModal.vue';
+import IconPicker from '@/components/common/IconPicker.vue';
+import { MAP_MARKER_ICONS } from '@/maps/icons';
 import { confirm } from '@/dialogs';
-import { IconX, IconDownload } from '@tabler/icons-vue';
 import { fileHandler } from '@/utils/files';
 import {
   saveSoundPack,
@@ -273,48 +319,67 @@ import {
 } from '@/ambient-sound/utils/packManager';
 import type {
   LayerDef,
-  OneShotDef,
-  WeatherDef,
+  MoodMode,
+  MoodState,
   MoodStateDef,
+  OneShotDef,
   SoundPackManifest,
 } from '@/ambient-sound/types';
 
-const router = useRouter();
-const { t } = useI18n();
-
-const isEditing = ref(false);
-
-interface LayerFormData extends LayerDef {
-  fileHandle?: FileSystemFileHandle;
-  fileBlob?: Blob;
+interface FileForm {
+  file: string;
+  blob?: Blob;
+  handle?: FileSystemFileHandle;
 }
 
-interface SfxFormData extends OneShotDef {
-  fileHandle?: FileSystemFileHandle;
-  fileBlob?: Blob;
+interface VariationForm {
+  id: string;
+  name: string;
+  samples: FileForm[];
 }
 
-interface WeatherFormData extends WeatherDef {
-  fileHandle?: FileSystemFileHandle;
-  fileBlob?: Blob;
+interface LayerFormData {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  defaultVolume: number;
+  loop: boolean;
+  variations: VariationForm[];
 }
 
-interface MoodFormData extends MoodStateDef {
-  musicFileHandle?: FileSystemFileHandle;
-  musicFileBlob?: Blob;
+interface OneShotFormData {
+  id: string;
+  name: string;
+  icon: string;
+  file: string;
+  category: OneShotDef['category'];
+  volume: number;
+  blob?: Blob;
+  handle?: FileSystemFileHandle;
+}
+
+interface MoodFormData {
+  state: MoodState;
+  name: string;
+  icon: string;
+  mode: MoodMode;
+  musicFiles: FileForm[];
 }
 
 interface PackFormData {
   id: string;
   name: string;
   description: string;
-  category: 'fantasy' | 'scifi' | 'horror' | 'modern' | 'custom';
+  category: SoundPackManifest['category'];
   defaultIntensity: number;
   layers: LayerFormData[];
-  oneShots: SfxFormData[];
-  weatherSystems: WeatherFormData[];
+  oneShots: OneShotFormData[];
   moodStates: MoodFormData[];
 }
+
+const { t } = useI18n();
+const router = useRouter();
 
 const packData = ref<PackFormData>({
   id: '',
@@ -324,14 +389,44 @@ const packData = ref<PackFormData>({
   defaultIntensity: 50,
   layers: [],
   oneShots: [],
-  weatherSystems: [],
   moodStates: [
-    { state: 'explore', name: 'Explore', icon: '🔍', musicFile: '' },
-    { state: 'combat', name: 'Combat', icon: '⚔️', musicFile: '' },
-    { state: 'victory', name: 'Victory', icon: '🏆', musicFile: '' },
-    { state: 'rest', name: 'Rest', icon: '🔥', musicFile: '' },
+    {
+      state: 'explore',
+      name: 'Explore',
+      icon: 'ra-horn-call',
+      mode: 'continual',
+      musicFiles: [],
+    },
+    {
+      state: 'combat',
+      name: 'Combat',
+      icon: 'ra-crossed-swords',
+      mode: 'continual',
+      musicFiles: [],
+    },
+    {
+      state: 'victory',
+      name: 'Victory',
+      icon: 'ra-trophy',
+      mode: 'temporary',
+      musicFiles: [],
+    },
+    {
+      state: 'rest',
+      name: 'Rest',
+      icon: 'ra-campfire',
+      mode: 'continual',
+      musicFiles: [],
+    },
   ],
 });
+
+const editorTabs = computed(() => [
+  { name: 'main', label: t('ambientSoundPage.packInfo') },
+  { name: 'layers', label: t('ambientSoundPage.ambientLayers') },
+  { name: 'oneShots', label: t('ambientSoundPage.oneShots') },
+  { name: 'moods', label: t('ambientSoundPage.moodStates') },
+]);
 
 const categoryOptions = [
   { label: 'Fantasy', value: 'fantasy' },
@@ -348,226 +443,175 @@ const sfxCategoryOptions = [
   { label: 'Weather', value: 'weather' },
 ];
 
-const isValid = computed(() => {
-  return packData.value.name.trim().length > 0;
-});
+const moodModeOptions = computed(() => [
+  { label: t('ambientSoundPage.continual'), value: 'continual' },
+  { label: t('ambientSoundPage.temporary'), value: 'temporary' },
+]);
 
-function getFileName(path: string): string {
-  return path.split('/').pop() || path;
-}
-
-async function pickLayerFile(index: number) {
+async function pickFiles(): Promise<FileForm[]> {
   if (!fileHandler.isSupported()) {
     console.warn('File System API not supported');
-    return;
+    return [];
   }
   const files = await fileHandler.pickAudioFiles();
-  if (files.length > 0) {
-    const file = files[0].file;
-    packData.value.layers[index].fileHandle =
-      files[0].source.kind === 'handle'
-        ? (files[0].source as any).handle
-        : undefined;
-    packData.value.layers[index].fileBlob =
-      files[0].source.kind === 'blob'
-        ? (files[0].source as any).blob
-        : undefined;
-    packData.value.layers[index].file = `layers/${file.name}`;
-  }
-}
-
-async function pickSfxFile(index: number) {
-  if (!fileHandler.isSupported()) {
-    console.warn('File System API not supported');
-    return;
-  }
-  const files = await fileHandler.pickAudioFiles();
-  if (files.length > 0) {
-    const file = files[0].file;
-    packData.value.oneShots[index].fileHandle =
-      files[0].source.kind === 'handle'
-        ? (files[0].source as any).handle
-        : undefined;
-    packData.value.oneShots[index].fileBlob =
-      files[0].source.kind === 'blob'
-        ? (files[0].source as any).blob
-        : undefined;
-    packData.value.oneShots[index].file = `sfx/${file.name}`;
-  }
-}
-
-async function pickWeatherFile(index: number) {
-  if (!fileHandler.isSupported()) {
-    console.warn('File System API not supported');
-    return;
-  }
-  const files = await fileHandler.pickAudioFiles();
-  if (files.length > 0) {
-    const file = files[0].file;
-    packData.value.weatherSystems[index].fileHandle =
-      files[0].source.kind === 'handle'
-        ? (files[0].source as any).handle
-        : undefined;
-    packData.value.weatherSystems[index].fileBlob =
-      files[0].source.kind === 'blob'
-        ? (files[0].source as any).blob
-        : undefined;
-    packData.value.weatherSystems[index].file = `weather/${file.name}`;
-  }
-}
-
-async function pickMusicFile(moodState: string) {
-  if (!fileHandler.isSupported()) {
-    console.warn('File System API not supported');
-    return;
-  }
-  const files = await fileHandler.pickAudioFiles();
-  if (files.length > 0) {
-    const file = files[0].file;
-    const mood = packData.value.moodStates.find((m) => m.state === moodState);
-    if (mood) {
-      mood.musicFileHandle =
-        files[0].source.kind === 'handle'
-          ? (files[0].source as any).handle
-          : undefined;
-      mood.musicFileBlob =
-        files[0].source.kind === 'blob'
-          ? (files[0].source as any).blob
-          : undefined;
-      mood.musicFile = `music/${file.name}`;
-    }
-  }
+  return files.map(({ file, source }) => ({
+    file: file.name,
+    blob: source.kind === 'blob' ? source.blob : undefined,
+    handle: source.kind === 'handle' ? source.handle : undefined,
+  }));
 }
 
 function addLayer() {
   packData.value.layers.push({
     id: `layer_${Date.now()}`,
     name: '',
-    icon: '🔊',
-    file: '',
+    icon: 'ra-horn-call',
+    category: 'Ambient',
     defaultVolume: 50,
     loop: true,
+    variations: [
+      {
+        id: `variation_${Date.now()}`,
+        name: t('ambientSoundPage.defaultVariation'),
+        samples: [],
+      },
+    ],
   });
 }
 
-function removeLayer(index: number) {
-  packData.value.layers.splice(index, 1);
+function removeLayer(layerId: string) {
+  packData.value.layers = packData.value.layers.filter(
+    (layer) => layer.id !== layerId,
+  );
+}
+
+function addVariation(layer: LayerFormData) {
+  layer.variations.push({
+    id: `variation_${Date.now()}`,
+    name: '',
+    samples: [],
+  });
+}
+
+function removeVariation(layer: LayerFormData, variationId: string) {
+  layer.variations = layer.variations.filter(
+    (variation) => variation.id !== variationId,
+  );
+}
+
+async function addLayerSamples(layer: LayerFormData, variation: VariationForm) {
+  const files = await pickFiles();
+  variation.samples.push(...files);
+}
+
+function removeSample(variation: VariationForm, index: number) {
+  variation.samples.splice(index, 1);
 }
 
 function addOneShot() {
   packData.value.oneShots.push({
     id: `sfx_${Date.now()}`,
     name: '',
-    icon: '🔔',
+    icon: 'ra-bell',
     file: '',
     category: 'exploration',
     volume: 80,
   });
 }
 
-function removeOneShot(index: number) {
-  packData.value.oneShots.splice(index, 1);
+function removeOneShot(sfxId: string) {
+  packData.value.oneShots = packData.value.oneShots.filter(
+    (sfx) => sfx.id !== sfxId,
+  );
 }
 
-function addWeather() {
-  packData.value.weatherSystems.push({
-    id: `weather_${Date.now()}`,
-    name: '',
-    icon: '🌧️',
-    file: '',
-    affectsLayers: [],
-  });
+async function pickOneShotFile(sfx: OneShotFormData) {
+  const [file] = await pickFiles();
+  if (!file) return;
+  sfx.file = file.file;
+  sfx.blob = file.blob;
+  sfx.handle = file.handle;
 }
 
-function removeWeather(index: number) {
-  packData.value.weatherSystems.splice(index, 1);
+async function addMoodFiles(mood: MoodFormData) {
+  const files = await pickFiles();
+  mood.musicFiles.push(...files);
+}
+
+function removeMoodFile(mood: MoodFormData, index: number) {
+  mood.musicFiles.splice(index, 1);
 }
 
 function goBack() {
   router.push('/ambient-sound');
 }
 
+async function collectAudio(
+  audioFiles: Map<string, Blob>,
+  folder: string,
+  file: FileForm,
+) {
+  if (file.blob) {
+    audioFiles.set(`${folder}/${file.file}`, file.blob);
+    return;
+  }
+  if (file.handle) {
+    const resolved = await file.handle.getFile();
+    audioFiles.set(`${folder}/${file.file}`, resolved);
+  }
+}
+
 async function savePack() {
   const audioFiles: Map<string, Blob> = new Map();
 
   for (const layer of packData.value.layers) {
-    if (layer.fileBlob) {
-      const fileName = layer.file?.split('/').pop() || `${layer.id}.mp3`;
-      audioFiles.set(`layers/${fileName}`, layer.fileBlob);
-    } else if (layer.fileHandle) {
-      const file = await layer.fileHandle.getFile();
-      audioFiles.set(`layers/${file.name}`, file);
-    }
-  }
-
-  for (const sfx of packData.value.oneShots) {
-    if (sfx.fileBlob) {
-      const fileName = sfx.file?.split('/').pop() || `${sfx.id}.mp3`;
-      audioFiles.set(`sfx/${fileName}`, sfx.fileBlob);
-    } else if (sfx.fileHandle) {
-      const file = await sfx.fileHandle.getFile();
-      audioFiles.set(`sfx/${file.name}`, file);
-    }
-  }
-
-  for (const weather of packData.value.weatherSystems) {
-    if (weather.fileBlob) {
-      const fileName = weather.file?.split('/').pop() || `${weather.id}.mp3`;
-      audioFiles.set(`weather/${fileName}`, weather.fileBlob);
-    } else if (weather.fileHandle) {
-      const file = await weather.fileHandle.getFile();
-      audioFiles.set(`weather/${file.name}`, file);
-    }
-  }
-
-  for (const mood of packData.value.moodStates) {
-    if (mood.musicFileBlob) {
-      const fileName = mood.musicFile?.split('/').pop() || `${mood.state}.mp3`;
-      audioFiles.set(`music/${fileName}`, mood.musicFileBlob);
-    } else if (mood.musicFileHandle) {
-      const file = await mood.musicFileHandle.getFile();
-      if (mood.musicFile) {
-        audioFiles.set(`music/${file.name}`, file);
+    for (const variation of layer.variations) {
+      for (const sample of variation.samples) {
+        await collectAudio(audioFiles, 'layers', sample);
       }
+    }
+  }
+  for (const sfx of packData.value.oneShots) {
+    if (sfx.file) await collectAudio(audioFiles, 'sfx', sfx);
+  }
+  for (const mood of packData.value.moodStates) {
+    for (const music of mood.musicFiles) {
+      await collectAudio(audioFiles, 'music', music);
     }
   }
 
   const packId = packData.value.id || `pack_${Date.now()}`;
 
-  const cleanLayers: LayerDef[] = packData.value.layers.map((l) => ({
-    id: l.id,
-    name: l.name,
-    icon: l.icon,
-    file: l.file,
-    defaultVolume: l.defaultVolume,
-    loop: l.loop,
+  const layers: LayerDef[] = packData.value.layers.map((layer) => ({
+    id: layer.id,
+    name: layer.name,
+    icon: layer.icon,
+    category: layer.category,
+    defaultVolume: layer.defaultVolume,
+    loop: layer.loop,
+    variations: layer.variations.map((variation) => ({
+      id: variation.id,
+      name: variation.name,
+      samples: variation.samples.map((sample) => sample.file),
+    })),
   }));
 
-  const cleanOneShots: OneShotDef[] = packData.value.oneShots.map((s) => ({
-    id: s.id,
-    name: s.name,
-    icon: s.icon,
-    file: s.file,
-    category: s.category,
-    volume: s.volume,
+  const oneShots: OneShotDef[] = packData.value.oneShots.map((sfx) => ({
+    id: sfx.id,
+    name: sfx.name,
+    icon: sfx.icon,
+    file: sfx.file,
+    category: sfx.category,
+    volume: sfx.volume,
   }));
 
-  const cleanWeather: WeatherDef[] = packData.value.weatherSystems.map((w) => ({
-    id: w.id,
-    name: w.name,
-    icon: w.icon,
-    file: w.file,
-    affectsLayers: w.affectsLayers,
+  const moodStates: MoodStateDef[] = packData.value.moodStates.map((mood) => ({
+    state: mood.state,
+    name: mood.name,
+    icon: mood.icon,
+    mode: mood.mode,
+    musicFiles: mood.musicFiles.map((music) => music.file),
   }));
-
-  const cleanMoodStates: MoodStateDef[] = packData.value.moodStates.map(
-    (m) => ({
-      state: m.state as 'explore' | 'combat' | 'victory' | 'rest',
-      name: m.name,
-      icon: m.icon,
-      musicFile: m.musicFile,
-    }),
-  );
 
   const manifest: SoundPackManifest = {
     version: '1.0',
@@ -576,15 +620,12 @@ async function savePack() {
     description: packData.value.description,
     category: packData.value.category,
     defaultIntensity: packData.value.defaultIntensity,
-    layers: cleanLayers,
-    oneShots: cleanOneShots,
-    weatherSystems: cleanWeather,
-    moodStates: cleanMoodStates,
+    layers,
+    oneShots,
+    moodStates,
   };
 
   await saveSoundPack(manifest, audioFiles);
-  console.log('Pack saved to IndexedDB:', manifest.id);
-
   await showDownloadOption(manifest.id);
 }
 
@@ -609,133 +650,102 @@ async function downloadPack(packId: string) {
 
 <style scoped>
 .pack-editor-page {
-  padding: 16px;
   max-width: 900px;
   margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.editor-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.editor-section {
-  background: #f5f5f5;
-  padding: 16px;
-  border-radius: 8px;
-}
-
-.editor-section h3 {
-  margin: 0 0 16px;
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.section-header h3 {
-  margin: 0;
-}
-
-.editor-section .QInput,
-.editor-section .QSelect {
-  margin-bottom: 12px;
-}
-
-.intensity-input {
-  margin-top: 8px;
-}
-
-.intensity-input span {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #666;
+  margin-bottom: 1rem;
 }
 
 .items-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .item-card {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: center;
-  background: white;
-  padding: 8px;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+}
+
+.item-card.column {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .item-fields {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   flex: 1;
+  align-items: center;
 }
 
-.item-fields .QInput,
-.item-fields .QSelect {
-  margin: 0;
+.item-fields > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-fields .number-input {
+  max-width: 96px;
 }
 
 .item-file {
   min-width: 120px;
 }
 
+.variations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.variation-card {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.5rem;
+}
+
+.sample-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+  padding: 0.15rem 0;
+}
+
 .empty-message {
   text-align: center;
-  color: #999;
-  padding: 16px;
+  color: var(--color-text-light);
+  padding: 1rem;
 }
 
 .mood-states-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
 }
 
 .mood-state-card {
-  background: white;
-  padding: 12px;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .mood-state-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.mood-icon {
-  font-size: 24px;
+  gap: 0.5rem;
 }
 </style>

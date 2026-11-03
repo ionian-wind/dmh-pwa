@@ -5,7 +5,9 @@ const storeMock = vi.hoisted(() => ({
   currentPack: null as any,
   isPlaying: false,
   activeLayers: new Map<string, any>(),
+  layerVariationSelections: new Map<string, string>(),
   toggleLayer: vi.fn(),
+  setLayerVariation: vi.fn(),
   setLayerVolume: vi.fn(),
 }));
 
@@ -24,14 +26,29 @@ describe('AmbientMixer', () => {
           id: 'rain',
           name: 'Rain',
           icon: '🌧',
-          file: 'rain.mp3',
+          category: 'Weather',
           defaultVolume: 50,
+          variations: [
+            { id: 'light', name: 'Light rain', samples: ['light.mp3'] },
+            { id: 'heavy', name: 'Heavy rain', samples: ['heavy.mp3'] },
+          ],
         },
       ],
     };
+    storeMock.layerVariationSelections = new Map([['rain', 'light']]);
     storeMock.activeLayers = new Map([
-      ['rain', { layerId: 'rain', volume: 0.5, isPlaying: true }],
+      [
+        'rain',
+        {
+          layerId: 'rain',
+          variationId: 'light',
+          sampleIndex: 0,
+          volume: 0.5,
+          isPlaying: true,
+        },
+      ],
     ]);
+    storeMock.setLayerVariation.mockClear();
   });
 
   it('uses a contrast slider colour and wires layer controls', async () => {
@@ -45,8 +62,14 @@ describe('AmbientMixer', () => {
 
     expect(wrapper.find('.section-header button').exists()).toBe(false);
 
+    expect(wrapper.text()).toContain('Weather');
     await card.trigger('click');
-    expect(storeMock.toggleLayer).toHaveBeenCalledWith('rain');
+    expect(storeMock.toggleLayer).toHaveBeenCalledWith('rain', 'light');
+
+    const variationSelect = wrapper.findComponent(quasarStubs.QSelect);
+    expect(variationSelect.exists()).toBe(true);
+    variationSelect.vm.$emit('update:modelValue', 'heavy');
+    expect(storeMock.setLayerVariation).toHaveBeenCalledWith('rain', 'heavy');
 
     slider.vm.$emit('update:modelValue', 0.25);
     expect(storeMock.setLayerVolume).toHaveBeenCalledWith('rain', 0.25);

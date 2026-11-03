@@ -933,6 +933,18 @@ Add route to router:
 - Ambient music can be disabled independently of ambient layers. Disabling it
   stops the mood-music track; re-enabling it resumes the current mood music
   while playback is active.
+- Ambient layers are grouped by category. Each layer has one or more variations,
+  each with its own sample pool; selecting a variation switches the samples used
+  and only one sample per layer plays at a time. Weather is represented as a
+  normal ambient layer category rather than a separate panel.
+- Mood states support `continual` and `temporary` modes. Temporary music returns
+  to the previous mood after the track ends; continual music keeps looping.
+  Each mood can have several music files and one is chosen randomly. Clicking
+  the active mood does not restart its music.
+- One-shot effects are grouped by category. The pack editor is a standard
+  tabbed `BaseModal` with separate tabs for main info, ambient layers,
+  one-shots and mood states. Layer, one-shot and mood icons use the shared
+  `IconPicker` with the RPG Awesome icon set.
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`
   rows; clicking a pack loads it and clicking the active pack unloads it.
   Each row has a hover delete action with confirmation. **Create Pack** and
