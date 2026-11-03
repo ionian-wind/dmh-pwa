@@ -96,6 +96,27 @@ associated with their source package and are removed if that package is removed.
 Removing a package removes its scenes, ambience entries and one-shot entries,
 and stops playback if that package is currently active.
 
+### 2.7 Scene-to-entity links
+
+Scenes can be linked to local DMH entities:
+
+- **locations** — map locations;
+- **modules**;
+- **encounters**;
+- **characters**.
+
+Links are local user associations, not package content. They are not stored in
+`pack.json` and are not exported inside the `.spk` archive. A scene can be linked
+to several entities, and one entity can show several linked scenes.
+
+Links reference the scene by `packageId + sceneId`. They survive package reloads
+as long as those IDs remain stable. Removing a package removes its scene links;
+deleting a linked entity removes the corresponding links.
+
+Links are shortcuts, not automatic playback rules: opening an entity shows its
+linked scenes, and selecting one starts that scene. Automatic scene switching is
+a separate opt-in feature.
+
 ## 3. Architecture
 
 ### 3.1 Directory Structure
@@ -280,6 +301,23 @@ export interface SceneDef {
   /** Music owned by this scene; never shared with another scene. */
   music: SceneMusic;
 }
+
+/** Local user data; never stored inside the package manifest. */
+export type SceneLinkEntityType =
+  | 'location'
+  | 'module'
+  | 'encounter'
+  | 'character';
+
+export interface SceneEntityLink {
+  id: string;
+  packageId: string;
+  sceneId: string;
+  entityType: SceneLinkEntityType;
+  entityId: string;
+  createdAt: number;
+  updatedAt: number;
+}
 ```
 
 > Sections 5–12 below are earlier implementation sketches. Where they conflict
@@ -298,7 +336,8 @@ The ambient-sound area has three primary surfaces:
   grouped by package and category. Entries are content; they do not play just
   because they are visible.
 - **Scene detail/editor** — the mix for one package-owned scene: active
-  ambience entries, variations, volumes, one-shot selection, intensity and music.
+  ambience entries, variations, volumes, one-shot selection, intensity, music
+  and linked DMH entities.
 
 A persistent **Now Playing / sound control panel** shows the current scene and
 provides playback, quick volume and expand/detach controls.
@@ -327,10 +366,23 @@ provides playback, quick volume and expand/detach controls.
 - One-shots tab: selected one-shot entries available to trigger in the scene.
 - Music tab: files owned by this scene. Music is always scene-bound; it cannot
   be reused as a global mood track.
+- Links tab: linked locations, modules, encounters and characters.
 - Uses the standard tabbed `BaseModal`/editor pattern and the shared
   `IconPicker`.
 
-### 4.5 Playback controls
+### 4.5 Entity links
+
+Links are available from both sides:
+
+- **Scene detail/editor** — a “Linked to” section lists linked locations,
+  modules, encounters and characters, with add/remove controls.
+- **Location, module, encounter and character views** — a “Scenes” section lists
+  scenes linked to that entity. Selecting a linked scene starts it.
+- Removing a link affects only the local association; it does not modify the
+  package or delete the scene.
+- Deleting a package or linked entity removes the affected links.
+
+### 4.6 Playback controls
 
 - Scene play/pause and stop.
 - Master, music, ambience and one-shot volume buses.
@@ -910,24 +962,26 @@ Add route to router:
 
 - **Custom Packs**: Users create their own ambient mixes
 - **Audio File Import**: Upload custom sounds (integrate with existing jukebox)
-- **Scene Transitions**: Link sound pack to campaign locations/notes
-- **Timer Integration**: Auto-change mood states on encounter timer
+- **Scene Links**: Link scenes to locations, modules, encounters and characters
+- **Timer Integration**: Opt-in auto-start of a linked scene on encounter start
 - **Hotkeys**: Keyboard shortcuts for common SFX
 - **Mobile Optimization**: Larger touch targets, haptic feedback on SFX
 
 ## 11. Acceptance Criteria
 
-1. ✅ User can select from multiple sound packs (Forest, Tavern, Dungeon, etc.)
-2. ✅ User can toggle ambient layers on/off with individual volume control
-3. ✅ User can switch between mood states (Explore/Combat/Victory/Rest)
+1. ✅ Importing a package adds its scenes to the scenes list and its ambience and
+   one-shot entries to the global gallery.
+2. ✅ Selecting a scene applies its ambience variations, volumes, one-shot
+   selection and intensity.
+3. ✅ Scene music is owned by the scene and never shared with another scene.
 4. ✅ One-shot SFX play immediately on button press regardless of ambient
-   play/pause, scene, music or ambient-volume state
-5. ✅ Intensity slider affects audio complexity in real-time
-6. ✅ Weather system modifies ambient sounds appropriately
-7. ✅ Audio continues playing in background (when navigating away)
-8. ✅ Settings persist across sessions
-9. ✅ Works offline with cached audio
-10. ✅ Smooth audio transitions (no abrupt cuts)
+   play/pause, scene, music or ambient-volume state.
+5. ✅ A scene can be linked to locations, modules, encounters and characters.
+6. ✅ Linked scenes appear from both the scene side and the entity side.
+7. ✅ Audio continues playing in background when navigating away.
+8. ✅ Settings and local scene links persist across sessions.
+9. ✅ Works offline with cached audio.
+10. ✅ Scene switches use smooth audio transitions.
 
 ## 12. Implementation Notes
 
@@ -1148,15 +1202,17 @@ scenes and per-layer controls feel coherent.
 
 ### 14.4 DMH-specific extension: link scenes to entities
 
-Pocket Bard stops at scenes. DMH can connect them to the session workflow:
+Pocket Bard stops at scenes. DMH connects package scenes to local campaign data:
 
-- attach a scene to an **encounter** and offer “Start scene” when combat begins;
-- attach a scene to a **map location** or **note**;
-- offer mood transitions on combat start, combat end and victory;
-- always ask for confirmation before an automatic switch.
+- **locations** — map locations;
+- **modules**;
+- **encounters**;
+- **characters**.
 
-This is the main differentiator and should be treated as a later phase, after
-the scene model is stable.
+A scene can be linked to multiple entities, and an entity can list multiple
+linked scenes. Links are local user data stored outside the package, keyed by
+`packageId + sceneId`. Selecting a linked scene starts it; automatic switching
+on entity open or combat start is a separate opt-in feature.
 
 ### 14.5 Suggested delivery order
 
@@ -1165,7 +1221,7 @@ the scene model is stable.
 | **P0**   | Now Playing bar; library tabs/category chips; 3-state layer controls; audio settings buses | 3–5 days     |
 | **P1**   | Scene model + save/load/duplicate; scene library grid; scene detail checklist              | 1–2 weeks    |
 | **P2**   | Pack credits; search/favourites; drag reorder; scene crossfade                             | ~1 week      |
-| **P3**   | Encounter/map/note scene links; Party EQ/ducking; scene export/import                      | later        |
+| **P3**   | Location/module/encounter/character scene links; Party EQ/ducking; scene export/import     | later        |
 
 ### 14.6 Architectural notes
 
@@ -1181,6 +1237,8 @@ the scene model is stable.
   scene-level fade/crossfade helpers.
 - Mount the Now Playing bar in the layout shell, not inside
   `AmbientSoundView.vue`, so it survives route changes.
+- Store scene-to-entity links locally, outside the package manifest, keyed by
+  `packageId + sceneId` and the target entity type/id.
 - Keep the local-first model: no marketplace, accounts or remote scene sharing
   in the first iteration.
 
