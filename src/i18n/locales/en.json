@@ -745,6 +745,10 @@
   "ambientSoundPage": {
     "title": "Ambient Sound",
     "selectPack": "Select Sound Pack",
+    "masterVolume": "Master volume",
+    "off": "Off",
+    "noPacks": "No packs available",
+    "moods": {"explore": "Explore", "combat": "Combat", "victory": "Victory", "rest": "Rest"},
     "importPack": "Import Pack",
     "createPack": "Create Pack",
     "editPack": "Edit Pack",

@@ -7,23 +7,29 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 ## 2. Core Concepts
 
 ### 2.1 Sound Pack (Scene)
+
 A Sound Pack is a pre-defined collection of audio assets organized around a location or theme. Examples:
+
 - Forest, Tavern, Dungeon, City, Cave, Beach, Graveyard, Castle, etc.
 
 Each Sound Pack contains:
+
 - **Ambient Layers**: Looping background sounds (rain, wind, birds, fire crackling)
 - **One-Shot Effects**: Triggerable sound effects (door creak, footsteps, combat sounds)
 - **Mood States**: Different musical contexts (Explore, Combat, Victory)
 - **Weather Systems**: Context-aware weather that adapts to location
 
 ### 2.2 Ambient Layer
+
 A continuous audio loop that plays in the background. Users can:
+
 - Toggle layer on/off
 - Adjust individual volume (0-100%)
 - Layer multiple sounds simultaneously
 - Fade in/out smoothly
 
 Example layers for "Forest":
+
 - Birds chirping
 - Wind through trees
 - Stream/water flowing
@@ -31,13 +37,17 @@ Example layers for "Forest":
 - Insects/crickets
 
 ### 2.3 One-Shot Sound Effect
+
 A triggered sound that plays once and stops. Used for:
+
 - Combat: sword swing, spell cast, arrow fired, monster roar
 - Exploration: door creak, footstep, key jangle, chest opening
 - Environmental: thunder crack, glass breaking, waterfall splash
 
 ### 2.4 Mood State
+
 A mode that changes the musical context. Standard states:
+
 - **Explore**: Calm, ambient music for exploration
 - **Combat**: Intense, dramatic music for battles
 - **Victory**: Triumphant music after combat
@@ -46,7 +56,9 @@ A mode that changes the musical context. Standard states:
 Transitions between states should be seamless (crossfade).
 
 ### 2.5 Intensity
+
 A slider (0-100%) that dynamically affects audio complexity:
+
 - Low intensity: Simple, minimal arrangement
 - High intensity: Full, complex musical arrangement
 - Works with both music and ambient layers
@@ -102,6 +114,7 @@ my-pack.spk
 ```
 
 **pack.json schema:**
+
 ```json
 {
   "version": "1.0",
@@ -267,6 +280,7 @@ export interface AmbientSoundState {
 ### 4.2 Component Specifications
 
 #### Sound Pack Selector
+
 - Dropdown showing all available packs
 - Search/filter functionality
 - Show pack thumbnail/icon
@@ -274,18 +288,21 @@ export interface AmbientSoundState {
 - "Custom" option for user-created mixes
 
 #### Mood State Control
+
 - Four large buttons: Explore, Combat, Victory, Rest
 - Visual indication of active state (highlighted)
 - Smooth transition animation when switching
 - Optional: custom mood states per pack
 
 #### Intensity Slider
+
 - Range: 0-100%
 - Shows numeric value
 - Affects: music arrangement complexity, layer density
 - Real-time update without audio interruption
 
 #### Ambient Mixer Panel
+
 - Grid of layer cards
 - Each card shows:
   - Icon
@@ -296,6 +313,7 @@ export interface AmbientSoundState {
 - "Add Layer" button for custom combinations
 
 #### One-Shot Panel
+
 - Grid of SFX buttons
 - Categorized tabs: Combat, Exploration, Environmental, Weather
 - Visual feedback on trigger (flash/pulse)
@@ -303,6 +321,7 @@ export interface AmbientSoundState {
 - Long-press for volume adjustment
 
 #### Weather System Toggle
+
 - Dropdown or toggle buttons
 - Shows currently active weather
 - Weather affects specific ambient layers
@@ -393,7 +412,7 @@ export class AudioEngine {
 
   // Cleanup
   dispose(): void {
-    this.layers.forEach(layer => layer.unload());
+    this.layers.forEach((layer) => layer.unload());
     this.musicTrack?.unload();
     this.layers.clear();
   }
@@ -401,6 +420,7 @@ export class AudioEngine {
 ```
 
 ### 5.2 Audio Caching Strategy
+
 - Cache frequently used sounds in IndexedDB
 - Preload pack assets when user selects a pack
 - Lazy load less common effects
@@ -443,7 +463,9 @@ async function getDB(): Promise<AmbientSoundDB> {
   });
 }
 
-export async function importSoundPack(spkFile: File): Promise<SoundPackManifest> {
+export async function importSoundPack(
+  spkFile: File,
+): Promise<SoundPackManifest> {
   const arrayBuffer = await spkFile.arrayBuffer();
   const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -452,7 +474,9 @@ export async function importSoundPack(spkFile: File): Promise<SoundPackManifest>
     throw new Error('Invalid sound pack: missing pack.json');
   }
 
-  const manifest: SoundPackManifest = JSON.parse(await manifestFile.async('string'));
+  const manifest: SoundPackManifest = JSON.parse(
+    await manifestFile.async('string'),
+  );
 
   const audioBlobs = new Map<string, Blob>();
 
@@ -504,7 +528,7 @@ export async function importSoundPack(spkFile: File): Promise<SoundPackManifest>
 export async function getStoredPacks(): Promise<SoundPackManifest[]> {
   const db = await getDB();
   const packs = await db.getAll('soundPacks');
-  return packs.map(p => p.manifest);
+  return packs.map((p) => p.manifest);
 }
 
 export async function getPackAudio(packId: string): Promise<Map<string, Blob>> {
@@ -597,6 +621,7 @@ Add to `package.json`:
 ```
 
 **scripts/pack-sound-pack.js:**
+
 ```javascript
 import fs from 'fs';
 import path from 'path';
@@ -610,9 +635,9 @@ const PACK_DIR = path.join(rootDir, 'sound-packs');
 const OUTPUT_DIR = path.join(rootDir, 'dist/sound-packs');
 
 function getPacks() {
-  return fs.readdirSync(PACK_DIR).filter(f => 
-    fs.statSync(path.join(PACK_DIR, f)).isDirectory()
-  );
+  return fs
+    .readdirSync(PACK_DIR)
+    .filter((f) => fs.statSync(path.join(PACK_DIR, f)).isDirectory());
 }
 
 async function packSoundPack(packName) {
@@ -655,6 +680,7 @@ main().catch(console.error);
 ```
 
 **scripts/unpack-sound-pack.js:**
+
 ```javascript
 import fs from 'fs';
 import path from 'path';
@@ -685,7 +711,7 @@ async function main() {
     fs.mkdirSync(INPUT_DIR, { recursive: true });
   }
 
-  const files = fs.readdirSync(INPUT_DIR).filter(f => f.endsWith('.spk'));
+  const files = fs.readdirSync(INPUT_DIR).filter((f) => f.endsWith('.spk'));
   console.log(`Found ${files.length} files to unpack`);
 
   for (const file of files) {
@@ -699,6 +725,7 @@ main().catch(console.error);
 ```
 
 Add dependencies:
+
 ```bash
 npm install archiver extract-zip
 ```
@@ -729,11 +756,13 @@ sound-packs/
 ```
 
 Run packaging:
+
 ```bash
 npm run pack:sound
 ```
 
 Output:
+
 ```
 dist/sound-packs/fantasy-forest.spk
 ```
@@ -746,7 +775,12 @@ dist/sound-packs/fantasy-forest.spk
 // src/ambient-sound/stores/ambientSoundStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { AmbientSoundPack, MoodState, ActiveLayer, WeatherSystem } from '../types';
+import type {
+  AmbientSoundPack,
+  MoodState,
+  ActiveLayer,
+  WeatherSystem,
+} from '../types';
 
 export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   // State
@@ -886,7 +920,11 @@ Add route to router:
 - Use existing `howler` package already in dependencies
 - Follow existing code style from jukebox module
 - Leverage existing Pinia store patterns with persistence
-- Use existing UI components from component library (Quasar)
+- The main page injects `ViewHeader` through `useLayout`; Create Pack and
+  Import Pack live in the application header alongside other page actions.
+- Page content uses the project's `QCard`/`QCardSection` layout, `TabGroup`,
+  tabler icons, CSS theme variables and localized text rather than standalone
+  page-level styling.
 - Integrate with existing file handling for custom audio upload
 
 ## 13. Free Sound Sources
@@ -895,44 +933,45 @@ All sources below are free for commercial and non-commercial use. Check individu
 
 ### CC0 / Public Domain
 
-| Source | URL | Description |
-|--------|-----|-------------|
-| kmontesdev Fantasy SFX | https://kmontesdev.itch.io/fantasy-ambient-sound-effects-pack-cc0 | 2GB of fantasy sounds, CC0 |
-| OpenGameArt CC0 SFX | https://opengameart.org/content/cc0-sound-fx | 80+ RPG sounds, CC0 |
-| OpenGameArt CC0 Creatures | https://opengameart.org/content/cc0-creature-sfx | 80+ monster sounds, CC0 |
-| OpenGameArt CC0 RPG | https://opengameart.org/content/cc0-rpg-sfx | 80+ RPG effects, CC0 |
-| OpenGameArt Nature Sounds | https://opengameart.org/content/nature-sounds-cc0 | Nature ambient sounds, CC0 |
-| OpenGameArt Background Ambience | https://opengameart.org/content/cc0-background-ambience | Background loops, CC0 |
-| OpenGameArt Dark Cavern | https://opengameart.org/content/dark-cavern-ambient | Dungeon ambience, CC0 |
-| Kronbits 200 Free SFX | https://kronbits.itch.io/200-free-sfx | Game sounds, CC0 |
-| Clutch Assets 200+ RPG Sounds | https://clutch-assets.itch.io/200-free-rpg-sounds | RPG sounds, free to use |
+| Source                          | URL                                                               | Description                |
+| ------------------------------- | ----------------------------------------------------------------- | -------------------------- |
+| kmontesdev Fantasy SFX          | https://kmontesdev.itch.io/fantasy-ambient-sound-effects-pack-cc0 | 2GB of fantasy sounds, CC0 |
+| OpenGameArt CC0 SFX             | https://opengameart.org/content/cc0-sound-fx                      | 80+ RPG sounds, CC0        |
+| OpenGameArt CC0 Creatures       | https://opengameart.org/content/cc0-creature-sfx                  | 80+ monster sounds, CC0    |
+| OpenGameArt CC0 RPG             | https://opengameart.org/content/cc0-rpg-sfx                       | 80+ RPG effects, CC0       |
+| OpenGameArt Nature Sounds       | https://opengameart.org/content/nature-sounds-cc0                 | Nature ambient sounds, CC0 |
+| OpenGameArt Background Ambience | https://opengameart.org/content/cc0-background-ambience           | Background loops, CC0      |
+| OpenGameArt Dark Cavern         | https://opengameart.org/content/dark-cavern-ambient               | Dungeon ambience, CC0      |
+| Kronbits 200 Free SFX           | https://kronbits.itch.io/200-free-sfx                             | Game sounds, CC0           |
+| Clutch Assets 200+ RPG Sounds   | https://clutch-assets.itch.io/200-free-rpg-sounds                 | RPG sounds, free to use    |
 
 ### CC BY 4.0 (Attribution Required)
 
-| Source | URL | Description |
-|--------|-----|-------------|
-| Audio Elk Ambience | https://audioelk.itch.io/free-sounds-ambience-collection | Field recordings, CC BY-SA 4.0 |
-| OpenGameArt Music | https://opengameart.org/content/music-for-rpg-ambience | RPG background music, CC BY 3.0 |
-| OpenGameArt Ambient | https://opengameart.org/content/rpgaudioambiance | RPG ambiences, CC BY 3.0 |
+| Source              | URL                                                      | Description                     |
+| ------------------- | -------------------------------------------------------- | ------------------------------- |
+| Audio Elk Ambience  | https://audioelk.itch.io/free-sounds-ambience-collection | Field recordings, CC BY-SA 4.0  |
+| OpenGameArt Music   | https://opengameart.org/content/music-for-rpg-ambience   | RPG background music, CC BY 3.0 |
+| OpenGameArt Ambient | https://opengameart.org/content/rpgaudioambiance         | RPG ambiences, CC BY 3.0        |
 
 ### Pixabay (No Attribution Required)
 
-| Source | URL | Description |
-|--------|-----|-------------|
+| Source                | URL                                | Description                      |
+| --------------------- | ---------------------------------- | -------------------------------- |
 | Pixabay Sound Effects | https://pixabay.com/sound-effects/ | 120,000+ sounds, Pixabay License |
-| Pixabay Music | https://pixabay.com/music/ | Royalty-free music |
+| Pixabay Music         | https://pixabay.com/music/         | Royalty-free music               |
 
 ### Open Source Apps (Integration Reference)
 
-| Source | URL | Description |
-|--------|-----|-------------|
-| Tabletop Audio | https://tabletopaudio.com/ | Free ambiences & music |
-| Ambora | http://ambora.app/ | Open source (MIT), desktop app |
+| Source             | URL                                | Description                        |
+| ------------------ | ---------------------------------- | ---------------------------------- |
+| Tabletop Audio     | https://tabletopaudio.com/         | Free ambiences & music             |
+| Ambora             | http://ambora.app/                 | Open source (MIT), desktop app     |
 | Ambiance Architect | https://ambiancearchitect.itch.io/ | Free to use, Freesound integration |
 
 ### Creating Packs
 
 To create a sound pack:
+
 1. Create directory `sound-packs/<pack-name>/`
 2. Add `pack.json` with metadata
 3. Add audio files in layers/, sfx/, music/, weather/ folders

@@ -1,7 +1,9 @@
 <template>
   <div class="intensity-slider">
     <div class="slider-header">
-      <span class="section-label">{{ $t('ambientSoundPage.intensity') }}</span>
+      <span class="text-subtitle1 text-weight-medium">
+        {{ $t('ambientSoundPage.intensity') }}
+      </span>
       <span class="intensity-value">{{ store.intensity }}%</span>
     </div>
     <QSlider
@@ -32,10 +34,6 @@ function handleIntensityChange(value: number | null) {
 </script>
 
 <style scoped>
-.intensity-slider {
-  margin-bottom: 16px;
-}
-
 .slider-header {
   display: flex;
   justify-content: space-between;
@@ -43,15 +41,9 @@ function handleIntensityChange(value: number | null) {
   margin-bottom: 8px;
 }
 
-.section-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-}
-
 .intensity-value {
   font-size: 14px;
   font-weight: 600;
-  color: var(--q-primary);
+  color: var(--color-primary);
 }
 </style>

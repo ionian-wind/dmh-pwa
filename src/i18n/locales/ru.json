@@ -746,6 +746,10 @@
   "ambientSoundPage": {
     "title": "Амбиент",
     "selectPack": "Выбрать звуковой пакет",
+    "masterVolume": "Общая громкость",
+    "off": "Выкл.",
+    "noPacks": "Нет доступных наборов",
+    "moods": {"explore": "Исследование", "combat": "Бой", "victory": "Победа", "rest": "Отдых"},
     "importPack": "Импорт пакета",
     "createPack": "Создать пакет",
     "editPack": "Редактировать пакет",

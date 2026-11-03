@@ -1,19 +1,18 @@
 <template>
   <div class="one-shot-panel">
     <div class="section-header">
-      <span class="section-label">{{ $t('ambientSoundPage.oneShots') }}</span>
+      <span class="text-subtitle1 text-weight-medium">
+        {{ $t('ambientSoundPage.oneShots') }}
+      </span>
     </div>
 
-    <QTabs v-model="activeTab" dense class="sfx-tabs" align="left">
-      <QTab name="all" :label="$t('ambientSoundPage.all')" />
-      <QTab name="combat" :label="$t('ambientSoundPage.combat')" />
-      <QTab name="exploration" :label="$t('ambientSoundPage.exploration')" />
-      <QTab
-        name="environmental"
-        :label="$t('ambientSoundPage.environmental')"
-      />
-      <QTab name="weather" :label="$t('ambientSoundPage.weather')" />
-    </QTabs>
+    <TabGroup
+      v-model="activeTab"
+      :tabs="sfxTabs"
+      size="sm"
+      align="justify"
+      class="q-mb-md"
+    />
 
     <div v-if="filteredSfx.length" class="sfx-grid">
       <QBtn
@@ -36,11 +35,20 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import TabGroup from '@/components/common/TabGroup.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { OneShotDef } from '@/ambient-sound/types';
 
 const store = useAmbientSoundStore();
 const activeTab = ref('all');
+
+const sfxTabs = [
+  { id: 'all', label: 'ambientSoundPage.all' },
+  { id: 'combat', label: 'ambientSoundPage.combat' },
+  { id: 'exploration', label: 'ambientSoundPage.exploration' },
+  { id: 'environmental', label: 'ambientSoundPage.environmental' },
+  { id: 'weather', label: 'ambientSoundPage.weather' },
+];
 
 const filteredSfx = computed(() => {
   if (!store.currentPack?.oneShots) return [];
@@ -60,24 +68,10 @@ function playSfx(sfx: OneShotDef) {
 </script>
 
 <style scoped>
-.one-shot-panel {
-  margin-bottom: 16px;
-}
-
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-}
-
-.section-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-}
-
-.sfx-tabs {
   margin-bottom: 12px;
 }
 
@@ -90,12 +84,12 @@ function playSfx(sfx: OneShotDef) {
 .sfx-button {
   padding: 8px;
   border-radius: 8px;
-  background: #f5f5f5;
+  background: var(--color-background-soft);
   font-size: 11px;
 }
 
 .sfx-button:hover {
-  background: #e8e8e8;
+  background: var(--color-background-mute);
 }
 
 .sfx-button:active {
@@ -113,7 +107,7 @@ function playSfx(sfx: OneShotDef) {
 
 .no-sfx {
   text-align: center;
-  color: #999;
-  padding: 24px;
+  color: var(--color-text-light);
+  padding: 1.5rem;
 }
 </style>

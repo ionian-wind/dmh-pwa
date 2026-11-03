@@ -1,76 +1,94 @@
 <template>
-  <QPage class="ambient-sound-page">
-    <div class="page-header">
-      <h1 class="page-title">{{ $t('ambientSoundPage.title') }}</h1>
-      <div class="header-actions">
-        <div class="master-volume">
-          <IconVolume size="20" />
-          <QSlider
-            :model-value="store.masterVolume"
-            :min="0"
-            :max="100"
-            :step="1"
-            color="primary"
-            dense
-            style="width: 80px"
-            @update:model-value="
-              (v: number | null) => v !== null && store.setMasterVolume(v)
-            "
-          />
-        </div>
-        <QBtn
-          flat
-          :label="$t('ambientSoundPage.createPack')"
-          @click="goToEditor"
-        >
-          <IconPlus size="20" style="margin-right: 8px" />
-        </QBtn>
-        <QBtn
-          flat
-          :label="$t('ambientSoundPage.importPack')"
-          @click="triggerFileInput"
-        >
-          <IconUpload size="20" style="margin-right: 8px" />
-        </QBtn>
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".spk"
-          style="display: none"
-          @change="handleFileImport"
-        />
-      </div>
-    </div>
+  <div class="q-pa-md ambient-sound-page">
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".spk"
+      class="hidden-file-input"
+      @change="handleFileImport"
+    />
 
-    <div v-if="store.loading" class="loading-state">
+    <div
+      v-if="store.loading"
+      class="q-pa-xl flex flex-center column text-grey-7"
+    >
       <QSpinnerDots size="40px" color="primary" />
-      <p>{{ $t('ambientSoundPage.loading') }}</p>
+      <div class="q-mt-md">{{ t('ambientSoundPage.loading') }}</div>
     </div>
 
     <template v-else>
-      <SoundPackSelector />
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection class="row items-center q-gutter-md">
+          <IconVolume :size="22" />
+          <div class="col">
+            <div class="text-subtitle2">
+              {{ t('ambientSoundPage.masterVolume') }}
+            </div>
+            <QSlider
+              :model-value="store.masterVolume"
+              :min="0"
+              :max="100"
+              :step="1"
+              color="primary"
+              dense
+              class="master-volume-slider"
+              @update:model-value="
+                (v: number | null) => v !== null && store.setMasterVolume(v)
+              "
+            />
+          </div>
+          <div class="text-caption text-grey-7 master-volume-value">
+            {{ store.masterVolume }}%
+          </div>
+        </QCardSection>
+      </QCard>
+
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection>
+          <SoundPackSelector />
+        </QCardSection>
+      </QCard>
 
       <template v-if="store.currentPack">
-        <MoodStateControl />
-        <IntensitySlider />
-        <AmbientMixer />
-        <OneShotPanel />
-        <WeatherPanel />
+        <QCard flat bordered class="q-mb-md">
+          <QCardSection><MoodStateControl /></QCardSection>
+        </QCard>
+        <QCard flat bordered class="q-mb-md">
+          <QCardSection><IntensitySlider /></QCardSection>
+        </QCard>
+        <QCard flat bordered class="q-mb-md">
+          <QCardSection><AmbientMixer /></QCardSection>
+        </QCard>
+        <QCard flat bordered class="q-mb-md">
+          <QCardSection><OneShotPanel /></QCardSection>
+        </QCard>
+        <QCard flat bordered class="q-mb-md">
+          <QCardSection><WeatherPanel /></QCardSection>
+        </QCard>
       </template>
 
-      <div v-else class="empty-state">
-        <IconMusic size="64" color="grey" />
-        <p>{{ $t('ambientSoundPage.selectPack') }}</p>
-        <p class="hint">{{ $t('ambientSoundPage.importHint') }}</p>
-      </div>
+      <QCard v-else flat bordered>
+        <QCardSection class="flex flex-center column text-center q-pa-xl">
+          <IconMusic :size="64" class="text-grey-6" />
+          <div class="text-subtitle1 q-mt-md">
+            {{ t('ambientSoundPage.selectPack') }}
+          </div>
+          <div class="text-caption text-grey-7 q-mt-xs">
+            {{ t('ambientSoundPage.importHint') }}
+          </div>
+        </QCardSection>
+      </QCard>
     </template>
-  </QPage>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { IconVolume, IconMusic, IconUpload, IconPlus } from '@tabler/icons-vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { IconMusic, IconPlus, IconUpload, IconVolume } from '@tabler/icons-vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
+import { useLayout } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundPackSelector from '@/ambient-sound/components/SoundPackSelector.vue';
 import MoodStateControl from '@/ambient-sound/components/MoodStateControl.vue';
@@ -79,15 +97,17 @@ import AmbientMixer from '@/ambient-sound/components/AmbientMixer.vue';
 import OneShotPanel from '@/ambient-sound/components/OneShotPanel.vue';
 import WeatherPanel from '@/ambient-sound/components/WeatherPanel.vue';
 
+const { t } = useI18n();
 const store = useAmbientSoundStore();
 const router = useRouter();
+const layout = useLayout();
 const fileInput = ref<HTMLInputElement | null>(null);
 
 function goToEditor() {
   router.push('/ambient-sound/editor');
 }
 
-async function triggerFileInput() {
+function triggerFileInput() {
   fileInput.value?.click();
 }
 
@@ -101,74 +121,53 @@ async function handleFileImport(event: Event) {
 }
 
 onMounted(async () => {
+  layout.setTopMenuContent({
+    component: ViewHeader,
+    props: {
+      title: t('ambientSoundPage.title'),
+      buttons: [
+        {
+          icon: IconPlus,
+          color: 'positive',
+          title: 'ambientSoundPage.createPack',
+          event: goToEditor,
+        },
+        {
+          icon: IconUpload,
+          color: 'primary',
+          title: 'ambientSoundPage.importPack',
+          event: triggerFileInput,
+        },
+      ],
+    },
+  });
   await store.loadStoredPacks();
 });
 
 onUnmounted(() => {
+  layout.setTopMenuContent(null);
   store.pause();
 });
 </script>
 
 <style scoped>
 .ambient-sound-page {
-  padding: 16px;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+.hidden-file-input {
+  display: none;
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
+.master-volume-slider {
+  max-width: 320px;
+  margin-top: 0.25rem;
 }
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.master-volume {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  color: #666;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px;
-  text-align: center;
-  color: #666;
-}
-
-.empty-state p {
-  margin: 16px 0 8px;
-}
-
-.empty-state .hint {
-  font-size: 14px;
-  color: #999;
+.master-volume-value {
+  min-width: 3rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 </style>

@@ -1,13 +1,15 @@
 <template>
   <div class="mood-state-control">
-    <div class="section-label">{{ $t('ambientSoundPage.moodState') }}</div>
+    <div class="text-subtitle1 text-weight-medium q-mb-sm">
+      {{ $t('ambientSoundPage.moodState') }}
+    </div>
     <div class="mood-buttons">
       <QBtn
         v-for="mood in moodStates"
         :key="mood.state"
-        :class="{ active: store.currentMoodState === mood.state }"
+        :color="store.currentMoodState === mood.state ? 'primary' : 'grey-7'"
         :outline="store.currentMoodState !== mood.state"
-        size="lg"
+        size="md"
         @click="store.setMoodState(mood.state)"
       >
         <component :is="mood.icon" size="20" style="margin-right: 8px" />
@@ -19,6 +21,7 @@
 
 <script setup lang="ts">
 import { computed, type Component } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   IconSearch,
   IconSwords,
@@ -28,6 +31,7 @@ import {
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { MoodState } from '@/ambient-sound/types';
 
+const { t } = useI18n();
 const store = useAmbientSoundStore();
 
 interface MoodOption {
@@ -45,10 +49,26 @@ const moodStates = computed<MoodOption[]>(() => {
     }));
   }
   return [
-    { state: 'explore', label: 'Explore', icon: IconSearch },
-    { state: 'combat', label: 'Combat', icon: IconSwords },
-    { state: 'victory', label: 'Victory', icon: IconTrophy },
-    { state: 'rest', label: 'Rest', icon: IconCampfire },
+    {
+      state: 'explore',
+      label: t('ambientSoundPage.moods.explore'),
+      icon: IconSearch,
+    },
+    {
+      state: 'combat',
+      label: t('ambientSoundPage.moods.combat'),
+      icon: IconSwords,
+    },
+    {
+      state: 'victory',
+      label: t('ambientSoundPage.moods.victory'),
+      icon: IconTrophy,
+    },
+    {
+      state: 'rest',
+      label: t('ambientSoundPage.moods.rest'),
+      icon: IconCampfire,
+    },
   ];
 });
 
@@ -74,30 +94,14 @@ function getIconFromEmoji(iconStr: string): Component {
 </script>
 
 <style scoped>
-.mood-state-control {
-  margin-bottom: 16px;
-}
-
-.section-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-  margin-bottom: 8px;
-}
-
 .mood-buttons {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.mood-buttons .QBtn {
+.mood-buttons > * {
   flex: 1;
-  min-width: 80px;
-}
-
-.mood-buttons .QBtn.active {
-  background: var(--q-primary);
-  color: white;
+  min-width: 90px;
 }
 </style>

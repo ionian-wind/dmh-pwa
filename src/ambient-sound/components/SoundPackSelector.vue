@@ -35,14 +35,18 @@
       flat
       round
       size="sm"
-      icon="x"
+      :title="$t('common.close')"
+      :aria-label="$t('common.close')"
       @click="store.unloadPack()"
-    />
+    >
+      <IconX :size="18" />
+    </QBtn>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, type Component } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   IconFolder,
   IconTree,
@@ -50,9 +54,11 @@ import {
   IconAlertTriangle,
   IconBuilding,
   IconEdit,
+  IconX,
 } from '@tabler/icons-vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
+const { t } = useI18n();
 const store = useAmbientSoundStore();
 const selectedPackId = ref<string | null>(null);
 
@@ -74,7 +80,7 @@ const packOptions = computed<PackOption[]>(() => {
   if (options.length === 0) {
     return [
       {
-        label: 'No packs available',
+        label: t('ambientSoundPage.noPacks'),
         value: '',
         icon: IconFolder,
         category: '',
@@ -117,7 +123,6 @@ watch(
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
 }
 
 .sound-pack-selector :deep(.QSelect) {

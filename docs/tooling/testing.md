@@ -161,6 +161,8 @@ The suite now includes direct tests for:
 - AnyDice completion definitions from included code pieces, including
   function parameter snippets and source-piece labels,
 - map entity catalog/link blocks including jukebox playlists,
+- ambient sound pack import/export/storage, audio-engine fades/transitions and
+  the ambient store's playback/mood/weather actions,
 - localized completion labels/details for built-in snippets, program
   variables, keywords and code-piece definitions.
 

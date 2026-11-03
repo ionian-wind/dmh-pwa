@@ -1,15 +1,19 @@
 <template>
   <div class="ambient-mixer">
     <div class="section-header">
-      <span class="section-label">{{
-        $t('ambientSoundPage.ambientLayers')
-      }}</span>
+      <span class="text-subtitle1 text-weight-medium">
+        {{ $t('ambientSoundPage.ambientLayers') }}
+      </span>
       <QBtn
         flat
         dense
-        :icon="store.isPlaying ? 'pause' : 'play_arrow'"
+        :title="t(store.isPlaying ? 'common.pause' : 'common.play')"
+        :aria-label="t(store.isPlaying ? 'common.pause' : 'common.play')"
         @click="store.togglePlayPause()"
-      />
+      >
+        <IconPlayerPause v-if="store.isPlaying" />
+        <IconPlayerPlay v-else />
+      </QBtn>
     </div>
 
     <div v-if="store.currentPack?.layers.length" class="layers-grid">
@@ -37,7 +41,9 @@
             "
           />
         </div>
-        <div v-else class="layer-inactive">Off</div>
+        <div v-else class="layer-inactive">
+          {{ $t('ambientSoundPage.off') }}
+        </div>
       </div>
     </div>
 
@@ -48,27 +54,20 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import { IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
+const { t } = useI18n();
 const store = useAmbientSoundStore();
 </script>
 
 <style scoped>
-.ambient-mixer {
-  margin-bottom: 16px;
-}
-
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-}
-
-.section-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
 }
 
 .layers-grid {
@@ -82,18 +81,18 @@ const store = useAmbientSoundStore();
   flex-direction: column;
   align-items: center;
   padding: 12px;
-  border-radius: 8px;
-  background: #f5f5f5;
+  border-radius: var(--border-radius);
+  background: var(--color-background-soft);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .layer-card:hover {
-  background: #e8e8e8;
+  background: var(--color-background-mute);
 }
 
 .layer-card.active {
-  background: var(--q-primary);
+  background: var(--color-primary);
   color: white;
 }
 
@@ -119,13 +118,13 @@ const store = useAmbientSoundStore();
 
 .layer-inactive {
   font-size: 10px;
-  color: #999;
+  color: var(--color-text-light);
   margin-top: 4px;
 }
 
 .no-layers {
   text-align: center;
-  color: #999;
-  padding: 24px;
+  color: var(--color-text-light);
+  padding: 1.5rem;
 }
 </style>

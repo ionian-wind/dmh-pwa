@@ -99,10 +99,11 @@ describe('JukeboxDialog', () => {
 
     config.jukeboxAnimatePlayerBackground = false;
     await nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    await nextTick();
-
-    expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false);
+    await vi.waitFor(
+      () =>
+        expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false),
+      { timeout: 2000 },
+    );
     expect(wrapper.find('.jukebox-dialog-card').classes()).not.toContain(
       'has-gradient-bg',
     );
