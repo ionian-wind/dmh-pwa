@@ -84,6 +84,17 @@ function close() {
             <QToggle v-model="configStore.jukeboxAnimatePlayerBackground" />
           </QItemSection>
         </QItem>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('jukebox.displayCoverWhilePlaying') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.displayCoverWhilePlayingHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.jukeboxDisplayCoverWhilePlaying" />
+          </QItemSection>
+        </QItem>
       </QList>
     </section>
   </BaseModal>

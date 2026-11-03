@@ -129,6 +129,14 @@ function setAnimatePlayerBackground(value: boolean) {
   configStore.jukeboxAnimatePlayerBackground = value;
 }
 
+function setDisplayCoverWhilePlaying(value: boolean) {
+  configStore.jukeboxDisplayCoverWhilePlaying = value;
+}
+
+const displayArtwork = computed(
+  () => props.showArtwork && configStore.jukeboxDisplayCoverWhilePlaying,
+);
+
 // Theming logic: update CSS variables for JukeboxPlayer based on track color
 const showRemainingTime = ref(false);
 function toggleTimeDisplay() {
@@ -177,7 +185,7 @@ const handleProgressChange = (value: number | null) => {
     </Transition>
     <TrackInfo
       :track="playerStore.currentTrack"
-      :show-artwork="props.showArtwork"
+      :show-artwork="displayArtwork"
     />
 
     <QToolbar class="q-pa-none q-gutter-x-sm progress-bar">
@@ -356,6 +364,15 @@ const handleProgressChange = (value: number | null) => {
                 <QToggle
                   :model-value="configStore.jukeboxAnimatePlayerBackground"
                   @update:model-value="setAnimatePlayerBackground"
+                />
+              </div>
+              <div class="player-settings-row">
+                <span class="player-settings-label">
+                  {{ t('jukebox.displayCoverWhilePlaying') }}
+                </span>
+                <QToggle
+                  :model-value="configStore.jukeboxDisplayCoverWhilePlaying"
+                  @update:model-value="setDisplayCoverWhilePlaying"
                 />
               </div>
             </div>

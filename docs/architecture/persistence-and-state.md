@@ -10,23 +10,23 @@ subsystem in the app: every feature goes through it.
 
 Object stores are created lazily by migrations. Current stores:
 
-| Store | Owner | Schema-validated |
-| --- | --- | --- |
-| `characters` | `stores/characters` | `character.schema.json` |
-| `monsters` | `stores/monsters` | `monster.schema.json` |
-| `notes` | `stores/notes` | `note.schema.json` |
-| `noteTypes` | `stores/noteTypes` | `noteType.schema.json` |
-| `parties` | `stores/parties` | `party.schema.json` |
-| `modules` | `stores/modules` | `module.schema.json` |
-| `encounters` | `stores/encounters` | `encounter.schema.json` |
-| `combats` | `stores/combats` | `combat.schema.json` |
-| `bookmarks` | `stores/bookmarks` | `bookmark.schema.json` |
-| `timers` | `stores/timers` | `timer.schema.json` |
-| `indexations_mentions` | `useMentionsStore` | no |
-| `jukebox_playlists` | `jukebox/stores` | no (explicitly bypassed) |
-| `jukebox_tracks` | `jukebox/stores` | no |
-| `jukebox_files` | `jukebox/stores` | no |
-| `migrations` | migration runner | no |
+| Store                  | Owner               | Schema-validated         |
+| ---------------------- | ------------------- | ------------------------ |
+| `characters`           | `stores/characters` | `character.schema.json`  |
+| `monsters`             | `stores/monsters`   | `monster.schema.json`    |
+| `notes`                | `stores/notes`      | `note.schema.json`       |
+| `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`   |
+| `parties`              | `stores/parties`    | `party.schema.json`      |
+| `modules`              | `stores/modules`    | `module.schema.json`     |
+| `encounters`           | `stores/encounters` | `encounter.schema.json`  |
+| `combats`              | `stores/combats`    | `combat.schema.json`     |
+| `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`   |
+| `timers`               | `stores/timers`     | `timer.schema.json`      |
+| `indexations_mentions` | `useMentionsStore`  | no                       |
+| `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed) |
+| `jukebox_tracks`       | `jukebox/stores`    | no                       |
+| `jukebox_files`        | `jukebox/stores`    | no                       |
+| `migrations`           | migration runner    | no                       |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
 generates IDs.
@@ -91,19 +91,19 @@ schema key. Validation happens in `idbPutItem`, i.e. on every `create` and
 `useStore<T>({ storeName, validationSchema })` returns a cached object
 (`storeCache` keyed by store name) with:
 
-| Member | Type | Behavior |
-| --- | --- | --- |
-| `items` | `Ref<T[]>` | Full in-memory list |
-| `isLoaded` | `Ref<boolean>` | Set after first successful load |
-| `error` | `Ref<Error \| null>` | Last load error |
-| `sortedItems` | `ComputedRef<T[]>` | Copy sorted by `updatedAt` desc |
-| `getById` | `(id) => T \| null` | Linear scan |
-| `create` | `(data) => Promise<T>` | Deep-unwraps, adds ID/timestamps, validates, persists, pushes |
-| `update` | `(id, patch) => Promise<T>` | Merges plain original + patch, bumps `updatedAt`, validates, persists |
-| `remove` | `(id) => Promise<void>` | Deletes from IDB and memory, clears current if matching |
-| `load` | `() => Promise<void>` | Replaces `items` with `getAll()` |
-| `current` | `ComputedRef<T \| null>` | Based on internal `currentId` |
-| `setCurrentId`, `clearCurrent` | functions | Selection helpers |
+| Member                         | Type                        | Behavior                                                              |
+| ------------------------------ | --------------------------- | --------------------------------------------------------------------- |
+| `items`                        | `Ref<T[]>`                  | Full in-memory list                                                   |
+| `isLoaded`                     | `Ref<boolean>`              | Set after first successful load                                       |
+| `error`                        | `Ref<Error \| null>`        | Last load error                                                       |
+| `sortedItems`                  | `ComputedRef<T[]>`          | Copy sorted by `updatedAt` desc                                       |
+| `getById`                      | `(id) => T \| null`         | Linear scan                                                           |
+| `create`                       | `(data) => Promise<T>`      | Deep-unwraps, adds ID/timestamps, validates, persists, pushes         |
+| `update`                       | `(id, patch) => Promise<T>` | Merges plain original + patch, bumps `updatedAt`, validates, persists |
+| `remove`                       | `(id) => Promise<void>`     | Deletes from IDB and memory, clears current if matching               |
+| `load`                         | `() => Promise<void>`       | Replaces `items` with `getAll()`                                      |
+| `current`                      | `ComputedRef<T \| null>`    | Based on internal `currentId`                                         |
+| `setCurrentId`, `clearCurrent` | functions                   | Selection helpers                                                     |
 
 Important consequences:
 
@@ -128,18 +128,18 @@ export const useNoteStore = defineStore('notes', () => {
 });
 ```
 
-| Store | ID | Extra behavior |
-| --- | --- | --- |
-| `useNoteStore` | `notes` | Search/tag filter, `allTags`, mention index sync on create/update/remove, `hidden` protection |
-| `useCharacterStore` | `characters` | Name search |
-| `useMonsterStore` | `monsters` | Name search |
-| `usePartyStore` | `parties` | Name search |
-| `useModuleStore` | `modules` | Name search, `getModuleName` |
-| `useEncounterStore` | `encounters` | Name search |
-| `useCombatStore` | `combats` | Combatant/turn helpers, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
-| `useNoteTypeStore` | `noteTypes` | Name search |
-| `useBookmarkStore` | `bookmarks` | `findByModuleAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark` |
-| `useTimerStore` | `timers` | `init`, `start/stop/reset`, ticking `now` ref, completion notifications |
+| Store               | ID           | Extra behavior                                                                                |
+| ------------------- | ------------ | --------------------------------------------------------------------------------------------- |
+| `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove, `hidden` protection |
+| `useCharacterStore` | `characters` | Name search                                                                                   |
+| `useMonsterStore`   | `monsters`   | Name search                                                                                   |
+| `usePartyStore`     | `parties`    | Name search                                                                                   |
+| `useModuleStore`    | `modules`    | Name search, `getModuleName`                                                                  |
+| `useEncounterStore` | `encounters` | Name search                                                                                   |
+| `useCombatStore`    | `combats`    | Combatant/turn helpers, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
+| `useNoteTypeStore`  | `noteTypes`  | Name search                                                                                   |
+| `useBookmarkStore`  | `bookmarks`  | `findByModuleAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark`                      |
+| `useTimerStore`     | `timers`     | `init`, `start/stop/reset`, ticking `now` ref, completion notifications                       |
 
 ### Filtering
 
@@ -182,7 +182,9 @@ persistence** rather than `pinia-plugin-persistedstate`.
 - A `watch` per key writes changes back.
 - Values: `jukeboxLastTrackId`, `jukeboxLastTrackProgress`,
   `jukeboxLastVolume`, `jukeboxActivePlaylistId`, `jukeboxRepeatMode`,
-  `jukeboxShuffle`, `savedLanguage`.
+  `jukeboxShuffle`, `jukeboxSmoothTrackChange`,
+  `jukeboxAnimatePlayerBackground`, `jukeboxDisplayCoverWhilePlaying`,
+  `confirmDelete`, `savedLanguage`.
 - `savedLanguage` defaults to `window.navigator.language`.
 
 `pinia-shared-state` is also active, so these stores are synchronized between
@@ -204,11 +206,11 @@ interface Migration {
 
 Current migrations:
 
-| Version | File | Effect |
-| --- | --- | --- |
-| 1 | `0000000001_initial_schema.ts` | Declares all core stores (no-op `go`) |
-| 2 | `0000000002_bookmarks.ts` | Adds `bookmarks` |
-| 3 | `0000000003_timers.ts` | Adds `timers` |
+| Version | File                           | Effect                                |
+| ------- | ------------------------------ | ------------------------------------- |
+| 1       | `0000000001_initial_schema.ts` | Declares all core stores (no-op `go`) |
+| 2       | `0000000002_bookmarks.ts`      | Adds `bookmarks`                      |
+| 3       | `0000000003_timers.ts`         | Adds `timers`                         |
 
 Sorted in `src/migrations/index.ts`. The version is the max migration number;
 adding a migration requires adding it to the `migrations` array (the generator
@@ -228,6 +230,7 @@ parties, bookmarks, timers, jukebox_playlists, jukebox_tracks, jukebox_files,
 indexations_mentions`.
 
 Backup encoding:
+
 - Normal records are written as JSON.
 - `jukebox_files` Blob sources are base64-encoded as `source.kind: 'blob-data'`.
 - FileSystem handles cannot be serialized; they are written as

@@ -496,6 +496,7 @@
     "player": "Player",
     "smoothTrackChangeHint": "Cross-fade between the outgoing and incoming track.",
     "animatePlayerBackgroundHint": "Show an animated album-colour gradient behind the player.",
+    "displayCoverWhilePlayingHint": "Show album artwork in the expanded player.",
     "languageHint": "Choose the language used by the application."
   },
   "tags": {
@@ -733,6 +734,7 @@
     "playerSettings": "Player settings",
     "smoothTrackChange": "Smooth track change",
     "animatePlayerBackground": "Animate player background",
+    "displayCoverWhilePlaying": "Display cover while playing",
     "playNext": "Play next",
     "playLast": "Play last",
     "allTracks": "All Tracks",

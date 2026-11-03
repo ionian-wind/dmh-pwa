@@ -411,25 +411,31 @@ describe('current shared components', () => {
       title: 'Track',
       palette: ['#112233', '#445566'],
       color: '#112233',
+      picture: 'data:image/png;base64,abc',
     } as any;
 
     const wrapper = mount(JukeboxPlayer, {
-      props: { animatedBackground: true },
+      props: { animatedBackground: true, showArtwork: true },
     });
 
     const toggles = wrapper.findAllComponents(quasarStubs.QToggle);
-    expect(toggles).toHaveLength(2);
+    expect(toggles).toHaveLength(3);
     expect(toggles[0].props('modelValue')).toBe(false);
     expect(toggles[1].props('modelValue')).toBe(true);
+    expect(toggles[2].props('modelValue')).toBe(true);
     expect(wrapper.classes()).toContain('with-animated-bg');
+    expect(wrapper.find('.track-artwork-container').exists()).toBe(true);
 
     await toggles[0].vm.$emit('update:modelValue', true);
     await toggles[1].vm.$emit('update:modelValue', false);
+    await toggles[2].vm.$emit('update:modelValue', false);
     await nextTick();
 
     expect(config.jukeboxSmoothTrackChange).toBe(true);
     expect(config.jukeboxAnimatePlayerBackground).toBe(false);
+    expect(config.jukeboxDisplayCoverWhilePlaying).toBe(false);
     expect(wrapper.classes()).not.toContain('with-animated-bg');
+    expect(wrapper.find('.track-artwork-container').exists()).toBe(false);
 
     player.isPlaying = false;
     player.currentTrack = null;

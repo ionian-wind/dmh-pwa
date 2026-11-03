@@ -232,6 +232,9 @@ unmount. The `filesStore` is loaded but unused.
     static when playback is paused and morphs only while playing; pausing keeps
     the animation phase so resuming continues from the same point instead of
     restarting. Turning the setting off removes the gradient entirely.
+  - **Display cover while playing** (on by default): controls the album artwork
+    in the expanded jukebox dialog. The footer player stays compact and does not
+    render artwork.
 - Album-colour background: when enabled with `animatedBackground`, a
   `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
   `track.palette` or `track.color`, both derived from the album cover). The

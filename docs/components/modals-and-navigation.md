@@ -7,20 +7,20 @@ and the shell regions used to inject page chrome.
 
 Props:
 
-| Prop | Default | Meaning |
-| --- | --- | --- |
-| `isOpen` | required | Visibility |
-| `modalId` | required | Stack identity |
-| `title` | — | Header text/translation key |
-| `showSubmit` / `showCancel` | — | Action buttons |
-| `showDelete` | — | Standard delete action (editing existing entities) |
-| `submitLabel` / `cancelLabel` / `deleteLabel` | — | Override labels |
-| `showClose` | — | Whether the header exists (combined with title/expand) |
-| `showExpand` / `isExpanded` | — | Maximize toggle |
-| `disableSubmit` | — | Disable submit button |
-| `tabs` | — | Header tab definitions (`{ name, title, icon }`) |
-| `activeTab` | first tab | Controlled active tab |
-| `useModalStack` | `true` | Set `false` for pickers nested inside another modal |
+| Prop                                          | Default   | Meaning                                                |
+| --------------------------------------------- | --------- | ------------------------------------------------------ |
+| `isOpen`                                      | required  | Visibility                                             |
+| `modalId`                                     | required  | Stack identity                                         |
+| `title`                                       | —         | Header text/translation key                            |
+| `showSubmit` / `showCancel`                   | —         | Action buttons                                         |
+| `showDelete`                                  | —         | Standard delete action (editing existing entities)     |
+| `submitLabel` / `cancelLabel` / `deleteLabel` | —         | Override labels                                        |
+| `showClose`                                   | —         | Whether the header exists (combined with title/expand) |
+| `showExpand` / `isExpanded`                   | —         | Maximize toggle                                        |
+| `disableSubmit`                               | —         | Disable submit button                                  |
+| `tabs`                                        | —         | Header tab definitions (`{ name, title, icon }`)       |
+| `activeTab`                                   | first tab | Controlled active tab                                  |
+| `useModalStack`                               | `true`    | Set `false` for pickers nested inside another modal    |
 
 Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
 `update:isExpanded`.
@@ -116,6 +116,7 @@ All use `persistent: true`. Defaults are English ("OK", "Cancel", "Confirm",
 "Alert", "Prompt") rather than i18n keys.
 
 Caveats:
+
 - Options are spread **after** the explicit config, so `ok`, `cancel`,
   `persistent`, etc. can be overridden accidentally if present in options.
 - `prompt` passes `model` and `type` but no validation.
@@ -128,23 +129,23 @@ Caveats:
 `App.vue` calls `provideLayout()`; consumers use:
 
 ```ts
-useLayout()      // typed topMenu/rightDrawer/bottomDrawer state
-useRightDrawer() // owner-scoped set/clear for the right drawer
+useLayout(); // typed topMenu/rightDrawer/bottomDrawer state
+useRightDrawer(); // owner-scoped set/clear for the right drawer
 ```
 
 Consumers:
 
-| View | Right drawer | Footer | Header |
-| --- | --- | --- | --- |
-| Any list view (`BaseListView`) | via view prop | — | `ViewHeader` |
-| Any entity view (`BaseEntityView`) | via view | — | `ViewHeader` |
-| `NoteView` | `NoteViewSidebar` | — | `ViewHeader` |
-| `PartyView` | `PartyViewSidebar` | — | `ViewHeader` |
-| `MonsterView` | `MonsterViewSidebar` | — | `ViewHeader` |
-| `EncounterView` | `EncounterViewSidebar` | — | `ViewHeader` |
-| `CharacterView` | `#sidepanel` | — | `ViewHeader` |
-| `ModuleView` | `#sidepanel` | — | `ViewHeader` |
-| `JukeboxView` | `PlaylistList` | `JukeboxPlayer` | `ViewHeader` |
+| View                               | Right drawer           | Footer          | Header       |
+| ---------------------------------- | ---------------------- | --------------- | ------------ |
+| Any list view (`BaseListView`)     | via view prop          | —               | `ViewHeader` |
+| Any entity view (`BaseEntityView`) | via view               | —               | `ViewHeader` |
+| `NoteView`                         | `NoteViewSidebar`      | —               | `ViewHeader` |
+| `PartyView`                        | `PartyViewSidebar`     | —               | `ViewHeader` |
+| `MonsterView`                      | `MonsterViewSidebar`   | —               | `ViewHeader` |
+| `EncounterView`                    | `EncounterViewSidebar` | —               | `ViewHeader` |
+| `CharacterView`                    | `#sidepanel`           | —               | `ViewHeader` |
+| `ModuleView`                       | `#sidepanel`           | —               | `ViewHeader` |
+| `JukeboxView`                      | `PlaylistList`         | `JukeboxPlayer` | `ViewHeader` |
 
 - The right drawer is owner-scoped: only the view that set the content can
   clear it.
@@ -169,6 +170,7 @@ Settings item. It currently has two sections:
 - **Player**
   - Smooth track change.
   - Animate player background.
+  - Display cover while playing.
 
 The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits
@@ -189,8 +191,13 @@ with `useDragSnap`:
 `Notify` is registered globally. The timer store uses it for completions:
 
 ```ts
-Notify.create({ color: 'secondary', textColor: 'primary', position: 'top',
-  timeout: 0, closeBtn: true })
+Notify.create({
+  color: 'secondary',
+  textColor: 'primary',
+  position: 'top',
+  timeout: 0,
+  closeBtn: true,
+});
 ```
 
 These notifications never auto-dismiss (`timeout: 0`).

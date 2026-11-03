@@ -49,6 +49,7 @@ describe('settings dialog', () => {
     config.confirmDelete = true;
     config.jukeboxSmoothTrackChange = false;
     config.jukeboxAnimatePlayerBackground = true;
+    config.jukeboxDisplayCoverWhilePlaying = true;
 
     const wrapper = mount(SettingsDialog, {
       props: { modelValue: true },
@@ -60,9 +61,10 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Confirm deletion');
     expect(wrapper.text()).toContain('Cross-fade');
     expect(wrapper.text()).toContain('animated album-colour gradient');
+    expect(wrapper.text()).toContain('Display cover while playing');
 
     const toggles = wrapper.findAllComponents(QToggleStub);
-    expect(toggles).toHaveLength(3);
+    expect(toggles).toHaveLength(4);
 
     toggles[0].vm.$emit('update:modelValue', false);
     await nextTick();
@@ -79,6 +81,12 @@ describe('settings dialog', () => {
       .vm.$emit('update:modelValue', false);
     await nextTick();
     expect(config.jukeboxAnimatePlayerBackground).toBe(false);
+
+    wrapper
+      .findAllComponents(QToggleStub)[3]
+      .vm.$emit('update:modelValue', false);
+    await nextTick();
+    expect(config.jukeboxDisplayCoverWhilePlaying).toBe(false);
     wrapper.unmount();
   });
 

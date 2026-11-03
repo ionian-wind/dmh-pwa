@@ -29,6 +29,7 @@ describe('config store', () => {
     expect(config.jukeboxLastTrackProgress).toBe(0);
     expect(config.jukeboxLastVolume).toBe(1);
     expect(config.jukeboxRepeatMode).toBe(JukeboxRepeatMode.off);
+    expect(config.jukeboxDisplayCoverWhilePlaying).toBe(true);
     expect(config.savedLanguage).toBe('en');
   });
 

@@ -497,6 +497,7 @@
     "player": "Плеер",
     "smoothTrackChangeHint": "Плавно смешивать предыдущий и новый трек при переключении.",
     "animatePlayerBackgroundHint": "Показывать анимированный градиент из цветов обложки за плеером.",
+    "displayCoverWhilePlayingHint": "Показывать обложку альбома в раскрытом плеере.",
     "languageHint": "Выберите язык интерфейса приложения."
   },
   "tags": {
@@ -734,6 +735,7 @@
     "playerSettings": "Настройки плеера",
     "smoothTrackChange": "Плавная смена трека",
     "animatePlayerBackground": "Анимировать фон плеера",
+    "displayCoverWhilePlaying": "Показывать обложку при воспроизведении",
     "playNext": "Играть следующим",
     "playLast": "Играть последним",
     "allTracks": "Все треки",
