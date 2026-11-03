@@ -7,6 +7,7 @@ import SettingsDialog from '@/components/SettingsDialog.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import App from '@/App.vue';
+import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
 const QToggleStub = quasarStubs.QToggle;
@@ -50,6 +51,7 @@ describe('settings dialog', () => {
     config.jukeboxSmoothTrackChange = false;
     config.jukeboxAnimatePlayerBackground = true;
     config.jukeboxDisplayCoverWhilePlaying = true;
+    config.jukeboxUseMiniPlayer = true;
 
     const wrapper = mount(SettingsDialog, {
       props: { modelValue: true },
@@ -62,9 +64,10 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Cross-fade');
     expect(wrapper.text()).toContain('animated album-colour gradient');
     expect(wrapper.text()).toContain('Display cover while playing');
+    expect(wrapper.text()).toContain('Use mini player');
 
     const toggles = wrapper.findAllComponents(QToggleStub);
-    expect(toggles).toHaveLength(4);
+    expect(toggles).toHaveLength(5);
 
     toggles[0].vm.$emit('update:modelValue', false);
     await nextTick();
@@ -87,6 +90,12 @@ describe('settings dialog', () => {
       .vm.$emit('update:modelValue', false);
     await nextTick();
     expect(config.jukeboxDisplayCoverWhilePlaying).toBe(false);
+
+    wrapper
+      .findAllComponents(QToggleStub)[4]
+      .vm.$emit('update:modelValue', false);
+    await nextTick();
+    expect(config.jukeboxUseMiniPlayer).toBe(false);
     wrapper.unmount();
   });
 
@@ -130,6 +139,48 @@ describe('settings dialog', () => {
 
     expect(wrapper.findComponent(SettingsDialog).props('modelValue')).toBe(
       true,
+    );
+    wrapper.unmount();
+  });
+
+  it('opens the mini player or navigates when mini player is disabled', async () => {
+    const config = useConfigStore();
+    config.jukeboxUseMiniPlayer = true;
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { render: () => h('div') } },
+        { path: '/jukebox', component: { render: () => h('div') } },
+      ],
+    });
+    await router.push('/');
+    await router.isReady();
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router],
+      },
+    });
+    await flushPromises();
+
+    const jukeboxButton = wrapper.find('.jukebox-button');
+    await jukeboxButton.trigger('click');
+    await nextTick();
+    expect(wrapper.findComponent(JukeboxDialog).props('modelValue')).toBe(true);
+
+    await jukeboxButton.trigger('click');
+    await nextTick();
+    expect(wrapper.findComponent(JukeboxDialog).props('modelValue')).toBe(
+      false,
+    );
+
+    config.jukeboxUseMiniPlayer = false;
+    await jukeboxButton.trigger('click');
+    await flushPromises();
+
+    expect(router.currentRoute.value.path).toBe('/jukebox');
+    expect(wrapper.findComponent(JukeboxDialog).props('modelValue')).toBe(
+      false,
     );
     wrapper.unmount();
   });

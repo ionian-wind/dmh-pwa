@@ -235,6 +235,9 @@ unmount. The `filesStore` is loaded but unused.
   - **Display cover while playing** (on by default): controls the album artwork
     in the expanded jukebox dialog. The footer player stays compact and does not
     render artwork.
+  - **Use mini player** (on by default): the app-menu Jukebox item opens the
+    draggable mini-player dialog. When off, the item navigates to `/jukebox`
+    instead.
 - Album-colour background: when enabled with `animatedBackground`, a
   `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
   `track.palette` or `track.color`, both derived from the album cover). The

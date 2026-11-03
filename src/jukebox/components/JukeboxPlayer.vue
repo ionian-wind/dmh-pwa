@@ -133,6 +133,10 @@ function setDisplayCoverWhilePlaying(value: boolean) {
   configStore.jukeboxDisplayCoverWhilePlaying = value;
 }
 
+function setUseMiniPlayer(value: boolean) {
+  configStore.jukeboxUseMiniPlayer = value;
+}
+
 const displayArtwork = computed(
   () => props.showArtwork && configStore.jukeboxDisplayCoverWhilePlaying,
 );
@@ -373,6 +377,15 @@ const handleProgressChange = (value: number | null) => {
                 <QToggle
                   :model-value="configStore.jukeboxDisplayCoverWhilePlaying"
                   @update:model-value="setDisplayCoverWhilePlaying"
+                />
+              </div>
+              <div class="player-settings-row">
+                <span class="player-settings-label">
+                  {{ t('jukebox.useMiniPlayer') }}
+                </span>
+                <QToggle
+                  :model-value="configStore.jukeboxUseMiniPlayer"
+                  @update:model-value="setUseMiniPlayer"
                 />
               </div>
             </div>

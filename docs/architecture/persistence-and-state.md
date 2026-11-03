@@ -184,7 +184,7 @@ persistence** rather than `pinia-plugin-persistedstate`.
   `jukeboxLastVolume`, `jukeboxActivePlaylistId`, `jukeboxRepeatMode`,
   `jukeboxShuffle`, `jukeboxSmoothTrackChange`,
   `jukeboxAnimatePlayerBackground`, `jukeboxDisplayCoverWhilePlaying`,
-  `confirmDelete`, `savedLanguage`.
+  `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`.
 - `savedLanguage` defaults to `window.navigator.language`.
 
 `pinia-shared-state` is also active, so these stores are synchronized between

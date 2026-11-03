@@ -95,6 +95,17 @@ function close() {
             <QToggle v-model="configStore.jukeboxDisplayCoverWhilePlaying" />
           </QItemSection>
         </QItem>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('jukebox.useMiniPlayer') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.useMiniPlayerHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.jukeboxUseMiniPlayer" />
+          </QItemSection>
+        </QItem>
       </QList>
     </section>
   </BaseModal>

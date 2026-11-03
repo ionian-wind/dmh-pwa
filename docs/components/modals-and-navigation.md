@@ -171,6 +171,7 @@ Settings item. It currently has two sections:
   - Smooth track change.
   - Animate player background.
   - Display cover while playing.
+  - Use mini player (off → the Jukebox menu item opens `/jukebox`).
 
 The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits

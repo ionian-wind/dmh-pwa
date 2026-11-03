@@ -10,6 +10,7 @@ import MentionModalStack from '@/components/common/MentionModalStack.vue';
 import { Section } from '@/types';
 import SettingsDialog from '@/components/SettingsDialog.vue';
 import { provideLayout } from '@/composables/useLayout';
+import { useConfigStore } from './utils/configStore';
 
 import {
   IconMaximize,
@@ -50,6 +51,7 @@ import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
+const configStore = useConfigStore();
 
 const leftMenuMinimized = ref(false);
 const toolsExpanded = ref(false);
@@ -255,6 +257,14 @@ const hasJukeboxFooter = computed(
 const isJukeboxPopupOpen = ref(false);
 const isCalculatorPopupOpen = ref(false);
 const isSettingsOpen = ref(false);
+
+function openJukebox() {
+  if (configStore.jukeboxUseMiniPlayer) {
+    isJukeboxPopupOpen.value = !isJukeboxPopupOpen.value;
+    return;
+  }
+  router.push('/jukebox');
+}
 </script>
 
 <template>
@@ -395,7 +405,7 @@ const isSettingsOpen = ref(false);
               v-else
               clickable
               v-ripple
-              @click="isJukeboxPopupOpen = !isJukeboxPopupOpen"
+              @click="openJukebox"
             >
               <QItemSection side>
                 <IconMusic
