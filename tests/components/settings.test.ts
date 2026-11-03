@@ -198,7 +198,7 @@ describe('settings dialog', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/', component: { render: () => h('div') } },
-        { path: '/ambient-sound', component: { render: () => h('div') } },
+        { path: '/ambient', component: { render: () => h('div') } },
       ],
     });
     await router.push('/');

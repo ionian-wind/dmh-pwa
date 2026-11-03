@@ -172,7 +172,7 @@ function isToolsRoute(): boolean {
   return (
     path.startsWith('/timers') ||
     path.startsWith('/probability-calculator') ||
-    path.startsWith('/ambient-sound')
+    path.startsWith('/ambient')
   );
 }
 
@@ -423,9 +423,9 @@ function openJukebox() {
                 <QItem
                   clickable
                   v-ripple
-                  :to="'/ambient-sound'"
+                  :to="'/ambient'"
                   :active="
-                    router.currentRoute.value.path.startsWith('/ambient-sound')
+                    router.currentRoute.value.path.startsWith('/ambient')
                   "
                   :active-class="'bg-secondary'"
                   :title="t('navigation.ambientSound')"

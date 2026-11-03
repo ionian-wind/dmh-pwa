@@ -13,6 +13,10 @@ import type {
   SceneRef,
 } from '../types';
 import { audioEngine } from '../utils/audioEngine';
+import {
+  pauseJukeboxForAmbient,
+  setAmbientPauseHandler,
+} from '@/utils/playbackCoordinator';
 import * as packManager from '../utils/packManager';
 import {
   getAudioFormat,
@@ -237,7 +241,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       volume,
       isPlaying: true,
     });
-    if (isPlaying.value) audioEngine.playLayer(key, volume);
+    if (isPlaying.value) {
+      pauseJukeboxForAmbient();
+      audioEngine.playLayer(key, volume);
+    }
     return true;
   }
 
@@ -274,6 +281,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       replace,
     );
     if (isPlaying.value) {
+      pauseJukeboxForAmbient();
       audioEngine.playMusic(intensity.value / 100);
     }
   }
@@ -343,6 +351,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       }
 
       isPlaying.value = true;
+      pauseJukeboxForAmbient();
       startSceneMusic(packId, found.scene);
       for (const [layer, active] of activeLayers.value) {
         audioEngine.playLayer(layer, active.volume);
@@ -366,6 +375,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   function play(): void {
     if (!activeScene.value && activeLayers.value.size === 0) return;
     isPlaying.value = true;
+    pauseJukeboxForAmbient();
     for (const [layer, active] of activeLayers.value) {
       audioEngine.playLayer(layer, active.volume);
     }
@@ -682,6 +692,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
 
   audioEngine.setMusicEndHandler(handleSceneMusicEnd);
   audioEngine.setOneShotEndHandler(handleOneShotEnd);
+  setAmbientPauseHandler(pause);
 
   return {
     storedPacks,

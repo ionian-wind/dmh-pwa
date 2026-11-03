@@ -14,8 +14,6 @@
             :active-variation-id="
               activeVariationId(entry.packageId, entry.ambience.id)
             "
-            :pack-name="entry.pack.name"
-            :used-in="usedIn(entry.packageId, entry.ambience.id)"
             @select-variation="
               (variationId) => selectVariation(entry, variationId)
             "
@@ -66,14 +64,6 @@ const groups = computed(() => {
 
 function activeVariationId(packId: string, ambienceId: string) {
   return store.activeLayers.get(`${packId}:${ambienceId}`)?.variationId ?? null;
-}
-
-function usedIn(packId: string, ambienceId: string) {
-  return store.allScenes.filter(({ pack, scene }) =>
-    scene.ambiences.some(
-      (selection) => pack.id === packId && selection.ambienceId === ambienceId,
-    ),
-  ).length;
 }
 
 async function selectVariation(entry: GalleryAmbience, variationId: string) {

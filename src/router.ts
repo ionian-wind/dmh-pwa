@@ -161,15 +161,23 @@ const router = createRouter({
     },
     // Ambient Sound route
     {
-      path: '/ambient-sound',
+      path: '/ambient',
       name: 'ambient-sound',
       component: AmbientSoundView,
       meta: { exact: true },
     },
     {
-      path: '/ambient-sound/scenes/:sceneId',
+      path: '/ambient/:sceneId',
       name: 'ambient-scene',
       component: AmbientSoundView,
+    },
+    {
+      path: '/ambient-sound',
+      redirect: '/ambient',
+    },
+    {
+      path: '/ambient-sound/scenes/:sceneId',
+      redirect: (to) => `/ambient/${to.params.sceneId}`,
     },
     // 404 route
     {

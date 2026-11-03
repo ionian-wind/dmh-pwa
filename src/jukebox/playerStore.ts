@@ -12,6 +12,10 @@ import { fileHandler } from '@/utils/files';
 import { debug, debugError, debugWarn } from '@/utils/debug';
 import { rng } from '@/utils/random';
 import { Howl, Howler } from 'howler';
+import {
+  pauseAmbientForJukebox,
+  setJukeboxPauseHandler,
+} from '@/utils/playbackCoordinator';
 
 const SMOOTH_TRACK_FADE_MS = 1200;
 
@@ -440,6 +444,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       volume: smooth ? 0 : volume.value,
       format: format ? [format] : undefined,
       onplay: () => {
+        pauseAmbientForJukebox();
         isPlaying.value = true;
         duration.value = howl?.duration() || 0;
         startProgressTimer();
@@ -562,6 +567,12 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
       debug('🎵 JukeboxPlayer: Resuming playback (Howler)');
       howl.play();
     }
+  }
+
+  function pause() {
+    if (!isPlaying.value) return;
+    howl?.pause();
+    isPlaying.value = false;
   }
 
   async function playPrev() {
@@ -803,6 +814,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     }
   }
 
+  setJukeboxPauseHandler(pause);
+
   return {
     // State
     currentTrack,
@@ -834,6 +847,7 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     playPrev,
     playTrackFromPlaylist,
     togglePlay,
+    pause,
     playNext,
     stop,
 

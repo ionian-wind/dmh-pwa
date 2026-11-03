@@ -545,9 +545,8 @@ A global content gallery for ambience entries from all loaded packages.
 
 **Ambience row**
 
-- Icon, name and a package/category subtitle.
-- Number of scenes using the entry; available variations are the variation
-  buttons themselves.
+- Icon, name and category.
+- Available variations are shown as variation buttons.
 - Variation buttons: clicking a variation on an inactive entry starts it,
   clicking another variation on an active entry swaps its sample pool, and
   clicking the active variation stops it. Several entries can play together.
@@ -591,7 +590,7 @@ Package content is imported, not authored in the app.
 
 Opening a scene row replaces the ambient page content with the scene player
 view while the package sidebar and bottom player panel stay in place. The scene
-view URL is `/ambient-sound/scenes/<scene-id>`, so the hashed scene ID is
+view URL is `/ambient/<scene-id>`, so the hashed scene ID is
 shareable and survives a reload. Playback starts only from an explicit play
 action. A Back button in the view header returns to the scene/gallery tabs. The
 view contains:
@@ -669,6 +668,15 @@ It mirrors the jukebox player and lives in the app footer.
   and volume state.
 - A single one-shot may be retriggered while already playing; overlapping
   instances are supported up to the audio engine's one-shot pool.
+
+**Playback exclusivity**
+
+- Jukebox playback and ambient scene/ambience playback are mutually exclusive:
+  starting one pauses the other.
+- Pausing or stopping one never resumes the other automatically; the user must
+  start it again.
+- One-shots are exempt: they can sound while ambient is paused, while the
+  jukebox is playing, or with no scene active.
 
 ### 4.9 Responsive behavior
 
@@ -1284,7 +1292,7 @@ Add route to router:
 ```typescript
 // src/router/index.ts (add to routes array)
 {
-  path: '/ambient-sound',
+  path: '/ambient',
   name: 'ambient-sound',
   component: () => import('@/ambient-sound/AmbientSoundView.vue'),
   meta: { title: 'Ambient Sound', icon: 'music' },

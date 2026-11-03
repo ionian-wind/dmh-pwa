@@ -92,6 +92,10 @@ vi.mock('@/jukebox/stores', () => ({
   usePictureUrlCacheStore: () => ({ getPictureUrl: mocks.pictureUrl }),
 }));
 
+import {
+  resetPlaybackCoordinator,
+  setAmbientPauseHandler,
+} from '@/utils/playbackCoordinator';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 
 function track(id: string, overrides: Record<string, any> = {}) {
@@ -127,8 +131,24 @@ describe('jukebox player store', () => {
   });
 
   afterEach(() => {
+    resetPlaybackCoordinator();
     delete (navigator as any).mediaSession;
     vi.unstubAllGlobals();
+  });
+
+  it('pauses ambient playback when a track starts', async () => {
+    const pauseAmbient = vi.fn();
+    setAmbientPauseHandler(pauseAmbient);
+    const player = useJukeboxPlayerStore();
+    const song = track('one');
+    mocks.tracks.items.value = [song];
+    player.queue = [song];
+    player.queueIndex = 0;
+
+    await player.playTrackFromPlaylist(song);
+
+    expect(pauseAmbient).toHaveBeenCalled();
+    resetPlaybackCoordinator();
   });
 
   it('plays, pauses, seeks, changes volume and config toggles', async () => {

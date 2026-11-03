@@ -64,6 +64,8 @@ describe('AmbienceGallery', () => {
     expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(2);
     expect(wrapper.text()).toContain('Weather');
     expect(wrapper.text()).toContain('Interior');
+    expect(wrapper.text()).not.toContain('Forest');
+    expect(wrapper.text()).not.toContain('scenes');
     wrapper.unmount();
   });
 

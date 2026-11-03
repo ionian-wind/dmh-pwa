@@ -7,9 +7,6 @@
           {{ ambience.name }}
         </div>
         <div class="text-caption text-grey-7">{{ subtitle }}</div>
-        <div v-if="usedIn !== undefined" class="text-caption text-grey-6">
-          {{ usedIn }} {{ t('ambientSoundPage.scenes') }}
-        </div>
       </div>
       <QBtnGroup flat>
         <QBtn
@@ -41,14 +38,10 @@ const props = withDefaults(
     ambience: LayerDef;
     activeVariationId?: string | null;
     disabled?: boolean;
-    packName?: string;
-    usedIn?: number;
   }>(),
   {
     activeVariationId: null,
     disabled: false,
-    packName: '',
-    usedIn: undefined,
   },
 );
 
@@ -60,10 +53,9 @@ const { t } = useI18n();
 
 const variations = computed(() => getLayerVariations(props.ambience));
 
-const subtitle = computed(() => {
-  const parts = [props.packName, props.ambience.category].filter(Boolean);
-  return parts.length ? parts.join(' · ') : t('ambientSoundPage.ambiences');
-});
+const subtitle = computed(
+  () => props.ambience.category?.trim() || t('ambientSoundPage.ambiences'),
+);
 </script>
 
 <style scoped>

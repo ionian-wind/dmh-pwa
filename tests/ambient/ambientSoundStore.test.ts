@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 const mocks = vi.hoisted(() => ({
@@ -35,6 +35,10 @@ vi.mock('@/ambient-sound/utils/audioEngine', () => ({
   audioEngine: mocks.audioEngine,
 }));
 
+import {
+  resetPlaybackCoordinator,
+  setJukeboxPauseHandler,
+} from '@/utils/playbackCoordinator';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { normalizeSoundPack } from '@/ambient-sound/utils/packData';
 import type { SoundPackManifest } from '@/ambient-sound/types';
@@ -136,6 +140,10 @@ function createStore() {
 }
 
 describe('ambient sound store', () => {
+  afterEach(() => {
+    resetPlaybackCoordinator();
+  });
+
   beforeEach(() => {
     for (const fn of Object.values(mocks.packManager)) fn.mockReset();
     for (const fn of Object.values(mocks.audioEngine)) fn.mockReset();
@@ -356,6 +364,21 @@ describe('ambient sound store', () => {
       'forest:rain',
       0.4,
     );
+  });
+
+  it('pauses jukebox playback when ambient starts, but not for one-shots', async () => {
+    const pauseJukebox = vi.fn();
+    setJukeboxPauseHandler(pauseJukebox);
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.playScene('forest', 'tavern');
+    expect(pauseJukebox).toHaveBeenCalled();
+
+    pauseJukebox.mockClear();
+    await store.playOneShot('forest', 'thunder');
+    expect(pauseJukebox).not.toHaveBeenCalled();
+    resetPlaybackCoordinator();
   });
 
   it('plays one-shots independently of ambient volume and transport', async () => {
