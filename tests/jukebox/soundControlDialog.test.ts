@@ -125,7 +125,6 @@ describe('SoundControlDialog', () => {
     const frame = wrapper.find('.sound-control-frame');
     expect(frame.attributes('style')).toContain('width: 600px');
     expect(frame.attributes('style')).toContain('max-width: 600px');
-    expect(wrapper.text()).toContain('Sound control');
     wrapper.unmount();
   });
 

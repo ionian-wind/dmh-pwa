@@ -169,9 +169,6 @@ function navigateToJukebox() {
             >
               <IconExternalLink />
             </QBtn>
-            <span class="sound-control-title">
-              {{ t('jukebox.soundControl') }}
-            </span>
           </div>
           <QBtn
             flat
@@ -218,13 +215,6 @@ function navigateToJukebox() {
   overflow-y: auto;
 }
 
-.sound-control-title {
-  margin-left: 0.25rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .drag-handle {
   cursor: grab;
 }
@@ -232,10 +222,6 @@ function navigateToJukebox() {
 @media (max-width: 600px) {
   .sound-control-card {
     max-height: 88vh;
-  }
-
-  .sound-control-title {
-    display: none;
   }
 }
 </style>
