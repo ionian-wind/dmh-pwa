@@ -77,6 +77,10 @@ randomly and the next random variant follows when the track ends. Only one music
 preset plays at a time, and the scene can switch it off entirely. There is no
 shared mood-state music and no global music track that outlives the scene.
 
+Presets may be **continual** or **temporary**. Temporary presets (for example
+Victory) play once and then return to the previous continual preset. The sample
+package marks every `victory` preset as temporary.
+
 ### 2.5 Global gallery
 
 After a package is loaded:
@@ -137,7 +141,7 @@ src/
 │   │   ├── SceneList.vue             # Package-owned scenes
 │   │   ├── ScenePlayerView.vue       # In-page scene player
 │   │   ├── AmbienceGallery.vue       # Global ambience browser
-│   │   ├── OneShotGallery.vue        # Global one-shot card grid
+│   │   ├── OneShotGallery.vue        # Global one-shot knob grid
 │   │   ├── AmbientGlobalControl.vue  # Fixed footer player
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
@@ -245,12 +249,106 @@ directory or mood-state track shared by scenes.
           "id": "combat",
           "name": "Combat",
           "files": ["scenes/tavern/music/combat.mp3"]
+        },
+        {
+          "id": "victory",
+          "name": "Victory",
+          "files": ["scenes/tavern/music/victory.mp3"],
+          "mode": "temporary"
         }
       ]
     }
   ]
 }
 ```
+
+**Archive layout**
+
+- `pack.json` is required and must sit at the archive root.
+- `ambiences/` holds the shared ambience sample pools referenced by
+  `ambiences[].variations[].samples`.
+- `one-shots/` holds one-shot files referenced by `oneShots[].file`.
+- `scenes/<scene-id>/music/` holds music owned by that scene. A preset's `files`
+  entries are resolved relative to the package root; bare filenames are
+  normalized to `scenes/<scene-id>/music/<name>`.
+- `icon.png` is an optional package thumbnail. It is not the scene icon (scenes
+  have no icon).
+- Audio paths may be absolute from the package root or bare filenames; the
+  importer normalizes them into the canonical folders.
+- Importing a package never starts audio. Playback begins only from an explicit
+  play action.
+
+**Top-level manifest fields**
+
+| Field              | Required | Notes                                                         |
+| ------------------ | -------- | ------------------------------------------------------------- |
+| `version`          | yes      | Manifest format version.                                      |
+| `id`               | yes      | Stable package ID. Re-importing with the same ID replaces it. |
+| `name`             | yes      | Display name.                                                 |
+| `description`      | yes      | Short summary.                                                |
+| `author`           | no       | Attribution text.                                             |
+| `icon`             | no       | Package icon value; not used for scene identity.              |
+| `category`         | yes      | `fantasy`, `scifi`, `horror`, `modern` or `custom`.           |
+| `defaultIntensity` | no       | Fallback scene intensity, snapped to 0/25/50/75/100.          |
+| `ambiences`        | yes      | Ambience entries (legacy `layers` is normalized here).        |
+| `oneShots`         | yes      | One-shot entries.                                             |
+| `scenes`           | yes      | Scene configurations.                                         |
+| `moodStates`       | no       | Legacy mood music, normalized into single-preset scenes.      |
+| `weatherSystems`   | no       | Legacy weather entries, normalized into ambience categories.  |
+
+**Ambience entry**
+
+| Field            | Required | Notes                                                               |
+| ---------------- | -------- | ------------------------------------------------------------------- |
+| `id`             | yes      | Stable ID, unique inside the package.                               |
+| `name`           | yes      | Display name.                                                       |
+| `icon`           | yes      | Icon-picker value such as `fa-solid:cloud-rain`.                    |
+| `category`       | no       | Group heading (Weather, Nature, Interior, Crowd, …).                |
+| `defaultVolume`  | yes      | 0–100.                                                              |
+| `loop`           | yes      | Ambience layers normally loop.                                      |
+| `fadeTime`       | no       | Fade duration in milliseconds.                                      |
+| `variations`     | yes      | One or more named sample pools.                                     |
+| `file`/`samples` | no       | Legacy single-file/flat sample forms; normalized into `variations`. |
+
+Each variation has `id`, `name` and `samples[]`. Each sample is a path relative
+to the package root. The folder is normally `ambiences/`.
+
+**One-shot entry**
+
+| Field      | Required | Notes                                                              |
+| ---------- | -------- | ------------------------------------------------------------------ |
+| `id`       | yes      | Stable ID, unique inside the package.                              |
+| `name`     | yes      | Display name.                                                      |
+| `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.                   |
+| `file`     | yes      | Audio path relative to the package root, normally `one-shots/...`. |
+| `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.             |
+| `volume`   | yes      | 0–100. One-shots use their own volume and ignore ambient buses.    |
+| `cooldown` | no       | Optional cooldown in seconds.                                      |
+
+**Scene**
+
+| Field          | Required | Notes                                                              |
+| -------------- | -------- | ------------------------------------------------------------------ |
+| `id`           | yes      | Stable ID, unique inside the package.                              |
+| `name`         | yes      | Display name.                                                      |
+| `description`  | no       | Preview text.                                                      |
+| `intensity`    | yes      | One of 0, 25, 50, 75 or 100 (snapped on load).                     |
+| `ambiences`    | yes      | Active ambience selections: `ambienceId`, `variationId`, `volume`. |
+| `oneShotIds`   | yes      | One-shot IDs available in the scene.                               |
+| `musicPresets` | yes      | Scene-owned music presets.                                         |
+
+**Scene music preset**
+
+| Field   | Required | Notes                                                                 |
+| ------- | -------- | --------------------------------------------------------------------- |
+| `id`    | yes      | Preset type such as `explore`, `combat`, `victory` or `rest`.         |
+| `name`  | yes      | Display name.                                                         |
+| `files` | yes      | One or more variants; one is picked randomly each time.               |
+| `mode`  | no       | `continual` (default) or `temporary`. Temporary presets return to the |
+|         |          | previous continual preset when the track ends (sample: `victory`).    |
+
+Scenes have no `icon` field. Unknown fields are ignored. Scene music is owned by
+the scene; there is no package-wide music folder.
 
 ### 3.3 Data Models
 
@@ -310,6 +408,8 @@ export interface SceneMusicPreset {
   id: string;
   name: string;
   files: string[];
+  /** `continual` (default) or `temporary` (returns to the previous preset). */
+  mode?: 'continual' | 'temporary';
 }
 
 export interface SceneDef {
@@ -438,11 +538,12 @@ A global content gallery for ambience entries from all loaded packages.
 A global content gallery for one-shot entries.
 
 - Package and category filters behave like the Ambiences tab.
-- Flat card grid; cards are not grouped by package.
-- Each card shows icon, name, category, package and “Used in N scenes”.
-- Clicking anywhere on the card plays the one-shot; there is no separate play
-  button.
-- A card highlights while its one-shot is playing.
+- Flat knob grid; entries are not grouped by package.
+- Each entry is a Quasar knob with the one-shot icon in the knob slot.
+- The knob arc shows the current one-shot playback progress.
+- Clicking the knob plays the one-shot; clicking again retriggers it.
+- The knob is highlighted while the one-shot is playing.
+- Each entry also shows icon, name, category, package and “Used in N scenes”.
 - Triggering a one-shot from the scene player/playback panel is independent of
   ambient playback, scene music and ambient volume settings.
 - One-shot cards remain visible and playable even when no scene is active.
@@ -468,16 +569,19 @@ returns to the scene/gallery tabs. The view contains:
   not block one-shots. While the scene is paused or not the active scene, music
   preset buttons and ambience variation buttons are disabled; one-shots remain
   available.
-- **Music preset bar** — an Off button plus one button per scene music preset
-  (for example Explore, Combat, Victory). Only one preset can be active; the Off
-  button stops scene music without stopping ambiences. Within a preset the next
-  music variant is chosen randomly when the current track ends.
+- **Music preset bar** — a single button group containing Off plus one larger
+  button per scene music preset (for example Explore, Combat, Victory). Only one
+  preset can be active; the Off button stops scene music without stopping
+  ambiences. Within a preset the next music variant is chosen randomly when the
+  current track ends. Temporary presets such as Victory return to the previous
+  preset when their track ends.
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.
-- **One-shots tab** — linked one-shots as cards grouped by category. Clicking a
-  card plays that one-shot immediately, independent of music or ambience state,
-  and the card highlights while it plays.
+- **One-shots tab** — linked one-shots as knob controls grouped by category.
+  The one-shot icon sits inside the knob and the arc shows playback progress.
+  Clicking the knob plays the one-shot immediately, independent of music or
+  ambience state.
 
 The Back button returns to the list without stopping playback; the scene remains
 available from the bottom player panel.
@@ -531,7 +635,7 @@ It mirrors the jukebox player and lives in the app footer.
 **Desktop (≥1024 px)**
 
 - Right package sidebar persistent.
-- Scenes use a single-column list; one-shots use an auto-fill card grid.
+- Scenes use a single-column list; one-shots use an auto-fill knob grid.
 - Scene player view spans the full page-content width.
 - Tabs stay sticky below the app header; the lists scroll independently.
 - Docked sound panel matches the page-content width.
@@ -579,7 +683,8 @@ It mirrors the jukebox player and lives in the app footer.
 | `SceneList`            | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
 | `ScenePlayerView`      | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
 | `AmbienceGallery`      | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `category`               |
-| `OneShotGallery`       | One-shot card grid and playing highlight                      | `galleryOneShots`, `category`                |
+| `OneShotGallery`       | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `category`                |
+| `OneShotControl`       | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`              |
 | `EntityScenesPanel`    | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
 | `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume     | `activeScene`, `playback`, `masterVolume`    |
 

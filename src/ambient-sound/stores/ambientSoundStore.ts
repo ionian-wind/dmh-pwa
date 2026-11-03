@@ -10,6 +10,7 @@ import type {
   SceneDef,
   SceneEntityLink,
   SceneLinkEntityType,
+  SceneMusicPreset,
   SceneRef,
 } from '../types';
 import { audioEngine } from '../utils/audioEngine';
@@ -71,6 +72,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   const isPlaying = ref(false);
   const musicEnabled = ref(true);
   const activeMusicPresetId = ref<string | null>(null);
+  const previousMusicPresetId = ref<string | null>(null);
   const intensity = ref(50);
   const masterVolume = ref(80);
   const loading = ref(false);
@@ -248,6 +250,17 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     );
   }
 
+  function continualFallback(
+    scene: SceneDef,
+    excludeId?: string,
+  ): SceneMusicPreset | null {
+    return (
+      scene.musicPresets.find(
+        (preset) => preset.id !== excludeId && preset.mode !== 'temporary',
+      ) ?? null
+    );
+  }
+
   function startSceneMusic(
     packId: string,
     scene: SceneDef,
@@ -272,7 +285,9 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       getAudioFormat(rawFile),
       replace,
     );
-    audioEngine.playMusic(intensity.value / 100);
+    if (isPlaying.value) {
+      audioEngine.playMusic(intensity.value / 100);
+    }
   }
 
   function handleSceneMusicEnd(): void {
@@ -284,7 +299,30 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     ) {
       return;
     }
-    startSceneMusic(activeScene.value.pack.id, activeScene.value.scene, true);
+
+    const scene = activeScene.value.scene;
+    const active = activeMusicPreset(scene);
+    if (active?.mode === 'temporary') {
+      const previous =
+        (previousMusicPresetId.value
+          ? scene.musicPresets.find(
+              (preset) =>
+                preset.id === previousMusicPresetId.value &&
+                preset.mode !== 'temporary',
+            )
+          : null) ?? continualFallback(scene, active.id);
+      previousMusicPresetId.value = null;
+      activeMusicPresetId.value = previous?.id ?? null;
+      if (!previous) {
+        musicEnabled.value = false;
+        audioEngine.stopMusic(false);
+        return;
+      }
+      startSceneMusic(activeScene.value.pack.id, scene, true);
+      return;
+    }
+
+    startSceneMusic(activeScene.value.pack.id, scene, true);
   }
 
   async function playScene(packId: string, sceneId: string): Promise<void> {
@@ -299,7 +337,12 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       await ensurePackAudio(found.pack);
       activeSceneKey.value = key;
       intensity.value = snapIntensity(found.scene.intensity);
-      activeMusicPresetId.value = found.scene.musicPresets[0]?.id ?? null;
+      const firstPreset = found.scene.musicPresets[0] ?? null;
+      activeMusicPresetId.value = firstPreset?.id ?? null;
+      previousMusicPresetId.value =
+        firstPreset?.mode === 'temporary'
+          ? (continualFallback(found.scene, firstPreset.id)?.id ?? null)
+          : null;
       musicEnabled.value = !!activeMusicPresetId.value;
       activeLayers.value.clear();
       audioEngine.stopAll();
@@ -358,6 +401,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     activeLayers.value.clear();
     activeSceneKey.value = null;
     activeMusicPresetId.value = null;
+    previousMusicPresetId.value = null;
     isPlaying.value = false;
   }
 
@@ -444,10 +488,28 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   function setMusicPreset(presetId: string | null): void {
     if (!presetId) {
       activeMusicPresetId.value = null;
+      previousMusicPresetId.value = null;
       musicEnabled.value = false;
       audioEngine.stopMusic(false);
       return;
     }
+
+    const scene = activeScene.value?.scene ?? null;
+    const preset = scene?.musicPresets.find((item) => item.id === presetId);
+    if (preset?.mode === 'temporary') {
+      const current = activeMusicPresetId.value;
+      if (scene && current && current !== presetId) {
+        const currentPreset = scene.musicPresets.find(
+          (item) => item.id === current,
+        );
+        if (currentPreset && currentPreset.mode !== 'temporary') {
+          previousMusicPresetId.value = current;
+        }
+      }
+    } else {
+      previousMusicPresetId.value = null;
+    }
+
     activeMusicPresetId.value = presetId;
     musicEnabled.value = true;
     if (!activeScene.value) return;
@@ -473,6 +535,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     return (
       (playingOneShotCounts.value.get(oneShotKey(packId, oneShotId)) ?? 0) > 0
     );
+  }
+
+  function oneShotProgress(packId: string, oneShotId: string): number {
+    return audioEngine.getOneShotProgress(oneShotKey(packId, oneShotId));
   }
 
   function handleOneShotEnd(key: string): void {
@@ -666,6 +732,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     toggleMusic,
     playOneShot,
     isOneShotPlaying,
+    oneShotProgress,
     previewAmbience,
     stopPreview,
     addSceneLink,

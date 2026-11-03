@@ -6,6 +6,7 @@ const storeMock = vi.hoisted(() => ({
   galleryOneShots: [] as any[],
   allScenes: [] as any[],
   isOneShotPlaying: vi.fn(() => false),
+  oneShotProgress: vi.fn(() => 0),
   playOneShot: vi.fn(),
 }));
 
@@ -38,6 +39,8 @@ describe('OneShotGallery', () => {
   beforeEach(() => {
     storeMock.isOneShotPlaying.mockReset();
     storeMock.isOneShotPlaying.mockReturnValue(false);
+    storeMock.oneShotProgress.mockReset();
+    storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.playOneShot.mockReset();
     storeMock.selectedPackId = null;
     storeMock.galleryOneShots = [
@@ -57,11 +60,11 @@ describe('OneShotGallery', () => {
       global: { stubs: quasarStubs },
     });
 
-    const cards = wrapper.findAll('.sfx-card');
+    const cards = wrapper.findAll('.one-shot-control');
     expect(cards).toHaveLength(2);
-    expect(cards[0].find('button').exists()).toBe(false);
+    expect(cards[0].find('.one-shot-knob').exists()).toBe(true);
 
-    await cards[0].trigger('click');
+    await cards[0].find('.one-shot-knob').trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });
@@ -74,7 +77,7 @@ describe('OneShotGallery', () => {
       global: { stubs: quasarStubs },
     });
 
-    const cards = wrapper.findAll('.sfx-card');
+    const cards = wrapper.findAll('.one-shot-control');
     expect(cards[0].classes()).toContain('is-playing');
     expect(cards[1].classes()).not.toContain('is-playing');
     wrapper.unmount();
@@ -86,7 +89,7 @@ describe('OneShotGallery', () => {
     });
 
     await wrapper.find('select').setValue('combat');
-    expect(wrapper.findAll('.sfx-card')).toHaveLength(1);
+    expect(wrapper.findAll('.one-shot-control')).toHaveLength(1);
     expect(wrapper.text()).toContain('Sword');
 
     storeMock.galleryOneShots = [];

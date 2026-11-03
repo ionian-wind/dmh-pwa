@@ -38,6 +38,14 @@ const howler = vi.hoisted(() => {
       return this;
     }
 
+    duration(_id?: number) {
+      return 10;
+    }
+
+    seek(_id?: number) {
+      return 4;
+    }
+
     unload() {
       this.unloaded = true;
       return this;
@@ -125,10 +133,21 @@ describe('ambient audio engine', () => {
     expect(howler.instances).toHaveLength(1);
     expect(engine.playOneShot('thunder', 0.5)).toBe(true);
     expect(instance(0).volume()).toBe(0.5);
+    expect(engine.getOneShotProgress('thunder')).toBe(0.4);
     expect(engine.playOneShot('missing')).toBe(false);
+    expect(engine.getOneShotProgress('missing')).toBe(0);
 
     instance(0).opts.onend();
     expect(onEnd).toHaveBeenCalledWith('thunder');
+  });
+
+  it('returns zero one-shot progress when duration is unavailable', () => {
+    engine.loadOneShot('thunder', 'blob:thunder');
+    engine.playOneShot('thunder');
+    instance(0).duration = () => {
+      throw new Error('not ready');
+    };
+    expect(engine.getOneShotProgress('thunder')).toBe(0);
   });
 
   it('replaces layer samples and reports temporary music end', () => {

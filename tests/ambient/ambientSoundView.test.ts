@@ -18,6 +18,8 @@ const storeMock = vi.hoisted(() => ({
   setMasterVolume: vi.fn(),
   loadStoredPacks: vi.fn().mockResolvedValue(undefined),
   stopPreview: vi.fn(),
+  playScene: vi.fn(),
+  playOneShot: vi.fn(),
 }));
 
 const layoutMock = vi.hoisted(() => ({
@@ -72,6 +74,8 @@ describe('AmbientSoundView', () => {
       storeMock.setMasterVolume,
       storeMock.loadStoredPacks,
       storeMock.stopPreview,
+      storeMock.playScene,
+      storeMock.playOneShot,
       layoutMock.setTopMenuContent,
       layoutMock.setBottomDrawerContent,
       rightDrawerMock.set,
@@ -99,6 +103,8 @@ describe('AmbientSoundView', () => {
     expect(wrapper.text()).toContain('Ambiences');
     expect(wrapper.text()).toContain('One-shots');
     expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(true);
+    expect(storeMock.playScene).not.toHaveBeenCalled();
+    expect(storeMock.playOneShot).not.toHaveBeenCalled();
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);

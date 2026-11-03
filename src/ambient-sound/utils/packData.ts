@@ -84,13 +84,16 @@ function normalizeSceneMusicPresets(scene: SceneDef): SceneMusicPreset[] {
       : [];
 
   return presets
-    .map((preset) => ({
-      id: preset.id || 'default',
-      name: preset.name || preset.id || 'Default',
-      files: (preset.files ?? [])
-        .filter(Boolean)
-        .map((file) => normalizeSceneMusicPath(scene.id, file)),
-    }))
+    .map(
+      (preset): SceneMusicPreset => ({
+        id: preset.id || 'default',
+        name: preset.name || preset.id || 'Default',
+        files: (preset.files ?? [])
+          .filter(Boolean)
+          .map((file) => normalizeSceneMusicPath(scene.id, file)),
+        mode: preset.mode === 'temporary' ? 'temporary' : 'continual',
+      }),
+    )
     .filter((preset) => preset.files.length > 0);
 }
 
@@ -133,6 +136,7 @@ export function normalizeSoundPack(
           files: files.map((file) =>
             normalizeSceneMusicPath(`mood-${mood.state}`, file),
           ),
+          mode: getMoodMode(mood),
         },
       ],
     } satisfies SceneDef;

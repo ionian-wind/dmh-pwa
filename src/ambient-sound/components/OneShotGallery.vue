@@ -14,38 +14,14 @@
     </div>
 
     <div v-if="entries.length" class="sfx-grid">
-      <QCard
+      <OneShotControl
         v-for="entry in entries"
         :key="`${entry.packageId}:${entry.oneShot.id}`"
-        flat
-        bordered
-        class="sfx-card"
-        :class="{
-          'is-playing': store.isOneShotPlaying(
-            entry.packageId,
-            entry.oneShot.id,
-          ),
-        }"
-        role="button"
-        tabindex="0"
-        @click="play(entry)"
-        @keydown.enter.prevent="play(entry)"
-        @keydown.space.prevent="play(entry)"
-      >
-        <QCardSection class="column items-center text-center q-gutter-xs">
-          <AmbientIcon :icon="entry.oneShot.icon" :size="28" />
-          <div class="text-subtitle2 text-weight-medium">
-            {{ entry.oneShot.name }}
-          </div>
-          <div class="text-caption text-grey-7">
-            {{ entry.pack.name }} · {{ entry.oneShot.category }}
-          </div>
-          <div class="text-caption text-grey-6">
-            {{ usedIn(entry.packageId, entry.oneShot.id) }}
-            {{ t('ambientSoundPage.scenes') }}
-          </div>
-        </QCardSection>
-      </QCard>
+        :pack-id="entry.packageId"
+        :one-shot="entry.oneShot"
+        :pack-name="entry.pack.name"
+        :used-in="usedIn(entry.packageId, entry.oneShot.id)"
+      />
     </div>
 
     <EmptyState
@@ -62,9 +38,8 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconBell } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
-import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
+import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import type { GalleryOneShot } from '@/ambient-sound/types';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -89,10 +64,6 @@ const entries = computed(() =>
   }),
 );
 
-function play(entry: GalleryOneShot) {
-  void store.playOneShot(entry.packageId, entry.oneShot.id);
-}
-
 function usedIn(packId: string, oneShotId: string) {
   return store.allScenes.filter(
     ({ pack, scene }) =>
@@ -108,20 +79,7 @@ function usedIn(packId: string, oneShotId: string) {
 
 .sfx-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
-}
-
-.sfx-card {
-  min-width: 0;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.sfx-card.is-playing {
-  border-color: var(--color-primary);
-  background: var(--color-background-soft);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
 }
 </style>

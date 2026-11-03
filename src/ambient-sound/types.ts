@@ -32,6 +32,8 @@ export interface SceneMusicPreset {
   id: string;
   name: string;
   files: string[];
+  /** `temporary` presets return to the previous preset when their track ends. */
+  mode?: MoodMode;
 }
 
 /** Legacy scene music shape; normalized into `musicPresets`. */

@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
     pauseAll: vi.fn(),
     setMusicVolume: vi.fn(),
     playOneShot: vi.fn(),
+    getOneShotProgress: vi.fn(),
     stopMusic: vi.fn(),
     setMusicEndHandler: vi.fn(),
     setOneShotEndHandler: vi.fn(),
@@ -100,6 +101,12 @@ const manifest: SoundPackManifest = {
             'scenes/tavern/music/combat-2.mp3',
           ],
         },
+        {
+          id: 'victory',
+          name: 'Victory',
+          files: ['scenes/tavern/music/victory.mp3'],
+          mode: 'temporary',
+        },
       ],
     },
   ],
@@ -116,6 +123,9 @@ const blobs = {
   'scenes/tavern/music/combat.mp3': new Blob(['combat'], { type: 'combat' }),
   'scenes/tavern/music/combat-2.mp3': new Blob(['combat2'], {
     type: 'combat2',
+  }),
+  'scenes/tavern/music/victory.mp3': new Blob(['victory'], {
+    type: 'victory',
   }),
 };
 
@@ -236,6 +246,40 @@ describe('ambient sound store', () => {
     expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
   });
 
+  it('returns from a temporary preset to the previous preset', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
+
+    store.setMusicPreset('victory');
+    expect(store.activeMusicPresetId).toBe('victory');
+
+    const endHandler = mocks.audioEngine.setMusicEndHandler.mock.calls[0][0];
+    endHandler();
+
+    expect(store.activeMusicPresetId).toBe('explore');
+    expect(mocks.audioEngine.loadMusic).toHaveBeenLastCalledWith(
+      'forest::tavern::explore',
+      'blob:theme',
+      false,
+      ['mp3'],
+      true,
+    );
+  });
+
+  it('loads but does not play music while paused', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
+    store.pause();
+    mocks.audioEngine.playMusic.mockClear();
+    mocks.audioEngine.loadMusic.mockClear();
+
+    store.setMusicPreset('combat');
+    expect(mocks.audioEngine.loadMusic).toHaveBeenCalled();
+    expect(mocks.audioEngine.playMusic).not.toHaveBeenCalled();
+  });
+
   it('toggles and changes ambience independently', async () => {
     const store = createStore();
     await store.loadStoredPacks();
@@ -316,6 +360,17 @@ describe('ambient sound store', () => {
     const endHandler = mocks.audioEngine.setOneShotEndHandler.mock.calls[0][0];
     endHandler('oneShot:forest:thunder');
     expect(store.isOneShotPlaying('forest', 'thunder')).toBe(false);
+  });
+
+  it('exposes one-shot playback progress', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    mocks.audioEngine.getOneShotProgress.mockReturnValue(0.5);
+
+    expect(store.oneShotProgress('forest', 'thunder')).toBe(0.5);
+    expect(mocks.audioEngine.getOneShotProgress).toHaveBeenCalledWith(
+      'oneShot:forest:thunder',
+    );
   });
 
   it('ignores one-shots that the audio engine cannot start', async () => {

@@ -23,6 +23,25 @@ describe('AmbientIcon', () => {
     wrapper.unmount();
   });
 
+  it('keeps an already prefixed Font Awesome name', () => {
+    const wrapper = mount(AmbientIcon, {
+      props: { icon: 'fa-solid:fa-cloud-rain' },
+    });
+    const icon = wrapper.find('i');
+    expect(icon.classes()).toContain('fa-cloud-rain');
+    expect(icon.classes()).not.toContain('fa-fa-cloud-rain');
+    wrapper.unmount();
+  });
+
+  it('falls back to text for unknown collections', () => {
+    const wrapper = mount(AmbientIcon, {
+      props: { icon: 'mdi:weather' },
+    });
+    expect(wrapper.find('i').exists()).toBe(false);
+    expect(wrapper.text()).toBe('mdi:weather');
+    wrapper.unmount();
+  });
+
   it('renders emoji and default icons as text', () => {
     const emoji = mount(AmbientIcon, { props: { icon: '🌧️' } });
     expect(emoji.text()).toBe('🌧️');

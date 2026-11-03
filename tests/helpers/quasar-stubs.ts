@@ -100,6 +100,21 @@ const QToggle = defineComponent({
   },
 });
 
+const QKnob = defineComponent({
+  name: 'QKnob',
+  inheritAttrs: false,
+  props: { modelValue: { type: Number, default: 0 } },
+  emits: ['update:modelValue'],
+  setup(props, { slots, attrs }) {
+    return () =>
+      h(
+        'div',
+        { ...attrs, 'data-stub': 'QKnob', 'data-progress': props.modelValue },
+        slots.default?.(),
+      );
+  },
+});
+
 const QVirtualScroll = defineComponent({
   name: 'QVirtualScroll',
   props: { items: { type: Array, default: () => [] } },
@@ -244,6 +259,7 @@ export const quasarStubs: Record<string, any> = {
   QColor,
   QPopupEdit,
   QPopupProxy,
+  QKnob,
   QVirtualScroll,
 };
 

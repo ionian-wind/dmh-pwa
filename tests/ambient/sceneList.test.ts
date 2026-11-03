@@ -94,6 +94,19 @@ describe('SceneList', () => {
     wrapper.unmount();
   });
 
+  it('shows the Playing badge for the active scene', () => {
+    storeMock.selectedPackId = 'local-pack';
+    storeMock.activeSceneKey = 'local-pack::scene-2';
+    storeMock.isPlaying = true;
+    storeMock.activeScene = { pack: createdPack, scene: { id: 'scene-2' } };
+    const wrapper = mount(SceneList, {
+      global: { stubs: quasarStubs },
+    });
+
+    expect(wrapper.find('[data-stub="QBadge"]').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
   it('does not expose row actions or scene icons', () => {
     storeMock.selectedPackId = 'local-pack';
     const wrapper = mount(SceneList, {

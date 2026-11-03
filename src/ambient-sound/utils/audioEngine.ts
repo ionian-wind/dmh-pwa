@@ -5,6 +5,7 @@ export class AudioEngine {
   private musicTrack: Howl | null = null;
   private weatherTrack: Howl | null = null;
   private oneShots: Map<string, Howl> = new Map();
+  private oneShotPlayIds: Map<string, number> = new Map();
   private masterVolume: number = 0.8;
   private currentMoodState: string = 'explore';
   private musicEndHandler: (() => void) | null = null;
@@ -101,7 +102,15 @@ export class AudioEngine {
       volume: 1,
       html5: true,
       preload: true,
-      onend: () => this.oneShotEndHandler?.(sfxId),
+      onend: (soundId?: number) => {
+        if (
+          soundId === undefined ||
+          this.oneShotPlayIds.get(sfxId) === soundId
+        ) {
+          this.oneShotPlayIds.delete(sfxId);
+        }
+        this.oneShotEndHandler?.(sfxId);
+      },
       ...(format ? { format } : {}),
     });
     this.oneShots.set(sfxId, howl);
@@ -112,8 +121,26 @@ export class AudioEngine {
     if (!sfx) return false;
     // One-shots use their own volume and are independent of ambient buses.
     sfx.volume(Math.max(0, Math.min(1, volume)));
-    sfx.play();
+    const soundId = sfx.play();
+    if (soundId === undefined) return false;
+    this.oneShotPlayIds.set(sfxId, soundId);
     return true;
+  }
+
+  getOneShotProgress(sfxId: string): number {
+    const sfx = this.oneShots.get(sfxId);
+    if (!sfx) return 0;
+    try {
+      const soundId = this.oneShotPlayIds.get(sfxId);
+      const duration =
+        soundId !== undefined ? sfx.duration(soundId) : sfx.duration();
+      if (!Number.isFinite(duration) || duration <= 0) return 0;
+      const seek = soundId !== undefined ? sfx.seek(soundId) : sfx.seek();
+      if (typeof seek !== 'number' || !Number.isFinite(seek)) return 0;
+      return Math.max(0, Math.min(1, seek / duration));
+    } catch {
+      return 0;
+    }
   }
 
   loadMusic(

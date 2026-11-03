@@ -44,13 +44,13 @@
         <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
           {{ t('ambientSoundPage.music') }}
         </div>
-        <div class="music-bar q-mb-md">
+        <QBtnGroup flat class="music-bar q-mb-md">
           <QBtn
             :color="musicOff ? 'primary' : 'grey-7'"
             :outline="!musicOff"
             :disable="!sceneControlsEnabled"
             :label="t('ambientSoundPage.off')"
-            size="sm"
+            size="md"
             @click="store.setMusicPreset(null)"
           />
           <QBtn
@@ -60,10 +60,10 @@
             :outline="activePresetId !== preset.id"
             :disable="!sceneControlsEnabled"
             :label="preset.name"
-            size="sm"
+            size="md"
             @click="store.setMusicPreset(preset.id)"
           />
-        </div>
+        </QBtnGroup>
 
         <TabGroup
           v-model="activeTab"
@@ -133,35 +133,13 @@
               {{ group.category }}
             </div>
             <div class="one-shot-grid">
-              <QCard
+              <OneShotControl
                 v-for="oneShot in group.items"
                 :key="oneShot.id"
-                flat
-                bordered
-                class="one-shot-card"
-                :class="{
-                  'is-playing': store.isOneShotPlaying(
-                    entry.pack.id,
-                    oneShot.id,
-                  ),
-                }"
-                role="button"
-                tabindex="0"
-                @click="store.playOneShot(entry.pack.id, oneShot.id)"
-                @keydown.enter.prevent="
-                  store.playOneShot(entry.pack.id, oneShot.id)
-                "
-                @keydown.space.prevent="
-                  store.playOneShot(entry.pack.id, oneShot.id)
-                "
-              >
-                <QCardSection
-                  class="column items-center text-center q-gutter-xs"
-                >
-                  <AmbientIcon :icon="oneShot.icon" :size="26" />
-                  <div class="text-caption">{{ oneShot.name }}</div>
-                </QCardSection>
-              </QCard>
+                :pack-id="entry.pack.id"
+                :one-shot="oneShot"
+                :knob-size="68"
+              />
             </div>
           </section>
           <EmptyState
@@ -192,6 +170,7 @@ import {
   IconWaveSine,
 } from '@tabler/icons-vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
+import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
@@ -339,9 +318,7 @@ watch(
 }
 
 .music-bar {
-  display: flex;
   flex-wrap: wrap;
-  gap: 8px;
 }
 
 .variant-active {
@@ -352,18 +329,6 @@ watch(
 .one-shot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 10px;
-}
-
-.one-shot-card {
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.one-shot-card.is-playing {
-  border-color: var(--color-primary);
-  background: var(--color-background-soft);
+  gap: 12px;
 }
 </style>

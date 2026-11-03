@@ -102,6 +102,57 @@ describe('ambient pack data', () => {
       id: 'explore',
       name: 'Explore',
       files: ['scenes/grove/music/theme.mp3'],
+      mode: 'continual',
+    });
+  });
+
+  it('normalizes flat samples and legacy scene music', () => {
+    const pack = normalizeSoundPack({
+      ...legacy,
+      layers: [
+        {
+          id: 'flat',
+          name: 'Flat',
+          icon: 'fa-solid:cloud-rain',
+          defaultVolume: 40,
+          loop: true,
+          samples: ['flat.mp3'],
+        },
+        {
+          id: 'legacy',
+          name: 'Legacy',
+          icon: 'fa-solid:wind',
+          defaultVolume: 20,
+          loop: true,
+          file: 'legacy.mp3',
+        },
+      ],
+      ambiences: undefined,
+      moodStates: [],
+      scenes: [
+        {
+          id: 'grove',
+          name: 'Grove',
+          intensity: 50,
+          ambiences: [],
+          oneShotIds: [],
+          musicPresets: [],
+          music: { files: ['theme.mp3'], loop: true },
+        },
+      ],
+    });
+
+    expect(pack.ambiences[0].variations?.[0].samples).toEqual([
+      'ambiences/flat.mp3',
+    ]);
+    expect(pack.ambiences[1].variations?.[0].samples).toEqual([
+      'ambiences/legacy.mp3',
+    ]);
+    expect(pack.scenes[0].musicPresets[0]).toEqual({
+      id: 'default',
+      name: 'Default',
+      files: ['scenes/grove/music/theme.mp3'],
+      mode: 'continual',
     });
   });
 
@@ -133,6 +184,7 @@ describe('ambient pack data', () => {
         id: 'explore',
         name: 'Explore',
         files: ['scenes/grove/music/a.mp3'],
+        mode: 'continual',
       },
     ]);
   });

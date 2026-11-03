@@ -15,6 +15,7 @@ const storeMock = vi.hoisted(() => ({
   setMusicPreset: vi.fn(),
   playOneShot: vi.fn(),
   isOneShotPlaying: vi.fn(() => false),
+  oneShotProgress: vi.fn(() => 0),
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
 }));
@@ -34,6 +35,7 @@ describe('ScenePlayerView', () => {
       storeMock.setMusicPreset,
       storeMock.playOneShot,
       storeMock.isOneShotPlaying,
+      storeMock.oneShotProgress,
       storeMock.toggleAmbience,
       storeMock.setAmbienceVariation,
     ]) {
@@ -44,6 +46,7 @@ describe('ScenePlayerView', () => {
     storeMock.isPlaying = true;
     storeMock.activeSceneKey = 'pack-1::scene-1';
     storeMock.isOneShotPlaying.mockReturnValue(false);
+    storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.activeLayers = new Map([
       ['pack-1:rain', { variationId: 'light', volume: 0.4 }],
     ]);
@@ -167,10 +170,10 @@ describe('ScenePlayerView', () => {
       .find((entry) => entry.text() === 'One-shots');
     await oneShotsTab!.trigger('click');
     const thunder = wrapper
-      .findAll('.one-shot-card')
+      .findAll('.one-shot-control')
       .find((card) => card.text().includes('Thunder'));
     expect(thunder!.attributes('disabled')).toBeUndefined();
-    await thunder!.trigger('click');
+    await thunder!.find('.one-shot-knob').trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });
@@ -263,9 +266,9 @@ describe('ScenePlayerView', () => {
       .find((button) => button.text() === 'One-shots');
     await oneShotsTab!.trigger('click');
     const thunder = wrapper
-      .findAll('.one-shot-card')
+      .findAll('.one-shot-control')
       .find((card) => card.text().includes('Thunder'));
-    await thunder!.trigger('click');
+    await thunder!.find('.one-shot-knob').trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });
@@ -282,7 +285,7 @@ describe('ScenePlayerView', () => {
       .find((button) => button.text() === 'One-shots');
     await oneShotsTab!.trigger('click');
     const thunder = wrapper
-      .findAll('.one-shot-card')
+      .findAll('.one-shot-control')
       .find((card) => card.text().includes('Thunder'));
     expect(thunder!.classes()).toContain('is-playing');
     wrapper.unmount();
