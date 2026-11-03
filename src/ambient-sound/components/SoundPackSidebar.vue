@@ -1,13 +1,6 @@
 <template>
   <div class="sound-pack-sidebar">
     <div class="sound-pack-sidebar-content">
-      <div
-        v-if="store.storedPacks.length === 0"
-        class="text-caption text-grey-7 q-pa-sm"
-      >
-        {{ t('ambientSoundPage.importHint') }}
-      </div>
-
       <SidebarItem
         v-for="pack in store.storedPacks"
         :key="pack.id"

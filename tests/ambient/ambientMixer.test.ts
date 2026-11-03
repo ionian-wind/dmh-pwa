@@ -50,6 +50,9 @@ describe('AmbientMixer', () => {
 
     slider.vm.$emit('update:modelValue', 0.25);
     expect(storeMock.setLayerVolume).toHaveBeenCalledWith('rain', 0.25);
+
+    await wrapper.find('.layer-volume').trigger('wheel', { deltaY: 100 });
+    expect(storeMock.setLayerVolume).toHaveBeenCalledWith('rain', 0.4);
     wrapper.unmount();
   });
 

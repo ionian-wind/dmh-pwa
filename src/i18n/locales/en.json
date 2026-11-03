@@ -773,7 +773,6 @@
     "environmental": "Environmental",
     "noLayers": "No ambient layers available",
     "noSfx": "No one-shot effects available",
-    "importHint": "Import a .spk sound pack file to get started",
     "name": "Name",
     "icon": "Icon",
     "volume": "Volume",

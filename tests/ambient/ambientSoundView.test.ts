@@ -98,6 +98,11 @@ describe('AmbientSoundView', () => {
     await wrapper.find('button[aria-label="Play"]').trigger('click');
     expect(storeMock.togglePlayPause).toHaveBeenCalledTimes(1);
 
+    await wrapper
+      .find('.master-volume-slider')
+      .trigger('wheel', { deltaY: 100 });
+    expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
+
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
     expect(rightDrawerMock.clear).toHaveBeenCalled();

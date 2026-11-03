@@ -27,7 +27,7 @@
               <IconPlayerPlay v-else />
             </QBtn>
             <IconVolume :size="22" />
-            <div class="col">
+            <div class="col" @wheel.prevent="handleMasterVolumeWheel">
               <div class="text-caption text-grey-7 q-mb-xs">
                 {{ t('ambientSoundPage.masterVolume') }}
               </div>
@@ -107,6 +107,11 @@ const { t } = useI18n();
 const store = useAmbientSoundStore();
 const layout = useLayout();
 const rightDrawer = useRightDrawer();
+
+function handleMasterVolumeWheel(event: WheelEvent) {
+  const next = Math.round(store.masterVolume - event.deltaY * 0.1);
+  store.setMasterVolume(next);
+}
 
 onMounted(async () => {
   layout.setTopMenuContent({

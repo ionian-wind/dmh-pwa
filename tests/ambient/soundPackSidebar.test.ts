@@ -114,12 +114,13 @@ describe('SoundPackSidebar', () => {
     wrapper.unmount();
   });
 
-  it('shows the import hint when the library is empty', () => {
+  it('shows no hint or pack rows when the library is empty', () => {
     storeMock.storedPacks = [];
     const wrapper = mount(SoundPackSidebar);
 
-    expect(wrapper.text()).toContain('Import a .spk sound pack file');
+    expect(wrapper.text()).not.toContain('Import a .spk sound pack file');
     expect(wrapper.findAll('.sound-pack-item')).toHaveLength(0);
+    expect(control(wrapper, 'Create Pack')).toBeTruthy();
     wrapper.unmount();
   });
 });

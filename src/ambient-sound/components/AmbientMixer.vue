@@ -16,7 +16,11 @@
       >
         <div class="layer-icon">{{ layer.icon }}</div>
         <div class="layer-name">{{ layer.name }}</div>
-        <div v-if="store.activeLayers.has(layer.id)" class="layer-volume">
+        <div
+          v-if="store.activeLayers.has(layer.id)"
+          class="layer-volume"
+          @wheel.prevent="handleLayerVolumeWheel($event, layer.id)"
+        >
           <QSlider
             :model-value="store.activeLayers.get(layer.id)?.volume ?? 0"
             :min="0"
@@ -47,6 +51,13 @@
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 const store = useAmbientSoundStore();
+
+function handleLayerVolumeWheel(event: WheelEvent, layerId: string) {
+  const active = store.activeLayers.get(layerId);
+  if (!active) return;
+  const next = Math.max(0, Math.min(1, active.volume - event.deltaY * 0.001));
+  store.setLayerVolume(layerId, Math.round(next * 100) / 100);
+}
 </script>
 
 <style scoped>

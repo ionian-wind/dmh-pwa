@@ -931,7 +931,9 @@ Add route to router:
   rows; clicking a pack loads it and clicking the active pack unloads it.
   Each row has a hover delete action with confirmation. **Create Pack** and
   **Import Pack** are pinned bottom `QItem` controls with side icons, matching
-  the map sidebar's bottom control pattern.
+  the map sidebar's bottom control pattern. No empty-library hint is shown.
+- Master and active-layer volume sliders respond to the mouse wheel, matching
+  the jukebox player volume control.
 - While ambient playback is active, the main-menu headphones icon smoothly
   pulses with a larger/smaller bounce animation.
 - Integrate with existing file handling for custom audio upload
