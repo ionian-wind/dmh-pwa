@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
     setMusicVolume: vi.fn(),
     playOneShot: vi.fn(),
     stopMusic: vi.fn(),
+    setMusicEndHandler: vi.fn(),
   },
 }));
 
@@ -85,7 +86,21 @@ const manifest: SoundPackManifest = {
       intensity: 70,
       ambiences: [{ ambienceId: 'rain', variationId: 'light', volume: 40 }],
       oneShotIds: ['thunder'],
-      music: { files: ['scenes/tavern/music/theme.mp3'], loop: true },
+      musicPresets: [
+        {
+          id: 'explore',
+          name: 'Explore',
+          files: ['scenes/tavern/music/theme.mp3'],
+        },
+        {
+          id: 'combat',
+          name: 'Combat',
+          files: [
+            'scenes/tavern/music/combat.mp3',
+            'scenes/tavern/music/combat-2.mp3',
+          ],
+        },
+      ],
     },
   ],
 };
@@ -98,6 +113,10 @@ const blobs = {
   'ambiences/wind.mp3': new Blob(['wind'], { type: 'wind' }),
   'one-shots/thunder.mp3': new Blob(['thunder'], { type: 'thunder' }),
   'scenes/tavern/music/theme.mp3': new Blob(['theme'], { type: 'theme' }),
+  'scenes/tavern/music/combat.mp3': new Blob(['combat'], { type: 'combat' }),
+  'scenes/tavern/music/combat-2.mp3': new Blob(['combat2'], {
+    type: 'combat2',
+  }),
 };
 
 function createStore() {
@@ -163,11 +182,13 @@ describe('ambient sound store', () => {
       0.4,
     );
     expect(mocks.audioEngine.loadMusic).toHaveBeenCalledWith(
-      'forest::tavern',
+      'forest::tavern::explore',
       'blob:theme',
-      true,
+      false,
       ['mp3'],
+      false,
     );
+    expect(store.activeMusicPresetId).toBe('explore');
     expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.7);
 
     store.pause();
@@ -179,6 +200,40 @@ describe('ambient sound store', () => {
     store.stop();
     expect(store.activeScene).toBeNull();
     expect(mocks.audioEngine.stopAll).toHaveBeenCalled();
+  });
+
+  it('switches scene music presets and queues another variant on end', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
+
+    expect(store.activeMusicPresetId).toBe('explore');
+    const endHandler = mocks.audioEngine.setMusicEndHandler.mock.calls[0][0];
+
+    endHandler();
+    expect(mocks.audioEngine.loadMusic).toHaveBeenLastCalledWith(
+      'forest::tavern::explore',
+      'blob:theme',
+      false,
+      ['mp3'],
+      true,
+    );
+
+    store.setMusicPreset('combat');
+    expect(store.activeMusicPresetId).toBe('combat');
+    expect(store.musicEnabled).toBe(true);
+    expect(mocks.audioEngine.loadMusic).toHaveBeenLastCalledWith(
+      'forest::tavern::combat',
+      'blob:combat',
+      false,
+      ['mp3'],
+      true,
+    );
+
+    store.setMusicPreset(null);
+    expect(store.activeMusicPresetId).toBeNull();
+    expect(store.musicEnabled).toBe(false);
+    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
   });
 
   it('toggles and changes ambience independently', async () => {
@@ -296,6 +351,32 @@ describe('ambient sound store', () => {
     );
   });
 
+  it('guards idle, missing and repeated operations', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    store.play();
+    await store.toggleAmbience('missing', 'rain');
+    await store.toggleAmbience('forest', 'missing');
+    await store.setAmbienceVariation('forest', 'missing', 'default');
+    await store.setAmbienceVariation('forest', 'rain', 'heavy');
+    await store.saveScene('missing', {
+      ...manifest.scenes![0],
+      id: 'missing',
+    });
+    await store.deleteScene('missing', 'missing');
+
+    store.setMusicPreset('explore');
+    expect(store.musicEnabled).toBe(true);
+    store.setMusicEnabled(true);
+    store.toggleMusic();
+    expect(store.musicEnabled).toBe(false);
+
+    await store.playScene('forest', 'tavern');
+    await store.selectScene('forest', 'tavern');
+    expect(mocks.audioEngine.stopAll).toHaveBeenCalled();
+  });
+
   it('imports and deletes packages while cleaning links and playback', async () => {
     const store = createStore();
     await store.loadStoredPacks();
@@ -324,7 +405,7 @@ describe('ambient sound store', () => {
       ...manifest.scenes![0],
       id: 'shop',
       name: 'Shop',
-      music: { files: [], loop: true },
+      musicPresets: [],
     };
     await store.saveScene('forest', scene);
     expect(mocks.packManager.updatePackManifest).toHaveBeenCalled();

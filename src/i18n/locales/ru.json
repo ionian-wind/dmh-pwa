@@ -839,7 +839,11 @@
     "importedPackage": "Импортированный пакет",
     "importedSceneReadOnly": "Импортированные сцены доступны только для чтения",
     "importedReadOnlyHint": "Импортированные пакеты доступны только для чтения. Создайте новый пакет для редактирования.",
-    "ambientMix": "Эмбиент-микс"
+    "ambientMix": "Эмбиент-микс",
+    "addMusicPreset": "Добавить музыкальный пресет",
+    "musicPresetExplore": "Исследование",
+    "musicPresetCombat": "Бой",
+    "musicPresetVictory": "Победа"
   },
   "maps": {
     "title": "Карты",

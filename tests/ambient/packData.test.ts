@@ -39,7 +39,7 @@ describe('ambient pack data', () => {
     expect(pack.ambiences[0].variations?.[0].samples).toEqual([
       'ambiences/rain.mp3',
     ]);
-    expect(pack.scenes[0].music.files).toEqual([
+    expect(pack.scenes[0].musicPresets[0].files).toEqual([
       'scenes/mood-explore/music/explore.mp3',
     ]);
   });
@@ -81,10 +81,13 @@ describe('ambient pack data', () => {
           intensity: 50,
           ambiences: [],
           oneShotIds: [],
-          music: {
-            files: ['scenes/grove/music/theme.mp3'],
-            loop: false,
-          },
+          musicPresets: [
+            {
+              id: 'explore',
+              name: 'Explore',
+              files: ['scenes/grove/music/theme.mp3'],
+            },
+          ],
         },
       ],
       moodStates: [],
@@ -94,10 +97,44 @@ describe('ambient pack data', () => {
       'layers/wind.mp3',
     ]);
     expect(pack.oneShots[0].file).toBe('sfx/bell.mp3');
-    expect(pack.scenes[0].music).toEqual({
+    expect(pack.scenes[0].musicPresets[0]).toEqual({
+      id: 'explore',
+      name: 'Explore',
       files: ['scenes/grove/music/theme.mp3'],
-      loop: false,
     });
+  });
+
+  it('keeps only non-empty modern music presets', () => {
+    const pack = normalizeSoundPack({
+      ...legacy,
+      moodStates: [],
+      scenes: [
+        {
+          id: 'grove',
+          name: 'Grove',
+          icon: 'ra-tree',
+          intensity: 50,
+          ambiences: [],
+          oneShotIds: [],
+          musicPresets: [
+            { id: 'empty', name: 'Empty', files: [] },
+            {
+              id: 'explore',
+              name: 'Explore',
+              files: ['scenes/grove/music/a.mp3', ''],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(pack.scenes[0].musicPresets).toEqual([
+      {
+        id: 'explore',
+        name: 'Explore',
+        files: ['scenes/grove/music/a.mp3'],
+      },
+    ]);
   });
 
   it('builds and labels scene music paths', () => {

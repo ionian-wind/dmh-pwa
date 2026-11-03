@@ -28,6 +28,13 @@ export interface SceneAmbience {
   volume: number;
 }
 
+export interface SceneMusicPreset {
+  id: string;
+  name: string;
+  files: string[];
+}
+
+/** Legacy scene music shape; normalized into `musicPresets`. */
 export interface SceneMusic {
   files: string[];
   loop: boolean;
@@ -41,8 +48,10 @@ export interface SceneDef {
   intensity: number;
   ambiences: SceneAmbience[];
   oneShotIds: string[];
-  /** Music owned by this scene; never shared with another scene. */
-  music: SceneMusic;
+  /** Music presets owned by this scene; each preset selects one music type. */
+  musicPresets: SceneMusicPreset[];
+  /** Legacy scene music shape, normalized into `musicPresets`. */
+  music?: SceneMusic;
 }
 
 export interface NormalizedSoundPack extends SoundPackManifest {

@@ -63,6 +63,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   const sceneLinks = ref<SceneEntityLink[]>(loadLinks());
   const isPlaying = ref(false);
   const musicEnabled = ref(true);
+  const activeMusicPresetId = ref<string | null>(null);
   const intensity = ref(50);
   const masterVolume = ref(80);
   const loading = ref(false);
@@ -181,14 +182,16 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     }
 
     for (const scene of pack.scenes) {
-      for (const file of scene.music.files) {
-        const path = getSceneMusicFile(scene.id, file);
-        const blob = blobs[path] ?? blobs[file];
-        if (blob) {
-          loadedAudioUrls.value.set(
-            audioKey(pack.id, path),
-            URL.createObjectURL(blob),
-          );
+      for (const preset of scene.musicPresets) {
+        for (const file of preset.files) {
+          const path = getSceneMusicFile(scene.id, file);
+          const blob = blobs[path] ?? blobs[file];
+          if (blob) {
+            loadedAudioUrls.value.set(
+              audioKey(pack.id, path),
+              URL.createObjectURL(blob),
+            );
+          }
         }
       }
     }
@@ -229,25 +232,51 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     return true;
   }
 
-  function startSceneMusic(packId: string, scene: SceneDef): void {
-    if (!musicEnabled.value || scene.music.files.length === 0) {
+  function activeMusicPreset(scene: SceneDef) {
+    return (
+      scene.musicPresets.find(
+        (preset) => preset.id === activeMusicPresetId.value,
+      ) ?? null
+    );
+  }
+
+  function startSceneMusic(
+    packId: string,
+    scene: SceneDef,
+    replace = false,
+  ): void {
+    const preset = activeMusicPreset(scene);
+    if (!musicEnabled.value || !preset?.files.length) {
       audioEngine.stopMusic(false);
       return;
     }
 
-    const index = randomIndex(scene.music.files.length);
-    const rawFile = scene.music.files[index];
+    const index = randomIndex(preset.files.length);
+    const rawFile = preset.files[index];
     const path = getSceneMusicFile(scene.id, rawFile);
     const url = audioUrl(packId, path) ?? audioUrl(packId, rawFile);
     if (!url) return;
 
     audioEngine.loadMusic(
-      sceneKey(packId, scene.id),
+      `${sceneKey(packId, scene.id)}::${preset.id}`,
       url,
-      scene.music.loop,
+      false,
       getAudioFormat(rawFile),
+      replace,
     );
     audioEngine.playMusic(intensity.value / 100);
+  }
+
+  function handleSceneMusicEnd(): void {
+    if (
+      !isPlaying.value ||
+      !musicEnabled.value ||
+      !activeMusicPresetId.value ||
+      !activeScene.value
+    ) {
+      return;
+    }
+    startSceneMusic(activeScene.value.pack.id, activeScene.value.scene, true);
   }
 
   async function playScene(packId: string, sceneId: string): Promise<void> {
@@ -262,6 +291,8 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       await ensurePackAudio(found.pack);
       activeSceneKey.value = key;
       intensity.value = found.scene.intensity;
+      activeMusicPresetId.value = found.scene.musicPresets[0]?.id ?? null;
+      musicEnabled.value = !!activeMusicPresetId.value;
       activeLayers.value.clear();
       audioEngine.stopAll();
 
@@ -304,8 +335,8 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     for (const [layer, active] of activeLayers.value) {
       audioEngine.playLayer(layer, active.volume);
     }
-    if (activeScene.value && musicEnabled.value) {
-      startSceneMusic(activeScene.value.pack.id, activeScene.value.scene);
+    if (activeScene.value && musicEnabled.value && activeMusicPresetId.value) {
+      audioEngine.playMusic(intensity.value / 100);
     }
   }
 
@@ -318,6 +349,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     audioEngine.stopAll();
     activeLayers.value.clear();
     activeSceneKey.value = null;
+    activeMusicPresetId.value = null;
     isPlaying.value = false;
   }
 
@@ -387,14 +419,31 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   }
 
   function setMusicEnabled(value: boolean): void {
-    musicEnabled.value = value;
     if (!value) {
+      musicEnabled.value = false;
       audioEngine.stopMusic(false);
       return;
     }
-    if (activeScene.value) {
-      startSceneMusic(activeScene.value.pack.id, activeScene.value.scene);
+    musicEnabled.value = true;
+    if (!activeScene.value) return;
+    if (!activeMusicPresetId.value) {
+      activeMusicPresetId.value =
+        activeScene.value.scene.musicPresets[0]?.id ?? null;
     }
+    startSceneMusic(activeScene.value.pack.id, activeScene.value.scene, true);
+  }
+
+  function setMusicPreset(presetId: string | null): void {
+    if (!presetId) {
+      activeMusicPresetId.value = null;
+      musicEnabled.value = false;
+      audioEngine.stopMusic(false);
+      return;
+    }
+    activeMusicPresetId.value = presetId;
+    musicEnabled.value = true;
+    if (!activeScene.value) return;
+    startSceneMusic(activeScene.value.pack.id, activeScene.value.scene, true);
   }
 
   function toggleMusic(): void {
@@ -601,6 +650,8 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     saveLinks(sceneLinks.value);
   }
 
+  audioEngine.setMusicEndHandler(handleSceneMusicEnd);
+
   return {
     storedPacks,
     selectedPackId,
@@ -614,6 +665,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     sceneLinks,
     isPlaying,
     musicEnabled,
+    activeMusicPresetId,
     intensity,
     masterVolume,
     loading,
@@ -634,6 +686,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     setIntensity,
     setMasterVolume,
     setMusicEnabled,
+    setMusicPreset,
     toggleMusic,
     playOneShot,
     previewAmbience,

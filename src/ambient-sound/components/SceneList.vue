@@ -33,6 +33,7 @@
         bordered
         class="scene-row"
         :class="{ 'is-active': isActive(entry.pack.id, entry.scene.id) }"
+        @click="emit('open', entry.pack.id, entry.scene.id)"
       >
         <QCardSection class="row items-center q-gutter-sm">
           <AmbientIcon :icon="entry.scene.icon" :size="24" />
@@ -79,7 +80,7 @@
                   : 'common.play',
               )
             "
-            @click="toggleScene(entry.pack.id, entry.scene.id)"
+            @click.stop="toggleScene(entry.pack.id, entry.scene.id)"
           >
             <IconPlayerPause v-if="isPlaying(entry.pack.id, entry.scene.id)" />
             <IconPlayerPlay v-else />
@@ -94,7 +95,7 @@
                 : t('common.edit')
             "
             :aria-label="t('common.edit')"
-            @click="emit('edit', entry.pack.id, entry.scene.id)"
+            @click.stop="emit('edit', entry.pack.id, entry.scene.id)"
           >
             <IconPencil :size="18" />
           </QBtn>
@@ -149,6 +150,7 @@ import { confirm } from '@/dialogs';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 const emit = defineEmits<{
+  (e: 'open', packId: string, sceneId: string): void;
   (e: 'edit', packId: string, sceneId: string): void;
   (e: 'create', packId: string): void;
 }>();

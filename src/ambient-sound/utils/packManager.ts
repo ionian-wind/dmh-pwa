@@ -87,16 +87,18 @@ async function extractAudio(
   }
 
   for (const scene of manifest.scenes) {
-    for (const musicFile of scene.music.files) {
-      const canonical = getSceneMusicFile(scene.id, musicFile);
-      const name = basename(musicFile);
-      const blob = await readZipBlob(zip, [
-        canonical,
-        musicFile,
-        `music/${name}`,
-        name,
-      ]);
-      if (blob) audioBlobs[canonical] = blob;
+    for (const preset of scene.musicPresets) {
+      for (const musicFile of preset.files) {
+        const canonical = getSceneMusicFile(scene.id, musicFile);
+        const name = basename(musicFile);
+        const blob = await readZipBlob(zip, [
+          canonical,
+          musicFile,
+          `music/${name}`,
+          name,
+        ]);
+        if (blob) audioBlobs[canonical] = blob;
+      }
     }
   }
 

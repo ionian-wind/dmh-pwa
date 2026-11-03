@@ -838,7 +838,11 @@
     "importedPackage": "Imported package",
     "importedSceneReadOnly": "Imported scenes are read-only",
     "importedReadOnlyHint": "Imported packages are read-only. Duplicate or create a new package to edit content.",
-    "ambientMix": "Ambient mix"
+    "ambientMix": "Ambient mix",
+    "addMusicPreset": "Add music preset",
+    "musicPresetExplore": "Explore",
+    "musicPresetCombat": "Combat",
+    "musicPresetVictory": "Victory"
   },
   "maps": {
     "title": "Maps",

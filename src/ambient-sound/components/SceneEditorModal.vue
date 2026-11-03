@@ -212,11 +212,37 @@
     </template>
 
     <template #music>
-      <div class="column q-gutter-sm">
-        <QCard v-for="file in draft.music.files" :key="file" flat bordered>
+      <div class="row items-center q-gutter-sm q-mb-md">
+        <QSelect
+          v-model="presetToAdd"
+          :options="availablePresetTypes"
+          outlined
+          dense
+          emit-value
+          map-options
+          :label="t('ambientSoundPage.addMusicPreset')"
+          class="col"
+        />
+        <QBtn
+          color="primary"
+          :disable="!presetToAdd"
+          :label="t('common.add')"
+          @click="addMusicPreset"
+        />
+      </div>
+
+      <div v-if="draft.musicPresets.length" class="column q-gutter-sm">
+        <QCard
+          v-for="preset in draft.musicPresets"
+          :key="preset.id"
+          flat
+          bordered
+        >
           <QCardSection class="row items-center q-gutter-sm">
             <IconMusic :size="20" />
-            <span class="col ellipsis">{{ musicName(file) }}</span>
+            <span class="col text-subtitle2 text-weight-medium">
+              {{ preset.name }}
+            </span>
             <QBtn
               flat
               dense
@@ -224,28 +250,40 @@
               color="negative"
               :title="t('common.remove')"
               :aria-label="t('common.remove')"
-              @click="removeMusic(file)"
+              @click="removeMusicPreset(preset.id)"
             >
               <IconTrash :size="16" />
             </QBtn>
           </QCardSection>
+          <QCardSection class="column q-gutter-xs">
+            <div v-for="file in preset.files" :key="file" class="sample-row">
+              <span class="ellipsis">{{ musicName(file) }}</span>
+              <QBtn
+                flat
+                dense
+                round
+                color="negative"
+                :title="t('common.remove')"
+                :aria-label="t('common.remove')"
+                @click="removeMusic(preset, file)"
+              >
+                <IconTrash :size="14" />
+              </QBtn>
+            </div>
+            <QBtn
+              flat
+              color="primary"
+              :label="t('ambientSoundPage.addMusic')"
+              @click="addMusicFiles(preset)"
+            />
+          </QCardSection>
         </QCard>
-        <div class="row items-center q-gutter-sm">
-          <QBtn
-            flat
-            color="primary"
-            :label="t('ambientSoundPage.addMusic')"
-            @click="addMusicFiles"
-          />
-          <span class="col">{{ t('ambientSoundPage.loopMusic') }}</span>
-          <QToggle v-model="draft.music.loop" />
-        </div>
         <div class="text-caption text-grey-7">
           {{ t('ambientSoundPage.sceneMusicHint') }}
         </div>
       </div>
       <EmptyState
-        v-if="draft.music.files.length === 0"
+        v-else
         :icon="IconMusic"
         :title="t('ambientSoundPage.noSceneMusic')"
         :hint="t('ambientSoundPage.sceneMusicHint')"
@@ -322,7 +360,12 @@ import {
   getLayerVariations,
   getSceneMusicName,
 } from '@/ambient-sound/utils/packData';
-import type { LayerDef, OneShotDef, SceneDef } from '@/ambient-sound/types';
+import type {
+  LayerDef,
+  OneShotDef,
+  SceneDef,
+  SceneMusicPreset,
+} from '@/ambient-sound/types';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -340,8 +383,14 @@ const store = useAmbientSoundStore();
 const ambienceToAdd = ref('');
 const oneShotToAdd = ref('');
 const pendingMusic = ref<
-  Array<{ file: string; blob?: Blob; handle?: FileSystemFileHandle }>
+  Array<{
+    presetId: string;
+    file: string;
+    blob?: Blob;
+    handle?: FileSystemFileHandle;
+  }>
 >([]);
+const presetToAdd = ref('');
 const linkPickerOpen = ref(false);
 
 const pack = computed(
@@ -364,7 +413,7 @@ function makeScene(): SceneDef {
     intensity: pack.value?.defaultIntensity ?? 50,
     ambiences: [],
     oneShotIds: [],
-    music: { files: [], loop: true },
+    musicPresets: [],
   };
 }
 
@@ -388,6 +437,17 @@ const tabs = computed(() => [
   { name: 'music', label: t('ambientSoundPage.music') },
   { name: 'links', label: t('ambientSoundPage.links') },
 ]);
+
+const presetTypes = computed(() => [
+  { label: t('ambientSoundPage.musicPresetExplore'), value: 'explore' },
+  { label: t('ambientSoundPage.musicPresetCombat'), value: 'combat' },
+  { label: t('ambientSoundPage.musicPresetVictory'), value: 'victory' },
+]);
+
+const availablePresetTypes = computed(() => {
+  const selected = new Set(draft.value.musicPresets.map((preset) => preset.id));
+  return presetTypes.value.filter((preset) => !selected.has(preset.value));
+});
 
 const availableAmbiences = computed(() => {
   const selected = new Set(draft.value.ambiences.map((row) => row.ambienceId));
@@ -459,24 +519,45 @@ function musicName(file: string) {
   return getSceneMusicName(file);
 }
 
-function removeMusic(file: string) {
-  draft.value.music.files = draft.value.music.files.filter(
-    (entry) => entry !== file,
+function addMusicPreset() {
+  if (!presetToAdd.value) return;
+  const type = presetTypes.value.find(
+    (preset) => preset.value === presetToAdd.value,
   );
+  draft.value.musicPresets.push({
+    id: presetToAdd.value,
+    name: type?.label || presetToAdd.value,
+    files: [],
+  });
+  presetToAdd.value = '';
+}
+
+function removeMusicPreset(presetId: string) {
+  draft.value.musicPresets = draft.value.musicPresets.filter(
+    (preset) => preset.id !== presetId,
+  );
+  pendingMusic.value = pendingMusic.value.filter(
+    (entry) => entry.presetId !== presetId,
+  );
+}
+
+function removeMusic(preset: SceneMusicPreset, file: string) {
+  preset.files = preset.files.filter((entry) => entry !== file);
   pendingMusic.value = pendingMusic.value.filter(
     (entry) => `scenes/${draft.value.id}/music/${entry.file}` !== file,
   );
 }
 
-async function addMusicFiles() {
+async function addMusicFiles(preset: SceneMusicPreset) {
   if (!fileHandler.isSupported()) return;
   const files = await fileHandler.pickAudioFiles();
   for (const { file, source } of files) {
     const path = `scenes/${draft.value.id}/music/${file.name}`;
-    if (!draft.value.music.files.includes(path)) {
-      draft.value.music.files.push(path);
+    if (!preset.files.includes(path)) {
+      preset.files.push(path);
     }
     pendingMusic.value.push({
+      presetId: preset.id,
       file: file.name,
       blob: source.kind === 'blob' ? source.blob : undefined,
       handle: source.kind === 'handle' ? source.handle : undefined,

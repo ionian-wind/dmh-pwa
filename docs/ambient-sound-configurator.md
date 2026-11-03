@@ -66,11 +66,12 @@ A scene is a saved playback configuration owned by a package. It defines:
 Scenes have no cover art in this model. The package icon represents the package;
 a scene is identified by its name and icon.
 
-**Scene music is strictly bound to the scene.** There is no shared mood-state
-music and no global music track that outlives the scene. When a scene becomes
-active, its music is the music for that scene. Switching scenes stops the old
-scene music and starts the new scene's music. A scene may own one or more music
-files, but those files are only used by that scene.
+**Scene music is strictly bound to the scene.** A scene contains one or more
+music presets by type — for example Explore, Combat and Victory. Each preset owns
+one or more music variants; when the preset plays, one variant is selected
+randomly and the next random variant follows when the track ends. Only one music
+preset plays at a time, and the scene can switch it off entirely. There is no
+shared mood-state music and no global music track that outlives the scene.
 
 ### 2.5 Global gallery
 
@@ -227,10 +228,21 @@ directory or mood-state track shared by scenes.
         { "ambienceId": "rain", "variationId": "light", "volume": 35 }
       ],
       "oneShotIds": ["thunder"],
-      "music": {
-        "files": ["scenes/tavern/music/theme.mp3"],
-        "loop": true
-      }
+      "musicPresets": [
+        {
+          "id": "explore",
+          "name": "Explore",
+          "files": [
+            "scenes/tavern/music/explore-1.mp3",
+            "scenes/tavern/music/explore-2.mp3"
+          ]
+        },
+        {
+          "id": "combat",
+          "name": "Combat",
+          "files": ["scenes/tavern/music/combat.mp3"]
+        }
+      ]
     }
   ]
 }
@@ -288,9 +300,10 @@ export interface SceneAmbience {
   volume: number;
 }
 
-export interface SceneMusic {
+export interface SceneMusicPreset {
+  id: string;
+  name: string;
   files: string[];
-  loop: boolean;
 }
 
 export interface SceneDef {
@@ -301,8 +314,8 @@ export interface SceneDef {
   intensity: number;
   ambiences: SceneAmbience[];
   oneShotIds: string[];
-  /** Music owned by this scene; never shared with another scene. */
-  music: SceneMusic;
+  /** Music presets owned by this scene; each has one or more variants. */
+  musicPresets: SceneMusicPreset[];
 }
 
 /** Local user data; never stored inside the package manifest. */
@@ -469,10 +482,13 @@ the editor hides Save and shows an import warning.
 
 **Music tab**
 
-- Lists only music files owned by this scene. Music from another scene or from a
-  global gallery is not selectable.
-- Each file has preview, loop toggle and remove. The scene may have zero files.
-- There is no “music mood” selector; scene music is part of the scene itself.
+- Lists music presets by type (Explore, Combat, Victory) and the variants inside
+  each preset.
+- Add preset: choose a type and create it.
+- Add music: upload one or more variants into a preset.
+- Each variant has remove; presets can be removed as a whole.
+- Music from another scene or from a global gallery is not selectable.
+- There is no shared “music mood” selector; scene music is part of the scene.
 - Empty state: “This scene has no music”.
 
 **Links tab**
@@ -491,7 +507,27 @@ the editor hides Save and shows an import warning.
   entity links.
 - Delete asks for confirmation, removes links and stops the scene if active.
 
-### 4.6 Add-to-scene picker
+### 4.6 Scene player dialog
+
+Opening a scene row opens the scene player dialog and starts the scene. It
+contains:
+
+- **Global play/pause** — controls the scene music and linked ambiences. It does
+  not block one-shots.
+- **Music preset bar** — an Off button plus one button per scene music preset
+  (for example Explore, Combat, Victory). Only one preset can be active; the Off
+  button stops scene music without stopping ambiences. Within a preset the next
+  music variant is chosen randomly when the current track ends.
+- **Ambiences tab** — linked ambiences grouped by category. Each row shows the
+  ambience name and a toggle group of its variations. Only one variation per
+  ambience plays at a time; clicking the active variation stops the ambience.
+- **One-shots tab** — linked one-shots as cards grouped by category. Clicking a
+  card plays that one-shot immediately, independent of music or ambience state.
+
+The dialog closes without stopping playback; the scene remains available from
+the Now Playing surface.
+
+### 4.7 Add-to-scene picker
 
 Used from Ambiences and One-shots galleries.
 
@@ -504,7 +540,7 @@ Used from Ambiences and One-shots galleries.
   action.
 - Does not copy audio and does not change the currently playing scene.
 
-### 4.7 Entity views: linked scenes
+### 4.8 Entity views: linked scenes
 
 The same reusable `EntityScenesPanel` appears in the side panel/detail area of:
 
@@ -526,7 +562,7 @@ The scene picker searches all loaded packages and groups scenes by package.
 Selecting a scene starts it; it does not navigate away from the entity view.
 Deleting the entity or its package removes the affected links.
 
-### 4.8 Global sound panel
+### 4.9 Global sound panel
 
 A persistent panel, available on every page, showing the current scene.
 
@@ -559,7 +595,7 @@ A persistent panel, available on every page, showing the current scene.
 - One-shots are attenuated by the one-shot bus only, never by ambient master,
   music or ambience buses.
 
-### 4.9 Responsive behavior
+### 4.10 Responsive behavior
 
 **Desktop (≥1024 px)**
 
@@ -583,7 +619,7 @@ A persistent panel, available on every page, showing the current scene.
 - Touch targets are at least 44×44 px; hover-only actions are also available from
   an overflow menu.
 
-### 4.10 Feedback, accessibility and edge states
+### 4.11 Feedback, accessibility and edge states
 
 - Package import: loading spinner, validation error message, retry action.
 - Package delete: confirmation includes the number of scenes and entries removed.
@@ -598,7 +634,7 @@ A persistent panel, available on every page, showing the current scene.
 - Respect `prefers-reduced-motion` for pulsing icons and scene transitions.
 - Toasts confirm add/remove link, add-to-scene, package import and duplicate.
 
-### 4.11 Component and state mapping
+### 4.12 Component and state mapping
 
 | UI component        | Responsibility                                       | Main state/actions                            |
 | ------------------- | ---------------------------------------------------- | --------------------------------------------- |
@@ -1346,18 +1382,20 @@ interface SceneDef {
     volume: number;
   }>;
   oneShotIds: string[];
-  music: {
+  musicPresets: Array<{
+    id: string;
+    name: string;
     files: string[];
-    loop: boolean;
-  };
+  }>;
 }
 ```
 
-Scene music is always owned by the scene. There is no shared mood-state music
-track and no cross-scene music selection. Loading a package registers its scenes
-in the scenes list and its ambience/one-shot entries in the global gallery.
-One-shots are always directly triggerable and are not gated by ambient playback
-or scene state.
+Scene music is always owned by the scene. Each scene provides music presets of
+different types, and each preset can hold several randomly sequenced variants.
+There is no shared mood-state music track and no cross-scene music selection.
+Loading a package registers its scenes in the scenes list and its
+ambience/one-shot entries in the global gallery. One-shots are always directly
+triggerable and are not gated by ambient playback or scene state.
 
 ### 14.3 Proposed experience
 

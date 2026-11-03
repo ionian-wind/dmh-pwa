@@ -115,8 +115,9 @@ export class AudioEngine {
     audioUrl: string,
     loop = true,
     format?: string[],
+    replace = false,
   ): void {
-    if (this.musicTrack && this.currentMoodState === moodState) {
+    if (this.musicTrack && this.currentMoodState === moodState && !replace) {
       return;
     }
     this.musicTrack?.unload();

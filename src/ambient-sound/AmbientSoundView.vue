@@ -100,6 +100,7 @@
 
           <SceneList
             v-if="activeTab === 'scenes'"
+            @open="openScenePlayer"
             @edit="openEditor"
             @create="createScene"
           />
@@ -117,6 +118,13 @@
       :icon="IconMusic"
       :title="t('ambientSoundPage.importPack')"
       :hint="t('ambientSoundPage.importPackHint')"
+    />
+
+    <ScenePlayerDialog
+      :is-open="playerOpen"
+      :pack-id="playerPackId"
+      :scene-id="playerSceneId"
+      @close="playerOpen = false"
     />
 
     <SceneEditorModal
@@ -157,6 +165,7 @@ import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
 import SceneEditorModal from '@/ambient-sound/components/SceneEditorModal.vue';
+import ScenePlayerDialog from '@/ambient-sound/components/ScenePlayerDialog.vue';
 import AddToScenePicker from '@/ambient-sound/components/AddToScenePicker.vue';
 
 const { t } = useI18n();
@@ -168,6 +177,9 @@ const activeTab = ref('scenes');
 const editorOpen = ref(false);
 const editorPackId = ref('');
 const editorSceneId = ref<string | undefined>(undefined);
+const playerOpen = ref(false);
+const playerPackId = ref('');
+const playerSceneId = ref('');
 const pickerOpen = ref(false);
 const pickerPackId = ref('');
 const pickerKind = ref<'ambience' | 'oneShot'>('ambience');
@@ -182,6 +194,12 @@ const tabs = computed(() => [
 function handleMasterVolumeWheel(event: WheelEvent) {
   const next = Math.round(store.masterVolume - event.deltaY * 0.1);
   store.setMasterVolume(next);
+}
+
+function openScenePlayer(packId: string, sceneId: string) {
+  playerPackId.value = packId;
+  playerSceneId.value = sceneId;
+  playerOpen.value = true;
 }
 
 function openEditor(packId: string, sceneId: string) {

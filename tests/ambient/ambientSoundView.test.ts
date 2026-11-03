@@ -47,6 +47,7 @@ const stubs = {
   AmbienceGallery: true,
   OneShotGallery: true,
   SceneEditorModal: true,
+  ScenePlayerDialog: true,
   AddToScenePicker: true,
 };
 

@@ -4,6 +4,7 @@ import type {
   MoodStateDef,
   NormalizedSoundPack,
   SceneDef,
+  SceneMusicPreset,
   SoundPackManifest,
 } from '../types';
 
@@ -75,6 +76,24 @@ function normalizeSceneMusicPath(sceneId: string, file: string): string {
   return `scenes/${sceneId}/music/${name}`;
 }
 
+function normalizeSceneMusicPresets(scene: SceneDef): SceneMusicPreset[] {
+  const presets = scene.musicPresets?.length
+    ? scene.musicPresets
+    : scene.music?.files?.length
+      ? [{ id: 'default', name: 'Default', files: scene.music.files }]
+      : [];
+
+  return presets
+    .map((preset) => ({
+      id: preset.id || 'default',
+      name: preset.name || preset.id || 'Default',
+      files: (preset.files ?? [])
+        .filter(Boolean)
+        .map((file) => normalizeSceneMusicPath(scene.id, file)),
+    }))
+    .filter((preset) => preset.files.length > 0);
+}
+
 /** Convert legacy manifests into the package/scene model. */
 export function normalizeSoundPack(
   manifest: SoundPackManifest,
@@ -108,12 +127,15 @@ export function normalizeSoundPack(
         volume: ambience.defaultVolume,
       })),
       oneShotIds: oneShots.map((oneShot) => oneShot.id),
-      music: {
-        files: files.map((file) =>
-          normalizeSceneMusicPath(`mood-${mood.state}`, file),
-        ),
-        loop: getMoodMode(mood) !== 'temporary',
-      },
+      musicPresets: [
+        {
+          id: mood.state,
+          name: mood.name,
+          files: files.map((file) =>
+            normalizeSceneMusicPath(`mood-${mood.state}`, file),
+          ),
+        },
+      ],
     } satisfies SceneDef;
   });
 
@@ -124,12 +146,7 @@ export function normalizeSoundPack(
       intensity: scene.intensity ?? manifest.defaultIntensity ?? 50,
       ambiences: scene.ambiences ?? [],
       oneShotIds: scene.oneShotIds ?? [],
-      music: {
-        files: (scene.music?.files ?? [])
-          .filter(Boolean)
-          .map((file) => normalizeSceneMusicPath(scene.id, file)),
-        loop: scene.music?.loop !== false,
-      },
+      musicPresets: normalizeSceneMusicPresets(scene),
     }),
   );
 

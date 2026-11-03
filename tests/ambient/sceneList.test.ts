@@ -109,6 +109,9 @@ describe('SceneList', () => {
 
     const row = wrapper.find('.scene-row');
     expect(row.find('.imported-mark').exists()).toBe(false);
+    await row.trigger('click');
+    expect(wrapper.emitted('open')?.[0]).toEqual(['local-pack', 'scene-2']);
+
     const edit = row.find('button[aria-label="Edit"]');
     expect(edit.attributes('disabled')).toBeUndefined();
     await edit.trigger('click');

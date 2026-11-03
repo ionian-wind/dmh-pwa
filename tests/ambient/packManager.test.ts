@@ -76,7 +76,13 @@ const modernManifest: SoundPackManifest = {
       intensity: 55,
       ambiences: [{ ambienceId: 'wind', variationId: 'soft', volume: 40 }],
       oneShotIds: ['bell'],
-      music: { files: ['scenes/grove/music/theme.mp3'], loop: true },
+      musicPresets: [
+        {
+          id: 'explore',
+          name: 'Explore',
+          files: ['scenes/grove/music/theme.mp3'],
+        },
+      ],
     },
   ],
 };
@@ -131,7 +137,7 @@ describe('ambient pack manager', () => {
     expect(result.ambiences).toHaveLength(1);
     expect(result.scenes).toHaveLength(1);
     expect(result.scenes[0].id).toBe('mood-explore');
-    expect(result.scenes[0].music.files).toEqual([
+    expect(result.scenes[0].musicPresets[0].files).toEqual([
       'scenes/mood-explore/music/explore.mp3',
     ]);
 
