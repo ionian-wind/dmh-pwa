@@ -149,12 +149,6 @@ const sections: SectionItem[] = [
     path: '/modules',
     icon: IconBook,
   },
-  {
-    section: Section.AMBIENT_SOUND,
-    label: 'navigation.ambientSound',
-    path: '/ambient-sound',
-    icon: IconHeadphones,
-  },
 ];
 
 function isActive(item: SectionItem): boolean {
@@ -174,7 +168,9 @@ function isProbabilityCalculatorActive(): boolean {
 function isToolsRoute(): boolean {
   const path = router.currentRoute.value.path;
   return (
-    path.startsWith('/timers') || path.startsWith('/probability-calculator')
+    path.startsWith('/timers') ||
+    path.startsWith('/probability-calculator') ||
+    path.startsWith('/ambient-sound')
   );
 }
 
@@ -315,11 +311,6 @@ function openJukebox() {
                         ? menuItem.icon.value
                         : menuItem.icon
                     "
-                    :class="{
-                      'ambient-playing':
-                        menuItem.section === Section.AMBIENT_SOUND &&
-                        ambientSoundStore.isPlaying,
-                    }"
                     :key="
                       menuItem.section === Section.TIMERS
                         ? animationFrame
@@ -381,6 +372,26 @@ function openJukebox() {
                   <QItemSection side><IconChartLine /></QItemSection>
                   <QItemSection>
                     {{ t('navigation.probabilityCalculator') }}
+                  </QItemSection>
+                </QItem>
+                <QItem
+                  clickable
+                  v-ripple
+                  :to="'/ambient-sound'"
+                  :active="
+                    router.currentRoute.value.path.startsWith('/ambient-sound')
+                  "
+                  :active-class="'bg-secondary'"
+                >
+                  <QItemSection side>
+                    <IconHeadphones
+                      :class="{
+                        'ambient-playing': ambientSoundStore.isPlaying,
+                      }"
+                    />
+                  </QItemSection>
+                  <QItemSection>
+                    {{ t('navigation.ambientSound') }}
                   </QItemSection>
                 </QItem>
               </div>

@@ -920,13 +920,16 @@ Add route to router:
 - Use existing `howler` package already in dependencies
 - Follow existing code style from jukebox module
 - Leverage existing Pinia store patterns with persistence
-- The main page injects `ViewHeader` through `useLayout`; Create Pack and
-  Import Pack live in the application header alongside other page actions.
+- The main page injects `ViewHeader` through `useLayout`; pack management lives
+  in the right sidebar, and the Ambient Sound item sits under **Tools** in the
+  main menu.
 - Page content uses the project's `QCard`/`QCardSection` layout, `TabGroup`,
   tabler icons, CSS theme variables and localized text rather than standalone
   page-level styling.
-- A dedicated **Overall control** card owns global play/pause and master volume;
-  ambient layers keep their own layer toggles and volume sliders.
+- When a pack is selected, an untitled overall-control card owns global
+  play/pause and master volume; ambient layers keep their own layer toggles and
+  volume sliders. With no pack selected, only the shared empty state is shown
+  (no overall-control card or surrounding card).
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`
   rows; clicking a pack loads it and clicking the active pack unloads it.
   Each row has a hover delete action with confirmation. **Create Pack** and

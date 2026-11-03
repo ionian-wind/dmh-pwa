@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import type { PropType } from 'vue';
 import ViewHeader from './ViewHeader.vue';
+import EmptyState from './EmptyState.vue';
 import VueDraggable from 'vuedraggable';
 import { useLayout } from '@/composables/useLayout';
 
@@ -169,12 +170,7 @@ onBeforeUnmount(() => {
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
   >
-    <div
-      v-if="items.length === 0"
-      class="empty-state q-pa-xl text-center text-primary"
-    >
-      {{ emptyMessage }}
-    </div>
+    <EmptyState v-if="items.length === 0" :title="emptyMessage" />
 
     <VueDraggable
       v-else-if="draggable"

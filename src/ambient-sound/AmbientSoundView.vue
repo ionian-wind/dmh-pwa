@@ -8,12 +8,9 @@
       <div class="q-mt-md">{{ t('ambientSoundPage.loading') }}</div>
     </div>
 
-    <template v-else>
+    <template v-else-if="store.currentPack">
       <QCard flat bordered class="q-mb-md">
         <QCardSection>
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">
-            {{ t('ambientSoundPage.overallControl') }}
-          </div>
           <div class="row items-center q-gutter-md">
             <QBtn
               round
@@ -51,36 +48,29 @@
         </QCardSection>
       </QCard>
 
-      <template v-if="store.currentPack">
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection><MoodStateControl /></QCardSection>
-        </QCard>
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection><IntensitySlider /></QCardSection>
-        </QCard>
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection><AmbientMixer /></QCardSection>
-        </QCard>
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection><OneShotPanel /></QCardSection>
-        </QCard>
-        <QCard flat bordered class="q-mb-md">
-          <QCardSection><WeatherPanel /></QCardSection>
-        </QCard>
-      </template>
-
-      <QCard v-else flat bordered>
-        <QCardSection class="flex flex-center column text-center q-pa-xl">
-          <IconMusic :size="64" class="text-grey-6" />
-          <div class="text-subtitle1 q-mt-md">
-            {{ t('ambientSoundPage.selectPack') }}
-          </div>
-          <div class="text-caption text-grey-7 q-mt-xs">
-            {{ t('ambientSoundPage.sidebarHint') }}
-          </div>
-        </QCardSection>
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection><MoodStateControl /></QCardSection>
+      </QCard>
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection><IntensitySlider /></QCardSection>
+      </QCard>
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection><AmbientMixer /></QCardSection>
+      </QCard>
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection><OneShotPanel /></QCardSection>
+      </QCard>
+      <QCard flat bordered class="q-mb-md">
+        <QCardSection><WeatherPanel /></QCardSection>
       </QCard>
     </template>
+
+    <EmptyState
+      v-else
+      :icon="IconMusic"
+      :title="t('ambientSoundPage.selectPack')"
+      :hint="t('ambientSoundPage.sidebarHint')"
+    />
   </div>
 </template>
 
@@ -94,6 +84,7 @@ import {
   IconVolume,
 } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';

@@ -92,7 +92,7 @@ describe('AmbientSoundView', () => {
     });
 
     expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(6);
-    expect(wrapper.text()).toContain('Overall control');
+    expect(wrapper.text()).not.toContain('Overall control');
     expect(wrapper.text()).toContain('Master volume');
     expect(wrapper.text()).toContain('50%');
     await wrapper.find('button[aria-label="Play"]').trigger('click');
@@ -120,6 +120,8 @@ describe('AmbientSoundView', () => {
     expect(wrapper.text()).toContain(
       'Open the sound pack sidebar to choose, import, or create a pack.',
     );
+    expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(0);
+    expect(wrapper.find('.empty-state').exists()).toBe(true);
     wrapper.unmount();
   });
 
