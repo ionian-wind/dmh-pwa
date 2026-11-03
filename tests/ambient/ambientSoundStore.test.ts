@@ -268,6 +268,22 @@ describe('ambient sound store', () => {
     );
   });
 
+  it('turns temporary music off when no previous preset was played', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
+    store.setMusicPreset(null);
+    store.setMusicPreset('victory');
+    expect(store.activeMusicPresetId).toBe('victory');
+
+    const endHandler = mocks.audioEngine.setMusicEndHandler.mock.calls[0][0];
+    endHandler();
+
+    expect(store.activeMusicPresetId).toBeNull();
+    expect(store.musicEnabled).toBe(false);
+    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
+  });
+
   it('loads but does not play music while paused', async () => {
     const store = createStore();
     await store.loadStoredPacks();

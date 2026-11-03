@@ -10,7 +10,6 @@ import type {
   SceneDef,
   SceneEntityLink,
   SceneLinkEntityType,
-  SceneMusicPreset,
   SceneRef,
 } from '../types';
 import { audioEngine } from '../utils/audioEngine';
@@ -250,17 +249,6 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     );
   }
 
-  function continualFallback(
-    scene: SceneDef,
-    excludeId?: string,
-  ): SceneMusicPreset | null {
-    return (
-      scene.musicPresets.find(
-        (preset) => preset.id !== excludeId && preset.mode !== 'temporary',
-      ) ?? null
-    );
-  }
-
   function startSceneMusic(
     packId: string,
     scene: SceneDef,
@@ -303,15 +291,13 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     const scene = activeScene.value.scene;
     const active = activeMusicPreset(scene);
     if (active?.mode === 'temporary') {
-      const previous =
-        (previousMusicPresetId.value
-          ? scene.musicPresets.find(
-              (preset) =>
-                preset.id === previousMusicPresetId.value &&
-                preset.mode !== 'temporary',
-            )
-          : null) ?? continualFallback(scene, active.id);
+      const previousId = previousMusicPresetId.value;
       previousMusicPresetId.value = null;
+      const previous = previousId
+        ? (scene.musicPresets.find(
+            (preset) => preset.id === previousId && preset.mode !== 'temporary',
+          ) ?? null)
+        : null;
       activeMusicPresetId.value = previous?.id ?? null;
       if (!previous) {
         musicEnabled.value = false;
@@ -339,10 +325,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       intensity.value = snapIntensity(found.scene.intensity);
       const firstPreset = found.scene.musicPresets[0] ?? null;
       activeMusicPresetId.value = firstPreset?.id ?? null;
-      previousMusicPresetId.value =
-        firstPreset?.mode === 'temporary'
-          ? (continualFallback(found.scene, firstPreset.id)?.id ?? null)
-          : null;
+      previousMusicPresetId.value = null;
       musicEnabled.value = !!activeMusicPresetId.value;
       activeLayers.value.clear();
       audioEngine.stopAll();
@@ -498,8 +481,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     const preset = scene?.musicPresets.find((item) => item.id === presetId);
     if (preset?.mode === 'temporary') {
       const current = activeMusicPresetId.value;
-      if (scene && current && current !== presetId) {
-        const currentPreset = scene.musicPresets.find(
+      if (!current) {
+        previousMusicPresetId.value = null;
+      } else if (current !== presetId) {
+        const currentPreset = scene?.musicPresets.find(
           (item) => item.id === current,
         );
         if (currentPreset && currentPreset.mode !== 'temporary') {

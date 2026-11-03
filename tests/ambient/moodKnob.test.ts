@@ -27,6 +27,9 @@ describe('MoodKnob', () => {
     });
 
     expect(wrapper.find('.mood-knob-label').text()).toBe('Combat');
+    expect(wrapper.find('.mood-knob-control').attributes('aria-readonly')).toBe(
+      'true',
+    );
     await wrapper.find('.mood-knob-control').trigger('click');
     expect(wrapper.emitted('select')).toHaveLength(1);
     wrapper.unmount();

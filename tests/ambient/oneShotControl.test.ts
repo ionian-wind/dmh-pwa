@@ -40,6 +40,7 @@ describe('OneShotControl', () => {
 
     const knob = wrapper.find('.one-shot-knob');
     expect(knob.exists()).toBe(true);
+    expect(knob.attributes('aria-readonly')).toBe('true');
     expect(knob.find('i').classes()).toContain('fa-cloud-bolt');
 
     await knob.trigger('click');

@@ -9,6 +9,7 @@
       :color="playing ? 'primary' : 'grey-7'"
       track-color="grey-4"
       show-value
+      readonly
       class="one-shot-knob"
       role="button"
       tabindex="0"

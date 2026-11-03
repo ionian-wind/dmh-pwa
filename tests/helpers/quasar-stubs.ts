@@ -106,6 +106,7 @@ const QKnob = defineComponent({
   props: {
     modelValue: { type: Number, default: 0 },
     disable: Boolean,
+    readonly: Boolean,
   },
   emits: ['update:modelValue'],
   setup(props, { slots, attrs }) {
@@ -117,6 +118,7 @@ const QKnob = defineComponent({
           'data-stub': 'QKnob',
           'data-progress': props.modelValue,
           ...(props.disable ? { disabled: '' } : {}),
+          ...(props.readonly ? { 'aria-readonly': 'true' } : {}),
         },
         slots.default?.(),
       );

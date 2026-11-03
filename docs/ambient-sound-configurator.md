@@ -78,8 +78,9 @@ preset plays at a time, and the scene can switch it off entirely. There is no
 shared mood-state music and no global music track that outlives the scene.
 
 Presets may be **continual** or **temporary**. Temporary presets (for example
-Victory) play once and then return to the previous continual preset. The sample
-package marks every `victory` preset as temporary.
+Victory) play once and then return to the previously played preset, or turn
+scene music off when no preset was played before. The sample package marks every
+`victory` preset as temporary.
 
 ### 2.5 Global gallery
 
@@ -345,7 +346,7 @@ to the package root. The folder is normally `ambiences/`.
 | `name`  | yes      | Display name.                                                         |
 | `files` | yes      | One or more variants; one is picked randomly each time.               |
 | `mode`  | no       | `continual` (default) or `temporary`. Temporary presets return to the |
-|         |          | previous continual preset when the track ends (sample: `victory`).    |
+|         |          | previously played preset, or Off when none (sample: `victory`).       |
 
 Scenes have no `icon` field. Unknown fields are ignored. Scene music is owned by
 the scene; there is no package-wide music folder.
@@ -408,7 +409,7 @@ export interface SceneMusicPreset {
   id: string;
   name: string;
   files: string[];
-  /** `continual` (default) or `temporary` (returns to the previous preset). */
+  /** `continual` (default) or `temporary` (returns to the previous played preset or Off). */
   mode?: 'continual' | 'temporary';
 }
 
@@ -540,8 +541,9 @@ A global content gallery for one-shot entries.
 - Package and category filters behave like the Ambiences tab.
 - Flat knob grid; entries are not grouped by package.
 - Each entry is a Quasar knob with the one-shot icon in the knob slot.
-- The knob arc shows the current one-shot playback progress.
-- Clicking the knob plays the one-shot; clicking again retriggers it.
+- The knob is a round button with a read-only progress arc. It cannot be dragged
+  to scrub; clicking it plays the one-shot.
+- Clicking the knob again retriggers the one-shot.
 - The knob is highlighted while the one-shot is playing.
 - Each entry also shows icon, name, category, package and “Used in N scenes”.
 - Triggering a one-shot from the scene player/playback panel is independent of
@@ -570,8 +572,10 @@ returns to the scene/gallery tabs. The view contains:
   when nothing is playing or switches the active preset while playing. Only one
   preset can be active; Off stops scene music without stopping ambiences. Within
   a preset the next music variant is chosen randomly when the current track
-  ends. Temporary presets such as Victory return to the previous preset when
-  their track ends and show playback progress on their knob.
+  ends. Temporary presets such as Victory play once, then return to the
+  previously played preset or turn music off when there was none. Only temporary
+  presets show playback progress on their knob; the knob is read-only and acts
+  as a round button.
 - **No scene play/pause button** — the scene view has no transport button. The
   footer player's play/pause resumes playback after a pause.
 - **Control gating** — while paused, mood knobs and ambience variation buttons

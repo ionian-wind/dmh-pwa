@@ -9,6 +9,7 @@
       :color="active ? 'primary' : 'grey-7'"
       track-color="grey-4"
       show-value
+      readonly
       :disable="disabled"
       class="mood-knob-control"
       role="button"
