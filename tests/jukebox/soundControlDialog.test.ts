@@ -176,12 +176,12 @@ describe('SoundControlDialog', () => {
     };
 
     startDrag(1);
-    dispatch('pointermove', 0, -250);
+    dispatch('pointermove', 0, -30);
     await nextTick();
 
     expect(card.attributes('data-mode')).toBe('dialog');
 
-    dispatch('pointerup', 0, -250, 1);
+    dispatch('pointerup', 0, -30, 1);
     await nextTick();
     expect(card.classes()).toContain('is-dialog');
 

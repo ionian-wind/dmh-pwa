@@ -92,7 +92,7 @@ const model = computed({
 
 const displayMode = ref<'panel' | 'dialog'>('panel');
 const cardRef = ref<ComponentPublicInstance | null>(null);
-const DETACH_THRESHOLD = 200;
+const MODE_SWITCH_THRESHOLD = 20;
 
 const viewportWidth = ref(
   typeof window === 'undefined' ? 0 : window.innerWidth,
@@ -110,7 +110,7 @@ function isNearViewportBottom(): boolean {
   if (!element) return true;
 
   const rect = element.getBoundingClientRect();
-  return window.innerHeight - rect.bottom <= 140;
+  return window.innerHeight - rect.bottom <= MODE_SWITCH_THRESHOLD;
 }
 
 function setDisplayMode(mode: 'panel' | 'dialog') {
@@ -148,7 +148,7 @@ watch([isDragging, translateY], ([dragging, offsetY]) => {
   if (!dragging) return;
 
   if (displayMode.value === 'panel') {
-    if (offsetY < -DETACH_THRESHOLD) setDisplayMode('dialog');
+    if (offsetY < -MODE_SWITCH_THRESHOLD) setDisplayMode('dialog');
     return;
   }
 
