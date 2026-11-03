@@ -60,6 +60,9 @@ A scene is a saved playback configuration owned by a package. It defines:
 - the scene intensity and mix settings;
 - the scene's own music.
 
+Scenes have no cover art in this model. The package icon represents the package;
+a scene is identified by its name and icon.
+
 **Scene music is strictly bound to the scene.** There is no shared mood-state
 music and no global music track that outlives the scene. When a scene becomes
 active, its music is the music for that scene. Switching scenes stops the old
@@ -135,7 +138,6 @@ my-pack.spk
 │   └── thunder.mp3
 └── scenes/
     ├── tavern/
-    │   ├── cover.png         # Scene thumbnail (optional)
     │   └── music/
     │       └── theme.mp3
     └── dungeon/
@@ -196,7 +198,6 @@ directory or mood-state track shared by scenes.
       "name": "Tavern",
       "description": "A warm, busy roadside inn",
       "icon": "ra-beer",
-      "cover": "scenes/tavern/cover.png",
       "intensity": 60,
       "ambiences": [
         { "ambienceId": "rain", "variationId": "light", "volume": 35 }
@@ -273,7 +274,6 @@ export interface SceneDef {
   name: string;
   description?: string;
   icon: string;
-  cover?: string;
   intensity: number;
   ambiences: SceneAmbience[];
   oneShotIds: string[];
@@ -298,15 +298,14 @@ The ambient-sound area has three primary surfaces:
   grouped by package and category. Entries are content; they do not play just
   because they are visible.
 - **Scene detail/editor** — the mix for one package-owned scene: active
-  ambience entries, variations, volumes, one-shot selection, intensity, cover
-  and music.
+  ambience entries, variations, volumes, one-shot selection, intensity and music.
 
 A persistent **Now Playing / sound control panel** shows the current scene and
 provides playback, quick volume and expand/detach controls.
 
 ### 4.2 Scenes list
 
-- Shows package scenes with cover, name, package name and last updated time.
+- Shows package scenes with icon, name, package name and last updated time.
 - Selecting a scene starts it; selecting the active scene does not restart its
   music.
 - Scene actions: play, edit, duplicate (as a new scene in the same package) and
@@ -323,7 +322,7 @@ provides playback, quick volume and expand/detach controls.
 
 ### 4.4 Scene editor
 
-- Main info: name, description, cover, intensity.
+- Main info: name, description, icon, intensity.
 - Ambience tab: selected ambience entries, variation, volume per entry.
 - One-shots tab: selected one-shot entries available to trigger in the scene.
 - Music tab: files owned by this scene. Music is always scene-bound; it cannot
@@ -1020,7 +1019,7 @@ To create an ambient sound package:
 1. Create directory `sound-packs/<package-name>/`.
 2. Add `pack.json` with package metadata, `ambiences`, `oneShots` and `scenes`.
 3. Add ambience samples under `ambiences/`, one-shot files under `one-shots/`,
-   and scene-owned covers/music under `scenes/<scene-id>/`.
+   and scene-owned music under `scenes/<scene-id>/music/`.
 4. Run `npm run pack:sound` to generate the `.spk` file.
 5. Import the `.spk` file in the app; its scenes appear in the scenes list and
    its entries appear in the global gallery.
@@ -1035,8 +1034,8 @@ To create an ambient sound package:
 
 The screenshots show a scene-centric product rather than a pack-centric mixer:
 
-- **Scenes** are the primary library object, with cover art, description,
-  Preview/Play and last-updated metadata.
+- **Scenes** are the primary library object, with description, Preview/Play and
+  last-updated metadata. DMH does not use scene cover art.
 - **Ambiences** and **One-shots** are separate libraries with category chips.
 - **Scene editing** is a checklist: “Added to scene”, grouped by category, with
   Remove All and a clear empty/complete state.
@@ -1064,7 +1063,6 @@ interface SceneDef {
   id: string;
   name: string;
   description?: string;
-  cover?: string;
   intensity: number;
   ambiences: Array<{
     ambienceId: string;
@@ -1091,7 +1089,7 @@ or scene state.
 
 Present on all pages, not only the ambient page:
 
-- scene cover, scene name and playing/paused state;
+- scene icon, scene name and playing/paused state;
 - play/pause, stop with fade and a quick master volume;
 - tap to open the full mixer;
 - optional previous/next scene once a scene queue exists.
@@ -1104,7 +1102,7 @@ separate destination.
 
 Replace the current vertical control stack with:
 
-- **Scenes** — cover grid, search, last updated, Preview/Play.
+- **Scenes** — list/grid with name, package, last updated, Preview/Play.
 - **Ambiences** — grouped rows with icon, name, category and active state.
 - **One-shots** — category grid with large touch targets and a Manage action.
 
@@ -1116,7 +1114,7 @@ rather than a large centred modal.
 
 Mirror the Pocket Bard scene detail screen:
 
-- cover, description and last updated;
+- description and last updated;
 - Preview and Play buttons;
 - grouped checklists for layers and one-shots;
 - Remove All;
@@ -1177,8 +1175,8 @@ the scene model is stable.
   register ambience/one-shot entries in the global gallery.
 - Keep scene references package-local: a scene may only reference entries from
   its own package.
-- Store scene covers and music as package assets; scene music is never shared
-  between scenes.
+- Store scene music as a package asset; scene music is never shared between
+  scenes.
 - Extend `AudioEngine` with independent music, ambience and one-shot gains and
   scene-level fade/crossfade helpers.
 - Mount the Now Playing bar in the layout shell, not inside
@@ -1200,8 +1198,7 @@ the scene model is stable.
    stay strictly package-local? The current model keeps scenes package-local.
 2. Should “Preview” play the scene quietly in place, or temporarily replace the
    current playback and restore it on stop?
-3. Do we need user-created scene covers, or can covers be generated from the
-   linked map/location image?
+3. Do we need scene icons beyond the shared icon picker?
 4. Is Party EQ required, or is simple music ducking during one-shots enough?
 5. Should scene changes participate in undo/redo, or is a simple confirmation
    dialog sufficient?
