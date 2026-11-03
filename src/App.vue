@@ -236,8 +236,18 @@ onUnmounted(() => {
 const leftDrawerOpen = ref(false);
 const miniState = ref(true);
 
+const menuMini = computed(() => !configStore.expandMenu || miniState.value);
+
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+function onMenuMouseEnter() {
+  if (configStore.expandMenu) miniState.value = false;
+}
+
+function onMenuMouseLeave() {
+  if (configStore.expandMenu) miniState.value = true;
 }
 
 const {
@@ -301,9 +311,9 @@ function openJukebox() {
         v-model="leftDrawerOpen"
         side="left"
         bordered
-        :mini="miniState"
-        @mouseenter="miniState = false"
-        @mouseleave="miniState = true"
+        :mini="menuMini"
+        @mouseenter="onMenuMouseEnter"
+        @mouseleave="onMenuMouseLeave"
         class="left-sidebar full-height column justify-between q-gutter-y-sm"
       >
         <div>
@@ -315,6 +325,8 @@ function openJukebox() {
                 :active="isActive(menuItem)"
                 :active-class="'bg-secondary'"
                 :to="menuItem.path"
+                :title="t(menuItem.label)"
+                :aria-label="t(menuItem.label)"
               >
                 <QItemSection side>
                   <component
@@ -339,11 +351,26 @@ function openJukebox() {
               clickable
               v-ripple
               :active="false"
+              :title="t('navigation.tools')"
+              :aria-label="t('navigation.tools')"
               @click="toolsExpanded = !toolsExpanded"
             >
-              <QItemSection side><IconTool /></QItemSection>
-              <QItemSection>{{ t('navigation.tools') }}</QItemSection>
               <QItemSection side>
+                <div
+                  class="tools-icon-stack"
+                  :class="{ 'tools-icon-stack--mini': menuMini }"
+                >
+                  <IconTool />
+                  <IconChevronDown
+                    v-if="menuMini"
+                    :size="14"
+                    class="tools-caret tools-caret--mini"
+                    :class="{ 'tools-caret--open': toolsExpanded }"
+                  />
+                </div>
+              </QItemSection>
+              <QItemSection>{{ t('navigation.tools') }}</QItemSection>
+              <QItemSection v-if="!menuMini" side>
                 <IconChevronDown
                   :size="18"
                   class="tools-caret"
@@ -359,6 +386,8 @@ function openJukebox() {
                   :active="router.currentRoute.value.path.startsWith('/timers')"
                   :active-class="'bg-secondary'"
                   :to="'/timers'"
+                  :title="t('navigation.timers')"
+                  :aria-label="t('navigation.timers')"
                 >
                   <QItemSection side>
                     <component :is="timerIcon" :key="animationFrame" />
@@ -369,6 +398,8 @@ function openJukebox() {
                   clickable
                   v-ripple
                   :active="false"
+                  :title="t('app.calculator')"
+                  :aria-label="t('app.calculator')"
                   @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
                 >
                   <QItemSection side><IconCalculator /></QItemSection>
@@ -380,6 +411,8 @@ function openJukebox() {
                   :to="'/probability-calculator'"
                   :active="isProbabilityCalculatorActive()"
                   :active-class="'bg-secondary'"
+                  :title="t('navigation.probabilityCalculator')"
+                  :aria-label="t('navigation.probabilityCalculator')"
                 >
                   <QItemSection side><IconChartLine /></QItemSection>
                   <QItemSection>
@@ -394,6 +427,8 @@ function openJukebox() {
                     router.currentRoute.value.path.startsWith('/ambient-sound')
                   "
                   :active-class="'bg-secondary'"
+                  :title="t('navigation.ambientSound')"
+                  :aria-label="t('navigation.ambientSound')"
                 >
                   <QItemSection side>
                     <IconHeadphones
@@ -419,6 +454,8 @@ function openJukebox() {
               :active="isJukeboxActive()"
               :to="'/jukebox'"
               :active-class="'bg-secondary'"
+              :title="t('app.jukebox')"
+              :aria-label="t('app.jukebox')"
             >
               <QItemSection side>
                 <IconMusic
@@ -435,6 +472,8 @@ function openJukebox() {
               v-else
               clickable
               v-ripple
+              :title="t('app.jukebox')"
+              :aria-label="t('app.jukebox')"
               @click="openJukebox"
             >
               <QItemSection side>
@@ -450,6 +489,8 @@ function openJukebox() {
               clickable
               data-test="open-settings"
               :active="false"
+              :title="t('navigation.settings')"
+              :aria-label="t('navigation.settings')"
               v-ripple
               @click="isSettingsOpen = true"
             >
@@ -586,5 +627,21 @@ function openJukebox() {
 
 .tools-caret--open {
   transform: rotate(180deg);
+}
+
+.tools-icon-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.tools-icon-stack--mini {
+  gap: 0;
+}
+
+.tools-caret--mini {
+  margin-top: -1px;
 }
 </style>

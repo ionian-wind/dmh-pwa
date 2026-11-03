@@ -498,7 +498,9 @@
     "animatePlayerBackgroundHint": "Show an animated album-colour gradient behind the player.",
     "displayCoverWhilePlayingHint": "Show album artwork in the expanded player.",
     "useMiniPlayerHint": "Show the music player dialog when opening Jukebox. Turn off to open the full Jukebox page instead.",
-    "languageHint": "Choose the language used by the application."
+    "languageHint": "Choose the language used by the application.",
+    "expandMenu": "Expand menu",
+    "expandMenuHint": "Expand the sidebar on hover. Turn off to keep icons only, with labels shown as hover hints."
   },
   "tags": {
     "title": "Tags"

@@ -167,6 +167,11 @@ Settings item. It currently has two sections:
     `configStore.savedLanguage`; Quasar’s locale follows the selection.
   - **Confirm deletion** — default `true`. When off, `confirm()` resolves
     `true` immediately without opening a confirmation dialog.
+  - **Expand menu** — default `true`. When on, hovering the left menu expands it
+    from icons to labels. When off, the menu stays mini and only shows icons;
+    each item exposes its label as a native `title` tooltip. In mini mode, the
+    Tools item stacks a small chevron under the wrench and still toggles the
+    tools group.
 - **Player**
   - Smooth track change.
   - Animate player background.

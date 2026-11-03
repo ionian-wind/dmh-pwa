@@ -49,6 +49,7 @@ describe('settings dialog', () => {
   it('updates interface and player options', async () => {
     const config = useConfigStore();
     config.confirmDelete = true;
+    config.expandMenu = true;
     config.jukeboxSmoothTrackChange = false;
     config.jukeboxAnimatePlayerBackground = true;
     config.jukeboxDisplayCoverWhilePlaying = true;
@@ -62,13 +63,14 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Interface');
     expect(wrapper.text()).toContain('Player');
     expect(wrapper.text()).toContain('Confirm deletion');
+    expect(wrapper.text()).toContain('Expand menu');
     expect(wrapper.text()).toContain('Cross-fade');
     expect(wrapper.text()).toContain('animated album-colour gradient');
     expect(wrapper.text()).toContain('Display cover while playing');
     expect(wrapper.text()).toContain('Show player dialog');
 
     const toggles = wrapper.findAllComponents(QToggleStub);
-    expect(toggles).toHaveLength(5);
+    expect(toggles).toHaveLength(6);
 
     toggles[0].vm.$emit('update:modelValue', false);
     await nextTick();
@@ -76,24 +78,30 @@ describe('settings dialog', () => {
 
     wrapper
       .findAllComponents(QToggleStub)[1]
+      .vm.$emit('update:modelValue', false);
+    await nextTick();
+    expect(config.expandMenu).toBe(false);
+
+    wrapper
+      .findAllComponents(QToggleStub)[2]
       .vm.$emit('update:modelValue', true);
     await nextTick();
     expect(config.jukeboxSmoothTrackChange).toBe(true);
 
     wrapper
-      .findAllComponents(QToggleStub)[2]
+      .findAllComponents(QToggleStub)[3]
       .vm.$emit('update:modelValue', false);
     await nextTick();
     expect(config.jukeboxAnimatePlayerBackground).toBe(false);
 
     wrapper
-      .findAllComponents(QToggleStub)[3]
+      .findAllComponents(QToggleStub)[4]
       .vm.$emit('update:modelValue', false);
     await nextTick();
     expect(config.jukeboxDisplayCoverWhilePlaying).toBe(false);
 
     wrapper
-      .findAllComponents(QToggleStub)[4]
+      .findAllComponents(QToggleStub)[5]
       .vm.$emit('update:modelValue', false);
     await nextTick();
     expect(config.jukeboxUseMiniPlayer).toBe(false);
@@ -141,6 +149,45 @@ describe('settings dialog', () => {
     expect(wrapper.findComponent(SettingsDialog).props('modelValue')).toBe(
       true,
     );
+    wrapper.unmount();
+  });
+
+  it('keeps the menu mini when expand menu is disabled', async () => {
+    const config = useConfigStore();
+    config.expandMenu = true;
+    config.savedLanguage = 'en';
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { render: () => h('div') } }],
+    });
+    await router.push('/');
+    await router.isReady();
+
+    const wrapper = mount(App, { global: { plugins: [router] } });
+    await flushPromises();
+
+    const drawer = wrapper.find('.left-sidebar');
+    expect(drawer.attributes('title')).toBeUndefined();
+    expect(
+      wrapper.find('[data-test="open-settings"]').attributes('title'),
+    ).toBeTruthy();
+    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
+
+    await drawer.trigger('mouseenter');
+    await nextTick();
+    expect(drawer.attributes('mini')).not.toBe('true');
+    expect(wrapper.find('.tools-caret--mini').exists()).toBe(false);
+    expect(wrapper.find('.tools-caret').exists()).toBe(true);
+
+    config.expandMenu = false;
+    await nextTick();
+    expect(drawer.attributes('mini')).toBe('true');
+    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
+
+    await drawer.trigger('mouseenter');
+    await nextTick();
+    expect(drawer.attributes('mini')).toBe('true');
+    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
     wrapper.unmount();
   });
 

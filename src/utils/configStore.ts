@@ -46,6 +46,7 @@ export type ConfigStore = {
   jukeboxAnimatePlayerBackground: Ref<boolean>;
   jukeboxDisplayCoverWhilePlaying: Ref<boolean>;
   jukeboxUseMiniPlayer: Ref<boolean>;
+  expandMenu: Ref<boolean>;
   confirmDelete: Ref<boolean>;
   savedLanguage: Ref<string>;
 };
@@ -80,6 +81,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     const jukeboxUseMiniPlayer = ref<boolean>(
       getValue('jukeboxUseMiniPlayer', true),
     );
+    const expandMenu = ref<boolean>(getValue('expandMenu', true));
     const confirmDelete = ref<boolean>(getValue('confirmDelete', true));
     const browserLanguage = window?.navigator?.language ?? 'en';
     const savedLanguage = ref<string>(
@@ -100,6 +102,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
       jukeboxAnimatePlayerBackground,
       jukeboxDisplayCoverWhilePlaying,
       jukeboxUseMiniPlayer,
+      expandMenu,
       confirmDelete,
       savedLanguage,
     };

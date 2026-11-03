@@ -56,6 +56,17 @@ function close() {
             <QToggle v-model="configStore.confirmDelete" />
           </QItemSection>
         </QItem>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('settings.expandMenu') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.expandMenuHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.expandMenu" />
+          </QItemSection>
+        </QItem>
       </QList>
     </section>
 

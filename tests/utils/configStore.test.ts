@@ -31,6 +31,7 @@ describe('config store', () => {
     expect(config.jukeboxRepeatMode).toBe(JukeboxRepeatMode.off);
     expect(config.jukeboxDisplayCoverWhilePlaying).toBe(true);
     expect(config.jukeboxUseMiniPlayer).toBe(true);
+    expect(config.expandMenu).toBe(true);
     expect(config.savedLanguage).toBe('en');
   });
 
