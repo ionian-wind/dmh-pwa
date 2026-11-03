@@ -118,12 +118,17 @@ describe('ambient audio engine', () => {
   });
 
   it('loads and plays one-shot effects', () => {
+    const onEnd = vi.fn();
+    engine.setOneShotEndHandler(onEnd);
     engine.loadOneShot('thunder', 'blob:thunder');
     engine.loadOneShot('thunder', 'blob:thunder');
     expect(howler.instances).toHaveLength(1);
-    engine.playOneShot('thunder', 0.5);
+    expect(engine.playOneShot('thunder', 0.5)).toBe(true);
     expect(instance(0).volume()).toBe(0.5);
-    engine.playOneShot('missing');
+    expect(engine.playOneShot('missing')).toBe(false);
+
+    instance(0).opts.onend();
+    expect(onEnd).toHaveBeenCalledWith('thunder');
   });
 
   it('replaces layer samples and reports temporary music end', () => {

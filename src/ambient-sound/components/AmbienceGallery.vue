@@ -1,16 +1,6 @@
 <template>
   <div>
     <div class="row items-center q-gutter-sm q-mb-md">
-      <QInput
-        v-model="search"
-        dense
-        outlined
-        clearable
-        :placeholder="t('ambientSoundPage.searchAmbiences')"
-        class="col"
-      >
-        <template #prepend><IconSearch :size="18" /></template>
-      </QInput>
       <QSelect
         v-model="category"
         :options="categoryOptions"
@@ -117,7 +107,6 @@ import { useI18n } from 'vue-i18n';
 import {
   IconPlayerPause,
   IconPlayerPlay,
-  IconSearch,
   IconWaveSine,
 } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -128,7 +117,6 @@ import type { GalleryAmbience, LayerDef } from '@/ambient-sound/types';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const search = ref('');
 const category = ref('');
 const selectedVariations = ref<Record<string, string>>({});
 
@@ -143,19 +131,13 @@ const categoryOptions = computed(() => {
   ];
 });
 
-const entries = computed(() => {
-  const query = search.value.trim().toLowerCase();
-  return store.galleryAmbiences.filter(({ pack, ambience }) => {
+const entries = computed(() =>
+  store.galleryAmbiences.filter(({ pack, ambience }) => {
     if (store.selectedPackId && pack.id !== store.selectedPackId) return false;
     if (category.value && ambience.category !== category.value) return false;
-    if (!query) return true;
-    return (
-      ambience.name.toLowerCase().includes(query) ||
-      pack.name.toLowerCase().includes(query) ||
-      (ambience.category ?? '').toLowerCase().includes(query)
-    );
-  });
-});
+    return true;
+  }),
+);
 
 function variations(ambience: LayerDef) {
   return getLayerVariations(ambience);

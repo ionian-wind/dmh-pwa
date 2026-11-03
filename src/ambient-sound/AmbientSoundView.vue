@@ -123,7 +123,10 @@ onUnmounted(() => {
   z-index: 10;
   padding: 0.5rem 0;
   background: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
+}
+
+.ambient-tabs-sticky :deep(.tab-nav) {
+  border-bottom: none;
 }
 
 .ambient-tab-body {

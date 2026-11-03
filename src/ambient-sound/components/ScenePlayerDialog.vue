@@ -31,9 +31,6 @@
             <IconPlayerPlay v-else />
           </QBtn>
           <div class="col">
-            <div class="text-caption text-grey-7">
-              {{ t('ambientSoundPage.nowPlaying') }}
-            </div>
             <div class="text-subtitle1">
               {{ store.activeScene?.scene.name || entry.scene.name }}
             </div>
@@ -138,7 +135,21 @@
                 flat
                 bordered
                 class="one-shot-card"
+                :class="{
+                  'is-playing': store.isOneShotPlaying(
+                    entry.pack.id,
+                    oneShot.id,
+                  ),
+                }"
+                role="button"
+                tabindex="0"
                 @click="store.playOneShot(entry.pack.id, oneShot.id)"
+                @keydown.enter.prevent="
+                  store.playOneShot(entry.pack.id, oneShot.id)
+                "
+                @keydown.space.prevent="
+                  store.playOneShot(entry.pack.id, oneShot.id)
+                "
               >
                 <QCardSection
                   class="column items-center text-center q-gutter-xs"
@@ -337,6 +348,14 @@ watch(
 
 .one-shot-card {
   cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.one-shot-card.is-playing {
+  border-color: var(--color-primary);
+  background: var(--color-background-soft);
 }
 
 @media (max-width: 600px) {

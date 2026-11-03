@@ -348,7 +348,7 @@ The ambient-sound section is a first-class app page with a package sidebar:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Header: Ambient Sound                    [search] [sidebar]  │
+│ Header: Ambient Sound                              [sidebar]  │
 ├───────────────────────────────────────────┬──────────────────┤
 │ Tabs: Scenes | Ambiences | One-shots       │ Packages         │
 │                                           │ ──────────────── │
@@ -384,8 +384,7 @@ The Scenes tab is the default landing view.
 
 **Toolbar**
 
-- Search by scene name, package name or description.
-- Filter chips: All packages / current package / linked only.
+- Package filter chips: All packages / current package / linked only.
 - Sort: recently updated, name, package.
 
 **Scene row/card**
@@ -407,7 +406,6 @@ play/pause instead.
 
 - No packages: empty state with “Import package”.
 - Packages but no scenes: “This package has no scenes”.
-- No search results: compact empty state with “Clear filters”.
 - Loading/importing: spinner and disabled package actions.
 
 ### 4.3 Ambiences tab
@@ -416,7 +414,6 @@ A global content gallery for ambience entries from all loaded packages.
 
 **Toolbar**
 
-- Search by name, package or category.
 - Package filter (synced with the sidebar filter).
 - Category chips built from the available categories; include “All”.
 - View toggle: grouped list (default) or compact table.
@@ -436,13 +433,15 @@ A global content gallery for ambience entries from all loaded packages.
 
 A global content gallery for one-shot entries.
 
-- Search and package/category filters behave like the Ambiences tab.
+- Package and category filters behave like the Ambiences tab.
 - Group by package, then by category.
-- Each row/card shows icon, name, category, package and “Used in N scenes”.
-- Primary action is “Play”.
+- Each card shows icon, name, category, package and “Used in N scenes”.
+- Clicking anywhere on the card plays the one-shot; there is no separate play
+  button.
+- A card highlights while its one-shot is playing.
 - Triggering a one-shot from the scene player/playback panel is independent of
   ambient playback, scene music and ambient volume settings.
-- One-shot rows remain visible and playable even when no scene is active.
+- One-shot cards remain visible and playable even when no scene is active.
 
 ### 4.5 Read-only package content
 
@@ -469,10 +468,11 @@ contains:
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.
 - **One-shots tab** — linked one-shots as cards grouped by category. Clicking a
-  card plays that one-shot immediately, independent of music or ambience state.
+  card plays that one-shot immediately, independent of music or ambience state,
+  and the card highlights while it plays.
 
 The dialog closes without stopping playback; the scene remains available from
-the Now Playing surface.
+the bottom player panel.
 
 ### 4.7 Entity views: linked scenes
 
@@ -505,9 +505,10 @@ It mirrors the jukebox player and lives in the app footer.
 
 - Anchored to the bottom as a flush app footer, width equal to the
   page-content area.
-- Shows scene icon, scene name, package name and play/pause state.
-- Music toggle, play/pause, stop and master volume access.
-- No scene cover art; scene identity is icon + name.
+- Shows the scene name, package name and play/pause state.
+- An intensity slider occupies the same slot as the jukebox track-progress bar.
+- Music toggle, play/pause and master volume access.
+- No scene icon, cover art, “Now playing” caption or stop button.
 
 **Floating dialog mode**
 
@@ -561,8 +562,8 @@ It mirrors the jukebox player and lives in the app footer.
 - Package delete: confirmation includes the number of scenes and entries removed.
 - Active scene: visible badge and pulsing state in the app menu/sound panel.
 - Paused: play icon and “Paused” status; music disabled: muted music indicator.
-- Empty states cover: no packages, no scenes, no gallery entries, no search
-  results, no linked entities, no music.
+- Empty states cover: no packages, no scenes, no gallery entries, no linked
+  entities, no music.
 - All icon buttons have `title`/`aria-label`; sliders have accessible labels and
   current values.
 - Keyboard: tab order follows the visual order; Escape closes modals/dialogs;
@@ -576,8 +577,8 @@ It mirrors the jukebox player and lives in the app footer.
 | ---------------------- | --------------------------------------------------------- | -------------------------------------------- |
 | `AmbientSoundView`     | Page layout, sticky tabs, package filter, content         | `currentPackage`, `activeTab`, `activeScene` |
 | `PackageSidebar`       | Package list, import/delete, filter                       | `packages`, `selectedPackageId`              |
-| `SceneList`            | Scene rows, search and opening the player                 | `scenes`, `activeSceneId`                    |
-| `GlobalGallery`        | Ambience/one-shot browsing                                | `galleryEntries`, `search`, `category`       |
+| `SceneList`            | Scene rows and opening the player                         | `scenes`, `activeSceneId`                    |
+| `GlobalGallery`        | Ambience/one-shot browsing                                | `galleryEntries`, `category`                 |
 | `EntityScenesPanel`    | Linked scenes in location/module/encounter/character      | `links`, `add/remove`, `play`                |
 | `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume | `activeScene`, `playback`, `masterVolume`    |
 

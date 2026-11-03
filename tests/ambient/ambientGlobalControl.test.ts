@@ -14,7 +14,7 @@ const storeMock = vi.hoisted(() => ({
   intensity: 55,
   toggleMusic: vi.fn(),
   togglePlayPause: vi.fn(),
-  stop: vi.fn(),
+  setIntensity: vi.fn(),
   setMasterVolume: vi.fn(),
 }));
 
@@ -35,10 +35,11 @@ describe('AmbientGlobalControl', () => {
     storeMock.masterVolume = 50;
     storeMock.isPlaying = true;
     storeMock.musicEnabled = true;
+    storeMock.intensity = 55;
     for (const fn of [
       storeMock.toggleMusic,
       storeMock.togglePlayPause,
-      storeMock.stop,
+      storeMock.setIntensity,
       storeMock.setMasterVolume,
     ]) {
       fn.mockReset();
@@ -52,17 +53,31 @@ describe('AmbientGlobalControl', () => {
 
     expect(wrapper.text()).toContain('Tavern');
     expect(wrapper.text()).toContain('Forest');
+    expect(wrapper.text()).not.toContain('Now playing');
+    expect(wrapper.find('.ambient-artwork').exists()).toBe(false);
     expect(wrapper.find('.ambient-player-header').exists()).toBe(true);
     expect(wrapper.find('.ambient-player-controls').exists()).toBe(true);
 
     await wrapper.find('button[aria-label="Pause"]').trigger('click');
     expect(storeMock.togglePlayPause).toHaveBeenCalled();
 
-    await wrapper.find('button[aria-label="Stop"]').trigger('click');
-    expect(storeMock.stop).toHaveBeenCalled();
+    expect(wrapper.find('button[aria-label="Stop"]').exists()).toBe(false);
 
     await wrapper.find('button[aria-label="Turn music off"]').trigger('click');
     expect(storeMock.toggleMusic).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it('adjusts intensity from the progress-bar slot', async () => {
+    const wrapper = mount(AmbientGlobalControl, {
+      global: { stubs: quasarStubs },
+    });
+
+    const sliders = wrapper.findAllComponents(quasarStubs.QSlider);
+    expect(sliders).toHaveLength(2);
+    sliders[0].vm.$emit('update:modelValue', 0.55);
+    expect(storeMock.setIntensity).toHaveBeenCalledWith(55);
+    expect(wrapper.find('.intensity-value').text()).toBe('55%');
     wrapper.unmount();
   });
 
@@ -74,9 +89,8 @@ describe('AmbientGlobalControl', () => {
     await wrapper.find('.volume-button').trigger('wheel', { deltaY: 100 });
     expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
 
-    wrapper
-      .findComponent(quasarStubs.QSlider)
-      .vm.$emit('update:modelValue', 0.25);
+    const volumeSlider = wrapper.findAllComponents(quasarStubs.QSlider)[1];
+    volumeSlider.vm.$emit('update:modelValue', 0.25);
     expect(storeMock.setMasterVolume).toHaveBeenCalledWith(25);
 
     storeMock.masterVolume = 0;

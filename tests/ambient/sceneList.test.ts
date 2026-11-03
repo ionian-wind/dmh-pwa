@@ -59,20 +59,36 @@ describe('SceneList', () => {
     storeMock.activeScene = null;
   });
 
-  it('filters scenes and opens a scene from its row', async () => {
+  it('opens a scene from its row', async () => {
     const wrapper = mount(SceneList, {
       global: { stubs: quasarStubs },
     });
     expect(wrapper.findAll('.scene-row')).toHaveLength(2);
 
-    await wrapper.find('input').setValue('Smithy');
-    expect(wrapper.findAll('.scene-row')).toHaveLength(1);
-
     const row = wrapper.find('.scene-row');
     await row.trigger('click');
-    expect(wrapper.emitted('open')?.[0]).toEqual(['local-pack', 'scene-2']);
+    expect(wrapper.emitted('open')?.[0]).toEqual(['imported-pack', 'scene-1']);
+    wrapper.unmount();
+  });
 
-    await wrapper.find('input').setValue('missing');
+  it('filters scenes by the selected package', () => {
+    storeMock.selectedPackId = 'local-pack';
+    const wrapper = mount(SceneList, {
+      global: { stubs: quasarStubs },
+    });
+
+    expect(wrapper.findAll('.scene-row')).toHaveLength(1);
+    expect(wrapper.text()).toContain('Smithy');
+    expect(wrapper.text()).not.toContain('Tavern');
+    wrapper.unmount();
+  });
+
+  it('shows the empty scene state', () => {
+    storeMock.allScenes = [];
+    const wrapper = mount(SceneList, {
+      global: { stubs: quasarStubs },
+    });
+
     expect(wrapper.findAll('.scene-row')).toHaveLength(0);
     expect(wrapper.text()).toContain('No scenes yet');
     wrapper.unmount();

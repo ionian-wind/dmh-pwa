@@ -8,6 +8,7 @@ export class AudioEngine {
   private masterVolume: number = 0.8;
   private currentMoodState: string = 'explore';
   private musicEndHandler: (() => void) | null = null;
+  private oneShotEndHandler: ((sfxId: string) => void) | null = null;
 
   setMasterVolume(volume: number): void {
     this.masterVolume = Math.max(0, Math.min(1, volume));
@@ -41,6 +42,10 @@ export class AudioEngine {
 
   setMusicEndHandler(handler: (() => void) | null): void {
     this.musicEndHandler = handler;
+  }
+
+  setOneShotEndHandler(handler: ((sfxId: string) => void) | null): void {
+    this.oneShotEndHandler = handler;
   }
 
   private handleMusicEnd(): void {
@@ -96,18 +101,19 @@ export class AudioEngine {
       volume: 1,
       html5: true,
       preload: true,
+      onend: () => this.oneShotEndHandler?.(sfxId),
       ...(format ? { format } : {}),
     });
     this.oneShots.set(sfxId, howl);
   }
 
-  playOneShot(sfxId: string, volume: number = 1): void {
+  playOneShot(sfxId: string, volume: number = 1): boolean {
     const sfx = this.oneShots.get(sfxId);
-    if (sfx) {
-      // One-shots use their own volume and are independent of ambient buses.
-      sfx.volume(Math.max(0, Math.min(1, volume)));
-      sfx.play();
-    }
+    if (!sfx) return false;
+    // One-shots use their own volume and are independent of ambient buses.
+    sfx.volume(Math.max(0, Math.min(1, volume)));
+    sfx.play();
+    return true;
   }
 
   loadMusic(

@@ -1,16 +1,6 @@
 <template>
   <div>
     <div class="row items-center q-gutter-sm q-mb-md">
-      <QInput
-        v-model="search"
-        dense
-        outlined
-        clearable
-        :placeholder="t('ambientSoundPage.searchOneShots')"
-        class="col"
-      >
-        <template #prepend><IconSearch :size="18" /></template>
-      </QInput>
       <QSelect
         v-model="category"
         :options="categoryOptions"
@@ -30,6 +20,17 @@
         flat
         bordered
         class="sfx-card"
+        :class="{
+          'is-playing': store.isOneShotPlaying(
+            entry.packageId,
+            entry.oneShot.id,
+          ),
+        }"
+        role="button"
+        tabindex="0"
+        @click="play(entry)"
+        @keydown.enter.prevent="play(entry)"
+        @keydown.space.prevent="play(entry)"
       >
         <QCardSection class="column items-center text-center q-gutter-xs">
           <AmbientIcon :icon="entry.oneShot.icon" :size="28" />
@@ -42,17 +43,6 @@
           <div class="text-caption text-grey-6">
             {{ usedIn(entry.packageId, entry.oneShot.id) }}
             {{ t('ambientSoundPage.scenes') }}
-          </div>
-          <div class="row q-gutter-xs">
-            <QBtn
-              flat
-              round
-              :title="t('ambientSoundPage.preview')"
-              :aria-label="t('ambientSoundPage.preview')"
-              @click="store.playOneShot(entry.packageId, entry.oneShot.id)"
-            >
-              <IconPlayerPlay :size="18" />
-            </QBtn>
           </div>
         </QCardSection>
       </QCard>
@@ -70,14 +60,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconBell, IconPlayerPlay, IconSearch } from '@tabler/icons-vue';
+import { IconBell } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
+import type { GalleryOneShot } from '@/ambient-sound/types';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const search = ref('');
 const category = ref('');
 
 const categoryOptions = computed(() => {
@@ -91,19 +81,17 @@ const categoryOptions = computed(() => {
   ];
 });
 
-const entries = computed(() => {
-  const query = search.value.trim().toLowerCase();
-  return store.galleryOneShots.filter(({ pack, oneShot }) => {
+const entries = computed(() =>
+  store.galleryOneShots.filter(({ pack, oneShot }) => {
     if (store.selectedPackId && pack.id !== store.selectedPackId) return false;
     if (category.value && oneShot.category !== category.value) return false;
-    if (!query) return true;
-    return (
-      oneShot.name.toLowerCase().includes(query) ||
-      pack.name.toLowerCase().includes(query) ||
-      oneShot.category.toLowerCase().includes(query)
-    );
-  });
-});
+    return true;
+  }),
+);
+
+function play(entry: GalleryOneShot) {
+  void store.playOneShot(entry.packageId, entry.oneShot.id);
+}
 
 function usedIn(packId: string, oneShotId: string) {
   return store.allScenes.filter(
@@ -126,5 +114,14 @@ function usedIn(packId: string, oneShotId: string) {
 
 .sfx-card {
   min-width: 0;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.sfx-card.is-playing {
+  border-color: var(--color-primary);
+  background: var(--color-background-soft);
 }
 </style>

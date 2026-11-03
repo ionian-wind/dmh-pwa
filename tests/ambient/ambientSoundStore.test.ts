@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
     playOneShot: vi.fn(),
     stopMusic: vi.fn(),
     setMusicEndHandler: vi.fn(),
+    setOneShotEndHandler: vi.fn(),
   },
 }));
 
@@ -302,6 +303,7 @@ describe('ambient sound store', () => {
     await store.loadStoredPacks();
     store.setMasterVolume(0);
     store.pause();
+    mocks.audioEngine.playOneShot.mockReturnValue(true);
 
     await store.playOneShot('forest', 'thunder');
 
@@ -310,6 +312,39 @@ describe('ambient sound store', () => {
       0.8,
     );
     expect(store.isPlaying).toBe(false);
+    expect(store.isOneShotPlaying('forest', 'thunder')).toBe(true);
+
+    const endHandler = mocks.audioEngine.setOneShotEndHandler.mock.calls[0][0];
+    endHandler('oneShot:forest:thunder');
+    expect(store.isOneShotPlaying('forest', 'thunder')).toBe(false);
+  });
+
+  it('ignores one-shots that the audio engine cannot start', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    mocks.audioEngine.playOneShot.mockReturnValue(false);
+
+    await store.playOneShot('forest', 'thunder');
+    await store.playOneShot('forest', 'missing');
+    await store.playOneShot('missing', 'thunder');
+
+    expect(store.isOneShotPlaying('forest', 'thunder')).toBe(false);
+  });
+
+  it('keeps a one-shot highlighted until overlapping plays both end', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    mocks.audioEngine.playOneShot.mockReturnValue(true);
+
+    await store.playOneShot('forest', 'thunder');
+    await store.playOneShot('forest', 'thunder');
+    const endHandler = mocks.audioEngine.setOneShotEndHandler.mock.calls[0][0];
+
+    endHandler('oneShot:forest:thunder');
+    expect(store.isOneShotPlaying('forest', 'thunder')).toBe(true);
+
+    endHandler('oneShot:forest:thunder');
+    expect(store.isOneShotPlaying('forest', 'thunder')).toBe(false);
   });
 
   it('handles selection, transport toggles, music and previews', async () => {

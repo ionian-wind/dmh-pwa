@@ -1,18 +1,5 @@
 <template>
   <div class="scene-list">
-    <div class="row items-center q-gutter-sm q-mb-md">
-      <QInput
-        v-model="search"
-        dense
-        outlined
-        clearable
-        :placeholder="t('ambientSoundPage.searchScenes')"
-        class="col"
-      >
-        <template #prepend><IconSearch :size="18" /></template>
-      </QInput>
-    </div>
-
     <div v-if="scenes.length" class="column q-gutter-sm">
       <QCard
         v-for="entry in scenes"
@@ -89,14 +76,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconMusic,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconSearch,
-} from '@tabler/icons-vue';
+import { IconMusic, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
@@ -107,24 +89,16 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const search = ref('');
 
 function sceneKey(packId: string, sceneId: string) {
   return `${packId}::${sceneId}`;
 }
 
-const scenes = computed(() => {
-  const query = search.value.trim().toLowerCase();
-  return store.allScenes.filter(({ pack, scene }) => {
-    if (store.selectedPackId && pack.id !== store.selectedPackId) return false;
-    if (!query) return true;
-    return (
-      scene.name.toLowerCase().includes(query) ||
-      pack.name.toLowerCase().includes(query) ||
-      (scene.description ?? '').toLowerCase().includes(query)
-    );
-  });
-});
+const scenes = computed(() =>
+  store.allScenes.filter(
+    ({ pack }) => !store.selectedPackId || pack.id === store.selectedPackId,
+  ),
+);
 
 function isActive(packId: string, sceneId: string) {
   return store.activeSceneKey === sceneKey(packId, sceneId);

@@ -70,6 +70,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   const loadedPackIds = ref<Set<string>>(new Set());
   const loadedAudioUrls = ref<Map<string, string>>(new Map());
   const previewLayerId = ref<string | null>(null);
+  const playingOneShotCounts = ref<Map<string, number>>(new Map());
 
   const selectedPack = computed(
     () =>
@@ -455,10 +456,25 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     const oneShot = findOneShot(packId, oneShotId);
     if (!pack || !oneShot) return;
     await ensurePackAudio(pack);
-    audioEngine.playOneShot(
-      oneShotKey(packId, oneShot.id),
-      oneShot.volume / 100,
+    const key = oneShotKey(packId, oneShot.id);
+    if (!audioEngine.playOneShot(key, oneShot.volume / 100)) return;
+    const count = playingOneShotCounts.value.get(key) ?? 0;
+    playingOneShotCounts.value.set(key, count + 1);
+  }
+
+  function isOneShotPlaying(packId: string, oneShotId: string): boolean {
+    return (
+      (playingOneShotCounts.value.get(oneShotKey(packId, oneShotId)) ?? 0) > 0
     );
+  }
+
+  function handleOneShotEnd(key: string): void {
+    const count = playingOneShotCounts.value.get(key) ?? 0;
+    if (count <= 1) {
+      playingOneShotCounts.value.delete(key);
+      return;
+    }
+    playingOneShotCounts.value.set(key, count - 1);
   }
 
   async function previewAmbience(
@@ -603,6 +619,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   }
 
   audioEngine.setMusicEndHandler(handleSceneMusicEnd);
+  audioEngine.setOneShotEndHandler(handleOneShotEnd);
 
   return {
     storedPacks,
@@ -641,6 +658,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     setMusicPreset,
     toggleMusic,
     playOneShot,
+    isOneShotPlaying,
     previewAmbience,
     stopPreview,
     addSceneLink,

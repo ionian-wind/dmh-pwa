@@ -14,6 +14,7 @@ const storeMock = vi.hoisted(() => ({
   playScene: vi.fn(),
   setMusicPreset: vi.fn(),
   playOneShot: vi.fn(),
+  isOneShotPlaying: vi.fn(() => false),
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
 }));
@@ -32,6 +33,7 @@ describe('ScenePlayerDialog', () => {
       storeMock.playScene,
       storeMock.setMusicPreset,
       storeMock.playOneShot,
+      storeMock.isOneShotPlaying,
       storeMock.toggleAmbience,
       storeMock.setAmbienceVariation,
     ]) {
@@ -40,6 +42,7 @@ describe('ScenePlayerDialog', () => {
     storeMock.activeMusicPresetId = 'explore';
     storeMock.musicEnabled = true;
     storeMock.isPlaying = true;
+    storeMock.isOneShotPlaying.mockReturnValue(false);
     storeMock.activeLayers = new Map([
       ['pack-1:rain', { variationId: 'light', volume: 0.4 }],
     ]);
@@ -218,6 +221,24 @@ describe('ScenePlayerDialog', () => {
       .find((card) => card.text().includes('Thunder'));
     await thunder!.trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
+    wrapper.unmount();
+  });
+
+  it('highlights one-shot cards while they are playing', async () => {
+    storeMock.isOneShotPlaying.mockReturnValue(true);
+    const wrapper = mount(ScenePlayerDialog, {
+      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs: quasarStubs },
+    });
+
+    const oneShotsTab = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'One-shots');
+    await oneShotsTab!.trigger('click');
+    const thunder = wrapper
+      .findAll('.one-shot-card')
+      .find((card) => card.text().includes('Thunder'));
+    expect(thunder!.classes()).toContain('is-playing');
     wrapper.unmount();
   });
 });

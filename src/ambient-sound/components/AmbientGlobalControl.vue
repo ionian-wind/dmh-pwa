@@ -1,13 +1,7 @@
 <template>
   <div class="ambient-player">
     <div class="ambient-player-header">
-      <QAvatar rounded size="48px" class="ambient-artwork">
-        <AmbientIcon :icon="store.activeScene?.scene.icon || '🎵'" :size="24" />
-      </QAvatar>
       <div class="col">
-        <div class="text-caption text-grey-7">
-          {{ t('ambientSoundPage.nowPlaying') }}
-        </div>
         <div class="text-h6">
           {{
             store.activeScene?.scene.name ||
@@ -25,11 +19,35 @@
           }}
         </div>
       </div>
-      <div class="ambient-layer-count text-caption text-grey-6">
-        {{ store.intensity }}%
+    </div>
+
+    <QToolbar class="q-pa-none intensity-bar">
+      <div class="intensity-label text-caption text-grey-7">
         {{ t('ambientSoundPage.intensity') }}
       </div>
-    </div>
+      <div
+        class="intensity-slider"
+        @mouseenter="isIntensityHovered = true"
+        @mouseleave="isIntensityHovered = false"
+      >
+        <QSlider
+          :model-value="store.intensity / 100"
+          :min="0"
+          :max="1"
+          :step="0.01"
+          :markers="false"
+          :color="isIntensityHovered ? 'info' : 'primary'"
+          :track-size="isIntensityHovered ? '10px' : '5px'"
+          @update:model-value="
+            (value: number | null) =>
+              value !== null && store.setIntensity(Math.round(value * 100))
+          "
+        />
+      </div>
+      <div class="intensity-value text-caption text-grey-7">
+        {{ store.intensity }}%
+      </div>
+    </QToolbar>
 
     <QToolbar class="ambient-player-controls q-pa-none q-gutter-x-sm">
       <QBtnGroup flat class="playback-options">
@@ -67,15 +85,6 @@
         >
           <IconPlayerPause v-if="store.isPlaying" />
           <IconPlayerPlay v-else />
-        </QBtn>
-        <QBtn
-          flat
-          :disable="!store.activeScene && !store.hasActiveLayers"
-          :title="t('common.stop')"
-          :aria-label="t('common.stop')"
-          @click="store.stop()"
-        >
-          <IconPlayerStop />
         </QBtn>
       </QBtnGroup>
 
@@ -144,11 +153,9 @@ import {
   IconMusicOff,
   IconPlayerPause,
   IconPlayerPlay,
-  IconPlayerStop,
   IconVolume,
   IconVolumeOff,
 } from '@tabler/icons-vue';
-import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 const { t } = useI18n();
@@ -156,6 +163,7 @@ const store = useAmbientSoundStore();
 
 const isVolumePopupOpen = ref(false);
 const isVolumeHovered = ref(false);
+const isIntensityHovered = ref(false);
 const isVolumePopupDragging = ref(false);
 let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -207,14 +215,27 @@ function handleVolumeWheel(event: WheelEvent) {
   gap: 1rem;
 }
 
-.ambient-artwork {
-  background: var(--color-background-mute);
-  color: var(--color-primary);
+.intensity-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.ambient-layer-count {
+.intensity-slider {
+  flex: 1 1 auto;
+}
+
+.intensity-label {
+  min-width: 68px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.intensity-value {
+  min-width: 40px;
   text-align: right;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .ambient-player-controls {
