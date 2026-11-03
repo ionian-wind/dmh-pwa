@@ -171,14 +171,6 @@ const router = createRouter({
       name: 'ambient-scene',
       component: AmbientSoundView,
     },
-    {
-      path: '/ambient-sound',
-      redirect: '/ambient',
-    },
-    {
-      path: '/ambient-sound/scenes/:sceneId',
-      redirect: (to) => `/ambient/${to.params.sceneId}`,
-    },
     // 404 route
     {
       path: '/:catchAll(.*)',
