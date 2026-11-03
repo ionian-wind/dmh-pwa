@@ -143,6 +143,20 @@ export class AudioEngine {
     }
   }
 
+  getMusicProgress(): number {
+    const track = this.musicTrack;
+    if (!track) return 0;
+    try {
+      const duration = track.duration();
+      const seek = track.seek();
+      if (!Number.isFinite(duration) || duration <= 0) return 0;
+      if (typeof seek !== 'number' || !Number.isFinite(seek)) return 0;
+      return Math.max(0, Math.min(1, seek / duration));
+    } catch {
+      return 0;
+    }
+  }
+
   loadMusic(
     moodState: string,
     audioUrl: string,

@@ -103,13 +103,21 @@ const QToggle = defineComponent({
 const QKnob = defineComponent({
   name: 'QKnob',
   inheritAttrs: false,
-  props: { modelValue: { type: Number, default: 0 } },
+  props: {
+    modelValue: { type: Number, default: 0 },
+    disable: Boolean,
+  },
   emits: ['update:modelValue'],
   setup(props, { slots, attrs }) {
     return () =>
       h(
         'div',
-        { ...attrs, 'data-stub': 'QKnob', 'data-progress': props.modelValue },
+        {
+          ...attrs,
+          'data-stub': 'QKnob',
+          'data-progress': props.modelValue,
+          ...(props.disable ? { disabled: '' } : {}),
+        },
         slots.default?.(),
       );
   },

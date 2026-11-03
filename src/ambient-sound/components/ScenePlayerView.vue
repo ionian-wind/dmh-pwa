@@ -18,52 +18,34 @@
           <div class="text-h6">{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
         </div>
+        <div class="text-caption text-grey-7">
+          {{ t('ambientSoundPage.intensity') }}: {{ store.intensity }}%
+        </div>
       </template>
     </div>
 
     <QCard v-if="entry" flat bordered class="scene-player-card">
       <QCardSection>
-        <div class="row items-center q-gutter-md q-mb-md">
-          <QBtn
-            round
-            color="primary"
-            size="lg"
-            :title="t(store.isPlaying ? 'common.pause' : 'common.play')"
-            :aria-label="t(store.isPlaying ? 'common.pause' : 'common.play')"
-            @click="togglePlayback"
-          >
-            <IconPlayerPause v-if="store.isPlaying" />
-            <IconPlayerPlay v-else />
-          </QBtn>
-          <div class="col" />
-          <div class="text-caption text-grey-7">
-            {{ t('ambientSoundPage.intensity') }}: {{ store.intensity }}%
-          </div>
-        </div>
-
         <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
           {{ t('ambientSoundPage.music') }}
         </div>
-        <QBtnGroup flat class="music-bar q-mb-md">
-          <QBtn
-            :color="musicOff ? 'primary' : 'grey-7'"
-            :outline="!musicOff"
-            :disable="!sceneControlsEnabled"
+        <div class="mood-knobs q-mb-md">
+          <MoodKnob
             :label="t('ambientSoundPage.off')"
-            size="md"
-            @click="store.setMusicPreset(null)"
+            :active="musicOff"
+            :disabled="!sceneControlsEnabled"
+            @select="selectMusic(null)"
           />
-          <QBtn
+          <MoodKnob
             v-for="preset in entry.scene.musicPresets"
             :key="preset.id"
-            :color="activePresetId === preset.id ? 'primary' : 'grey-7'"
-            :outline="activePresetId !== preset.id"
-            :disable="!sceneControlsEnabled"
             :label="preset.name"
-            size="md"
-            @click="store.setMusicPreset(preset.id)"
+            :active="activePresetId === preset.id"
+            :track-progress="preset.mode === 'temporary'"
+            :disabled="!sceneControlsEnabled"
+            @select="selectMusic(preset.id)"
           />
-        </QBtnGroup>
+        </div>
 
         <TabGroup
           v-model="activeTab"
@@ -165,21 +147,16 @@ import {
   IconArrowLeft,
   IconBell,
   IconMusic,
-  IconPlayerPause,
-  IconPlayerPlay,
   IconWaveSine,
 } from '@tabler/icons-vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
+import MoodKnob from '@/ambient-sound/components/MoodKnob.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { getLayerVariations } from '@/ambient-sound/utils/packData';
-import type {
-  LayerDef,
-  OneShotDef,
-  SceneLinkEntityType,
-} from '@/ambient-sound/types';
+import type { LayerDef, OneShotDef } from '@/ambient-sound/types';
 
 const props = defineProps<{
   packId: string;
@@ -218,14 +195,20 @@ function sceneIsActive() {
   return store.activeSceneKey === `${props.packId}::${props.sceneId}`;
 }
 
-const sceneControlsEnabled = computed(() => store.isPlaying && sceneIsActive());
+const sceneControlsEnabled = computed(
+  () => store.isPlaying || (!store.activeScene && !store.hasActiveLayers),
+);
 
-async function togglePlayback() {
-  if (!sceneIsActive()) {
-    await store.playScene(props.packId, props.sceneId);
+async function selectMusic(presetId: string | null) {
+  if (!sceneControlsEnabled.value) return;
+  if (presetId === null) {
+    store.setMusicPreset(null);
     return;
   }
-  store.togglePlayPause();
+  if (!sceneIsActive() || !store.isPlaying) {
+    await store.playScene(props.packId, props.sceneId);
+  }
+  store.setMusicPreset(presetId);
 }
 
 const ambienceGroups = computed(() => {
@@ -317,8 +300,10 @@ watch(
   flex: 0 0 auto;
 }
 
-.music-bar {
+.mood-knobs {
+  display: flex;
   flex-wrap: wrap;
+  gap: 12px;
 }
 
 .variant-active {

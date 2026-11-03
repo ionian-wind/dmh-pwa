@@ -32,6 +32,7 @@ describe('AmbientGlobalControl', () => {
       scene: { id: 'scene-1', name: 'Tavern', icon: '🍺' },
     };
     storeMock.hasActiveLayers = true;
+    storeMock.activeLayers = new Map([['pack-1:rain', {}]]);
     storeMock.masterVolume = 50;
     storeMock.isPlaying = true;
     storeMock.musicEnabled = true;
@@ -58,7 +59,9 @@ describe('AmbientGlobalControl', () => {
     expect(wrapper.find('.ambient-player-header').exists()).toBe(true);
     expect(wrapper.find('.ambient-player-controls').exists()).toBe(true);
 
-    await wrapper.find('button[aria-label="Pause"]').trigger('click');
+    const pause = wrapper.find('button[aria-label="Pause"]');
+    expect(pause.attributes('disabled')).toBeUndefined();
+    await pause.trigger('click');
     expect(storeMock.togglePlayPause).toHaveBeenCalled();
 
     expect(wrapper.find('button[aria-label="Stop"]').exists()).toBe(false);
@@ -99,6 +102,21 @@ describe('AmbientGlobalControl', () => {
     storeMock.masterVolume = 0;
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.volume-button').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('disables transport when nothing is active', () => {
+    storeMock.activeScene = null;
+    storeMock.hasActiveLayers = false;
+    storeMock.activeLayers = new Map();
+    storeMock.isPlaying = false;
+    const wrapper = mount(AmbientGlobalControl, {
+      global: { stubs: quasarStubs },
+    });
+
+    expect(
+      wrapper.find('button[aria-label="Play"]').attributes('disabled'),
+    ).toBeDefined();
     wrapper.unmount();
   });
 

@@ -9,13 +9,14 @@ const storeMock = vi.hoisted(() => ({
   activeMusicPresetId: 'explore' as string | null,
   musicEnabled: true,
   isPlaying: true,
+  hasActiveLayers: true,
   intensity: 55,
-  togglePlayPause: vi.fn(),
   playScene: vi.fn(),
   setMusicPreset: vi.fn(),
   playOneShot: vi.fn(),
   isOneShotPlaying: vi.fn(() => false),
   oneShotProgress: vi.fn(() => 0),
+  musicProgress: vi.fn(() => 0),
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
 }));
@@ -30,12 +31,12 @@ import { quasarStubs } from '../helpers/quasar-stubs';
 describe('ScenePlayerView', () => {
   beforeEach(() => {
     for (const fn of [
-      storeMock.togglePlayPause,
       storeMock.playScene,
       storeMock.setMusicPreset,
       storeMock.playOneShot,
       storeMock.isOneShotPlaying,
       storeMock.oneShotProgress,
+      storeMock.musicProgress,
       storeMock.toggleAmbience,
       storeMock.setAmbienceVariation,
     ]) {
@@ -44,9 +45,11 @@ describe('ScenePlayerView', () => {
     storeMock.activeMusicPresetId = 'explore';
     storeMock.musicEnabled = true;
     storeMock.isPlaying = true;
+    storeMock.hasActiveLayers = true;
     storeMock.activeSceneKey = 'pack-1::scene-1';
     storeMock.isOneShotPlaying.mockReturnValue(false);
     storeMock.oneShotProgress.mockReturnValue(0);
+    storeMock.musicProgress.mockReturnValue(0);
     storeMock.activeLayers = new Map([
       ['pack-1:rain', { variationId: 'light', volume: 0.4 }],
     ]);
@@ -88,6 +91,12 @@ describe('ScenePlayerView', () => {
           musicPresets: [
             { id: 'explore', name: 'Explore', files: ['e.mp3'] },
             { id: 'combat', name: 'Combat', files: ['c.mp3'] },
+            {
+              id: 'victory',
+              name: 'Victory',
+              files: ['v.mp3'],
+              mode: 'temporary',
+            },
           ],
         },
       },
@@ -108,7 +117,7 @@ describe('ScenePlayerView', () => {
     wrapper.unmount();
   });
 
-  it('shows scene music presets and controls global playback', async () => {
+  it('shows mood knobs and switches the active preset', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
@@ -118,26 +127,24 @@ describe('ScenePlayerView', () => {
     expect(wrapper.text()).toContain('Off');
     expect(wrapper.text()).toContain('Explore');
     expect(wrapper.text()).toContain('Combat');
+    expect(
+      wrapper.find('.scene-player-view button[aria-label="Play"]').exists(),
+    ).toBe(false);
 
-    const pause = wrapper.find('button[aria-label="Pause"]');
-    await pause.trigger('click');
-    expect(storeMock.togglePlayPause).toHaveBeenCalled();
-
-    const off = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Off');
-    await off!.trigger('click');
+    const knob = (label: string) =>
+      wrapper.findAll('.mood-knob').find((entry) => entry.text() === label);
+    await knob('Off')!.find('.mood-knob-control').trigger('click');
     expect(storeMock.setMusicPreset).toHaveBeenCalledWith(null);
 
-    const combat = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Combat');
-    await combat!.trigger('click');
+    await knob('Combat')!.find('.mood-knob-control').trigger('click');
     expect(storeMock.setMusicPreset).toHaveBeenCalledWith('combat');
     wrapper.unmount();
   });
 
-  it('opens an inactive scene without starting playback', async () => {
+  it('does not start playback on open and starts from a mood knob', async () => {
+    storeMock.activeScene = null;
+    storeMock.activeLayers = new Map();
+    storeMock.hasActiveLayers = false;
     storeMock.activeSceneKey = 'other::scene';
     storeMock.isPlaying = false;
     const wrapper = mount(ScenePlayerView, {
@@ -147,8 +154,12 @@ describe('ScenePlayerView', () => {
 
     expect(storeMock.playScene).not.toHaveBeenCalled();
 
-    await wrapper.find('button[aria-label="Play"]').trigger('click');
+    const explore = wrapper
+      .findAll('.mood-knob')
+      .find((entry) => entry.text() === 'Explore');
+    await explore!.find('.mood-knob-control').trigger('click');
     expect(storeMock.playScene).toHaveBeenCalledWith('pack-1', 'scene-1');
+    expect(storeMock.setMusicPreset).toHaveBeenCalledWith('explore');
     wrapper.unmount();
   });
 
@@ -159,11 +170,18 @@ describe('ScenePlayerView', () => {
       global: { stubs: quasarStubs },
     });
 
-    const button = (label: string) =>
-      wrapper.findAll('button').find((entry) => entry.text() === label);
-    expect(button('Off')!.attributes('disabled')).toBeDefined();
-    expect(button('Explore')!.attributes('disabled')).toBeDefined();
-    expect(button('Light')!.attributes('disabled')).toBeDefined();
+    const knob = (label: string) =>
+      wrapper.findAll('.mood-knob').find((entry) => entry.text() === label);
+    expect(
+      knob('Off')!.find('.mood-knob-control').attributes('disabled'),
+    ).toBeDefined();
+    expect(
+      knob('Explore')!.find('.mood-knob-control').attributes('disabled'),
+    ).toBeDefined();
+    const light = wrapper
+      .findAll('button')
+      .find((entry) => entry.text() === 'Light');
+    expect(light!.attributes('disabled')).toBeDefined();
 
     const oneShotsTab = wrapper
       .findAll('button')

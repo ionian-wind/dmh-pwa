@@ -141,6 +141,14 @@ describe('ambient audio engine', () => {
     expect(onEnd).toHaveBeenCalledWith('thunder');
   });
 
+  it('reports current music progress', () => {
+    engine.loadMusic('explore', 'blob:theme');
+    expect(engine.getMusicProgress()).toBe(0.4);
+
+    engine.musicTrack = null;
+    expect(engine.getMusicProgress()).toBe(0);
+  });
+
   it('returns zero one-shot progress when duration is unavailable', () => {
     engine.loadOneShot('thunder', 'blob:thunder');
     engine.playOneShot('thunder');

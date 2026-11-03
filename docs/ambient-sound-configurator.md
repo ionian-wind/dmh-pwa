@@ -565,16 +565,18 @@ view while the package sidebar and bottom player panel stay in place. Playback
 starts only from an explicit play action. A Back button in the view header
 returns to the scene/gallery tabs. The view contains:
 
-- **Global play/pause** — controls the scene music and linked ambiences. It does
-  not block one-shots. While the scene is paused or not the active scene, music
-  preset buttons and ambience variation buttons are disabled; one-shots remain
-  available.
-- **Music preset bar** — a single button group containing Off plus one larger
-  button per scene music preset (for example Explore, Combat, Victory). Only one
-  preset can be active; the Off button stops scene music without stopping
-  ambiences. Within a preset the next music variant is chosen randomly when the
-  current track ends. Temporary presets such as Victory return to the previous
-  preset when their track ends.
+- **Mood knobs** — a knob row containing Off plus one knob per scene music preset
+  (for example Explore, Combat, Victory). Clicking a mood knob starts the scene
+  when nothing is playing or switches the active preset while playing. Only one
+  preset can be active; Off stops scene music without stopping ambiences. Within
+  a preset the next music variant is chosen randomly when the current track
+  ends. Temporary presets such as Victory return to the previous preset when
+  their track ends and show playback progress on their knob.
+- **No scene play/pause button** — the scene view has no transport button. The
+  footer player's play/pause resumes playback after a pause.
+- **Control gating** — while paused, mood knobs and ambience variation buttons
+  are disabled. They are enabled again when the footer player resumes, or when
+  nothing has been started yet.
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.
@@ -621,6 +623,8 @@ It mirrors the jukebox player and lives in the app footer.
 - An intensity slider occupies the same slot as the jukebox track-progress bar.
   It has five steps (0/25/50/75/100), snaps to them and shows tick marks.
 - Music toggle, play/pause and master volume access.
+- Play/pause is disabled while no scene or ambience is active. Once mood music
+  or ambience starts, it becomes available and pauses all scene playback.
 - No scene icon, cover art, “Now playing” caption or stop button.
 
 **Playback behavior**

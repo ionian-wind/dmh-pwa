@@ -541,6 +541,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     return audioEngine.getOneShotProgress(oneShotKey(packId, oneShotId));
   }
 
+  function musicProgress(): number {
+    return audioEngine.getMusicProgress();
+  }
+
   function handleOneShotEnd(key: string): void {
     const count = playingOneShotCounts.value.get(key) ?? 0;
     if (count <= 1) {
@@ -733,6 +737,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     playOneShot,
     isOneShotPlaying,
     oneShotProgress,
+    musicProgress,
     previewAmbience,
     stopPreview,
     addSceneLink,

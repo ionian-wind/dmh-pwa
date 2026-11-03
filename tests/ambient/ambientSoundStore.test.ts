@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
     setMusicVolume: vi.fn(),
     playOneShot: vi.fn(),
     getOneShotProgress: vi.fn(),
+    getMusicProgress: vi.fn(),
     stopMusic: vi.fn(),
     setMusicEndHandler: vi.fn(),
     setOneShotEndHandler: vi.fn(),
@@ -371,6 +372,14 @@ describe('ambient sound store', () => {
     expect(mocks.audioEngine.getOneShotProgress).toHaveBeenCalledWith(
       'oneShot:forest:thunder',
     );
+  });
+
+  it('exposes music progress from the audio engine', () => {
+    const store = createStore();
+    mocks.audioEngine.getMusicProgress.mockReturnValue(0.25);
+
+    expect(store.musicProgress()).toBe(0.25);
+    expect(mocks.audioEngine.getMusicProgress).toHaveBeenCalled();
   });
 
   it('ignores one-shots that the audio engine cannot start', async () => {
