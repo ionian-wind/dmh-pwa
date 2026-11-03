@@ -20,6 +20,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   const masterVolume = ref(80);
   const isPlaying = ref(false);
   const weatherActive = ref<WeatherDef | null>(null);
+  const musicEnabled = ref(true);
   const storedPacks = ref<SoundPackManifest[]>([]);
   const loading = ref(false);
   const loadedAudioUrls = ref<Map<string, string>>(new Map());
@@ -168,11 +169,13 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       }
     }
 
-    const exploreMood = currentPack.value.moodStates.find(
-      (m) => m.state === currentMoodState.value,
-    );
-    if (exploreMood?.musicFile) {
-      audioEngine.playMusic(intensity.value / 100);
+    if (musicEnabled.value) {
+      const mood = currentPack.value.moodStates.find(
+        (m) => m.state === currentMoodState.value,
+      );
+      if (mood?.musicFile) {
+        audioEngine.playMusic(intensity.value / 100);
+      }
     }
 
     if (weatherActive.value) {
@@ -198,7 +201,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
 
     currentMoodState.value = state;
 
-    if (!isPlaying.value) return;
+    if (!isPlaying.value || !musicEnabled.value) return;
 
     const mood = currentPack.value.moodStates.find((m) => m.state === state);
     if (mood?.musicFile) {
@@ -221,9 +224,29 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
 
   function setIntensity(value: number): void {
     intensity.value = Math.max(0, Math.min(100, value));
-    if (isPlaying.value) {
+    if (isPlaying.value && musicEnabled.value) {
       audioEngine.setMusicVolume(intensity.value / 100);
     }
+  }
+
+  function setMusicEnabled(value: boolean): void {
+    musicEnabled.value = value;
+    if (!value) {
+      audioEngine.stopMusic(false);
+      return;
+    }
+    if (!isPlaying.value) return;
+
+    const mood = currentPack.value?.moodStates.find(
+      (m) => m.state === currentMoodState.value,
+    );
+    if (mood?.musicFile) {
+      audioEngine.playMusic(intensity.value / 100);
+    }
+  }
+
+  function toggleMusic(): void {
+    setMusicEnabled(!musicEnabled.value);
   }
 
   function setMasterVolume(volume: number): void {
@@ -266,6 +289,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     masterVolume,
     isPlaying,
     weatherActive,
+    musicEnabled,
     storedPacks,
     loading,
     hasActiveLayers,
@@ -284,5 +308,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     setMasterVolume,
     toggleWeather,
     playOneShot,
+    setMusicEnabled,
+    toggleMusic,
   };
 });

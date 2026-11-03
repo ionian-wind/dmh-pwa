@@ -927,9 +927,12 @@ Add route to router:
   tabler icons, CSS theme variables and localized text rather than standalone
   page-level styling.
 - When a pack is selected, an untitled overall-control card owns global
-  play/pause and master volume; ambient layers keep their own layer toggles and
-  volume sliders. With no pack selected, only the shared empty state is shown
-  (no overall-control card or surrounding card).
+  play/pause, a separate music on/off button, and master volume; ambient layers
+  keep their own layer toggles and volume sliders. With no pack selected, only
+  the shared empty state is shown (no overall-control card or surrounding card).
+- Ambient music can be disabled independently of ambient layers. Disabling it
+  stops the mood-music track; re-enabling it resumes the current mood music
+  while playback is active.
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`
   rows; clicking a pack loads it and clicking the active pack unloads it.
   Each row has a hover delete action with confirmation. **Create Pack** and

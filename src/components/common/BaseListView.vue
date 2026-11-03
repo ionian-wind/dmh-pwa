@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 import type { PropType } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import EmptyState from './EmptyState.vue';
@@ -34,6 +41,14 @@ const props = defineProps({
     >,
     default: () => [],
   },
+});
+
+const emptyState = computed(() => {
+  const text = props.emptyMessage.trim();
+  const split = text.indexOf('. ');
+  return split === -1
+    ? { title: text, hint: '' }
+    : { title: text.slice(0, split), hint: text.slice(split + 2) };
 });
 
 const showEditor = ref(false);
@@ -170,7 +185,11 @@ onBeforeUnmount(() => {
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
   >
-    <EmptyState v-if="items.length === 0" :title="emptyMessage" />
+    <EmptyState
+      v-if="items.length === 0"
+      :title="emptyState.title"
+      :hint="emptyState.hint"
+    />
 
     <VueDraggable
       v-else-if="draggable"

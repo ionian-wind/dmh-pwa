@@ -748,6 +748,8 @@
     "masterVolume": "Master volume",
     "sidebarHint": "Open the sound pack sidebar to choose, import, or create a pack.",
     "deletePackConfirm": "Delete “{name}”?",
+    "musicOff": "Turn music off",
+    "musicOn": "Turn music on",
     "off": "Off",
     "noPacks": "No packs available",
     "moods": {

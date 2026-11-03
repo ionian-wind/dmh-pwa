@@ -95,6 +95,20 @@ describe('BaseListView', () => {
     expect(wrapper.emitted('cancel')).toHaveLength(1);
   });
 
+  it('splits empty messages into title and subtitle', () => {
+    const { wrapper } = mountList({
+      items: [],
+      emptyMessage: 'Nothing here. Add your first item to get started!',
+    });
+    expect(wrapper.find('.empty-state .text-subtitle1').text()).toBe(
+      'Nothing here',
+    );
+    expect(wrapper.find('.empty-state .text-caption').text()).toBe(
+      'Add your first item to get started!',
+    );
+    wrapper.unmount();
+  });
+
   it('renders masonry cards and forwards all card events', async () => {
     const { wrapper } = mountList();
     expect(wrapper.findAll('.card-stub')).toHaveLength(2);

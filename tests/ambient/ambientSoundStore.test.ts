@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
     setMusicVolume: vi.fn(),
     stopWeather: vi.fn(),
     playOneShot: vi.fn(),
+    stopMusic: vi.fn(),
   },
 }));
 
@@ -234,6 +235,33 @@ describe('ambient sound store', () => {
       expect.any(String),
       0,
     );
+  });
+
+  it('toggles ambient music independently of playback', async () => {
+    const store = createStore();
+    expect(store.musicEnabled).toBe(true);
+    await store.loadPack(manifest);
+    store.play();
+    expect(mocks.audioEngine.playMusic).toHaveBeenCalled();
+
+    mocks.audioEngine.playMusic.mockClear();
+    store.setMusicEnabled(false);
+    expect(store.musicEnabled).toBe(false);
+    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
+
+    store.setMoodState('combat');
+    await Promise.resolve();
+    expect(mocks.audioEngine.transitionToMusic).not.toHaveBeenCalled();
+
+    store.play();
+    expect(mocks.audioEngine.playMusic).not.toHaveBeenCalled();
+
+    store.setMusicEnabled(true);
+    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.65);
+
+    store.toggleMusic();
+    expect(store.musicEnabled).toBe(false);
+    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledTimes(2);
   });
 
   it('controls weather and one-shots', async () => {
