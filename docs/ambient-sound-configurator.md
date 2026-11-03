@@ -2,67 +2,87 @@
 
 ## 1. Overview
 
-This document describes the Ambient Sound Configurator feature for DMH PWA, inspired by reference applications Syrinscape, Tabletone, and Pocket Bard. The feature enables Game Masters to create immersive soundscapes for tabletop RPG sessions by layering ambient sounds, triggering one-shot effects, and managing mood states.
+This document describes the Ambient Sound Configurator feature for DMH PWA, inspired by reference applications Syrinscape, Tabletone, and Pocket Bard. The feature enables Game Masters to create immersive soundscapes for tabletop RPG sessions by layering ambient sounds, triggering one-shot effects, and switching between package-defined scenes.
 
 ## 2. Core Concepts
 
-### 2.1 Sound Pack (Scene)
+### 2.1 Package
 
-A Sound Pack is a pre-defined collection of audio assets organized around a location or theme. Examples:
+An ambient sound package (`.spk`) is a self-contained distributable content unit.
+A package contains:
 
-- Forest, Tavern, Dungeon, City, Cave, Beach, Graveyard, Castle, etc.
+- **audio files** used by its entries and scenes;
+- **ambience entries** — loopable background layers;
+- **one-shot entries** — triggerable effects;
+- **scene configurations** — saved mixes owned by the package.
 
-Each Sound Pack contains:
+A package is content, not a running mix. Importing or loading a package registers
+its contents but does not start playback automatically.
 
-- **Ambient Layers**: Looping background sounds (rain, wind, birds, fire crackling)
-- **One-Shot Effects**: Triggerable sound effects (door creak, footsteps, combat sounds)
-- **Mood States**: Different musical contexts (Explore, Combat, Victory)
-- **Weather Systems**: Context-aware weather that adapts to location
+Scenes reference ambience and one-shot entries from the same package. A scene is
+not an independent global preset that can mix entries from multiple packages.
 
-### 2.2 Ambient Layer
+### 2.2 Ambience entry
 
-A continuous audio loop that plays in the background. Users can:
+An ambience entry is a loopable background sound. Each entry has:
 
-- Toggle layer on/off
-- Adjust individual volume (0-100%)
-- Layer multiple sounds simultaneously
-- Fade in/out smoothly
+- a stable ID, name, icon and category;
+- a default volume, loop flag and optional fade time;
+- one or more **variations**;
+- a **sample pool** for each variation.
 
-Example layers for "Forest":
+Only one sample from the selected variation plays at a time. Switching variation
+switches the active sample pool; switching the selected sample restarts only that
+ambience layer. Weather is represented as an ambience category, not as a separate
+weather system.
 
-- Birds chirping
-- Wind through trees
-- Stream/water flowing
-- Distant wildlife
-- Insects/crickets
+### 2.3 One-shot entry
 
-### 2.3 One-Shot Sound Effect
+A one-shot entry is a triggerable sound that plays once. Entries are categorized
+(combat, exploration, environmental, weather, and so on), have an icon, a volume
+and an optional cooldown. One-shot entries can be referenced by multiple scenes
+from the same package.
 
-A triggered sound that plays once and stops. Used for:
+### 2.4 Scene
 
-- Combat: sword swing, spell cast, arrow fired, monster roar
-- Exploration: door creak, footstep, key jangle, chest opening
-- Environmental: thunder crack, glass breaking, waterfall splash
+A scene is a saved playback configuration owned by a package. It defines:
 
-### 2.4 Mood State
+- which ambience entries are active;
+- which variation and volume each active ambience uses;
+- which one-shot entries belong to the scene;
+- the scene intensity and mix settings;
+- the scene's own music.
 
-A mode that changes the musical context. Standard states:
+**Scene music is strictly bound to the scene.** There is no shared mood-state
+music and no global music track that outlives the scene. When a scene becomes
+active, its music is the music for that scene. Switching scenes stops the old
+scene music and starts the new scene's music. A scene may own one or more music
+files, but those files are only used by that scene.
 
-- **Explore**: Calm, ambient music for exploration
-- **Combat**: Intense, dramatic music for battles
-- **Victory**: Triumphant music after combat
-- **Rest**: Peaceful music for breaks/camping
+### 2.5 Global gallery
 
-Transitions between states should be seamless (crossfade).
+After a package is loaded:
 
-### 2.5 Intensity
+- its **scenes** are added to the **scenes list**;
+- its **ambience entries** and **one-shot entries** are added to the **global
+  gallery**.
 
-A slider (0-100%) that dynamically affects audio complexity:
+The gallery is a content browser, not a scene. Adding a gallery entry to a scene
+creates a reference from that scene to the package entry. Gallery entries remain
+associated with their source package and are removed if that package is removed.
 
-- Low intensity: Simple, minimal arrangement
-- High intensity: Full, complex musical arrangement
-- Works with both music and ambient layers
-- Changes audio dynamically without stopping playback
+### 2.6 Package lifecycle
+
+1. The user imports a `.spk` file.
+2. The manifest is validated and audio blobs are stored locally.
+3. The package is registered.
+4. Its scenes are inserted into the scenes list.
+5. Its ambience and one-shot entries are inserted into the global gallery.
+6. Nothing starts playing until the user starts a scene or manually previews
+   content.
+
+Removing a package removes its scenes, ambience entries and one-shot entries,
+and stops playback if that package is currently active.
 
 ## 3. Architecture
 
@@ -71,96 +91,112 @@ A slider (0-100%) that dynamically affects audio complexity:
 ```
 src/
 ├── ambient-sound/
-│   ├── AmbientSoundView.vue          # Main view
+│   ├── AmbientSoundView.vue          # Scenes list / playback view
 │   ├── components/
-│   │   ├── SoundPackSelector.vue     # Pack/scene picker
-│   │   ├── AmbientMixer.vue           # Layer mixer panel (includes LayerCard)
-│   │   ├── MoodStateControl.vue       # State buttons (Explore/Combat)
-│   │   ├── OneShotPanel.vue          # Grid of SFX buttons (includes SFXButton)
-│   │   ├── IntensitySlider.vue       # Intensity control
-│   │   ├── WeatherPanel.vue          # Weather system toggle
-│   │   └── MasterVolumeControl.vue   # Integrated in header
+│   │   ├── SceneList.vue             # Package-owned scenes
+│   │   ├── GlobalGallery.vue         # Ambience + one-shot content browser
+│   │   ├── AmbientMixer.vue          # Ambience layer controls
+│   │   ├── OneShotPanel.vue          # One-shot trigger grid
+│   │   ├── IntensitySlider.vue       # Scene intensity
+│   │   └── NowPlayingPanel.vue       # Persistent playback / quick controls
 │   ├── stores/
-│   │   └── ambientSoundStore.ts      # Pinia store
-│   ├── types.ts                      # TypeScript interfaces
+│   │   └── ambientSoundStore.ts      # Scenes, gallery and playback state
+│   ├── types.ts                      # Package/entry/scene interfaces
 │   └── utils/
 │       ├── audioEngine.ts            # Howler.js wrapper
-│       └── packManager.ts            # IndexedDB pack storage
+│       ├── packData.ts               # Manifest normalization
+│       └── packManager.ts            # IndexedDB package storage
 ├── assets/
-│   └── sounds/                       # Built-in pack assets (optional)
+│   └── sounds/                       # Built-in assets (optional)
 │       └── (loaded from IndexedDB instead)
 ```
 
-### 3.2 Sound Pack File Format
+### 3.2 Package File Format
 
-Sound packs are distributed as `.spk` files (ZIP archives):
+Packages are distributed as `.spk` files (ZIP archives):
 
 ```
 my-pack.spk
-├── pack.json           # Metadata and configuration
-├── icon.png            # Pack thumbnail (optional)
-├── layers/             # Ambient loop sounds
-│   ├── birds.mp3
-│   ├── wind.mp3
-│   └── stream.mp3
-├── sfx/                # One-shot effects
-│   ├── branch_break.mp3
-│   └── door_creak.mp3
-└── music/              # Mood state music tracks
-    ├── explore.mp3
-    ├── combat.mp3
-    ├── victory.mp3
-    └── rest.mp3
+├── pack.json                 # Metadata, entries and scenes
+├── icon.png                  # Package thumbnail (optional)
+├── ambiences/                # Shared ambience sample pools
+│   ├── rain-light.mp3
+│   └── rain-heavy.mp3
+├── one-shots/                # One-shot effects
+│   └── thunder.mp3
+└── scenes/
+    ├── tavern/
+    │   ├── cover.png         # Scene thumbnail (optional)
+    │   └── music/
+    │       └── theme.mp3
+    └── dungeon/
+        └── music/
+            └── ambience.mp3
 ```
+
+Scene music lives under the owning scene. There is no package-wide `music/`
+directory or mood-state track shared by scenes.
 
 **pack.json schema:**
 
 ```json
 {
-  "version": "1.0",
-  "id": "unique-pack-id",
+  "version": "2.0",
+  "id": "unique-package-id",
   "name": "Forest",
   "description": "Dense woodland with streams and wildlife",
   "author": "DMH Team",
   "category": "fantasy",
-  "defaultIntensity": 50,
-  "layers": [
+  "ambiences": [
     {
-      "id": "birds",
-      "name": "Birds",
-      "icon": "🐦",
-      "file": "layers/birds.mp3",
-      "defaultVolume": 60,
+      "id": "rain",
+      "name": "Rain",
+      "icon": "ra-rain",
+      "category": "Weather",
+      "defaultVolume": 45,
       "loop": true,
-      "fadeTime": 0.5
+      "fadeTime": 0.8,
+      "variations": [
+        {
+          "id": "light",
+          "name": "Light rain",
+          "samples": ["ambiences/rain-light.mp3"]
+        },
+        {
+          "id": "heavy",
+          "name": "Heavy rain",
+          "samples": ["ambiences/rain-heavy.mp3"]
+        }
+      ]
     }
   ],
   "oneShots": [
     {
-      "id": "branch_break",
-      "name": "Branch Break",
-      "icon": "🌿",
-      "file": "sfx/branch_break.mp3",
-      "category": "exploration",
+      "id": "thunder",
+      "name": "Thunder",
+      "icon": "ra-bell",
+      "file": "one-shots/thunder.mp3",
+      "category": "weather",
       "volume": 80,
       "cooldown": 500
     }
   ],
-  "weatherSystems": [
+  "scenes": [
     {
-      "id": "rain",
-      "name": "Rain",
-      "icon": "🌧️",
-      "file": "weather/rain.mp3",
-      "affectsLayers": ["birds", "wind"]
-    }
-  ],
-  "moodStates": [
-    {
-      "state": "explore",
-      "name": "Explore",
-      "icon": "🔍",
-      "musicFile": "music/explore.mp3"
+      "id": "tavern",
+      "name": "Tavern",
+      "description": "A warm, busy roadside inn",
+      "icon": "ra-beer",
+      "cover": "scenes/tavern/cover.png",
+      "intensity": 60,
+      "ambiences": [
+        { "ambienceId": "rain", "variationId": "light", "volume": 35 }
+      ],
+      "oneShotIds": ["thunder"],
+      "music": {
+        "files": ["scenes/tavern/music/theme.mp3"],
+        "loop": true
+      }
     }
   ]
 }
@@ -171,161 +207,129 @@ my-pack.spk
 ```typescript
 // src/ambient-sound/types.ts
 
-export interface AmbientSoundPack {
+export interface SoundPackageManifest {
+  version: string;
   id: string;
   name: string;
   description: string;
-  icon: string;
-  categories: AmbientCategory[];
-  weatherSystems: WeatherSystem[];
-  moodStates: MoodStateConfig[];
-  defaultIntensity: number;
+  author?: string;
+  icon?: string;
+  category: 'fantasy' | 'scifi' | 'horror' | 'modern' | 'custom';
+  ambiences: AmbienceDef[];
+  oneShots: OneShotDef[];
+  scenes: SceneDef[];
 }
 
-export interface AmbientCategory {
+export interface AmbienceVariation {
   id: string;
   name: string;
-  layers: AmbientLayer[];
-  oneShots: OneShotEffect[];
+  /** Sample paths relative to the package root. */
+  samples: string[];
 }
 
-export interface AmbientLayer {
+export interface AmbienceDef {
   id: string;
   name: string;
   icon: string;
-  audioUrl: string;
+  category?: string;
   defaultVolume: number;
   loop: boolean;
-  fadeTime?: number; // seconds for fade in/out
+  fadeTime?: number;
+  variations: AmbienceVariation[];
 }
 
-export interface OneShotEffect {
+export interface OneShotDef {
   id: string;
   name: string;
   icon: string;
-  audioUrl: string;
+  file: string;
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
   volume: number;
-  cooldown?: number; // ms between triggers
+  cooldown?: number;
 }
 
-export interface WeatherSystem {
+export interface SceneAmbience {
+  ambienceId: string;
+  variationId: string;
+  volume: number;
+}
+
+export interface SceneMusic {
+  files: string[];
+  loop: boolean;
+}
+
+export interface SceneDef {
   id: string;
   name: string;
+  description?: string;
   icon: string;
-  layers: AmbientLayer[]; // weather-specific layers
-  affectsLocations: string[]; // which ambient layers it modifies
-}
-
-export interface MoodStateConfig {
-  state: MoodState;
-  name: string;
-  icon: string;
-  musicTrack?: MusicTrack;
-  transitionsTo?: MoodState[];
-}
-
-export type MoodState = 'explore' | 'combat' | 'victory' | 'rest';
-
-export interface ActiveLayer {
-  layerId: string;
-  volume: number;
-  isPlaying: boolean;
-  currentTime: number;
-}
-
-export interface AmbientSoundState {
-  currentPack: AmbientSoundPack | null;
-  activeLayers: Map<string, ActiveLayer>;
-  currentMoodState: MoodState;
+  cover?: string;
   intensity: number;
-  masterVolume: number;
-  isPlaying: boolean;
-  weatherActive: WeatherSystem | null;
+  ambiences: SceneAmbience[];
+  oneShotIds: string[];
+  /** Music owned by this scene; never shared with another scene. */
+  music: SceneMusic;
 }
 ```
+
+> Sections 5–12 below are earlier implementation sketches. Where they conflict
+> with the package, gallery and scene rules in Sections 2–4, Sections 2–4 are
+> authoritative.
 
 ## 4. User Interface
 
-### 4.1 Main Layout
+### 4.1 Main layout
 
-```
-┌─────────────────────────────────────────────────────┐
-│  [Sound Pack Dropdown]              [Master Vol]   │
-├─────────────────────────────────────────────────────┤
-│  Mood States:  [Explore] [Combat] [Victory] [Rest] │
-├─────────────────────────────────────────────────────┤
-│  Intensity: ═══════════●═══════  [75%]             │
-├─────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────┐   │
-│  │  AMBIENT LAYERS                              │   │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐            │   │
-│  │  │ 🌧️  │ │ 🔥  │ │ 🌲  │ │ 💧  │  [+]        │   │
-│  │  │ Rain│ │ Fire│ │Forest│ │Stream│            │   │
-│  │  │ ████│ │ ████│ │  ██  │ │  ██  │            │   │
-│  │  │ Vol │ │ Vol │ │ Vol  │ │ Vol  │            │   │
-│  │  └─────┘ └─────┘ └─────┘ └─────┘            │   │
-│  └─────────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────┐   │
-│  │  ONE-SHOT EFFECTS              [Weather: 🌧️]│   │
-│  │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐       │   │
-│  │  │ 🚪 │ │ 👣 │ │ ⚔️ │ │ ✨  │ │ 🔔  │       │   │
-│  │  └────┘ └────┘ └────┘ └────┘ └────┘       │   │
-│  │  Door  Foot  Attack  Spell  Bell          │   │
-│  └─────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
-```
+The ambient-sound area has three primary surfaces:
 
-### 4.2 Component Specifications
+- **Scenes list** — all scenes from loaded packages. Selecting a scene applies
+  its configuration and starts its scene-bound music.
+- **Global gallery** — all ambience and one-shot entries from loaded packages,
+  grouped by package and category. Entries are content; they do not play just
+  because they are visible.
+- **Scene detail/editor** — the mix for one package-owned scene: active
+  ambience entries, variations, volumes, one-shot selection, intensity, cover
+  and music.
 
-#### Sound Pack Selector
+A persistent **Now Playing / sound control panel** shows the current scene and
+provides playback, quick volume and expand/detach controls.
 
-- Dropdown showing all available packs
-- Search/filter functionality
-- Show pack thumbnail/icon
-- Display category (Fantasy, Sci-Fi, Horror)
-- "Custom" option for user-created mixes
+### 4.2 Scenes list
 
-#### Mood State Control
+- Shows package scenes with cover, name, package name and last updated time.
+- Selecting a scene starts it; selecting the active scene does not restart its
+  music.
+- Scene actions: play, edit, duplicate (as a new scene in the same package) and
+  delete.
+- Removing a package removes its scenes from this list.
 
-- Four large buttons: Explore, Combat, Victory, Rest
-- Visual indication of active state (highlighted)
-- Smooth transition animation when switching
-- Optional: custom mood states per pack
+### 4.3 Global gallery
 
-#### Intensity Slider
+- Combines ambience and one-shot entries from all loaded packages.
+- Groups by package and then by entry category.
+- Supports search, preview and “add to scene”.
+- Adding an entry to a scene creates a reference; it does not copy audio.
+- Entries remain bound to their source package.
 
-- Range: 0-100%
-- Shows numeric value
-- Affects: music arrangement complexity, layer density
-- Real-time update without audio interruption
+### 4.4 Scene editor
 
-#### Ambient Mixer Panel
+- Main info: name, description, cover, intensity.
+- Ambience tab: selected ambience entries, variation, volume per entry.
+- One-shots tab: selected one-shot entries available to trigger in the scene.
+- Music tab: files owned by this scene. Music is always scene-bound; it cannot
+  be reused as a global mood track.
+- Uses the standard tabbed `BaseModal`/editor pattern and the shared
+  `IconPicker`.
 
-- Grid of layer cards
-- Each card shows:
-  - Icon
-  - Name
-  - Volume slider
-  - Toggle on/off
-  - Play/pause individual
-- "Add Layer" button for custom combinations
+### 4.5 Playback controls
 
-#### One-Shot Panel
-
-- Grid of SFX buttons
-- Categorized tabs: Combat, Exploration, Environmental, Weather
-- Visual feedback on trigger (flash/pulse)
-- Cooldown indicator for limited triggers
-- Long-press for volume adjustment
-
-#### Weather System Toggle
-
-- Dropdown or toggle buttons
-- Shows currently active weather
-- Weather affects specific ambient layers
-- Example: Rain in Forest = muffled birds, dripping sounds
+- Scene play/pause and stop.
+- Master, music, ambience and one-shot volume buses.
+- Per-ambience toggle and volume; one sample per ambience plays at a time.
+- One-shot trigger grid.
+- Scene switching crossfades or stops the old scene music and starts the new
+  scene's music.
 
 ## 5. Audio Engine
 
@@ -998,12 +1002,193 @@ All sources below are free for commercial and non-commercial use. Check individu
 | Ambora             | http://ambora.app/                 | Open source (MIT), desktop app     |
 | Ambiance Architect | https://ambiancearchitect.itch.io/ | Free to use, Freesound integration |
 
-### Creating Packs
+### Creating Packages
 
-To create a sound pack:
+To create an ambient sound package:
 
-1. Create directory `sound-packs/<pack-name>/`
-2. Add `pack.json` with metadata
-3. Add audio files in layers/, sfx/, music/, weather/ folders
-4. Run `npm run pack:sound` to generate `.spk` file
-5. Import the `.spk` file in the app
+1. Create directory `sound-packs/<package-name>/`.
+2. Add `pack.json` with package metadata, `ambiences`, `oneShots` and `scenes`.
+3. Add ambience samples under `ambiences/`, one-shot files under `one-shots/`,
+   and scene-owned covers/music under `scenes/<scene-id>/`.
+4. Run `npm run pack:sound` to generate the `.spk` file.
+5. Import the `.spk` file in the app; its scenes appear in the scenes list and
+   its entries appear in the global gallery.
+
+## 14. Pocket Bard-Inspired Proposals
+
+> **Status:** proposal only — none of this section is implemented yet.
+> Based on the reference screenshots in `content/pocketbard/` and the current
+> ambient-sound implementation.
+
+### 14.1 What to borrow from Pocket Bard
+
+The screenshots show a scene-centric product rather than a pack-centric mixer:
+
+- **Scenes** are the primary library object, with cover art, description,
+  Preview/Play and last-updated metadata.
+- **Ambiences** and **One-shots** are separate libraries with category chips.
+- **Scene editing** is a checklist: “Added to scene”, grouped by category, with
+  Remove All and a clear empty/complete state.
+- **Table controls** are fast: mood pills, an intensity slider, per-layer
+  I/II/III buttons and a variation dropdown.
+- **A persistent now-playing bar** keeps the current scene visible everywhere.
+- **Audio settings are global**: master/music/ambience/one-shots volume, presets,
+  reset and an optional Party EQ.
+- **Credits belong to content**: composer/artist attribution is visible on the
+  scene detail screen.
+
+### 14.2 Scene-centric package model
+
+Scenes are part of the package, not separate global presets. A package owns its
+ambience entries, one-shot entries and scenes together:
+
+- **Package** — distributable content and scene definitions.
+- **Global gallery** — browsable ambience and one-shot entries from loaded
+  packages.
+- **Scene** — a package-owned playback configuration referencing entries from
+  the same package.
+
+```typescript
+interface SceneDef {
+  id: string;
+  name: string;
+  description?: string;
+  cover?: string;
+  intensity: number;
+  ambiences: Array<{
+    ambienceId: string;
+    variationId: string;
+    volume: number;
+  }>;
+  oneShotIds: string[];
+  music: {
+    files: string[];
+    loop: boolean;
+  };
+}
+```
+
+Scene music is always owned by the scene. There is no shared mood-state music
+track and no cross-scene music selection. Loading a package registers its scenes
+in the scenes list and its ambience/one-shot entries in the global gallery.
+
+### 14.3 Proposed experience
+
+#### Persistent Now Playing bar
+
+Present on all pages, not only the ambient page:
+
+- scene cover, scene name and playing/paused state;
+- play/pause, stop with fade and a quick master volume;
+- tap to open the full mixer;
+- optional previous/next scene once a scene queue exists.
+
+The bar belongs in the app shell, above the bottom navigation on mobile. This
+makes ambient audio feel integrated with the rest of the DMH instead of being a
+separate destination.
+
+#### Ambient page as a three-tab library
+
+Replace the current vertical control stack with:
+
+- **Scenes** — cover grid, search, last updated, Preview/Play.
+- **Ambiences** — grouped rows with icon, name, category and active state.
+- **One-shots** — category grid with large touch targets and a Manage action.
+
+Reuse the existing `TabGroup`, `QCard`, `EmptyState`, `SidebarItem` and
+`BaseModal` patterns. On mobile, scene details should open as a bottom sheet
+rather than a large centred modal.
+
+#### Scene detail and scene editing
+
+Mirror the Pocket Bard scene detail screen:
+
+- cover, description and last updated;
+- Preview and Play buttons;
+- grouped checklists for layers and one-shots;
+- Remove All;
+- a useful complete state instead of a dead “Added all ambiences” message;
+- composer/artist credits and licence information from the pack manifest.
+
+#### Quick layer controls
+
+Keep the existing sliders for fine control, but add a compact three-state
+control per layer:
+
+- **I / II / III** = low / medium / high volume (soft / normal / prominent);
+- explicit mute and solo affordances later;
+- variation selection remains a separate dropdown.
+
+This is substantially faster at the table, especially on a phone. Keep the
+wheel-adjusted sliders as a desktop/expanded option.
+
+#### Global audio settings
+
+Move global audio controls into one `BaseModal` or bottom sheet:
+
+- mix preset dropdown;
+- master, music, ambience and one-shot volumes;
+- reset to defaults;
+- optional Party EQ / voice-friendly mode;
+- persisted audio settings.
+
+The audio engine needs separate buses for music, ambience and one-shots before
+scenes and per-layer controls feel coherent.
+
+### 14.4 DMH-specific extension: link scenes to entities
+
+Pocket Bard stops at scenes. DMH can connect them to the session workflow:
+
+- attach a scene to an **encounter** and offer “Start scene” when combat begins;
+- attach a scene to a **map location** or **note**;
+- offer mood transitions on combat start, combat end and victory;
+- always ask for confirmation before an automatic switch.
+
+This is the main differentiator and should be treated as a later phase, after
+the scene model is stable.
+
+### 14.5 Suggested delivery order
+
+| Priority | Work                                                                                       | Rough effort |
+| -------- | ------------------------------------------------------------------------------------------ | ------------ |
+| **P0**   | Now Playing bar; library tabs/category chips; 3-state layer controls; audio settings buses | 3–5 days     |
+| **P1**   | Scene model + save/load/duplicate; scene library grid; scene detail checklist              | 1–2 weeks    |
+| **P2**   | Pack credits; search/favourites; drag reorder; scene crossfade                             | ~1 week      |
+| **P3**   | Encounter/map/note scene links; Party EQ/ducking; scene export/import                      | later        |
+
+### 14.6 Architectural notes
+
+- Extend the package manifest with optional `credits` and `licence` fields while
+  keeping existing manifests readable during migration.
+- Parse scenes from the package manifest into the scenes list on load, and
+  register ambience/one-shot entries in the global gallery.
+- Keep scene references package-local: a scene may only reference entries from
+  its own package.
+- Store scene covers and music as package assets; scene music is never shared
+  between scenes.
+- Extend `AudioEngine` with independent music, ambience and one-shot gains and
+  scene-level fade/crossfade helpers.
+- Mount the Now Playing bar in the layout shell, not inside
+  `AmbientSoundView.vue`, so it survives route changes.
+- Keep the local-first model: no marketplace, accounts or remote scene sharing
+  in the first iteration.
+
+### 14.7 Explicitly not planned
+
+- A Discover/Profile-style marketplace navigation. The application is
+  local-first; Packs and Scenes are enough unless shared content is introduced.
+- Copying Pocket Bard’s exact parchment visual style. The layout and hierarchy
+  can be borrowed while keeping the existing dark Quasar theme.
+- Automatic scene switching without user confirmation.
+
+### 14.8 Open questions
+
+1. Should a scene be allowed to reference entries from multiple packages, or
+   stay strictly package-local? The current model keeps scenes package-local.
+2. Should “Preview” play the scene quietly in place, or temporarily replace the
+   current playback and restore it on stop?
+3. Do we need user-created scene covers, or can covers be generated from the
+   linked map/location image?
+4. Is Party EQ required, or is simple music ducking during one-shots enough?
+5. Should scene changes participate in undo/redo, or is a simple confirmation
+   dialog sufficient?
