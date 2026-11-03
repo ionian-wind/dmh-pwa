@@ -78,5 +78,13 @@ describe('note downloads', () => {
   it('sanitizes unsafe file names', () => {
     expect(noteDownloadFileName('A/B: C?', 'md')).toBe('A-B- C-.md');
     expect(noteDownloadFileName('', 'png')).toBe('note.png');
+    expect(noteDownloadFileName('   ', 'md')).toBe('note.md');
+  });
+
+  it('treats missing text content as an empty document', () => {
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+      () => undefined,
+    );
+    expect(downloadNote(note({ content: undefined as any }))).toBe(true);
   });
 });

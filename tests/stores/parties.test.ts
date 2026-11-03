@@ -37,5 +37,12 @@ describe('party store', () => {
     store.setSearchQuery('hero');
     expect(store.filtered).toHaveLength(1);
     expect(store.filtered[0].name).toBe('Heroes');
+
+    store.clearFilter();
+    expect(store.searchQuery).toBe('');
+    expect(store.filtered).toHaveLength(2);
+
+    store.setFilter('vill');
+    expect(store.filtered.map((party) => party.name)).toEqual(['Villains']);
   });
 });

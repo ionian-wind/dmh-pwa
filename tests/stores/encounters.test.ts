@@ -27,6 +27,13 @@ describe('encounter store', () => {
     store.setSearchQuery('boss');
     expect(store.filtered.map((e) => e.name)).toEqual(['Boss Fight']);
     expect(store.sortedItems).toHaveLength(2);
+
+    store.setFilter('amb');
+    expect(store.filtered.map((e) => e.name)).toEqual(['Ambush']);
+
+    store.clearFilter();
+    expect(store.searchQuery).toBe('');
+    expect(store.filtered).toHaveLength(2);
   });
 
   it('updates the monster roster', async () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { h } from 'vue';
@@ -51,6 +51,27 @@ describe('current views', () => {
   it('renders NotFoundView', async () => {
     const wrapper = await mountView(NotFoundView, '/');
     expect(wrapper.text()).toContain('404');
+  });
+
+  it('navigates home and back from NotFoundView', async () => {
+    const router = makeRouter();
+    await router.push('/missing');
+    await router.isReady();
+    const push = vi.spyOn(router, 'push');
+    const back = vi.spyOn(router, 'back').mockImplementation(() => {});
+
+    const wrapper = mount(NotFoundView, {
+      global: { plugins: [router] },
+    });
+    await flushPromises();
+
+    const buttons = wrapper.findAll('button');
+    await buttons[0].trigger('click');
+    expect(push).toHaveBeenCalledWith('/');
+
+    await buttons[1].trigger('click');
+    expect(back).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
   });
 
   it.each([

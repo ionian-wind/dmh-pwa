@@ -10,6 +10,7 @@ import RangeSlider from '@/components/common/RangeSlider.vue';
 import Button from '@/components/form/Button.vue';
 import RollButton from '@/components/RollButton.vue';
 import { useModalState } from '@/composables/useModalState';
+import { quasarStubs } from '../helpers/quasar-stubs';
 
 const mocks = vi.hoisted(() => ({
   diceBox: {
@@ -201,8 +202,7 @@ describe('common controls', () => {
     const wrapper = mount(RangeSlider, {
       props: { modelValue: 0, min: 0, max: 100, step: 10 },
     });
-    const container = wrapper.find('.slider-container')
-      .element as HTMLElement;
+    const container = wrapper.find('.slider-container').element as HTMLElement;
     container.getBoundingClientRect = () =>
       ({
         left: 0,
@@ -301,6 +301,16 @@ describe('common controls', () => {
     });
     await loading.find('button').trigger('click');
     expect(loading.emitted('click')).toBeUndefined();
+
+    const qbtn = wrapper.findComponent(quasarStubs.QBtn);
+    const go = vi.fn();
+    const event = new Event('click');
+    qbtn.vm.$emit('click', event, go);
+    expect(wrapper.emitted('click')?.at(-1)).toEqual([event]);
+    expect(go).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+    disabled.unmount();
+    loading.unmount();
   });
 
   it('RollButton initializes dice, toggles fabs and rolls a die', async () => {

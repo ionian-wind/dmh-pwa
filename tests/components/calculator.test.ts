@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 
 import CalculatorView from '@/calculator/CalculatorView.vue';
+import { quasarStubs } from '../helpers/quasar-stubs';
 
 async function mountCalculator() {
   const wrapper = mount(CalculatorView, { props: { modelValue: true } });
@@ -115,5 +116,55 @@ describe('CalculatorView', () => {
     wrapper.unmount();
     expect(vm.unitBase).toBe('');
     expect(vm.sourceUnit).toBe('');
+  });
+
+  it('wires every keypad button', async () => {
+    const wrapper = await mountCalculator();
+
+    for (const button of wrapper.findAll('button')) {
+      await button.trigger('click');
+    }
+    await nextTick();
+
+    expect(wrapper.find('.calculator-input').exists()).toBe(true);
+    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
+    wrapper.unmount();
+  });
+
+  it('switches tabs, selects units and copies converted results', async () => {
+    const wrapper = await mountCalculator();
+    const vm = wrapper.vm as any;
+
+    wrapper
+      .findComponent(quasarStubs.QTabs)
+      .vm.$emit('update:modelValue', 'convert');
+    await nextTick();
+
+    vm.unitBase = 'length';
+    vm.sourceUnit = 'm';
+    vm.append('1');
+    vm.calculate();
+    await nextTick();
+
+    const selects = wrapper.findAllComponents(quasarStubs.QSelect);
+    expect(selects.length).toBeGreaterThanOrEqual(2);
+    selects[0].vm.$emit('update:modelValue', 'mass');
+    await nextTick();
+
+    vm.unitBase = 'length';
+    await nextTick();
+    vm.sourceUnit = 'm';
+    await nextTick();
+
+    const copy = wrapper.find('.convert-results button');
+    expect(copy.exists()).toBe(true);
+    await copy.trigger('click');
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+
+    wrapper
+      .findComponent(quasarStubs.QDialog)
+      .vm.$emit('update:modelValue', false);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+    wrapper.unmount();
   });
 });

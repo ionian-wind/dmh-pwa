@@ -173,6 +173,30 @@ describe('jukebox store integration', () => {
     expect(wrapper.emitted('remove')?.[0]).toEqual([track]);
   });
 
+  it('marks draggable tracks and emits play on click', async () => {
+    const track = await seedTrack('Tavern Theme');
+    const wrapper = mount(TrackCard, {
+      props: { track: { ...track, duration: undefined }, draggable: true },
+    });
+
+    const item = wrapper.find('.track-item');
+    expect(item.attributes('data-draggable')).toBe('true');
+    await item.trigger('click');
+    expect(wrapper.emitted('play')?.[0]).toEqual([
+      { ...track, duration: undefined },
+    ]);
+    wrapper.unmount();
+
+    const staticCard = mount(TrackCard, {
+      props: { track: { ...track, duration: 42 } },
+    });
+    expect(staticCard.find('.track-item').attributes('data-draggable')).toBe(
+      undefined,
+    );
+    expect(staticCard.text()).toContain('0:42');
+    staticCard.unmount();
+  });
+
   it('toggles track membership in an existing playlist', async () => {
     const track = await seedTrack('Tavern Theme');
     const playlists = useJukeboxPlaylistsStore();

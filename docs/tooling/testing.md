@@ -7,7 +7,8 @@
 - Globals enabled (`describe/it/expect` without imports).
 - Setup file: `tests/setup.ts`.
 - Coverage: V8, excludes `main.ts`, `router.ts`, i18n, types, schemas, tests,
-  declarations, configs.
+  generated output (`dist/`, `dev-dist/`, service workers), `scripts/`,
+  declarations and configs.
 - Alias `@` → `src`.
 
 ## End-to-end tests
@@ -45,9 +46,10 @@ check also verifies that secondary buttons keep sufficient text contrast.
   printed).
 - Clears mocks before each test.
 
-There is no global Pinia, Vue I18n, Quasar, or router installation. Components
-that use `useI18n()` or Quasar components must mock or install them per test;
-many do not, which is a major source of failures.
+Each test gets a fresh Pinia, Vue I18n, Quasar component stubs, a layout-store
+provide and `fake-indexeddb`; tests only override these globals when they need
+different behaviour. Router-dependent components install a memory router in the
+test itself.
 
 ## Test layout
 
@@ -64,29 +66,29 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 98. Total tests: 738.
+Total test files: 110. Total tests: 832.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  98 passed (98)
-Tests       738 passed (738)
+Test Files  110 passed (110)
+Tests       832 passed (832)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  91.61%
-Branches    85.04%
-Functions    80.75%
-Lines       91.61%
+Statements  92.13%
+Branches    87.82%
+Functions    89.16%
+Lines       92.13%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
 large dice-roller AST/plugin files, which have dedicated parser/evaluator suites.
-`vitest.config.ts` enforces global thresholds (87% statements/lines, 80%
-branches, 75% functions) so future changes cannot silently drop coverage.
+`vitest.config.ts` enforces global thresholds (92% statements/lines, 87%
+branches, 89% functions) so future changes cannot silently drop coverage.
 Generated output (`dist/`, `dev-dist/`, service workers) and standalone
 scripts are excluded from coverage.
 
@@ -147,7 +149,11 @@ The suite now includes direct tests for:
 - map canvas readback patching and the map-layers migration,
 - Monaco environment setup and the probability calculator page, code library,
   syntax page, editor completions, sharing, chart zoom and syntax markers,
-- note Markdown/PNG downloads and the shared `SidebarItem` component.
+- note Markdown/PNG downloads and the shared `SidebarItem` component,
+- drag-and-drop and ordering paths: `BaseListView` sort events and drop
+  handlers, playlist `sortOrder` persistence, jukebox file drops and track
+  reordering, the `Tree` drag handles/drop target wiring, and tree reorder
+  propagation from `ModuleDocumentTree`.
 
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting

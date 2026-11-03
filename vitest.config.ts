@@ -15,10 +15,10 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       thresholds: {
-        statements: 87,
-        branches: 80,
-        functions: 75,
-        lines: 87,
+        statements: 92,
+        branches: 87,
+        functions: 89,
+        lines: 92,
       },
       exclude: [
         'src/main.ts',

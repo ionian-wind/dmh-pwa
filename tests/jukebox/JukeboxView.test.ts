@@ -92,13 +92,23 @@ const BaseListViewStub = defineComponent({
 const AddToPlaylistStub = defineComponent({
   name: 'AddToPlaylistModal',
   props: { modelValue: Boolean, track: Object },
-  setup(props) {
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
     return () =>
-      h('div', {
-        'data-stub': 'AddToPlaylistModal',
-        'data-open': String(props.modelValue),
-        'data-track': props.track?.id,
-      });
+      h(
+        'div',
+        {
+          'data-stub': 'AddToPlaylistModal',
+          'data-open': String(props.modelValue),
+          'data-track': props.track?.id,
+        },
+        [
+          h('button', {
+            class: 'close-add-to-playlist',
+            onClick: () => emit('update:modelValue', false),
+          }),
+        ],
+      );
   },
 });
 
@@ -140,7 +150,10 @@ describe('JukeboxView', () => {
     mocks.playlists.items.value = [];
     mocks.tracks.create.mockReset();
     mocks.tracks.create.mockImplementation(async (data: any) => {
-      const created = { id: `track-${mocks.tracks.items.value.length + 1}`, ...data };
+      const created = {
+        id: `track-${mocks.tracks.items.value.length + 1}`,
+        ...data,
+      };
       mocks.tracks.items.value.push(created);
       return created;
     });
@@ -148,6 +161,8 @@ describe('JukeboxView', () => {
       mocks.playlists.items.value.find((item) => item.id === id),
     );
     mocks.getJukeboxFile.mockResolvedValue(undefined);
+    mocks.pickAudioFiles.mockResolvedValue([]);
+    mocks.deleteJukeboxFile.mockResolvedValue(undefined);
     mocks.getFile.mockResolvedValue(audioFile());
     mocks.getAsFileSystemHandle.mockResolvedValue(null);
     mocks.extractTrackMetadata.mockResolvedValue({
@@ -324,6 +339,151 @@ describe('JukeboxView', () => {
     expect(mocks.tracks.create).toHaveBeenCalled();
   });
 
+  it('closes the add-to-playlist modal and ignores non-file drags', async () => {
+    const { wrapper } = await mountView();
+
+    wrapper
+      .findComponent(AddToPlaylistStub)
+      .vm.$emit('update:modelValue', false);
+    expect(wrapper.findComponent(AddToPlaylistStub).props('modelValue')).toBe(
+      false,
+    );
+
+    document.dispatchEvent(
+      dragEvent('dragenter', { types: ['text/plain'], items: [] }),
+    );
+    document.dispatchEvent(dragEvent('dragover', { types: ['text/plain'] }));
+    document.dispatchEvent(
+      dragEvent('dragleave', { types: ['text/plain'], items: [] }),
+    );
+    await nextTick();
+    expect(wrapper.find('.drop-zone-active').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('ignores sorts without an existing selected playlist', async () => {
+    const { list } = await mountView();
+
+    list.vm.$emit('sort', [{ id: 't1' }]);
+    await flushPromises();
+    expect(mocks.playlists.update).not.toHaveBeenCalled();
+
+    const config = useConfigStore();
+    config.jukeboxActivePlaylistId = 'missing';
+    await nextTick();
+    list.vm.$emit('sort', [{ id: 't1' }]);
+    await flushPromises();
+    expect(mocks.playlists.update).not.toHaveBeenCalled();
+  });
+
+  it('handles dropdowns without data and extension-based audio files', async () => {
+    const file = new File(['audio'], 'song.mp3', { type: '' });
+    mocks.getAsFileSystemHandle.mockResolvedValue(null);
+
+    const { wrapper } = await mountView();
+    document.dispatchEvent(dragEvent('drop', {}));
+    await flushPromises();
+
+    document.dispatchEvent(
+      dragEvent('drop', {
+        items: [{ kind: 'file', getAsFile: () => file }],
+      }),
+    );
+    await flushPromises();
+
+    expect(mocks.tracks.create).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it('uses the file name when metadata has no title and keeps file dates', async () => {
+    mocks.getJukeboxFile.mockResolvedValue({ id: 'existing', createdAt: 123 });
+    mocks.extractTrackMetadata.mockResolvedValue({});
+    mocks.pickAudioFiles.mockResolvedValue([
+      {
+        file: audioFile('untitled.mp3'),
+        source: { kind: 'blob', blob: audioFile() },
+      },
+    ]);
+
+    const { list } = await mountView();
+    list.vm.$emit('create');
+    await flushPromises();
+
+    expect(mocks.putJukeboxFile).toHaveBeenCalledWith(
+      expect.objectContaining({ createdAt: 123 }),
+    );
+    expect(mocks.tracks.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'untitled' }),
+    );
+  });
+
+  it('guards concurrent imports and handles picker errors', async () => {
+    let resolvePick: (value: any[]) => void = () => {};
+    mocks.pickAudioFiles.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePick = resolve;
+      }),
+    );
+
+    const { list } = await mountView();
+    list.vm.$emit('create');
+    list.vm.$emit('create');
+    expect(mocks.pickAudioFiles).toHaveBeenCalledTimes(1);
+
+    document.dispatchEvent(dragEvent('drop', {}));
+    await nextTick();
+
+    resolvePick([]);
+    await flushPromises();
+
+    mocks.pickAudioFiles.mockRejectedValue(new Error('picker failed'));
+    list.vm.$emit('create');
+    await flushPromises();
+
+    mocks.pickAudioFiles.mockRejectedValue(
+      new DOMException('cancelled', 'AbortError'),
+    );
+    list.vm.$emit('create');
+    await flushPromises();
+  });
+
+  it('handles dropped-file and deletion errors without crashing', async () => {
+    mocks.getAsFileSystemHandle.mockRejectedValue(new Error('bad drop'));
+    const { wrapper, list } = await mountView();
+
+    document.dispatchEvent(
+      dragEvent('drop', {
+        items: [{ kind: 'file', getAsFile: () => audioFile() }],
+      }),
+    );
+    await flushPromises();
+
+    const track = {
+      id: 't1',
+      fileId: 'f1',
+      title: '',
+      playlistIds: [],
+    } as JukeboxTrack;
+    mocks.tracks.items.value = [track];
+    mocks.deleteJukeboxFile.mockRejectedValue(new Error('file gone'));
+    const card = (list.props('cardProps') as any)(track);
+    await card.onRemove();
+    expect(mocks.tracks.remove).toHaveBeenCalledWith('t1');
+
+    wrapper.unmount();
+  });
+
+  it('handles selected playlists that reference deleted tracks', async () => {
+    mocks.tracks.items.value = [];
+    mocks.playlists.items.value = [{ id: 'p1', trackIds: ['missing'] }];
+    const config = useConfigStore();
+    config.jukeboxActivePlaylistId = 'p1';
+
+    const { wrapper } = await mountView();
+    expect(wrapper.findComponent(BaseListViewStub).props('items')).toEqual([]);
+    wrapper.unmount();
+  });
+
   it('handles dropped blobs, skips non-audio files and cleans up listeners', async () => {
     const file = audioFile();
     mocks.getAsFileSystemHandle.mockResolvedValue(null);
@@ -338,7 +498,8 @@ describe('JukeboxView', () => {
           },
           {
             kind: 'file',
-            getAsFile: () => new File(['text'], 'notes.txt', { type: 'text/plain' }),
+            getAsFile: () =>
+              new File(['text'], 'notes.txt', { type: 'text/plain' }),
           },
           { kind: 'string' },
         ],

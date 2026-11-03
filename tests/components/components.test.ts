@@ -435,6 +435,97 @@ describe('current shared components', () => {
     player.currentTrack = null;
   });
 
+  it('JukeboxPlayer wires transport, volume and progress controls', async () => {
+    const player = useJukeboxPlayerStore();
+    player.currentTrack = {
+      id: 'track-controls',
+      title: 'Track',
+      duration: 120,
+    } as any;
+    player.duration = 120;
+    player.currentTime = 30;
+    player.volume = 0.5;
+    player.isPlaying = true;
+    player.queue = [
+      player.currentTrack,
+      { id: 'track-next', title: 'Next', duration: 60 } as any,
+    ];
+    player.queueIndex = 0;
+
+    const seek = vi.spyOn(player, 'seek').mockImplementation(() => {});
+    const setVolume = vi
+      .spyOn(player, 'setVolume')
+      .mockImplementation(() => {});
+    const togglePlay = vi
+      .spyOn(player, 'togglePlay')
+      .mockImplementation(() => {});
+    const playNext = vi.spyOn(player, 'playNext').mockImplementation(() => {});
+    const playPrev = vi.spyOn(player, 'playPrev').mockImplementation(() => {});
+    const toggleShuffle = vi
+      .spyOn(player, 'toggleShuffle')
+      .mockImplementation(() => {});
+    const cycleRepeat = vi
+      .spyOn(player, 'cycleRepeatMode')
+      .mockImplementation(() => {});
+    const toggleMute = vi
+      .spyOn(player, 'toggleMute')
+      .mockImplementation(() => {});
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { animatedBackground: false },
+    });
+    await nextTick();
+
+    await wrapper.find('.time-current').trigger('click');
+    expect(wrapper.find('.time-current').text()).toContain('-');
+
+    const seekArea = wrapper.find('.progress-bar-seek');
+    await seekArea.trigger('mouseenter');
+    await seekArea.trigger('mouseleave');
+
+    const sliders = wrapper.findAllComponents(quasarStubs.QSlider);
+    expect(sliders.length).toBeGreaterThanOrEqual(2);
+    sliders[0].vm.$emit('update:modelValue', 0.5);
+    sliders[0].vm.$emit('update:modelValue', null);
+    expect(seek).toHaveBeenCalledWith(60);
+
+    await wrapper.find('.play-pause').trigger('click');
+    await wrapper.find('.prev-track').trigger('click');
+    await wrapper.find('.next-track').trigger('click');
+    expect(togglePlay).toHaveBeenCalled();
+    expect(playPrev).toHaveBeenCalled();
+    expect(playNext).toHaveBeenCalled();
+
+    const optionButtons = wrapper.findAll('.playback-options button');
+    await optionButtons[0].trigger('click');
+    await optionButtons[1].trigger('click');
+    expect(toggleShuffle).toHaveBeenCalled();
+    expect(cycleRepeat).toHaveBeenCalled();
+
+    const volumeButton = wrapper.find('.volume-button');
+    await volumeButton.trigger('mouseenter');
+    await volumeButton.trigger('wheel', { deltaY: 100 });
+    await volumeButton.trigger('mouseleave');
+    await volumeButton.trigger('click');
+    expect(setVolume).toHaveBeenCalled();
+    expect(toggleMute).toHaveBeenCalled();
+
+    await wrapper.find('.volume-popup').trigger('pointerdown');
+    await wrapper.find('.volume-popup').trigger('mouseenter');
+    await wrapper.find('.volume-popup').trigger('mouseleave');
+    await wrapper.find('.volume-popup').trigger('wheel', { deltaY: -100 });
+    expect(setVolume).toHaveBeenCalledWith(expect.any(Number));
+
+    sliders[1].vm.$emit('update:modelValue', 0.25);
+    sliders[1].vm.$emit('update:modelValue', null);
+    expect(setVolume).toHaveBeenCalledWith(0.25);
+
+    player.isPlaying = false;
+    player.currentTrack = null;
+    player.currentTime = 0;
+    wrapper.unmount();
+  });
+
   it('BaseListView grid uses column gutters and three large columns', () => {
     const DummyCard = {
       name: 'DummyCard',
@@ -713,6 +804,40 @@ describe('current editors', () => {
     expect(icon.exists()).toBe(true);
     expect(icon.props('collection')).toBe('ra');
     expect(icon.props('icons')).toBe(MAP_MARKER_ICONS);
+  });
+
+  it('ColorPicker syncs the color and clears it', async () => {
+    const wrapper = mount(ColorPicker, {
+      props: {
+        modelValue: '#123456',
+        label: 'Color',
+        clearable: true,
+        clearLabel: 'Clear color',
+      },
+    });
+
+    expect(wrapper.text()).toContain('Color');
+    wrapper
+      .findComponent(quasarStubs.QColor)
+      .vm.$emit('update:modelValue', '#abcdef');
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['#abcdef']);
+
+    const clear = wrapper.find('button[title="Clear color"]');
+    expect(clear.exists()).toBe(true);
+    await clear.trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.[1]).toEqual(['']);
+    wrapper.unmount();
+  });
+
+  it('ColorPicker emits an empty value when its model is cleared', () => {
+    const wrapper = mount(ColorPicker, {
+      props: { modelValue: undefined },
+    });
+    wrapper
+      .findComponent(quasarStubs.QColor)
+      .vm.$emit('update:modelValue', null);
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['']);
+    wrapper.unmount();
   });
 
   it('ModuleEditor submits name and description', async () => {

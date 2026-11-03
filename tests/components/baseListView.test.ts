@@ -3,6 +3,7 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 
 import BaseListView from '@/components/common/BaseListView.vue';
+import VueDraggable from 'vuedraggable';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
 const CardStub = defineComponent({
@@ -28,7 +29,7 @@ const CardStub = defineComponent({
 const EditorStub = defineComponent({
   name: 'EditorStub',
   props: { isOpen: Boolean, item: Object },
-  emits: ['submit', 'cancel'],
+  emits: ['submit', 'cancel', 'delete'],
   setup(_props, { emit }) {
     return () =>
       h('div', { class: 'editor-stub' }, [
@@ -41,6 +42,11 @@ const EditorStub = defineComponent({
           'button',
           { class: 'cancel', onClick: () => emit('cancel') },
           'cancel',
+        ),
+        h(
+          'button',
+          { class: 'editor-delete', onClick: () => emit('delete') },
+          'delete',
         ),
       ]);
   },
@@ -168,5 +174,64 @@ describe('BaseListView', () => {
   it('hides the header when requested', () => {
     const { layout } = mountList({ hideHeader: true });
     expect(layout.topMenuContent.value).toBeNull();
+  });
+
+  it('forwards card events from grid and simple-list layouts', async () => {
+    for (const viewStyle of ['grid', 'simple-list']) {
+      const { wrapper } = mountList({ viewStyle });
+      const card = wrapper.find('.card-stub');
+      await card.find('.view').trigger('click');
+      await card.find('.edit').trigger('click');
+      await card.find('.delete').trigger('click');
+      await card.find('.copy').trigger('click');
+      await card.find('.tag').trigger('click');
+
+      expect(wrapper.emitted('view')?.[0]).toEqual([{ id: 'a' }]);
+      expect(wrapper.emitted('edit')?.[0]).toEqual([{ id: 'a' }]);
+      expect(wrapper.emitted('delete')?.[0]).toEqual([{ id: 'a' }]);
+      expect(wrapper.emitted('copy')?.[0]).toEqual([{ id: 'a' }]);
+      expect(wrapper.emitted('tag-click')?.[0]).toEqual(['tag']);
+      wrapper.unmount();
+    }
+  });
+
+  it('forwards card events from the draggable layout and emits sort', async () => {
+    const { wrapper } = mountList({ draggable: true });
+    const card = wrapper.find('.card-stub');
+    expect(wrapper.findComponent(CardStub).props('draggable')).toBe(true);
+    await card.find('.view').trigger('click');
+    await card.find('.edit').trigger('click');
+    await card.find('.delete').trigger('click');
+    await card.find('.copy').trigger('click');
+    await card.find('.tag').trigger('click');
+
+    expect(wrapper.emitted('view')?.[0]).toEqual([{ id: 'a' }]);
+
+    const draggable = wrapper.findComponent(VueDraggable);
+    expect(draggable.exists()).toBe(true);
+    draggable.vm.$emit('update:modelValue', [{ id: 'b' }, { id: 'a' }]);
+    await nextTick();
+    draggable.vm.$emit('end');
+    expect(wrapper.emitted('sort')?.[0]?.[0]).toEqual([
+      { id: 'b' },
+      { id: 'a' },
+    ]);
+    wrapper.unmount();
+  });
+
+  it('closes the editor when deleting through it', async () => {
+    const { wrapper, layout } = mountList();
+    layout.topMenuContent.value?.props?.onCreate();
+    await nextTick();
+
+    await wrapper
+      .findComponent(EditorStub)
+      .find('.editor-delete')
+      .trigger('click');
+    await nextTick();
+
+    expect(wrapper.emitted('delete')?.[0]).toEqual([null]);
+    expect(wrapper.findComponent(EditorStub).exists()).toBe(false);
+    wrapper.unmount();
   });
 });

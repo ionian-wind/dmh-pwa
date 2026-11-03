@@ -24,15 +24,14 @@ describe('schema validator', () => {
   });
 
   it('is idempotent when registering the same key twice', () => {
-    expect(() =>
-      registerValidationSchema('test-schema', schema),
-    ).not.toThrow();
+    expect(() => registerValidationSchema('test-schema', schema)).not.toThrow();
     expect(canValidate('test-schema')).toBe(true);
   });
 
   it('returns a structured result for valid and invalid data', async () => {
-    await expect(validateSchema('test-schema', { name: 'A', age: 1 })).resolves
-      .toEqual({ valid: true, errors: [] });
+    await expect(
+      validateSchema('test-schema', { name: 'A', age: 1 }),
+    ).resolves.toEqual({ valid: true, errors: [] });
 
     const invalid = await validateSchema('test-schema', {
       name: 'A',
@@ -51,6 +50,21 @@ describe('schema validator', () => {
     await expect(validateSchema('missing-schema', {})).rejects.toThrow(
       'Schema "missing-schema" not found',
     );
+    await expect(getValidationErrors('missing-schema', {})).rejects.toThrow(
+      'Schema "missing-schema" not found',
+    );
+  });
+
+  it('returns no errors for valid data and includes paths when present', async () => {
+    await expect(
+      getValidationErrors('test-schema', { name: 'A', age: 1 }),
+    ).resolves.toEqual([]);
+
+    const errors = await getValidationErrors('test-schema', {
+      name: 'A',
+      age: 'old',
+    });
+    expect(errors.join(' ')).toContain('at /age');
   });
 
   it('validates arrays item by item', async () => {
@@ -71,5 +85,12 @@ describe('schema validator', () => {
       { name: 'B' },
     ]);
     expect(errors.join(' ')).toContain('Item at index 1');
+  });
+
+  it('rejects non-array values for array helpers', async () => {
+    await expect(validateArray('test-schema', {})).resolves.toBe(false);
+    await expect(
+      getArrayValidationErrors('test-schema', 'nope'),
+    ).resolves.toEqual(['Data is not an array']);
   });
 });
