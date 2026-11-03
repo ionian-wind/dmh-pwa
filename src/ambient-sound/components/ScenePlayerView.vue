@@ -1,23 +1,29 @@
 <template>
-  <QDialog
-    :model-value="isOpen"
-    seamless
-    class="scene-player-dialog"
-    @update:model-value="(value: boolean) => !value && emit('close')"
-  >
-    <QCard v-if="entry" class="scene-player-card">
-      <QCardSection class="row items-center q-gutter-sm">
+  <div class="scene-player-view">
+    <div class="scene-view-header row items-center q-gutter-sm q-mb-md">
+      <QBtn
+        flat
+        no-caps
+        class="scene-back"
+        :title="t('common.back')"
+        :aria-label="t('common.back')"
+        @click="emit('back')"
+      >
+        <IconArrowLeft :size="20" />
+        <span class="q-ml-xs">{{ t('common.back') }}</span>
+      </QBtn>
+      <template v-if="entry">
+        <QSeparator vertical />
         <AmbientIcon :icon="entry.scene.icon" :size="28" />
         <div class="col">
           <div class="text-h6">{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
         </div>
-        <QBtn flat round :aria-label="t('common.close')" @click="emit('close')">
-          <IconX />
-        </QBtn>
-      </QCardSection>
+      </template>
+    </div>
 
-      <QCardSection class="q-pt-none">
+    <QCard v-if="entry" flat bordered class="scene-player-card">
+      <QCardSection>
         <div class="row items-center q-gutter-md q-mb-md">
           <QBtn
             round
@@ -30,11 +36,7 @@
             <IconPlayerPause v-if="store.isPlaying" />
             <IconPlayerPlay v-else />
           </QBtn>
-          <div class="col">
-            <div class="text-subtitle1">
-              {{ store.activeScene?.scene.name || entry.scene.name }}
-            </div>
-          </div>
+          <div class="col" />
           <div class="text-caption text-grey-7">
             {{ t('ambientSoundPage.intensity') }}: {{ store.intensity }}%
           </div>
@@ -168,18 +170,24 @@
         </div>
       </QCardSection>
     </QCard>
-  </QDialog>
+    <EmptyState
+      v-else
+      :icon="IconMusic"
+      :title="t('ambientSoundPage.noScenes')"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  IconArrowLeft,
   IconBell,
+  IconMusic,
   IconPlayerPause,
   IconPlayerPlay,
   IconWaveSine,
-  IconX,
 } from '@tabler/icons-vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -193,13 +201,12 @@ import type {
 } from '@/ambient-sound/types';
 
 const props = defineProps<{
-  isOpen: boolean;
   packId: string;
   sceneId: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'close'): void;
+  (e: 'back'): void;
 }>();
 
 const { t } = useI18n();
@@ -306,9 +313,8 @@ async function toggleVariant(
 }
 
 watch(
-  () => [props.isOpen, props.packId, props.sceneId],
+  () => [props.packId, props.sceneId],
   () => {
-    if (!props.isOpen) return;
     activeTab.value = 'ambiences';
   },
   { immediate: true },
@@ -316,14 +322,16 @@ watch(
 </script>
 
 <style scoped>
-.scene-player-dialog :deep(.q-dialog__inner) {
-  padding: 24px;
+.scene-player-view {
+  width: 100%;
 }
 
 .scene-player-card {
-  width: min(760px, 100%);
-  max-height: min(88vh, 900px);
-  overflow-y: auto;
+  width: 100%;
+}
+
+.scene-back {
+  flex: 0 0 auto;
 }
 
 .music-bar {
@@ -353,16 +361,5 @@ watch(
 .one-shot-card.is-playing {
   border-color: var(--color-primary);
   background: var(--color-background-soft);
-}
-
-@media (max-width: 600px) {
-  .scene-player-dialog :deep(.q-dialog__inner) {
-    padding: 0;
-  }
-
-  .scene-player-card {
-    width: 100%;
-    max-height: 100vh;
-  }
 }
 </style>

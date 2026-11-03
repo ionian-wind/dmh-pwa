@@ -453,10 +453,12 @@ Package content is imported, not authored in the app.
 - Scene-to-entity links are local user data and remain editable.
 - Scene music presets and variants come from the package and are read-only.
 
-### 4.6 Scene player dialog
+### 4.6 Scene player view
 
-Opening a scene row shows the scene player dialog without starting playback.
-Playback starts only from an explicit play action. The dialog contains:
+Opening a scene row replaces the ambient page content with the scene player
+view while the package sidebar and bottom player panel stay in place. Playback
+starts only from an explicit play action. A Back button in the view header
+returns to the scene/gallery tabs. The view contains:
 
 - **Global play/pause** — controls the scene music and linked ambiences. It does
   not block one-shots.
@@ -471,8 +473,8 @@ Playback starts only from an explicit play action. The dialog contains:
   card plays that one-shot immediately, independent of music or ambience state,
   and the card highlights while it plays.
 
-The dialog closes without stopping playback; the scene remains available from
-the bottom player panel.
+The Back button returns to the list without stopping playback; the scene remains
+available from the bottom player panel.
 
 ### 4.7 Entity views: linked scenes
 
@@ -536,7 +538,7 @@ It mirrors the jukebox player and lives in the app footer.
 
 - Right package sidebar persistent.
 - Scenes and gallery rows in a comfortable 1–2 column layout.
-- Scene player dialog max width around 760 px.
+- Scene player view spans the full page-content width.
 - Tabs stay sticky below the app header; the lists scroll independently.
 - Docked sound panel matches the page-content width.
 
@@ -544,14 +546,15 @@ It mirrors the jukebox player and lives in the app footer.
 
 - Package sidebar becomes an overlay drawer.
 - Scene cards/rows remain list-first; gallery uses 2 columns.
-- Scene player dialog uses most of the viewport height.
+- Scene player view uses the full page width and scrolls with the page.
 
 **Mobile (<600 px)**
 
 - Tabs stay sticky below the app header and shrink to fit narrow screens;
   the package sidebar opens as a drawer.
 - Scenes are full-width rows; gallery is a single-column list.
-- Scene player opens full-screen or as a bottom sheet.
+- Scene player view uses the full page width with the Back button pinned to the
+  top of the content.
 - Sound panel docks as the app footer; the list scrolls above it.
 - Touch targets are at least 44×44 px; hover-only actions are also available from
   an overflow menu.
@@ -573,14 +576,15 @@ It mirrors the jukebox player and lives in the app footer.
 
 ### 4.11 Component and state mapping
 
-| UI component           | Responsibility                                            | Main state/actions                           |
-| ---------------------- | --------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`     | Page layout, sticky tabs, package filter, content         | `currentPackage`, `activeTab`, `activeScene` |
-| `PackageSidebar`       | Package list, import/delete, filter                       | `packages`, `selectedPackageId`              |
-| `SceneList`            | Scene rows and opening the player                         | `scenes`, `activeSceneId`                    |
-| `GlobalGallery`        | Ambience/one-shot browsing                                | `galleryEntries`, `category`                 |
-| `EntityScenesPanel`    | Linked scenes in location/module/encounter/character      | `links`, `add/remove`, `play`                |
-| `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume | `activeScene`, `playback`, `masterVolume`    |
+| UI component           | Responsibility                                                | Main state/actions                           |
+| ---------------------- | ------------------------------------------------------------- | -------------------------------------------- |
+| `AmbientSoundView`     | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
+| `PackageSidebar`       | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
+| `SceneList`            | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
+| `ScenePlayerView`      | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
+| `GlobalGallery`        | Ambience/one-shot browsing                                    | `galleryEntries`, `category`                 |
+| `EntityScenesPanel`    | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
+| `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume     | `activeScene`, `playback`, `masterVolume`    |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

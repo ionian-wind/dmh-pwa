@@ -9,15 +9,29 @@
     </div>
 
     <template v-else-if="store.storedPacks.length">
-      <div class="ambient-tabs-sticky" :style="{ top: `${headerOffset}px` }">
-        <TabGroup v-model="activeTab" :tabs="tabs" size="md" align="justify" />
-      </div>
+      <ScenePlayerView
+        v-if="selectedScene"
+        :pack-id="selectedScene.packId"
+        :scene-id="selectedScene.sceneId"
+        @back="selectedScene = null"
+      />
 
-      <div class="ambient-tab-body">
-        <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
-        <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
-        <OneShotGallery v-else />
-      </div>
+      <template v-else>
+        <div class="ambient-tabs-sticky" :style="{ top: `${headerOffset}px` }">
+          <TabGroup
+            v-model="activeTab"
+            :tabs="tabs"
+            size="md"
+            align="justify"
+          />
+        </div>
+
+        <div class="ambient-tab-body">
+          <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
+          <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
+          <OneShotGallery v-else />
+        </div>
+      </template>
     </template>
 
     <EmptyState
@@ -25,13 +39,6 @@
       :icon="IconMusic"
       :title="t('ambientSoundPage.importPack')"
       :hint="t('ambientSoundPage.importPackHint')"
-    />
-
-    <ScenePlayerDialog
-      :is-open="playerOpen"
-      :pack-id="playerPackId"
-      :scene-id="playerSceneId"
-      @close="playerOpen = false"
     />
   </div>
 </template>
@@ -50,7 +57,7 @@ import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalContro
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
-import ScenePlayerDialog from '@/ambient-sound/components/ScenePlayerDialog.vue';
+import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -58,9 +65,7 @@ const layout = useLayout();
 const rightDrawer = useRightDrawer();
 
 const activeTab = ref('scenes');
-const playerOpen = ref(false);
-const playerPackId = ref('');
-const playerSceneId = ref('');
+const selectedScene = ref<{ packId: string; sceneId: string } | null>(null);
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);
@@ -78,9 +83,7 @@ const tabs = computed(() => [
 ]);
 
 function openScenePlayer(packId: string, sceneId: string) {
-  playerPackId.value = packId;
-  playerSceneId.value = sceneId;
-  playerOpen.value = true;
+  selectedScene.value = { packId, sceneId };
 }
 
 onMounted(async () => {

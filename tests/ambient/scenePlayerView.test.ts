@@ -23,10 +23,10 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => storeMock,
 }));
 
-import ScenePlayerDialog from '@/ambient-sound/components/ScenePlayerDialog.vue';
+import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
 import { quasarStubs } from '../helpers/quasar-stubs';
 
-describe('ScenePlayerDialog', () => {
+describe('ScenePlayerView', () => {
   beforeEach(() => {
     for (const fn of [
       storeMock.togglePlayPause,
@@ -92,9 +92,22 @@ describe('ScenePlayerDialog', () => {
     storeMock.activeScene = storeMock.allScenes[0];
   });
 
+  it('emits back from the header button', async () => {
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs: quasarStubs },
+    });
+
+    const back = wrapper.find('button[aria-label="Back"]');
+    expect(back.exists()).toBe(true);
+    await back.trigger('click');
+    expect(wrapper.emitted('back')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
   it('shows scene music presets and controls global playback', async () => {
-    const wrapper = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
 
@@ -124,8 +137,8 @@ describe('ScenePlayerDialog', () => {
   it('opens an inactive scene without starting playback', async () => {
     storeMock.activeSceneKey = 'other::scene';
     storeMock.isPlaying = false;
-    const wrapper = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
 
@@ -136,19 +149,21 @@ describe('ScenePlayerDialog', () => {
     wrapper.unmount();
   });
 
-  it('renders nothing for a missing scene', () => {
+  it('shows an empty state for a missing scene', () => {
     storeMock.allScenes = [];
-    const missing = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'missing' },
+    const missing = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'missing' },
       global: { stubs: quasarStubs },
     });
     expect(missing.find('.scene-player-card').exists()).toBe(false);
+    expect(missing.text()).toContain('No scenes yet');
+    expect(missing.find('button[aria-label="Back"]').exists()).toBe(true);
     missing.unmount();
   });
 
   it('supports stopping the active variant and starting an inactive one', async () => {
-    const wrapper = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
 
@@ -186,8 +201,8 @@ describe('ScenePlayerDialog', () => {
     storeMock.musicEnabled = false;
     storeMock.activeMusicPresetId = null;
 
-    const wrapper = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
     expect(wrapper.text()).toContain('No ambiences in this scene');
@@ -202,8 +217,8 @@ describe('ScenePlayerDialog', () => {
   });
 
   it('switches ambience variants and plays one-shots', async () => {
-    const wrapper = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
 
@@ -231,8 +246,8 @@ describe('ScenePlayerDialog', () => {
 
   it('highlights one-shot cards while they are playing', async () => {
     storeMock.isOneShotPlaying.mockReturnValue(true);
-    const wrapper = mount(ScenePlayerDialog, {
-      props: { isOpen: true, packId: 'pack-1', sceneId: 'scene-1' },
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs: quasarStubs },
     });
 

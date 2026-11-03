@@ -51,7 +51,7 @@ const stubs = {
   SceneList: true,
   AmbienceGallery: true,
   OneShotGallery: true,
-  ScenePlayerDialog: true,
+  ScenePlayerView: true,
 };
 
 describe('AmbientSoundView', () => {
@@ -126,6 +126,32 @@ describe('AmbientSoundView', () => {
     expect(wrapper.findComponent({ name: 'OneShotGallery' }).exists()).toBe(
       true,
     );
+    wrapper.unmount();
+  });
+
+  it('replaces the page content with the scene view and returns with back', async () => {
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
+    await flushPromises();
+
+    const sceneList = wrapper.findComponent({ name: 'SceneList' });
+    sceneList.vm.$emit('open', 'pack-1', 'scene-1');
+    await flushPromises();
+
+    const sceneView = wrapper.findComponent({ name: 'ScenePlayerView' });
+    expect(sceneView.exists()).toBe(true);
+    expect(sceneView.props('packId')).toBe('pack-1');
+    expect(sceneView.props('sceneId')).toBe('scene-1');
+    expect(wrapper.find('.ambient-tabs-sticky').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(false);
+
+    sceneView.vm.$emit('back');
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: 'ScenePlayerView' }).exists()).toBe(
+      false,
+    );
+    expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(true);
+    expect(wrapper.find('.ambient-tabs-sticky').exists()).toBe(true);
     wrapper.unmount();
   });
 
