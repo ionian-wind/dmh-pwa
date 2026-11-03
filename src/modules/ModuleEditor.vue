@@ -8,6 +8,7 @@ import { alert } from '@/dialogs';
 const props = defineProps<{
   module: Module | null;
   isOpen: boolean;
+  useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -63,6 +64,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="module ? t('modules.edit') : t('modules.create')"
     :showSubmit="true"

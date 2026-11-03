@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<{
     character?: PlayerCharacter | null;
     isOpen: boolean;
+    useModalStack?: boolean;
     partyId?: UUID;
   }>(),
   {
@@ -76,6 +77,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="isEditing ? t('characters.edit') : t('characters.create')"
     :showSubmit="true"

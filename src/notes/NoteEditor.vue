@@ -17,6 +17,7 @@ const { t } = useI18n();
 const props = defineProps<{
   note: Note | null;
   isOpen: boolean;
+  useModalStack?: boolean;
   isEditing?: boolean;
   validationError?: string | null;
   hideModuleSelector?: boolean;
@@ -124,6 +125,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="isEditing ? t('common.editNote') : t('common.createNote')"
     :showSubmit="true"

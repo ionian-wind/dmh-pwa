@@ -13,6 +13,7 @@ import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 const props = defineProps<{
   map: MapEntity | null;
   isOpen: boolean;
+  useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -182,6 +183,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="map ? t('maps.edit') : t('maps.create')"
     :showSubmit="true"

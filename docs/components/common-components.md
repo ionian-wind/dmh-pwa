@@ -145,8 +145,11 @@ icon.
 
 Main-entity references are edited with `EntitiesLinking` blocks in editor
 dialogs, not with standalone dropdown selectors. Each block owns one entity
-type and provides its own searchable add flow. Internal options such as note
-types and map layers keep their dedicated selectors.
+type and provides its own searchable add flow. The add modal's search row also
+has a create (+) button that opens the related entity editor without leaving the
+linking flow. After saving, the new entity is selected and marked “Created” so
+it can be linked immediately. Internal options such as note types and map layers
+keep their dedicated selectors.
 
 ### `TagSelector.vue`
 

@@ -11,6 +11,7 @@ import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 const props = defineProps<{
   location: MapLocation | null;
   isOpen: boolean;
+  useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -79,6 +80,7 @@ function remove() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="isNew ? t('maps.addLocation') : t('maps.editLocation')"
     :showSubmit="true"

@@ -13,6 +13,7 @@ const { t } = useI18n();
 const props = defineProps<{
   monster: Monster | null;
   isOpen: boolean;
+  useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -91,6 +92,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="isEditing ? t('monsters.edit') : t('monsters.create')"
     :showSubmit="true"

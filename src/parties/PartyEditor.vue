@@ -14,6 +14,7 @@ const { t } = useI18n();
 const props = defineProps<{
   party: Party | null;
   isOpen: boolean;
+  useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -100,6 +101,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="party ? t('parties.edit') : t('parties.create')"
     :showSubmit="true"

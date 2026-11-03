@@ -11,6 +11,7 @@ import type { MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
   modelValue: boolean;
+  useModalStack?: boolean;
   playlist: JukeboxPlaylist | null;
 }>();
 
@@ -106,6 +107,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="modelValue"
     modalId="playlist-editor"
     @update:isOpen="$emit('update:modelValue', $event)"

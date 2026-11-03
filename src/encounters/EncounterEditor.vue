@@ -11,6 +11,7 @@ import type { MapEntityRef } from '@/maps/types';
 const props = defineProps<{
   encounter: Encounter | null;
   isOpen: boolean;
+  useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -116,6 +117,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="isEditing ? t('encounters.edit') : t('encounters.create')"
     :showSubmit="true"
