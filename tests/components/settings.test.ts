@@ -171,7 +171,8 @@ describe('settings dialog', () => {
     expect(
       wrapper.find('[data-test="open-settings"]').attributes('title'),
     ).toBeTruthy();
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
+    expect(wrapper.find('.tools-caret--mini').exists()).toBe(false);
+    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     await drawer.trigger('mouseenter');
     await nextTick();
@@ -183,6 +184,7 @@ describe('settings dialog', () => {
     await nextTick();
     expect(drawer.attributes('mini')).toBe('true');
     expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
+    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     await drawer.trigger('mouseenter');
     await nextTick();

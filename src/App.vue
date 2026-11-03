@@ -237,6 +237,7 @@ const leftDrawerOpen = ref(false);
 const miniState = ref(true);
 
 const menuMini = computed(() => !configStore.expandMenu || miniState.value);
+const menuLockedMini = computed(() => !configStore.expandMenu);
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -358,11 +359,11 @@ function openJukebox() {
               <QItemSection side>
                 <div
                   class="tools-icon-stack"
-                  :class="{ 'tools-icon-stack--mini': menuMini }"
+                  :class="{ 'tools-icon-stack--mini': menuLockedMini }"
                 >
                   <IconTool />
                   <IconChevronDown
-                    v-if="menuMini"
+                    v-if="menuLockedMini"
                     :size="14"
                     class="tools-caret tools-caret--mini"
                     :class="{ 'tools-caret--open': toolsExpanded }"
@@ -370,7 +371,7 @@ function openJukebox() {
                 </div>
               </QItemSection>
               <QItemSection>{{ t('navigation.tools') }}</QItemSection>
-              <QItemSection v-if="!menuMini" side>
+              <QItemSection v-if="!menuLockedMini" side>
                 <IconChevronDown
                   :size="18"
                   class="tools-caret"

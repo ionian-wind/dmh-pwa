@@ -169,9 +169,10 @@ Settings item. It currently has two sections:
     `true` immediately without opening a confirmation dialog.
   - **Expand menu** — default `true`. When on, hovering the left menu expands it
     from icons to labels. When off, the menu stays mini and only shows icons;
-    each item exposes its label as a native `title` tooltip. In mini mode, the
-    Tools item stacks a small chevron under the wrench and still toggles the
-    tools group.
+    each item exposes its label as a native `title` tooltip. When Expand menu is
+    off, the Tools item stacks a small chevron under the wrench and still
+    toggles the tools group. Hovering out of an expandable menu keeps the normal
+    side chevron.
 - **Player**
   - Smooth track change.
   - Animate player background.
