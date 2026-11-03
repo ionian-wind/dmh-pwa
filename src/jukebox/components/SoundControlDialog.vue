@@ -96,7 +96,7 @@ const cardRef = ref<ComponentPublicInstance | null>(null);
 const isRepositioning = ref(false);
 const canDock = ref(false);
 const PANEL_DETACH_DISTANCE = 5;
-const DIALOG_DOCK_DISTANCE = 20;
+const DIALOG_DOCK_DISTANCE = 10;
 let repositioning = false;
 
 const viewportWidth = ref(
