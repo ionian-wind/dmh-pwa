@@ -925,6 +925,8 @@ Add route to router:
 - Page content uses the project's `QCard`/`QCardSection` layout, `TabGroup`,
   tabler icons, CSS theme variables and localized text rather than standalone
   page-level styling.
+- A dedicated **Overall control** card owns global play/pause and master volume;
+  ambient layers keep their own layer toggles and volume sliders.
 - Integrate with existing file handling for custom audio upload
 
 ## 13. Free Sound Sources

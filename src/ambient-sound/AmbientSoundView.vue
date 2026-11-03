@@ -18,27 +18,43 @@
 
     <template v-else>
       <QCard flat bordered class="q-mb-md">
-        <QCardSection class="row items-center q-gutter-md">
-          <IconVolume :size="22" />
-          <div class="col">
-            <div class="text-subtitle2">
-              {{ t('ambientSoundPage.masterVolume') }}
-            </div>
-            <QSlider
-              :model-value="store.masterVolume"
-              :min="0"
-              :max="100"
-              :step="1"
-              color="primary"
-              dense
-              class="master-volume-slider"
-              @update:model-value="
-                (v: number | null) => v !== null && store.setMasterVolume(v)
-              "
-            />
+        <QCardSection>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm">
+            {{ t('ambientSoundPage.overallControl') }}
           </div>
-          <div class="text-caption text-grey-7 master-volume-value">
-            {{ store.masterVolume }}%
+          <div class="row items-center q-gutter-md">
+            <QBtn
+              round
+              color="primary"
+              size="lg"
+              :title="t(store.isPlaying ? 'common.pause' : 'common.play')"
+              :aria-label="t(store.isPlaying ? 'common.pause' : 'common.play')"
+              @click="store.togglePlayPause()"
+            >
+              <IconPlayerPause v-if="store.isPlaying" />
+              <IconPlayerPlay v-else />
+            </QBtn>
+            <IconVolume :size="22" />
+            <div class="col">
+              <div class="text-caption text-grey-7 q-mb-xs">
+                {{ t('ambientSoundPage.masterVolume') }}
+              </div>
+              <QSlider
+                :model-value="store.masterVolume"
+                :min="0"
+                :max="100"
+                :step="1"
+                color="primary"
+                dense
+                class="master-volume-slider"
+                @update:model-value="
+                  (v: number | null) => v !== null && store.setMasterVolume(v)
+                "
+              />
+            </div>
+            <div class="text-caption text-grey-7 master-volume-value">
+              {{ store.masterVolume }}%
+            </div>
           </div>
         </QCardSection>
       </QCard>
@@ -86,7 +102,14 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { IconMusic, IconPlus, IconUpload, IconVolume } from '@tabler/icons-vue';
+import {
+  IconMusic,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconPlus,
+  IconUpload,
+  IconVolume,
+} from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { useLayout } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';

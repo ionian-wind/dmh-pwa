@@ -12,6 +12,8 @@ const storeMock = vi.hoisted(() => ({
     oneShots: [],
     weatherSystems: [],
   },
+  isPlaying: false,
+  togglePlayPause: vi.fn(),
   setMasterVolume: vi.fn(),
   loadStoredPacks: vi.fn().mockResolvedValue(undefined),
   importPack: vi.fn().mockResolvedValue(undefined),
@@ -63,6 +65,8 @@ describe('AmbientSoundView', () => {
     storeMock.pause.mockClear();
     storeMock.setMasterVolume.mockClear();
     storeMock.importPack.mockClear();
+    storeMock.togglePlayPause.mockClear();
+    storeMock.isPlaying = false;
   });
 
   it('uses the shared header and card layout', async () => {
@@ -80,8 +84,11 @@ describe('AmbientSoundView', () => {
     ]);
 
     expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(7);
+    expect(wrapper.text()).toContain('Overall control');
     expect(wrapper.text()).toContain('Master volume');
     expect(wrapper.text()).toContain('50%');
+    await wrapper.find('button[aria-label="Play"]').trigger('click');
+    expect(storeMock.togglePlayPause).toHaveBeenCalledTimes(1);
 
     header.props.buttons[0].event();
     expect(push).toHaveBeenCalledWith('/ambient-sound/editor');

@@ -746,6 +746,7 @@
     "title": "Ambient Sound",
     "selectPack": "Select Sound Pack",
     "masterVolume": "Master volume",
+    "overallControl": "Overall control",
     "off": "Off",
     "noPacks": "No packs available",
     "moods": {

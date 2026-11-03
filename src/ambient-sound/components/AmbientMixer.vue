@@ -4,16 +4,6 @@
       <span class="text-subtitle1 text-weight-medium">
         {{ $t('ambientSoundPage.ambientLayers') }}
       </span>
-      <QBtn
-        flat
-        dense
-        :title="t(store.isPlaying ? 'common.pause' : 'common.play')"
-        :aria-label="t(store.isPlaying ? 'common.pause' : 'common.play')"
-        @click="store.togglePlayPause()"
-      >
-        <IconPlayerPause v-if="store.isPlaying" />
-        <IconPlayerPlay v-else />
-      </QBtn>
     </div>
 
     <div v-if="store.currentPack?.layers.length" class="layers-grid">
@@ -32,7 +22,7 @@
             :min="0"
             :max="1"
             :step="0.01"
-            color="primary"
+            color="white"
             dense
             @click.stop
             @update:model-value="
@@ -54,11 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-import { IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
-const { t } = useI18n();
 const store = useAmbientSoundStore();
 </script>
 
@@ -114,6 +101,12 @@ const store = useAmbientSoundStore();
 .layer-volume {
   width: 100%;
   margin-top: 8px;
+  color: var(--color-text-inverse);
+}
+
+.layer-card.active :deep(.q-slider__track),
+.layer-card.active :deep(.q-slider__thumb) {
+  color: var(--color-text-inverse);
 }
 
 .layer-inactive {
