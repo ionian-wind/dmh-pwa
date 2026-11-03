@@ -550,6 +550,13 @@ function openJukebox() {
   animation: ambient-pulse 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .jukebox-playing,
+  .ambient-playing {
+    animation: none;
+  }
+}
+
 .footer-flush {
   padding: 0 !important;
   background: var(--color-background-soft) !important;

@@ -132,24 +132,25 @@ a separate opt-in feature.
 ```
 src/
 ├── ambient-sound/
-│   ├── AmbientSoundView.vue          # Scenes list / playback view
+│   ├── AmbientSoundView.vue          # Page layout, tabs and scene view switch
 │   ├── components/
 │   │   ├── SceneList.vue             # Package-owned scenes
-│   │   ├── GlobalGallery.vue         # Ambience + one-shot content browser
-│   │   ├── AmbientMixer.vue          # Ambience layer controls
-│   │   ├── OneShotPanel.vue          # One-shot trigger grid
-│   │   ├── IntensitySlider.vue       # Scene intensity
-│   │   └── NowPlayingPanel.vue       # Persistent playback / quick controls
+│   │   ├── ScenePlayerView.vue       # In-page scene player
+│   │   ├── AmbienceGallery.vue       # Global ambience browser
+│   │   ├── OneShotGallery.vue        # Global one-shot card grid
+│   │   ├── AmbientGlobalControl.vue  # Fixed footer player
+│   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
+│   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
+│   │   └── SoundPackSidebar.vue      # Package list and import/remove
 │   ├── stores/
 │   │   └── ambientSoundStore.ts      # Scenes, gallery and playback state
 │   ├── types.ts                      # Package/entry/scene interfaces
 │   └── utils/
-│       ├── audioEngine.ts            # Howler.js wrapper
+│       ├── audioEngine.ts            # Howler playback engine
 │       ├── packData.ts               # Manifest normalization
-│       └── packManager.ts            # IndexedDB package storage
+│       └── packManager.ts            # Import, storage and archive export
 ├── assets/
-│   └── sounds/                       # Built-in assets (optional)
-│       └── (loaded from IndexedDB instead)
+│   └── sounds/                       # Optional built-in audio assets
 ```
 
 ### 3.2 Package File Format
@@ -279,6 +280,7 @@ export interface AmbienceVariation {
 export interface AmbienceDef {
   id: string;
   name: string;
+  /** Icon-picker format, e.g. `fa-solid:cloud-rain`. */
   icon: string;
   category?: string;
   defaultVolume: number;
@@ -290,6 +292,7 @@ export interface AmbienceDef {
 export interface OneShotDef {
   id: string;
   name: string;
+  /** Icon-picker format, e.g. `fa-solid:cloud-bolt`. */
   icon: string;
   file: string;
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
@@ -362,12 +365,12 @@ The ambient-sound section is a first-class app page with a package sidebar:
 │                                           │ ──────────────── │
 │                                           │ Import package   │
 ├───────────────────────────────────────────┴──────────────────┤
-│ Now Playing / sound control panel                            │
+│ Intensity slider · music toggle · play/pause · volume        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- Use the existing `ViewHeader`, `QCard`, `TabGroup`, `BaseModal`,
-  `SidebarItem`, `IconPicker` and `EmptyState` components.
+- Use the existing shared components: `ViewHeader`, `QCard`, `TabGroup`,
+  `SidebarItem`, `BaseModal` and `EmptyState`.
 - The package sidebar is the right drawer. The main page owns the left content.
 - The Scenes / Ambiences / One-shots tabs stay sticky below the app header while
   the list scrolls.
@@ -376,10 +379,12 @@ The ambient-sound section is a first-class app page with a package sidebar:
   scene and gallery lists scroll.
 - “All packages” is the default filter. Selecting a package filters the active
   tab to that package; selecting it again clears the filter.
-- Package rows show package icon, name and category. Hover/focus shows delete.
+- Package rows show a category icon and the package name. Each row has a
+  remove action.
 - Import is the only pinned footer action. Package creation/editing happens
   outside the app through the sound-pack script.
-- The global sound panel is mounted in the app shell, not inside the page.
+- The player panel is registered in the app footer from the ambient page, not
+  rendered inside the page content.
 
 ### 4.2 Scenes tab
 
@@ -387,8 +392,8 @@ The Scenes tab is the default landing view.
 
 **Toolbar**
 
-- Package filter chips: All packages / current package / linked only.
-- Sort: recently updated, name, package.
+There is no in-page toolbar. The right sidebar's package filter narrows the
+list.
 
 **Scene row/card**
 
@@ -397,17 +402,16 @@ Each scene is a row in a `QCard`/list, not a cover grid. It shows:
 - scene name and description preview;
 - package name;
 - link count (for example, “3 links”);
-- last updated time;
-- active badge and playing/paused state.
+- a “Playing” badge while the scene is playing.
 
-Clicking the row opens the scene player view. The list has no play button;
-playback starts from the scene view.
+Clicking the row opens the scene player view. The list has no icon or play
+button; playback starts from the scene view.
 
 **States**
 
 - No packages: empty state with “Import package”.
 - Packages but no scenes: “This package has no scenes”.
-- Loading/importing: spinner and disabled package actions.
+- Loading/importing: page-level spinner.
 
 ### 4.3 Ambiences tab
 
@@ -415,27 +419,26 @@ A global content gallery for ambience entries from all loaded packages.
 
 **Toolbar**
 
-- Package filter (synced with the sidebar filter).
-- Category chips built from the available categories; include “All”.
-- View toggle: grouped list (default) or compact table.
+- Package filter synced with the right sidebar.
+- Category dropdown built from the available categories, with “All categories”.
 
 **Ambience row**
 
 - Icon, name and category.
 - Package name.
-- Number of variations and total samples.
-- “Used in N scenes” badge.
+- Number of variations and number of scenes using the entry.
 - Play/pause toggle; toggling one entry starts it without stopping other active
   ambience entries, so several tracks can play together.
-- Variation dropdown; changing it while active swaps that track's sample pool.
-- Active-in-current-scene indicator.
+- Variation dropdown, shown when the entry has more than one variation;
+  changing it while active swaps that track's sample pool.
+- The active row is highlighted.
 
 ### 4.4 One-shots tab
 
 A global content gallery for one-shot entries.
 
 - Package and category filters behave like the Ambiences tab.
-- Group by package, then by category.
+- Flat card grid; cards are not grouped by package.
 - Each card shows icon, name, category, package and “Used in N scenes”.
 - Clicking anywhere on the card plays the one-shot; there is no separate play
   button.
@@ -497,9 +500,9 @@ Panel contents:
 - empty state: “No scenes linked”;
 - current scene highlighted.
 
-The scene picker searches all loaded packages and groups scenes by package.
-Selecting a scene starts it; it does not navigate away from the entity view.
-Deleting the entity or its package removes the affected links.
+The scene picker lists unlinked scenes from all packages. Selecting a scene adds
+the link; it does not start playback. Deleting the entity or its package removes
+the affected links.
 
 ### 4.8 Global sound panel
 
@@ -516,32 +519,19 @@ It mirrors the jukebox player and lives in the app footer.
 - Music toggle, play/pause and master volume access.
 - No scene icon, cover art, “Now playing” caption or stop button.
 
-**Floating dialog mode**
+**Playback behavior**
 
-- Dragging the panel up detaches it into a centred floating dialog.
-- The dialog header centre is positioned under the pointer at detach.
-- Detaching begins after a 5 px upward drag.
-- The snap/dock zone is 10 px from the page bottom, measured from the dialog’s
-  bottom edge.
-- The snap catcher arms only after the dialog leaves the bottom zone.
-- Docking ends the drag gesture.
-- The floating dialog is draggable anywhere on the page and remains within a
-  usable viewport area.
-- Closing the panel returns it to the docked state.
-
-**One-shot behavior in the panel**
-
-- The quick one-shot tray remains usable when ambient playback is paused.
-- Triggering a one-shot does not change the active scene, music or ambience mix.
-- One-shots are attenuated by the one-shot bus only, never by ambient master,
-  music or ambience buses.
+- One-shots are triggered from the galleries or the scene view, not from the
+  footer panel.
+- One-shots use their own entry volume and are independent of ambient playback
+  and volume state.
 
 ### 4.9 Responsive behavior
 
 **Desktop (≥1024 px)**
 
 - Right package sidebar persistent.
-- Scenes and gallery rows in a comfortable 1–2 column layout.
+- Scenes use a single-column list; one-shots use an auto-fill card grid.
 - Scene player view spans the full page-content width.
 - Tabs stay sticky below the app header; the lists scroll independently.
 - Docked sound panel matches the page-content width.
@@ -560,33 +550,36 @@ It mirrors the jukebox player and lives in the app footer.
 - Scene player view uses the full page width with the Back button pinned to the
   top of the content.
 - Sound panel docks as the app footer; the list scrolls above it.
-- Touch targets are at least 44×44 px; hover-only actions are also available from
-  an overflow menu.
+- Touch targets are at least 44×44 px.
 
 ### 4.10 Feedback, accessibility and edge states
 
-- Package import: loading spinner, validation error message, retry action.
-- Package delete: confirmation includes the number of scenes and entries removed.
-- Active scene: visible badge and pulsing state in the app menu/sound panel.
-- Paused: play icon and “Paused” status; music disabled: muted music indicator.
+- Package import uses the page loading state; invalid packages are rejected by
+  the import routine.
+- Package delete: confirmation names the package.
+- Active scene: visible “Playing” badge and pulsing headphones icon in the app
+  menu.
+- Paused: play icon is shown; music disabled: muted music indicator.
 - Empty states cover: no packages, no scenes, no gallery entries, no linked
   entities, no music.
 - All icon buttons have `title`/`aria-label`; sliders have accessible labels and
   current values.
-- Keyboard: tab order follows the visual order; Escape closes modals/dialogs;
-  sliders support arrow keys.
+- Keyboard: tab order follows the visual order; Escape closes modal dialogs;
+  the scene view returns with its Back button; sliders support arrow keys.
 - Respect `prefers-reduced-motion` for pulsing icons and scene transitions.
-- Toasts confirm link changes and package import.
+- Package import and link changes update the sidebar and entity panels
+  immediately.
 
 ### 4.11 Component and state mapping
 
 | UI component           | Responsibility                                                | Main state/actions                           |
 | ---------------------- | ------------------------------------------------------------- | -------------------------------------------- |
 | `AmbientSoundView`     | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
-| `PackageSidebar`       | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
+| `SoundPackSidebar`     | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
 | `SceneList`            | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
 | `ScenePlayerView`      | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
-| `GlobalGallery`        | Ambience/one-shot browsing                                    | `galleryEntries`, `category`                 |
+| `AmbienceGallery`      | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `category`               |
+| `OneShotGallery`       | One-shot card grid and playing highlight                      | `galleryOneShots`, `category`                |
 | `EntityScenesPanel`    | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
 | `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume     | `activeScene`, `playback`, `masterVolume`    |
 

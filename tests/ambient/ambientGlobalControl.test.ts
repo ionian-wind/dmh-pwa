@@ -75,6 +75,9 @@ describe('AmbientGlobalControl', () => {
 
     const sliders = wrapper.findAllComponents(quasarStubs.QSlider);
     expect(sliders).toHaveLength(2);
+    expect(sliders[0].attributes('step')).toBe('0.25');
+    expect(sliders[0].attributes('snap')).toBeDefined();
+    expect(sliders[0].attributes('aria-label')).toBeTruthy();
     sliders[0].vm.$emit('update:modelValue', 0.75);
     expect(storeMock.setIntensity).toHaveBeenCalledWith(75);
     expect(wrapper.find('.intensity-value').text()).toBe('75%');

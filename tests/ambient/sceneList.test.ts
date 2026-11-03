@@ -67,6 +67,7 @@ describe('SceneList', () => {
     const row = wrapper.find('.scene-row');
     await row.trigger('click');
     expect(wrapper.emitted('open')?.[0]).toEqual(['imported-pack', 'scene-1']);
+    expect(storeMock.playScene).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

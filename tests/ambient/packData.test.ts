@@ -97,6 +97,7 @@ describe('ambient pack data', () => {
       'layers/wind.mp3',
     ]);
     expect(pack.oneShots[0].file).toBe('sfx/bell.mp3');
+    expect(pack.scenes[0]).not.toHaveProperty('icon');
     expect(pack.scenes[0].musicPresets[0]).toEqual({
       id: 'explore',
       name: 'Explore',

@@ -39,6 +39,7 @@
           :markers="true"
           :color="isIntensityHovered ? 'info' : 'primary'"
           :track-size="isIntensityHovered ? '10px' : '5px'"
+          :aria-label="t('ambientSoundPage.intensity')"
           @update:model-value="
             (value: number | null) =>
               value !== null && store.setIntensity(Math.round(value * 100))
@@ -132,6 +133,7 @@
                 :track-size="isVolumeHovered ? '10px' : '5px'"
                 size="md"
                 class="volume-bar"
+                :aria-label="t('ambientSoundPage.masterVolume')"
                 @update:model-value="
                   (value: number | null) =>
                     value !== null && store.setMasterVolume(value * 100)
