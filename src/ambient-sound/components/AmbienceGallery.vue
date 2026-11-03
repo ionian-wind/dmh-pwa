@@ -33,8 +33,16 @@
         <QCardSection class="row items-center q-gutter-sm">
           <AmbientIcon :icon="entry.ambience.icon" :size="24" />
           <div class="col">
-            <div class="text-subtitle2 text-weight-medium">
-              {{ entry.ambience.name }}
+            <div
+              class="text-subtitle2 text-weight-medium row items-center q-gutter-xs"
+            >
+              <span>{{ entry.ambience.name }}</span>
+              <IconPackageImport
+                v-if="entry.pack.origin === 'imported'"
+                :size="13"
+                class="imported-mark"
+                :title="t('ambientSoundPage.importedPackage')"
+              />
             </div>
             <div class="text-caption text-grey-7">
               {{ entry.pack.name }} ·
@@ -102,6 +110,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  IconPackageImport,
   IconPlayerPlay,
   IconPlus,
   IconSearch,
@@ -186,6 +195,10 @@ function preview(entry: GalleryAmbience) {
 </script>
 
 <style scoped>
+.imported-mark {
+  color: var(--color-text-light);
+}
+
 .category-select {
   min-width: 150px;
 }

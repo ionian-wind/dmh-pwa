@@ -66,23 +66,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 124. Total tests: 921.
+Total test files: 126. Total tests: 928.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  124 passed (124)
-Tests       921 passed (921)
+Test Files  126 passed (126)
+Tests       928 passed (928)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.76%
-Branches    87.03%
-Functions    89.27%
-Lines       92.76%
+Statements  92.80%
+Branches    87.02%
+Functions    89.45%
+Lines       92.80%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the

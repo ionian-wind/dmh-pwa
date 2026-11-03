@@ -5,7 +5,7 @@
     :title="
       isNew ? t('ambientSoundPage.newScene') : t('ambientSoundPage.editScene')
     "
-    :show-submit="true"
+    :show-submit="!isReadOnly"
     :show-cancel="true"
     :submit-label="t('common.save')"
     :cancel-label="t('common.cancel')"
@@ -15,6 +15,16 @@
     @update:is-open="(value: boolean) => !value && emit('close')"
   >
     <template #main>
+      <QBanner
+        v-if="isReadOnly"
+        class="q-mb-md bg-grey-2 text-grey-9"
+        inline-actions
+      >
+        <template #avatar>
+          <IconPackageImport :size="20" />
+        </template>
+        {{ t('ambientSoundPage.importedReadOnlyHint') }}
+      </QBanner>
       <div class="column q-gutter-md">
         <QInput
           v-model="draft.name"
@@ -295,6 +305,7 @@ import {
   IconBell,
   IconLink,
   IconMusic,
+  IconPackageImport,
   IconPlayerPlay,
   IconTrash,
   IconWaveSine,
@@ -337,6 +348,7 @@ const pack = computed(
   () => store.storedPacks.find((entry) => entry.id === props.packId) ?? null,
 );
 const isNew = computed(() => !props.sceneId);
+const isReadOnly = computed(() => pack.value?.origin === 'imported');
 
 function makeScene(): SceneDef {
   const existing = props.sceneId
@@ -473,7 +485,7 @@ async function addMusicFiles() {
 }
 
 async function save() {
-  if (!draft.value.name.trim() || !pack.value) return;
+  if (isReadOnly.value || !draft.value.name.trim() || !pack.value) return;
   const scene = { ...draft.value, name: draft.value.name.trim() };
   const audioFiles = new Map<string, Blob>();
   for (const entry of pendingMusic.value) {

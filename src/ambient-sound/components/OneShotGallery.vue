@@ -33,8 +33,16 @@
       >
         <QCardSection class="column items-center text-center q-gutter-xs">
           <AmbientIcon :icon="entry.oneShot.icon" :size="28" />
-          <div class="text-subtitle2 text-weight-medium">
-            {{ entry.oneShot.name }}
+          <div
+            class="text-subtitle2 text-weight-medium row items-center q-gutter-xs"
+          >
+            <span>{{ entry.oneShot.name }}</span>
+            <IconPackageImport
+              v-if="entry.pack.origin === 'imported'"
+              :size="13"
+              class="imported-mark"
+              :title="t('ambientSoundPage.importedPackage')"
+            />
           </div>
           <div class="text-caption text-grey-7">
             {{ entry.pack.name }} · {{ entry.oneShot.category }}
@@ -82,6 +90,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconBell,
+  IconPackageImport,
   IconPlayerPlay,
   IconPlus,
   IconSearch,
@@ -133,6 +142,10 @@ function usedIn(packId: string, oneShotId: string) {
 </script>
 
 <style scoped>
+.imported-mark {
+  color: var(--color-text-light);
+}
+
 .category-select {
   min-width: 150px;
 }

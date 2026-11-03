@@ -49,6 +49,8 @@ export interface NormalizedSoundPack extends SoundPackManifest {
   ambiences: LayerDef[];
   layers: LayerDef[];
   scenes: SceneDef[];
+  /** Set by local storage, never exported inside the package manifest. */
+  origin?: 'imported' | 'created';
 }
 
 export type SceneLinkEntityType =

@@ -17,7 +17,9 @@ A package contains:
 - **scene configurations** — saved mixes owned by the package.
 
 A package is content, not a running mix. Importing or loading a package registers
-its contents but does not start playback automatically.
+its contents but does not start playback automatically. Imported packages are
+read-only: their scenes cannot be edited. Imported packages, scenes and gallery
+entries are marked with a small light import icon.
 
 Scenes reference ambience and one-shot entries from the same package. A scene is
 not an independent global preset that can mix entries from multiple packages.
@@ -424,6 +426,7 @@ A global content gallery for one-shot entries.
 - Group by package, then by category.
 - Each row/card shows icon, name, category, package and “Used in N scenes”.
 - Primary action is “Preview”; secondary action is “Add to scene”.
+- Imported entries show a light import icon.
 - Triggering a one-shot from the scene editor/playback panel is independent of
   ambient playback, scene music and ambient volume settings.
 - One-shot rows remain visible and playable even when no scene is active.
@@ -431,7 +434,8 @@ A global content gallery for one-shot entries.
 ### 4.5 Scene editor
 
 The scene editor is a standard tabbed `BaseModal` opened from the Scenes tab.
-It edits one package-owned scene.
+It edits one package-owned scene. Scenes from imported packages are read-only:
+the editor hides Save and shows an import warning.
 
 **Tabs**
 

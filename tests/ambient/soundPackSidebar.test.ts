@@ -86,6 +86,29 @@ describe('SoundPackSidebar', () => {
     wrapper.unmount();
   });
 
+  it('opens the file picker and imports a selected archive', async () => {
+    const click = vi
+      .spyOn(HTMLInputElement.prototype, 'click')
+      .mockImplementation(() => {});
+    const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });
+    const importItem = wrapper
+      .findAll('[data-stub="QItem"]')
+      .find((item) => item.text().includes('Import Pack'));
+    await importItem!.trigger('click');
+    expect(click).toHaveBeenCalled();
+
+    const fileInput = wrapper.find('input[type=file]');
+    const file = new File(['pack'], 'pack.spk');
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [file],
+    });
+    await fileInput.trigger('change');
+    expect(storeMock.importPack).toHaveBeenCalledWith(file);
+    click.mockRestore();
+    wrapper.unmount();
+  });
+
   it('renders the all-packages entry when empty', () => {
     storeMock.storedPacks = [];
     const wrapper = mount(SoundPackSidebar, { global: { stubs: quasarStubs } });

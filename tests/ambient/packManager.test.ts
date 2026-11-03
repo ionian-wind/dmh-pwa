@@ -127,6 +127,7 @@ describe('ambient pack manager', () => {
     const result = await manager.importSoundPack(await packFile());
 
     expect(result.id).toBe('pack-1');
+    expect(result.origin).toBe('imported');
     expect(result.ambiences).toHaveLength(1);
     expect(result.scenes).toHaveLength(1);
     expect(result.scenes[0].id).toBe('mood-explore');
@@ -134,6 +135,7 @@ describe('ambient pack manager', () => {
       'scenes/mood-explore/music/explore.mp3',
     ]);
 
+    expect((await manager.getStoredPacks())[0].origin).toBe('imported');
     const blobs = await manager.getPackAudioBlobs('pack-1');
     expect(Object.keys(blobs)).toEqual([
       'ambiences/rain.mp3',
@@ -199,6 +201,7 @@ describe('ambient pack manager', () => {
       name: 'Updated forest',
     });
     expect(updated.name).toBe('Updated forest');
+    expect(updated.origin).toBe('imported');
     const blobs = await manager.getPackAudioBlobs('pack-2');
     expect(Object.keys(blobs)).toContain('ambiences/wind.mp3');
   });
@@ -220,19 +223,24 @@ describe('ambient pack manager', () => {
 
   it('saves, exports and downloads packs', async () => {
     const manager = await load();
-    await manager.saveSoundPack(modernManifest, new Map());
+    const savedManifest = { ...modernManifest, id: 'pack-save' };
+    await manager.saveSoundPack(savedManifest, new Map());
     await manager.saveSoundPack(
-      { ...modernManifest, name: 'Updated' },
+      { ...savedManifest, name: 'Updated' },
       new Map(),
     );
+    const saved = (await manager.getStoredPacks()).find(
+      (pack) => pack.id === 'pack-save',
+    );
+    expect(saved?.origin).toBe('created');
 
-    const blob = await manager.exportSoundPack('pack-2');
+    const blob = await manager.exportSoundPack('pack-save');
     expect(blob).toBeInstanceOf(Blob);
     await expect(manager.exportSoundPack('missing')).rejects.toThrow(
       'Pack not found',
     );
 
-    await manager.exportSoundPackAsFile('pack-2');
+    await manager.exportSoundPackAsFile('pack-save');
     expect(URL.createObjectURL).toHaveBeenCalled();
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
     await expect(manager.exportSoundPackAsFile('missing')).rejects.toThrow(

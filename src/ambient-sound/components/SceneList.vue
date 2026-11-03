@@ -15,6 +15,12 @@
         v-if="store.selectedPackId"
         color="primary"
         :label="t('ambientSoundPage.newScene')"
+        :disable="selectedPackImported"
+        :title="
+          selectedPackImported
+            ? t('ambientSoundPage.importedReadOnlyHint')
+            : undefined
+        "
         @click="emit('create', store.selectedPackId)"
       />
     </div>
@@ -35,6 +41,12 @@
               <span class="text-subtitle1 text-weight-medium">
                 {{ entry.scene.name }}
               </span>
+              <IconPackageImport
+                v-if="entry.pack.origin === 'imported'"
+                :size="14"
+                class="imported-mark"
+                :title="t('ambientSoundPage.importedPackage')"
+              />
               <QBadge
                 v-if="isPlaying(entry.pack.id, entry.scene.id)"
                 color="primary"
@@ -75,7 +87,12 @@
           <QBtn
             flat
             round
-            :title="t('common.edit')"
+            :disable="entry.pack.origin === 'imported'"
+            :title="
+              entry.pack.origin === 'imported'
+                ? t('ambientSoundPage.importedSceneReadOnly')
+                : t('common.edit')
+            "
             :aria-label="t('common.edit')"
             @click="emit('edit', entry.pack.id, entry.scene.id)"
           >
@@ -120,6 +137,7 @@ import { useI18n } from 'vue-i18n';
 import {
   IconMusic,
   IconPencil,
+  IconPackageImport,
   IconPlayerPause,
   IconPlayerPlay,
   IconSearch,
@@ -138,6 +156,11 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const search = ref('');
+const selectedPackImported = computed(
+  () =>
+    store.storedPacks.find((pack) => pack.id === store.selectedPackId)
+      ?.origin === 'imported',
+);
 
 function sceneKey(packId: string, sceneId: string) {
   return `${packId}::${sceneId}`;
@@ -189,6 +212,10 @@ async function removeScene(packId: string, sceneId: string, name: string) {
 </script>
 
 <style scoped>
+.imported-mark {
+  color: var(--color-text-light);
+}
+
 .scene-list {
   width: 100%;
 }

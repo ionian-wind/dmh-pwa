@@ -834,7 +834,10 @@
     "createSceneFirst": "Create a scene in this package first.",
     "scenesTab": "Scenes",
     "oneShotsTab": "One-shots",
-    "noLinkEntities": "No entities available to link"
+    "noLinkEntities": "No entities available to link",
+    "importedPackage": "Imported package",
+    "importedSceneReadOnly": "Imported scenes are read-only",
+    "importedReadOnlyHint": "Imported packages are read-only. Duplicate or create a new package to edit content."
   },
   "maps": {
     "title": "Maps",

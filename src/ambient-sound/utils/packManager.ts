@@ -16,6 +16,7 @@ interface SoundPackRecord {
   manifest: NormalizedSoundPack;
   audioBlobs: Record<string, Blob>;
   addedAt: number;
+  origin: 'imported' | 'created';
 }
 
 let dbInstance: IDBPDatabase | null = null;
@@ -31,6 +32,11 @@ async function getDB(): Promise<IDBPDatabase> {
     },
   });
   return dbInstance;
+}
+
+function stripOrigin(manifest: NormalizedSoundPack): NormalizedSoundPack {
+  const { origin: _origin, ...rest } = manifest;
+  return rest as NormalizedSoundPack;
 }
 
 function basename(path: string): string {
@@ -127,19 +133,23 @@ export async function importSoundPack(
 
   await putPack({
     id: manifest.id,
-    manifest,
+    manifest: stripOrigin(manifest),
     audioBlobs,
     addedAt: existing?.addedAt ?? Date.now(),
+    origin: 'imported',
   });
 
-  return manifest;
+  return { ...manifest, origin: 'imported' };
 }
 
 export async function getStoredPacks(): Promise<NormalizedSoundPack[]> {
   const db = await getDB();
   const packs = (await db.getAll('soundPacks')) as SoundPackRecord[];
   return packs
-    .map((pack) => normalizeSoundPack(pack.manifest))
+    .map((pack) => ({
+      ...normalizeSoundPack(pack.manifest),
+      origin: pack.origin ?? 'created',
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -150,7 +160,9 @@ export async function getPack(
   const pack = (await db.get('soundPacks', packId)) as
     | SoundPackRecord
     | undefined;
-  return pack ? normalizeSoundPack(pack.manifest) : null;
+  return pack
+    ? { ...normalizeSoundPack(pack.manifest), origin: pack.origin ?? 'created' }
+    : null;
 }
 
 export async function getPackAudioBlobs(
@@ -202,9 +214,10 @@ export async function saveSoundPack(
     | undefined;
   await putPack({
     id: manifest.id,
-    manifest,
+    manifest: stripOrigin(manifest),
     audioBlobs,
     addedAt: existing?.addedAt ?? Date.now(),
+    origin: existing?.origin ?? 'created',
   });
 }
 
@@ -220,8 +233,9 @@ export async function updatePackManifest(
   if (!existing) throw new Error('Pack not found');
 
   const manifest = normalizeSoundPack({ ...manifestInput, id: packId });
-  await putPack({ ...existing, manifest });
-  return manifest;
+  const storedManifest = stripOrigin(manifest);
+  await putPack({ ...existing, manifest: storedManifest });
+  return { ...storedManifest, origin: existing.origin ?? 'created' };
 }
 
 async function buildZip(record: SoundPackRecord): Promise<Blob> {
