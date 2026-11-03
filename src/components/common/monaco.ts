@@ -11,6 +11,7 @@ import 'monaco-editor/editor/contrib/hover/browser/hoverContribution.js';
 import 'monaco-editor/editor/contrib/linesOperations/browser/linesOperations.js';
 import 'monaco-editor/editor/contrib/multicursor/browser/multicursor.js';
 import 'monaco-editor/editor/contrib/smartSelect/browser/smartSelect.js';
+import 'monaco-editor/editor/contrib/suggest/browser/suggestController.js';
 import 'monaco-editor/editor/contrib/snippet/browser/snippetController2.js';
 import 'monaco-editor/editor/contrib/wordHighlighter/browser/wordHighlighter.js';
 import 'monaco-editor/editor/contrib/wordOperations/browser/wordOperations.js';

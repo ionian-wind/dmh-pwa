@@ -66,6 +66,45 @@ test('creates a share link with the source in the hash', async ({ page }) => {
   expect(page.url()).toContain('#code=');
 });
 
+test('shows completions from included code pieces while typing', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'dmh-probability-calculator:library',
+      JSON.stringify([
+        {
+          id: 'library-piece',
+          name: 'Combat library',
+          include: true,
+          code: `DAMAGE: 2d6 + 3
+function: double N:n if above B:n {
+  result: N + N
+}`,
+        },
+      ]),
+    );
+  });
+  await page.goto('/dmh-pwa/probability-calculator');
+  await page.locator('.monaco-editor').waitFor({ timeout: 30_000 });
+
+  const editor = page.locator('.monaco-editor');
+  await editor.click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('[dou');
+
+  const suggestions = page.locator('.suggest-widget');
+  await expect(suggestions).toBeVisible({ timeout: 10_000 });
+  await expect(suggestions).toContainText('double N if above B');
+  await expect(suggestions).toContainText('From code piece: Combat library');
+
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('DAM');
+  await expect(suggestions).toBeVisible({ timeout: 10_000 });
+  await expect(suggestions).toContainText('DAMAGE');
+});
+
 test('shows a hideable syntax TOC with anchor links', async ({ page }) => {
   await page.goto('/dmh-pwa/probability-calculator/syntax');
 
