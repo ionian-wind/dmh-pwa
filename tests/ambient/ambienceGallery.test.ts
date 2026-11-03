@@ -75,7 +75,10 @@ describe('AmbienceGallery', () => {
     const rain = wrapper
       .findAll('[data-stub="QCard"]')
       .find((card) => card.text().includes('Rain'));
-    await rain!.find('button[aria-label="Play"]').trigger('click');
+    const variation = rain!
+      .findAll('button')
+      .find((button) => button.text() === 'Default');
+    await variation!.trigger('click');
     expect(storeMock.toggleAmbience).toHaveBeenCalledWith(
       'pack-1',
       'rain',

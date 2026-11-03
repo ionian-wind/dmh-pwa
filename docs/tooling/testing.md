@@ -79,10 +79,10 @@ Tests       983 passed (983)
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.51%
-Branches    87.01%
-Functions    89.44%
-Lines       92.51%
+Statements  92.55%
+Branches    87.04%
+Functions    89.58%
+Lines       92.55%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the

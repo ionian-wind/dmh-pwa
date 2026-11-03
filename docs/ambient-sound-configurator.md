@@ -525,14 +525,14 @@ A global content gallery for ambience entries from all loaded packages.
 
 **Ambience row**
 
-- Icon, name and category.
-- Package name.
-- Number of variations and number of scenes using the entry.
-- Play/pause toggle; toggling one entry starts it without stopping other active
-  ambience entries, so several tracks can play together.
-- Variation dropdown, shown when the entry has more than one variation;
-  changing it while active swaps that track's sample pool.
+- Icon, name and a package/category subtitle.
+- Number of scenes using the entry; available variations are the variation
+  buttons themselves.
+- Variation buttons: clicking a variation on an inactive entry starts it,
+  clicking another variation on an active entry swaps its sample pool, and
+  clicking the active variation stops it. Several entries can play together.
 - The active row is highlighted.
+- The row layout is shared with the scene player through `AmbienceItem`.
 
 ### 4.4 One-shots tab
 

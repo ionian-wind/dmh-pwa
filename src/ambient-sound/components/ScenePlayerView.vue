@@ -62,37 +62,16 @@
             :title="group.category"
           >
             <div class="column q-gutter-xs">
-              <QCard
+              <AmbienceItem
                 v-for="row in group.rows"
                 :key="row.ambience.id"
-                flat
-                bordered
-              >
-                <QCardSection class="row items-center q-gutter-sm">
-                  <AmbientIcon :icon="row.ambience.icon" :size="22" />
-                  <div class="col">
-                    <div class="text-subtitle2">{{ row.ambience.name }}</div>
-                    <div class="text-caption text-grey-7">
-                      {{ row.ambience.category || group.category }}
-                    </div>
-                  </div>
-                  <QBtnGroup flat>
-                    <QBtn
-                      v-for="variation in row.variations"
-                      :key="variation.id"
-                      :class="{
-                        'variant-active':
-                          row.activeVariationId === variation.id,
-                      }"
-                      :outline="row.activeVariationId !== variation.id"
-                      :disable="!sceneControlsEnabled"
-                      :label="variation.name"
-                      size="sm"
-                      @click="toggleVariant(row, variation.id)"
-                    />
-                  </QBtnGroup>
-                </QCardSection>
-              </QCard>
+                :ambience="row.ambience"
+                :active-variation-id="row.activeVariationId"
+                :disabled="!sceneControlsEnabled"
+                @select-variation="
+                  (variationId) => toggleVariant(row, variationId)
+                "
+              />
             </div>
           </EntityGroup>
           <EmptyState
@@ -143,14 +122,13 @@ import {
   IconMusic,
   IconWaveSine,
 } from '@tabler/icons-vue';
-import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
+import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
 import MoodKnob from '@/ambient-sound/components/MoodKnob.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import { getLayerVariations } from '@/ambient-sound/utils/packData';
 import type { LayerDef, OneShotDef } from '@/ambient-sound/types';
 
 const props = defineProps<{
@@ -212,7 +190,6 @@ const ambienceGroups = computed(() => {
     string,
     Array<{
       ambience: LayerDef;
-      variations: ReturnType<typeof getLayerVariations>;
       activeVariationId: string | null;
     }>
   >();
@@ -230,7 +207,6 @@ const ambienceGroups = computed(() => {
     const rows = groups.get(category) ?? [];
     rows.push({
       ambience,
-      variations: getLayerVariations(ambience),
       activeVariationId: active?.variationId ?? null,
     });
     groups.set(category, rows);
@@ -299,11 +275,6 @@ watch(
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-}
-
-.variant-active {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
 }
 
 .one-shot-grid {
