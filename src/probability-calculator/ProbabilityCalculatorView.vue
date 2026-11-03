@@ -42,6 +42,7 @@ import {
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
 import { formatDiceSyntaxError } from './syntaxErrors';
+import { setAnyDiceCompletionCodePieces } from './anydiceCompletions';
 import CodeLibraryPanel from './CodeLibraryPanel.vue';
 import {
   createCodePiece,
@@ -129,6 +130,12 @@ watch(
     saveCodeLibrary(pieces);
   },
   { deep: true },
+);
+
+watch(
+  () => libraryState.pieces,
+  (pieces) => setAnyDiceCompletionCodePieces(pieces),
+  { deep: true, immediate: true },
 );
 
 const viewOptions: Array<{ value: ViewMode; label: string }> = [
@@ -446,6 +453,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload);
+  setAnyDiceCompletionCodePieces([]);
   layout.setTopMenuContent(null);
   rightDrawer.clear();
 });

@@ -23,7 +23,9 @@ using integer (`bigint`) weights. A Vue page under
   Timers and Calculator are grouped there as well.
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
   Monarch syntax highlighter, autocomplete for keywords, snippets, built-in
-  functions and variables, and Monaco markers for syntax-error ranges.
+  functions and variables, definitions from code pieces included in the current
+  namespace (variables and functions, labelled with the source piece name), and
+  Monaco markers for syntax-error ranges.
 - Syntax errors are structured by the parser (unexpected token/character,
   expected token types, source range), formatted into human-readable localized
   text, and shown in the error banner with a clickable `line N, column M` link

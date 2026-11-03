@@ -7,6 +7,90 @@ interface CompletionSnippet {
   documentation?: string;
 }
 
+export interface CodeCompletionPiece {
+  name: string;
+  code: string;
+  include: boolean;
+}
+
+export interface CodePieceDefinition {
+  kind: 'function' | 'variable';
+  label: string;
+  insertText: string;
+  source: string;
+}
+
+const FUNCTION_PATTERN = /^[ \t]*function:[ \t]*(.+?)[ \t]*\{/gm;
+const VARIABLE_PATTERN = /^([A-Z_][A-Z0-9_]*)[ \t]*:/gm;
+const PARAMETER_PATTERN = /([A-Z_][A-Z0-9_]*)\s*:\s*[a-z]+/g;
+
+/** Extract function and global variable definitions from a code piece. */
+export function extractCodePieceDefinitions(
+  piece: CodeCompletionPiece,
+): CodePieceDefinition[] {
+  const definitions: CodePieceDefinition[] = [];
+  const seen = new Set<string>();
+
+  for (const match of piece.code.matchAll(FUNCTION_PATTERN)) {
+    const signature = match[1].trim();
+    if (!signature) continue;
+    let parameter = 0;
+    const insertText = signature.replace(
+      PARAMETER_PATTERN,
+      (_match, name: string) => {
+        parameter += 1;
+        return `\${${parameter}:${name}}`;
+      },
+    );
+    const label = signature.replace(PARAMETER_PATTERN, '$1');
+    const key = `function:${label}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    definitions.push({
+      kind: 'function',
+      label,
+      insertText,
+      source: piece.name,
+    });
+  }
+
+  for (const match of piece.code.matchAll(VARIABLE_PATTERN)) {
+    const name = match[1];
+    const key = `variable:${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    definitions.push({
+      kind: 'variable',
+      label: name,
+      insertText: name,
+      source: piece.name,
+    });
+  }
+
+  return definitions;
+}
+
+let completionCodePieces: CodeCompletionPiece[] = [];
+
+/** Update the code pieces used as completion suggestions. */
+export function setAnyDiceCompletionCodePieces(
+  pieces: CodeCompletionPiece[],
+): void {
+  completionCodePieces = pieces.map((piece) => ({ ...piece }));
+}
+
+function codePieceDefinitions(): Map<string, CodePieceDefinition> {
+  const definitions = new Map<string, CodePieceDefinition>();
+  for (const piece of completionCodePieces) {
+    if (!piece.include) continue;
+    for (const definition of extractCodePieceDefinitions(piece)) {
+      const key = `${definition.kind}:${definition.label}`;
+      if (!definitions.has(key)) definitions.set(key, definition);
+    }
+  }
+  return definitions;
+}
+
 const functionSnippets: CompletionSnippet[] = [
   {
     label: 'absolute NUMBER',
@@ -226,6 +310,41 @@ export function createAnyDiceCompletionProvider(): monaco.languages.CompletionIt
           insertText: variable,
           range,
           sortText: `4-${variable}`,
+        });
+      }
+
+      const existingLabels = new Set(
+        suggestions.map(
+          (suggestion) => `${suggestion.kind}:${suggestion.label}`,
+        ),
+      );
+      for (const definition of codePieceDefinitions().values()) {
+        const kind =
+          definition.kind === 'function'
+            ? monaco.languages.CompletionItemKind.Function
+            : monaco.languages.CompletionItemKind.Variable;
+        const key = `${kind}:${definition.label}`;
+        if (existingLabels.has(key) || definition.label === word.word) continue;
+        existingLabels.add(key);
+
+        const isFunction = definition.kind === 'function';
+        suggestions.push({
+          label: definition.label,
+          kind,
+          detail: `From code piece: ${definition.source}`,
+          documentation: `Defined in code piece “${definition.source}”.`,
+          insertText: isFunction
+            ? inCall
+              ? `${definition.insertText}${closeCall ? ']' : ''}`
+              : `[${definition.insertText}]`
+            : definition.insertText,
+          insertTextRules: isFunction
+            ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+            : undefined,
+          range,
+          sortText: isFunction
+            ? `0-${definition.label}`
+            : `3.5-${definition.label}`,
         });
       }
 

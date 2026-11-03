@@ -66,23 +66,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 113. Total tests: 850.
+Total test files: 113. Total tests: 853.
 
 ## Current results (measured)
 
 ```
 npm test
 Test Files  113 passed (113)
-Tests       850 passed (850)
+Tests       853 passed (853)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.11%
-Branches    87.73%
-Functions    89.17%
-Lines       92.11%
+Statements  92.14%
+Branches    87.69%
+Functions    89.19%
+Lines       92.14%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
@@ -157,7 +157,9 @@ The suite now includes direct tests for:
 - structured Chevrotain error providers, human-readable localized syntax
   messages, and the error banner's line/column link to the editor position,
 - the syntax-page right-drawer TOC, clickable section-heading anchors, scroll
-  spy, hash updates and the header toggle that hides/reopens the sidebar.
+  spy, hash updates and the header toggle that hides/reopens the sidebar,
+- AnyDice completion definitions from included code pieces, including
+  function parameter snippets and source-piece labels.
 
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting

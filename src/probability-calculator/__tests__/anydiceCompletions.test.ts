@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const languages = vi.hoisted(() => {
   let provider: any;
@@ -26,7 +26,9 @@ vi.mock('@/components/common/monaco', () => ({
 
 import {
   createAnyDiceCompletionProvider,
+  extractCodePieceDefinitions,
   registerAnyDiceCompletions,
+  setAnyDiceCompletionCodePieces,
 } from '../anydiceCompletions';
 
 function modelFor(text: string) {
@@ -53,7 +55,99 @@ function position(column: number) {
   return { lineNumber: 1, column };
 }
 
+const libraryPiece = {
+  name: 'Combat library',
+  include: true,
+  code: `DAMAGE: 2d6 + 3
+function: double N:n if above B:n {
+  result: N + N
+}
+function: always seven {
+  result: 7
+}`,
+};
+
 describe('AnyDice completions', () => {
+  afterEach(() => {
+    setAnyDiceCompletionCodePieces([]);
+  });
+
+  it('extracts definitions and their source code piece', () => {
+    const definitions = extractCodePieceDefinitions(libraryPiece);
+
+    expect(definitions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'variable',
+          label: 'DAMAGE',
+          insertText: 'DAMAGE',
+          source: 'Combat library',
+        }),
+        expect.objectContaining({
+          kind: 'function',
+          label: 'double N if above B',
+          insertText: 'double ${1:N} if above ${2:B}',
+          source: 'Combat library',
+        }),
+        expect.objectContaining({
+          kind: 'function',
+          label: 'always seven',
+          insertText: 'always seven',
+        }),
+      ]),
+    );
+  });
+
+  it('offers definitions from included code pieces with their name', () => {
+    setAnyDiceCompletionCodePieces([
+      libraryPiece,
+      { name: 'Ignored', include: false, code: 'HIDDEN: 1' },
+    ]);
+    const provider = createAnyDiceCompletionProvider();
+    const result = provider.provideCompletionItems(
+      modelFor('out') as any,
+      position(4) as any,
+      {} as any,
+      {} as any,
+    ) as { suggestions: any[] };
+
+    const damage = result.suggestions.find(
+      (suggestion) => suggestion.label === 'DAMAGE',
+    );
+    expect(damage).toMatchObject({
+      kind: 6,
+      detail: 'From code piece: Combat library',
+      documentation: 'Defined in code piece “Combat library”.',
+    });
+
+    const double = result.suggestions.find(
+      (suggestion) => suggestion.label === 'double N if above B',
+    );
+    expect(double).toMatchObject({
+      kind: 3,
+      insertText: '[double ${1:N} if above ${2:B}]',
+      insertTextRules: 4,
+    });
+    expect(
+      result.suggestions.map((suggestion) => suggestion.label),
+    ).not.toContain('HIDDEN');
+  });
+
+  it('inserts connected code-piece functions inside call brackets', () => {
+    setAnyDiceCompletionCodePieces([libraryPiece]);
+    const provider = createAnyDiceCompletionProvider();
+    const result = provider.provideCompletionItems(
+      modelFor('[dou') as any,
+      position(5) as any,
+      {} as any,
+      {} as any,
+    ) as { suggestions: any[] };
+    const double = result.suggestions.find(
+      (suggestion) => suggestion.label === 'double N if above B',
+    );
+    expect(double.insertText).toBe('double ${1:N} if above ${2:B}]');
+  });
+
   it('offers snippets, functions, keywords and variables', () => {
     const provider = createAnyDiceCompletionProvider();
     const model = modelFor('X: 1\noutput X');
