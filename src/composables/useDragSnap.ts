@@ -12,6 +12,8 @@ interface DragSnapOptions {
 export function useDragSnap(options: DragSnapOptions = {}) {
   const translateX = ref(0);
   const translateY = ref(0);
+  const pointerX = ref(0);
+  const pointerY = ref(0);
   const isDragging = ref(false);
   const hasTransition = ref(false);
 
@@ -33,6 +35,8 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     startTranslateY = translateY.value;
     lastX = e.clientX;
     lastY = e.clientY;
+    pointerX.value = e.clientX;
+    pointerY.value = e.clientY;
     captureTarget = e.target as HTMLElement;
     capturePointerId = e.pointerId;
     captureTarget.setPointerCapture(e.pointerId);
@@ -42,6 +46,8 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     if (!isDragging.value) return;
     lastX = e.clientX;
     lastY = e.clientY;
+    pointerX.value = e.clientX;
+    pointerY.value = e.clientY;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     translateX.value = startTranslateX + dx;
@@ -141,6 +147,8 @@ export function useDragSnap(options: DragSnapOptions = {}) {
     cardStyle,
     transitionHide,
     isDragging,
+    pointerX,
+    pointerY,
     translateX,
     translateY,
     onPointerDown,

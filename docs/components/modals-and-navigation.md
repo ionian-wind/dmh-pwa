@@ -192,7 +192,8 @@ with `useDragSnap`:
   soon as the drag crosses the detach/dock threshold. Detaching happens after a
   5 px upward drag; docking uses a 10 px snap area measured from the dialog's
   bottom edge, and only becomes active after the dialog leaves that area.
-  Docking ends the drag gesture. In dialog mode the card can be moved freely
+  Docking ends the drag gesture. On detach, the floating dialog's header centre
+  is placed under the pointer. In dialog mode the card can be moved freely
   across the page.
 - Both are opened from the left nav and are mounted for the app lifetime.
 

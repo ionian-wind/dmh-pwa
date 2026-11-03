@@ -149,18 +149,29 @@ async function setDisplayMode(
   repositioning = true;
   isRepositioning.value = true;
 
-  const previousX = translateX.value;
-  const previousY = translateY.value;
-
   displayMode.value = mode;
   await nextTick();
 
   if (element && previousRect) {
-    const nextRect = element.getBoundingClientRect();
-    setPosition(
-      previousX + previousRect.left - nextRect.left,
-      previousY + previousRect.top - nextRect.top,
-    );
+    if (mode === 'dialog') {
+      const handle = element.querySelector(
+        '.drag-handle',
+      ) as HTMLElement | null;
+      const anchorRect = (handle ?? element).getBoundingClientRect();
+      const anchorX = anchorRect.left + anchorRect.width / 2;
+      const anchorY = anchorRect.top + anchorRect.height / 2;
+
+      setPosition(
+        translateX.value + pointerX.value - anchorX,
+        translateY.value + pointerY.value - anchorY,
+      );
+    } else {
+      const nextRect = element.getBoundingClientRect();
+      setPosition(
+        translateX.value + previousRect.left - nextRect.left,
+        translateY.value + previousRect.top - nextRect.top,
+      );
+    }
     rebaseDragOrigin();
   }
 
@@ -193,6 +204,8 @@ const {
   cardStyle,
   transitionHide,
   isDragging,
+  pointerX,
+  pointerY,
   translateX,
   translateY,
   onPointerDown,

@@ -261,7 +261,9 @@ unmount. The `filesStore` is loaded but unused.
   5 px upward drag; the dock snap area is measured from the floating dialog's
   bottom edge and is 10 px deep. The snap catcher is armed only after the
   dialog has left that bottom area. Docking ends the drag gesture, so further
-  pointer movement does not immediately pull the panel back out.
+  pointer movement does not immediately pull the panel back out. When detaching,
+  the floating dialog is positioned so the centre of its header sits under the
+  pointer.
 - Track changes crossfade the outgoing and incoming gradient layers. If the next
   track has no cover palette, the current gradient fades out instead.
 - Controls inherit `--jp-control-color`, derived from the palette with the best
