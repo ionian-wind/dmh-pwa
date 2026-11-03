@@ -43,6 +43,7 @@ import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 
 const stubs = {
   QSpinnerDots: true,
+  AmbientGlobalControl: true,
   SceneList: true,
   AmbienceGallery: true,
   OneShotGallery: true,
@@ -88,44 +89,15 @@ describe('AmbientSoundView', () => {
       component: SoundPackSidebar,
     });
 
-    expect(wrapper.text()).toContain('Tavern');
     expect(wrapper.text()).toContain('Scenes');
     expect(wrapper.text()).toContain('Ambiences');
     expect(wrapper.text()).toContain('One-shots');
-    expect(wrapper.text()).toContain('Master volume');
-    expect(wrapper.text()).toContain('50%');
     expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(true);
-
-    await wrapper.find('button[aria-label="Play"]').trigger('click');
-    expect(storeMock.togglePlayPause).toHaveBeenCalledTimes(1);
-
-    await wrapper.find('.master-volume').trigger('wheel', { deltaY: 100 });
-    expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
-
-    const musicButton = wrapper
-      .findAll('button')
-      .find((button) => button.attributes('aria-label') === 'Turn music off');
-    await musicButton!.trigger('click');
-    expect(storeMock.toggleMusic).toHaveBeenCalled();
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
     expect(rightDrawerMock.clear).toHaveBeenCalled();
     expect(storeMock.stopPreview).toHaveBeenCalled();
-  });
-
-  it('toggles ambient playback when only gallery tracks are active', async () => {
-    storeMock.activeScene = null as any;
-    storeMock.hasActiveLayers = true;
-    const wrapper = mount(AmbientSoundView, { global: { stubs } });
-    await flushPromises();
-
-    expect(wrapper.text()).toContain('Ambient mix');
-    const play = wrapper.find('button[aria-label="Play"]');
-    expect(play.attributes('disabled')).toBeUndefined();
-    await play.trigger('click');
-    expect(storeMock.togglePlayPause).toHaveBeenCalled();
-    wrapper.unmount();
   });
 
   it('switches tabs between scenes and the global galleries', async () => {
