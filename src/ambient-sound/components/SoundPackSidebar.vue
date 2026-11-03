@@ -1,18 +1,27 @@
 <template>
-  <div class="q-pa-md sound-pack-sidebar">
+  <div class="sound-pack-sidebar">
     <div class="sound-pack-sidebar-content">
-      <div class="text-subtitle1 text-weight-medium q-mb-md">
-        {{ t('ambientSoundPage.soundPacks') }}
-      </div>
-
-      <SoundPackSelector />
-
       <div
         v-if="store.storedPacks.length === 0"
-        class="text-caption text-grey-7 q-mt-sm"
+        class="text-caption text-grey-7 q-pa-sm"
       >
         {{ t('ambientSoundPage.importHint') }}
       </div>
+
+      <SidebarItem
+        v-for="pack in store.storedPacks"
+        :key="pack.id"
+        :title="pack.name"
+        class="sound-pack-item"
+        :class="{
+          'is-selected': store.currentPack?.id === pack.id,
+        }"
+        @click="togglePack(pack)"
+      >
+        <template #left>
+          <component :is="categoryIcon(pack.category)" :size="18" />
+        </template>
+      </SidebarItem>
     </div>
 
     <div class="sound-pack-sidebar-controls">
@@ -48,17 +57,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { IconPlus, IconUpload } from '@tabler/icons-vue';
-import SoundPackSelector from '@/ambient-sound/components/SoundPackSelector.vue';
+import {
+  IconAlertTriangle,
+  IconBuilding,
+  IconEdit,
+  IconFolder,
+  IconPlus,
+  IconRocket,
+  IconTree,
+  IconUpload,
+} from '@tabler/icons-vue';
+import SidebarItem from '@/components/common/SidebarItem.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
+import type { SoundPackManifest } from '@/ambient-sound/types';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
+
+const categoryIcons: Record<string, Component> = {
+  fantasy: IconTree,
+  scifi: IconRocket,
+  horror: IconAlertTriangle,
+  modern: IconBuilding,
+  custom: IconEdit,
+};
+
+function categoryIcon(category: string): Component {
+  return categoryIcons[category] || IconFolder;
+}
+
+async function togglePack(pack: SoundPackManifest) {
+  if (store.currentPack?.id === pack.id) {
+    store.unloadPack();
+    return;
+  }
+  await store.loadPack(pack);
+}
 
 function goToEditor() {
   router.push('/ambient-sound/editor');
@@ -90,12 +129,23 @@ async function handleFileImport(event: Event) {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  padding-top: 0.5rem;
 }
 
 .sound-pack-sidebar-controls {
   flex: 0 0 auto;
   margin-top: auto;
   background: var(--color-background);
+}
+
+.sound-pack-item {
+  cursor: pointer;
+}
+
+.sound-pack-item.is-selected {
+  background: var(--color-primary-light);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .hidden-file-input {

@@ -46,7 +46,6 @@ import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 
 const stubs = {
   QSpinnerDots: true,
-  SoundPackSelector: true,
   MoodStateControl: true,
   IntensitySlider: true,
   AmbientMixer: true,
