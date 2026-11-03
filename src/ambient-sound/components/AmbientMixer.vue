@@ -111,9 +111,11 @@ function variationsFor(layer: LayerDef) {
 function selectedVariationId(layer: LayerDef) {
   const variations = variationsFor(layer);
   const selected = store.layerVariationSelections.get(layer.id);
-  return variations.find((variation) => variation.id === selected)?.id
-    ?? variations[0]?.id
-    ?? '';
+  return (
+    variations.find((variation) => variation.id === selected)?.id ??
+    variations[0]?.id ??
+    ''
+  );
 }
 
 function variationOptions(layer: LayerDef) {
@@ -138,10 +140,7 @@ function selectVariation(layer: LayerDef, variationId: string) {
 function handleLayerVolumeWheel(event: WheelEvent, layerId: string) {
   const active = store.activeLayers.get(layerId);
   if (!active) return;
-  const next = Math.max(
-    0,
-    Math.min(1, active.volume - event.deltaY * 0.001),
-  );
+  const next = Math.max(0, Math.min(1, active.volume - event.deltaY * 0.001));
   store.setLayerVolume(layerId, Math.round(next * 100) / 100);
 }
 </script>
