@@ -1,4 +1,8 @@
 import { CstParser } from 'chevrotain';
+import {
+  decodeSyntaxErrorMetadata,
+  parserErrorMessageProvider,
+} from './syntaxErrorProvider';
 import { DiceSyntaxError } from './errors';
 import {
   allTokens,
@@ -52,6 +56,7 @@ export class DiceParser extends CstParser {
     super(allTokens, {
       recoveryEnabled: false,
       nodeLocationTracking: 'full',
+      errorMessageProvider: parserErrorMessageProvider,
     });
     this.performSelfAnalysis();
   }
@@ -348,16 +353,28 @@ export class DiceParser extends CstParser {
   });
 }
 
+function unexpectedCharacter(message: string, input: string, offset: number) {
+  const match = message.match(/unexpected character:\s*->(.*?)<-/i);
+  if (match?.[1]) return match[1];
+  return input.charAt(offset) || undefined;
+}
+
 export function parseCst(input: string) {
   const { tokens, errors } = tokenize(input);
   if (errors.length > 0) {
     const first = errors[0];
+    const found =
+      first.found ?? unexpectedCharacter(first.message, input, first.offset);
     throw new DiceSyntaxError(
       errors.map((error) => error.message).join('; '),
       first.line,
       first.column,
       first.line,
       first.column + Math.max(1, first.length),
+      {
+        code: first.code ?? 'unexpected-character',
+        found,
+      },
     );
   }
   const parser = new DiceParser();
@@ -379,22 +396,33 @@ export function parseCst(input: string) {
     const endColumn = Number.isFinite(token?.endColumn)
       ? (token!.endColumn as number) + 1
       : column + 1;
+    const decoded = decodeSyntaxErrorMetadata(first.message);
+    const metadata = decoded.metadata;
+    const foundKind = metadata?.foundKind ?? token?.tokenType?.name;
+    const found = metadata?.found ?? (token?.image?.trim() || undefined);
+    const expected = metadata?.expected ?? [];
+    const endOfInput = !token || foundKind === 'EOF';
 
     throw new DiceSyntaxError(
       parser.errors
-        .map(
-          (error) =>
-            `${error.message} (line ${
-              Number.isFinite(error.token?.startLine)
-                ? error.token!.startLine
-                : line
-            })`,
-        )
+        .map((error) => decodeSyntaxErrorMetadata(error.message).message)
         .join('; '),
       line,
       column,
       endLine,
       endColumn,
+      {
+        code:
+          metadata?.code ??
+          (endOfInput
+            ? 'unexpected-end-of-input'
+            : expected.length > 0
+              ? 'unexpected-token'
+              : 'invalid-syntax'),
+        expected,
+        found,
+        foundKind,
+      },
     );
   }
   return cst;

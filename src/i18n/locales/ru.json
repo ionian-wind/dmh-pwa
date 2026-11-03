@@ -969,6 +969,23 @@
       "summary": "Сводка"
     },
     "errorTitle": "Ошибка вычисления",
+    "syntaxErrors": {
+      "unexpectedToken": "Неожиданный токен {found}. Ожидалось: {expected}.",
+      "unexpectedTokenNoExpected": "Неожиданный токен {found}.",
+      "unexpectedCharacter": "Неожиданный символ {found}.",
+      "unexpectedEnd": "Неожиданный конец ввода. Ожидалось: {expected}.",
+      "unexpectedEndNoExpected": "Неожиданный конец ввода.",
+      "invalid": "В выражении есть синтаксическая ошибка.",
+      "location": "строка {line}, столбец {column}",
+      "tokens": {
+        "number": "число",
+        "string": "текст",
+        "variable": "переменная",
+        "word": "слово",
+        "endOfInput": "конец ввода",
+        "unknown": "неизвестный токен"
+      }
+    },
     "empty": "Запустите вычисление, чтобы увидеть результаты.",
     "noOutcomes": "Нет возможных исходов.",
     "value": "Значение",

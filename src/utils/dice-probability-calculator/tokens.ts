@@ -1,4 +1,9 @@
 import { createToken, Lexer, type IToken } from 'chevrotain';
+import type { DiceSyntaxErrorCode } from './errors';
+import {
+  decodeSyntaxErrorMetadata,
+  lexerErrorMessageProvider,
+} from './syntaxErrorProvider';
 
 /** A lowercase word. */
 export const Word = createToken({
@@ -153,7 +158,9 @@ export const allTokens = [
   RParen,
 ];
 
-export const lexer = new Lexer(allTokens);
+export const lexer = new Lexer(allTokens, {
+  errorMessageProvider: lexerErrorMessageProvider,
+});
 
 export interface TokenizationError {
   message: string;
@@ -161,6 +168,8 @@ export interface TokenizationError {
   line: number;
   column: number;
   length: number;
+  code?: DiceSyntaxErrorCode;
+  found?: string;
 }
 
 export function tokenize(input: string): {
@@ -170,12 +179,17 @@ export function tokenize(input: string): {
   const result = lexer.tokenize(input);
   return {
     tokens: result.tokens,
-    errors: result.errors.map((error) => ({
-      message: error.message,
-      offset: error.offset,
-      line: error.line ?? 1,
-      column: error.column ?? 1,
-      length: error.length ?? 1,
-    })),
+    errors: result.errors.map((error) => {
+      const decoded = decodeSyntaxErrorMetadata(error.message);
+      return {
+        message: decoded.message,
+        offset: error.offset,
+        line: error.line ?? 1,
+        column: error.column ?? 1,
+        length: error.length ?? 1,
+        code: decoded.metadata?.code,
+        found: decoded.metadata?.found,
+      };
+    }),
   };
 }

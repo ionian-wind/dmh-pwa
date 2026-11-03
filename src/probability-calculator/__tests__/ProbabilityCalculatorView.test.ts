@@ -13,6 +13,9 @@ const routeGuard = vi.hoisted(() => ({ handler: null as null | (() => any) }));
 const markerState = vi.hoisted(() => ({
   model: { id: 'model' },
   setModelMarkers: vi.fn(),
+  revealLineInCenter: vi.fn(),
+  setPosition: vi.fn(),
+  focus: vi.fn(),
 }));
 
 vi.mock('@/dialogs', () => ({ prompt: promptMock, confirm: confirmMock }));
@@ -79,7 +82,12 @@ vi.mock('@/components/common/MonacoEditor.vue', async () => {
       emits: ['update:modelValue'],
       setup(props, { emit, expose }) {
         expose({
-          getEditor: () => ({ getModel: () => markerState.model }),
+          getEditor: () => ({
+            getModel: () => markerState.model,
+            revealLineInCenter: markerState.revealLineInCenter,
+            setPosition: markerState.setPosition,
+            focus: markerState.focus,
+          }),
         });
         return () =>
           h('textarea', {
@@ -394,8 +402,19 @@ describe('ProbabilityCalculatorView', () => {
       expect.objectContaining({
         startLineNumber: 1,
         severity: 8,
+        message: expect.stringContaining('Unexpected end of input'),
       }),
     ]);
+    expect(wrapper.text()).toContain('Unexpected end of input');
+    expect(wrapper.text()).toContain('line 1, column 11');
+
+    await wrapper.find('.syntax-error-location').trigger('click');
+    expect(markerState.revealLineInCenter).toHaveBeenCalledWith(1);
+    expect(markerState.setPosition).toHaveBeenCalledWith({
+      lineNumber: 1,
+      column: 11,
+    });
+    expect(markerState.focus).toHaveBeenCalled();
 
     await editor.setValue('output 1d4');
     await wrapper

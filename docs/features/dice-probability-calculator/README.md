@@ -20,6 +20,11 @@ using integer (`bigint`) weights. A Vue page under
 - Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
   Monarch syntax highlighter, autocomplete for keywords, snippets, built-in
   functions and variables, and Monaco markers for syntax-error ranges.
+- Syntax errors are structured by the parser (unexpected token/character,
+  expected token types, source range), formatted into human-readable localized
+  text, and shown in the error banner with a clickable `line N, column M` link
+  that moves the editor cursor to the error. Marker hover text uses the same
+  localized message.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,

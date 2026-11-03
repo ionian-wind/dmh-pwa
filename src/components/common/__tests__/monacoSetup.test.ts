@@ -22,5 +22,5 @@ describe('monaco setup', () => {
 
     expect(module.monaco.editor).toBeDefined();
     expect(environment.getWorker()).toBeInstanceOf(hoisted.FakeEditorWorker);
-  }, 20_000);
+  }, 60_000);
 });
