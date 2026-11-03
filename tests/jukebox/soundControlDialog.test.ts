@@ -18,6 +18,99 @@ function makeRouter() {
   });
 }
 
+function createDragHarness(wrapper: ReturnType<typeof mount>) {
+  const card = wrapper.find('.sound-control-card');
+  const cardElement = card.element as HTMLElement;
+  const handleElement = wrapper.find('.drag-handle').element as HTMLElement;
+  const cardRectSpy = vi.spyOn(cardElement, 'getBoundingClientRect');
+  let activePointerId = 1;
+  let pointerCounter = 0;
+
+  Object.defineProperty(handleElement, 'setPointerCapture', {
+    configurable: true,
+    value: vi.fn(),
+  });
+  Object.defineProperty(handleElement, 'releasePointerCapture', {
+    configurable: true,
+    value: vi.fn(),
+  });
+
+  const dispatch = (
+    target: HTMLElement,
+    type: string,
+    clientX: number,
+    clientY: number,
+    pointerId: number,
+  ) => {
+    const event = new MouseEvent(type, {
+      bubbles: true,
+      clientX,
+      clientY,
+    });
+    Object.defineProperty(event, 'pointerId', { value: pointerId });
+    target.dispatchEvent(event);
+  };
+
+  const setCardRect = (top: number, height = 200, width = 600) => {
+    cardRectSpy.mockReturnValue({
+      x: 0,
+      y: top,
+      left: 0,
+      top,
+      right: width,
+      bottom: top + height,
+      width,
+      height,
+      toJSON: () => ({}),
+    });
+  };
+
+  const setHandleRect = (
+    left: number,
+    top: number,
+    width = 300,
+    height = 50,
+  ) => {
+    const handle = cardElement.querySelector('.drag-handle') as HTMLElement;
+    vi.spyOn(handle, 'getBoundingClientRect').mockReturnValue({
+      x: left,
+      y: top,
+      left,
+      top,
+      right: left + width,
+      bottom: top + height,
+      width,
+      height,
+      toJSON: () => ({}),
+    });
+  };
+
+  const start = (clientX = 0, clientY = 0) => {
+    pointerCounter += 1;
+    activePointerId = pointerCounter;
+    dispatch(handleElement, 'pointerdown', clientX, clientY, activePointerId);
+  };
+
+  const move = (clientX: number, clientY: number) => {
+    dispatch(cardElement, 'pointermove', clientX, clientY, activePointerId);
+  };
+
+  const up = (clientX: number, clientY: number) => {
+    dispatch(cardElement, 'pointerup', clientX, clientY, activePointerId);
+  };
+
+  return {
+    card,
+    cardElement,
+    handleElement,
+    setCardRect,
+    setHandleRect,
+    start,
+    move,
+    up,
+  };
+}
+
 async function mountDialog() {
   const router = makeRouter();
   await router.push('/');
@@ -293,6 +386,126 @@ describe('SoundControlDialog', () => {
     expect(card.attributes('data-mode')).toBe('panel');
 
     dispatch('pointerup', 0, 100, 1);
+    await flushPromises();
+    wrapper.unmount();
+  });
+
+  it('cycles detach, dock and detach again across separate gestures', async () => {
+    const { wrapper } = await mountDialog();
+    const viewportHeight = window.innerHeight;
+    const drag = createDragHarness(wrapper);
+
+    drag.setCardRect(viewportHeight - 200);
+    drag.start();
+    drag.move(0, -6);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+
+    // Leave the dock zone, then come back into it to dock.
+    drag.setCardRect(viewportHeight - 240);
+    drag.move(0, -10);
+    await flushPromises();
+    drag.setCardRect(viewportHeight - 210);
+    drag.move(0, 100);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('panel');
+    drag.up(0, 100);
+    await flushPromises();
+
+    // A new gesture must detach again from the docked panel.
+    drag.setCardRect(viewportHeight - 200);
+    drag.start();
+    drag.move(0, -6);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+
+    drag.up(0, -6);
+    await flushPromises();
+    wrapper.unmount();
+  });
+
+  it('stays detached when released inside the snap zone before arming', async () => {
+    const { wrapper } = await mountDialog();
+    const viewportHeight = window.innerHeight;
+    const drag = createDragHarness(wrapper);
+
+    // Detach while the dialog bottom is still inside the 10 px snap zone.
+    drag.setCardRect(viewportHeight - 206);
+    drag.start();
+    drag.move(0, -6);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+
+    drag.move(0, 100);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+
+    drag.up(0, 100);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+
+    // A later gesture can leave the zone and then dock.
+    drag.start();
+    drag.setCardRect(viewportHeight - 240);
+    drag.move(0, -10);
+    await flushPromises();
+    drag.setCardRect(viewportHeight - 210);
+    drag.move(0, 100);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('panel');
+
+    drag.up(0, 100);
+    await flushPromises();
+    wrapper.unmount();
+  });
+
+  it('reopens in the docked panel state after being detached', async () => {
+    const { wrapper } = await mountDialog();
+    const viewportHeight = window.innerHeight;
+    const drag = createDragHarness(wrapper);
+
+    drag.setCardRect(viewportHeight - 206);
+    drag.start();
+    drag.move(0, -6);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+    drag.up(0, -6);
+    await flushPromises();
+
+    await wrapper.setProps({ modelValue: false });
+    await nextTick();
+    await wrapper.setProps({ modelValue: true });
+    await flushPromises();
+
+    expect(drag.card.attributes('data-mode')).toBe('panel');
+    expect(drag.card.classes()).not.toContain('is-dialog');
+
+    drag.start();
+    drag.move(0, -6);
+    await flushPromises();
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+    drag.up(0, -6);
+    await flushPromises();
+    wrapper.unmount();
+  });
+
+  it('places the detached header centre under the pointer', async () => {
+    const { wrapper } = await mountDialog();
+    const viewportHeight = window.innerHeight;
+    const drag = createDragHarness(wrapper);
+
+    drag.setCardRect(viewportHeight - 200);
+    drag.setHandleRect(500, 800, 300, 50);
+    drag.start(100, 200);
+    drag.move(100, 194);
+    await flushPromises();
+
+    expect(drag.card.attributes('data-mode')).toBe('dialog');
+    expect(drag.card.attributes('style')).toContain(
+      'translate(-550px, -637px)',
+    );
+
+    drag.up(100, 194);
     await flushPromises();
     wrapper.unmount();
   });
