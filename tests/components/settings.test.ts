@@ -9,6 +9,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import App from '@/App.vue';
 import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
 import { useConfigStore } from '@/utils/configStore';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
 const QToggleStub = quasarStubs.QToggle;
 
@@ -140,6 +141,30 @@ describe('settings dialog', () => {
     expect(wrapper.findComponent(SettingsDialog).props('modelValue')).toBe(
       true,
     );
+    wrapper.unmount();
+  });
+
+  it('pulses the ambient menu icon while ambient sound is playing', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { render: () => h('div') } },
+        { path: '/ambient-sound', component: { render: () => h('div') } },
+      ],
+    });
+    await router.push('/');
+    await router.isReady();
+    const wrapper = mount(App, { global: { plugins: [router] } });
+    await flushPromises();
+
+    const ambient = useAmbientSoundStore();
+    ambient.isPlaying = true;
+    await nextTick();
+    expect(wrapper.find('.ambient-playing').exists()).toBe(true);
+
+    ambient.isPlaying = false;
+    await nextTick();
+    expect(wrapper.find('.ambient-playing').exists()).toBe(false);
     wrapper.unmount();
   });
 

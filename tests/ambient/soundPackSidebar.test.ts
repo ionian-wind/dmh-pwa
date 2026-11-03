@@ -6,8 +6,11 @@ const storeMock = vi.hoisted(() => ({
   currentPack: null as any,
   loadPack: vi.fn().mockResolvedValue(undefined),
   unloadPack: vi.fn(),
+  deletePack: vi.fn().mockResolvedValue(undefined),
   importPack: vi.fn().mockResolvedValue(undefined),
 }));
+
+const confirmMock = vi.hoisted(() => vi.fn());
 
 const push = vi.hoisted(() => vi.fn());
 
@@ -15,6 +18,7 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => storeMock,
 }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@/dialogs', () => ({ confirm: confirmMock }));
 
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 
@@ -35,7 +39,10 @@ describe('SoundPackSidebar', () => {
     storeMock.currentPack = null;
     storeMock.loadPack.mockClear();
     storeMock.unloadPack.mockClear();
+    storeMock.deletePack.mockClear();
     storeMock.importPack.mockClear();
+    confirmMock.mockReset();
+    confirmMock.mockResolvedValue(true);
     push.mockClear();
   });
 
@@ -60,6 +67,20 @@ describe('SoundPackSidebar', () => {
     expect(items[1].classes()).toContain('is-selected');
     await items[1].trigger('click');
     expect(storeMock.unloadPack).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it('deletes a pack through the sidebar action after confirmation', async () => {
+    const wrapper = mount(SoundPackSidebar);
+    const deleteButton = wrapper.find('.sound-pack-item .sound-pack-delete');
+
+    expect(deleteButton.exists()).toBe(true);
+    await deleteButton.trigger('click');
+    await flushPromises();
+
+    expect(confirmMock).toHaveBeenCalled();
+    expect(storeMock.deletePack).toHaveBeenCalledWith('p1');
+    expect(storeMock.loadPack).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

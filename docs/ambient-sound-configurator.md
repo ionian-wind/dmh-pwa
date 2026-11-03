@@ -929,8 +929,11 @@ Add route to router:
   ambient layers keep their own layer toggles and volume sliders.
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`
   rows; clicking a pack loads it and clicking the active pack unloads it.
-  **Create Pack** and **Import Pack** are pinned bottom `QItem` controls with
-  side icons, matching the map sidebar's bottom control pattern.
+  Each row has a hover delete action with confirmation. **Create Pack** and
+  **Import Pack** are pinned bottom `QItem` controls with side icons, matching
+  the map sidebar's bottom control pattern.
+- While ambient playback is active, the main-menu headphones icon smoothly
+  pulses with a larger/smaller bounce animation.
 - Integrate with existing file handling for custom audio upload
 
 ## 13. Free Sound Sources

@@ -21,6 +21,21 @@
         <template #left>
           <component :is="categoryIcon(pack.category)" :size="18" />
         </template>
+        <template #actions>
+          <QBtn
+            flat
+            dense
+            round
+            size="sm"
+            color="negative"
+            class="sound-pack-delete"
+            :title="t('common.delete')"
+            :aria-label="t('common.delete')"
+            @click.stop="removePack(pack)"
+          >
+            <IconTrash :size="16" />
+          </QBtn>
+        </template>
       </SidebarItem>
     </div>
 
@@ -68,9 +83,11 @@ import {
   IconPlus,
   IconRocket,
   IconTree,
+  IconTrash,
   IconUpload,
 } from '@tabler/icons-vue';
 import SidebarItem from '@/components/common/SidebarItem.vue';
+import { confirm } from '@/dialogs';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SoundPackManifest } from '@/ambient-sound/types';
 
@@ -97,6 +114,17 @@ async function togglePack(pack: SoundPackManifest) {
     return;
   }
   await store.loadPack(pack);
+}
+
+async function removePack(pack: SoundPackManifest) {
+  if (
+    !(await confirm(
+      t('ambientSoundPage.deletePackConfirm', { name: pack.name }),
+    ))
+  ) {
+    return;
+  }
+  await store.deletePack(pack.id);
 }
 
 function goToEditor() {

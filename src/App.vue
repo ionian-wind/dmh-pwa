@@ -46,11 +46,13 @@ import {
 } from '@tabler/icons-vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useTimerStore } from './stores/timers';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import JukeboxDialog from '@/jukebox/components/JukeboxDialog.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
+const ambientSoundStore = useAmbientSoundStore();
 const configStore = useConfigStore();
 
 const leftMenuMinimized = ref(false);
@@ -313,6 +315,11 @@ function openJukebox() {
                         ? menuItem.icon.value
                         : menuItem.icon
                     "
+                    :class="{
+                      'ambient-playing':
+                        menuItem.section === Section.AMBIENT_SOUND &&
+                        ambientSoundStore.isPlaying,
+                    }"
                     :key="
                       menuItem.section === Section.TIMERS
                         ? animationFrame
@@ -495,6 +502,27 @@ function openJukebox() {
 
 .jukebox-playing {
   animation: jukebox-sway 0.6s ease-in-out infinite;
+}
+
+@keyframes ambient-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.25);
+  }
+  55% {
+    transform: scale(1.06);
+  }
+  72% {
+    transform: scale(1.18);
+  }
+}
+
+.ambient-playing {
+  transform-origin: center;
+  animation: ambient-pulse 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
 }
 
 .footer-flush {
