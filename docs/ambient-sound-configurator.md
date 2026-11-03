@@ -357,8 +357,7 @@ The ambient-sound section is a first-class app page with a package sidebar:
 │                                           │ Tavern           │
 │                                           │ ...              │
 │                                           │ ──────────────── │
-│                                           │ Create pack      │
-│                                           │ Import pack      │
+│                                           │ Import package   │
 ├───────────────────────────────────────────┴──────────────────┤
 │ Now Playing / sound control panel                            │
 └──────────────────────────────────────────────────────────────┘
@@ -370,7 +369,8 @@ The ambient-sound section is a first-class app page with a package sidebar:
 - “All packages” is the default filter. Selecting a package filters the active
   tab to that package; selecting it again clears the filter.
 - Package rows show package icon, name and category. Hover/focus shows delete.
-- Create/Import are pinned footer actions, matching the map sidebar pattern.
+- Import is the only pinned footer action. Package creation/editing happens
+  outside the app through the sound-pack script.
 - The global sound panel is mounted in the app shell, not inside the page.
 
 ### 4.2 Scenes tab
@@ -1082,13 +1082,13 @@ sound-packs/
 Run packaging:
 
 ```bash
-npm run pack:sound
+npm run pack:sound -- sound-packs/fantasy-forest
 ```
 
 Output:
 
 ```
-dist/sound-packs/fantasy-forest.spk
+sound-packs/fantasy-forest.spk
 ```
 
 ## 7. State Management
@@ -1269,15 +1269,12 @@ Add route to router:
   to the previous mood after the track ends; continual music keeps looping.
   Each mood can have several music files and one is chosen randomly. Clicking
   the active mood does not restart its music.
-- One-shot effects are grouped by category. The pack editor is a standard
-  tabbed `BaseModal` with separate tabs for main info, ambient layers,
-  one-shots and mood states. Layer, one-shot and mood icons use the shared
-  `IconPicker` with the RPG Awesome icon set.
+- Packages are built and edited by script, not in the app. The sidebar only
+  imports, filters and removes packages.
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`
-  rows; clicking a pack loads it and clicking the active pack unloads it.
-  Each row has a hover delete action with confirmation. **Create Pack** and
-  **Import Pack** are pinned bottom `QItem` controls with side icons, matching
-  the map sidebar's bottom control pattern. No empty-library hint is shown.
+  rows; clicking a pack filters content to it and clicking the active package
+  clears the filter. Each row has a hover delete action with confirmation.
+  **Import Package** is the only pinned bottom `QItem` control.
 - Master and active-layer volume sliders respond to the mouse wheel, matching
   the jukebox player volume control.
 - While ambient playback is active, the main-menu headphones icon smoothly
@@ -1333,7 +1330,16 @@ To create an ambient sound package:
 2. Add `pack.json` with package metadata, `ambiences`, `oneShots` and `scenes`.
 3. Add ambience samples under `ambiences/`, one-shot files under `one-shots/`,
    and scene-owned music under `scenes/<scene-id>/music/`.
-4. Run `npm run pack:sound` to generate the `.spk` file.
+4. Build the package with the script:
+
+   ```bash
+   npm run pack:sound -- content/my-pack
+   ```
+
+   This writes `content/my-pack.spk` next to the package directory. Running
+   `npm run pack:sound` without arguments packs every directory under
+   `sound-packs/` into `dist/sound-packs/`.
+
 5. Import the `.spk` file in the app; its scenes appear in the scenes list and
    its entries appear in the global gallery.
 

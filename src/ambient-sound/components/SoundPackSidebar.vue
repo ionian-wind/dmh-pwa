@@ -50,14 +50,6 @@
     <div class="sound-pack-sidebar-controls">
       <QSeparator />
       <QList>
-        <QItem clickable v-ripple @click="goToEditor">
-          <QItemSection>
-            {{ t('ambientSoundPage.createPack') }}
-          </QItemSection>
-          <QItemSection side>
-            <IconPlus :size="18" />
-          </QItemSection>
-        </QItem>
         <QItem clickable v-ripple @click="triggerFileInput">
           <QItemSection>
             {{ t('ambientSoundPage.importPack') }}
@@ -82,7 +74,6 @@
 <script setup lang="ts">
 import { ref, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import {
   IconAlertTriangle,
   IconBuilding,
@@ -102,7 +93,6 @@ import type { NormalizedSoundPack } from '@/ambient-sound/types';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const router = useRouter();
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const categoryIcons: Record<string, Component> = {
@@ -126,10 +116,6 @@ async function removePack(pack: NormalizedSoundPack) {
     return;
   }
   await store.deletePack(pack.id);
-}
-
-function goToEditor() {
-  router.push('/ambient-sound/editor');
 }
 
 function triggerFileInput() {

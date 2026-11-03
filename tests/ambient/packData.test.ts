@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getLayerVariations,
   getSceneMusicFile,
   getSceneMusicName,
   normalizeSoundPack,
@@ -135,6 +136,29 @@ describe('ambient pack data', () => {
         files: ['scenes/grove/music/a.mp3'],
       },
     ]);
+  });
+
+  it('handles packages without entries and empty variations', () => {
+    const empty = normalizeSoundPack({
+      ...legacy,
+      layers: undefined,
+      ambiences: undefined,
+      oneShots: undefined as any,
+      moodStates: [],
+    });
+    expect(empty.ambiences).toEqual([]);
+    expect(empty.oneShots).toEqual([]);
+    expect(empty.scenes).toEqual([]);
+    expect(
+      getLayerVariations({
+        id: 'empty',
+        name: 'Empty',
+        icon: '',
+        defaultVolume: 0,
+        loop: true,
+        variations: [],
+      }),
+    ).toEqual([]);
   });
 
   it('builds and labels scene music paths', () => {

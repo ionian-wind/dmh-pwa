@@ -94,6 +94,16 @@ archive writing and safe unpacking helpers. Covered by
 `tests/scripts/soundPackArchive.test.ts`. `public/assets/dice-box` is unrelated
 (3D dice assets).
 
+Build a specific package directory:
+
+```bash
+npm run pack:sound -- content/sample-ambient-pack
+```
+
+This writes `content/sample-ambient-pack.spk`. With no arguments the script packs
+every directory under `sound-packs/` into `dist/sound-packs/`. Package creation and
+editing are intentionally script-only; there is no in-app package editor.
+
 ## `scripts/test-import.js`
 
 A standalone harness for the module import format. It likely exercises

@@ -9,36 +9,53 @@ const rootDir = path.resolve(__dirname, '..');
 const PACK_DIR = path.join(rootDir, 'sound-packs');
 const OUTPUT_DIR = path.join(rootDir, 'dist', 'sound-packs');
 
-function getPacks() {
-  if (!fs.existsSync(PACK_DIR)) {
-    console.log('No sound-packs directory found');
-    return [];
-  }
+function getDefaultPacks() {
+  if (!fs.existsSync(PACK_DIR)) return [];
   return fs
     .readdirSync(PACK_DIR)
-    .filter((file) => fs.statSync(path.join(PACK_DIR, file)).isDirectory());
+    .filter((file) => fs.statSync(path.join(PACK_DIR, file)).isDirectory())
+    .map((name) => ({
+      packDir: path.join(PACK_DIR, name),
+      outputFile: path.join(OUTPUT_DIR, `${name}.spk`),
+    }));
 }
 
-async function packSoundPack(packName) {
-  const packPath = path.join(PACK_DIR, packName);
-  const outputPath = path.join(OUTPUT_DIR, `${packName}.spk`);
+function getArgumentPacks(args) {
+  return args.map((arg) => {
+    const packDir = path.resolve(process.cwd(), arg);
+    return {
+      packDir,
+      outputFile: path.join(
+        path.dirname(packDir),
+        `${path.basename(packDir)}.spk`,
+      ),
+    };
+  });
+}
 
-  if (!fs.existsSync(path.join(packPath, 'pack.json'))) {
-    console.log(`Skipping ${packName}: no pack.json found`);
+async function packSoundPack({ packDir, outputFile }) {
+  if (!fs.existsSync(path.join(packDir, 'pack.json'))) {
+    console.log(`Skipping ${packDir}: no pack.json found`);
     return;
   }
 
-  try {
-    const result = await writeSoundPackArchive(packPath, outputPath);
-    console.log(`Packed: ${packName}.spk (${result.bytes} bytes)`);
-  } catch (error) {
-    console.error(`Failed to pack ${packName}:`, error);
-  }
+  const result = await writeSoundPackArchive(packDir, outputFile);
+  console.log(`Packed: ${result.outputPath} (${result.bytes} bytes)`);
 }
 
 async function main() {
-  const packs = getPacks();
-  console.log(`Found ${packs.length} sound pack(s) to pack`);
+  const args = process.argv.slice(2);
+  const packs = args.length ? getArgumentPacks(args) : getDefaultPacks();
+
+  if (packs.length === 0) {
+    console.log(
+      'No package directories found. Pass one or more directories, for example:',
+    );
+    console.log('  npm run pack:sound -- content/sample-ambient-pack');
+    return;
+  }
+
+  console.log(`Found ${packs.length} sound package(s) to pack`);
   for (const pack of packs) {
     await packSoundPack(pack);
   }

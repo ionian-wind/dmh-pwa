@@ -771,7 +771,6 @@
       "rest": "Rest"
     },
     "importPack": "Import Pack",
-    "createPack": "Create Pack",
     "editPack": "Edit Pack",
     "packInfo": "Pack Information",
     "loading": "Loading sound pack...",

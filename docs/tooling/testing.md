@@ -66,23 +66,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 127. Total tests: 938.
+Total test files: 126. Total tests: 933.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  127 passed (127)
-Tests       938 passed (938)
+Test Files  126 passed (126)
+Tests       933 passed (933)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.85%
-Branches    87.02%
-Functions    89.33%
-Lines       92.85%
+Statements  92.77%
+Branches    87.03%
+Functions    89.74%
+Lines       92.77%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
@@ -163,7 +163,7 @@ The suite now includes direct tests for:
 - map entity catalog/link blocks including jukebox playlists,
 - ambient sound pack import/export/storage, audio-engine fades/transitions,
   the ambient store's playback/mood/weather actions, recursive pack/unpack
-  archive helpers, the pack editor workflow and the sound-pack selector,
+  archive helpers and the sound-pack selector,
 - localized completion labels/details for built-in snippets, program
   variables, keywords and code-piece definitions.
 
