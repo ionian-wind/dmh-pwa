@@ -66,6 +66,24 @@ test('creates a share link with the source in the hash', async ({ page }) => {
   expect(page.url()).toContain('#code=');
 });
 
+test('shows a hideable syntax TOC with anchor links', async ({ page }) => {
+  await page.goto('/dmh-pwa/probability-calculator/syntax');
+
+  const toc = page.locator('.table-of-contents');
+  await expect(toc).toBeVisible();
+  await expect(toc).toContainText('On this page');
+
+  await toc.locator('a.toc-link', { hasText: 'Functions' }).click();
+  await expect(page).toHaveURL(/#functions$/);
+  await expect(page.locator('#functions')).toBeVisible();
+
+  const toggle = page.getByRole('button', { name: 'Toggle sidebar' });
+  await toggle.click();
+  await expect(toc).not.toBeVisible();
+  await toggle.click();
+  await expect(toc).toBeVisible();
+});
+
 test('highlights syntax errors and clears them before the next calculation', async ({
   page,
 }) => {

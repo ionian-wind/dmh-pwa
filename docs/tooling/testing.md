@@ -66,23 +66,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 112. Total tests: 844.
+Total test files: 113. Total tests: 848.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  112 passed (112)
-Tests       844 passed (844)
+Test Files  113 passed (113)
+Tests       848 passed (848)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.23%
-Branches    87.81%
-Functions    89.22%
-Lines       92.23%
+Statements  92.06%
+Branches    87.71%
+Functions    89.13%
+Lines       92.06%
 ```
 
 Every source module now has tests. The only files below 80% line coverage are the
@@ -155,7 +155,9 @@ The suite now includes direct tests for:
   reordering, the `Tree` drag handles/drop target wiring, and tree reorder
   propagation from `ModuleDocumentTree`,
 - structured Chevrotain error providers, human-readable localized syntax
-  messages, and the error banner's line/column link to the editor position.
+  messages, and the error banner's line/column link to the editor position,
+- the syntax-page right-drawer TOC, its `#anchor` links/hash updates and the
+  header toggle that hides/reopens the sidebar.
 
 The remaining intentional low-coverage area is the large dice-roller AST/plugin
 implementation; it is exercised by parser, evaluator, macro, table, formatting

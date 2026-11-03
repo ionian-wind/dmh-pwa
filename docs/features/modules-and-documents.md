@@ -138,7 +138,8 @@ edits, note edits, imports, and reloads are reflected without remounting.
 - Bookmarks are keyed by module + note, not by heading anchor.
 - `TableOfContents` has both an internal scroll-spy and an external
   `activeAnchorId` mode. It is rendered in the module sidepanel via
-  `BaseEntityView`’s `sidepanel` slot.
+  `BaseEntityView`’s `sidepanel` slot. TOC entries are `#anchor` links and
+  emit `item-click`; clicking updates the URL hash.
 - `ModuleView`'s bookmark edit modal uses `v-if="editingBookmark"` with
   `:isOpen="!!editingBookmark"`. `BaseModal` emits `update:isOpen`, so closing
   it clears the editing state.

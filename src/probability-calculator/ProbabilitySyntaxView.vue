@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { IconArrowLeft, IconBook2 } from '@tabler/icons-vue';
+import { IconArrowLeft } from '@tabler/icons-vue';
+import ViewHeader from '@/components/common/ViewHeader.vue';
+import TableOfContents from '@/components/common/TableOfContents.vue';
+import { useLayout, useRightDrawer } from '@/composables/useLayout';
 
 const router = useRouter();
 const { t, tm } = useI18n();
@@ -186,30 +189,124 @@ const parameterBullets = computed(
       'probabilityCalculator.syntaxPage.functions.params',
     ) as unknown as string[],
 );
+
+interface TOCItem {
+  id: string;
+  level: number;
+  anchorId: string;
+  title: string;
+}
+
+const tocItems = computed<TOCItem[]>(() => [
+  {
+    id: 'basics',
+    level: 2,
+    anchorId: 'basics',
+    title: t('probabilityCalculator.syntaxPage.sections.basics'),
+  },
+  {
+    id: 'operators',
+    level: 2,
+    anchorId: 'operators',
+    title: t('probabilityCalculator.syntaxPage.sections.operators'),
+  },
+  {
+    id: 'sequences',
+    level: 2,
+    anchorId: 'sequences',
+    title: t('probabilityCalculator.syntaxPage.sections.sequences'),
+  },
+  {
+    id: 'position',
+    level: 3,
+    anchorId: 'position',
+    title: t('probabilityCalculator.syntaxPage.sections.position'),
+  },
+  {
+    id: 'flow',
+    level: 2,
+    anchorId: 'flow',
+    title: t('probabilityCalculator.syntaxPage.sections.flow'),
+  },
+  {
+    id: 'functions',
+    level: 2,
+    anchorId: 'functions',
+    title: t('probabilityCalculator.syntaxPage.sections.functions'),
+  },
+  {
+    id: 'library',
+    level: 2,
+    anchorId: 'library',
+    title: t('probabilityCalculator.syntaxPage.sections.library'),
+  },
+  {
+    id: 'settings',
+    level: 2,
+    anchorId: 'settings',
+    title: t('probabilityCalculator.syntaxPage.sections.settings'),
+  },
+  {
+    id: 'examples',
+    level: 2,
+    anchorId: 'examples',
+    title: t('probabilityCalculator.syntaxPage.sections.examples'),
+  },
+]);
+
+function scrollToSection(anchorId: string) {
+  document.getElementById(anchorId)?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  });
+}
+
+const sidebarProps = reactive({
+  items: tocItems.value,
+  title: t('probabilityCalculator.syntaxPage.tableOfContents'),
+  onItemClick: scrollToSection,
+});
+
+watch(
+  [tocItems, () => t('probabilityCalculator.syntaxPage.tableOfContents')],
+  ([items, title]) => {
+    sidebarProps.items = items;
+    sidebarProps.title = title;
+  },
+  { immediate: true },
+);
+
+const layout = useLayout();
+const rightDrawer = useRightDrawer();
+
+onMounted(() => {
+  layout.setTopMenuContent({
+    component: ViewHeader,
+    props: {
+      title: t('probabilityCalculator.syntaxPage.title'),
+      subtitle: t('probabilityCalculator.syntaxPage.subtitle'),
+      buttons: [
+        {
+          icon: IconArrowLeft,
+          color: 'primary',
+          title: 'probabilityCalculator.syntaxPage.back',
+          event: () => router.push('/probability-calculator'),
+        },
+      ],
+    },
+  });
+  rightDrawer.set({ component: TableOfContents, props: sidebarProps });
+});
+
+onBeforeUnmount(() => {
+  layout.setTopMenuContent(null);
+  rightDrawer.clear();
+});
 </script>
 
 <template>
   <div class="q-pa-md syntax-doc-page">
-    <div class="row items-center q-gutter-sm q-mb-md">
-      <QBtn
-        flat
-        round
-        :aria-label="t('probabilityCalculator.syntaxPage.back')"
-        @click="router.push('/probability-calculator')"
-      >
-        <IconArrowLeft />
-      </QBtn>
-      <div>
-        <div class="text-h5">
-          {{ t('probabilityCalculator.syntaxPage.title') }}
-        </div>
-        <div class="text-caption text-grey-7">
-          {{ t('probabilityCalculator.syntaxPage.subtitle') }}
-        </div>
-      </div>
-    </div>
-
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="basics" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.basics') }}
@@ -230,7 +327,7 @@ output DAMAGE named "sword damage"</pre
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="operators" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.operators') }}
@@ -261,7 +358,7 @@ output DAMAGE named "sword damage"</pre
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="sequences" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.sequences') }}
@@ -276,7 +373,7 @@ output DAMAGE named "sword damage"</pre
 {d6}
 {}</pre
         >
-        <div class="text-subtitle2 q-mt-md q-mb-xs">
+        <div id="position" class="text-subtitle2 q-mt-md q-mb-xs">
           {{ t('probabilityCalculator.syntaxPage.sections.position') }}
         </div>
         <pre v-pre class="syntax-code">
@@ -295,7 +392,7 @@ output DAMAGE named "sword damage"</pre
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="flow" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.flow') }}
@@ -322,7 +419,7 @@ else {
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="functions" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.functions') }}
@@ -348,7 +445,7 @@ output [add d4 to d6]</pre
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="library" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.library') }}
@@ -374,7 +471,7 @@ output [add d4 to d6]</pre
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered class="q-mb-md">
+    <QCard id="settings" flat bordered class="q-mb-md">
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.settings') }}
@@ -391,7 +488,7 @@ set "maximum function depth" to 5</pre
       </QCardSection>
     </QCard>
 
-    <QCard flat bordered>
+    <QCard id="examples" flat bordered>
       <QCardSection>
         <div class="text-subtitle1 text-weight-medium q-mb-sm">
           {{ t('probabilityCalculator.syntaxPage.sections.examples') }}
@@ -415,6 +512,10 @@ set "maximum function depth" to 5</pre
 .syntax-doc-page {
   max-width: 1100px;
   margin: 0 auto;
+}
+
+.syntax-doc-page [id] {
+  scroll-margin-top: 1rem;
 }
 
 .syntax-code {

@@ -194,7 +194,12 @@ const { rightDrawerContent, toggleRightDrawer } = useLayout();
     </QBtn>
   </QBtnGroup>
   <QBtnGroup>
-    <QBtn v-if="rightDrawerContent" @click="toggleRightDrawer">
+    <QBtn
+      v-if="rightDrawerContent"
+      @click="toggleRightDrawer"
+      :title="t('common.toggleSidebar')"
+      :aria-label="t('common.toggleSidebar')"
+    >
       <component :is="props.rightDrawerIcon" />
     </QBtn>
   </QBtnGroup>

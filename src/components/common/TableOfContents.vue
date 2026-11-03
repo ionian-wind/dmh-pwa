@@ -12,6 +12,7 @@ interface TOCItem {
 const props = defineProps<{
   items: TOCItem[];
   activeAnchorId?: string | null;
+  title?: string;
 }>();
 
 const activeItemId = ref<string | null>(null);
@@ -20,10 +21,14 @@ const tocItemRefs = ref<{ [key: string]: HTMLElement | undefined }>({});
 
 const emit = defineEmits(['item-click']);
 
-function scrollToAnchor(anchorId: string) {
-  const element = document.getElementById(anchorId);
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth' });
+function handleItemClick(anchorId: string, event: MouseEvent) {
+  event.preventDefault();
+  emit('item-click', anchorId);
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hash !== `#${anchorId}`
+  ) {
+    history.replaceState(null, '', `#${anchorId}`);
   }
 }
 
@@ -49,6 +54,8 @@ function findScrollableContainer(): Element | null {
     document.querySelector('.base-entity-view'),
     document.querySelector('.document-markdown'),
     document.querySelector('.entity-content'),
+    document.querySelector('.q-page-container'),
+    document.querySelector('.syntax-doc-page'),
   ];
 
   for (const container of containers) {
@@ -194,7 +201,8 @@ function setTocItemRef(
 
 <template>
   <div class="table-of-contents">
-    <nav class="toc-nav" ref="tocNavRef">
+    <div v-if="title" class="toc-title">{{ title }}</div>
+    <nav class="toc-nav" ref="tocNavRef" :aria-label="title">
       <ul class="toc-list">
         <li
           v-for="item in items"
@@ -206,13 +214,14 @@ function setTocItemRef(
           ]"
           :ref="(el) => setTocItemRef(el, item)"
         >
-          <button
+          <a
             class="toc-link"
-            @click="emit('item-click', item.anchorId)"
+            :href="`#${item.anchorId}`"
+            @click="handleItemClick(item.anchorId, $event)"
             :title="item.title"
           >
             {{ item.title }}
-          </button>
+          </a>
         </li>
       </ul>
     </nav>
@@ -220,6 +229,14 @@ function setTocItemRef(
 </template>
 
 <style scoped>
+.toc-title {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0.25rem;
+}
+
 .toc-list {
   list-style: none;
   margin: 0;

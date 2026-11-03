@@ -239,6 +239,7 @@
   },
   "common": {
     "mainEditor": "Main editor",
+    "toggleSidebar": "Toggle sidebar",
     "linkedEntities": "Linked entities",
     "confirmDelete": "Are you sure you want to delete {title}?",
     "empty": "No items found",
@@ -865,6 +866,7 @@
     "syntaxPage": {
       "title": "AnyDice Syntax Reference",
       "subtitle": "Supported syntax for the dice probability calculator",
+      "tableOfContents": "On this page",
       "back": "Back to calculator",
       "sections": {
         "basics": "Program basics",
