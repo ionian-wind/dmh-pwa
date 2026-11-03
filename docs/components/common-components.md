@@ -151,6 +151,13 @@ linking flow. After saving, the new entity is selected and marked “Created” 
 it can be linked immediately. Internal options such as note types and map layers
 keep their dedicated selectors.
 
+### `EntityGroup.vue`
+
+Section wrapper for grouped entity lists. It renders an uppercase group title
+followed by a flexible separator and exposes the group content through the
+default slot. Consecutive groups get vertical spacing. Used by the ambient
+ambience/one-shot galleries and the scene player groups.
+
 ### `TagSelector.vue`
 
 - Adds and removes string tags with a standard outlined `QInput` and `QChip`

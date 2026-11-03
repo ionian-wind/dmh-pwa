@@ -60,7 +60,7 @@ describe('AmbienceGallery', () => {
     });
 
     expect(wrapper.find('.category-select').exists()).toBe(false);
-    expect(wrapper.findAll('.ambience-group')).toHaveLength(2);
+    expect(wrapper.findAll('.entity-group')).toHaveLength(2);
     expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(2);
     expect(wrapper.text()).toContain('Weather');
     expect(wrapper.text()).toContain('Interior');

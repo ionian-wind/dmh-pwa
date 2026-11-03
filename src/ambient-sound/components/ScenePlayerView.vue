@@ -56,14 +56,11 @@
         />
 
         <div v-if="activeTab === 'ambiences'">
-          <section
+          <EntityGroup
             v-for="group in ambienceGroups"
             :key="group.category"
-            class="q-mb-md"
+            :title="group.category"
           >
-            <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
-              {{ group.category }}
-            </div>
             <div class="column q-gutter-xs">
               <QCard
                 v-for="row in group.rows"
@@ -97,7 +94,7 @@
                 </QCardSection>
               </QCard>
             </div>
-          </section>
+          </EntityGroup>
           <EmptyState
             v-if="ambienceGroups.length === 0"
             :icon="IconWaveSine"
@@ -106,17 +103,11 @@
         </div>
 
         <div v-else>
-          <section
+          <EntityGroup
             v-for="group in oneShotGroups"
             :key="group.category"
-            class="q-mb-md"
+            :title="group.category"
           >
-            <div class="row items-center q-gutter-sm q-mb-sm">
-              <span class="text-caption text-uppercase text-grey-7">
-                {{ group.category }}
-              </span>
-              <QSeparator class="col" />
-            </div>
             <div class="one-shot-grid">
               <OneShotControl
                 v-for="oneShot in group.items"
@@ -126,7 +117,7 @@
                 :knob-size="68"
               />
             </div>
-          </section>
+          </EntityGroup>
           <EmptyState
             v-if="oneShotGroups.length === 0"
             :icon="IconBell"
@@ -156,6 +147,7 @@ import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import MoodKnob from '@/ambient-sound/components/MoodKnob.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import EntityGroup from '@/components/common/EntityGroup.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { getLayerVariations } from '@/ambient-sound/utils/packData';

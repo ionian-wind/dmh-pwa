@@ -1,17 +1,11 @@
 <template>
   <div>
-    <div v-if="groups.length" class="ambience-groups">
-      <section
+    <div v-if="groups.length">
+      <EntityGroup
         v-for="group in groups"
         :key="group.category"
-        class="ambience-group"
+        :title="group.category"
       >
-        <div class="row items-center q-gutter-sm q-mb-sm">
-          <span class="text-caption text-uppercase text-grey-7">
-            {{ group.category }}
-          </span>
-          <QSeparator class="col" />
-        </div>
         <div class="column q-gutter-sm">
           <QCard
             v-for="entry in group.items"
@@ -92,7 +86,7 @@
             </QCardSection>
           </QCard>
         </div>
-      </section>
+      </EntityGroup>
     </div>
 
     <EmptyState
@@ -113,6 +107,7 @@ import {
   IconWaveSine,
 } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import EntityGroup from '@/components/common/EntityGroup.vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { getLayerVariations } from '@/ambient-sound/utils/packData';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
@@ -196,12 +191,6 @@ function selectVariation(
 .is-active {
   border-color: var(--color-primary);
   background: var(--color-background-soft);
-}
-
-.ambience-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
 }
 
 .variation-select {

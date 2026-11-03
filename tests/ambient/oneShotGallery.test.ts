@@ -89,7 +89,7 @@ describe('OneShotGallery', () => {
     });
 
     expect(wrapper.find('select').exists()).toBe(false);
-    expect(wrapper.findAll('.one-shot-group')).toHaveLength(2);
+    expect(wrapper.findAll('.entity-group')).toHaveLength(2);
     expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(2);
     expect(wrapper.text()).toContain('weather');
     expect(wrapper.text()).toContain('combat');
