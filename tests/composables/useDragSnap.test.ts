@@ -4,11 +4,11 @@ import { mount } from '@vue/test-utils';
 
 import { useDragSnap } from '@/composables/useDragSnap';
 
-function mountComposable() {
+function mountComposable(options?: Parameters<typeof useDragSnap>[0]) {
   let api: ReturnType<typeof useDragSnap> | null = null;
   const TestComponent = defineComponent({
     setup() {
-      api = useDragSnap();
+      api = useDragSnap(options);
       return () => h('div');
     },
   });
@@ -61,6 +61,32 @@ describe('useDragSnap', () => {
     expect(drag.cardStyle.value.transform).toBe('translate(0px, -250px)');
     expect(drag.cardStyle.value.transition).toBe('none');
     expect(drag.transitionHide.value).toBe('fade');
+  });
+
+  it('supports free placement and release notifications', () => {
+    const onRelease = vi.fn();
+    const drag = mountComposable({
+      snapBack: () => false,
+      onRelease,
+    });
+    const target = document.createElement('div');
+    target.setPointerCapture = vi.fn();
+
+    drag.onPointerDown({
+      clientX: 0,
+      clientY: 0,
+      pointerId: 1,
+      target,
+    } as any);
+    drag.onPointerMove({ clientX: 30, clientY: 40 } as PointerEvent);
+    drag.onPointerUp();
+
+    expect(onRelease).toHaveBeenCalledTimes(1);
+    expect(drag.cardStyle.value.transform).toBe('translate(30px, 40px)');
+
+    drag.resetPosition();
+    expect(drag.cardStyle.value.transform).toBe('translate(0px, 0px)');
+    expect(drag.cardStyle.value.transition).toBe('transform 0.3s ease');
   });
 
   it('ignores moves before dragging starts and resets on hide', () => {

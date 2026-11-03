@@ -2,7 +2,14 @@ import { ref, computed } from 'vue';
 
 const SNAP_THRESHOLD = 200;
 
-export function useDragSnap() {
+interface DragSnapOptions {
+  /** Return false to let the card stay where it was dropped. */
+  snapBack?: () => boolean;
+  /** Called after pointer release, once snap-back has been applied. */
+  onRelease?: () => void;
+}
+
+export function useDragSnap(options: DragSnapOptions = {}) {
   const translateX = ref(0);
   const translateY = ref(0);
   const isDragging = ref(false);
@@ -35,11 +42,19 @@ export function useDragSnap() {
     if (!isDragging.value) return;
     isDragging.value = false;
 
-    if (translateY.value > -SNAP_THRESHOLD) {
+    if ((options.snapBack?.() ?? true) && translateY.value > -SNAP_THRESHOLD) {
       hasTransition.value = true;
       translateX.value = 0;
       translateY.value = 0;
     }
+
+    options.onRelease?.();
+  }
+
+  function resetPosition() {
+    hasTransition.value = true;
+    translateX.value = 0;
+    translateY.value = 0;
   }
 
   function onHide() {
@@ -62,9 +77,12 @@ export function useDragSnap() {
     cardStyle,
     transitionHide,
     isDragging,
+    translateX,
+    translateY,
     onPointerDown,
     onPointerMove,
     onPointerUp,
     onHide,
+    resetPosition,
   };
 }

@@ -249,10 +249,13 @@ unmount. The `filesStore` is loaded but unused.
 - The bottom-drawer player is one gradient surface. In the sound-control panel
   the `QCard` itself owns the surface, so the header toolbar and player content
   share a single background; the embedded player is rendered without its own
-  gradient. The panel is a snapable bottom dialog whose width and horizontal
-  position follow the page-content area, excluding the left menu and right
-  sidebar. In panel layout the album cover sits to the left of the progress and
-  transport controls.
+  gradient. The panel is a snapable dialog with two modes. When docked it is a
+  bottom panel whose width and horizontal position follow the page-content area,
+  excluding the left menu and right sidebar; the album cover sits to the left
+  of the progress and transport controls. Dragging the panel away from the
+  bottom switches it to a floating dialog with the larger album cover centred
+  above the track details. Dragging the floating dialog back near the bottom
+  docks it again, while anywhere else it can be moved freely across the page.
 - Track changes crossfade the outgoing and incoming gradient layers. If the next
   track has no cover palette, the current gradient fades out instead.
 - Controls inherit `--jp-control-color`, derived from the palette with the best

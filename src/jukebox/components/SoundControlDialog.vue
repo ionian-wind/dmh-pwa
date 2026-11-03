@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+  type ComponentPublicInstance,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconExternalLink, IconX } from '@tabler/icons-vue';
 import { useRouter } from 'vue-router';
@@ -83,14 +90,8 @@ const model = computed({
   set: (value) => emit('update:modelValue', value),
 });
 
-const {
-  cardStyle,
-  transitionHide,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onHide,
-} = useDragSnap();
+const displayMode = ref<'panel' | 'dialog'>('panel');
+const cardRef = ref<ComponentPublicInstance | null>(null);
 
 const viewportWidth = ref(
   typeof window === 'undefined' ? 0 : window.innerWidth,
@@ -103,15 +104,78 @@ function updateViewportWidth() {
 onMounted(() => window.addEventListener('resize', updateViewportWidth));
 onUnmounted(() => window.removeEventListener('resize', updateViewportWidth));
 
-const frameStyle = computed((): Record<string, string> => {
-  if (!props.contentWidth || !viewportWidth.value) return {};
+function isNearViewportBottom(): boolean {
+  const element = cardRef.value?.$el as HTMLElement | undefined;
+  if (!element) return true;
 
-  const offset =
-    props.contentLeft + props.contentWidth / 2 - viewportWidth.value / 2;
+  const rect = element.getBoundingClientRect();
+  return window.innerHeight - rect.bottom <= 140;
+}
+
+function handleDragRelease() {
+  if (displayMode.value === 'panel') {
+    if (!isNearViewportBottom()) {
+      displayMode.value = 'dialog';
+      resetPosition();
+    }
+    return;
+  }
+
+  if (isNearViewportBottom()) {
+    displayMode.value = 'panel';
+    resetPosition();
+  }
+}
+
+const {
+  cardStyle,
+  transitionHide,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onHide,
+  resetPosition,
+} = useDragSnap({
+  snapBack: () => displayMode.value === 'panel',
+  onRelease: handleDragRelease,
+});
+
+function handleHide() {
+  onHide();
+  displayMode.value = 'panel';
+}
+
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) {
+      displayMode.value = 'panel';
+      resetPosition();
+    }
+  },
+);
+
+const frameStyle = computed((): Record<string, string> => {
+  const viewport = viewportWidth.value;
+  if (!viewport) return {};
+
+  const panelWidth = props.contentWidth || viewport;
+  const width =
+    displayMode.value === 'panel'
+      ? panelWidth
+      : Math.min(560, panelWidth, viewport - 32);
+  const offset = props.contentWidth
+    ? props.contentLeft + props.contentWidth / 2 - viewport / 2
+    : 0;
+  const transform =
+    displayMode.value === 'panel'
+      ? `translateX(${offset}px)`
+      : `translateX(${offset}px) translateY(calc(-50vh + 50%))`;
+
   return {
-    width: `${props.contentWidth}px`,
-    maxWidth: `${props.contentWidth}px`,
-    transform: `translateX(${offset}px)`,
+    width: `${width}px`,
+    maxWidth: `${width}px`,
+    transform,
   };
 });
 
@@ -128,12 +192,15 @@ function navigateToJukebox() {
     v-model="model"
     :transition-hide="transitionHide"
     class="sound-control-dialog"
-    @hide="onHide"
+    @hide="handleHide"
   >
     <div class="sound-control-frame" :style="frameStyle">
       <QCard
+        ref="cardRef"
+        :data-mode="displayMode"
         :class="{
           'sound-control-card': true,
+          'is-dialog': displayMode === 'dialog',
           'animated-gradient-surface': true,
           'has-gradient-bg': gradientVisible,
           'with-animated-bg': isAnimatedBg,
@@ -181,7 +248,11 @@ function navigateToJukebox() {
           </QBtn>
         </QToolbar>
         <div class="sound-control-body">
-          <JukeboxPlayer :modal="true" layout="panel" :show-artwork="true" />
+          <JukeboxPlayer
+            :modal="true"
+            :layout="displayMode === 'panel' ? 'panel' : 'bar'"
+            :show-artwork="true"
+          />
         </div>
       </QCard>
     </div>
@@ -193,9 +264,14 @@ function navigateToJukebox() {
   padding: 0 !important;
 }
 
+:global(.sound-control-dialog .q-dialog__inner > div) {
+  overflow: visible !important;
+}
+
 .sound-control-frame {
   width: 100%;
   max-width: 100%;
+  overflow: visible;
 }
 
 .sound-control-card {
@@ -213,6 +289,10 @@ function navigateToJukebox() {
   min-height: 0;
   padding: 0 1rem 1rem;
   overflow-y: auto;
+}
+
+.sound-control-card.is-dialog {
+  box-shadow: var(--shadow-lg);
 }
 
 .drag-handle {
