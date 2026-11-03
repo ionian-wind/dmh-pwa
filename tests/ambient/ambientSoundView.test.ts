@@ -24,6 +24,11 @@ const layoutMock = vi.hoisted(() => ({
   setTopMenuContent: vi.fn(),
 }));
 
+const rightDrawerMock = vi.hoisted(() => ({
+  set: vi.fn(),
+  clear: vi.fn(),
+}));
+
 const push = vi.hoisted(() => vi.fn());
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -31,11 +36,13 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
 }));
 vi.mock('@/composables/useLayout', () => ({
   useLayout: () => ({ setTopMenuContent: layoutMock.setTopMenuContent }),
+  useRightDrawer: () => rightDrawerMock,
 }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }));
 
 import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
+import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 
 const stubs = {
   QSpinnerDots: true,
@@ -60,6 +67,8 @@ describe('AmbientSoundView', () => {
       weatherSystems: [],
     };
     layoutMock.setTopMenuContent.mockClear();
+    rightDrawerMock.set.mockClear();
+    rightDrawerMock.clear.mockClear();
     push.mockClear();
     storeMock.loadStoredPacks.mockClear();
     storeMock.pause.mockClear();
@@ -78,30 +87,21 @@ describe('AmbientSoundView', () => {
     const header = layoutMock.setTopMenuContent.mock.calls[0][0];
     expect(header.component).toBe(ViewHeader);
     expect(header.props.title).toBe('Ambient Sound');
-    expect(header.props.buttons.map((button: any) => button.title)).toEqual([
-      'ambientSoundPage.createPack',
-      'ambientSoundPage.importPack',
-    ]);
+    expect(header.props.buttons).toBeUndefined();
+    expect(rightDrawerMock.set).toHaveBeenCalledWith({
+      component: SoundPackSidebar,
+    });
 
-    expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(7);
+    expect(wrapper.findAll('[data-stub="QCard"]')).toHaveLength(6);
     expect(wrapper.text()).toContain('Overall control');
     expect(wrapper.text()).toContain('Master volume');
     expect(wrapper.text()).toContain('50%');
     await wrapper.find('button[aria-label="Play"]').trigger('click');
     expect(storeMock.togglePlayPause).toHaveBeenCalledTimes(1);
 
-    header.props.buttons[0].event();
-    expect(push).toHaveBeenCalledWith('/ambient-sound/editor');
-
-    const click = vi
-      .spyOn(HTMLInputElement.prototype, 'click')
-      .mockImplementation(() => undefined);
-    header.props.buttons[1].event();
-    expect(click).toHaveBeenCalled();
-    click.mockRestore();
-
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
+    expect(rightDrawerMock.clear).toHaveBeenCalled();
     expect(storeMock.pause).toHaveBeenCalled();
   });
 
@@ -114,7 +114,7 @@ describe('AmbientSoundView', () => {
 
     expect(wrapper.text()).toContain('Select Sound Pack');
     expect(wrapper.text()).toContain(
-      'Import a .spk sound pack file to get started',
+      'Open the sound pack sidebar to choose, import, or create a pack.',
     );
     wrapper.unmount();
   });

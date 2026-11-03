@@ -747,6 +747,8 @@
     "selectPack": "Select Sound Pack",
     "masterVolume": "Master volume",
     "overallControl": "Overall control",
+    "soundPacks": "Sound packs",
+    "sidebarHint": "Open the sound pack sidebar to choose, import, or create a pack.",
     "off": "Off",
     "noPacks": "No packs available",
     "moods": {

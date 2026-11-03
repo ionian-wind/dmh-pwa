@@ -1,13 +1,5 @@
 <template>
   <div class="q-pa-md ambient-sound-page">
-    <input
-      ref="fileInput"
-      type="file"
-      accept=".spk"
-      class="hidden-file-input"
-      @change="handleFileImport"
-    />
-
     <div
       v-if="store.loading"
       class="q-pa-xl flex flex-center column text-grey-7"
@@ -59,12 +51,6 @@
         </QCardSection>
       </QCard>
 
-      <QCard flat bordered class="q-mb-md">
-        <QCardSection>
-          <SoundPackSelector />
-        </QCardSection>
-      </QCard>
-
       <template v-if="store.currentPack">
         <QCard flat bordered class="q-mb-md">
           <QCardSection><MoodStateControl /></QCardSection>
@@ -90,7 +76,7 @@
             {{ t('ambientSoundPage.selectPack') }}
           </div>
           <div class="text-caption text-grey-7 q-mt-xs">
-            {{ t('ambientSoundPage.importHint') }}
+            {{ t('ambientSoundPage.sidebarHint') }}
           </div>
         </QCardSection>
       </QCard>
@@ -99,21 +85,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import {
   IconMusic,
   IconPlayerPause,
   IconPlayerPlay,
-  IconPlus,
-  IconUpload,
   IconVolume,
 } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
-import { useLayout } from '@/composables/useLayout';
+import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import SoundPackSelector from '@/ambient-sound/components/SoundPackSelector.vue';
+import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import MoodStateControl from '@/ambient-sound/components/MoodStateControl.vue';
 import IntensitySlider from '@/ambient-sound/components/IntensitySlider.vue';
 import AmbientMixer from '@/ambient-sound/components/AmbientMixer.vue';
@@ -122,53 +105,23 @@ import WeatherPanel from '@/ambient-sound/components/WeatherPanel.vue';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const router = useRouter();
 const layout = useLayout();
-const fileInput = ref<HTMLInputElement | null>(null);
-
-function goToEditor() {
-  router.push('/ambient-sound/editor');
-}
-
-function triggerFileInput() {
-  fileInput.value?.click();
-}
-
-async function handleFileImport(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (file) {
-    await store.importPack(file);
-    target.value = '';
-  }
-}
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   layout.setTopMenuContent({
     component: ViewHeader,
     props: {
       title: t('ambientSoundPage.title'),
-      buttons: [
-        {
-          icon: IconPlus,
-          color: 'positive',
-          title: 'ambientSoundPage.createPack',
-          event: goToEditor,
-        },
-        {
-          icon: IconUpload,
-          color: 'primary',
-          title: 'ambientSoundPage.importPack',
-          event: triggerFileInput,
-        },
-      ],
     },
   });
+  rightDrawer.set({ component: SoundPackSidebar });
   await store.loadStoredPacks();
 });
 
 onUnmounted(() => {
   layout.setTopMenuContent(null);
+  rightDrawer.clear();
   store.pause();
 });
 </script>
@@ -177,10 +130,6 @@ onUnmounted(() => {
 .ambient-sound-page {
   max-width: 1000px;
   margin: 0 auto;
-}
-
-.hidden-file-input {
-  display: none;
 }
 
 .master-volume-slider {

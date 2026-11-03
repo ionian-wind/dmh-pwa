@@ -927,6 +927,9 @@ Add route to router:
   page-level styling.
 - A dedicated **Overall control** card owns global play/pause and master volume;
   ambient layers keep their own layer toggles and volume sliders.
+- Sound-pack management lives in the right sidebar. **Create Pack** and
+  **Import Pack** are pinned bottom `QItem` controls with side icons, matching
+  the map sidebar's bottom control pattern.
 - Integrate with existing file handling for custom audio upload
 
 ## 13. Free Sound Sources
