@@ -43,6 +43,13 @@ A one-shot entry is a triggerable sound that plays once. Entries are categorized
 and an optional cooldown. One-shot entries can be referenced by multiple scenes
 from the same package.
 
+One-shots are **independent of ambient playback state and mix settings**. They
+can be triggered while ambient audio is paused, while no scene is active, while
+music is disabled, while all ambience layers are muted, or while the ambient
+master volume is zero. They use their own entry volume and are not attenuated by
+the ambient master, music or ambience buses. A future dedicated one-shot bus may
+control them, but it must remain separate from the ambient settings.
+
 ### 2.4 Scene
 
 A scene is a saved playback configuration owned by a package. It defines:
@@ -80,6 +87,8 @@ associated with their source package and are removed if that package is removed.
 5. Its ambience and one-shot entries are inserted into the global gallery.
 6. Nothing starts playing until the user starts a scene or manually previews
    content.
+7. One-shot entries can be triggered regardless of whether ambient playback or a
+   scene is active.
 
 Removing a package removes its scenes, ambience entries and one-shot entries,
 and stops playback if that package is currently active.
@@ -327,7 +336,8 @@ provides playback, quick volume and expand/detach controls.
 - Scene play/pause and stop.
 - Master, music, ambience and one-shot volume buses.
 - Per-ambience toggle and volume; one sample per ambience plays at a time.
-- One-shot trigger grid.
+- One-shot trigger grid, always active regardless of ambient transport state,
+  active scene, music enabled state or ambient volume settings.
 - Scene switching crossfades or stops the old scene music and starts the new
   scene's music.
 
@@ -911,7 +921,8 @@ Add route to router:
 1. ✅ User can select from multiple sound packs (Forest, Tavern, Dungeon, etc.)
 2. ✅ User can toggle ambient layers on/off with individual volume control
 3. ✅ User can switch between mood states (Explore/Combat/Victory/Rest)
-4. ✅ One-shot SFX play immediately on button press
+4. ✅ One-shot SFX play immediately on button press regardless of ambient
+   play/pause, scene, music or ambient-volume state
 5. ✅ Intensity slider affects audio complexity in real-time
 6. ✅ Weather system modifies ambient sounds appropriately
 7. ✅ Audio continues playing in background (when navigating away)
@@ -1071,6 +1082,8 @@ interface SceneDef {
 Scene music is always owned by the scene. There is no shared mood-state music
 track and no cross-scene music selection. Loading a package registers its scenes
 in the scenes list and its ambience/one-shot entries in the global gallery.
+One-shots are always directly triggerable and are not gated by ambient playback
+or scene state.
 
 ### 14.3 Proposed experience
 
