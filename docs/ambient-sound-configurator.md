@@ -459,7 +459,7 @@ the editor hides Save and shows an import warning.
 | **Main**      | Name (required), description, icon via `IconPicker`, intensity slider, package (read-only) |
 | **Ambiences** | Selected ambience entries, variation selector, volume slider, remove, add entry            |
 | **One-shots** | Selected one-shot entries, category grouping, preview, remove, add entry                   |
-| **Music**     | Scene-owned music files, preview, loop toggle, replace/remove                              |
+| **Music**     | Scene-owned music presets by type; variants, add/remove preset and variants                |
 | **Links**     | Linked locations, modules, encounters and characters; add/remove links                     |
 
 **Ambiences tab**
