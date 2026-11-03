@@ -125,9 +125,10 @@ Renders:
 
 - title or spacer,
 - optional search `QInput`,
-- `buttons[]` (icon, color, title key, disabled, event),
-- create/edit/delete buttons,
-- right-drawer toggle.
+- a primary `QBtnGroup` containing `buttons[]` (icon, color, title key,
+  disabled, event) and create/edit/delete buttons,
+- a vertical `QSeparator` when both primary actions and a sidebar exist,
+- a separate `QBtnGroup` with the right-drawer toggle.
 
 Title strings are treated as i18n keys (`t(btn.title)`, `t('common.create')`).
 Search state is controlled via `searchQuery` + `update:searchQuery`, but no

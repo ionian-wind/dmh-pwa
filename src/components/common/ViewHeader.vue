@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
-import { type PropType } from 'vue';
+import { computed, type PropType } from 'vue';
 import IconRightDrawer from '@/components/common/IconRightDrawer.vue';
 import { useLayout } from '@/composables/useLayout';
 
@@ -125,6 +125,14 @@ const props = defineProps({
 const emit = defineEmits(['create', 'update:searchQuery']);
 
 const { rightDrawerContent, toggleRightDrawer } = useLayout();
+
+const hasPrimaryActions = computed(
+  () =>
+    props.buttons.length > 0 ||
+    props.showCreate ||
+    props.showEdit ||
+    props.showDelete,
+);
 </script>
 
 <template>
@@ -148,9 +156,10 @@ const { rightDrawerContent, toggleRightDrawer } = useLayout();
     outlined
   />
 
-  <QBtnGroup v-if="props.buttons.length > 0">
+  <QBtnGroup v-if="hasPrimaryActions">
     <QBtn
       v-for="(btn, index) in props.buttons"
+      :key="index"
       :color="btn.color"
       @click="btn.event"
       :title="t(btn.title)"
@@ -159,9 +168,7 @@ const { rightDrawerContent, toggleRightDrawer } = useLayout();
     >
       <component :is="btn.icon"></component>
     </QBtn>
-  </QBtnGroup>
 
-  <QBtnGroup>
     <QBtn
       v-if="props.showCreate"
       :color="'positive'"
@@ -176,7 +183,7 @@ const { rightDrawerContent, toggleRightDrawer } = useLayout();
       v-if="props.showEdit"
       :color="'positive'"
       @click="props.onEdit"
-      :disabled="props.isEditing"
+      :disable="props.isEditing"
       :title="t('common.edit')"
       :aria-label="t('common.edit')"
     >
@@ -193,9 +200,15 @@ const { rightDrawerContent, toggleRightDrawer } = useLayout();
       <IconTrash />
     </QBtn>
   </QBtnGroup>
-  <QBtnGroup>
+
+  <QSeparator
+    v-if="hasPrimaryActions && rightDrawerContent"
+    vertical
+    class="view-header-separator"
+  />
+
+  <QBtnGroup v-if="rightDrawerContent">
     <QBtn
-      v-if="rightDrawerContent"
       @click="toggleRightDrawer"
       :title="t('common.toggleSidebar')"
       :aria-label="t('common.toggleSidebar')"
@@ -206,6 +219,10 @@ const { rightDrawerContent, toggleRightDrawer } = useLayout();
 </template>
 
 <style scoped>
+.view-header-separator {
+  margin: 0 0.25rem;
+}
+
 .view-header-subtitle {
   font-size: 0.75rem;
   line-height: 1.1;
