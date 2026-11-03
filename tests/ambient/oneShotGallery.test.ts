@@ -83,15 +83,20 @@ describe('OneShotGallery', () => {
     wrapper.unmount();
   });
 
-  it('filters by category and shows an empty state', async () => {
+  it('groups one-shots by category with titles and separators', () => {
     const wrapper = mount(OneShotGallery, {
       global: { stubs: quasarStubs },
     });
 
-    await wrapper.find('select').setValue('combat');
-    expect(wrapper.findAll('.one-shot-control')).toHaveLength(1);
-    expect(wrapper.text()).toContain('Sword');
+    expect(wrapper.find('select').exists()).toBe(false);
+    expect(wrapper.findAll('.one-shot-group')).toHaveLength(2);
+    expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(2);
+    expect(wrapper.text()).toContain('weather');
+    expect(wrapper.text()).toContain('combat');
+    wrapper.unmount();
+  });
 
+  it('shows an empty state', () => {
     storeMock.galleryOneShots = [];
     storeMock.selectedPackId = 'pack-1';
     const empty = mount(OneShotGallery, {
@@ -99,6 +104,5 @@ describe('OneShotGallery', () => {
     });
     expect(empty.text()).toContain('No one-shots');
     empty.unmount();
-    wrapper.unmount();
   });
 });

@@ -111,8 +111,11 @@
             :key="group.category"
             class="q-mb-md"
           >
-            <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
-              {{ group.category }}
+            <div class="row items-center q-gutter-sm q-mb-sm">
+              <span class="text-caption text-uppercase text-grey-7">
+                {{ group.category }}
+              </span>
+              <QSeparator class="col" />
             </div>
             <div class="one-shot-grid">
               <OneShotControl

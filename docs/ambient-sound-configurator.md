@@ -518,10 +518,10 @@ button; playback starts from the scene view.
 
 A global content gallery for ambience entries from all loaded packages.
 
-**Toolbar**
+**Grouping**
 
-- Package filter synced with the right sidebar.
-- Category dropdown built from the available categories, with “All categories”.
+- Package filter synced with the right sidebar. There is no category selector.
+- Entries are grouped by category; each group has a title and separator.
 
 **Ambience row**
 
@@ -538,8 +538,9 @@ A global content gallery for ambience entries from all loaded packages.
 
 A global content gallery for one-shot entries.
 
-- Package and category filters behave like the Ambiences tab.
-- Flat knob grid; entries are not grouped by package.
+- Package filter behaves like the Ambiences tab. There is no category selector.
+- Knob entries are grouped by category; every group has a title and separator.
+  A group can contain entries from multiple packages.
 - Each entry is a Quasar knob with the one-shot icon in the knob slot.
 - The knob is a round button with a read-only progress arc. It cannot be dragged
   to scrub; clicking it plays the one-shot.
@@ -586,8 +587,9 @@ returns to the scene/gallery tabs. The view contains:
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.
-- **One-shots tab** — linked one-shots as knob controls grouped by category.
-  The one-shot icon sits inside the knob and the arc shows playback progress.
+- **One-shots tab** — linked one-shots as knob controls grouped by category,
+  with a title and separator per group. The one-shot icon sits inside the knob
+  and the arc shows playback progress.
   Clicking the knob plays the one-shot immediately, independent of music or
   ambience state.
 
