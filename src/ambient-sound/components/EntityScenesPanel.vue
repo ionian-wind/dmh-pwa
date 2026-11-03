@@ -30,15 +30,7 @@
           <AmbientIcon :icon="entry.scene.icon" :size="20" />
         </QItemSection>
         <QItemSection>
-          <div class="row items-center q-gutter-xs">
-            <span>{{ entry.scene.name }}</span>
-            <IconPackageImport
-              v-if="entry.pack.origin === 'imported'"
-              :size="13"
-              class="imported-mark"
-              :title="t('ambientSoundPage.importedPackage')"
-            />
-          </div>
+          <div>{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
         </QItemSection>
         <QItemSection side>
@@ -106,7 +98,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-  IconPackageImport,
   IconPlayerPause,
   IconPlayerPlay,
   IconPlus,
@@ -188,10 +179,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.imported-mark {
-  color: var(--color-text-light);
-}
-
 .entity-scenes-panel {
   min-height: 120px;
 }

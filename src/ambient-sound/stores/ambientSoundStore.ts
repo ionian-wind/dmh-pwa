@@ -602,54 +602,6 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       .map((link) => ({ packageId: link.packageId, sceneId: link.sceneId }));
   }
 
-  async function saveScene(
-    packId: string,
-    scene: SceneDef,
-    audioFiles: Map<string, Blob> = new Map(),
-  ): Promise<void> {
-    const pack = findPack(packId);
-    if (!pack) return;
-
-    const scenes = pack.scenes.some((entry) => entry.id === scene.id)
-      ? pack.scenes.map((entry) => (entry.id === scene.id ? scene : entry))
-      : [...pack.scenes, scene];
-    const manifest = { ...pack, scenes };
-
-    if (audioFiles.size > 0) {
-      const existing = await packManager.getPackAudioBlobs(packId);
-      const merged = new Map<string, Blob>(Object.entries(existing));
-      for (const [path, blob] of audioFiles) merged.set(path, blob);
-      await packManager.saveSoundPack(manifest, merged);
-      clearPackAudio(packId);
-    }
-
-    const updated = await packManager.updatePackManifest(packId, manifest);
-    storedPacks.value = storedPacks.value.map((entry) =>
-      entry.id === packId ? updated : entry,
-    );
-    if (activeSceneKey.value === sceneKey(packId, scene.id)) {
-      activeSceneKey.value = sceneKey(packId, scene.id);
-    }
-  }
-
-  async function deleteScene(packId: string, sceneId: string): Promise<void> {
-    const pack = findPack(packId);
-    if (!pack) return;
-    if (activeSceneKey.value === sceneKey(packId, sceneId)) stop();
-    const scenes = pack.scenes.filter((scene) => scene.id !== sceneId);
-    const updated = await packManager.updatePackManifest(packId, {
-      ...pack,
-      scenes,
-    });
-    storedPacks.value = storedPacks.value.map((entry) =>
-      entry.id === packId ? updated : entry,
-    );
-    sceneLinks.value = sceneLinks.value.filter(
-      (link) => !(link.packageId === packId && link.sceneId === sceneId),
-    );
-    saveLinks(sceneLinks.value);
-  }
-
   audioEngine.setMusicEndHandler(handleSceneMusicEnd);
 
   return {
@@ -695,7 +647,5 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     removeSceneLink,
     linksForScene,
     linksForEntity,
-    saveScene,
-    deleteScene,
   };
 });

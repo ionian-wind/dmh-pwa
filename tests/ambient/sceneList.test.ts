@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 
 const storeMock = vi.hoisted(() => ({
-  selectedPackId: 'imported-pack' as string | null,
+  selectedPackId: null as string | null,
   storedPacks: [] as any[],
   allScenes: [] as any[],
   activeSceneKey: null as string | null,
@@ -12,15 +12,11 @@ const storeMock = vi.hoisted(() => ({
   playScene: vi.fn(),
   play: vi.fn(),
   pause: vi.fn(),
-  deleteScene: vi.fn(),
 }));
-
-const confirmMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => storeMock,
 }));
-vi.mock('@/dialogs', () => ({ confirm: confirmMock }));
 
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import { quasarStubs } from '../helpers/quasar-stubs';
@@ -45,13 +41,11 @@ describe('SceneList', () => {
       storeMock.playScene,
       storeMock.play,
       storeMock.pause,
-      storeMock.deleteScene,
-      confirmMock,
     ]) {
       fn.mockReset();
     }
     storeMock.linksForScene.mockReturnValue([]);
-    storeMock.selectedPackId = 'imported-pack';
+    storeMock.selectedPackId = null;
     storeMock.storedPacks = [importedPack, createdPack];
     storeMock.allScenes = [
       { pack: importedPack, scene },
@@ -63,30 +57,9 @@ describe('SceneList', () => {
     storeMock.activeSceneKey = null;
     storeMock.isPlaying = false;
     storeMock.activeScene = null;
-    confirmMock.mockResolvedValue(true);
   });
 
-  it('marks imported scenes and disables editing them', () => {
-    const wrapper = mount(SceneList, {
-      global: { stubs: quasarStubs },
-    });
-
-    const rows = wrapper.findAll('.scene-row');
-    expect(rows).toHaveLength(1);
-    expect(rows[0].find('.imported-mark').exists()).toBe(true);
-
-    const edit = rows[0].find('button[aria-label="Edit"]');
-    expect(edit.attributes('disabled')).toBeDefined();
-
-    const newScene = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'New scene');
-    expect(newScene?.attributes('disabled')).toBeDefined();
-    wrapper.unmount();
-  });
-
-  it('filters scenes and shows the empty state', async () => {
-    storeMock.selectedPackId = null;
+  it('filters scenes and opens a scene from its row', async () => {
     const wrapper = mount(SceneList, {
       global: { stubs: quasarStubs },
     });
@@ -95,13 +68,17 @@ describe('SceneList', () => {
     await wrapper.find('input').setValue('Smithy');
     expect(wrapper.findAll('.scene-row')).toHaveLength(1);
 
+    const row = wrapper.find('.scene-row');
+    await row.trigger('click');
+    expect(wrapper.emitted('open')?.[0]).toEqual(['local-pack', 'scene-2']);
+
     await wrapper.find('input').setValue('missing');
     expect(wrapper.findAll('.scene-row')).toHaveLength(0);
     expect(wrapper.text()).toContain('No scenes yet');
     wrapper.unmount();
   });
 
-  it('lets created scenes be edited and started', async () => {
+  it('shows only playback controls and does not expose edit or delete actions', () => {
     storeMock.selectedPackId = 'local-pack';
     const wrapper = mount(SceneList, {
       global: { stubs: quasarStubs },
@@ -109,27 +86,14 @@ describe('SceneList', () => {
 
     const row = wrapper.find('.scene-row');
     expect(row.find('.imported-mark').exists()).toBe(false);
-    await row.trigger('click');
-    expect(wrapper.emitted('open')?.[0]).toEqual(['local-pack', 'scene-2']);
-
-    const edit = row.find('button[aria-label="Edit"]');
-    expect(edit.attributes('disabled')).toBeUndefined();
-    await edit.trigger('click');
-    expect(wrapper.emitted('edit')?.[0]).toEqual(['local-pack', 'scene-2']);
-
-    const play = row.find('button[aria-label="Play"]');
-    await play.trigger('click');
-    expect(storeMock.playScene).toHaveBeenCalledWith('local-pack', 'scene-2');
-
-    const newScene = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'New scene');
-    await newScene!.trigger('click');
-    expect(wrapper.emitted('create')?.[0]).toEqual(['local-pack']);
+    expect(row.find('button[aria-label="Edit"]').exists()).toBe(false);
+    expect(row.find('button[aria-label="Delete"]').exists()).toBe(false);
+    expect(row.find('button[aria-label="Play"]').exists()).toBe(true);
+    expect(wrapper.text()).not.toContain('New scene');
     wrapper.unmount();
   });
 
-  it('pauses the active scene and deletes scenes after confirmation', async () => {
+  it('pauses the active scene', async () => {
     storeMock.selectedPackId = 'local-pack';
     storeMock.activeSceneKey = 'local-pack::scene-2';
     storeMock.isPlaying = true;
@@ -141,14 +105,6 @@ describe('SceneList', () => {
     const row = wrapper.find('.scene-row');
     await row.find('button[aria-label="Pause"]').trigger('click');
     expect(storeMock.pause).toHaveBeenCalled();
-
-    await row.find('button[aria-label="Delete"]').trigger('click');
-    await vi.waitFor(() =>
-      expect(storeMock.deleteScene).toHaveBeenCalledWith(
-        'local-pack',
-        'scene-2',
-      ),
-    );
     wrapper.unmount();
   });
 });

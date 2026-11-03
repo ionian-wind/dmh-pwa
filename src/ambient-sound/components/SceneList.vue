@@ -11,18 +11,6 @@
       >
         <template #prepend><IconSearch :size="18" /></template>
       </QInput>
-      <QBtn
-        v-if="store.selectedPackId"
-        color="primary"
-        :label="t('ambientSoundPage.newScene')"
-        :disable="selectedPackImported"
-        :title="
-          selectedPackImported
-            ? t('ambientSoundPage.importedReadOnlyHint')
-            : undefined
-        "
-        @click="emit('create', store.selectedPackId)"
-      />
     </div>
 
     <div v-if="scenes.length" class="column q-gutter-sm">
@@ -42,12 +30,6 @@
               <span class="text-subtitle1 text-weight-medium">
                 {{ entry.scene.name }}
               </span>
-              <IconPackageImport
-                v-if="entry.pack.origin === 'imported'"
-                :size="14"
-                class="imported-mark"
-                :title="t('ambientSoundPage.importedPackage')"
-              />
               <QBadge
                 v-if="isPlaying(entry.pack.id, entry.scene.id)"
                 color="primary"
@@ -85,32 +67,6 @@
             <IconPlayerPause v-if="isPlaying(entry.pack.id, entry.scene.id)" />
             <IconPlayerPlay v-else />
           </QBtn>
-          <QBtn
-            flat
-            round
-            :disable="entry.pack.origin === 'imported'"
-            :title="
-              entry.pack.origin === 'imported'
-                ? t('ambientSoundPage.importedSceneReadOnly')
-                : t('common.edit')
-            "
-            :aria-label="t('common.edit')"
-            @click.stop="emit('edit', entry.pack.id, entry.scene.id)"
-          >
-            <IconPencil :size="18" />
-          </QBtn>
-          <QBtn
-            flat
-            round
-            color="negative"
-            :title="t('common.delete')"
-            :aria-label="t('common.delete')"
-            @click="
-              removeScene(entry.pack.id, entry.scene.id, entry.scene.name)
-            "
-          >
-            <IconTrash :size="18" />
-          </QBtn>
         </QCardSection>
       </QCard>
     </div>
@@ -137,32 +93,21 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconMusic,
-  IconPencil,
-  IconPackageImport,
   IconPlayerPause,
   IconPlayerPlay,
   IconSearch,
-  IconTrash,
 } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
-import { confirm } from '@/dialogs';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 const emit = defineEmits<{
   (e: 'open', packId: string, sceneId: string): void;
-  (e: 'edit', packId: string, sceneId: string): void;
-  (e: 'create', packId: string): void;
 }>();
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const search = ref('');
-const selectedPackImported = computed(
-  () =>
-    store.storedPacks.find((pack) => pack.id === store.selectedPackId)
-      ?.origin === 'imported',
-);
 
 function sceneKey(packId: string, sceneId: string) {
   return `${packId}::${sceneId}`;
@@ -204,20 +149,9 @@ async function toggleScene(packId: string, sceneId: string) {
   }
   await store.playScene(packId, sceneId);
 }
-
-async function removeScene(packId: string, sceneId: string, name: string) {
-  if (!(await confirm(t('ambientSoundPage.deleteSceneConfirm', { name })))) {
-    return;
-  }
-  await store.deleteScene(packId, sceneId);
-}
 </script>
 
 <style scoped>
-.imported-mark {
-  color: var(--color-text-light);
-}
-
 .scene-list {
   width: 100%;
 }

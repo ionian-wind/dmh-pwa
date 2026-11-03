@@ -23,17 +23,9 @@
             class="q-mb-md"
           />
 
-          <SceneList
-            v-if="activeTab === 'scenes'"
-            @open="openScenePlayer"
-            @edit="openEditor"
-            @create="createScene"
-          />
-          <AmbienceGallery
-            v-else-if="activeTab === 'ambiences'"
-            @add="openAddToScene"
-          />
-          <OneShotGallery v-else @add="openAddToScene" />
+          <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
+          <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
+          <OneShotGallery v-else />
         </QCardSection>
       </QCard>
     </template>
@@ -50,22 +42,6 @@
       :pack-id="playerPackId"
       :scene-id="playerSceneId"
       @close="playerOpen = false"
-    />
-
-    <SceneEditorModal
-      :is-open="editorOpen"
-      :pack-id="editorPackId"
-      :scene-id="editorSceneId"
-      @close="closeEditor"
-      @saved="activeTab = 'scenes'"
-    />
-
-    <AddToScenePicker
-      :is-open="pickerOpen"
-      :pack-id="pickerPackId"
-      :kind="pickerKind"
-      :entry-id="pickerEntryId"
-      @close="pickerOpen = false"
     />
   </div>
 </template>
@@ -84,9 +60,7 @@ import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalContro
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
-import SceneEditorModal from '@/ambient-sound/components/SceneEditorModal.vue';
 import ScenePlayerDialog from '@/ambient-sound/components/ScenePlayerDialog.vue';
-import AddToScenePicker from '@/ambient-sound/components/AddToScenePicker.vue';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -94,16 +68,9 @@ const layout = useLayout();
 const rightDrawer = useRightDrawer();
 
 const activeTab = ref('scenes');
-const editorOpen = ref(false);
-const editorPackId = ref('');
-const editorSceneId = ref<string | undefined>(undefined);
 const playerOpen = ref(false);
 const playerPackId = ref('');
 const playerSceneId = ref('');
-const pickerOpen = ref(false);
-const pickerPackId = ref('');
-const pickerKind = ref<'ambience' | 'oneShot'>('ambience');
-const pickerEntryId = ref('');
 
 const tabs = computed(() => [
   { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
@@ -115,33 +82,6 @@ function openScenePlayer(packId: string, sceneId: string) {
   playerPackId.value = packId;
   playerSceneId.value = sceneId;
   playerOpen.value = true;
-}
-
-function openEditor(packId: string, sceneId: string) {
-  editorPackId.value = packId;
-  editorSceneId.value = sceneId;
-  editorOpen.value = true;
-}
-
-function createScene(packId: string) {
-  editorPackId.value = packId;
-  editorSceneId.value = undefined;
-  editorOpen.value = true;
-}
-
-function closeEditor() {
-  editorOpen.value = false;
-}
-
-function openAddToScene(
-  packId: string,
-  kind: 'ambience' | 'oneShot',
-  entryId: string,
-) {
-  pickerPackId.value = packId;
-  pickerKind.value = kind;
-  pickerEntryId.value = entryId;
-  pickerOpen.value = true;
 }
 
 onMounted(async () => {

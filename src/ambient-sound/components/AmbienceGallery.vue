@@ -34,16 +34,8 @@
         <QCardSection class="row items-center q-gutter-sm">
           <AmbientIcon :icon="entry.ambience.icon" :size="24" />
           <div class="col">
-            <div
-              class="text-subtitle2 text-weight-medium row items-center q-gutter-xs"
-            >
-              <span>{{ entry.ambience.name }}</span>
-              <IconPackageImport
-                v-if="entry.pack.origin === 'imported'"
-                :size="13"
-                class="imported-mark"
-                :title="t('ambientSoundPage.importedPackage')"
-              />
+            <div class="text-subtitle2 text-weight-medium">
+              {{ entry.ambience.name }}
             </div>
             <div class="text-caption text-grey-7">
               {{ entry.pack.name }} ·
@@ -106,16 +98,6 @@
             />
             <IconPlayerPlay v-else :size="18" />
           </QBtn>
-          <QBtn
-            flat
-            round
-            color="primary"
-            :title="t('ambientSoundPage.addToScene')"
-            :aria-label="t('ambientSoundPage.addToScene')"
-            @click="emit('add', entry.packageId, 'ambience', entry.ambience.id)"
-          >
-            <IconPlus :size="18" />
-          </QBtn>
         </QCardSection>
       </QCard>
     </div>
@@ -133,10 +115,8 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-  IconPackageImport,
   IconPlayerPause,
   IconPlayerPlay,
-  IconPlus,
   IconSearch,
   IconWaveSine,
 } from '@tabler/icons-vue';
@@ -145,10 +125,6 @@ import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { getLayerVariations } from '@/ambient-sound/utils/packData';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { GalleryAmbience, LayerDef } from '@/ambient-sound/types';
-
-const emit = defineEmits<{
-  (e: 'add', packId: string, kind: 'ambience', id: string): void;
-}>();
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -237,10 +213,6 @@ function selectVariation(
 .is-active {
   border-color: var(--color-primary);
   background: var(--color-background-soft);
-}
-
-.imported-mark {
-  color: var(--color-text-light);
 }
 
 .category-select {

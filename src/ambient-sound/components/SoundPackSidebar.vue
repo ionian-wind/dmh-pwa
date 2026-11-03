@@ -24,12 +24,6 @@
           <component :is="categoryIcon(pack.category)" :size="18" />
         </template>
         <template #actions>
-          <IconPackageImport
-            v-if="pack.origin === 'imported'"
-            :size="14"
-            class="imported-mark"
-            :title="t('ambientSoundPage.importedPackage')"
-          />
           <QBtn
             flat
             dense
@@ -79,7 +73,6 @@ import {
   IconBuilding,
   IconEdit,
   IconFolder,
-  IconPackageImport,
   IconPlus,
   IconRocket,
   IconTree,
@@ -151,10 +144,6 @@ async function handleFileImport(event: Event) {
   flex: 0 0 auto;
   margin-top: auto;
   background: var(--color-background);
-}
-
-.imported-mark {
-  color: var(--color-text-light);
 }
 
 .sound-pack-item {

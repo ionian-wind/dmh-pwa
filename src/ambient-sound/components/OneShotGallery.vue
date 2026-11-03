@@ -33,16 +33,8 @@
       >
         <QCardSection class="column items-center text-center q-gutter-xs">
           <AmbientIcon :icon="entry.oneShot.icon" :size="28" />
-          <div
-            class="text-subtitle2 text-weight-medium row items-center q-gutter-xs"
-          >
-            <span>{{ entry.oneShot.name }}</span>
-            <IconPackageImport
-              v-if="entry.pack.origin === 'imported'"
-              :size="13"
-              class="imported-mark"
-              :title="t('ambientSoundPage.importedPackage')"
-            />
+          <div class="text-subtitle2 text-weight-medium">
+            {{ entry.oneShot.name }}
           </div>
           <div class="text-caption text-grey-7">
             {{ entry.pack.name }} · {{ entry.oneShot.category }}
@@ -61,16 +53,6 @@
             >
               <IconPlayerPlay :size="18" />
             </QBtn>
-            <QBtn
-              flat
-              round
-              color="primary"
-              :title="t('ambientSoundPage.addToScene')"
-              :aria-label="t('ambientSoundPage.addToScene')"
-              @click="emit('add', entry.packageId, 'oneShot', entry.oneShot.id)"
-            >
-              <IconPlus :size="18" />
-            </QBtn>
           </div>
         </QCardSection>
       </QCard>
@@ -88,20 +70,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconBell,
-  IconPackageImport,
-  IconPlayerPlay,
-  IconPlus,
-  IconSearch,
-} from '@tabler/icons-vue';
+import { IconBell, IconPlayerPlay, IconSearch } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-
-const emit = defineEmits<{
-  (e: 'add', packId: string, kind: 'oneShot', id: string): void;
-}>();
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -142,10 +114,6 @@ function usedIn(packId: string, oneShotId: string) {
 </script>
 
 <style scoped>
-.imported-mark {
-  color: var(--color-text-light);
-}
-
 .category-select {
   min-width: 150px;
 }

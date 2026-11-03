@@ -34,7 +34,7 @@ vi.mock('@/ambient-sound/utils/audioEngine', () => ({
 
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { normalizeSoundPack } from '@/ambient-sound/utils/packData';
-import type { SceneDef, SoundPackManifest } from '@/ambient-sound/types';
+import type { SoundPackManifest } from '@/ambient-sound/types';
 
 const manifest: SoundPackManifest = {
   version: '2.0',
@@ -360,12 +360,6 @@ describe('ambient sound store', () => {
     await store.toggleAmbience('forest', 'missing');
     await store.setAmbienceVariation('forest', 'missing', 'default');
     await store.setAmbienceVariation('forest', 'rain', 'heavy');
-    await store.saveScene('missing', {
-      ...manifest.scenes![0],
-      id: 'missing',
-    });
-    await store.deleteScene('missing', 'missing');
-
     store.setMusicPreset('explore');
     expect(store.musicEnabled).toBe(true);
     store.setMusicEnabled(true);
@@ -397,33 +391,16 @@ describe('ambient sound store', () => {
     expect(store.selectedPackId).toBe('forest');
   });
 
-  it('creates, updates and deletes scenes and links', async () => {
+  it('adds and removes local scene links', async () => {
     const store = createStore();
     await store.loadStoredPacks();
 
-    const scene: SceneDef = {
-      ...manifest.scenes![0],
-      id: 'shop',
-      name: 'Shop',
-      musicPresets: [],
-    };
-    await store.saveScene('forest', scene);
-    expect(mocks.packManager.updatePackManifest).toHaveBeenCalled();
-    expect(store.storedPacks[0].scenes.map((entry) => entry.id)).toContain(
-      'shop',
-    );
-
-    store.addSceneLink('forest', 'shop', 'location', 'loc-1');
+    store.addSceneLink('forest', 'tavern', 'location', 'loc-1');
     expect(store.linksForEntity('location', 'loc-1')).toEqual([
-      { packageId: 'forest', sceneId: 'shop' },
+      { packageId: 'forest', sceneId: 'tavern' },
     ]);
 
-    store.removeSceneLink(store.linksForScene('forest', 'shop')[0].id);
+    store.removeSceneLink(store.linksForScene('forest', 'tavern')[0].id);
     expect(store.linksForEntity('location', 'loc-1')).toEqual([]);
-
-    await store.deleteScene('forest', 'shop');
-    expect(store.storedPacks[0].scenes.map((entry) => entry.id)).not.toContain(
-      'shop',
-    );
   });
 });

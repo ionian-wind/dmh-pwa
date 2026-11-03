@@ -47,9 +47,7 @@ const stubs = {
   SceneList: true,
   AmbienceGallery: true,
   OneShotGallery: true,
-  SceneEditorModal: true,
   ScenePlayerDialog: true,
-  AddToScenePicker: true,
 };
 
 describe('AmbientSoundView', () => {
@@ -119,43 +117,6 @@ describe('AmbientSoundView', () => {
     expect(wrapper.findComponent({ name: 'OneShotGallery' }).exists()).toBe(
       true,
     );
-    wrapper.unmount();
-  });
-
-  it('opens the scene editor and add-to-scene picker from child actions', async () => {
-    const wrapper = mount(AmbientSoundView, { global: { stubs } });
-    await flushPromises();
-
-    const sceneList = wrapper.findComponent({ name: 'SceneList' });
-    sceneList.vm.$emit('edit', 'pack-1', 'scene-1');
-    sceneList.vm.$emit('create', 'pack-1');
-    await flushPromises();
-
-    const editor = wrapper.findComponent({ name: 'SceneEditorModal' });
-    expect(editor.props('isOpen')).toBe(true);
-    expect(editor.props('packId')).toBe('pack-1');
-
-    const ambiencesTab = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Ambiences');
-    await ambiencesTab!.trigger('click');
-    await flushPromises();
-
-    const ambienceGallery = wrapper.findComponent({ name: 'AmbienceGallery' });
-    ambienceGallery.vm.$emit('add', 'pack-1', 'ambience', 'rain');
-    await flushPromises();
-
-    const picker = wrapper.findComponent({ name: 'AddToScenePicker' });
-    expect(picker.props('isOpen')).toBe(true);
-    expect(picker.props('packId')).toBe('pack-1');
-    expect(picker.props('kind')).toBe('ambience');
-    expect(picker.props('entryId')).toBe('rain');
-
-    editor.vm.$emit('close');
-    picker.vm.$emit('close');
-    await flushPromises();
-    expect(editor.props('isOpen')).toBe(false);
-    expect(picker.props('isOpen')).toBe(false);
     wrapper.unmount();
   });
 
