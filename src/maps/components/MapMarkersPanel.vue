@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { IconPencil, IconTrash } from '@tabler/icons-vue';
-import EntityLinkList from '@/components/common/EntityLinkList.vue';
 import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { MapMarker } from '../types';
 import { markerIconClass } from '../icons';
@@ -60,11 +59,6 @@ const { t } = useI18n();
       <div v-if="marker.description" class="text-caption text-grey-7">
         {{ marker.description }}
       </div>
-      <EntityLinkList
-        v-if="marker.entities.length > 0"
-        :links="marker.entities"
-      />
-
       <template v-if="editable" #actions>
         <QBtn
           flat

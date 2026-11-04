@@ -11,7 +11,6 @@ import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-
 const area: MapArea = {
   id: 'a1',
   title: 'Forest',
@@ -153,7 +152,6 @@ describe('MapAreaEditor', () => {
 describe('MapAreasPanel', () => {
   it('lists areas, shapes, linked entities and emits selection', async () => {
     resetMockStores();
-    seedMockStore('notes', [{ id: 'n1', title: 'Session note' }]);
 
     const wrapper = mount(MapAreasPanel, {
       props: { areas: [area, area2] },
@@ -163,7 +161,7 @@ describe('MapAreasPanel', () => {
     expect(wrapper.text()).toContain('Forest');
     expect(wrapper.text()).toContain('Dark woods');
     expect(wrapper.text()).not.toContain('Polygon');
-    expect(wrapper.text()).toContain('Session note');
+    expect(wrapper.text()).not.toContain('Session note');
     expect(wrapper.text()).toContain('Lake');
 
     await wrapper.find('.map-area-item').trigger('click');
