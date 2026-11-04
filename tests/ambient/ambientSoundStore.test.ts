@@ -504,6 +504,28 @@ describe('ambient sound store', () => {
     );
   });
 
+  it('marks the scene active when ambience starts in scene context', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 0, 'tavern');
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeSceneKey).toBe('forest::tavern');
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 0, 'tavern');
+    expect(store.isPlaying).toBe(false);
+    expect(store.activeSceneKey).toBeNull();
+  });
+
+  it('does not mark a scene for ambience started outside a scene', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 0);
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeSceneKey).toBeNull();
+  });
+
   it('plays multiple ambience tracks together and toggles them globally', async () => {
     const store = createStore();
     await store.loadStoredPacks();
@@ -557,6 +579,7 @@ describe('ambient sound store', () => {
       0.8,
     );
     expect(store.isPlaying).toBe(false);
+    expect(store.activeSceneKey).toBeNull();
     expect(store.isOneShotPlaying('forest', 'thunder')).toBe(true);
 
     const endHandler = mocks.audioEngine.setOneShotEndHandler.mock.calls[0][0];

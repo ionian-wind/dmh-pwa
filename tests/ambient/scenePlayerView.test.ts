@@ -337,6 +337,7 @@ describe('ScenePlayerView', () => {
       'rain',
       'light',
       0,
+      'scene-1',
     );
 
     wrapper
@@ -358,6 +359,7 @@ describe('ScenePlayerView', () => {
       'rain',
       'heavy',
       0,
+      'scene-1',
     );
     wrapper.unmount();
   });
@@ -411,6 +413,7 @@ describe('ScenePlayerView', () => {
       'rain',
       'heavy',
       0,
+      'scene-1',
     );
 
     const oneShotsTab = wrapper

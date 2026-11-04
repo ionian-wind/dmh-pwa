@@ -385,6 +385,7 @@ async function selectSample(
     row.ambience.id,
     variationId,
     sampleIndex,
+    props.sceneId,
   );
 }
 

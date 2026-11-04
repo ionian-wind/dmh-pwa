@@ -471,6 +471,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     ambienceId: string,
     variationId: string,
     sampleIndex: number,
+    sceneId?: string,
   ): Promise<void> {
     const key = layerKey(packId, ambienceId);
     const active = activeLayers.value.get(key);
@@ -486,21 +487,28 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
 
     if (!active) {
       await toggleAmbience(packId, ambienceId, variationId, sampleIndex);
-      return;
+    } else {
+      const pack = findPack(packId);
+      const ambience = findAmbience(packId, ambienceId);
+      if (!pack || !ambience) return;
+      await ensurePackAudio(pack);
+      stopLayer(key);
+      startAmbience(
+        packId,
+        ambience,
+        variationId,
+        active.volume * 100,
+        sampleIndex,
+      );
     }
 
-    const pack = findPack(packId);
-    const ambience = findAmbience(packId, ambienceId);
-    if (!pack || !ambience) return;
-    await ensurePackAudio(pack);
-    stopLayer(key);
-    startAmbience(
-      packId,
-      ambience,
-      variationId,
-      active.volume * 100,
-      sampleIndex,
-    );
+    if (
+      sceneId &&
+      activeLayers.value.has(key) &&
+      activeSceneKey.value === null
+    ) {
+      activeSceneKey.value = sceneKey(packId, sceneId);
+    }
   }
 
   async function retuneAmbienceVariation(
