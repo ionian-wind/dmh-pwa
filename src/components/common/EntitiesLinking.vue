@@ -3,6 +3,7 @@ import { computed, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconPlus, IconX } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityCreateDialog from '@/maps/components/EntityCreateDialog.vue';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 import { dedupeEntityRefs } from '@/maps/utils/entityRefs';
@@ -139,56 +140,53 @@ function removeLink(ref: MapEntityRef) {
 
 <template>
   <div>
-    <QList separator>
-      <QItem>
-        <QItemSection class="text-subtitle2">{{ kindLabel }}</QItemSection>
-        <QItemSection side>
-          <QBtn
-            flat
-            round
-            color="primary"
-            :title="t('common.add')"
-            :aria-label="t('common.add')"
-            @click="openModal"
-          >
-            <IconPlus :size="18" />
-          </QBtn>
-        </QItemSection>
-      </QItem>
-    </QList>
-
-    <QVirtualScroll
-      v-if="linkedRefs.length > 0"
-      :items="linkedRefs"
-      type="list"
-      virtual-scroll-item-size="48"
-      class="q-pa-none"
-      style="max-height: 320px"
-    >
-      <template #default="{ item: ref }">
-        <QItem class="linked-entity-item">
-          <QItemSection>{{ labelFor(ref) }}</QItemSection>
-          <QItemSection side>
-            <QBtn
-              flat
-              dense
-              round
-              color="negative"
-              class="linked-entity-remove"
-              :title="t('common.remove')"
-              :aria-label="t('common.remove')"
-              @click="removeLink(ref)"
-            >
-              <IconX :size="16" />
-            </QBtn>
-          </QItemSection>
-        </QItem>
+    <EntityGroup :title="kindLabel">
+      <template #actions>
+        <QBtn
+          flat
+          round
+          color="primary"
+          :title="t('common.add')"
+          :aria-label="t('common.add')"
+          @click="openModal"
+        >
+          <IconPlus :size="18" />
+        </QBtn>
       </template>
-    </QVirtualScroll>
 
-    <div v-else class="text-caption text-grey-7 q-pa-sm">
-      {{ t('maps.noLinkedEntities') }}
-    </div>
+      <QVirtualScroll
+        v-if="linkedRefs.length > 0"
+        :items="linkedRefs"
+        type="list"
+        virtual-scroll-item-size="48"
+        class="q-pa-none"
+        style="max-height: 320px"
+      >
+        <template #default="{ item: ref }">
+          <QItem class="linked-entity-item">
+            <QItemSection>{{ labelFor(ref) }}</QItemSection>
+            <QItemSection side>
+              <QBtn
+                flat
+                dense
+                round
+                color="negative"
+                class="linked-entity-remove"
+                :title="t('common.remove')"
+                :aria-label="t('common.remove')"
+                @click="removeLink(ref)"
+              >
+                <IconX :size="16" />
+              </QBtn>
+            </QItemSection>
+          </QItem>
+        </template>
+      </QVirtualScroll>
+
+      <div v-else class="text-caption text-grey-7 q-pa-sm">
+        {{ t('maps.noLinkedEntities') }}
+      </div>
+    </EntityGroup>
 
     <BaseModal
       :isOpen="isModalOpen"

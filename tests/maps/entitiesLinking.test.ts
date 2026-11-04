@@ -65,6 +65,7 @@ describe('EntitiesLinking', () => {
     });
 
     expect(wrapper.text()).toContain('Notes');
+    expect(wrapper.find('.entity-group').exists()).toBe(true);
     expect(wrapper.text()).toContain('No linked entities.');
 
     await wrapper.setProps({

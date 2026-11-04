@@ -175,9 +175,10 @@ scene player. It accepts `tabs` (`id`, `label`, optional `disabled`) and support
 ### `EntityGroup.vue`
 
 Section wrapper for grouped entity lists. It renders an uppercase group title
-followed by a flexible separator and exposes the group content through the
-default slot. Consecutive groups get vertical spacing. Used by the ambient
-ambience/one-shot galleries and the scene player groups.
+followed by a flexible separator, an optional `actions` slot beside the title,
+and the group content through the default slot. Consecutive groups get vertical
+spacing. Used by the ambient ambience/one-shot galleries, scene player groups and
+`EntitiesLinking` blocks.
 
 ### `VolumeControl.vue`
 
