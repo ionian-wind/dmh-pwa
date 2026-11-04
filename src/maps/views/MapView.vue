@@ -111,6 +111,8 @@ type MapInfoSelection =
   | { kind: 'area'; id: string }
   | null;
 const infoSelection = ref<MapInfoSelection>(null);
+const infoAnchor = ref({ left: 0, top: 0 });
+const mapContainerRef = ref<HTMLElement | null>(null);
 const boxGeometry = createBox();
 const drawShapes: MapAreaShape[] = ['polygon', 'circle', 'square', 'freehand'];
 
@@ -197,12 +199,6 @@ const infoArea = computed(() =>
     ? map.value?.areas.find((area) => area.id === infoSelection.value!.id)
     : null,
 );
-
-const infoPosition = computed<[number, number] | undefined>(() => {
-  if (infoMarker.value) return markerMapPosition(infoMarker.value);
-  if (infoArea.value) return areaMapCenter(infoArea.value);
-  return undefined;
-});
 
 const infoLocation = computed(() => {
   const locationId =
@@ -364,14 +360,14 @@ function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
   const markerId = feature?.get?.('markerId');
   if (markerId) {
     const marker = map.value?.markers.find((entry) => entry.id === markerId);
-    if (marker) showMarkerInfo(marker);
+    if (marker) showMarkerInfo(marker, event);
     return;
   }
 
   const areaId = feature?.get?.('areaId');
   if (areaId) {
     const area = map.value?.areas.find((entry) => entry.id === areaId);
-    if (area) showAreaInfo(area);
+    if (area) showAreaInfo(area, event);
     return;
   }
 
@@ -716,11 +712,39 @@ async function deleteMapFromEditor() {
   await handleDelete();
 }
 
-function showMarkerInfo(marker: MapMarker) {
+function setInfoAnchor(event?: MouseEvent | { pixel?: number[] }) {
+  if (event && 'pixel' in event && event.pixel) {
+    infoAnchor.value = { left: event.pixel[0], top: event.pixel[1] };
+    return;
+  }
+
+  const rect = mapContainerRef.value?.getBoundingClientRect();
+  if (!rect) return;
+
+  if (event instanceof MouseEvent) {
+    infoAnchor.value = {
+      left: event.clientX - rect.left,
+      top: event.clientY - rect.top,
+    };
+    return;
+  }
+
+  infoAnchor.value = { left: rect.width / 2, top: rect.height / 2 };
+}
+
+function showMarkerInfo(
+  marker: MapMarker,
+  event?: MouseEvent | { pixel?: number[] },
+) {
+  setInfoAnchor(event);
   infoSelection.value = { kind: 'marker', id: marker.id };
 }
 
-function showAreaInfo(area: MapArea) {
+function showAreaInfo(
+  area: MapArea,
+  event?: MouseEvent | { pixel?: number[] },
+) {
+  setInfoAnchor(event);
   infoSelection.value = { kind: 'area', id: area.id };
 }
 
@@ -862,7 +886,7 @@ watch(isEditMode, (editing) => {
     :header-show-delete="isEditMode"
     fill
   >
-    <div v-if="mapReady" class="map-view-container">
+    <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
       <div v-if="isAddingMarker || drawMode" class="map-hint">
         {{ isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint') }}
       </div>
@@ -965,7 +989,7 @@ watch(isEditMode, (editing) => {
               color: areaTextColor(area.color),
             }"
             :title="area.title"
-            @click.stop="showAreaInfo(area)"
+            @click.stop="showAreaInfo(area, $event)"
           >
             <i
               v-if="area.icon"
@@ -977,65 +1001,70 @@ watch(isEditMode, (editing) => {
           </button>
         </ol-overlay>
 
-        <ol-overlay
-          v-if="infoSelection && infoPosition"
-          :position="infoPosition"
-          positioning="bottom-center"
-          :offset="[0, -18]"
-          class-name="map-info-overlay"
-          :stop-event="true"
+        <div
+          v-if="infoSelection"
+          class="map-info-anchor"
+          :style="{ left: `${infoAnchor.left}px`, top: `${infoAnchor.top}px` }"
         >
-          <div class="map-info-popup">
-            <button
-              type="button"
-              class="map-info-close"
-              :title="t('common.close')"
-              :aria-label="t('common.close')"
-              @click.stop="closeMapInfo"
-            >
-              ×
-            </button>
-            <h4 class="map-info-title">
-              {{
-                infoMarker?.title || infoArea?.title || t('maps.untitledArea')
-              }}
-            </h4>
-            <p v-if="infoLocationName" class="map-info-location">
-              {{ infoLocationName }}
-            </p>
-            <p
-              v-if="infoMarker?.description || infoArea?.description"
-              class="map-info-description"
-            >
-              {{ infoMarker?.description || infoArea?.description }}
-            </p>
-            <EntityLinkList
-              v-if="
-                (infoMarker?.entities.length ?? 0) > 0 ||
-                (infoArea?.entities.length ?? 0) > 0
-              "
-              :links="infoMarker?.entities || infoArea?.entities || []"
-            />
-            <div class="map-info-actions">
+          <QMenu
+            :model-value="true"
+            anchor="top middle"
+            self="bottom middle"
+            :offset="[0, -10]"
+            @update:model-value="(value) => !value && closeMapInfo()"
+          >
+            <div class="map-info-popup">
               <button
-                v-if="infoLocation"
                 type="button"
-                class="map-info-edit"
-                @click.stop="goToInfoLocation"
+                class="map-info-close"
+                :title="t('common.close')"
+                :aria-label="t('common.close')"
+                @click.stop="closeMapInfo"
               >
-                {{ t('maps.goToLocation') }}
+                ×
               </button>
-              <button
-                v-if="isEditMode"
-                type="button"
-                class="map-info-edit"
-                @click.stop="editInfoItem"
+              <h4 class="map-info-title">
+                {{
+                  infoMarker?.title || infoArea?.title || t('maps.untitledArea')
+                }}
+              </h4>
+              <p v-if="infoLocationName" class="map-info-location">
+                {{ infoLocationName }}
+              </p>
+              <p
+                v-if="infoMarker?.description || infoArea?.description"
+                class="map-info-description"
               >
-                {{ t('common.edit') }}
-              </button>
+                {{ infoMarker?.description || infoArea?.description }}
+              </p>
+              <EntityLinkList
+                v-if="
+                  (infoMarker?.entities.length ?? 0) > 0 ||
+                  (infoArea?.entities.length ?? 0) > 0
+                "
+                :links="infoMarker?.entities || infoArea?.entities || []"
+              />
+              <div class="map-info-actions">
+                <button
+                  v-if="infoLocation"
+                  type="button"
+                  class="map-info-edit"
+                  @click.stop="goToInfoLocation"
+                >
+                  {{ t('maps.goToLocation') }}
+                </button>
+                <button
+                  v-if="isEditMode"
+                  type="button"
+                  class="map-info-edit"
+                  @click.stop="editInfoItem"
+                >
+                  {{ t('common.edit') }}
+                </button>
+              </div>
             </div>
-          </div>
-        </ol-overlay>
+          </QMenu>
+        </div>
       </ol-map>
 
       <div
@@ -1056,7 +1085,7 @@ watch(isEditMode, (editing) => {
           type="button"
           class="map-marker-accessible"
           :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
-          @click.stop="showMarkerInfo(marker)"
+          @click.stop="showMarkerInfo(marker, $event)"
         >
           {{ marker.title || t('maps.untitledMarker') }}
         </button>
@@ -1368,9 +1397,14 @@ watch(isEditMode, (editing) => {
   outline-offset: 2px;
 }
 
-.map-info-popup {
-  position: relative;
+.map-info-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
   z-index: 1000;
+}
+
+.map-info-popup {
   min-width: 220px;
   max-width: 320px;
   padding: 0.75rem 2rem 0.75rem 0.9rem;
@@ -1378,10 +1412,6 @@ watch(isEditMode, (editing) => {
   border-radius: var(--border-radius);
   background: var(--color-background);
   box-shadow: var(--shadow-lg);
-}
-
-:global(.map-info-overlay) {
-  z-index: 1000;
 }
 
 .map-info-close {

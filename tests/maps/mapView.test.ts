@@ -390,6 +390,7 @@ describe('MapView', () => {
     const vm = wrapper.vm as any;
 
     await wrapper.find('.map-marker-accessible').trigger('click');
+    expect(wrapper.find('.map-info-anchor').exists()).toBe(true);
     expect(wrapper.find('.map-info-popup').exists()).toBe(true);
     expect(wrapper.find('.map-info-title').text()).toContain('Castle');
     expect(wrapper.find('.map-info-actions').text()).toContain(
