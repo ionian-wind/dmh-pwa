@@ -38,6 +38,6 @@ const selectOptions = computed(() =>
 
 <style scoped>
 .variation-select {
-  max-width: 340px;
+  width: 100%;
 }
 </style>
