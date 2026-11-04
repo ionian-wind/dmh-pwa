@@ -2,10 +2,7 @@
   <component
     :is="editorComponent"
     v-bind="editorProps"
-    @submit="handleSubmit"
-    @saved="handleSubmit"
-    @cancel="handleCancel"
-    @update:model-value="handleModelUpdate"
+    v-on="editorListeners"
   />
 </template>
 
@@ -49,6 +46,18 @@ const editors: Record<MapEntityKind, Component> = {
 };
 
 const editorComponent = computed(() => editors[props.kind]);
+
+const editorListeners = computed(() => {
+  const listeners: Record<string, (...args: any[]) => void> = {
+    submit: handleSubmit,
+    cancel: handleCancel,
+    'update:modelValue': handleModelUpdate,
+  };
+  if (props.kind === 'playlist') {
+    listeners.saved = handleSubmit;
+  }
+  return listeners;
+});
 
 const editorProps = computed(() => {
   switch (props.kind) {

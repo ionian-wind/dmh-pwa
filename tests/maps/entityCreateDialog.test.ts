@@ -61,6 +61,11 @@ describe('EntityCreateDialog', () => {
     });
     await flushPromises();
 
+    const editor = wrapper.findComponent({ name: 'NoteEditor' });
+    expect(
+      (editor.vm.$attrs as Record<string, unknown>).onSaved,
+    ).toBeUndefined();
+
     const submit = wrapper.find('.note-editor-submit');
     expect(submit.exists()).toBe(true);
     await submit.trigger('click');
