@@ -129,6 +129,9 @@ describe('dialog helpers', () => {
       }),
     ).resolves.toBeNull();
 
+    const dialogOptions = vi.mocked(Dialog.create).mock.calls.at(-1)?.[0];
+    expect(dialogOptions).not.toHaveProperty('modelValue');
+
     expect(Dialog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Rename',

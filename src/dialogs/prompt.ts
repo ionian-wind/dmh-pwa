@@ -16,24 +16,34 @@ export function prompt(
   options: PromptOptions = {},
 ): Promise<string | null> {
   return new Promise((resolve) => {
+    const {
+      title,
+      okText,
+      cancelText,
+      color,
+      inputType,
+      modelValue,
+      ...dialogOptions
+    } = options;
+
     Dialog.create({
       message,
-      title: options.title || i18n.global.t('common.prompt'),
+      title: title || i18n.global.t('common.prompt'),
       prompt: {
-        model: options.modelValue || '',
-        type: options.inputType || 'text',
+        model: modelValue || '',
+        type: inputType || 'text',
       },
       ok: {
-        label: options.okText || i18n.global.t('common.ok'),
-        color: options.color || 'primary',
+        label: okText || i18n.global.t('common.ok'),
+        color: color || 'primary',
       },
       cancel: {
-        label: options.cancelText || i18n.global.t('common.cancel'),
-        color: options.color || 'secondary',
+        label: cancelText || i18n.global.t('common.cancel'),
+        color: color || 'secondary',
         textColor: 'dark',
       },
       persistent: true,
-      ...options,
+      ...dialogOptions,
     })
       .onOk((data: string) => resolve(data))
       .onCancel(() => resolve(null));
