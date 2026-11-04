@@ -64,7 +64,7 @@ Character membership can also be managed from the party detail page.
 - Loads characters and modules.
 - `partyCharacters` filters loaded characters by `party.characters` for the page
   subtitle.
-- The **Main editor** tab shows the party description.
+- The **View** tab shows the party description.
 - The **Linked entities** tab shows modules and characters read-only.
 - Link management moves to `PartyEditor`; the view no longer has unlink buttons
   or a separate link modal.

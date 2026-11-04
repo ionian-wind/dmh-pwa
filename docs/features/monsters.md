@@ -67,7 +67,7 @@ caller explicitly passes it. No caller passes it.
 ## Detail page (`MonsterView.vue`)
 
 - Loads monsters, publishes `MonsterViewSidebar` to the right drawer.
-- Renders `notes` as plain text in the **Main editor** tab.
+- Renders `notes` as plain text in the **View** tab.
 - A **Linked entities** tab shows module membership read-only via
   `EntityViewLinks`.
 - Edit modal and delete with confirmation; `BaseEntityTabView` navigates to

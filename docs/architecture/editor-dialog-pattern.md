@@ -170,8 +170,7 @@ so they keep a single form without tabs. Combat has no editor yet.
 Entity detail pages use the same split when the entity has linkable main-entity
 fields:
 
-- The main tab uses the same icon as the edit dialog and the accessible label
-  **Main editor**.
+- The main tab uses `IconEye` and the accessible label **View**.
 - A **Linked entities** tab uses `EntityViewLinks` to render the same link blocks
   as the editor in `readonly` mode.
 - Tabs render icon-only in the app header panel (`#main_header`), centered in the
