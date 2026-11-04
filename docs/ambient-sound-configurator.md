@@ -704,7 +704,8 @@ footer.
   centered in the remaining row up to a maximum width.
 - Master volume opens a popup, including mouse-wheel adjustment. The shared
   `VolumeControl` component is reused from the jukebox player.
-- Play/pause is disabled while no scene or ambience is active.
+- Play/pause is disabled while no mood preset or ambience layer is active; a
+  paused scene with active content can still be resumed.
 - No scene icon, cover art, “Now playing” caption or stop button.
 
 **Playback behavior**

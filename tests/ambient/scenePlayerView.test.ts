@@ -148,10 +148,28 @@ describe('ScenePlayerView', () => {
     wrapper.unmount();
   });
 
-  it('shows the header play button disabled when nothing is active', () => {
+  it('disables the header play button when no mood or ambience is active', () => {
     storeMock.activeScene = null;
     storeMock.hasActiveLayers = false;
+    storeMock.isPlaying = true;
+    storeMock.musicEnabled = false;
+    storeMock.activeMusicPresetId = null;
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs },
+    });
+
+    const play = wrapper.find('.scene-view-header button[aria-label="Play"]');
+    expect(play.attributes('disabled')).toBeDefined();
+    wrapper.unmount();
+  });
+
+  it('keeps the header play button enabled while active content is paused', () => {
+    storeMock.activeScene = storeMock.allScenes[0];
+    storeMock.hasActiveLayers = false;
     storeMock.isPlaying = false;
+    storeMock.musicEnabled = true;
+    storeMock.activeMusicPresetId = 'explore';
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs },
@@ -161,7 +179,7 @@ describe('ScenePlayerView', () => {
       wrapper
         .find('.scene-view-header button[aria-label="Play"]')
         .attributes('disabled'),
-    ).toBeDefined();
+    ).toBeUndefined();
     wrapper.unmount();
   });
 

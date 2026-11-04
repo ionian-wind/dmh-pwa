@@ -36,6 +36,12 @@ jobs:
       - name: Copy index.html to 404.html
         run: cp dist/index.html dist/404.html
 
+      - name: Create version file
+        run: |
+          echo "{\"sha\": \"${{ github.sha }}\"}" > ./dist/version.json
+          # Or a simple text file:
+          # echo "${{ github.sha }}" > ./dist/commit.txt
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

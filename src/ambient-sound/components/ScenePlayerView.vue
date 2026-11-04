@@ -22,12 +22,12 @@
           <QBtn
             flat
             class="scene-play-button"
-            :disable="!store.activeScene && !store.hasActiveLayers"
-            :title="t(store.isPlaying ? 'common.pause' : 'common.play')"
-            :aria-label="t(store.isPlaying ? 'common.pause' : 'common.play')"
+            :disable="!hasPlaybackContent"
+            :title="t(isPlaybackRunning ? 'common.pause' : 'common.play')"
+            :aria-label="t(isPlaybackRunning ? 'common.pause' : 'common.play')"
             @click="store.togglePlayPause()"
           >
-            <IconPlayerPause v-if="store.isPlaying" />
+            <IconPlayerPause v-if="isPlaybackRunning" />
             <IconPlayerPlay v-else />
           </QBtn>
           <VolumeControl
@@ -183,6 +183,16 @@ function sceneIsActive() {
 
 const sceneControlsEnabled = computed(
   () => store.isPlaying || (!store.activeScene && !store.hasActiveLayers),
+);
+
+const hasPlaybackContent = computed(
+  () =>
+    store.hasActiveLayers ||
+    (store.musicEnabled && store.activeMusicPresetId !== null),
+);
+
+const isPlaybackRunning = computed(
+  () => hasPlaybackContent.value && store.isPlaying,
 );
 
 async function selectMusic(presetId: string | null) {
