@@ -22,6 +22,7 @@ import {
   getAudioFormat,
   getLayerVariations,
   getSceneMusicFile,
+  getVariation,
 } from '../utils/packData';
 
 const LINKS_STORAGE_KEY = 'dmh-ambient-scene-links';
@@ -153,15 +154,6 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     return loadedAudioUrls.value.get(audioKey(packId, path));
   }
 
-  function getVariation(ambience: LayerDef, variationId?: string) {
-    const variations = getLayerVariations(ambience);
-    return (
-      variations.find((variation) => variation.id === variationId) ??
-      variations[0] ??
-      null
-    );
-  }
-
   async function ensurePackAudio(pack: NormalizedSoundPack): Promise<void> {
     if (loadedPackIds.value.has(pack.id)) return;
 
@@ -222,11 +214,17 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     ambience: LayerDef,
     variationId: string | undefined,
     volumePercent: number,
+    sampleIndex?: number,
   ): boolean {
     const variation = getVariation(ambience, variationId);
     if (!variation?.samples.length) return false;
 
-    const index = randomIndex(variation.samples.length);
+    const index =
+      sampleIndex !== undefined &&
+      sampleIndex >= 0 &&
+      sampleIndex < variation.samples.length
+        ? sampleIndex
+        : randomIndex(variation.samples.length);
     const sample = variation.samples[index];
     const url = audioUrl(packId, sample);
     if (!url) return false;
@@ -430,6 +428,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     packId: string,
     ambienceId: string,
     variationId?: string,
+    sampleIndex?: number,
   ): Promise<void> {
     const key = layerKey(packId, ambienceId);
     if (activeLayers.value.has(key)) {
@@ -446,8 +445,53 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     await ensurePackAudio(pack);
     const shouldResume = !isPlaying.value;
     isPlaying.value = true;
-    startAmbience(packId, ambience, variationId, ambience.defaultVolume ?? 50);
+    startAmbience(
+      packId,
+      ambience,
+      variationId,
+      ambience.defaultVolume ?? 50,
+      sampleIndex,
+    );
     if (shouldResume) play();
+  }
+
+  async function selectAmbienceSample(
+    packId: string,
+    ambienceId: string,
+    variationId: string,
+    sampleIndex: number,
+  ): Promise<void> {
+    const key = layerKey(packId, ambienceId);
+    const active = activeLayers.value.get(key);
+
+    if (
+      active?.variationId === variationId &&
+      active.sampleIndex === sampleIndex
+    ) {
+      stopLayer(key);
+      if (activeLayers.value.size === 0 && !activeScene.value) {
+        isPlaying.value = false;
+      }
+      return;
+    }
+
+    if (!active) {
+      await toggleAmbience(packId, ambienceId, variationId, sampleIndex);
+      return;
+    }
+
+    const pack = findPack(packId);
+    const ambience = findAmbience(packId, ambienceId);
+    if (!pack || !ambience) return;
+    await ensurePackAudio(pack);
+    stopLayer(key);
+    startAmbience(
+      packId,
+      ambience,
+      variationId,
+      active.volume * 100,
+      sampleIndex,
+    );
   }
 
   async function setAmbienceVariation(
@@ -761,6 +805,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     togglePlayPause,
     stop,
     toggleAmbience,
+    selectAmbienceSample,
     setAmbienceVariation,
     setAmbienceVolume,
     setIntensity,

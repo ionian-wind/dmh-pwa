@@ -378,6 +378,40 @@ describe('ambient sound store', () => {
     expect(store.activeLayers.has('forest:rain')).toBe(false);
   });
 
+  it('selects individual ambience samples and stops the active sample', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 0);
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'light',
+      sampleIndex: 0,
+      volume: 0.4,
+    });
+    expect(mocks.audioEngine.loadLayer).toHaveBeenLastCalledWith(
+      'forest:rain',
+      'blob:light',
+      true,
+      ['mp3'],
+    );
+
+    await store.selectAmbienceSample('forest', 'rain', 'heavy', 0);
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'heavy',
+      sampleIndex: 0,
+      volume: 0.4,
+    });
+    expect(mocks.audioEngine.loadLayer).toHaveBeenLastCalledWith(
+      'forest:rain',
+      'blob:heavy',
+      true,
+      ['mp3'],
+    );
+
+    await store.selectAmbienceSample('forest', 'rain', 'heavy', 0);
+    expect(store.activeLayers.has('forest:rain')).toBe(false);
+  });
+
   it('plays multiple ambience tracks together and toggles them globally', async () => {
     const store = createStore();
     await store.loadStoredPacks();

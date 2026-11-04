@@ -2,24 +2,19 @@
   <QCard flat bordered :class="{ 'is-active': activeVariationId !== null }">
     <QCardSection class="row items-center q-gutter-sm">
       <AmbientIcon :icon="ambience.icon" :size="24" />
-      <div class="col">
-        <div class="text-subtitle2 text-weight-medium">
-          {{ ambience.name }}
-        </div>
-        <div class="text-caption text-grey-7">{{ subtitle }}</div>
+      <div class="col text-subtitle2 text-weight-medium">
+        {{ ambience.name }}
       </div>
       <QBtnGroup flat>
         <QBtn
-          v-for="variation in variations"
-          :key="variation.id"
-          :class="{
-            'variant-active': activeVariationId === variation.id,
-          }"
-          :outline="activeVariationId !== variation.id"
+          v-for="(sample, index) in samples"
+          :key="`${variationId}:${sample}:${index}`"
+          :class="{ 'sample-active': isActiveSample(index) }"
+          :outline="!isActiveSample(index)"
           :disable="disabled"
-          :label="variation.name"
+          :label="romanNumeral(index + 1)"
           size="sm"
-          @click="emit('select-variation', variation.id)"
+          @click="emit('select-sample', variationId, index)"
         />
       </QBtnGroup>
     </QCardSection>
@@ -28,34 +23,56 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import AmbientIcon from '@/ambient-sound/components/AmbientIcon.vue';
-import { getLayerVariations } from '@/ambient-sound/utils/packData';
+import { findVariation } from '@/ambient-sound/utils/packData';
 import type { LayerDef } from '@/ambient-sound/types';
 
 const props = withDefaults(
   defineProps<{
     ambience: LayerDef;
+    variationId: string;
     activeVariationId?: string | null;
+    activeSampleIndex?: number | null;
     disabled?: boolean;
   }>(),
   {
     activeVariationId: null,
+    activeSampleIndex: null,
     disabled: false,
   },
 );
 
 const emit = defineEmits<{
-  (e: 'select-variation', variationId: string): void;
+  (e: 'select-sample', variationId: string, sampleIndex: number): void;
 }>();
 
-const { t } = useI18n();
+const ROMAN_NUMERALS = [
+  'I',
+  'II',
+  'III',
+  'IV',
+  'V',
+  'VI',
+  'VII',
+  'VIII',
+  'IX',
+  'X',
+];
 
-const variations = computed(() => getLayerVariations(props.ambience));
-
-const subtitle = computed(
-  () => props.ambience.category?.trim() || t('ambientSoundPage.ambiences'),
+const samples = computed(
+  () => findVariation(props.ambience, props.variationId)?.samples ?? [],
 );
+
+function romanNumeral(value: number): string {
+  return ROMAN_NUMERALS[value - 1] ?? String(value);
+}
+
+function isActiveSample(index: number): boolean {
+  return (
+    props.activeVariationId === props.variationId &&
+    props.activeSampleIndex === index
+  );
+}
 </script>
 
 <style scoped>
@@ -64,7 +81,7 @@ const subtitle = computed(
   background: var(--color-background-soft);
 }
 
-.variant-active {
+.sample-active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }

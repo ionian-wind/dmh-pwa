@@ -70,6 +70,12 @@
       <EntityTabs v-model="activeTab" :tabs="tabs" class="q-mb-md" />
 
       <div v-if="activeTab === 'ambiences'">
+        <VariationSelect
+          v-if="variationOptions.length"
+          v-model="selectedVariationId"
+          :options="variationOptions"
+          class="q-mb-md"
+        />
         <EntityGroup
           v-for="group in ambienceGroups"
           :key="group.category"
@@ -80,10 +86,13 @@
               v-for="row in group.rows"
               :key="row.ambience.id"
               :ambience="row.ambience"
+              :variation-id="selectedVariationId"
               :active-variation-id="row.activeVariationId"
+              :active-sample-index="row.activeSampleIndex"
               :disabled="!sceneControlsEnabled"
-              @select-variation="
-                (variationId) => toggleVariant(row, variationId)
+              @select-sample="
+                (variationId, sampleIndex) =>
+                  selectSample(row, variationId, sampleIndex)
               "
             />
           </div>
@@ -141,11 +150,16 @@ import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
 import AmbientControls from '@/ambient-sound/components/AmbientControls.vue';
 import MoodButton from '@/ambient-sound/components/MoodButton.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
+import VariationSelect from '@/ambient-sound/components/VariationSelect.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityTabs from '@/components/common/EntityTabs.vue';
 import VolumeControl from '@/components/common/VolumeControl.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
+import {
+  findVariation,
+  getGlobalVariations,
+} from '@/ambient-sound/utils/packData';
 import type { LayerDef, OneShotDef } from '@/ambient-sound/types';
 
 const props = defineProps<{
@@ -212,13 +226,44 @@ async function selectMusic(presetId: string | null) {
   store.setMusicPreset(presetId);
 }
 
+const sceneAmbienceLayers = computed(() => {
+  if (!entry.value) return [];
+  return entry.value.scene.ambiences
+    .map((selected) =>
+      entry.value?.pack.ambiences.find(
+        (item) => item.id === selected.ambienceId,
+      ),
+    )
+    .filter((ambience): ambience is LayerDef => !!ambience);
+});
+
+const variationOptions = computed(() =>
+  getGlobalVariations(sceneAmbienceLayers.value),
+);
+
+const selectedVariationId = ref('');
+
+watch(
+  variationOptions,
+  (options) => {
+    if (!options.some((option) => option.id === selectedVariationId.value)) {
+      selectedVariationId.value = options[0]?.id ?? '';
+    }
+  },
+  { immediate: true },
+);
+
 const ambienceGroups = computed(() => {
   if (!entry.value) return [];
+  const variationId = selectedVariationId.value;
+  if (!variationId) return [];
+
   const groups = new Map<
     string,
     Array<{
       ambience: LayerDef;
       activeVariationId: string | null;
+      activeSampleIndex: number | null;
     }>
   >();
 
@@ -227,6 +272,8 @@ const ambienceGroups = computed(() => {
       (item) => item.id === selected.ambienceId,
     );
     if (!ambience) continue;
+    const variation = findVariation(ambience, variationId);
+    if (!variation?.samples.length) continue;
     const category =
       ambience.category?.trim() || t('ambientSoundPage.ambiences');
     const active = store.activeLayers.get(
@@ -236,6 +283,7 @@ const ambienceGroups = computed(() => {
     rows.push({
       ambience,
       activeVariationId: active?.variationId ?? null,
+      activeSampleIndex: active?.sampleIndex ?? null,
     });
     groups.set(category, rows);
   }
@@ -256,25 +304,17 @@ const oneShotGroups = computed(() => {
   return [...groups].map(([category, items]) => ({ category, items }));
 });
 
-async function toggleVariant(
-  row: { ambience: LayerDef; activeVariationId: string | null },
+async function selectSample(
+  row: { ambience: LayerDef },
   variationId: string,
+  sampleIndex: number,
 ) {
-  const key = `${props.packId}:${row.ambience.id}`;
-  const active = store.activeLayers.get(key);
-  if (active?.variationId === variationId) {
-    await store.toggleAmbience(props.packId, row.ambience.id);
-    return;
-  }
-  if (active) {
-    await store.setAmbienceVariation(
-      props.packId,
-      row.ambience.id,
-      variationId,
-    );
-    return;
-  }
-  await store.toggleAmbience(props.packId, row.ambience.id, variationId);
+  await store.selectAmbienceSample(
+    props.packId,
+    row.ambience.id,
+    variationId,
+    sampleIndex,
+  );
 }
 
 watch(

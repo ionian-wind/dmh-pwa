@@ -51,6 +51,61 @@ export function getMoodMode(mood: MoodStateDef): 'temporary' | 'continual' {
   return mood.mode === 'temporary' ? 'temporary' : 'continual';
 }
 
+/** Resolve a variation by id, falling back to the first available variation. */
+export function getVariation(
+  ambience: LayerDef,
+  variationId?: string,
+): LayerVariation | null {
+  const variations = getLayerVariations(ambience);
+  return (
+    variations.find((variation) => variation.id === variationId) ??
+    variations[0] ??
+    null
+  );
+}
+
+/** Resolve an exact variation; returns null when the ambience lacks it. */
+export function findVariation(
+  ambience: LayerDef,
+  variationId: string,
+): LayerVariation | null {
+  return (
+    getLayerVariations(ambience).find(
+      (variation) => variation.id === variationId,
+    ) ?? null
+  );
+}
+
+export interface AmbienceVariationOption {
+  id: string;
+  name: string;
+}
+
+/**
+ * Build the global variation list for a set of ambiences.
+ * The default variation is preferred first so the initial view is useful.
+ */
+export function getGlobalVariations(
+  ambiences: LayerDef[],
+): AmbienceVariationOption[] {
+  const variations = new Map<string, string>();
+  for (const ambience of ambiences) {
+    for (const variation of getLayerVariations(ambience)) {
+      if (!variations.has(variation.id)) {
+        variations.set(variation.id, variation.name || variation.id);
+      }
+    }
+  }
+
+  const options = [...variations].map(([id, name]) => ({ id, name }));
+  const defaultIndex = options.findIndex((option) => option.id === 'default');
+  if (defaultIndex > 0) {
+    const [defaultOption] = options.splice(defaultIndex, 1);
+    options.unshift(defaultOption);
+  }
+  return options;
+}
+
 /** Howler needs an explicit format for extensionless blob URLs. */
 export function getAudioFormat(file?: string): string[] | undefined {
   const extension = file?.split('.').pop()?.toLowerCase();

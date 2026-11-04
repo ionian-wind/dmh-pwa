@@ -24,6 +24,7 @@ const storeMock = vi.hoisted(() => ({
   musicProgress: vi.fn(() => 0),
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
+  selectAmbienceSample: vi.fn(),
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -51,6 +52,7 @@ describe('ScenePlayerView', () => {
       storeMock.musicProgress,
       storeMock.toggleAmbience,
       storeMock.setAmbienceVariation,
+      storeMock.selectAmbienceSample,
     ]) {
       fn.mockReset();
     }
@@ -65,7 +67,7 @@ describe('ScenePlayerView', () => {
     storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.musicProgress.mockReturnValue(0);
     storeMock.activeLayers = new Map([
-      ['pack-1:rain', { variationId: 'light', volume: 0.4 }],
+      ['pack-1:rain', { variationId: 'light', sampleIndex: 0, volume: 0.4 }],
     ]);
     storeMock.allScenes = [
       {
@@ -267,10 +269,10 @@ describe('ScenePlayerView', () => {
       wrapper.findAll('.mood-button').find((entry) => entry.text() === label);
     expect(knob('Off')!.attributes('disabled')).toBeDefined();
     expect(knob('Explore')!.attributes('disabled')).toBeDefined();
-    const light = wrapper
-      .findAll('button')
-      .find((entry) => entry.text() === 'Light');
-    expect(light!.attributes('disabled')).toBeDefined();
+    const rainCard = wrapper
+      .findAll('[data-stub="QCard"]')
+      .find((card) => card.text().includes('Rain'));
+    expect(rainCard!.findAll('button')[0].attributes('disabled')).toBeDefined();
 
     const oneShotsTab = wrapper
       .findAll('button')
@@ -297,27 +299,45 @@ describe('ScenePlayerView', () => {
     missing.unmount();
   });
 
-  it('supports stopping the active variant and starting an inactive one', async () => {
+  it('selects samples from the filtered variation', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs },
     });
 
-    const light = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Light');
-    await light!.trigger('click');
-    expect(storeMock.toggleAmbience).toHaveBeenCalledWith('pack-1', 'rain');
+    const rainCard = () =>
+      wrapper
+        .findAll('[data-stub="QCard"]')
+        .find((card) => card.text().includes('Rain'));
+    expect(
+      rainCard()!
+        .findAll('button')
+        .map((button) => button.text()),
+    ).toEqual(['I']);
 
-    storeMock.activeLayers = new Map();
-    const heavy = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Heavy');
-    await heavy!.trigger('click');
-    expect(storeMock.toggleAmbience).toHaveBeenLastCalledWith(
+    await rainCard()!.findAll('button')[0].trigger('click');
+    expect(storeMock.selectAmbienceSample).toHaveBeenCalledWith(
+      'pack-1',
+      'rain',
+      'light',
+      0,
+    );
+
+    wrapper
+      .findComponent(quasarStubs.QSelect)
+      .vm.$emit('update:modelValue', 'heavy');
+    await wrapper.vm.$nextTick();
+    expect(
+      rainCard()!
+        .findAll('button')
+        .map((button) => button.text()),
+    ).toEqual(['I']);
+    await rainCard()!.findAll('button')[0].trigger('click');
+    expect(storeMock.selectAmbienceSample).toHaveBeenLastCalledWith(
       'pack-1',
       'rain',
       'heavy',
+      0,
     );
     wrapper.unmount();
   });
@@ -352,20 +372,25 @@ describe('ScenePlayerView', () => {
     wrapper.unmount();
   });
 
-  it('switches ambience variants and plays one-shots', async () => {
+  it('switches ambience variation and plays one-shots', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs },
     });
 
-    const heavy = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Heavy');
-    await heavy!.trigger('click');
-    expect(storeMock.setAmbienceVariation).toHaveBeenCalledWith(
+    wrapper
+      .findComponent(quasarStubs.QSelect)
+      .vm.$emit('update:modelValue', 'heavy');
+    await wrapper.vm.$nextTick();
+    const rain = wrapper
+      .findAll('[data-stub="QCard"]')
+      .find((card) => card.text().includes('Rain'));
+    await rain!.findAll('button')[0].trigger('click');
+    expect(storeMock.selectAmbienceSample).toHaveBeenCalledWith(
       'pack-1',
       'rain',
       'heavy',
+      0,
     );
 
     const oneShotsTab = wrapper

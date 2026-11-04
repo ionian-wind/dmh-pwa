@@ -8,6 +8,7 @@ const storeMock = vi.hoisted(() => ({
   activeLayers: new Map<string, any>(),
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
+  selectAmbienceSample: vi.fn(),
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -25,7 +26,13 @@ const ambience = (id: string, name: string, category: string) => ({
   category,
   defaultVolume: 40,
   loop: true,
-  variations: [{ id: 'default', name: 'Default', samples: [`${id}.mp3`] }],
+  variations: [
+    {
+      id: 'default',
+      name: 'Default',
+      samples: [`${id}-default-1.mp3`, `${id}-default-2.mp3`],
+    },
+  ],
 });
 
 describe('AmbienceGallery', () => {
@@ -36,7 +43,21 @@ describe('AmbienceGallery', () => {
       {
         packageId: 'pack-1',
         pack,
-        ambience: ambience('rain', 'Rain', 'Weather'),
+        ambience: {
+          ...ambience('rain', 'Rain', 'Weather'),
+          variations: [
+            {
+              id: 'light',
+              name: 'Light rain',
+              samples: ['rain-light-1.mp3', 'rain-light-2.mp3'],
+            },
+            {
+              id: 'heavy',
+              name: 'Heavy rain',
+              samples: ['rain-heavy-1.mp3'],
+            },
+          ],
+        },
       },
       {
         packageId: 'pack-1',
@@ -50,42 +71,93 @@ describe('AmbienceGallery', () => {
       },
     ];
     storeMock.allScenes = [{ pack, scene: { id: 'scene-1', ambiences: [] } }];
-    storeMock.toggleAmbience.mockReset();
-    storeMock.setAmbienceVariation.mockReset();
+    for (const fn of [
+      storeMock.toggleAmbience,
+      storeMock.setAmbienceVariation,
+      storeMock.selectAmbienceSample,
+    ]) {
+      fn.mockReset();
+    }
   });
 
-  it('groups ambiences by category with titles and separators', () => {
+  it('shows the first global variation and filters ambiences by samples', async () => {
     const wrapper = mount(AmbienceGallery, {
       global: { stubs: quasarStubs },
     });
 
-    expect(wrapper.find('.category-select').exists()).toBe(false);
-    expect(wrapper.findAll('.entity-group')).toHaveLength(2);
-    expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(2);
+    const select = wrapper.findComponent(quasarStubs.QSelect);
+    expect(select.exists()).toBe(true);
+    expect(select.props('modelValue')).toBe('default');
+    expect(select.props('options')).toEqual([
+      { label: 'Default', value: 'default' },
+      { label: 'Light rain', value: 'light' },
+      { label: 'Heavy rain', value: 'heavy' },
+    ]);
+
     expect(wrapper.text()).toContain('Weather');
     expect(wrapper.text()).toContain('Interior');
-    expect(wrapper.text()).not.toContain('Forest');
-    expect(wrapper.text()).not.toContain('scenes');
+    expect(
+      wrapper
+        .findAll('[data-stub="QCard"]')
+        .some((card) => card.text().includes('Rain')),
+    ).toBe(false);
+    expect(wrapper.findAll('.entity-group')).toHaveLength(2);
+
+    select.vm.$emit('update:modelValue', 'light');
+    await wrapper.vm.$nextTick();
+
+    const cards = wrapper.findAll('[data-stub="QCard"]');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].text()).toContain('Rain');
+    expect(wrapper.text()).not.toContain('Wind');
+    expect(wrapper.findAll('.entity-group')).toHaveLength(1);
     wrapper.unmount();
   });
 
-  it('plays an ambience from its row', async () => {
+  it('plays an enumerated sample from its row', async () => {
     const wrapper = mount(AmbienceGallery, {
       global: { stubs: quasarStubs },
     });
+
+    const select = wrapper.findComponent(quasarStubs.QSelect);
+    select.vm.$emit('update:modelValue', 'light');
+    await wrapper.vm.$nextTick();
 
     const rain = wrapper
       .findAll('[data-stub="QCard"]')
       .find((card) => card.text().includes('Rain'));
-    const variation = rain!
-      .findAll('button')
-      .find((button) => button.text() === 'Default');
-    await variation!.trigger('click');
-    expect(storeMock.toggleAmbience).toHaveBeenCalledWith(
+    expect(rain!.text()).not.toContain('.mp3');
+    const samples = rain!.findAll('button');
+    expect(samples.map((button) => button.text())).toEqual(['I', 'II']);
+
+    await samples[1].trigger('click');
+    expect(storeMock.selectAmbienceSample).toHaveBeenCalledWith(
       'pack-1',
       'rain',
-      'default',
+      'light',
+      1,
     );
+    wrapper.unmount();
+  });
+
+  it('shows the selected sample as active', async () => {
+    storeMock.activeLayers = new Map([
+      ['pack-1:rain', { variationId: 'light', sampleIndex: 1 }],
+    ]);
+    const wrapper = mount(AmbienceGallery, {
+      global: { stubs: quasarStubs },
+    });
+
+    wrapper
+      .findComponent(quasarStubs.QSelect)
+      .vm.$emit('update:modelValue', 'light');
+    await wrapper.vm.$nextTick();
+
+    const rain = wrapper
+      .findAll('[data-stub="QCard"]')
+      .find((card) => card.text().includes('Rain'));
+    expect(rain!.classes()).toContain('is-active');
+    expect(rain!.findAll('button')[1].classes()).toContain('sample-active');
     wrapper.unmount();
   });
 
@@ -97,6 +169,7 @@ describe('AmbienceGallery', () => {
     });
 
     expect(wrapper.text()).toContain('No ambiences');
+    expect(wrapper.find('.variation-select').exists()).toBe(false);
     wrapper.unmount();
   });
 });

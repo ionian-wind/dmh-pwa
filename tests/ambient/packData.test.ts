@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  findVariation,
+  getGlobalVariations,
   getLayerVariations,
   getSceneMusicFile,
   getSceneMusicName,
+  getVariation,
   normalizeSoundPack,
 } from '@/ambient-sound/utils/packData';
 import type { SoundPackManifest } from '@/ambient-sound/types';
@@ -42,6 +45,44 @@ describe('ambient pack data', () => {
     ]);
     expect(pack.scenes[0].musicPresets[0].files).toEqual([
       'scenes/mood-explore/music/explore.mp3',
+    ]);
+  });
+
+  it('derives global variations with the default first', () => {
+    const ambiences = [
+      {
+        id: 'rain',
+        name: 'Rain',
+        icon: 'ra-rain',
+        defaultVolume: 40,
+        loop: true,
+        variations: [
+          { id: 'light', name: 'Light rain', samples: ['light.mp3'] },
+          { id: 'heavy', name: 'Heavy rain', samples: ['heavy.mp3'] },
+        ],
+      },
+      {
+        id: 'wind',
+        name: 'Wind',
+        icon: 'ra-wind',
+        defaultVolume: 30,
+        loop: true,
+        variations: [{ id: 'default', name: 'Default', samples: ['wind.mp3'] }],
+      },
+    ];
+
+    expect(getGlobalVariations(ambiences)).toEqual([
+      { id: 'default', name: 'Default' },
+      { id: 'light', name: 'Light rain' },
+      { id: 'heavy', name: 'Heavy rain' },
+    ]);
+    expect(getVariation(ambiences[0] as any, 'heavy')?.samples).toEqual([
+      'heavy.mp3',
+    ]);
+    expect(getVariation(ambiences[0] as any, 'missing')?.id).toBe('light');
+    expect(findVariation(ambiences[0] as any, 'missing')).toBeNull();
+    expect(findVariation(ambiences[0] as any, 'heavy')?.samples).toEqual([
+      'heavy.mp3',
     ]);
   });
 

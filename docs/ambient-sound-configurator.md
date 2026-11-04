@@ -14,8 +14,9 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 - Packages are script-built and read-only in the app: import or remove only.
 - Scene rows have no icon, play button or link-count metadata; clicking a row
   opens the scene view.
-- Ambience groups use a shared `AmbienceItem` row with variation buttons and no
-  package or scene-count metadata.
+- Ambience groups use a shared `AmbienceItem` row with enumerated sample
+  buttons and no package, category or scene-count metadata. A variation select
+  above the list filters rows to ambiences that have samples for that variation.
 - One-shot entries are grouped category knobs. Each knob contains the icon and
   shows only the name below it. Knobs are read-only progress indicators with
   click/keyboard handled by a wrapper.
@@ -69,11 +70,14 @@ An ambience entry is a loopable background sound. Each entry has:
 - one or more **variations**;
 - a **sample pool** for each variation.
 
-Only one sample from the selected variation plays at a time. Switching variation
-switches the active sample pool; switching the selected sample restarts only that
-ambience layer. Multiple ambience entries can play together, both as part of a
-scene and as additional gallery tracks layered on top. Weather is represented as
-an ambience category, not as a separate weather system.
+Variations are collected into a global list across the visible ambience entries,
+preferring `default` first. The UI selects the first variation by default and
+uses it to filter out entries without matching samples. Only one sample from the
+selected variation plays at a time. Clicking another sample in the same
+variation restarts only that ambience layer; clicking the active sample stops
+it. Multiple ambience entries can play together, both as part of a scene and as
+additional gallery tracks layered on top. Weather is represented as an ambience
+category, not as a separate weather system.
 
 ### 2.3 One-shot entry
 
@@ -176,7 +180,8 @@ src/
 │   │   ├── SceneList.vue             # Package-owned scenes
 │   │   ├── ScenePlayerView.vue       # In-page scene player
 │   │   ├── AmbienceGallery.vue       # Global ambience browser
-│   │   ├── AmbienceItem.vue          # Shared ambience row and variations
+│   │   ├── AmbienceItem.vue          # Ambience row and enumerated samples
+│   │   ├── VariationSelect.vue       # Global variation filter select
 │   │   ├── OneShotGallery.vue        # Global one-shot knob grid
 │   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
 │   │   ├── MoodButton.vue            # Mood selector and progress button
@@ -583,16 +588,21 @@ A global content gallery for ambience entries from all loaded packages.
 **Grouping**
 
 - Package filter synced with the right sidebar. There is no category selector.
+- A variation select sits above the list. It lists the global variations
+  derived from the visible ambiences, defaults to the first variation and has
+  no “all variations” option.
+- Entries without samples for the selected variation are filtered out.
 - Entries are grouped by category; each group has a title and separator.
 
 **Ambience row**
 
-- Icon, name and category.
-- Available variations are shown as variation buttons.
-- Variation buttons: clicking a variation on an inactive entry starts it,
-  clicking another variation on an active entry swaps its sample pool, and
-  clicking the active variation stops it. Several entries can play together.
-- The active row is highlighted.
+- Icon and name only; the category is not repeated inside the row.
+- Samples for the selected variation are shown as enumerated `I`, `II`, `III`
+  buttons. File names are never displayed.
+- Clicking a sample on an inactive entry starts it, clicking another sample on
+  an active entry switches that ambience to the sample, and clicking the active
+  sample stops it. Several entries can play together.
+- The active row and active sample are highlighted.
 - The row layout is shared with the scene player through `AmbienceItem`.
 
 ### 4.4 One-shots tab
@@ -661,11 +671,12 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
   remaining row, up to a maximum width. Play/pause resumes the active scene
   after a pause.
 - **Control gating** — while paused, the intensity slider, mood buttons and
-  ambience variation buttons are disabled. They are enabled again when the
-  scene play/pause control resumes, or when nothing has been started yet.
-- **Ambiences tab** — linked ambiences grouped by category. Each row shows the
-  ambience name and a toggle group of its variations. Only one variation per
-  ambience plays at a time; clicking the active variation stops the ambience.
+  ambience sample buttons are disabled. They are enabled again when the scene
+  play/pause control resumes, or when nothing has been started yet.
+- **Ambiences tab** — a variation select filters linked ambiences to those with
+  samples for the selected variation. Rows are grouped by category and show the
+  ambience name plus enumerated sample buttons. Only one sample per ambience
+  plays at a time; clicking the active sample stops the ambience.
 - **Entity tabs** — the scene uses the same dense `EntityTabs` component as the
   main ambient page and module entity views.
 - **One-shots tab** — linked one-shots as knob controls grouped by category,
@@ -782,7 +793,8 @@ footer.
 | `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                      |
 | `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`               |
 | `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`             |
-| `AmbienceItem`      | Shared ambience row, metadata and variation buttons           | `ambience`, `activeVariationId`, `disabled`    |
+| `AmbienceItem`      | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample       |
+| `VariationSelect`   | Global variation filter above ambience lists                  | `options`, `modelValue`                        |
 | `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                    |
 | `OneShotControl`    | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`                |
 | `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                  |

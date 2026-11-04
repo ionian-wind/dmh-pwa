@@ -1,5 +1,12 @@
 <template>
   <div>
+    <VariationSelect
+      v-if="variations.length"
+      v-model="selectedVariationId"
+      :options="variations"
+      class="q-mb-md"
+    />
+
     <div v-if="groups.length">
       <EntityGroup
         v-for="group in groups"
@@ -11,11 +18,16 @@
             v-for="entry in group.items"
             :key="`${entry.packageId}:${entry.ambience.id}`"
             :ambience="entry.ambience"
+            :variation-id="selectedVariationId"
             :active-variation-id="
               activeVariationId(entry.packageId, entry.ambience.id)
             "
-            @select-variation="
-              (variationId) => selectVariation(entry, variationId)
+            :active-sample-index="
+              activeSampleIndex(entry.packageId, entry.ambience.id)
+            "
+            @select-sample="
+              (variationId, sampleIndex) =>
+                selectSample(entry, variationId, sampleIndex)
             "
           />
         </div>
@@ -32,13 +44,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconWaveSine } from '@tabler/icons-vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
+import VariationSelect from '@/ambient-sound/components/VariationSelect.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
+import {
+  findVariation,
+  getGlobalVariations,
+} from '@/ambient-sound/utils/packData';
 import type { GalleryAmbience } from '@/ambient-sound/types';
 
 const { t } = useI18n();
@@ -51,9 +68,34 @@ const entries = computed(() =>
   }),
 );
 
+const variations = computed(() =>
+  getGlobalVariations(entries.value.map(({ ambience }) => ambience)),
+);
+
+const selectedVariationId = ref('');
+
+watch(
+  variations,
+  (options) => {
+    if (!options.some((option) => option.id === selectedVariationId.value)) {
+      selectedVariationId.value = options[0]?.id ?? '';
+    }
+  },
+  { immediate: true },
+);
+
+const filteredEntries = computed(() => {
+  const variationId = selectedVariationId.value;
+  if (!variationId) return [];
+  return entries.value.filter(
+    ({ ambience }) =>
+      (findVariation(ambience, variationId)?.samples.length ?? 0) > 0,
+  );
+});
+
 const groups = computed(() => {
   const grouped = new Map<string, GalleryAmbience[]>();
-  for (const entry of entries.value) {
+  for (const entry of filteredEntries.value) {
     const category = entry.ambience.category?.trim() || 'Ambience';
     const items = grouped.get(category) ?? [];
     items.push(entry);
@@ -66,25 +108,20 @@ function activeVariationId(packId: string, ambienceId: string) {
   return store.activeLayers.get(`${packId}:${ambienceId}`)?.variationId ?? null;
 }
 
-async function selectVariation(entry: GalleryAmbience, variationId: string) {
-  const key = `${entry.packageId}:${entry.ambience.id}`;
-  const active = store.activeLayers.get(key);
-  if (active?.variationId === variationId) {
-    await store.toggleAmbience(entry.packageId, entry.ambience.id);
-    return;
-  }
-  if (active) {
-    await store.setAmbienceVariation(
-      entry.packageId,
-      entry.ambience.id,
-      variationId,
-    );
-    return;
-  }
-  await store.toggleAmbience(entry.packageId, entry.ambience.id, variationId);
+function activeSampleIndex(packId: string, ambienceId: string) {
+  return store.activeLayers.get(`${packId}:${ambienceId}`)?.sampleIndex ?? null;
+}
+
+async function selectSample(
+  entry: GalleryAmbience,
+  variationId: string,
+  sampleIndex: number,
+) {
+  await store.selectAmbienceSample(
+    entry.packageId,
+    entry.ambience.id,
+    variationId,
+    sampleIndex,
+  );
 }
 </script>
-
-<style scoped>
-/* Layout is owned by AmbienceItem and EntityGroup. */
-</style>
