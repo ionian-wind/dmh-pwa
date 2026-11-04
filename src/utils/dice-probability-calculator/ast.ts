@@ -63,8 +63,7 @@ export interface SequenceNode {
 }
 
 export type CallItem =
-  | { kind: 'word'; value: string }
-  | { kind: 'expression'; value: Expression };
+  { kind: 'word'; value: string } | { kind: 'expression'; value: Expression };
 
 export interface CallNode {
   kind: 'call';

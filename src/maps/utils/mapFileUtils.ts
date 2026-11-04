@@ -76,8 +76,7 @@ export async function getMapFileBlob(mapFile: MapFile): Promise<Blob> {
     return mapFile.source.handle.getFile();
   }
   const legacyHandle = (mapFile as any).handle as
-    | FileSystemFileHandle
-    | undefined;
+    FileSystemFileHandle | undefined;
   if (legacyHandle) return legacyHandle.getFile();
   throw new Error('Map file has no readable source');
 }

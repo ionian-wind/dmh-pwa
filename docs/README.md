@@ -16,12 +16,12 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | ----------------- | -------------------------------------------------------- |
 | UI framework      | Vue 3 (`<script setup>`), TypeScript                     |
 | Component library | Quasar 2 + Tabler icons                                  |
-| State             | Pinia 3 (setup stores) + `pinia-shared-state`            |
+| State             | Pinia 4 (setup stores) + `pinia-shared-state`            |
 | Storage           | IndexedDB through `idb`, JSON Schema validation with Ajv |
-| Build             | Vite 7, `vite-plugin-pwa` (Workbox)                      |
+| Build             | Vite 8, `vite-plugin-pwa` (Workbox)                      |
 | Markdown          | markdown-it for rendering, Milkdown/Crepe for editing    |
 | Audio             | Howler for playback, `music-metadata` in a web worker    |
-| Tests             | Vitest 3 + `@vue/test-utils` + happy-dom/jsdom           |
+| Tests             | Vitest 5 + `@vue/test-utils` + happy-dom/jsdom           |
 | Hosting target    | GitHub Pages under `/dmh-pwa`                            |
 
 ## Documentation map

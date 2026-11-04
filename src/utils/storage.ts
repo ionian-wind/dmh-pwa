@@ -205,10 +205,17 @@ export interface BaseStore<T extends WithMetadata> {
 const storeCache: Map<string, BaseStore<any>> = new Map();
 
 /** Test helper: clear the in-memory base-store cache. */
-export function resetStoreCache(): void {
+export async function resetStoreCache(): Promise<void> {
+  const pending = dbPromise;
   storeCache.clear();
   dbPromise = null;
   isInitialized = false;
+  if (!pending) return;
+  try {
+    (await pending).close();
+  } catch {
+    // Ignore a connection that failed to open.
+  }
 }
 
 export function useStore<T extends WithMetadata>(

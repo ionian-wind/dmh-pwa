@@ -15,13 +15,13 @@ import { debug, debugWarn, debugError } from './utils/debug';
 import { Quasar, Dialog, Notify } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
 import quasarLangEn from 'quasar/lang/en-US';
-import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
+import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v7';
 
 import 'vue3-openlayers/vue3-openlayers.css';
 
 import Vue3OpenLayers from 'vue3-openlayers';
 import 'rpg-awesome/css/rpg-awesome.css';
-import '@quasar/extras/fontawesome-v6/fontawesome-v6.css';
+import '@quasar/extras/fontawesome-v7/fontawesome-v7.css';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';

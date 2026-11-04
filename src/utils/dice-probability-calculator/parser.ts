@@ -384,18 +384,22 @@ export function parseCst(input: string) {
     const first = parser.errors[0];
     const token = first.token;
     const previous = (first as { previousToken?: typeof token }).previousToken;
-    const line = Number.isFinite(token?.startLine)
+    const hasStart =
+      token !== undefined &&
+      (token.startLine ?? -1) > 0 &&
+      (token.startColumn ?? -1) > 0;
+    const hasEnd =
+      token !== undefined &&
+      (token.endLine ?? -1) > 0 &&
+      (token.endColumn ?? -1) > 0;
+    const line = hasStart
       ? (token!.startLine as number)
       : (previous?.endLine ?? 1);
-    const column = Number.isFinite(token?.startColumn)
+    const column = hasStart
       ? (token!.startColumn as number)
       : (previous?.endColumn ?? 0) + 1;
-    const endLine = Number.isFinite(token?.endLine)
-      ? (token!.endLine as number)
-      : line;
-    const endColumn = Number.isFinite(token?.endColumn)
-      ? (token!.endColumn as number) + 1
-      : column + 1;
+    const endLine = hasEnd ? (token!.endLine as number) : line;
+    const endColumn = hasEnd ? (token!.endColumn as number) + 1 : column + 1;
     const decoded = decodeSyntaxErrorMetadata(first.message);
     const metadata = decoded.metadata;
     const foundKind = metadata?.foundKind ?? token?.tokenType?.name;

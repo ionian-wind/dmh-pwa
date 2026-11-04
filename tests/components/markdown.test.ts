@@ -204,7 +204,7 @@ describe('Markdown', () => {
     const observe = vi.fn();
     vi.stubGlobal(
       'IntersectionObserver',
-      vi.fn((cb: IntersectionObserverCallback) => {
+      vi.fn(function (cb: IntersectionObserverCallback) {
         callback = cb;
         return { observe, disconnect, unobserve: vi.fn() };
       }),

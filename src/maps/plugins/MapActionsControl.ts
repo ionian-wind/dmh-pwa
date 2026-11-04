@@ -79,7 +79,7 @@ export class MapActionsControl extends Control {
   }
 
   getElement(): HTMLElement {
-    return this.element;
+    return this.element!;
   }
 
   setLabels(labels: MapActionsControlLabels): void {
@@ -115,7 +115,7 @@ export class MapActionsControl extends Control {
   }
 
   setVisible(visible: boolean): void {
-    this.element.style.display = visible ? '' : 'none';
+    this.element!.style.display = visible ? '' : 'none';
     if (!visible) this.closeMenu();
   }
 
@@ -206,6 +206,6 @@ export class MapActionsControl extends Control {
   private readonly onDocumentPointerDown = (event: PointerEvent): void => {
     if (!this.menuOpen) return;
     const target = event.target as Node | null;
-    if (target && !this.element.contains(target)) this.closeMenu();
+    if (target && !this.element?.contains(target)) this.closeMenu();
   };
 }

@@ -12,7 +12,7 @@ point for the rest of the part documentation.
 - **Quasar 2** as the component/layout system (`QLayout`, `QDrawer`, `QPage`,
   `QDialog`, `QInput`, `QSelect`, tables, tabs, notifications). Global Quasar
   plugins registered are `Notify` and `Dialog`.
-- **Pinia 3** setup stores; `pinia-shared-state` is enabled so state can be
+- **Pinia 4** setup stores; `pinia-shared-state` is enabled so state can be
   synchronized between browser tabs via `BroadcastChannel`/`localStorage`
   (library default behavior).
 - **IndexedDB** via `idb` as the single source of truth.

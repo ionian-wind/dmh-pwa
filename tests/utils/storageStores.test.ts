@@ -15,14 +15,11 @@ import {
   useMentionsStore,
   useStore,
 } from '@/utils/storage';
-import {
-  registerValidationSchema,
-  canValidate,
-} from '@/utils/schemaValidator';
+import { registerValidationSchema, canValidate } from '@/utils/schemaValidator';
 import JSZip from 'jszip';
 
 async function deleteDatabase() {
-  resetStoreCache();
+  await resetStoreCache();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase('dmh-db');
     request.onsuccess = () => resolve();
@@ -49,7 +46,7 @@ describe('IndexedDB storage', () => {
     } catch {
       // ignore cleanup failures
     }
-    resetStoreCache();
+    await resetStoreCache();
   });
 
   it('performs item CRUD operations', async () => {
@@ -168,7 +165,9 @@ describe('IndexedDB storage', () => {
     await restoreAllStores(backup);
 
     const notes = await idbGetAllItems<any>('notes');
-    expect(notes).toEqual([expect.objectContaining({ id: 'n1', title: 'Note' })]);
+    expect(notes).toEqual([
+      expect.objectContaining({ id: 'n1', title: 'Note' }),
+    ]);
 
     const files = await idbGetAllItems<any>('jukebox_files');
     expect(files[0].source.kind).toBe('blob');

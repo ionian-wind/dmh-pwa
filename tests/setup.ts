@@ -59,12 +59,14 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Mock crypto.randomUUID
-Object.defineProperty(globalThis, 'crypto', {
-  value: {
-    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substr(2, 9),
-  },
-});
+// Keep the real Web Crypto API (nanoid needs getRandomValues) and only
+// override randomUUID for stable test identifiers.
+if (globalThis.crypto) {
+  Object.defineProperty(globalThis.crypto, 'randomUUID', {
+    configurable: true,
+    value: () => 'test-uuid-' + Math.random().toString(36).slice(2, 11),
+  });
+}
 
 // Keep console output for debugging failures while still allowing spies.
 globalThis.console = {
@@ -75,18 +77,18 @@ globalThis.console = {
 };
 
 // Global test utilities
-globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+globalThis.ResizeObserver = class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+} as any;
 
 // Mock IntersectionObserver
-globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+globalThis.IntersectionObserver = class IntersectionObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+} as any;
 
 const i18n = createI18n({
   legacy: false,
@@ -111,7 +113,7 @@ beforeEach(async () => {
   localStorageMock.setItem.mockClear();
   localStorageMock.removeItem.mockClear();
   localStorageMock.clear.mockClear();
-  resetStoreCache();
+  await resetStoreCache();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase('dmh-db');
     request.onsuccess = () => resolve();

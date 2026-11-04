@@ -11,7 +11,7 @@ import type { MapFile } from '@/maps/types';
 import { resetStoreCache } from '@/utils/storage';
 
 async function deleteDatabase() {
-  resetStoreCache();
+  await resetStoreCache();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase('dmh-db');
     request.onsuccess = () => resolve();

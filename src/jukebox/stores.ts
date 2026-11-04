@@ -140,7 +140,7 @@ export function trackIsActive(
 ): boolean {
   return Boolean(
     currentTrack &&
-      currentTrack.id === track.id &&
-      activePlaylistId === selectedPlaylistId,
+    currentTrack.id === track.id &&
+    activePlaylistId === selectedPlaylistId,
   );
 }

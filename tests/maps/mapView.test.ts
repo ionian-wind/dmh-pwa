@@ -210,6 +210,18 @@ const MarkersPanelStub = defineComponent({
   },
 });
 
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: {
+    kind: String,
+    modelValue: Array,
+    readonly: Boolean,
+  },
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
+  },
+});
+
 const location = {
   id: 'l1',
   name: 'Town',
@@ -299,6 +311,7 @@ async function mountMapView() {
         MapAreaEditor: AreaEditorStub,
         MapMarkersPanel: MarkersPanelStub,
         MapAreasPanel: AreasPanelStub,
+        EntitiesLinking: EntitiesLinkingStub,
       },
     },
   });
@@ -421,12 +434,11 @@ describe('MapView', () => {
     const wrapper = await mountMapView();
 
     await wrapper.find('.map-marker-accessible').trigger('click');
-    const popup = wrapper.find('.map-info-popup');
-    expect(popup.find('.entity-group').exists()).toBe(true);
-    expect(popup.text()).toContain('Notes');
-    expect(popup.text()).toContain('n1');
-    expect(popup.find('button[aria-label="Add"]').exists()).toBe(false);
-    expect(popup.find('button[aria-label="Remove"]').exists()).toBe(false);
+    const links = wrapper.findComponent(EntitiesLinkingStub);
+    expect(links.exists()).toBe(true);
+    expect(links.props('kind')).toBe('note');
+    expect(links.props('modelValue')).toEqual([{ kind: 'note', id: 'n1' }]);
+    expect(links.props('readonly')).toBe(true);
 
     map.markers[0].entities = [];
     wrapper.unmount();

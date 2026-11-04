@@ -25,13 +25,18 @@ let dbInstance: IDBPDatabase | null = null;
 async function getDB(): Promise<IDBPDatabase> {
   if (dbInstance) return dbInstance;
 
-  dbInstance = await openDB(DB_NAME, DB_VERSION, {
+  const db = await openDB(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('soundPacks')) {
         db.createObjectStore('soundPacks', { keyPath: 'id' });
       }
     },
   });
+  db.onversionchange = () => {
+    db.close();
+    if (dbInstance === db) dbInstance = null;
+  };
+  dbInstance = db;
   return dbInstance;
 }
 
@@ -133,8 +138,7 @@ export async function importSoundPack(
   const manifest = normalizeSoundPack(raw);
   const audioBlobs = await extractAudio(zip, manifest);
   const existing = (await (await getDB()).get('soundPacks', manifest.id)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
 
   await putPack({
     id: manifest.id,
@@ -163,8 +167,7 @@ export async function getPack(
 ): Promise<NormalizedSoundPack | null> {
   const db = await getDB();
   const pack = (await db.get('soundPacks', packId)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
   return pack
     ? { ...normalizeSoundPack(pack.manifest), origin: pack.origin ?? 'created' }
     : null;
@@ -175,8 +178,7 @@ export async function getPackAudioBlobs(
 ): Promise<Record<string, Blob>> {
   const db = await getDB();
   const pack = (await db.get('soundPacks', packId)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
   return pack?.audioBlobs || {};
 }
 
@@ -215,8 +217,7 @@ export async function saveSoundPack(
   }
 
   const existing = (await (await getDB()).get('soundPacks', manifest.id)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
   await putPack({
     id: manifest.id,
     manifest: stripOrigin(manifest),
@@ -233,8 +234,7 @@ export async function updatePackManifest(
 ): Promise<NormalizedSoundPack> {
   const db = await getDB();
   const existing = (await db.get('soundPacks', packId)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
   if (!existing) throw new Error('Pack not found');
 
   const manifest = normalizeSoundPack({ ...manifestInput, id: packId });
@@ -257,8 +257,7 @@ async function buildZip(record: SoundPackRecord): Promise<Blob> {
 export async function exportSoundPackAsFile(packId: string): Promise<void> {
   const db = await getDB();
   const record = (await db.get('soundPacks', packId)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
   if (!record) throw new Error('Pack not found');
 
   const content = await buildZip(record);
@@ -273,8 +272,7 @@ export async function exportSoundPackAsFile(packId: string): Promise<void> {
 export async function exportSoundPack(packId: string): Promise<Blob> {
   const db = await getDB();
   const record = (await db.get('soundPacks', packId)) as
-    | SoundPackRecord
-    | undefined;
+    SoundPackRecord | undefined;
   if (!record) throw new Error('Pack not found');
   return buildZip(record);
 }

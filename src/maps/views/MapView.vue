@@ -20,7 +20,6 @@ import {
   IconX,
 } from '@tabler/icons-vue';
 import type { Item } from 'ol-contextmenu';
-import 'ol-contextmenu/ol-contextmenu.css';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm, prompt } from '@/dialogs';
@@ -110,9 +109,7 @@ const hoveredMarkerId = ref<string | null>(null);
 const isAreaEditorOpen = ref(false);
 const editingArea = ref<MapArea | null>(null);
 type MapInfoSelection =
-  | { kind: 'marker'; id: string }
-  | { kind: 'area'; id: string }
-  | null;
+  { kind: 'marker'; id: string } | { kind: 'area'; id: string } | null;
 const infoSelection = ref<MapInfoSelection>(null);
 const infoAnchor = ref({ left: 0, top: 0 });
 const mapContainerRef = ref<HTMLElement | null>(null);

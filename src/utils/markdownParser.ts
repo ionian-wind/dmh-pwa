@@ -1,12 +1,13 @@
 import MarkdownIt from 'markdown-it';
-import type MarkdownItType from 'markdown-it';
-import type { PluginSimple } from 'markdown-it';
+import type { Env, MarkdownIt as MarkdownItInstance } from 'markdown-it';
 import { useModuleStore } from '@/stores/modules';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useMapStore } from '@/maps/maps';
+
+type PluginSimple = (md: MarkdownItInstance) => void;
 
 const mentionKindMap = new Map([
   [
@@ -75,7 +76,7 @@ const mentionKindMap = new Map([
 const entityLinkRegex =
   /^(note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)$/;
 
-const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
+const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
   const defaultRender =
     md.renderer.rules.link_open ||
     function (tokens: any, idx: number, options: any, _env: any, self: any) {
@@ -134,7 +135,7 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
 // --- Checkbox (Task List) plugin for markdown-it ---
 const checkboxRegex = /^\s*\[([ xX])\]\s+/;
 
-const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
+const checkboxPlugin: PluginSimple = (md: MarkdownItInstance) => {
   const originalListItemOpen =
     md.renderer.rules.list_item_open ||
     function (tokens: any, idx: number, _options: any, _env: any, self: any) {
@@ -184,7 +185,7 @@ const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
 // --- Custom Header Plugin for {#KIND-id} headers ---
 const headerIdRegex = /\s*\{#([a-zA-Z]+)-([a-zA-Z0-9_-]+)\}\s*$/;
 
-const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
+const customHeaderPlugin: PluginSimple = (md: MarkdownItInstance) => {
   // Patch the renderer for heading_open
   const originalHeadingOpen =
     md.renderer.rules.heading_open ||
@@ -378,7 +379,7 @@ export function sanitizeMarkdownHtml(html: string): string {
   return doc.body.innerHTML;
 }
 
-export function parseMarkdown(text: string, env?: unknown): string {
+export function parseMarkdown(text: string, env?: Env): string {
   return sanitizeMarkdownHtml(md.render(text || '', env));
 }
 

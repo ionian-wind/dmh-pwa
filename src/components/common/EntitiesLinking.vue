@@ -161,13 +161,11 @@ function removeLink(ref: MapEntityRef) {
 
 .linked-entity-remove {
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.15s ease;
 }
 
 .linked-entity-item:hover .linked-entity-remove,
 .linked-entity-item:focus-within .linked-entity-remove {
   opacity: 1;
-  pointer-events: auto;
 }
 </style>

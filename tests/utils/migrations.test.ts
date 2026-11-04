@@ -3,7 +3,7 @@ import { openDB, resetStoreCache } from '@/utils/storage';
 import { sortedMigrations } from '@/migrations';
 
 async function deleteDatabase() {
-  resetStoreCache();
+  await resetStoreCache();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase('dmh-db');
     request.onsuccess = () => resolve();
@@ -80,7 +80,7 @@ describe('database migrations', () => {
     await tx.done;
     db.close();
 
-    resetStoreCache();
+    await resetStoreCache();
     const reopened = await openDB();
     const note = await reopened.get('notes', 'note1');
     expect(note.contentType).toBe('text');
@@ -115,7 +115,7 @@ describe('database migrations', () => {
     await tx.done;
     db.close();
 
-    resetStoreCache();
+    await resetStoreCache();
     const reopened = await openDB();
     const map = await reopened.get('maps', 'map1');
     const location = await reopened.get('map_locations', 'l1');

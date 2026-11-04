@@ -156,7 +156,9 @@ test('links a note from the marker editor links tab', async ({ page }) => {
 
   await dialog.getByRole('tab', { name: 'Linked entities' }).click();
 
-  const noteBlock = dialog.locator('.q-list').filter({ hasText: 'Notes' });
+  const noteBlock = dialog
+    .locator('.entity-group')
+    .filter({ hasText: 'Notes' });
   await noteBlock.getByRole('button', { name: 'Add', exact: true }).click();
   const linkDialog = page.getByRole('dialog').last();
   await linkDialog.getByPlaceholder('Search').fill('E2E Note');

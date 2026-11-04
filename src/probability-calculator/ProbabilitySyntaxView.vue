@@ -431,8 +431,7 @@ X: 3
 output X + 1 named "four"
 
 DAMAGE: 2d6 + 3
-output DAMAGE named "sword damage"</pre
-        >
+output DAMAGE named "sword damage"</pre>
         <ul class="q-mt-sm">
           <li v-for="(bullet, index) in basicsBullets" :key="index">
             {{ bullet }}
@@ -501,8 +500,7 @@ output DAMAGE named "sword damage"</pre
 {1..3:2}
 {{1,2,4}:2, 5, 6}
 {d6}
-{}</pre
-        >
+{}</pre>
         <a
           id="position"
           class="syntax-section-link syntax-section-link--sub text-subtitle2 q-mt-md q-mb-xs"
@@ -523,8 +521,7 @@ output DAMAGE named "sword damage"</pre
 1 @ 246        \ 2 \
 # 1234         \ 4 \
 # (3d6)        \ 3 \
-{1,2} @ 3d6</pre
-        >
+{1,2} @ 3d6</pre>
         <p class="q-mb-none">
           {{ t('probabilityCalculator.syntaxPage.sequences.positionOrder') }}
         </p>
@@ -556,8 +553,7 @@ else if X = 2 {
 }
 else {
   output 1d6
-}</pre
-        >
+}</pre>
         <p class="q-mb-none">
           {{ t('probabilityCalculator.syntaxPage.flow.note') }}
         </p>
@@ -584,8 +580,7 @@ function: add A to B {
 }
 
 output [add 1 to 2]
-output [add d4 to d6]</pre
-        >
+output [add d4 to d6]</pre>
         <p>{{ t('probabilityCalculator.syntaxPage.functions.paramsIntro') }}</p>
         <ul>
           <li v-for="(bullet, index) in parameterBullets" :key="index">
@@ -649,8 +644,7 @@ output [add d4 to d6]</pre
 set "position order" to "highest first"
 set "position order" to "lowest first"
 set "explode depth" to 2
-set "maximum function depth" to 5</pre
-        >
+set "maximum function depth" to 5</pre>
         <p class="q-mb-none">
           {{ t('probabilityCalculator.syntaxPage.settings.note') }}
         </p>

@@ -686,8 +686,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
   ): boolean {
     return Boolean(
       currentTrack.value &&
-        currentTrack.value.id === track.id &&
-        configStore.jukeboxActivePlaylistId === selectedPlaylistId,
+      currentTrack.value.id === track.id &&
+      configStore.jukeboxActivePlaylistId === selectedPlaylistId,
     );
   }
 
