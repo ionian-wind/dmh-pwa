@@ -512,10 +512,9 @@ describe('ambient sound store', () => {
     resetPlaybackCoordinator();
   });
 
-  it('plays one-shots independently of ambient volume and transport', async () => {
+  it('plays one-shots independently of ambient transport', async () => {
     const store = createStore();
     await store.loadStoredPacks();
-    store.setMasterVolume(0);
     store.pause();
     mocks.audioEngine.playOneShot.mockReturnValue(true);
 

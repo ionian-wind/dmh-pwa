@@ -5,11 +5,14 @@ const LAYER_CROSSFADE_MS = 500;
 
 export class AudioEngine {
   private layers: Map<string, Howl> = new Map();
+  private layerBaseVolumes = new Map<string, number>();
   private retiringLayers = new Set<Howl>();
   private musicTrack: Howl | null = null;
+  private musicBaseVolume: number = 0.5;
   private retiringMusicTracks = new Set<Howl>();
   private weatherTrack: Howl | null = null;
   private oneShots: Map<string, Howl> = new Map();
+  private oneShotBaseVolumes = new Map<string, number>();
   private oneShotPlayIds: Map<string, number[]> = new Map();
   private masterVolume: number = 0.8;
   private currentMoodState: string = 'explore';
@@ -20,6 +23,25 @@ export class AudioEngine {
 
   setMasterVolume(volume: number): void {
     this.masterVolume = Math.max(0, Math.min(1, volume));
+
+    this.layers.forEach((layer, layerId) => {
+      const target =
+        (this.layerBaseVolumes.get(layerId) ?? 0) * this.masterVolume;
+      if (layer.playing()) layer.fade(layer.volume(), target, 100);
+      else layer.volume(target);
+    });
+
+    if (this.musicTrack) {
+      this.musicTrack.fade(
+        this.musicTrack.volume(),
+        this.musicBaseVolume * this.masterVolume,
+        100,
+      );
+    }
+
+    this.oneShots.forEach((sfx, sfxId) => {
+      sfx.volume((this.oneShotBaseVolumes.get(sfxId) ?? 1) * this.masterVolume);
+    });
   }
 
   getMasterVolume(): number {
@@ -36,6 +58,7 @@ export class AudioEngine {
       const existing = this.layers.get(layerId)!;
       if (!replace) return;
       this.layers.delete(layerId);
+      this.layerBaseVolumes.delete(layerId);
       if (existing.playing()) {
         this.fadeOutRetiringLayer(existing);
       } else {
@@ -112,7 +135,9 @@ export class AudioEngine {
   playLayer(layerId: string, volume: number = 0.5): void {
     const layer = this.layers.get(layerId);
     if (layer) {
-      const targetVolume = volume * this.masterVolume;
+      const baseVolume = Math.max(0, Math.min(1, volume));
+      this.layerBaseVolumes.set(layerId, baseVolume);
+      const targetVolume = baseVolume * this.masterVolume;
       if (!layer.playing()) {
         layer.volume(0);
         layer.play();
@@ -127,6 +152,7 @@ export class AudioEngine {
     const layer = this.layers.get(layerId);
     if (!layer) return;
     this.layers.delete(layerId);
+    this.layerBaseVolumes.delete(layerId);
     if (fadeOut && layer.playing()) {
       this.fadeOutRetiringLayer(layer);
     } else {
@@ -138,7 +164,9 @@ export class AudioEngine {
   setLayerVolume(layerId: string, volume: number): void {
     const layer = this.layers.get(layerId);
     if (layer && layer.playing()) {
-      layer.fade(layer.volume(), volume * this.masterVolume, 100);
+      const baseVolume = Math.max(0, Math.min(1, volume));
+      this.layerBaseVolumes.set(layerId, baseVolume);
+      layer.fade(layer.volume(), baseVolume * this.masterVolume, 100);
     }
   }
 
@@ -153,7 +181,7 @@ export class AudioEngine {
     }
     const howl = new Howl({
       src: [audioUrl],
-      volume: 1,
+      volume: 0,
       html5: true,
       preload: true,
       // Allow the same one-shot to overlap with itself.
@@ -179,8 +207,10 @@ export class AudioEngine {
   playOneShot(sfxId: string, volume: number = 1): boolean {
     const sfx = this.oneShots.get(sfxId);
     if (!sfx) return false;
-    // One-shots use their own volume and are independent of ambient buses.
-    sfx.volume(Math.max(0, Math.min(1, volume)));
+    // One-shots use their own entry volume, scaled by the scene master volume.
+    const baseVolume = Math.max(0, Math.min(1, volume));
+    this.oneShotBaseVolumes.set(sfxId, baseVolume);
+    sfx.volume(baseVolume * this.masterVolume);
     const soundId = sfx.play();
     if (soundId === undefined) return false;
     const activeIds = this.oneShotPlayIds.get(sfxId) ?? [];
@@ -264,9 +294,11 @@ export class AudioEngine {
 
   playMusic(volume: number = 0.5): void {
     if (this.musicTrack && !this.musicTrack.playing()) {
+      const baseVolume = Math.max(0, Math.min(1, volume));
+      this.musicBaseVolume = baseVolume;
       this.musicTrack.volume(0);
       this.musicTrack.play();
-      this.musicTrack.fade(0, volume * this.masterVolume, 1000);
+      this.musicTrack.fade(0, baseVolume * this.masterVolume, 1000);
       this.scheduleMusicNearEnd();
     }
   }
@@ -292,10 +324,12 @@ export class AudioEngine {
   }
 
   setMusicVolume(volume: number): void {
+    const baseVolume = Math.max(0, Math.min(1, volume));
+    this.musicBaseVolume = baseVolume;
     if (this.musicTrack && this.musicTrack.playing()) {
       this.musicTrack.fade(
         this.musicTrack.volume(),
-        volume * this.masterVolume,
+        baseVolume * this.masterVolume,
         100,
       );
     }
@@ -309,6 +343,8 @@ export class AudioEngine {
     format?: string[],
   ): void {
     this.clearMusicNearEndTimer();
+    const baseVolume = Math.max(0, Math.min(1, volume));
+    this.musicBaseVolume = baseVolume;
     if (this.musicTrack) {
       this.musicTrack.fade(this.musicTrack.volume(), 0, 1000);
       setTimeout(() => {
@@ -327,12 +363,12 @@ export class AudioEngine {
         this.musicTrack = track;
         this.currentMoodState = newMoodState;
         track.play();
-        track.fade(0, volume * this.masterVolume, 1000);
+        track.fade(0, baseVolume * this.masterVolume, 1000);
         this.scheduleMusicNearEnd();
       }, 1000);
     } else {
       this.loadMusic(newMoodState, newAudioUrl, loop, format);
-      this.playMusic(volume);
+      this.playMusic(baseVolume);
     }
   }
 
@@ -426,7 +462,9 @@ export class AudioEngine {
     this.retiringMusicTracks.clear();
     this.weatherTrack?.unload();
     this.layers.clear();
+    this.layerBaseVolumes.clear();
     this.oneShots.clear();
+    this.oneShotBaseVolumes.clear();
     this.musicTrack = null;
     this.weatherTrack = null;
   }

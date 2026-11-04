@@ -99,6 +99,32 @@ describe('ambient audio engine', () => {
     expect(howler.volume).not.toHaveBeenCalled();
   });
 
+  it('applies master volume to active layers, music and one-shots', () => {
+    engine.loadLayer('rain', 'blob:rain');
+    engine.playLayer('rain', 0.8);
+    engine.loadMusic('explore', 'blob:explore');
+    engine.playMusic(0.5);
+    engine.loadOneShot('thunder', 'blob:thunder');
+    engine.playOneShot('thunder', 0.8);
+
+    const layer = instance(0);
+    const music = instance(1);
+    const oneShot = instance(2);
+    expect(layer.volume()).toBe(0.8);
+    expect(music.volume()).toBe(0.5);
+    expect(oneShot.volume()).toBe(0.8);
+
+    engine.setMasterVolume(0.5);
+    expect(layer.volume()).toBe(0.4);
+    expect(music.volume()).toBe(0.25);
+    expect(oneShot.volume()).toBe(0.4);
+
+    engine.setMasterVolume(0);
+    expect(layer.volume()).toBe(0);
+    expect(music.volume()).toBe(0);
+    expect(oneShot.volume()).toBe(0);
+  });
+
   it('loads, fades, plays and stops layers', () => {
     engine.loadLayer('rain', 'blob:rain');
     engine.loadLayer('rain', 'blob:rain');

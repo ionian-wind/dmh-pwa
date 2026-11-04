@@ -92,7 +92,8 @@ icon-picker format (`collection:name`, for example `fa-solid:cloud-bolt`), a
 volume and an optional cooldown. One-shot entries can be referenced by multiple scenes
 from the same package.
 
-One-shots are **independent of ambient playback state and mix settings**. They
+One-shots are **independent of ambient playback transport**, but their entry
+volume is scaled by the scene master volume. They
 can be triggered while ambient audio is paused, while no scene is active, while
 music is disabled, while all ambience layers are muted, or while the ambient
 master volume is zero. They use their own entry volume and are not attenuated by
@@ -400,7 +401,7 @@ to the package root. The folder is normally `ambiences/`.
 | `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.                   |
 | `file`     | yes      | Audio path relative to the package root, normally `one-shots/...`. |
 | `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.             |
-| `volume`   | yes      | 0–100. One-shots use their own volume and ignore ambient buses.    |
+| `volume`   | yes      | 0–100. Scaled by the scene master volume.                          |
 | `cooldown` | no       | Optional cooldown in seconds.                                      |
 
 **Scene**
@@ -737,8 +738,8 @@ footer.
 **Playback behavior**
 
 - One-shots are triggered from the galleries or the scene view.
-- One-shots use their own entry volume and are independent of ambient playback
-  and volume state.
+- One-shots use their own entry volume, scaled by the scene master volume, and
+  are independent of ambient playback transport.
 - A single one-shot may be retriggered while already playing. There is no
   active-instance cap; the UI shows an `×N` badge while instances overlap.
 
