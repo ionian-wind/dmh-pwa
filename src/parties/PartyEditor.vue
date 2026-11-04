@@ -5,7 +5,7 @@ import type { Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { alert } from '@/dialogs';
 import { UUID } from '@/types';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 

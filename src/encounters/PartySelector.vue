@@ -8,7 +8,7 @@ import { generateId } from '@/utils/storage';
 import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import type { MapEntityRef } from '@/maps/types';
 
 const partyStore = usePartyStore();

@@ -152,6 +152,21 @@ it can be linked immediately. Linked rows highlight on hover and expose the
 unlink action only on hover or keyboard focus. Internal options such as note
 types and map layers keep their dedicated selectors.
 
+### `EntitiesLinking.vue`
+
+Shared entity-link editor block. It accepts one entity `kind`, a `modelValue` of
+`{ kind, id }` refs, optional `multiple`, `label` and `options`, and emits the
+full updated ref list. It provides searchable add selection, inline creation via
+`EntityCreateDialog`, virtual-scroll linked lists and remove actions. Located
+under `src/components/common/`.
+
+### `EntityLinkList.vue`
+
+Read-only inline list of linked entity refs. Resolves display labels through the
+entity catalog and optionally shows remove buttons. The list is wrapped in
+`EntityGroup` with the “Linked entities” heading. Located under
+`src/components/common/`.
+
 ### `EntityTabs.vue`
 
 Dense Quasar `QTabs`/`QTab` bar shared by entity views, the ambient page and the

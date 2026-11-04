@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import EntityLinkList from '@/maps/components/EntityLinkList.vue';
+import EntityLinkList from '@/components/common/EntityLinkList.vue';
 
 describe('EntityLinkList', () => {
   it('renders known and unknown links and emits removals', async () => {
@@ -15,7 +15,8 @@ describe('EntityLinkList', () => {
     expect(wrapper.text()).toContain('n1');
     expect(wrapper.text()).toContain('x1');
     expect(wrapper.text()).toContain('Notes');
-    expect(wrapper.text()).toContain('Notes');
+    expect(wrapper.find('.entity-group').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Linked entities');
 
     const removeButtons = wrapper.findAll('.entity-link-remove');
     expect(removeButtons).toHaveLength(2);

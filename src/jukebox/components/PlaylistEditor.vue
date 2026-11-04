@@ -5,7 +5,7 @@ import { useJukeboxPlaylistsStore } from '../stores';
 import type { JukeboxPlaylist } from '../types';
 import type { UUID } from '@/types';
 import { useI18n } from 'vue-i18n';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 

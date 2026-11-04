@@ -7,7 +7,7 @@ import type { MapEntityRef } from '../types';
 import { createMapFileFromFile, getMapFileBlob } from '../utils/mapFileUtils';
 import { deleteMapFile, getMapFile, putMapFile } from '../maps';
 import { normalizeMapEntity } from '../utils/normalize';
-import EntitiesLinking from './EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 
 const props = defineProps<{

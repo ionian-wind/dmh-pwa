@@ -8,7 +8,7 @@ import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import NoteCanvas from './NoteCanvas.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 

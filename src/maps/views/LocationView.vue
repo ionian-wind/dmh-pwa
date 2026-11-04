@@ -6,7 +6,7 @@ import BaseCard from '@/components/common/BaseCard.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
-import EntitiesLinking from '../components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import MapLocationEditor from '../components/MapLocationEditor.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';

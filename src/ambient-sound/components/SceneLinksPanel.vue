@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';

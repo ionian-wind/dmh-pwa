@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
-import EntitiesLinking from './EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import type { MapEntityKind, MapEntityRef, MapLocation } from '../types';
 import { generateId } from '@/utils/storage';
 import { deepUnwrap } from '@/utils/deepUnwrap';

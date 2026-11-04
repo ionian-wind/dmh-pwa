@@ -26,7 +26,7 @@ vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
   }),
 }));
 
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 
 const EntityCreateDialogStub = defineComponent({
   name: 'EntityCreateDialog',

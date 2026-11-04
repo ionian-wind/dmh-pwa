@@ -31,7 +31,7 @@ import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapMarkersPanel from '../components/MapMarkersPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
-import EntityLinkList from '../components/EntityLinkList.vue';
+import EntityLinkList from '@/components/common/EntityLinkList.vue';
 import { useMapLocationStore } from '../locations';
 import {
   MapActionsControl,

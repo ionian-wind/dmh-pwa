@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { IconPencil, IconTrash } from '@tabler/icons-vue';
-import EntityLinkList from './EntityLinkList.vue';
+import EntityLinkList from '@/components/common/EntityLinkList.vue';
 import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { MapArea } from '../types';
 import { markerIconClass } from '../icons';
