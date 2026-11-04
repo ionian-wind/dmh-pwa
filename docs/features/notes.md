@@ -60,6 +60,7 @@ editable in the note form; it is chosen by the create action.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
 - Renders tags as clickable `#tag` labels that emit `tag-click`.
+- Applies the note's optional `backgroundColor` behind its content.
 - Has an `IconFileDownload` action: text notes download as `.md`, drawing
   notes download their PNG preview. Drawings without a preview are disabled.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
@@ -80,6 +81,8 @@ Fields:
     Quickdraw editor.
 - Note type selector and tag selector. The module link lives in the dialog's
   linked-entities tab.
+- Optional background colour (`backgroundColor`). It is rendered behind the
+  note content on the detail page and note cards.
 
 Behavior:
 
@@ -186,6 +189,7 @@ saved from the UI has:
   "typeId": null,
   "tags": [],
   "moduleId": null,
+  "backgroundColor": "",
   "hidden": false,
   "createdAt": 0,
   "updatedAt": 0

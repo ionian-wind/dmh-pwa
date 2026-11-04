@@ -471,7 +471,8 @@
     "contentPlaceholder": "Enter content here...",
     "module": "Module",
     "type": "Type",
-    "tags": "Tags"
+    "tags": "Tags",
+    "backgroundColor": "Background color"
   },
   "partySelector": {
     "chooseParty": "Choose a party...",

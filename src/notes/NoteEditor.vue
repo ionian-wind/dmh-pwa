@@ -3,6 +3,7 @@ import { ref, watch, computed, onMounted, nextTick } from 'vue';
 import type { Note, NoteContentType } from '@/types';
 import TagSelector from '../components/common/TagSelector.vue';
 import NoteTypeSelector from './NoteTypeSelector.vue';
+import ColorPicker from '@/components/common/ColorPicker.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import NoteCanvas from './NoteCanvas.vue';
@@ -163,6 +164,15 @@ function handleDelete() {
             v-model="editedNote.tags"
             :entity-type="'note'"
             :current-entity-id="editedNote.id"
+          />
+        </div>
+        <div class="q-mb-md">
+          <ColorPicker
+            id="note-background-color"
+            v-model="editedNote.backgroundColor"
+            :label="t('editor.backgroundColor')"
+            clearable
+            :clear-label="t('common.clear')"
           />
         </div>
         <div class="q-mb-md">

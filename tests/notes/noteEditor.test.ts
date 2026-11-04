@@ -116,4 +116,47 @@ describe('NoteEditor content types', () => {
     expect(alert).toHaveBeenCalled();
     expect(wrapper.emitted('submit')).toBeUndefined();
   });
+
+  it('edits and preserves the note background colour', async () => {
+    const wrapper = mountEditor({
+      note: { ...baseNote, backgroundColor: '#ffeeaa' },
+    });
+
+    const picker = wrapper.findComponent({ name: 'ColorPicker' });
+    expect(picker.exists()).toBe(true);
+    expect(picker.props('modelValue')).toBe('#ffeeaa');
+
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      backgroundColor: '#ffeeaa',
+    });
+  });
+
+  it('binds title, type, tags, mode toggle and content updates', async () => {
+    const wrapper = mountEditor({ note: baseNote });
+
+    wrapper
+      .findAllComponents({ name: 'QInput' })[0]
+      .vm.$emit('update:modelValue', 'Renamed');
+    wrapper
+      .findComponent({ name: 'NoteTypeSelector' })
+      .vm.$emit('update:modelValue', 'type-1');
+    wrapper
+      .findComponent({ name: 'TagSelector' })
+      .vm.$emit('update:modelValue', ['lore']);
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    wrapper
+      .findComponent(MarkdownEditorStub)
+      .vm.$emit('update:modelValue', 'changed');
+
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      title: 'Renamed',
+      typeId: 'type-1',
+      tags: ['lore'],
+    });
+  });
 });

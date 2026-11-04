@@ -199,17 +199,26 @@ async function handleEditorDelete() {
     v-model="activeTab"
   >
     <template #main>
-      <NoteCanvas
-        v-if="note?.contentType === 'draw'"
-        :model-value="noteContent"
-        readonly
-      />
-      <Markdown
-        v-else
-        :taskCheckboxEnabled="true"
-        :content="noteContent"
-        @update:content="handleMarkdownContentChange"
-      />
+      <div
+        class="note-content-surface"
+        :style="
+          note?.backgroundColor
+            ? { backgroundColor: note.backgroundColor }
+            : undefined
+        "
+      >
+        <NoteCanvas
+          v-if="note?.contentType === 'draw'"
+          :model-value="noteContent"
+          readonly
+        />
+        <Markdown
+          v-else
+          :taskCheckboxEnabled="true"
+          :content="noteContent"
+          @update:content="handleMarkdownContentChange"
+        />
+      </div>
     </template>
 
     <template #links>
@@ -231,6 +240,12 @@ async function handleEditorDelete() {
 </template>
 
 <style scoped>
+.note-content-surface {
+  min-height: 100%;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+}
+
 .markdown-content {
   font-family: var(--font-family);
 }

@@ -93,6 +93,11 @@ function handleDownload() {
         v-else
         ref="contentRef"
         :class="['note-card-content', { clamped: clamped && !expanded }]"
+        :style="
+          note.backgroundColor
+            ? { backgroundColor: note.backgroundColor }
+            : undefined
+        "
       >
         <Markdown :content="note.content" />
       </div>
@@ -134,6 +139,11 @@ function handleDownload() {
   </BaseCard>
 </template>
 <style scoped>
+.note-card-content {
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
+}
+
 .note-drawing-preview {
   width: 100%;
   max-height: 180px;
