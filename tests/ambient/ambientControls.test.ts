@@ -74,7 +74,6 @@ describe('AmbientControls', () => {
     expect(sliders[0].attributes('snap')).toBeDefined();
     sliders[0].vm.$emit('update:modelValue', 0.75);
     expect(storeMock.setIntensity).toHaveBeenCalledWith(75);
-    expect(wrapper.find('.intensity-value').text()).toBe('75%');
     wrapper.unmount();
   });
 

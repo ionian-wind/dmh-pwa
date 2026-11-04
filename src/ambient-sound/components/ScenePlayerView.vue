@@ -18,9 +18,6 @@
           <div class="text-h6">{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
         </div>
-        <div class="text-caption text-grey-7">
-          {{ t('ambientSoundPage.intensity') }}: {{ store.intensity }}%
-        </div>
       </template>
     </div>
 

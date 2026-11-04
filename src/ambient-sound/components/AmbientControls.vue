@@ -25,9 +25,6 @@
           "
         />
       </div>
-      <div class="intensity-value text-caption text-grey-7">
-        {{ store.intensity }}%
-      </div>
     </QToolbar>
 
     <div class="ambient-control-row">
@@ -179,12 +176,6 @@ function handleVolumeWheel(event: WheelEvent) {
   min-width: 68px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.intensity-value {
-  min-width: 40px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .ambient-control-row {
