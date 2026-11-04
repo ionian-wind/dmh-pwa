@@ -180,6 +180,29 @@ commit SHA inlined by Vite at build time from `VITE_COMMIT_SHA` in dark text
 over a semi-transparent light background. Local builds fall back to `dev`. No
 runtime request is made.
 
+### `ProgressButton.vue`
+
+Quasar `QBtn` wrapper with a built-in progress icon. Props:
+
+| Prop      | Type                               | Default | Description                         |
+| --------- | ---------------------------------- | ------- | ----------------------------------- |
+| `state`   | `'none' \| 'loading' \| 'playing'` | `none`  | Current button progress state.      |
+| `percent` | `number`                           | `0`     | Progress percentage, clamped 0–100. |
+
+- `none` renders the default slot unchanged.
+- `loading` shows a spinning `IconLoader2`.
+- `playing` selects the closest Tabler percentage icon and fades between
+  values as the percentage changes.
+- Reaching `100` fades the icon out, switches the rendered state to `none`, and
+  emits `update:state` plus `finish`. Use `v-model:state` to keep the parent in
+  sync.
+
+Percentage icons used: `IconPercentage0`, `IconPercentage10`,
+`IconPercentage20`, `IconPercentage25`, `IconPercentage30`, `IconPercentage33`,
+`IconPercentage40`, `IconPercentage50`, `IconPercentage60`, `IconPercentage66`,
+`IconPercentage70`, `IconPercentage75`, `IconPercentage80`, `IconPercentage90`
+and `IconPercentage100`.
+
 ### `TagSelector.vue`
 
 - Adds and removes string tags with a standard outlined `QInput` and `QChip`
