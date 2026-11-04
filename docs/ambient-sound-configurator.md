@@ -642,7 +642,7 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
 
 - **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.
   Uses the same bar layout as the intensity control: the label sits at the left
-  edge and a rounded button group is centered in the remaining row. The group
+  edge and a rounded button group is right-aligned in the remaining row. The group
   contains Off plus one large button per scene music preset (for example
   Explore, Combat, Victory). Clicking a mood button starts only that
   mood music when nothing is playing, or crossfades to the active preset while
@@ -657,7 +657,7 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
   icon.
 - **Playback controls** — play/pause and master volume sit at the far right of
   the scene title line. The five-step intensity control sits directly under the
-  mood block: its label is at the left edge and the slider is centered in the
+  mood block: its label is at the left edge and the slider is right-aligned in the
   remaining row, up to a maximum width. Play/pause resumes the active scene
   after a pause.
 - **Control gating** — while paused, the intensity slider, mood buttons and
@@ -707,7 +707,7 @@ footer.
 - Play/pause and master volume sit at the far right of the scene title line.
 - Five-step intensity slider (0/25/50/75/100) with snapping and tick marks sits
   under the mood block. The label stays at the left edge and the slider is
-  centered in the remaining row up to a maximum width.
+  right-aligned in the remaining row up to a maximum width.
 - Master volume opens a popup, including mouse-wheel adjustment. The shared
   `VolumeControl` component is reused from the jukebox player.
 - Play/pause is disabled while no mood preset or ambience layer is active; a

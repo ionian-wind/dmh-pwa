@@ -5,7 +5,7 @@
     >
       {{ t('ambientSoundPage.intensity') }}
     </div>
-    <div class="col row justify-center">
+    <div class="col row justify-end">
       <QSlider
         :model-value="store.intensity / 100"
         :min="0"

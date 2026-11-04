@@ -44,7 +44,7 @@
         <div class="mood-label text-caption text-uppercase text-grey-7 q-mr-md">
           {{ t('ambientSoundPage.mood') }}
         </div>
-        <div class="col row justify-center">
+        <div class="col row justify-end">
           <QBtnGroup rounded class="mood-buttons">
             <MoodButton
               :label="t('ambientSoundPage.off')"
