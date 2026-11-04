@@ -24,7 +24,6 @@ const storeMock = vi.hoisted(() => ({
 
 const layoutMock = vi.hoisted(() => ({
   setTopMenuContent: vi.fn(),
-  setBottomDrawerContent: vi.fn(),
 }));
 
 const rightDrawerMock = vi.hoisted(() => ({
@@ -51,7 +50,6 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
 vi.mock('@/composables/useLayout', () => ({
   useLayout: () => ({
     setTopMenuContent: layoutMock.setTopMenuContent,
-    setBottomDrawerContent: layoutMock.setBottomDrawerContent,
   }),
   useRightDrawer: () => rightDrawerMock,
 }));
@@ -59,7 +57,6 @@ vi.mock('@/composables/useLayout', () => ({
 import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
-import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalControl.vue';
 import { EntityTabsStub } from '../helpers/entityTabsStub';
 
 const stubs = {
@@ -99,7 +96,6 @@ describe('AmbientSoundView', () => {
       storeMock.playScene,
       storeMock.playOneShot,
       layoutMock.setTopMenuContent,
-      layoutMock.setBottomDrawerContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
       routerMock.push,
@@ -118,10 +114,6 @@ describe('AmbientSoundView', () => {
     expect(rightDrawerMock.set).toHaveBeenCalledWith({
       component: SoundPackSidebar,
     });
-    expect(layoutMock.setBottomDrawerContent).toHaveBeenCalledWith({
-      component: AmbientGlobalControl,
-    });
-
     expect(wrapper.text()).toContain('Scenes');
     expect(wrapper.text()).toContain('Ambiences');
     expect(wrapper.text()).toContain('One-shots');
@@ -131,7 +123,6 @@ describe('AmbientSoundView', () => {
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
-    expect(layoutMock.setBottomDrawerContent).toHaveBeenLastCalledWith(null);
     expect(rightDrawerMock.clear).toHaveBeenCalled();
     expect(storeMock.stopPreview).toHaveBeenCalled();
   });

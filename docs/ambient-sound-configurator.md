@@ -8,8 +8,9 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 
 - Ambient page route is `/ambient`; a scene view is `/ambient/<scene-id>` and is
   reloadable/shareable.
-- Layout follows the jukebox: sticky page tabs, scrollable content, and a fixed
-  player panel in the app footer.
+- Layout follows the jukebox: sticky page tabs and scrollable content. Playback
+  controls live in the scene view under the mood block; there is no ambient
+  player in the app footer.
 - Packages are script-built and read-only in the app: import or remove only.
 - Scene rows have no icon, play button or link-count metadata; clicking a row
   opens the scene view.
@@ -175,7 +176,7 @@ src/
 │   │   ├── OneShotGallery.vue        # Global one-shot knob grid
 │   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
 │   │   ├── MoodKnob.vue              # Mood selector/progress knob
-│   │   ├── AmbientGlobalControl.vue  # Fixed footer player
+│   │   ├── AmbientControls.vue       # Intensity, transport and volume
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
 │   │   └── SoundPackSidebar.vue      # Package list and import/remove
@@ -534,17 +535,14 @@ The ambient-sound section is a first-class app page with a package sidebar:
 - The package sidebar is the right drawer. The main page owns the left content.
 - The Scenes / Ambiences / One-shots tabs use the shared dense `EntityTabs` bar
   and stay sticky below the app header while the list scrolls.
-- The page uses the same player layout as the jukebox: the ambient player panel
-  is registered in the app footer, so it stays fixed at the bottom while the
-  scene and gallery lists scroll.
+- The ambient page has no bottom player panel. Scene playback controls
+  (intensity, play/pause, volume) live in the scene view under the mood block.
 - “All packages” is the default filter. Selecting a package filters the active
   tab to that package; selecting it again clears the filter.
 - Package rows show a category icon and the package name. Each row has a
   remove action.
 - Import is the only pinned footer action. Package creation/editing happens
   outside the app through the sound-pack script.
-- The player panel is registered in the app footer from the ambient page, not
-  rendered inside the page content.
 
 ### 4.2 Scenes tab
 
@@ -629,14 +627,15 @@ Package content is imported, not authored in the app.
 ### 4.6 Scene player view
 
 Opening a scene row replaces the ambient page content with the scene player
-view while the package sidebar and bottom player panel stay in place. The scene
-content is rendered directly in the page rather than inside a card. The scene
-view URL is `/ambient/<scene-id>`, so the hashed scene ID is shareable and
-survives a reload. Playback starts only from an explicit play action. A Back
-button in the view header returns to the scene/gallery tabs. The view contains:
+view while the package sidebar stays in place. The scene content is rendered
+directly in the page rather than inside a card. The scene view URL is
+`/ambient/<scene-id>`, so the hashed scene ID is shareable and survives a
+reload. Playback starts only from an explicit action. A Back button in the view
+header returns to the scene/gallery tabs. The view contains:
 
-- **Mood knobs** — labelled “Mood” in English and “Атмосфера” in Russian; a knob row containing Off plus one knob per scene music preset
-  (for example Explore, Combat, Victory). Clicking a mood knob starts only that
+- **Mood knobs** — labelled “Mood” in English and “Атмосфера” in Russian.
+  A knob row containing Off plus one knob per scene music preset (for example
+  Explore, Combat, Victory). Clicking a mood knob starts only that
   mood music when nothing is playing, or switches the active preset while
   playing; it never starts the scene's ambience layers. Ambience starts only
   when a variation button is clicked. Only one preset can be active; Off stops
@@ -646,11 +645,12 @@ button in the view header returns to the scene/gallery tabs. The view contains:
   off when there was none. Only temporary
   presets show playback progress on their knob; the knob is read-only and acts
   as a round button.
-- **No scene play/pause button** — the scene view has no transport button. The
-  footer player's play/pause resumes playback after a pause.
+- **Playback controls** — directly under the mood block: the five-step intensity
+  slider, play/pause, and master volume. Play/pause resumes the active scene
+  after a pause.
 - **Control gating** — while paused, mood knobs and ambience variation buttons
-  are disabled. They are enabled again when the footer player resumes, or when
-  nothing has been started yet.
+  are disabled. They are enabled again when the scene play/pause control
+  resumes, or when nothing has been started yet.
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.
@@ -662,8 +662,8 @@ button in the view header returns to the scene/gallery tabs. The view contains:
   Clicking the knob plays the one-shot immediately, independent of music or
   ambience state.
 
-The Back button returns to the list without stopping playback; the scene remains
-available from the bottom player panel.
+The Back button returns to the list without stopping playback; the active scene
+remains available from the scene list (with its Playing badge).
 
 ### 4.7 Entity views: linked scenes
 
@@ -687,27 +687,20 @@ The scene picker lists unlinked scenes from all packages. Selecting a scene adds
 the link; it does not start playback. Deleting the entity or its package removes
 the affected links.
 
-### 4.8 Global sound panel
+### 4.8 Scene playback controls
 
-A persistent player panel on the ambient-sound page, showing the current scene.
-It mirrors the jukebox player and lives in the app footer.
+Playback controls are part of the scene view and sit directly under the mood
+block. They are not rendered in the app footer.
 
-**Docked mode**
-
-- Anchored to the bottom as a flush app footer, width equal to the
-  page-content area.
-- Shows the scene name, package name and play/pause state.
-- An intensity slider occupies the same slot as the jukebox track-progress bar.
-  It has five steps (0/25/50/75/100), snaps to them and shows tick marks.
-- Play/pause and master volume access.
-- Play/pause is disabled while no scene or ambience is active. Once mood music
-  or ambience starts, it becomes available and pauses all scene playback.
+- Five-step intensity slider (0/25/50/75/100) with snapping and tick marks.
+- Play/pause for the active scene and its ambience.
+- Master volume popup, including mouse-wheel adjustment.
+- Play/pause is disabled while no scene or ambience is active.
 - No scene icon, cover art, “Now playing” caption or stop button.
 
 **Playback behavior**
 
-- One-shots are triggered from the galleries or the scene view, not from the
-  footer panel.
+- One-shots are triggered from the galleries or the scene view.
 - One-shots use their own entry volume and are independent of ambient playback
   and volume state.
 - A single one-shot may be retriggered while already playing. There is no
@@ -730,7 +723,6 @@ It mirrors the jukebox player and lives in the app footer.
 - Scenes use a single-column list; one-shots use an auto-fill knob grid.
 - Scene player view spans the full page-content width.
 - Tabs stay sticky below the app header; the lists scroll independently.
-- Docked sound panel matches the page-content width.
 
 **Tablet (600–1023 px)**
 
@@ -745,7 +737,6 @@ It mirrors the jukebox player and lives in the app footer.
 - Scenes are full-width rows; gallery is a single-column list.
 - Scene player view uses the full page width with the Back button pinned to the
   top of the content.
-- Sound panel docks as the app footer; the list scrolls above it.
 - Touch targets are at least 44×44 px.
 
 ### 4.10 Feedback, accessibility and edge states
@@ -768,18 +759,18 @@ It mirrors the jukebox player and lives in the app footer.
 
 ### 4.11 Component and state mapping
 
-| UI component           | Responsibility                                                | Main state/actions                           |
-| ---------------------- | ------------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`     | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
-| `SoundPackSidebar`     | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
-| `SceneList`            | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
-| `ScenePlayerView`      | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
-| `AmbienceGallery`      | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
-| `AmbienceItem`         | Shared ambience row, metadata and variation buttons           | `ambience`, `activeVariationId`, `disabled`  |
-| `OneShotGallery`       | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
-| `OneShotControl`       | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel`    | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
-| `AmbientGlobalControl` | Fixed footer player: scene info, intensity, transport, volume | `activeScene`, `playback`, `masterVolume`    |
+| UI component        | Responsibility                                                | Main state/actions                           |
+| ------------------- | ------------------------------------------------------------- | -------------------------------------------- |
+| `AmbientSoundView`  | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
+| `SoundPackSidebar`  | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
+| `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
+| `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
+| `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
+| `AmbienceItem`      | Shared ambience row, metadata and variation buttons           | `ambience`, `activeVariationId`, `disabled`  |
+| `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
+| `OneShotControl`    | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`              |
+| `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
+| `AmbientControls`   | Scene intensity, play/pause and master volume                 | `intensity`, `isPlaying`, `masterVolume`     |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

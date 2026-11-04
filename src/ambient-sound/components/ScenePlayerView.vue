@@ -46,6 +46,8 @@
         />
       </div>
 
+      <AmbientControls class="q-mb-md" />
+
       <EntityTabs v-model="activeTab" :tabs="tabs" class="q-mb-md" />
 
       <div v-if="activeTab === 'ambiences'">
@@ -115,6 +117,7 @@ import {
   IconWaveSine,
 } from '@tabler/icons-vue';
 import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
+import AmbientControls from '@/ambient-sound/components/AmbientControls.vue';
 import MoodKnob from '@/ambient-sound/components/MoodKnob.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';

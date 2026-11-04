@@ -49,7 +49,6 @@ import EntityTabs from '@/components/common/EntityTabs.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
-import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalControl.vue';
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
@@ -101,9 +100,6 @@ onMounted(async () => {
     props: { title: t('ambientSoundPage.title') },
   });
   rightDrawer.set({ component: SoundPackSidebar });
-  layout.setBottomDrawerContent({
-    component: AmbientGlobalControl,
-  });
   syncHeaderOffset();
   const header = document.querySelector<HTMLElement>('.q-header');
   if (header && typeof ResizeObserver !== 'undefined') {
@@ -118,7 +114,6 @@ onUnmounted(() => {
   headerResizeObserver = null;
   layout.setTopMenuContent(null);
   rightDrawer.clear();
-  layout.setBottomDrawerContent(null);
   store.stopPreview();
 });
 </script>
