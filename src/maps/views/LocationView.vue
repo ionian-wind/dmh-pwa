@@ -201,6 +201,11 @@ function openLocation(locationId: string) {
     </template>
 
     <template #sidepanel>
+      <div
+        v-if="location?.map?.fileId"
+        id="location-map-sidebar"
+        class="location-map-sidebar"
+      ></div>
       <EntityScenesPanel
         v-if="location"
         entity-type="location"

@@ -151,6 +151,7 @@ describe('LocationView', () => {
     expect(tabs).toEqual(['main', 'map', 'backlinks', 'links']);
     expect(wrapper.find('[data-slot="main"]').text()).toContain('A busy port.');
     expect(wrapper.find('[data-slot="map"] .map-tab-stub').exists()).toBe(true);
+    expect(wrapper.find('#location-map-sidebar').exists()).toBe(true);
     wrapper.unmount();
   });
 
@@ -462,6 +463,7 @@ describe('LocationView', () => {
     const tabs = wrapper.findAll('.tab').map((tab) => tab.text());
     expect(tabs).toEqual(['main', 'backlinks', 'links']);
     expect(tabs).not.toContain('map');
+    expect(wrapper.find('#location-map-sidebar').exists()).toBe(false);
     wrapper.unmount();
   });
 });

@@ -283,6 +283,7 @@ async function mountMapView(props: Record<string, unknown> = {}) {
         'ol-interaction-draw': PassthroughStub,
       },
       stubs: {
+        teleport: true,
         MapMarkerEditor: MarkerEditorStub,
         MapAreaEditor: AreaEditorStub,
         MapMarkersPanel: MarkersPanelStub,
@@ -982,8 +983,10 @@ describe('MapView', () => {
 
     await editButton.trigger('click');
     expect(vm.isEditMode).toBe(true);
-    expect(controlsList.find('.map-layer-add').exists()).toBe(true);
-    await viewButton.trigger('click');
+    expect(
+      wrapper.find('.map-sidepanel-controls .map-layer-add').exists(),
+    ).toBe(true);
+    await wrapper.find('.map-mode-view').trigger('click');
     expect(vm.isEditMode).toBe(false);
 
     wrapper.unmount();

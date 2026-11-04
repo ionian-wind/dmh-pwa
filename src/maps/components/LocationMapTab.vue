@@ -890,10 +890,7 @@ watch(isEditMode, (editing) => {
 <template>
   <div class="map-page-layout map-page-layout--tab">
     <div class="map-page-body">
-      <div
-        v-if="!map?.fileId"
-        class="q-pa-md text-caption text-grey-7"
-      >
+      <div v-if="!map?.fileId" class="q-pa-md text-caption text-grey-7">
         {{ t('maps.noMapImage') }}
       </div>
       <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
@@ -1132,205 +1129,207 @@ watch(isEditMode, (editing) => {
       </div>
     </div>
 
-    <aside class="map-tab-sidepanel">
-      <div class="map-sidepanel">
-        <div class="map-sidepanel-content">
-          <TabGroup
-            v-model="sidePanelTab"
-            :tabs="sideTabs"
-            size="sm"
-            align="justify"
-          >
-            <div v-show="sidePanelTab === 'markers'">
-              <div
-                v-for="(layer, layerIndex) in layers"
-                :key="`marker-layer-${layer.id}`"
-                class="q-mb-sm"
-              >
-                <div class="row items-center justify-between q-px-sm q-pt-sm">
-                  <span
-                    class="text-caption text-uppercase text-weight-bold text-grey-7"
-                    >{{ layer.title }}</span
-                  >
-                  <span class="row items-center">
-                    <template v-if="!isEditMode">
-                      <QBtn
-                        flat
-                        size="sm"
-                        :title="
-                          isLayerHidden(layer.id)
-                            ? t('maps.showLayer')
-                            : t('maps.hideLayer')
-                        "
-                        @click="toggleLayerVisibility(layer.id)"
-                      >
-                        <IconEyeOff v-if="isLayerHidden(layer.id)" />
-                        <IconEye v-else />
-                      </QBtn>
-                    </template>
-                    <template v-else>
-                      <QBtn
-                        v-if="layer.id !== MAP_BASE_LAYER_ID"
-                        flat
-                        size="sm"
-                        :title="t('maps.editLayer')"
-                        @click="editLayer(layer)"
-                      >
-                        <IconPencil :size="16" />
-                      </QBtn>
-                      <QBtn
-                        v-if="layer.id !== MAP_BASE_LAYER_ID"
-                        flat
-                        size="sm"
-                        color="negative"
-                        :title="t('maps.deleteLayer')"
-                        @click="deleteLayer(layer)"
-                      >
-                        <IconTrash :size="16" />
-                      </QBtn>
-                    </template>
-                  </span>
-                </div>
-                <MapMarkersPanel
-                  :markers="markersForLayer(layer.id)"
-                  :editable="isEditMode"
-                  hide-empty
-                  @select-marker="selectMarker"
-                  @edit="editMarker"
-                  @delete="deleteMarkerFromList"
-                  @hover="hoverMarker"
-                />
-                <QSeparator v-if="layerIndex < layers.length - 1" />
-              </div>
-            </div>
-            <div v-show="sidePanelTab === 'areas'">
-              <div
-                v-for="(layer, layerIndex) in layers"
-                :key="`area-layer-${layer.id}`"
-                class="q-mb-sm"
-              >
-                <div class="row items-center justify-between q-px-sm q-pt-sm">
-                  <span
-                    class="text-caption text-uppercase text-weight-bold text-grey-7"
-                    >{{ layer.title }}</span
-                  >
-                  <span class="row items-center">
-                    <template v-if="!isEditMode">
-                      <QBtn
-                        flat
-                        size="sm"
-                        :title="
-                          isLayerHidden(layer.id)
-                            ? t('maps.showLayer')
-                            : t('maps.hideLayer')
-                        "
-                        @click="toggleLayerVisibility(layer.id)"
-                      >
-                        <IconEyeOff v-if="isLayerHidden(layer.id)" />
-                        <IconEye v-else />
-                      </QBtn>
-                    </template>
-                    <template v-else>
-                      <QBtn
-                        v-if="layer.id !== MAP_BASE_LAYER_ID"
-                        flat
-                        size="sm"
-                        :title="t('maps.editLayer')"
-                        @click="editLayer(layer)"
-                      >
-                        <IconPencil :size="16" />
-                      </QBtn>
-                      <QBtn
-                        v-if="layer.id !== MAP_BASE_LAYER_ID"
-                        flat
-                        size="sm"
-                        color="negative"
-                        :title="t('maps.deleteLayer')"
-                        @click="deleteLayer(layer)"
-                      >
-                        <IconTrash :size="16" />
-                      </QBtn>
-                    </template>
-                  </span>
-                </div>
-                <MapAreasPanel
-                  :areas="areasForLayer(layer.id)"
-                  :show-title="false"
-                  :editable="isEditMode"
-                  hide-empty
-                  @select-area="focusArea"
-                  @edit="editArea"
-                  @delete="deleteAreaFromList"
-                  @hover="hoverArea"
-                />
-                <QSeparator v-if="layerIndex < layers.length - 1" />
-              </div>
-            </div>
-          </TabGroup>
-        </div>
-
-        <QSeparator />
-        <div class="map-sidepanel-controls bg-white">
-          <QList>
-            <QItem
-              v-if="isEditMode"
-              class="map-layer-add"
-              clickable
-              v-ripple
-              @click="addLayer"
+    <Teleport to="#location-map-sidebar">
+      <div class="map-tab-sidepanel">
+        <div class="map-sidepanel">
+          <div class="map-sidepanel-content">
+            <TabGroup
+              v-model="sidePanelTab"
+              :tabs="sideTabs"
+              size="sm"
+              align="justify"
             >
-              <QItemSection>
-                {{ t('maps.addLayer') }}
-              </QItemSection>
-              <QItemSection side>
-                <IconPlus :size="18" />
-              </QItemSection>
-            </QItem>
+              <div v-show="sidePanelTab === 'markers'">
+                <div
+                  v-for="(layer, layerIndex) in layers"
+                  :key="`marker-layer-${layer.id}`"
+                  class="q-mb-sm"
+                >
+                  <div class="row items-center justify-between q-px-sm q-pt-sm">
+                    <span
+                      class="text-caption text-uppercase text-weight-bold text-grey-7"
+                      >{{ layer.title }}</span
+                    >
+                    <span class="row items-center">
+                      <template v-if="!isEditMode">
+                        <QBtn
+                          flat
+                          size="sm"
+                          :title="
+                            isLayerHidden(layer.id)
+                              ? t('maps.showLayer')
+                              : t('maps.hideLayer')
+                          "
+                          @click="toggleLayerVisibility(layer.id)"
+                        >
+                          <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                          <IconEye v-else />
+                        </QBtn>
+                      </template>
+                      <template v-else>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          :title="t('maps.editLayer')"
+                          @click="editLayer(layer)"
+                        >
+                          <IconPencil :size="16" />
+                        </QBtn>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          color="negative"
+                          :title="t('maps.deleteLayer')"
+                          @click="deleteLayer(layer)"
+                        >
+                          <IconTrash :size="16" />
+                        </QBtn>
+                      </template>
+                    </span>
+                  </div>
+                  <MapMarkersPanel
+                    :markers="markersForLayer(layer.id)"
+                    :editable="isEditMode"
+                    hide-empty
+                    @select-marker="selectMarker"
+                    @edit="editMarker"
+                    @delete="deleteMarkerFromList"
+                    @hover="hoverMarker"
+                  />
+                  <QSeparator v-if="layerIndex < layers.length - 1" />
+                </div>
+              </div>
+              <div v-show="sidePanelTab === 'areas'">
+                <div
+                  v-for="(layer, layerIndex) in layers"
+                  :key="`area-layer-${layer.id}`"
+                  class="q-mb-sm"
+                >
+                  <div class="row items-center justify-between q-px-sm q-pt-sm">
+                    <span
+                      class="text-caption text-uppercase text-weight-bold text-grey-7"
+                      >{{ layer.title }}</span
+                    >
+                    <span class="row items-center">
+                      <template v-if="!isEditMode">
+                        <QBtn
+                          flat
+                          size="sm"
+                          :title="
+                            isLayerHidden(layer.id)
+                              ? t('maps.showLayer')
+                              : t('maps.hideLayer')
+                          "
+                          @click="toggleLayerVisibility(layer.id)"
+                        >
+                          <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                          <IconEye v-else />
+                        </QBtn>
+                      </template>
+                      <template v-else>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          :title="t('maps.editLayer')"
+                          @click="editLayer(layer)"
+                        >
+                          <IconPencil :size="16" />
+                        </QBtn>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          color="negative"
+                          :title="t('maps.deleteLayer')"
+                          @click="deleteLayer(layer)"
+                        >
+                          <IconTrash :size="16" />
+                        </QBtn>
+                      </template>
+                    </span>
+                  </div>
+                  <MapAreasPanel
+                    :areas="areasForLayer(layer.id)"
+                    :show-title="false"
+                    :editable="isEditMode"
+                    hide-empty
+                    @select-area="focusArea"
+                    @edit="editArea"
+                    @delete="deleteAreaFromList"
+                    @hover="hoverArea"
+                  />
+                  <QSeparator v-if="layerIndex < layers.length - 1" />
+                </div>
+              </div>
+            </TabGroup>
+          </div>
 
-            <QItem class="map-label-toggle">
-              <QItemSection>
-                {{ t('maps.showLabels') }}
-              </QItemSection>
-              <QItemSection side>
-                <QToggle
-                  :model-value="showLabels"
-                  @update:model-value="showLabels = $event"
-                />
-              </QItemSection>
-            </QItem>
+          <QSeparator />
+          <div class="map-sidepanel-controls bg-white">
+            <QList>
+              <QItem
+                v-if="isEditMode"
+                class="map-layer-add"
+                clickable
+                v-ripple
+                @click="addLayer"
+              >
+                <QItemSection>
+                  {{ t('maps.addLayer') }}
+                </QItemSection>
+                <QItemSection side>
+                  <IconPlus :size="18" />
+                </QItemSection>
+              </QItem>
 
-            <QItem class="map-mode-toggle">
-              <QItemSection>
-                <QBtnGroup spread class="full-width">
-                  <QBtn
-                    class="map-mode-view"
-                    color="primary"
-                    :outline="isEditMode"
-                    :title="t('maps.viewMode')"
-                    :aria-label="t('maps.viewMode')"
-                    :aria-pressed="!isEditMode"
-                    @click="isEditMode = false"
-                  >
-                    <IconLiveView :size="18" />
-                  </QBtn>
-                  <QBtn
-                    class="map-mode-edit"
-                    color="primary"
-                    :outline="!isEditMode"
-                    :title="t('maps.editMode')"
-                    :aria-label="t('maps.editMode')"
-                    :aria-pressed="isEditMode"
-                    @click="isEditMode = true"
-                  >
-                    <IconEdit :size="18" />
-                  </QBtn>
-                </QBtnGroup>
-              </QItemSection>
-            </QItem>
-          </QList>
+              <QItem class="map-label-toggle">
+                <QItemSection>
+                  {{ t('maps.showLabels') }}
+                </QItemSection>
+                <QItemSection side>
+                  <QToggle
+                    :model-value="showLabels"
+                    @update:model-value="showLabels = $event"
+                  />
+                </QItemSection>
+              </QItem>
+
+              <QItem class="map-mode-toggle">
+                <QItemSection>
+                  <QBtnGroup spread class="full-width">
+                    <QBtn
+                      class="map-mode-view"
+                      color="primary"
+                      :outline="isEditMode"
+                      :title="t('maps.viewMode')"
+                      :aria-label="t('maps.viewMode')"
+                      :aria-pressed="!isEditMode"
+                      @click="isEditMode = false"
+                    >
+                      <IconLiveView :size="18" />
+                    </QBtn>
+                    <QBtn
+                      class="map-mode-edit"
+                      color="primary"
+                      :outline="!isEditMode"
+                      :title="t('maps.editMode')"
+                      :aria-label="t('maps.editMode')"
+                      :aria-pressed="isEditMode"
+                      @click="isEditMode = true"
+                    >
+                      <IconEdit :size="18" />
+                    </QBtn>
+                  </QBtnGroup>
+                </QItemSection>
+              </QItem>
+            </QList>
+          </div>
         </div>
       </div>
-    </aside>
+    </Teleport>
 
     <MapMarkerEditor
       :marker="editingMarker"
@@ -1361,29 +1360,10 @@ watch(isEditMode, (editing) => {
   min-height: 0;
 }
 
-.map-page-layout--tab {
-  flex-direction: row;
-}
-
 .map-tab-sidepanel {
-  flex: 0 0 340px;
   min-width: 0;
   min-height: 0;
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
   background: var(--color-background);
-}
-
-@media (max-width: 900px) {
-  .map-page-layout--tab {
-    flex-direction: column;
-  }
-
-  .map-tab-sidepanel {
-    flex: 0 1 auto;
-    max-height: 40%;
-    border-top: 1px solid rgba(0, 0, 0, 0.12);
-    border-left: none;
-  }
 }
 
 .map-page-body {

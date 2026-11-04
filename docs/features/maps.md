@@ -208,7 +208,8 @@ The location detail page includes a **Map** tab that renders the location-owned
 map. It contains:
 
 - The map image with markers, areas, labels and the map action controls.
-- An attached sidebar with **Markers** and **Areas** tabs, grouped by layer.
+- The location right sidebar hosts the map's **Markers** and **Areas** tabs,
+  grouped by layer. The map tab has no internal sidebar.
   - Layers show their title with visibility controls.
   - Rows use a coloured left edge like jukebox tracks.
   - Areas do not show their shape type in the list.
