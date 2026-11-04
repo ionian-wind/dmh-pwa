@@ -92,9 +92,9 @@ the base layer.
 
 Each logical layer is backed by its own OpenLayers vector layer for both area
 geometry and marker points. Layer visibility uses the native
-`layer.setVisible(...)` behavior. Marker icons are rendered as canvas text using
-the RPGAwesome font, with their titles as text labels. A visually hidden list of
-marker buttons preserves keyboard/screen-reader access.
+`layer.setVisible(...)` behavior. Markers use generated SVG pin images rendered
+through the OpenLayers `Icon` style, with their titles as text labels. A visually
+hidden list of marker buttons preserves keyboard/screen-reader access.
 
 Marker and area layers are created only after the base map image finishes
 loading. A spinner is shown over the map while the image loads.
@@ -116,9 +116,9 @@ interface MapMarker {
   locationId?: string | null;
   layerId: string;
   entities: MapEntityRef[];
-  icon: string; // RPG Awesome class, e.g. "ra-castle-emblem"
-  color: string; // CSS color for the marker icon
-  backgroundColor?: string; // optional badge colour, empty for transparent
+  icon: string; // `ra-*` or `fa-solid:*` icon
+  color: string; // marker/icon CSS color
+  backgroundColor?: string; // optional pin fill colour
 }
 ```
 
@@ -127,11 +127,14 @@ interface MapMarker {
 - A marker can link to one location and any number of other entities, including
   other maps.
 - Icons are optional; new markers start with no icon.
-- Icons come from [RPG Awesome](https://nagoshiashumari.github.io/Rpg-Awesome/).
-  The stored value is the class without the `ra` prefix (`ra-castle-emblem`); rendering
-  uses `class="ra ra-castle-emblem"`.
-- The icon color is stored per marker and rendered inline.
-- Markers can also have an optional background badge colour behind the icon.
+- Marker icons support both RPG Awesome (`ra-castle-emblem`) and Font Awesome
+  Solid (`fa-solid:cloud-rain`) values.
+- `src/maps/mapMarkerSvg.ts` generates a scalable pin SVG at runtime. RPG
+  Awesome glyph paths are generated into `src/maps/rpgIconPaths.ts`; Font
+  Awesome paths come from `@fortawesome/fontawesome-svg-core`.
+- Pin fill and icon colour are configurable per marker. When a marker
+  background colour is set it becomes the pin fill; otherwise the marker colour
+  fills the pin and a contrasting icon colour is used.
   It is transparent by default and can be cleared from the marker editor.
 
 ### Areas
@@ -339,7 +342,9 @@ header tabs to separate their own fields from linked entities.
 ## Icons
 
 `src/maps/icons.ts` exposes `MAP_MARKER_ICONS`, generated from the RPG Awesome
-CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no icon) and `DEFAULT_MARKER_COLOR`.
+CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no icon) and
+`DEFAULT_MARKER_COLOR`. `src/maps/mapMarkerSvg.ts` generates colored marker pins
+from either RPG Awesome paths or Font Awesome core icons.
 
 `src/components/common/IconPicker.vue` provides searchable icon selection plus
 a “No icon” option. It is configurable with an icon array and collection name;

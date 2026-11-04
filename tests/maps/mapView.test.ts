@@ -425,8 +425,11 @@ describe('MapView', () => {
       get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
     };
     const idleStyles = (wrapper.vm as any).markerStyle(markerFeature);
-    expect(idleStyles[0].getImage().getRadius()).toBe(15);
-    expect(idleStyles[0].getImage().getFill().getColor()).toBe('#ffffff');
+    const idleImage = idleStyles[0].getImage();
+    expect(idleImage.getSrc()).toContain('data:image/svg+xml');
+    const idleSvg = decodeURIComponent(idleImage.getSrc());
+    expect(idleSvg).toContain('height="40"');
+    expect(idleSvg).toContain('fill="#ffffff"');
     expect(idleStyles[1].getText().getStroke()).toBeNull();
 
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', 'm1');
@@ -435,8 +438,10 @@ describe('MapView', () => {
       'is-hovered',
     );
     const hoveredStyles = (wrapper.vm as any).markerStyle(markerFeature);
-    expect(hoveredStyles[0].getImage().getRadius()).toBe(17);
-    expect(hoveredStyles[1].getText().getStroke().getColor()).toBe('#ffffff');
+    expect(decodeURIComponent(hoveredStyles[0].getImage().getSrc())).toContain(
+      'height="46"',
+    );
+    expect(hoveredStyles[1].getText().getFont()).toContain('700');
 
     wrapper.findComponent(MarkersPanelStub).vm.$emit('hover', null);
     wrapper.findComponent(AreasPanelStub).vm.$emit('hover', 'a1');
@@ -543,7 +548,7 @@ describe('MapView', () => {
     const hiddenLabelStyles = vm.markerStyle({
       get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
     });
-    expect(hiddenLabelStyles).toHaveLength(2);
+    expect(hiddenLabelStyles).toHaveLength(1);
 
     vm.showLabels = true;
     await flushPromises();

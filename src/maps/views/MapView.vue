@@ -67,12 +67,14 @@ import {
   mapToImagePoint,
   mapToImagePoints,
 } from '../utils/mapCoordinates';
-import { markerIconClass, markerIconGlyph } from '../icons';
+import { markerIconClass } from '../icons';
+import { createMapMarkerDataUri } from '../mapMarkerSvg';
 import { createBox } from 'ol/interaction/Draw';
 import Style from 'ol/style/Style';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Circle from 'ol/style/Circle';
+import Icon from 'ol/style/Icon';
 import Text from 'ol/style/Text';
 import type { MapArea, MapAreaShape, MapLayer } from '../types';
 
@@ -575,50 +577,30 @@ function markerStyle(feature: any) {
   if (!marker) return undefined;
 
   const hovered = hoveredMarkerId.value === marker.id;
-  const glyph = markerIconGlyph(marker.icon);
-  const styles: Style[] = [];
-
   const background = marker.backgroundColor?.trim();
-  if (background && background !== 'transparent') {
-    styles.push(
-      new Style({
-        image: new Circle({
-          radius: glyph ? (hovered ? 17 : 15) : hovered ? 12 : 10,
-          fill: new Fill({ color: background }),
-        }),
-      }),
-    );
-  }
+  const hasBackground = !!background && background !== 'transparent';
+  const fill = hasBackground ? background : marker.color;
+  const iconColor = hasBackground
+    ? marker.color
+    : contrastTextColor(marker.color);
+  const height = hovered ? 46 : 40;
+  const width = Math.round((23 / 32) * height);
 
-  if (glyph) {
-    styles.push(
-      new Style({
-        text: new Text({
-          text: glyph,
-          font: `${hovered ? 24 : 20}px RPGAwesome`,
-          fill: new Fill({ color: marker.color }),
-          stroke: hovered
-            ? new Stroke({ color: contrastTextColor(marker.color), width: 3 })
-            : undefined,
-          textAlign: 'center',
-          textBaseline: 'middle',
+  const styles: Style[] = [
+    new Style({
+      image: new Icon({
+        src: createMapMarkerDataUri(marker.icon, {
+          height,
+          fill,
+          stroke: '#fff',
+          iconColor,
         }),
+        width,
+        height,
+        anchor: [0.5, 1],
       }),
-    );
-  } else {
-    styles.push(
-      new Style({
-        image: new Circle({
-          radius: hovered ? 8 : 6,
-          fill: new Fill({ color: marker.color }),
-          stroke: new Stroke({
-            color: hovered ? contrastTextColor(marker.color) : '#fff',
-            width: hovered ? 3 : 2,
-          }),
-        }),
-      }),
-    );
-  }
+    }),
+  ];
 
   if (showLabels.value) {
     styles.push(
@@ -631,7 +613,7 @@ function markerStyle(feature: any) {
           padding: [2, 6, 2, 6],
           textAlign: 'center',
           textBaseline: 'middle',
-          offsetY: glyph ? 20 : 14,
+          offsetY: hovered ? 16 : 14,
         }),
       }),
     );
