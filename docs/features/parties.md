@@ -7,13 +7,14 @@ It is the roster used to start a combat.
 
 ## Key files
 
-| File                          | Role                |
-| ----------------------------- | ------------------- |
-| `src/stores/parties.ts`       | Store + name search |
-| `src/parties/PartiesView.vue` | List page           |
-| `src/parties/PartyCard.vue`   | Card                |
-| `src/parties/PartyEditor.vue` | Create/edit modal   |
-| `src/parties/PartyView.vue`   | Detail page         |
+| File                               | Role                |
+| ---------------------------------- | ------------------- |
+| `src/stores/parties.ts`            | Store + name search |
+| `src/parties/PartiesView.vue`      | List page           |
+| `src/parties/PartyCard.vue`        | Card                |
+| `src/parties/PartyEditor.vue`      | Create/edit modal   |
+| `src/parties/PartyView.vue`        | Detail page         |
+| `src/parties/PartyViewSidebar.vue` | Mentions sidebar    |
 
 ## Data
 
@@ -71,6 +72,12 @@ Character membership can also be managed from the party detail page.
   `/parties`. It does not delete associated combats.
 - `partySubtitle` is computed in English ("Modules: … • N characters") and is
   displayed under the page title.
+- Publishes `PartyViewSidebar` to the right drawer.
+
+## Sidebar
+
+`PartyViewSidebar` computes outgoing mentions and backlinks from the plain
+`party` prop.
 
 ## Relationships
 

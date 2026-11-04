@@ -567,6 +567,10 @@ function openJukebox() {
   }
 }
 
+.q-toolbar {
+  position: relative;
+}
+
 .jukebox-playing {
   animation: jukebox-sway 0.6s ease-in-out infinite;
 }

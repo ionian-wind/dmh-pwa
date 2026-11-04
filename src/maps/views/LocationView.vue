@@ -2,7 +2,17 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { IconMapPin2 } from '@tabler/icons-vue';
+import {
+  IconAffiliate,
+  IconBook,
+  IconGhost3,
+  IconMapPin2,
+  IconNote,
+  IconPlaylist,
+  IconSwords,
+  IconUser,
+  IconUsers,
+} from '@tabler/icons-vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
@@ -52,10 +62,21 @@ const headerButtons = computed(() =>
     : [],
 );
 
+const tabIcons: Record<string, any> = {
+  note: IconNote,
+  module: IconBook,
+  party: IconUsers,
+  monster: IconGhost3,
+  encounter: IconSwords,
+  character: IconUser,
+  playlist: IconPlaylist,
+};
+
 const entityTabs = computed(() =>
   linkableGroups.value.map((group) => ({
     id: group.kind,
     label: t(group.labelKey),
+    icon: tabIcons[group.kind] ?? IconAffiliate,
     badge: linksFor(group.kind).length || undefined,
   })),
 );

@@ -10,10 +10,12 @@ import {
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
+  IconAffiliate,
   IconEdit,
   IconEye,
   IconEyeOff,
   IconLiveView,
+  IconMap,
   IconPencil,
   IconPlus,
   IconTrash,
@@ -106,8 +108,8 @@ const isAddingMarker = ref(false);
 const isEditMode = ref(false);
 const pageTab = ref('map');
 const pageTabs = computed(() => [
-  { id: 'map', label: t('maps.mapTab') },
-  { id: 'links', label: t('common.linkedEntities') },
+  { id: 'map', label: t('maps.mapTab'), icon: IconMap },
+  { id: 'links', label: t('common.linkedEntities'), icon: IconAffiliate },
 ]);
 const mapLinks = computed<MapEntityRef[]>(() => {
   const links = [...(map.value?.entities ?? [])];

@@ -62,8 +62,8 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - Renders `notes` as plain text (not Markdown).
 - Edit modal, delete with confirmation, then `BaseEntityView` navigates to the
   list.
-- The right drawer only shows linked ambient scenes. Character mentions are no
-  longer duplicated in the sidebar.
+- Shows mentions and backlinks via `<template #sidepanel>` plus linked ambient
+  scenes.
 
 ## Relationships and lifecycle
 

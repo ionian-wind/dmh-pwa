@@ -193,8 +193,9 @@ hidden. Shows a translated empty state when there are no links.
 ### `entityViewTabs.ts`
 
 Returns the standard detail-page tabs: **Main editor** and **Linked entities**,
-with the same icons as the edit dialog. Used by note, party and monster detail
-pages so their view tabs mirror the editor's Main/Links split.
+with the same icons as the edit dialog. View headers render them icon-only with
+accessible titles. Used by note, party and monster detail pages so their view
+tabs mirror the editor's Main/Links split.
 
 ### `EntityTabs.vue`
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -15,7 +15,9 @@ import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import type { MapEntityRef } from '@/maps/types';
 
 import PartyEditor from '@/parties/PartyEditor.vue';
+import PartyViewSidebar from '@/parties/PartyViewSidebar.vue';
 import { confirm } from '@/dialogs';
+import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
@@ -97,12 +99,19 @@ const partySubtitle = computed(() => {
 
   return parts.join(' • ');
 });
+const rightDrawer = useRightDrawer();
+
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
     characterStore.load(),
     moduleStore.load(),
   ]);
+  rightDrawer.set({ component: PartyViewSidebar, props: { party } });
+});
+
+onBeforeUnmount(() => {
+  rightDrawer.clear();
 });
 
 async function handleEditorDelete() {

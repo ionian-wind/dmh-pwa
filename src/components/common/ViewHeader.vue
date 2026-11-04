@@ -176,7 +176,6 @@ const hasPrimaryActions = computed(
       v-for="tab in props.tabs"
       :key="tab.id"
       :name="tab.id"
-      :label="tab.label"
       :disable="tab.disabled"
       :title="tab.label"
       :aria-label="tab.label"
@@ -262,7 +261,10 @@ const hasPrimaryActions = computed(
 
 <style scoped>
 .view-header-tabs {
-  margin-inline: auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .view-header-separator {

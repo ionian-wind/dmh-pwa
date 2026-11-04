@@ -17,7 +17,7 @@ used as hidden document sections inside modules.
 | `src/notes/NoteCanvas.vue`                 | Quickdraw canvas for `draw` notes               |
 | `src/notes/NoteView.vue`                   | Detail page                                     |
 | `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteEditor`)  |
-| `src/notes/NoteViewSidebar.vue`            | Tag sidebar                                     |
+| `src/notes/NoteViewSidebar.vue`            | Tags + mentions sidebar                         |
 | `src/components/common/MarkdownEditor.vue` | Editor used by NoteEditor                       |
 | `src/components/common/Markdown.vue`       | Renderer used by cards and detail               |
 
@@ -160,7 +160,8 @@ The only escape is delete + recreate.
 
 `NoteView` uses the standard **Main editor** / **Linked entities** tabs in the
 app header panel. Main editor renders the note body; Linked entities shows the
-note's module read-only. The right sidebar only shows tags.
+note's module read-only. The right sidebar shows tags plus outgoing and incoming
+mentions.
 
 ## Markdown and mentions
 

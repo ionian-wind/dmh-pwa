@@ -7,14 +7,14 @@ current record is intentionally minimal: name, notes, module membership.
 
 ## Key files
 
-| File                                  | Role                |
-| ------------------------------------- | ------------------- |
-| `src/stores/monsters.ts`              | Store + name search |
-| `src/monsters/MonstersView.vue`       | List page           |
-| `src/monsters/MonsterCard.vue`        | Card                |
-| `src/monsters/MonsterEditor.vue`      | Create/edit modal   |
-| `src/monsters/MonsterView.vue`        | Detail page         |
-| `src/monsters/MonsterViewSidebar.vue` | Scene links sidebar |
+| File                                  | Role                           |
+| ------------------------------------- | ------------------------------ |
+| `src/stores/monsters.ts`              | Store + name search            |
+| `src/monsters/MonstersView.vue`       | List page                      |
+| `src/monsters/MonsterCard.vue`        | Card                           |
+| `src/monsters/MonsterEditor.vue`      | Create/edit modal              |
+| `src/monsters/MonsterView.vue`        | Detail page                    |
+| `src/monsters/MonsterViewSidebar.vue` | Mentions + scene links sidebar |
 
 ## Data
 
@@ -75,8 +75,8 @@ caller explicitly passes it. No caller passes it.
 
 ## Sidebar
 
-`MonsterViewSidebar` reads the plain `monster` prop and displays linked ambient
-scenes only. Entity mentions are no longer duplicated in the sidebar.
+`MonsterViewSidebar` reads the plain `monster` prop and displays outgoing and
+incoming mentions plus linked ambient scenes.
 
 ## Relationships
 

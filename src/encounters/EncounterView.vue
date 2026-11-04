@@ -15,7 +15,12 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
-import { IconSwords } from '@tabler/icons-vue';
+import {
+  IconAffiliate,
+  IconGhost3,
+  IconInfoCircle,
+  IconSwords,
+} from '@tabler/icons-vue';
 import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
 import { prompt, confirm } from '@/dialogs';
 import { sanitizeHtmlContent } from '@/utils/markdownParser';
@@ -224,21 +229,25 @@ const tabs = computed(() => [
   {
     id: 'information',
     label: t('encounters.tabs.information'),
+    icon: IconInfoCircle,
     badge: undefined,
   },
   {
     id: 'monsters',
     label: t('encounters.tabs.monsters'),
+    icon: IconGhost3,
     badge: encounterMonsters.value.length,
   },
   {
     id: 'combats',
     label: t('encounters.tabs.combats'),
+    icon: IconSwords,
     badge: encounterCombats.value.length,
   },
   {
     id: 'links',
     label: t('common.linkedEntities'),
+    icon: IconAffiliate,
     badge: encounterLinks.value.length || undefined,
   },
 ]);

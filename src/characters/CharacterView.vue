@@ -5,13 +5,16 @@ import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import Mentions from '@/components/common/Mentions.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
+import { useMentionsStore } from '@/utils/storage';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 
 const route = useRoute();
 const router = useRouter();
 const characterStore = useCharacterStore();
+const mentionsStore = useMentionsStore();
 const { t } = useI18n();
 const showEditor = ref(false);
 
@@ -52,8 +55,21 @@ function closeEditor() {
 // Computed properties for BaseEntityView
 const characterTitle = computed(() => character.value?.name || '');
 
+const mentionedEntities = computed(() => {
+  if (!character.value) return [];
+  return mentionsStore.getLinks({ kind: 'character', id: character.value.id });
+});
+const mentionedInEntities = computed(() => {
+  if (!character.value) return [];
+  return mentionsStore.getBacklinks({
+    kind: 'character',
+    id: character.value.id,
+  });
+});
+
 onMounted(async () => {
   await characterStore.load();
+  await mentionsStore.load();
 });
 
 async function handleEditorDelete() {
@@ -97,6 +113,12 @@ async function handleEditorDelete() {
     </template>
 
     <template #sidepanel>
+      <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
+      <Mentions
+        :title="t('common.mentionedIn')"
+        :entities="mentionedInEntities"
+      />
+      <QSeparator class="q-my-sm" />
       <EntityScenesPanel
         v-if="character"
         entity-type="character"

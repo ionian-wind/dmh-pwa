@@ -111,8 +111,9 @@ describe('ViewHeader action buttons', () => {
 
     const tabComponents = wrapper.findAll('[data-stub="QTab"]');
     expect(tabComponents).toHaveLength(2);
-    expect(tabComponents[0].attributes('label')).toBe('Main editor');
-    expect(tabComponents[1].attributes('label')).toBe('Linked entities');
+    expect(tabComponents[0].attributes('title')).toBe('Main editor');
+    expect(tabComponents[0].attributes('aria-label')).toBe('Main editor');
+    expect(tabComponents[1].attributes('title')).toBe('Linked entities');
     expect(wrapper.find('.custom-icon').exists()).toBe(true);
 
     wrapper

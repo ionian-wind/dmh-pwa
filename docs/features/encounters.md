@@ -14,7 +14,7 @@ quantities. It is the template from which a combat is created.
 | `src/encounters/EncounterCard.vue`        | Card with "run combat" action                    |
 | `src/encounters/EncounterEditor.vue`      | Create/edit modal                                |
 | `src/encounters/EncounterView.vue`        | Detail page (information/monsters/combats/links) |
-| `src/encounters/EncounterViewSidebar.vue` | Scene links sidebar                              |
+| `src/encounters/EncounterViewSidebar.vue` | Mentions + scene links sidebar                   |
 | `src/encounters/PartySelector.vue`        | Party/character selection → combat               |
 
 ## Data

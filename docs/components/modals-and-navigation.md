@@ -228,7 +228,7 @@ These notifications never auto-dismiss (`timeout: 0`).
 - **Header**: injected per route; includes create/edit/delete and custom header
   buttons.
 - **Left drawer**: primary navigation + jukebox/calculator shortcuts.
-- **Right drawer**: contextual sidebar (scene links, TOC, playlists).
+- **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists).
 - **Footer**: only the jukebox player.
 - **Overlays**: PWA status/install, mention modals, calculator, jukebox dialog.
 

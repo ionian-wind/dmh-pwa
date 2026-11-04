@@ -170,12 +170,14 @@ so they keep a single form without tabs. Combat has no editor yet.
 Entity detail pages use the same split when the entity has linkable main-entity
 fields:
 
-- The main tab is labelled **Main editor**, matching the edit dialog.
+- The main tab uses the same icon as the edit dialog and the accessible label
+  **Main editor**.
 - A **Linked entities** tab uses `EntityViewLinks` to render the same link blocks
   as the editor in `readonly` mode.
-- Tabs render in the app header panel (`#main_header`), not inside the page body.
+- Tabs render icon-only in the app header panel (`#main_header`), centered in the
+  toolbar. Hovering a tab shows its label.
 - Add, remove and inline-create actions are not available in the view tab.
-- Mention lists are not duplicated in the right sidebar.
+- Mention lists remain available in the right sidebar.
 - `NoteView`, `PartyView`, `MonsterView` and `EncounterView` follow this pattern.
   `LocationView` keeps its per-kind tabs but renders them read-only.
 
