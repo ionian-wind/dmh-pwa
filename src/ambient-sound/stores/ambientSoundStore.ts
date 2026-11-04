@@ -905,4 +905,8 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     linksForScene,
     linksForEntity,
   };
+}, {
+  // Runtime-only audio state contains Maps and Sets that cannot be serialized
+  // safely across tabs by pinia-shared-state.
+  share: { enable: false },
 });

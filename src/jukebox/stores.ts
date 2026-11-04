@@ -123,6 +123,9 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
     getPictureStyle,
     clearCache,
   };
+}, {
+  // Object URL caches contain Maps and browser-only URLs.
+  share: { enable: false },
 });
 
 /**

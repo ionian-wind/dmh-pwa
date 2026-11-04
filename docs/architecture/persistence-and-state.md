@@ -187,9 +187,12 @@ persistence** rather than `pinia-plugin-persistedstate`.
   `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`.
 - `savedLanguage` defaults to `window.navigator.language`.
 
-`pinia-shared-state` is also active, so these stores are synchronized between
-tabs when the browser supports it. There is no conflict resolution beyond
-last-write-wins.
+`pinia-shared-state` is also active for serializable stores, so they are
+synchronized between tabs when the browser supports it. There is no conflict
+resolution beyond last-write-wins. The `ambient-sound` store and the
+`pictureUrlCache` store opt out of sharing: their runtime state contains
+`Map`/`Set` values and object URLs that cannot be serialized safely. Sharing
+them previously replaced live maps with plain objects and broke scene playback.
 
 ## 6. Migrations
 

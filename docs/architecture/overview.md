@@ -12,9 +12,9 @@ point for the rest of the part documentation.
 - **Quasar 2** as the component/layout system (`QLayout`, `QDrawer`, `QPage`,
   `QDialog`, `QInput`, `QSelect`, tables, tabs, notifications). Global Quasar
   plugins registered are `Notify` and `Dialog`.
-- **Pinia 4** setup stores; `pinia-shared-state` is enabled so state can be
-  synchronized between browser tabs via `BroadcastChannel`/`localStorage`
-  (library default behavior).
+- **Pinia 4** setup stores; `pinia-shared-state` synchronizes serializable state
+  between browser tabs. Stores holding runtime `Map`/`Set` values or object URLs
+  (ambient audio and picture caches) opt out.
 - **IndexedDB** via `idb` as the single source of truth.
 - **markdown-it** for rendering, **Milkdown/Crepe** for WYSIWYG editing.
 - **Howler** for the jukebox; **music-metadata** in a worker for tags/artwork.
