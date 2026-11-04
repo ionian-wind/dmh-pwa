@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import PWAStatus from '@/components/PWAStatus.vue';
+import CommitBadge from '@/components/CommitBadge.vue';
 import CalculatorDialog from '@/calculator/CalculatorView.vue';
 import MentionModalStack from '@/components/common/MentionModalStack.vue';
 import { Section } from '@/types';
@@ -537,6 +538,7 @@ function openJukebox() {
       <!-- Install prompt temporarily disabled while the flow is being finished. -->
       <PWAInstallPrompt :enabled="false" />
       <PWAStatus />
+      <CommitBadge />
       <!-- Global Mention Modal Stack -->
       <MentionModalStack />
       <CalculatorDialog v-model="isCalculatorPopupOpen" />

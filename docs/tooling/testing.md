@@ -66,14 +66,14 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 135. Total tests: 1000.
+Total test files: 136. Total tests: 1002.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  135 passed (135)
-Tests       1000 passed (1000)
+Test Files  136 passed (136)
+Tests       1002 passed (1002)
 ```
 
 Coverage (V8, `npm run test:coverage`):

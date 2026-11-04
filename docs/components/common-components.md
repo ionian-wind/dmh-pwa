@@ -173,6 +173,13 @@ an optional `muteable` flag. It emits `update:modelValue` with the next clamped
 volume and, when muteable, `toggle-mute` on click. Percentages are always shown
 as integers. Used by the jukebox player and the ambient scene title line.
 
+### `CommitBadge.vue`
+
+Fixed, non-interactable badge in the page's bottom-left corner. It displays the
+commit SHA inlined by Vite at build time from `VITE_COMMIT_SHA` in light text
+over a semi-transparent background. Local builds fall back to `dev`. No runtime
+request is made.
+
 ### `TagSelector.vue`
 
 - Adds and removes string tags with a standard outlined `QInput` and `QChip`

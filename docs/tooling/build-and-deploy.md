@@ -87,14 +87,14 @@ Steps:
 3. `npm ci`.
 4. `npm run types-check`.
 5. `npm run test:regression`.
-6. `npm run build`.
+6. `npm run build` with `VITE_COMMIT_SHA=${{ github.sha }}`.
 7. `cp dist/index.html dist/404.html` (SPA fallback for GitHub Pages).
-8. Write the deployed commit SHA to `dist/version.json` as `{"sha": "<sha>"}`.
-9. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
+8. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
 
-Locally, `public/version.json` contains `{"sha":"dev"}`. It is copied into the
-build so development and preview builds have the same file shape as deployed
-builds.
+Vite inlines `VITE_COMMIT_SHA` into the bundle during the build, so no extra
+request is needed at runtime. Locally the value is absent and `CommitBadge`
+falls back to `dev`. The badge is fixed in the page's bottom-left corner,
+non-interactable, and visually semi-transparent.
 
 The full suite runs in CI along with the regression suite. See
 [testing.md](testing.md).
