@@ -629,10 +629,10 @@ Package content is imported, not authored in the app.
 
 Opening a scene row replaces the ambient page content with the scene player
 view while the package sidebar and bottom player panel stay in place. The scene
-view URL is `/ambient/<scene-id>`, so the hashed scene ID is
-shareable and survives a reload. Playback starts only from an explicit play
-action. A Back button in the view header returns to the scene/gallery tabs. The
-view contains:
+content is rendered directly in the page rather than inside a card. The scene
+view URL is `/ambient/<scene-id>`, so the hashed scene ID is shareable and
+survives a reload. Playback starts only from an explicit play action. A Back
+button in the view header returns to the scene/gallery tabs. The view contains:
 
 - **Mood knobs** — a knob row containing Off plus one knob per scene music preset
   (for example Explore, Combat, Victory). Clicking a mood knob starts only that

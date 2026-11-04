@@ -24,87 +24,85 @@
       </template>
     </div>
 
-    <QCard v-if="entry" flat bordered class="scene-player-card">
-      <QCardSection>
-        <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
-          {{ t('ambientSoundPage.music') }}
-        </div>
-        <div class="mood-knobs q-mb-md">
-          <MoodKnob
-            :label="t('ambientSoundPage.off')"
-            :active="musicOff"
-            :disabled="!sceneControlsEnabled"
-            @select="selectMusic(null)"
-          />
-          <MoodKnob
-            v-for="preset in entry.scene.musicPresets"
-            :key="preset.id"
-            :label="preset.name"
-            :active="activePresetId === preset.id"
-            :track-progress="preset.mode === 'temporary'"
-            :disabled="!sceneControlsEnabled"
-            @select="selectMusic(preset.id)"
-          />
-        </div>
-
-        <TabGroup
-          v-model="activeTab"
-          :tabs="tabs"
-          size="sm"
-          align="justify"
-          class="q-mb-md"
+    <div v-if="entry" class="scene-player-content">
+      <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
+        {{ t('ambientSoundPage.music') }}
+      </div>
+      <div class="mood-knobs q-mb-md">
+        <MoodKnob
+          :label="t('ambientSoundPage.off')"
+          :active="musicOff"
+          :disabled="!sceneControlsEnabled"
+          @select="selectMusic(null)"
         />
+        <MoodKnob
+          v-for="preset in entry.scene.musicPresets"
+          :key="preset.id"
+          :label="preset.name"
+          :active="activePresetId === preset.id"
+          :track-progress="preset.mode === 'temporary'"
+          :disabled="!sceneControlsEnabled"
+          @select="selectMusic(preset.id)"
+        />
+      </div>
 
-        <div v-if="activeTab === 'ambiences'">
-          <EntityGroup
-            v-for="group in ambienceGroups"
-            :key="group.category"
-            :title="group.category"
-          >
-            <div class="column q-gutter-xs">
-              <AmbienceItem
-                v-for="row in group.rows"
-                :key="row.ambience.id"
-                :ambience="row.ambience"
-                :active-variation-id="row.activeVariationId"
-                :disabled="!sceneControlsEnabled"
-                @select-variation="
-                  (variationId) => toggleVariant(row, variationId)
-                "
-              />
-            </div>
-          </EntityGroup>
-          <EmptyState
-            v-if="ambienceGroups.length === 0"
-            :icon="IconWaveSine"
-            :title="t('ambientSoundPage.noAmbiencesInScene')"
-          />
-        </div>
+      <TabGroup
+        v-model="activeTab"
+        :tabs="tabs"
+        size="sm"
+        align="justify"
+        class="q-mb-md"
+      />
 
-        <div v-else>
-          <EntityGroup
-            v-for="group in oneShotGroups"
-            :key="group.category"
-            :title="group.category"
-          >
-            <div class="one-shot-grid">
-              <OneShotControl
-                v-for="oneShot in group.items"
-                :key="oneShot.id"
-                :pack-id="entry.pack.id"
-                :one-shot="oneShot"
-                :knob-size="68"
-              />
-            </div>
-          </EntityGroup>
-          <EmptyState
-            v-if="oneShotGroups.length === 0"
-            :icon="IconBell"
-            :title="t('ambientSoundPage.noOneShotsInScene')"
-          />
-        </div>
-      </QCardSection>
-    </QCard>
+      <div v-if="activeTab === 'ambiences'">
+        <EntityGroup
+          v-for="group in ambienceGroups"
+          :key="group.category"
+          :title="group.category"
+        >
+          <div class="column q-gutter-xs">
+            <AmbienceItem
+              v-for="row in group.rows"
+              :key="row.ambience.id"
+              :ambience="row.ambience"
+              :active-variation-id="row.activeVariationId"
+              :disabled="!sceneControlsEnabled"
+              @select-variation="
+                (variationId) => toggleVariant(row, variationId)
+              "
+            />
+          </div>
+        </EntityGroup>
+        <EmptyState
+          v-if="ambienceGroups.length === 0"
+          :icon="IconWaveSine"
+          :title="t('ambientSoundPage.noAmbiencesInScene')"
+        />
+      </div>
+
+      <div v-else>
+        <EntityGroup
+          v-for="group in oneShotGroups"
+          :key="group.category"
+          :title="group.category"
+        >
+          <div class="one-shot-grid">
+            <OneShotControl
+              v-for="oneShot in group.items"
+              :key="oneShot.id"
+              :pack-id="entry.pack.id"
+              :one-shot="oneShot"
+              :knob-size="68"
+            />
+          </div>
+        </EntityGroup>
+        <EmptyState
+          v-if="oneShotGroups.length === 0"
+          :icon="IconBell"
+          :title="t('ambientSoundPage.noOneShotsInScene')"
+        />
+      </div>
+    </div>
     <EmptyState
       v-else
       :icon="IconMusic"
@@ -264,7 +262,7 @@ watch(
   width: 100%;
 }
 
-.scene-player-card {
+.scene-player-content {
   width: 100%;
 }
 
