@@ -259,8 +259,45 @@ const QCheckbox = defineComponent({
   },
 });
 
+const QBtnToggle = defineComponent({
+  name: 'QBtnToggle',
+  inheritAttrs: false,
+  props: {
+    modelValue: { default: null },
+    options: { type: Array, default: () => [] },
+    disable: Boolean,
+  },
+  emits: ['update:modelValue', 'click'],
+  setup(props, { attrs, emit, slots }) {
+    return () =>
+      h(
+        'div',
+        { ...attrs, 'data-stub': 'QBtnToggle' },
+        (props.options as any[]).map((option) =>
+          h(
+            'button',
+            {
+              ...(option.attrs ?? {}),
+              disabled: props.disable || option.disable,
+              onClick: (event: MouseEvent) => {
+                if (option.value !== props.modelValue) {
+                  emit('update:modelValue', option.value);
+                }
+                emit('click', event);
+              },
+            },
+            option.slot
+              ? slots[option.slot]?.()
+              : (option.label ?? String(option.value ?? '')),
+          ),
+        ),
+      );
+  },
+});
+
 export const quasarStubs: Record<string, any> = {
   QBtn,
+  QBtnToggle,
   QInput,
   QSelect,
   QToggle,

@@ -182,7 +182,7 @@ runtime request is made.
 
 ### `ProgressButton.vue`
 
-Quasar `QBtn` wrapper with a built-in progress icon. Props:
+Quasar `QBtn` wrapper around the shared `ProgressIndicator` content. Props:
 
 | Prop      | Type                               | Default | Description                         |
 | --------- | ---------------------------------- | ------- | ----------------------------------- |
@@ -203,6 +203,14 @@ Percentage icons used: `IconPercentage0`, `IconPercentage10`,
 `IconPercentage40`, `IconPercentage50`, `IconPercentage60`, `IconPercentage66`,
 `IconPercentage70`, `IconPercentage75`, `IconPercentage80`, `IconPercentage90`
 and `IconPercentage100`.
+
+### `ProgressIndicator.vue`
+
+Non-button progress content shared by `ProgressButton` and the ambient temporary
+mood toggle. It renders the default slot plus a state icon: spinner while
+loading, nearest Tabler percentage icon while playing, and no icon in the none
+state. At 100% the icon fades and the component emits `update:state` plus
+`finish`.
 
 ### `TagSelector.vue`
 

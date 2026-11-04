@@ -43,8 +43,8 @@ describe('ProgressButton', () => {
     const wrapper = mountButton({}, { default: 'Start' });
 
     expect(wrapper.text()).toBe('Start');
-    expect(wrapper.find('.progress-button-progress').exists()).toBe(false);
-    expect(wrapper.find('.progress-button-spinner').exists()).toBe(false);
+    expect(wrapper.find('.progress-indicator-icon').exists()).toBe(false);
+    expect(wrapper.find('.progress-indicator-spinner').exists()).toBe(false);
     expect(wrapper.attributes('aria-busy')).toBeUndefined();
     wrapper.unmount();
   });
@@ -53,7 +53,7 @@ describe('ProgressButton', () => {
     const wrapper = mountButton({ state: 'loading', percent: 100 });
 
     expect(wrapper.findComponent(IconLoader2).exists()).toBe(true);
-    expect(wrapper.find('.progress-button-spinner').exists()).toBe(true);
+    expect(wrapper.find('.progress-indicator-spinner').exists()).toBe(true);
     expect(wrapper.findComponent(IconPercentage100).exists()).toBe(false);
     expect(wrapper.attributes('aria-busy')).toBe('true');
     wrapper.unmount();
@@ -114,7 +114,7 @@ describe('ProgressButton', () => {
     );
     await nextTick();
 
-    expect(wrapper.find('.progress-button-progress').classes()).toContain(
+    expect(wrapper.find('.progress-indicator-icon').classes()).toContain(
       'is-finishing',
     );
     expect(wrapper.findComponent(IconPercentage100).exists()).toBe(true);
@@ -128,7 +128,7 @@ describe('ProgressButton', () => {
     await nextTick();
     expect(wrapper.emitted('update:state')).toEqual([['none']]);
     expect(wrapper.emitted('finish')).toHaveLength(1);
-    expect(wrapper.find('.progress-button-progress').exists()).toBe(false);
+    expect(wrapper.find('.progress-indicator-icon').exists()).toBe(false);
     expect(wrapper.text()).toBe('Done');
     wrapper.unmount();
   });
@@ -144,7 +144,7 @@ describe('ProgressButton', () => {
     await nextTick();
 
     expect(wrapper.emitted('update:state')).toBeUndefined();
-    expect(wrapper.find('.progress-button-progress').classes()).not.toContain(
+    expect(wrapper.find('.progress-indicator-icon').classes()).not.toContain(
       'is-finishing',
     );
     expect(wrapper.findComponent(IconPercentage60).exists()).toBe(true);

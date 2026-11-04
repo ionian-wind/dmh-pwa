@@ -1,68 +1,26 @@
 <template>
-  <QBtn
-    v-if="!trackProgress"
-    class="mood-button"
-    :class="{ 'is-active': active }"
-    :label="label"
-    :disable="disabled"
-    :color="active ? 'primary' : 'grey-7'"
-    :outline="!active"
-    no-caps
-    size="lg"
-    :aria-pressed="active"
-    @click="select"
-  />
-  <ProgressButton
-    v-else
-    class="mood-button"
-    :class="{ 'is-active': active }"
-    :state="progressState"
-    :percent="progress"
-    :disable="disabled"
-    :color="active ? 'primary' : 'grey-7'"
-    :outline="!active"
-    no-caps
-    size="lg"
-    :title="label"
-    :aria-label="label"
-    :aria-pressed="active"
-    @click="select"
-  >
+  <ProgressIndicator :state="progressState" :percent="progress">
     {{ label }}
-  </ProgressButton>
+  </ProgressIndicator>
 </template>
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import ProgressButton from '@/components/common/ProgressButton.vue';
+import ProgressIndicator from '@/components/common/ProgressIndicator.vue';
 
 const props = withDefaults(
   defineProps<{
     label: string;
     active?: boolean;
-    disabled?: boolean;
-    /** Track playback progress (used for temporary presets). */
-    trackProgress?: boolean;
   }>(),
-  {
-    active: false,
-    disabled: false,
-    trackProgress: false,
-  },
+  { active: false },
 );
-
-const emit = defineEmits<{
-  (e: 'select'): void;
-}>();
 
 const store = useAmbientSoundStore();
 const progress = ref(0);
 
-const shouldTrack = computed(
-  () => props.trackProgress && props.active && store.isPlaying,
-);
-
+const shouldTrack = computed(() => props.active && store.isPlaying);
 const progressState = computed(() => (shouldTrack.value ? 'playing' : 'none'));
 
 const raf =
@@ -76,10 +34,6 @@ const cancelRaf =
     : (handle: number) => clearTimeout(handle);
 
 let frame: number | null = null;
-
-function select() {
-  if (!props.disabled) emit('select');
-}
 
 function tick() {
   if (!shouldTrack.value) {

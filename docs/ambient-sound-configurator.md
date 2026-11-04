@@ -188,7 +188,7 @@ src/
 │   │   ├── VariationSelect.vue       # Global variation filter select
 │   │   ├── OneShotGallery.vue        # Global one-shot knob grid
 │   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
-│   │   ├── MoodButton.vue            # Mood selector and progress button
+│   │   ├── MoodProgress.vue          # Mood label and progress indicator
 │   │   ├── AmbientControls.vue       # Scene intensity slider
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
@@ -659,9 +659,10 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
 
 - **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.
   Uses the same bar layout as the intensity control: the label sits at the left
-  edge and a rounded button group is right-aligned in the remaining row. The group
-  contains Off plus one large button per scene music preset (for example
-  Explore, Combat, Victory). Clicking a mood button starts only that
+  edge and a rounded `QBtnToggle` is right-aligned in the remaining row. The
+  toggle contains Off plus one large regular button per scene music preset (for
+  example Explore, Combat, Victory). Temporary preset buttons render
+  `MoodProgress` content instead of a plain label. Clicking a mood button starts only that
   mood music when nothing is playing, or crossfades to the active preset while
   playing; it never starts the scene's ambience layers. Clicking the preset that
   is already active does nothing. Ambience starts only when a variation button
@@ -793,20 +794,20 @@ footer.
 
 ### 4.11 Component and state mapping
 
-| UI component        | Responsibility                                                | Main state/actions                             |
-| ------------------- | ------------------------------------------------------------- | ---------------------------------------------- |
-| `AmbientSoundView`  | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene`   |
-| `SoundPackSidebar`  | Package list, import/delete, filter                           | `packages`, `selectedPackageId`                |
-| `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                      |
-| `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`               |
-| `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`             |
-| `AmbienceItem`      | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample       |
-| `VariationSelect`   | Global variation filter above ambience lists                  | `options`, `modelValue`                        |
-| `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                    |
-| `OneShotControl`    | Button-wrapped knob, icon and playback progress               | `packId`, `oneShot`, `progress`                |
-| `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                  |
-| `MoodButton`        | Regular or progress mood selector button                      | `label`, `active`, `trackProgress`, `disabled` |
-| `AmbientControls`   | Scene intensity slider                                        | `intensity`                                    |
+| UI component        | Responsibility                                                | Main state/actions                           |
+| ------------------- | ------------------------------------------------------------- | -------------------------------------------- |
+| `AmbientSoundView`  | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
+| `SoundPackSidebar`  | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
+| `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
+| `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
+| `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
+| `AmbienceItem`      | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample     |
+| `VariationSelect`   | Global variation filter above ambience lists                  | `options`, `modelValue`                      |
+| `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
+| `OneShotControl`    | Button-wrapped knob, icon and playback progress               | `packId`, `oneShot`, `progress`              |
+| `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
+| `MoodProgress`      | Mood label with temporary-mood progress indicator             | `label`, `active`                            |
+| `AmbientControls`   | Scene intensity slider                                        | `intensity`                                  |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

@@ -223,6 +223,16 @@ describe('ScenePlayerView', () => {
       wrapper.find('.scene-player-view button[aria-label="Play"]').exists(),
     ).toBe(false);
 
+    const toggle = wrapper.findComponent(quasarStubs.QBtnToggle);
+    expect(toggle.exists()).toBe(true);
+    const options = toggle.props('options');
+    expect(options).toHaveLength(4);
+    expect(options[0]).toMatchObject({ value: null, label: 'Off' });
+    expect(options[3]).toMatchObject({
+      value: 'victory',
+      slot: 'mood-temporary-0',
+    });
+
     const knob = (label: string) =>
       wrapper.findAll('.mood-button').find((entry) => entry.text() === label);
     await knob('Off')!.trigger('click');

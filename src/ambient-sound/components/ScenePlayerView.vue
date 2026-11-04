@@ -45,23 +45,26 @@
           {{ t('ambientSoundPage.mood') }}
         </div>
         <div class="col row justify-end">
-          <QBtnGroup rounded class="mood-buttons">
-            <MoodButton
-              :label="t('ambientSoundPage.off')"
-              :active="musicOff"
-              :disabled="!sceneControlsEnabled"
-              @select="selectMusic(null)"
-            />
-            <MoodButton
-              v-for="preset in entry.scene.musicPresets"
-              :key="preset.id"
-              :label="preset.name"
-              :active="activePresetId === preset.id"
-              :track-progress="preset.mode === 'temporary'"
-              :disabled="!sceneControlsEnabled"
-              @select="selectMusic(preset.id)"
-            />
-          </QBtnGroup>
+          <QBtnToggle
+            :model-value="activePresetId"
+            :options="moodOptions"
+            rounded
+            size="lg"
+            no-caps
+            class="mood-buttons"
+            @update:model-value="selectMusic"
+          >
+            <template
+              v-for="mood in temporaryMoodSlots"
+              :key="mood.slot"
+              #[mood.slot]
+            >
+              <MoodProgress
+                :label="mood.preset.name"
+                :active="activePresetId === mood.preset.id"
+              />
+            </template>
+          </QBtnToggle>
         </div>
       </QToolbar>
 
@@ -149,7 +152,7 @@ import {
 } from '@tabler/icons-vue';
 import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
 import AmbientControls from '@/ambient-sound/components/AmbientControls.vue';
-import MoodButton from '@/ambient-sound/components/MoodButton.vue';
+import MoodProgress from '@/ambient-sound/components/MoodProgress.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import VariationSelect from '@/ambient-sound/components/VariationSelect.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -190,10 +193,10 @@ const tabs = computed(() => [
 ]);
 
 const activePresetId = computed(() =>
-  store.musicEnabled ? store.activeMusicPresetId : null,
+  sceneIsActive() && store.musicEnabled ? store.activeMusicPresetId : null,
 );
 const musicOff = computed(
-  () => !store.musicEnabled || !store.activeMusicPresetId,
+  () => !sceneIsActive() || !store.musicEnabled || !store.activeMusicPresetId,
 );
 
 function sceneIsActive() {
@@ -213,6 +216,62 @@ const hasPlaybackContent = computed(
 const isPlaybackRunning = computed(
   () => hasPlaybackContent.value && store.isPlaying,
 );
+
+const temporaryMoodSlots = computed(() => {
+  if (!entry.value) return [];
+  return entry.value.scene.musicPresets
+    .filter((preset) => preset.mode === 'temporary')
+    .map((preset, index) => ({
+      slot: `mood-temporary-${index}`,
+      preset,
+    }));
+});
+
+interface MoodToggleOption {
+  value: string | null;
+  label?: string;
+  slot?: string;
+  disable?: boolean;
+  outline?: boolean;
+  color?: string;
+  attrs?: Record<string, unknown>;
+}
+
+const moodOptions = computed<MoodToggleOption[]>(() => {
+  if (!entry.value) return [];
+  let temporaryIndex = 0;
+  const disabled = !sceneControlsEnabled.value;
+  const offActive = musicOff.value;
+  const options: MoodToggleOption[] = [
+    {
+      value: null,
+      label: t('ambientSoundPage.off'),
+      disable: disabled,
+      outline: !offActive,
+      color: offActive ? 'primary' : 'grey-7',
+      attrs: { class: 'mood-button' },
+    },
+  ];
+
+  for (const preset of entry.value.scene.musicPresets) {
+    const active = activePresetId.value === preset.id;
+    const option: MoodToggleOption = {
+      value: preset.id,
+      disable: disabled,
+      outline: !active,
+      color: active ? 'primary' : 'grey-7',
+      attrs: { class: 'mood-button' },
+    };
+    if (preset.mode === 'temporary') {
+      option.slot = `mood-temporary-${temporaryIndex++}`;
+    } else {
+      option.label = preset.name;
+    }
+    options.push(option);
+  }
+
+  return options;
+});
 
 async function selectMusic(presetId: string | null) {
   if (!sceneControlsEnabled.value) return;
