@@ -129,8 +129,8 @@ describe('map marker editor', () => {
     linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
       { kind: 'location', id: 'l1' },
     ]);
-    linkingBlock(wrapper, 'map').vm.$emit('update:modelValue', [
-      { kind: 'map', id: 'map2' },
+    linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n1' },
     ]);
     wrapper
       .findComponent(IconPickerStub)
@@ -150,7 +150,7 @@ describe('map marker editor', () => {
       x: 100,
       y: 200,
       locationId: 'l1',
-      entities: [{ kind: 'map', id: 'map2' }],
+      entities: [{ kind: 'note', id: 'n1' }],
       icon: 'ra:ra-sword',
       color: '#00ff00',
       backgroundColor: '#ffffff',

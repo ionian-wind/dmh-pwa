@@ -98,8 +98,8 @@ describe('MapAreaEditor', () => {
     linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
       { kind: 'location', id: 'l1' },
     ]);
-    linkingBlock(wrapper, 'map').vm.$emit('update:modelValue', [
-      { kind: 'map', id: 'map2' },
+    linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n1' },
     ]);
     wrapper
       .findComponent(IconPickerStub)
@@ -117,7 +117,7 @@ describe('MapAreaEditor', () => {
       shape: 'polygon',
       points: area.points,
       locationId: 'l1',
-      entities: [{ kind: 'map', id: 'map2' }],
+      entities: [{ kind: 'note', id: 'n1' }],
       icon: 'ra:ra-tree',
       color: '#00ff00',
     });

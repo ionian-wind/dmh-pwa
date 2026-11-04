@@ -124,8 +124,9 @@ interface MapMarker {
 
 - Placing a marker: choose **Add marker**, then click the map. The marker editor
   opens with the clicked image coordinates.
-- A marker can link to one location and any number of other entities, including
-  other maps.
+- A marker can link to one location and any number of other entities (notes,
+  modules, monsters, encounters, characters). Parties and other maps are not
+  available as marker links.
 - Icons are optional; new markers start with no icon.
 - Marker icons support both RPG Awesome (`ra-castle-emblem`) and Font Awesome
   Solid (`fa-solid:cloud-rain`) values.
@@ -164,8 +165,9 @@ interface MapArea {
 - Areas render as semi-transparent fills with a stronger stroke on hover.
 - Clicking an area opens the area editor.
 - Each area supports title, description, optional RPG Awesome icon, colour,
-  one optional location, and any number of linked entities. Areas are not
-  linked to other areas or to markers.
+  one optional location, and linked entities. Areas can link to notes, modules,
+  monsters, encounters and characters, but not to parties, other maps, other
+  areas or markers.
 - The area list is shown in the right sidebar **Areas** tab and supports
   editing and deleting directly from the list.
 

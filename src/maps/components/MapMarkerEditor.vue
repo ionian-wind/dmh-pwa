@@ -50,11 +50,9 @@ const editorTabs = useEntityEditorTabs();
 const linkKinds: MapEntityKind[] = [
   'note',
   'module',
-  'party',
   'monster',
   'encounter',
   'character',
-  'map',
 ];
 
 const linkedLocation = computed<MapEntityRef[]>(() =>
