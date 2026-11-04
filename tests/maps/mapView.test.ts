@@ -453,6 +453,24 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
+  it('navigates to the linked location from the info popup', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+    const router = wrapper.vm.$router;
+    const push = vi.spyOn(router, 'push');
+
+    vm.showMarkerInfo(map.markers[0]);
+    await flushPromises();
+    const goToLocation = wrapper
+      .findAll('.map-info-actions button')
+      .find((button) => button.text() === 'Go to location');
+    expect(goToLocation).toBeTruthy();
+
+    await goToLocation!.trigger('click');
+    expect(push).toHaveBeenCalledWith('/locations/l1');
+    wrapper.unmount();
+  });
+
   it('does not open the map info popup when a sidebar item is clicked', async () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;

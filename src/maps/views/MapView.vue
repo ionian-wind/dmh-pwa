@@ -213,12 +213,7 @@ const infoLocationName = computed(() => infoLocation.value?.name ?? '');
 
 function goToInfoLocation() {
   if (!infoLocation.value) return;
-  const linkedMap = mapStore.items.find(
-    (entry) => entry.locationId === infoLocation.value?.id,
-  );
-  void router.push(
-    linkedMap ? `/maps/${linkedMap.id}` : `/locations/${infoLocation.value.id}`,
-  );
+  void router.push(`/locations/${infoLocation.value.id}`);
 }
 
 const drawType = computed(() =>
