@@ -15,6 +15,9 @@ export class AudioEngine {
   private oneShotBaseVolumes = new Map<string, number>();
   private oneShotPlayIds: Map<string, number[]> = new Map();
   private masterVolume: number = 0.8;
+  private moodVolume: number = 1;
+  private ambienceVolume: number = 1;
+  private oneShotVolume: number = 1;
   private currentMoodState: string = 'explore';
   private musicEndHandler: (() => void) | null = null;
   private musicNearEndHandler: (() => void) | null = null;
@@ -23,24 +26,54 @@ export class AudioEngine {
 
   setMasterVolume(volume: number): void {
     this.masterVolume = Math.max(0, Math.min(1, volume));
+    this.applyLayerVolumes();
+    this.applyMusicVolume();
+    this.applyOneShotVolumes();
+  }
 
+  setMoodVolume(volume: number): void {
+    this.moodVolume = Math.max(0, Math.min(1, volume));
+    this.applyMusicVolume();
+  }
+
+  setAmbienceVolume(volume: number): void {
+    this.ambienceVolume = Math.max(0, Math.min(1, volume));
+    this.applyLayerVolumes();
+  }
+
+  setOneShotVolume(volume: number): void {
+    this.oneShotVolume = Math.max(0, Math.min(1, volume));
+    this.applyOneShotVolumes();
+  }
+
+  private applyLayerVolumes(): void {
     this.layers.forEach((layer, layerId) => {
       const target =
-        (this.layerBaseVolumes.get(layerId) ?? 0) * this.masterVolume;
+        (this.layerBaseVolumes.get(layerId) ?? 0) *
+        this.ambienceVolume *
+        this.masterVolume;
       if (layer.playing()) layer.fade(layer.volume(), target, 100);
       else layer.volume(target);
     });
+  }
 
-    if (this.musicTrack) {
-      this.musicTrack.fade(
-        this.musicTrack.volume(),
-        this.musicBaseVolume * this.masterVolume,
-        100,
-      );
+  private applyMusicVolume(): void {
+    if (!this.musicTrack) return;
+    const target = this.musicBaseVolume * this.moodVolume * this.masterVolume;
+    if (this.musicTrack.playing()) {
+      this.musicTrack.fade(this.musicTrack.volume(), target, 100);
+    } else {
+      this.musicTrack.volume(target);
     }
+  }
 
+  private applyOneShotVolumes(): void {
     this.oneShots.forEach((sfx, sfxId) => {
-      sfx.volume((this.oneShotBaseVolumes.get(sfxId) ?? 1) * this.masterVolume);
+      sfx.volume(
+        (this.oneShotBaseVolumes.get(sfxId) ?? 1) *
+          this.oneShotVolume *
+          this.masterVolume,
+      );
     });
   }
 
@@ -137,7 +170,7 @@ export class AudioEngine {
     if (layer) {
       const baseVolume = Math.max(0, Math.min(1, volume));
       this.layerBaseVolumes.set(layerId, baseVolume);
-      const targetVolume = baseVolume * this.masterVolume;
+      const targetVolume = baseVolume * this.ambienceVolume * this.masterVolume;
       if (!layer.playing()) {
         layer.volume(0);
         layer.play();
@@ -166,7 +199,11 @@ export class AudioEngine {
     if (layer && layer.playing()) {
       const baseVolume = Math.max(0, Math.min(1, volume));
       this.layerBaseVolumes.set(layerId, baseVolume);
-      layer.fade(layer.volume(), baseVolume * this.masterVolume, 100);
+      layer.fade(
+        layer.volume(),
+        baseVolume * this.ambienceVolume * this.masterVolume,
+        100,
+      );
     }
   }
 
@@ -210,7 +247,7 @@ export class AudioEngine {
     // One-shots use their own entry volume, scaled by the scene master volume.
     const baseVolume = Math.max(0, Math.min(1, volume));
     this.oneShotBaseVolumes.set(sfxId, baseVolume);
-    sfx.volume(baseVolume * this.masterVolume);
+    sfx.volume(baseVolume * this.oneShotVolume * this.masterVolume);
     const soundId = sfx.play();
     if (soundId === undefined) return false;
     const activeIds = this.oneShotPlayIds.get(sfxId) ?? [];
@@ -298,7 +335,11 @@ export class AudioEngine {
       this.musicBaseVolume = baseVolume;
       this.musicTrack.volume(0);
       this.musicTrack.play();
-      this.musicTrack.fade(0, baseVolume * this.masterVolume, 1000);
+      this.musicTrack.fade(
+        0,
+        baseVolume * this.moodVolume * this.masterVolume,
+        1000,
+      );
       this.scheduleMusicNearEnd();
     }
   }
@@ -329,7 +370,7 @@ export class AudioEngine {
     if (this.musicTrack && this.musicTrack.playing()) {
       this.musicTrack.fade(
         this.musicTrack.volume(),
-        baseVolume * this.masterVolume,
+        baseVolume * this.moodVolume * this.masterVolume,
         100,
       );
     }
@@ -363,7 +404,7 @@ export class AudioEngine {
         this.musicTrack = track;
         this.currentMoodState = newMoodState;
         track.play();
-        track.fade(0, baseVolume * this.masterVolume, 1000);
+        track.fade(0, baseVolume * this.moodVolume * this.masterVolume, 1000);
         this.scheduleMusicNearEnd();
       }, 1000);
     } else {

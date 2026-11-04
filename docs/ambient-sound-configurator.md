@@ -93,12 +93,10 @@ volume and an optional cooldown. One-shot entries can be referenced by multiple 
 from the same package.
 
 One-shots are **independent of ambient playback transport**, but their entry
-volume is scaled by the scene master volume. They
-can be triggered while ambient audio is paused, while no scene is active, while
-music is disabled, while all ambience layers are muted, or while the ambient
-master volume is zero. They use their own entry volume and are not attenuated by
-the ambient master, music or ambience buses. A future dedicated one-shot bus may
-control them, but it must remain separate from the ambient settings.
+volume is scaled by the one-shot bus and the scene master volume. They can be
+triggered while ambient audio is paused, while no scene is active, while music
+is disabled, while all ambience layers are muted, or while the ambient master
+volume is zero. The one-shot bus is independent of the mood and ambience buses.
 
 ### 2.4 Scene
 
@@ -192,6 +190,7 @@ src/
 │   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
 │   │   ├── MoodProgress.vue          # Mood label and progress indicator
 │   │   ├── AmbientControls.vue       # Scene intensity slider
+│   │   ├── AmbientVolumeDialog.vue   # Master/mood/ambience/one-shot volumes
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
 │   │   └── SoundPackSidebar.vue      # Package list and import/remove
@@ -675,11 +674,11 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
   fade out to Off when there was none. Only temporary presets show playback
   progress; their buttons keep the preset name visible next to the percentage
   icon.
-- **Playback controls** — play/pause and master volume sit at the far right of
-  the scene title line. The five-step intensity control sits directly under the
-  mood block: its label is at the left edge and the slider is right-aligned in the
-  remaining row, up to a maximum width. Play/pause resumes the active scene
-  after a pause.
+- **Playback controls** — play/pause and the volume-dialog button sit at the far
+  right of the scene title line. The five-step intensity control sits directly
+  under the mood block: its label is at the left edge and the slider is
+  right-aligned in the remaining row, up to a maximum width. Play/pause resumes
+  the active scene after a pause.
 - **Control gating** — while paused, the intensity slider, mood buttons and
   ambience sample buttons are disabled. They are enabled again when the scene
   play/pause control resumes, or when nothing has been started yet.
@@ -725,12 +724,13 @@ the affected links.
 Playback controls are part of the scene view and are not rendered in the app
 footer.
 
-- Play/pause and master volume sit at the far right of the scene title line.
+- Play/pause and the volume button (`IconVolume`) sit at the far right of the
+  scene title line.
 - Five-step intensity slider (0/25/50/75/100) with snapping and tick marks sits
   under the mood block. The label stays at the left edge and the slider is
   right-aligned in the remaining row up to a maximum width.
-- Master volume opens a popup, including mouse-wheel adjustment. The shared
-  `VolumeControl` component is reused from the jukebox player.
+- The volume button opens a dedicated dialog with four controls: master, mood,
+  ambience and one-shots. Each control is a 0–100% slider.
 - Play/pause is disabled while no mood preset or ambience layer is active; a
   paused scene with active content can still be resumed.
 - No scene icon, cover art, “Now playing” caption or stop button.
@@ -738,8 +738,8 @@ footer.
 **Playback behavior**
 
 - One-shots are triggered from the galleries or the scene view.
-- One-shots use their own entry volume, scaled by the scene master volume, and
-  are independent of ambient playback transport.
+- One-shots use their own entry volume, scaled by the one-shot bus and scene
+  master volume, and are independent of ambient playback transport.
 - A single one-shot may be retriggered while already playing. There is no
   active-instance cap; the UI shows an `×N` badge while instances overlap.
 
@@ -796,20 +796,21 @@ footer.
 
 ### 4.11 Component and state mapping
 
-| UI component        | Responsibility                                                | Main state/actions                           |
-| ------------------- | ------------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`  | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
-| `SoundPackSidebar`  | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
-| `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
-| `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
-| `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
-| `AmbienceItem`      | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample     |
-| `VariationSelect`   | Global variation filter above ambience lists                  | `options`, `modelValue`                      |
-| `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
-| `OneShotControl`    | Button-wrapped knob, icon and playback progress               | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
-| `MoodProgress`      | Mood label with temporary-mood progress indicator             | `label`, `active`                            |
-| `AmbientControls`   | Scene intensity slider                                        | `intensity`                                  |
+| UI component          | Responsibility                                                | Main state/actions                           |
+| --------------------- | ------------------------------------------------------------- | -------------------------------------------- |
+| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
+| `SoundPackSidebar`    | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
+| `SceneList`           | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
+| `ScenePlayerView`     | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
+| `AmbienceGallery`     | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
+| `AmbienceItem`        | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample     |
+| `VariationSelect`     | Global variation filter above ambience lists                  | `options`, `modelValue`                      |
+| `OneShotGallery`      | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
+| `OneShotControl`      | Button-wrapped knob, icon and playback progress               | `packId`, `oneShot`, `progress`              |
+| `EntityScenesPanel`   | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
+| `MoodProgress`        | Mood label with temporary-mood progress indicator             | `label`, `active`                            |
+| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders            | `modelValue`                                 |
+| `AmbientControls`     | Scene intensity slider                                        | `intensity`                                  |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

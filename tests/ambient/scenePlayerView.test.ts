@@ -12,8 +12,14 @@ const storeMock = vi.hoisted(() => ({
   hasActiveLayers: true,
   intensity: 55,
   masterVolume: 50,
+  moodVolume: 100,
+  ambienceVolume: 100,
+  oneShotVolume: 100,
   togglePlayPause: vi.fn(),
   setMasterVolume: vi.fn(),
+  setMoodVolume: vi.fn(),
+  setAmbienceVolume: vi.fn(),
+  setOneShotVolume: vi.fn(),
   playScene: vi.fn(),
   playSceneMusic: vi.fn(),
   setMusicPreset: vi.fn(),
@@ -43,6 +49,9 @@ describe('ScenePlayerView', () => {
     for (const fn of [
       storeMock.togglePlayPause,
       storeMock.setMasterVolume,
+      storeMock.setMoodVolume,
+      storeMock.setAmbienceVolume,
+      storeMock.setOneShotVolume,
       storeMock.playScene,
       storeMock.playSceneMusic,
       storeMock.setMusicPreset,
@@ -63,6 +72,9 @@ describe('ScenePlayerView', () => {
     storeMock.isPlaying = true;
     storeMock.hasActiveLayers = true;
     storeMock.masterVolume = 50;
+    storeMock.moodVolume = 100;
+    storeMock.ambienceVolume = 100;
+    storeMock.oneShotVolume = 100;
     storeMock.activeSceneKey = 'pack-1::scene-1';
     storeMock.isOneShotPlaying.mockReturnValue(false);
     storeMock.oneShotPlayCount.mockReturnValue(0);
@@ -147,8 +159,8 @@ describe('ScenePlayerView', () => {
     await pause.trigger('click');
     expect(storeMock.togglePlayPause).toHaveBeenCalled();
 
-    await header.find('.volume-button').trigger('wheel', { deltaY: 100 });
-    expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
+    await header.find('.volume-button').trigger('click');
+    expect(wrapper.find('.volume-dialog-card').exists()).toBe(true);
     expect(wrapper.find('.intensity-slider').attributes('disable')).toBe(
       'false',
     );
@@ -190,22 +202,6 @@ describe('ScenePlayerView', () => {
     expect(wrapper.find('.intensity-slider').attributes('disable')).toBe(
       'true',
     );
-    wrapper.unmount();
-  });
-
-  it('formats fractional volume as an integer percentage', () => {
-    storeMock.masterVolume = 28.999999999999996;
-    const wrapper = mount(ScenePlayerView, {
-      props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs },
-    });
-
-    expect(wrapper.find('.volume-popup-value').text()).toBe('29%');
-    expect(
-      wrapper
-        .find('.scene-view-header .volume-button')
-        .attributes('aria-label'),
-    ).toContain('29%');
     wrapper.unmount();
   });
 

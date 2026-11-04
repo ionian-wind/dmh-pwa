@@ -119,6 +119,13 @@ describe('ambient audio engine', () => {
     expect(music.volume()).toBe(0.25);
     expect(oneShot.volume()).toBe(0.4);
 
+    engine.setAmbienceVolume(0.5);
+    engine.setMoodVolume(0.5);
+    engine.setOneShotVolume(0.5);
+    expect(layer.volume()).toBe(0.2);
+    expect(music.volume()).toBe(0.125);
+    expect(oneShot.volume()).toBe(0.2);
+
     engine.setMasterVolume(0);
     expect(layer.volume()).toBe(0);
     expect(music.volume()).toBe(0);

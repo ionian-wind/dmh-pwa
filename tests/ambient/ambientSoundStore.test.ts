@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
     loadOneShot: vi.fn(),
     loadMusic: vi.fn(),
     setMasterVolume: vi.fn(),
+    setMoodVolume: vi.fn(),
+    setAmbienceVolume: vi.fn(),
+    setOneShotVolume: vi.fn(),
     stopAll: vi.fn(),
     stopLayer: vi.fn(),
     playLayer: vi.fn(),
@@ -401,7 +404,7 @@ describe('ambient sound store', () => {
       ['mp3'],
     );
 
-    store.setAmbienceVolume('forest', 'rain', 0.2);
+    store.setLayerVolume('forest', 'rain', 0.2);
     expect(store.activeLayers.get('forest:rain')?.volume).toBe(0.2);
     expect(mocks.audioEngine.setLayerVolume).toHaveBeenCalledWith(
       'forest:rain',
@@ -582,12 +585,24 @@ describe('ambient sound store', () => {
     expect(store.oneShotPlayCount('forest', 'thunder')).toBe(0);
   });
 
-  it('stores master volume as an integer percentage', () => {
+  it('stores volume levels as integer percentages', () => {
     const store = createStore();
 
     store.setMasterVolume(28.999999999999996);
     expect(store.masterVolume).toBe(29);
     expect(mocks.audioEngine.setMasterVolume).toHaveBeenCalledWith(0.29);
+
+    store.setMoodVolume(40.4);
+    expect(store.moodVolume).toBe(40);
+    expect(mocks.audioEngine.setMoodVolume).toHaveBeenCalledWith(0.4);
+
+    store.setAmbienceVolume(60.4);
+    expect(store.ambienceVolume).toBe(60);
+    expect(mocks.audioEngine.setAmbienceVolume).toHaveBeenCalledWith(0.6);
+
+    store.setOneShotVolume(80.4);
+    expect(store.oneShotVolume).toBe(80);
+    expect(mocks.audioEngine.setOneShotVolume).toHaveBeenCalledWith(0.8);
 
     store.setMasterVolume(-5);
     expect(store.masterVolume).toBe(0);

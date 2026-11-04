@@ -30,11 +30,15 @@
             <IconPlayerPause v-if="isPlaybackRunning" />
             <IconPlayerPlay v-else />
           </QBtn>
-          <VolumeControl
-            :model-value="store.masterVolume / 100"
-            :label="t('ambientSoundPage.masterVolume')"
-            @update:model-value="(value) => store.setMasterVolume(value * 100)"
-          />
+          <QBtn
+            flat
+            class="volume-button"
+            :title="t('ambientSoundPage.volumeControls')"
+            :aria-label="t('ambientSoundPage.volumeControls')"
+            @click="isVolumeDialogOpen = true"
+          >
+            <IconVolume />
+          </QBtn>
         </QBtnGroup>
       </template>
     </div>
@@ -136,6 +140,8 @@
       :icon="IconMusic"
       :title="t('ambientSoundPage.noScenes')"
     />
+
+    <AmbientVolumeDialog v-model="isVolumeDialogOpen" />
   </div>
 </template>
 
@@ -148,17 +154,18 @@ import {
   IconMusic,
   IconPlayerPause,
   IconPlayerPlay,
+  IconVolume,
   IconWaveSine,
 } from '@tabler/icons-vue';
 import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
 import AmbientControls from '@/ambient-sound/components/AmbientControls.vue';
+import AmbientVolumeDialog from '@/ambient-sound/components/AmbientVolumeDialog.vue';
 import MoodProgress from '@/ambient-sound/components/MoodProgress.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import VariationSelect from '@/ambient-sound/components/VariationSelect.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityTabs from '@/components/common/EntityTabs.vue';
-import VolumeControl from '@/components/common/VolumeControl.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import {
   findVariation,
@@ -178,6 +185,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const activeTab = ref('ambiences');
+const isVolumeDialogOpen = ref(false);
 
 const entry = computed(
   () =>

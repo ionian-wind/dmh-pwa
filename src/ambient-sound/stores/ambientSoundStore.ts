@@ -80,6 +80,9 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   const previousMusicPresetId = ref<string | null>(null);
   const intensity = ref(50);
   const masterVolume = ref(80);
+  const moodVolume = ref(100);
+  const ambienceVolume = ref(100);
+  const oneShotVolume = ref(100);
   const loading = ref(false);
   const loadedPackIds = ref<Set<string>>(new Set());
   const loadedAudioUrls = ref<Map<string, string>>(new Map());
@@ -546,7 +549,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     startAmbience(packId, ambience, variationId, active.volume * 100);
   }
 
-  function setAmbienceVolume(
+  function setLayerVolume(
     packId: string,
     ambienceId: string,
     volume: number,
@@ -568,6 +571,21 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   function setMasterVolume(value: number): void {
     masterVolume.value = Math.round(Math.max(0, Math.min(100, value)));
     audioEngine.setMasterVolume(masterVolume.value / 100);
+  }
+
+  function setMoodVolume(value: number): void {
+    moodVolume.value = Math.round(Math.max(0, Math.min(100, value)));
+    audioEngine.setMoodVolume(moodVolume.value / 100);
+  }
+
+  function setAmbienceVolume(value: number): void {
+    ambienceVolume.value = Math.round(Math.max(0, Math.min(100, value)));
+    audioEngine.setAmbienceVolume(ambienceVolume.value / 100);
+  }
+
+  function setOneShotVolume(value: number): void {
+    oneShotVolume.value = Math.round(Math.max(0, Math.min(100, value)));
+    audioEngine.setOneShotVolume(oneShotVolume.value / 100);
   }
 
   function setMusicEnabled(value: boolean): void {
@@ -826,6 +844,9 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     activeMusicPresetId,
     intensity,
     masterVolume,
+    moodVolume,
+    ambienceVolume,
+    oneShotVolume,
     loading,
     hasActiveLayers,
     loadStoredPacks,
@@ -843,9 +864,12 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     selectAmbienceSample,
     retuneAmbienceVariation,
     setAmbienceVariation,
-    setAmbienceVolume,
+    setLayerVolume,
     setIntensity,
     setMasterVolume,
+    setMoodVolume,
+    setAmbienceVolume,
+    setOneShotVolume,
     setMusicEnabled,
     setMusicPreset,
     toggleMusic,
