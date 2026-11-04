@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import {
-  IconLoader2,
   IconPercentage0,
   IconPercentage10,
   IconPercentage100,
@@ -49,11 +48,12 @@ describe('ProgressButton', () => {
     wrapper.unmount();
   });
 
-  it('shows a spinning loader while loading', () => {
+  it('uses the native QBtn loading state while loading', () => {
     const wrapper = mountButton({ state: 'loading', percent: 100 });
 
-    expect(wrapper.findComponent(IconLoader2).exists()).toBe(true);
-    expect(wrapper.find('.progress-indicator-spinner').exists()).toBe(true);
+    const button = wrapper.findComponent(quasarStubs.QBtn);
+    expect(button.attributes('data-loading')).toBe('true');
+    expect(wrapper.find('.progress-indicator-icon').exists()).toBe(false);
     expect(wrapper.findComponent(IconPercentage100).exists()).toBe(false);
     expect(wrapper.attributes('aria-busy')).toBe('true');
     wrapper.unmount();

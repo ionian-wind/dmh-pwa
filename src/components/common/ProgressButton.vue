@@ -1,7 +1,11 @@
 <template>
-  <QBtn class="progress-button" :aria-busy="isBusy ? 'true' : undefined">
+  <QBtn
+    class="progress-button"
+    :loading="isLoading"
+    :aria-busy="isBusy ? 'true' : undefined"
+  >
     <ProgressIndicator
-      :state="state"
+      :state="indicatorState"
       :percent="percent"
       @update:state="emit('update:state', $event)"
       @finish="emit('finish')"
@@ -17,9 +21,11 @@ import ProgressIndicator, {
   type ProgressIndicatorState,
 } from '@/components/common/ProgressIndicator.vue';
 
+type ProgressButtonState = 'none' | 'loading' | 'playing';
+
 const props = withDefaults(
   defineProps<{
-    state?: ProgressIndicatorState;
+    state?: ProgressButtonState;
     /** Progress from 0 to 100. */
     percent?: number;
   }>(),
@@ -30,11 +36,15 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:state', value: ProgressIndicatorState): void;
+  (e: 'update:state', value: ProgressButtonState): void;
   (e: 'finish'): void;
 }>();
 
+const isLoading = computed(() => props.state === 'loading');
 const isBusy = computed(
   () => props.state === 'loading' || props.state === 'playing',
+);
+const indicatorState = computed<ProgressIndicatorState>(() =>
+  props.state === 'loading' ? 'none' : props.state,
 );
 </script>

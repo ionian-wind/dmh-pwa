@@ -12,7 +12,11 @@ const slotStub = (name: string) =>
 const QBtn = defineComponent({
   name: 'QBtn',
   inheritAttrs: false,
-  props: { label: { type: String, default: '' }, disable: Boolean },
+  props: {
+    label: { type: String, default: '' },
+    disable: Boolean,
+    loading: Boolean,
+  },
   emits: ['click'],
   setup(props, { slots, emit, attrs }) {
     return () =>
@@ -21,6 +25,7 @@ const QBtn = defineComponent({
         {
           ...attrs,
           disabled: props.disable,
+          'data-loading': props.loading ? 'true' : undefined,
           onClick: (event: MouseEvent) => emit('click', event),
         },
         slots.default?.() ?? props.label,

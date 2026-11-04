@@ -191,7 +191,7 @@ Quasar `QBtn` wrapper around the shared `ProgressIndicator` content. Props:
 
 - The default slot (label or other content) is always rendered.
 - `none` shows only the default slot.
-- `loading` adds a spinning `IconLoader2` next to the slot content.
+- `loading` delegates to the native Quasar `QBtn` loading spinner.
 - `playing` adds the closest Tabler percentage icon and fades between values as
   the percentage changes, while keeping the label visible.
 - Reaching `100` fades the icon out, switches the rendered state to `none`, and
@@ -206,11 +206,11 @@ and `IconPercentage100`.
 
 ### `ProgressIndicator.vue`
 
-Non-button progress content shared by `ProgressButton` and the ambient temporary
-mood toggle. It renders the default slot plus a state icon: spinner while
-loading, nearest Tabler percentage icon while playing, and no icon in the none
-state. At 100% the icon fades and the component emits `update:state` plus
-`finish`.
+Non-button percentage progress content shared by `ProgressButton` and the
+ambient temporary mood toggle. It renders the default slot plus the nearest
+Tabler percentage icon while playing, and no icon in the none state. Native
+`QBtn` loading is handled by the button wrapper instead. At 100% the icon fades
+and the component emits `update:state` plus `finish`.
 
 ### `TagSelector.vue`
 

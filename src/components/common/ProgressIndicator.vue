@@ -6,16 +6,7 @@
       :class="{ 'is-finishing': isFinishing }"
     >
       <Transition name="progress-indicator-icon">
-        <IconLoader2
-          v-if="renderedState === 'loading'"
-          key="loading"
-          class="progress-indicator-spinner"
-        />
-        <component
-          v-else
-          :is="percentageIcon"
-          :key="`percent-${percentageValue}`"
-        />
+        <component :is="percentageIcon" :key="`percent-${percentageValue}`" />
       </Transition>
     </span>
     <slot />
@@ -23,13 +14,12 @@
 </template>
 
 <script lang="ts">
-export type ProgressIndicatorState = 'none' | 'loading' | 'playing';
+export type ProgressIndicatorState = 'none' | 'playing';
 </script>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import {
-  IconLoader2,
   IconPercentage0,
   IconPercentage10,
   IconPercentage100,
@@ -135,7 +125,7 @@ watch(
   ([state, percent]) => {
     cancelFinish();
     if (state !== 'playing') {
-      renderedState.value = state;
+      renderedState.value = 'none';
       return;
     }
     renderedState.value = 'playing';
@@ -173,10 +163,6 @@ onBeforeUnmount(clearFinishTimer);
   transform: scale(0.8);
 }
 
-.progress-indicator-spinner {
-  animation: progress-indicator-spin 1s linear infinite;
-}
-
 .progress-indicator-icon-enter-active,
 .progress-indicator-icon-leave-active {
   transition:
@@ -194,11 +180,5 @@ onBeforeUnmount(clearFinishTimer);
 .progress-indicator-icon-leave-to {
   opacity: 0;
   transform: scale(0.85);
-}
-
-@keyframes progress-indicator-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>
