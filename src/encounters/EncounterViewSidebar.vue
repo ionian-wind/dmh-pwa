@@ -43,6 +43,7 @@ onMounted(async () => mentionsStore.load());
     <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
     <QSeparator />
     <EntityScenesPanel
+      v-if="props.encounter?.id"
       entity-type="encounter"
       :entity-id="props.encounter.id"
     />

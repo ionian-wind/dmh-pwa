@@ -668,4 +668,26 @@ describe('jukebox player store', () => {
     await nextTick();
     expect(player.currentTrack).toBeNull();
   });
+
+  it('uses Blob artwork metadata for media session', async () => {
+    Object.defineProperty(navigator, 'mediaSession', {
+      configurable: true,
+      value: { setActionHandler: vi.fn(), metadata: null },
+    });
+    vi.stubGlobal(
+      'MediaMetadata',
+      class {
+        constructor(public data: any) {}
+      },
+    );
+    const player = useJukeboxPlayerStore();
+    const one = track('one', {
+      picture: new Blob(['art'], { type: 'image/png' }),
+    });
+    mocks.tracks.items.value = [one];
+    await player.playTrackFromPlaylist(one);
+    expect(navigator.mediaSession.metadata).toBeTruthy();
+    delete (navigator as any).mediaSession;
+    vi.unstubAllGlobals();
+  });
 });

@@ -76,6 +76,9 @@ export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
     if (typeof picture === 'string') {
       return picture;
     }
+    if (!(picture instanceof Blob)) {
+      return '';
+    }
 
     // Create a stable identity for this Blob instance. Size+type alone can
     // collide for different images, which showed the wrong artwork.

@@ -189,10 +189,10 @@ persistence** rather than `pinia-plugin-persistedstate`.
 
 `pinia-shared-state` is also active for serializable stores, so they are
 synchronized between tabs when the browser supports it. There is no conflict
-resolution beyond last-write-wins. The `ambient-sound` store and the
-`pictureUrlCache` store opt out of sharing: their runtime state contains
-`Map`/`Set` values and object URLs that cannot be serialized safely. Sharing
-them previously replaced live maps with plain objects and broke scene playback.
+resolution beyond last-write-wins. The `ambient-sound`, `jukeboxPlayer` and `pictureUrlCache` stores opt out of
+sharing: their runtime state contains `Map`/`Set` values, playback queues,
+artwork `Blob`s and object URLs that cannot be serialized safely. Sharing them
+previously replaced live maps with plain objects and corrupted track artwork.
 
 ## 6. Migrations
 

@@ -13,8 +13,8 @@ point for the rest of the part documentation.
   `QDialog`, `QInput`, `QSelect`, tables, tabs, notifications). Global Quasar
   plugins registered are `Notify` and `Dialog`.
 - **Pinia 4** setup stores; `pinia-shared-state` synchronizes serializable state
-  between browser tabs. Stores holding runtime `Map`/`Set` values or object URLs
-  (ambient audio and picture caches) opt out.
+  between browser tabs. Runtime audio, playback and artwork-cache stores opt out
+  because they hold non-serializable `Map`/`Set`, `Blob` and object-URL state.
 - **IndexedDB** via `idb` as the single source of truth.
 - **markdown-it** for rendering, **Milkdown/Crepe** for WYSIWYG editing.
 - **Howler** for the jukebox; **music-metadata** in a worker for tags/artwork.

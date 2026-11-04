@@ -172,7 +172,9 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
             type:
               typeof currentTrack.value.picture === 'string'
                 ? 'image/jpeg'
-                : currentTrack.value.picture.type || 'image/jpeg',
+                : currentTrack.value.picture instanceof Blob
+                  ? currentTrack.value.picture.type || 'image/jpeg'
+                  : 'image/jpeg',
           });
         }
       }
@@ -863,4 +865,8 @@ export const useJukeboxPlayerStore = defineStore('jukeboxPlayer', () => {
     cycleRepeatMode,
     trackIsActive,
   };
+}, {
+  // Playback state contains current tracks, queues and artwork Blobs that are
+  // not JSON-serializable; cross-tab sharing corrupts them.
+  share: { enable: false },
 });

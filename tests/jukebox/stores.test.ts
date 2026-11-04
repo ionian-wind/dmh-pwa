@@ -94,4 +94,10 @@ describe('jukebox stores', () => {
     expect(trackIsActive(track, { id: 't2' } as any, 'p1', 'p1')).toBe(false);
     expect(trackIsActive(null, track, 'p1', 'p1')).toBe(false);
   });
+
+  it('ignores non-Blob artwork values that cannot be turned into URLs', () => {
+    const store = usePictureUrlCacheStore();
+    expect(store.getPictureUrl({} as any)).toBe('');
+    expect(store.getPictureStyle({} as any)).toEqual({ backgroundImage: '' });
+  });
 });
