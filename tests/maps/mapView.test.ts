@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => ({
   },
   getMapFile: vi.fn(),
   getMapFileBlob: vi.fn(),
+  confirm: vi.fn(),
+  prompt: vi.fn(),
 }));
 
 vi.mock('@/maps/maps', () => ({
@@ -33,6 +35,11 @@ vi.mock('@/maps/maps', () => ({
 
 vi.mock('@/maps/locations', () => ({
   useMapLocationStore: () => mocks.locationStore,
+}));
+
+vi.mock('@/dialogs', () => ({
+  confirm: mocks.confirm,
+  prompt: mocks.prompt,
 }));
 
 vi.mock('@/maps/utils/mapFileUtils', () => ({
@@ -343,6 +350,8 @@ describe('MapView', () => {
       source: { kind: 'blob', blob: new Blob(['image']) },
       imageMetadata: { width: 200, height: 100, aspectRatio: 2 },
     });
+    mocks.confirm.mockResolvedValue(true);
+    mocks.prompt.mockResolvedValue('Layer 2');
     mocks.getMapFileBlob.mockResolvedValue(new Blob(['image']));
     (URL as any).createObjectURL = vi.fn(() => 'blob:map-image');
     (URL as any).revokeObjectURL = vi.fn();
@@ -496,6 +505,148 @@ describe('MapView', () => {
 
     await goToLocation!.trigger('click');
     expect(push).toHaveBeenCalledWith('/locations/l1');
+    wrapper.unmount();
+  });
+
+  it('covers list deletion, map editor and layer actions', async () => {
+    const localMap = structuredClone(map);
+    mocks.mapStore.getById.mockReturnValue(localMap);
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+    const update = mocks.mapStore.update;
+    update.mockImplementation(async (_id: string, patch: any) => ({
+      ...localMap,
+      ...patch,
+    }));
+
+    await vm.deleteMarkerFromList('m1');
+    expect(update).toHaveBeenCalledWith('map1', { markers: [] });
+
+    await vm.deleteAreaFromList('a1');
+    expect(update).toHaveBeenCalledWith('map1', { areas: [] });
+
+    vm.openMapEditor();
+    expect(vm.isMapEditorOpen).toBe(true);
+    await vm.submitMapEditor({ title: 'Renamed', fileId: 'file1' });
+    expect(update).toHaveBeenCalledWith('map1', {
+      title: 'Renamed',
+      fileId: 'file1',
+    });
+
+    localMap.layers = [
+      { id: 'base', title: 'Base' },
+      { id: 'layer-2', title: 'Layer 2' },
+    ];
+    vm.map = { ...localMap };
+    await vm.addLayer();
+    expect(update).toHaveBeenCalledWith(
+      'map1',
+      expect.objectContaining({
+        layers: expect.arrayContaining([
+          expect.objectContaining({ title: 'Layer 2' }),
+        ]),
+      }),
+    );
+
+    mocks.prompt.mockResolvedValueOnce('Renamed layer');
+    localMap.layers = [
+      { id: 'base', title: 'Base' },
+      { id: 'layer-2', title: 'Layer 2' },
+    ];
+    vm.map = { ...localMap };
+    await vm.editLayer({ id: 'layer-2', title: 'Layer 2' });
+    expect(update).toHaveBeenCalledWith(
+      'map1',
+      expect.objectContaining({
+        layers: expect.arrayContaining([
+          expect.objectContaining({ title: 'Renamed layer' }),
+        ]),
+      }),
+    );
+
+    localMap.markers = [{ ...map.markers[0], layerId: 'layer-2' }];
+    localMap.areas = [{ ...map.areas[0], layerId: 'layer-2' }];
+    vm.map = { ...localMap };
+    await vm.deleteLayer({ id: 'layer-2', title: 'Layer 2' });
+    expect(update).toHaveBeenCalledWith(
+      'map1',
+      expect.objectContaining({
+        layers: [{ id: 'base', title: 'Base' }],
+        markers: [expect.objectContaining({ layerId: 'base' })],
+        areas: [expect.objectContaining({ layerId: 'base' })],
+      }),
+    );
+
+    vm.toggleLayerVisibility('base');
+    vm.toggleLayerVisibility('base');
+    vm.showMarkerInfo(localMap.markers[0]);
+    vm.toggleLayerVisibility('layer-2');
+    vm.handleMapAction({ action: 'cancel-drawing' });
+    vm.onContextMenuOpen();
+
+    await vm.deleteMapFromEditor();
+    expect(mocks.mapStore.remove).toHaveBeenCalledWith('map1');
+    wrapper.unmount();
+  });
+
+  it('covers image, area, hover and info helpers', async () => {
+    const localMap = structuredClone(map);
+    localMap.areas.push({
+      id: 'a2',
+      title: 'Circle',
+      shape: 'circle',
+      points: [],
+      center: [10, 10],
+      radius: 5,
+      entities: [],
+      locationId: null,
+      layerId: 'base',
+      icon: '',
+      color: '#336699',
+    } as any);
+    mocks.mapStore.getById.mockReturnValue(localMap);
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    vm.onImageLoadStart();
+    expect(vm.imageLoaded).toBe(false);
+    vm.onImageLoadEnd();
+    expect(vm.imageLoaded).toBe(true);
+    vm.onImageLoadError();
+    expect(vm.imageLoadFailed).toBe(true);
+
+    expect(vm.areaCircleMapCenter(localMap.areas[1])).toHaveLength(2);
+    vm.hoverArea('a1');
+    expect(vm.hoveredAreaId).toBe('a1');
+    vm.hoverMarker('m1');
+    expect(vm.hoveredMarkerId).toBe('m1');
+    vm.selectMarker('m1');
+    vm.focusArea('a1');
+    vm.refreshAreaHighlight();
+
+    vm.showMarkerInfo(localMap.markers[0]);
+    vm.editInfoItem();
+    expect(vm.isMarkerEditorOpen).toBe(true);
+    vm.showAreaInfo(localMap.areas[0]);
+    vm.editInfoItem();
+    expect(vm.isAreaEditorOpen).toBe(true);
+
+    mapHarness.map.forEachFeatureAtPixel.mockReturnValueOnce({
+      get: (key: string) => (key === 'areaId' ? 'a1' : undefined),
+    });
+    vm.onMapClick({ pixel: [1, 1], coordinate: [20, 20] });
+    await flushPromises();
+    expect(vm.infoSelection).toEqual({ kind: 'area', id: 'a1' });
+
+    vm.toggleLayerVisibility('base');
+    vm.toggleLayerVisibility('base');
+    wrapper.unmount();
+  });
+
+  it('marks the image as failed when the blob cannot be loaded', async () => {
+    mocks.getMapFileBlob.mockRejectedValueOnce(new Error('missing blob'));
+    const wrapper = await mountMapView();
+    expect((wrapper.vm as any).imageLoadFailed).toBe(true);
     wrapper.unmount();
   });
 

@@ -165,6 +165,50 @@ describe('PlaylistList drag-and-drop and selection', () => {
     wrapper.unmount();
   });
 
+  it('clears selected and active playlist when it is removed', async () => {
+    const store = seed();
+    const config = useConfigStore();
+    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
+    const wrapper = mountList();
+    await flushPromises();
+
+    await wrapper.findAll('.playlist-item')[0].trigger('click');
+    expect(config.jukeboxActivePlaylistId).toBe('p2');
+    await wrapper
+      .findAll('.playlist-item')[0]
+      .findAll('button')[1]
+      .trigger('click');
+    await flushPromises();
+    expect(config.jukeboxActivePlaylistId).toBeNull();
+    wrapper.unmount();
+  });
+
+  it('clears an active playlist that is not currently selected', async () => {
+    const store = seed();
+    const config = useConfigStore();
+    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
+    const wrapper = mountList();
+    await flushPromises();
+
+    config.jukeboxActivePlaylistId = 'p1';
+    await (wrapper.vm as any).removePlaylist('p1');
+    expect(config.jukeboxActivePlaylistId).toBeNull();
+    wrapper.unmount();
+  });
+
+  it('keeps a selected playlist that is missing from the filtered list', async () => {
+    seed();
+    const wrapper = mountList();
+    await flushPromises();
+    const vm = wrapper.vm as any;
+    vm.updateSortedPlaylists([{ id: 'p2', name: 'First', sortOrder: 1 }], 'p1');
+    expect(vm.sortedPlaylists.map((playlist: any) => playlist.id)).toEqual([
+      'p2',
+      'p1',
+    ]);
+    wrapper.unmount();
+  });
+
   it('removes the edited playlist through the editor delete action', async () => {
     const store = seed();
     const remove = vi.spyOn(store, 'remove').mockResolvedValue(undefined);

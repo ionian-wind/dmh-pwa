@@ -331,6 +331,35 @@ describe('ProbabilityCalculatorView', () => {
     wrapper.unmount();
   });
 
+  it('renames and deletes library pieces', async () => {
+    const wrapper = await mountPage();
+    const state = libraryState();
+    state.pieces.push({
+      id: 'piece-1',
+      name: 'Old',
+      code: 'output 1d4',
+      include: false,
+    } as any);
+    state.selectedId = 'piece-1';
+
+    promptMock.mockResolvedValueOnce('');
+    await state.onRename(state.pieces[0]);
+    promptMock.mockResolvedValueOnce('   ');
+    await state.onRename(state.pieces[0]);
+    promptMock.mockResolvedValueOnce('Renamed');
+    await state.onRename(state.pieces[0]);
+    expect(state.pieces[0].name).toBe('Renamed');
+
+    confirmMock.mockResolvedValueOnce(false);
+    await state.onDelete(state.pieces[0]);
+    expect(state.pieces).toHaveLength(1);
+    confirmMock.mockResolvedValueOnce(true);
+    await state.onDelete(state.pieces[0]);
+    expect(state.pieces).toHaveLength(0);
+    expect(state.selectedId).toBeNull();
+    wrapper.unmount();
+  });
+
   it('includes checked library pieces in the calculation namespace', async () => {
     vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
       key === CODE_LIBRARY_STORAGE_KEY

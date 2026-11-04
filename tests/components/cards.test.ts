@@ -291,6 +291,11 @@ describe('domain cards', () => {
 
     await buttons[0].trigger('mouseenter');
     await buttons[0].trigger('mouseleave');
+    await buttons[1].trigger('mousedown');
+    vi.advanceTimersByTime(400);
+    await buttons[1].trigger('mouseup');
+    await buttons[1].trigger('mouseenter');
+    await buttons[1].trigger('mouseleave');
     expect(wrapper.find('svg').exists()).toBe(true);
 
     wrapper.unmount();

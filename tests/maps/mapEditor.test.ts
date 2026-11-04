@@ -6,7 +6,7 @@ import MapEditor from '@/maps/components/MapEditor.vue';
 import type { MapEntity, MapFile } from '@/maps/types';
 import { quasarStubs } from '../helpers/quasar-stubs';
 import { createMapFileFromFile } from '@/maps/utils/mapFileUtils';
-import { getMapFile, putMapFile } from '@/maps/maps';
+import { deleteMapFile, getMapFile, putMapFile } from '@/maps/maps';
 
 vi.mock('@/maps/maps', () => ({
   getMapFile: vi.fn(),
@@ -36,6 +36,10 @@ const locationMocks = vi.hoisted(() => {
 
 vi.mock('@/maps/locations', () => ({
   useMapLocationStore: () => locationMocks.store,
+}));
+
+vi.mock('@/dialogs', () => ({
+  alert: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/maps/utils/mapFileUtils', () => ({
@@ -106,6 +110,77 @@ describe('MapEditor', () => {
     vi.mocked(createMapFileFromFile).mockResolvedValue(mapFile);
     vi.mocked(getMapFile).mockResolvedValue(mapFile);
     vi.mocked(putMapFile).mockResolvedValue(undefined);
+    vi.mocked(deleteMapFile).mockResolvedValue(undefined);
+  });
+
+  it('handles image selection errors and replaces an existing file', async () => {
+    const wrapper = mount(MapEditor, {
+      props: { map: existingMap, isOpen: true },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('world.png');
+    });
+
+    const fileInput = wrapper.find('input[type="file"]');
+    await fileInput.trigger('change');
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [new File(['text'], 'note.txt', { type: 'text/plain' })],
+    });
+    await fileInput.trigger('change');
+
+    vi.mocked(createMapFileFromFile).mockRejectedValueOnce(new Error('bad'));
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [new File(['image'], 'bad.png', { type: 'image/png' })],
+    });
+    await fileInput.trigger('change');
+    await nextTick();
+
+    vi.mocked(createMapFileFromFile).mockResolvedValueOnce({
+      ...mapFile,
+      id: 'file2',
+      name: 'new.png',
+    });
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [new File(['image'], 'new.png', { type: 'image/png' })],
+    });
+    await fileInput.trigger('change');
+    await nextTick();
+    wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
+    await nextTick();
+    expect(putMapFile).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'file2' }),
+    );
+    expect(deleteMapFile).toHaveBeenCalledWith('file1');
+    wrapper.unmount();
+  });
+
+  it('reports preview failures and missing images', async () => {
+    vi.mocked(getMapFile).mockResolvedValueOnce({
+      ...mapFile,
+      name: 'broken.png',
+    });
+    const wrapper = mount(MapEditor, {
+      props: { map: existingMap, isOpen: true },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+    await vi.waitFor(() => {
+      expect(getMapFile).toHaveBeenCalledWith('file1');
+    });
+    wrapper.unmount();
+
+    const noImage = mount(MapEditor, {
+      props: { map: null, isOpen: true },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+    await noImage.find('#map-title').setValue('No image');
+    noImage.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
+    await nextTick();
+    expect(noImage.emitted('submit')).toBeUndefined();
+    noImage.unmount();
   });
 
   it('creates a map with a selected image and locations', async () => {

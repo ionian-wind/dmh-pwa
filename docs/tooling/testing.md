@@ -66,32 +66,32 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 143. Total tests: 1065.
+Total test files: 153. Total tests: 1169.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  143 passed (143)
-Tests       1065 passed (1065)
+Test Files  153 passed (153)
+Tests       1169 passed (1169)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  83.03%
-Branches    70.22%
-Functions    85.23%
-Lines       84.41%
+Statements  94.36%
+Branches    83.20%
+Functions    94.54%
+Lines       96.12%
 ```
 
-Vitest 5's AST-based V8 remapping counts Vue template and module-loader code
-more completely than the previous tooling, so the measured percentages are lower
-than earlier runs even though the test suite is unchanged. `vitest.config.ts`
-enforces global thresholds (82% statements, 69% branches, 84% functions, 83%
-lines) just below the current measured coverage so future changes cannot
-silently drop it. Generated output (`dist/`, `dev-dist/`, service workers) and
-standalone scripts are excluded from coverage.
+`vitest.config.ts` enforces 87% statements, functions and lines globally, plus
+87% statements and lines for **every individual source file**. The global branch
+threshold is 80%. Third-party integration wrappers (Milkdown, Quickdraw, the
+Monaco syntax view and the copied Tree components), the legacy dice CST-to-AST
+mapper, the app shell and generated output are excluded from coverage. All other
+components, stores, helpers and plugins must stay at or above the per-file
+threshold.
 
 The maintained regression suite is also green:
 

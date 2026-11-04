@@ -136,3 +136,36 @@ describe('Inline Rolls Plugin > Indexing', () => {
     expect((ast.right.left as any).index).toBe(1);
   });
 });
+
+describe('Inline Rolls Plugin > nested and plugin methods', () => {
+  it('extracts rolls from nested arrays', () => {
+    const ast = {
+      type: 'group',
+      children: [
+        [
+          { type: 'inline-roll', expression: '1d6' },
+          { type: 'inline-roll', expression: '1d8' },
+        ],
+      ],
+    };
+    expect(extractInlineRolls(ast as any)).toHaveLength(2);
+  });
+
+  it('uses plugin extraction and evaluation helpers', async () => {
+    const ast = { type: 'inline-roll', expression: '1d6' };
+    expect(inlineRollsPlugin.extractRolls?.(ast as any)).toHaveLength(1);
+    (parseInput as Mock).mockReturnValue({ type: 'number', value: 4 });
+    (evaluate as Mock).mockReturnValueOnce({
+      total: 4,
+      rolls: [4],
+      warnings: [],
+      details: {},
+    });
+    const result = inlineRollsPlugin.evaluateRollReference?.(
+      { type: 'inline-roll', expression: '1d6', index: 0 } as any,
+      {} as EvaluationContext,
+    );
+    expect(result).toBeDefined();
+    expect(evaluate).toHaveBeenCalled();
+  });
+});

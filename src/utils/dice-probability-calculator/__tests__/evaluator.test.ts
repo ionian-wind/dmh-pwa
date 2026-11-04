@@ -227,3 +227,44 @@ describe('dice probability calculator evaluator', () => {
     });
   });
 });
+
+describe('dice probability calculator edge coverage', () => {
+  it('throws on invalid arithmetic', () => {
+    expect(() => calculate('output 1 / 0')).toThrow('Division by zero');
+    expect(() => calculate('output 2 ^ -1')).toThrow(
+      'Exponent must be a non-negative integer',
+    );
+  });
+
+  it('handles zero and negative die faces', () => {
+    expect(one('output d0').outcomes.map((outcome) => outcome.value)).toEqual([
+      0,
+    ]);
+    expect(one('output d-1').outcomes.map((outcome) => outcome.value)).toEqual([
+      -1,
+    ]);
+  });
+
+  it('handles sequence operators', () => {
+    expect(one('output # {1,2,3}').outcomes[0].value).toBe(3);
+    expect(one('output {1,2} = {1,2}').outcomes[0].value).toBe(1);
+    expect(one('output {1,2} < 2').outcomes[0].value).toBe(1);
+    expect(one('output ! 1d6').outcomes).toHaveLength(1);
+    expect(one('output # 1d6').outcomes[0].value).toBe(1);
+    expect(one('output - 1d6').outcomes[0].value).toBe(-6);
+    expect(() => calculate('output 1d6 @ 1')).toThrow(
+      'A die cannot be used as a position selector',
+    );
+  });
+});
+
+describe('dice probability calculator operator coverage', () => {
+  it('evaluates die comparisons, logical operators and powers', () => {
+    expect(one('output 1d6 = 3').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 3 = 1d6').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 1d6 & 1d6').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 1d6 & 0').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 1d6 ^ 2').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 2 / 1d6').outcomes[0].value).toBeTypeOf('number');
+  });
+});

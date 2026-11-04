@@ -1,100 +1,84 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-
-const noteStore = vi.hoisted(() => ({
-  create: vi.fn(),
-}));
-
-vi.mock('@/stores/notes', () => ({
-  useNoteStore: () => noteStore,
-}));
-
-vi.mock('@/notes/NoteEditor.vue', () => ({
-  __esModule: true,
-  default: defineComponent({
-    name: 'NoteEditor',
-    props: {
-      note: { type: Object, default: null },
-      isOpen: Boolean,
-      useModalStack: Boolean,
-    },
-    emits: ['submit', 'cancel'],
-    setup(_, { emit }) {
-      return () =>
-        h(
-          'button',
-          {
-            class: 'note-editor-submit',
-            onClick: () =>
-              emit('submit', {
-                id: '',
-                title: 'Created note',
-                content: '',
-                contentType: 'text',
-                tags: [],
-                hidden: false,
-                createdAt: 0,
-                updatedAt: 0,
-              }),
-          },
-          'save',
-        );
-    },
-  }),
-}));
-
 import EntityCreateDialog from '@/maps/components/EntityCreateDialog.vue';
 
-describe('EntityCreateDialog', () => {
-  beforeEach(() => {
-    noteStore.create.mockReset();
-    noteStore.create.mockImplementation(async (data: any) => ({
-      ...data,
-      id: 'note-1',
-    }));
-  });
+const mocks = vi.hoisted(() => ({
+  createLinkedEntity: vi.fn(),
+  alert: vi.fn().mockResolvedValue(undefined),
+}));
 
-  it('creates a related note and emits it as created', async () => {
+vi.mock('@/maps/utils/createLinkedEntity', () => ({
+  createLinkedEntity: mocks.createLinkedEntity,
+}));
+
+vi.mock('@/dialogs', () => ({ alert: mocks.alert }));
+
+describe('EntityCreateDialog', () => {
+  it('creates an entity, guards duplicates and emits its ref', async () => {
+    let resolveCreate: (value: any) => void = () => {};
+    mocks.createLinkedEntity.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
     const wrapper = mount(EntityCreateDialog, {
       props: { kind: 'note' },
+      global: { stubs: { NoteEditor: true } },
     });
-    await flushPromises();
+    const vm = wrapper.vm as any;
 
-    const editor = wrapper.findComponent({ name: 'NoteEditor' });
-    expect(
-      (editor.vm.$attrs as Record<string, unknown>).onSaved,
-    ).toBeUndefined();
-
-    const submit = wrapper.find('.note-editor-submit');
-    expect(submit.exists()).toBe(true);
-    await submit.trigger('click');
-    await flushPromises();
-
-    expect(noteStore.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Created note',
-        hidden: false,
-        contentType: 'text',
-      }),
-    );
+    const first = vm.handleSubmit({ title: 'New note' });
+    const second = vm.handleSubmit({ title: 'Second note' });
+    await second;
+    expect(mocks.createLinkedEntity).toHaveBeenCalledTimes(1);
+    resolveCreate({ id: 'n1', label: 'New note' });
+    await first;
     expect(wrapper.emitted('created')?.[0]).toEqual([
-      {
-        ref: { kind: 'note', id: 'note-1' },
-        label: 'Created note',
-      },
+      { ref: { kind: 'note', id: 'n1' }, label: 'New note' },
     ]);
     wrapper.unmount();
   });
 
-  it('forwards cancel from the editor', async () => {
+  it('handles creation errors and cancellation', async () => {
+    mocks.createLinkedEntity.mockRejectedValueOnce(new Error('bad'));
     const wrapper = mount(EntityCreateDialog, {
       props: { kind: 'note' },
+      global: { stubs: { NoteEditor: true } },
     });
+    const vm = wrapper.vm as any;
+    await vm.handleSubmit({ title: 'New note' });
     await flushPromises();
+    expect(mocks.alert).toHaveBeenCalled();
 
-    wrapper.findComponent({ name: 'NoteEditor' }).vm.$emit('cancel');
+    vm.handleCancel();
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+    vm.handleModelUpdate(false);
+    expect(wrapper.emitted('cancel')).toHaveLength(2);
+    vm.handleModelUpdate(true);
+    expect(wrapper.emitted('cancel')).toHaveLength(2);
     wrapper.unmount();
+  });
+
+  it('provides editor props for every entity kind', async () => {
+    for (const kind of [
+      'note',
+      'module',
+      'party',
+      'monster',
+      'encounter',
+      'character',
+      'map',
+      'location',
+      'playlist',
+    ] as const) {
+      const wrapper = mount(EntityCreateDialog, {
+        props: { kind },
+        global: { stubs: { NoteEditor: true } },
+      });
+      await flushPromises();
+      expect(wrapper.exists()).toBe(true);
+      wrapper.unmount();
+    }
   });
 });

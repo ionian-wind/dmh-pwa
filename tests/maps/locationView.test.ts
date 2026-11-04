@@ -9,13 +9,15 @@ const mocks = vi.hoisted(() => ({
     isLoaded: true,
     getById: vi.fn(),
     load: vi.fn().mockResolvedValue(undefined),
-    update: vi.fn(),
+    update: vi.fn().mockResolvedValue(undefined),
   },
   mapStore: {
     isLoaded: true,
     items: [] as any[],
     load: vi.fn().mockResolvedValue(undefined),
   },
+  deleteLocation: vi.fn(),
+  confirm: vi.fn().mockResolvedValue(true),
   push: vi.fn(),
 }));
 
@@ -26,12 +28,14 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/maps/locations', () => ({
   useMapLocationStore: () => mocks.locationStore,
-  deleteMapLocation: vi.fn(),
+  deleteMapLocation: mocks.deleteLocation,
 }));
 
 vi.mock('@/maps/maps', () => ({
   useMapStore: () => mocks.mapStore,
 }));
+
+vi.mock('@/dialogs', () => ({ confirm: mocks.confirm }));
 
 vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
   useMapEntityCatalog: () => ({
@@ -49,13 +53,78 @@ vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
   }),
 }));
 
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: { kind: String, modelValue: Array },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    return () =>
+      h(
+        'button',
+        {
+          class: 'link-update',
+          'data-kind': props.kind,
+          onClick: () =>
+            emit('update:modelValue', [{ kind: props.kind, id: 'note-1' }]),
+        },
+        'update',
+      );
+  },
+});
+
+const TabGroupStub = defineComponent({
+  name: 'TabGroup',
+  props: { modelValue: String, tabs: Array },
+  emits: ['update:modelValue'],
+  setup(_, { slots }) {
+    return () => h('div', { class: 'tab-group-stub' }, slots.default?.());
+  },
+});
+
+const MapLocationEditorStub = defineComponent({
+  name: 'MapLocationEditor',
+  props: { isOpen: Boolean, location: Object },
+  emits: ['save', 'delete', 'cancel'],
+  setup(props, { emit }) {
+    return () =>
+      h('div', { class: 'location-editor-stub' }, [
+        h(
+          'button',
+          {
+            class: 'editor-save',
+            onClick: () =>
+              emit('save', {
+                ...props.location,
+                name: 'Updated town',
+                description: 'Updated',
+                entities: [],
+              }),
+          },
+          'save',
+        ),
+        h(
+          'button',
+          { class: 'editor-delete', onClick: () => emit('delete') },
+          'delete',
+        ),
+        h(
+          'button',
+          { class: 'editor-cancel', onClick: () => emit('cancel') },
+          'cancel',
+        ),
+      ]);
+  },
+});
+
 const BaseEntityTabViewStub = defineComponent({
   name: 'BaseEntityTabView',
   props: {
     tabs: { type: Array, default: () => [] },
     headerButtons: { type: Array, default: () => [] },
+    onDelete: Function,
+    onEdit: Function,
   },
-  setup(props) {
+  setup(props, { slots }) {
     return () =>
       h('div', [
         h(
@@ -72,6 +141,18 @@ const BaseEntityTabViewStub = defineComponent({
             onClick: button.event,
           }),
         ),
+        h('button', { class: 'entity-delete', onClick: props.onDelete }, 'del'),
+        h('button', { class: 'entity-edit', onClick: props.onEdit }, 'edit'),
+        h('div', { class: 'default-slot' }, slots.default?.()),
+        ...Object.entries(slots)
+          .filter(
+            ([name]) => !['default', 'sidepanel', 'editor'].includes(name),
+          )
+          .map(([name, slot]) =>
+            h('div', { class: 'entity-slot', 'data-slot': name }, slot?.()),
+          ),
+        h('div', { class: 'sidepanel-slot' }, slots.sidepanel?.()),
+        h('div', { class: 'editor-slot' }, slots.editor?.()),
       ]);
   },
 });
@@ -80,7 +161,7 @@ const location = {
   id: 'l1',
   name: 'Town',
   description: '',
-  entities: [],
+  entities: [{ kind: 'note', id: 'note-1' }],
   createdAt: 1,
   updatedAt: 1,
 };
@@ -90,10 +171,10 @@ function mountLocationView() {
     global: {
       stubs: {
         BaseEntityTabView: BaseEntityTabViewStub,
-        TabGroup: true,
-        EntitiesLinking: true,
+        TabGroup: TabGroupStub,
+        EntitiesLinking: EntitiesLinkingStub,
         EntityScenesPanel: true,
-        MapLocationEditor: true,
+        MapLocationEditor: MapLocationEditorStub,
       },
     },
   });
@@ -130,6 +211,65 @@ describe('LocationView', () => {
     await flushPromises();
 
     expect(wrapper.findAll('.header-button')).toHaveLength(0);
+    wrapper.unmount();
+  });
+
+  it('updates links, edits and deletes the location', async () => {
+    mocks.locationStore.getById.mockReturnValue(location);
+    mocks.mapStore.items = [];
+
+    const wrapper = mountLocationView();
+    await flushPromises();
+
+    await wrapper.find('.link-update').trigger('click');
+    expect(mocks.locationStore.update).toHaveBeenCalledWith('l1', {
+      entities: [{ kind: 'note', id: 'note-1' }],
+    });
+
+    await wrapper.find('.entity-edit').trigger('click');
+    expect(wrapper.find('.location-editor-stub').exists()).toBe(true);
+    await wrapper.find('.editor-save').trigger('click');
+    expect(mocks.locationStore.update).toHaveBeenCalledWith(
+      'l1',
+      expect.objectContaining({ name: 'Updated town' }),
+    );
+    await wrapper.find('.editor-cancel').trigger('click');
+
+    await wrapper.find('.entity-delete').trigger('click');
+    await flushPromises();
+    expect(mocks.deleteLocation).toHaveBeenCalledWith('l1');
+    expect(mocks.push).toHaveBeenCalledWith('/maps?tab=locations');
+    wrapper.unmount();
+  });
+
+  it('lists linked markers and areas from all maps', async () => {
+    mocks.locationStore.getById.mockReturnValue(location);
+    mocks.mapStore.items = [
+      {
+        id: 'map1',
+        title: 'World',
+        locationId: 'l1',
+        markers: [{ id: 'm1', title: 'Castle', locationId: 'l1' }],
+        areas: [{ id: 'a1', title: 'Forest', locationId: 'l1' }],
+      },
+    ];
+
+    const wrapper = mountLocationView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Castle');
+    expect(wrapper.text()).toContain('Forest');
+    await wrapper.find('.location-linked-item').trigger('click');
+    expect(mocks.push).toHaveBeenCalledWith('/maps/map1');
+    wrapper.unmount();
+  });
+
+  it('does nothing when the location is missing', async () => {
+    mocks.locationStore.getById.mockReturnValue(undefined);
+    mocks.mapStore.items = [];
+    const wrapper = mountLocationView();
+    await flushPromises();
+    expect(wrapper.findAll('.tab')).toHaveLength(1);
     wrapper.unmount();
   });
 });

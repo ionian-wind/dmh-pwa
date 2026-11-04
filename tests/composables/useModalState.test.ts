@@ -61,6 +61,13 @@ describe('useModalState', () => {
     expect(state.currentMentionModal.value).toBeNull();
   });
 
+  it('removes unknown mention modal ids from the stack', () => {
+    state.openMentionModal('m1', { id: 'n1' }, 'note');
+    state.closeMentionModal('missing');
+    expect(state.currentMentionModal.value?.modalId).toBe('m1');
+    state.closeMentionModal('m1');
+  });
+
   it('treats reopening the previous entity as a back action', () => {
     state.openMentionModal('m1', { id: 'n1' }, 'note');
     state.openMentionModal('m2', { id: 'm1' }, 'monster');

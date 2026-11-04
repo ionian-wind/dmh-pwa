@@ -109,6 +109,14 @@ function track(id: string, overrides: Record<string, any> = {}) {
 }
 
 describe('jukebox player store', () => {
+  it('disables playback without a current track or queue', () => {
+    setActivePinia(createPinia());
+    const player = useJukeboxPlayerStore();
+    expect(player.canPlay).toBe(false);
+    expect(player.hasNextTrack).toBe(false);
+    expect(player.hasPrevTrack).toBe(false);
+  });
+
   beforeEach(() => {
     setActivePinia(createPinia());
     mocks.howls.length = 0;

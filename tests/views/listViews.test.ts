@@ -230,6 +230,7 @@ describe('list views', () => {
     const store = useModuleStore();
     const create = vi.spyOn(store, 'create').mockResolvedValue({} as any);
     vi.spyOn(store, 'update').mockResolvedValue({} as any);
+    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
 
     const moduleItem = {
       id: 'mod1',
@@ -249,6 +250,10 @@ describe('list views', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Campaign', noteTree: [] }),
     );
+    await expect(card.onDelete()).resolves.toBe(true);
+    expect(store.remove).toHaveBeenCalledWith('mod1');
+    vi.mocked(confirm).mockResolvedValue(false);
+    await expect(card.onDelete()).resolves.toBe(false);
     wrapper.unmount();
   });
 
@@ -257,6 +262,7 @@ describe('list views', () => {
     const store = useNoteStore();
     vi.spyOn(store, 'create').mockResolvedValue({} as any);
     vi.spyOn(store, 'update').mockResolvedValue({} as any);
+    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
     const setTagFilter = vi.spyOn(store, 'setTagFilter');
 
     const note = { id: 'n1', title: 'Session', tags: ['combat'] } as any;
@@ -305,6 +311,15 @@ describe('list views', () => {
     );
     expect(router.currentRoute.value.query.tag).toBe('combat');
 
+    list(wrapper).vm.$emit('cancel');
+    expect((list(wrapper).props('editorProps') as any)(null).contentType).toBe(
+      undefined,
+    );
+    await expect(card.onDelete()).resolves.toBe(true);
+    expect(store.remove).toHaveBeenCalledWith('n1');
+    vi.mocked(confirm).mockResolvedValue(false);
+    await expect(card.onDelete()).resolves.toBe(false);
+
     await router.replace('/notes?tag=social');
     await flushPromises();
     expect(setTagFilter).toHaveBeenCalledWith('social');
@@ -352,6 +367,7 @@ describe('list views', () => {
     const store = useEncounterStore();
     vi.spyOn(store, 'create').mockResolvedValue({} as any);
     vi.spyOn(store, 'update').mockResolvedValue({} as any);
+    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
 
     const encounter = { id: 'e1', name: 'Ambush' } as any;
     const card = (list(wrapper).props('cardProps') as any)(encounter);
@@ -386,6 +402,10 @@ describe('list views', () => {
     await flushPromises();
     expect(store.update).toHaveBeenCalled();
     expect(store.create).toHaveBeenCalledTimes(2);
+    await expect(card.onDelete()).resolves.toBe(true);
+    expect(store.remove).toHaveBeenCalledWith('e1');
+    vi.mocked(confirm).mockResolvedValue(false);
+    await expect(card.onDelete()).resolves.toBe(false);
     wrapper.unmount();
   });
 
