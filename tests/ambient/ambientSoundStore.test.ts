@@ -440,13 +440,16 @@ describe('ambient sound store', () => {
 
     await store.playOneShot('forest', 'thunder');
     await store.playOneShot('forest', 'thunder');
+    expect(store.oneShotPlayCount('forest', 'thunder')).toBe(2);
     const endHandler = mocks.audioEngine.setOneShotEndHandler.mock.calls[0][0];
 
     endHandler('oneShot:forest:thunder');
     expect(store.isOneShotPlaying('forest', 'thunder')).toBe(true);
+    expect(store.oneShotPlayCount('forest', 'thunder')).toBe(1);
 
     endHandler('oneShot:forest:thunder');
     expect(store.isOneShotPlaying('forest', 'thunder')).toBe(false);
+    expect(store.oneShotPlayCount('forest', 'thunder')).toBe(0);
   });
 
   it('handles selection, transport toggles, music and previews', async () => {

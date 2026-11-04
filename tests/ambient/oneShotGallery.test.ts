@@ -6,6 +6,7 @@ const storeMock = vi.hoisted(() => ({
   galleryOneShots: [] as any[],
   allScenes: [] as any[],
   isOneShotPlaying: vi.fn(() => false),
+  oneShotPlayCount: vi.fn(() => 0),
   oneShotProgress: vi.fn(() => 0),
   playOneShot: vi.fn(),
 }));
@@ -39,6 +40,8 @@ describe('OneShotGallery', () => {
   beforeEach(() => {
     storeMock.isOneShotPlaying.mockReset();
     storeMock.isOneShotPlaying.mockReturnValue(false);
+    storeMock.oneShotPlayCount.mockReset();
+    storeMock.oneShotPlayCount.mockReturnValue(0);
     storeMock.oneShotProgress.mockReset();
     storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.playOneShot.mockReset();

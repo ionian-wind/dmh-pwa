@@ -9,22 +9,27 @@
     @keydown.enter.prevent="play"
     @keydown.space.prevent="play"
   >
-    <QKnob
-      v-model="progress"
-      :min="0"
-      :max="100"
-      :thickness="0.2"
-      :size="`${knobSize}px`"
-      :color="playing ? 'primary' : 'grey-7'"
-      track-color="grey-4"
-      show-value
-      readonly
-      :instant-feedback="true"
-      :no-pointer-events="true"
-      class="one-shot-knob"
-    >
-      <AmbientIcon :icon="oneShot.icon" :size="iconSize" />
-    </QKnob>
+    <div class="one-shot-knob-wrap">
+      <QKnob
+        v-model="progress"
+        :min="0"
+        :max="100"
+        :thickness="0.2"
+        :size="`${knobSize}px`"
+        :color="playing ? 'primary' : 'grey-7'"
+        track-color="grey-4"
+        show-value
+        readonly
+        :instant-feedback="true"
+        :no-pointer-events="true"
+        class="one-shot-knob"
+      >
+        <AmbientIcon :icon="oneShot.icon" :size="iconSize" />
+      </QKnob>
+      <QBadge v-if="playCount > 1" color="primary" class="one-shot-count">
+        ×{{ playCount }}
+      </QBadge>
+    </div>
 
     <div class="text-subtitle2 text-weight-medium text-center">
       {{ oneShot.name }}
@@ -52,6 +57,9 @@ const progress = ref(0);
 
 const playing = computed(() =>
   store.isOneShotPlaying(props.packId, props.oneShot.id),
+);
+const playCount = computed(() =>
+  store.oneShotPlayCount(props.packId, props.oneShot.id),
 );
 const iconSize = computed(() => Math.round(props.knobSize * 0.34));
 
@@ -122,8 +130,20 @@ onUnmounted(() => {
   border-radius: var(--border-radius);
 }
 
+.one-shot-knob-wrap {
+  position: relative;
+  display: flex;
+}
+
 .one-shot-knob {
   pointer-events: none;
   transition: color 0.2s ease;
+}
+
+.one-shot-count {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  pointer-events: none;
 }
 </style>

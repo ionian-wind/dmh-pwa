@@ -566,6 +566,8 @@ A global content gallery for one-shot entries.
   allowed, and the knob tracks progress of the most recent still-playing
   instance.
 - The knob is highlighted while any instance of the one-shot is playing.
+- When the same one-shot is playing more than once at the same time, the knob
+  shows an `×N` badge with the active instance count.
 - Knobs bind progress with `v-model` in the 0–100 range, use `min=0` / `max=100`,
   `instant-feedback`, and disable pointer events on the knob itself. A wrapping
   control handles clicks and keyboard activation.

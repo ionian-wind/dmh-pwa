@@ -15,6 +15,7 @@ const storeMock = vi.hoisted(() => ({
   setMusicPreset: vi.fn(),
   playOneShot: vi.fn(),
   isOneShotPlaying: vi.fn(() => false),
+  oneShotPlayCount: vi.fn(() => 0),
   oneShotProgress: vi.fn(() => 0),
   musicProgress: vi.fn(() => 0),
   toggleAmbience: vi.fn(),
@@ -35,6 +36,7 @@ describe('ScenePlayerView', () => {
       storeMock.setMusicPreset,
       storeMock.playOneShot,
       storeMock.isOneShotPlaying,
+      storeMock.oneShotPlayCount,
       storeMock.oneShotProgress,
       storeMock.musicProgress,
       storeMock.toggleAmbience,
@@ -48,6 +50,7 @@ describe('ScenePlayerView', () => {
     storeMock.hasActiveLayers = true;
     storeMock.activeSceneKey = 'pack-1::scene-1';
     storeMock.isOneShotPlaying.mockReturnValue(false);
+    storeMock.oneShotPlayCount.mockReturnValue(0);
     storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.musicProgress.mockReturnValue(0);
     storeMock.activeLayers = new Map([

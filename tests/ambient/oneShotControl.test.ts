@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 
 const storeMock = vi.hoisted(() => ({
   isOneShotPlaying: vi.fn(() => false),
+  oneShotPlayCount: vi.fn(() => 0),
   oneShotProgress: vi.fn(() => 0),
   playOneShot: vi.fn(),
 }));
@@ -27,6 +28,8 @@ describe('OneShotControl', () => {
   beforeEach(() => {
     storeMock.isOneShotPlaying.mockReset();
     storeMock.isOneShotPlaying.mockReturnValue(false);
+    storeMock.oneShotPlayCount.mockReset();
+    storeMock.oneShotPlayCount.mockReturnValue(0);
     storeMock.oneShotProgress.mockReset();
     storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.playOneShot.mockReset();
@@ -73,6 +76,18 @@ describe('OneShotControl', () => {
     wrapper.unmount();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('shows a count when the same one-shot overlaps', () => {
+    storeMock.isOneShotPlaying.mockReturnValue(true);
+    storeMock.oneShotPlayCount.mockReturnValue(2);
+    const wrapper = mount(OneShotControl, {
+      props: { packId: 'pack-1', oneShot: thunder },
+      global: { stubs: quasarStubs },
+    });
+
+    expect(wrapper.find('.one-shot-count').text()).toBe('×2');
+    wrapper.unmount();
   });
 
   it('shows one-shot progress on the knob', async () => {
