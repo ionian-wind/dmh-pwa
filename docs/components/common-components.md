@@ -165,6 +165,14 @@ followed by a flexible separator and exposes the group content through the
 default slot. Consecutive groups get vertical spacing. Used by the ambient
 ambience/one-shot galleries and the scene player groups.
 
+### `VolumeControl.vue`
+
+Shared speaker button with a hover/wheel volume popup. It accepts a `modelValue`
+in the 0–1 range, a `label` used for the title/aria text and slider label, and
+an optional `muteable` flag. It emits `update:modelValue` with the next clamped
+volume and, when muteable, `toggle-mute` on click. Percentages are always shown
+as integers. Used by the jukebox player and the ambient scene title line.
+
 ### `TagSelector.vue`
 
 - Adds and removes string tags with a standard outlined `QInput` and `QChip`

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import TrackInfo from '@/jukebox/components/TrackInfo.vue';
+import VolumeControl from '@/components/common/VolumeControl.vue';
 import AlbumPicture from '@/jukebox/components/AlbumPicture.vue';
 import {
   getGradientContrastColor,
@@ -20,8 +21,6 @@ import {
   IconRepeat,
   IconRepeatOnce,
   IconSettingsAutomation,
-  IconVolume,
-  IconVolumeOff,
 } from '@tabler/icons-vue';
 import { useConfigStore } from '@/utils/configStore';
 const props = defineProps<{
@@ -81,49 +80,6 @@ const controlStyle = computed<Record<string, string>>(() => {
   return style;
 });
 
-// Volume popup open state
-const isVolumePopupOpen = ref(false);
-const isVolumeHovered = ref(false);
-const isVolumePopupDragging = ref(false);
-const isSettingsPopupOpen = ref(false);
-
-let closeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-function onVolumePointerDown() {
-  isVolumePopupDragging.value = true;
-  document.addEventListener(
-    'pointerup',
-    () => {
-      isVolumePopupDragging.value = false;
-    },
-    { once: true },
-  );
-}
-
-function onVolumeEnter() {
-  if (closeTimeout) {
-    clearTimeout(closeTimeout);
-    closeTimeout = null;
-  }
-  isVolumePopupOpen.value = true;
-}
-
-function onVolumeLeave() {
-  if (isVolumePopupDragging.value) return;
-  closeTimeout = setTimeout(() => {
-    isVolumePopupOpen.value = false;
-  }, 200);
-}
-
-function handleVolumeWheel(event: WheelEvent) {
-  event.preventDefault();
-  isVolumePopupOpen.value = true;
-  const delta = event.deltaY;
-  let newVolume = playerStore.volume - delta * 0.001;
-  newVolume = Math.max(0, Math.min(1, newVolume));
-  playerStore.setVolume(newVolume);
-}
-
 function setSmoothTrackChange(value: boolean) {
   configStore.jukeboxSmoothTrackChange = value;
 }
@@ -140,6 +96,8 @@ function setUseMiniPlayer(value: boolean) {
   configStore.jukeboxUseMiniPlayer = value;
 }
 
+const isSettingsPopupOpen = ref(false);
+
 const displayArtwork = computed(
   () => props.showArtwork && configStore.jukeboxDisplayCoverWhilePlaying,
 );
@@ -152,9 +110,6 @@ function toggleTimeDisplay() {
 }
 
 const progress = computed(() => playerStore.currentTime / playerStore.duration);
-const volumePercent = computed(
-  () => `${Math.round(playerStore.volume * 100)}%`,
-);
 
 // Add hover state for progress bar
 const isProgressHovered = ref(false);
@@ -304,57 +259,13 @@ const handleProgressChange = (value: number | null) => {
           </QBtnGroup>
 
           <QBtnGroup flat class="volume-control">
-            <QBtn
-              flat
-              @click="playerStore.toggleMute()"
-              @wheel.prevent="handleVolumeWheel"
-              class="volume-button"
-              :title="`${t('jukebox.volume')}: ${volumePercent}`"
-              :aria-label="`${t('jukebox.volume')}: ${volumePercent}`"
-              @mouseenter="onVolumeEnter"
-              @mouseleave="onVolumeLeave"
-            >
-              <IconVolume v-if="playerStore.volume > 0" />
-              <IconVolumeOff v-else />
-              <QPopupProxy
-                v-model="isVolumePopupOpen"
-                anchor="center left"
-                self="center right"
-                :breakpoint="0"
-                no-parent-event
-              >
-                <div
-                  class="volume-popup q-pa-sm"
-                  style="width: 200px"
-                  @wheel.prevent="handleVolumeWheel"
-                  @pointerdown="onVolumePointerDown"
-                  @mouseenter="
-                    onVolumeEnter();
-                    isVolumeHovered = true;
-                  "
-                  @mouseleave="
-                    onVolumeLeave();
-                    isVolumeHovered = false;
-                  "
-                >
-                  <QSlider
-                    :model-value="playerStore.volume"
-                    :min="0"
-                    :max="1"
-                    :step="0.01"
-                    :markers="false"
-                    :color="isVolumeHovered ? 'info' : 'primary'"
-                    :track-size="isVolumeHovered ? '10px' : '5px'"
-                    size="md"
-                    class="volume-bar"
-                    @update:model-value="
-                      (value) => value !== null && playerStore.setVolume(value)
-                    "
-                  />
-                  <span class="volume-popup-value">{{ volumePercent }}</span>
-                </div>
-              </QPopupProxy>
-            </QBtn>
+            <VolumeControl
+              :model-value="playerStore.volume"
+              :label="t('jukebox.volume')"
+              muteable
+              @update:model-value="playerStore.setVolume"
+              @toggle-mute="playerStore.toggleMute"
+            />
 
             <QBtn
               flat
@@ -524,28 +435,6 @@ const handleProgressChange = (value: number | null) => {
   width: 100%;
 }
 
-.volume-bar.q-slider {
-  width: 100%;
-}
-
-/* Fix volume popup scrollbar issue */
-.volume-popup {
-  overflow: hidden;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 52px;
-}
-
-.volume-popup-value {
-  min-width: 38px;
-  text-align: right;
-  font-size: 0.75rem;
-  color: var(--color-text-light);
-  font-variant-numeric: tabular-nums;
-}
-
 .player-settings {
   display: flex;
   flex-direction: column;
@@ -566,18 +455,5 @@ const handleProgressChange = (value: number | null) => {
 
 .player-settings-label {
   white-space: nowrap;
-}
-
-.volume-popup .q-slider {
-  overflow: visible;
-  width: 100%;
-}
-
-.volume-popup .q-slider__track-container {
-  overflow: visible;
-}
-
-.volume-popup .q-slider__thumb {
-  overflow: visible;
 }
 </style>

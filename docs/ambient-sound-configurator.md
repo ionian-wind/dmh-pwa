@@ -650,8 +650,10 @@ header returns to the scene/gallery tabs. The view contains:
   presets show playback progress on their knob; the knob is read-only and acts
   as a round button.
 - **Playback controls** — play/pause and master volume sit at the far right of
-  the scene title line. The five-step intensity slider sits directly under the
-  mood block. Play/pause resumes the active scene after a pause.
+  the scene title line. The five-step intensity control sits directly under the
+  mood block: its label is at the left edge and the slider is centered in the
+  remaining row, up to a maximum width. Play/pause resumes the active scene
+  after a pause.
 - **Control gating** — while paused, mood knobs and ambience variation buttons
   are disabled. They are enabled again when the scene play/pause control
   resumes, or when nothing has been started yet.
@@ -698,8 +700,10 @@ footer.
 
 - Play/pause and master volume sit at the far right of the scene title line.
 - Five-step intensity slider (0/25/50/75/100) with snapping and tick marks sits
-  under the mood block.
-- Master volume opens a popup, including mouse-wheel adjustment.
+  under the mood block. The label stays at the left edge and the slider is
+  centered in the remaining row up to a maximum width.
+- Master volume opens a popup, including mouse-wheel adjustment. The shared
+  `VolumeControl` component is reused from the jukebox player.
 - Play/pause is disabled while no scene or ambience is active.
 - No scene icon, cover art, “Now playing” caption or stop button.
 

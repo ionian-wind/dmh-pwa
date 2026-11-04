@@ -1,32 +1,31 @@
 <template>
-  <div class="ambient-controls">
-    <QToolbar class="q-pa-none intensity-bar">
-      <div class="intensity-label text-caption text-grey-7">
-        {{ t('ambientSoundPage.intensity') }}
-      </div>
-      <div
+  <QToolbar class="q-pa-none">
+    <div
+      class="intensity-label text-caption text-uppercase text-grey-7 q-mr-md"
+    >
+      {{ t('ambientSoundPage.intensity') }}
+    </div>
+    <div class="col row justify-center">
+      <QSlider
+        :model-value="store.intensity / 100"
+        :min="0"
+        :max="1"
+        :step="0.25"
+        snap
+        :markers="true"
+        :color="isIntensityHovered ? 'info' : 'primary'"
+        :track-size="isIntensityHovered ? '10px' : '5px'"
         class="intensity-slider"
+        :aria-label="t('ambientSoundPage.intensity')"
         @mouseenter="isIntensityHovered = true"
         @mouseleave="isIntensityHovered = false"
-      >
-        <QSlider
-          :model-value="store.intensity / 100"
-          :min="0"
-          :max="1"
-          :step="0.25"
-          snap
-          :markers="true"
-          :color="isIntensityHovered ? 'info' : 'primary'"
-          :track-size="isIntensityHovered ? '10px' : '5px'"
-          :aria-label="t('ambientSoundPage.intensity')"
-          @update:model-value="
-            (value: number | null) =>
-              value !== null && store.setIntensity(Math.round(value * 100))
-          "
-        />
-      </div>
-    </QToolbar>
-  </div>
+        @update:model-value="
+          (value: number | null) =>
+            value !== null && store.setIntensity(Math.round(value * 100))
+        "
+      />
+    </div>
+  </QToolbar>
 </template>
 
 <script setup lang="ts">
@@ -40,32 +39,12 @@ const isIntensityHovered = ref(false);
 </script>
 
 <style scoped>
-.ambient-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.intensity-bar {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .intensity-slider {
-  flex: 1 1 auto;
+  max-width: 680px;
 }
 
 .intensity-slider :deep(.q-slider__markers) {
   color: var(--color-text-light);
   opacity: 0.9;
-}
-
-.intensity-label {
-  min-width: 68px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 </style>
