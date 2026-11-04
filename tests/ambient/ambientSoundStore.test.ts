@@ -473,6 +473,19 @@ describe('ambient sound store', () => {
     expect(store.oneShotPlayCount('forest', 'thunder')).toBe(0);
   });
 
+  it('stores master volume as an integer percentage', () => {
+    const store = createStore();
+
+    store.setMasterVolume(28.999999999999996);
+    expect(store.masterVolume).toBe(29);
+    expect(mocks.audioEngine.setMasterVolume).toHaveBeenCalledWith(0.29);
+
+    store.setMasterVolume(-5);
+    expect(store.masterVolume).toBe(0);
+    store.setMasterVolume(120);
+    expect(store.masterVolume).toBe(100);
+  });
+
   it('handles selection, transport toggles, music and previews', async () => {
     const store = createStore();
     await store.loadStoredPacks();

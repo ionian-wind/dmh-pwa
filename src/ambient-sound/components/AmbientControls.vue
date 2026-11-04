@@ -48,6 +48,7 @@ const isIntensityHovered = ref(false);
 
 .intensity-bar {
   width: 100%;
+  max-width: 420px;
   display: flex;
   align-items: center;
   gap: 8px;

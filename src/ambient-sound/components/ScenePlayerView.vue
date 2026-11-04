@@ -32,8 +32,8 @@
           </QBtn>
           <QBtn
             flat
-            :title="`${t('ambientSoundPage.masterVolume')}: ${store.masterVolume}%`"
-            :aria-label="`${t('ambientSoundPage.masterVolume')}: ${store.masterVolume}%`"
+            :title="`${t('ambientSoundPage.masterVolume')}: ${volumePercent}%`"
+            :aria-label="`${t('ambientSoundPage.masterVolume')}: ${volumePercent}%`"
             class="volume-button"
             @mouseenter="onVolumeEnter"
             @mouseleave="onVolumeLeave"
@@ -78,9 +78,7 @@
                       value !== null && store.setMasterVolume(value * 100)
                   "
                 />
-                <span class="volume-popup-value">
-                  {{ store.masterVolume }}%
-                </span>
+                <span class="volume-popup-value"> {{ volumePercent }}% </span>
               </div>
             </QPopupProxy>
           </QBtn>
@@ -206,6 +204,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const activeTab = ref('ambiences');
+const volumePercent = computed(() => Math.round(store.masterVolume));
 
 const isVolumePopupOpen = ref(false);
 const isVolumeHovered = ref(false);

@@ -58,6 +58,7 @@ describe('ScenePlayerView', () => {
     storeMock.musicEnabled = true;
     storeMock.isPlaying = true;
     storeMock.hasActiveLayers = true;
+    storeMock.masterVolume = 50;
     storeMock.activeSceneKey = 'pack-1::scene-1';
     storeMock.isOneShotPlaying.mockReturnValue(false);
     storeMock.oneShotPlayCount.mockReturnValue(0);
@@ -161,6 +162,22 @@ describe('ScenePlayerView', () => {
         .find('.scene-view-header button[aria-label="Play"]')
         .attributes('disabled'),
     ).toBeDefined();
+    wrapper.unmount();
+  });
+
+  it('formats fractional volume as an integer percentage', () => {
+    storeMock.masterVolume = 28.999999999999996;
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs },
+    });
+
+    expect(wrapper.find('.volume-popup-value').text()).toBe('29%');
+    expect(
+      wrapper
+        .find('.scene-view-header .volume-button')
+        .attributes('aria-label'),
+    ).toContain('29%');
     wrapper.unmount();
   });
 

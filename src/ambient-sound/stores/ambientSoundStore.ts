@@ -487,7 +487,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   }
 
   function setMasterVolume(value: number): void {
-    masterVolume.value = Math.max(0, Math.min(100, value));
+    masterVolume.value = Math.round(Math.max(0, Math.min(100, value)));
     audioEngine.setMasterVolume(masterVolume.value / 100);
   }
 
