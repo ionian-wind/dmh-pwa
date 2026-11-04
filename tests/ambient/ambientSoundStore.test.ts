@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
     getMusicProgress: vi.fn(),
     stopMusic: vi.fn(),
     setMusicEndHandler: vi.fn(),
+    setMusicNearEndHandler: vi.fn(),
     setOneShotEndHandler: vi.fn(),
   },
 }));
@@ -240,6 +241,21 @@ describe('ambient sound store', () => {
       true,
     );
     expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.75);
+  });
+
+  it('does not restart the active mood when it is selected again', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    await store.playScene('forest', 'tavern');
+
+    mocks.audioEngine.loadMusic.mockClear();
+    mocks.audioEngine.playMusic.mockClear();
+
+    store.setMusicPreset('explore');
+
+    expect(store.activeMusicPresetId).toBe('explore');
+    expect(mocks.audioEngine.loadMusic).not.toHaveBeenCalled();
+    expect(mocks.audioEngine.playMusic).not.toHaveBeenCalled();
   });
 
   it('switches scene music presets and queues another variant on end', async () => {

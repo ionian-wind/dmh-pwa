@@ -22,7 +22,8 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 - Overlapping plays of the same one-shot are supported and shown as an `×N`
   badge; one-shots can sound at any time.
 - Mood knobs start/switch mood music only; they never start scene ambience.
-  Temporary moods return to the previous mood or Off.
+  Switching moods crossfades the music, and clicking the active mood does
+  nothing. Temporary moods return to the previous mood or Off.
 - Only temporary mood knobs show playback progress.
 - Opening a scene never starts playback. When nothing is playing, mood and
   ambience controls can start their own audio. While paused, those controls are
@@ -635,18 +636,20 @@ view while the package sidebar stays in place. The scene content is rendered
 directly in the page rather than inside a card. The scene view URL is
 `/ambient/<scene-id>`, so the hashed scene ID is shareable and survives a
 reload. Playback starts only from an explicit action. A Back button in the view
-header returns to the scene/gallery tabs. The view contains:
+header returns to the scene/gallery tabs. If the scene's package is removed
+while the scene is open, the app redirects to `/ambient`. The view contains:
 
 - **Mood knobs** — labelled “Mood” in English and “Атмосфера” in Russian.
   A knob row containing Off plus one knob per scene music preset (for example
   Explore, Combat, Victory). Clicking a mood knob starts only that
-  mood music when nothing is playing, or switches the active preset while
-  playing; it never starts the scene's ambience layers. Ambience starts only
-  when a variation button is clicked. Only one preset can be active; Off stops
-  scene music without stopping ambiences. Within a preset the next music variant
-  is chosen randomly when the current track ends. Temporary presets such as
-  Victory play once, then return to the previously played preset or turn music
-  off when there was none. Only temporary
+  mood music when nothing is playing, or crossfades to the active preset while
+  playing; it never starts the scene's ambience layers. Clicking the preset that
+  is already active does nothing. Ambience starts only when a variation button
+  is clicked. Only one preset can be active; Off stops scene music without
+  stopping ambiences. Within a preset the next music variant is chosen randomly
+  and crossfaded in just before the current track ends. Temporary presets such
+  as Victory play once, then crossfade back to the previously played preset or
+  turn music off when there was none. Only temporary
   presets show playback progress on their knob; the knob is read-only and acts
   as a round button.
 - **Playback controls** — play/pause and master volume sit at the far right of
@@ -1400,10 +1403,11 @@ Add route to router:
   each with its own sample pool; selecting a variation switches the samples used
   and only one sample per layer plays at a time. Weather is represented as a
   normal ambient layer category rather than a separate panel.
-- Mood states support `continual` and `temporary` modes. Temporary music returns
-  to the previous mood after the track ends; continual music keeps looping.
-  Each mood can have several music files and one is chosen randomly. Clicking
-  the active mood does not restart its music.
+- Mood states support `continual` and `temporary` modes. Temporary music
+  crossfades back to the previous mood as the track ends; continual music keeps
+  playing by crossfading into another randomly chosen variant. Each mood can
+  have several music files. Clicking the active mood does not restart its
+  music.
 - Packages are built and edited by script, not in the app. The sidebar only
   imports, filters and removes packages.
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`

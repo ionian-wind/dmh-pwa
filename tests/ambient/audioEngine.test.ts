@@ -191,7 +191,8 @@ describe('ambient audio engine', () => {
     expect(onEnd).toHaveBeenCalledTimes(1);
   });
 
-  it('manages music tracks and transitions', () => {
+  it('crossfades music tracks and transitions', () => {
+    vi.useFakeTimers();
     engine.loadMusic('explore', 'blob:explore');
     engine.loadMusic('explore', 'blob:explore');
     expect(howler.instances).toHaveLength(1);
@@ -204,11 +205,14 @@ describe('ambient audio engine', () => {
     engine.setMusicVolume(0.2);
     expect(music.volume()).toBe(0.2);
 
+    const fade = vi.spyOn(music, 'fade');
     engine.loadMusic('combat', 'blob:combat');
-    expect(instance(0).unloaded).toBe(true);
+    expect(fade).toHaveBeenCalledWith(0.2, 0, 1000);
+    expect(music.unloaded).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(music.unloaded).toBe(true);
     expect(howler.instances).toHaveLength(2);
 
-    vi.useFakeTimers();
     engine.transitionToMusic('rest', 'blob:rest', 0.3);
     vi.advanceTimersByTime(1000);
     expect(instance(1).unloaded).toBe(true);
@@ -222,6 +226,35 @@ describe('ambient audio engine', () => {
     instance(2).play();
     engine.stopMusic(false);
     expect(instance(2).playing()).toBe(false);
+  });
+
+  it('reports when music is about to end so variants can blend', () => {
+    vi.useFakeTimers();
+    const onNearEnd = vi.fn();
+    engine.setMusicNearEndHandler(onNearEnd);
+    engine.loadMusic('explore', 'blob:explore');
+    engine.playMusic();
+
+    vi.advanceTimersByTime(4999);
+    expect(onNearEnd).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onNearEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores end events from a retired music track', () => {
+    vi.useFakeTimers();
+    const onEnd = vi.fn();
+    engine.setMusicEndHandler(onEnd);
+    engine.loadMusic('explore', 'blob:explore');
+    const retired = instance(0);
+    engine.playMusic();
+    engine.loadMusic('combat', 'blob:combat');
+
+    retired.opts.onend();
+    expect(onEnd).not.toHaveBeenCalled();
+
+    instance(1).opts.onend();
+    expect(onEnd).toHaveBeenCalledTimes(1);
   });
 
   it('starts music and transitions when no track is loaded', () => {

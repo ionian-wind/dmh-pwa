@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { reactive } from 'vue';
 
 const storeMock = vi.hoisted(() => ({
   loading: false,
@@ -37,6 +38,7 @@ const routeMock = vi.hoisted(() => ({
 
 const routerMock = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
 }));
 
 vi.mock('vue-router', () => ({
@@ -99,6 +101,7 @@ describe('AmbientSoundView', () => {
       rightDrawerMock.set,
       rightDrawerMock.clear,
       routerMock.push,
+      routerMock.replace,
     ]) {
       fn.mockClear();
     }
@@ -177,6 +180,42 @@ describe('AmbientSoundView', () => {
     sceneView.vm.$emit('back');
     await flushPromises();
     expect(routerMock.push).toHaveBeenLastCalledWith({
+      name: 'ambient-sound',
+    });
+    wrapper.unmount();
+  });
+
+  it('redirects to the ambient list when the routed scene is missing', async () => {
+    routeMock.params = { sceneId: 'removed-scene' };
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
+    await flushPromises();
+
+    expect(routerMock.replace).toHaveBeenCalledWith({
+      name: 'ambient-sound',
+    });
+    expect(wrapper.findComponent({ name: 'ScenePlayerView' }).exists()).toBe(
+      false,
+    );
+    wrapper.unmount();
+  });
+
+  it('redirects when the open scene loses its package', async () => {
+    routeMock.params = { sceneId: 'scene-1' };
+    storeMock.allScenes = reactive([
+      {
+        pack: { id: 'pack-1', name: 'Campaign' },
+        scene: { id: 'scene-1', name: 'Tavern' },
+      },
+    ]) as any;
+
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
+    await flushPromises();
+    expect(routerMock.replace).not.toHaveBeenCalled();
+
+    storeMock.allScenes.splice(0);
+    await flushPromises();
+
+    expect(routerMock.replace).toHaveBeenCalledWith({
       name: 'ambient-sound',
     });
     wrapper.unmount();

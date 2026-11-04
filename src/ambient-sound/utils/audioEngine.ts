@@ -1,14 +1,19 @@
 import { Howl } from 'howler';
 
+const MUSIC_CROSSFADE_MS = 1000;
+
 export class AudioEngine {
   private layers: Map<string, Howl> = new Map();
   private musicTrack: Howl | null = null;
+  private retiringMusicTracks = new Set<Howl>();
   private weatherTrack: Howl | null = null;
   private oneShots: Map<string, Howl> = new Map();
   private oneShotPlayIds: Map<string, number[]> = new Map();
   private masterVolume: number = 0.8;
   private currentMoodState: string = 'explore';
   private musicEndHandler: (() => void) | null = null;
+  private musicNearEndHandler: (() => void) | null = null;
+  private musicNearEndTimer: ReturnType<typeof setTimeout> | null = null;
   private oneShotEndHandler: ((sfxId: string) => void) | null = null;
 
   setMasterVolume(volume: number): void {
@@ -45,12 +50,45 @@ export class AudioEngine {
     this.musicEndHandler = handler;
   }
 
+  setMusicNearEndHandler(handler: (() => void) | null): void {
+    this.musicNearEndHandler = handler;
+  }
+
   setOneShotEndHandler(handler: ((sfxId: string) => void) | null): void {
     this.oneShotEndHandler = handler;
   }
 
-  private handleMusicEnd(): void {
+  private handleMusicEnd(track: Howl): void {
+    if (track !== this.musicTrack) return;
     this.musicEndHandler?.();
+  }
+
+  private clearMusicNearEndTimer(): void {
+    if (this.musicNearEndTimer !== null) {
+      clearTimeout(this.musicNearEndTimer);
+      this.musicNearEndTimer = null;
+    }
+  }
+
+  private scheduleMusicNearEnd(): void {
+    this.clearMusicNearEndTimer();
+    const track = this.musicTrack;
+    if (!track || !track.playing()) return;
+
+    const duration = track.duration();
+    const seek = track.seek();
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    if (typeof seek !== 'number' || !Number.isFinite(seek)) return;
+
+    const remainingMs = (duration - seek) * 1000;
+    const delay = remainingMs - MUSIC_CROSSFADE_MS;
+    if (delay <= 0) return;
+
+    this.musicNearEndTimer = setTimeout(() => {
+      this.musicNearEndTimer = null;
+      if (track !== this.musicTrack) return;
+      this.musicNearEndHandler?.();
+    }, delay);
   }
 
   playLayer(layerId: string, volume: number = 0.5): void {
@@ -176,17 +214,36 @@ export class AudioEngine {
     if (this.musicTrack && this.currentMoodState === moodState && !replace) {
       return;
     }
-    this.musicTrack?.unload();
-    this.musicTrack = new Howl({
+    this.clearMusicNearEndTimer();
+    if (this.musicTrack) {
+      if (this.musicTrack.playing()) {
+        this.fadeOutRetiringTrack(this.musicTrack);
+      } else {
+        this.musicTrack.unload();
+      }
+    }
+    const track = new Howl({
       src: [audioUrl],
       loop,
       volume: 0,
       html5: true,
       preload: true,
-      onend: () => this.handleMusicEnd(),
+      onend: () => this.handleMusicEnd(track),
+      onload: () => this.scheduleMusicNearEnd(),
       ...(format ? { format } : {}),
     });
+    this.musicTrack = track;
     this.currentMoodState = moodState;
+  }
+
+  private fadeOutRetiringTrack(track: Howl): void {
+    this.retiringMusicTracks.add(track);
+    track.fade(track.volume(), 0, MUSIC_CROSSFADE_MS);
+    setTimeout(() => {
+      track.stop();
+      track.unload();
+      this.retiringMusicTracks.delete(track);
+    }, MUSIC_CROSSFADE_MS);
   }
 
   playMusic(volume: number = 0.5): void {
@@ -194,18 +251,26 @@ export class AudioEngine {
       this.musicTrack.volume(volume * this.masterVolume);
       this.musicTrack.fade(0, volume * this.masterVolume, 1000);
       this.musicTrack.play();
+      this.scheduleMusicNearEnd();
     }
   }
 
   stopMusic(fadeOut: boolean = true): void {
+    this.clearMusicNearEndTimer();
+    this.retiringMusicTracks.forEach((track) => {
+      track.stop();
+      track.unload();
+    });
+    this.retiringMusicTracks.clear();
     if (this.musicTrack) {
-      if (fadeOut && this.musicTrack.playing()) {
-        this.musicTrack.fade(this.musicTrack.volume(), 0, 1000);
+      const track = this.musicTrack;
+      if (fadeOut && track.playing()) {
+        track.fade(track.volume(), 0, 1000);
         setTimeout(() => {
-          this.musicTrack?.stop();
+          track.stop();
         }, 1000);
       } else {
-        this.musicTrack.stop();
+        track.stop();
       }
     }
   }
@@ -227,23 +292,27 @@ export class AudioEngine {
     loop = true,
     format?: string[],
   ): void {
+    this.clearMusicNearEndTimer();
     if (this.musicTrack) {
       this.musicTrack.fade(this.musicTrack.volume(), 0, 1000);
       setTimeout(() => {
         this.musicTrack?.stop();
         this.musicTrack?.unload();
-        this.musicTrack = new Howl({
+        const track = new Howl({
           src: [newAudioUrl],
           loop,
           volume: 0,
           html5: true,
           preload: true,
-          onend: () => this.handleMusicEnd(),
+          onend: () => this.handleMusicEnd(track),
+          onload: () => this.scheduleMusicNearEnd(),
           ...(format ? { format } : {}),
         });
+        this.musicTrack = track;
         this.currentMoodState = newMoodState;
-        this.musicTrack.play();
-        this.musicTrack.fade(0, volume * this.masterVolume, 1000);
+        track.play();
+        track.fade(0, volume * this.masterVolume, 1000);
+        this.scheduleMusicNearEnd();
       }, 1000);
     } else {
       this.loadMusic(newMoodState, newAudioUrl, loop, format);
@@ -296,8 +365,10 @@ export class AudioEngine {
   }
 
   pauseAll(): void {
+    this.clearMusicNearEndTimer();
     this.layers.forEach((layer) => layer.pause());
     this.musicTrack?.pause();
+    this.retiringMusicTracks.forEach((track) => track.pause());
     this.weatherTrack?.pause();
   }
 
@@ -309,6 +380,7 @@ export class AudioEngine {
     });
     if (this.musicTrack && this.musicTrack.volume() > 0) {
       this.musicTrack.play();
+      this.scheduleMusicNearEnd();
     }
     if (this.weatherTrack && this.weatherTrack.volume() > 0) {
       this.weatherTrack.play();
@@ -316,15 +388,21 @@ export class AudioEngine {
   }
 
   stopAll(): void {
+    this.clearMusicNearEndTimer();
     this.layers.forEach((layer) => layer.stop());
     this.musicTrack?.stop();
+    this.retiringMusicTracks.forEach((track) => track.stop());
+    this.retiringMusicTracks.clear();
     this.weatherTrack?.stop();
   }
 
   dispose(): void {
+    this.clearMusicNearEndTimer();
     this.layers.forEach((layer) => layer.unload());
     this.oneShots.forEach((sfx) => sfx.unload());
     this.musicTrack?.unload();
+    this.retiringMusicTracks.forEach((track) => track.unload());
+    this.retiringMusicTracks.clear();
     this.weatherTrack?.unload();
     this.layers.clear();
     this.oneShots.clear();

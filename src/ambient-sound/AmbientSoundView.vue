@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
@@ -62,14 +62,29 @@ const route = useRoute();
 const router = useRouter();
 
 const activeTab = ref('scenes');
+const packsReady = ref(false);
 
 const selectedScene = computed(() => {
   const sceneId =
     typeof route.params.sceneId === 'string' ? route.params.sceneId : '';
   if (!sceneId) return null;
   const match = store.allScenes.find(({ scene }) => scene.id === sceneId);
-  return { packId: match?.pack.id ?? '', sceneId };
+  return match ? { packId: match.pack.id, sceneId } : null;
 });
+
+watch(
+  [() => route.params.sceneId, selectedScene, packsReady],
+  () => {
+    if (
+      packsReady.value &&
+      typeof route.params.sceneId === 'string' &&
+      !selectedScene.value
+    ) {
+      void router.replace({ name: 'ambient-sound' });
+    }
+  },
+  { immediate: true },
+);
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);
@@ -107,6 +122,7 @@ onMounted(async () => {
     headerResizeObserver.observe(header);
   }
   await store.loadStoredPacks();
+  packsReady.value = true;
 });
 
 onUnmounted(() => {

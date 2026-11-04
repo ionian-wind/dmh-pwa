@@ -515,6 +515,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       return;
     }
 
+    if (presetId === activeMusicPresetId.value && musicEnabled.value) {
+      return;
+    }
+
     const scene = activeScene.value?.scene ?? null;
     const preset = scene?.musicPresets.find((item) => item.id === presetId);
     if (preset?.mode === 'temporary') {
@@ -723,6 +727,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
   }
 
   audioEngine.setMusicEndHandler(handleSceneMusicEnd);
+  audioEngine.setMusicNearEndHandler(handleSceneMusicEnd);
   audioEngine.setOneShotEndHandler(handleOneShotEnd);
   setAmbientPauseHandler(pause);
 
