@@ -110,8 +110,9 @@ under `LayoutKey`. Consumers use `useLayout()` / `useRightDrawer()` from
 The right drawer is ownership-aware: a view that did not set the current
 content cannot clear it.
 
-`BaseListView` and `BaseEntityView` publish a `ViewHeader` with
-create/edit/delete/search/buttons. `JukeboxView` publishes `PlaylistList` to the
+`BaseListView` publishes a `ViewHeader` with create/edit/delete/search/buttons.
+`BaseEntityView` publishes only header actions; the entity title and subtitle
+render at the top of the page content. `JukeboxView` publishes `PlaylistList` to the
 right drawer and `JukeboxPlayer` to the footer. `NoteView`, `PartyView`,
 `MonsterView`, and `EncounterView` publish their domain sidebar to the right
 drawer and clear it on unmount. `BaseEntityView` publishes a `sidepanel` slot

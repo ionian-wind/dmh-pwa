@@ -147,6 +147,9 @@ Consumers:
 | `ModuleView`                       | `#sidepanel`           | —               | `ViewHeader` |
 | `JukeboxView`                      | `PlaylistList`         | `JukeboxPlayer` | `ViewHeader` |
 
+Entity detail pages render their title/subtitle in the page content; the
+`ViewHeader` toolbar is reserved for actions and the right-drawer toggle.
+
 - The right drawer is owner-scoped: only the view that set the content can
   clear it.
 - `NotesView` does not touch another view's drawer.

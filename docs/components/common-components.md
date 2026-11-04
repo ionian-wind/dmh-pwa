@@ -96,13 +96,16 @@ Props: entity, name, list route, delete/edit callbacks, `title`, `subtitle`,
 right drawer icon.
 
 - Shows loading text, `NotFoundView`, or the page.
-- Injects and publishes `ViewHeader` for the app header; clears it on unmount.
+- Renders the entity title and subtitle at the top of the page content, not in
+  the app header.
+- Injects and publishes `ViewHeader` for the app header actions only; clears it
+  on unmount.
 - Clears the header on delete only if `onDelete()` resolves `true`; navigation
   uses `router.push(listRoute)`.
-- **Does not pass `subtitle` to the header**, so subtitles are never displayed.
 - Renders the default slot, `editor`, `actions`, and `sub`; publishes a
   `sidepanel` slot to the right drawer.
-- `unwrapContent` skips the inner content wrapper.
+- `unwrapContent` skips the inner content wrapper. Fill layouts keep the title
+  fixed above the scrollable/fill content area.
 
 ### `BaseEntityTabView.vue`
 

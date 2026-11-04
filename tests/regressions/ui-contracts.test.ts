@@ -182,7 +182,8 @@ describe('regression: UI contracts', () => {
     });
     await nextTick();
 
-    expect(layout.topMenuContent.value?.props?.subtitle).toBe('Subtitle');
+    expect(layout.topMenuContent.value?.props?.subtitle).toBe('');
+    expect(wrapper.find('.entity-page-subtitle').text()).toBe('Subtitle');
     expect(layout.topMenuContent.value?.props?.showEdit).toBe(true);
     expect(layout.topMenuContent.value?.props?.showDelete).toBe(true);
 

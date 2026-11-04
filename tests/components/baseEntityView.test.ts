@@ -60,8 +60,10 @@ describe('BaseEntityView', () => {
     await nextTick();
 
     const header = layout.topMenuContent.value?.props;
-    expect(header?.title).toBe('Title');
-    expect(header?.subtitle).toBe('Subtitle');
+    expect(header?.title).toBe('');
+    expect(header?.subtitle).toBe('');
+    expect(wrapper.find('.entity-page-title').text()).toBe('Title');
+    expect(wrapper.find('.entity-page-subtitle').text()).toBe('Subtitle');
     expect(header?.buttons).toHaveLength(1);
     expect(header?.rightDrawerIcon).toEqual(rightDrawerIcon);
 
