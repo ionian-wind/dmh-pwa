@@ -564,6 +564,19 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
+  it('does not expose edit or delete actions for the base layer', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+    vm.isEditMode = true;
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Base');
+    expect(wrapper.findAll('button[title="Edit layer"]')).toHaveLength(0);
+    expect(wrapper.findAll('button[title="Delete layer"]')).toHaveLength(0);
+    expect(wrapper.find('.map-layer-add').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
   it('switches map modes from the icon button group', async () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;

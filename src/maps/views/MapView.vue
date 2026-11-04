@@ -794,6 +794,7 @@ async function addLayer() {
 }
 
 async function editLayer(layer: MapLayer) {
+  if (!map.value || layer.id === MAP_BASE_LAYER_ID) return;
   const title = await prompt(t('maps.layerName'), {
     title: t('maps.editLayer'),
     modelValue: layer.title,
@@ -1100,6 +1101,7 @@ watch(isEditMode, (editing) => {
                     </template>
                     <template v-else>
                       <QBtn
+                        v-if="layer.id !== MAP_BASE_LAYER_ID"
                         flat
                         size="sm"
                         :title="t('maps.editLayer')"
@@ -1161,6 +1163,7 @@ watch(isEditMode, (editing) => {
                     </template>
                     <template v-else>
                       <QBtn
+                        v-if="layer.id !== MAP_BASE_LAYER_ID"
                         flat
                         size="sm"
                         :title="t('maps.editLayer')"

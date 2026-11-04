@@ -87,7 +87,8 @@ interface MapLayer {
 
 Every map has a permanent base layer (`base`) plus any number of user-defined
 layers. Markers and areas store a `layerId`. Users can add, rename, and delete
-layers; deleting a layer moves its children to the base layer.
+non-base layers; the base layer is fixed. Deleting a layer moves its children to
+the base layer.
 
 Each logical layer is backed by its own OpenLayers vector layer for both area
 geometry and marker points. Layer visibility uses the native
@@ -219,7 +220,7 @@ The map detail page no longer has top tabs. It contains:
   - Rows use a coloured left edge like jukebox tracks.
   - Areas do not show their shape type in the list.
   - In edit mode rows have edit/delete actions and each layer has
-    rename/delete controls. The base layer cannot be deleted.
+    rename/delete controls. The base layer cannot be edited or deleted.
   - Hovering a row highlights the marker or area on the map.
 - **Add layer** is a menu-style row below the tabbed lists, shown only in edit
   mode.
