@@ -915,7 +915,8 @@
     "editMode": "Edit mode",
     "showLayer": "Show layer",
     "hideLayer": "Hide layer",
-    "showLabels": "Show labels"
+    "showLabels": "Show labels",
+    "mapTab": "Map"
   },
   "probabilityCalculator": {
     "completions": {

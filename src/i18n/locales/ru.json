@@ -916,7 +916,8 @@
     "editMode": "Режим редактирования",
     "showLayer": "Показать слой",
     "hideLayer": "Скрыть слой",
-    "showLabels": "Показать подписи"
+    "showLabels": "Показать подписи",
+    "mapTab": "Карта"
   },
   "probabilityCalculator": {
     "completions": {

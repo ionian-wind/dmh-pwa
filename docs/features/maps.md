@@ -217,9 +217,10 @@ references.
 
 ## Map detail layout
 
-The map detail page no longer has top tabs. It contains:
+The map detail page has **Map** and **Linked entities** tabs. It contains:
 
-- The map itself.
+- The map itself in the Map tab.
+- The Linked entities tab shows map modules and the linked location read-only.
 - Right sidebar tabs: **Markers** and **Areas**, grouped by layer.
   - Layers show their title with visibility controls.
   - Rows use a coloured left edge like jukebox tracks.
@@ -251,8 +252,9 @@ A location detail page follows the module detail pattern:
   header bar and opens that map. The map is not shown as a tab.
 - Top tabs for each linkable entity kind: notes, modules, parties, monsters,
   encounters, characters, and jukebox playlists.
-- Each tab uses the reusable `EntitiesLinking` component: the entity-type title
-  and add button sit above a linked list with remove actions. Both the linked
+- Each tab uses the reusable `EntitiesLinking` component in read-only mode: the
+  entity-type title and linked list are shown without add or remove actions.
+  Link management happens through the location editor. Both the linked
   list and the searchable modal use virtual-scroll lists. The component's
   `multiple` prop (default `true`) switches between checkbox multi-select and
   radio single-select. The modal's search row has a create (+) button that opens

@@ -22,10 +22,17 @@ import {
 import type { Item } from 'ol-contextmenu';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
+import EntityTabs from '@/components/common/EntityTabs.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import { confirm, prompt } from '@/dialogs';
 import 'vue3-openlayers/vue3-openlayers.css';
 import { getMapFile, useMapStore } from '../maps';
-import type { MapEntity, MapEntityForm, MapMarker } from '../types';
+import type {
+  MapEntity,
+  MapEntityForm,
+  MapEntityRef,
+  MapMarker,
+} from '../types';
 import MapEditor from '../components/MapEditor.vue';
 import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
@@ -98,6 +105,18 @@ const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
 const isEditMode = ref(false);
+const pageTab = ref('map');
+const pageTabs = computed(() => [
+  { id: 'map', label: t('maps.mapTab') },
+  { id: 'links', label: t('common.linkedEntities') },
+]);
+const mapLinks = computed<MapEntityRef[]>(() => {
+  const links = [...(map.value?.entities ?? [])];
+  if (map.value?.locationId) {
+    links.push({ kind: 'location', id: map.value.locationId });
+  }
+  return links;
+});
 const showLabels = ref(true);
 const sidePanelTab = ref('markers');
 const hiddenLayerIds = ref<Set<string>>(new Set());
@@ -870,231 +889,250 @@ watch(isEditMode, (editing) => {
     :header-show-delete="isEditMode"
     fill
   >
-    <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
-      <div v-if="isAddingMarker || drawMode" class="map-hint">
-        {{ isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint') }}
-      </div>
+    <div class="map-page-layout">
+      <EntityTabs v-model="pageTab" :tabs="pageTabs" class="map-page-tabs" />
+      <div v-show="pageTab === 'map'" class="map-page-body">
+        <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
+          <div v-if="isAddingMarker || drawMode" class="map-hint">
+            {{
+              isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint')
+            }}
+          </div>
 
-      <ol-map
-        ref="olMapRef"
-        :loadTilesWhileAnimating="true"
-        :loadTilesWhileInteracting="true"
-        style="height: 100%"
-        @click="onMapClick"
-      >
-        <ol-view
-          :center="center"
-          :zoom="2"
-          :min-zoom="1"
-          :max-zoom="6"
-          :projection="projection"
-          :extent="extent"
-        />
-        <ol-zoom-control />
-        <ol-context-menu-control
-          v-if="isEditMode"
-          ref="contextMenuRef"
-          :items="contextMenuItems"
-          :default-items="false"
-          :width="200"
-          @open="onContextMenuOpen"
-        />
-
-        <ol-image-layer id="map-view">
-          <ol-source-image-static
-            :url="imageUrl"
-            :imageSize="size"
-            :imageExtent="extent"
-            :projection="projection"
-            :wrapX="false"
-            :wrapY="false"
-            @imageloadstart="onImageLoadStart"
-            @imageloadend="onImageLoadEnd"
-            @imageloaderror="onImageLoadError"
-          />
-        </ol-image-layer>
-
-        <template v-if="imageLoaded">
-          <ol-vector-layer
-            v-for="(layer, layerIndex) in layers"
-            :key="layer.id"
-            :z-index="layerIndex"
-            :visible="!isLayerHidden(layer.id)"
-            :style="mapFeatureStyle"
+          <ol-map
+            ref="olMapRef"
+            :loadTilesWhileAnimating="true"
+            :loadTilesWhileInteracting="true"
+            style="height: 100%"
+            @click="onMapClick"
           >
-            <ol-source-vector>
-              <ol-feature
-                v-for="marker in markersForLayer(layer.id)"
-                :key="`marker-${marker.id}`"
-                :properties="{ kind: 'marker', markerId: marker.id }"
+            <ol-view
+              :center="center"
+              :zoom="2"
+              :min-zoom="1"
+              :max-zoom="6"
+              :projection="projection"
+              :extent="extent"
+            />
+            <ol-zoom-control />
+            <ol-context-menu-control
+              v-if="isEditMode"
+              ref="contextMenuRef"
+              :items="contextMenuItems"
+              :default-items="false"
+              :width="200"
+              @open="onContextMenuOpen"
+            />
+
+            <ol-image-layer id="map-view">
+              <ol-source-image-static
+                :url="imageUrl"
+                :imageSize="size"
+                :imageExtent="extent"
+                :projection="projection"
+                :wrapX="false"
+                :wrapY="false"
+                @imageloadstart="onImageLoadStart"
+                @imageloadend="onImageLoadEnd"
+                @imageloaderror="onImageLoadError"
+              />
+            </ol-image-layer>
+
+            <template v-if="imageLoaded">
+              <ol-vector-layer
+                v-for="(layer, layerIndex) in layers"
+                :key="layer.id"
+                :z-index="layerIndex"
+                :visible="!isLayerHidden(layer.id)"
+                :style="mapFeatureStyle"
               >
-                <ol-geom-point :coordinates="markerMapPosition(marker)" />
-              </ol-feature>
-              <ol-feature
-                v-for="area in areasForLayer(layer.id)"
-                :key="area.id"
-                :properties="{ kind: 'area', areaId: area.id }"
-              >
-                <ol-geom-polygon
-                  v-if="area.shape !== 'circle'"
-                  :coordinates="areaPolygonCoordinates(area)"
-                />
-                <ol-geom-circle
-                  v-else
-                  :center="areaCircleMapCenter(area)"
-                  :radius="area.radius"
-                />
-              </ol-feature>
-            </ol-source-vector>
-          </ol-vector-layer>
-        </template>
-
-        <ol-interaction-draw
-          v-if="drawMode"
-          :type="drawType"
-          :freehand="drawFreehand"
-          :geometry-function="drawGeometryFunction"
-          @drawend="onAreaDrawn"
-        />
-
-        <ol-overlay
-          v-if="imageLoaded && showLabels"
-          v-for="area in visibleAreas"
-          :key="`area-label-${area.id}`"
-          :position="areaMapCenter(area)"
-          positioning="center-center"
-          :stop-event="true"
-        >
-          <button
-            type="button"
-            class="map-area-label"
-            :style="{
-              backgroundColor: areaFillColor(area.color, 0.82),
-              color: areaTextColor(area.color),
-            }"
-            :title="area.title"
-            @click.stop="showAreaInfo(area, $event)"
-          >
-            <i
-              v-if="area.icon"
-              :class="['ra', markerIconClass(area.icon)]"
-              :style="{ color: area.color }"
-              aria-hidden="true"
-            ></i>
-            {{ area.title }}
-          </button>
-        </ol-overlay>
-
-        <div
-          v-if="infoSelection"
-          class="map-info-anchor"
-          :style="{ left: `${infoAnchor.left}px`, top: `${infoAnchor.top}px` }"
-        >
-          <QMenu
-            :model-value="true"
-            anchor="top middle"
-            self="bottom middle"
-            :offset="[0, -10]"
-            @update:model-value="(value) => !value && closeMapInfo()"
-          >
-            <QCard class="map-info-popup" flat>
-              <QCardSection class="row items-start q-py-sm">
-                <div class="col">
-                  <div class="map-info-title text-subtitle1 text-weight-medium">
-                    {{
-                      infoMarker?.title ||
-                      infoArea?.title ||
-                      t('maps.untitledArea')
-                    }}
-                  </div>
-                  <div
-                    v-if="infoLocationName"
-                    class="text-caption text-primary text-weight-medium"
+                <ol-source-vector>
+                  <ol-feature
+                    v-for="marker in markersForLayer(layer.id)"
+                    :key="`marker-${marker.id}`"
+                    :properties="{ kind: 'marker', markerId: marker.id }"
                   >
-                    {{ infoLocationName }}
-                  </div>
-                </div>
-                <QBtn
-                  flat
-                  dense
-                  round
-                  :aria-label="t('common.close')"
-                  @click.stop="closeMapInfo"
-                >
-                  <IconX :size="18" />
-                </QBtn>
-              </QCardSection>
+                    <ol-geom-point :coordinates="markerMapPosition(marker)" />
+                  </ol-feature>
+                  <ol-feature
+                    v-for="area in areasForLayer(layer.id)"
+                    :key="area.id"
+                    :properties="{ kind: 'area', areaId: area.id }"
+                  >
+                    <ol-geom-polygon
+                      v-if="area.shape !== 'circle'"
+                      :coordinates="areaPolygonCoordinates(area)"
+                    />
+                    <ol-geom-circle
+                      v-else
+                      :center="areaCircleMapCenter(area)"
+                      :radius="area.radius"
+                    />
+                  </ol-feature>
+                </ol-source-vector>
+              </ol-vector-layer>
+            </template>
 
-              <QCardSection
-                v-if="infoMarker?.description || infoArea?.description"
-                class="q-pt-none"
+            <ol-interaction-draw
+              v-if="drawMode"
+              :type="drawType"
+              :freehand="drawFreehand"
+              :geometry-function="drawGeometryFunction"
+              @drawend="onAreaDrawn"
+            />
+
+            <ol-overlay
+              v-if="imageLoaded && showLabels"
+              v-for="area in visibleAreas"
+              :key="`area-label-${area.id}`"
+              :position="areaMapCenter(area)"
+              positioning="center-center"
+              :stop-event="true"
+            >
+              <button
+                type="button"
+                class="map-area-label"
+                :style="{
+                  backgroundColor: areaFillColor(area.color, 0.82),
+                  color: areaTextColor(area.color),
+                }"
+                :title="area.title"
+                @click.stop="showAreaInfo(area, $event)"
               >
-                <div class="text-body2 text-grey-7">
-                  {{ infoMarker?.description || infoArea?.description }}
-                </div>
-              </QCardSection>
+                <i
+                  v-if="area.icon"
+                  :class="['ra', markerIconClass(area.icon)]"
+                  :style="{ color: area.color }"
+                  aria-hidden="true"
+                ></i>
+                {{ area.title }}
+              </button>
+            </ol-overlay>
 
-              <QCardSection v-if="infoEntities.length > 0" class="q-pt-none">
-                <EntitiesLinking
-                  v-for="kind in infoEntityKinds"
-                  :key="kind"
-                  :kind="kind"
-                  :model-value="infoEntities"
-                  readonly
-                />
-              </QCardSection>
-
-              <QCardActions
-                v-if="infoLocation || isEditMode"
-                class="map-info-actions q-pt-none"
-                align="right"
+            <div
+              v-if="infoSelection"
+              class="map-info-anchor"
+              :style="{
+                left: `${infoAnchor.left}px`,
+                top: `${infoAnchor.top}px`,
+              }"
+            >
+              <QMenu
+                :model-value="true"
+                anchor="top middle"
+                self="bottom middle"
+                :offset="[0, -10]"
+                @update:model-value="(value) => !value && closeMapInfo()"
               >
-                <QBtn
-                  v-if="infoLocation"
-                  flat
-                  dense
-                  no-caps
-                  color="primary"
-                  :label="t('maps.goToLocation')"
-                  @click.stop="goToInfoLocation"
-                />
-                <QBtn
-                  v-if="isEditMode"
-                  flat
-                  dense
-                  no-caps
-                  color="primary"
-                  :label="t('common.edit')"
-                  @click.stop="editInfoItem"
-                />
-              </QCardActions>
-            </QCard>
-          </QMenu>
+                <QCard class="map-info-popup" flat>
+                  <QCardSection class="row items-start q-py-sm">
+                    <div class="col">
+                      <div
+                        class="map-info-title text-subtitle1 text-weight-medium"
+                      >
+                        {{
+                          infoMarker?.title ||
+                          infoArea?.title ||
+                          t('maps.untitledArea')
+                        }}
+                      </div>
+                      <div
+                        v-if="infoLocationName"
+                        class="text-caption text-primary text-weight-medium"
+                      >
+                        {{ infoLocationName }}
+                      </div>
+                    </div>
+                    <QBtn
+                      flat
+                      dense
+                      round
+                      :aria-label="t('common.close')"
+                      @click.stop="closeMapInfo"
+                    >
+                      <IconX :size="18" />
+                    </QBtn>
+                  </QCardSection>
+
+                  <QCardSection
+                    v-if="infoMarker?.description || infoArea?.description"
+                    class="q-pt-none"
+                  >
+                    <div class="text-body2 text-grey-7">
+                      {{ infoMarker?.description || infoArea?.description }}
+                    </div>
+                  </QCardSection>
+
+                  <QCardSection
+                    v-if="infoEntities.length > 0"
+                    class="q-pt-none"
+                  >
+                    <EntitiesLinking
+                      v-for="kind in infoEntityKinds"
+                      :key="kind"
+                      :kind="kind"
+                      :model-value="infoEntities"
+                      readonly
+                    />
+                  </QCardSection>
+
+                  <QCardActions
+                    v-if="infoLocation || isEditMode"
+                    class="map-info-actions q-pt-none"
+                    align="right"
+                  >
+                    <QBtn
+                      v-if="infoLocation"
+                      flat
+                      dense
+                      no-caps
+                      color="primary"
+                      :label="t('maps.goToLocation')"
+                      @click.stop="goToInfoLocation"
+                    />
+                    <QBtn
+                      v-if="isEditMode"
+                      flat
+                      dense
+                      no-caps
+                      color="primary"
+                      :label="t('common.edit')"
+                      @click.stop="editInfoItem"
+                    />
+                  </QCardActions>
+                </QCard>
+              </QMenu>
+            </div>
+          </ol-map>
+
+          <div
+            v-if="!imageLoaded && !imageLoadFailed"
+            class="map-loading-overlay absolute-full flex flex-center"
+          >
+            <QSpinner
+              color="primary"
+              size="3em"
+              :aria-label="t('common.loading')"
+            />
+          </div>
+
+          <div v-if="imageLoaded" class="map-accessible-markers">
+            <button
+              v-for="marker in visibleMarkers"
+              :key="`accessible-${marker.id}`"
+              type="button"
+              class="map-marker-accessible"
+              :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
+              @click.stop="showMarkerInfo(marker, $event)"
+            >
+              {{ marker.title || t('maps.untitledMarker') }}
+            </button>
+          </div>
         </div>
-      </ol-map>
-
-      <div
-        v-if="!imageLoaded && !imageLoadFailed"
-        class="map-loading-overlay absolute-full flex flex-center"
-      >
-        <QSpinner
-          color="primary"
-          size="3em"
-          :aria-label="t('common.loading')"
-        />
       </div>
 
-      <div v-if="imageLoaded" class="map-accessible-markers">
-        <button
-          v-for="marker in visibleMarkers"
-          :key="`accessible-${marker.id}`"
-          type="button"
-          class="map-marker-accessible"
-          :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
-          @click.stop="showMarkerInfo(marker, $event)"
-        >
-          {{ marker.title || t('maps.untitledMarker') }}
-        </button>
+      <div v-if="pageTab === 'links'" class="map-page-links q-pa-md">
+        <EntityViewLinks :links="mapLinks" />
       </div>
     </div>
 
@@ -1329,6 +1367,28 @@ watch(isEditMode, (editing) => {
 </template>
 
 <style scoped>
+.map-page-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-page-tabs {
+  flex: 0 0 auto;
+}
+
+.map-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.map-page-links {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
 .map-view-container {
   position: relative;
   height: 100%;
