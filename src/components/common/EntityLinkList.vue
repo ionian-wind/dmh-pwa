@@ -8,7 +8,6 @@ import {
   getEntityKindOption,
 } from '@/maps/utils/entityRefs';
 import { useMapEntityCatalog } from '@/maps/composables/useMapEntityCatalog';
-import EntityGroup from '@/components/common/EntityGroup.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -38,30 +37,28 @@ const resolved = computed(() =>
 </script>
 
 <template>
-  <EntityGroup :title="t('common.linkedEntities')">
-    <div class="row q-gutter-xs">
-      <span
-        v-for="link in resolved"
-        :key="`${link.ref.kind}:${link.ref.id}`"
-        class="row items-center q-gutter-xs q-px-sm q-py-xs bg-grey-2 rounded-borders"
-        :title="`${link.kindLabel}: ${link.label}`"
+  <div class="row q-gutter-xs">
+    <span
+      v-for="link in resolved"
+      :key="`${link.ref.kind}:${link.ref.id}`"
+      class="row items-center q-gutter-xs q-px-sm q-py-xs bg-grey-2 rounded-borders"
+      :title="`${link.kindLabel}: ${link.label}`"
+    >
+      <span class="text-caption text-grey-7">{{ link.kindLabel }}</span>
+      <span>{{ link.label }}</span>
+      <QBtn
+        v-if="removable"
+        flat
+        dense
+        round
+        size="xs"
+        color="negative"
+        class="entity-link-remove"
+        :aria-label="t('common.remove')"
+        @click.stop="emit('remove', link.ref)"
       >
-        <span class="text-caption text-grey-7">{{ link.kindLabel }}</span>
-        <span>{{ link.label }}</span>
-        <QBtn
-          v-if="removable"
-          flat
-          dense
-          round
-          size="xs"
-          color="negative"
-          class="entity-link-remove"
-          :aria-label="t('common.remove')"
-          @click.stop="emit('remove', link.ref)"
-        >
-          <IconX :size="14" />
-        </QBtn>
-      </span>
-    </div>
-  </EntityGroup>
+        <IconX :size="14" />
+      </QBtn>
+    </span>
+  </div>
 </template>

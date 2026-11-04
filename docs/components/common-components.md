@@ -163,8 +163,7 @@ under `src/components/common/`.
 ### `EntityLinkList.vue`
 
 Read-only inline list of linked entity refs. Resolves display labels through the
-entity catalog and optionally shows remove buttons. The list is wrapped in
-`EntityGroup` with the “Linked entities” heading. Located under
+entity catalog and optionally shows remove buttons. Located under
 `src/components/common/`.
 
 ### `EntityTabs.vue`
