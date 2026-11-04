@@ -165,6 +165,19 @@ Linkable editors already use the tab layout:
 `CharacterEditor`, `ModuleEditor`, and `TimerEditor` have no main-entity links,
 so they keep a single form without tabs. Combat has no editor yet.
 
+## View pages mirror the editor
+
+Entity detail pages use the same split when the entity has linkable main-entity
+fields:
+
+- The main tab renders only entity-owned content.
+- A **Linked entities** tab uses `EntityViewLinks` to render the same link blocks
+  as the editor in `readonly` mode.
+- Add, remove and inline-create actions are not available in the view tab.
+- Mention lists are not duplicated in the right sidebar.
+- `NoteView`, `PartyView`, `MonsterView` and `EncounterView` follow this pattern.
+  `LocationView` keeps its per-kind tabs but renders them read-only.
+
 ## Acceptance checklist
 
 An editor dialog conforms when:

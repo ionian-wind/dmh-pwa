@@ -346,7 +346,9 @@
     "done": "Готово",
     "module": "Модуль",
     "moduleRequired": "Модуль обязателен",
-    "dropAudioFiles": "Перетащите аудиофайлы сюда"
+    "dropAudioFiles": "Перетащите аудиофайлы сюда",
+    "overview": "Обзор",
+    "noLinkedEntities": "Связанных сущностей нет."
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",

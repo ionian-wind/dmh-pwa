@@ -7,13 +7,13 @@ and free-text notes; the README's "stats, equipment, and notes" are aspirational
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/characters.ts` | Store + name search |
-| `src/characters/CharactersView.vue` | List page |
-| `src/characters/CharacterCard.vue` | Card |
-| `src/characters/CharacterEditor.vue` | Create/edit modal |
-| `src/characters/CharacterView.vue` | Detail page |
+| File                                 | Role                |
+| ------------------------------------ | ------------------- |
+| `src/stores/characters.ts`           | Store + name search |
+| `src/characters/CharactersView.vue`  | List page           |
+| `src/characters/CharacterCard.vue`   | Card                |
+| `src/characters/CharacterEditor.vue` | Create/edit modal   |
+| `src/characters/CharacterView.vue`   | Detail page         |
 
 ## Data
 
@@ -62,8 +62,8 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - Renders `notes` as plain text (not Markdown).
 - Edit modal, delete with confirmation, then `BaseEntityView` navigates to the
   list.
-- Shows mentions via `<template #sidepanel>`; `BaseEntityView` publishes the
-  slot to the right drawer.
+- The right drawer only shows linked ambient scenes. Character mentions are no
+  longer duplicated in the sidebar.
 
 ## Relationships and lifecycle
 

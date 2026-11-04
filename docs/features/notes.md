@@ -17,7 +17,7 @@ used as hidden document sections inside modules.
 | `src/notes/NoteCanvas.vue`                 | Quickdraw canvas for `draw` notes               |
 | `src/notes/NoteView.vue`                   | Detail page                                     |
 | `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteEditor`)  |
-| `src/notes/NoteViewSidebar.vue`            | Tags + mentions sidebar                         |
+| `src/notes/NoteViewSidebar.vue`            | Tag sidebar                                     |
 | `src/components/common/MarkdownEditor.vue` | Editor used by NoteEditor                       |
 | `src/components/common/Markdown.vue`       | Renderer used by cards and detail               |
 
@@ -155,6 +155,12 @@ The only escape is delete + recreate.
   directly to the filter. Tags containing `%` or spaces may misbehave.
 - No UI exists to remove/clear the tag filter except navigating back to
   `/notes` without the query.
+
+## Detail tabs
+
+`NoteView` uses the standard **Overview** / **Linked entities** tabs. Overview
+renders the note body; Linked entities shows the note's module read-only. The
+right sidebar only shows tags.
 
 ## Markdown and mentions
 

@@ -181,6 +181,19 @@ Searchable entity picker used by `EntitiesLinking`. It accepts the entity
 inline, or `cancel`. The create (+) action opens `EntityCreateDialog`. Located
 under `src/components/common/`.
 
+### `EntityViewLinks.vue`
+
+Read-only view of an entity's main-entity links. It accepts `links` as
+`MapEntityRef[]`, groups them by kind, and renders each group with
+`EntitiesLinking` in `readonly` mode. Add, remove and inline-create actions are
+hidden. Shows a translated empty state when there are no links.
+
+### `entityViewTabs.ts`
+
+Returns the standard detail-page tabs: **Overview** and **Linked entities**.
+Used by note, party and monster detail pages so their view tabs mirror the
+editor's Main/Links split.
+
 ### `EntityTabs.vue`
 
 Dense Quasar `QTabs`/`QTab` bar shared by entity views, the ambient page and the

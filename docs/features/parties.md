@@ -7,14 +7,13 @@ It is the roster used to start a combat.
 
 ## Key files
 
-| File                               | Role                |
-| ---------------------------------- | ------------------- |
-| `src/stores/parties.ts`            | Store + name search |
-| `src/parties/PartiesView.vue`      | List page           |
-| `src/parties/PartyCard.vue`        | Card                |
-| `src/parties/PartyEditor.vue`      | Create/edit modal   |
-| `src/parties/PartyView.vue`        | Detail page         |
-| `src/parties/PartyViewSidebar.vue` | Mentions sidebar    |
+| File                          | Role                |
+| ----------------------------- | ------------------- |
+| `src/stores/parties.ts`       | Store + name search |
+| `src/parties/PartiesView.vue` | List page           |
+| `src/parties/PartyCard.vue`   | Card                |
+| `src/parties/PartyEditor.vue` | Create/edit modal   |
+| `src/parties/PartyView.vue`   | Detail page         |
 
 ## Data
 
@@ -62,19 +61,16 @@ Character membership can also be managed from the party detail page.
 
 - Resolves party from store by route param.
 - Loads characters and modules.
-- `partyCharacters` filters loaded characters by `party.characters`.
-- `handleToggleCharacter` adds/removes a character ID and persists immediately.
-- Link-characters modal lists every character with a toggle; there is no search.
-- Delete uses the app confirm dialog, then `BaseEntityView` navigates back to
+- `partyCharacters` filters loaded characters by `party.characters` for the page
+  subtitle.
+- The **Overview** tab shows the party description.
+- The **Linked entities** tab shows modules and characters read-only.
+- Link management moves to `PartyEditor`; the view no longer has unlink buttons
+  or a separate link modal.
+- Delete uses the app confirm dialog, then `BaseEntityTabView` navigates back to
   `/parties`. It does not delete associated combats.
-- Publishes `PartyViewSidebar` to the right drawer.
 - `partySubtitle` is computed in English ("Modules: … • N characters") and is
-  never displayed anyway because `BaseEntityView` drops `subtitle`.
-
-## Sidebar
-
-`PartyViewSidebar` computes mentions and backlinks from the plain `party` prop.
-It is published to the right drawer by `PartyView`.
+  displayed under the page title.
 
 ## Relationships
 

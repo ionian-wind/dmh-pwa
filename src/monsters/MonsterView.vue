@@ -4,7 +4,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
 import type { Monster } from '@/types';
 import MonsterEditor from '@/monsters/MonsterEditor.vue';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import MonsterViewSidebar from '@/monsters/MonsterViewSidebar.vue';
 import { confirm } from '@/dialogs';
@@ -14,6 +17,8 @@ const route = useRoute();
 const router = useRouter();
 const monsterStore = useMonsterStore();
 const showEditor = ref(false);
+const activeTab = ref('main');
+const tabs = useEntityViewTabs();
 const { t } = useI18n();
 
 const monster = ref<Monster | null>(null);
@@ -66,6 +71,9 @@ const handleDelete = async () => {
 
 // Computed properties for BaseEntityView
 const monsterTitle = computed(() => monster.value?.name || '');
+const monsterLinks = computed<MapEntityRef[]>(() =>
+  (monster.value?.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
+);
 
 const rightDrawer = useRightDrawer();
 
@@ -87,7 +95,7 @@ async function handleEditorDelete() {
 </script>
 
 <template>
-  <BaseEntityView
+  <BaseEntityTabView
     :entity="monster"
     entity-name="t('monsters.title')"
     list-route="/monsters"
@@ -97,15 +105,23 @@ async function handleEditorDelete() {
     :title="monsterTitle"
     :not-found="notFound"
     :loading="loading"
+    :tabs="tabs"
+    v-model="activeTab"
   >
-    <div v-if="monster" class="q-pa-md q-gutter-md">
-      <div v-if="monster.notes" class="q-mb-md">
-        <h2>{{ t('notes.title') }}</h2>
-        <div class="q-pa-sm bg-grey-1 rounded-borders">
-          <p>{{ monster.notes }}</p>
+    <template #main>
+      <div v-if="monster" class="q-pa-md q-gutter-md">
+        <div v-if="monster.notes" class="q-mb-md">
+          <h2>{{ t('notes.title') }}</h2>
+          <div class="q-pa-sm bg-grey-1 rounded-borders">
+            <p>{{ monster.notes }}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <template #links>
+      <EntityViewLinks :links="monsterLinks" />
+    </template>
 
     <!-- Editor Modal -->
     <template #editor>
@@ -117,5 +133,5 @@ async function handleEditorDelete() {
         @cancel="handleCancel"
       />
     </template>
-  </BaseEntityView>
+  </BaseEntityTabView>
 </template>

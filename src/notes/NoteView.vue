@@ -11,7 +11,10 @@ import { useEncounterStore } from '@/stores/encounters';
 import type { Note } from '@/types';
 import NoteEditor from '@/notes/NoteEditor.vue';
 import { extractMentionedEntities } from '@/utils/markdownParser';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import type { MapEntityRef } from '@/maps/types';
 import Markdown from '@/components/common/Markdown.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
@@ -31,6 +34,8 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 
 const isEditing = ref(false);
+const activeTab = ref('main');
+const tabs = useEntityViewTabs();
 const isLoaded = computed(() => noteStore.isLoaded);
 const note = ref<Note | null>(null);
 const notFound = computed(() => isLoaded.value && !note.value);
@@ -150,6 +155,9 @@ const handleSubmit = async (editedNote: Note) => {
 
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title || '');
+const noteLinks = computed<MapEntityRef[]>(() =>
+  note.value?.moduleId ? [{ kind: 'module', id: note.value.moduleId }] : [],
+);
 
 const rightDrawer = useRightDrawer();
 
@@ -177,7 +185,7 @@ async function handleEditorDelete() {
 </script>
 
 <template>
-  <BaseEntityView
+  <BaseEntityTabView
     :entity="note"
     entity-name="notes.title"
     list-route="/notes"
@@ -187,18 +195,26 @@ async function handleEditorDelete() {
     :title="noteTitle"
     :not-found="notFound"
     :header-buttons="headerButtons"
+    :tabs="tabs"
+    v-model="activeTab"
   >
-    <NoteCanvas
-      v-if="note?.contentType === 'draw'"
-      :model-value="noteContent"
-      readonly
-    />
-    <Markdown
-      v-else
-      :taskCheckboxEnabled="true"
-      :content="noteContent"
-      @update:content="handleMarkdownContentChange"
-    />
+    <template #main>
+      <NoteCanvas
+        v-if="note?.contentType === 'draw'"
+        :model-value="noteContent"
+        readonly
+      />
+      <Markdown
+        v-else
+        :taskCheckboxEnabled="true"
+        :content="noteContent"
+        @update:content="handleMarkdownContentChange"
+      />
+    </template>
+
+    <template #links>
+      <EntityViewLinks :links="noteLinks" />
+    </template>
 
     <template #editor>
       <NoteEditor
@@ -211,7 +227,7 @@ async function handleEditorDelete() {
         @cancel="handleCancel"
       />
     </template>
-  </BaseEntityView>
+  </BaseEntityTabView>
 </template>
 
 <style scoped>

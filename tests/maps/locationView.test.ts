@@ -221,11 +221,6 @@ describe('LocationView', () => {
     const wrapper = mountLocationView();
     await flushPromises();
 
-    await wrapper.find('.link-update').trigger('click');
-    expect(mocks.locationStore.update).toHaveBeenCalledWith('l1', {
-      entities: [{ kind: 'note', id: 'note-1' }],
-    });
-
     await wrapper.find('.entity-edit').trigger('click');
     expect(wrapper.find('.location-editor-stub').exists()).toBe(true);
     await wrapper.find('.editor-save').trigger('click');

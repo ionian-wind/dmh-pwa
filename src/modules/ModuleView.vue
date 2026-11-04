@@ -17,9 +17,7 @@ import type { Module, Bookmark } from '@/types';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
-import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
-import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import MonsterCard from '@/monsters/MonsterCard.vue';
@@ -65,7 +63,6 @@ const mapStore = useMapStore();
 const locationStore = useMapLocationStore();
 const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
-const mentionsStore = useMentionsStore();
 const bookmarkStore = useBookmarkStore();
 const { t } = useI18n();
 
@@ -150,15 +147,6 @@ function moduleLocationProps(location: MapLocation) {
   };
 }
 
-const mentionedEntities = computed(() => {
-  if (!module.value) return [];
-  return mentionsStore.getLinks({ kind: 'module', id: module.value.id });
-});
-const mentionedInEntities = computed(() => {
-  if (!module.value) return [];
-  return mentionsStore.getBacklinks({ kind: 'module', id: module.value.id });
-});
-
 const moduleBookmarks = computed(() => {
   if (!module.value || !module.value.id) return [];
   return bookmarkStore.items.filter((b) => b.moduleId === module.value!.id);
@@ -194,7 +182,6 @@ onMounted(async () => {
     noteStore.load(),
     playlistsStore.load(),
     tracksStore.load(),
-    mentionsStore.load(),
     bookmarkStore.load(),
     mapStore.load(),
     locationStore.load(),
@@ -631,16 +618,6 @@ async function handleEditorDelete() {
               </div>
             </template>
           </TabGroup>
-        </div>
-        <div v-else-if="activeTab !== 'document'">
-          <Mentions
-            :title="t('common.mentions')"
-            :entities="mentionedEntities"
-          />
-          <Mentions
-            :title="t('common.mentionedIn')"
-            :entities="mentionedInEntities"
-          />
         </div>
         <QSeparator class="q-my-sm" />
         <EntityScenesPanel

@@ -13,8 +13,7 @@ import { deleteMapLocation, useMapLocationStore } from '../locations';
 import { useMapStore } from '../maps';
 import { useMapEntityCatalog } from '../composables/useMapEntityCatalog';
 import { markerIconClass } from '../icons';
-import type { MapEntityKind, MapEntityRef } from '../types';
-import { dedupeEntityRefs } from '../utils/entityRefs';
+import type { MapEntityKind } from '../types';
 
 const route = useRoute();
 const router = useRouter();
@@ -97,13 +96,6 @@ function linksFor(kind: MapEntityKind) {
   );
 }
 
-async function updateLinks(entities: MapEntityRef[]) {
-  if (!location.value) return;
-  await locationStore.update(location.value.id, {
-    entities: dedupeEntityRefs(entities),
-  });
-}
-
 async function handleDelete() {
   if (!location.value) return false;
   if (
@@ -153,7 +145,7 @@ function openMap(mapId: string) {
       <EntitiesLinking
         :kind="group.kind"
         :model-value="location?.entities ?? []"
-        @update:model-value="updateLinks"
+        readonly
       />
     </template>
 

@@ -1,35 +1,12 @@
 <script setup lang="ts">
-import Mentions from '@/components/common/Mentions.vue';
-import { computed, onMounted } from 'vue';
 import type { Note } from '@/types';
 import { useI18n } from 'vue-i18n';
-import { useMentionsStore } from '@/utils/storage';
 
 const { t } = useI18n();
-
-const mentionsStore = useMentionsStore();
 
 const props = defineProps<{
   note: Note;
 }>();
-
-const mentions = computed(() => {
-  return props.note
-    ? mentionsStore.getLinks({ kind: 'note', id: props.note.id })
-    : [];
-});
-
-// Find notes that mention this note using the indexation store
-const mentionedIn = computed(() =>
-  props.note
-    ? mentionsStore.getBacklinks({
-        kind: 'note',
-        id: props.note.id,
-      })
-    : [],
-);
-
-onMounted(() => mentionsStore.load());
 </script>
 
 <template>
@@ -47,8 +24,5 @@ onMounted(() => mentionsStore.load());
       </div>
       <QSeparator />
     </div>
-    <Mentions :title="t('common.mentions')" :entities="mentions" />
-    <QSeparator />
-    <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
   </div>
 </template>

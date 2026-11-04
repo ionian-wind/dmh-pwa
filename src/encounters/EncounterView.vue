@@ -4,12 +4,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
 import { useMonsterStore } from '@/stores/monsters';
-import { useModuleStore } from '@/stores/modules';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
 import type { Encounter, Monster, Combat } from '@/types';
+import type { MapEntityRef } from '@/maps/types';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/form/Button.vue';
@@ -25,7 +26,6 @@ const router = useRouter();
 const { t } = useI18n();
 const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
-const moduleStore = useModuleStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
 
@@ -90,12 +90,6 @@ const handleSave = async (
 
 const handleCancel = () => {
   isEditorOpen.value = false;
-};
-
-const getModuleName = (moduleId: string | null) => {
-  if (!moduleId) return 'No Module';
-  const module = moduleStore.items.find((m) => m.id === moduleId);
-  return module ? module.name : 'Unknown Module';
 };
 
 // Computed properties for monster linking
@@ -219,6 +213,12 @@ const handleViewCombat = (combat: Combat) => {
   router.push(`/combats/${combat.id}`);
 };
 
+const encounterLinks = computed<MapEntityRef[]>(() =>
+  encounter.value?.moduleId
+    ? [{ kind: 'module', id: encounter.value.moduleId }]
+    : [],
+);
+
 // Tab configuration
 const tabs = computed(() => [
   {
@@ -235,6 +235,11 @@ const tabs = computed(() => [
     id: 'combats',
     label: t('encounters.tabs.combats'),
     badge: encounterCombats.value.length,
+  },
+  {
+    id: 'links',
+    label: t('common.linkedEntities'),
+    badge: encounterLinks.value.length || undefined,
   },
 ]);
 
@@ -290,7 +295,6 @@ onMounted(async () => {
   await Promise.all([
     encounterStore.load(),
     monsterStore.load(),
-    moduleStore.load(),
     combatStore.load(),
     partyStore.load(),
   ]);
@@ -336,13 +340,6 @@ async function handleEditorDelete() {
         },
       ]"
     >
-      <template #sub>
-        <div v-if="encounter?.moduleId" class="module-link">
-          <router-link :to="`/modules/${encounter.moduleId}`">
-            {{ getModuleName(encounter.moduleId) }}
-          </router-link>
-        </div>
-      </template>
       <template #information>
         <section class="details-section">
           <div v-html="safeDescription"></div>
@@ -395,6 +392,9 @@ async function handleEditorDelete() {
             </table>
           </div>
         </div>
+      </template>
+      <template #links>
+        <EntityViewLinks :links="encounterLinks" />
       </template>
       <template #combats>
         <h2>{{ t('encounters.combats.title') }}</h2>

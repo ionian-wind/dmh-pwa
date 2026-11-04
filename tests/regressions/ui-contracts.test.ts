@@ -136,32 +136,6 @@ describe('regression: UI contracts', () => {
     wrapper.unmount();
   });
 
-  it('renders mention lists from a plain entity prop', async () => {
-    const MentionsStub = {
-      name: 'Mentions',
-      props: ['title', 'entities'],
-      template: '<div>{{ title }}:{{ entities.length }}</div>',
-    };
-
-    const wrapper = mount(NoteViewSidebar, {
-      props: { note: { id: 'n1', title: 'Note', tags: [] } as any },
-      global: {
-        plugins: [i18n],
-        stubs: { ...quasarStubs, Mentions: MentionsStub },
-      },
-    });
-    await flushPromises();
-
-    const mentions = wrapper.findAllComponents(MentionsStub);
-    expect(mentions.length).toBe(2);
-    expect(mentions[0].props('entities')).toEqual([
-      { kind: 'note', id: 'outgoing' },
-    ]);
-    expect(mentions[1].props('entities')).toEqual([
-      { kind: 'note', id: 'incoming' },
-    ]);
-  });
-
   it('forwards subtitle and sidepanel from BaseEntityView', async () => {
     const layout = createLayoutStore();
 

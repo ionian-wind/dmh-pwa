@@ -7,14 +7,14 @@ current record is intentionally minimal: name, notes, module membership.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/monsters.ts` | Store + name search |
-| `src/monsters/MonstersView.vue` | List page |
-| `src/monsters/MonsterCard.vue` | Card |
-| `src/monsters/MonsterEditor.vue` | Create/edit modal |
-| `src/monsters/MonsterView.vue` | Detail page |
-| `src/monsters/MonsterViewSidebar.vue` | Mentions sidebar |
+| File                                  | Role                |
+| ------------------------------------- | ------------------- |
+| `src/stores/monsters.ts`              | Store + name search |
+| `src/monsters/MonstersView.vue`       | List page           |
+| `src/monsters/MonsterCard.vue`        | Card                |
+| `src/monsters/MonsterEditor.vue`      | Create/edit modal   |
+| `src/monsters/MonsterView.vue`        | Detail page         |
+| `src/monsters/MonsterViewSidebar.vue` | Scene links sidebar |
 
 ## Data
 
@@ -44,8 +44,12 @@ Schema requires `id`, `name`, timestamps; optional `notes` and `moduleIds`.
 ## Card
 
 ```vue
-<BaseCard :show-view="showActions" :show-edit="showActions"
-          :show-delete="showActions" ... />
+<BaseCard
+  :show-view="showActions"
+  :show-edit="showActions"
+  :show-delete="showActions"
+  ...
+/>
 ```
 
 `showActions` defaults to `undefined`, so all three actions are hidden unless a
@@ -63,15 +67,16 @@ caller explicitly passes it. No caller passes it.
 ## Detail page (`MonsterView.vue`)
 
 - Loads monsters, publishes `MonsterViewSidebar` to the right drawer.
-- Renders `notes` as plain text.
-- Edit modal and delete with confirmation; `BaseEntityView` navigates to
+- Renders `notes` as plain text in the **Overview** tab.
+- A **Linked entities** tab shows module membership read-only via
+  `EntityViewLinks`.
+- Edit modal and delete with confirmation; `BaseEntityTabView` navigates to
   `/monsters` after a successful delete.
-- Does not render module memberships or an encounter usage list.
 
 ## Sidebar
 
-`MonsterViewSidebar` reads the plain `monster` prop and displays outgoing and
-incoming mentions.
+`MonsterViewSidebar` reads the plain `monster` prop and displays linked ambient
+scenes only. Entity mentions are no longer duplicated in the sidebar.
 
 ## Relationships
 

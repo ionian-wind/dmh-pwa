@@ -1,23 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { Party, PlayerCharacter } from '@/types';
+import { Party } from '@/types';
 
 import { usePartyStore } from '@/stores/parties';
 import { useModuleStore } from '@/stores/modules';
 import { useCharacterStore } from '@/stores/characters';
 
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Button from '@/components/form/Button.vue';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import type { MapEntityRef } from '@/maps/types';
 
 import PartyEditor from '@/parties/PartyEditor.vue';
-import PartyViewSidebar from '@/parties/PartyViewSidebar.vue';
 import { confirm } from '@/dialogs';
-import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,7 +25,8 @@ const characterStore = useCharacterStore();
 const { t } = useI18n();
 
 const showEditor = ref(false);
-const showLinkModal = ref(false);
+const activeTab = ref('main');
+const tabs = useEntityViewTabs();
 
 const isLoaded = computed(() => partyStore.isLoaded);
 const party = computed(() => partyStore.getById(route.params.id as string));
@@ -42,23 +41,19 @@ const modules = computed(() => {
   );
 });
 
-const allCharacters = computed(() => characterStore.items);
 const partyCharacters = computed(() => {
   const p = party.value;
   if (!p) return [];
-  return allCharacters.value.filter((c) => p.characters.includes(c.id));
+  return characterStore.items.filter((c) => p.characters.includes(c.id));
 });
 
-const linkedCharacters = computed(() => {
+const partyLinks = computed<MapEntityRef[]>(() => {
   const p = party.value;
-  if (!p) return {};
-  return allCharacters.value.reduce(
-    (acc, character) => {
-      acc[character.id] = p.characters.includes(character.id);
-      return acc;
-    },
-    {} as Record<string, boolean>,
-  );
+  if (!p) return [];
+  return [
+    ...(p.moduleIds ?? []).map((id) => ({ kind: 'module' as const, id })),
+    ...(p.characters ?? []).map((id) => ({ kind: 'character' as const, id })),
+  ];
 });
 
 async function handleDeleteParty() {
@@ -84,22 +79,6 @@ const handlePartyCancel = () => {
   showEditor.value = false;
 };
 
-const handleToggleCharacter = (
-  character: PlayerCharacter,
-  isLinked: boolean,
-) => {
-  if (!party.value) return;
-  let updatedCharacters = [...party.value.characters];
-  if (isLinked) {
-    if (!updatedCharacters.includes(character.id)) {
-      updatedCharacters.push(character.id);
-    }
-  } else {
-    updatedCharacters = updatedCharacters.filter((id) => id !== character.id);
-  }
-  partyStore.update(party.value.id, { characters: updatedCharacters });
-};
-
 // Computed properties for BaseEntityView
 const partyTitle = computed(() => party.value?.name || '');
 const partySubtitle = computed(() => {
@@ -118,19 +97,12 @@ const partySubtitle = computed(() => {
 
   return parts.join(' • ');
 });
-const rightDrawer = useRightDrawer();
-
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
     characterStore.load(),
     moduleStore.load(),
   ]);
-  rightDrawer.set({ component: PartyViewSidebar, props: { party } });
-});
-
-onBeforeUnmount(() => {
-  rightDrawer.clear();
 });
 
 async function handleEditorDelete() {
@@ -142,121 +114,42 @@ async function handleEditorDelete() {
 </script>
 
 <template>
-  <div>
-    <BaseEntityView
-      :entity="party"
-      entity-name="parties.title"
-      list-route="/parties"
-      :on-delete="handleDeleteParty"
-      :on-edit="() => (showEditor = true)"
-      :is-editing="showEditor"
-      :title="partyTitle"
-      :subtitle="partySubtitle"
-      :not-found="notFound"
-      :loading="loading"
-    >
-      <!-- Party Content -->
-      <div v-if="party">
-        <div class="q-pa-md q-gutter-md">
-          <div class="row items-center q-mb-md">
-            <div class="col">
-              <h2>{{ t('partyView.title') }}</h2>
-            </div>
-            <div class="col-auto">
-              <QBtn flat @click="showLinkModal = true" class="q-ml-md">
-                {{ t('parties.linkCharacters') }}
-              </QBtn>
-            </div>
-          </div>
-          <div
-            v-if="partyCharacters.length === 0"
-            class="q-pa-md text-grey text-center q-mt-xl"
-          >
-            <p>{{ t('partyView.noCharacters') }}</p>
-          </div>
-          <div v-else class="row q-gutter-md">
-            <div class="col-12">
-              <table class="q-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('partyView.name') }}</th>
-                    <th>{{ t('partyView.actions') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="character in partyCharacters" :key="character.id">
-                    <td>{{ character.name }}</td>
-                    <td>
-                      <button
-                        class="q-btn q-btn--flat text-negative"
-                        @click="handleToggleCharacter(character, false)"
-                      >
-                        {{ t('partyView.unlink') }}
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+  <BaseEntityTabView
+    :entity="party"
+    entity-name="parties.title"
+    list-route="/parties"
+    :on-delete="handleDeleteParty"
+    :on-edit="() => (showEditor = true)"
+    :is-editing="showEditor"
+    :title="partyTitle"
+    :subtitle="partySubtitle"
+    :not-found="notFound"
+    :loading="loading"
+    :tabs="tabs"
+    v-model="activeTab"
+  >
+    <template #main>
+      <div v-if="party" class="q-pa-md q-gutter-md">
+        <p v-if="party.description" class="text-body1">
+          {{ party.description }}
+        </p>
       </div>
+    </template>
 
-      <!-- Editor Modal -->
-      <template #editor>
-        <PartyEditor
-          :party="party"
-          :isOpen="showEditor"
-          @submit="handleSaveParty"
-          @delete="handleEditorDelete"
-          @cancel="handlePartyCancel"
-        />
-      </template>
-    </BaseEntityView>
+    <template #links>
+      <EntityViewLinks :links="partyLinks" />
+    </template>
 
-    <!-- Link Characters Modal -->
-    <BaseModal
-      :is-open="showLinkModal"
-      :title="t('parties.linkCharacters')"
-      :show-cancel="true"
-      :show-submit="false"
-      :cancel-label="t('common.close')"
-      modal-id="link-characters-modal"
-      @cancel="showLinkModal = false"
-    >
-      <div
-        v-if="allCharacters.length === 0"
-        class="q-pa-md text-grey text-center q-mt-xl"
-      >
-        <p>{{ t('partyView.noAvailable') }}</p>
-      </div>
-      <div v-else class="row q-gutter-md">
-        <div class="col-12">
-          <table class="q-table">
-            <thead>
-              <tr>
-                <th>{{ t('partyView.name') }}</th>
-                <th>{{ t('partyView.linked') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="character in allCharacters" :key="character.id">
-                <td>{{ character.name }}</td>
-                <td>
-                  <ToggleSwitch
-                    :model-value="linkedCharacters[character.id]"
-                    @update:modelValue="
-                      (value) => handleToggleCharacter(character, value)
-                    "
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </BaseModal>
-  </div>
+    <template #editor>
+      <PartyEditor
+        :party="party"
+        :isOpen="showEditor"
+        @submit="handleSaveParty"
+        @delete="handleEditorDelete"
+        @cancel="handlePartyCancel"
+      />
+    </template>
+  </BaseEntityTabView>
 </template>
 
 <style scoped>
