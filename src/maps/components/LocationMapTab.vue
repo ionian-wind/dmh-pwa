@@ -35,6 +35,7 @@ import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapMarkersPanel from '../components/MapMarkersPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import { useMapLocationStore } from '../locations';
 import {
   MapActionsControl,
@@ -239,6 +240,7 @@ const contextMenuItems = computed<Item[]>(() => [
 const sideTabs = computed(() => [
   { id: 'markers', label: 'maps.markers' },
   { id: 'areas', label: 'maps.areas' },
+  { id: 'scenes', label: 'ambientSoundPage.scenesTab' },
 ]);
 
 const infoMarker = computed(() =>
@@ -1264,6 +1266,13 @@ watch(isEditMode, (editing) => {
                   <QSeparator v-if="layerIndex < layers.length - 1" />
                 </div>
               </div>
+              <div v-show="sidePanelTab === 'scenes'">
+                <EntityScenesPanel
+                  v-if="sourceLocation"
+                  entity-type="location"
+                  :entity-id="sourceLocation.id"
+                />
+              </div>
             </TabGroup>
           </div>
 
@@ -1361,6 +1370,9 @@ watch(isEditMode, (editing) => {
 }
 
 .map-tab-sidepanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   background: var(--color-background);

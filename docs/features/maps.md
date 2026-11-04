@@ -209,7 +209,8 @@ map. It contains:
 
 - The map image with markers, areas, labels and the map action controls.
 - The location right sidebar hosts the map's **Markers** and **Areas** tabs,
-  grouped by layer. The map tab has no internal sidebar.
+  grouped by layer, plus a **Scenes** tab for ambient scene links. The map tab
+  has no internal sidebar.
   - Layers show their title with visibility controls.
   - Rows use a coloured left edge like jukebox tracks.
   - Areas do not show their shape type in the list.

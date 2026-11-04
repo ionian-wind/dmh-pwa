@@ -207,7 +207,7 @@ function openLocation(locationId: string) {
         class="location-map-sidebar"
       ></div>
       <EntityScenesPanel
-        v-if="location"
+        v-if="location && !location.map?.fileId"
         entity-type="location"
         :entity-id="location.id"
       />
@@ -226,6 +226,12 @@ function openLocation(locationId: string) {
 </template>
 
 <style scoped>
+.location-map-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
 :deep(.q-tab-panels),
 :deep(.q-tab-panel) {
   height: 100%;
