@@ -154,19 +154,20 @@ types and map layers keep their dedicated selectors.
 
 ### `EntitiesLinking.vue`
 
-Shared entity-link editor block. It accepts one entity `kind`, a `modelValue` of
-`{ kind, id }` refs, optional `multiple`, `label` and `options`, and emits the
-full updated ref list. It provides searchable add selection, inline creation via
-`EntityCreateDialog`, virtual-scroll linked lists and remove actions. Located
+Shared entity-link block. It accepts one entity `kind`, a `modelValue` of
+`{ kind, id }` refs, optional `multiple`, `label`, `options` and `readonly`, and
+emits the full updated ref list. It provides a linked list with remove actions
+and opens `EntityLinkingDialog` for searchable add selection. In readonly mode
+the add and remove actions are hidden, so it can display links in view-only
+contexts. Located under `src/components/common/`.
+
+### `EntityLinkingDialog.vue`
+
+Searchable entity picker used by `EntitiesLinking`. It accepts the entity
+`kind`, dialog `title`, available `options`, already `linkedIds` and optional
+`multiple`; emits `add` with the selected refs and labels for entities created
+inline, or `cancel`. The create (+) action opens `EntityCreateDialog`. Located
 under `src/components/common/`.
-
-### `EntityLinkList.vue`
-
-Read-only inline list of linked entity refs. Resolves display labels through the
-entity catalog and optionally shows remove buttons. Located under
-`src/components/common/`.
-
-![EntityLinkList example](../screenshots/entity-link-list-example.png)
 
 ### `EntityTabs.vue`
 

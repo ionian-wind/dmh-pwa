@@ -339,9 +339,10 @@ type MapEntityKind =
 ```
 
 `EntitiesLinking` loads each entity store, shows one linking block per entity
-type, and deduplicates `kind:id` pairs. `EntityLinkList` resolves display labels
-for read-only lists. Map, marker, area, and location editors use `BaseModal`
-header tabs to separate their own fields from linked entities.
+type, and deduplicates `kind:id` pairs. Its read-only mode hides the add and
+remove actions, and the marker/area popup uses it to list linked entities. Map,
+marker, area, and location editors use `BaseModal` header tabs to separate their
+own fields from linked entities.
 
 ## Icons
 

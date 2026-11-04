@@ -416,6 +416,22 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
+  it('shows linked entities in the marker popup without add or remove actions', async () => {
+    map.markers[0].entities = [{ kind: 'note', id: 'n1' }];
+    const wrapper = await mountMapView();
+
+    await wrapper.find('.map-marker-accessible').trigger('click');
+    const popup = wrapper.find('.map-info-popup');
+    expect(popup.find('.entity-group').exists()).toBe(true);
+    expect(popup.text()).toContain('Notes');
+    expect(popup.text()).toContain('n1');
+    expect(popup.find('button[aria-label="Add"]').exists()).toBe(false);
+    expect(popup.find('button[aria-label="Remove"]').exists()).toBe(false);
+
+    map.markers[0].entities = [];
+    wrapper.unmount();
+  });
+
   it('highlights map items when their sidebar rows are hovered', async () => {
     const wrapper = await mountMapView();
     const markerButton = wrapper.find('.map-marker-accessible');

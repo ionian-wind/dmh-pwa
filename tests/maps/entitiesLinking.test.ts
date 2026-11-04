@@ -177,6 +177,27 @@ describe('EntitiesLinking', () => {
     ]);
   });
 
+  it('hides add and remove actions in readonly mode', () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [{ kind: 'note', id: 'n1' }],
+        readonly: true,
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Alpha note');
+    expect(wrapper.find('button[aria-label="Add"]').exists()).toBe(false);
+    expect(wrapper.find('button[aria-label="Remove"]').exists()).toBe(false);
+    expect(wrapper.findComponent(EntityCreateDialogStub).exists()).toBe(false);
+  });
+
   it('filters the search modal and adds multiple selected entities', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },

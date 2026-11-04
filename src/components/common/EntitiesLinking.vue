@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, useId } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconPlus, IconX } from '@tabler/icons-vue';
-import BaseModal from '@/components/common/BaseModal.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
-import EntityCreateDialog from '@/maps/components/EntityCreateDialog.vue';
+import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 import { dedupeEntityRefs } from '@/maps/utils/entityRefs';
 import { useMapEntityCatalog } from '@/maps/composables/useMapEntityCatalog';
@@ -16,8 +15,9 @@ const props = withDefaults(
     multiple?: boolean;
     label?: string;
     options?: Array<{ id: string; label: string }>;
+    readonly?: boolean;
   }>(),
-  { multiple: true },
+  { multiple: true, readonly: false },
 );
 
 const emit = defineEmits<{
@@ -26,12 +26,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { groups, getLabel } = useMapEntityCatalog();
-const instanceId = useId();
 const isModalOpen = ref(false);
-const isCreateOpen = ref(false);
-const search = ref('');
-const selectedIds = ref<string[]>([]);
-const createdIds = ref<string[]>([]);
 const createdLabels = ref<Record<string, string>>({});
 
 const group = computed(() =>
@@ -46,6 +41,8 @@ const linkedRefs = computed(() =>
   props.modelValue.filter((ref) => ref.kind === props.kind),
 );
 
+const linkedIds = computed(() => linkedRefs.value.map((ref) => ref.id));
+
 const sourceOptions = computed(() => {
   const base = props.options ?? group.value?.items ?? [];
   const existing = new Set(base.map((item) => item.id));
@@ -54,12 +51,6 @@ const sourceOptions = computed(() => {
     .map(([id, label]) => ({ id, label }));
   return [...base, ...extras];
 });
-
-const availableOptions = computed(() =>
-  sourceOptions.value.filter(
-    (item) => !linkedRefs.value.some((ref) => ref.id === item.id),
-  ),
-);
 
 function labelFor(ref: MapEntityRef): string {
   const createdLabel = createdLabels.value[ref.id];
@@ -70,60 +61,14 @@ function labelFor(ref: MapEntityRef): string {
   return getLabel(ref);
 }
 
-const filteredOptions = computed(() => {
-  const query = search.value.trim().toLowerCase();
-  if (!query) return availableOptions.value;
-  return availableOptions.value.filter((item) =>
-    item.label.toLowerCase().includes(query),
-  );
-});
-
-function openModal() {
-  search.value = '';
-  selectedIds.value = [];
-  createdIds.value = [];
-  createdLabels.value = {};
-  isModalOpen.value = true;
-}
-
-function closeModal() {
-  isCreateOpen.value = false;
-  isModalOpen.value = false;
-}
-
-function handleCreated(payload: { ref: MapEntityRef; label: string }) {
-  const { ref, label } = payload;
-  isCreateOpen.value = false;
-  search.value = '';
-  createdIds.value = [...new Set([...createdIds.value, ref.id])];
-  createdLabels.value = { ...createdLabels.value, [ref.id]: label };
-  if (props.multiple) {
-    if (!selectedIds.value.includes(ref.id)) {
-      selectedIds.value = [...selectedIds.value, ref.id];
-    }
-  } else {
-    selectedIds.value = [ref.id];
-  }
-}
-
-function toggleOption(id: string) {
-  if (!props.multiple) {
-    selectedIds.value = [id];
-    return;
-  }
-  selectedIds.value = selectedIds.value.includes(id)
-    ? selectedIds.value.filter((selected) => selected !== id)
-    : [...selectedIds.value, id];
-}
-
-function addSelected() {
-  if (selectedIds.value.length === 0) return;
+function handleAdd(payload: {
+  refs: MapEntityRef[];
+  labels: Record<string, string>;
+}) {
+  createdLabels.value = { ...createdLabels.value, ...payload.labels };
   emit(
     'update:modelValue',
-    dedupeEntityRefs([
-      ...props.modelValue,
-      ...selectedIds.value.map((id) => ({ kind: props.kind, id })),
-    ]),
+    dedupeEntityRefs([...props.modelValue, ...payload.refs]),
   );
   isModalOpen.value = false;
 }
@@ -143,12 +88,13 @@ function removeLink(ref: MapEntityRef) {
     <EntityGroup :title="kindLabel">
       <template #actions>
         <QBtn
+          v-if="!readonly"
           flat
           round
           color="primary"
           :title="t('common.add')"
           :aria-label="t('common.add')"
-          @click="openModal"
+          @click="isModalOpen = true"
         >
           <IconPlus :size="18" />
         </QBtn>
@@ -165,7 +111,7 @@ function removeLink(ref: MapEntityRef) {
         <template #default="{ item: ref }">
           <QItem class="linked-entity-item">
             <QItemSection>{{ labelFor(ref) }}</QItemSection>
-            <QItemSection side>
+            <QItemSection v-if="!readonly" side>
               <QBtn
                 flat
                 dense
@@ -188,98 +134,16 @@ function removeLink(ref: MapEntityRef) {
       </div>
     </EntityGroup>
 
-    <BaseModal
-      :isOpen="isModalOpen"
-      :title="kindLabel"
-      :showSubmit="true"
-      :showCancel="true"
-      :submitLabel="t('common.add')"
-      :cancelLabel="t('common.cancel')"
-      :disableSubmit="selectedIds.length === 0"
-      :use-modal-stack="false"
-      :modalId="`entities-linking-${kind}-${instanceId}`"
-      @submit="addSelected"
-      @cancel="closeModal"
-    >
-      <div class="column q-gutter-sm">
-        <div class="row items-center q-gutter-sm">
-          <QInput
-            v-model="search"
-            :placeholder="t('common.search')"
-            dense
-            outlined
-            clearable
-            class="col"
-          />
-          <QBtn
-            flat
-            round
-            color="positive"
-            :title="t('common.create')"
-            :aria-label="t('common.create')"
-            @click="isCreateOpen = true"
-          >
-            <IconPlus :size="20" />
-          </QBtn>
-        </div>
-
-        <QVirtualScroll
-          v-if="filteredOptions.length > 0"
-          :items="filteredOptions"
-          type="list"
-          virtual-scroll-item-size="48"
-          class="q-pa-none"
-          style="max-height: 320px"
-        >
-          <template #default="{ item: option }">
-            <QItem
-              clickable
-              class="entity-option"
-              :class="{
-                'entity-option--created': createdIds.includes(option.id),
-              }"
-              @click="toggleOption(option.id)"
-            >
-              <QItemSection side>
-                <QCheckbox
-                  v-if="multiple"
-                  :model-value="selectedIds.includes(option.id)"
-                  @update:model-value="toggleOption(option.id)"
-                  @click.stop
-                />
-                <QRadio
-                  v-else
-                  :model-value="selectedIds[0]"
-                  :val="option.id"
-                  @update:model-value="toggleOption(option.id)"
-                  @click.stop
-                />
-              </QItemSection>
-              <QItemSection>
-                <div class="row items-center q-gutter-xs">
-                  <span>{{ option.label }}</span>
-                  <QBadge
-                    v-if="createdIds.includes(option.id)"
-                    color="positive"
-                  >
-                    {{ t('common.created') }}
-                  </QBadge>
-                </div>
-              </QItemSection>
-            </QItem>
-          </template>
-        </QVirtualScroll>
-        <div v-else class="text-caption text-grey-7">
-          {{ t('common.empty') }}
-        </div>
-      </div>
-    </BaseModal>
-
-    <EntityCreateDialog
-      v-if="isCreateOpen"
+    <EntityLinkingDialog
+      v-if="!readonly"
+      :is-open="isModalOpen"
       :kind="kind"
-      @created="handleCreated"
-      @cancel="isCreateOpen = false"
+      :title="kindLabel"
+      :options="sourceOptions"
+      :linked-ids="linkedIds"
+      :multiple="multiple"
+      @add="handleAdd"
+      @cancel="isModalOpen = false"
     />
   </div>
 </template>

@@ -32,7 +32,7 @@ import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapMarkersPanel from '../components/MapMarkersPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
-import EntityLinkList from '@/components/common/EntityLinkList.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useMapLocationStore } from '../locations';
 import {
   MapActionsControl,
@@ -77,7 +77,7 @@ import Stroke from 'ol/style/Stroke';
 import Circle from 'ol/style/Circle';
 import Icon from 'ol/style/Icon';
 import Text from 'ol/style/Text';
-import type { MapArea, MapAreaShape, MapLayer } from '../types';
+import type { MapArea, MapAreaShape, MapEntityKind, MapLayer } from '../types';
 
 const route = useRoute();
 const router = useRouter();
@@ -210,6 +210,15 @@ const infoLocation = computed(() => {
 });
 
 const infoLocationName = computed(() => infoLocation.value?.name ?? '');
+
+const infoEntities = computed(
+  () => infoMarker.value?.entities ?? infoArea.value?.entities ?? [],
+);
+
+const infoEntityKinds = computed(
+  () =>
+    [...new Set(infoEntities.value.map((ref) => ref.kind))] as MapEntityKind[],
+);
 
 function goToInfoLocation() {
   if (!infoLocation.value) return;
@@ -1028,15 +1037,13 @@ watch(isEditMode, (editing) => {
                 </div>
               </QCardSection>
 
-              <QCardSection
-                v-if="
-                  (infoMarker?.entities.length ?? 0) > 0 ||
-                  (infoArea?.entities.length ?? 0) > 0
-                "
-                class="q-pt-none"
-              >
-                <EntityLinkList
-                  :links="infoMarker?.entities || infoArea?.entities || []"
+              <QCardSection v-if="infoEntities.length > 0" class="q-pt-none">
+                <EntitiesLinking
+                  v-for="kind in infoEntityKinds"
+                  :key="kind"
+                  :kind="kind"
+                  :model-value="infoEntities"
+                  readonly
                 />
               </QCardSection>
 
