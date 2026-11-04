@@ -7,27 +7,22 @@ import { confirm } from '@/dialogs';
 import LocationCard from '../components/LocationCard.vue';
 import MapLocationEditor from '../components/MapLocationEditor.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';
-import { useMapStore } from '../maps';
 import type { MapLocation } from '../types';
 
 const router = useRouter();
 const { t } = useI18n();
 const locationStore = useMapLocationStore();
-const mapStore = useMapStore();
 
 onMounted(async () => {
-  await Promise.all([locationStore.load(), mapStore.load()]);
+  await locationStore.load();
 });
 
 function cardProps(location: MapLocation) {
   return {
     location,
-    linkedMap:
-      mapStore.items.find((map) => map.locationId === location.id) ?? null,
     onView: () => router.push(`/locations/${location.id}`),
     onEdit: () => undefined,
     onDelete: () => handleDelete(location),
-    onOpenMap: (mapId: string) => router.push(`/maps/${mapId}`),
   };
 }
 
@@ -58,12 +53,14 @@ async function handleSubmit(location: MapLocation) {
       name: location.name,
       description: location.description,
       entities: location.entities,
+      map: location.map,
     });
   } else {
     await locationStore.create({
       name: location.name,
       description: location.description,
       entities: location.entities,
+      map: location.map,
     });
   }
 }

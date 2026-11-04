@@ -34,7 +34,6 @@ Main entities are the only entities that can appear in the **Links** tab.
 | Encounter | `/encounters/:id` | `EncounterEditor`   |
 | Combat    | `/combats/:id`    | no editor yet       |
 | Module    | `/modules/:id`    | `ModuleEditor`      |
-| Map       | `/maps/:id`       | `MapEditor`         |
 | Location  | `/locations/:id`  | `MapLocationEditor` |
 
 A main entity may have no editor yet (currently Combat). If an editor is added
@@ -51,10 +50,10 @@ route. It is created and edited inside a parent page or dialog.
 | Timer            | Timers list              |
 | Jukebox track    | Jukebox                  |
 | Jukebox playlist | Jukebox sidebar          |
-| Map file         | Map editor               |
+| Map file         | Location editor          |
 | Map layer        | Map sidebar / map editor |
-| Map marker       | Map view                 |
-| Map area         | Map view                 |
+| Map marker       | Location map tab         |
+| Map area         | Location map tab         |
 | Combatant        | Combat view              |
 
 Internal entities never appear in the main-entity linking UI. Options that
@@ -150,17 +149,16 @@ save buttons inside tab content.
 
 Linkable editors already use the tab layout:
 
-| Editor              | Link blocks                                                                 |
-| ------------------- | --------------------------------------------------------------------------- |
-| `NoteEditor`        | Modules                                                                     |
-| `PartyEditor`       | Modules, Characters                                                         |
-| `MonsterEditor`     | Modules                                                                     |
-| `EncounterEditor`   | Modules                                                                     |
-| `PlaylistEditor`    | Modules                                                                     |
-| `MapEditor`         | Locations                                                                   |
-| `MapLocationEditor` | Notes, Modules, Parties, Monsters, Encounters, Characters                   |
-| `MapMarkerEditor`   | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
-| `MapAreaEditor`     | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters, Maps |
+| Editor              | Link blocks                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| `NoteEditor`        | Modules                                                               |
+| `PartyEditor`       | Modules, Characters                                                   |
+| `MonsterEditor`     | Modules                                                               |
+| `EncounterEditor`   | Modules                                                               |
+| `PlaylistEditor`    | Modules                                                               |
+| `MapLocationEditor` | Notes, Modules, Parties, Monsters, Encounters, Characters             |
+| `MapMarkerEditor`   | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters |
+| `MapAreaEditor`     | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters |
 
 `CharacterEditor`, `ModuleEditor`, and `TimerEditor` have no main-entity links,
 so they keep a single form without tabs. Combat has no editor yet.
@@ -177,8 +175,8 @@ fields:
   toolbar. Hovering a tab shows its label.
 - Add, remove and inline-create actions are not available in the view tab.
 - Mention lists remain available in the right sidebar.
-- `NoteView`, `PartyView`, `MonsterView`, `EncounterView`, `MapView` and
-  `LocationView` follow this pattern.
+- `NoteView`, `PartyView`, `MonsterView`, `EncounterView` and `LocationView`
+  follow this pattern (the location page adds Map and Backlinks tabs).
 
 ## Acceptance checklist
 

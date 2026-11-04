@@ -4,9 +4,7 @@ import { useModuleStore } from '@/stores/modules';
 import { useMonsterStore } from '@/stores/monsters';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
-import { useMapStore } from '@/maps/maps';
 import { useMapLocationStore } from '@/maps/locations';
-import { normalizeMapEntity } from '@/maps/utils/normalize';
 import type { MapEntityKind, MapLocation } from '@/maps/types';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
@@ -71,17 +69,18 @@ export async function createLinkedEntity(
       );
       return { id: character.id, label: character.name };
     }
-    case 'map': {
-      const form = stripEntityMeta(payload as Record<string, unknown>);
-      const map = await useMapStore().create(normalizeMapEntity(form));
-      return { id: map.id, label: map.title };
-    }
     case 'location': {
       const location = payload as MapLocation;
       const created = await useMapLocationStore().create({
         name: location.name,
         description: location.description,
         entities: location.entities ?? [],
+        map: location.map ?? {
+          fileId: '',
+          layers: [],
+          markers: [],
+          areas: [],
+        },
       });
       return { id: created.id, label: created.name };
     }
@@ -90,5 +89,7 @@ export async function createLinkedEntity(
       if (!playlist?.id) return null;
       return { id: playlist.id, label: playlist.name };
     }
+    default:
+      return null;
   }
 }

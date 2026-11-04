@@ -6,6 +6,7 @@ import {
 } from '../icons';
 import { MAP_BASE_LAYER_ID, normalizeLayers } from './mapLayers';
 import type {
+  LocationMap,
   MapArea,
   MapAreaShape,
   MapEntity,
@@ -33,14 +34,42 @@ function normalizeEntities(entities: unknown): MapEntityRef[] {
     }));
 }
 
+export function normalizeLocationMap(
+  map: Partial<LocationMap> & Record<string, any> = {},
+): LocationMap {
+  const layers = normalizeLayers(map.layers);
+  const layerIds = new Set(layers.map((layer) => layer.id));
+  const withValidLayer = <T extends { layerId: string }>(item: T): T =>
+    layerIds.has(item.layerId) ? item : { ...item, layerId: MAP_BASE_LAYER_ID };
+
+  return {
+    fileId: typeof map.fileId === 'string' ? map.fileId : '',
+    layers,
+    markers: (Array.isArray(map.markers)
+      ? map.markers.map(normalizeMarker)
+      : []
+    ).map(withValidLayer),
+    areas: (Array.isArray(map.areas) ? map.areas.map(normalizeArea) : []).map(
+      withValidLayer,
+    ),
+  };
+}
+
 export function normalizeLocation(
   location: Partial<MapLocation> & Record<string, any> = {},
 ): MapLocation {
+  const map =
+    location.map ??
+    (location.fileId || location.layers || location.markers || location.areas
+      ? location
+      : {});
+
   return {
     id: location.id || generateId(),
     name: location.name || '',
     description: location.description || '',
     entities: normalizeEntities(location.entities),
+    map: normalizeLocationMap(map),
     createdAt: Number(location.createdAt) || Date.now(),
     updatedAt: Number(location.updatedAt) || Date.now(),
   };

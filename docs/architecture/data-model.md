@@ -221,11 +221,12 @@ Defined in `src/jukebox/types.ts` and intentionally **not** schema-validated
 }
 ```
 
-### Map entities
+### Map data in locations
 
-Defined in `src/maps/types.ts`; maps are schema-validated
-(`src/maps/schemas/map.schema.json`). Map files are not schema-validated because
-they may contain `Blob`/`FileSystemFileHandle` sources.
+Defined in `src/maps/types.ts`; locations are schema-validated
+(`src/maps/schemas/mapLocation.schema.json`). Map files are not schema-validated
+because they may contain `Blob`/`FileSystemFileHandle` sources. Map data is
+embedded in `MapLocation.map`; there is no runtime `MapEntity` store.
 
 **MapFile** (`map_files` store)
 
@@ -242,18 +243,14 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
 }
 ```
 
-**MapEntity** (`maps` store)
+**LocationMap** (`MapLocation.map`)
 
 ```ts
 {
-  id, createdAt, updatedAt,
-  title, description?,
   fileId, // references map_files.id
-  locationId?: string | null,
   layers: MapLayer[],
   markers: MapMarker[],
-  areas: MapArea[],
-  points?: unknown[] // legacy, normalized into markers on read
+  areas: MapArea[]
 }
 ```
 
@@ -265,14 +262,15 @@ they may contain `Blob`/`FileSystemFileHandle` sources.
 }
 ```
 
-**MapLocation**
+**MapLocation** (`map_locations` store)
 
 ```ts
 {
   id,
   name,
   description?,
-  entities: MapEntityRef[]
+  entities: MapEntityRef[],
+  map: LocationMap
 }
 ```
 

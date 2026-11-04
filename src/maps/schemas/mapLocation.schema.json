@@ -19,6 +19,9 @@
         "$ref": "#/definitions/entityRef"
       }
     },
+    "map": {
+      "type": "object"
+    },
     "createdAt": {
       "type": "number"
     },

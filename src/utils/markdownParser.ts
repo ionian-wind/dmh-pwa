@@ -5,7 +5,7 @@ import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import { useMapStore } from '@/maps/maps';
+import { useMapLocationStore } from '@/maps/locations';
 
 type PluginSimple = (md: MarkdownItInstance) => void;
 
@@ -61,20 +61,20 @@ const mentionKindMap = new Map([
     },
   ],
   [
-    'map',
+    'location',
     {
-      useStore: useMapStore,
-      titleKey: 'title',
+      useStore: useMapLocationStore,
+      titleKey: 'name',
       idKey: 'id',
-      type: 'Map',
-      target: 'maps',
+      type: 'Location',
+      target: 'locations',
     },
   ],
 ]);
 
 // --- Internal Entity Link Plugin for markdown-it ---
 const entityLinkRegex =
-  /^(note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)$/;
+  /^(note|module|party|monster|encounter|location):\/\/([a-zA-Z0-9_-]+)$/;
 
 const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
   const defaultRender =
@@ -397,7 +397,7 @@ export interface EntityRef {
 export function extractMentionedEntities(text: string): EntityRef[] {
   // Match [title](type://id)
   const entityLinkExtractRegex =
-    /\[[^\]]*\]\((note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)\)/g;
+    /\[[^\]]*\]\((note|module|party|monster|encounter|location):\/\/([a-zA-Z0-9_-]+)\)/g;
   const results: EntityRef[] = [];
   let match;
   while ((match = entityLinkExtractRegex.exec(text)) !== null) {

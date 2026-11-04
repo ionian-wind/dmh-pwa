@@ -7,7 +7,6 @@ const storeMocks = vi.hoisted(() => ({
   monster: { create: vi.fn() },
   encounter: { create: vi.fn() },
   character: { create: vi.fn() },
-  map: { create: vi.fn() },
   location: { create: vi.fn() },
 }));
 
@@ -25,18 +24,9 @@ vi.mock('@/stores/encounters', () => ({
 vi.mock('@/stores/characters', () => ({
   useCharacterStore: () => storeMocks.character,
 }));
-vi.mock('@/maps/maps', () => ({ useMapStore: () => storeMocks.map }));
 vi.mock('@/maps/locations', () => ({
   useMapLocationStore: () => storeMocks.location,
 }));
-vi.mock('@/maps/utils/normalize', () => ({
-  normalizeMapEntity: vi.fn((form: any) => ({
-    ...form,
-    id: 'map-1',
-    title: form.title,
-  })),
-}));
-
 import {
   createLinkedEntity,
   stripEntityMeta,
@@ -67,7 +57,6 @@ describe('createLinkedEntity', () => {
       id: 'character-1',
       name: 'Character',
     });
-    storeMocks.map.create.mockResolvedValue({ id: 'map-1', title: 'Map' });
     storeMocks.location.create.mockResolvedValue({
       id: 'location-1',
       name: 'Location',
@@ -113,25 +102,18 @@ describe('createLinkedEntity', () => {
     expect(store.create).toHaveBeenCalledWith({ name: label });
   });
 
-  it('creates a map from the map editor form', async () => {
-    const created = await createLinkedEntity('map', {
-      ...meta,
-      title: 'Map',
-      fileId: 'file-1',
-    });
-
-    expect(created).toEqual({ id: 'map-1', label: 'Map' });
-    expect(storeMocks.map.create).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Map', fileId: 'file-1' }),
-    );
-  });
-
   it('creates a location with its link list', async () => {
     const created = await createLinkedEntity('location', {
       ...meta,
       name: 'Location',
       description: 'A place',
       entities: [{ kind: 'note', id: 'n1' }],
+      map: {
+        fileId: 'file-1',
+        layers: [{ id: 'base', title: 'Base' }],
+        markers: [],
+        areas: [],
+      },
     });
 
     expect(created).toEqual({ id: 'location-1', label: 'Location' });
@@ -139,6 +121,12 @@ describe('createLinkedEntity', () => {
       name: 'Location',
       description: 'A place',
       entities: [{ kind: 'note', id: 'n1' }],
+      map: {
+        fileId: 'file-1',
+        layers: [{ id: 'base', title: 'Base' }],
+        markers: [],
+        areas: [],
+      },
     });
   });
 

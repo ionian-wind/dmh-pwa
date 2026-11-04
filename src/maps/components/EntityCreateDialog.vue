@@ -25,7 +25,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const isSaving = ref(false);
 
-const editors: Record<MapEntityKind, Component> = {
+const editors: Partial<Record<MapEntityKind, Component>> = {
   note: defineAsyncComponent(() => import('@/notes/NoteEditor.vue')),
   module: defineAsyncComponent(() => import('@/modules/ModuleEditor.vue')),
   party: defineAsyncComponent(() => import('@/parties/PartyEditor.vue')),
@@ -36,7 +36,6 @@ const editors: Record<MapEntityKind, Component> = {
   character: defineAsyncComponent(
     () => import('@/characters/CharacterEditor.vue'),
   ),
-  map: defineAsyncComponent(() => import('@/maps/components/MapEditor.vue')),
   location: defineAsyncComponent(
     () => import('@/maps/components/MapLocationEditor.vue'),
   ),
@@ -73,12 +72,12 @@ const editorProps = computed(() => {
       return { encounter: null, isOpen: true, useModalStack: false };
     case 'character':
       return { character: null, isOpen: true, useModalStack: false };
-    case 'map':
-      return { map: null, isOpen: true, useModalStack: false };
     case 'location':
       return { location: null, isOpen: true, useModalStack: false };
     case 'playlist':
       return { modelValue: true, playlist: null, useModalStack: false };
+    default:
+      return {};
   }
 });
 

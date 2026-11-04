@@ -18,7 +18,6 @@ const JukeboxView = () => import('@/jukebox/JukeboxView.vue');
 const TimersView = () => import('@/timers/TimersView.vue');
 const AmbientSoundView = () => import('@/ambient-sound/AmbientSoundView.vue');
 const MapsView = () => import('@/maps/views/MapsView.vue');
-const MapView = () => import('@/maps/views/MapView.vue');
 const LocationView = () => import('@/maps/views/LocationView.vue');
 // import AllIconsView from './views/AllIconsView.vue';
 
@@ -151,8 +150,7 @@ const router = createRouter({
     },
     {
       path: '/maps/:id',
-      name: 'map-detail',
-      component: MapView,
+      redirect: (to) => `/locations/${to.params.id}`,
     },
     {
       path: '/locations/:id',

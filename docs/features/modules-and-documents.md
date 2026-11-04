@@ -38,7 +38,7 @@ continuous, virtualized document with a table of contents and bookmark controls.
 
 ## Module detail (`ModuleView.vue`)
 
-Loads modules, parties, monsters, encounters, notes, playlists, tracks, maps,
+Loads modules, parties, monsters, encounters, notes, playlists, tracks,
 locations, the mention index, and bookmarks.
 
 Computed collections:
@@ -48,13 +48,13 @@ Computed collections:
 - `moduleEncounters` — encounters whose `moduleId` equals this module.
 - `moduleNotes` — notes with this `moduleId` and `hidden === false`.
 - `modulePlaylists` — playlists whose `moduleIds` include this module.
-- `moduleMaps` — maps whose `entities` include a `module` link to this module.
 - `moduleLocations` — locations whose `entities` include a `module` link to this module.
 - `moduleBookmarks` — bookmarks with this `moduleId`.
 
-Tabs: Book, Book Tree, Linked entities. The Linked entities tab collects maps,
-locations, parties, monsters, encounters, notes and playlists that reference
-this module and renders them read-only with `EntityViewLinks`.
+Tabs: Book, Book Tree, Linked entities. The Linked entities tab collects
+locations (including their maps), parties, monsters, encounters, notes and
+playlists that reference this module and renders them read-only with
+`EntityViewLinks`.
 
 Header actions intended: Export ZIP. Delete/edit come from `BaseEntityTabView`.
 

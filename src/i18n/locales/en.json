@@ -916,7 +916,11 @@
     "showLayer": "Show layer",
     "hideLayer": "Hide layer",
     "showLabels": "Show labels",
-    "mapTab": "Map"
+    "mapTab": "Map",
+    "backlinks": "Backlinks",
+    "noBacklinks": "No markers or areas link back to this location.",
+    "noMapImage": "No map image yet. Edit this location to add one.",
+    "clearMap": "Clear map"
   },
   "probabilityCalculator": {
     "completions": {

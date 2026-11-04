@@ -10,31 +10,26 @@ import {
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  IconAffiliate,
   IconEdit,
   IconEye,
   IconEyeOff,
   IconLiveView,
-  IconMap,
   IconPencil,
   IconPlus,
   IconTrash,
   IconX,
 } from '@tabler/icons-vue';
 import type { Item } from 'ol-contextmenu';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
-import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import { confirm, prompt } from '@/dialogs';
 import 'vue3-openlayers/vue3-openlayers.css';
-import { getMapFile, useMapStore } from '../maps';
+import { getMapFile } from '../maps';
 import type {
+  LocationMap,
   MapEntity,
-  MapEntityForm,
-  MapEntityRef,
+  MapEntityKind,
   MapMarker,
 } from '../types';
-import MapEditor from '../components/MapEditor.vue';
 import MapMarkerEditor from '../components/MapMarkerEditor.vue';
 import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapMarkersPanel from '../components/MapMarkersPanel.vue';
@@ -54,7 +49,7 @@ import '../plugins/mapPlugins.css';
 import { getMapFileBlob, revokeMapFileUrl } from '../utils/mapFileUtils';
 import { enableFrequentHitDetectionReads } from '../utils/canvasReadback';
 import { contrastTextColor } from '../utils/colors';
-import { normalizeMapEntity } from '../utils/normalize';
+import { normalizeLocationMap } from '../utils/normalize';
 import {
   createMarkerDraft,
   removeMarker,
@@ -84,40 +79,78 @@ import Stroke from 'ol/style/Stroke';
 import Circle from 'ol/style/Circle';
 import Icon from 'ol/style/Icon';
 import Text from 'ol/style/Text';
-import type { MapArea, MapAreaShape, MapEntityKind, MapLayer } from '../types';
+import type { MapArea, MapAreaShape, MapLayer, MapLocation } from '../types';
 
 const route = useRoute();
 const router = useRouter();
-const mapStore = useMapStore();
 const locationStore = useMapLocationStore();
 const { t, locale } = useI18n();
 
+const props = defineProps<{
+  location?: MapLocation;
+}>();
+
 enableFrequentHitDetectionReads();
 
-const isLoaded = computed(() => mapStore.isLoaded);
-const loading = computed(() => !isLoaded.value);
+function asLocation(value: any): MapLocation | null {
+  if (!value) return null;
+  if (value.map) return value as MapLocation;
+  return {
+    id: value.id,
+    name: value.title || value.name || '',
+    description: value.description || '',
+    entities: Array.isArray(value.entities) ? value.entities : [],
+    map: {
+      fileId: value.fileId || '',
+      layers: value.layers || [],
+      markers: value.markers || [],
+      areas: value.areas || [],
+    },
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+  };
+}
+
+const sourceLocation = computed(
+  () =>
+    props.location ??
+    asLocation(locationStore.getById(String(route.params.id ?? ''))),
+);
+
+function toMapView(location: MapLocation | null): MapEntity | null {
+  if (!location) return null;
+  const data = normalizeLocationMap(location.map);
+  return {
+    id: location.id,
+    title: location.name,
+    description: location.description ?? '',
+    fileId: data.fileId,
+    entities: Array.isArray(location.entities) ? location.entities : [],
+    locationId: null,
+    layers: data.layers,
+    markers: data.markers,
+    areas: data.areas,
+    createdAt: location.createdAt,
+    updatedAt: location.updatedAt,
+  };
+}
+
 const map = ref<MapEntity | null>(null);
-const notFound = computed(() => isLoaded.value && !map.value);
+
+watch(
+  sourceLocation,
+  (location) => {
+    map.value = toMapView(location);
+  },
+  { immediate: true, deep: true },
+);
 const mapReady = ref(false);
 const imageLoaded = ref(false);
 const imageLoadFailed = ref(false);
-const isMapEditorOpen = ref(false);
 const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
 const isEditMode = ref(false);
-const pageTab = ref('map');
-const pageTabs = computed(() => [
-  { id: 'map', label: t('maps.mapTab'), icon: IconMap },
-  { id: 'links', label: t('common.linkedEntities'), icon: IconAffiliate },
-]);
-const mapLinks = computed<MapEntityRef[]>(() => {
-  const links = [...(map.value?.entities ?? [])];
-  if (map.value?.locationId) {
-    links.push({ kind: 'location', id: map.value.locationId });
-  }
-  return links;
-});
 const showLabels = ref(true);
 const sidePanelTab = ref('markers');
 const hiddenLayerIds = ref<Set<string>>(new Set());
@@ -268,15 +301,17 @@ function areaCircleMapCenter(area: MapArea): [number, number] {
   return imageToMapPoint(area.center || [0, 0], size.value[1]);
 }
 
-function updateMapFromStore() {
-  if (!mapStore.isLoaded) return;
-  const found = mapStore.getById(route.params.id as string);
-  map.value = found ? normalizeMapEntity(found) : null;
+async function saveMapData(patch: Partial<LocationMap>) {
+  const location = sourceLocation.value;
+  if (!location) return;
+  const current = normalizeLocationMap(location.map);
+  await locationStore.update(location.id, {
+    map: { ...current, ...patch },
+  });
+  if (map.value) {
+    map.value = { ...map.value, ...patch };
+  }
 }
-
-watch([() => mapStore.items, () => mapStore.isLoaded], updateMapFromStore, {
-  immediate: true,
-});
 
 const imageUrl = ref<string | null>(null);
 const size = ref<[number, number]>([0, 0]);
@@ -344,8 +379,7 @@ watch(
 );
 
 onMounted(async () => {
-  await Promise.all([mapStore.load(), locationStore.load()]);
-  updateMapFromStore();
+  if (!locationStore.isLoaded) await locationStore.load();
   void document.fonts
     ?.load('20px RPGAwesome')
     .then(() => olMapRef.value?.map?.render?.())
@@ -356,15 +390,6 @@ onBeforeUnmount(() => {
   unbindMapActions();
   releaseImageUrl();
 });
-
-const mapTitle = computed(() => map.value?.title || '');
-
-const handleDelete = async () => {
-  if (!map.value) return false;
-  await mapStore.remove(map.value.id);
-  await router.push('/maps');
-  return true;
-};
 
 function startAddMarker() {
   isAddingMarker.value = true;
@@ -401,7 +426,9 @@ function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
     [event.coordinate[0], event.coordinate[1]],
     size.value[1],
   );
-  editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y));
+  editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y), {
+    locationId: sourceLocation.value?.id ?? null,
+  });
   isMarkerEditorOpen.value = true;
   isAddingMarker.value = false;
 }
@@ -413,7 +440,9 @@ function startDrawArea(shape: MapAreaShape) {
 
 function createMarkerAtCoordinate(coordinate: [number, number]) {
   const [x, y] = mapToImagePoint(coordinate, size.value[1]);
-  editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y));
+  editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y), {
+    locationId: sourceLocation.value?.id ?? null,
+  });
   isMarkerEditorOpen.value = true;
   isAddingMarker.value = false;
 }
@@ -495,10 +524,14 @@ function onAreaDrawn(event: any) {
   let draft: MapArea;
 
   if (shape === 'circle') {
-    draft = createAreaDraft(shape, {
-      center: mapToImagePoint(geometry.getCenter(), size.value[1]),
-      radius: geometry.getRadius(),
-    });
+    draft = createAreaDraft(
+      shape,
+      {
+        center: mapToImagePoint(geometry.getCenter(), size.value[1]),
+        radius: geometry.getRadius(),
+      },
+      { locationId: sourceLocation.value?.id ?? null },
+    );
   } else {
     const ring = geometry.getCoordinates()[0] as Array<[number, number]>;
     const points = [...ring];
@@ -509,9 +542,13 @@ function onAreaDrawn(event: any) {
     ) {
       points.pop();
     }
-    draft = createAreaDraft(shape, {
-      points: mapToImagePoints(points, size.value[1]),
-    });
+    draft = createAreaDraft(
+      shape,
+      {
+        points: mapToImagePoints(points, size.value[1]),
+      },
+      { locationId: sourceLocation.value?.id ?? null },
+    );
   }
 
   editingArea.value = draft;
@@ -530,9 +567,7 @@ function closeAreaEditor() {
 }
 
 async function persistAreas(areas: MapArea[]) {
-  if (!map.value) return;
-  const updated = await mapStore.update(map.value.id, { areas });
-  map.value = normalizeMapEntity(updated);
+  await saveMapData({ areas });
 }
 
 async function saveArea(area: MapArea) {
@@ -683,9 +718,7 @@ function closeMarkerEditor() {
 }
 
 async function persistMarkers(markers: MapMarker[]) {
-  if (!map.value) return;
-  const updated = await mapStore.update(map.value.id, { markers });
-  map.value = normalizeMapEntity(updated);
+  await saveMapData({ markers });
 }
 
 async function saveMarker(marker: MapMarker) {
@@ -698,22 +731,6 @@ async function deleteMarker(markerId: string) {
   if (!map.value) return;
   await persistMarkers(removeMarker(map.value.markers, markerId));
   closeMarkerEditor();
-}
-
-function openMapEditor() {
-  isMapEditorOpen.value = true;
-}
-
-async function submitMapEditor(form: MapEntityForm) {
-  if (!map.value) return;
-  const updated = await mapStore.update(map.value.id, form);
-  map.value = normalizeMapEntity(updated);
-  isMapEditorOpen.value = false;
-}
-
-async function deleteMapFromEditor() {
-  isMapEditorOpen.value = false;
-  await handleDelete();
 }
 
 function setInfoAnchor(event?: MouseEvent | { pixel?: number[] }) {
@@ -806,11 +823,7 @@ function toggleLayerVisibility(layerId: string) {
 }
 
 async function persistLayers(updatedLayers: MapLayer[]) {
-  if (!map.value) return;
-  const updated = await mapStore.update(map.value.id, {
-    layers: updatedLayers,
-  });
-  map.value = normalizeMapEntity(updated);
+  await saveMapData({ layers: updatedLayers });
 }
 
 async function addLayer() {
@@ -847,7 +860,7 @@ async function deleteLayer(layer: MapLayer) {
     return;
   }
 
-  const updated = await mapStore.update(map.value.id, {
+  await saveMapData({
     layers: layers.value.filter((entry) => entry.id !== layer.id),
     markers: map.value.markers.map((marker) =>
       marker.layerId === layer.id
@@ -860,7 +873,6 @@ async function deleteLayer(layer: MapLayer) {
         : area,
     ),
   });
-  map.value = normalizeMapEntity(updated);
 }
 
 watch(isEditMode, (editing) => {
@@ -876,269 +888,251 @@ watch(isEditMode, (editing) => {
 </script>
 
 <template>
-  <BaseEntityView
-    :entity="map"
-    entity-name="maps.title"
-    list-route="/maps"
-    :on-delete="handleDelete"
-    :on-edit="openMapEditor"
-    :title="mapTitle"
-    :not-found="notFound"
-    :loading="loading"
-    :unwrap-content="true"
-    :header-show-edit="isEditMode"
-    :header-show-delete="isEditMode"
-    :tabs="pageTabs"
-    v-model="pageTab"
-    fill
-  >
-    <div class="map-page-layout">
-      <div v-show="pageTab === 'map'" class="map-page-body">
-        <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
-          <div v-if="isAddingMarker || drawMode" class="map-hint">
-            {{
-              isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint')
-            }}
-          </div>
+  <div class="map-page-layout map-page-layout--tab">
+    <div class="map-page-body">
+      <div
+        v-if="!map?.fileId"
+        class="q-pa-md text-caption text-grey-7"
+      >
+        {{ t('maps.noMapImage') }}
+      </div>
+      <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
+        <div v-if="isAddingMarker || drawMode" class="map-hint">
+          {{
+            isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint')
+          }}
+        </div>
 
-          <ol-map
-            ref="olMapRef"
-            :loadTilesWhileAnimating="true"
-            :loadTilesWhileInteracting="true"
-            style="height: 100%"
-            @click="onMapClick"
-          >
-            <ol-view
-              :center="center"
-              :zoom="2"
-              :min-zoom="1"
-              :max-zoom="6"
+        <ol-map
+          ref="olMapRef"
+          :loadTilesWhileAnimating="true"
+          :loadTilesWhileInteracting="true"
+          style="height: 100%"
+          @click="onMapClick"
+        >
+          <ol-view
+            :center="center"
+            :zoom="2"
+            :min-zoom="1"
+            :max-zoom="6"
+            :projection="projection"
+            :extent="extent"
+          />
+          <ol-zoom-control />
+          <ol-context-menu-control
+            v-if="isEditMode"
+            ref="contextMenuRef"
+            :items="contextMenuItems"
+            :default-items="false"
+            :width="200"
+            @open="onContextMenuOpen"
+          />
+
+          <ol-image-layer id="map-view">
+            <ol-source-image-static
+              :url="imageUrl"
+              :imageSize="size"
+              :imageExtent="extent"
               :projection="projection"
-              :extent="extent"
+              :wrapX="false"
+              :wrapY="false"
+              @imageloadstart="onImageLoadStart"
+              @imageloadend="onImageLoadEnd"
+              @imageloaderror="onImageLoadError"
             />
-            <ol-zoom-control />
-            <ol-context-menu-control
-              v-if="isEditMode"
-              ref="contextMenuRef"
-              :items="contextMenuItems"
-              :default-items="false"
-              :width="200"
-              @open="onContextMenuOpen"
-            />
+          </ol-image-layer>
 
-            <ol-image-layer id="map-view">
-              <ol-source-image-static
-                :url="imageUrl"
-                :imageSize="size"
-                :imageExtent="extent"
-                :projection="projection"
-                :wrapX="false"
-                :wrapY="false"
-                @imageloadstart="onImageLoadStart"
-                @imageloadend="onImageLoadEnd"
-                @imageloaderror="onImageLoadError"
-              />
-            </ol-image-layer>
-
-            <template v-if="imageLoaded">
-              <ol-vector-layer
-                v-for="(layer, layerIndex) in layers"
-                :key="layer.id"
-                :z-index="layerIndex"
-                :visible="!isLayerHidden(layer.id)"
-                :style="mapFeatureStyle"
-              >
-                <ol-source-vector>
-                  <ol-feature
-                    v-for="marker in markersForLayer(layer.id)"
-                    :key="`marker-${marker.id}`"
-                    :properties="{ kind: 'marker', markerId: marker.id }"
-                  >
-                    <ol-geom-point :coordinates="markerMapPosition(marker)" />
-                  </ol-feature>
-                  <ol-feature
-                    v-for="area in areasForLayer(layer.id)"
-                    :key="area.id"
-                    :properties="{ kind: 'area', areaId: area.id }"
-                  >
-                    <ol-geom-polygon
-                      v-if="area.shape !== 'circle'"
-                      :coordinates="areaPolygonCoordinates(area)"
-                    />
-                    <ol-geom-circle
-                      v-else
-                      :center="areaCircleMapCenter(area)"
-                      :radius="area.radius"
-                    />
-                  </ol-feature>
-                </ol-source-vector>
-              </ol-vector-layer>
-            </template>
-
-            <ol-interaction-draw
-              v-if="drawMode"
-              :type="drawType"
-              :freehand="drawFreehand"
-              :geometry-function="drawGeometryFunction"
-              @drawend="onAreaDrawn"
-            />
-
-            <ol-overlay
-              v-if="imageLoaded && showLabels"
-              v-for="area in visibleAreas"
-              :key="`area-label-${area.id}`"
-              :position="areaMapCenter(area)"
-              positioning="center-center"
-              :stop-event="true"
+          <template v-if="imageLoaded">
+            <ol-vector-layer
+              v-for="(layer, layerIndex) in layers"
+              :key="layer.id"
+              :z-index="layerIndex"
+              :visible="!isLayerHidden(layer.id)"
+              :style="mapFeatureStyle"
             >
-              <button
-                type="button"
-                class="map-area-label"
-                :style="{
-                  backgroundColor: areaFillColor(area.color, 0.82),
-                  color: areaTextColor(area.color),
-                }"
-                :title="area.title"
-                @click.stop="showAreaInfo(area, $event)"
-              >
-                <i
-                  v-if="area.icon"
-                  :class="['ra', markerIconClass(area.icon)]"
-                  :style="{ color: area.color }"
-                  aria-hidden="true"
-                ></i>
-                {{ area.title }}
-              </button>
-            </ol-overlay>
+              <ol-source-vector>
+                <ol-feature
+                  v-for="marker in markersForLayer(layer.id)"
+                  :key="`marker-${marker.id}`"
+                  :properties="{ kind: 'marker', markerId: marker.id }"
+                >
+                  <ol-geom-point :coordinates="markerMapPosition(marker)" />
+                </ol-feature>
+                <ol-feature
+                  v-for="area in areasForLayer(layer.id)"
+                  :key="area.id"
+                  :properties="{ kind: 'area', areaId: area.id }"
+                >
+                  <ol-geom-polygon
+                    v-if="area.shape !== 'circle'"
+                    :coordinates="areaPolygonCoordinates(area)"
+                  />
+                  <ol-geom-circle
+                    v-else
+                    :center="areaCircleMapCenter(area)"
+                    :radius="area.radius"
+                  />
+                </ol-feature>
+              </ol-source-vector>
+            </ol-vector-layer>
+          </template>
 
-            <div
-              v-if="infoSelection"
-              class="map-info-anchor"
+          <ol-interaction-draw
+            v-if="drawMode"
+            :type="drawType"
+            :freehand="drawFreehand"
+            :geometry-function="drawGeometryFunction"
+            @drawend="onAreaDrawn"
+          />
+
+          <ol-overlay
+            v-if="imageLoaded && showLabels"
+            v-for="area in visibleAreas"
+            :key="`area-label-${area.id}`"
+            :position="areaMapCenter(area)"
+            positioning="center-center"
+            :stop-event="true"
+          >
+            <button
+              type="button"
+              class="map-area-label"
               :style="{
-                left: `${infoAnchor.left}px`,
-                top: `${infoAnchor.top}px`,
+                backgroundColor: areaFillColor(area.color, 0.82),
+                color: areaTextColor(area.color),
               }"
+              :title="area.title"
+              @click.stop="showAreaInfo(area, $event)"
             >
-              <QMenu
-                :model-value="true"
-                anchor="top middle"
-                self="bottom middle"
-                :offset="[0, -10]"
-                @update:model-value="(value) => !value && closeMapInfo()"
-              >
-                <QCard class="map-info-popup" flat>
-                  <QCardSection class="row items-start q-py-sm">
-                    <div class="col">
-                      <div
-                        class="map-info-title text-subtitle1 text-weight-medium"
-                      >
-                        {{
-                          infoMarker?.title ||
-                          infoArea?.title ||
-                          t('maps.untitledArea')
-                        }}
-                      </div>
-                      <div
-                        v-if="infoLocationName"
-                        class="text-caption text-primary text-weight-medium"
-                      >
-                        {{ infoLocationName }}
-                      </div>
-                    </div>
-                    <QBtn
-                      flat
-                      dense
-                      round
-                      :aria-label="t('common.close')"
-                      @click.stop="closeMapInfo"
-                    >
-                      <IconX :size="18" />
-                    </QBtn>
-                  </QCardSection>
-
-                  <QCardSection
-                    v-if="infoMarker?.description || infoArea?.description"
-                    class="q-pt-none"
-                  >
-                    <div class="text-body2 text-grey-7">
-                      {{ infoMarker?.description || infoArea?.description }}
-                    </div>
-                  </QCardSection>
-
-                  <QCardSection
-                    v-if="infoEntities.length > 0"
-                    class="q-pt-none"
-                  >
-                    <EntitiesLinking
-                      v-for="kind in infoEntityKinds"
-                      :key="kind"
-                      :kind="kind"
-                      :model-value="infoEntities"
-                      readonly
-                    />
-                  </QCardSection>
-
-                  <QCardActions
-                    v-if="infoLocation || isEditMode"
-                    class="map-info-actions q-pt-none"
-                    align="right"
-                  >
-                    <QBtn
-                      v-if="infoLocation"
-                      flat
-                      dense
-                      no-caps
-                      color="primary"
-                      :label="t('maps.goToLocation')"
-                      @click.stop="goToInfoLocation"
-                    />
-                    <QBtn
-                      v-if="isEditMode"
-                      flat
-                      dense
-                      no-caps
-                      color="primary"
-                      :label="t('common.edit')"
-                      @click.stop="editInfoItem"
-                    />
-                  </QCardActions>
-                </QCard>
-              </QMenu>
-            </div>
-          </ol-map>
+              <i
+                v-if="area.icon"
+                :class="['ra', markerIconClass(area.icon)]"
+                :style="{ color: area.color }"
+                aria-hidden="true"
+              ></i>
+              {{ area.title }}
+            </button>
+          </ol-overlay>
 
           <div
-            v-if="!imageLoaded && !imageLoadFailed"
-            class="map-loading-overlay absolute-full flex flex-center"
+            v-if="infoSelection"
+            class="map-info-anchor"
+            :style="{
+              left: `${infoAnchor.left}px`,
+              top: `${infoAnchor.top}px`,
+            }"
           >
-            <QSpinner
-              color="primary"
-              size="3em"
-              :aria-label="t('common.loading')"
-            />
-          </div>
-
-          <div v-if="imageLoaded" class="map-accessible-markers">
-            <button
-              v-for="marker in visibleMarkers"
-              :key="`accessible-${marker.id}`"
-              type="button"
-              class="map-marker-accessible"
-              :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
-              @click.stop="showMarkerInfo(marker, $event)"
+            <QMenu
+              :model-value="true"
+              anchor="top middle"
+              self="bottom middle"
+              :offset="[0, -10]"
+              @update:model-value="(value) => !value && closeMapInfo()"
             >
-              {{ marker.title || t('maps.untitledMarker') }}
-            </button>
-          </div>
-        </div>
-      </div>
+              <QCard class="map-info-popup" flat>
+                <QCardSection class="row items-start q-py-sm">
+                  <div class="col">
+                    <div
+                      class="map-info-title text-subtitle1 text-weight-medium"
+                    >
+                      {{
+                        infoMarker?.title ||
+                        infoArea?.title ||
+                        t('maps.untitledArea')
+                      }}
+                    </div>
+                    <div
+                      v-if="infoLocationName"
+                      class="text-caption text-primary text-weight-medium"
+                    >
+                      {{ infoLocationName }}
+                    </div>
+                  </div>
+                  <QBtn
+                    flat
+                    dense
+                    round
+                    :aria-label="t('common.close')"
+                    @click.stop="closeMapInfo"
+                  >
+                    <IconX :size="18" />
+                  </QBtn>
+                </QCardSection>
 
-      <div v-if="pageTab === 'links'" class="map-page-links q-pa-md">
-        <EntityViewLinks :links="mapLinks" />
+                <QCardSection
+                  v-if="infoMarker?.description || infoArea?.description"
+                  class="q-pt-none"
+                >
+                  <div class="text-body2 text-grey-7">
+                    {{ infoMarker?.description || infoArea?.description }}
+                  </div>
+                </QCardSection>
+
+                <QCardSection v-if="infoEntities.length > 0" class="q-pt-none">
+                  <EntitiesLinking
+                    v-for="kind in infoEntityKinds"
+                    :key="kind"
+                    :kind="kind"
+                    :model-value="infoEntities"
+                    readonly
+                  />
+                </QCardSection>
+
+                <QCardActions
+                  v-if="infoLocation || isEditMode"
+                  class="map-info-actions q-pt-none"
+                  align="right"
+                >
+                  <QBtn
+                    v-if="infoLocation"
+                    flat
+                    dense
+                    no-caps
+                    color="primary"
+                    :label="t('maps.goToLocation')"
+                    @click.stop="goToInfoLocation"
+                  />
+                  <QBtn
+                    v-if="isEditMode"
+                    flat
+                    dense
+                    no-caps
+                    color="primary"
+                    :label="t('common.edit')"
+                    @click.stop="editInfoItem"
+                  />
+                </QCardActions>
+              </QCard>
+            </QMenu>
+          </div>
+        </ol-map>
+
+        <div
+          v-if="!imageLoaded && !imageLoadFailed"
+          class="map-loading-overlay absolute-full flex flex-center"
+        >
+          <QSpinner
+            color="primary"
+            size="3em"
+            :aria-label="t('common.loading')"
+          />
+        </div>
+
+        <div v-if="imageLoaded" class="map-accessible-markers">
+          <button
+            v-for="marker in visibleMarkers"
+            :key="`accessible-${marker.id}`"
+            type="button"
+            class="map-marker-accessible"
+            :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
+            @click.stop="showMarkerInfo(marker, $event)"
+          >
+            {{ marker.title || t('maps.untitledMarker') }}
+          </button>
+        </div>
       </div>
     </div>
 
-    <template #sidepanel>
+    <aside class="map-tab-sidepanel">
       <div class="map-sidepanel">
         <div class="map-sidepanel-content">
           <TabGroup
@@ -1336,36 +1330,27 @@ watch(isEditMode, (editing) => {
           </QList>
         </div>
       </div>
-    </template>
+    </aside>
 
-    <template #editor>
-      <MapEditor
-        :map="map"
-        :is-open="isMapEditorOpen"
-        @submit="submitMapEditor"
-        @delete="deleteMapFromEditor"
-        @cancel="isMapEditorOpen = false"
-      />
-      <MapMarkerEditor
-        :marker="editingMarker"
-        :locations="allLocations"
-        :layers="map?.layers || []"
-        :is-open="isMarkerEditorOpen"
-        @save="saveMarker"
-        @delete="deleteMarker"
-        @cancel="closeMarkerEditor"
-      />
-      <MapAreaEditor
-        :area="editingArea"
-        :locations="allLocations"
-        :layers="map?.layers || []"
-        :is-open="isAreaEditorOpen"
-        @save="saveArea"
-        @delete="deleteArea"
-        @cancel="closeAreaEditor"
-      />
-    </template>
-  </BaseEntityView>
+    <MapMarkerEditor
+      :marker="editingMarker"
+      :locations="allLocations"
+      :layers="map?.layers || []"
+      :is-open="isMarkerEditorOpen"
+      @save="saveMarker"
+      @delete="deleteMarker"
+      @cancel="closeMarkerEditor"
+    />
+    <MapAreaEditor
+      :area="editingArea"
+      :locations="allLocations"
+      :layers="map?.layers || []"
+      :is-open="isAreaEditorOpen"
+      @save="saveArea"
+      @delete="deleteArea"
+      @cancel="closeAreaEditor"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -1374,6 +1359,31 @@ watch(isEditMode, (editing) => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+.map-page-layout--tab {
+  flex-direction: row;
+}
+
+.map-tab-sidepanel {
+  flex: 0 0 340px;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--color-background);
+}
+
+@media (max-width: 900px) {
+  .map-page-layout--tab {
+    flex-direction: column;
+  }
+
+  .map-tab-sidepanel {
+    flex: 0 1 auto;
+    max-height: 40%;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: none;
+  }
 }
 
 .map-page-body {

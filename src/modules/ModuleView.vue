@@ -7,7 +7,6 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
-import { useMapStore } from '@/maps/maps';
 import { useMapLocationStore } from '@/maps/locations';
 import { useConfigStore } from '@/utils/configStore';
 import { useBookmarkStore } from '@/stores/bookmarks';
@@ -55,7 +54,6 @@ const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const noteStore = useNoteStore();
 const playlistsStore = useJukeboxPlaylistsStore();
-const mapStore = useMapStore();
 const locationStore = useMapLocationStore();
 const configStore = useConfigStore();
 const mentionsStore = useMentionsStore();
@@ -99,15 +97,6 @@ const modulePlaylists = computed(() =>
   ),
 );
 
-const moduleMaps = computed(() =>
-  mapStore.items.filter((map) =>
-    map.entities?.some(
-      (entity) =>
-        entity.kind === 'module' && entity.id === (route.params.id as string),
-    ),
-  ),
-);
-
 const moduleLocations = computed(() =>
   locationStore.items.filter((location) =>
     location.entities?.some(
@@ -143,7 +132,6 @@ const entityTabs = computed(() => [
 ]);
 
 const moduleLinks = computed<MapEntityRef[]>(() => [
-  ...moduleMaps.value.map((map) => ({ kind: 'map' as const, id: map.id })),
   ...moduleLocations.value.map((location) => ({
     kind: 'location' as const,
     id: location.id,
@@ -184,7 +172,6 @@ onMounted(async () => {
     playlistsStore.load(),
     mentionsStore.load(),
     bookmarkStore.load(),
-    mapStore.load(),
     locationStore.load(),
   ]);
   // Listen for hash changes

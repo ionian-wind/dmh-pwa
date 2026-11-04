@@ -22,10 +22,18 @@ export interface MapPoint {
   [key: string]: unknown;
 }
 
+export interface LocationMap {
+  fileId: string;
+  layers: MapLayer[];
+  markers: MapMarker[];
+  areas: MapArea[];
+}
+
 export interface MapLocation extends WithMetadata {
   name: string;
   description?: string;
   entities: MapEntityRef[];
+  map: LocationMap;
 }
 
 export interface MapLayer {
@@ -80,6 +88,7 @@ export interface MapFile extends WithMetadata {
   imageMetadata?: ImageMetadata;
 }
 
+/** Legacy persisted map shape; merged into `MapLocation.map`. */
 export interface MapEntity extends WithMetadata {
   title: string;
   description?: string;
@@ -95,10 +104,3 @@ export interface MapEntity extends WithMetadata {
   /** @deprecated Use markers. Converted by normalizeMapEntity. */
   points?: MapPoint[];
 }
-
-export type MapEntityForm = Omit<
-  MapEntity,
-  'id' | 'createdAt' | 'updatedAt'
-> & {
-  id?: string;
-};

@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { IconMapPin2 } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
 import BaseCard from '@/components/common/BaseCard.vue';
-import type { MapEntity, MapLocation } from '../types';
+import type { MapLocation } from '../types';
 
 const props = defineProps<{
   location: MapLocation;
-  linkedMap?: MapEntity | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'view', location: MapLocation): void;
   (e: 'edit', location: MapLocation): void;
   (e: 'delete', location: MapLocation): void;
-  (e: 'open-map', mapId: string): void;
 }>();
 
 const { t } = useI18n();
@@ -36,18 +33,5 @@ const { t } = useI18n();
     >
       {{ location.description }}
     </p>
-    <div v-if="linkedMap" class="text-primary text-caption text-weight-bold">
-      {{ linkedMap.title }}
-    </div>
-    <template v-if="linkedMap" #actions>
-      <QBtn
-        flat
-        color="warning"
-        :title="t('maps.openLinkedMap')"
-        @click="emit('open-map', linkedMap.id)"
-      >
-        <IconMapPin2 />
-      </QBtn>
-    </template>
   </BaseCard>
 </template>

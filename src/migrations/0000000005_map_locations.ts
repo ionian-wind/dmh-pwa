@@ -8,6 +8,7 @@ function asLocation(location: MapLocation): MapLocation {
     name: location.name || '',
     description: location.description || '',
     entities: Array.isArray(location.entities) ? location.entities : [],
+    map: { fileId: '', layers: [], markers: [], areas: [] },
     createdAt: Number(location.createdAt) || Date.now(),
     updatedAt: Number(location.updatedAt) || Date.now(),
   };

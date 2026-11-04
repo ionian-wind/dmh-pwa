@@ -5,7 +5,6 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
-import { useMapStore } from '../maps';
 import { useMapLocationStore } from '../locations';
 import type { Ref } from 'vue';
 import type { MapEntityKind, MapEntityRef } from '../types';
@@ -60,12 +59,6 @@ export const MAP_ENTITY_KIND_OPTIONS: MapEntityKindOption[] = [
     labelKey: 'characters.title',
     titleField: 'name',
     useStore: useCharacterStore,
-  },
-  {
-    kind: 'map',
-    labelKey: 'maps.title',
-    titleField: 'title',
-    useStore: useMapStore,
   },
   {
     kind: 'location',

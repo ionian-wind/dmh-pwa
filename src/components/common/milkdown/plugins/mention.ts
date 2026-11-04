@@ -257,7 +257,7 @@ const mentionKinds = [
   { kind: 'party', label: 'parties.title', icon: iconUsers },
   { kind: 'monster', label: 'monsters.title', icon: iconGhost },
   { kind: 'encounter', label: 'encounters.title', icon: iconSwords },
-  { kind: 'map', label: 'maps.title', icon: iconMap },
+  { kind: 'location', label: 'maps.locations', icon: iconMap },
 ];
 
 // Restore buildMentionToolbar for use with buildToolbar callback in Crepe toolbar config

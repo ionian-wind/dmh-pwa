@@ -375,7 +375,6 @@ describe('map entity references', () => {
       'monster',
       'encounter',
       'character',
-      'map',
       'location',
       'playlist',
     ]);
@@ -384,10 +383,10 @@ describe('map entity references', () => {
       labelKey: 'playlist.title',
       titleField: 'name',
     });
-    expect(getEntityKindOption('map')).toMatchObject({
-      kind: 'map',
-      labelKey: 'maps.title',
-      titleField: 'title',
+    expect(getEntityKindOption('location')).toMatchObject({
+      kind: 'location',
+      labelKey: 'maps.locations',
+      titleField: 'name',
     });
     expect(getEntityKindOption('unknown')).toBeUndefined();
   });

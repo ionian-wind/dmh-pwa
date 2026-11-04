@@ -61,7 +61,7 @@ describe('milkdown mention plugin helpers', () => {
       'party',
       'monster',
       'encounter',
-      'map',
+      'location',
     ]);
     expect(items[0].options.active()).toBe(false);
   });

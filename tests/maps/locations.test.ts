@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useMapStore } from '@/maps/maps';
 import { deleteMapLocation, useMapLocationStore } from '@/maps/locations';
-import { resetStoreCache } from '@/utils/storage';
+import { idbPutItem, resetStoreCache } from '@/utils/storage';
 
 async function deleteDatabase() {
   await resetStoreCache();
@@ -13,6 +12,48 @@ async function deleteDatabase() {
     request.onerror = () => resolve();
     request.onblocked = () => resolve();
   });
+}
+
+function marker(locationId: string | null = null) {
+  return {
+    id: 'm1',
+    title: 'Castle',
+    x: 10,
+    y: 20,
+    locationId,
+    layerId: 'base',
+    entities: [],
+    icon: 'ra-castle',
+    color: '#cc3333',
+  };
+}
+
+function area(locationId: string | null = null) {
+  return {
+    id: 'a1',
+    title: 'Forest',
+    shape: 'polygon' as const,
+    points: [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+    ] as Array<[number, number]>,
+    locationId,
+    layerId: 'base',
+    entities: [],
+    icon: '',
+    color: '#336699',
+  };
+}
+
+function mapData(overrides: Record<string, unknown> = {}) {
+  return {
+    fileId: '',
+    layers: [{ id: 'base', title: 'Base' }],
+    markers: [],
+    areas: [],
+    ...overrides,
+  };
 }
 
 describe('map location store', () => {
@@ -27,6 +68,7 @@ describe('map location store', () => {
       name: 'Town',
       description: 'Starting town',
       entities: [],
+      map: mapData(),
     });
 
     expect(store.getById(location.id)?.name).toBe('Town');
@@ -45,111 +87,76 @@ describe('map location store', () => {
     expect(store.getById(location.id)).toBeNull();
   });
 
-  it('removes a deleted location from maps and markers', async () => {
+  it('detaches a deleted location from markers and areas in other maps', async () => {
     const locationStore = useMapLocationStore();
-    const mapStore = useMapStore();
-    const location = await locationStore.create({
+    const target = await locationStore.create({
       name: 'Town',
       description: '',
       entities: [],
+      map: mapData(),
     });
-    const map = await mapStore.create({
-      title: 'World',
+    const other = await locationStore.create({
+      name: 'Region',
       description: '',
-      fileId: 'file1',
-      locationId: location.id,
-      layers: [{ id: 'base', title: 'Base' }],
-      markers: [
-        {
-          id: 'm1',
-          title: 'Castle',
-          x: 10,
-          y: 20,
-          locationId: location.id,
-          layerId: 'base',
-          entities: [],
-          icon: 'ra-castle',
-          color: '#cc3333',
-        },
-      ],
-      areas: [
-        {
-          id: 'a1',
-          title: 'Forest',
-          shape: 'polygon',
-          points: [
-            [0, 0],
-            [10, 0],
-            [10, 10],
-          ],
-          locationId: location.id,
-          layerId: 'base',
-          entities: [],
-          icon: '',
-          color: '#336699',
-        },
-      ],
+      entities: [],
+      map: mapData({
+        markers: [marker(target.id), marker('other')],
+        areas: [area(target.id), area('other')],
+      }),
     });
 
-    await deleteMapLocation(location.id);
+    await deleteMapLocation(target.id);
 
-    expect(locationStore.getById(location.id)).toBeNull();
-    expect(mapStore.getById(map.id)?.locationId).toBeNull();
-    expect(mapStore.getById(map.id)?.markers[0].locationId).toBeNull();
-    expect(mapStore.getById(map.id)?.areas[0].locationId).toBeNull();
+    expect(locationStore.getById(target.id)).toBeNull();
+    const updated = locationStore.getById(other.id);
+    expect(updated?.map.markers[0].locationId).toBeNull();
+    expect(updated?.map.markers[1].locationId).toBe('other');
+    expect(updated?.map.areas[0].locationId).toBeNull();
+    expect(updated?.map.areas[1].locationId).toBe('other');
   });
 
-  it('detaches legacy location ids and preserves unrelated links', async () => {
+  it('preserves unrelated links when detaching', async () => {
     const locationStore = useMapLocationStore();
-    const mapStore = useMapStore();
     const target = await locationStore.create({
       name: 'Target',
       description: '',
       entities: [],
+      map: mapData(),
     });
-    const map = await mapStore.create({
-      title: 'Legacy',
+    const other = await locationStore.create({
+      name: 'Other',
       description: '',
-      fileId: 'file1',
-      locationId: null,
-      layers: [{ id: 'base', title: 'Base' }],
-      markers: [
-        {
-          id: 'm1',
-          title: 'Keep',
-          x: 1,
-          y: 1,
-          locationId: 'other',
-          layerId: 'base',
-          entities: [],
-          icon: 'ra-castle',
-          color: '#cc3333',
-        },
-      ],
-      areas: [
-        {
-          id: 'a1',
-          title: 'Keep',
-          shape: 'polygon',
-          points: [
-            [0, 0],
-            [1, 0],
-            [1, 1],
-          ],
-          locationId: 'other',
-          layerId: 'base',
-          entities: [],
-          color: '#336699',
-        },
-      ],
+      entities: [],
+      map: mapData({
+        markers: [marker('other')],
+        areas: [area('other')],
+      }),
     });
-    (map as any).locationIds = [target.id];
-    await mapStore.update(map.id, { locationIds: [target.id] } as any);
 
     await deleteMapLocation(target.id);
 
-    const updated = mapStore.getById(map.id);
-    expect(updated?.markers[0].locationId).toBe('other');
-    expect(updated?.areas[0].locationId).toBe('other');
+    const updated = locationStore.getById(other.id);
+    expect(updated?.map.markers[0].locationId).toBe('other');
+    expect(updated?.map.areas[0].locationId).toBe('other');
+  });
+
+  it('normalizes legacy locations without map data on load', async () => {
+    await idbPutItem('map_locations', {
+      id: 'legacy',
+      name: 'Legacy',
+      description: 'Old record',
+      entities: [],
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    const store = useMapLocationStore();
+    await store.load();
+
+    expect(store.getById('legacy')?.map).toEqual({
+      fileId: '',
+      layers: [{ id: 'base', title: 'Base' }],
+      markers: [],
+      areas: [],
+    });
   });
 });

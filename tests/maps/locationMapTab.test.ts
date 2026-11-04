@@ -3,23 +3,16 @@ import { defineComponent, h, onMounted } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
-import MapView from '@/maps/views/MapView.vue';
+import MapView from '@/maps/components/LocationMapTab.vue';
 import { MapActionsControl } from '@/maps/plugins/MapActionsControl';
 import type { MapEntity } from '@/maps/types';
 
 const mocks = vi.hoisted(() => ({
-  mapStore: {
-    isLoaded: true,
-    items: { value: [] as any[] },
-    getById: vi.fn(),
-    load: vi.fn().mockResolvedValue(undefined),
-    update: vi.fn(),
-    remove: vi.fn().mockResolvedValue(undefined),
-  },
   locationStore: {
     isLoaded: true,
     items: [] as any[],
     getById: vi.fn(),
+    update: vi.fn(),
     load: vi.fn().mockResolvedValue(undefined),
   },
   getMapFile: vi.fn(),
@@ -29,7 +22,6 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/maps/maps', () => ({
-  useMapStore: () => mocks.mapStore,
   getMapFile: mocks.getMapFile,
 }));
 
@@ -46,19 +38,6 @@ vi.mock('@/maps/utils/mapFileUtils', () => ({
   getMapFileBlob: mocks.getMapFileBlob,
   revokeMapFileUrl: vi.fn(),
 }));
-
-const BaseEntityViewStub = defineComponent({
-  name: 'BaseEntityView',
-  setup(_, { slots }) {
-    return () =>
-      h('div', { class: 'entity-view-stub' }, [
-        slots.default?.(),
-        slots.sidepanel?.(),
-        slots.actions?.(),
-        slots.editor?.(),
-      ]);
-  },
-});
 
 const mapHarness = {
   map: null as any,
@@ -158,15 +137,6 @@ const VectorLayerStub = defineComponent({
   props: { visible: { type: Boolean, default: true }, zIndex: Number },
   setup(_, { slots }) {
     return () => h('div', { class: 'ol-vector-layer-stub' }, slots.default?.());
-  },
-});
-
-const MapEditorStub = defineComponent({
-  name: 'MapEditor',
-  props: { isOpen: Boolean, map: Object },
-  emits: ['submit', 'cancel'],
-  setup() {
-    return () => h('div', { class: 'map-editor-stub' });
   },
 });
 
@@ -280,7 +250,7 @@ const map: MapEntity = {
   updatedAt: 2,
 };
 
-async function mountMapView() {
+async function mountMapView(props: Record<string, unknown> = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -292,6 +262,7 @@ async function mountMapView() {
   await router.isReady();
 
   const wrapper = mount(MapView, {
+    props,
     global: {
       plugins: [router],
       components: {
@@ -312,8 +283,6 @@ async function mountMapView() {
         'ol-interaction-draw': PassthroughStub,
       },
       stubs: {
-        BaseEntityView: BaseEntityViewStub,
-        MapEditor: MapEditorStub,
         MapMarkerEditor: MarkerEditorStub,
         MapAreaEditor: AreaEditorStub,
         MapMarkersPanel: MarkersPanelStub,
@@ -332,13 +301,12 @@ describe('MapView', () => {
     mapHarness.map = null;
     mapHarness.controls.length = 0;
     mapHarness.deferImageLoad = false;
-    mocks.mapStore.isLoaded = true;
-    mocks.mapStore.getById.mockReturnValue(map);
+    mocks.locationStore.isLoaded = true;
     mocks.locationStore.items = [location];
     mocks.locationStore.getById.mockImplementation((id: string) =>
-      id === location.id ? location : undefined,
+      id === location.id ? location : map,
     );
-    mocks.mapStore.update.mockImplementation(
+    mocks.locationStore.update.mockImplementation(
       async (_id: string, patch: any) => ({
         ...map,
         ...patch,
@@ -510,27 +478,23 @@ describe('MapView', () => {
 
   it('covers list deletion, map editor and layer actions', async () => {
     const localMap = structuredClone(map);
-    mocks.mapStore.getById.mockReturnValue(localMap);
+    mocks.locationStore.getById.mockReturnValue(localMap);
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
-    const update = mocks.mapStore.update;
+    const update = mocks.locationStore.update;
     update.mockImplementation(async (_id: string, patch: any) => ({
       ...localMap,
       ...patch,
     }));
 
     await vm.deleteMarkerFromList('m1');
-    expect(update).toHaveBeenCalledWith('map1', { markers: [] });
+    expect(update).toHaveBeenCalledWith('map1', {
+      map: expect.objectContaining({ markers: [] }),
+    });
 
     await vm.deleteAreaFromList('a1');
-    expect(update).toHaveBeenCalledWith('map1', { areas: [] });
-
-    vm.openMapEditor();
-    expect(vm.isMapEditorOpen).toBe(true);
-    await vm.submitMapEditor({ title: 'Renamed', fileId: 'file1' });
     expect(update).toHaveBeenCalledWith('map1', {
-      title: 'Renamed',
-      fileId: 'file1',
+      map: expect.objectContaining({ areas: [] }),
     });
 
     localMap.layers = [
@@ -542,9 +506,11 @@ describe('MapView', () => {
     expect(update).toHaveBeenCalledWith(
       'map1',
       expect.objectContaining({
-        layers: expect.arrayContaining([
-          expect.objectContaining({ title: 'Layer 2' }),
-        ]),
+        map: expect.objectContaining({
+          layers: expect.arrayContaining([
+            expect.objectContaining({ title: 'Layer 2' }),
+          ]),
+        }),
       }),
     );
 
@@ -558,9 +524,11 @@ describe('MapView', () => {
     expect(update).toHaveBeenCalledWith(
       'map1',
       expect.objectContaining({
-        layers: expect.arrayContaining([
-          expect.objectContaining({ title: 'Renamed layer' }),
-        ]),
+        map: expect.objectContaining({
+          layers: expect.arrayContaining([
+            expect.objectContaining({ title: 'Renamed layer' }),
+          ]),
+        }),
       }),
     );
 
@@ -571,9 +539,11 @@ describe('MapView', () => {
     expect(update).toHaveBeenCalledWith(
       'map1',
       expect.objectContaining({
-        layers: [{ id: 'base', title: 'Base' }],
-        markers: [expect.objectContaining({ layerId: 'base' })],
-        areas: [expect.objectContaining({ layerId: 'base' })],
+        map: expect.objectContaining({
+          layers: [{ id: 'base', title: 'Base' }],
+          markers: [expect.objectContaining({ layerId: 'base' })],
+          areas: [expect.objectContaining({ layerId: 'base' })],
+        }),
       }),
     );
 
@@ -583,9 +553,6 @@ describe('MapView', () => {
     vm.toggleLayerVisibility('layer-2');
     vm.handleMapAction({ action: 'cancel-drawing' });
     vm.onContextMenuOpen();
-
-    await vm.deleteMapFromEditor();
-    expect(mocks.mapStore.remove).toHaveBeenCalledWith('map1');
     wrapper.unmount();
   });
 
@@ -604,7 +571,7 @@ describe('MapView', () => {
       icon: '',
       color: '#336699',
     } as any);
-    mocks.mapStore.getById.mockReturnValue(localMap);
+    mocks.locationStore.getById.mockReturnValue(localMap);
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
@@ -653,8 +620,8 @@ describe('MapView', () => {
   it('covers view, drawing, layer and missing-item branches', async () => {
     const localMap = structuredClone(map);
     localMap.layers.push({ id: 'layer-2', title: 'Layer 2' });
-    mocks.mapStore.getById.mockReturnValue(localMap);
-    mocks.mapStore.update.mockImplementation(
+    mocks.locationStore.getById.mockReturnValue(localMap);
+    mocks.locationStore.update.mockImplementation(
       async (_id: string, patch: any) => ({
         ...localMap,
         ...patch,
@@ -739,12 +706,11 @@ describe('MapView', () => {
 
     vm.onMapClick({ pixel: [1, 1], coordinate: [20, 20] });
     vm.onMapClick({});
-    await vm.handleDelete();
     wrapper.unmount();
   });
 
   it('handles missing map data and empty collections', async () => {
-    mocks.mapStore.getById.mockReturnValue(undefined);
+    mocks.locationStore.getById.mockReturnValue(undefined);
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
@@ -753,14 +719,11 @@ describe('MapView', () => {
     expect(vm.visibleAreas).toEqual([]);
     expect(vm.markersForLayer('base')).toEqual([]);
     expect(vm.areasForLayer('base')).toEqual([]);
-    expect(vm.mapTitle).toBe('');
     expect(vm.infoEntities).toEqual([]);
     vm.goToInfoLocation();
-    await expect(vm.handleDelete()).resolves.toBe(false);
     await vm.persistMarkers([]);
     await vm.saveMarker({ id: 'm1' });
     await vm.deleteMarker('m1');
-    await vm.submitMapEditor({ title: 'x', fileId: 'f' });
     await vm.persistLayers([]);
     await vm.deleteArea('a1');
     await vm.saveArea({ id: 'a1' });
@@ -779,7 +742,7 @@ describe('MapView', () => {
     localMap.markers = [];
     localMap.areas = [];
     localMap.layers = [];
-    mocks.mapStore.getById.mockReturnValue(localMap);
+    mocks.locationStore.getById.mockReturnValue(localMap);
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
@@ -825,7 +788,7 @@ describe('MapView', () => {
       locationId: 'l1',
       description: 'area desc',
     });
-    mocks.mapStore.getById.mockReturnValue(localMap);
+    mocks.locationStore.getById.mockReturnValue(localMap);
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;
 
@@ -900,12 +863,14 @@ describe('MapView', () => {
     });
     await flushPromises();
 
-    expect(mocks.mapStore.update).toHaveBeenCalledWith(
+    expect(mocks.locationStore.update).toHaveBeenCalledWith(
       'map1',
       expect.objectContaining({
-        markers: expect.arrayContaining([
-          expect.objectContaining({ title: 'New marker' }),
-        ]),
+        map: expect.objectContaining({
+          markers: expect.arrayContaining([
+            expect.objectContaining({ title: 'New marker' }),
+          ]),
+        }),
       }),
     );
     wrapper.unmount();
@@ -922,22 +887,20 @@ describe('MapView', () => {
 
     editor.vm.$emit('save', { ...map.markers[0], title: 'Renamed' });
     await flushPromises();
-    expect(mocks.mapStore.update).toHaveBeenCalledWith(
+    expect(mocks.locationStore.update).toHaveBeenCalledWith(
       'map1',
       expect.objectContaining({
-        markers: [expect.objectContaining({ title: 'Renamed' })],
+        map: expect.objectContaining({
+          markers: [expect.objectContaining({ title: 'Renamed' })],
+        }),
       }),
     );
 
     editor.vm.$emit('delete', 'm1');
     await flushPromises();
-    expect(mocks.mapStore.update).toHaveBeenLastCalledWith('map1', {
-      markers: [],
+    expect(mocks.locationStore.update).toHaveBeenLastCalledWith('map1', {
+      map: expect.objectContaining({ markers: [] }),
     });
-
-    vm.openMapEditor();
-    await flushPromises();
-    expect(wrapper.findComponent(MapEditorStub).props('isOpen')).toBe(true);
     wrapper.unmount();
   });
 
@@ -1107,12 +1070,14 @@ describe('MapView', () => {
       title: 'New area',
     });
     await flushPromises();
-    expect(mocks.mapStore.update).toHaveBeenCalledWith(
+    expect(mocks.locationStore.update).toHaveBeenCalledWith(
       'map1',
       expect.objectContaining({
-        areas: expect.arrayContaining([
-          expect.objectContaining({ title: 'New area' }),
-        ]),
+        map: expect.objectContaining({
+          areas: expect.arrayContaining([
+            expect.objectContaining({ title: 'New area' }),
+          ]),
+        }),
       }),
     );
 
@@ -1124,10 +1089,12 @@ describe('MapView', () => {
 
     editor.vm.$emit('delete', 'a1');
     await flushPromises();
-    expect(mocks.mapStore.update).toHaveBeenLastCalledWith(
+    expect(mocks.locationStore.update).toHaveBeenLastCalledWith(
       'map1',
       expect.objectContaining({
-        areas: [expect.objectContaining({ title: 'New area' })],
+        map: expect.objectContaining({
+          areas: [expect.objectContaining({ title: 'New area' })],
+        }),
       }),
     );
 
@@ -1182,6 +1149,62 @@ describe('MapView', () => {
         [40, 60],
       ]),
     });
+    wrapper.unmount();
+  });
+
+  it('renders from an explicit location prop with normalized map data', async () => {
+    mocks.locationStore.getById.mockReturnValue(undefined);
+    const wrapper = await mountMapView({
+      location: {
+        id: 'loc-prop',
+        name: '',
+        description: undefined,
+        entities: undefined,
+        map: {
+          fileId: '',
+          layers: [],
+          markers: [],
+          areas: [],
+        },
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    });
+    const vm = wrapper.vm as any;
+
+    expect(vm.map).toMatchObject({
+      id: 'loc-prop',
+      title: '',
+      description: '',
+      entities: [],
+    });
+    expect(vm.layers).toEqual([{ id: 'base', title: 'Base' }]);
+    wrapper.unmount();
+  });
+
+  it('handles a missing image record and unloaded location store', async () => {
+    mocks.locationStore.isLoaded = false;
+    mocks.getMapFile.mockResolvedValue(undefined);
+    const wrapper = await mountMapView();
+    await flushPromises();
+    const vm = wrapper.vm as any;
+
+    expect(mocks.locationStore.load).toHaveBeenCalled();
+    expect(mocks.getMapFile).toHaveBeenCalledWith('file1');
+    expect(vm.mapReady).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('ignores map actions without the expected payload', async () => {
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    vm.drawMode = 'polygon';
+    vm.drawMode = null;
+    vm.handleMapAction({ action: 'draw-area' });
+    vm.handleMapAction({ action: 'unknown' });
+    vm.handleMapAction({ action: 'cancel-drawing' });
+    vm.onMapClick({});
     wrapper.unmount();
   });
 });
