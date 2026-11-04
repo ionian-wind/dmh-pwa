@@ -236,7 +236,8 @@ The map detail page no longer has top tabs. It contains:
 
 Clicking a marker or area opens an information popup instead of the editor. The
 popup is a Quasar menu anchored at the click position rather than an
-OpenLayers overlay. It shows the title, description, marker location, and linked
+OpenLayers overlay, and its content uses `QCard`, `QCardSection`, `QCardActions`
+and `QBtn`. It shows the title, description, marker location, and linked
 entities, with an Edit action in edit mode and a Go to location action when
 linked.
 

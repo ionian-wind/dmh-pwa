@@ -17,6 +17,7 @@ import {
   IconPencil,
   IconPlus,
   IconTrash,
+  IconX,
 } from '@tabler/icons-vue';
 import type { Item } from 'ol-contextmenu';
 import 'ol-contextmenu/ol-contextmenu.css';
@@ -995,56 +996,80 @@ watch(isEditMode, (editing) => {
             :offset="[0, -10]"
             @update:model-value="(value) => !value && closeMapInfo()"
           >
-            <div class="map-info-popup">
-              <button
-                type="button"
-                class="map-info-close"
-                :title="t('common.close')"
-                :aria-label="t('common.close')"
-                @click.stop="closeMapInfo"
-              >
-                ×
-              </button>
-              <h4 class="map-info-title">
-                {{
-                  infoMarker?.title || infoArea?.title || t('maps.untitledArea')
-                }}
-              </h4>
-              <p v-if="infoLocationName" class="map-info-location">
-                {{ infoLocationName }}
-              </p>
-              <p
+            <QCard class="map-info-popup" flat>
+              <QCardSection class="row items-start q-py-sm">
+                <div class="col">
+                  <div class="map-info-title text-subtitle1 text-weight-medium">
+                    {{
+                      infoMarker?.title ||
+                      infoArea?.title ||
+                      t('maps.untitledArea')
+                    }}
+                  </div>
+                  <div
+                    v-if="infoLocationName"
+                    class="text-caption text-primary text-weight-medium"
+                  >
+                    {{ infoLocationName }}
+                  </div>
+                </div>
+                <QBtn
+                  flat
+                  dense
+                  round
+                  :aria-label="t('common.close')"
+                  @click.stop="closeMapInfo"
+                >
+                  <IconX :size="18" />
+                </QBtn>
+              </QCardSection>
+
+              <QCardSection
                 v-if="infoMarker?.description || infoArea?.description"
-                class="map-info-description"
+                class="q-pt-none"
               >
-                {{ infoMarker?.description || infoArea?.description }}
-              </p>
-              <EntityLinkList
+                <div class="text-body2 text-grey-7">
+                  {{ infoMarker?.description || infoArea?.description }}
+                </div>
+              </QCardSection>
+
+              <QCardSection
                 v-if="
                   (infoMarker?.entities.length ?? 0) > 0 ||
                   (infoArea?.entities.length ?? 0) > 0
                 "
-                :links="infoMarker?.entities || infoArea?.entities || []"
-              />
-              <div class="map-info-actions">
-                <button
+                class="q-pt-none"
+              >
+                <EntityLinkList
+                  :links="infoMarker?.entities || infoArea?.entities || []"
+                />
+              </QCardSection>
+
+              <QCardActions
+                v-if="infoLocation || isEditMode"
+                class="map-info-actions q-pt-none"
+                align="right"
+              >
+                <QBtn
                   v-if="infoLocation"
-                  type="button"
-                  class="map-info-edit"
+                  flat
+                  dense
+                  no-caps
+                  color="primary"
+                  :label="t('maps.goToLocation')"
                   @click.stop="goToInfoLocation"
-                >
-                  {{ t('maps.goToLocation') }}
-                </button>
-                <button
+                />
+                <QBtn
                   v-if="isEditMode"
-                  type="button"
-                  class="map-info-edit"
+                  flat
+                  dense
+                  no-caps
+                  color="primary"
+                  :label="t('common.edit')"
                   @click.stop="editInfoItem"
-                >
-                  {{ t('common.edit') }}
-                </button>
-              </div>
-            </div>
+                />
+              </QCardActions>
+            </QCard>
           </QMenu>
         </div>
       </ol-map>
@@ -1389,58 +1414,5 @@ watch(isEditMode, (editing) => {
 .map-info-popup {
   min-width: 220px;
   max-width: 320px;
-  padding: 0.75rem 2rem 0.75rem 0.9rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-background);
-  box-shadow: var(--shadow-lg);
-}
-
-.map-info-close {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.35rem;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--color-text-light);
-  cursor: pointer;
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.map-info-title {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
-}
-
-.map-info-location {
-  margin: 0 0 0.35rem;
-  color: var(--color-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.map-info-description {
-  margin: 0 0 0.5rem;
-  color: var(--color-text-light);
-  font-size: 0.85rem;
-}
-
-.map-info-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-
-.map-info-edit {
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm, 4px);
-  background: var(--color-background-soft);
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: 0.8rem;
 }
 </style>
