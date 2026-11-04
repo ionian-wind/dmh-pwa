@@ -120,11 +120,31 @@ describe('ambient audio engine', () => {
     engine.stopLayer('rain');
     vi.advanceTimersByTime(500);
     expect(layer.playing()).toBe(false);
+    expect(layer.unloaded).toBe(true);
 
-    layer.play();
+    engine.loadLayer('rain', 'blob:rain');
+    engine.playLayer('rain', 0.5);
+    const replacement = instance(1);
     engine.stopLayer('rain', false);
-    expect(layer.playing()).toBe(false);
+    expect(replacement.playing()).toBe(false);
     engine.stopLayer('missing');
+  });
+
+  it('crossfades layer samples when replacing an active layer', () => {
+    vi.useFakeTimers();
+    engine.loadLayer('rain', 'blob:one');
+    engine.playLayer('rain', 0.5);
+    const first = instance(0);
+
+    engine.loadLayer('rain', 'blob:two', true);
+    const second = instance(1);
+    engine.playLayer('rain', 0.5);
+
+    expect(first.unloaded).toBe(false);
+    expect(second.playing()).toBe(true);
+    vi.advanceTimersByTime(500);
+    expect(first.unloaded).toBe(true);
+    expect(second.playing()).toBe(true);
   });
 
   it('loads and plays one-shot effects', () => {

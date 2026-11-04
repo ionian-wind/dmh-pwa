@@ -73,10 +73,10 @@ An ambience entry is a loopable background sound. Each entry has:
 Variations are collected into a global list across the visible ambience entries,
 preferring `default` first. The UI selects the first variation by default and
 uses it to filter out entries without matching samples. Only one sample from the
-selected variation plays at a time. Clicking another sample in the same
-variation restarts only that ambience layer; clicking the active sample stops
-it. Multiple ambience entries can play together, both as part of a scene and as
-additional gallery tracks layered on top. Weather is represented as an ambience
+selected variation plays at a time. Clicking another sample crossfades only
+that ambience layer to the new sample; clicking the active sample fades it out
+and stops it. Multiple ambience entries can play together, both as part of a
+scene and as additional gallery tracks layered on top. Weather is represented as an ambience
 category, not as a separate weather system.
 
 ### 2.3 One-shot entry
