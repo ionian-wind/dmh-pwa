@@ -253,6 +253,30 @@ describe('ambient sound store', () => {
     expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.75);
   });
 
+  it('keeps manually started ambience playing when a mood starts', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 1);
+    expect(store.activeSceneKey).toBeNull();
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'light',
+      sampleIndex: 1,
+      volume: 0.4,
+    });
+
+    await store.playSceneMusic('forest', 'tavern', 'explore');
+
+    expect(store.activeSceneKey).toBe('forest::tavern');
+    expect(store.activeMusicPresetId).toBe('explore');
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'light',
+      sampleIndex: 1,
+      volume: 0.4,
+    });
+    expect(mocks.audioEngine.stopAll).not.toHaveBeenCalled();
+  });
+
   it('does not restart the active mood when it is selected again', async () => {
     const store = createStore();
     await store.loadStoredPacks();

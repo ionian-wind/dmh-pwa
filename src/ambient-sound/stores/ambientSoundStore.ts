@@ -374,8 +374,10 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     await ensurePackAudio(found.pack);
     const key = sceneKey(packId, sceneId);
     if (activeSceneKey.value !== key) {
-      activeLayers.value.clear();
-      audioEngine.stopAll();
+      if (activeSceneKey.value) {
+        activeLayers.value.clear();
+        audioEngine.stopAll();
+      }
       activeSceneKey.value = key;
     }
 

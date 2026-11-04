@@ -22,9 +22,10 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   click/keyboard handled by a wrapper.
 - Overlapping plays of the same one-shot are supported and shown as an `×N`
   badge; one-shots can sound at any time.
-- Mood buttons start/switch mood music only; they never start scene ambience.
-  Switching moods crossfades the music, and clicking the active mood does
-  nothing. Temporary moods crossfade to the previous mood or fade out to Off.
+- Mood buttons start/switch mood music only; they never start or stop scene
+  ambience. Switching moods crossfades the music, and clicking the active mood
+  does nothing. Temporary moods crossfade to the previous mood or fade out to
+  Off.
 - Off and continual moods use regular buttons; temporary moods use progress
   buttons that show playback progress alongside the label.
 - Opening a scene never starts playback. When nothing is playing, mood and
