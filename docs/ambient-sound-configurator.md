@@ -19,8 +19,9 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   above the list filters rows to ambiences that have samples for that variation.
 - One-shot entries are grouped category knobs. Each knob contains the icon and
   shows only the name below it. The knob and label are wrapped in a Quasar
-  `QBtn`, which handles click/keyboard activation. The knob progress ring is
-  shown only while the one-shot is playing.
+  `QBtn`, which handles click/keyboard activation. While the one-shot plays,
+  the button is styled as pressed and exposes `aria-pressed="true"`; the knob
+  progress ring is shown only while playing.
 - Overlapping plays of the same one-shot are supported and shown as an `×N`
   badge; one-shots can sound at any time.
 - Mood buttons start/switch mood music only; they never start or stop scene

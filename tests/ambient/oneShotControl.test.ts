@@ -87,6 +87,31 @@ describe('OneShotControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('marks the button as pressed while the one-shot is playing', () => {
+    const idle = mount(OneShotControl, {
+      props: { packId: 'pack-1', oneShot: thunder },
+      global: { stubs: quasarStubs },
+    });
+    expect(idle.find('.one-shot-control').attributes('aria-pressed')).toBe(
+      'false',
+    );
+    expect(idle.find('.one-shot-control').classes()).not.toContain(
+      'is-playing',
+    );
+    idle.unmount();
+
+    storeMock.isOneShotPlaying.mockReturnValue(true);
+    const playing = mount(OneShotControl, {
+      props: { packId: 'pack-1', oneShot: thunder },
+      global: { stubs: quasarStubs },
+    });
+    expect(playing.find('.one-shot-control').attributes('aria-pressed')).toBe(
+      'true',
+    );
+    expect(playing.find('.one-shot-control').classes()).toContain('is-playing');
+    playing.unmount();
+  });
+
   it('shows the knob progress line only while playing', () => {
     storeMock.isOneShotPlaying.mockReturnValue(true);
     const wrapper = mount(OneShotControl, {

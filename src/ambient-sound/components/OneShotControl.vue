@@ -1,11 +1,11 @@
 <template>
   <QBtn
-    flat
     no-caps
     padding="sm none"
     class="one-shot-control"
     :class="{ 'is-playing': playing }"
     :aria-label="oneShot.name"
+    :aria-pressed="playing ? 'true' : 'false'"
     @click="play"
   >
     <span class="one-shot-content">
@@ -117,6 +117,11 @@ onUnmounted(() => {
 .one-shot-control {
   width: 100%;
   min-width: 0;
+}
+
+.one-shot-control.is-playing {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .one-shot-content {
