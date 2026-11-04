@@ -78,7 +78,8 @@ test('shows map and location tabs and opens location details', async ({
 
   await page.locator('.location-card h5').click();
   await expect(page).toHaveURL(/\/locations\/location-1/);
-  await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Map' })).toHaveCount(0);
+  await expect(page.getByTitle('Open linked map')).toBeVisible();
   await expect(page.locator('.location-linked-group-title')).toContainText(
     'E2E World',
   );

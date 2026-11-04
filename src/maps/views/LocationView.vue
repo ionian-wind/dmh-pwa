@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import BaseCard from '@/components/common/BaseCard.vue';
+import { IconMapPin2 } from '@tabler/icons-vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
@@ -40,17 +40,26 @@ const linkedMap = computed(
     mapStore.items.find((map) => map.locationId === location.value?.id) ?? null,
 );
 
-const entityTabs = computed(() => {
-  const tabs = linkableGroups.value.map((group) => ({
+const headerButtons = computed(() =>
+  linkedMap.value
+    ? [
+        {
+          color: 'warning',
+          title: 'maps.openLinkedMap',
+          icon: IconMapPin2,
+          event: () => openMap(linkedMap.value!.id),
+        },
+      ]
+    : [],
+);
+
+const entityTabs = computed(() =>
+  linkableGroups.value.map((group) => ({
     id: group.kind,
     label: t(group.labelKey),
     badge: linksFor(group.kind).length || undefined,
-  }));
-  if (linkedMap.value) {
-    tabs.unshift({ id: 'map', label: t('maps.mapTab'), badge: undefined });
-  }
-  return tabs;
-});
+  })),
+);
 
 const markerGroups = computed(() => {
   const locationId = location.value?.id;
@@ -137,24 +146,9 @@ function openMap(mapId: string) {
     :not-found="notFound"
     :loading="loading"
     :tabs="entityTabs"
+    :header-buttons="headerButtons"
     v-model="activeTab"
   >
-    <template #map>
-      <BaseCard
-        v-if="linkedMap"
-        showView
-        :title="linkedMap.title"
-        @view="openMap(linkedMap.id)"
-      >
-        <p
-          v-if="linkedMap.description"
-          class="text-body2 text-grey-7 q-mb-none"
-        >
-          {{ linkedMap.description }}
-        </p>
-      </BaseCard>
-    </template>
-
     <template v-for="group in linkableGroups" :key="group.kind" #[group.kind]>
       <EntitiesLinking
         :kind="group.kind"

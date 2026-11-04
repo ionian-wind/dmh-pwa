@@ -247,7 +247,8 @@ linked.
 
 A location detail page follows the module detail pattern:
 
-- If the location is linked to a map, a **Map** tab is shown with that map card.
+- If the location is linked to a map, an orange map-pin action appears in the
+  header bar and opens that map. The map is not shown as a tab.
 - Top tabs for each linkable entity kind: notes, modules, parties, monsters,
   encounters, characters, and jukebox playlists.
 - Each tab uses the reusable `EntitiesLinking` component: the entity-type title
