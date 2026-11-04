@@ -12,7 +12,6 @@ const storeMock = vi.hoisted(() => ({
   isPlaying: true,
   musicEnabled: true,
   intensity: 75,
-  toggleMusic: vi.fn(),
   togglePlayPause: vi.fn(),
   setIntensity: vi.fn(),
   setMasterVolume: vi.fn(),
@@ -38,7 +37,6 @@ describe('AmbientGlobalControl', () => {
     storeMock.musicEnabled = true;
     storeMock.intensity = 75;
     for (const fn of [
-      storeMock.toggleMusic,
       storeMock.togglePlayPause,
       storeMock.setIntensity,
       storeMock.setMasterVolume,
@@ -66,8 +64,9 @@ describe('AmbientGlobalControl', () => {
 
     expect(wrapper.find('button[aria-label="Stop"]').exists()).toBe(false);
 
-    await wrapper.find('button[aria-label="Turn music off"]').trigger('click');
-    expect(storeMock.toggleMusic).toHaveBeenCalled();
+    expect(wrapper.find('button[aria-label="Turn music off"]').exists()).toBe(
+      false,
+    );
     wrapper.unmount();
   });
 

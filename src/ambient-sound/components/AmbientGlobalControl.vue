@@ -52,31 +52,6 @@
     </QToolbar>
 
     <QToolbar class="ambient-player-controls q-pa-none q-gutter-x-sm">
-      <QBtnGroup flat class="playback-options">
-        <QBtn
-          flat
-          :class="{ 'is-inactive': !store.musicEnabled }"
-          :title="
-            t(
-              store.musicEnabled
-                ? 'ambientSoundPage.musicOff'
-                : 'ambientSoundPage.musicOn',
-            )
-          "
-          :aria-label="
-            t(
-              store.musicEnabled
-                ? 'ambientSoundPage.musicOff'
-                : 'ambientSoundPage.musicOn',
-            )
-          "
-          @click="store.toggleMusic()"
-        >
-          <IconMusic v-if="store.musicEnabled" />
-          <IconMusicOff v-else />
-        </QBtn>
-      </QBtnGroup>
-
       <QBtnGroup flat class="playback-controls">
         <QBtn
           flat
@@ -152,8 +127,6 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-  IconMusic,
-  IconMusicOff,
   IconPlayerPause,
   IconPlayerPlay,
   IconVolume,
@@ -254,11 +227,6 @@ function handleVolumeWheel(event: WheelEvent) {
   column-gap: 8px;
 }
 
-.playback-options {
-  grid-column: 1;
-  justify-self: start;
-}
-
 .playback-controls {
   grid-column: 2;
   justify-self: center;
@@ -267,10 +235,6 @@ function handleVolumeWheel(event: WheelEvent) {
 .volume-control {
   grid-column: 3;
   justify-self: end;
-}
-
-.playback-options .is-inactive {
-  opacity: 0.55;
 }
 
 .volume-popup {

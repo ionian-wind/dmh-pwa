@@ -486,7 +486,7 @@ The ambient-sound section is a first-class app page with a package sidebar:
 │                                           │ ──────────────── │
 │                                           │ Import package   │
 ├───────────────────────────────────────────┴──────────────────┤
-│ Intensity slider · music toggle · play/pause · volume        │
+│ Intensity slider · play/pause · volume                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -656,7 +656,7 @@ It mirrors the jukebox player and lives in the app footer.
 - Shows the scene name, package name and play/pause state.
 - An intensity slider occupies the same slot as the jukebox track-progress bar.
   It has five steps (0/25/50/75/100), snaps to them and shows tick marks.
-- Music toggle, play/pause and master volume access.
+- Play/pause and master volume access.
 - Play/pause is disabled while no scene or ambience is active. Once mood music
   or ambience starts, it becomes available and pauses all scene playback.
 - No scene icon, cover art, “Now playing” caption or stop button.
