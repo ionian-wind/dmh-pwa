@@ -52,8 +52,9 @@ Computed collections:
 - `moduleLocations` — locations whose `entities` include a `module` link to this module.
 - `moduleBookmarks` — bookmarks with this `moduleId`.
 
-Tabs: Book, Maps, Locations, Parties, Monsters, Encounters, Notes, Playlists,
-Book Tree.
+Tabs: Book, Book Tree, Linked entities. The Linked entities tab collects maps,
+locations, parties, monsters, encounters, notes and playlists that reference
+this module and renders them read-only with `EntityViewLinks`.
 
 Header actions intended: Export ZIP. Delete/edit come from `BaseEntityTabView`.
 

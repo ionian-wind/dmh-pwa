@@ -82,9 +82,10 @@ the emitted object for later use.
 
 ## Detail page (`EncounterView.vue`)
 
-Tabs: Information, Monsters, Combats.
+Tabs: Information, Linked entities, Monsters, Combats.
 
 - Information: renders `encounter.description` with `v-html` (unsanitized).
+- Linked entities: shows the encounter's module read-only.
 - Monsters:
   - Loads all monsters and shows those whose IDs are keys of
     `encounter.monsters`.

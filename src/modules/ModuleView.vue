@@ -7,29 +7,20 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
-import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
-import { useJukeboxTracksStore } from '@/jukebox/stores';
 import { useMapStore } from '@/maps/maps';
 import { useMapLocationStore } from '@/maps/locations';
 import { useConfigStore } from '@/utils/configStore';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Module, Bookmark } from '@/types';
-import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
-import PartyCard from '@/parties/PartyCard.vue';
-import MonsterCard from '@/monsters/MonsterCard.vue';
-import EncounterCard from '@/encounters/EncounterCard.vue';
-import NoteCard from '@/notes/NoteCard.vue';
-import JukeboxPlaylistCard from '@/jukebox/components/JukeboxPlaylistCard.vue';
-import MapCard from '@/maps/components/MapCard.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
-import LocationCard from '@/maps/components/LocationCard.vue';
-import type { MapEntity, MapLocation } from '@/maps/types';
+import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/form/Button.vue';
 import ModuleDocumentTree from '@/modules/ModuleDocumentTree.vue';
@@ -39,8 +30,11 @@ import { cropTitle } from '@/utils/cropTitle';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { confirm } from '@/dialogs';
 import {
-  IconDownload,
+  IconAffiliate,
+  IconBook,
   IconBookmark,
+  IconDownload,
+  IconListTree,
   IconPencil,
   IconTrash,
 } from '@tabler/icons-vue';
@@ -63,7 +57,6 @@ const noteStore = useNoteStore();
 const playlistsStore = useJukeboxPlaylistsStore();
 const mapStore = useMapStore();
 const locationStore = useMapLocationStore();
-const tracksStore = useJukeboxTracksStore();
 const configStore = useConfigStore();
 const mentionsStore = useMentionsStore();
 const bookmarkStore = useBookmarkStore();
@@ -124,32 +117,6 @@ const moduleLocations = computed(() =>
   ),
 );
 
-function moduleMapProps(map: MapEntity) {
-  return {
-    map,
-    linkedLocation: map.locationId
-      ? (locationStore.getById(map.locationId) ?? null)
-      : null,
-    onView: () => router.push(`/maps/${map.id}`),
-    onEdit: () => router.push(`/maps/${map.id}`),
-    onDelete: () => undefined,
-    onOpenLocation: (locationId: string) =>
-      router.push(`/locations/${locationId}`),
-  };
-}
-
-function moduleLocationProps(location: MapLocation) {
-  return {
-    location,
-    linkedMap:
-      mapStore.items.find((map) => map.locationId === location.id) ?? null,
-    onView: () => router.push(`/locations/${location.id}`),
-    onEdit: () => router.push(`/locations/${location.id}`),
-    onDelete: () => undefined,
-    onOpenMap: (mapId: string) => router.push(`/maps/${mapId}`),
-  };
-}
-
 const mentionedEntities = computed(() => {
   if (!module.value) return [];
   return mentionsStore.getLinks({ kind: 'module', id: module.value.id });
@@ -165,15 +132,39 @@ const moduleBookmarks = computed(() => {
 });
 
 const entityTabs = computed(() => [
-  { id: 'document', label: t('moduleView.book') },
-  { id: 'maps', label: t('maps.title') },
-  { id: 'locations', label: t('maps.locations') },
-  { id: 'parties', label: t('navigation.parties') },
-  { id: 'monsters', label: t('navigation.monsters') },
-  { id: 'encounters', label: t('navigation.encounters') },
-  { id: 'notes', label: t('navigation.notes') },
-  { id: 'playlists', label: t('moduleView.playlists') },
-  { id: 'noteTree', label: t('moduleView.bookTree') },
+  { id: 'document', label: t('moduleView.book'), icon: IconBook },
+  { id: 'noteTree', label: t('moduleView.bookTree'), icon: IconListTree },
+  {
+    id: 'links',
+    label: t('common.linkedEntities'),
+    icon: IconAffiliate,
+    badge: moduleLinks.value.length || undefined,
+  },
+]);
+
+const moduleLinks = computed<MapEntityRef[]>(() => [
+  ...moduleMaps.value.map((map) => ({ kind: 'map' as const, id: map.id })),
+  ...moduleLocations.value.map((location) => ({
+    kind: 'location' as const,
+    id: location.id,
+  })),
+  ...moduleParties.value.map((party) => ({
+    kind: 'party' as const,
+    id: party.id,
+  })),
+  ...moduleMonsters.value.map((monster) => ({
+    kind: 'monster' as const,
+    id: monster.id,
+  })),
+  ...moduleEncounters.value.map((encounter) => ({
+    kind: 'encounter' as const,
+    id: encounter.id,
+  })),
+  ...moduleNotes.value.map((note) => ({ kind: 'note' as const, id: note.id })),
+  ...modulePlaylists.value.map((playlist) => ({
+    kind: 'playlist' as const,
+    id: playlist.id,
+  })),
 ]);
 
 const activeTab = ref('document');
@@ -183,8 +174,6 @@ const activeAnchorId = ref<string | null>(null);
 const editingBookmark = ref<Bookmark | null>(null);
 const editingTitle = ref('');
 
-const playerStore = useJukeboxPlayerStore();
-
 onMounted(async () => {
   await Promise.all([
     moduleStore.load(),
@@ -193,7 +182,6 @@ onMounted(async () => {
     encounterStore.load(),
     noteStore.load(),
     playlistsStore.load(),
-    tracksStore.load(),
     mentionsStore.load(),
     bookmarkStore.load(),
     mapStore.load(),
@@ -261,10 +249,6 @@ function handleSaveNoteTree(newTree: any) {
   debug('[ModuleView] Saving tree', newTree);
   if (!module.value) return;
   moduleStore.update(module.value.id, { ...module.value, noteTree: newTree });
-}
-
-function handlePlayPlaylist(playlist: JukeboxPlaylist) {
-  // TODO: implement
 }
 
 function handleTOCUpdate(toc: TOCItem[]) {
@@ -419,126 +403,8 @@ async function handleEditorDelete() {
           <p>{{ t('moduleView.noDocument') }}</p>
         </div>
       </template>
-      <template #maps>
-        <div
-          v-if="moduleMaps.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noMaps') }}
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div
-            v-for="map in moduleMaps"
-            :key="map.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <MapCard v-bind="moduleMapProps(map)" />
-          </div>
-        </div>
-      </template>
-      <template #locations>
-        <div
-          v-if="moduleLocations.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noLocations') }}
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div
-            v-for="location in moduleLocations"
-            :key="location.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <LocationCard v-bind="moduleLocationProps(location)" />
-          </div>
-        </div>
-      </template>
-      <template #parties>
-        <div
-          v-if="moduleParties.length === 0"
-          class="empty-state q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noParties') }}
-        </div>
-        <div v-else class="content-grid">
-          <PartyCard
-            v-for="party in moduleParties"
-            :key="party.id"
-            :party="party"
-          />
-        </div>
-      </template>
-      <template #monsters>
-        <div
-          v-if="moduleMonsters.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noMonsters') }}
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div
-            v-for="monster in moduleMonsters"
-            :key="monster.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <MonsterCard :monster="monster" />
-          </div>
-        </div>
-      </template>
-      <template #encounters>
-        <div
-          v-if="moduleEncounters.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noEncounters') }}
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div
-            v-for="encounter in moduleEncounters"
-            :key="encounter.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <EncounterCard :encounter="encounter" />
-          </div>
-        </div>
-      </template>
-      <template #notes>
-        <div
-          v-if="moduleNotes.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noNotes') }}
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div
-            v-for="note in moduleNotes"
-            :key="note.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <NoteCard :note="note" />
-          </div>
-        </div>
-      </template>
-      <template #playlists>
-        <div
-          v-if="modulePlaylists.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          {{ t('moduleView.noPlaylists') }}
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div
-            v-for="playlist in modulePlaylists"
-            :key="playlist.id"
-            class="col-12 col-sm-6 col-md-4 col-lg-3"
-          >
-            <JukeboxPlaylistCard
-              :playlist="playlist"
-              @view="() => router.push('/jukebox')"
-              @play="handlePlayPlaylist"
-            />
-          </div>
-        </div>
+      <template #links>
+        <EntityViewLinks :links="moduleLinks" />
       </template>
       <template #noteTree>
         <ModuleDocumentTree
