@@ -37,41 +37,6 @@ vi.mock('@/maps/maps', () => ({
 
 vi.mock('@/dialogs', () => ({ confirm: mocks.confirm }));
 
-vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
-  useMapEntityCatalog: () => ({
-    groups: {
-      value: [
-        { kind: 'map', labelKey: 'maps.title', titleField: 'title', items: [] },
-        {
-          kind: 'note',
-          labelKey: 'notes.title',
-          titleField: 'title',
-          items: [],
-        },
-      ],
-    },
-  }),
-}));
-
-const EntitiesLinkingStub = defineComponent({
-  name: 'EntitiesLinking',
-  props: { kind: String, modelValue: Array },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    return () =>
-      h(
-        'button',
-        {
-          class: 'link-update',
-          'data-kind': props.kind,
-          onClick: () =>
-            emit('update:modelValue', [{ kind: props.kind, id: 'note-1' }]),
-        },
-        'update',
-      );
-  },
-});
-
 const TabGroupStub = defineComponent({
   name: 'TabGroup',
   props: { modelValue: String, tabs: Array },
@@ -172,7 +137,6 @@ function mountLocationView() {
       stubs: {
         BaseEntityTabView: BaseEntityTabViewStub,
         TabGroup: TabGroupStub,
-        EntitiesLinking: EntitiesLinkingStub,
         EntityScenesPanel: true,
         MapLocationEditor: MapLocationEditorStub,
       },
@@ -181,8 +145,11 @@ function mountLocationView() {
 }
 
 describe('LocationView', () => {
-  it('hides the map tab and links to the connected map from the header', async () => {
-    mocks.locationStore.getById.mockReturnValue(location);
+  it('renders the main and links tabs and the connected map header action', async () => {
+    mocks.locationStore.getById.mockReturnValue({
+      ...location,
+      description: 'A busy port.',
+    });
     mocks.mapStore.items = [
       { id: 'map1', locationId: 'l1', markers: [], areas: [] },
     ];
@@ -191,8 +158,8 @@ describe('LocationView', () => {
     await flushPromises();
 
     const tabs = wrapper.findAll('.tab').map((tab) => tab.text());
-    expect(tabs).toContain('note');
-    expect(tabs).not.toContain('map');
+    expect(tabs).toEqual(['main', 'links']);
+    expect(wrapper.find('[data-slot="main"]').text()).toContain('A busy port.');
 
     const headerButtons = wrapper.findAll('.header-button');
     expect(headerButtons).toHaveLength(1);
@@ -259,12 +226,15 @@ describe('LocationView', () => {
     wrapper.unmount();
   });
 
-  it('does nothing when the location is missing', async () => {
+  it('renders a description fallback when the location is missing', async () => {
     mocks.locationStore.getById.mockReturnValue(undefined);
     mocks.mapStore.items = [];
     const wrapper = mountLocationView();
     await flushPromises();
-    expect(wrapper.findAll('.tab')).toHaveLength(1);
+    expect(wrapper.findAll('.tab')).toHaveLength(2);
+    expect(wrapper.find('[data-slot="main"]').text()).toContain(
+      'No description provided',
+    );
     wrapper.unmount();
   });
 });

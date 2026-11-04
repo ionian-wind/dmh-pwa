@@ -2,35 +2,24 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-  IconAffiliate,
-  IconBook,
-  IconGhost3,
-  IconMapPin2,
-  IconNote,
-  IconPlaylist,
-  IconSwords,
-  IconUser,
-  IconUsers,
-} from '@tabler/icons-vue';
+import { IconMapPin2 } from '@tabler/icons-vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm } from '@/dialogs';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import MapLocationEditor from '../components/MapLocationEditor.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';
 import { useMapStore } from '../maps';
-import { useMapEntityCatalog } from '../composables/useMapEntityCatalog';
 import { markerIconClass } from '../icons';
-import type { MapEntityKind } from '../types';
+import type { MapEntityRef } from '../types';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const locationStore = useMapLocationStore();
 const mapStore = useMapStore();
-const { groups } = useMapEntityCatalog();
 
 const location = computed(() =>
   locationStore.getById(String(route.params.id ?? '')),
@@ -38,10 +27,9 @@ const location = computed(() =>
 const loading = computed(() => !locationStore.isLoaded);
 const notFound = computed(() => locationStore.isLoaded && !location.value);
 
-const linkableGroups = computed(() =>
-  groups.value.filter(
-    (group) => group.kind !== 'map' && group.kind !== 'location',
-  ),
+const tabs = useEntityViewTabs();
+const locationLinks = computed<MapEntityRef[]>(
+  () => location.value?.entities ?? [],
 );
 
 const linkedMap = computed(
@@ -60,25 +48,6 @@ const headerButtons = computed(() =>
         },
       ]
     : [],
-);
-
-const tabIcons: Record<string, any> = {
-  note: IconNote,
-  module: IconBook,
-  party: IconUsers,
-  monster: IconGhost3,
-  encounter: IconSwords,
-  character: IconUser,
-  playlist: IconPlaylist,
-};
-
-const entityTabs = computed(() =>
-  linkableGroups.value.map((group) => ({
-    id: group.kind,
-    label: t(group.labelKey),
-    icon: tabIcons[group.kind] ?? IconAffiliate,
-    badge: linksFor(group.kind).length || undefined,
-  })),
 );
 
 const markerGroups = computed(() => {
@@ -104,18 +73,12 @@ const areaGroups = computed(() => {
 });
 
 const showEditor = ref(false);
-const activeTab = ref('note');
+const activeTab = ref('main');
 const sidePanelTab = ref('markers');
 
 onMounted(async () => {
   await Promise.all([locationStore.load(), mapStore.load()]);
 });
-
-function linksFor(kind: MapEntityKind) {
-  return (location.value?.entities ?? []).filter(
-    (entity) => entity.kind === kind,
-  );
-}
 
 async function handleDelete() {
   if (!location.value) return false;
@@ -158,16 +121,23 @@ function openMap(mapId: string) {
     :title="location?.name"
     :not-found="notFound"
     :loading="loading"
-    :tabs="entityTabs"
+    :tabs="tabs"
     :header-buttons="headerButtons"
     v-model="activeTab"
   >
-    <template v-for="group in linkableGroups" :key="group.kind" #[group.kind]>
-      <EntitiesLinking
-        :kind="group.kind"
-        :model-value="location?.entities ?? []"
-        readonly
-      />
+    <template #main>
+      <div class="q-py-md">
+        <p v-if="location?.description" class="text-body1">
+          {{ location.description }}
+        </p>
+        <p v-else class="text-caption text-grey-7">
+          {{ t('common.noDescription') }}
+        </p>
+      </div>
+    </template>
+
+    <template #links>
+      <EntityViewLinks :links="locationLinks" />
     </template>
 
     <template #sidepanel>

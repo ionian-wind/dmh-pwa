@@ -72,9 +72,10 @@ Locations are global entities stored in `map_locations`, independent of any
 single map. Maps link to them through `locationId`, and markers and areas
 reference one through `locationId`.
 
-Each location has its own detail page with tabs for linked notes, modules,
-parties, monsters, encounters, and characters. The right drawer lists the maps
-that link to that location.
+Each location has its own detail page with **View** and **Linked entities**
+tabs. View renders the location description; Linked entities shows notes,
+modules, parties, monsters, encounters, characters and playlists read-only. The
+right drawer lists the maps that link to that location.
 
 ### Layers
 

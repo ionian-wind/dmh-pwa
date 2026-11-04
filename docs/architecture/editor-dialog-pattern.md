@@ -177,8 +177,8 @@ fields:
   toolbar. Hovering a tab shows its label.
 - Add, remove and inline-create actions are not available in the view tab.
 - Mention lists remain available in the right sidebar.
-- `NoteView`, `PartyView`, `MonsterView` and `EncounterView` follow this pattern.
-  `LocationView` keeps its per-kind tabs but renders them read-only.
+- `NoteView`, `PartyView`, `MonsterView`, `EncounterView`, `MapView` and
+  `LocationView` follow this pattern.
 
 ## Acceptance checklist
 
