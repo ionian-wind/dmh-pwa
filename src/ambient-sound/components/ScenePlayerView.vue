@@ -179,7 +179,8 @@ async function selectMusic(presetId: string | null) {
     return;
   }
   if (!sceneIsActive() || !store.isPlaying) {
-    await store.playScene(props.packId, props.sceneId);
+    await store.playSceneMusic(props.packId, props.sceneId, presetId);
+    return;
   }
   store.setMusicPreset(presetId);
 }

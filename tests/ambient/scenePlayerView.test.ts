@@ -12,6 +12,7 @@ const storeMock = vi.hoisted(() => ({
   hasActiveLayers: true,
   intensity: 55,
   playScene: vi.fn(),
+  playSceneMusic: vi.fn(),
   setMusicPreset: vi.fn(),
   playOneShot: vi.fn(),
   isOneShotPlaying: vi.fn(() => false),
@@ -33,6 +34,7 @@ describe('ScenePlayerView', () => {
   beforeEach(() => {
     for (const fn of [
       storeMock.playScene,
+      storeMock.playSceneMusic,
       storeMock.setMusicPreset,
       storeMock.playOneShot,
       storeMock.isOneShotPlaying,
@@ -161,8 +163,13 @@ describe('ScenePlayerView', () => {
       .findAll('.mood-knob')
       .find((entry) => entry.text() === 'Explore');
     await explore!.trigger('click');
-    expect(storeMock.playScene).toHaveBeenCalledWith('pack-1', 'scene-1');
-    expect(storeMock.setMusicPreset).toHaveBeenCalledWith('explore');
+    expect(storeMock.playSceneMusic).toHaveBeenCalledWith(
+      'pack-1',
+      'scene-1',
+      'explore',
+    );
+    expect(storeMock.playScene).not.toHaveBeenCalled();
+    expect(storeMock.setMusicPreset).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

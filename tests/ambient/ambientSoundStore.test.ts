@@ -221,6 +221,27 @@ describe('ambient sound store', () => {
     expect(mocks.audioEngine.stopAll).toHaveBeenCalled();
   });
 
+  it('starts only scene music when a mood is selected', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.playSceneMusic('forest', 'tavern', 'explore');
+
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeScene?.scene.id).toBe('tavern');
+    expect(store.activeLayers.size).toBe(0);
+    expect(store.activeMusicPresetId).toBe('explore');
+    expect(mocks.audioEngine.playLayer).not.toHaveBeenCalled();
+    expect(mocks.audioEngine.loadMusic).toHaveBeenCalledWith(
+      'forest::tavern::explore',
+      'blob:theme',
+      false,
+      ['mp3'],
+      true,
+    );
+    expect(mocks.audioEngine.playMusic).toHaveBeenCalledWith(0.75);
+  });
+
   it('switches scene music presets and queues another variant on end', async () => {
     const store = createStore();
     await store.loadStoredPacks();

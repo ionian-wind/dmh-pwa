@@ -361,6 +361,34 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     }
   }
 
+  async function playSceneMusic(
+    packId: string,
+    sceneId: string,
+    presetId: string,
+  ): Promise<void> {
+    const found = findScene(packId, sceneId);
+    const preset = found?.scene.musicPresets.find(
+      (entry) => entry.id === presetId,
+    );
+    if (!found || !preset) return;
+
+    await ensurePackAudio(found.pack);
+    const key = sceneKey(packId, sceneId);
+    if (activeSceneKey.value !== key) {
+      activeLayers.value.clear();
+      audioEngine.stopAll();
+      activeSceneKey.value = key;
+    }
+
+    intensity.value = snapIntensity(found.scene.intensity);
+    activeMusicPresetId.value = presetId;
+    previousMusicPresetId.value = null;
+    musicEnabled.value = true;
+    isPlaying.value = true;
+    pauseJukeboxForAmbient();
+    startSceneMusic(packId, found.scene, true);
+  }
+
   async function selectScene(packId: string, sceneId: string): Promise<void> {
     const key = sceneKey(packId, sceneId);
     if (activeSceneKey.value === key && isPlaying.value) return;
@@ -721,6 +749,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     deletePack,
     selectPack,
     playScene,
+    playSceneMusic,
     selectScene,
     pause,
     play,

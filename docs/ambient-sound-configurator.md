@@ -597,12 +597,14 @@ action. A Back button in the view header returns to the scene/gallery tabs. The
 view contains:
 
 - **Mood knobs** — a knob row containing Off plus one knob per scene music preset
-  (for example Explore, Combat, Victory). Clicking a mood knob starts the scene
-  when nothing is playing or switches the active preset while playing. Only one
-  preset can be active; Off stops scene music without stopping ambiences. Within
-  a preset the next music variant is chosen randomly when the current track
-  ends. Temporary presets such as Victory play once, then return to the
-  previously played preset or turn music off when there was none. Only temporary
+  (for example Explore, Combat, Victory). Clicking a mood knob starts only that
+  mood music when nothing is playing, or switches the active preset while
+  playing; it never starts the scene's ambience layers. Ambience starts only
+  when a variation button is clicked. Only one preset can be active; Off stops
+  scene music without stopping ambiences. Within a preset the next music variant
+  is chosen randomly when the current track ends. Temporary presets such as
+  Victory play once, then return to the previously played preset or turn music
+  off when there was none. Only temporary
   presets show playback progress on their knob; the knob is read-only and acts
   as a round button.
 - **No scene play/pause button** — the scene view has no transport button. The
