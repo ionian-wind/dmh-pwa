@@ -10,7 +10,7 @@ import CalculatorDialog from '@/calculator/CalculatorView.vue';
 import MentionModalStack from '@/components/common/MentionModalStack.vue';
 import { Section } from '@/types';
 import SettingsDialog from '@/components/SettingsDialog.vue';
-import { provideLayout } from '@/composables/useLayout';
+import { provideLayout, unwrapProps } from '@/composables/useLayout';
 import { useConfigStore } from './utils/configStore';
 
 import {
@@ -513,7 +513,7 @@ function openJukebox() {
       >
         <component
           :is="rightDrawerContent.component"
-          v-bind="rightDrawerContent.props"
+          v-bind="unwrapProps(rightDrawerContent.props)"
         />
       </QDrawer>
 

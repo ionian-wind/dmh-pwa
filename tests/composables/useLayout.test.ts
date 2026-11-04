@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createLayoutStore } from '@/composables/useLayout';
+import { ref } from 'vue';
+import { createLayoutStore, unwrapProps } from '@/composables/useLayout';
 
 describe('layout store', () => {
   it('stores header and footer content', () => {
@@ -49,6 +50,18 @@ describe('layout store', () => {
 
     layout.clearRightDrawer(ownerB);
     expect(layout.rightDrawerContent.value).toBeNull();
+  });
+
+  it('unwraps refs passed to injected components', () => {
+    const monster = ref({ id: 'monster-1' });
+    const props = unwrapProps({ monster, count: 2, label: 'Monster' });
+
+    expect(props).toEqual({
+      monster: { id: 'monster-1' },
+      count: 2,
+      label: 'Monster',
+    });
+    expect(unwrapProps()).toBeUndefined();
   });
 
   it('toggles the right drawer', () => {
