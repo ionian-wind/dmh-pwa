@@ -3,7 +3,7 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 
 import BaseListView from '@/components/common/BaseListView.vue';
-import VueDraggable from 'vuedraggable';
+import SortableList from '@/components/common/SortableList.vue';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
 const CardStub = defineComponent({
@@ -221,7 +221,7 @@ describe('BaseListView', () => {
 
     expect(wrapper.emitted('view')?.[0]).toEqual([{ id: 'a' }]);
 
-    const draggable = wrapper.findComponent(VueDraggable);
+    const draggable = wrapper.findComponent(SortableList);
     expect(draggable.exists()).toBe(true);
     draggable.vm.$emit('update:modelValue', [{ id: 'b' }, { id: 'a' }]);
     await nextTick();

@@ -5,7 +5,7 @@ import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import { useConfigStore } from '@/utils/configStore';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
-import VueDraggable from 'vuedraggable';
+import SortableList from '@/components/common/SortableList.vue';
 
 import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
@@ -153,7 +153,7 @@ onMounted(async () => {
 
     <!-- Scrollable, sortable playlists -->
     <QScrollArea class="q-pa-none q-mb-none col-grow" style="min-height: 0">
-      <VueDraggable
+      <SortableList
         v-model="sortedPlaylists"
         tag="div"
         class="playlist-list"
@@ -193,7 +193,7 @@ onMounted(async () => {
             </QItemSection>
           </QItem>
         </template>
-      </VueDraggable>
+      </SortableList>
     </QScrollArea>
 
     <QSeparator />

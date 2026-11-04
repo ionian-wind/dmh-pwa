@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
-import VueDraggable from 'vuedraggable';
+import SortableList from '@/components/common/SortableList.vue';
 
 import PlaylistList from '@/jukebox/components/PlaylistList.vue';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
@@ -80,7 +80,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
       expect.stringContaining('Second'),
     ]);
 
-    const draggable = wrapper.findComponent(VueDraggable);
+    const draggable = wrapper.findComponent(SortableList);
     expect(draggable.exists()).toBe(true);
     draggable.vm.$emit('update:modelValue', [
       store.items.value[0],
@@ -110,7 +110,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
     await flushPromises();
 
     wrapper
-      .findComponent(VueDraggable)
+      .findComponent(SortableList)
       .vm.$emit('end', { newIndex: 1, oldIndex: 1 });
     await flushPromises();
 

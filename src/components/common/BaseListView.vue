@@ -10,7 +10,7 @@ import {
 import type { PropType } from 'vue';
 import ViewHeader from './ViewHeader.vue';
 import EmptyState from './EmptyState.vue';
-import VueDraggable from 'vuedraggable';
+import SortableList from './SortableList.vue';
 import { useLayout } from '@/composables/useLayout';
 
 const props = defineProps({
@@ -191,14 +191,14 @@ onBeforeUnmount(() => {
       :hint="emptyState.hint"
     />
 
-    <VueDraggable
+    <SortableList
       v-else-if="draggable"
       :key="'draggable'"
       v-model="localItems"
       item-key="id"
-      @end="handleSortEnd"
       tag="div"
       class="q-list simple-list"
+      @end="handleSortEnd"
     >
       <template #item="{ element: item }">
         <component
@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
           @copy="$emit('copy', item)"
         />
       </template>
-    </VueDraggable>
+    </SortableList>
     <div v-else>
       <div
         v-if="viewStyle === 'masonry'"

@@ -73,7 +73,7 @@ Emits: `create`, `edit`, `delete`, `submit`, `cancel`, `update:searchQuery`,
 
 Behavior:
 
-- Clones `items` into `localItems` for optional `vuedraggable` sorting.
+- Clones `items` into `localItems` for optional `SortableList` sorting.
 - Emits `sort(localItems)` on drag end.
 - Internally opens the editor when a card emits `edit`; create resets the
   editing item.
@@ -151,6 +151,15 @@ linking flow. After saving, the new entity is selected and marked “Created” 
 it can be linked immediately. Linked rows highlight on hover and expose the
 unlink action only on hover or keyboard focus. Internal options such as note
 types and map layers keep their dedicated selectors.
+
+### `SortableList.vue`
+
+Generic drag-and-drop list built on `@vue-dnd-kit/core`. It accepts a
+`modelValue` array, an `itemKey` (default `id`), optional `tag`, `handle`,
+`groups` and `disabled` props, and emits `update:modelValue` after reordering
+plus `end({ oldIndex, newIndex })`. It renders the `item` slot for each entry.
+The shared `SortableItem` wrapper starts drags from the row while ignoring
+buttons, links, form controls and `[data-no-drag]` targets.
 
 ### `EntitiesLinking.vue`
 
