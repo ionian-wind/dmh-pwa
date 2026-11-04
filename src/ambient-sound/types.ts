@@ -13,7 +13,7 @@ export interface SoundPackManifest {
   scenes?: SceneDef[];
   /** Legacy field, normalized into `ambiences`. */
   layers?: LayerDef[];
-  oneShots: OneShotDef[];
+  oneShots?: OneShotDef[];
   /** Legacy pre-scene music model, normalized into scenes. */
   moodStates?: MoodStateDef[];
   /** Legacy weather entries, normalized into ambience categories. */
@@ -58,6 +58,7 @@ export interface SceneDef {
 export interface NormalizedSoundPack extends SoundPackManifest {
   ambiences: LayerDef[];
   layers: LayerDef[];
+  oneShots: OneShotDef[];
   scenes: SceneDef[];
   /** Set by local storage, never exported inside the package manifest. */
   origin?: 'imported' | 'created';

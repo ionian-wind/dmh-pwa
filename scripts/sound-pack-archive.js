@@ -293,10 +293,17 @@ async function hashSoundPackContents(packDir) {
   const manifest = JSON.parse(
     await fs.readFile(path.join(packDir, 'pack.json'), 'utf8'),
   );
+  const ambiences = manifest.ambiences ?? manifest.layers ?? [];
+  const oneShots = manifest.oneShots ?? [];
+  const scenes = manifest.scenes ?? [];
+  if (ambiences.length === 0 && oneShots.length === 0 && scenes.length === 0) {
+    throw new Error(
+      'Sound pack cannot be empty: add at least one ambience, one-shot or scene',
+    );
+  }
   const outputFiles = new Map();
   const referencedSources = new Set();
 
-  const ambiences = manifest.ambiences ?? manifest.layers ?? [];
   const ambienceIds = new Map();
   for (const ambience of ambiences) {
     const previousId = ambience.id;
@@ -305,14 +312,14 @@ async function hashSoundPackContents(packDir) {
   }
 
   const oneShotIds = new Map();
-  for (const oneShot of manifest.oneShots ?? []) {
+  for (const oneShot of oneShots) {
     const previousId = oneShot.id;
     await hashOneShot(packDir, oneShot, outputFiles, referencedSources);
     oneShotIds.set(previousId, oneShot.id);
   }
 
   const sceneIds = new Map();
-  for (const scene of manifest.scenes ?? []) {
+  for (const scene of scenes) {
     const previousId = scene.id;
     const files = await resolveSceneFiles(packDir, scene, referencedSources);
     const id = sha256(

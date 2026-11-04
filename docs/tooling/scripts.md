@@ -108,7 +108,8 @@ At pack time the script assigns SHA-256 content IDs: each ambience, one-shot and
 scene is hashed from its metadata (with all `id` keys excluded) and its files,
 each audio file is named by its content hash, and the package ID is the hash of
 the combined entity hashes. References are rewritten before the archive is
-written.
+written. Ambiences, one-shots and scenes are optional, but at least one entry is
+required; completely empty packages are rejected.
 
 ## `scripts/test-import.js`
 

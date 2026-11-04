@@ -17,7 +17,20 @@ async function makePack(name = 'demo') {
   await mkdir(path.join(packDir, 'docs'), { recursive: true });
   await writeFile(
     path.join(packDir, 'pack.json'),
-    JSON.stringify({ id: name, name }),
+    JSON.stringify({
+      id: name,
+      name,
+      scenes: [
+        {
+          id: 'scene',
+          name: 'Scene',
+          intensity: 50,
+          ambiences: [],
+          oneShotIds: [],
+          musicPresets: [],
+        },
+      ],
+    }),
   );
   await writeFile(path.join(packDir, 'layers', 'rain.mp3'), 'rain');
   await writeFile(path.join(packDir, 'docs', 'notes.txt'), 'notes');
@@ -237,6 +250,140 @@ describe('sound pack archive helpers', () => {
     expect(after.ambiences[0].id).not.toBe(before.ambiences[0].id);
     expect(after.scenes[0].id).not.toBe(before.scenes[0].id);
     expect(after.id).not.toBe(before.id);
+  });
+
+  it('supports ambience-only, one-shot-only and scene-only packs', async () => {
+    const onlyAmbience = path.join(root, 'only-ambience');
+    await mkdir(path.join(onlyAmbience, 'ambiences'), { recursive: true });
+    await writeFile(path.join(onlyAmbience, 'ambiences', 'rain.mp3'), 'rain');
+    await writeFile(
+      path.join(onlyAmbience, 'pack.json'),
+      JSON.stringify({
+        version: '2.0',
+        id: 'ambience-pack',
+        name: 'Ambience only',
+        description: '',
+        category: 'fantasy',
+        ambiences: [
+          {
+            id: 'rain',
+            name: 'Rain',
+            icon: 'fa-solid:cloud-rain',
+            defaultVolume: 40,
+            loop: true,
+            variations: [
+              {
+                id: 'default',
+                name: 'Default',
+                samples: ['ambiences/rain.mp3'],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const ambienceManifest = JSON.parse(
+      (await (await JSZip.loadAsync(await createSoundPackBuffer(onlyAmbience)))
+        .file('pack.json')
+        ?.async('string')) ?? '{}',
+    );
+    expect(ambienceManifest.ambiences[0].id).toMatch(/^[a-f0-9]{64}$/);
+    expect(ambienceManifest.oneShots).toBeUndefined();
+    expect(ambienceManifest.scenes).toBeUndefined();
+
+    const onlyOneShot = path.join(root, 'only-one-shot');
+    await mkdir(path.join(onlyOneShot, 'one-shots'), { recursive: true });
+    await writeFile(path.join(onlyOneShot, 'one-shots', 'bell.mp3'), 'bell');
+    await writeFile(
+      path.join(onlyOneShot, 'pack.json'),
+      JSON.stringify({
+        version: '2.0',
+        id: 'one-shot-pack',
+        name: 'One-shot only',
+        description: '',
+        category: 'fantasy',
+        oneShots: [
+          {
+            id: 'bell',
+            name: 'Bell',
+            icon: 'fa-solid:bell',
+            file: 'one-shots/bell.mp3',
+            category: 'environmental',
+            volume: 70,
+          },
+        ],
+      }),
+    );
+    const oneShotManifest = JSON.parse(
+      (await (await JSZip.loadAsync(await createSoundPackBuffer(onlyOneShot)))
+        .file('pack.json')
+        ?.async('string')) ?? '{}',
+    );
+    expect(oneShotManifest.oneShots[0].id).toMatch(/^[a-f0-9]{64}$/);
+    expect(oneShotManifest.ambiences).toBeUndefined();
+    expect(oneShotManifest.scenes).toBeUndefined();
+
+    const onlyScene = path.join(root, 'only-scene');
+    await mkdir(path.join(onlyScene, 'scenes', 'tavern', 'music'), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(onlyScene, 'scenes', 'tavern', 'music', 'theme.mp3'),
+      'theme',
+    );
+    await writeFile(
+      path.join(onlyScene, 'pack.json'),
+      JSON.stringify({
+        version: '2.0',
+        id: 'scene-pack',
+        name: 'Scene only',
+        description: '',
+        category: 'fantasy',
+        scenes: [
+          {
+            id: 'tavern',
+            name: 'Tavern',
+            intensity: 50,
+            ambiences: [],
+            oneShotIds: [],
+            musicPresets: [
+              {
+                id: 'explore',
+                name: 'Explore',
+                files: ['scenes/tavern/music/theme.mp3'],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const sceneManifest = JSON.parse(
+      (await (await JSZip.loadAsync(await createSoundPackBuffer(onlyScene)))
+        .file('pack.json')
+        ?.async('string')) ?? '{}',
+    );
+    expect(sceneManifest.scenes[0].id).toMatch(/^[a-f0-9]{64}$/);
+    expect(sceneManifest.ambiences).toBeUndefined();
+    expect(sceneManifest.oneShots).toBeUndefined();
+  });
+
+  it('rejects a package with no ambiences, one-shots or scenes', async () => {
+    const empty = path.join(root, 'empty');
+    await mkdir(empty, { recursive: true });
+    await writeFile(
+      path.join(empty, 'pack.json'),
+      JSON.stringify({
+        version: '2.0',
+        id: 'empty',
+        name: 'Empty',
+        description: '',
+        category: 'fantasy',
+      }),
+    );
+
+    await expect(createSoundPackBuffer(empty)).rejects.toThrow(
+      'Sound pack cannot be empty',
+    );
   });
 
   it('rejects directories without pack.json', async () => {

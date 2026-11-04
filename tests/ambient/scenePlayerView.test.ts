@@ -11,6 +11,9 @@ const storeMock = vi.hoisted(() => ({
   isPlaying: true,
   hasActiveLayers: true,
   intensity: 55,
+  masterVolume: 50,
+  togglePlayPause: vi.fn(),
+  setMasterVolume: vi.fn(),
   playScene: vi.fn(),
   playSceneMusic: vi.fn(),
   setMusicPreset: vi.fn(),
@@ -36,6 +39,8 @@ const stubs = { ...quasarStubs, EntityTabs: EntityTabsStub };
 describe('ScenePlayerView', () => {
   beforeEach(() => {
     for (const fn of [
+      storeMock.togglePlayPause,
+      storeMock.setMasterVolume,
       storeMock.playScene,
       storeMock.playSceneMusic,
       storeMock.setMusicPreset,
@@ -122,6 +127,40 @@ describe('ScenePlayerView', () => {
     expect(back.exists()).toBe(true);
     await back.trigger('click');
     expect(wrapper.emitted('back')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('places transport and volume in the title line', async () => {
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs },
+    });
+
+    const header = wrapper.find('.scene-view-header');
+    const pause = header.find('button[aria-label="Pause"]');
+    expect(pause.exists()).toBe(true);
+    await pause.trigger('click');
+    expect(storeMock.togglePlayPause).toHaveBeenCalled();
+
+    await header.find('.volume-button').trigger('wheel', { deltaY: 100 });
+    expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
+    wrapper.unmount();
+  });
+
+  it('shows the header play button disabled when nothing is active', () => {
+    storeMock.activeScene = null;
+    storeMock.hasActiveLayers = false;
+    storeMock.isPlaying = false;
+    const wrapper = mount(ScenePlayerView, {
+      props: { packId: 'pack-1', sceneId: 'scene-1' },
+      global: { stubs },
+    });
+
+    expect(
+      wrapper
+        .find('.scene-view-header button[aria-label="Play"]')
+        .attributes('disabled'),
+    ).toBeDefined();
     wrapper.unmount();
   });
 

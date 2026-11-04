@@ -39,12 +39,14 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 ### 2.1 Package
 
 An ambient sound package (`.spk`) is a self-contained distributable content unit.
-A package contains:
+A package contains one or more of:
 
-- **audio files** used by its entries and scenes;
 - **ambience entries** — loopable background layers;
 - **one-shot entries** — triggerable effects;
-- **scene configurations** — saved mixes owned by the package.
+- **scene configurations** — saved mixes owned by the package,
+
+plus any **audio files** used by those elements. Packages with only ambiences,
+only one-shots or only scenes are valid; a completely empty package is not.
 
 A package is content, not a running mix. Importing or loading a package registers
 its contents but does not start playback automatically. Imported package content
@@ -176,7 +178,7 @@ src/
 │   │   ├── OneShotGallery.vue        # Global one-shot knob grid
 │   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
 │   │   ├── MoodKnob.vue              # Mood selector/progress knob
-│   │   ├── AmbientControls.vue       # Intensity, transport and volume
+│   │   ├── AmbientControls.vue       # Scene intensity slider
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
 │   │   └── SoundPackSidebar.vue      # Package list and import/remove
@@ -351,9 +353,9 @@ content-derived SHA-256 identifiers when building the `.spk`:
 | `icon`             | no       | Package icon value; not used for scene identity.              |
 | `category`         | yes      | `fantasy`, `scifi`, `horror`, `modern` or `custom`.           |
 | `defaultIntensity` | no       | Fallback scene intensity, snapped to 0/25/50/75/100.          |
-| `ambiences`        | yes      | Ambience entries (legacy `layers` is normalized here).        |
-| `oneShots`         | yes      | One-shot entries.                                             |
-| `scenes`           | yes      | Scene configurations.                                         |
+| `ambiences`        | no       | Ambience entries (legacy `layers` is normalized here).        |
+| `oneShots`         | no       | One-shot entries.                                             |
+| `scenes`           | no       | Scene configurations.                                         |
 | `moodStates`       | no       | Legacy mood music, normalized into single-preset scenes.      |
 | `weatherSystems`   | no       | Legacy weather entries, normalized into ambience categories.  |
 
@@ -408,8 +410,10 @@ to the package root. The folder is normally `ambiences/`.
 | `mode`  | no       | `continual` (default) or `temporary`. Temporary presets return to the |
 |         |          | previously played preset, or Off when none (sample: `victory`).       |
 
-Scenes have no `icon` field. Unknown fields are ignored. Scene music is owned by
-the scene; there is no package-wide music folder.
+At least one of `ambiences`, `oneShots` or `scenes` must contain an entry; the
+pack script rejects completely empty packages. Scenes have no `icon` field.
+Unknown fields are ignored. Scene music is owned by the scene; there is no
+package-wide music folder.
 
 ### 3.3 Data Models
 
@@ -645,9 +649,9 @@ header returns to the scene/gallery tabs. The view contains:
   off when there was none. Only temporary
   presets show playback progress on their knob; the knob is read-only and acts
   as a round button.
-- **Playback controls** — directly under the mood block: the five-step intensity
-  slider, play/pause, and master volume. Play/pause resumes the active scene
-  after a pause.
+- **Playback controls** — play/pause and master volume sit at the far right of
+  the scene title line. The five-step intensity slider sits directly under the
+  mood block. Play/pause resumes the active scene after a pause.
 - **Control gating** — while paused, mood knobs and ambience variation buttons
   are disabled. They are enabled again when the scene play/pause control
   resumes, or when nothing has been started yet.
@@ -689,12 +693,13 @@ the affected links.
 
 ### 4.8 Scene playback controls
 
-Playback controls are part of the scene view and sit directly under the mood
-block. They are not rendered in the app footer.
+Playback controls are part of the scene view and are not rendered in the app
+footer.
 
-- Five-step intensity slider (0/25/50/75/100) with snapping and tick marks.
-- Play/pause for the active scene and its ambience.
-- Master volume popup, including mouse-wheel adjustment.
+- Play/pause and master volume sit at the far right of the scene title line.
+- Five-step intensity slider (0/25/50/75/100) with snapping and tick marks sits
+  under the mood block.
+- Master volume opens a popup, including mouse-wheel adjustment.
 - Play/pause is disabled while no scene or ambience is active.
 - No scene icon, cover art, “Now playing” caption or stop button.
 
@@ -770,7 +775,7 @@ block. They are not rendered in the app footer.
 | `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
 | `OneShotControl`    | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`              |
 | `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
-| `AmbientControls`   | Scene intensity, play/pause and master volume                 | `intensity`, `isPlaying`, `masterVolume`     |
+| `AmbientControls`   | Scene intensity slider                                        | `intensity`                                  |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and
