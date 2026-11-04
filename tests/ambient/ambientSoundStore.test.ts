@@ -280,6 +280,35 @@ describe('ambient sound store', () => {
     expect(mocks.audioEngine.stopAll).not.toHaveBeenCalled();
   });
 
+  it('deactivates the scene when the mood is turned off without ambience', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.playSceneMusic('forest', 'tavern', 'explore');
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeSceneKey).toBe('forest::tavern');
+    expect(store.activeLayers.size).toBe(0);
+
+    store.setMusicPreset(null);
+
+    expect(store.musicEnabled).toBe(false);
+    expect(store.isPlaying).toBe(false);
+    expect(store.activeSceneKey).toBeNull();
+  });
+
+  it('keeps the scene active when the mood is turned off with ambience', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 0);
+    await store.playSceneMusic('forest', 'tavern', 'explore');
+    store.setMusicPreset(null);
+
+    expect(store.isPlaying).toBe(true);
+    expect(store.activeSceneKey).toBe('forest::tavern');
+    expect(store.activeLayers.size).toBe(1);
+  });
+
   it('does not restart the active mood when it is selected again', async () => {
     const store = createStore();
     await store.loadStoredPacks();
