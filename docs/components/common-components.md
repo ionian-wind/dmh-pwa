@@ -166,6 +166,8 @@ Read-only inline list of linked entity refs. Resolves display labels through the
 entity catalog and optionally shows remove buttons. Located under
 `src/components/common/`.
 
+![EntityLinkList example](../screenshots/entity-link-list-example.png)
+
 ### `EntityTabs.vue`
 
 Dense Quasar `QTabs`/`QTab` bar shared by entity views, the ambient page and the
