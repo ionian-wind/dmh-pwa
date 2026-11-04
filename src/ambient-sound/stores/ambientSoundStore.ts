@@ -309,7 +309,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
       activeMusicPresetId.value = previous?.id ?? null;
       if (!previous) {
         musicEnabled.value = false;
-        audioEngine.stopMusic(false);
+        audioEngine.stopMusic(true);
         return;
       }
       startSceneMusic(activeScene.value.pack.id, scene, true);

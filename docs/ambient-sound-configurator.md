@@ -23,7 +23,7 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   badge; one-shots can sound at any time.
 - Mood knobs start/switch mood music only; they never start scene ambience.
   Switching moods crossfades the music, and clicking the active mood does
-  nothing. Temporary moods return to the previous mood or Off.
+  nothing. Temporary moods crossfade to the previous mood or fade out to Off.
 - Only temporary mood knobs show playback progress.
 - Opening a scene never starts playback. When nothing is playing, mood and
   ambience controls can start their own audio. While paused, those controls are
@@ -649,7 +649,7 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
   stopping ambiences. Within a preset the next music variant is chosen randomly
   and crossfaded in just before the current track ends. Temporary presets such
   as Victory play once, then crossfade back to the previously played preset or
-  turn music off when there was none. Only temporary
+  fade out to Off when there was none. Only temporary
   presets show playback progress on their knob; the knob is read-only and acts
   as a round button.
 - **Playback controls** — play/pause and master volume sit at the far right of
@@ -1404,8 +1404,9 @@ Add route to router:
   and only one sample per layer plays at a time. Weather is represented as a
   normal ambient layer category rather than a separate panel.
 - Mood states support `continual` and `temporary` modes. Temporary music
-  crossfades back to the previous mood as the track ends; continual music keeps
-  playing by crossfading into another randomly chosen variant. Each mood can
+  crossfades back to the previous mood as the track ends, or fades out to Off
+  when there was none; continual music keeps playing by crossfading into
+  another randomly chosen variant. Each mood can
   have several music files. Clicking the active mood does not restart its
   music.
 - Packages are built and edited by script, not in the app. The sidebar only

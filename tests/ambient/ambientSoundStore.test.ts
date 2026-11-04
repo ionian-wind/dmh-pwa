@@ -313,7 +313,7 @@ describe('ambient sound store', () => {
     );
   });
 
-  it('turns temporary music off when no previous preset was played', async () => {
+  it('fades temporary music off when no previous preset was played', async () => {
     const store = createStore();
     await store.loadStoredPacks();
     await store.playScene('forest', 'tavern');
@@ -326,7 +326,7 @@ describe('ambient sound store', () => {
 
     expect(store.activeMusicPresetId).toBeNull();
     expect(store.musicEnabled).toBe(false);
-    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(false);
+    expect(mocks.audioEngine.stopMusic).toHaveBeenCalledWith(true);
   });
 
   it('loads but does not play music while paused', async () => {
