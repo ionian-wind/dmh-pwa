@@ -635,7 +635,7 @@ view URL is `/ambient/<scene-id>`, so the hashed scene ID is shareable and
 survives a reload. Playback starts only from an explicit play action. A Back
 button in the view header returns to the scene/gallery tabs. The view contains:
 
-- **Mood knobs** — a knob row containing Off plus one knob per scene music preset
+- **Mood knobs** — labelled “Mood” in English and “Атмосфера” in Russian; a knob row containing Off plus one knob per scene music preset
   (for example Explore, Combat, Victory). Clicking a mood knob starts only that
   mood music when nothing is playing, or switches the active preset while
   playing; it never starts the scene's ambience layers. Ambience starts only

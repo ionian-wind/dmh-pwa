@@ -751,7 +751,6 @@
     "masterVolume": "Master volume",
     "sidebarHint": "Open the sound pack sidebar to choose, import, or create a pack.",
     "deletePackConfirm": "Delete “{name}”?",
-    "music": "Music",
     "variation": "Variation",
     "addVariation": "Add variation",
     "addSample": "Add sample",
@@ -819,7 +818,8 @@
     "scenesTab": "Scenes",
     "oneShotsTab": "One-shots",
     "noLinkEntities": "No entities available to link",
-    "ambientMix": "Ambient mix"
+    "ambientMix": "Ambient mix",
+    "mood": "Mood"
   },
   "maps": {
     "title": "Maps",

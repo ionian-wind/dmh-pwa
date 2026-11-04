@@ -26,7 +26,7 @@
 
     <div v-if="entry" class="scene-player-content">
       <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
-        {{ t('ambientSoundPage.music') }}
+        {{ t('ambientSoundPage.mood') }}
       </div>
       <div class="mood-knobs q-mb-md">
         <MoodKnob
