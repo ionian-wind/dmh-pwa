@@ -120,8 +120,8 @@ describe('OneShotControl', () => {
     });
 
     const knob = wrapper.find('.one-shot-knob');
-    expect(knob.attributes('color')).toBe('primary');
-    expect(knob.attributes('track-color')).toBe('grey-4');
+    expect(knob.attributes('color')).toBe('white');
+    expect(knob.attributes('track-color')).toBe('grey-7');
     wrapper.unmount();
   });
 

@@ -16,8 +16,8 @@
           :max="100"
           :thickness="0.2"
           :size="`${knobSize}px`"
-          :color="playing ? 'primary' : 'transparent'"
-          :track-color="playing ? 'grey-4' : 'transparent'"
+          :color="playing ? 'white' : 'transparent'"
+          :track-color="playing ? 'grey-7' : 'transparent'"
           show-value
           readonly
           :instant-feedback="true"
