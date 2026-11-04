@@ -9,24 +9,15 @@
     </div>
 
     <template v-else-if="store.storedPacks.length">
-      <ScenePlayerView
-        v-if="selectedScene"
-        :pack-id="selectedScene.packId"
-        :scene-id="selectedScene.sceneId"
-        @back="goBack"
-      />
+      <div class="ambient-tabs-sticky" :style="{ top: `${headerOffset}px` }">
+        <EntityTabs v-model="activeTab" :tabs="tabs" />
+      </div>
 
-      <template v-else>
-        <div class="ambient-tabs-sticky" :style="{ top: `${headerOffset}px` }">
-          <EntityTabs v-model="activeTab" :tabs="tabs" />
-        </div>
-
-        <div class="ambient-tab-body">
-          <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
-          <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
-          <OneShotGallery v-else />
-        </div>
-      </template>
+      <div class="ambient-tab-body">
+        <SceneList v-if="activeTab === 'scenes'" @open="openScenePlayer" />
+        <AmbienceGallery v-else-if="activeTab === 'ambiences'" />
+        <OneShotGallery v-else />
+      </div>
     </template>
 
     <EmptyState
@@ -39,9 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -52,39 +43,14 @@ import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
-import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const layout = useLayout();
 const rightDrawer = useRightDrawer();
-const route = useRoute();
 const router = useRouter();
 
 const activeTab = ref('scenes');
-const packsReady = ref(false);
-
-const selectedScene = computed(() => {
-  const sceneId =
-    typeof route.params.sceneId === 'string' ? route.params.sceneId : '';
-  if (!sceneId) return null;
-  const match = store.allScenes.find(({ scene }) => scene.id === sceneId);
-  return match ? { packId: match.pack.id, sceneId } : null;
-});
-
-watch(
-  [() => route.params.sceneId, selectedScene, packsReady],
-  () => {
-    if (
-      packsReady.value &&
-      typeof route.params.sceneId === 'string' &&
-      !selectedScene.value
-    ) {
-      void router.replace({ name: 'ambient-sound' });
-    }
-  },
-  { immediate: true },
-);
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);
@@ -105,10 +71,6 @@ function openScenePlayer(_packId: string, sceneId: string) {
   void router.push({ name: 'ambient-scene', params: { sceneId } });
 }
 
-function goBack() {
-  void router.push({ name: 'ambient-sound' });
-}
-
 onMounted(async () => {
   layout.setTopMenuContent({
     component: ViewHeader,
@@ -122,7 +84,6 @@ onMounted(async () => {
     headerResizeObserver.observe(header);
   }
   await store.loadStoredPacks();
-  packsReady.value = true;
 });
 
 onUnmounted(() => {

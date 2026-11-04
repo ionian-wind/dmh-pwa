@@ -211,7 +211,6 @@ describe('ScenePlayerView', () => {
       global: { stubs },
     });
 
-    expect(wrapper.text()).toContain('Tavern Evening');
     expect(wrapper.text()).toContain('Off');
     expect(wrapper.text()).toContain('Explore');
     expect(wrapper.text()).toContain('Combat');

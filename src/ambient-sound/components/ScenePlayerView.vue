@@ -13,11 +13,7 @@
         <span class="q-ml-xs">{{ t('common.back') }}</span>
       </QBtn>
       <template v-if="entry">
-        <QSeparator vertical />
-        <div class="col">
-          <div class="text-h6">{{ entry.scene.name }}</div>
-          <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
-        </div>
+        <QSpace />
         <QBtnGroup flat class="scene-title-actions">
           <QBtn
             flat

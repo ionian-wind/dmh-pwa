@@ -1,26 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { reactive } from 'vue';
 
 const storeMock = vi.hoisted(() => ({
   loading: false,
-  masterVolume: 50,
-  musicEnabled: true,
-  isPlaying: false,
   storedPacks: [{ id: 'pack-1', name: 'Campaign' }],
-  activeScene: {
-    pack: { id: 'pack-1', name: 'Campaign' },
-    scene: { id: 'scene-1', name: 'Tavern' },
-  },
-  activeSceneKey: 'pack-1::scene-1',
-  hasActiveLayers: false,
-  togglePlayPause: vi.fn(),
-  toggleMusic: vi.fn(),
-  setMasterVolume: vi.fn(),
   loadStoredPacks: vi.fn().mockResolvedValue(undefined),
   stopPreview: vi.fn(),
-  playScene: vi.fn(),
-  playOneShot: vi.fn(),
 }));
 
 const layoutMock = vi.hoisted(() => ({
@@ -32,17 +17,11 @@ const rightDrawerMock = vi.hoisted(() => ({
   clear: vi.fn(),
 }));
 
-const routeMock = vi.hoisted(() => ({
-  params: {} as Record<string, string>,
-}));
-
 const routerMock = vi.hoisted(() => ({
   push: vi.fn(),
-  replace: vi.fn(),
 }));
 
 vi.mock('vue-router', () => ({
-  useRoute: () => routeMock,
   useRouter: () => routerMock,
 }));
 
@@ -66,42 +45,20 @@ const stubs = {
   SceneList: true,
   AmbienceGallery: true,
   OneShotGallery: true,
-  ScenePlayerView: true,
   EntityTabs: EntityTabsStub,
 };
 
 describe('AmbientSoundView', () => {
   beforeEach(() => {
     storeMock.loading = false;
-    storeMock.masterVolume = 50;
-    storeMock.musicEnabled = true;
-    storeMock.isPlaying = false;
-    storeMock.hasActiveLayers = false;
     storeMock.storedPacks = [{ id: 'pack-1', name: 'Campaign' }] as any;
-    storeMock.activeScene = {
-      pack: { id: 'pack-1', name: 'Campaign' },
-      scene: { id: 'scene-1', name: 'Tavern' },
-    } as any;
-    storeMock.allScenes = [
-      {
-        pack: { id: 'pack-1', name: 'Campaign' },
-        scene: { id: 'scene-1', name: 'Tavern' },
-      },
-    ] as any;
-    routeMock.params = {};
     for (const fn of [
-      storeMock.togglePlayPause,
-      storeMock.toggleMusic,
-      storeMock.setMasterVolume,
       storeMock.loadStoredPacks,
       storeMock.stopPreview,
-      storeMock.playScene,
-      storeMock.playOneShot,
       layoutMock.setTopMenuContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
       routerMock.push,
-      routerMock.replace,
     ]) {
       fn.mockClear();
     }
@@ -121,8 +78,6 @@ describe('AmbientSoundView', () => {
     expect(wrapper.text()).toContain('Ambiences');
     expect(wrapper.text()).toContain('One-shots');
     expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(true);
-    expect(storeMock.playScene).not.toHaveBeenCalled();
-    expect(storeMock.playOneShot).not.toHaveBeenCalled();
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
@@ -152,71 +107,17 @@ describe('AmbientSoundView', () => {
     wrapper.unmount();
   });
 
-  it('pushes scene routes and renders the scene view from the URL', async () => {
-    const listWrapper = mount(AmbientSoundView, { global: { stubs } });
+  it('pushes the scene route when a scene is opened', async () => {
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
     await flushPromises();
 
-    listWrapper
+    wrapper
       .findComponent({ name: 'SceneList' })
       .vm.$emit('open', 'pack-1', 'scene-1');
     await flushPromises();
     expect(routerMock.push).toHaveBeenCalledWith({
       name: 'ambient-scene',
       params: { sceneId: 'scene-1' },
-    });
-    listWrapper.unmount();
-
-    routeMock.params = { sceneId: 'scene-1' };
-    const wrapper = mount(AmbientSoundView, { global: { stubs } });
-    await flushPromises();
-
-    const sceneView = wrapper.findComponent({ name: 'ScenePlayerView' });
-    expect(sceneView.exists()).toBe(true);
-    expect(sceneView.props('packId')).toBe('pack-1');
-    expect(sceneView.props('sceneId')).toBe('scene-1');
-    expect(wrapper.find('.ambient-tabs-sticky').exists()).toBe(false);
-    expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(false);
-
-    sceneView.vm.$emit('back');
-    await flushPromises();
-    expect(routerMock.push).toHaveBeenLastCalledWith({
-      name: 'ambient-sound',
-    });
-    wrapper.unmount();
-  });
-
-  it('redirects to the ambient list when the routed scene is missing', async () => {
-    routeMock.params = { sceneId: 'removed-scene' };
-    const wrapper = mount(AmbientSoundView, { global: { stubs } });
-    await flushPromises();
-
-    expect(routerMock.replace).toHaveBeenCalledWith({
-      name: 'ambient-sound',
-    });
-    expect(wrapper.findComponent({ name: 'ScenePlayerView' }).exists()).toBe(
-      false,
-    );
-    wrapper.unmount();
-  });
-
-  it('redirects when the open scene loses its package', async () => {
-    routeMock.params = { sceneId: 'scene-1' };
-    storeMock.allScenes = reactive([
-      {
-        pack: { id: 'pack-1', name: 'Campaign' },
-        scene: { id: 'scene-1', name: 'Tavern' },
-      },
-    ]) as any;
-
-    const wrapper = mount(AmbientSoundView, { global: { stubs } });
-    await flushPromises();
-    expect(routerMock.replace).not.toHaveBeenCalled();
-
-    storeMock.allScenes.splice(0);
-    await flushPromises();
-
-    expect(routerMock.replace).toHaveBeenCalledWith({
-      name: 'ambient-sound',
     });
     wrapper.unmount();
   });

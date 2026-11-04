@@ -8,9 +8,11 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 
 - Ambient page route is `/ambient`; a scene view is `/ambient/<scene-id>` and is
   reloadable/shareable.
-- Layout follows the jukebox: sticky page tabs and scrollable content. Playback
-  controls live in the scene view under the mood block; there is no ambient
-  player in the app footer.
+- The main ambient page has sticky tabs and the package sidebar. The scene view
+  is a separate page component using the common view header, has no package
+  sidebar, and shows the scene name in the app header.
+- Playback controls live in the scene view; there is no ambient player in the
+  app footer.
 - Packages are script-built and read-only in the app: import or remove only.
 - Scene rows have no icon, play button or link-count metadata; clicking a row
   opens the scene view.
@@ -179,10 +181,11 @@ a separate opt-in feature.
 ```
 src/
 ├── ambient-sound/
-│   ├── AmbientSoundView.vue          # Page layout, tabs and scene view switch
+│   ├── AmbientSoundView.vue          # Ambient main page and tabs
+│   ├── AmbientSceneView.vue          # Standalone scene page
 │   ├── components/
 │   │   ├── SceneList.vue             # Package-owned scenes
-│   │   ├── ScenePlayerView.vue       # In-page scene player
+│   │   ├── ScenePlayerView.vue       # Scene player content
 │   │   ├── AmbienceGallery.vue       # Global ambience browser
 │   │   ├── AmbienceItem.vue          # Ambience row and enumerated samples
 │   │   ├── VariationSelect.vue       # Global variation filter select
@@ -657,13 +660,13 @@ Package content is imported, not authored in the app.
 
 ### 4.6 Scene player view
 
-Opening a scene row replaces the ambient page content with the scene player
-view while the package sidebar stays in place. The scene content is rendered
-directly in the page rather than inside a card. The scene view URL is
+Opening a scene row navigates to a separate scene page at
 `/ambient/<scene-id>`, so the hashed scene ID is shareable and survives a
-reload. Playback starts only from an explicit action. A Back button in the view
-header returns to the scene/gallery tabs. If the scene's package is removed
-while the scene is open, the app redirects to `/ambient`. The view contains:
+reload. The scene page uses the common view layout: the scene name is shown in
+the app header and there is no package sidebar. Package names are not repeated
+in the scene title. Playback starts only from an explicit action. A Back button
+in the page returns to the scene/gallery tabs. If the scene's package is removed
+while the scene is open, the app redirects to `/ambient`. The page contains:
 
 - **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.
   Uses the same bar layout as the intensity control: the label sits at the left
@@ -682,7 +685,7 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
   progress; their buttons keep the preset name visible next to the percentage
   icon.
 - **Playback controls** — play/pause and the volume-dialog button sit at the far
-  right of the scene title line. The five-step intensity control sits directly
+  right of the scene control row. The five-step intensity control sits directly
   under the mood block: its label is at the left edge and the slider is
   right-aligned in the remaining row, up to a maximum width. Play/pause resumes
   the active scene after a pause.
