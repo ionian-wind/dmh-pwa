@@ -145,6 +145,9 @@ describe('ScenePlayerView', () => {
 
     await header.find('.volume-button').trigger('wheel', { deltaY: 100 });
     expect(storeMock.setMasterVolume).toHaveBeenCalledWith(40);
+    expect(wrapper.find('.intensity-slider').attributes('disable')).toBe(
+      'false',
+    );
     wrapper.unmount();
   });
 
@@ -180,6 +183,9 @@ describe('ScenePlayerView', () => {
         .find('.scene-view-header button[aria-label="Play"]')
         .attributes('disabled'),
     ).toBeUndefined();
+    expect(wrapper.find('.intensity-slider').attributes('disable')).toBe(
+      'true',
+    );
     wrapper.unmount();
   });
 

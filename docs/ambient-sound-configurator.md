@@ -654,9 +654,9 @@ header returns to the scene/gallery tabs. The view contains:
   mood block: its label is at the left edge and the slider is centered in the
   remaining row, up to a maximum width. Play/pause resumes the active scene
   after a pause.
-- **Control gating** — while paused, mood knobs and ambience variation buttons
-  are disabled. They are enabled again when the scene play/pause control
-  resumes, or when nothing has been started yet.
+- **Control gating** — while paused, the intensity slider, mood knobs and
+  ambience variation buttons are disabled. They are enabled again when the
+  scene play/pause control resumes, or when nothing has been started yet.
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.

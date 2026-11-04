@@ -61,7 +61,7 @@
         />
       </div>
 
-      <AmbientControls class="q-mb-md" />
+      <AmbientControls class="q-mb-md" :disabled="!sceneControlsEnabled" />
 
       <EntityTabs v-model="activeTab" :tabs="tabs" class="q-mb-md" />
 

@@ -38,4 +38,16 @@ describe('AmbientControls', () => {
     expect(storeMock.setIntensity).toHaveBeenCalledWith(75);
     wrapper.unmount();
   });
+
+  it('disables the intensity slider when requested', () => {
+    const wrapper = mount(AmbientControls, {
+      props: { disabled: true },
+      global: { stubs: quasarStubs },
+    });
+
+    expect(
+      wrapper.findComponent(quasarStubs.QSlider).attributes('disable'),
+    ).toBe('true');
+    wrapper.unmount();
+  });
 });

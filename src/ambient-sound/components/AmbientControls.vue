@@ -15,6 +15,7 @@
         :markers="true"
         :color="isIntensityHovered ? 'info' : 'primary'"
         :track-size="isIntensityHovered ? '10px' : '5px'"
+        :disable="disabled"
         class="intensity-slider"
         :aria-label="t('ambientSoundPage.intensity')"
         @mouseenter="isIntensityHovered = true"
@@ -35,6 +36,7 @@ import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
+defineProps<{ disabled?: boolean }>();
 const isIntensityHovered = ref(false);
 </script>
 

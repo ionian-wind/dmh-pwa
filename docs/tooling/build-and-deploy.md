@@ -89,7 +89,12 @@ Steps:
 5. `npm run test:regression`.
 6. `npm run build`.
 7. `cp dist/index.html dist/404.html` (SPA fallback for GitHub Pages).
-8. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
+8. Write the deployed commit SHA to `dist/version.json` as `{"sha": "<sha>"}`.
+9. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
+
+Locally, `public/version.json` contains `{"sha":"dev"}`. It is copied into the
+build so development and preview builds have the same file shape as deployed
+builds.
 
 The full suite runs in CI along with the regression suite. See
 [testing.md](testing.md).
