@@ -104,9 +104,11 @@ describe('ambient audio engine', () => {
     engine.loadLayer('rain', 'blob:rain');
     expect(howler.instances).toHaveLength(1);
 
-    engine.playLayer('rain', 0.5);
     const layer = instance(0);
+    const layerFade = vi.spyOn(layer, 'fade');
+    engine.playLayer('rain', 0.5);
     expect(layer.playing()).toBe(true);
+    expect(layerFade).toHaveBeenCalledWith(0, 0.5, 500);
     expect(layer.volume()).toBe(0.5);
 
     engine.playLayer('rain', 0.25);
@@ -217,9 +219,11 @@ describe('ambient audio engine', () => {
     engine.loadMusic('explore', 'blob:explore');
     expect(howler.instances).toHaveLength(1);
 
-    engine.playMusic(0.4);
     const music = instance(0);
+    const musicFade = vi.spyOn(music, 'fade');
+    engine.playMusic(0.4);
     expect(music.playing()).toBe(true);
+    expect(musicFade).toHaveBeenCalledWith(0, 0.4, 1000);
     expect(music.volume()).toBe(0.4);
 
     engine.setMusicVolume(0.2);

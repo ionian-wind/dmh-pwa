@@ -80,7 +80,7 @@ Coverage (V8, `npm run test:coverage`):
 
 ```
 Statements  92.74%
-Branches    87.12%
+Branches    87.10%
 Functions    90.00%
 Lines       92.74%
 ```

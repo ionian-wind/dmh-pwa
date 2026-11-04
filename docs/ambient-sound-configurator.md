@@ -28,6 +28,8 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   Off.
 - Off and continual moods use regular buttons; temporary moods use progress
   buttons that show playback progress alongside the label.
+- Mood music and ambience samples fade in when starting from silence, and fade
+  out when stopping, so transitions from no audio blend with active layers.
 - Opening a scene never starts playback. When nothing is playing, mood and
   ambience controls can start their own audio. While paused, those controls are
   disabled and only the footer play button resumes playback.

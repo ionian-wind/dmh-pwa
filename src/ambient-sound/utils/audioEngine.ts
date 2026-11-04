@@ -113,10 +113,10 @@ export class AudioEngine {
     const layer = this.layers.get(layerId);
     if (layer) {
       const targetVolume = volume * this.masterVolume;
-      layer.volume(targetVolume);
       if (!layer.playing()) {
-        layer.fade(0, targetVolume, 500);
+        layer.volume(0);
         layer.play();
+        layer.fade(0, targetVolume, 500);
       } else {
         layer.fade(layer.volume(), targetVolume, 100);
       }
@@ -264,9 +264,9 @@ export class AudioEngine {
 
   playMusic(volume: number = 0.5): void {
     if (this.musicTrack && !this.musicTrack.playing()) {
-      this.musicTrack.volume(volume * this.masterVolume);
-      this.musicTrack.fade(0, volume * this.masterVolume, 1000);
+      this.musicTrack.volume(0);
       this.musicTrack.play();
+      this.musicTrack.fade(0, volume * this.masterVolume, 1000);
       this.scheduleMusicNearEnd();
     }
   }
