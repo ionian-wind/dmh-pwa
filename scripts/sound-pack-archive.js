@@ -133,10 +133,7 @@ function validateAmbienceVariations(ambiences) {
 }
 
 function oneShotSamples(oneShot) {
-  if (Array.isArray(oneShot.samples) && oneShot.samples.length) {
-    return oneShot.samples.filter(Boolean);
-  }
-  return oneShot.file ? [oneShot.file] : [];
+  return Array.isArray(oneShot.samples) ? oneShot.samples.filter(Boolean) : [];
 }
 
 function sceneMusicPresets(scene) {
@@ -277,7 +274,6 @@ async function hashOneShot(packDir, oneShot, outputFiles, referencedSources) {
   }
 
   const hashInput = withoutIds(oneShot);
-  delete hashInput.file;
   hashInput.samples = resolvedSamples.map((sample) => sample.hash);
   const sampleHashes = [
     ...new Set(resolvedSamples.map((sample) => sample.hash)),
@@ -286,7 +282,6 @@ async function hashOneShot(packDir, oneShot, outputFiles, referencedSources) {
   oneShot.samples = resolvedSamples.map((sample) =>
     hashedAssetPath('one-shots', sample),
   );
-  oneShot.file = oneShot.samples[0];
 }
 
 async function resolveSceneFiles(packDir, scene, referencedSources) {

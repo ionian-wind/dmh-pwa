@@ -92,7 +92,7 @@ const manifest: SoundPackManifest = {
       id: 'thunder',
       name: 'Thunder',
       icon: 'ra-bell',
-      file: 'one-shots/thunder.mp3',
+      samples: ['one-shots/thunder.mp3'],
       category: 'weather',
       volume: 80,
     },

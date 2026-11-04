@@ -110,7 +110,7 @@ describe('ambient pack data', () => {
           id: 'bell',
           name: 'Bell',
           icon: 'ra-bell',
-          file: 'sfx/bell.mp3',
+          samples: ['sfx/bell.mp3'],
           category: 'environmental',
           volume: 70,
         },
@@ -137,7 +137,7 @@ describe('ambient pack data', () => {
     expect(pack.ambiences[0].variations?.[0].samples).toEqual([
       'layers/wind.mp3',
     ]);
-    expect(pack.oneShots[0].file).toBe('sfx/bell.mp3');
+    expect(pack.oneShots[0].samples).toEqual(['sfx/bell.mp3']);
     expect(pack.scenes[0]).not.toHaveProperty('icon');
     expect(pack.scenes[0].musicPresets[0]).toEqual({
       id: 'explore',

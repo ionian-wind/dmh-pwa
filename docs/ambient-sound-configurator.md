@@ -403,7 +403,6 @@ to the package root. The folder is normally `ambiences/`.
 | `name`     | yes      | Display name.                                                  |
 | `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.               |
 | `samples`  | yes      | One or more audio paths; one is picked randomly for each play. |
-| `file`     | no       | Legacy single-sample form, normalized into `samples`.          |
 | `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.         |
 | `volume`   | yes      | 0–100. Scaled by the scene master volume.                      |
 | `cooldown` | no       | Optional cooldown in seconds.                                  |
@@ -479,8 +478,6 @@ export interface OneShotDef {
   icon: string;
   /** One or more samples; one is picked randomly for each play. */
   samples: string[];
-  /** Legacy single sample, normalized into `samples`. */
-  file?: string;
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
   volume: number;
   cooldown?: number;
@@ -1086,8 +1083,6 @@ export interface OneShotDef {
   icon: string;
   /** One or more samples; one is picked randomly for each play. */
   samples: string[];
-  /** Legacy single sample, normalized into `samples`. */
-  file?: string;
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
   volume: number;
   cooldown?: number;

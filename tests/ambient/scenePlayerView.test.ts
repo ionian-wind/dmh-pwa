@@ -108,7 +108,7 @@ describe('ScenePlayerView', () => {
               name: 'Thunder',
               icon: 'fa-solid:cloud-bolt',
               category: 'weather',
-              file: 't.mp3',
+              samples: ['t.mp3'],
               volume: 80,
             },
           ],

@@ -126,10 +126,9 @@ function normalizeOneShotPath(file: string): string {
   return `one-shots/${file}`;
 }
 
-/** Resolve all samples for a one-shot, including the legacy single-file form. */
+/** Resolve all samples for a one-shot. */
 export function getOneShotSamples(oneShot: OneShotDef): string[] {
-  if (oneShot.samples?.length) return oneShot.samples.filter(Boolean);
-  return oneShot.file ? [oneShot.file] : [];
+  return oneShot.samples.filter(Boolean);
 }
 
 function normalizeSceneMusicPath(sceneId: string, file: string): string {
@@ -174,14 +173,10 @@ export function normalizeSoundPack(
       file: ambience.file ? normalizeAmbienceSample(ambience.file) : undefined,
     }),
   );
-  const oneShots = (manifest.oneShots ?? []).map((oneShot) => {
-    const samples = getOneShotSamples(oneShot).map(normalizeOneShotPath);
-    return {
-      ...oneShot,
-      samples,
-      file: samples[0],
-    };
-  });
+  const oneShots = (manifest.oneShots ?? []).map((oneShot) => ({
+    ...oneShot,
+    samples: getOneShotSamples(oneShot).map(normalizeOneShotPath),
+  }));
   const legacyScenes = (manifest.moodStates ?? []).map((mood) => {
     const files = getMoodMusicFiles(mood);
     return {

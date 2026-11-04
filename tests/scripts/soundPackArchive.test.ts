@@ -143,7 +143,7 @@ describe('sound pack archive helpers', () => {
             id: ids.oneShot,
             name: 'Thunder',
             icon: 'fa-solid:cloud-bolt',
-            file: 'one-shots/thunder.mp3',
+            samples: ['one-shots/thunder.mp3'],
             category: 'weather',
             volume: 80,
           },
@@ -215,7 +215,7 @@ describe('sound pack archive helpers', () => {
     expect(firstManifest.ambiences[0].variations[0].samples[0]).toMatch(
       /^ambiences\/[a-f0-9]{64}\.mp3$/,
     );
-    expect(firstManifest.oneShots[0].file).toMatch(
+    expect(firstManifest.oneShots[0].samples[0]).toMatch(
       /^one-shots\/[a-f0-9]{64}\.mp3$/,
     );
     const outputMusic = scene.musicPresets[0].files[0];

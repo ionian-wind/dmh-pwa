@@ -19,7 +19,7 @@ const thunder = {
   id: 'thunder',
   name: 'Thunder',
   icon: 'fa-solid:cloud-bolt',
-  file: 'one-shots/thunder.mp3',
+  samples: ['one-shots/thunder.mp3'],
   category: 'weather' as const,
   volume: 80,
 };
