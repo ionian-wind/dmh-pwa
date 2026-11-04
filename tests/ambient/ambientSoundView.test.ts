@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { defineComponent } from 'vue';
 
 const storeMock = vi.hoisted(() => ({
   loading: false,
   storedPacks: [{ id: 'pack-1', name: 'Campaign' }],
+  allScenes: [] as any[],
   loadStoredPacks: vi.fn().mockResolvedValue(undefined),
   stopPreview: vi.fn(),
 }));
@@ -15,14 +17,6 @@ const layoutMock = vi.hoisted(() => ({
 const rightDrawerMock = vi.hoisted(() => ({
   set: vi.fn(),
   clear: vi.fn(),
-}));
-
-const routerMock = vi.hoisted(() => ({
-  push: vi.fn(),
-}));
-
-vi.mock('vue-router', () => ({
-  useRouter: () => routerMock,
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -40,11 +34,23 @@ import ViewHeader from '@/components/common/ViewHeader.vue';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import { EntityTabsStub } from '../helpers/entityTabsStub';
 
+const BaseModalStub = defineComponent({
+  name: 'BaseModal',
+  props: { isOpen: Boolean, title: String },
+  emits: ['update:isOpen', 'cancel'],
+  template: `<div v-if="isOpen" class="base-modal-stub">
+    <span class="modal-title">{{ title }}</span>
+    <slot />
+  </div>`,
+});
+
 const stubs = {
   QSpinnerDots: true,
   SceneList: true,
   AmbienceGallery: true,
   OneShotGallery: true,
+  ScenePlayerView: true,
+  BaseModal: BaseModalStub,
   EntityTabs: EntityTabsStub,
 };
 
@@ -52,13 +58,18 @@ describe('AmbientSoundView', () => {
   beforeEach(() => {
     storeMock.loading = false;
     storeMock.storedPacks = [{ id: 'pack-1', name: 'Campaign' }] as any;
+    storeMock.allScenes = [
+      {
+        pack: { id: 'pack-1', name: 'Forest' },
+        scene: { id: 'scene-1', name: 'Tavern Evening' },
+      },
+    ] as any;
     for (const fn of [
       storeMock.loadStoredPacks,
       storeMock.stopPreview,
       layoutMock.setTopMenuContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
-      routerMock.push,
     ]) {
       fn.mockClear();
     }
@@ -107,7 +118,7 @@ describe('AmbientSoundView', () => {
     wrapper.unmount();
   });
 
-  it('pushes the scene route when a scene is opened', async () => {
+  it('opens the scene player in a dialog', async () => {
     const wrapper = mount(AmbientSoundView, { global: { stubs } });
     await flushPromises();
 
@@ -115,10 +126,19 @@ describe('AmbientSoundView', () => {
       .findComponent({ name: 'SceneList' })
       .vm.$emit('open', 'pack-1', 'scene-1');
     await flushPromises();
-    expect(routerMock.push).toHaveBeenCalledWith({
-      name: 'ambient-scene',
-      params: { sceneId: 'scene-1' },
-    });
+
+    const modal = wrapper.findComponent(BaseModalStub);
+    expect(modal.props('isOpen')).toBe(true);
+    expect(modal.props('title')).toBe('Tavern Evening');
+    const player = modal.findComponent({ name: 'ScenePlayerView' });
+    expect(player.exists()).toBe(true);
+    expect(player.props('packId')).toBe('pack-1');
+    expect(player.props('sceneId')).toBe('scene-1');
+    expect(player.props('showBack')).toBe(false);
+
+    player.vm.$emit('back');
+    await flushPromises();
+    expect(modal.props('isOpen')).toBe(false);
     wrapper.unmount();
   });
 

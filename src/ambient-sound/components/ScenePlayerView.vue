@@ -2,6 +2,7 @@
   <div class="scene-player-view">
     <div class="scene-view-header row items-center q-gutter-sm q-mb-md">
       <QBtn
+        v-if="showBack"
         flat
         no-caps
         class="scene-back"
@@ -169,10 +170,14 @@ import {
 } from '@/ambient-sound/utils/packData';
 import type { LayerDef, OneShotDef } from '@/ambient-sound/types';
 
-const props = defineProps<{
-  packId: string;
-  sceneId: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    packId: string;
+    sceneId: string;
+    showBack?: boolean;
+  }>(),
+  { showBack: true },
+);
 
 const emit = defineEmits<{
   (e: 'back'): void;

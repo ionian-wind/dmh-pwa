@@ -6,12 +6,12 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 
 ### 1.1 Current implementation requirements
 
-- Ambient page route is `/ambient`; a scene view is `/ambient/<scene-id>` and is
-  reloadable/shareable.
-- The main ambient page has sticky tabs and the package sidebar. The scene view
-  is a separate page component using the common view header, has no package
-  sidebar, and shows the scene name in the app header.
-- Playback controls live in the scene view; there is no ambient player in the
+- Ambient page route is `/ambient`. Legacy `/ambient/<scene-id>` links redirect
+  to the main page.
+- The main ambient page has sticky tabs and the package sidebar. Selecting a
+  scene opens the scene player in a dialog over the main page; the dialog title
+  is the scene name.
+- Playback controls live in the scene dialog; there is no ambient player in the
   app footer.
 - Packages are script-built and read-only in the app: import or remove only.
 - Scene rows have no icon, play button or link-count metadata; clicking a row
@@ -182,7 +182,6 @@ a separate opt-in feature.
 src/
 ├── ambient-sound/
 │   ├── AmbientSoundView.vue          # Ambient main page and tabs
-│   ├── AmbientSceneView.vue          # Standalone scene page
 │   ├── components/
 │   │   ├── SceneList.vue             # Package-owned scenes
 │   │   ├── ScenePlayerView.vue       # Scene player content
@@ -660,13 +659,12 @@ Package content is imported, not authored in the app.
 
 ### 4.6 Scene player view
 
-Opening a scene row navigates to a separate scene page at
-`/ambient/<scene-id>`, so the hashed scene ID is shareable and survives a
-reload. The scene page uses the common view layout: the scene name is shown in
-the app header and there is no package sidebar. Package names are not repeated
-in the scene title. Playback starts only from an explicit action. A Back button
-in the page returns to the scene/gallery tabs. If the scene's package is removed
-while the scene is open, the app redirects to `/ambient`. The page contains:
+Opening a scene row opens the scene player in a dialog over the ambient main
+page. The dialog title is the scene name; package names are not repeated. The
+package sidebar remains behind the modal. Playback starts only from an explicit
+action. Closing the dialog returns to the scene/gallery tabs without stopping
+playback. If the scene's package is removed while the dialog is open, the dialog
+closes and the app remains on `/ambient`. The dialog contains:
 
 - **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.
   Uses the same bar layout as the intensity control: the label sits at the left
@@ -704,8 +702,8 @@ while the scene is open, the app redirects to `/ambient`. The page contains:
   Clicking the knob plays the one-shot immediately, independent of music or
   ambience state.
 
-The Back button returns to the list without stopping playback; the active scene
-remains available from the scene list (with its Playing badge).
+Closing the scene dialog returns to the list without stopping playback; the
+active scene remains available from the scene list (with its Playing badge).
 
 ### 4.7 Entity views: linked scenes
 
@@ -783,8 +781,8 @@ footer.
 - Tabs stay sticky below the app header and shrink to fit narrow screens;
   the package sidebar opens as a drawer.
 - Scenes are full-width rows; gallery is a single-column list.
-- Scene player view uses the full page width with the Back button pinned to the
-  top of the content.
+- Scene player dialog uses nearly the full viewport width and scrolls its
+  content.
 - Touch targets are at least 44×44 px.
 
 ### 4.10 Feedback, accessibility and edge states
@@ -799,29 +797,29 @@ footer.
   entities, no music.
 - All icon buttons have `title`/`aria-label`; sliders have accessible labels and
   current values.
-- Keyboard: tab order follows the visual order; Escape closes modal dialogs;
-  the scene view returns with its Back button; sliders support arrow keys.
+- Keyboard: tab order follows the visual order; Escape closes modal dialogs,
+  including the scene dialog; sliders support arrow keys.
 - Respect `prefers-reduced-motion` for pulsing icons and scene transitions.
 - Package import and link changes update the sidebar and entity panels
   immediately.
 
 ### 4.11 Component and state mapping
 
-| UI component          | Responsibility                                                | Main state/actions                           |
-| --------------------- | ------------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
-| `SoundPackSidebar`    | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
-| `SceneList`           | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
-| `ScenePlayerView`     | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
-| `AmbienceGallery`     | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
-| `AmbienceItem`        | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample     |
-| `VariationSelect`     | Global variation filter above ambience lists                  | `options`, `modelValue`                      |
-| `OneShotGallery`      | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
-| `OneShotControl`      | Button-wrapped knob, icon and playback progress               | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel`   | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
-| `MoodProgress`        | Mood label with temporary-mood progress indicator             | `label`, `active`                            |
-| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders            | `modelValue`                                 |
-| `AmbientControls`     | Scene intensity slider                                        | `intensity`                                  |
+| UI component          | Responsibility                                          | Main state/actions                           |
+| --------------------- | ------------------------------------------------------- | -------------------------------------------- |
+| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content       | `currentPackage`, `activeTab`, `activeScene` |
+| `SoundPackSidebar`    | Package list, import/delete, filter                     | `packages`, `selectedPackageId`              |
+| `SceneList`           | Scene rows and opening the player                       | `scenes`, `activeSceneId`                    |
+| `ScenePlayerView`     | Scene dialog content with music, ambience and one-shots | `packId`, `sceneId`, `showBack`, `activeTab` |
+| `AmbienceGallery`     | Ambience browsing, variations and layered playback      | `galleryAmbiences`, `activeLayers`           |
+| `AmbienceItem`        | Ambience row with enumerated sample buttons             | `ambience`, `variationId`, active sample     |
+| `VariationSelect`     | Global variation filter above ambience lists            | `options`, `modelValue`                      |
+| `OneShotGallery`      | One-shot knob grid and playing/progress state           | `galleryOneShots`, `groups`                  |
+| `OneShotControl`      | Button-wrapped knob, icon and playback progress         | `packId`, `oneShot`, `progress`              |
+| `EntityScenesPanel`   | Linked scenes in location/module/encounter/character    | `links`, `add/remove`, `play`                |
+| `MoodProgress`        | Mood label with temporary-mood progress indicator       | `label`, `active`                            |
+| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders      | `modelValue`                                 |
+| `AmbientControls`     | Scene intensity slider                                  | `intensity`                                  |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

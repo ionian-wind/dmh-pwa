@@ -17,7 +17,6 @@ import NotFoundView from '@/views/NotFoundView.vue';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import TimersView from '@/timers/TimersView.vue';
 import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
-import AmbientSceneView from '@/ambient-sound/AmbientSceneView.vue';
 import MapsView from '@/maps/views/MapsView.vue';
 import MapView from '@/maps/views/MapView.vue';
 import LocationView from '@/maps/views/LocationView.vue';
@@ -169,8 +168,7 @@ const router = createRouter({
     },
     {
       path: '/ambient/:sceneId',
-      name: 'ambient-scene',
-      component: AmbientSceneView,
+      redirect: { name: 'ambient-sound' },
     },
     // 404 route
     {
