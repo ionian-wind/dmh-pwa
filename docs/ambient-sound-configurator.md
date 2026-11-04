@@ -4,6 +4,35 @@
 
 This document describes the Ambient Sound Configurator feature for DMH PWA, inspired by common tabletop ambience workflows. The feature enables Game Masters to create immersive soundscapes for tabletop RPG sessions by layering ambient sounds, triggering one-shot effects, and switching between package-defined scenes.
 
+### 1.1 Current implementation requirements
+
+- Ambient page route is `/ambient`; a scene view is `/ambient/<scene-id>` and is
+  reloadable/shareable.
+- Layout follows the jukebox: sticky page tabs, scrollable content, and a fixed
+  player panel in the app footer.
+- Packages are script-built and read-only in the app: import or remove only.
+- Scene rows have no icon, play button or link-count metadata; clicking a row
+  opens the scene view.
+- Ambience groups use a shared `AmbienceItem` row with variation buttons and no
+  package or scene-count metadata.
+- One-shot entries are grouped category knobs. Each knob contains the icon and
+  shows only the name below it. Knobs are read-only progress indicators with
+  click/keyboard handled by a wrapper.
+- Overlapping plays of the same one-shot are supported and shown as an `×N`
+  badge; one-shots can sound at any time.
+- Mood knobs start/switch mood music only; they never start scene ambience.
+  Temporary moods return to the previous mood or Off.
+- Only temporary mood knobs show playback progress.
+- Opening a scene never starts playback. When nothing is playing, mood and
+  ambience controls can start their own audio. While paused, those controls are
+  disabled and only the footer play button resumes playback.
+- Jukebox and ambient playback are mutually exclusive: starting one pauses the
+  other; pausing/stopping never auto-resumes the other. One-shots are exempt.
+- Intensity has five snapped levels: 0/25/50/75/100.
+- Entity links use hashed package/scene IDs. Packaging derives entity IDs from
+  metadata (all `id` keys excluded) plus file content hashes; files and packages
+  are identified by SHA-256 hashes.
+
 ## 2. Core Concepts
 
 ### 2.1 Package
@@ -90,9 +119,9 @@ After a package is loaded:
 - its **ambience entries** and **one-shot entries** are added to the **global
   gallery**.
 
-The gallery is a content browser, not a scene. Adding a gallery entry to a scene
-creates a reference from that scene to the package entry. Gallery entries remain
-associated with their source package and are removed if that package is removed.
+The gallery is a read-only content browser, not a scene. Gallery entries cannot
+be added to or removed from scenes in the app. They remain associated with their
+source package and are removed if that package is removed.
 
 ### 2.6 Package lifecycle
 
@@ -101,8 +130,8 @@ associated with their source package and are removed if that package is removed.
 3. The package is registered.
 4. Its scenes are inserted into the scenes list.
 5. Its ambience and one-shot entries are inserted into the global gallery.
-6. Nothing starts playing until the user starts a scene or manually previews
-   content.
+6. Nothing starts playing until the user starts mood music, an ambience
+   variation, or a one-shot.
 7. One-shot entries can be triggered regardless of whether ambient playback or a
    scene is active.
 
@@ -142,7 +171,10 @@ src/
 │   │   ├── SceneList.vue             # Package-owned scenes
 │   │   ├── ScenePlayerView.vue       # In-page scene player
 │   │   ├── AmbienceGallery.vue       # Global ambience browser
+│   │   ├── AmbienceItem.vue          # Shared ambience row and variations
 │   │   ├── OneShotGallery.vue        # Global one-shot knob grid
+│   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
+│   │   ├── MoodKnob.vue              # Mood selector/progress knob
 │   │   ├── AmbientGlobalControl.vue  # Fixed footer player
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
@@ -154,6 +186,12 @@ src/
 │       ├── audioEngine.ts            # Howler playback engine
 │       ├── packData.ts               # Manifest normalization
 │       └── packManager.ts            # Import, storage and archive export
+├── components/common/
+│   └── EntityGroup.vue               # Grouped entity section layout
+├── maps/components/
+│   └── EntityCreateDialog.vue        # Create related entity from link picker
+├── utils/
+│   └── playbackCoordinator.ts        # Jukebox/ambient mutual pause
 ├── assets/
 │   └── sounds/                       # Optional built-in audio assets
 ```
@@ -575,7 +613,7 @@ A global content gallery for one-shot entries.
   one-shot icon. Package, category and scene-count metadata are not displayed.
 - Triggering a one-shot from the scene player/playback panel is independent of
   ambient playback, scene music and ambient volume settings.
-- One-shot cards remain visible and playable even when no scene is active.
+- One-shot entries remain visible and playable even when no scene is active.
 
 ### 4.5 Read-only package content
 
@@ -669,8 +707,8 @@ It mirrors the jukebox player and lives in the app footer.
   footer panel.
 - One-shots use their own entry volume and are independent of ambient playback
   and volume state.
-- A single one-shot may be retriggered while already playing; overlapping
-  instances are supported up to the audio engine's one-shot pool.
+- A single one-shot may be retriggered while already playing. There is no
+  active-instance cap; the UI shows an `×N` badge while instances overlap.
 
 **Playback exclusivity**
 
@@ -714,7 +752,7 @@ It mirrors the jukebox player and lives in the app footer.
 - Package delete: confirmation names the package.
 - Active scene: visible “Playing” badge and pulsing headphones icon in the app
   menu.
-- Paused: play icon is shown; music disabled: muted music indicator.
+- Paused: play icon is shown and the footer play button resumes playback.
 - Empty states cover: no packages, no scenes, no gallery entries, no linked
   entities, no music.
 - All icon buttons have `title`/`aria-label`; sliders have accessible labels and
@@ -733,11 +771,12 @@ It mirrors the jukebox player and lives in the app footer.
 | `SoundPackSidebar`     | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
 | `SceneList`            | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
 | `ScenePlayerView`      | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
-| `AmbienceGallery`      | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `category`               |
-| `OneShotGallery`       | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `category`                |
+| `AmbienceGallery`      | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
+| `AmbienceItem`         | Shared ambience row, metadata and variation buttons           | `ambience`, `activeVariationId`, `disabled`  |
+| `OneShotGallery`       | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
 | `OneShotControl`       | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`              |
 | `EntityScenesPanel`    | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
-| `AmbientGlobalControl` | Fixed footer player: scene info, music, transport, volume     | `activeScene`, `playback`, `masterVolume`    |
+| `AmbientGlobalControl` | Fixed footer player: scene info, intensity, transport, volume | `activeScene`, `playback`, `masterVolume`    |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and

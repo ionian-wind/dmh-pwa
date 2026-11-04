@@ -247,7 +247,8 @@ A location detail page follows the module detail pattern:
   `multiple` prop (default `true`) switches between checkbox multi-select and
   radio single-select. The modal's search row has a create (+) button that opens
   the editor for that entity type; after saving, the new entity is selected and
-  marked “Created” in the option list.
+  marked “Created” in the option list. Linked rows highlight on hover, and their
+  unlink action appears on hover or keyboard focus.
 - The right drawer has the same **Markers** and **Areas** tabs as the map view.
   It lists markers and areas linked to this location from all maps, grouped by
   map title with separators between groups.
