@@ -22,6 +22,7 @@ import {
   findVariation,
   getAudioFormat,
   getLayerVariations,
+  getOneShotSamples,
   getSceneMusicFile,
   getVariation,
 } from '../utils/packData';
@@ -178,14 +179,19 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     }
 
     for (const oneShot of pack.oneShots) {
-      const blob = blobs[oneShot.file];
-      if (blob) {
+      const urls = [];
+      for (const sample of getOneShotSamples(oneShot)) {
+        const blob = blobs[sample];
+        if (!blob) continue;
         const url = URL.createObjectURL(blob);
-        loadedAudioUrls.value.set(audioKey(pack.id, oneShot.file), url);
+        loadedAudioUrls.value.set(audioKey(pack.id, sample), url);
+        urls.push(url);
+      }
+      if (urls.length > 0) {
         audioEngine.loadOneShot(
           oneShotKey(pack.id, oneShot.id),
-          url,
-          getAudioFormat(oneShot.file),
+          urls,
+          getAudioFormat(getOneShotSamples(oneShot)[0]),
         );
       }
     }

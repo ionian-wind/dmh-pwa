@@ -293,7 +293,11 @@ content-derived SHA-256 identifiers when building the `.spk`:
       "id": "thunder",
       "name": "Thunder",
       "icon": "fa-solid:cloud-bolt",
-      "file": "one-shots/thunder.mp3",
+      "samples": [
+        "one-shots/thunder.mp3",
+        "one-shots/thunder-alt1.mp3",
+        "one-shots/thunder-alt2.mp3"
+      ],
       "category": "weather",
       "volume": 80,
       "cooldown": 500
@@ -340,7 +344,7 @@ content-derived SHA-256 identifiers when building the `.spk`:
 - `pack.json` is required and must sit at the archive root.
 - `ambiences/` holds the shared ambience sample pools referenced by
   `ambiences[].variations[].samples`.
-- `one-shots/` holds one-shot files referenced by `oneShots[].file`.
+- `one-shots/` holds one-shot files referenced by `oneShots[].samples`.
 - `scenes/<scene-id>/music/` holds music owned by that scene in the source
   package. A preset's `files` entries are resolved relative to the package
   root; the built archive writes them as
@@ -393,15 +397,16 @@ to the package root. The folder is normally `ambiences/`.
 
 **One-shot entry**
 
-| Field      | Required | Notes                                                              |
-| ---------- | -------- | ------------------------------------------------------------------ |
-| `id`       | yes      | Stable ID, unique inside the package.                              |
-| `name`     | yes      | Display name.                                                      |
-| `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.                   |
-| `file`     | yes      | Audio path relative to the package root, normally `one-shots/...`. |
-| `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.             |
-| `volume`   | yes      | 0–100. Scaled by the scene master volume.                          |
-| `cooldown` | no       | Optional cooldown in seconds.                                      |
+| Field      | Required | Notes                                                          |
+| ---------- | -------- | -------------------------------------------------------------- |
+| `id`       | yes      | Stable ID, unique inside the package.                          |
+| `name`     | yes      | Display name.                                                  |
+| `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.               |
+| `samples`  | yes      | One or more audio paths; one is picked randomly for each play. |
+| `file`     | no       | Legacy single-sample form, normalized into `samples`.          |
+| `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.         |
+| `volume`   | yes      | 0–100. Scaled by the scene master volume.                      |
+| `cooldown` | no       | Optional cooldown in seconds.                                  |
 
 **Scene**
 
@@ -472,7 +477,10 @@ export interface OneShotDef {
   name: string;
   /** Icon-picker format, e.g. `fa-solid:cloud-bolt`. */
   icon: string;
-  file: string;
+  /** One or more samples; one is picked randomly for each play. */
+  samples: string[];
+  /** Legacy single sample, normalized into `samples`. */
+  file?: string;
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
   volume: number;
   cooldown?: number;
@@ -620,13 +628,15 @@ A global content gallery for one-shot entries.
 - Package filter behaves like the Ambiences tab. There is no category selector.
 - Knob entries are grouped by category; every group has a title and separator.
   A group can contain entries from multiple packages.
-- Each entry is a Quasar knob with the one-shot icon in the knob slot.
-- The knob is a round button with a read-only progress arc. It cannot be dragged
-  to scrub; clicking it plays the one-shot.
-- Clicking the knob again retriggers the one-shot; overlapping instances are
+- Each entry wraps a Quasar knob and its label in a `QBtn`.
+- The knob has a read-only progress arc and cannot be dragged to scrub; clicking
+  the button plays the one-shot.
+- When an entry defines several samples, one is chosen randomly for each play.
+- Clicking the button again retriggers the one-shot; overlapping instances are
   allowed, and the knob tracks progress of the most recent still-playing
   instance.
-- The knob is highlighted while any instance of the one-shot is playing.
+- The button is highlighted and pressed while any instance of the one-shot is
+  playing.
 - When the same one-shot is playing more than once at the same time, the knob
   shows an `×N` badge with the active instance count.
 - Knobs bind progress with `v-model` in the 0–100 range, use `min=0` / `max=100`,
@@ -730,7 +740,8 @@ footer.
   under the mood block. The label stays at the left edge and the slider is
   right-aligned in the remaining row up to a maximum width.
 - The volume button opens a dedicated dialog with four controls: master, mood,
-  ambience and one-shots. Each control is a 0–100% slider.
+  ambience and one-shots. Each control is a 0–100% slider and supports mouse
+  wheel adjustment in 5% steps.
 - Play/pause is disabled while no mood preset or ambience layer is active; a
   paused scene with active content can still be resumed.
 - No scene icon, cover art, “Now playing” caption or stop button.
@@ -1073,7 +1084,10 @@ export interface OneShotDef {
   id: string;
   name: string;
   icon: string;
-  file: string;
+  /** One or more samples; one is picked randomly for each play. */
+  samples: string[];
+  /** Legacy single sample, normalized into `samples`. */
+  file?: string;
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
   volume: number;
   cooldown?: number;

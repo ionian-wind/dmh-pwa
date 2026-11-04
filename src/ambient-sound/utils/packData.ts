@@ -3,6 +3,7 @@ import type {
   LayerVariation,
   MoodStateDef,
   NormalizedSoundPack,
+  OneShotDef,
   SceneDef,
   SceneMusicPreset,
   SoundPackManifest,
@@ -125,6 +126,12 @@ function normalizeOneShotPath(file: string): string {
   return `one-shots/${file}`;
 }
 
+/** Resolve all samples for a one-shot, including the legacy single-file form. */
+export function getOneShotSamples(oneShot: OneShotDef): string[] {
+  if (oneShot.samples?.length) return oneShot.samples.filter(Boolean);
+  return oneShot.file ? [oneShot.file] : [];
+}
+
 function normalizeSceneMusicPath(sceneId: string, file: string): string {
   if (file.startsWith('scenes/')) return file;
   const name = file.split('/').pop() || file;
@@ -167,10 +174,14 @@ export function normalizeSoundPack(
       file: ambience.file ? normalizeAmbienceSample(ambience.file) : undefined,
     }),
   );
-  const oneShots = (manifest.oneShots ?? []).map((oneShot) => ({
-    ...oneShot,
-    file: normalizeOneShotPath(oneShot.file),
-  }));
+  const oneShots = (manifest.oneShots ?? []).map((oneShot) => {
+    const samples = getOneShotSamples(oneShot).map(normalizeOneShotPath);
+    return {
+      ...oneShot,
+      samples,
+      file: samples[0],
+    };
+  });
   const legacyScenes = (manifest.moodStates ?? []).map((mood) => {
     const files = getMoodMusicFiles(mood);
     return {

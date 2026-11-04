@@ -22,7 +22,12 @@
       </QCardSection>
 
       <QCardSection class="column q-gutter-md">
-        <div v-for="row in rows" :key="row.key" class="volume-row">
+        <div
+          v-for="row in rows"
+          :key="row.key"
+          class="volume-row"
+          @wheel.prevent="onWheel(row, $event)"
+        >
           <div class="row items-center justify-between q-mb-xs">
             <span class="text-body2">{{ row.label }}</span>
             <span class="volume-value">{{ row.value }}%</span>
@@ -67,6 +72,15 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
+
+function onWheel(
+  row: { value: number; set: (value: number) => void },
+  event: WheelEvent,
+) {
+  if (event.deltaY === 0) return;
+  const step = event.deltaY < 0 ? 5 : -5;
+  row.set(row.value + step);
+}
 
 const rows = computed(() => [
   {

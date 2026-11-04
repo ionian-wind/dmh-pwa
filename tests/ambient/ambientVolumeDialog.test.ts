@@ -73,6 +73,25 @@ describe('AmbientVolumeDialog', () => {
     wrapper.unmount();
   });
 
+  it('adjusts each control with the mouse wheel', async () => {
+    const wrapper = mount(AmbientVolumeDialog, {
+      props: { modelValue: true },
+      global: { stubs: quasarStubs },
+    });
+
+    const rows = wrapper.findAll('.volume-row');
+    await rows[0].trigger('wheel', { deltaY: -100 });
+    await rows[1].trigger('wheel', { deltaY: 100 });
+    await rows[2].trigger('wheel', { deltaY: -100 });
+    await rows[3].trigger('wheel', { deltaY: 100 });
+
+    expect(storeMock.setMasterVolume).toHaveBeenCalledWith(55);
+    expect(storeMock.setMoodVolume).toHaveBeenCalledWith(55);
+    expect(storeMock.setAmbienceVolume).toHaveBeenCalledWith(75);
+    expect(storeMock.setOneShotVolume).toHaveBeenCalledWith(75);
+    wrapper.unmount();
+  });
+
   it('renders nothing while closed', () => {
     const wrapper = mount(AmbientVolumeDialog, {
       props: { modelValue: false },

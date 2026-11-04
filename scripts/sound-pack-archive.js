@@ -132,6 +132,13 @@ function validateAmbienceVariations(ambiences) {
   }
 }
 
+function oneShotSamples(oneShot) {
+  if (Array.isArray(oneShot.samples) && oneShot.samples.length) {
+    return oneShot.samples.filter(Boolean);
+  }
+  return oneShot.file ? [oneShot.file] : [];
+}
+
 function sceneMusicPresets(scene) {
   if (Array.isArray(scene.musicPresets) && scene.musicPresets.length) {
     return scene.musicPresets;
@@ -248,23 +255,38 @@ async function hashAmbience(packDir, ambience, outputFiles, referencedSources) {
 }
 
 async function hashOneShot(packDir, oneShot, outputFiles, referencedSources) {
-  const resolved = requireAsset(
-    await resolveAsset(packDir, [
-      oneShot.file,
-      `one-shots/${basename(oneShot.file)}`,
-      `sfx/${basename(oneShot.file)}`,
-      basename(oneShot.file),
-    ]),
-    `one-shot "${oneShot.name}" file "${oneShot.file}"`,
-  );
-  referencedSources.add(resolved.relative);
-  const outputPath = hashedAssetPath('one-shots', resolved);
-  outputFiles.set(outputPath, resolved.buffer);
+  const samples = oneShotSamples(oneShot);
+  if (samples.length === 0) {
+    throw new Error(`One-shot "${oneShot.name}" has no samples`);
+  }
+
+  const resolvedSamples = [];
+  for (const sample of samples) {
+    const resolved = requireAsset(
+      await resolveAsset(packDir, [
+        sample,
+        `one-shots/${basename(sample)}`,
+        `sfx/${basename(sample)}`,
+        basename(sample),
+      ]),
+      `one-shot "${oneShot.name}" sample "${sample}"`,
+    );
+    referencedSources.add(resolved.relative);
+    resolvedSamples.push(resolved);
+    outputFiles.set(hashedAssetPath('one-shots', resolved), resolved.buffer);
+  }
 
   const hashInput = withoutIds(oneShot);
-  hashInput.file = resolved.hash;
-  oneShot.id = sha256(canonicalJson(hashInput), resolved.hash);
-  oneShot.file = outputPath;
+  delete hashInput.file;
+  hashInput.samples = resolvedSamples.map((sample) => sample.hash);
+  const sampleHashes = [
+    ...new Set(resolvedSamples.map((sample) => sample.hash)),
+  ].sort();
+  oneShot.id = sha256(canonicalJson(hashInput), ...sampleHashes);
+  oneShot.samples = resolvedSamples.map((sample) =>
+    hashedAssetPath('one-shots', sample),
+  );
+  oneShot.file = oneShot.samples[0];
 }
 
 async function resolveSceneFiles(packDir, scene, referencedSources) {

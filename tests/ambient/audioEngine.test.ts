@@ -206,6 +206,18 @@ describe('ambient audio engine', () => {
     expect(engine.getMusicProgress()).toBe(0);
   });
 
+  it('picks a random sample when a one-shot has several', () => {
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    engine.loadOneShot('thunder', ['blob:one', 'blob:two']);
+    expect(howler.instances).toHaveLength(2);
+
+    expect(engine.playOneShot('thunder', 0.5)).toBe(true);
+    expect(instance(0).playing()).toBe(false);
+    expect(instance(1).playing()).toBe(true);
+    expect(instance(1).volume()).toBe(0.5);
+    random.mockRestore();
+  });
+
   it('allows the same one-shot to overlap with itself', () => {
     engine.loadOneShot('thunder', 'blob:thunder');
     const howl = instance(0);

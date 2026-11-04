@@ -11,9 +11,12 @@ export class AudioEngine {
   private musicBaseVolume: number = 0.5;
   private retiringMusicTracks = new Set<Howl>();
   private weatherTrack: Howl | null = null;
-  private oneShots: Map<string, Howl> = new Map();
+  private oneShots: Map<string, Howl[]> = new Map();
   private oneShotBaseVolumes = new Map<string, number>();
-  private oneShotPlayIds: Map<string, number[]> = new Map();
+  private oneShotPlayIds = new Map<
+    string,
+    Array<{ howl: Howl; soundId: number }>
+  >();
   private masterVolume: number = 0.8;
   private moodVolume: number = 1;
   private ambienceVolume: number = 1;
@@ -68,12 +71,12 @@ export class AudioEngine {
   }
 
   private applyOneShotVolumes(): void {
-    this.oneShots.forEach((sfx, sfxId) => {
-      sfx.volume(
+    this.oneShots.forEach((howls, sfxId) => {
+      const target =
         (this.oneShotBaseVolumes.get(sfxId) ?? 1) *
-          this.oneShotVolume *
-          this.masterVolume,
-      );
+        this.oneShotVolume *
+        this.masterVolume;
+      howls.forEach((howl) => howl.volume(target));
     });
   }
 
@@ -212,59 +215,78 @@ export class AudioEngine {
     return layer ? layer.playing() : false;
   }
 
-  loadOneShot(sfxId: string, audioUrl: string, format?: string[]): void {
+  loadOneShot(
+    sfxId: string,
+    audioUrl: string | string[],
+    format?: string[],
+  ): void {
     if (this.oneShots.has(sfxId)) {
       return;
     }
-    const howl = new Howl({
-      src: [audioUrl],
-      volume: 0,
-      html5: true,
-      preload: true,
-      // Allow the same one-shot to overlap with itself.
-      pool: 8,
-      onend: (soundId?: number) => {
-        const activeIds = this.oneShotPlayIds.get(sfxId);
-        if (activeIds) {
-          if (soundId === undefined) {
-            activeIds.length = 0;
-          } else {
-            const index = activeIds.indexOf(soundId);
-            if (index >= 0) activeIds.splice(index, 1);
-          }
-          if (activeIds.length === 0) this.oneShotPlayIds.delete(sfxId);
-        }
-        this.oneShotEndHandler?.(sfxId);
-      },
-      ...(format ? { format } : {}),
+    const urls = Array.isArray(audioUrl) ? audioUrl : [audioUrl];
+    const howls = urls.map((url) => {
+      const howl = new Howl({
+        src: [url],
+        volume: 0,
+        html5: true,
+        preload: true,
+        // Allow the same one-shot to overlap with itself.
+        pool: 8,
+        onend: (soundId?: number) =>
+          this.handleOneShotEnd(sfxId, howl, soundId),
+        ...(format ? { format } : {}),
+      });
+      return howl;
     });
-    this.oneShots.set(sfxId, howl);
+    this.oneShots.set(sfxId, howls);
+  }
+
+  private handleOneShotEnd(sfxId: string, howl: Howl, soundId?: number): void {
+    const active = this.oneShotPlayIds.get(sfxId);
+    if (!active) return;
+
+    let removed = false;
+    for (let index = active.length - 1; index >= 0; index -= 1) {
+      const entry = active[index];
+      if (
+        entry.howl === howl &&
+        (soundId === undefined || entry.soundId === soundId)
+      ) {
+        active.splice(index, 1);
+        removed = true;
+        if (soundId !== undefined) break;
+      }
+    }
+
+    if (active.length === 0) this.oneShotPlayIds.delete(sfxId);
+    if (removed) this.oneShotEndHandler?.(sfxId);
   }
 
   playOneShot(sfxId: string, volume: number = 1): boolean {
-    const sfx = this.oneShots.get(sfxId);
-    if (!sfx) return false;
-    // One-shots use their own entry volume, scaled by the scene master volume.
+    const howls = this.oneShots.get(sfxId);
+    if (!howls?.length) return false;
+    // One-shots use their own entry volume, scaled by the scene buses.
     const baseVolume = Math.max(0, Math.min(1, volume));
     this.oneShotBaseVolumes.set(sfxId, baseVolume);
-    sfx.volume(baseVolume * this.oneShotVolume * this.masterVolume);
-    const soundId = sfx.play();
+    const targetVolume = baseVolume * this.oneShotVolume * this.masterVolume;
+    howls.forEach((howl) => howl.volume(targetVolume));
+
+    const howl = howls[Math.floor(Math.random() * howls.length)];
+    const soundId = howl.play();
     if (soundId === undefined) return false;
-    const activeIds = this.oneShotPlayIds.get(sfxId) ?? [];
-    activeIds.push(soundId);
-    this.oneShotPlayIds.set(sfxId, activeIds);
+    const active = this.oneShotPlayIds.get(sfxId) ?? [];
+    active.push({ howl, soundId });
+    this.oneShotPlayIds.set(sfxId, active);
     return true;
   }
 
   getOneShotProgress(sfxId: string): number {
-    const sfx = this.oneShots.get(sfxId);
-    if (!sfx) return 0;
-    const activeIds = this.oneShotPlayIds.get(sfxId);
-    const soundId = activeIds?.at(-1);
-    if (soundId === undefined) return 0;
+    const active = this.oneShotPlayIds.get(sfxId);
+    const entry = active?.at(-1);
+    if (!entry) return 0;
     try {
-      const duration = sfx.duration(soundId);
-      const seek = sfx.seek(soundId);
+      const duration = entry.howl.duration(entry.soundId);
+      const seek = entry.howl.seek(entry.soundId);
       if (!Number.isFinite(duration) || duration <= 0) return 0;
       if (typeof seek !== 'number' || !Number.isFinite(seek)) return 0;
       return Math.max(0, Math.min(1, seek / duration));
@@ -497,7 +519,7 @@ export class AudioEngine {
     this.layers.forEach((layer) => layer.unload());
     this.retiringLayers.forEach((layer) => layer.unload());
     this.retiringLayers.clear();
-    this.oneShots.forEach((sfx) => sfx.unload());
+    this.oneShots.forEach((howls) => howls.forEach((howl) => howl.unload()));
     this.musicTrack?.unload();
     this.retiringMusicTracks.forEach((track) => track.unload());
     this.retiringMusicTracks.clear();

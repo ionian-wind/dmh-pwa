@@ -4,6 +4,7 @@ import type { NormalizedSoundPack, SoundPackManifest } from '../types';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 import {
   getLayerVariations,
+  getOneShotSamples,
   getSceneMusicFile,
   normalizeSoundPack,
 } from './packData';
@@ -76,14 +77,16 @@ async function extractAudio(
   }
 
   for (const oneShot of manifest.oneShots) {
-    const name = basename(oneShot.file);
-    const blob = await readZipBlob(zip, [
-      oneShot.file,
-      `one-shots/${name}`,
-      `sfx/${name}`,
-      name,
-    ]);
-    if (blob) audioBlobs[oneShot.file] = blob;
+    for (const sample of getOneShotSamples(oneShot)) {
+      const name = basename(sample);
+      const blob = await readZipBlob(zip, [
+        sample,
+        `one-shots/${name}`,
+        `sfx/${name}`,
+        name,
+      ]);
+      if (blob) audioBlobs[sample] = blob;
+    }
   }
 
   for (const scene of manifest.scenes) {

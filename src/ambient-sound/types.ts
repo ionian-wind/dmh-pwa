@@ -125,7 +125,10 @@ export interface OneShotDef {
   id: string;
   name: string;
   icon: string;
-  file: string;
+  /** Legacy single sample; normalized into `samples`. */
+  file?: string;
+  /** One or more samples; one is picked randomly for each play. */
+  samples?: string[];
   category: 'combat' | 'exploration' | 'environmental' | 'weather';
   volume: number;
   cooldown?: number;

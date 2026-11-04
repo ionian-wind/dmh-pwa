@@ -201,7 +201,7 @@ describe('ambient sound store', () => {
     expect(store.intensity).toBe(75);
     expect(mocks.audioEngine.loadOneShot).toHaveBeenCalledWith(
       'oneShot:forest:thunder',
-      'blob:thunder',
+      ['blob:thunder'],
       ['mp3'],
     );
     expect(mocks.audioEngine.loadLayer).toHaveBeenCalledWith(

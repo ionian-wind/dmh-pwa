@@ -294,6 +294,7 @@ describe('sound pack archive helpers', () => {
     const onlyOneShot = path.join(root, 'only-one-shot');
     await mkdir(path.join(onlyOneShot, 'one-shots'), { recursive: true });
     await writeFile(path.join(onlyOneShot, 'one-shots', 'bell.mp3'), 'bell');
+    await writeFile(path.join(onlyOneShot, 'one-shots', 'bell-2.mp3'), 'bell2');
     await writeFile(
       path.join(onlyOneShot, 'pack.json'),
       JSON.stringify({
@@ -307,7 +308,7 @@ describe('sound pack archive helpers', () => {
             id: 'bell',
             name: 'Bell',
             icon: 'fa-solid:bell',
-            file: 'one-shots/bell.mp3',
+            samples: ['one-shots/bell.mp3', 'one-shots/bell-2.mp3'],
             category: 'environmental',
             volume: 70,
           },
@@ -320,6 +321,12 @@ describe('sound pack archive helpers', () => {
         ?.async('string')) ?? '{}',
     );
     expect(oneShotManifest.oneShots[0].id).toMatch(/^[a-f0-9]{64}$/);
+    expect(oneShotManifest.oneShots[0].samples).toHaveLength(2);
+    expect(
+      oneShotManifest.oneShots[0].samples.every((sample: string) =>
+        /^one-shots\/[a-f0-9]{64}\.mp3$/.test(sample),
+      ),
+    ).toBe(true);
     expect(oneShotManifest.ambiences).toBeUndefined();
     expect(oneShotManifest.scenes).toBeUndefined();
 
