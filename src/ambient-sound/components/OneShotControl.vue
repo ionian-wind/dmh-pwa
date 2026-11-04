@@ -2,7 +2,7 @@
   <QBtn
     flat
     no-caps
-    padding="none"
+    padding="sm none"
     class="one-shot-control"
     :class="{ 'is-playing': playing }"
     :aria-label="oneShot.name"
@@ -16,8 +16,8 @@
           :max="100"
           :thickness="0.2"
           :size="`${knobSize}px`"
-          :color="playing ? 'primary' : 'grey-7'"
-          track-color="grey-4"
+          :color="playing ? 'primary' : 'transparent'"
+          :track-color="playing ? 'grey-4' : 'transparent'"
           show-value
           readonly
           :instant-feedback="true"

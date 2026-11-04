@@ -48,8 +48,11 @@ describe('OneShotControl', () => {
     expect(button.find('.one-shot-knob').exists()).toBe(true);
 
     const knob = wrapper.find('.one-shot-knob');
+    expect(button.attributes('padding')).toBe('sm none');
     expect(knob.exists()).toBe(true);
     expect(knob.attributes('aria-readonly')).toBe('true');
+    expect(knob.attributes('color')).toBe('transparent');
+    expect(knob.attributes('track-color')).toBe('transparent');
     expect(knob.attributes('min')).toBe('0');
     expect(knob.attributes('max')).toBe('100');
     expect(knob.attributes('instant-feedback')).toBeDefined();
@@ -82,6 +85,19 @@ describe('OneShotControl', () => {
     wrapper.unmount();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it('shows the knob progress line only while playing', () => {
+    storeMock.isOneShotPlaying.mockReturnValue(true);
+    const wrapper = mount(OneShotControl, {
+      props: { packId: 'pack-1', oneShot: thunder },
+      global: { stubs: quasarStubs },
+    });
+
+    const knob = wrapper.find('.one-shot-knob');
+    expect(knob.attributes('color')).toBe('primary');
+    expect(knob.attributes('track-color')).toBe('grey-4');
+    wrapper.unmount();
   });
 
   it('shows a count when the same one-shot overlaps', () => {
