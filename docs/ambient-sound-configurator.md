@@ -668,7 +668,8 @@ playback. If the scene's package is removed while the dialog is open, the dialog
 closes and the app remains on `/ambient`. The dialog contains:
 
 - **Dialog layout** — the dialog follows the notes-dialog pattern with two
-  top-level tabs, Main and Linked entities, plus a fullscreen expand control.
+  top-level tabs, Main (`IconEar`) and Linked entities, plus a fullscreen expand
+  control.
   The scene name is shown inside the Main tab on the same row as play/pause and
   the volume button; the package name is not repeated.
 - **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.

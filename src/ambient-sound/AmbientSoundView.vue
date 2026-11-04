@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconMusic } from '@tabler/icons-vue';
+import { IconEar, IconMusic } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
@@ -82,7 +82,12 @@ const rightDrawer = useRightDrawer();
 const activeTab = ref('scenes');
 const selectedScene = ref<{ packId: string; sceneId: string } | null>(null);
 const isSceneDialogOpen = ref(false);
-const sceneDialogTabs = useEntityEditorTabs();
+const editorTabs = useEntityEditorTabs();
+const sceneDialogTabs = computed(() =>
+  editorTabs.value.map((tab) =>
+    tab.name === 'main' ? { ...tab, icon: IconEar } : tab,
+  ),
+);
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);

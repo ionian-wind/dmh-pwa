@@ -31,6 +31,7 @@ vi.mock('@/composables/useLayout', () => ({
 
 import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
+import { IconEar } from '@tabler/icons-vue';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import { EntityTabsStub } from '../helpers/entityTabsStub';
 
@@ -143,9 +144,12 @@ describe('AmbientSoundView', () => {
     const modal = wrapper.findComponent(BaseModalStub);
     expect(modal.props('isOpen')).toBe(true);
     expect(modal.props('showExpand')).toBe(true);
-    expect(
-      modal.props('tabs').map((tab: { name: string }) => tab.name),
-    ).toEqual(['main', 'links']);
+    const tabs = modal.props('tabs');
+    expect(tabs.map((tab: { name: string }) => tab.name)).toEqual([
+      'main',
+      'links',
+    ]);
+    expect(tabs[0].icon).toBe(IconEar);
     const player = modal.findComponent({ name: 'ScenePlayerView' });
     expect(player.exists()).toBe(true);
     expect(player.props('packId')).toBe('pack-1');
