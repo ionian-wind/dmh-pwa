@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import BaseEntityView from './BaseEntityView.vue';
+import EntityTabs from './EntityTabs.vue';
 
 interface Tab {
   id: string;
@@ -91,16 +92,14 @@ function handleTabAdd() {
   >
     <template #default>
       <div>
-        <QTabs v-if="tabs.length > 0" v-model="activeTab" dense class="q-mb-md">
-          <QTab
-            v-for="tab in tabs"
-            :key="tab.id"
-            :name="tab.id"
-            :label="tab.label"
-            :disable="tab.disabled"
-            @click="() => handleTabClick(tab)"
-          />
-        </QTabs>
+        <EntityTabs
+          v-if="tabs.length > 0"
+          v-model="activeTab"
+          :tabs="tabs"
+          class="q-mb-md"
+          @update:model-value="handleTabUpdate"
+          @tab-click="handleTabClick"
+        />
         <QTabPanels v-model="activeTab" animated>
           <QTabPanel v-for="tab in tabs" :key="tab.id" :name="tab.id">
             <slot :name="tab.id" />

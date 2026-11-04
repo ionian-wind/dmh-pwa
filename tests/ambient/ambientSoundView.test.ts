@@ -60,6 +60,7 @@ import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import AmbientGlobalControl from '@/ambient-sound/components/AmbientGlobalControl.vue';
+import { EntityTabsStub } from '../helpers/entityTabsStub';
 
 const stubs = {
   QSpinnerDots: true,
@@ -67,6 +68,7 @@ const stubs = {
   AmbienceGallery: true,
   OneShotGallery: true,
   ScenePlayerView: true,
+  EntityTabs: EntityTabsStub,
 };
 
 describe('AmbientSoundView', () => {

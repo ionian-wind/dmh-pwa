@@ -152,6 +152,12 @@ it can be linked immediately. Linked rows highlight on hover and expose the
 unlink action only on hover or keyboard focus. Internal options such as note
 types and map layers keep their dedicated selectors.
 
+### `EntityTabs.vue`
+
+Dense Quasar `QTabs`/`QTab` bar shared by entity views, the ambient page and the
+scene player. It accepts `tabs` (`id`, `label`, optional `disabled`) and supports
+`v-model` plus a `tab-click` event.
+
 ### `EntityGroup.vue`
 
 Section wrapper for grouped entity lists. It renders an uppercase group title

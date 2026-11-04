@@ -18,12 +18,7 @@
 
       <template v-else>
         <div class="ambient-tabs-sticky" :style="{ top: `${headerOffset}px` }">
-          <TabGroup
-            v-model="activeTab"
-            :tabs="tabs"
-            size="md"
-            align="justify"
-          />
+          <EntityTabs v-model="activeTab" :tabs="tabs" />
         </div>
 
         <div class="ambient-tab-body">
@@ -50,7 +45,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
-import TabGroup from '@/components/common/TabGroup.vue';
+import EntityTabs from '@/components/common/EntityTabs.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
@@ -140,10 +135,6 @@ onUnmounted(() => {
   z-index: 10;
   padding: 0.5rem 0;
   background: var(--color-background);
-}
-
-.ambient-tabs-sticky :deep(.tab-nav) {
-  border-bottom: none;
 }
 
 .ambient-tab-body {

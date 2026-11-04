@@ -187,7 +187,8 @@ src/
 │       ├── packData.ts               # Manifest normalization
 │       └── packManager.ts            # Import, storage and archive export
 ├── components/common/
-│   └── EntityGroup.vue               # Grouped entity section layout
+│   ├── EntityGroup.vue               # Grouped entity section layout
+│   └── EntityTabs.vue                # Shared dense entity tab bar
 ├── maps/components/
 │   └── EntityCreateDialog.vue        # Create related entity from link picker
 ├── utils/
@@ -528,11 +529,11 @@ The ambient-sound section is a first-class app page with a package sidebar:
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- Use the existing shared components: `ViewHeader`, `QCard`, `TabGroup`,
+- Use the existing shared components: `ViewHeader`, `QCard`, `EntityTabs`,
   `SidebarItem`, `BaseModal` and `EmptyState`.
 - The package sidebar is the right drawer. The main page owns the left content.
-- The Scenes / Ambiences / One-shots tabs stay sticky below the app header while
-  the list scrolls.
+- The Scenes / Ambiences / One-shots tabs use the shared dense `EntityTabs` bar
+  and stay sticky below the app header while the list scrolls.
 - The page uses the same player layout as the jukebox: the ambient player panel
   is registered in the app footer, so it stays fixed at the bottom while the
   scene and gallery lists scroll.
@@ -653,6 +654,8 @@ button in the view header returns to the scene/gallery tabs. The view contains:
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
   ambience name and a toggle group of its variations. Only one variation per
   ambience plays at a time; clicking the active variation stops the ambience.
+- **Entity tabs** — the scene uses the same dense `EntityTabs` component as the
+  main ambient page and module entity views.
 - **One-shots tab** — linked one-shots as knob controls grouped by category,
   with a title and separator per group. The one-shot icon sits inside the knob
   and the arc shows playback progress.

@@ -28,7 +28,10 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
 }));
 
 import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
+import { EntityTabsStub } from '../helpers/entityTabsStub';
 import { quasarStubs } from '../helpers/quasar-stubs';
+
+const stubs = { ...quasarStubs, EntityTabs: EntityTabsStub };
 
 describe('ScenePlayerView', () => {
   beforeEach(() => {
@@ -112,7 +115,7 @@ describe('ScenePlayerView', () => {
   it('emits back from the header button', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     const back = wrapper.find('button[aria-label="Back"]');
@@ -125,7 +128,7 @@ describe('ScenePlayerView', () => {
   it('shows mood knobs and switches the active preset', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     expect(wrapper.text()).toContain('Tavern Evening');
@@ -154,7 +157,7 @@ describe('ScenePlayerView', () => {
     storeMock.isPlaying = false;
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     expect(storeMock.playScene).not.toHaveBeenCalled();
@@ -177,7 +180,7 @@ describe('ScenePlayerView', () => {
     storeMock.isPlaying = false;
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     const knob = (label: string) =>
@@ -210,7 +213,7 @@ describe('ScenePlayerView', () => {
     storeMock.allScenes = [];
     const missing = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'missing' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
     expect(missing.find('.scene-player-card').exists()).toBe(false);
     expect(missing.text()).toContain('No scenes yet');
@@ -221,7 +224,7 @@ describe('ScenePlayerView', () => {
   it('supports stopping the active variant and starting an inactive one', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     const light = wrapper
@@ -260,7 +263,7 @@ describe('ScenePlayerView', () => {
 
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
     expect(wrapper.text()).toContain('No ambiences in this scene');
     expect(wrapper.text()).toContain('Off');
@@ -276,7 +279,7 @@ describe('ScenePlayerView', () => {
   it('switches ambience variants and plays one-shots', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     const heavy = wrapper
@@ -305,7 +308,7 @@ describe('ScenePlayerView', () => {
     storeMock.isOneShotPlaying.mockReturnValue(true);
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
-      global: { stubs: quasarStubs },
+      global: { stubs },
     });
 
     const oneShotsTab = wrapper

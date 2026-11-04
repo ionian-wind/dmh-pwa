@@ -46,13 +46,7 @@
         />
       </div>
 
-      <TabGroup
-        v-model="activeTab"
-        :tabs="tabs"
-        size="sm"
-        align="justify"
-        class="q-mb-md"
-      />
+      <EntityTabs v-model="activeTab" :tabs="tabs" class="q-mb-md" />
 
       <div v-if="activeTab === 'ambiences'">
         <EntityGroup
@@ -125,7 +119,7 @@ import MoodKnob from '@/ambient-sound/components/MoodKnob.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
-import TabGroup from '@/components/common/TabGroup.vue';
+import EntityTabs from '@/components/common/EntityTabs.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { LayerDef, OneShotDef } from '@/ambient-sound/types';
 
