@@ -8,6 +8,7 @@ import {
   validateModuleImport,
 } from '@/utils/moduleImportExport';
 import { openDB, StorageError } from '@/utils/storage';
+import { validateSchema } from '@/utils/schemaValidator';
 
 vi.mock('@/utils/storage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/storage')>();
@@ -77,9 +78,7 @@ describe('module import timestamps', () => {
   });
 
   it('validates missing, orphaned and matching note references', () => {
-    const tree = [
-      { noteId: 'a', children: [{ noteId: 'b', children: [] }] },
-    ];
+    const tree = [{ noteId: 'a', children: [{ noteId: 'b', children: [] }] }];
     const result = validateModuleImport(
       { noteTree: tree as any },
       tree as any,
@@ -121,9 +120,7 @@ describe('module import timestamps', () => {
       parseModuleZip(await makeZip({ 'module.json': '{bad' })),
     ).rejects.toThrow('Invalid module.json format');
     await expect(
-      parseModuleZip(
-        await makeZip({ 'module.json': '{}' }),
-      ),
+      parseModuleZip(await makeZip({ 'module.json': '{}' })),
     ).rejects.toThrow('Tree file not found in zip');
     await expect(
       parseModuleZip(
@@ -131,9 +128,7 @@ describe('module import timestamps', () => {
       ),
     ).rejects.toThrow('Invalid tree.json format');
     await expect(
-      parseModuleZip(
-        await makeZip({ 'module.json': '{}', 'tree.json': '[]' }),
-      ),
+      parseModuleZip(await makeZip({ 'module.json': '{}', 'tree.json': '[]' })),
     ).resolves.toEqual({ module: {}, tree: [], notes: [] });
   });
 
@@ -171,6 +166,74 @@ describe('module import timestamps', () => {
       'indexations_mentions',
     );
     expect(put).toHaveBeenCalledTimes(3);
+  });
+
+  it('fills missing tree ids and handles empty trees and note lists', () => {
+    const result = remapImportedModule({
+      module: { id: 'm', name: 'M' } as any,
+      tree: [
+        {
+          noteId: 'missing',
+          children: [{ noteId: 'n1', children: [] }],
+        },
+      ] as any,
+      notes: [
+        {
+          id: 'n1',
+          title: 'Note',
+          content: '',
+          typeId: null,
+          tags: [],
+          moduleId: 'm',
+          hidden: false,
+        } as any,
+      ],
+    });
+    expect(result.module.noteTree[0].noteId).toBeTruthy();
+    expect(result.notes[0].contentType).toBe('text');
+    expect(result.notes[0].hidden).toBe(false);
+  });
+
+  it('rejects invalid modules and notes and skips empty mention indexes', async () => {
+    const put = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(openDB).mockResolvedValue({
+      transaction: vi.fn(() => ({
+        objectStore: vi.fn(() => ({ put })),
+        done: Promise.resolve(),
+      })),
+    } as any);
+
+    vi.mocked(validateSchema).mockResolvedValueOnce({
+      valid: false,
+      errors: ['bad module'],
+    });
+    await expect(
+      importModuleFromZip({
+        module: { name: 'Bad' } as any,
+        tree: [],
+        notes: [],
+      }),
+    ).rejects.toBeInstanceOf(StorageError);
+
+    vi.mocked(validateSchema)
+      .mockResolvedValueOnce({ valid: true, errors: [] })
+      .mockResolvedValueOnce({ valid: false, errors: ['bad note'] });
+    await expect(
+      importModuleFromZip({
+        module: { name: 'Bad note' } as any,
+        tree: [],
+        notes: [{ id: 'n1', title: 'Note', content: '' } as any],
+      }),
+    ).rejects.toBeInstanceOf(StorageError);
+
+    vi.mocked(validateSchema).mockResolvedValue({ valid: true, errors: [] });
+    const result = await importModuleFromZip({
+      module: { name: 'Clean' } as any,
+      tree: undefined as any,
+      notes: [{ id: 'n1', title: 'Note', content: 'no mentions' } as any],
+    });
+    expect(result.noteCount).toBe(1);
+    expect(put).toHaveBeenCalledTimes(2);
   });
 
   it('wraps storage failures in a StorageError', async () => {

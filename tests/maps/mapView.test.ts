@@ -650,6 +650,220 @@ describe('MapView', () => {
     wrapper.unmount();
   });
 
+  it('covers view, drawing, layer and missing-item branches', async () => {
+    const localMap = structuredClone(map);
+    localMap.layers.push({ id: 'layer-2', title: 'Layer 2' });
+    mocks.mapStore.getById.mockReturnValue(localMap);
+    mocks.mapStore.update.mockImplementation(
+      async (_id: string, patch: any) => ({
+        ...localMap,
+        ...patch,
+      }),
+    );
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    expect(vm.markerStyle({ get: () => 'missing' })).toBeUndefined();
+    expect(vm.areaStyle({ get: () => 'missing' })).toBeUndefined();
+    expect(
+      vm.mapFeatureStyle({
+        get: (key: string) => (key === 'markerId' ? 'm1' : undefined),
+      }),
+    ).toBeTruthy();
+    expect(
+      vm.mapFeatureStyle({
+        get: (key: string) => (key === 'areaId' ? 'a1' : undefined),
+      }),
+    ).toBeTruthy();
+
+    vm.showLabels = false;
+    await flushPromises();
+    vm.showLabels = true;
+    await flushPromises();
+    vm.isEditMode = true;
+    await flushPromises();
+    vm.isEditMode = false;
+    await flushPromises();
+
+    vm.drawMode = 'polygon';
+    await flushPromises();
+    vm.cancelDrawing();
+    expect(vm.drawMode).toBeNull();
+
+    vm.editInfoItem();
+    vm.selectMarker('missing');
+    vm.focusArea('missing');
+    vm.hoverArea(null);
+    vm.hoverMarker(null);
+    await vm.addLayer();
+    await vm.editLayer({ id: 'base', title: 'Base' });
+    await vm.deleteLayer({ id: 'base', title: 'Base' });
+    await vm.deleteMarkerFromList('missing');
+    await vm.deleteAreaFromList('missing');
+
+    mocks.confirm.mockResolvedValueOnce(false);
+    await vm.deleteMarkerFromList('m1');
+    mocks.confirm.mockResolvedValueOnce(false);
+    await vm.deleteAreaFromList('a1');
+    mocks.confirm.mockResolvedValueOnce(false);
+    await vm.deleteLayer({ id: 'layer-2', title: 'Layer 2' });
+
+    vm.showMarkerInfo(localMap.markers[0]);
+    vm.toggleLayerVisibility('base');
+    expect(vm.infoSelection).toBeNull();
+    vm.toggleLayerVisibility('base');
+
+    vm.isEditMode = true;
+    vm.isAddingMarker = true;
+    vm.onMapClick({ pixel: [1, 1], coordinate: [20, 20] });
+    await flushPromises();
+    expect(vm.isMarkerEditorOpen).toBe(true);
+    vm.closeMarkerEditor();
+
+    vm.drawMode = 'freehand';
+    vm.onAreaDrawn({
+      feature: {
+        getGeometry: () => ({
+          getCoordinates: () => [
+            [10, 20],
+            [30, 40],
+          ],
+        }),
+      },
+    });
+    vm.closeAreaEditor();
+    vm.handleMapAction({ action: 'draw-area', shape: 'circle' });
+    vm.handleMapAction({ action: 'cancel-drawing' });
+    vm.handleMapAction({ action: 'add-marker', coordinate: [5, 5] });
+    vm.closeMarkerEditor();
+
+    vm.onMapClick({ pixel: [1, 1], coordinate: [20, 20] });
+    vm.onMapClick({});
+    await vm.handleDelete();
+    wrapper.unmount();
+  });
+
+  it('handles missing map data and empty collections', async () => {
+    mocks.mapStore.getById.mockReturnValue(undefined);
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    expect(vm.layers).toEqual([]);
+    expect(vm.visibleMarkers).toEqual([]);
+    expect(vm.visibleAreas).toEqual([]);
+    expect(vm.markersForLayer('base')).toEqual([]);
+    expect(vm.areasForLayer('base')).toEqual([]);
+    expect(vm.mapTitle).toBe('');
+    expect(vm.infoEntities).toEqual([]);
+    vm.goToInfoLocation();
+    await expect(vm.handleDelete()).resolves.toBe(false);
+    await vm.persistMarkers([]);
+    await vm.saveMarker({ id: 'm1' });
+    await vm.deleteMarker('m1');
+    await vm.submitMapEditor({ title: 'x', fileId: 'f' });
+    await vm.persistLayers([]);
+    await vm.deleteArea('a1');
+    await vm.saveArea({ id: 'a1' });
+    await vm.deleteAreaFromList('a1');
+    await vm.deleteMarkerFromList('m1');
+    vm.onAreaDrawn({ feature: { getGeometry: () => ({}) } });
+    vm.selectMarker('m1');
+    vm.focusArea('a1');
+    vm.closeAreaEditor();
+    vm.closeMarkerEditor();
+    wrapper.unmount();
+  });
+
+  it('handles empty map collections and draw mode variants', async () => {
+    const localMap = structuredClone(map);
+    localMap.markers = [];
+    localMap.areas = [];
+    localMap.layers = [];
+    mocks.mapStore.getById.mockReturnValue(localMap);
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    expect(vm.layers).toHaveLength(1);
+    expect(vm.visibleMarkers).toEqual([]);
+    expect(vm.visibleAreas).toEqual([]);
+    vm.drawMode = 'circle';
+    await flushPromises();
+    vm.drawMode = 'square';
+    await flushPromises();
+    vm.drawMode = 'freehand';
+    await flushPromises();
+    vm.drawMode = null;
+    await flushPromises();
+    vm.showMarkerInfo({ id: 'missing', title: '', entities: [] });
+    await flushPromises();
+    expect(wrapper.find('.map-info-title').text()).toContain('Untitled');
+
+    vm.onMapClick({ pixel: [1, 1] });
+    mapHarness.map.forEachFeatureAtPixel.mockReturnValueOnce({
+      get: (key: string) => (key === 'markerId' ? 'missing' : undefined),
+    });
+    vm.onMapClick({ pixel: [1, 1] });
+    mapHarness.map.forEachFeatureAtPixel.mockReturnValueOnce({
+      get: (key: string) => (key === 'areaId' ? 'missing' : undefined),
+    });
+    vm.onMapClick({ pixel: [1, 1] });
+    wrapper.unmount();
+  });
+
+  it('covers popup variants, titles and info anchoring', async () => {
+    const localMap = structuredClone(map);
+    localMap.markers[0] = {
+      ...localMap.markers[0],
+      title: '',
+      description: 'desc',
+    };
+    localMap.areas[0] = { ...localMap.areas[0], title: '', icon: 'ra-tree' };
+    localMap.areas.push({
+      ...localMap.areas[0],
+      id: 'a2',
+      title: 'Area two',
+      locationId: 'l1',
+      description: 'area desc',
+    });
+    mocks.mapStore.getById.mockReturnValue(localMap);
+    const wrapper = await mountMapView();
+    const vm = wrapper.vm as any;
+
+    vm.showMarkerInfo(localMap.markers[0]);
+    await flushPromises();
+    expect(wrapper.text()).toContain('Untitled marker');
+    expect(wrapper.text()).toContain('desc');
+    vm.isEditMode = true;
+    await flushPromises();
+    expect(wrapper.findAll('.map-info-actions button').length).toBeGreaterThan(
+      0,
+    );
+    wrapper
+      .findComponent({ name: 'QMenu' })
+      .vm.$emit('update:modelValue', false);
+    await flushPromises();
+    expect(vm.infoSelection).toBeNull();
+
+    vm.showAreaInfo(localMap.areas[1]);
+    await flushPromises();
+    expect(wrapper.text()).toContain('Area two');
+    expect(wrapper.text()).toContain('area desc');
+    expect(wrapper.find('.map-area-label i').exists()).toBe(true);
+
+    vm.showAreaInfo(localMap.areas[0]);
+    await flushPromises();
+    expect(wrapper.text()).toContain('Untitled area');
+
+    vm.setInfoAnchor();
+    expect(vm.infoAnchor).toEqual({ left: 0, top: 0 });
+    mocks.prompt.mockResolvedValueOnce('');
+    await vm.addLayer();
+    mocks.prompt.mockResolvedValueOnce('');
+    await vm.editLayer({ id: 'layer-2', title: 'Layer 2' });
+    vm.onContextMenuOpen();
+    wrapper.unmount();
+  });
+
   it('does not open the map info popup when a sidebar item is clicked', async () => {
     const wrapper = await mountMapView();
     const vm = wrapper.vm as any;

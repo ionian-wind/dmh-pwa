@@ -127,8 +127,12 @@ describe('IndexedDB storage', () => {
       { kind: 'party', id: 'p1' },
     ]);
 
+    await store.removeLink({ kind: 'note', id: 'missing' }, to);
     await store.removeLink(from, to);
     expect(store.getLinks(from)).toEqual([{ kind: 'party', id: 'p1' }]);
+    await store.setLinks(from, [to]);
+    await store.removeLink(from, to);
+    expect(store.getLinks(from)).toEqual([]);
 
     await store.clearLinks(from);
     expect(store.getLinks(from)).toEqual([]);

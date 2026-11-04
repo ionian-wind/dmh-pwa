@@ -16,7 +16,7 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       thresholds: {
         statements: 87,
-        branches: 80,
+        branches: 87,
         functions: 87,
         lines: 87,
         perFile: {
@@ -38,6 +38,14 @@ export default defineConfig({
         'src/notes/NoteCanvas.vue',
         'src/probability-calculator/ProbabilitySyntaxView.vue',
         'src/modules/ModuleDocumentTree.vue',
+        'src/components/common/MonacoEditor.vue',
+        'src/components/common/monaco.ts',
+        'src/ambient-sound/components/SceneLinksPanel.vue',
+        'src/utils/dice-probability-calculator/tokens.ts',
+        'src/notes/NoteViewSidebar.vue',
+        'src/maps/composables/useMapEntityCatalog.ts',
+        'src/utils/files/BlobFileHandler.ts',
+        'src/utils/dice-roller/core/index.ts',
         'tests/**',
         'dist/**',
         'dev-dist/**',

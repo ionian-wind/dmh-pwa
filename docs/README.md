@@ -28,14 +28,15 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 
 ### Architecture
 
-| Document                                                                       | Covers                                                           |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| [architecture/overview.md](architecture/overview.md)                           | Boot sequence, layers, layout shell, routing, error handling     |
-| [architecture/data-model.md](architecture/data-model.md)                       | Every entity, fields, relationships, ID/timestamp conventions    |
-| [architecture/persistence-and-state.md](architecture/persistence-and-state.md) | IndexedDB, base store, Pinia stores, schemas, migrations, backup |
-| [architecture/i18n.md](architecture/i18n.md)                                   | Locale loading, language persistence, key conventions            |
-| [architecture/editor-dialog-pattern.md](architecture/editor-dialog-pattern.md) | Required editor dialog tabs, field ordering, entity categories   |
-| [architecture/pwa.md](architecture/pwa.md)                                     | Manifest, service worker, install prompt, update flow            |
+| Document                                                                                   | Covers                                                           |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| [architecture/overview.md](architecture/overview.md)                                       | Boot sequence, layers, layout shell, routing, error handling     |
+| [architecture/data-model.md](architecture/data-model.md)                                   | Every entity, fields, relationships, ID/timestamp conventions    |
+| [architecture/persistence-and-state.md](architecture/persistence-and-state.md)             | IndexedDB, base store, Pinia stores, schemas, migrations, backup |
+| [architecture/i18n.md](architecture/i18n.md)                                               | Locale loading, language persistence, key conventions            |
+| [architecture/editor-dialog-pattern.md](architecture/editor-dialog-pattern.md)             | Required editor dialog tabs, field ordering, entity categories   |
+| [architecture/pwa.md](architecture/pwa.md)                                                 | Manifest, service worker, install prompt, update flow            |
+| [architecture/legacy-and-unreachable-code.md](architecture/legacy-and-unreachable-code.md) | Coverage exclusions and documented unreachable branches          |
 
 ### Feature parts
 
@@ -127,7 +128,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **1169 / 1169 passing tests across 153 files** (after replacing obsolete suites
+   **1266 / 1266 passing tests across 157 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

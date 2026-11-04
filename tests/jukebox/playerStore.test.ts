@@ -491,4 +491,181 @@ describe('jukebox player store', () => {
       });
     });
   });
+
+  it('checks file handle permissions in every state', async () => {
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    mocks.tracks.items.value = [one];
+    player.queue = [one];
+
+    const granted = {
+      queryPermission: vi.fn().mockResolvedValue('granted'),
+      requestPermission: vi.fn(),
+    };
+    mocks.getJukeboxFile.mockResolvedValueOnce({
+      source: { kind: 'handle', handle: granted },
+    });
+    await player.playTrackFromPlaylist(one);
+    expect(player.isPlaying).toBe(true);
+
+    const requested = {
+      queryPermission: vi.fn().mockResolvedValue('prompt'),
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    };
+    mocks.getJukeboxFile.mockResolvedValueOnce({
+      source: { kind: 'handle', handle: requested },
+    });
+    await player.playTrackFromPlaylist(one);
+    expect(requested.requestPermission).toHaveBeenCalled();
+
+    const denied = {
+      queryPermission: vi.fn().mockResolvedValue('prompt'),
+      requestPermission: vi.fn().mockResolvedValue('denied'),
+    };
+    mocks.getJukeboxFile.mockResolvedValueOnce({
+      source: { kind: 'handle', handle: denied },
+    });
+    await player.playTrackFromPlaylist(one);
+
+    const throwing = {
+      queryPermission: vi.fn().mockResolvedValue('prompt'),
+      requestPermission: vi.fn().mockRejectedValue(new Error('nope')),
+    };
+    mocks.getJukeboxFile.mockResolvedValueOnce({
+      source: { kind: 'handle', handle: throwing },
+    });
+    await expect(player.playTrackFromPlaylist(one)).resolves.toBeUndefined();
+  });
+
+  it('handles file names without extensions and missing playback', async () => {
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    mocks.tracks.items.value = [one];
+    player.queue = [one];
+    mocks.getFile.mockResolvedValueOnce(new File(['audio'], 'song'));
+
+    await player.playTrackFromPlaylist(one);
+    expect(player.isPlaying).toBe(true);
+
+    const empty = useJukeboxPlayerStore();
+    empty.togglePlay();
+    empty.pause();
+    expect(empty.isPlaying).toBe(false);
+  });
+
+  it('restores nothing when the last track is missing', async () => {
+    const config = useConfigStore();
+    config.jukeboxLastTrackId = null;
+    const player = useJukeboxPlayerStore();
+    await player.init();
+    expect(player.currentTrack).toBeNull();
+
+    config.jukeboxLastTrackId = 'missing';
+    const missing = useJukeboxPlayerStore();
+    mocks.tracks.items.value = [];
+    await missing.init();
+    expect(missing.currentTrack).toBeNull();
+  });
+
+  it('handles repeat-track next, previous at the start and queue resorting', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    player.queue = [one, two];
+    player.queueIndex = 0;
+    await player.playTrackFromPlaylist(one);
+    await player.playPrev();
+    expect(player.currentTrack?.id).toBe('one');
+
+    config.jukeboxRepeatMode = JukeboxRepeatMode.track;
+    await player.playNext();
+    expect(player.currentTrack?.id).toBe('one');
+
+    player.queuePlaylistId = 'p1';
+    player.resortQueue('other');
+    player.resortQueue('p1');
+    expect(player.queue.length).toBe(2);
+  });
+
+  it('clears queue playlist bindings for missing playlists', async () => {
+    const config = useConfigStore();
+    const player = useJukeboxPlayerStore();
+    config.jukeboxActivePlaylistId = 'missing';
+    await nextTick();
+    await nextTick();
+    expect(player.currentTrack).toBeNull();
+    expect(player.queue).toEqual([]);
+  });
+
+  it('handles queue-only playback and queue mutations', async () => {
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    player.queue = [one];
+    expect(player.canPlay).toBe(true);
+    expect(player.hasPrevTrack).toBe(false);
+
+    player.queueTrackNext(two);
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+    player.queueTrackLast(two);
+    expect(player.queue.map((item) => item.id)).toContain('two');
+  });
+
+  it('handles a missing howl instance and paused state', async () => {
+    const empty = useJukeboxPlayerStore();
+    empty.togglePlay();
+    empty.pause();
+    expect(empty.isPlaying).toBe(false);
+  });
+
+  it('builds metadata without optional artwork and handles media handlers', async () => {
+    const handlers: Record<string, Function> = {};
+    Object.defineProperty(navigator, 'mediaSession', {
+      configurable: true,
+      value: {
+        setActionHandler: vi.fn((name: string, handler: Function) => {
+          handlers[name] = handler;
+        }),
+        metadata: null,
+      },
+    });
+    vi.stubGlobal(
+      'MediaMetadata',
+      class {
+        constructor(public data: any) {}
+      },
+    );
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    mocks.tracks.items.value = [one];
+    await player.init();
+    await player.playTrackFromPlaylist(one);
+    expect(navigator.mediaSession.metadata).toBeTruthy();
+    handlers.play();
+    handlers.pause();
+    handlers.previoustrack();
+    handlers.nexttrack();
+    delete (navigator as any).mediaSession;
+    vi.unstubAllGlobals();
+  });
+
+  it('clears queue bindings when the active playlist disappears', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    mocks.tracks.items.value = [one];
+    mocks.playlists.items.value = [{ id: 'p1', trackIds: ['one'] }];
+    config.jukeboxActivePlaylistId = 'p1';
+    player.actualiseQueue();
+    expect(player.queue.map((item) => item.id)).toEqual(['one']);
+
+    mocks.playlists.items.value = [];
+    config.jukeboxActivePlaylistId = 'missing';
+    await nextTick();
+    await nextTick();
+    expect(player.currentTrack).toBeNull();
+  });
 });

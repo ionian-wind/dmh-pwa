@@ -161,6 +161,32 @@ describe('dice probability calculator parser', () => {
     }
   });
 
+  it('reports a range of malformed inputs', () => {
+    for (const script of [
+      '@',
+      '1 @',
+      'output 1 +',
+      'output {1 2}',
+      'output 1\nrrewr',
+      'output )',
+    ]) {
+      expect(() => parse(script)).toThrow(DiceSyntaxError);
+    }
+  });
+
+  it('builds unary, access and ranged sequence expressions', () => {
+    for (const script of [
+      'loop I over {1..2} { output I }',
+      'output -1',
+      'output # {1,2}',
+      'output 1 @ {1,2}',
+      'output {1..2, 3}',
+      'output d{1..3}',
+    ]) {
+      expect(parse(script).statements.length).toBeGreaterThan(0);
+    }
+  });
+
   it('parses function call items in source order', () => {
     const program = parse('output [highest 1 of 2d6]');
     const statement = program.statements[0];

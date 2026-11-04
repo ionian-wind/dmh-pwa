@@ -4,6 +4,7 @@ import {
   DEFAULT_MARKER_COLOR,
   DEFAULT_MARKER_ICON,
   normalizeArea,
+  normalizeLocation,
   normalizeMapEntity,
   normalizeMarker,
 } from '@/maps/utils/normalize';
@@ -405,5 +406,54 @@ describe('map entity references', () => {
       { kind: 'monster', id: 'n1' },
       { kind: 'map', id: 'map1' },
     ]);
+  });
+});
+
+describe('normalization defaults and legacy maps', () => {
+  it('fills defaults for empty locations, markers and areas', () => {
+    const location = normalizeLocation({});
+    expect(location.id).toBeTruthy();
+    expect(location.name).toBe('');
+    expect(location.description).toBe('');
+    expect(location.entities).toEqual([]);
+    expect(normalizeMarker({}).layerId).toBe('base');
+    expect(normalizeArea({}).shape).toBe('polygon');
+    expect(normalizeArea({ shape: 'invalid' as any }).shape).toBe('polygon');
+    expect(normalizeArea({ points: 'bad' as any }).points).toEqual([]);
+    expect(normalizeMarker({ entities: 'bad' as any }).entities).toEqual([]);
+    expect(normalizeLocation({ entities: null as any }).entities).toEqual([]);
+  });
+
+  it('normalizes legacy points, locations and invalid layers', () => {
+    const map = normalizeMapEntity({
+      points: [
+        { x: 10, y: 20, label: 'Legacy' },
+        { x: 'bad', y: 2 },
+      ],
+      locationIds: ['l1', 2],
+      layers: [{ id: 'base', title: 'Base' }],
+      areas: [],
+    } as any);
+    expect(map.markers[0].title).toBe('Legacy');
+    expect(map.locationId).toBe('l1');
+
+    const invalidLayers = normalizeMapEntity({
+      layers: [{ id: 'base', title: 'Base' }],
+      markers: [{ id: 'm1', layerId: 'missing' }],
+      areas: [{ id: 'a1', layerId: 'missing', points: [[1, 2], ['bad']] }],
+    } as any);
+    expect(invalidLayers.markers[0].layerId).toBe('base');
+    expect(invalidLayers.areas[0].layerId).toBe('base');
+
+    const fromLocations = normalizeMapEntity({
+      locations: [{ id: 'l2' }, { id: 3 }],
+      markers: [],
+      areas: [],
+    } as any);
+    expect(fromLocations.locationId).toBe('l2');
+    const noLocations = normalizeMapEntity({ markers: [], areas: [] } as any);
+    expect(noLocations.locationId).toBeNull();
+    expect(noLocations.markers).toEqual([]);
+    expect(noLocations.areas).toEqual([]);
   });
 });

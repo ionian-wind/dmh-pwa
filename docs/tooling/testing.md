@@ -66,32 +66,31 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 153. Total tests: 1169.
+Total test files: 157. Total tests: 1266.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  153 passed (153)
-Tests       1169 passed (1169)
+Test Files  157 passed (157)
+Tests       1266 passed (1266)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  94.36%
-Branches    83.20%
-Functions    94.54%
-Lines       96.12%
+Statements  95.61%
+Branches    87.03%
+Functions    95.26%
+Lines       96.92%
 ```
 
-`vitest.config.ts` enforces 87% statements, functions and lines globally, plus
-87% statements and lines for **every individual source file**. The global branch
-threshold is 80%. Third-party integration wrappers (Milkdown, Quickdraw, the
-Monaco syntax view and the copied Tree components), the legacy dice CST-to-AST
-mapper, the app shell and generated output are excluded from coverage. All other
-components, stores, helpers and plugins must stay at or above the per-file
-threshold.
+`vitest.config.ts` enforces 87% statements, functions, branches and lines
+globally, plus 87% statements and lines for **every individual source file**.
+Third-party integration wrappers, generated/copied components, the legacy
+dice-roller engine, thin adapters and the app shell are excluded. The full list
+and the documented unreachable defensive branches are in
+[architecture/legacy-and-unreachable-code.md](../architecture/legacy-and-unreachable-code.md).
 
 The maintained regression suite is also green:
 

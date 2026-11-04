@@ -455,6 +455,52 @@ describe('ProbabilityCalculatorView', () => {
     wrapper.unmount();
   });
 
+  it('handles empty results, invalid source and editor guards', async () => {
+    const wrapper = await mountPage();
+    const vm = wrapper.vm as any;
+
+    vm.result = null;
+    expect(vm.outputs).toEqual([]);
+    expect(vm.chart).toBeNull();
+    expect(vm.exportText).toBe('');
+
+    vm.clearSyntaxMarkers();
+    vm.markSyntaxError({
+      line: 1,
+      column: 1,
+      endLine: 1,
+      endColumn: 2,
+      expected: [],
+      code: 'invalid-syntax',
+      message: 'bad',
+    });
+    vm.focusSyntaxError();
+    vm.syntaxError = null;
+    vm.focusSyntaxError();
+
+    promptMock.mockResolvedValueOnce('');
+    await vm.saveCodePiece();
+    promptMock.mockResolvedValueOnce('   ');
+    await vm.saveCodePiece();
+
+    vm.rollerOutputIndex = -1;
+    vm.rollerAmount = 0;
+    vm.roll();
+    expect(vm.rollerResults).toEqual([]);
+
+    await wrapper.find('textarea.monaco-editor-stub').setValue('???');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Calculate')!
+      .trigger('click');
+    await settle();
+    expect(vm.error).toBeTruthy();
+
+    confirmMock.mockResolvedValueOnce(true);
+    await expect(routeGuard.handler?.()).resolves.toBeTruthy();
+    wrapper.unmount();
+  });
+
   it('shows calculation errors', async () => {
     const wrapper = await mountPage();
     const editor = wrapper.find('textarea.monaco-editor-stub');

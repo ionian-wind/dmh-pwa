@@ -179,6 +179,52 @@ describe('ambient sound store', () => {
     localStorage.clear();
   });
 
+  it('handles missing identifiers and empty selections', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    store.selectPack('forest');
+
+    await store.playScene('missing', 'missing');
+    await store.playScene('forest', 'missing');
+    await store.playSceneMusic('missing', 'missing', 'missing');
+    await store.playSceneMusic('forest', 'tavern', 'missing');
+    await store.selectScene('missing', 'missing');
+    await store.selectScene('forest', 'tavern');
+    await store.selectScene('forest', 'tavern');
+
+    await store.selectAmbienceSample('forest', 'missing', 'x', 0);
+    await store.selectAmbienceSample('forest', 'rain', 'missing', 0);
+    await store.retuneAmbienceVariation('missing', 'missing');
+    await store.retuneAmbienceVariation('missing', 'forest');
+    await store.setAmbienceVariation('missing', 'missing', 'x');
+    store.setLayerVolume('missing', 'x', 0.5);
+    await store.previewAmbience('missing', 'missing');
+    await store.previewAmbience('forest', 'rain', 'missing');
+    store.stopPreview();
+
+    store.addSceneLink('forest', 'tavern', 'location', 'l1');
+    store.addSceneLink('forest', 'tavern', 'location', 'l1');
+    store.removeSceneLink('missing');
+    expect(store.linksForEntity('location', 'l1')).toHaveLength(1);
+
+    store.selectPack(null);
+    store.selectPack('forest');
+    store.selectPack('forest');
+    expect(store.selectedPackId).toBeNull();
+  });
+
+  it('clears audio and links when deleting an active pack', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+    store.selectPack('forest');
+    store.addSceneLink('forest', 'tavern', 'location', 'l1');
+    await store.playScene('forest', 'tavern');
+    await store.deletePack('forest');
+    expect(store.selectedPackId).toBeNull();
+    expect(store.linksForEntity('location', 'l1')).toEqual([]);
+    expect(mocks.packManager.deletePack).toHaveBeenCalledWith('forest');
+  });
+
   it('loads packages into scenes and the global gallery', async () => {
     const store = createStore();
     await store.loadStoredPacks();
