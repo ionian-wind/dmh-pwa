@@ -32,6 +32,9 @@ const storeMock = vi.hoisted(() => ({
   setAmbienceVariation: vi.fn(),
   selectAmbienceSample: vi.fn(),
   retuneAmbienceVariation: vi.fn(),
+  linksForScene: vi.fn(() => []),
+  addSceneLink: vi.fn(),
+  removeSceneLink: vi.fn(),
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -64,6 +67,9 @@ describe('ScenePlayerView', () => {
       storeMock.setAmbienceVariation,
       storeMock.selectAmbienceSample,
       storeMock.retuneAmbienceVariation,
+      storeMock.linksForScene,
+      storeMock.addSceneLink,
+      storeMock.removeSceneLink,
     ]) {
       fn.mockReset();
     }
@@ -80,6 +86,7 @@ describe('ScenePlayerView', () => {
     storeMock.oneShotPlayCount.mockReturnValue(0);
     storeMock.oneShotProgress.mockReturnValue(0);
     storeMock.musicProgress.mockReturnValue(0);
+    storeMock.linksForScene.mockReturnValue([]);
     storeMock.activeLayers = new Map([
       ['pack-1:rain', { variationId: 'light', sampleIndex: 0, volume: 0.4 }],
     ]);
@@ -205,12 +212,14 @@ describe('ScenePlayerView', () => {
     wrapper.unmount();
   });
 
-  it('shows mood buttons and switches the active preset', async () => {
+  it('shows the scene title and mood buttons', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs },
     });
 
+    expect(wrapper.text()).toContain('Tavern Evening');
+    expect(wrapper.text()).not.toContain('Forest');
     expect(wrapper.text()).toContain('Off');
     expect(wrapper.text()).toContain('Explore');
     expect(wrapper.text()).toContain('Combat');

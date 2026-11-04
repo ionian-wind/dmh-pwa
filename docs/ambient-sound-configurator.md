@@ -159,6 +159,7 @@ Scenes can be linked to local DMH entities:
 
 - **locations** — map locations;
 - **modules**;
+- **monsters**;
 - **encounters**;
 - **characters**.
 
@@ -666,6 +667,10 @@ action. Closing the dialog returns to the scene/gallery tabs without stopping
 playback. If the scene's package is removed while the dialog is open, the dialog
 closes and the app remains on `/ambient`. The dialog contains:
 
+- **Dialog layout** — the dialog follows the notes-dialog pattern with two
+  top-level tabs, Main and Linked entities, plus a fullscreen expand control.
+  The scene name is shown inside the Main tab on the same row as play/pause and
+  the volume button; the package name is not repeated.
 - **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.
   Uses the same bar layout as the intensity control: the label sits at the left
   edge and a rounded `QBtnToggle` is right-aligned in the remaining row. The
@@ -701,6 +706,10 @@ closes and the app remains on `/ambient`. The dialog contains:
   and the arc shows playback progress.
   Clicking the knob plays the one-shot immediately, independent of music or
   ambience state.
+- **Linked entities tab** — links the open scene to modules, locations,
+  monsters, characters and encounters. It reuses the common `EntitiesLinking`
+  lists and updates the same local scene-link records shown by
+  `EntityScenesPanel`.
 
 Closing the scene dialog returns to the list without stopping playback; the
 active scene remains available from the scene list (with its Playing badge).
@@ -711,6 +720,7 @@ The same reusable `EntityScenesPanel` appears in the side panel/detail area of:
 
 - locations (`LocationView`);
 - modules (`ModuleView`);
+- monsters (`MonsterViewSidebar`);
 - encounters (`EncounterView`);
 - characters (`CharacterView`).
 
@@ -805,21 +815,22 @@ footer.
 
 ### 4.11 Component and state mapping
 
-| UI component          | Responsibility                                          | Main state/actions                           |
-| --------------------- | ------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content       | `currentPackage`, `activeTab`, `activeScene` |
-| `SoundPackSidebar`    | Package list, import/delete, filter                     | `packages`, `selectedPackageId`              |
-| `SceneList`           | Scene rows and opening the player                       | `scenes`, `activeSceneId`                    |
-| `ScenePlayerView`     | Scene dialog content with music, ambience and one-shots | `packId`, `sceneId`, `showBack`, `activeTab` |
-| `AmbienceGallery`     | Ambience browsing, variations and layered playback      | `galleryAmbiences`, `activeLayers`           |
-| `AmbienceItem`        | Ambience row with enumerated sample buttons             | `ambience`, `variationId`, active sample     |
-| `VariationSelect`     | Global variation filter above ambience lists            | `options`, `modelValue`                      |
-| `OneShotGallery`      | One-shot knob grid and playing/progress state           | `galleryOneShots`, `groups`                  |
-| `OneShotControl`      | Button-wrapped knob, icon and playback progress         | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel`   | Linked scenes in location/module/encounter/character    | `links`, `add/remove`, `play`                |
-| `MoodProgress`        | Mood label with temporary-mood progress indicator       | `label`, `active`                            |
-| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders      | `modelValue`                                 |
-| `AmbientControls`     | Scene intensity slider                                  | `intensity`                                  |
+| UI component          | Responsibility                                               | Main state/actions                           |
+| --------------------- | ------------------------------------------------------------ | -------------------------------------------- |
+| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content            | `currentPackage`, `activeTab`, `activeScene` |
+| `SoundPackSidebar`    | Package list, import/delete, filter                          | `packages`, `selectedPackageId`              |
+| `SceneList`           | Scene rows and opening the player                            | `scenes`, `activeSceneId`                    |
+| `ScenePlayerView`     | Scene dialog content with music, ambience and one-shots      | `packId`, `sceneId`, `showBack`, `activeTab` |
+| `AmbienceGallery`     | Ambience browsing, variations and layered playback           | `galleryAmbiences`, `activeLayers`           |
+| `AmbienceItem`        | Ambience row with enumerated sample buttons                  | `ambience`, `variationId`, active sample     |
+| `VariationSelect`     | Global variation filter above ambience lists                 | `options`, `modelValue`                      |
+| `OneShotGallery`      | One-shot knob grid and playing/progress state                | `galleryOneShots`, `groups`                  |
+| `OneShotControl`      | Button-wrapped knob, icon and playback progress              | `packId`, `oneShot`, `progress`              |
+| `EntityScenesPanel`   | Linked scenes on location/module/monster/encounter/character | `links`, `add/remove`, `play`                |
+| `EntitiesLinking`     | Scene links tab for five entity kinds                        | `kind`, `modelValue`                         |
+| `MoodProgress`        | Mood label with temporary-mood progress indicator            | `label`, `active`                            |
+| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders           | `modelValue`                                 |
+| `AmbientControls`     | Scene intensity slider                                       | `intensity`                                  |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and
@@ -1650,6 +1661,7 @@ DMH connects package scenes to local campaign data:
 
 - **locations** — map locations;
 - **modules**;
+- **monsters**;
 - **encounters**;
 - **characters**.
 

@@ -36,12 +36,24 @@ import { EntityTabsStub } from '../helpers/entityTabsStub';
 
 const BaseModalStub = defineComponent({
   name: 'BaseModal',
-  props: { isOpen: Boolean, title: String },
+  props: {
+    isOpen: Boolean,
+    title: String,
+    tabs: { type: Array, default: () => [] },
+    showExpand: Boolean,
+  },
   emits: ['update:isOpen', 'cancel'],
   template: `<div v-if="isOpen" class="base-modal-stub">
     <span class="modal-title">{{ title }}</span>
-    <slot />
+    <slot name="main" />
+    <slot name="links" />
   </div>`,
+});
+
+const SceneLinksPanelStub = defineComponent({
+  name: 'SceneLinksPanel',
+  props: { packId: String, sceneId: String },
+  template: '<div class="scene-links-stub" />',
 });
 
 const stubs = {
@@ -50,6 +62,7 @@ const stubs = {
   AmbienceGallery: true,
   OneShotGallery: true,
   ScenePlayerView: true,
+  SceneLinksPanel: SceneLinksPanelStub,
   BaseModal: BaseModalStub,
   EntityTabs: EntityTabsStub,
 };
@@ -129,12 +142,18 @@ describe('AmbientSoundView', () => {
 
     const modal = wrapper.findComponent(BaseModalStub);
     expect(modal.props('isOpen')).toBe(true);
-    expect(modal.props('title')).toBe('Tavern Evening');
+    expect(modal.props('showExpand')).toBe(true);
+    expect(
+      modal.props('tabs').map((tab: { name: string }) => tab.name),
+    ).toEqual(['main', 'links']);
     const player = modal.findComponent({ name: 'ScenePlayerView' });
     expect(player.exists()).toBe(true);
     expect(player.props('packId')).toBe('pack-1');
     expect(player.props('sceneId')).toBe('scene-1');
     expect(player.props('showBack')).toBe(false);
+    const links = modal.findComponent(SceneLinksPanelStub);
+    expect(links.props('packId')).toBe('pack-1');
+    expect(links.props('sceneId')).toBe('scene-1');
 
     player.vm.$emit('back');
     await flushPromises();

@@ -7,6 +7,7 @@ import type { Monster } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
 
 import Mentions from '@/components/common/Mentions.vue';
+import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 
 const mentionsStore = useMentionsStore();
 const { t } = useI18n();
@@ -36,6 +37,8 @@ onMounted(() => mentionsStore.load());
 
 <template>
   <div class="side-panel-content q-pa-md">
+    <EntityScenesPanel entity-type="monster" :entity-id="monster.id" />
+    <QSeparator />
     <Mentions :title="t('common.mentions')" :entities="mentions" />
     <QSeparator />
     <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
