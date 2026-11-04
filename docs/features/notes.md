@@ -158,9 +158,9 @@ The only escape is delete + recreate.
 
 ## Detail tabs
 
-`NoteView` uses the standard **Overview** / **Linked entities** tabs. Overview
-renders the note body; Linked entities shows the note's module read-only. The
-right sidebar only shows tags.
+`NoteView` uses the standard **Main editor** / **Linked entities** tabs in the
+app header panel. Main editor renders the note body; Linked entities shows the
+note's module read-only. The right sidebar only shows tags.
 
 ## Markdown and mentions
 

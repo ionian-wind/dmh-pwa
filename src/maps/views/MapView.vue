@@ -22,7 +22,6 @@ import {
 import type { Item } from 'ol-contextmenu';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
-import EntityTabs from '@/components/common/EntityTabs.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import { confirm, prompt } from '@/dialogs';
 import 'vue3-openlayers/vue3-openlayers.css';
@@ -887,10 +886,11 @@ watch(isEditMode, (editing) => {
     :unwrap-content="true"
     :header-show-edit="isEditMode"
     :header-show-delete="isEditMode"
+    :tabs="pageTabs"
+    v-model="pageTab"
     fill
   >
     <div class="map-page-layout">
-      <EntityTabs v-model="pageTab" :tabs="pageTabs" class="map-page-tabs" />
       <div v-show="pageTab === 'map'" class="map-page-body">
         <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
           <div v-if="isAddingMarker || drawMode" class="map-hint">
@@ -1372,10 +1372,6 @@ watch(isEditMode, (editing) => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-}
-
-.map-page-tabs {
-  flex: 0 0 auto;
 }
 
 .map-page-body {

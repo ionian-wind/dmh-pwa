@@ -217,7 +217,8 @@ references.
 
 ## Map detail layout
 
-The map detail page has **Map** and **Linked entities** tabs. It contains:
+The map detail page has **Map** and **Linked entities** tabs in the app header
+panel. It contains:
 
 - The map itself in the Map tab.
 - The Linked entities tab shows map modules and the linked location read-only.

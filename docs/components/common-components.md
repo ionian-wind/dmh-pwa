@@ -98,8 +98,10 @@ right drawer icon.
 - Shows loading text, `NotFoundView`, or the page.
 - Renders the entity title and subtitle at the top of the page content, not in
   the app header.
-- Injects and publishes `ViewHeader` for the app header actions only; clears it
-  on unmount.
+- Injects and publishes `ViewHeader` for app-header actions and optional page
+  tabs; clears it on unmount.
+- When `tabs`/`modelValue` are supplied, tabs render in the `#main_header` panel
+  above the page body.
 - Clears the header on delete only if `onDelete()` resolves `true`; navigation
   uses `router.push(listRoute)`.
 - Renders the default slot, `editor`, `actions`, and `sub`; publishes a
@@ -190,9 +192,9 @@ hidden. Shows a translated empty state when there are no links.
 
 ### `entityViewTabs.ts`
 
-Returns the standard detail-page tabs: **Overview** and **Linked entities**.
-Used by note, party and monster detail pages so their view tabs mirror the
-editor's Main/Links split.
+Returns the standard detail-page tabs: **Main editor** and **Linked entities**,
+with the same icons as the edit dialog. Used by note, party and monster detail
+pages so their view tabs mirror the editor's Main/Links split.
 
 ### `EntityTabs.vue`
 

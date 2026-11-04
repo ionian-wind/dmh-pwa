@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import BaseEntityView from './BaseEntityView.vue';
-import EntityTabs from './EntityTabs.vue';
 
 interface Tab {
   id: string;
   label: string;
-  icon?: string;
+  icon?: any;
   disabled?: boolean;
   badge?: string | number;
 }
@@ -82,30 +81,27 @@ function handleTabClose(tabId: string) {
 function handleTabAdd() {
   emit('tab-add');
 }
+
+const viewProps = computed(() => {
+  const { modelValue: _modelValue, ...rest } = props;
+  return { ...rest, modelValue: activeTab.value };
+});
 </script>
 
 <template>
   <BaseEntityView
-    v-bind="props"
+    v-bind="viewProps"
     :unwrap-content="true"
+    @update:model-value="handleTabUpdate"
+    @tab-click="handleTabClick"
     @update:sidePanelVisible="$emit('update:sidePanelVisible', $event)"
   >
     <template #default>
-      <div>
-        <EntityTabs
-          v-if="tabs.length > 0"
-          v-model="activeTab"
-          :tabs="tabs"
-          class="q-mb-md"
-          @update:model-value="handleTabUpdate"
-          @tab-click="handleTabClick"
-        />
-        <QTabPanels v-model="activeTab" animated>
-          <QTabPanel v-for="tab in tabs" :key="tab.id" :name="tab.id">
-            <slot :name="tab.id" />
-          </QTabPanel>
-        </QTabPanels>
-      </div>
+      <QTabPanels v-model="activeTab" animated>
+        <QTabPanel v-for="tab in tabs" :key="tab.id" :name="tab.id">
+          <slot :name="tab.id" />
+        </QTabPanel>
+      </QTabPanels>
     </template>
     <template v-if="$slots.actions" #actions>
       <slot name="actions" />

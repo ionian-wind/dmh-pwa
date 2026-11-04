@@ -289,7 +289,7 @@ function openJukebox() {
 <template>
   <div>
     <QLayout view="hHh LpR lFr">
-      <QHeader bordered class="bg-primary text-white">
+      <QHeader bordered class="bg-primary text-white" id="main_header">
         <QToolbar class="text-white justify-between">
           <QBtn dense flat @click="toggleLeftDrawer" class="q-mr-sm">
             <IconMenu2 />
@@ -306,6 +306,7 @@ function openJukebox() {
       </QHeader>
 
       <QDrawer
+        id="main_menu"
         show-if-above
         v-model="leftDrawerOpen"
         side="left"

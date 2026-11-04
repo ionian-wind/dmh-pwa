@@ -8,6 +8,21 @@ import { useLayout } from '@/composables/useLayout';
 const { t } = useI18n();
 
 const props = defineProps({
+  tabs: {
+    type: Array as PropType<
+      {
+        id: string;
+        label: string;
+        icon?: any;
+        disabled?: boolean;
+      }[]
+    >,
+    default: () => [],
+  },
+  modelValue: {
+    type: String,
+    default: '',
+  },
   buttons: {
     type: Array as PropType<
       {
@@ -122,7 +137,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['create', 'update:searchQuery']);
+const emit = defineEmits([
+  'create',
+  'update:searchQuery',
+  'update:modelValue',
+  'tab-click',
+]);
 
 const { rightDrawerContent, toggleRightDrawer } = useLayout();
 
@@ -143,6 +163,28 @@ const hasPrimaryActions = computed(
     </div>
   </QToolbarTitle>
   <QSpace v-else />
+
+  <QTabs
+    v-if="props.tabs.length"
+    :model-value="props.modelValue"
+    dense
+    align="center"
+    class="view-header-tabs"
+    @update:model-value="(value) => emit('update:modelValue', value)"
+  >
+    <QTab
+      v-for="tab in props.tabs"
+      :key="tab.id"
+      :name="tab.id"
+      :label="tab.label"
+      :disable="tab.disabled"
+      :title="tab.label"
+      :aria-label="tab.label"
+      @click="emit('tab-click', tab)"
+    >
+      <component :is="tab.icon" v-if="tab.icon" />
+    </QTab>
+  </QTabs>
 
   <QInput
     v-if="props.showSearch"
@@ -219,6 +261,10 @@ const hasPrimaryActions = computed(
 </template>
 
 <style scoped>
+.view-header-tabs {
+  margin-inline: auto;
+}
+
 .view-header-separator {
   margin: 0 0.25rem;
 }

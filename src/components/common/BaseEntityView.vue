@@ -29,6 +29,8 @@ interface Props {
   headerShowEdit?: boolean;
   headerShowDelete?: boolean;
   headerButtons?: any[];
+  tabs?: Array<{ id: string; label: string; icon?: any; disabled?: boolean }>;
+  modelValue?: string;
   rightDrawerIcon?: any;
   fill?: boolean;
 }
@@ -45,9 +47,13 @@ const props = withDefaults(
     headerShowEdit: true,
     headerShowDelete: true,
     headerButtons: () => [],
+    tabs: () => [],
+    modelValue: '',
     fill: false,
   },
 );
+
+const emit = defineEmits(['update:modelValue', 'tab-click']);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -86,6 +92,11 @@ const injectTopMenu = () => {
     title: '',
     subtitle: '',
   };
+  headerProps.tabs = props.tabs;
+  headerProps.modelValue = props.modelValue;
+  headerProps['onUpdate:modelValue'] = (value: string) =>
+    emit('update:modelValue', value);
+  headerProps.onTabClick = (tab: unknown) => emit('tab-click', tab);
   if (props.rightDrawerIcon)
     headerProps.rightDrawerIcon = props.rightDrawerIcon;
   layout.setTopMenuContent(
@@ -109,6 +120,8 @@ watch(
     props.headerShowEdit,
     props.headerShowDelete,
     props.headerButtons,
+    props.tabs,
+    props.modelValue,
   ],
   () => injectTopMenu(),
   { deep: true },

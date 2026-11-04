@@ -97,4 +97,30 @@ describe('ViewHeader action buttons', () => {
       'Toggle sidebar',
     );
   });
+
+  it('renders page tabs in the header and forwards selection', async () => {
+    const tabs = [
+      { id: 'main', label: 'Main editor', icon: customIcon },
+      { id: 'links', label: 'Linked entities', disabled: true },
+    ];
+    const { wrapper } = mountHeader({
+      title: '',
+      tabs,
+      modelValue: 'main',
+    });
+
+    const tabComponents = wrapper.findAll('[data-stub="QTab"]');
+    expect(tabComponents).toHaveLength(2);
+    expect(tabComponents[0].attributes('label')).toBe('Main editor');
+    expect(tabComponents[1].attributes('label')).toBe('Linked entities');
+    expect(wrapper.find('.custom-icon').exists()).toBe(true);
+
+    wrapper
+      .findComponent({ name: 'QTabs' })
+      .vm.$emit('update:modelValue', 'links');
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['links']);
+
+    wrapper.findAllComponents({ name: 'QTab' })[0].vm.$emit('click');
+    expect(wrapper.emitted('tab-click')?.[0]).toEqual([tabs[0]]);
+  });
 });
