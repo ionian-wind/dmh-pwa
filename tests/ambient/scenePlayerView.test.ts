@@ -205,7 +205,7 @@ describe('ScenePlayerView', () => {
     wrapper.unmount();
   });
 
-  it('shows mood knobs and switches the active preset', async () => {
+  it('shows mood buttons and switches the active preset', async () => {
     const wrapper = mount(ScenePlayerView, {
       props: { packId: 'pack-1', sceneId: 'scene-1' },
       global: { stubs },
@@ -220,7 +220,7 @@ describe('ScenePlayerView', () => {
     ).toBe(false);
 
     const knob = (label: string) =>
-      wrapper.findAll('.mood-knob').find((entry) => entry.text() === label);
+      wrapper.findAll('.mood-button').find((entry) => entry.text() === label);
     await knob('Off')!.trigger('click');
     expect(storeMock.setMusicPreset).toHaveBeenCalledWith(null);
 
@@ -229,7 +229,7 @@ describe('ScenePlayerView', () => {
     wrapper.unmount();
   });
 
-  it('does not start playback on open and starts from a mood knob', async () => {
+  it('does not start playback on open and starts from a mood button', async () => {
     storeMock.activeScene = null;
     storeMock.activeLayers = new Map();
     storeMock.hasActiveLayers = false;
@@ -243,7 +243,7 @@ describe('ScenePlayerView', () => {
     expect(storeMock.playScene).not.toHaveBeenCalled();
 
     const explore = wrapper
-      .findAll('.mood-knob')
+      .findAll('.mood-button')
       .find((entry) => entry.text() === 'Explore');
     await explore!.trigger('click');
     expect(storeMock.playSceneMusic).toHaveBeenCalledWith(
@@ -264,13 +264,9 @@ describe('ScenePlayerView', () => {
     });
 
     const knob = (label: string) =>
-      wrapper.findAll('.mood-knob').find((entry) => entry.text() === label);
-    expect(
-      knob('Off')!.find('.mood-knob-control').attributes('disabled'),
-    ).toBeDefined();
-    expect(
-      knob('Explore')!.find('.mood-knob-control').attributes('disabled'),
-    ).toBeDefined();
+      wrapper.findAll('.mood-button').find((entry) => entry.text() === label);
+    expect(knob('Off')!.attributes('disabled')).toBeDefined();
+    expect(knob('Explore')!.attributes('disabled')).toBeDefined();
     const light = wrapper
       .findAll('button')
       .find((entry) => entry.text() === 'Light');

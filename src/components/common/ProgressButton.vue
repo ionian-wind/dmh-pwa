@@ -1,24 +1,25 @@
 <template>
-  <QBtn
-    v-bind="$attrs"
-    class="progress-button"
-    :aria-busy="isBusy ? 'true' : undefined"
-  >
+  <QBtn class="progress-button" :aria-busy="isBusy ? 'true' : undefined">
     <span class="progress-button-content">
       <span
         v-if="renderedState !== 'none'"
         class="progress-button-progress"
         :class="{ 'is-finishing': isFinishing }"
       >
-        <IconLoader2
-          v-if="renderedState === 'loading'"
-          class="progress-button-spinner"
-        />
-        <Transition v-else name="progress-button-icon" mode="out-in">
-          <component :is="percentageIcon" :key="percentageValue" />
+        <Transition name="progress-button-icon">
+          <IconLoader2
+            v-if="renderedState === 'loading'"
+            key="loading"
+            class="progress-button-spinner"
+          />
+          <component
+            v-else
+            :is="percentageIcon"
+            :key="`percent-${percentageValue}`"
+          />
         </Transition>
       </span>
-      <slot v-else />
+      <slot />
     </span>
   </QBtn>
 </template>
@@ -157,9 +158,11 @@ onBeforeUnmount(clearFinishTimer);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4em;
 }
 
 .progress-button-progress {
+  position: relative;
   display: inline-flex;
   transition:
     opacity 250ms ease,
@@ -183,8 +186,14 @@ onBeforeUnmount(clearFinishTimer);
 .progress-button-icon-enter-active,
 .progress-button-icon-leave-active {
   transition:
-    opacity 120ms ease,
-    transform 120ms ease;
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.progress-button-icon-leave-active {
+  position: absolute;
+  inset: 0;
+  margin: auto;
 }
 
 .progress-button-icon-enter-from,

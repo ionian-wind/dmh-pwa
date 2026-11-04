@@ -189,10 +189,11 @@ Quasar `QBtn` wrapper with a built-in progress icon. Props:
 | `state`   | `'none' \| 'loading' \| 'playing'` | `none`  | Current button progress state.      |
 | `percent` | `number`                           | `0`     | Progress percentage, clamped 0–100. |
 
-- `none` renders the default slot unchanged.
-- `loading` shows a spinning `IconLoader2`.
-- `playing` selects the closest Tabler percentage icon and fades between
-  values as the percentage changes.
+- The default slot (label or other content) is always rendered.
+- `none` shows only the default slot.
+- `loading` adds a spinning `IconLoader2` next to the slot content.
+- `playing` adds the closest Tabler percentage icon and fades between values as
+  the percentage changes, while keeping the label visible.
 - Reaching `100` fades the icon out, switches the rendered state to `none`, and
   emits `update:state` plus `finish`. Use `v-model:state` to keep the parent in
   sync.

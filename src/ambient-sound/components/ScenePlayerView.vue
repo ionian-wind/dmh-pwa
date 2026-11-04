@@ -40,26 +40,30 @@
     </div>
 
     <div v-if="entry" class="scene-player-content">
-      <div class="text-caption text-uppercase text-grey-7 q-mb-xs">
-        {{ t('ambientSoundPage.mood') }}
-      </div>
-      <div class="mood-knobs q-mb-md">
-        <MoodKnob
-          :label="t('ambientSoundPage.off')"
-          :active="musicOff"
-          :disabled="!sceneControlsEnabled"
-          @select="selectMusic(null)"
-        />
-        <MoodKnob
-          v-for="preset in entry.scene.musicPresets"
-          :key="preset.id"
-          :label="preset.name"
-          :active="activePresetId === preset.id"
-          :track-progress="preset.mode === 'temporary'"
-          :disabled="!sceneControlsEnabled"
-          @select="selectMusic(preset.id)"
-        />
-      </div>
+      <QToolbar class="q-pa-none q-mb-md">
+        <div class="mood-label text-caption text-uppercase text-grey-7 q-mr-md">
+          {{ t('ambientSoundPage.mood') }}
+        </div>
+        <div class="col row justify-center">
+          <QBtnGroup rounded class="mood-buttons">
+            <MoodButton
+              :label="t('ambientSoundPage.off')"
+              :active="musicOff"
+              :disabled="!sceneControlsEnabled"
+              @select="selectMusic(null)"
+            />
+            <MoodButton
+              v-for="preset in entry.scene.musicPresets"
+              :key="preset.id"
+              :label="preset.name"
+              :active="activePresetId === preset.id"
+              :track-progress="preset.mode === 'temporary'"
+              :disabled="!sceneControlsEnabled"
+              @select="selectMusic(preset.id)"
+            />
+          </QBtnGroup>
+        </div>
+      </QToolbar>
 
       <AmbientControls class="q-mb-md" :disabled="!sceneControlsEnabled" />
 
@@ -135,7 +139,7 @@ import {
 } from '@tabler/icons-vue';
 import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
 import AmbientControls from '@/ambient-sound/components/AmbientControls.vue';
-import MoodKnob from '@/ambient-sound/components/MoodKnob.vue';
+import MoodButton from '@/ambient-sound/components/MoodButton.vue';
 import OneShotControl from '@/ambient-sound/components/OneShotControl.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
@@ -303,12 +307,6 @@ watch(
 .scene-play-button:disabled {
   color: var(--color-text-light);
   opacity: 0.5;
-}
-
-.mood-knobs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 
 .one-shot-grid {

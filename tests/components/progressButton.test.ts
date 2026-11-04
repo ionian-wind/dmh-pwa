@@ -95,6 +95,17 @@ describe('ProgressButton', () => {
     high.unmount();
   });
 
+  it('keeps the label visible alongside the progress icon', () => {
+    const wrapper = mountButton(
+      { state: 'playing', percent: 50 },
+      { default: 'Mood' },
+    );
+
+    expect(wrapper.text()).toContain('Mood');
+    expect(wrapper.findComponent(IconPercentage50).exists()).toBe(true);
+    wrapper.unmount();
+  });
+
   it('fades a finished icon before switching to none', async () => {
     vi.useFakeTimers();
     const wrapper = mountButton(

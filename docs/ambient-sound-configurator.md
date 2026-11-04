@@ -21,10 +21,11 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   click/keyboard handled by a wrapper.
 - Overlapping plays of the same one-shot are supported and shown as an `×N`
   badge; one-shots can sound at any time.
-- Mood knobs start/switch mood music only; they never start scene ambience.
+- Mood buttons start/switch mood music only; they never start scene ambience.
   Switching moods crossfades the music, and clicking the active mood does
   nothing. Temporary moods crossfade to the previous mood or fade out to Off.
-- Only temporary mood knobs show playback progress.
+- Off and continual moods use regular buttons; temporary moods use progress
+  buttons that show playback progress alongside the label.
 - Opening a scene never starts playback. When nothing is playing, mood and
   ambience controls can start their own audio. While paused, those controls are
   disabled and only the footer play button resumes playback.
@@ -178,7 +179,7 @@ src/
 │   │   ├── AmbienceItem.vue          # Shared ambience row and variations
 │   │   ├── OneShotGallery.vue        # Global one-shot knob grid
 │   │   ├── OneShotControl.vue        # One-shot knob, icon and ×N badge
-│   │   ├── MoodKnob.vue              # Mood selector/progress knob
+│   │   ├── MoodButton.vue            # Mood selector and progress button
 │   │   ├── AmbientControls.vue       # Scene intensity slider
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
 │   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
@@ -639,9 +640,11 @@ reload. Playback starts only from an explicit action. A Back button in the view
 header returns to the scene/gallery tabs. If the scene's package is removed
 while the scene is open, the app redirects to `/ambient`. The view contains:
 
-- **Mood knobs** — labelled “Mood” in English and “Атмосфера” in Russian.
-  A knob row containing Off plus one knob per scene music preset (for example
-  Explore, Combat, Victory). Clicking a mood knob starts only that
+- **Mood buttons** — labelled “Mood” in English and “Атмосфера” in Russian.
+  Uses the same bar layout as the intensity control: the label sits at the left
+  edge and a rounded button group is centered in the remaining row. The group
+  contains Off plus one large button per scene music preset (for example
+  Explore, Combat, Victory). Clicking a mood button starts only that
   mood music when nothing is playing, or crossfades to the active preset while
   playing; it never starts the scene's ambience layers. Clicking the preset that
   is already active does nothing. Ambience starts only when a variation button
@@ -649,15 +652,15 @@ while the scene is open, the app redirects to `/ambient`. The view contains:
   stopping ambiences. Within a preset the next music variant is chosen randomly
   and crossfaded in just before the current track ends. Temporary presets such
   as Victory play once, then crossfade back to the previously played preset or
-  fade out to Off when there was none. Only temporary
-  presets show playback progress on their knob; the knob is read-only and acts
-  as a round button.
+  fade out to Off when there was none. Only temporary presets show playback
+  progress; their buttons keep the preset name visible next to the percentage
+  icon.
 - **Playback controls** — play/pause and master volume sit at the far right of
   the scene title line. The five-step intensity control sits directly under the
   mood block: its label is at the left edge and the slider is centered in the
   remaining row, up to a maximum width. Play/pause resumes the active scene
   after a pause.
-- **Control gating** — while paused, the intensity slider, mood knobs and
+- **Control gating** — while paused, the intensity slider, mood buttons and
   ambience variation buttons are disabled. They are enabled again when the
   scene play/pause control resumes, or when nothing has been started yet.
 - **Ambiences tab** — linked ambiences grouped by category. Each row shows the
@@ -772,18 +775,19 @@ footer.
 
 ### 4.11 Component and state mapping
 
-| UI component        | Responsibility                                                | Main state/actions                           |
-| ------------------- | ------------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`  | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene` |
-| `SoundPackSidebar`  | Package list, import/delete, filter                           | `packages`, `selectedPackageId`              |
-| `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                    |
-| `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`             |
-| `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`           |
-| `AmbienceItem`      | Shared ambience row, metadata and variation buttons           | `ambience`, `activeVariationId`, `disabled`  |
-| `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                  |
-| `OneShotControl`    | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                |
-| `AmbientControls`   | Scene intensity slider                                        | `intensity`                                  |
+| UI component        | Responsibility                                                | Main state/actions                             |
+| ------------------- | ------------------------------------------------------------- | ---------------------------------------------- |
+| `AmbientSoundView`  | Page layout, sticky tabs, package filter, content             | `currentPackage`, `activeTab`, `activeScene`   |
+| `SoundPackSidebar`  | Package list, import/delete, filter                           | `packages`, `selectedPackageId`                |
+| `SceneList`         | Scene rows and opening the player                             | `scenes`, `activeSceneId`                      |
+| `ScenePlayerView`   | In-page scene player with Back, music, ambience and one-shots | `packId`, `sceneId`, `activeTab`               |
+| `AmbienceGallery`   | Ambience browsing, variations and layered playback            | `galleryAmbiences`, `activeLayers`             |
+| `AmbienceItem`      | Shared ambience row, metadata and variation buttons           | `ambience`, `activeVariationId`, `disabled`    |
+| `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                    |
+| `OneShotControl`    | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`                |
+| `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                  |
+| `MoodButton`        | Regular or progress mood selector button                      | `label`, `active`, `trackProgress`, `disabled` |
+| `AmbientControls`   | Scene intensity slider                                        | `intensity`                                    |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and
@@ -1406,9 +1410,10 @@ Add route to router:
 - Mood states support `continual` and `temporary` modes. Temporary music
   crossfades back to the previous mood as the track ends, or fades out to Off
   when there was none; continual music keeps playing by crossfading into
-  another randomly chosen variant. Each mood can
-  have several music files. Clicking the active mood does not restart its
-  music.
+  another randomly chosen variant. Each mood can have several music files.
+  Clicking the active mood does not restart its music. Off and continual moods
+  use regular buttons; temporary moods use progress buttons with the mood name
+  kept next to the percentage icon.
 - Packages are built and edited by script, not in the app. The sidebar only
   imports, filters and removes packages.
 - Sound-pack management lives in the right sidebar. Packs are `SidebarItem`
