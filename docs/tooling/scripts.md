@@ -109,7 +109,9 @@ scene is hashed from its metadata (with all `id` keys excluded) and its files,
 each audio file is named by its content hash, and the package ID is the hash of
 the combined entity hashes. References are rewritten before the archive is
 written. Ambiences, one-shots and scenes are optional, but at least one entry is
-required; completely empty packages are rejected.
+required; completely empty packages are rejected. Every ambience must provide
+at least one sample for every variation used anywhere in the package, so the
+global variation filter never hides a playable ambience.
 
 ## `scripts/test-import.js`
 

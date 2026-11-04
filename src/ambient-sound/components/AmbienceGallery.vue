@@ -2,9 +2,10 @@
   <div>
     <VariationSelect
       v-if="variations.length"
-      v-model="selectedVariationId"
+      :model-value="selectedVariationId"
       :options="variations"
       class="q-mb-md"
+      @update:model-value="onVariationChange"
     />
 
     <div v-if="groups.length">
@@ -123,5 +124,11 @@ async function selectSample(
     variationId,
     sampleIndex,
   );
+}
+
+async function onVariationChange(variationId: string) {
+  if (!variationId || variationId === selectedVariationId.value) return;
+  selectedVariationId.value = variationId;
+  await store.retuneAmbienceVariation(variationId);
 }
 </script>

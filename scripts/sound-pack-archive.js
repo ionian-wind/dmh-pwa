@@ -97,6 +97,41 @@ function layerVariations(layer) {
   return [];
 }
 
+function validateAmbienceVariations(ambiences) {
+  const globalVariations = new Map();
+  for (const ambience of ambiences) {
+    for (const variation of layerVariations(ambience)) {
+      const samples = (variation.samples ?? []).filter(Boolean);
+      if (samples.length > 0 && !globalVariations.has(variation.id)) {
+        globalVariations.set(variation.id, variation.name || variation.id);
+      }
+    }
+  }
+
+  if (globalVariations.size === 0) return;
+
+  const missing = [];
+  for (const ambience of ambiences) {
+    const available = new Map(
+      layerVariations(ambience).map((variation) => [variation.id, variation]),
+    );
+    for (const [variationId, variationName] of globalVariations) {
+      const samples = available.get(variationId)?.samples ?? [];
+      if (!samples.some(Boolean)) {
+        missing.push(
+          `${ambience.name || ambience.id} → ${variationName} (${variationId})`,
+        );
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Each ambience must have at least one sample for every variation. Missing: ${missing.join(', ')}`,
+    );
+  }
+}
+
 function sceneMusicPresets(scene) {
   if (Array.isArray(scene.musicPresets) && scene.musicPresets.length) {
     return scene.musicPresets;
@@ -257,8 +292,7 @@ function sceneHashInput(scene, ambienceIds, oneShotIds, files) {
   const input = withoutIds(scene);
   input.ambiences = (scene.ambiences ?? []).map((selection) => ({
     ...selection,
-    ambienceId:
-      ambienceIds.get(selection.ambienceId) ?? selection.ambienceId,
+    ambienceId: ambienceIds.get(selection.ambienceId) ?? selection.ambienceId,
   }));
   input.oneShotIds = (scene.oneShotIds ?? []).map(
     (id) => oneShotIds.get(id) ?? id,
@@ -301,6 +335,7 @@ async function hashSoundPackContents(packDir) {
       'Sound pack cannot be empty: add at least one ambience, one-shot or scene',
     );
   }
+  validateAmbienceVariations(ambiences);
   const outputFiles = new Map();
   const referencedSources = new Set();
 
@@ -330,8 +365,7 @@ async function hashSoundPackContents(packDir) {
     scene.id = id;
     scene.ambiences = (scene.ambiences ?? []).map((selection) => ({
       ...selection,
-      ambienceId:
-        ambienceIds.get(selection.ambienceId) ?? selection.ambienceId,
+      ambienceId: ambienceIds.get(selection.ambienceId) ?? selection.ambienceId,
     }));
     scene.oneShotIds = (scene.oneShotIds ?? []).map(
       (oneShotId) => oneShotIds.get(oneShotId) ?? oneShotId,
@@ -351,8 +385,7 @@ async function hashSoundPackContents(packDir) {
     if (Array.isArray(scene.musicPresets) && scene.musicPresets.length) {
       scene.musicPresets.forEach((preset, index) => {
         preset.files = (filesByPreset.get(index) ?? []).map(
-          (file) =>
-            `scenes/${id}/music/${file.hash}${file.extension}`,
+          (file) => `scenes/${id}/music/${file.hash}${file.extension}`,
         );
       });
     }

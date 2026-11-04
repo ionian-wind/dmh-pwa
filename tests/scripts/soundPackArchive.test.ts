@@ -367,6 +367,57 @@ describe('sound pack archive helpers', () => {
     expect(sceneManifest.oneShots).toBeUndefined();
   });
 
+  it('rejects ambiences missing a global variation sample', async () => {
+    const packDir = path.join(root, 'variation-gap');
+    await mkdir(path.join(packDir, 'ambiences'), { recursive: true });
+    await writeFile(path.join(packDir, 'ambiences', 'rain-light.mp3'), 'light');
+    await writeFile(path.join(packDir, 'ambiences', 'wind.mp3'), 'wind');
+    await writeFile(
+      path.join(packDir, 'pack.json'),
+      JSON.stringify({
+        version: '2.0',
+        id: 'variation-gap',
+        name: 'Variation gap',
+        description: '',
+        category: 'fantasy',
+        ambiences: [
+          {
+            id: 'rain',
+            name: 'Rain',
+            icon: 'fa-solid:cloud-rain',
+            defaultVolume: 40,
+            loop: true,
+            variations: [
+              {
+                id: 'light',
+                name: 'Light',
+                samples: ['ambiences/rain-light.mp3'],
+              },
+            ],
+          },
+          {
+            id: 'wind',
+            name: 'Wind',
+            icon: 'fa-solid:wind',
+            defaultVolume: 30,
+            loop: true,
+            variations: [
+              {
+                id: 'default',
+                name: 'Default',
+                samples: ['ambiences/wind.mp3'],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    await expect(createSoundPackBuffer(packDir)).rejects.toThrow(
+      'Each ambience must have at least one sample for every variation',
+    );
+  });
+
   it('rejects a package with no ambiences, one-shots or scenes', async () => {
     const empty = path.join(root, 'empty');
     await mkdir(empty, { recursive: true });

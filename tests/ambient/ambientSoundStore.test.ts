@@ -60,8 +60,16 @@ const manifest: SoundPackManifest = {
       defaultVolume: 40,
       loop: true,
       variations: [
-        { id: 'light', name: 'Light', samples: ['ambiences/light.mp3'] },
-        { id: 'heavy', name: 'Heavy', samples: ['ambiences/heavy.mp3'] },
+        {
+          id: 'light',
+          name: 'Light',
+          samples: ['ambiences/light.mp3', 'ambiences/light-2.mp3'],
+        },
+        {
+          id: 'heavy',
+          name: 'Heavy',
+          samples: ['ambiences/heavy.mp3', 'ambiences/heavy-2.mp3'],
+        },
       ],
     },
     {
@@ -122,7 +130,9 @@ const pack = normalizeSoundPack(manifest);
 
 const blobs = {
   'ambiences/light.mp3': new Blob(['light'], { type: 'light' }),
+  'ambiences/light-2.mp3': new Blob(['light2'], { type: 'light2' }),
   'ambiences/heavy.mp3': new Blob(['heavy'], { type: 'heavy' }),
+  'ambiences/heavy-2.mp3': new Blob(['heavy2'], { type: 'heavy2' }),
   'ambiences/wind.mp3': new Blob(['wind'], { type: 'wind' }),
   'one-shots/thunder.mp3': new Blob(['thunder'], { type: 'thunder' }),
   'scenes/tavern/music/theme.mp3': new Blob(['theme'], { type: 'theme' }),
@@ -410,6 +420,32 @@ describe('ambient sound store', () => {
 
     await store.selectAmbienceSample('forest', 'rain', 'heavy', 0);
     expect(store.activeLayers.has('forest:rain')).toBe(false);
+  });
+
+  it('keeps active ambience playing when the variation changes', async () => {
+    const store = createStore();
+    await store.loadStoredPacks();
+
+    await store.selectAmbienceSample('forest', 'rain', 'light', 1);
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'light',
+      sampleIndex: 1,
+      volume: 0.4,
+    });
+
+    await store.retuneAmbienceVariation('heavy', 'forest');
+    expect(store.activeLayers.get('forest:rain')).toMatchObject({
+      variationId: 'heavy',
+      sampleIndex: 1,
+      volume: 0.4,
+    });
+    expect(mocks.audioEngine.stopLayer).toHaveBeenCalledWith('forest:rain');
+    expect(mocks.audioEngine.loadLayer).toHaveBeenLastCalledWith(
+      'forest:rain',
+      'blob:heavy2',
+      true,
+      ['mp3'],
+    );
   });
 
   it('plays multiple ambience tracks together and toggles them globally', async () => {

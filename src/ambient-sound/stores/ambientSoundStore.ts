@@ -19,6 +19,7 @@ import {
 } from '@/utils/playbackCoordinator';
 import * as packManager from '../utils/packManager';
 import {
+  findVariation,
   getAudioFormat,
   getLayerVariations,
   getSceneMusicFile,
@@ -494,6 +495,38 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     );
   }
 
+  async function retuneAmbienceVariation(
+    variationId: string,
+    packId?: string,
+  ): Promise<void> {
+    const activeEntries = [...activeLayers.value.entries()];
+    for (const [key, active] of activeEntries) {
+      const activePackId = key.slice(0, key.indexOf(':'));
+      if (packId && activePackId !== packId) continue;
+      if (active.variationId === variationId) continue;
+
+      const pack = findPack(activePackId);
+      const ambience = findAmbience(activePackId, active.layerId);
+      if (!pack || !ambience) continue;
+      const variation = findVariation(ambience, variationId);
+      if (!variation?.samples.length) continue;
+
+      await ensurePackAudio(pack);
+      const sampleIndex = Math.max(
+        0,
+        Math.min(active.sampleIndex, variation.samples.length - 1),
+      );
+      stopLayer(key);
+      startAmbience(
+        activePackId,
+        ambience,
+        variationId,
+        active.volume * 100,
+        sampleIndex,
+      );
+    }
+  }
+
   async function setAmbienceVariation(
     packId: string,
     ambienceId: string,
@@ -806,6 +839,7 @@ export const useAmbientSoundStore = defineStore('ambient-sound', () => {
     stop,
     toggleAmbience,
     selectAmbienceSample,
+    retuneAmbienceVariation,
     setAmbienceVariation,
     setAmbienceVolume,
     setIntensity,

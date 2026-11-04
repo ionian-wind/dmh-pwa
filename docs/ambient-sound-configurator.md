@@ -380,7 +380,10 @@ content-derived SHA-256 identifiers when building the `.spk`:
 | `variations`     | yes      | One or more named sample pools.                                     |
 | `file`/`samples` | no       | Legacy single-file/flat sample forms; normalized into `variations`. |
 
-Each variation has `id`, `name` and `samples[]`. Each sample is a path relative
+Every ambience must define each variation used anywhere in that package, with
+at least one sample per variation. The packaging script rejects packages where
+an ambience is missing a global variation. Each variation has `id`, `name` and
+`samples[]`. Each sample is a path relative
 to the package root. The folder is normally `ambiences/`.
 
 **One-shot entry**

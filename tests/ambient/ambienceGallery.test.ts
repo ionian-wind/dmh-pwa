@@ -9,6 +9,7 @@ const storeMock = vi.hoisted(() => ({
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
   selectAmbienceSample: vi.fn(),
+  retuneAmbienceVariation: vi.fn(),
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -75,6 +76,7 @@ describe('AmbienceGallery', () => {
       storeMock.toggleAmbience,
       storeMock.setAmbienceVariation,
       storeMock.selectAmbienceSample,
+      storeMock.retuneAmbienceVariation,
     ]) {
       fn.mockReset();
     }
@@ -111,6 +113,7 @@ describe('AmbienceGallery', () => {
     expect(cards[0].text()).toContain('Rain');
     expect(wrapper.text()).not.toContain('Wind');
     expect(wrapper.findAll('.entity-group')).toHaveLength(1);
+    expect(storeMock.retuneAmbienceVariation).toHaveBeenCalledWith('light');
     wrapper.unmount();
   });
 

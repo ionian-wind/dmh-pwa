@@ -72,9 +72,10 @@
       <div v-if="activeTab === 'ambiences'">
         <VariationSelect
           v-if="variationOptions.length"
-          v-model="selectedVariationId"
+          :model-value="selectedVariationId"
           :options="variationOptions"
           class="q-mb-md"
+          @update:model-value="onVariationChange"
         />
         <EntityGroup
           v-for="group in ambienceGroups"
@@ -315,6 +316,12 @@ async function selectSample(
     variationId,
     sampleIndex,
   );
+}
+
+async function onVariationChange(variationId: string) {
+  if (!variationId || variationId === selectedVariationId.value) return;
+  selectedVariationId.value = variationId;
+  await store.retuneAmbienceVariation(variationId, props.packId);
 }
 
 watch(

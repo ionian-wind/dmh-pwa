@@ -25,6 +25,7 @@ const storeMock = vi.hoisted(() => ({
   toggleAmbience: vi.fn(),
   setAmbienceVariation: vi.fn(),
   selectAmbienceSample: vi.fn(),
+  retuneAmbienceVariation: vi.fn(),
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -53,6 +54,7 @@ describe('ScenePlayerView', () => {
       storeMock.toggleAmbience,
       storeMock.setAmbienceVariation,
       storeMock.selectAmbienceSample,
+      storeMock.retuneAmbienceVariation,
     ]) {
       fn.mockReset();
     }
@@ -333,6 +335,10 @@ describe('ScenePlayerView', () => {
         .map((button) => button.text()),
     ).toEqual(['I']);
     await rainCard()!.findAll('button')[0].trigger('click');
+    expect(storeMock.retuneAmbienceVariation).toHaveBeenCalledWith(
+      'heavy',
+      'pack-1',
+    );
     expect(storeMock.selectAmbienceSample).toHaveBeenLastCalledWith(
       'pack-1',
       'rain',
