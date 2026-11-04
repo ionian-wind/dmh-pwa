@@ -185,7 +185,9 @@ src/
 │   ├── AmbientSoundView.vue          # Ambient main page and tabs
 │   ├── components/
 │   │   ├── SceneList.vue             # Package-owned scenes
+│   │   ├── ScenePlayerDialog.vue     # Scene dialog and main/link tabs
 │   │   ├── ScenePlayerView.vue       # Scene player content
+│   │   ├── SceneLinksPanel.vue       # Scene linking tab content
 │   │   ├── AmbienceGallery.vue       # Global ambience browser
 │   │   ├── AmbienceItem.vue          # Ambience row and enumerated samples
 │   │   ├── VariationSelect.vue       # Global variation filter select
@@ -821,7 +823,9 @@ footer.
 | `AmbientSoundView`    | Page layout, sticky tabs, package filter, content            | `currentPackage`, `activeTab`, `activeScene` |
 | `SoundPackSidebar`    | Package list, import/delete, filter                          | `packages`, `selectedPackageId`              |
 | `SceneList`           | Scene rows and opening the player                            | `scenes`, `activeSceneId`                    |
-| `ScenePlayerView`     | Scene dialog content with music, ambience and one-shots      | `packId`, `sceneId`, `showBack`, `activeTab` |
+| `ScenePlayerDialog`   | Expandable scene dialog with Main/Linked entities tabs       | `modelValue`, `packId`, `sceneId`            |
+| `ScenePlayerView`     | Scene main-tab content with music, ambience and one-shots    | `packId`, `sceneId`, `showBack`, `activeTab` |
+| `SceneLinksPanel`     | Linked entities tab for modules, locations, monsters, etc.   | `packId`, `sceneId`                          |
 | `AmbienceGallery`     | Ambience browsing, variations and layered playback           | `galleryAmbiences`, `activeLayers`           |
 | `AmbienceItem`        | Ambience row with enumerated sample buttons                  | `ambience`, `variationId`, active sample     |
 | `VariationSelect`     | Global variation filter above ambience lists                 | `options`, `modelValue`                      |

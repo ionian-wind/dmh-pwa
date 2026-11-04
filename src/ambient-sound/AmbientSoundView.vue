@@ -27,42 +27,20 @@
       :hint="t('ambientSoundPage.importPackHint')"
     />
 
-    <BaseModal
-      :is-open="isSceneDialogOpen"
-      :use-modal-stack="false"
-      :show-expand="true"
-      :tabs="sceneDialogTabs"
-      modal-id="ambient-scene-dialog"
-      @update:is-open="(value) => (isSceneDialogOpen = value)"
-      @cancel="closeSceneDialog"
-    >
-      <template #main>
-        <ScenePlayerView
-          v-if="sceneEntry"
-          :pack-id="sceneEntry.pack.id"
-          :scene-id="sceneEntry.scene.id"
-          :show-back="false"
-          @back="closeSceneDialog"
-        />
-      </template>
-      <template #links>
-        <SceneLinksPanel
-          v-if="sceneEntry"
-          :pack-id="sceneEntry.pack.id"
-          :scene-id="sceneEntry.scene.id"
-        />
-      </template>
-    </BaseModal>
+    <ScenePlayerDialog
+      v-if="selectedScene"
+      v-model="isSceneDialogOpen"
+      :pack-id="selectedScene.packId"
+      :scene-id="selectedScene.sceneId"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconEar, IconMusic } from '@tabler/icons-vue';
+import { IconMusic } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
-import BaseModal from '@/components/common/BaseModal.vue';
-import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityTabs from '@/components/common/EntityTabs.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
@@ -71,8 +49,7 @@ import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
-import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
-import SceneLinksPanel from '@/ambient-sound/components/SceneLinksPanel.vue';
+import ScenePlayerDialog from '@/ambient-sound/components/ScenePlayerDialog.vue';
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
@@ -82,12 +59,6 @@ const rightDrawer = useRightDrawer();
 const activeTab = ref('scenes');
 const selectedScene = ref<{ packId: string; sceneId: string } | null>(null);
 const isSceneDialogOpen = ref(false);
-const editorTabs = useEntityEditorTabs();
-const sceneDialogTabs = computed(() =>
-  editorTabs.value.map((tab) =>
-    tab.name === 'main' ? { ...tab, icon: IconEar } : tab,
-  ),
-);
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);
@@ -104,35 +75,10 @@ const tabs = computed(() => [
   { id: 'oneShots', label: t('ambientSoundPage.oneShotsTab') },
 ]);
 
-const sceneEntry = computed(() => {
-  if (!selectedScene.value) return null;
-  return (
-    store.allScenes.find(
-      ({ pack, scene }) =>
-        pack.id === selectedScene.value?.packId &&
-        scene.id === selectedScene.value?.sceneId,
-    ) ?? null
-  );
-});
-
 function openScenePlayer(packId: string, sceneId: string) {
   selectedScene.value = { packId, sceneId };
   isSceneDialogOpen.value = true;
 }
-
-function closeSceneDialog() {
-  isSceneDialogOpen.value = false;
-}
-
-watch(
-  [sceneEntry, isSceneDialogOpen],
-  () => {
-    if (isSceneDialogOpen.value && !sceneEntry.value) {
-      closeSceneDialog();
-    }
-  },
-  { immediate: true },
-);
 
 onMounted(async () => {
   layout.setTopMenuContent({

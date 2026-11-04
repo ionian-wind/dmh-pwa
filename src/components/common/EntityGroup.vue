@@ -4,7 +4,9 @@
       <span class="text-caption text-uppercase text-grey-7">{{ title }}</span>
       <QSeparator class="col" />
     </div>
-    <slot />
+    <div class="q-pa-sm">
+      <slot />
+    </div>
   </section>
 </template>
 
