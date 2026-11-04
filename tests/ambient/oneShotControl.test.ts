@@ -35,11 +35,17 @@ describe('OneShotControl', () => {
     storeMock.playOneShot.mockReset();
   });
 
-  it('renders the one-shot icon in the knob slot and plays on click', async () => {
+  it('wraps the knob and label in a button and plays on click', async () => {
     const wrapper = mount(OneShotControl, {
       props: { packId: 'pack-1', oneShot: thunder },
       global: { stubs: quasarStubs },
     });
+
+    const button = wrapper.find('.one-shot-control');
+    expect(wrapper.findComponent(quasarStubs.QBtn).exists()).toBe(true);
+    expect(button.element.tagName).toBe('BUTTON');
+    expect(button.text()).toContain('Thunder');
+    expect(button.find('.one-shot-knob').exists()).toBe(true);
 
     const knob = wrapper.find('.one-shot-knob');
     expect(knob.exists()).toBe(true);
@@ -50,7 +56,7 @@ describe('OneShotControl', () => {
     expect(knob.attributes('no-pointer-events')).toBeDefined();
     expect(knob.find('i').classes()).toContain('fa-cloud-bolt');
 
-    await wrapper.find('.one-shot-control').trigger('click');
+    await button.trigger('click');
     expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
     wrapper.unmount();
   });

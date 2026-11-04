@@ -18,8 +18,8 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   buttons and no package, category or scene-count metadata. A variation select
   above the list filters rows to ambiences that have samples for that variation.
 - One-shot entries are grouped category knobs. Each knob contains the icon and
-  shows only the name below it. Knobs are read-only progress indicators with
-  click/keyboard handled by a wrapper.
+  shows only the name below it. The knob and label are wrapped in a Quasar
+  `QBtn`, which handles click/keyboard activation.
 - Overlapping plays of the same one-shot are supported and shown as an `×N`
   badge; one-shots can sound at any time.
 - Mood buttons start/switch mood music only; they never start or stop scene
@@ -802,7 +802,7 @@ footer.
 | `AmbienceItem`      | Ambience row with enumerated sample buttons                   | `ambience`, `variationId`, active sample       |
 | `VariationSelect`   | Global variation filter above ambience lists                  | `options`, `modelValue`                        |
 | `OneShotGallery`    | One-shot knob grid and playing/progress state                 | `galleryOneShots`, `groups`                    |
-| `OneShotControl`    | Quasar knob with icon slot and playback progress              | `packId`, `oneShot`, `progress`                |
+| `OneShotControl`    | Button-wrapped knob, icon and playback progress               | `packId`, `oneShot`, `progress`                |
 | `EntityScenesPanel` | Linked scenes in location/module/encounter/character          | `links`, `add/remove`, `play`                  |
 | `MoodButton`        | Regular or progress mood selector button                      | `label`, `active`, `trackProgress`, `disabled` |
 | `AmbientControls`   | Scene intensity slider                                        | `intensity`                                    |

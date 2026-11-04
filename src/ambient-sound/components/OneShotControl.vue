@@ -1,40 +1,41 @@
 <template>
-  <div
+  <QBtn
+    flat
+    no-caps
+    padding="none"
     class="one-shot-control"
     :class="{ 'is-playing': playing }"
-    role="button"
-    tabindex="0"
     :aria-label="oneShot.name"
     @click="play"
-    @keydown.enter.prevent="play"
-    @keydown.space.prevent="play"
   >
-    <div class="one-shot-knob-wrap">
-      <QKnob
-        v-model="progress"
-        :min="0"
-        :max="100"
-        :thickness="0.2"
-        :size="`${knobSize}px`"
-        :color="playing ? 'primary' : 'grey-7'"
-        track-color="grey-4"
-        show-value
-        readonly
-        :instant-feedback="true"
-        :no-pointer-events="true"
-        class="one-shot-knob"
-      >
-        <AmbientIcon :icon="oneShot.icon" :size="iconSize" />
-      </QKnob>
-      <QBadge v-if="playCount > 1" color="primary" class="one-shot-count">
-        ×{{ playCount }}
-      </QBadge>
-    </div>
+    <span class="one-shot-content">
+      <span class="one-shot-knob-wrap">
+        <QKnob
+          v-model="progress"
+          :min="0"
+          :max="100"
+          :thickness="0.2"
+          :size="`${knobSize}px`"
+          :color="playing ? 'primary' : 'grey-7'"
+          track-color="grey-4"
+          show-value
+          readonly
+          :instant-feedback="true"
+          :no-pointer-events="true"
+          class="one-shot-knob"
+        >
+          <AmbientIcon :icon="oneShot.icon" :size="iconSize" />
+        </QKnob>
+        <QBadge v-if="playCount > 1" color="primary" class="one-shot-count">
+          ×{{ playCount }}
+        </QBadge>
+      </span>
 
-    <div class="text-subtitle2 text-weight-medium text-center">
-      {{ oneShot.name }}
-    </div>
-  </div>
+      <span class="text-subtitle2 text-weight-medium text-center">
+        {{ oneShot.name }}
+      </span>
+    </span>
+  </QBtn>
 </template>
 
 <script setup lang="ts">
@@ -114,20 +115,17 @@ onUnmounted(() => {
 
 <style scoped>
 .one-shot-control {
+  width: 100%;
+  min-width: 0;
+}
+
+.one-shot-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 0.25rem;
   min-width: 0;
-  cursor: pointer;
-  outline: none;
-}
-
-.one-shot-control:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 4px;
-  border-radius: var(--border-radius);
 }
 
 .one-shot-knob-wrap {
