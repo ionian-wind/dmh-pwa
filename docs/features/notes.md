@@ -53,8 +53,6 @@ editable in the note form; it is chosen by the create action.
 
 ## Card (`NoteCard.vue`)
 
-- Shows a gray type icon next to the title: `IconFileText` for text notes and
-  `IconBrush` for drawing notes.
 - Drawing notes show their saved PNG preview instead of a text placeholder.
 - Displays the rendered Markdown inside a `600px` clamp for text notes.
 - Measures `scrollHeight` after mount and on content change to decide whether

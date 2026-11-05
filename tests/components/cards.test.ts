@@ -8,7 +8,6 @@ import NoteCard from '@/notes/NoteCard.vue';
 import ModuleCard from '@/modules/ModuleCard.vue';
 import MonsterCard from '@/monsters/MonsterCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
-import { IconBrush, IconFileText } from '@tabler/icons-vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
@@ -97,7 +96,7 @@ describe('domain cards', () => {
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['combat']);
   });
 
-  it('shows the note content-type icon', () => {
+  it('renders note preview and text without a title icon', () => {
     const note = {
       id: 'n1',
       title: 'Sketch',
@@ -113,8 +112,8 @@ describe('domain cards', () => {
     } as any;
 
     const drawing = mount(NoteCard, { props: { note } });
-    expect(drawing.findComponent(IconBrush).exists()).toBe(true);
-    expect(drawing.findComponent(IconBrush).classes()).toContain('text-grey-7');
+    expect(drawing.find('h5').text()).toBe('Sketch');
+    expect(drawing.find('h5').find('svg').exists()).toBe(false);
     expect(drawing.find('img').attributes('src')).toBe(
       'data:image/png;base64,preview',
     );
@@ -122,9 +121,8 @@ describe('domain cards', () => {
     const text = mount(NoteCard, {
       props: { note: { ...note, contentType: 'text' } },
     });
-    expect(text.findComponent(IconFileText).exists()).toBe(true);
-    expect(text.findComponent(IconFileText).classes()).toContain('text-grey-7');
-    expect(text.findComponent(IconBrush).exists()).toBe(false);
+    expect(text.find('h5').text()).toBe('Sketch');
+    expect(text.find('h5').find('svg').exists()).toBe(false);
   });
 
   it('NoteCard expands clamped content', async () => {

@@ -79,9 +79,9 @@ Tests       1385 passed (1385)
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  95.75%
+Statements  95.76%
 Branches    87.30%
-Functions   95.46%
+Functions   95.49%
 Lines       97.05%
 ```
 

@@ -6,10 +6,8 @@ import { computed, ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useI18n } from 'vue-i18n';
 import {
-  IconBrush,
   IconChevronDown,
   IconChevronUp,
-  IconFileText,
   IconFileDownload,
 } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
@@ -76,8 +74,6 @@ function handleDownload() {
   >
     <template #header>
       <div class="row items-center q-gutter-xs">
-        <IconBrush v-if="isDrawing" :size="18" class="text-grey-7" />
-        <IconFileText v-else :size="18" class="text-grey-7" />
         <h5 class="q-ma-none">{{ note.title }}</h5>
       </div>
     </template>
