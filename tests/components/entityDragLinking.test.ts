@@ -107,6 +107,17 @@ describe('entity drag linking UI', () => {
         .find('.entity-drag-drop-card-inner')
         .classes(),
     ).toContain('entity-drag-drop-card--hovered');
+
+    await wrapper.find('.entity-drag-overlay').trigger('dragover');
+    await nextTick();
+    expect(
+      wrapper
+        .findAll('.entity-drag-drop-card')[0]
+        .find('.entity-drag-drop-card-inner')
+        .classes(),
+    ).not.toContain('entity-drag-drop-card--hovered');
+
+    await wrapper.findAll('.entity-drag-drop-card')[0].trigger('dragenter');
     await wrapper.findAll('.entity-drag-drop-card')[0].trigger('drop');
     await nextTick();
 

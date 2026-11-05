@@ -57,7 +57,7 @@ function drop(kind: EntityLinkKind) {
     <div
       v-if="isDragging"
       class="entity-drag-overlay"
-      @dragover.prevent
+      @dragover.prevent="hoveredKind = null"
       @drop.prevent="cancelDrop"
     >
       <div class="entity-drag-overlay-content">
@@ -77,7 +77,6 @@ function drop(kind: EntityLinkKind) {
             :aria-label="labelFor(kind)"
             @dragenter.prevent.stop="hoveredKind = kind"
             @dragover.prevent.stop="hoveredKind = kind"
-            @dragleave.self="hoveredKind = null"
             @drop.prevent.stop="drop(kind)"
           >
             <QCard
