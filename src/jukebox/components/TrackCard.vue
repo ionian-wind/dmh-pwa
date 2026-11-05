@@ -249,11 +249,11 @@ const trackColor = computed(() => props.track.color || 'transparent');
 }
 
 .track-waveform--base {
-  opacity: 0.16;
+  opacity: 0.08;
 }
 
 .track-waveform--played {
-  opacity: 0.7;
+  opacity: 0.24;
 }
 
 .track-waveform-layer :deep(svg) {
