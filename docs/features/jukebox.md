@@ -38,7 +38,9 @@ See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities)
 - `JukeboxTrack` stores extracted metadata and references `fileId`. Album art
   is stored as a `Blob` (`picture`) plus derived `color`/`palette`.
 - `JukeboxTrack.waveform` holds a generated inline SVG waveform string, or
-  `null` when the audio could not be decoded.
+  `null` when the audio could not be decoded. While a track is playing, its
+  `TrackCard` row renders that SVG as a bright, semi-transparent background
+  waveform.
 - `JukeboxPlaylist` stores `trackIds` in display order; `sortOrder` orders
   playlists; `moduleIds` links playlists to modules.
 - `JukeboxTrack.playlistIds` is declared but never maintained; membership is

@@ -273,6 +273,28 @@ describe('jukebox store integration', () => {
     wrapper.unmount();
   });
 
+  it('shows the generated waveform behind a playing track', async () => {
+    const track = {
+      id: 'waveform-track',
+      fileId: 'f1',
+      title: 'Wave',
+      waveform:
+        '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 1L0 9" stroke="#666"/></svg>',
+    };
+    const wrapper = mount(TrackCard, {
+      props: { track, isPlaying: true },
+    });
+
+    const waveform = wrapper.find('.track-waveform');
+    expect(waveform.exists()).toBe(true);
+    expect(waveform.html()).toContain('<svg');
+    expect(waveform.html()).toContain('M0 1L0 9');
+
+    await wrapper.setProps({ isPlaying: false });
+    expect(wrapper.find('.track-waveform').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it('publishes the playlist drawer and player footer', async () => {
     const layout = createLayoutStore();
     const router = createRouter({

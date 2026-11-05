@@ -86,6 +86,12 @@ const trackColor = computed(() => props.track.color || 'transparent');
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
+    <div
+      v-if="isPlaying && track.waveform"
+      class="track-waveform"
+      aria-hidden="true"
+      v-html="track.waveform"
+    />
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
       <IconGripVertical :size="18" />
     </QItemSection>
@@ -169,6 +175,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
 
 <style scoped>
 .track-item {
+  position: relative;
   display: flex;
   /*align-items: center;*/
   /*padding: 0.75rem;*/
@@ -181,6 +188,31 @@ const trackColor = computed(() => props.track.color || 'transparent');
   /*position: relative;*/
   overflow: hidden;
 }
+.track-waveform {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  color: var(--q-primary);
+  opacity: 0.3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.track-waveform :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.track-waveform :deep(path) {
+  stroke: currentColor;
+}
+
+.track-item :deep(.q-item__section) {
+  position: relative;
+  z-index: 1;
+}
+
 .track-item::before {
   content: '';
   position: absolute;
