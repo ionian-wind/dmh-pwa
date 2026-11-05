@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import { h, nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import TrackCard from '@/jukebox/components/TrackCard.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import {
   useJukeboxPlaylistsStore,
   useJukeboxTracksStore,
@@ -17,6 +16,18 @@ import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 
 const provides = {};
+
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: {
+    kind: String,
+    modelValue: { type: Array, default: () => [] },
+  },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
+  },
+});
 
 async function seedTrack(title = 'Tavern Theme') {
   const tracks = useJukeboxTracksStore();
@@ -79,36 +90,59 @@ describe('jukebox store integration', () => {
     expect(player.queue.map((track) => track.title)).toEqual(['One', 'Two']);
   });
 
-  it('creates a playlist from the add-to-playlist dialog and adds the track', async () => {
+  it('adds and removes a track through playlist entity linking', async () => {
     const track = await seedTrack('Tavern Theme');
     const playlists = useJukeboxPlaylistsStore();
+    const playlist = await playlists.create({
+      name: 'Set',
+      trackIds: [],
+    });
 
     const wrapper = mount(AddToPlaylistModal, {
       props: { modelValue: true, track },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+    const linking = wrapper.findComponent(EntitiesLinkingStub);
+    expect(linking.props()).toMatchObject({
+      kind: 'playlist',
+      modelValue: [],
     });
 
-    const input = wrapper.find('#new-playlist-name');
-    expect(input.exists()).toBe(true);
-    await input.setValue('Road trip');
-
-    const createButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Create');
-    expect(createButton).toBeTruthy();
-    await createButton!.trigger('click');
+    linking.vm.$emit('update:modelValue', [
+      { kind: 'playlist', id: playlist.id },
+    ]);
     await flushPromises();
+    await vi.waitFor(() =>
+      expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]),
+    );
 
-    expect(playlists.items.value).toHaveLength(1);
-    expect(playlists.items.value[0]).toMatchObject({
-      name: 'Road trip',
-      trackIds: [track.id],
+    wrapper
+      .findComponent(EntitiesLinkingStub)
+      .vm.$emit('update:modelValue', []);
+    await flushPromises();
+    await vi.waitFor(() =>
+      expect(playlists.getById(playlist.id)?.trackIds).toEqual([]),
+    );
+
+    wrapper.unmount();
+  });
+
+  it('does nothing when linking playlists without a track', async () => {
+    const playlists = useJukeboxPlaylistsStore();
+    const playlist = await playlists.create({
+      name: 'Set',
+      trackIds: [],
+    });
+    const wrapper = mount(AddToPlaylistModal, {
+      props: { modelValue: true, track: null },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
 
-    await nextTick();
-    const toggles = wrapper.findAll('input[type="checkbox"]');
-    expect(toggles).toHaveLength(1);
-    expect((toggles[0].element as HTMLInputElement).checked).toBe(true);
-
+    wrapper
+      .findComponent(EntitiesLinkingStub)
+      .vm.$emit('update:modelValue', [{ kind: 'playlist', id: playlist.id }]);
+    await flushPromises();
+    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
     wrapper.unmount();
   });
 
@@ -236,55 +270,6 @@ describe('jukebox store integration', () => {
     expect(
       wrapper.find('.track-bulk-select input[type="checkbox"]').exists(),
     ).toBe(true);
-    wrapper.unmount();
-  });
-
-  it('toggles track membership in an existing playlist', async () => {
-    const track = await seedTrack('Tavern Theme');
-    const playlists = useJukeboxPlaylistsStore();
-    const playlist = await playlists.create({
-      name: 'Set',
-      trackIds: [],
-    });
-
-    const wrapper = mount(AddToPlaylistModal, {
-      props: { modelValue: true, track },
-    });
-    const toggle = wrapper.findComponent(ToggleSwitch);
-    expect(toggle.props('modelValue')).toBe(false);
-
-    await toggle.vm.$emit('update:modelValue', true);
-    await flushPromises();
-    await vi.waitFor(() =>
-      expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]),
-    );
-
-    await wrapper
-      .findComponent(ToggleSwitch)
-      .vm.$emit('update:modelValue', false);
-    await flushPromises();
-    await vi.waitFor(() =>
-      expect(playlists.getById(playlist.id)?.trackIds).toEqual([]),
-    );
-
-    wrapper.unmount();
-  });
-
-  it('does nothing when toggling without a track', async () => {
-    const playlists = useJukeboxPlaylistsStore();
-    const playlist = await playlists.create({
-      name: 'Set',
-      trackIds: [],
-    });
-    const wrapper = mount(AddToPlaylistModal, {
-      props: { modelValue: true, track: null },
-    });
-
-    await wrapper
-      .findComponent(ToggleSwitch)
-      .vm.$emit('update:modelValue', true);
-    await flushPromises();
-    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
     wrapper.unmount();
   });
 

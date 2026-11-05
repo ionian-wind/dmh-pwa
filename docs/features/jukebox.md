@@ -9,25 +9,25 @@ API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 
 ## Key files
 
-| File                                            | Role                                                     |
-| ----------------------------------------------- | -------------------------------------------------------- |
-| `src/jukebox/types.ts`                          | `JukeboxFile`, `JukeboxTrack`, `JukeboxPlaylist`         |
-| `src/jukebox/stores.ts`                         | Three stores + file helpers + picture URL cache          |
-| `src/jukebox/playerStore.ts`                    | Playback engine, queue, shuffle/repeat, media session    |
-| `src/jukebox/JukeboxView.vue`                   | Library/playlist page                                    |
-| `src/jukebox/components/JukeboxPlayer.vue`      | Player controls                                          |
-| `src/jukebox/components/SoundControlDialog.vue` | Snapable global sound-control panel (music player now)   |
-| `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                          |
-| `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                     |
-| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist/module link editing                        |
-| `src/jukebox/components/TrackCard.vue`          | Track row                                                |
-| `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                     |
-| `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                   |
-| `src/jukebox/components/AddToPlaylistModal.vue` | Playlist membership toggles and inline playlist creation |
-| `src/jukebox/useAnimatedGradient.ts`            | Palette-based background                                 |
-| `src/jukebox/utils.ts`                          | `formatTime`                                             |
-| `src/jukebox/utils/waveform.ts`                 | Web Audio waveform SVG generation                        |
-| `src/utils/files/*`                             | File access + metadata extraction                        |
+| File                                            | Role                                                   |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| `src/jukebox/types.ts`                          | `JukeboxFile`, `JukeboxTrack`, `JukeboxPlaylist`       |
+| `src/jukebox/stores.ts`                         | Three stores + file helpers + picture URL cache        |
+| `src/jukebox/playerStore.ts`                    | Playback engine, queue, shuffle/repeat, media session  |
+| `src/jukebox/JukeboxView.vue`                   | Library/playlist page                                  |
+| `src/jukebox/components/JukeboxPlayer.vue`      | Player controls                                        |
+| `src/jukebox/components/SoundControlDialog.vue` | Snapable global sound-control panel (music player now) |
+| `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                        |
+| `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                   |
+| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist/module link editing                      |
+| `src/jukebox/components/TrackCard.vue`          | Track row                                              |
+| `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                   |
+| `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                 |
+| `src/jukebox/components/AddToPlaylistModal.vue` | Playlist membership via entity linking                 |
+| `src/jukebox/useAnimatedGradient.ts`            | Palette-based background                               |
+| `src/jukebox/utils.ts`                          | `formatTime`                                           |
+| `src/jukebox/utils/waveform.ts`                 | Web Audio waveform SVG generation                      |
+| `src/utils/files/*`                             | File access + metadata extraction                      |
 
 ## Data model
 
@@ -269,9 +269,10 @@ unmount. The `filesStore` is loaded but unused.
 - Playlist sort order is persisted as `sortOrder`; sorting is available only
   in edit mode.
 - Edit opens `PlaylistEditor` (name, modules, description).
-- `AddToPlaylistModal` toggles track membership in existing playlists and can
-  create a new playlist inline; the created playlist receives the current track
-  immediately and appears checked in the list.
+- `AddToPlaylistModal` uses the shared `EntitiesLinking` layout with
+  `kind="playlist"`. Linked playlists show as remoable chips; the add dialog
+  provides playlist search and creation. Adding or creating a playlist links
+  the current track immediately, and removing a linked playlist unlinks it.
 - Remove has no confirmation and does not affect tracks.
 
 ## Player UI

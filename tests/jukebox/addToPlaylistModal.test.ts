@@ -1,15 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h } from 'vue';
+import { flushPromises, mount } from '@vue/test-utils';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import { quasarStubs } from '../helpers/quasar-stubs';
 
 const mocks = vi.hoisted(() => ({
   store: {
     items: null as any,
-    create: vi.fn().mockResolvedValue({ id: 'p2' }),
     update: vi.fn().mockResolvedValue(undefined),
   },
   player: { actualiseQueue: vi.fn() },
@@ -21,8 +18,16 @@ vi.mock('@/jukebox/stores', async () => {
     {
       id: 'p1',
       name: 'Mix',
-      trackIds: [],
+      trackIds: ['t1'],
       sortOrder: 2,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+    {
+      id: 'p2',
+      name: 'Other',
+      trackIds: [],
+      sortOrder: 3,
       createdAt: 1,
       updatedAt: 1,
     },
@@ -30,7 +35,6 @@ vi.mock('@/jukebox/stores', async () => {
   return {
     useJukeboxPlaylistsStore: () => ({
       items: mocks.store.items,
-      create: mocks.store.create,
       update: mocks.store.update,
     }),
   };
@@ -39,61 +43,73 @@ vi.mock('@/jukebox/playerStore', () => ({
   useJukeboxPlayerStore: () => mocks.player,
 }));
 
-describe('AddToPlaylistModal', () => {
-  it('creates a playlist, toggles membership and resets on close', async () => {
-    const wrapper = mount(AddToPlaylistModal, {
-      props: {
-        modelValue: true,
-        track: { id: 't1', title: 'Track' } as any,
-      },
-    });
-    const input = wrapper.findComponent(quasarStubs.QInput);
-    input.vm.$emit('update:modelValue', 'New mix');
-    await nextTick();
-    const create = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Create');
-    await create!.trigger('click');
-    await nextTick();
-    expect(mocks.store.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'New mix',
-        trackIds: ['t1'],
-        sortOrder: 3,
-      }),
-    );
-    expect(mocks.player.actualiseQueue).toHaveBeenCalled();
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: {
+    kind: String,
+    modelValue: { type: Array, default: () => [] },
+  },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
+  },
+});
 
-    const toggle = wrapper.findComponent(ToggleSwitch);
-    toggle.vm.$emit('update:modelValue', true);
-    expect(mocks.store.update).toHaveBeenCalledWith('p1', {
+function mountModal(track: any = { id: 't1', title: 'Track' }) {
+  return mount(AddToPlaylistModal, {
+    props: { modelValue: true, track },
+    global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+  });
+}
+
+describe('AddToPlaylistModal', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.store.items.value[0].trackIds = ['t1'];
+    mocks.store.items.value[1].trackIds = [];
+  });
+
+  it('uses playlist entity linking and syncs track membership', async () => {
+    const wrapper = mountModal();
+    const linking = wrapper.findComponent(EntitiesLinkingStub);
+
+    expect(linking.props()).toMatchObject({
+      kind: 'playlist',
+      modelValue: [{ kind: 'playlist', id: 'p1' }],
+    });
+
+    linking.vm.$emit('update:modelValue', [
+      { kind: 'playlist', id: 'p1' },
+      { kind: 'playlist', id: 'p2' },
+    ]);
+    await flushPromises();
+    expect(mocks.store.update).toHaveBeenCalledWith('p2', {
       trackIds: ['t1'],
     });
-    toggle.vm.$emit('update:modelValue', false);
-    expect(mocks.store.update).toHaveBeenCalledWith('p1', { trackIds: [] });
+    expect(mocks.player.actualiseQueue).toHaveBeenCalled();
 
-    await wrapper.setProps({ modelValue: false });
-    await nextTick();
-    expect(wrapper.findComponent(quasarStubs.QInput).props('modelValue')).toBe(
-      '',
-    );
+    wrapper
+      .findComponent(EntitiesLinkingStub)
+      .vm.$emit('update:modelValue', []);
+    await flushPromises();
+    expect(mocks.store.update).toHaveBeenCalledWith('p1', {
+      trackIds: [],
+    });
     wrapper.unmount();
   });
 
-  it('handles missing tracks and modal close events', async () => {
-    const wrapper = mount(AddToPlaylistModal, {
-      props: { modelValue: true, track: null },
-    });
-    const vm = wrapper.vm as any;
-    await vm.togglePlaylist({ id: 'p1', trackIds: [] }, true);
-    await vm.createPlaylistAndAdd();
+  it('does nothing without a track and forwards close events', async () => {
+    const wrapper = mountModal(null);
+    const linking = wrapper.findComponent(EntitiesLinkingStub);
+    expect(linking.props('modelValue')).toEqual([]);
+
+    linking.vm.$emit('update:modelValue', [{ kind: 'playlist', id: 'p1' }]);
+    await flushPromises();
     expect(mocks.store.update).not.toHaveBeenCalled();
-    expect(mocks.store.create).not.toHaveBeenCalled();
 
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
     wrapper.findComponent(BaseModal).vm.$emit('update:isOpen', false);
-    expect(wrapper.emitted('update:modelValue')?.[1]).toEqual([false]);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[false], [false]]);
     wrapper.unmount();
   });
 });
