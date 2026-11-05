@@ -222,3 +222,20 @@ h6 {
 .milkdown .ProseMirror {
   padding: 0 80px;
 }
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tag {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  transition: color 0.15s;
+}
+
+.tag:hover {
+  color: var(--color-primary);
+}

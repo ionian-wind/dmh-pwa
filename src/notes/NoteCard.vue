@@ -155,13 +155,4 @@ function handleDownload() {
   border-radius: var(--border-radius);
   object-fit: contain;
 }
-
-.tag {
-  cursor: pointer;
-  text-decoration: underline dotted;
-  transition: color 0.15s;
-}
-.tag:hover {
-  color: var(--color-primary);
-}
 </style>
