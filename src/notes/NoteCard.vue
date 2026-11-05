@@ -144,6 +144,11 @@ function handleDownload() {
   border-radius: var(--border-radius-sm);
 }
 
+.note-card-content.clamped {
+  max-height: 600px;
+  overflow: hidden;
+}
+
 .note-drawing-preview {
   width: 100%;
   max-height: 180px;
