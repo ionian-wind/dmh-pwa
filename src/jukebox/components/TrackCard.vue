@@ -217,8 +217,8 @@ const trackColor = computed(() => props.track.color || 'transparent');
 
 .track-waveform {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -8px;
+  bottom: -8px;
   left: calc(60px + 20px);
   right: 12px;
   z-index: 0;
