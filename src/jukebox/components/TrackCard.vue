@@ -36,6 +36,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const isMenuOpen = ref(false);
+const bulkSelected = ref(false);
 
 const handleAddToPlaylist = () => {
   emit('add-to-playlist', props.track);
@@ -72,6 +73,9 @@ const trackColor = computed(() => props.track.color || 'transparent');
   >
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
       <IconGripVertical :size="18" />
+    </QItemSection>
+    <QItemSection v-if="draggable" side class="track-bulk-select" @click.stop>
+      <QCheckbox v-model="bulkSelected" dense />
     </QItemSection>
     <QItemSection>
       <TrackInfo

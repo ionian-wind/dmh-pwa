@@ -86,6 +86,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
     expect(draggable.exists()).toBe(true);
     expect(draggable.props('handle')).toBe('.playlist-drag-handle');
     expect(wrapper.findAll('.playlist-drag-handle')).toHaveLength(2);
+    expect(wrapper.findAll('.playlist-bulk-select')).toHaveLength(2);
     draggable.vm.$emit('update:modelValue', [
       store.items.value[0],
       store.items.value[1],
@@ -247,6 +248,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
     await flushPromises();
 
     expect(wrapper.findAll('.playlist-drag-handle')).toHaveLength(0);
+    expect(wrapper.findAll('.playlist-bulk-select')).toHaveLength(0);
     expect(wrapper.find('.playlist-list-container').classes()).not.toContain(
       'is-edit-mode',
     );
@@ -256,6 +258,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
     await flushPromises();
     expect(useJukeboxEditMode().value).toBe(true);
     expect(wrapper.findAll('.playlist-drag-handle')).toHaveLength(2);
+    expect(wrapper.findAll('.playlist-bulk-select')).toHaveLength(2);
     expect(wrapper.find('.playlist-list-container').classes()).toContain(
       'is-edit-mode',
     );

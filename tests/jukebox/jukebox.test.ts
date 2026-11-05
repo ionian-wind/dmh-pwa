@@ -183,6 +183,10 @@ describe('jukebox store integration', () => {
     expect(item.attributes('data-draggable')).toBe('true');
     const handle = wrapper.find('.track-drag-handle');
     expect(handle.exists()).toBe(true);
+    const bulk = wrapper.find('.track-bulk-select input[type="checkbox"]');
+    expect(bulk.exists()).toBe(true);
+    await bulk.setValue(true);
+    expect((bulk.element as HTMLInputElement).checked).toBe(true);
     await handle.trigger('click');
     expect(wrapper.emitted('play')).toBeUndefined();
     await item.trigger('click');
@@ -198,6 +202,7 @@ describe('jukebox store integration', () => {
       undefined,
     );
     expect(staticCard.find('.track-drag-handle').exists()).toBe(false);
+    expect(staticCard.find('.track-bulk-select').exists()).toBe(false);
     expect(staticCard.text()).toContain('0:42');
     staticCard.unmount();
   });

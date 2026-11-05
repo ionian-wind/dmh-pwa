@@ -33,6 +33,14 @@ const selectedPlaylistId = ref<string | null>(
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
+const bulkSelected = ref<Set<string>>(new Set());
+
+function toggleBulkSelection(playlistId: string, selected: boolean) {
+  const next = new Set(bulkSelected.value);
+  if (selected) next.add(playlistId);
+  else next.delete(playlistId);
+  bulkSelected.value = next;
+}
 
 // watch(
 //   filteredPlaylists,
@@ -190,6 +198,20 @@ onMounted(async () => {
               @click.stop
             >
               <IconGripVertical :size="16" />
+            </QItemSection>
+            <QItemSection
+              v-if="isEditMode"
+              side
+              class="playlist-bulk-select"
+              @click.stop
+            >
+              <QCheckbox
+                :model-value="bulkSelected.has(playlist.id)"
+                dense
+                @update:model-value="
+                  (value) => toggleBulkSelection(playlist.id, value)
+                "
+              />
             </QItemSection>
             <QItemSection>
               {{ playlist.name }}
