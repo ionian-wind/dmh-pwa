@@ -55,7 +55,11 @@ const trackColor = computed(() => props.track.color || 'transparent');
 <template>
   <QItem
     class="track-item"
-    :class="{ 'is-selected': isSelected, 'is-playing': isPlaying }"
+    :class="{
+      'is-selected': isSelected,
+      'is-playing': isPlaying,
+      'menu-open': isMenuOpen,
+    }"
     :style="{ '--track-item-color': trackColor }"
     clickable
     @click="handlePlay"
@@ -150,7 +154,8 @@ const trackColor = computed(() => props.track.color || 'transparent');
   display: none;
 }
 
-.track-item:hover .track-actions {
+.track-item:hover .track-actions,
+.track-item.menu-open .track-actions {
   display: flex;
 }
 
