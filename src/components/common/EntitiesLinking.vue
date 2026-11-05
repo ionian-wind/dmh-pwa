@@ -49,7 +49,12 @@ const sourceOptions = computed(() => {
   const extras = Object.entries(createdLabels.value)
     .filter(([id]) => !existing.has(id))
     .map(([id, label]) => ({ id, label }));
-  return [...base, ...extras];
+  // Keep linked refs selectable even when they are absent from the catalog,
+  // so they can be shown as checked and unlinked from the dialog.
+  const linkedExtras = linkedRefs.value
+    .filter((ref) => !existing.has(ref.id) && !createdLabels.value[ref.id])
+    .map((ref) => ({ id: ref.id, label: labelFor(ref) }));
+  return [...base, ...extras, ...linkedExtras];
 });
 
 function labelFor(ref: MapEntityRef): string {
@@ -66,10 +71,8 @@ function handleAdd(payload: {
   labels: Record<string, string>;
 }) {
   createdLabels.value = { ...createdLabels.value, ...payload.labels };
-  emit(
-    'update:modelValue',
-    dedupeEntityRefs([...props.modelValue, ...payload.refs]),
-  );
+  const otherKinds = props.modelValue.filter((ref) => ref.kind !== props.kind);
+  emit('update:modelValue', dedupeEntityRefs([...otherKinds, ...payload.refs]));
   isModalOpen.value = false;
 }
 

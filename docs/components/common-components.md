@@ -182,16 +182,19 @@ buttons, links, form controls and `[data-no-drag]` targets.
 Shared entity-link block. It accepts one entity `kind`, a `modelValue` of
 `{ kind, id }` refs, optional `multiple`, `label`, `options` and `readonly`, and
 emits the full updated ref list. It provides a linked list with remove actions
-and opens `EntityLinkingDialog` for searchable add selection. In readonly mode
-the add and remove actions are hidden, so it can display links in view-only
-contexts. Located under `src/components/common/`.
+and opens `EntityLinkingDialog` for searchable selection. Existing links are included in
+the dialog pre-selected, so links can be removed by unchecking them there as
+well as from the linked list. In readonly mode the add and remove actions are
+hidden, so it can display links in view-only contexts. Located under
+`src/components/common/`.
 
 ### `EntityLinkingDialog.vue`
 
 Searchable entity picker used by `EntitiesLinking`. It accepts the entity
 `kind`, dialog `title`, available `options`, already `linkedIds` and optional
-`multiple`; emits `add` with the selected refs and labels for entities created
-inline, or `cancel`. The create (+) action opens `EntityCreateDialog`. Located
+`multiple`; linked entities are shown pre-selected. Emits `add` with the full
+selected ref set (so unchecking linked entries removes them) plus labels for
+entities created inline, or `cancel`. The create (+) action opens `EntityCreateDialog`. Located
 under `src/components/common/`.
 
 ### `EntityViewLinks.vue`

@@ -239,4 +239,43 @@ describe('EntitiesLinking', () => {
       ],
     ]);
   });
+
+  it('shows linked entities in the selector and allows unlinking them', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [
+          { kind: 'note', id: 'n1' },
+          { kind: 'map', id: 'map1' },
+        ],
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('button[aria-label="Add"]').trigger('click');
+
+    const alpha = wrapper
+      .findAll('.entity-option')
+      .find((row) => row.text().includes('Alpha note'));
+    expect(alpha).toBeTruthy();
+    expect(
+      (alpha!.find('input[type="checkbox"]').element as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+
+    await alpha!.trigger('click');
+    const addButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add');
+    await addButton!.trigger('click');
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      [{ kind: 'map', id: 'map1' }],
+    ]);
+  });
 });

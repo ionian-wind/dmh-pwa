@@ -271,8 +271,10 @@ unmount. The `filesStore` is loaded but unused.
 - Edit opens `PlaylistEditor` (name, modules, description).
 - `AddToPlaylistModal` uses the shared `EntitiesLinking` layout with
   `kind="playlist"`. Linked playlists show as remoable chips; the add dialog
-  provides playlist search and creation. Adding or creating a playlist links
-  the current track immediately, and removing a linked playlist unlinks it.
+  provides playlist search and creation. Linked playlists are pre-selected in
+  the dialog, so they can also be unlinked there. Adding or creating a playlist
+  links the current track immediately, and removing a linked playlist unlinks
+  it.
 - Remove has no confirmation and does not affect tracks.
 
 ## Player UI

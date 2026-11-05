@@ -39,9 +39,7 @@ const availableOptions = computed(() => {
   const extras = Object.entries(createdLabels.value)
     .filter(([id]) => !existing.has(id))
     .map(([id, label]) => ({ id, label }));
-  return [...props.options, ...extras].filter(
-    (item) => !props.linkedIds.includes(item.id),
-  );
+  return [...props.options, ...extras];
 });
 
 const filteredOptions = computed(() => {
@@ -54,7 +52,7 @@ const filteredOptions = computed(() => {
 
 function reset() {
   search.value = '';
-  selectedIds.value = [];
+  selectedIds.value = [...props.linkedIds];
   createdIds.value = [];
   createdLabels.value = {};
   isCreateOpen.value = false;
@@ -98,7 +96,6 @@ function close() {
 }
 
 function addSelected() {
-  if (selectedIds.value.length === 0) return;
   const labels = Object.fromEntries(
     selectedIds.value
       .filter((id) => createdLabels.value[id])
@@ -120,7 +117,7 @@ function addSelected() {
     :showCancel="true"
     :submitLabel="t('common.add')"
     :cancelLabel="t('common.cancel')"
-    :disableSubmit="selectedIds.length === 0"
+    :disableSubmit="selectedIds.length === 0 && linkedIds.length === 0"
     :use-modal-stack="false"
     :modalId="`entities-linking-${kind}-${instanceId}`"
     @submit="addSelected"
