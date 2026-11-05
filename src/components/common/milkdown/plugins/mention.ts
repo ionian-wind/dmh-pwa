@@ -1,6 +1,7 @@
-import { $markSchema } from '@milkdown/utils';
+import { $markSchema, $prose } from '@milkdown/utils';
 import { $command } from '@milkdown/kit/utils';
 import { editorViewCtx } from '@milkdown/kit/core';
+import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 
 import { debug } from '@/utils/debug';
 import iconNote from '@tabler/icons/outline/note.svg?raw';
@@ -240,9 +241,80 @@ function insertMentionMark(
   return false;
 }
 
+/**
+ * Milkdown's default link mark can consume `kind://id` links before the mention
+ * mark parser sees them. Normalize such links into mention marks after parse.
+ */
+function normalizeMentionLinks(view: any): boolean {
+  const state = view?.state;
+  const linkType = state?.schema?.marks?.link;
+  const mentionType = state?.schema?.marks?.mention;
+  if (!linkType || !mentionType) return false;
+
+  const matches: Array<{
+    pos: number;
+    size: number;
+    kind: string;
+    id: string;
+    title: string;
+  }> = [];
+
+  state.doc.descendants((node: any, pos: number) => {
+    if (!node.isText || !node.marks?.length) return;
+    const link = node.marks.find((mark: any) => mark.type === linkType);
+    const match = link && entityLinkRegex.exec(String(link.attrs?.href ?? ''));
+    if (!match) return;
+    matches.push({
+      pos,
+      size: node.nodeSize,
+      kind: match[1],
+      id: match[2],
+      title: link.attrs?.title || node.text,
+    });
+  });
+
+  if (matches.length === 0) return false;
+
+  let tr = state.tr;
+  for (const entry of matches) {
+    tr = tr.removeMark(entry.pos, entry.pos + entry.size, linkType);
+    tr = tr.addMark(
+      entry.pos,
+      entry.pos + entry.size,
+      mentionType.create({
+        kind: entry.kind,
+        id: entry.id,
+        href: null,
+        title: entry.title,
+      }),
+    );
+  }
+  view.dispatch(tr);
+  return true;
+}
+
+const mentionNormalizePlugin = $prose(
+  () =>
+    new Plugin({
+      key: new PluginKey('mention-link-normalize'),
+      view(editorView) {
+        const normalize = () => normalizeMentionLinks(editorView);
+        queueMicrotask(normalize);
+        return {
+          update(view, previousState) {
+            if (view.state.doc !== previousState.doc) {
+              queueMicrotask(() => normalizeMentionLinks(view));
+            }
+          },
+        };
+      },
+    }),
+);
+
 // 2. Register the mark in a Crepe feature
 export const mentionFeature = (ctx: any) => {
   ctx.use(mentionMark);
+  ctx.use(mentionNormalizePlugin);
 };
 
 function mentionIcon(svg: string) {

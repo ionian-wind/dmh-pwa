@@ -135,6 +135,8 @@ exists, otherwise the bound `modelValue`. Raw-mode edits are bound through
 - defines a `mention` mark with `kind`, `id`, `href`, `title`,
 - parses `a[data-kind][data-id]` DOM,
 - parses links whose URL matches `kind://id`,
+- normalizes any default-link marks with `kind://id` into mention marks after
+  parse, so existing mentions render with mention styling in the editor,
 - serializes back to `[text](kind://id)`,
 - provides toolbar/block-menu groups for note/module/party/monster/encounter,
 - marks the matching toolbar item active when the cursor/selection is inside a
