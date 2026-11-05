@@ -545,7 +545,37 @@
       "taskLists": "Списки задач",
       "taskListsWillRender": "записанные как - [ ] или - [x] будут отображаться как неактивные чекбоксы."
     },
-    "placeholder": "Пишите здесь... Поддерживается Markdown"
+    "placeholder": "Пишите здесь... Поддерживается Markdown",
+    "crepe": {
+      "text": "Текст",
+      "heading": "Заголовок",
+      "formatting": "Форматирование",
+      "list": "Список",
+      "advanced": "Дополнительно",
+      "paragraph": "Абзац",
+      "heading1": "Заголовок 1",
+      "heading2": "Заголовок 2",
+      "heading3": "Заголовок 3",
+      "heading4": "Заголовок 4",
+      "heading5": "Заголовок 5",
+      "heading6": "Заголовок 6",
+      "quote": "Цитата",
+      "divider": "Разделитель",
+      "bulletList": "Маркированный список",
+      "orderedList": "Нумерованный список",
+      "taskList": "Список задач",
+      "image": "Изображение",
+      "codeBlock": "Блок кода",
+      "table": "Таблица",
+      "math": "Формула",
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "strikethrough": "Зачёркнутый",
+      "inlineCode": "Код",
+      "link": "Ссылка",
+      "latex": "LaTeX",
+      "ai": "ИИ"
+    }
   },
   "mentions": {
     "empty": "Упоминаний нет.",

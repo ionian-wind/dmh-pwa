@@ -16,14 +16,12 @@
 import { ref } from 'vue';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { Milkdown, useEditor } from '@milkdown/vue';
-import {
-  mentionFeature,
-  buildMentionToolbar,
-  buildMentionMenu,
-} from './plugins/mention';
+import { mentionFeature } from './plugins/mention';
+import { createCrepeFeatureConfig } from './crepeConfig';
 import MentionInsertPopup from './MentionInsertPopup.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
 import { getMentionableEntities } from '@/utils/markdownParser';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: string;
@@ -31,6 +29,7 @@ const props = defineProps<{
   currentEntityId: string;
 }>();
 const emit = defineEmits(['update:modelValue']);
+const { t } = useI18n();
 
 const crepeInstance = ref<Crepe | null>(null);
 
@@ -99,14 +98,7 @@ useEditor((root) => {
   crepeInstance.value = new Crepe({
     root,
     defaultValue: props.modelValue,
-    featureConfigs: {
-      [CrepeFeature.Toolbar]: {
-        buildToolbar: buildMentionToolbar,
-      },
-      [CrepeFeature.BlockEdit]: {
-        buildMenu: buildMentionMenu,
-      },
-    },
+    featureConfigs: createCrepeFeatureConfig(t),
   }).addFeature(mentionFeature);
 
   crepeInstance.value.on((api) => {

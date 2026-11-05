@@ -21,25 +21,25 @@ NoteEditor
 
 Props:
 
-| Prop | Meaning |
-| --- | --- |
-| `modelValue` | Markdown source |
-| `isWYSIWYGMode` | Visual vs raw textarea |
-| `placeholder`, `rows`, `label`, `className`, `hideFormattingHelp` | UI |
-| `enableMentions` | Enables mention toolbar/menu |
-| `currentEntityType`, `currentEntityId` | Excludes the edited entity from its own mention list |
+| Prop                                        | Meaning                                              |
+| ------------------------------------------- | ---------------------------------------------------- |
+| `modelValue`                                | Markdown source                                      |
+| `isWYSIWYGMode`                             | Visual vs raw textarea                               |
+| `placeholder`, `rows`, `label`, `className` | UI                                                   |
+| `enableMentions`                            | Enables mention toolbar/menu                         |
+| `currentEntityType`, `currentEntityId`      | Excludes the edited entity from its own mention list |
 
 Emits `update:modelValue`, exposes `getMarkdown()`.
 
-- Visual mode: `MilkdownEditorWrapper` inside a bordered `QCard`.
-- Raw mode: `QInput` textarea plus a formatting-help card documenting internal
-  links and basic Markdown.
+- Visual mode: `MilkdownEditorWrapper` inside a borderless `QCard`.
+- Raw mode: a borderless `QInput` textarea. Formatting help now lives in
+  `MarkdownHelpDialog`, opened from the note editor footer.
 - `getCurrentMarkdown()` returns the wrapper's Markdown when available,
   otherwise `modelValue`.
-If the user toggles from WYSIWYG to raw and edits, the ref may still hold the
-old WYSIWYG content, so submit could discard raw edits. In practice the raw
-textarea binds `modelValueProxy`, and the wrapper is only rendered in WYSIWYG
-mode; after toggling back, Crepe may be recreated. Treat this as fragile.
+  If the user toggles from WYSIWYG to raw and edits, the ref may still hold the
+  old WYSIWYG content, so submit could discard raw edits. In practice the raw
+  textarea binds `modelValueProxy`, and the wrapper is only rendered in WYSIWYG
+  mode; after toggling back, Crepe may be recreated. Treat this as fragile.
 
 ## `MilkdownEditorWrapper.vue`
 
@@ -50,8 +50,12 @@ A 22-line wrapper that provides `MilkdownProvider` and forwards `modelValue`,
 
 - Creates a `Crepe` instance in `useEditor` with:
   - `defaultValue = props.modelValue`,
-  - feature configs for `Toolbar` and `BlockEdit` using the mention builders,
+  - feature configs from `crepeConfig.ts` for `Toolbar`, `BlockEdit` and
+    `Placeholder`,
   - `.addFeature(mentionFeature)`.
+- `crepeConfig.ts` maps Crepe toolbar/menu/placeholder labels and mention
+  entries through the app's Vue I18n instance. Toolbar heading options and the
+  built-in heading/formatting group labels are localized too.
 - Registers `api.markdownUpdated` to emit `update:modelValue` on every change.
 - Exposes `getMarkdown()`.
 - Shows `MentionInsertPopup` when the global trigger fires.
@@ -100,7 +104,7 @@ Attributes: `kind`, `id`, `href`, `title`.
 
 ### Known rough edges
 
-- `href: \`${kind}://\`` lacks the ID. The link mark's own `id` attribute is
+- `href: \`${kind}://\``lacks the ID. The link mark's own`id` attribute is
   correct and serialization uses it, so output is right, but the DOM anchor
   before serialization may have a useless href.
 - Fallback insertion without a registered popup writes `id: ''`.

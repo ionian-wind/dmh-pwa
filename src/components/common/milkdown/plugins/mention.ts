@@ -260,12 +260,22 @@ const mentionKinds = [
   { kind: 'location', label: 'maps.locations', icon: iconMap },
 ];
 
+type Translate = (key: string) => string;
+const identity: Translate = (key) => key;
+
 // Restore buildMentionToolbar for use with buildToolbar callback in Crepe toolbar config
-export const buildMentionToolbar = (groupBuilder: any) => {
-  const mentionGroup = groupBuilder.addGroup('mentions', 'common.mentions');
+export const buildMentionToolbar = (
+  groupBuilder: any,
+  translate: Translate = identity,
+) => {
+  const mentionGroup = groupBuilder.addGroup(
+    'mentions',
+    translate('common.mentions'),
+  );
   mentionKinds.forEach(({ kind, label, icon }) => {
     mentionGroup.addItem(kind, {
       icon,
+      label: translate(label),
       active: () => false,
       onRun: (ctx: any) => insertMentionMark(ctx, kind, label, 'Toolbar'),
     });
@@ -273,11 +283,17 @@ export const buildMentionToolbar = (groupBuilder: any) => {
 };
 
 // Build mentions menu for BlockEdit feature
-export const buildMentionMenu = (builder: any) => {
-  const mentionGroup = builder.addGroup('mentions', 'common.mentions');
+export const buildMentionMenu = (
+  builder: any,
+  translate: Translate = identity,
+) => {
+  const mentionGroup = builder.addGroup(
+    'mentions',
+    translate('common.mentions'),
+  );
   mentionKinds.forEach(({ kind, label, icon }) => {
     mentionGroup.addItem(kind, {
-      label,
+      label: translate(label),
       icon,
       onRun: (ctx: any) => insertMentionMark(ctx, kind, label, 'BlockEdit'),
     });
