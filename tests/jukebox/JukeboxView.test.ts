@@ -91,7 +91,7 @@ const BaseListViewStub = defineComponent({
     cardProps: Function,
     draggable: Boolean,
     dragHandle: String,
-    headerButtons: Array,
+    leftHeaderButtons: Array,
   },
   emits: ['create', 'sort'],
   setup(_, { slots }) {
@@ -603,21 +603,21 @@ describe('JukeboxView', () => {
     mocks.tracks.items.value = [track];
 
     const { list } = await mountView();
-    expect(list.props('headerButtons')).toEqual([]);
+    expect(list.props('leftHeaderButtons')).toEqual([]);
 
     useJukeboxEditMode().value = true;
     await nextTick();
-    expect(list.props('headerButtons')).toEqual([]);
+    expect(list.props('leftHeaderButtons')).toEqual([]);
 
     bulk.toggleTrack('t1', true);
     await nextTick();
     expect(
-      (list.props('headerButtons') as any[]).map((button) => button.title),
+      (list.props('leftHeaderButtons') as any[]).map((button) => button.title),
     ).toEqual(['common.edit', 'common.delete']);
 
     useJukeboxEditMode().value = false;
     await nextTick();
-    expect(list.props('headerButtons')).toEqual([]);
+    expect(list.props('leftHeaderButtons')).toEqual([]);
     expect(bulk.selectedTrackIds.value.size).toBe(0);
   });
 
@@ -639,7 +639,7 @@ describe('JukeboxView', () => {
     bulk.toggleTrack('t1', true);
     await nextTick();
 
-    const [, deleteButton] = list.props('headerButtons') as any[];
+    const [, deleteButton] = list.props('leftHeaderButtons') as any[];
     await deleteButton.event(new Event('click'));
     await flushPromises();
 
@@ -663,7 +663,7 @@ describe('JukeboxView', () => {
     bulk.togglePlaylist('p1', true);
     await nextTick();
 
-    const [, deleteButton] = list.props('headerButtons') as any[];
+    const [, deleteButton] = list.props('leftHeaderButtons') as any[];
     await deleteButton.event(new Event('click'));
     await flushPromises();
 
@@ -691,7 +691,7 @@ describe('JukeboxView', () => {
     bulk.toggleTrack('t1', true);
     await nextTick();
 
-    const [editButton] = list.props('headerButtons') as any[];
+    const [editButton] = list.props('leftHeaderButtons') as any[];
     await editButton.event(new Event('click'));
     await nextTick();
 
@@ -727,7 +727,7 @@ describe('JukeboxView', () => {
     bulk.togglePlaylist('p2', true);
     await nextTick();
 
-    const [editButton] = list.props('headerButtons') as any[];
+    const [editButton] = list.props('leftHeaderButtons') as any[];
     await editButton.event(new Event('click'));
     await nextTick();
 

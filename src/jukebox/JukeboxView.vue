@@ -551,7 +551,7 @@ onBeforeUnmount(() => {
       drag-handle=".track-drag-handle"
       @sort="onTracksSorted"
       :right-drawer-icon="IconPlaylist"
-      :header-buttons="bulkHeaderButtons"
+      :left-header-buttons="bulkHeaderButtons"
     >
       <AddToPlaylistModal
         v-model="isAddToPlaylistModalOpen"

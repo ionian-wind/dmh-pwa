@@ -163,15 +163,25 @@ describe('BaseListView', () => {
   });
 
   it('keeps header props in sync and clears them on unmount', async () => {
+    const leftHeaderButtons = [
+      {
+        icon: { name: 'left' },
+        color: 'primary',
+        title: 'left',
+        event: vi.fn(),
+      },
+    ];
     const { wrapper, layout } = mountList({
       searchQuery: 'first',
       showSearch: true,
       rightDrawerIcon: { name: 'icon' },
+      leftHeaderButtons,
     });
 
     const header = layout.topMenuContent.value;
     expect(header?.props?.searchQuery).toBe('first');
     expect(header?.props?.rightDrawerIcon).toEqual({ name: 'icon' });
+    expect(header?.props?.leftButtons).toEqual(leftHeaderButtons);
 
     header?.props?.['onUpdate:searchQuery']?.('second');
     expect(wrapper.emitted('update:searchQuery')?.[0]).toEqual(['second']);

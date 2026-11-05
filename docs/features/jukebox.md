@@ -221,7 +221,7 @@ position until `onplay/onseek` updates it.
 - Selection is exclusive: selecting tracks disables playlist checkboxes and
   selecting playlists disables track checkboxes.
 - While edit mode is on and at least one row is selected, the main header shows
-  an Edit/Delete button group next to the sidebar toggle.
+  an Edit/Delete button group on the left side, before the title area.
   - Edit on selected tracks opens a playlist linking modal; applying it adds
     the selected tracks to checked playlists and removes them from unchecked
     playlists.

@@ -42,6 +42,25 @@ const props = defineProps({
     >,
     default: [],
   },
+  leftButtons: {
+    type: Array as PropType<
+      {
+        icon: any;
+        color: string;
+        title: string;
+        disabled?: boolean;
+        event: (
+          evt: Event,
+          go?: (opts?: {
+            to?: any;
+            replace?: boolean;
+            returnRouterError?: boolean;
+          }) => Promise<any>,
+        ) => void;
+      }[]
+    >,
+    default: [],
+  },
   title: {
     type: String,
     default: '',
@@ -156,6 +175,20 @@ const hasPrimaryActions = computed(
 </script>
 
 <template>
+  <QBtnGroup v-if="props.leftButtons.length" class="view-header-left-actions">
+    <QBtn
+      v-for="(btn, index) in props.leftButtons"
+      :key="index"
+      :color="btn.color"
+      @click="btn.event"
+      :title="t(btn.title)"
+      :aria-label="t(btn.title)"
+      :disable="btn.disabled"
+    >
+      <component :is="btn.icon"></component>
+    </QBtn>
+  </QBtnGroup>
+
   <QToolbarTitle v-if="props.title || props.subtitle">
     <div>{{ props.title }}</div>
     <div v-if="props.subtitle" class="view-header-subtitle">

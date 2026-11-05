@@ -124,4 +124,28 @@ describe('ViewHeader action buttons', () => {
     wrapper.findAllComponents({ name: 'QTab' })[0].vm.$emit('click');
     expect(wrapper.emitted('tab-click')?.[0]).toEqual([tabs[0]]);
   });
+
+  it('renders custom left buttons before the title and content actions', async () => {
+    const leftEvent = vi.fn();
+    const customIcon = { render: () => h('span', { class: 'left-icon' }) };
+    const { wrapper } = mountHeader({
+      leftButtons: [
+        {
+          icon: customIcon,
+          color: 'primary',
+          title: 'common.bookmark',
+          event: leftEvent,
+        },
+      ],
+    });
+
+    const groups = wrapper.findAll('[data-stub="QBtnGroup"]');
+    expect(groups).toHaveLength(3);
+
+    const leftButton = groups[0].find('button');
+    expect(leftButton.attributes('aria-label')).toBe('Bookmark');
+    expect(groups[0].find('.left-icon').exists()).toBe(true);
+    await leftButton.trigger('click');
+    expect(leftEvent).toHaveBeenCalledTimes(1);
+  });
 });

@@ -46,6 +46,12 @@ const props = defineProps({
     >,
     default: () => [],
   },
+  leftHeaderButtons: {
+    type: Array as PropType<
+      Array<{ icon: any; color: string; title: string; event: Function }>
+    >,
+    default: () => [],
+  },
 });
 
 const emptyState = computed(() => {
@@ -143,6 +149,7 @@ function syncHeaderProps() {
     searchQuery: props.searchQuery,
     searchPlaceholder: props.searchPlaceholder,
     buttons: props.headerButtons,
+    leftButtons: props.leftHeaderButtons,
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -157,6 +164,7 @@ onMounted(async () => {
     searchQuery: props.searchQuery,
     searchPlaceholder: props.searchPlaceholder,
     buttons: props.headerButtons,
+    leftButtons: props.leftHeaderButtons,
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -175,6 +183,7 @@ watch(
     props.searchQuery,
     props.searchPlaceholder,
     props.headerButtons,
+    props.leftHeaderButtons,
   ],
   syncHeaderProps,
 );
