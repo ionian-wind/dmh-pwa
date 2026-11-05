@@ -36,7 +36,6 @@ onMounted(() => mentionsStore.load());
 <template>
   <div class="side-panel-content q-pa-md">
     <Mentions :title="t('common.mentions')" :entities="mentions" />
-    <QSeparator />
     <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
   </div>
 </template>

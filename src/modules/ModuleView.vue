@@ -495,7 +495,6 @@ async function handleEditorDelete() {
             :entities="mentionedInEntities"
           />
         </div>
-        <QSeparator class="q-my-sm" />
         <EntityScenesPanel
           v-if="module"
           entity-type="module"

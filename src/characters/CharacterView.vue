@@ -118,7 +118,6 @@ async function handleEditorDelete() {
         :title="t('common.mentionedIn')"
         :entities="mentionedInEntities"
       />
-      <QSeparator class="q-my-sm" />
       <EntityScenesPanel
         v-if="character"
         entity-type="character"
