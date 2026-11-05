@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { JukeboxRepeatMode, useConfigStore } from '@/utils/configStore';
+import { Notify } from 'quasar';
+import i18n from '@/i18n';
 
 const mocks = vi.hoisted(() => ({
   howls: [] as any[],
@@ -459,13 +461,25 @@ describe('jukebox player store', () => {
     mocks.getFile.mockRejectedValueOnce(
       Object.assign(new Error('missing'), { name: 'NotFoundError' }),
     );
+    mocks.tracks.update.mockImplementationOnce(
+      async (id: string, changes: Record<string, any>) => {
+        const target = mocks.tracks.items.value.find((item) => item.id === id);
+        if (target) Object.assign(target, changes);
+      },
+    );
 
     await player.playTrackFromPlaylist(one);
+    await nextTick();
 
     expect(mocks.tracks.update).toHaveBeenCalledWith('one', {
       disabled: true,
     });
-    expect(player.currentTrack).toBeNull();
+    expect(Notify.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: i18n.global.t('jukebox.trackNotAvailable'),
+      }),
+    );
+    expect(player.currentTrack?.id).toBe('two');
   });
 
   it('handles Howler callbacks for pause, seek, load errors and missing tracks', async () => {
@@ -689,5 +703,84 @@ describe('jukebox player store', () => {
     expect(navigator.mediaSession.metadata).toBeTruthy();
     delete (navigator as any).mediaSession;
     vi.unstubAllGlobals();
+  });
+
+  it('skips forward over tracks whose files are missing', async () => {
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    const two = track('two');
+    const three = track('three');
+    const four = track('four');
+    mocks.tracks.items.value = [one, two, three, four];
+    player.queue = [one, two, three, four];
+    mocks.getJukeboxFile.mockImplementation(async (id: string) =>
+      id === 'file-two'
+        ? undefined
+        : { source: { kind: 'blob', blob: new Blob() } },
+    );
+
+    await player.playTrackFromPlaylist(one);
+    await player.playNext();
+
+    expect(player.currentTrack?.id).toBe('three');
+    expect(player.queueIndex).toBe(2);
+    expect(player.hasNextTrack).toBe(true);
+    expect(mocks.tracks.update).toHaveBeenCalledWith('two', {
+      disabled: true,
+    });
+    expect(Notify.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: i18n.global.t('jukebox.trackNotAvailable'),
+      }),
+    );
+  });
+
+  it('skips backward over tracks whose files are missing', async () => {
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    const two = track('two');
+    const three = track('three');
+    mocks.tracks.items.value = [one, two, three];
+    player.queue = [one, two, three];
+    mocks.getJukeboxFile.mockImplementation(async (id: string) =>
+      id === 'file-two'
+        ? undefined
+        : { source: { kind: 'blob', blob: new Blob() } },
+    );
+
+    await player.playTrackFromPlaylist(three);
+    await player.playPrev();
+
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.queueIndex).toBe(0);
+    expect(mocks.tracks.update).toHaveBeenCalledWith('two', {
+      disabled: true,
+    });
+  });
+
+  it('reaches the disabled end state when the last track is unavailable', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    player.queue = [one, two];
+    mocks.getJukeboxFile.mockImplementation(async (id: string) =>
+      id === 'file-two'
+        ? undefined
+        : { source: { kind: 'blob', blob: new Blob() } },
+    );
+
+    await player.playTrackFromPlaylist(one);
+    config.jukeboxRepeatMode = JukeboxRepeatMode.off;
+    await player.playNext();
+
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.queueIndex).toBe(1);
+    expect(player.hasNextTrack).toBe(false);
+    expect(player.isPlaying).toBe(false);
+    expect(mocks.tracks.update).toHaveBeenCalledWith('two', {
+      disabled: true,
+    });
   });
 });

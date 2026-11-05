@@ -782,7 +782,8 @@
     "noTrackSelected": "Трек не выбран",
     "openJukebox": "Открыть джукбокс",
     "viewMode": "Режим просмотра",
-    "editMode": "Режим редактирования"
+    "editMode": "Режим редактирования",
+    "trackNotAvailable": "Трек недоступен"
   },
   "ambientSoundPage": {
     "title": "Амбиент",

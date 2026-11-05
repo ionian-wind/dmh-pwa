@@ -110,8 +110,13 @@ Shuffle, repeat mode, active playlist, and last track are stored in
 4. Destroys the previous Howl and creates a new one with `html5: true`.
 5. Event handlers update `isPlaying`, `duration`, progress (via
    `requestAnimationFrame`), seek state, and load errors.
-6. If the file is `NotFoundError`, marks the track `disabled: true`.
-7. Sets `currentTrack`.
+6. Sets `currentTrack`.
+
+If the file record is missing, permission is denied, the file is not found, or
+reading it fails, `prepareAudioFile` returns `false`. `playTrack` then marks the
+track `disabled: true`, shows a `Track not available` notification, and lets
+the caller skip to the next playable track. Disabled tracks render muted and
+are filtered out of playback queues.
 
 `playTrack` starts playback and stores `jukeboxLastTrackId`.
 
@@ -151,11 +156,17 @@ queue when nothing is playing.
 - `hasNextTrack`: false at the end unless repeat mode is `list`.
 - `playNext`:
   - repeat `track`: replay current track from the beginning;
+  - skip unavailable tracks until a playable one is found;
   - if no next, stop and reset progress;
   - if at the last queue item and repeat is `list`, wrap the index to the
     start of the queue.
-- `playPrev`: if current time ≥ 5s, restart the track; otherwise move back one
-  queue item.
+- `playPrev` skips unavailable tracks backwards; if current time ≥ 5s, it
+  restarts the track instead.
+- Clicking an unavailable track also disables it, shows the notification, and
+  starts the next available track in the same queue.
+- Next/previous enabled states remain based on queue position, not on file
+  availability. The exception is an unavailable last track with repeat off:
+  once skipping reaches the end, the next button becomes disabled.
 - `removeTrackFromQueue`: removes all instances, stops if it was current, and
   plays next if it was playing.
 - `queueTrackNext(track)` / `queueTrackLast(track)`: move a track to just after

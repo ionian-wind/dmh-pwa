@@ -12,6 +12,8 @@ import { fileHandler } from '@/utils/files';
 import { debug, debugError, debugWarn } from '@/utils/debug';
 import { rng } from '@/utils/random';
 import { Howl, Howler } from 'howler';
+import { Notify } from 'quasar';
+import i18n from '@/i18n';
 import {
   pauseAmbientForJukebox,
   setJukeboxPauseHandler,
@@ -51,6 +53,20 @@ export const useJukeboxPlayerStore = defineStore(
     // Other Stores
     const tracksStore = useJukeboxTracksStore();
     const playlistsStore = useJukeboxPlaylistsStore();
+
+    async function markTrackUnavailable(track: JukeboxTrack) {
+      debug('🎵 JukeboxPlayer: Track unavailable, disabling', track.id);
+      if (!track.disabled) {
+        await tracksStore.update(track.id, { disabled: true });
+      }
+      Notify.create({
+        color: 'secondary',
+        textColor: 'primary',
+        message: i18n.global.t('jukebox.trackNotAvailable'),
+        position: 'top',
+        timeout: 2500,
+      });
+    }
     const pictureUrlCacheStore = usePictureUrlCacheStore();
 
     // Core State
@@ -423,12 +439,8 @@ export const useJukeboxPlayerStore = defineStore(
       try {
         file = await fileHandler.getFile(fileRecord.source);
       } catch (err) {
-        if (err instanceof Error && err.name === 'NotFoundError') {
-          debug('🎵 JukeboxPlayer: File not found, disabling track');
-          await tracksStore.update(track.id, { disabled: true });
-          return false;
-        }
-        throw err;
+        debugError('🎵 JukeboxPlayer: Could not read track file', err);
+        return false;
       }
       const src = URL.createObjectURL(file);
       // Determine format from file.type or file.name
@@ -503,8 +515,7 @@ export const useJukeboxPlayerStore = defineStore(
         onplayerror: async (_id: number, err: unknown) => {
           debugError('🎵 JukeboxPlayer: Howler play error', err);
           if (err instanceof Error && err.name === 'NotFoundError') {
-            debug('🎵 JukeboxPlayer: File not found, disabling track');
-            await tracksStore.update(track.id, { disabled: true });
+            await markTrackUnavailable(track);
             isPlaying.value = false;
             await playNext();
           }
@@ -524,7 +535,7 @@ export const useJukeboxPlayerStore = defineStore(
       debug('🎵 JukeboxPlayer: Resetting progress');
     }
 
-    async function playTrack(track: JukeboxTrack) {
+    async function playTrack(track: JukeboxTrack): Promise<boolean> {
       const previousTrackId = currentTrack.value?.id;
       const smooth =
         previousTrackId !== undefined &&
@@ -534,7 +545,8 @@ export const useJukeboxPlayerStore = defineStore(
       const prepared = await prepareAudioFile(track, 0, smooth);
       if (!prepared) {
         transitionInProgress = false;
-        return;
+        await markTrackUnavailable(track);
+        return false;
       }
 
       configStore.jukeboxLastTrackId = track.id;
@@ -549,7 +561,10 @@ export const useJukeboxPlayerStore = defineStore(
       } catch (error) {
         debugError('🎵 JukeboxPlayer: Playback failed (Howler).', error);
         isPlaying.value = false;
+        return false;
       }
+
+      return true;
     }
 
     async function playTrackFromPlaylist(track: JukeboxTrack) {
@@ -561,13 +576,38 @@ export const useJukeboxPlayerStore = defineStore(
       actualiseQueue(track.id);
 
       try {
-        await playTrack(track);
+        // Resolve the fallback order before playback starts: marking the
+        // clicked track disabled rebuilds the queue and would shift indices.
+        const queueItems = queue.value;
+        const clickedIndex = queueItems.findIndex(({ id }) => id === track.id);
+        const start = Math.max(0, clickedIndex + 1);
+        const candidates = queueItems.slice(start);
+        if (configStore.jukeboxRepeatMode === JukeboxRepeatMode.list) {
+          candidates.push(...queueItems.slice(0, start));
+        }
+
+        if (await playTrack(track)) {
+          const index = queue.value.findIndex(({ id }) => id === track.id);
+          queueIndex.value = index >= 0 ? index : 0;
+          return;
+        }
+
+        // The clicked track is unavailable. Keep going with the following
+        // tracks in the same queue instead of leaving playback empty-handed.
+        if (!(await playFirstAvailable(candidates))) {
+          if (currentTrack.value) {
+            // Nothing after the unavailable track could be played. Re-anchor
+            // the queue on the track that is still playing.
+            queueAnchorTrackId = null;
+            actualiseQueue();
+          } else {
+            isPlaying.value = false;
+            resetDuration();
+          }
+        }
       } finally {
         queueAnchorTrackId = null;
       }
-
-      const index = queue.value.findIndex(({ id }) => id === track.id);
-      queueIndex.value = index >= 0 ? index : 0;
     }
 
     async function togglePlay() {
@@ -597,6 +637,39 @@ export const useJukeboxPlayerStore = defineStore(
       isPlaying.value = false;
     }
 
+    async function playFirstAvailable(
+      candidates: JukeboxTrack[],
+    ): Promise<boolean> {
+      for (const candidate of candidates) {
+        if (candidate.disabled) continue;
+
+        if (await playTrack(candidate)) {
+          // The queue can be rebuilt when a missing file is marked disabled,
+          // so resolve the index from the current queue after playback starts.
+          const index = queue.value.findIndex(({ id }) => id === candidate.id);
+          if (index >= 0) queueIndex.value = index;
+          return true;
+        }
+
+        debug('🎵 JukeboxPlayer: Skipping unavailable track', candidate.id);
+      }
+
+      return false;
+    }
+
+    function nextCandidates(): JukeboxTrack[] {
+      const start = Math.max(0, queueIndex.value + 1);
+      const after = queue.value.slice(start);
+
+      if (configStore.jukeboxRepeatMode === JukeboxRepeatMode.list) {
+        // Wrap around instead of appending the playlist again; the latter
+        // grows the queue without bound during long sessions.
+        return [...after, ...queue.value.slice(0, start)];
+      }
+
+      return after;
+    }
+
     async function playPrev() {
       if (!hasPrevTrack.value) {
         return;
@@ -607,39 +680,40 @@ export const useJukeboxPlayerStore = defineStore(
         return;
       }
 
-      queueIndex.value -= 1;
-      const prevTrack = queue.value.at(queueIndex.value);
-      if (prevTrack) await playTrack(prevTrack);
+      const candidates = queue.value
+        .slice(0, Math.max(0, queueIndex.value))
+        .reverse();
+
+      if (!(await playFirstAvailable(candidates))) {
+        // Nothing before the current track can be played, so expose the
+        // beginning of the queue to the previous button.
+        queueIndex.value = 0;
+      }
     }
 
     async function playNext() {
       const repeatMode = configStore.jukeboxRepeatMode;
 
-      if (repeatMode === JukeboxRepeatMode.track) {
+      if (repeatMode === JukeboxRepeatMode.track && currentTrack.value) {
         // Replay the current track from the beginning
-        if (currentTrack.value) {
-          await playTrack(currentTrack.value);
-          return;
-        }
+        if (await playTrack(currentTrack.value)) return;
       }
 
-      if (!hasNextTrack.value) {
+      if (!currentTrack.value || queue.value.length === 0) {
         isPlaying.value = false;
         resetDuration();
         return;
       }
 
-      if (queueIndex.value === queue.value.length - 1) {
-        if (repeatMode === JukeboxRepeatMode.list) {
-          // Wrap around instead of appending the playlist again; the latter
-          // grows the queue without bound during long sessions.
-          queueIndex.value = -1;
-        }
-      }
-      queueIndex.value += 1;
+      if (await playFirstAvailable(nextCandidates())) return;
 
-      const nextTrack = queue.value.at(queueIndex.value);
-      if (nextTrack) await playTrack(nextTrack);
+      if (repeatMode !== JukeboxRepeatMode.list) {
+        // Everything ahead is unavailable. Treat the end of the queue as
+        // reached so the next button reflects the disabled end state.
+        queueIndex.value = queue.value.length - 1;
+      }
+      isPlaying.value = false;
+      resetDuration();
     }
 
     function stop() {

@@ -65,6 +65,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
     :class="{
       'is-selected': isSelected,
       'is-playing': isPlaying,
+      'is-disabled': track.disabled,
       'menu-open': isMenuOpen,
     }"
     :style="{ '--track-item-color': trackColor }"
@@ -165,6 +166,10 @@ const trackColor = computed(() => props.track.color || 'transparent');
   width: 4px;
   background: var(--track-item-color, transparent);
   transition: width 0.2s;
+}
+
+.track-item.is-disabled {
+  opacity: 0.55;
 }
 
 .track-drag-handle {

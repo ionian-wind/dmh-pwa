@@ -337,4 +337,14 @@ describe('jukebox store integration', () => {
     expect(wrapper.text()).not.toContain('Remove');
     wrapper.unmount();
   });
+
+  it('renders disabled tracks with a muted style', async () => {
+    const track = await seedTrack('Gone');
+    const wrapper = mount(TrackCard, {
+      props: { track: { ...track, disabled: true } },
+    });
+
+    expect(wrapper.find('.track-item').classes()).toContain('is-disabled');
+    wrapper.unmount();
+  });
 });
