@@ -174,6 +174,7 @@ describe('jukebox player store', () => {
     expect(player.isPlaying).toBe(true);
     expect(player.duration).toBe(120);
     expect(config.jukeboxLastTrackId).toBe('one');
+    expect(config.jukeboxLastPlaylistId).toBeNull();
     expect(mocks.howls).toHaveLength(1);
 
     player.seek(30);
@@ -782,5 +783,83 @@ describe('jukebox player store', () => {
     expect(mocks.tracks.update).toHaveBeenCalledWith('two', {
       disabled: true,
     });
+  });
+
+  it('persists the playback playlist with the last track', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    mocks.playlists.items.value = [
+      { id: 'p1', trackIds: ['one'] },
+      { id: 'p2', trackIds: ['two'] },
+    ];
+    config.jukeboxActivePlaylistId = 'p1';
+
+    await player.playTrackFromPlaylist(one);
+
+    expect(player.queuePlaylistId).toBe('p1');
+    expect(config.jukeboxLastPlaylistId).toBe('p1');
+    expect(player.queue.map((item) => item.id)).toEqual(['one']);
+  });
+
+  it('restores the saved playback playlist instead of the browsed playlist', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    mocks.playlists.items.value = [
+      { id: 'p1', trackIds: ['one', 'two'] },
+      { id: 'p2', trackIds: ['two', 'one'] },
+    ];
+    config.jukeboxLastTrackId = 'one';
+    config.jukeboxLastPlaylistId = 'p1';
+    config.jukeboxActivePlaylistId = 'p2';
+
+    await player.init();
+
+    expect(player.queuePlaylistId).toBe('p1');
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+  });
+
+  it('restores the all-tracks context when no playlist was saved', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    mocks.playlists.items.value = [{ id: 'p1', trackIds: ['one'] }];
+    config.jukeboxLastTrackId = 'one';
+    config.jukeboxLastPlaylistId = null;
+    config.jukeboxActivePlaylistId = 'p1';
+
+    await player.init();
+
+    expect(player.queuePlaylistId).toBeNull();
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+  });
+
+  it('keeps the current track when clicking an already disabled track', async () => {
+    const player = useJukeboxPlayerStore();
+    const one = track('one');
+    const two = track('two', { disabled: true });
+    mocks.tracks.items.value = [one, two];
+
+    await player.playTrackFromPlaylist(one);
+    const howlCount = mocks.howls.length;
+
+    await player.playTrackFromPlaylist(two);
+
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.isPlaying).toBe(true);
+    expect(mocks.howls).toHaveLength(howlCount);
+    expect(mocks.tracks.update).not.toHaveBeenCalled();
+    expect(Notify.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: i18n.global.t('jukebox.trackNotAvailable'),
+      }),
+    );
   });
 });

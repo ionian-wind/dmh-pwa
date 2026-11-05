@@ -54,11 +54,7 @@ export const useJukeboxPlayerStore = defineStore(
     const tracksStore = useJukeboxTracksStore();
     const playlistsStore = useJukeboxPlaylistsStore();
 
-    async function markTrackUnavailable(track: JukeboxTrack) {
-      debug('🎵 JukeboxPlayer: Track unavailable, disabling', track.id);
-      if (!track.disabled) {
-        await tracksStore.update(track.id, { disabled: true });
-      }
+    function notifyTrackUnavailable() {
       Notify.create({
         color: 'secondary',
         textColor: 'primary',
@@ -66,6 +62,14 @@ export const useJukeboxPlayerStore = defineStore(
         position: 'top',
         timeout: 2500,
       });
+    }
+
+    async function markTrackUnavailable(track: JukeboxTrack) {
+      debug('🎵 JukeboxPlayer: Track unavailable, disabling', track.id);
+      if (!track.disabled) {
+        await tracksStore.update(track.id, { disabled: true });
+      }
+      notifyTrackUnavailable();
     }
     const pictureUrlCacheStore = usePictureUrlCacheStore();
 
@@ -266,10 +270,13 @@ export const useJukeboxPlayerStore = defineStore(
         return;
       }
 
-      queuePlaylistId.value = resolvePlaylistIdForTrack(
-        lastTrack,
-        configStore.jukeboxActivePlaylistId,
-      );
+      const savedPlaylistId = configStore.jukeboxLastPlaylistId;
+      const savedPlaylist = savedPlaylistId
+        ? playlistsStore.getById(savedPlaylistId)
+        : null;
+      queuePlaylistId.value = savedPlaylist?.trackIds.includes(lastTrack.id)
+        ? savedPlaylistId
+        : null;
       queueAnchorTrackId = lastTrack.id;
       actualiseQueue();
 
@@ -550,6 +557,7 @@ export const useJukeboxPlayerStore = defineStore(
       }
 
       configStore.jukeboxLastTrackId = track.id;
+      configStore.jukeboxLastPlaylistId = queuePlaylistId.value;
       const isNewTrack = previousTrackId !== track.id;
       if (isNewTrack) {
         debug('🎵 JukeboxPlayer: New track');
@@ -568,6 +576,11 @@ export const useJukeboxPlayerStore = defineStore(
     }
 
     async function playTrackFromPlaylist(track: JukeboxTrack) {
+      if (track.disabled) {
+        notifyTrackUnavailable();
+        return;
+      }
+
       queuePlaylistId.value = resolvePlaylistIdForTrack(
         track,
         configStore.jukeboxActivePlaylistId,
@@ -729,6 +742,7 @@ export const useJukeboxPlayerStore = defineStore(
       currentTrack.value = null;
       currentTime.value = 0;
       configStore.jukeboxLastTrackId = null;
+      configStore.jukeboxLastPlaylistId = null;
       configStore.jukeboxLastTrackProgress = 0;
     }
 
@@ -920,6 +934,7 @@ export const useJukeboxPlayerStore = defineStore(
       isPlaying,
       queue,
       queueIndex,
+      queuePlaylistId,
 
       // Getters
       hasPrevTrack,

@@ -37,6 +37,7 @@ export enum JukeboxRepeatMode {
 
 export type ConfigStore = {
   jukeboxLastTrackId: Ref<string | null>;
+  jukeboxLastPlaylistId: Ref<string | null>;
   jukeboxLastTrackProgress: Ref<number>;
   jukeboxLastVolume: Ref<number>;
   jukeboxActivePlaylistId: Ref<string | null>;
@@ -57,6 +58,9 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     // Define your state here
     const jukeboxLastTrackId = ref<string | null>(
       getValue('jukeboxLastTrackId', null),
+    );
+    const jukeboxLastPlaylistId = ref<string | null>(
+      getValue('jukeboxLastPlaylistId', null),
     );
     const jukeboxLastTrackProgress = ref<number>(
       getValue('jukeboxLastTrackProgress', 0),
@@ -93,6 +97,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
 
     const config: ConfigStore = {
       jukeboxLastTrackId,
+      jukeboxLastPlaylistId,
       jukeboxLastTrackProgress,
       jukeboxLastVolume,
       jukeboxActivePlaylistId,

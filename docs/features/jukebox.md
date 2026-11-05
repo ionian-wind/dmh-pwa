@@ -96,8 +96,8 @@ currentTrack, isPlaying, currentTime, duration, volume, lastVolume
 queue: JukeboxTrack[], queueIndex: number, queuePlaylistId: string | null
 ```
 
-Shuffle, repeat mode, active playlist, and last track are stored in
-`configStore` (localStorage).
+Shuffle, repeat mode, the browsed playlist, and the last track plus its
+playback playlist context are stored in `configStore` (localStorage).
 
 ### Howler integration
 
@@ -119,7 +119,8 @@ track `disabled: true`, shows a `Track not available` notification, and lets
 the caller skip to the next playable track. Disabled tracks render muted and
 are filtered out of playback queues.
 
-`playTrack` starts playback and stores `jukeboxLastTrackId`.
+`playTrack` starts playback and stores `jukeboxLastTrackId` plus
+`jukeboxLastPlaylistId` (`null` for the all-tracks context).
 
 `togglePlay` pauses/resumes the existing Howl; it does nothing if no Howl
 exists.
@@ -163,8 +164,11 @@ queue when nothing is playing.
     start of the queue.
 - `playPrev` skips unavailable tracks backwards; if current time ≥ 5s, it
   restarts the track instead.
-- Clicking an unavailable track also disables it, shows the notification, and
-  starts the next available track in the same queue.
+- Clicking a track that is not yet marked disabled but whose file is unavailable
+  disables it, shows the notification, and starts the next available track in
+  the same queue.
+- Clicking an already disabled track only shows the notification; it does not
+  change the current track, queue, or playback context.
 - Next/previous enabled states remain based on queue position, not on file
   availability. The exception is an unavailable last track with repeat off:
   once skipping reaches the end, the next button becomes disabled.
@@ -191,8 +195,10 @@ hard-coded to "Owlbear's DMH".
 session, calls `restoreLastTrack()`, then `watchPlaylist()`.
 
 `restoreLastTrack` prepares the audio file at the saved progress but does not
-play it. Because `prepareAudioFile` sets `currentTrack`, the UI shows the
-restored track paused.
+play it. It restores the saved playback context from `jukeboxLastPlaylistId`:
+a playlist ID when playback came from that playlist, or `null` for all tracks.
+The currently browsed playlist is ignored. Because `prepareAudioFile` sets
+`currentTrack`, the UI shows the restored track paused.
 
 ### New-track detection
 
@@ -257,8 +263,9 @@ unmount. The `filesStore` is loaded but unused.
   - Edit mode: sorting handles appear, playlist manage buttons show on hover,
     and track menus include Remove.
   - The "New playlist" row is always available in both modes.
-- The All Tracks row and any playlist containing the currently playing track
-  get a left accent border.
+- The All Tracks row or the playback playlist gets a left accent border,
+  depending on the active playback context. The browsed playlist does not
+  affect this indicator.
 - Playlist sort order is persisted as `sortOrder`; sorting is available only
   in edit mode.
 - Edit opens `PlaylistEditor` (name, modules, description).

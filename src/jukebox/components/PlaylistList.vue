@@ -28,11 +28,13 @@ const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();
 const isEditMode = useJukeboxEditMode();
 const playlists = playlistsStore.items;
-const activeTrackId = computed(() => playerStore.currentTrack?.id ?? null);
+const hasActiveAllTracks = computed(
+  () => !!playerStore.currentTrack && playerStore.queuePlaylistId === null,
+);
 
-function playlistHasActiveTrack(playlist: JukeboxPlaylist) {
+function isActivePlaylist(playlistId: string) {
   return (
-    !!activeTrackId.value && playlist.trackIds.includes(activeTrackId.value)
+    !!playerStore.currentTrack && playerStore.queuePlaylistId === playlistId
   );
 }
 
@@ -194,7 +196,7 @@ onMounted(async () => {
           class="playlist-all-tracks"
           :active="selectedPlaylistId === null"
           :active-class="'bg-secondary'"
-          :class="{ 'has-active-track': !!activeTrackId }"
+          :class="{ 'has-active-track': hasActiveAllTracks }"
           v-ripple
           @click="setSelectedPlaylist(null)"
         >
@@ -223,7 +225,7 @@ onMounted(async () => {
             v-ripple
             @click="setSelectedPlaylist(playlist.id)"
             class="playlist-item"
-            :class="{ 'has-active-track': playlistHasActiveTrack(playlist) }"
+            :class="{ 'has-active-track': isActivePlaylist(playlist.id) }"
           >
             <QItemSection
               v-if="isEditMode"

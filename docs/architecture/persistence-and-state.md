@@ -180,7 +180,8 @@ persistence** rather than `pinia-plugin-persistedstate`.
 - Keys are prefixed `dmh-config:`.
 - `getValue` JSON-parses; invalid JSON throws during store creation.
 - A `watch` per key writes changes back.
-- Values: `jukeboxLastTrackId`, `jukeboxLastTrackProgress`,
+- Values: `jukeboxLastTrackId`, `jukeboxLastPlaylistId`,
+  `jukeboxLastTrackProgress`,
   `jukeboxLastVolume`, `jukeboxActivePlaylistId`, `jukeboxRepeatMode`,
   `jukeboxShuffle`, `jukeboxSmoothTrackChange`,
   `jukeboxAnimatePlayerBackground`, `jukeboxDisplayCoverWhilePlaying`,

@@ -299,11 +299,11 @@ describe('PlaylistList drag-and-drop and selection', () => {
     wrapper.unmount();
   });
 
-  it('marks the All Tracks row and playlists containing the active track', async () => {
-    const store = seed();
-    store.items.value[0].trackIds = ['t1'];
+  it('marks only the active playback playlist or All Tracks', async () => {
+    seed();
     const player = useJukeboxPlayerStore();
     player.currentTrack = { id: 't1', fileId: 'f1', title: 'Active' } as any;
+    player.queuePlaylistId = null;
 
     const wrapper = mountList();
     await flushPromises();
@@ -311,10 +311,22 @@ describe('PlaylistList drag-and-drop and selection', () => {
     expect(wrapper.find('.playlist-all-tracks').classes()).toContain(
       'has-active-track',
     );
+    expect(
+      wrapper
+        .findAll('.playlist-item')
+        .every((row) => !row.classes().includes('has-active-track')),
+    ).toBe(true);
+
+    player.queuePlaylistId = 'p1';
+    await nextTick();
+
+    expect(wrapper.find('.playlist-all-tracks').classes()).not.toContain(
+      'has-active-track',
+    );
     const rows = wrapper.findAll('.playlist-item');
-    const containing = rows.find((row) => row.text().includes('Second'));
+    const active = rows.find((row) => row.text().includes('Second'));
     const other = rows.find((row) => row.text().includes('First'));
-    expect(containing?.classes()).toContain('has-active-track');
+    expect(active?.classes()).toContain('has-active-track');
     expect(other?.classes()).not.toContain('has-active-track');
     wrapper.unmount();
   });
