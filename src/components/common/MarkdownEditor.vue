@@ -62,7 +62,7 @@ defineExpose({ getMarkdown });
     </label>
 
     <!-- Visual Editor (MilkdownCrepe) -->
-    <QCard flat bordered v-if="props.isWYSIWYGMode">
+    <QCard flat v-if="props.isWYSIWYGMode">
       <QCardSection>
         <MilkdownEditorWrapper
           ref="milkdownWrapperRef"
@@ -90,7 +90,7 @@ defineExpose({ getMarkdown });
         class="raw-textarea"
         v-bind="attrs"
         dense
-        outlined
+        borderless
       />
     </div>
   </div>

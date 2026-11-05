@@ -149,15 +149,15 @@ function handleDelete() {
         <div class="q-mb-md">
           <QInput
             v-model="editedNote.title"
-            :label="t('editor.title')"
+            :placeholder="t('editor.title')"
             required
-            outlined
+            borderless
+            hide-bottom-space
+            input-style="font-size: 1.5rem; font-weight: 500;"
             type="text"
           />
         </div>
         <div class="q-mb-md">
-          <h5>{{ t('editor.content') }}</h5>
-
           <slot
             name="content"
             :note="editedNote"
@@ -227,13 +227,13 @@ function handleDelete() {
                   clearable
                   :clear-label="t('common.clear')"
                 />
-                <QToggle left-label v-model="isWYSIWYGMode">
-                  {{ t('markdownEditor.visualMode') }}
-                </QToggle>
               </div>
             </QCard>
           </QMenu>
         </QBtn>
+        <QToggle left-label v-model="isWYSIWYGMode">
+          {{ t('markdownEditor.visualMode') }}
+        </QToggle>
         <QBtn
           v-if="!isWYSIWYGMode"
           flat

@@ -80,12 +80,15 @@ Fields:
   - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
     Quickdraw editor.
 - An icon-only **options** button in the dialog footer opens a popup with the
-  note type selector, tag selector, optional background colour
-  (`backgroundColor`) and the visual-editor toggle. The colour is rendered
-  behind the note content on the detail page and note cards.
-- When the visual editor is off, an icon-only help button appears next to
-  **options**. It opens `MarkdownHelpDialog` with markdown formatting and
+  note type selector, tag selector and optional background colour
+  (`backgroundColor`). The colour is rendered behind the note content on the
+  detail page and note cards.
+- The visual-editor toggle sits in the footer between **options** and help.
+- When the visual editor is off, an icon-only help button appears next to the
+  toggle. It opens `MarkdownHelpDialog` with markdown formatting and
   internal-link help.
+- The title input is borderless and larger; there is no separate **Content**
+  heading, and the visual/raw editors have no outer outline.
 - The module link lives in the dialog's linked-entities tab.
 
 Behavior:
