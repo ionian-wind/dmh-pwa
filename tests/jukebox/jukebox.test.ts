@@ -28,6 +28,16 @@ async function seedTrack(title = 'Tavern Theme') {
   return track;
 }
 
+function dispatchPointerDown(element: Element, shiftKey: boolean) {
+  element.dispatchEvent(
+    new MouseEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      shiftKey,
+    }),
+  );
+}
+
 describe('jukebox store integration', () => {
   beforeEach(() => {
     useJukeboxBulkSelection().clearSelection();
@@ -351,5 +361,30 @@ describe('jukebox store integration', () => {
 
     expect(wrapper.find('.track-item').classes()).toContain('is-disabled');
     wrapper.unmount();
+  });
+
+  it('selects a range of tracks with shift-click', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const first = { id: 't1', fileId: 'f1', title: 'One' };
+    const second = { id: 't2', fileId: 'f2', title: 'Two' };
+    const third = { id: 't3', fileId: 'f3', title: 'Three' };
+    bulk.setTrackOrder(['t1', 't2', 't3']);
+
+    const wrappers = [first, second, third].map((track) =>
+      mount(TrackCard, { props: { track, selectable: true } }),
+    );
+    const checkboxes = wrappers.map((wrapper) =>
+      wrapper.find('.track-bulk-select input[type="checkbox"]'),
+    );
+
+    dispatchPointerDown(checkboxes[0].element, false);
+    await checkboxes[0].trigger('click');
+    await checkboxes[0].trigger('change');
+    dispatchPointerDown(checkboxes[2].element, true);
+    await checkboxes[2].trigger('click');
+    await checkboxes[2].trigger('change');
+
+    expect([...bulk.selectedTrackIds.value]).toEqual(['t1', 't2', 't3']);
+    for (const wrapper of wrappers) wrapper.unmount();
   });
 });

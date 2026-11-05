@@ -75,6 +75,7 @@ const {
   hasSelectedTracks,
   hasSelectedPlaylists,
   hasSelection,
+  setTrackOrder,
   clearSelection,
 } = useJukeboxBulkSelection();
 
@@ -289,6 +290,7 @@ watch(
   filteredTracks,
   (newTracks) => {
     draggableTracks.value = [...newTracks];
+    setTrackOrder(newTracks.map((track) => track.id));
   },
   { immediate: true, deep: true },
 );

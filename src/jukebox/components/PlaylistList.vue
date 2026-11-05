@@ -34,8 +34,29 @@ const selectedPlaylistId = ref<string | null>(
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
-const { selectedPlaylistIds, hasSelectedTracks, togglePlaylist } =
-  useJukeboxBulkSelection();
+const {
+  selectedPlaylistIds,
+  hasSelectedTracks,
+  togglePlaylist,
+  setPlaylistOrder,
+} = useJukeboxBulkSelection();
+const bulkShiftClick = ref(false);
+
+function captureBulkClick(event: MouseEvent) {
+  bulkShiftClick.value = event.shiftKey;
+}
+
+function updateBulkSelection(selected: boolean) {
+  togglePlaylist(playlistIdForBulk.value, selected, bulkShiftClick.value);
+  bulkShiftClick.value = false;
+}
+
+const playlistIdForBulk = ref('');
+
+function capturePlaylistBulkClick(playlistId: string, event: MouseEvent) {
+  playlistIdForBulk.value = playlistId;
+  captureBulkClick(event);
+}
 
 // watch(
 //   filteredPlaylists,
@@ -84,6 +105,12 @@ watch(
   filteredPlaylists,
   (newPlaylists) =>
     updateSortedPlaylists(newPlaylists, selectedPlaylistId.value),
+  { immediate: true, deep: true },
+);
+
+watch(
+  sortedPlaylists,
+  (items) => setPlaylistOrder(items.map((playlist) => playlist.id)),
   { immediate: true, deep: true },
 );
 
@@ -198,15 +225,16 @@ onMounted(async () => {
               v-if="isEditMode"
               side
               class="playlist-bulk-select"
+              @pointerdown.capture="
+                capturePlaylistBulkClick(playlist.id, $event)
+              "
               @click.stop
             >
               <QCheckbox
                 :model-value="selectedPlaylistIds.has(playlist.id)"
                 :disable="hasSelectedTracks"
                 dense
-                @update:model-value="
-                  (value) => togglePlaylist(playlist.id, value)
-                "
+                @update:model-value="updateBulkSelection"
               />
             </QItemSection>
             <QItemSection>

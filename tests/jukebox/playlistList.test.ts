@@ -38,6 +38,16 @@ function mountList() {
   });
 }
 
+function dispatchPointerDown(element: Element, shiftKey: boolean) {
+  element.dispatchEvent(
+    new MouseEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      shiftKey,
+    }),
+  );
+}
+
 function seed() {
   const store = useJukeboxPlaylistsStore();
   store.items.value = [
@@ -264,6 +274,27 @@ describe('PlaylistList drag-and-drop and selection', () => {
     expect(wrapper.find('.playlist-list-container').classes()).toContain(
       'is-edit-mode',
     );
+    wrapper.unmount();
+  });
+
+  it('selects a range of playlists with shift-click', async () => {
+    seed();
+    const bulk = useJukeboxBulkSelection();
+    const wrapper = mountList();
+    await flushPromises();
+
+    expect(bulk.playlistOrder.value).toEqual(['p2', 'p1']);
+    const checkboxes = wrapper.findAll(
+      '.playlist-bulk-select input[type="checkbox"]',
+    );
+    dispatchPointerDown(checkboxes[0].element, false);
+    await checkboxes[0].trigger('click');
+    await checkboxes[0].trigger('change');
+    dispatchPointerDown(checkboxes[1].element, true);
+    await checkboxes[1].trigger('click');
+    await checkboxes[1].trigger('change');
+
+    expect([...bulk.selectedPlaylistIds.value]).toEqual(['p2', 'p1']);
     wrapper.unmount();
   });
 });

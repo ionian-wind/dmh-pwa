@@ -220,6 +220,8 @@ position until `onplay/onseek` updates it.
   order), so they can be selected without drag handles.
 - Selection is exclusive: selecting tracks disables playlist checkboxes and
   selecting playlists disables track checkboxes.
+- Shift-clicking a track or playlist checkbox selects or deselects the whole
+  range between the last clicked item and the current one in display order.
 - While edit mode is on and at least one row is selected, the main header shows
   an Edit/Delete button group on the left side, before the title area.
   - Edit on selected tracks opens a playlist linking modal; applying it adds

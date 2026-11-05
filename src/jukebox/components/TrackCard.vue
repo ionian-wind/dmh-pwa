@@ -41,6 +41,16 @@ const isMenuOpen = ref(false);
 const { selectedTrackIds, hasSelectedPlaylists, toggleTrack } =
   useJukeboxBulkSelection();
 const bulkSelected = computed(() => selectedTrackIds.value.has(props.track.id));
+const bulkShiftClick = ref(false);
+
+function captureBulkClick(event: MouseEvent) {
+  bulkShiftClick.value = event.shiftKey;
+}
+
+function updateBulkSelection(selected: boolean) {
+  toggleTrack(props.track.id, selected, bulkShiftClick.value);
+  bulkShiftClick.value = false;
+}
 
 const handleAddToPlaylist = () => {
   emit('add-to-playlist', props.track);
@@ -79,12 +89,18 @@ const trackColor = computed(() => props.track.color || 'transparent');
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
       <IconGripVertical :size="18" />
     </QItemSection>
-    <QItemSection v-if="selectable" side class="track-bulk-select" @click.stop>
+    <QItemSection
+      v-if="selectable"
+      side
+      class="track-bulk-select"
+      @pointerdown.capture="captureBulkClick"
+      @click.stop
+    >
       <QCheckbox
         :model-value="bulkSelected"
         :disable="hasSelectedPlaylists"
         dense
-        @update:model-value="(value) => toggleTrack(track.id, value)"
+        @update:model-value="updateBulkSelection"
       />
     </QItemSection>
     <QItemSection>
