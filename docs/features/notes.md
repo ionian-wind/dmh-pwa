@@ -65,8 +65,8 @@ editable in the note form; it is chosen by the create action.
   notes download their PNG preview. Drawings without a preview are disabled.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
 
-The note detail header shows the same download action immediately before the
-edit/delete buttons.
+The note detail header shows the same download action on the left side of the
+header, separate from the edit/delete buttons on the right.
 
 The 600px clamp is hard-coded and does not account for viewport size.
 

@@ -45,6 +45,7 @@ describe('BaseEntityView', () => {
         title: 'Title',
         subtitle: 'Subtitle',
         headerButtons: [{ title: 'Action' }],
+        leftHeaderButtons: [{ title: 'Left action' }],
         rightDrawerIcon,
         onEdit,
         onDelete,
@@ -65,6 +66,7 @@ describe('BaseEntityView', () => {
     expect(wrapper.find('.entity-page-title').text()).toBe('Title');
     expect(wrapper.find('.entity-page-subtitle').text()).toBe('Subtitle');
     expect(header?.buttons).toHaveLength(1);
+    expect(header?.leftButtons).toEqual([{ title: 'Left action' }]);
     expect(header?.rightDrawerIcon).toEqual(rightDrawerIcon);
 
     header?.onEdit();

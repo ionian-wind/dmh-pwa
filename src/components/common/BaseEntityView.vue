@@ -29,6 +29,7 @@ interface Props {
   headerShowEdit?: boolean;
   headerShowDelete?: boolean;
   headerButtons?: any[];
+  leftHeaderButtons?: any[];
   tabs?: Array<{ id: string; label: string; icon?: any; disabled?: boolean }>;
   modelValue?: string;
   rightDrawerIcon?: any;
@@ -47,6 +48,7 @@ const props = withDefaults(
     headerShowEdit: true,
     headerShowDelete: true,
     headerButtons: () => [],
+    leftHeaderButtons: () => [],
     tabs: () => [],
     modelValue: '',
     fill: false,
@@ -84,6 +86,7 @@ const SidepanelHost = defineComponent({
 const injectTopMenu = () => {
   const headerProps: Record<string, any> = {
     buttons: props.headerButtons,
+    leftButtons: props.leftHeaderButtons,
     showEdit: props.headerShowEdit,
     onEdit: handleEdit,
     showDelete: props.headerShowDelete,
@@ -120,6 +123,7 @@ watch(
     props.headerShowEdit,
     props.headerShowDelete,
     props.headerButtons,
+    props.leftHeaderButtons,
     props.tabs,
     props.modelValue,
   ],

@@ -194,7 +194,7 @@ async function handleEditorDelete() {
     :is-editing="isEditing"
     :title="noteTitle"
     :not-found="notFound"
-    :header-buttons="headerButtons"
+    :left-header-buttons="headerButtons"
     :tabs="tabs"
     v-model="activeTab"
   >

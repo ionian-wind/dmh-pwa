@@ -26,6 +26,7 @@ interface Props {
   tabs: Tab[];
   modelValue?: string;
   headerButtons?: any[];
+  leftHeaderButtons?: any[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -36,6 +37,7 @@ const props = withDefaults(defineProps<Props>(), {
   sidePanelVisible: true,
   hideHeader: false,
   headerButtons: () => [],
+  leftHeaderButtons: () => [],
   tabs: () => [],
 });
 
