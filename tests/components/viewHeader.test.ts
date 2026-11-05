@@ -148,4 +148,14 @@ describe('ViewHeader action buttons', () => {
     await leftButton.trigger('click');
     expect(leftEvent).toHaveBeenCalledTimes(1);
   });
+
+  it('shows the create action in a disabled loading state', () => {
+    const { wrapper } = mountHeader({ createLoading: true });
+    const create = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('aria-label') === 'Create');
+
+    expect(create?.attributes('disabled')).toBeDefined();
+    expect(create?.attributes('data-loading')).toBe('true');
+  });
 });

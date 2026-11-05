@@ -23,6 +23,7 @@ const props = defineProps({
   editorComponent: { type: [Object, Function, String], required: false },
   emptyMessage: { type: String, required: true },
   createTitle: { type: String, required: true },
+  createLoading: { type: Boolean, default: false },
   cardProps: {
     type: Function as PropType<(item: any) => any>,
     default: (item: any) => ({}),
@@ -144,6 +145,7 @@ function syncHeaderProps() {
   Object.assign(headerProps, {
     showCreate: true,
     createTitle: props.createTitle,
+    createLoading: props.createLoading,
     onCreate,
     showSearch: props.showSearch,
     searchQuery: props.searchQuery,
@@ -159,6 +161,7 @@ onMounted(async () => {
   headerProps = reactive<Record<string, any>>({
     showCreate: true,
     createTitle: props.createTitle,
+    createLoading: props.createLoading,
     onCreate,
     showSearch: props.showSearch,
     searchQuery: props.searchQuery,
@@ -179,6 +182,7 @@ onMounted(async () => {
 watch(
   () => [
     props.createTitle,
+    props.createLoading,
     props.showSearch,
     props.searchQuery,
     props.searchPlaceholder,
@@ -210,6 +214,8 @@ onBeforeUnmount(() => {
         class="empty-state-create q-mt-lg"
         color="positive"
         size="lg"
+        :disable="props.createLoading"
+        :loading="props.createLoading"
         @click="onCreate"
       >
         <IconPlus :size="28" />

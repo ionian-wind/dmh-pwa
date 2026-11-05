@@ -6,6 +6,7 @@ import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
+import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
 import SortableList from '@/components/common/SortableList.vue';
@@ -27,6 +28,7 @@ const playlistsStore = useJukeboxPlaylistsStore();
 const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();
 const isEditMode = useJukeboxEditMode();
+const isImporting = useJukeboxImporting();
 const playlists = playlistsStore.items;
 const hasActiveAllTracks = computed(
   () => !!playerStore.currentTrack && playerStore.queuePlaylistId === null,
@@ -345,6 +347,7 @@ onMounted(async () => {
               :title="t('jukebox.editMode')"
               :aria-label="t('jukebox.editMode')"
               :aria-pressed="isEditMode"
+              :disable="isImporting"
               @click="isEditMode = true"
             >
               <IconEdit :size="18" />

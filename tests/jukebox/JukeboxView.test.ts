@@ -7,6 +7,7 @@ import type { JukeboxTrack } from '@/jukebox/types';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
+import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
 
 const mocks = vi.hoisted(() => ({
   tracks: {
@@ -92,6 +93,7 @@ const BaseListViewStub = defineComponent({
     draggable: Boolean,
     dragHandle: String,
     leftHeaderButtons: Array,
+    createLoading: Boolean,
   },
   emits: ['create', 'sort'],
   setup(_, { slots }) {
@@ -172,6 +174,7 @@ describe('JukeboxView', () => {
 
   beforeEach(() => {
     useJukeboxBulkSelection().clearSelection();
+    useJukeboxImporting().value = false;
     mocks.tracks.items.value = [];
     mocks.playlists.items.value = [];
     mocks.tracks.create.mockReset();
@@ -777,5 +780,27 @@ describe('JukeboxView', () => {
     await nextTick();
     expect(bulk.selectedTrackIds.value.size).toBe(0);
     expect(wrapper.find('.jukebox-bulk-panel').exists()).toBe(false);
+  });
+
+  it('disables the add action while files are importing', async () => {
+    let resolvePick: (value: any[]) => void = () => {};
+    mocks.pickAudioFiles.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePick = resolve;
+      }),
+    );
+
+    const { list } = await mountView();
+    expect(list.props('createLoading')).toBe(false);
+
+    list.vm.$emit('create');
+    await nextTick();
+    expect(list.props('createLoading')).toBe(true);
+    expect(useJukeboxImporting().value).toBe(true);
+
+    resolvePick([]);
+    await flushPromises();
+    expect(list.props('createLoading')).toBe(false);
+    expect(useJukeboxImporting().value).toBe(false);
   });
 });

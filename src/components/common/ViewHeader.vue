@@ -77,6 +77,10 @@ const props = defineProps({
     type: String,
     default: 'Create',
   },
+  createLoading: {
+    type: Boolean,
+    default: false,
+  },
   onCreate: {
     type: Function as PropType<
       (
@@ -249,6 +253,8 @@ const hasPrimaryActions = computed(
       @click="props.onCreate"
       :title="t('common.create')"
       :aria-label="t('common.create')"
+      :disable="props.createLoading"
+      :loading="props.createLoading"
     >
       <IconPlus />
     </QBtn>

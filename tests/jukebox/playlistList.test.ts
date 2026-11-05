@@ -9,6 +9,7 @@ import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
+import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
 
 const EditorStub = defineComponent({
   name: 'PlaylistEditor',
@@ -77,6 +78,7 @@ function seed() {
 describe('PlaylistList drag-and-drop and selection', () => {
   beforeEach(() => {
     useJukeboxBulkSelection().clearSelection();
+    useJukeboxImporting().value = false;
     useConfigStore().jukeboxActivePlaylistId = null;
     useJukeboxEditMode().value = true;
   });
@@ -359,6 +361,23 @@ describe('PlaylistList drag-and-drop and selection', () => {
     await nextTick();
     expect(bulk.selectedPlaylistIds.value.size).toBe(0);
     expect(wrapper.find('.playlist-bulk-panel').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('disables the edit-mode switch while importing', async () => {
+    seed();
+    const wrapper = mountList();
+    await flushPromises();
+
+    expect(wrapper.find('.jukebox-edit-mode').attributes('disabled')).toBe(
+      undefined,
+    );
+
+    useJukeboxImporting().value = true;
+    await nextTick();
+    expect(
+      wrapper.find('.jukebox-edit-mode').attributes('disabled'),
+    ).toBeDefined();
     wrapper.unmount();
   });
 });

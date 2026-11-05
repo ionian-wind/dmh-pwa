@@ -24,6 +24,7 @@ import { confirm } from '@/dialogs';
 import { IconPencil, IconPlaylist, IconTrash } from '@tabler/icons-vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
+import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import { createWaveformSvg } from '@/jukebox/utils/waveform';
 import BulkLinkingModal from '@/jukebox/components/BulkLinkingModal.vue';
@@ -57,7 +58,7 @@ watch(
   { immediate: true },
 );
 
-const isAddingTracks = ref(false);
+const isAddingTracks = useJukeboxImporting();
 const isAddToPlaylistModalOpen = ref(false);
 const trackToAddToPlaylist = ref<JukeboxTrack | null>(null);
 let dragCounter = 0;
@@ -573,6 +574,7 @@ onBeforeUnmount(() => {
       :card-component="TrackCard"
       :empty-message="t('common.emptyTracks')"
       :create-title="t('common.addTracks')"
+      :create-loading="isAddingTracks"
       :card-props="cardProps"
       :show-search="false"
       :view-style="'list'"

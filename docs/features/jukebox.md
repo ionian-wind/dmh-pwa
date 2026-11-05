@@ -92,6 +92,10 @@ Two entry points:
 There is no deduplication of tracks: re-adding the same file creates another
 track that shares the same `fileId`.
 
+While an import is running (picker open, files processing, or dropped files
+being handled), the main Add Tracks button is disabled and shows a loading
+state, and the sidebar's Edit-mode switch is disabled.
+
 ## Playback engine (`playerStore.ts`)
 
 ### State

@@ -176,12 +176,14 @@ describe('BaseListView', () => {
       showSearch: true,
       rightDrawerIcon: { name: 'icon' },
       leftHeaderButtons,
+      createLoading: true,
     });
 
     const header = layout.topMenuContent.value;
     expect(header?.props?.searchQuery).toBe('first');
     expect(header?.props?.rightDrawerIcon).toEqual({ name: 'icon' });
     expect(header?.props?.leftButtons).toEqual(leftHeaderButtons);
+    expect(header?.props?.createLoading).toBe(true);
 
     header?.props?.['onUpdate:searchQuery']?.('second');
     expect(wrapper.emitted('update:searchQuery')?.[0]).toEqual(['second']);
