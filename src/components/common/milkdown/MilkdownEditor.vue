@@ -201,7 +201,7 @@ defineExpose({
     svg.mention-tabler-icon
 ),
 :global(.milkdown .milkdown-toolbar .toolbar-item svg.mention-tabler-icon) {
-  color: var(--color-text-light);
+  color: var(--crepe-color-outline);
   fill: none;
   stroke: currentColor;
 }
@@ -210,6 +210,7 @@ defineExpose({
   .milkdown .milkdown-toolbar .toolbar-item.active svg.mention-tabler-icon
 ) {
   color: var(--crepe-color-primary);
+  fill: none;
   stroke: currentColor;
 }
 </style>
