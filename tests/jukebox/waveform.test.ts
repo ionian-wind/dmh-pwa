@@ -130,4 +130,44 @@ describe('createWaveformSvg', () => {
 
     expect(svg).toMatch(/<path d="M0 4L0 76"/);
   });
+
+  it('normalizes quiet audio to use the full waveform height', async () => {
+    vi.stubGlobal(
+      'AudioContext',
+      class {
+        decodeAudioData = vi.fn().mockResolvedValue({
+          getChannelData: () => new Float32Array([0, 0.1, -0.2, 0.05]),
+        });
+        close = vi.fn().mockResolvedValue(undefined);
+      },
+    );
+
+    const svg = await createWaveformSvg(audioBlob(), {
+      width: 100,
+      height: 20,
+      bars: 2,
+    });
+
+    expect(svg).toContain('M0 5.5L0 14.5M100 1L100 19');
+  });
+
+  it('handles silent audio without dividing by zero', async () => {
+    vi.stubGlobal(
+      'AudioContext',
+      class {
+        decodeAudioData = vi.fn().mockResolvedValue({
+          getChannelData: () => new Float32Array([0, 0, 0, 0]),
+        });
+        close = vi.fn().mockResolvedValue(undefined);
+      },
+    );
+
+    const svg = await createWaveformSvg(audioBlob(), {
+      width: 100,
+      height: 20,
+      bars: 2,
+    });
+
+    expect(svg).toContain('M0 10L0 10M100 10L100 10');
+  });
 });

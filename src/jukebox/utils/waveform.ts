@@ -49,10 +49,16 @@ export async function createWaveformSvg(
       peaks.push(peak > 1 ? 1 : peak);
     }
 
+    // Normalize against the loudest bar so quiet tracks still fill the
+    // waveform area while already-loud tracks keep their natural shape.
+    const maxPeak = Math.max(...peaks, 0);
+    const normalizedPeaks =
+      maxPeak > 0 ? peaks.map((peak) => peak / maxPeak) : peaks;
+
     const middle = height / 2;
     const amplitude = middle * 0.9;
     const step = barCount > 1 ? width / (barCount - 1) : 0;
-    const path = peaks
+    const path = normalizedPeaks
       .map((peak, index) => {
         const x = Number((index * step).toFixed(2));
         const half = Number((peak * amplitude).toFixed(2));

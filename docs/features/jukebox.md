@@ -81,7 +81,8 @@ Two entry points:
      colors.
 5. Generates a waveform via `createWaveformSvg(file)`:
    - decodes the file with `AudioContext.decodeAudioData`,
-   - downsamples the first channel into peak bars,
+   - downsamples the first channel into peak bars and normalizes them against
+     the loudest bar so quiet recordings still fill the waveform height,
    - emits a compact single-path inline SVG.
    - Returns `null` when Web Audio is unavailable or decoding fails, so the
      import still succeeds without a waveform.
