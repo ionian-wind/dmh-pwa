@@ -4,6 +4,7 @@ import {
   buildMentionMenu,
   buildMentionToolbar,
   insertMentionCommand,
+  isMentionActive,
   mentionMark,
   registerMentionPopupTrigger,
 } from '@/components/common/milkdown/plugins/mention';
@@ -53,7 +54,10 @@ describe('milkdown mention plugin helpers', () => {
     const { builder, group, items } = createBuilder();
     buildMentionToolbar(builder);
 
-    expect(builder.addGroup).toHaveBeenCalledWith('mentions', 'common.mentions');
+    expect(builder.addGroup).toHaveBeenCalledWith(
+      'mentions',
+      'common.mentions',
+    );
     expect(group.addItem).toHaveBeenCalledTimes(6);
     expect(items.map((item) => item.kind)).toEqual([
       'note',
@@ -165,11 +169,15 @@ describe('milkdown mention plugin helpers', () => {
       closeMark: vi.fn(),
     };
     const markType = { name: 'mention' };
-    schema.parseMarkdown.runner(state, {
-      url: 'monster://m1',
-      title: 'Goblin',
-      children: [],
-    }, markType);
+    schema.parseMarkdown.runner(
+      state,
+      {
+        url: 'monster://m1',
+        title: 'Goblin',
+        children: [],
+      },
+      markType,
+    );
     expect(state.openMark).toHaveBeenCalledWith(markType, {
       kind: 'monster',
       id: 'm1',
@@ -214,5 +222,45 @@ describe('milkdown mention plugin helpers', () => {
 
     expect(command('ignored')({ selection: null }, dispatch)).toBe(false);
     expect(command(42)(selectionState, dispatch)).toBe(true);
+  });
+
+  it('marks the matching mention kind active under the cursor', () => {
+    const mark = { type: { name: 'mention' }, attrs: { kind: 'monster' } };
+    const ctx = {
+      get: () => ({
+        state: {
+          selection: { empty: true, $from: { marks: () => [mark] } },
+          storedMarks: null,
+          doc: {},
+        },
+      }),
+    };
+
+    expect(isMentionActive(ctx, 'monster')).toBe(true);
+    expect(isMentionActive(ctx, 'note')).toBe(false);
+
+    const { builder, items } = createBuilder();
+    buildMentionToolbar(builder);
+    expect(items[3].options.active(ctx)).toBe(true);
+    expect(items[0].options.active(ctx)).toBe(false);
+  });
+
+  it('detects mentions inside a text selection', () => {
+    const mark = { type: { name: 'mention' }, attrs: { kind: 'note' } };
+    const ctx = {
+      get: () => ({
+        state: {
+          selection: { empty: false, from: 0, to: 6 },
+          storedMarks: null,
+          doc: {
+            nodesBetween: (_from: number, _to: number, cb: Function) =>
+              cb({ isText: true, marks: [mark] }),
+          },
+        },
+      }),
+    };
+
+    expect(isMentionActive(ctx, 'note')).toBe(true);
+    expect(isMentionActive(ctx, 'party')).toBe(false);
   });
 });

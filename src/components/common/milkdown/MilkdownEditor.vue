@@ -205,4 +205,11 @@ defineExpose({
   fill: none;
   stroke: currentColor;
 }
+
+:global(
+  .milkdown .milkdown-toolbar .toolbar-item.active svg.mention-tabler-icon
+) {
+  color: var(--crepe-color-primary);
+  stroke: currentColor;
+}
 </style>

@@ -1,5 +1,6 @@
 import { $markSchema } from '@milkdown/utils';
 import { $command } from '@milkdown/kit/utils';
+import { editorViewCtx } from '@milkdown/kit/core';
 
 import { debug } from '@/utils/debug';
 import iconNote from '@tabler/icons/outline/note.svg?raw';
@@ -261,6 +262,39 @@ const mentionKinds = [
   { kind: 'location', label: 'maps.locations', icon: mentionIcon(iconMap) },
 ];
 
+function getEditorView(ctx: any) {
+  for (const key of [editorViewCtx, 'editorView', 'view']) {
+    try {
+      const view = ctx?.get?.(key);
+      if (view?.state) return view;
+    } catch {
+      // Try the next context key.
+    }
+  }
+  return null;
+}
+
+export function isMentionActive(ctx: any, kind: string): boolean {
+  const editorView = getEditorView(ctx);
+  const state = editorView?.state;
+  if (!state?.selection) return false;
+
+  const { selection, storedMarks, doc } = state;
+  const isKind = (mark: any) =>
+    mark?.type?.name === 'mention' && mark.attrs?.kind === kind;
+
+  if (selection.empty) {
+    const marks = storedMarks || selection.$from?.marks?.() || [];
+    return marks.some(isKind);
+  }
+
+  let active = false;
+  doc?.nodesBetween?.(selection.from, selection.to, (node: any) => {
+    if (node.isText && node.marks?.some(isKind)) active = true;
+  });
+  return active;
+}
+
 type Translate = (key: string) => string;
 const identity: Translate = (key) => key;
 
@@ -277,7 +311,7 @@ export const buildMentionToolbar = (
     mentionGroup.addItem(kind, {
       icon,
       label: translate(label),
-      active: () => false,
+      active: (ctx: any) => isMentionActive(ctx, kind),
       onRun: (ctx: any) => insertMentionMark(ctx, kind, label, 'Toolbar'),
     });
   });

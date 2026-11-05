@@ -137,6 +137,8 @@ exists, otherwise the bound `modelValue`. Raw-mode edits are bound through
 - parses links whose URL matches `kind://id`,
 - serializes back to `[text](kind://id)`,
 - provides toolbar/block-menu groups for note/module/party/monster/encounter,
+- marks the matching toolbar item active when the cursor/selection is inside a
+  mention of that kind,
 - opens a popup to choose an entity and inserts the mark at the selection.
 
 The popup (`MentionInsertPopup.vue`) lists entities of the chosen kind,
