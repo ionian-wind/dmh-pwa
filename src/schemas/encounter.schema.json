@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Encounter",
   "type": "object",
-  "required": ["id", "name", "monsters", "moduleId", "createdAt", "updatedAt"],
+  "required": ["id", "name", "monsters", "createdAt", "updatedAt", "moduleIds"],
   "properties": {
     "id": {
       "type": "string",
@@ -25,10 +25,6 @@
       },
       "description": "Object mapping monster IDs to their counts in this encounter"
     },
-    "moduleId": {
-      "type": "string",
-      "description": "ID of the module this encounter belongs to"
-    },
     "notes": {
       "type": "string",
       "description": "Additional notes about the encounter"
@@ -40,6 +36,13 @@
     "updatedAt": {
       "type": "number",
       "description": "Timestamp when the encounter was last updated"
+    },
+    "moduleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of the modules this encounter is linked to"
     }
   }
 }

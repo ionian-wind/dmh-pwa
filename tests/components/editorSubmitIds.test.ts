@@ -54,7 +54,7 @@ describe('editor submit identity', () => {
           name: 'Ambush',
           description: '',
           monsters: {},
-          moduleId: 'm1',
+          moduleIds: ['m1'],
           notes: '',
           createdAt: 1,
           updatedAt: 1,

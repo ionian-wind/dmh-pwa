@@ -44,7 +44,7 @@ const activeAnchorId = ref<string | null>(null);
 // Get notes for this module that are hidden (document tree notes)
 const notes = computed(() =>
   noteStore.items.filter(
-    (note) => note.moduleId === props.moduleId && note.hidden === true,
+    (note) => note.moduleIds?.includes(props.moduleId) && note.hidden === true,
   ),
 );
 

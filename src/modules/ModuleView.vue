@@ -80,14 +80,16 @@ const moduleMonsters = computed(() =>
 );
 
 const moduleEncounters = computed(() =>
-  encounterStore.items.filter(
-    (encounter) => encounter.moduleId === route.params.id,
+  encounterStore.items.filter((encounter) =>
+    encounter.moduleIds?.includes(route.params.id as string),
   ),
 );
 
 const moduleNotes = computed(() => {
   return noteStore.items.filter(
-    (note) => note.moduleId === route.params.id && note.hidden === false,
+    (note) =>
+      note.moduleIds?.includes(route.params.id as string) &&
+      note.hidden === false,
   );
 });
 
@@ -260,8 +262,8 @@ async function handleExportModule() {
   if (!module.value) return;
   // Gather module data
   const moduleId = module.value.id;
-  const moduleNotes = noteStore.items.filter(
-    (note) => note.moduleId === moduleId,
+  const moduleNotes = noteStore.items.filter((note) =>
+    note.moduleIds?.includes(moduleId),
   );
   const tree = module.value.noteTree || [];
 
@@ -285,7 +287,7 @@ async function handleExportModule() {
     contentType: note.contentType ?? 'text',
     typeId: note.typeId || null,
     tags: note.tags || [],
-    moduleId: note.moduleId,
+    moduleIds: note.moduleIds,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
     hidden: note.hidden,

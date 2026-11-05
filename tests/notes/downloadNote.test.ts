@@ -10,7 +10,7 @@ function note(overrides: Partial<Note> = {}): Note {
     contentType: 'text',
     tags: [],
     typeId: null,
-    moduleId: null,
+    moduleIds: [],
     hidden: false,
     createdAt: 0,
     updatedAt: 0,

@@ -26,21 +26,19 @@ const editedEncounter = ref<EncounterFormData>({
   name: '',
   description: '',
   monsters: {},
-  moduleId: '',
+  moduleIds: [],
   notes: '',
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
 const editorTabs = useEntityEditorTabs();
 
-const linkedModule = computed<MapEntityRef[]>(() =>
-  editedEncounter.value.moduleId
-    ? [{ kind: 'module', id: editedEncounter.value.moduleId }]
-    : [],
+const linkedModules = computed<MapEntityRef[]>(() =>
+  editedEncounter.value.moduleIds.map((id) => ({ kind: 'module', id })),
 );
 
-function setLinkedModule(links: MapEntityRef[]) {
-  editedEncounter.value.moduleId = links[0]?.id ?? '';
+function setLinkedModules(links: MapEntityRef[]) {
+  editedEncounter.value.moduleIds = links.map((link) => link.id);
 }
 
 const { t } = useI18n();
@@ -56,7 +54,7 @@ watch(
         name: '',
         description: '',
         monsters: {},
-        moduleId: '',
+        moduleIds: [],
         notes: '',
       };
     }
@@ -69,7 +67,7 @@ const resetForm = () => {
     name: '',
     description: '',
     monsters: {},
-    moduleId: '',
+    moduleIds: [],
     notes: '',
   };
 };
@@ -80,7 +78,7 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (!editedEncounter.value.moduleId) {
+  if (editedEncounter.value.moduleIds.length === 0) {
     await alert(t('common.moduleRequired'));
     return;
   }
@@ -175,9 +173,8 @@ function handleDelete() {
     <template #links>
       <EntitiesLinking
         kind="module"
-        :multiple="false"
-        :model-value="linkedModule"
-        @update:model-value="setLinkedModule"
+        :model-value="linkedModules"
+        @update:model-value="setLinkedModules"
       />
     </template>
   </BaseModal>

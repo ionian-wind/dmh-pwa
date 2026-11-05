@@ -13,11 +13,15 @@ const moduleStore = useModuleStore();
 const { t } = useI18n();
 
 const moduleName = computed(() => {
-  if (!props.encounter.moduleId) return 'No Module';
-  const module = moduleStore.items.find(
-    (m) => m.id === props.encounter.moduleId,
-  );
-  return module ? module.name : 'Unknown Module';
+  const ids = props.encounter.moduleIds ?? [];
+  if (ids.length === 0) return 'No Module';
+  return ids
+    .map(
+      (id) =>
+        moduleStore.items.find((module) => module.id === id)?.name ??
+        'Unknown Module',
+    )
+    .join(', ');
 });
 
 const monstersCount = computed(() => {

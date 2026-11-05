@@ -8,7 +8,7 @@ const note = (id: string, title = id): Note => ({
   content: 'Body',
   typeId: null,
   tags: [],
-  moduleId: 'm',
+  moduleIds: ['m'],
   hidden: true,
   createdAt: 0,
   updatedAt: 0,

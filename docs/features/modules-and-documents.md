@@ -45,8 +45,9 @@ Computed collections:
 
 - `moduleParties` — parties whose `moduleIds` include this module.
 - `moduleMonsters` — monsters whose `moduleIds` include this module.
-- `moduleEncounters` — encounters whose `moduleId` equals this module.
-- `moduleNotes` — notes with this `moduleId` and `hidden === false`.
+- `moduleEncounters` — encounters whose `moduleIds` include this module.
+- `moduleNotes` — notes whose `moduleIds` include this module and
+  `hidden === false`.
 - `modulePlaylists` — playlists whose `moduleIds` include this module.
 - `moduleLocations` — locations whose `entities` include a `module` link to this module.
 - `moduleBookmarks` — bookmarks with this `moduleId`.
@@ -99,7 +100,7 @@ children}` for the generic Tree component.
   removes the subtree. **No confirmation dialog.**
 
 Note: the tree is only as good as the stored `noteTree`. A note can exist with
-`moduleId` and `hidden` but no tree node; it will not appear in the book.
+`moduleIds` and `hidden` but no tree node; it will not appear in the book.
 
 ## Book renderer (`ModuleDocumentView.vue`)
 

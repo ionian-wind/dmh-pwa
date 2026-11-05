@@ -750,7 +750,7 @@ describe('current domain cards', () => {
           content: 'Hello **world**',
           tags: ['session'],
           typeId: null,
-          moduleId: null,
+          moduleIds: [],
           hidden: false,
           createdAt: 0,
           updatedAt: 0,
@@ -799,7 +799,7 @@ describe('current domain cards', () => {
           name: 'Ambush',
           description: 'Goblins',
           monsters: { m1: 2, m2: 1 },
-          moduleId: 'mod',
+          moduleIds: ['mod'],
         },
       },
     });

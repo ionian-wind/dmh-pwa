@@ -125,7 +125,8 @@ Use the following rule when deciding whether something moves to the Links tab.
 | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | Scalar fields owned by the entity                                                                                     | Main editor, first section                         |
 | Options pointing at internal entities                                                                                 | Main editor, second section                        |
-| Optional single main-entity reference (`moduleId`, `locationId`)                                                      | Links tab, single-select                           |
+| Optional/required module references (`moduleIds`, multi-select)                                                       | Links tab, multi-select                            |
+| Optional single main-entity reference (`locationId`)                                                                  | Links tab, single-select                           |
 | `MapEntityRef[]`-style cross-entity links                                                                             | Links tab, grouped by entity type                  |
 | Owned structures with extra per-relation data (party members, encounter monster roster, module note tree, map layers) | Main editor, because they define the entity itself |
 

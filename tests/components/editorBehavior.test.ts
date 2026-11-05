@@ -135,6 +135,7 @@ describe('editor behavior', () => {
 
     linkBlock(wrapper, 'module').vm.$emit('update:modelValue', [
       { kind: 'module', id: 'm1' },
+      { kind: 'module', id: 'm2' },
     ]);
     linkBlock(wrapper, 'character').vm.$emit('update:modelValue', [
       { kind: 'character', id: 'c1' },
@@ -146,7 +147,7 @@ describe('editor behavior', () => {
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'Company',
-      moduleIds: ['m1'],
+      moduleIds: ['m1', 'm2'],
       characters: ['c1'],
     });
     wrapper.unmount();
@@ -199,6 +200,7 @@ describe('editor behavior', () => {
 
     linkBlock(wrapper, 'module').vm.$emit('update:modelValue', [
       { kind: 'module', id: 'm1' },
+      { kind: 'module', id: 'm2' },
     ]);
     await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
@@ -206,7 +208,7 @@ describe('editor behavior', () => {
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'Ambush',
-      moduleId: 'm1',
+      moduleIds: ['m1', 'm2'],
     });
     expect(wrapper.emitted('cancel')).toHaveLength(1);
     wrapper.unmount();
@@ -218,7 +220,7 @@ describe('editor behavior', () => {
       name: 'Ambush',
       description: 'Goblins',
       monsters: {},
-      moduleId: 'm1',
+      moduleIds: ['m1'],
       notes: '',
       createdAt: 1,
       updatedAt: 1,
@@ -234,7 +236,7 @@ describe('editor behavior', () => {
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'Ambush',
-      moduleId: 'm1',
+      moduleIds: ['m1'],
     });
 
     (wrapper.vm as any).openEditor();
@@ -256,7 +258,7 @@ describe('editor behavior', () => {
       contentType: 'text',
       typeId: null,
       tags: [],
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
       createdAt: 1,
       updatedAt: 1,
@@ -276,11 +278,12 @@ describe('editor behavior', () => {
     expect(wrapper.findComponent(BaseModal).props('tabs')).toHaveLength(2);
     linkBlock(wrapper, 'module').vm.$emit('update:modelValue', [
       { kind: 'module', id: 'm2' },
+      { kind: 'module', id: 'm3' },
     ]);
     await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleId: 'm2',
+      moduleIds: ['m2', 'm3'],
     });
 
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
@@ -298,7 +301,7 @@ describe('editor behavior', () => {
       contentType: 'text',
       typeId: null,
       tags: [],
-      moduleId: 'm1',
+      moduleIds: ['m1'],
       hidden: false,
       createdAt: 1,
       updatedAt: 1,
@@ -336,7 +339,7 @@ describe('editor behavior', () => {
           contentType: 'draw',
           typeId: null,
           tags: [],
-          moduleId: null,
+          moduleIds: [],
           hidden: false,
           createdAt: 1,
           updatedAt: 1,

@@ -101,7 +101,7 @@ Behavior:
 - New notes are created by the parent with `hidden: false`; drawing notes keep
   `contentType: 'draw'`.
 
-A note created from the list can now carry `moduleId`, `typeId`, and tags. Notes
+A note created from the list can now carry `moduleIds`, `typeId`, and tags. Notes
 created inside a module's document tree are still forced to `hidden: true` by
 `ModuleDocumentTree`.
 
@@ -195,7 +195,7 @@ saved from the UI has:
   "content": "…",
   "typeId": null,
   "tags": [],
-  "moduleId": null,
+  "moduleIds": [],
   "backgroundColor": "",
   "hidden": false,
   "createdAt": 0,

@@ -180,7 +180,7 @@ describe('regression: known bugs', () => {
           content: 'Body',
           typeId: null,
           tags: [],
-          moduleId: 'old-module',
+          moduleIds: ['old-module'],
           hidden: true,
         },
       ],
@@ -190,7 +190,7 @@ describe('regression: known bugs', () => {
 
     expect(result.module.id).not.toBe('old-module');
     expect(result.notes[0].id).not.toBe('old-note');
-    expect(result.notes[0].moduleId).toBe(result.module.id);
+    expect(result.notes[0].moduleIds).toEqual([result.module.id]);
     expect(result.tree[0].noteId).toBe(result.notes[0].id);
     expect(result.tree[0].children).toEqual([]);
   });

@@ -65,6 +65,7 @@ integrity, and it only applies to note content on submit. Task-checkbox writes
 bypass it.
 
 Deleting a note removes the note and its outgoing index record, but leaves:
+
 - its node in any `module.noteTree`,
 - bookmarks pointing to it,
 - incoming links from other notes (those notes still render links to a missing
@@ -83,7 +84,7 @@ ModuleView loads module + all related stores
   │     └─ emits TOC + active anchor
   └─ Book Tree tab → ModuleDocumentTree
         ├─ convert tree ↔ ExtendedTreeNode
-        ├─ add/edit/remove notes (hidden:true, moduleId)
+        ├─ add/edit/remove notes (hidden:true, moduleIds)
         └─ local tree watcher emits update:noteTree
               └─ ModuleView.handleSaveNoteTree → moduleStore.update(noteTree)
 ```
@@ -110,12 +111,13 @@ HomeView import (or ModulesView if the button were enabled)
        └─ ImportValidationModal
   └─ importModuleFromZip
        ├─ module keeps its original id (comment claims new id)
-       ├─ notes keep ids; moduleId := module.id; timestamps := now
+       ├─ notes keep ids; moduleIds := [module.id]; timestamps := now
        ├─ raw transaction puts modules + notes (no schema validation)
        └─ stores reloaded by caller (modules/notes only)
 ```
 
 Consequences:
+
 - Importing the same archive twice creates a copy instead of overwriting.
 - IDs in the archive cannot collide with local records.
 - Notes are indexed for mentions during import.
@@ -276,12 +278,12 @@ than explaining what went wrong.
 
 ## 15. Seams that need a contract
 
-| Seam | Current state | Needed contract |
-| --- | --- | --- |
-| View ↔ shell chrome | String-keyed inject/provide; unforwarded slots | Typed layout store or composable |
-| View ↔ store | Ad-hoc loading per mount | Central load/cache policy |
-| Store ↔ store | IDs only, no integrity | Repository/unit-of-work + cascades |
-| Import ↔ store | Raw transaction bypasses validation and state | Import service that validates + refreshes |
-| Player ↔ playlist | Manual `actualiseQueue` calls | Reactive derived queue |
-| Mention index ↔ entities | Only notes indexed | Generic indexer per entity type |
-| Modal ↔ parent | Unused `footer`/`update:isOpen` slots | Shared modal contract |
+| Seam                     | Current state                                  | Needed contract                           |
+| ------------------------ | ---------------------------------------------- | ----------------------------------------- |
+| View ↔ shell chrome      | String-keyed inject/provide; unforwarded slots | Typed layout store or composable          |
+| View ↔ store             | Ad-hoc loading per mount                       | Central load/cache policy                 |
+| Store ↔ store            | IDs only, no integrity                         | Repository/unit-of-work + cascades        |
+| Import ↔ store           | Raw transaction bypasses validation and state  | Import service that validates + refreshes |
+| Player ↔ playlist        | Manual `actualiseQueue` calls                  | Reactive derived queue                    |
+| Mention index ↔ entities | Only notes indexed                             | Generic indexer per entity type           |
+| Modal ↔ parent           | Unused `footer`/`update:isOpen` slots          | Shared modal contract                     |

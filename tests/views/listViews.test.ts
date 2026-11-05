@@ -423,7 +423,7 @@ describe('list views', () => {
       treeMatchesModule: true,
     });
     vi.mocked(importModuleFromZip).mockResolvedValue({
-      moduleId: 'm1',
+      moduleIds: ['m1'],
       noteCount: 3,
     });
 

@@ -18,7 +18,7 @@ describe('note store', () => {
       content: 'See [Alice](monster://m1)',
       typeId: null,
       tags: ['session'],
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
     });
 
@@ -49,7 +49,7 @@ describe('note store', () => {
       content: 'Body',
       typeId: null,
       tags: [],
-      moduleId: 'm1',
+      moduleIds: ['m1'],
       hidden: true,
     });
 
@@ -64,7 +64,7 @@ describe('note store', () => {
       content: 'Goblin ambush',
       typeId: null,
       tags: ['combat'],
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
     });
     await store.create({
@@ -72,7 +72,7 @@ describe('note store', () => {
       content: 'Tavern scene',
       typeId: null,
       tags: ['social'],
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
     });
 
@@ -94,7 +94,7 @@ describe('note store', () => {
       content: 'Body',
       typeId: null,
       tags: [],
-      moduleId: 'm1',
+      moduleIds: ['m1'],
       hidden: true,
     });
     await modules.create({
@@ -118,7 +118,7 @@ describe('note store', () => {
       content: 'Body',
       typeId: null,
       tags: [],
-      moduleId: 'm2',
+      moduleIds: ['m2'],
       hidden: false,
     });
     await modules.create({
@@ -140,7 +140,7 @@ describe('note store', () => {
       content: 'Body',
       typeId: null,
       tags: [],
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
     });
 
@@ -154,7 +154,7 @@ describe('note store', () => {
       content: '# Heading\nVisit #harbor and #forest.',
       typeId: null,
       tags: ['session'],
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
     });
 

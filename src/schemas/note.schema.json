@@ -9,9 +9,9 @@
     "contentType",
     "typeId",
     "tags",
-    "moduleId",
     "createdAt",
-    "updatedAt"
+    "updatedAt",
+    "moduleIds"
   ],
   "properties": {
     "id": {
@@ -59,19 +59,6 @@
       },
       "description": "Array of tags associated with the note"
     },
-    "moduleId": {
-      "oneOf": [
-        {
-          "type": "string",
-          "description": "ID of the module this note belongs to"
-        },
-        {
-          "type": "null",
-          "description": "No module assigned"
-        }
-      ],
-      "description": "ID of the module this note belongs to or null if no module assigned"
-    },
     "createdAt": {
       "type": "number",
       "description": "Timestamp when the note was created"
@@ -79,6 +66,13 @@
     "updatedAt": {
       "type": "number",
       "description": "Timestamp when the note was last updated"
+    },
+    "moduleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of the modules this note is linked to"
     }
   }
 }

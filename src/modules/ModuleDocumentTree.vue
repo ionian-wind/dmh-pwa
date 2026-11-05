@@ -33,7 +33,7 @@ const { t } = useI18n();
 // Get notes for this module that are hidden (document tree notes)
 const notes = computed(() =>
   noteStore.items.filter(
-    (note) => note.moduleId === props.moduleId && note.hidden === true,
+    (note) => note.moduleIds?.includes(props.moduleId) && note.hidden === true,
   ),
 );
 
@@ -109,7 +109,7 @@ async function openAddNode(node: ExtendedTreeNode | null) {
     content: '',
     contentType: 'text',
     tags: [],
-    moduleId: props.moduleId,
+    moduleIds: [props.moduleId],
     typeId: null,
     hidden: true,
     createdAt: Date.now(),
@@ -134,9 +134,16 @@ async function openEdit(node: ExtendedTreeNode) {
 }
 
 async function handleSubmit(note: Note) {
+  // Internal document notes belong to the module they are edited from and
+  // cannot be re-linked through the editor.
+  const internalNote: Note = {
+    ...note,
+    moduleIds: [props.moduleId],
+    hidden: true,
+  };
   if (isAddMode.value) {
     // Persist note creation
-    const { id, createdAt, updatedAt, ...rest } = note;
+    const { id, createdAt, updatedAt, ...rest } = internalNote;
     const newNote = await noteStore.create(rest);
     localNotes.value.push({ ...newNote });
     const newNode: ExtendedTreeNode = {
@@ -169,12 +176,12 @@ async function handleSubmit(note: Note) {
     // Edit existing note
     const idx = localNotes.value.findIndex((n) => n.id === note.id);
     if (idx !== -1) {
-      localNotes.value[idx] = { ...note };
+      localNotes.value[idx] = { ...internalNote };
       // Update the tree node title
       const updateTitleRecursive = (nodes: ExtendedTreeNode[]): boolean => {
         for (const n of nodes) {
           if (n.noteId === note.id) {
-            n.title = note.title || 'Untitled';
+            n.title = internalNote.title || 'Untitled';
             return true;
           }
           if (n.children && updateTitleRecursive(n.children)) return true;
@@ -183,7 +190,7 @@ async function handleSubmit(note: Note) {
       };
       updateTitleRecursive(localTree.value);
     }
-    await noteStore.update(note.id, note);
+    await noteStore.update(internalNote.id, internalNote);
     // The watch on localTree will handle emitting the update
   }
 

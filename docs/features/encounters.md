@@ -27,12 +27,12 @@ interface Encounter {
   name: string;
   description?: string;
   monsters: Record<string, number>; // monsterId -> count
-  moduleId: string;
+  moduleIds: string[];
   notes?: string;
 }
 ```
 
-Schema requires `name`, `monsters`, `moduleId`, timestamps; monster counts are
+Schema requires `name`, `monsters`, `moduleIds`, timestamps; monster counts are
 constrained to 1..20. `description` and `notes` are allowed but not listed in
 the schema.
 
@@ -52,7 +52,7 @@ the schema.
 
 ## Card (`EncounterCard.vue`)
 
-- Module name lookup by `moduleId`.
+- Module name lookup by `moduleIds` (joined for display).
 - Monster summary as `"<kinds> (<total>)"`.
 - Run-combat button in the card action slot.
 - Emits `view`, `edit`, `delete`, `run-combat`, `copy`.
@@ -63,7 +63,7 @@ the schema.
 - The module link is edited in the **Linked entities** tab through an
   `EntitiesLinking` block.
 - Description and notes.
-- Validation requires both name and a real `moduleId`.
+- Validation requires both name and at least one real `moduleId` in `moduleIds`.
 - `handleSubmit` emits and then calls `closeEditor`, which resets the form and
   emits `cancel`. Parents also close on submit; double-close is harmless but
   means the reset happens before the parent reads the emitted object (the
@@ -119,7 +119,7 @@ See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 
 ## Relationships
 
-- `encounter.moduleId` → module (required).
+- `encounter.moduleIds` → modules (at least one required).
 - `encounter.monsters` → monster IDs with counts.
 - `combat.encounterId` → encounter.
 - Encounter-generated combats snapshot monster instances at creation.

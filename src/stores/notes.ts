@@ -83,15 +83,20 @@ export const useNoteStore = defineStore('notes', () => {
     const note = base.getById(id);
     if (!note) throw new Error(`Note '${id}' not found`);
 
-    if (hidden && !note.moduleId) {
+    const moduleIds = note.moduleIds ?? [];
+    if (hidden && moduleIds.length === 0) {
       throw new Error('A note must belong to a module before it can be hidden');
     }
 
     const modules = useModuleStore();
-    if (hidden && note.moduleId) {
-      await modules.addNoteToTree(note.moduleId, id);
-    } else if (!hidden && note.moduleId) {
-      await modules.removeNoteFromTree(note.moduleId, id);
+    if (hidden) {
+      await Promise.all(
+        moduleIds.map((moduleId) => modules.addNoteToTree(moduleId, id)),
+      );
+    } else {
+      await Promise.all(
+        moduleIds.map((moduleId) => modules.removeNoteFromTree(moduleId, id)),
+      );
     }
 
     return base.update(id, { hidden } as Partial<Note>);

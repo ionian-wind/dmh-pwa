@@ -156,7 +156,7 @@ const handleSubmit = async (editedNote: Note) => {
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title || '');
 const noteLinks = computed<MapEntityRef[]>(() =>
-  note.value?.moduleId ? [{ kind: 'module', id: note.value.moduleId }] : [],
+  (note.value?.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
 );
 
 const rightDrawer = useRightDrawer();

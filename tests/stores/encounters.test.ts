@@ -16,12 +16,12 @@ describe('encounter store', () => {
     await store.create({
       name: 'Ambush',
       monsters: { m1: 2 },
-      moduleId: 'mod',
+      moduleIds: ['mod'],
     });
     await store.create({
       name: 'Boss Fight',
       monsters: { m2: 1 },
-      moduleId: 'mod',
+      moduleIds: ['mod'],
     });
 
     store.setSearchQuery('boss');
@@ -41,7 +41,7 @@ describe('encounter store', () => {
     const created = await store.create({
       name: 'Ambush',
       monsters: { m1: 2 },
-      moduleId: 'mod',
+      moduleIds: ['mod'],
     });
     const updated = await store.update(created.id, {
       monsters: { m1: 3, m2: 1 },

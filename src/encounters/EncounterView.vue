@@ -219,9 +219,10 @@ const handleViewCombat = (combat: Combat) => {
 };
 
 const encounterLinks = computed<MapEntityRef[]>(() =>
-  encounter.value?.moduleId
-    ? [{ kind: 'module', id: encounter.value.moduleId }]
-    : [],
+  (encounter.value?.moduleIds ?? []).map((id) => ({
+    kind: 'module',
+    id,
+  })),
 );
 
 // Tab configuration

@@ -32,13 +32,13 @@
 | `preview`     | `string?`          | Small PNG data URL preview for drawing notes                 |
 | `typeId`      | `string \| null`   | References a `NoteType`; UI for setting it is commented out  |
 | `tags`        | `string[]`         | Used for card chips and route-based tag filtering            |
-| `moduleId`    | `string \| null`   | Owning module, or null for free notes                        |
+| `moduleIds`   | `string[]`         | Linked modules; empty for free notes                         |
 | `parentId`    | `string?`          | Declared in TS, not persisted by schemas/UI                  |
 | `metadata`    | `object?`          | Declared in TS, unused                                       |
 | `hidden`      | `boolean`          | `true` = document-tree note, excluded from normal note list  |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
-`typeId`, `tags`, `moduleId`, `createdAt`, `updatedAt`. `hidden` is not listed
+`typeId`, `tags`, `moduleIds`, `createdAt`, `updatedAt`. `hidden` is not listed
 but is accepted because additional properties are allowed.
 
 **Hidden-note semantics.** A note with `hidden: true`:
@@ -113,13 +113,13 @@ Again, no stat block/CR/HP fields exist.
 
 ### Encounter
 
-| Field         | Type                     | Notes                                     |
-| ------------- | ------------------------ | ----------------------------------------- |
-| `name`        | `string`                 | Required                                  |
-| `description` | `string?`                | Rendered with `v-html` in the detail view |
-| `monsters`    | `Record<string, number>` | Monster ID → count (schema: 1..20)        |
-| `moduleId`    | `string`                 | Required; editor requires a truthy value  |
-| `notes`       | `string?`                | Free text                                 |
+| Field         | Type                     | Notes                                      |
+| ------------- | ------------------------ | ------------------------------------------ |
+| `name`        | `string`                 | Required                                   |
+| `description` | `string?`                | Rendered with `v-html` in the detail view  |
+| `monsters`    | `Record<string, number>` | Monster ID → count (schema: 1..20)         |
+| `moduleIds`   | `string[]`               | At least one module required by the editor |
+| `notes`       | `string?`                | Free text                                  |
 
 ### Combat
 
@@ -329,8 +329,8 @@ embedded in `MapLocation.map`; there is no runtime `MapEntity` store.
 
 ```mermaid
 erDiagram
-  MODULE ||--o{ NOTE : "note.moduleId"
-  MODULE ||--o{ ENCOUNTER : "encounter.moduleId"
+  MODULE }o--o{ NOTE : "note.moduleIds"
+  MODULE }o--o{ ENCOUNTER : "encounter.moduleIds"
   MODULE }o--o{ PARTY : "party.moduleIds"
   MODULE }o--o{ MONSTER : "monster.moduleIds"
   MODULE }o--o{ PLAYLIST : "playlist.moduleIds"
@@ -362,9 +362,9 @@ currently only show note→entity and note→note connections.
 
 There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 
-- Deleting a module leaves notes with `moduleId`, encounters with `moduleId`,
-  bookmarks, and party/monster/playlist `moduleIds` pointing at a missing
-  module.
+- Deleting a module leaves notes with `moduleIds`, encounters with
+  `moduleIds`, bookmarks, and party/monster/playlist `moduleIds` pointing at a
+  missing module.
 - Deleting a note leaves nodes in `module.noteTree`. The book builder silently
   skips missing notes, so the tree shows holes.
 - Deleting a character leaves it in `party.characters`; `PartyView` filters via

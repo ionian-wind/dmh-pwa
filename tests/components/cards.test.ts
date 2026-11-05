@@ -79,7 +79,7 @@ describe('domain cards', () => {
       content: 'Hello **world**',
       tags: ['session', 'combat'],
       typeId: null,
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
       createdAt: 0,
       updatedAt: 0,
@@ -106,7 +106,7 @@ describe('domain cards', () => {
       preview: 'data:image/png;base64,preview',
       tags: [],
       typeId: null,
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
       createdAt: 0,
       updatedAt: 0,
@@ -134,7 +134,7 @@ describe('domain cards', () => {
       content: 'Body',
       tags: [],
       typeId: null,
-      moduleId: null,
+      moduleIds: [],
       hidden: false,
       createdAt: 0,
       updatedAt: 0,
@@ -201,7 +201,7 @@ describe('domain cards', () => {
       name: 'Ambush',
       description: 'Goblins',
       monsters: { goblin: 2, ogre: 1 },
-      moduleId: null,
+      moduleIds: [],
     } as any;
     const wrapper = mount(EncounterCard, { props: { encounter } });
     await nextTick();
@@ -228,7 +228,7 @@ describe('domain cards', () => {
           id: 'e1',
           name: 'Known',
           monsters: { goblin: 'many', ogre: 2 },
-          moduleId: 'mod',
+          moduleIds: ['mod'],
         },
       },
     });
@@ -241,7 +241,7 @@ describe('domain cards', () => {
         encounter: {
           id: 'e2',
           name: 'Unknown',
-          moduleId: 'missing',
+          moduleIds: ['missing'],
         },
       },
     });
@@ -255,7 +255,7 @@ describe('domain cards', () => {
           id: 'e3',
           name: 'Empty',
           monsters: null,
-          moduleId: '',
+          moduleIds: [],
         },
       },
     });

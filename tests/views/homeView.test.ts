@@ -155,7 +155,7 @@ describe('HomeView', () => {
       notes: [],
     });
     vi.mocked(importModuleFromZip).mockResolvedValue({
-      moduleId: 'm1',
+      moduleIds: ['m1'],
       noteCount: 2,
     });
     const wrapper = await mountHome();

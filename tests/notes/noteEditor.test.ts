@@ -53,7 +53,7 @@ const baseNote = {
   contentType: 'text',
   typeId: null,
   tags: [],
-  moduleId: null,
+  moduleIds: [],
   hidden: false,
   createdAt: 1,
   updatedAt: 1,

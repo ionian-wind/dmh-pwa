@@ -41,7 +41,7 @@ export interface Note extends WithMetadata {
   backgroundColor?: string;
   typeId: UUID | null;
   tags: string[];
-  moduleId: UUID | null;
+  moduleIds: UUID[];
   parentId?: UUID;
   metadata?: Record<string, unknown>;
   hidden: boolean; // If true, note is hidden from general listing (e.g. document tree notes)
@@ -108,7 +108,7 @@ export interface Encounter extends WithMetadata {
   name: string;
   description?: string;
   monsters: Record<UUID, number>;
-  moduleId: UUID;
+  moduleIds: UUID[];
   notes?: string;
 }
 

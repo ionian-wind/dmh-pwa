@@ -41,7 +41,7 @@ const editedNote = ref<Note>({
   content: '',
   contentType: props.contentType ?? 'text',
   tags: [],
-  moduleId: null,
+  moduleIds: [],
   typeId: null,
   hidden: false,
 });
@@ -64,7 +64,7 @@ watch(
       editedNote.value = {
         ...newNote,
         contentType: newNote.contentType ?? 'text',
-        moduleId: newNote.moduleId ?? null,
+        moduleIds: newNote.moduleIds ?? [],
         typeId: newNote.typeId ?? null,
       };
       lastNoteId.value = newNote.id;
@@ -77,7 +77,7 @@ watch(
         content: '',
         contentType: props.contentType ?? 'text',
         tags: [],
-        moduleId: null,
+        moduleIds: [],
         typeId: null,
         hidden: false,
       };
@@ -90,14 +90,12 @@ watch(
 const editorTabs = useEntityEditorTabs();
 const tabs = computed(() => (props.hideModuleSelector ? [] : editorTabs.value));
 
-const linkedModule = computed<MapEntityRef[]>(() =>
-  editedNote.value.moduleId
-    ? [{ kind: 'module', id: editedNote.value.moduleId }]
-    : [],
+const linkedModules = computed<MapEntityRef[]>(() =>
+  editedNote.value.moduleIds.map((id) => ({ kind: 'module', id })),
 );
 
-function setLinkedModule(links: MapEntityRef[]) {
-  editedNote.value.moduleId = links[0]?.id ?? null;
+function setLinkedModules(links: MapEntityRef[]) {
+  editedNote.value.moduleIds = links.map((link) => link.id);
 }
 
 const markdownEditorRef = ref<any>(null);
@@ -192,9 +190,8 @@ function handleDelete() {
     <template #links>
       <EntitiesLinking
         kind="module"
-        :multiple="false"
-        :model-value="linkedModule"
-        @update:model-value="setLinkedModule"
+        :model-value="linkedModules"
+        @update:model-value="setLinkedModules"
       />
     </template>
 
@@ -214,7 +211,6 @@ function handleDelete() {
                 <NoteTypeSelector
                   :allow-create="true"
                   v-model="editedNote.typeId"
-                  :module-id="editedNote.moduleId"
                 />
                 <TagSelector
                   v-model="editedNote.tags"
