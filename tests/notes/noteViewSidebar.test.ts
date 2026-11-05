@@ -16,6 +16,7 @@ describe('NoteViewSidebar', () => {
       global: { stubs: { RouterLink: RouterLinkStub } },
     });
     expect(wrapper.findAll('.tag-link')).toHaveLength(2);
+    expect(wrapper.find('.entity-group').exists()).toBe(true);
     wrapper.unmount();
   });
 

@@ -4,6 +4,7 @@ import { computed, onMounted } from 'vue';
 import type { Note } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { useMentionsStore } from '@/utils/storage';
+import EntityGroup from '@/components/common/EntityGroup.vue';
 
 const { t } = useI18n();
 
@@ -34,8 +35,11 @@ onMounted(() => mentionsStore.load());
 
 <template>
   <div class="side-panel-content q-pa-md">
-    <div v-if="props.note.tags?.length" class="tags-section">
-      <h5>{{ t('tags.title') }}</h5>
+    <EntityGroup
+      v-if="props.note.tags?.length"
+      class="tags-section"
+      :title="t('tags.title')"
+    >
       <div class="tags">
         <router-link
           v-for="tag in props.note.tags"
@@ -45,8 +49,7 @@ onMounted(() => mentionsStore.load());
           >#{{ tag }}</router-link
         >
       </div>
-      <QSeparator />
-    </div>
+    </EntityGroup>
     <Mentions :title="t('common.mentions')" :entities="mentions" />
     <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
   </div>
