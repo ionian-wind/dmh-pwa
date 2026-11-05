@@ -132,7 +132,6 @@ const hasContent = computed(() => {
 .base-card {
   position: relative;
   --card-actions-height: 52px;
-  transition: padding-bottom 0.15s ease;
 }
 
 .base-card:hover,
