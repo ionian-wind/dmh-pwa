@@ -779,7 +779,9 @@
     "playLast": "Play last",
     "allTracks": "All Tracks",
     "noTrackSelected": "No track selected",
-    "openJukebox": "Open Jukebox"
+    "openJukebox": "Open Jukebox",
+    "viewMode": "View mode",
+    "editMode": "Edit mode"
   },
   "ambientSoundPage": {
     "title": "Ambient Sound",

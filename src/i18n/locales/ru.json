@@ -780,7 +780,9 @@
     "playLast": "Играть последним",
     "allTracks": "Все треки",
     "noTrackSelected": "Трек не выбран",
-    "openJukebox": "Открыть джукбокс"
+    "openJukebox": "Открыть джукбокс",
+    "viewMode": "Режим просмотра",
+    "editMode": "Режим редактирования"
   },
   "ambientSoundPage": {
     "title": "Амбиент",

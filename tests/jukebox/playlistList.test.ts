@@ -6,6 +6,7 @@ import SortableList from '@/components/common/SortableList.vue';
 import PlaylistList from '@/jukebox/components/PlaylistList.vue';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useConfigStore } from '@/utils/configStore';
+import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 
 const EditorStub = defineComponent({
   name: 'PlaylistEditor',
@@ -64,6 +65,7 @@ function seed() {
 describe('PlaylistList drag-and-drop and selection', () => {
   beforeEach(() => {
     useConfigStore().jukeboxActivePlaylistId = null;
+    useJukeboxEditMode().value = true;
   });
 
   it('orders playlists by sortOrder and persists drag reordering', async () => {
@@ -235,6 +237,28 @@ describe('PlaylistList drag-and-drop and selection', () => {
 
     expect(remove).toHaveBeenCalledWith('p1');
     expect(wrapper.findComponent(EditorStub).props('modelValue')).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('hides drag handles and create row in view mode', async () => {
+    seed();
+    useJukeboxEditMode().value = false;
+    const wrapper = mountList();
+    await flushPromises();
+
+    expect(wrapper.findAll('.playlist-drag-handle')).toHaveLength(0);
+    expect(wrapper.find('.playlist-list-container').classes()).not.toContain(
+      'is-edit-mode',
+    );
+    expect(wrapper.text()).not.toContain('New playlist');
+
+    await wrapper.find('.jukebox-edit-mode').trigger('click');
+    await flushPromises();
+    expect(useJukeboxEditMode().value).toBe(true);
+    expect(wrapper.findAll('.playlist-drag-handle')).toHaveLength(2);
+    expect(wrapper.find('.playlist-list-container').classes()).toContain(
+      'is-edit-mode',
+    );
     wrapper.unmount();
   });
 });

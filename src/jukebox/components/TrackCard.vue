@@ -15,12 +15,16 @@ import type { JukeboxTrack } from '@/jukebox/types';
 import { formatTime } from '../utils';
 import TrackInfo from './TrackInfo.vue';
 
-const props = defineProps<{
-  track: JukeboxTrack;
-  isSelected?: boolean;
-  isPlaying?: boolean;
-  draggable?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    track: JukeboxTrack;
+    isSelected?: boolean;
+    isPlaying?: boolean;
+    draggable?: boolean;
+    showRemove?: boolean;
+  }>(),
+  { showRemove: true },
+);
 
 const emit = defineEmits<{
   (e: 'add-to-playlist', track: JukeboxTrack): void;
@@ -116,7 +120,11 @@ const trackColor = computed(() => props.track.color || 'transparent');
               </QItemSection>
               <QItemSection>{{ t('jukebox.playLast') }}</QItemSection>
             </QItem>
-            <QItem clickable @click.stop="handleRemove">
+            <QItem
+              v-if="showRemove !== false"
+              clickable
+              @click.stop="handleRemove"
+            >
               <QItemSection side>
                 <IconTrash />
               </QItemSection>

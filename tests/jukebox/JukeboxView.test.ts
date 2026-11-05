@@ -5,6 +5,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import type { JukeboxTrack } from '@/jukebox/types';
 import { useConfigStore } from '@/utils/configStore';
+import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 
 const mocks = vi.hoisted(() => ({
   tracks: {
@@ -515,5 +516,21 @@ describe('JukeboxView', () => {
       dragEvent('dragenter', { types: ['Files'], items: [] }),
     );
     expect(wrapper.find('.drop-zone-active').exists()).toBe(false);
+  });
+
+  it('enables dragging and removal only in edit mode', async () => {
+    const track = { id: 't1', title: 'One' } as JukeboxTrack;
+    mocks.tracks.items.value = [track];
+    mocks.playlists.items.value = [{ id: 'p1', trackIds: ['t1'] }];
+    useConfigStore().jukeboxActivePlaylistId = 'p1';
+
+    const { list } = await mountView();
+    expect(list.props('draggable')).toBe(false);
+    expect((list.props('cardProps') as any)(track).showRemove).toBe(false);
+
+    useJukeboxEditMode().value = true;
+    await nextTick();
+    expect(list.props('draggable')).toBe(true);
+    expect((list.props('cardProps') as any)(track).showRemove).toBe(true);
   });
 });

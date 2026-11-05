@@ -190,8 +190,8 @@ position until `onplay/onseek` updates it.
 - Footer: `JukeboxPlayer` with animated background, no artwork.
 - The list shows either all tracks (no playlist selected) or the selected
   playlist's tracks, in playlist order.
-- Dragging is enabled only when a playlist is selected and starts from the
-  per-row drag handle; reorder writes `playlist.trackIds` and resorts the queue.
+- In edit mode, a selected playlist's tracks can be sorted from their per-row
+  drag handle; reorder writes `playlist.trackIds` and resorts the queue.
   Clicking the row itself plays the track.
 - Track click toggles play if it is the active track, otherwise starts it from
   the playlist.
@@ -209,9 +209,15 @@ unmount. The `filesStore` is loaded but unused.
 
 ## Playlists
 
-- `PlaylistList` shows "All Tracks", then playlists sortable via a per-row
-  drag handle; clicking the row selects the playlist.
-- Playlist sort order is persisted as `sortOrder`.
+- `PlaylistList` shows "All Tracks", then playlists. In edit mode playlists use
+  a per-row drag handle for sorting; clicking the row selects the playlist.
+- A View/Edit mode switch sits at the bottom of the playlist sidebar.
+  - View mode: no drag handles, no create row, no playlist manage buttons on
+    hover, and no Remove item in track menus.
+  - Edit mode: sorting handles appear, playlist manage buttons show on hover,
+    and track menus include Remove.
+- Playlist sort order is persisted as `sortOrder`; sorting is available only
+  in edit mode.
 - Edit opens `PlaylistEditor` (name, modules, description).
 - `AddToPlaylistModal` toggles track membership in existing playlists and can
   create a new playlist inline; the created playlist receives the current track

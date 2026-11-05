@@ -3,12 +3,15 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import { useConfigStore } from '@/utils/configStore';
+import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
 import SortableList from '@/components/common/SortableList.vue';
 
 import {
+  IconEdit,
   IconGripVertical,
+  IconLiveView,
   IconPlus,
   IconPencil,
   IconX,
@@ -20,6 +23,7 @@ const { t } = useI18n();
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const configStore = useConfigStore();
+const isEditMode = useJukeboxEditMode();
 const playlists = playlistsStore.items;
 
 const filteredPlaylists = computed(() => playlists.value || []);
@@ -138,7 +142,10 @@ onMounted(async () => {
 
 <template>
   <div
-    class="q-pa-none q-gutter-none q-mb-none playlist-list-container column full-height"
+    :class="[
+      'q-pa-none q-gutter-none q-mb-none playlist-list-container column full-height',
+      { 'is-edit-mode': isEditMode },
+    ]"
   >
     <!-- Fixed 'All Tracks' entry -->
     <div>
@@ -162,6 +169,7 @@ onMounted(async () => {
         v-model="sortedPlaylists"
         tag="div"
         class="playlist-list"
+        :disabled="!isEditMode"
         handle=".playlist-drag-handle"
         item-key="id"
         @end="onPlaylistSortEnd"
@@ -175,7 +183,12 @@ onMounted(async () => {
             @click="setSelectedPlaylist(playlist.id)"
             class="playlist-item"
           >
-            <QItemSection side class="playlist-drag-handle" @click.stop>
+            <QItemSection
+              v-if="isEditMode"
+              side
+              class="playlist-drag-handle"
+              @click.stop
+            >
               <IconGripVertical :size="16" />
             </QItemSection>
             <QItemSection>
@@ -205,11 +218,43 @@ onMounted(async () => {
     </QScrollArea>
 
     <QSeparator />
-    <QList>
+    <QList v-if="isEditMode">
       <QItem clickable v-ripple @click="openPlaylistModal(null)">
         <QItemSection>{{ t('playlist.createNew') }}</QItemSection>
         <QItemSection side>
           <IconPlus :size="18" />
+        </QItemSection>
+      </QItem>
+    </QList>
+
+    <QSeparator />
+    <QList>
+      <QItem class="playlist-mode-toggle">
+        <QItemSection>
+          <QBtnGroup spread class="full-width">
+            <QBtn
+              class="jukebox-view-mode"
+              color="primary"
+              :outline="isEditMode"
+              :title="t('jukebox.viewMode')"
+              :aria-label="t('jukebox.viewMode')"
+              :aria-pressed="!isEditMode"
+              @click="isEditMode = false"
+            >
+              <IconLiveView :size="18" />
+            </QBtn>
+            <QBtn
+              class="jukebox-edit-mode"
+              color="primary"
+              :outline="!isEditMode"
+              :title="t('jukebox.editMode')"
+              :aria-label="t('jukebox.editMode')"
+              :aria-pressed="isEditMode"
+              @click="isEditMode = true"
+            >
+              <IconEdit :size="18" />
+            </QBtn>
+          </QBtnGroup>
         </QItemSection>
       </QItem>
     </QList>
@@ -236,7 +281,7 @@ onMounted(async () => {
   display: none;
 }
 
-.playlist-item:hover .playlist-actions {
+.playlist-list-container.is-edit-mode .playlist-item:hover .playlist-actions {
   display: flex;
 }
 </style>

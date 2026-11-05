@@ -66,23 +66,23 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 168. Total tests: 1334.
+Total test files: 168. Total tests: 1337.
 
 ## Current results (measured)
 
 ```
 npm test
 Test Files  159 passed (159)
-Tests       1334 passed (1334)
+Tests       1337 passed (1337)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
 Statements  95.72%
-Branches    87.01%
-Functions    95.44%
-Lines       97.02%
+Branches    87.04%
+Functions    95.42%
+Lines       97.01%
 ```
 
 `vitest.config.ts` enforces 87% statements, functions, branches and lines

@@ -23,6 +23,7 @@ import PlaylistList from './components/PlaylistList.vue';
 import { confirm } from '@/dialogs';
 import { IconPlaylist } from '@tabler/icons-vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
+import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -63,6 +64,7 @@ function openAddToPlaylistModal(track: JukeboxTrack) {
 }
 
 const playerStore = useJukeboxPlayerStore();
+const isEditMode = useJukeboxEditMode();
 
 function playTrackFromPlaylist(track: JukeboxTrack) {
   // When a track is played, update configStore to match the current selected playlist
@@ -308,6 +310,7 @@ function cardProps(track: JukeboxTrack) {
     onPlay: () => trackClick(track),
     onPlayNext: () => playerStore.queueTrackNext(track),
     onPlayLast: () => playerStore.queueTrackLast(track),
+    showRemove: isEditMode.value,
   };
 }
 
@@ -330,6 +333,7 @@ const layout = useLayout();
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
+  isEditMode.value = false;
   await Promise.all([
     tracksStore.load(),
     playlistsStore.load(),
@@ -374,7 +378,7 @@ onBeforeUnmount(() => {
       :show-search="false"
       :view-style="'list'"
       @create="pickFiles"
-      :draggable="selectedPlaylistId !== null"
+      :draggable="isEditMode && selectedPlaylistId !== null"
       drag-handle=".track-drag-handle"
       @sort="onTracksSorted"
       :right-drawer-icon="IconPlaylist"

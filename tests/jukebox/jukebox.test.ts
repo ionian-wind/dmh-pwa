@@ -303,4 +303,16 @@ describe('jukebox store integration', () => {
     expect(wrapper.text()).toContain('Tavern Theme');
     wrapper.unmount();
   });
+
+  it('hides remove from the track menu outside edit mode', async () => {
+    const track = await seedTrack('Tavern Theme');
+    const wrapper = mount(TrackCard, {
+      props: { track, showRemove: false },
+    });
+
+    const items = wrapper.findAll('.track-actions-menu [data-stub="QItem"]');
+    expect(items).toHaveLength(3);
+    expect(wrapper.text()).not.toContain('Remove');
+    wrapper.unmount();
+  });
 });
