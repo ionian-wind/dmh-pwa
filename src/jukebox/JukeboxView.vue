@@ -76,6 +76,7 @@ const {
   hasSelectedPlaylists,
   hasSelection,
   setTrackOrder,
+  selectAllTracks,
   clearSelection,
 } = useJukeboxBulkSelection();
 
@@ -483,6 +484,10 @@ const cardProps = computed(() => {
   };
 });
 
+function selectAllVisibleTracks() {
+  selectAllTracks(filteredTracks.value.map((track) => track.id));
+}
+
 async function onTracksSorted(newOrder: JukeboxTrack[]) {
   if (!selectedPlaylistId.value) return;
   const playlist = playlistsStore.getById(selectedPlaylistId.value);
@@ -540,6 +545,15 @@ onBeforeUnmount(() => {
     <div v-if="isDragging" class="drop-zone-active">
       {{ t('common.dropAudioFiles') }}
     </div>
+    <div v-if="isEditMode && hasSelectedTracks" class="jukebox-bulk-panel">
+      <button
+        type="button"
+        class="select-all-link"
+        @click="selectAllVisibleTracks"
+      >
+        {{ t('common.selectAll') }}
+      </button>
+    </div>
     <BaseListView
       :items="filteredTracks"
       :card-component="TrackCard"
@@ -581,6 +595,29 @@ onBeforeUnmount(() => {
 .jukebox-page {
   position: relative;
   min-height: 100%;
+}
+
+.jukebox-bulk-panel {
+  position: sticky;
+  /* Stay below the fixed app toolbar while the page scrolls. */
+  top: 51px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 24px;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.select-all-link {
+  padding: 0;
+  color: var(--q-primary);
+  font: inherit;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 .drop-zone-active {
   position: fixed;

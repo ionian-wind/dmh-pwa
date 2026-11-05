@@ -330,4 +330,22 @@ describe('PlaylistList drag-and-drop and selection', () => {
     expect(other?.classes()).not.toContain('has-active-track');
     wrapper.unmount();
   });
+
+  it('selects all playlists from the bulk panel', async () => {
+    seed();
+    const bulk = useJukeboxBulkSelection();
+    const wrapper = mountList();
+    await flushPromises();
+
+    bulk.togglePlaylist('p1', true);
+    await nextTick();
+
+    expect(wrapper.find('.playlist-bulk-panel').exists()).toBe(true);
+    await wrapper
+      .find('.playlist-bulk-panel .select-all-link')
+      .trigger('click');
+
+    expect([...bulk.selectedPlaylistIds.value].sort()).toEqual(['p1', 'p2']);
+    wrapper.unmount();
+  });
 });

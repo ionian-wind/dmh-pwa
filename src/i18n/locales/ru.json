@@ -348,7 +348,8 @@
     "moduleRequired": "Модуль обязателен",
     "dropAudioFiles": "Перетащите аудиофайлы сюда",
     "overview": "Обзор",
-    "noLinkedEntities": "Связанных сущностей нет."
+    "noLinkedEntities": "Связанных сущностей нет.",
+    "selectAll": "Выбрать все"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",

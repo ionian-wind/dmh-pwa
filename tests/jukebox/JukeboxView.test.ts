@@ -752,4 +752,21 @@ describe('JukeboxView', () => {
     });
     expect(bulk.selectedPlaylistIds.value.size).toBe(0);
   });
+
+  it('selects every visible track from the bulk panel', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const one = { id: 't1', title: 'One' } as JukeboxTrack;
+    const two = { id: 't2', title: 'Two' } as JukeboxTrack;
+    mocks.tracks.items.value = [one, two];
+
+    const { wrapper } = await mountView();
+    useJukeboxEditMode().value = true;
+    bulk.toggleTrack('t1', true);
+    await nextTick();
+
+    expect(wrapper.find('.jukebox-bulk-panel').exists()).toBe(true);
+    await wrapper.find('.select-all-link').trigger('click');
+
+    expect([...bulk.selectedTrackIds.value].sort()).toEqual(['t1', 't2']);
+  });
 });

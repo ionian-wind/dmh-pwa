@@ -78,4 +78,18 @@ describe('useJukeboxBulkSelection', () => {
     bulk.toggleTrack('t2', true, true);
     expect([...bulk.selectedTrackIds.value]).toEqual(['t1', 't2']);
   });
+
+  it('selects all items of the current view', () => {
+    const bulk = useJukeboxBulkSelection();
+
+    bulk.selectAllTracks(['t1', 't2', 't3']);
+    expect([...bulk.selectedTrackIds.value]).toEqual(['t1', 't2', 't3']);
+
+    bulk.selectAllPlaylists(['p1']);
+    expect(bulk.selectedPlaylistIds.value.size).toBe(0);
+
+    bulk.clearSelection();
+    bulk.selectAllPlaylists(['p1', 'p2']);
+    expect([...bulk.selectedPlaylistIds.value]).toEqual(['p1', 'p2']);
+  });
 });

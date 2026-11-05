@@ -48,8 +48,10 @@ const playlistToEdit = ref<JukeboxPlaylist | null>(null);
 const {
   selectedPlaylistIds,
   hasSelectedTracks,
+  hasSelectedPlaylists,
   togglePlaylist,
   setPlaylistOrder,
+  selectAllPlaylists,
 } = useJukeboxBulkSelection();
 const bulkShiftClick = ref(false);
 
@@ -162,6 +164,10 @@ const removePlaylist = async (playlistId: string) => {
   await playlistsStore.remove(playlistId);
 };
 
+function selectAllVisiblePlaylists() {
+  selectAllPlaylists(sortedPlaylists.value.map((playlist) => playlist.id));
+}
+
 const onPlaylistSortEnd = async (event: any) => {
   const { newIndex, oldIndex } = event;
   if (newIndex === oldIndex) return;
@@ -208,6 +214,18 @@ onMounted(async () => {
 
     <!-- Scrollable, sortable playlists -->
     <QScrollArea class="q-pa-none q-mb-none col-grow" style="min-height: 0">
+      <div
+        v-if="isEditMode && hasSelectedPlaylists"
+        class="playlist-bulk-panel"
+      >
+        <button
+          type="button"
+          class="select-all-link"
+          @click="selectAllVisiblePlaylists"
+        >
+          {{ t('common.selectAll') }}
+        </button>
+      </div>
       <SortableList
         v-model="sortedPlaylists"
         tag="div"
@@ -339,6 +357,28 @@ onMounted(async () => {
 
 .has-active-track {
   box-shadow: inset 3px 0 0 var(--q-primary);
+}
+
+.playlist-bulk-panel {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 16px;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.playlist-bulk-panel .select-all-link {
+  padding: 0;
+  color: var(--q-primary);
+  font: inherit;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 
 .playlist-actions {

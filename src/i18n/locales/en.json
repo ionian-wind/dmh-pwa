@@ -347,7 +347,8 @@
     "moduleRequired": "Module is required",
     "dropAudioFiles": "Drop audio files here",
     "overview": "Overview",
-    "noLinkedEntities": "No linked entities."
+    "noLinkedEntities": "No linked entities.",
+    "selectAll": "Select all"
   },
   "validation": {
     "required": "This field is required",

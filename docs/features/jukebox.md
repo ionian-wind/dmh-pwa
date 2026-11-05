@@ -238,6 +238,10 @@ position until `onplay/onseek` updates it.
   selecting playlists disables track checkboxes.
 - Shift-clicking a track or playlist checkbox selects or deselects the whole
   range between the last clicked item and the current one in display order.
+- While items are selected, a sticky bulk panel appears above the list with a
+  `Select all` pseudo-link. It selects every item in the current view (the
+  visible playlist/all-tracks list or the playlist sidebar). The panel reserves
+  its own layout space and overlays items while the list scrolls.
 - While edit mode is on and at least one row is selected, the main header shows
   an Edit/Delete button group on the left side, before the title area.
   - Edit on selected tracks opens a playlist linking modal; applying it adds

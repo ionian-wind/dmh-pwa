@@ -79,6 +79,18 @@ export function useJukeboxBulkSelection() {
     lastSelected.value = { kind: 'playlist', id: playlistId };
   }
 
+  function selectAllTracks(ids: string[]) {
+    if (hasSelectedPlaylists.value) return;
+    selectedTrackIds.value = new Set(ids);
+    lastSelected.value = null;
+  }
+
+  function selectAllPlaylists(ids: string[]) {
+    if (hasSelectedTracks.value) return;
+    selectedPlaylistIds.value = new Set(ids);
+    lastSelected.value = null;
+  }
+
   function clearSelection() {
     selectedTrackIds.value = new Set();
     selectedPlaylistIds.value = new Set();
@@ -97,6 +109,8 @@ export function useJukeboxBulkSelection() {
     setPlaylistOrder,
     toggleTrack,
     togglePlaylist,
+    selectAllTracks,
+    selectAllPlaylists,
     clearSelection,
   };
 }
