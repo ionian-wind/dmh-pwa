@@ -192,8 +192,17 @@ defineExpose({
   text-decoration: underline;
 }
 
-:global(.milkdown .milkdown-slash-menu svg.mention-tabler-icon),
-:global(.milkdown .milkdown-toolbar svg.mention-tabler-icon) {
-  filter: invert(1);
+:global(
+  .milkdown
+    .milkdown-slash-menu
+    .menu-groups
+    .menu-group
+    li
+    svg.mention-tabler-icon
+),
+:global(.milkdown .milkdown-toolbar .toolbar-item svg.mention-tabler-icon) {
+  color: var(--color-text-light);
+  fill: none;
+  stroke: currentColor;
 }
 </style>
