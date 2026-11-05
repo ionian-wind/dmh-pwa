@@ -350,7 +350,8 @@
     "noLinkedEntities": "No linked entities.",
     "selectAll": "Select all",
     "cancelSelection": "Cancel selection",
-    "dragToLink": "Drag to link"
+    "dragToLink": "Drag to link",
+    "linkEntityTo": "Link {type} to:"
   },
   "validation": {
     "required": "This field is required",

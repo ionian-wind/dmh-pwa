@@ -84,8 +84,16 @@ describe('entity drag linking UI', () => {
     });
     await nextTick();
 
+    expect(
+      document.documentElement.classList.contains('entity-drag-active'),
+    ).toBe(true);
+    expect(document.body.classList.contains('entity-drag-active')).toBe(true);
+
     const cards = wrapper.findAll('.entity-drag-drop-card');
     expect(cards).toHaveLength(2);
+    expect(wrapper.find('.entity-drag-overlay-title').text()).toBe(
+      'Link Notes to:',
+    );
     expect(cards.map((card) => card.attributes('aria-label'))).toEqual([
       'Modules',
       'Locations',
@@ -103,6 +111,9 @@ describe('entity drag linking UI', () => {
     await nextTick();
 
     expect(wrapper.find('.entity-drag-overlay').exists()).toBe(false);
+    expect(
+      document.documentElement.classList.contains('entity-drag-active'),
+    ).toBe(false);
     const dialog = wrapper.findComponent(EntityDragLinkDialogStub);
     expect(dialog.props()).toMatchObject({
       source: { kind: 'note', id: 'n1', title: 'Note' },
@@ -173,6 +184,41 @@ describe('entity drag linking UI', () => {
 
     dialog.vm.$emit('cancel');
     expect(wrapper.emitted('close')).toHaveLength(2);
+    wrapper.unmount();
+  });
+
+  it('clears the highlighted target when the drag overlay disappears', async () => {
+    const drag = useEntityDragLinking();
+    drag.startDrag({ kind: 'note', id: 'n1', title: 'Note' });
+
+    const wrapper = mount(EntityDragLinkingOverlay, {
+      global: {
+        stubs: { EntityDragLinkDialog: EntityDragLinkDialogStub },
+      },
+    });
+    await nextTick();
+
+    await wrapper.findAll('.entity-drag-drop-card')[0].trigger('dragenter');
+    await nextTick();
+    expect(
+      wrapper
+        .findAll('.entity-drag-drop-card')[0]
+        .find('.entity-drag-drop-card-inner')
+        .classes(),
+    ).toContain('entity-drag-drop-card--hovered');
+
+    drag.cancelDrop();
+    await nextTick();
+    expect(wrapper.find('.entity-drag-overlay').exists()).toBe(false);
+
+    drag.startDrag({ kind: 'note', id: 'n1', title: 'Note' });
+    await nextTick();
+    expect(
+      wrapper
+        .findAll('.entity-drag-drop-card')[0]
+        .find('.entity-drag-drop-card-inner')
+        .classes(),
+    ).not.toContain('entity-drag-drop-card--hovered');
     wrapper.unmount();
   });
 });

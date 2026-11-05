@@ -300,3 +300,8 @@ h6 {
   color: var(--mention-color);
   text-decoration: underline dotted;
 }
+
+html.entity-drag-active,
+body.entity-drag-active {
+  overflow: hidden !important;
+}

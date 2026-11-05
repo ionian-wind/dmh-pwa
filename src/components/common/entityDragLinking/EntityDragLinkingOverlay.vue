@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getEntityKindOption } from '@/maps/utils/entityRefs';
 import {
@@ -23,6 +23,21 @@ const {
 
 const hoveredKind = ref<EntityLinkKind | null>(null);
 
+watch(
+  isDragging,
+  (active) => {
+    document.documentElement.classList.toggle('entity-drag-active', active);
+    document.body.classList.toggle('entity-drag-active', active);
+    if (!active) hoveredKind.value = null;
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  document.documentElement.classList.remove('entity-drag-active');
+  document.body.classList.remove('entity-drag-active');
+});
+
 const targetKinds = computed(() =>
   draggedEntity.value ? ENTITY_LINK_TARGETS[draggedEntity.value.kind] : [],
 );
@@ -45,25 +60,36 @@ function drop(kind: EntityLinkKind) {
       @dragover.prevent
       @drop.prevent="cancelDrop"
     >
-      <div class="entity-drag-drop-grid">
-        <div
-          v-for="kind in targetKinds"
-          :key="kind"
-          class="entity-drag-drop-card"
-          role="button"
-          :aria-label="labelFor(kind)"
-          @dragenter.prevent.stop="hoveredKind = kind"
-          @dragover.prevent.stop="hoveredKind = kind"
-          @dragleave.self="hoveredKind = null"
-          @drop.prevent.stop="drop(kind)"
-        >
-          <QCard
-            class="entity-drag-drop-card-inner"
-            :class="{ 'entity-drag-drop-card--hovered': hoveredKind === kind }"
+      <div class="entity-drag-overlay-content">
+        <div class="entity-drag-overlay-title">
+          {{
+            t('common.linkEntityTo', {
+              type: draggedEntity ? labelFor(draggedEntity.kind) : '',
+            })
+          }}
+        </div>
+        <div class="entity-drag-drop-grid">
+          <div
+            v-for="kind in targetKinds"
+            :key="kind"
+            class="entity-drag-drop-card"
+            role="button"
+            :aria-label="labelFor(kind)"
+            @dragenter.prevent.stop="hoveredKind = kind"
+            @dragover.prevent.stop="hoveredKind = kind"
+            @dragleave.self="hoveredKind = null"
+            @drop.prevent.stop="drop(kind)"
           >
-            <component :is="ENTITY_LINK_ICONS[kind]" :size="56" />
-            <span>{{ labelFor(kind) }}</span>
-          </QCard>
+            <QCard
+              class="entity-drag-drop-card-inner"
+              :class="{
+                'entity-drag-drop-card--hovered': hoveredKind === kind,
+              }"
+            >
+              <component :is="ENTITY_LINK_ICONS[kind]" :size="64" />
+              <span>{{ labelFor(kind) }}</span>
+            </QCard>
+          </div>
         </div>
       </div>
     </div>
@@ -82,25 +108,46 @@ function drop(kind: EntityLinkKind) {
   position: fixed;
   inset: 0;
   z-index: 2400;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(4px);
+  scrollbar-width: none;
+}
+
+.entity-drag-overlay::-webkit-scrollbar {
+  display: none;
+}
+
+.entity-drag-overlay-content {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 100%;
+  padding: 24px;
+}
+
+.entity-drag-overlay-title {
+  color: #1f2937;
+  font-size: 1.35rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .entity-drag-drop-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
   width: min(900px, 100%);
-  max-height: 80vh;
-  overflow: auto;
 }
 
 .entity-drag-drop-card {
-  min-height: 150px;
+  flex: 0 0 210px;
+  height: 180px;
   cursor: copy;
 }
 
@@ -110,19 +157,20 @@ function drop(kind: EntityLinkKind) {
   align-items: center;
   justify-content: center;
   gap: 12px;
+  box-sizing: border-box;
   height: 100%;
-  min-height: 150px;
-  padding: 24px;
+  padding: 32px;
   color: var(--color-text);
   text-align: center;
-  border: 2px solid transparent;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition:
     border-color 0.15s ease,
-    transform 0.15s ease;
+    box-shadow 0.15s ease;
 }
 
 .entity-drag-drop-card--hovered {
   border-color: var(--q-primary);
-  transform: scale(1.03);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
 </style>

@@ -174,8 +174,11 @@ types and map layers keep their dedicated selectors.
 ### Entity drag linking
 
 Domain cards provide `dragEntity` metadata to `BaseCard`. Starting a drag opens
-`EntityDragLinkingOverlay`, a semi-transparent full-screen drop area containing
-large `QCard` targets for the entity kinds the dragged model can link to.
+`EntityDragLinkingOverlay`, a semi-transparent full-screen drop area with a
+`Link <type> to:` heading and large `QCard` targets for the entity kinds the
+dragged model can link to.
+While dragging, the page scroll is locked and its scrollbar is hidden; the drop
+grid hides its own scrollbars and only scrolls when the viewport is too small.
 Dropping on a kind opens `EntityLinkingDialog` for that kind; applying the
 dialog writes the relationship to the model fields:
 
