@@ -144,8 +144,29 @@ describe('note store', () => {
       hidden: false,
     });
 
-    await expect(notes.setHidden(note.id, true)).rejects.toThrow(
-      'module',
-    );
+    await expect(notes.setHidden(note.id, true)).rejects.toThrow('module');
+  });
+
+  it('adds hashtags from saved content to the note tag list', async () => {
+    const store = useNoteStore();
+    const created = await store.create({
+      title: 'Travel',
+      content: '# Heading\nVisit #harbor and #forest.',
+      typeId: null,
+      tags: ['session'],
+      moduleId: null,
+      hidden: false,
+    });
+
+    expect(created.tags).toEqual(['session', 'harbor', 'forest']);
+
+    const updated = await store.update(created.id, {
+      content: 'Travel to #harbor and #mountains.',
+    });
+    expect(updated.tags).toEqual(['session', 'harbor', 'forest', 'mountains']);
+    expect(store.allTags).toContain('mountains');
+
+    const withoutTags = await store.update(created.id, { tags: ['session'] });
+    expect(withoutTags.tags).toEqual(['session']);
   });
 });

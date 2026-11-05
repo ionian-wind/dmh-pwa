@@ -593,7 +593,10 @@
     "addTag": "Add tag",
     "add": "+",
     "remove": "×",
-    "hash": "#"
+    "hash": "#",
+    "selectTag": "Select tag",
+    "createTag": "Create {tag}",
+    "noTags": "No tags yet"
   },
   "timers": {
     "empty": "No timers yet. Create your first timer to get started!",

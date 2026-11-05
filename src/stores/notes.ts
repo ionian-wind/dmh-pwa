@@ -7,6 +7,7 @@ import { extractMentionedEntities } from '@/utils/markdownParser';
 import { useMentionsStore } from '@/utils/storage';
 import { useModuleStore } from './modules';
 import { debug } from '../utils/debug';
+import { mergeHashtags } from '@/utils/tags';
 
 export const useNoteStore = defineStore('notes', () => {
   const base = useStore<Note>({
@@ -19,9 +20,14 @@ export const useNoteStore = defineStore('notes', () => {
 
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
     debug('noteStore.create called', note);
+    const contentType = note.contentType ?? 'text';
     const newNote = await base.create({
       ...note,
-      contentType: note.contentType ?? 'text',
+      contentType,
+      tags: mergeHashtags(
+        note.tags ?? [],
+        contentType === 'draw' ? '' : note.content,
+      ),
     });
     // Indexation
     const from = { kind: 'note', id: newNote.id };
@@ -43,7 +49,14 @@ export const useNoteStore = defineStore('notes', () => {
     if (original && 'hidden' in original) {
       patchWithoutHidden.hidden = original.hidden;
     }
-    const updated = await base.update(id, patchWithoutHidden);
+    const contentType =
+      patchWithoutHidden.contentType ?? original?.contentType ?? 'text';
+    const content = patchWithoutHidden.content ?? original?.content ?? '';
+    let tags = patchWithoutHidden.tags ?? original?.tags ?? [];
+    if ('content' in patchWithoutHidden && contentType !== 'draw') {
+      tags = mergeHashtags(tags, content);
+    }
+    const updated = await base.update(id, { ...patchWithoutHidden, tags });
     // Indexation
     const from = { kind: 'note', id };
     const mentioned =

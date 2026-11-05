@@ -1,6 +1,15 @@
 <template>
   <div>
     <Milkdown />
+    <TagInsertPopup
+      v-if="tagPopup.show"
+      :tags="noteStore.allTags"
+      :query="tagPopup.query"
+      :position="tagPopup.position"
+      :onSelect="insertTag"
+      :onCreate="insertTag"
+      :onClose="closeTagPopup"
+    />
     <MentionInsertPopup
       v-if="mentionPopup.show"
       :kind="mentionPopup.kind"
@@ -13,14 +22,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { Milkdown, useEditor } from '@milkdown/vue';
 import { mentionFeature } from './plugins/mention';
 import { createCrepeFeatureConfig } from './crepeConfig';
 import MentionInsertPopup from './MentionInsertPopup.vue';
+import TagInsertPopup from './TagInsertPopup.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
 import { getMentionableEntities } from '@/utils/markdownParser';
+import { useNoteStore } from '@/stores/notes';
+import { registerTagAutocompleteTrigger } from './plugins/tagAutocomplete';
+import { tagAutocompleteFeature } from './plugins/tagAutocomplete';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
@@ -30,8 +43,18 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
+const noteStore = useNoteStore();
 
 const crepeInstance = ref<Crepe | null>(null);
+
+const tagPopup = ref({
+  show: false,
+  query: '',
+  position: { top: 0, left: 0 },
+  from: 0,
+  to: 0,
+  insert: (() => {}) as (tag: string) => void,
+});
 
 const mentionPopup = ref({
   show: false,
@@ -54,6 +77,35 @@ function openMentionPopup({ kind, mentions, position, onSelect }: any) {
 function closeMentionPopup() {
   mentionPopup.value.show = false;
 }
+
+function closeTagPopup() {
+  tagPopup.value.show = false;
+}
+
+function insertTag(tag: string) {
+  if (!tagPopup.value.show) return;
+  tagPopup.value.insert(tag);
+  closeTagPopup();
+}
+
+registerTagAutocompleteTrigger((payload) => {
+  if (!payload) {
+    closeTagPopup();
+    return;
+  }
+  tagPopup.value = {
+    show: true,
+    query: payload.query,
+    position: payload.position,
+    from: payload.from,
+    to: payload.to,
+    insert: payload.insert,
+  };
+});
+
+onMounted(() => {
+  if (!noteStore.isLoaded) void noteStore.load();
+});
 
 // Helper to get mentionable entities for a kind, excluding the current entity
 function getMentionables(kind: string) {
@@ -99,7 +151,9 @@ useEditor((root) => {
     root,
     defaultValue: props.modelValue,
     featureConfigs: createCrepeFeatureConfig(t),
-  }).addFeature(mentionFeature);
+  })
+    .addFeature(mentionFeature)
+    .addFeature(tagAutocompleteFeature);
 
   crepeInstance.value.on((api) => {
     api.markdownUpdated((_, markdown) => {
