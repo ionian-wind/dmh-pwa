@@ -37,6 +37,14 @@ const stores = vi.hoisted(() => ({
     items: [{ id: 'e1', name: 'Encounter one' }],
     load: vi.fn(),
   },
+  characters: {
+    items: [{ id: 'c1', name: 'Character one' }],
+    load: vi.fn(),
+  },
+  locations: {
+    items: [{ id: 'l1', name: 'Location one' }],
+    load: vi.fn(),
+  },
   ambient: {
     intensity: 50,
     isPlaying: true,
@@ -61,6 +69,12 @@ vi.mock('@/stores/monsters', () => ({
 }));
 vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => stores.encounters,
+}));
+vi.mock('@/stores/characters', () => ({
+  useCharacterStore: () => stores.characters,
+}));
+vi.mock('@/maps/locations', () => ({
+  useMapLocationStore: () => stores.locations,
 }));
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => stores.ambient,
@@ -116,6 +130,8 @@ describe('coverage gaps: shared components', () => {
           { kind: 'party', id: 'p1' },
           { kind: 'monster', id: 'mo1' },
           { kind: 'encounter', id: 'e1' },
+          { kind: 'character', id: 'c1' },
+          { kind: 'location', id: 'l1' },
           { kind: 'other', id: 'o1' },
         ],
       },
@@ -126,8 +142,10 @@ describe('coverage gaps: shared components', () => {
     expect(wrapper.text()).toContain('Party one');
     expect(wrapper.text()).toContain('Monster one');
     expect(wrapper.text()).toContain('Encounter one');
+    expect(wrapper.text()).toContain('Character one');
+    expect(wrapper.text()).toContain('Location one');
     expect(wrapper.text()).toContain('o1');
-    expect(wrapper.findAll('.router-link')).toHaveLength(6);
+    expect(wrapper.findAll('.router-link')).toHaveLength(8);
     wrapper.unmount();
 
     const empty = mount(Mentions, {

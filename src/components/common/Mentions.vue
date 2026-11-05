@@ -5,6 +5,8 @@ import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
+import { useCharacterStore } from '@/stores/characters';
+import { useMapLocationStore } from '@/maps/locations';
 import { cropTitle } from '@/utils/cropTitle';
 import { useI18n } from 'vue-i18n';
 import EntityGroup from './EntityGroup.vue';
@@ -20,6 +22,8 @@ const moduleStore = useModuleStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
+const characterStore = useCharacterStore();
+const locationStore = useMapLocationStore();
 const { t } = useI18n();
 
 onMounted(async () => {
@@ -28,6 +32,8 @@ onMounted(async () => {
   await partyStore.load();
   await monsterStore.load();
   await encounterStore.load();
+  await characterStore.load();
+  await locationStore.load();
 });
 
 function getEntityRoute(entity: EntityRef) {
@@ -42,13 +48,34 @@ function getEntityRoute(entity: EntityRef) {
       return `/modules/${entity.id}`;
     case 'note':
       return `/notes/${entity.id}`;
+    case 'character':
+      return `/characters/${entity.id}`;
+    case 'location':
+      return `/locations/${entity.id}`;
     default:
       return '#';
   }
 }
 
-function getEntityLabel(entity: EntityRef) {
-  return entity.kind.charAt(0).toUpperCase() + entity.kind.slice(1);
+function getEntityLabel(kind: string) {
+  switch (kind) {
+    case 'note':
+      return t('notes.title');
+    case 'module':
+      return t('modules.title');
+    case 'party':
+      return t('parties.title');
+    case 'monster':
+      return t('monsters.title');
+    case 'encounter':
+      return t('encounters.title');
+    case 'character':
+      return t('characters.title');
+    case 'location':
+      return t('maps.locations');
+    default:
+      return kind.charAt(0).toUpperCase() + kind.slice(1);
+  }
 }
 
 function getEntityDisplay(entity: EntityRef) {
@@ -79,6 +106,16 @@ function getEntityDisplay(entity: EntityRef) {
       label = e ? e.name || e.id : entity.id;
       break;
     }
+    case 'character': {
+      const c = characterStore.items.find((c) => c.id === entity.id);
+      label = c ? c.name || entity.id : entity.id;
+      break;
+    }
+    case 'location': {
+      const l = locationStore.items.find((l) => l.id === entity.id);
+      label = l ? l.name || entity.id : entity.id;
+      break;
+    }
     default:
       label = entity.id;
   }
@@ -103,10 +140,7 @@ const groupedEntities = computed(() => {
         :key="kind"
         class="mentions-group"
       >
-        <h6 class="mentions-group-title">
-          {{ getEntityLabel({ kind, id: '' })
-          }}<span v-if="group.length > 1">s</span>
-        </h6>
+        <h6 class="mentions-group-title">{{ getEntityLabel(kind) }}</h6>
         <ul class="mentions-list">
           <li v-for="entity in group" :key="entity.kind + ':' + entity.id">
             <router-link :to="getEntityRoute(entity)">
