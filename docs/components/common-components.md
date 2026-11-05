@@ -16,10 +16,13 @@ Emits: `view`, `edit`, `delete`.
 - Body renders only if the default slot has meaningful content (ignores
   comments/empty text, handles fragments).
 - Actions row renders if a slot exists or any action flag is set.
-- Actions are overlaid on the bottom of the card content instead of occupying
-  layout height, so showing them does not resize the card.
 - Actions are hidden until the card is hovered or contains keyboard focus
-  (`focus-within`); touch devices show them permanently.
+  (`focus-within`).
+- On hover the card gains bottom padding equal to the action-bar height, so the
+  toolbar sits below the content rather than covering it.
+- A matching negative bottom margin keeps the grid/flex layout height stable:
+  the hovered card expands downward over following cards without moving them.
+- Touch devices keep actions in normal flow and permanently visible.
 - Copy is supported when `showCopy` is set; domain cards enable it.
 
 ### Domain cards

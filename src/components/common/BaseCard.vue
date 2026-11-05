@@ -131,6 +131,15 @@ const hasContent = computed(() => {
 <style scoped>
 .base-card {
   position: relative;
+  --card-actions-height: 52px;
+  transition: padding-bottom 0.15s ease;
+}
+
+.base-card:hover,
+.base-card:focus-within {
+  z-index: 5;
+  padding-bottom: var(--card-actions-height);
+  margin-bottom: calc(-1 * var(--card-actions-height));
 }
 
 .base-card :deep(.base-card-actions) {
@@ -156,7 +165,14 @@ const hasContent = computed(() => {
 }
 
 @media (hover: none) {
+  .base-card:hover,
+  .base-card:focus-within {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
   .base-card :deep(.base-card-actions) {
+    position: static;
     opacity: 1;
     pointer-events: auto;
   }
