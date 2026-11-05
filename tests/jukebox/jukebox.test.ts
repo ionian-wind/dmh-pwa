@@ -181,6 +181,10 @@ describe('jukebox store integration', () => {
 
     const item = wrapper.find('.track-item');
     expect(item.attributes('data-draggable')).toBe('true');
+    const handle = wrapper.find('.track-drag-handle');
+    expect(handle.exists()).toBe(true);
+    await handle.trigger('click');
+    expect(wrapper.emitted('play')).toBeUndefined();
     await item.trigger('click');
     expect(wrapper.emitted('play')?.[0]).toEqual([
       { ...track, duration: undefined },
@@ -193,6 +197,7 @@ describe('jukebox store integration', () => {
     expect(staticCard.find('.track-item').attributes('data-draggable')).toBe(
       undefined,
     );
+    expect(staticCard.find('.track-drag-handle').exists()).toBe(false);
     expect(staticCard.text()).toContain('0:42');
     staticCard.unmount();
   });

@@ -190,8 +190,9 @@ position until `onplay/onseek` updates it.
 - Footer: `JukeboxPlayer` with animated background, no artwork.
 - The list shows either all tracks (no playlist selected) or the selected
   playlist's tracks, in playlist order.
-- Dragging is enabled only when a playlist is selected; reorder writes
-  `playlist.trackIds` and resorts the queue.
+- Dragging is enabled only when a playlist is selected and starts from the
+  per-row drag handle; reorder writes `playlist.trackIds` and resorts the queue.
+  Clicking the row itself plays the track.
 - Track click toggles play if it is the active track, otherwise starts it from
   the playlist.
 - A per-row icon-only actions menu (`IconDotsVertical`) contains Add to

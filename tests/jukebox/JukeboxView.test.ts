@@ -82,6 +82,7 @@ const BaseListViewStub = defineComponent({
     items: Array,
     cardProps: Function,
     draggable: Boolean,
+    dragHandle: String,
   },
   emits: ['create', 'sort'],
   setup(_, { slots }) {
@@ -290,6 +291,7 @@ describe('JukeboxView', () => {
     config.jukeboxActivePlaylistId = 'p1';
 
     const { list } = await mountView();
+    expect(list.props('dragHandle')).toBe('.track-drag-handle');
     list.vm.$emit('sort', [two, one]);
     await flushPromises();
 

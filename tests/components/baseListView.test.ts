@@ -210,9 +210,15 @@ describe('BaseListView', () => {
   });
 
   it('forwards card events from the draggable layout and emits sort', async () => {
-    const { wrapper } = mountList({ draggable: true });
+    const { wrapper } = mountList({
+      draggable: true,
+      dragHandle: '.drag-handle',
+    });
     const card = wrapper.find('.card-stub');
     expect(wrapper.findComponent(CardStub).props('draggable')).toBe(true);
+    expect(wrapper.findComponent(SortableList).props('handle')).toBe(
+      '.drag-handle',
+    );
     await card.find('.view').trigger('click');
     await card.find('.edit').trigger('click');
     await card.find('.delete').trigger('click');

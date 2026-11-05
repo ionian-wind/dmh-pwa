@@ -375,6 +375,7 @@ onBeforeUnmount(() => {
       :view-style="'list'"
       @create="pickFiles"
       :draggable="selectedPlaylistId !== null"
+      drag-handle=".track-drag-handle"
       @sort="onTracksSorted"
       :right-drawer-icon="IconPlaylist"
     >

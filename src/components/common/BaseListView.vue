@@ -34,6 +34,7 @@ const props = defineProps({
   sidePanelVisible: { type: Boolean, default: false },
   viewStyle: { type: String, default: 'masonry' },
   draggable: { type: Boolean, default: false },
+  dragHandle: { type: String, default: undefined },
   hideHeader: { type: Boolean, default: false },
   rightDrawerIcon: { type: [Object, Function], default: undefined },
   showSearch: { type: Boolean, default: false },
@@ -210,6 +211,7 @@ onBeforeUnmount(() => {
       :key="'draggable'"
       v-model="localItems"
       item-key="id"
+      :handle="dragHandle"
       tag="div"
       class="q-list simple-list"
       @end="handleSortEnd"

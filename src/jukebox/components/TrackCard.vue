@@ -5,6 +5,7 @@ import {
   IconArrowBarToDown,
   IconArrowBarToUp,
   IconDotsVertical,
+  IconGripVertical,
   IconPlaylistAdd,
   IconTrash,
 } from '@tabler/icons-vue';
@@ -65,6 +66,9 @@ const trackColor = computed(() => props.track.color || 'transparent');
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
+    <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
+      <IconGripVertical :size="18" />
+    </QItemSection>
     <QItemSection>
       <TrackInfo
         :artwork-size="'60px'"
@@ -148,6 +152,15 @@ const trackColor = computed(() => props.track.color || 'transparent');
   width: 4px;
   background: var(--track-item-color, transparent);
   transition: width 0.2s;
+}
+
+.track-drag-handle {
+  cursor: grab;
+  color: var(--color-text-lighter);
+}
+
+.track-drag-handle:active {
+  cursor: grabbing;
 }
 
 .track-actions {
