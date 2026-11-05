@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, useAttrs, computed } from 'vue';
+import { ref, watch, useAttrs, computed } from 'vue';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
@@ -7,6 +7,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useI18n } from 'vue-i18n';
 import MilkdownEditorWrapper from './milkdown/MilkdownEditorWrapper.vue';
+import { editorHtmlToMarkdown, markdownToEditorHtml } from './markdownRaw';
 
 // Ref for MilkdownEditorWrapper to access getMarkdown
 const milkdownWrapperRef = ref<any>(null);
@@ -40,11 +41,27 @@ const modelValueProxy = computed({
   set: (val) => emit('update:modelValue', val),
 });
 
+const rawHtml = ref(markdownToEditorHtml(props.modelValue));
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value !== editorHtmlToMarkdown(rawHtml.value)) {
+      rawHtml.value = markdownToEditorHtml(value);
+    }
+  },
+);
+
+function onRawUpdate(html: string) {
+  rawHtml.value = html;
+  emit('update:modelValue', editorHtmlToMarkdown(html));
+}
+
 function getCurrentMarkdown() {
-  if (milkdownWrapperRef.value?.getMarkdown) {
+  if (props.isWYSIWYGMode && milkdownWrapperRef.value?.getMarkdown) {
     return milkdownWrapperRef.value.getMarkdown();
   }
-  return props.modelValue;
+  return editorHtmlToMarkdown(rawHtml.value);
 }
 
 // Expose for parent (NoteEditor) to call on submit
@@ -79,20 +96,16 @@ defineExpose({ getMarkdown });
       </QCardSection>
     </QCard>
 
-    <!-- Raw Markdown Textarea -->
-    <div v-else class="raw-editor">
-      <QInput
-        :type="'textarea'"
-        :model-value="modelValueProxy"
-        @update:model-value="modelValueProxy = String($event ?? '')"
-        :placeholder="props.placeholder"
-        :rows="props.rows || 10"
-        class="raw-textarea"
-        v-bind="attrs"
-        dense
-        borderless
-      />
-    </div>
+    <!-- Raw Markdown Editor -->
+    <QEditor
+      v-else
+      :toolbar="[]"
+      :model-value="rawHtml"
+      :placeholder="props.placeholder"
+      class="raw-textarea"
+      v-bind="attrs"
+      @update:model-value="onRawUpdate"
+    />
   </div>
 </template>
 

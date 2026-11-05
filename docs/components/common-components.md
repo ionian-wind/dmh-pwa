@@ -16,6 +16,8 @@ Emits: `view`, `edit`, `delete`.
 - Body renders only if the default slot has meaningful content (ignores
   comments/empty text, handles fragments).
 - Actions row renders if a slot exists or any action flag is set.
+- Actions are hidden until the card is hovered or contains keyboard focus
+  (`focus-within`); touch devices show them permanently.
 - Copy is supported when `showCopy` is set; domain cards enable it.
 
 ### Domain cards
@@ -88,6 +90,8 @@ Behavior:
   `q-col-gutter-*` so column widths stay centered and do not overflow.
 - `handleDelete` is an empty stub; deletion is delegated upward.
 - The empty state is a normal padded block, not a fixed-position element.
+- Empty lists render a large positive **Create** button below the empty-state
+  text; it runs the same create action as the header button.
 
 ### `BaseEntityView.vue`
 

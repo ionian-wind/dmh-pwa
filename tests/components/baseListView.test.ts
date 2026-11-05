@@ -248,4 +248,19 @@ describe('BaseListView', () => {
     expect(wrapper.findComponent(EditorStub).exists()).toBe(false);
     wrapper.unmount();
   });
+
+  it('offers a create button in the empty state', async () => {
+    const { wrapper } = mountList({ items: [] });
+
+    const create = wrapper.find('.empty-state-create');
+    expect(create.exists()).toBe(true);
+    expect(create.text()).toContain('Create');
+    expect(create.find('svg').exists()).toBe(true);
+
+    await create.trigger('click');
+    await nextTick();
+    expect(wrapper.emitted('create')).toHaveLength(1);
+    expect(wrapper.findComponent(EditorStub).props('isOpen')).toBe(true);
+    wrapper.unmount();
+  });
 });

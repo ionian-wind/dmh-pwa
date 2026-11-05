@@ -24,7 +24,7 @@ Props:
 | Prop                                        | Meaning                                              |
 | ------------------------------------------- | ---------------------------------------------------- |
 | `modelValue`                                | Markdown source                                      |
-| `isWYSIWYGMode`                             | Visual vs raw textarea                               |
+| `isWYSIWYGMode`                             | Visual vs raw editor                                 |
 | `placeholder`, `rows`, `label`, `className` | UI                                                   |
 | `enableMentions`                            | Enables mention toolbar/menu                         |
 | `currentEntityType`, `currentEntityId`      | Excludes the edited entity from its own mention list |
@@ -32,8 +32,9 @@ Props:
 Emits `update:modelValue`, exposes `getMarkdown()`.
 
 - Visual mode: `MilkdownEditorWrapper` inside a borderless `QCard`.
-- Raw mode: a borderless `QInput` textarea. Formatting help now lives in
-  `MarkdownHelpDialog`, opened from the note editor footer.
+- Raw mode: a Quasar `QEditor` with an empty toolbar. Markdown text is
+  converted to/from QEditor HTML with `markdownRaw.ts`. Formatting help lives
+  in `MarkdownHelpDialog`, opened from the note editor footer.
 - `getCurrentMarkdown()` returns the wrapper's Markdown when available,
   otherwise `modelValue`.
   If the user toggles from WYSIWYG to raw and edits, the ref may still hold the
@@ -118,9 +119,10 @@ Attributes: `kind`, `id`, `href`, `title`.
 
 ## Raw Markdown mode
 
-A Quasar textarea with `rows` (default 10) and a help card. It binds through
-`:model-value` + `@update:model-value`. It does not provide syntax
-highlighting, link autocomplete, or a preview.
+A Quasar `QEditor` with `:toolbar="[]"`. Because QEditor works in HTML while
+notes store Markdown, `markdownRaw.ts` converts newlines/escaping in both
+directions. It does not provide syntax highlighting, link autocomplete, or a
+preview.
 
 ## Persistence path
 

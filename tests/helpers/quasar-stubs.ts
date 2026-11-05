@@ -227,6 +227,7 @@ const passthroughNames = [
   'QCheckbox',
   'QRadio',
   'QField',
+  'QEditor',
   'QForm',
   'QBadge',
   'QChip',

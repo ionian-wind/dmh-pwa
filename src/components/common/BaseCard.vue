@@ -36,7 +36,7 @@ const hasContent = computed(() => {
 </script>
 
 <template>
-  <QCard>
+  <QCard class="base-card">
     <QCardSection
       v-if="$slots.header || title"
       class="base-card-header"
@@ -127,3 +127,21 @@ const hasContent = computed(() => {
     </QCardActions>
   </QCard>
 </template>
+
+<style scoped>
+.base-card :deep(.base-card-actions) {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.base-card:hover :deep(.base-card-actions),
+.base-card:focus-within :deep(.base-card-actions) {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .base-card :deep(.base-card-actions) {
+    opacity: 1;
+  }
+}
+</style>

@@ -12,6 +12,10 @@ import ViewHeader from './ViewHeader.vue';
 import EmptyState from './EmptyState.vue';
 import SortableList from './SortableList.vue';
 import { useLayout } from '@/composables/useLayout';
+import { useI18n } from 'vue-i18n';
+import { IconPlus } from '@tabler/icons-vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   items: { type: Array as PropType<any[]>, required: true },
@@ -189,7 +193,17 @@ onBeforeUnmount(() => {
       v-if="items.length === 0"
       :title="emptyState.title"
       :hint="emptyState.hint"
-    />
+    >
+      <QBtn
+        class="empty-state-create q-mt-lg"
+        color="positive"
+        size="lg"
+        @click="onCreate"
+      >
+        <IconPlus :size="28" />
+        <span class="q-ml-sm">{{ t('common.create') }}</span>
+      </QBtn>
+    </EmptyState>
 
     <SortableList
       v-else-if="draggable"
