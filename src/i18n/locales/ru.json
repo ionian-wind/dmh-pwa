@@ -349,7 +349,8 @@
     "dropAudioFiles": "Перетащите аудиофайлы сюда",
     "overview": "Обзор",
     "noLinkedEntities": "Связанных сущностей нет.",
-    "selectAll": "Выбрать все"
+    "selectAll": "Выбрать все",
+    "cancelSelection": "Отменить выбор"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",

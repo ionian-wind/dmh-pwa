@@ -765,8 +765,17 @@ describe('JukeboxView', () => {
     await nextTick();
 
     expect(wrapper.find('.jukebox-bulk-panel').exists()).toBe(true);
+    expect(wrapper.find('.select-all-link').exists()).toBe(true);
     await wrapper.find('.select-all-link').trigger('click');
+    await nextTick();
 
     expect([...bulk.selectedTrackIds.value].sort()).toEqual(['t1', 't2']);
+    expect(wrapper.find('.select-all-link').exists()).toBe(false);
+    expect(wrapper.find('.cancel-selection-link').exists()).toBe(true);
+
+    await wrapper.find('.cancel-selection-link').trigger('click');
+    await nextTick();
+    expect(bulk.selectedTrackIds.value.size).toBe(0);
+    expect(wrapper.find('.jukebox-bulk-panel').exists()).toBe(false);
   });
 });

@@ -484,6 +484,12 @@ const cardProps = computed(() => {
   };
 });
 
+const allVisibleTracksSelected = computed(
+  () =>
+    filteredTracks.value.length > 0 &&
+    filteredTracks.value.every((track) => selectedTrackIds.value.has(track.id)),
+);
+
 function selectAllVisibleTracks() {
   selectAllTracks(filteredTracks.value.map((track) => track.id));
 }
@@ -547,11 +553,19 @@ onBeforeUnmount(() => {
     </div>
     <div v-if="isEditMode && hasSelectedTracks" class="jukebox-bulk-panel">
       <button
+        v-if="!allVisibleTracksSelected"
         type="button"
         class="select-all-link"
         @click="selectAllVisibleTracks"
       >
         {{ t('common.selectAll') }}
+      </button>
+      <button
+        type="button"
+        class="cancel-selection-link"
+        @click="clearSelection"
+      >
+        {{ t('common.cancelSelection') }}
       </button>
     </div>
     <BaseListView
@@ -610,7 +624,8 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--color-border-light);
 }
 
-.select-all-link {
+.select-all-link,
+.cancel-selection-link {
   padding: 0;
   color: var(--q-primary);
   font: inherit;
@@ -618,6 +633,10 @@ onBeforeUnmount(() => {
   background: none;
   border: 0;
   cursor: pointer;
+}
+
+.jukebox-bulk-panel .cancel-selection-link {
+  margin-left: 16px;
 }
 .drop-zone-active {
   position: fixed;

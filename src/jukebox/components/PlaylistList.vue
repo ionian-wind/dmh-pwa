@@ -52,6 +52,7 @@ const {
   togglePlaylist,
   setPlaylistOrder,
   selectAllPlaylists,
+  clearSelection,
 } = useJukeboxBulkSelection();
 const bulkShiftClick = ref(false);
 
@@ -164,6 +165,14 @@ const removePlaylist = async (playlistId: string) => {
   await playlistsStore.remove(playlistId);
 };
 
+const allVisiblePlaylistsSelected = computed(
+  () =>
+    sortedPlaylists.value.length > 0 &&
+    sortedPlaylists.value.every((playlist) =>
+      selectedPlaylistIds.value.has(playlist.id),
+    ),
+);
+
 function selectAllVisiblePlaylists() {
   selectAllPlaylists(sortedPlaylists.value.map((playlist) => playlist.id));
 }
@@ -219,11 +228,19 @@ onMounted(async () => {
         class="playlist-bulk-panel"
       >
         <button
+          v-if="!allVisiblePlaylistsSelected"
           type="button"
           class="select-all-link"
           @click="selectAllVisiblePlaylists"
         >
           {{ t('common.selectAll') }}
+        </button>
+        <button
+          type="button"
+          class="cancel-selection-link"
+          @click="clearSelection"
+        >
+          {{ t('common.cancelSelection') }}
         </button>
       </div>
       <SortableList
@@ -371,7 +388,8 @@ onMounted(async () => {
   border-bottom: 1px solid var(--color-border-light);
 }
 
-.playlist-bulk-panel .select-all-link {
+.playlist-bulk-panel .select-all-link,
+.playlist-bulk-panel .cancel-selection-link {
   padding: 0;
   color: var(--q-primary);
   font: inherit;
@@ -379,6 +397,10 @@ onMounted(async () => {
   background: none;
   border: 0;
   cursor: pointer;
+}
+
+.playlist-bulk-panel .cancel-selection-link {
+  margin-left: 16px;
 }
 
 .playlist-actions {

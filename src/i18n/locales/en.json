@@ -348,7 +348,8 @@
     "dropAudioFiles": "Drop audio files here",
     "overview": "Overview",
     "noLinkedEntities": "No linked entities.",
-    "selectAll": "Select all"
+    "selectAll": "Select all",
+    "cancelSelection": "Cancel selection"
   },
   "validation": {
     "required": "This field is required",

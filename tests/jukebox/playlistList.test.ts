@@ -341,11 +341,24 @@ describe('PlaylistList drag-and-drop and selection', () => {
     await nextTick();
 
     expect(wrapper.find('.playlist-bulk-panel').exists()).toBe(true);
+    expect(wrapper.find('.playlist-bulk-panel .select-all-link').exists()).toBe(
+      true,
+    );
     await wrapper
       .find('.playlist-bulk-panel .select-all-link')
       .trigger('click');
+    await nextTick();
 
     expect([...bulk.selectedPlaylistIds.value].sort()).toEqual(['p1', 'p2']);
+    expect(wrapper.find('.playlist-bulk-panel .select-all-link').exists()).toBe(
+      false,
+    );
+    await wrapper
+      .find('.playlist-bulk-panel .cancel-selection-link')
+      .trigger('click');
+    await nextTick();
+    expect(bulk.selectedPlaylistIds.value.size).toBe(0);
+    expect(wrapper.find('.playlist-bulk-panel').exists()).toBe(false);
     wrapper.unmount();
   });
 });
