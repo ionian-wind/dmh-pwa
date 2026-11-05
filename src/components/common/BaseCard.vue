@@ -129,19 +129,36 @@ const hasContent = computed(() => {
 </template>
 
 <style scoped>
+.base-card {
+  position: relative;
+}
+
 .base-card :deep(.base-card-actions) {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
   opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-background) 35%
+  );
   transition: opacity 0.15s ease;
 }
 
 .base-card:hover :deep(.base-card-actions),
 .base-card:focus-within :deep(.base-card-actions) {
   opacity: 1;
+  pointer-events: auto;
 }
 
 @media (hover: none) {
   .base-card :deep(.base-card-actions) {
     opacity: 1;
+    pointer-events: auto;
   }
 }
 </style>

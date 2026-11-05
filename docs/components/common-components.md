@@ -16,6 +16,8 @@ Emits: `view`, `edit`, `delete`.
 - Body renders only if the default slot has meaningful content (ignores
   comments/empty text, handles fragments).
 - Actions row renders if a slot exists or any action flag is set.
+- Actions are overlaid on the bottom of the card content instead of occupying
+  layout height, so showing them does not resize the card.
 - Actions are hidden until the card is hovered or contains keyboard focus
   (`focus-within`); touch devices show them permanently.
 - Copy is supported when `showCopy` is set; domain cards enable it.
