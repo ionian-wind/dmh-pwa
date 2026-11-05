@@ -24,6 +24,7 @@ import { confirm } from '@/dialogs';
 import { IconPlaylist } from '@tabler/icons-vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
+import { createWaveformSvg } from '@/jukebox/utils/waveform';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -164,6 +165,7 @@ async function processFiles(
       string,
       any
     >;
+    const waveform = await createWaveformSvg(file).catch(() => null);
     const newTrackData = {
       fileId,
       title: trackMeta.title || file.name.replace(/\.[^/.]+$/, ''),
@@ -173,6 +175,7 @@ async function processFiles(
       picture: trackMeta.picture,
       color: trackMeta.color,
       palette: trackMeta.palette,
+      waveform,
       playlistIds: [],
       genre: trackMeta.genre,
       year: trackMeta.year,

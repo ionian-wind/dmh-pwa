@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
   getFile: vi.fn(),
   getAsFileSystemHandle: vi.fn(),
   extractTrackMetadata: vi.fn(),
+  createWaveformSvg: vi.fn(),
   actualiseQueue: vi.fn(),
   removeTrackFromQueue: vi.fn().mockResolvedValue(undefined),
   playTrackFromPlaylist: vi.fn(),
@@ -56,6 +57,10 @@ vi.mock('@/utils/files', () => ({
     getAsFileSystemHandle: mocks.getAsFileSystemHandle,
     extractTrackMetadata: mocks.extractTrackMetadata,
   },
+}));
+
+vi.mock('@/jukebox/utils/waveform', () => ({
+  createWaveformSvg: mocks.createWaveformSvg,
 }));
 
 vi.mock('@/jukebox/playerStore', () => ({
@@ -175,6 +180,7 @@ describe('JukeboxView', () => {
       palette: ['#ffffff'],
     });
     mocks.trackIsActive.mockReturnValue(false);
+    mocks.createWaveformSvg.mockResolvedValue('<svg data-waveform="test"/>');
     vi.clearAllMocks();
   });
 
@@ -192,13 +198,33 @@ describe('JukeboxView', () => {
 
     expect(mocks.putJukeboxFile).toHaveBeenCalled();
     expect(mocks.extractTrackMetadata).toHaveBeenCalled();
+    expect(mocks.createWaveformSvg).toHaveBeenCalledWith(expect.any(File));
     expect(mocks.tracks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Song', artist: 'Artist' }),
+      expect.objectContaining({
+        title: 'Song',
+        artist: 'Artist',
+        waveform: '<svg data-waveform="test"/>',
+      }),
     );
     expect(mocks.playlists.update).toHaveBeenCalledWith('p1', {
       trackIds: ['old', 'track-1'],
     });
     expect(mocks.actualiseQueue).toHaveBeenCalled();
+  });
+
+  it('stores a null waveform when waveform generation fails', async () => {
+    mocks.createWaveformSvg.mockRejectedValueOnce(new Error('decode failed'));
+    mocks.pickAudioFiles.mockResolvedValue([
+      { file: audioFile(), source: { kind: 'blob', blob: audioFile() } },
+    ]);
+
+    const { list } = await mountView();
+    list.vm.$emit('create');
+    await flushPromises();
+
+    expect(mocks.tracks.create).toHaveBeenCalledWith(
+      expect.objectContaining({ waveform: null }),
+    );
   });
 
   it('skips file extraction when the same file already has a track', async () => {

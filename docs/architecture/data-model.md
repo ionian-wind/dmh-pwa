@@ -205,6 +205,7 @@ Defined in `src/jukebox/types.ts` and intentionally **not** schema-validated
   picture?: string | Blob,
   color?: string,
   palette?: string[],
+  waveform?: string | null,
   disabled?: boolean
 }
 ```

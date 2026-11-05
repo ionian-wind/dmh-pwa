@@ -25,6 +25,7 @@ API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 | `src/jukebox/components/AddToPlaylistModal.vue` | Playlist membership toggles and inline playlist creation |
 | `src/jukebox/useAnimatedGradient.ts`            | Palette-based background                                 |
 | `src/jukebox/utils.ts`                          | `formatTime`                                             |
+| `src/jukebox/utils/waveform.ts`                 | Web Audio waveform SVG generation                        |
 | `src/utils/files/*`                             | File access + metadata extraction                        |
 
 ## Data model
@@ -35,6 +36,8 @@ See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities)
   deterministic: `${file.name}-${file.lastModified}-${file.size}`.
 - `JukeboxTrack` stores extracted metadata and references `fileId`. Album art
   is stored as a `Blob` (`picture`) plus derived `color`/`palette`.
+- `JukeboxTrack.waveform` holds a generated inline SVG waveform string, or
+  `null` when the audio could not be decoded.
 - `JukeboxPlaylist` stores `trackIds` in display order; `sortOrder` orders
   playlists; `moduleIds` links playlists to modules.
 - `JukeboxTrack.playlistIds` is declared but never maintained; membership is
@@ -70,9 +73,15 @@ Two entry points:
      (`amount: 4`, `sample: 10`, `group: 30`, hex output). Fewer than four
      colors are returned only when the artwork has fewer distinct grouped
      colors.
-5. Creates a track.
-6. If a playlist is selected, appends the new track ID.
-7. Calls `playerStore.actualiseQueue()`.
+5. Generates a waveform via `createWaveformSvg(file)`:
+   - decodes the file with `AudioContext.decodeAudioData`,
+   - downsamples the first channel into peak bars,
+   - emits a compact single-path inline SVG.
+   - Returns `null` when Web Audio is unavailable or decoding fails, so the
+     import still succeeds without a waveform.
+6. Creates a track.
+7. If a playlist is selected, appends the new track ID.
+8. Calls `playerStore.actualiseQueue()`.
 
 There is no deduplication of tracks: re-adding the same file creates another
 track that shares the same `fileId`.
