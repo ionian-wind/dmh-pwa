@@ -1,4 +1,4 @@
-const HASHTAG_PATTERN = /(?:^|[\s([{"'>])#([\p{L}\p{N}_-]+)/gu;
+const HASHTAG_PATTERN = /(?:^|[\s(["'>])#([\p{L}\p{N}_-]+)/gu;
 
 /** Extract unique hashtag names from note text. Headings (`# Title`) are ignored. */
 export function extractHashtags(content: string): string[] {

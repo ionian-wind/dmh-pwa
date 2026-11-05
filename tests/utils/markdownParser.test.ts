@@ -12,65 +12,126 @@ vi.mock('@/stores/notes', () => ({
   useNoteStore: () => ({
     notes: [
       { id: 'note-1', title: 'Test Note', content: 'Test content' },
-      { id: 'note-2', title: 'Another Note', content: 'Another content' }
+      { id: 'note-2', title: 'Another Note', content: 'Another content' },
     ],
-    getById: (id: string) => ({
-      'note-1': { id: 'note-1', title: 'Test Note', content: 'Test content' },
-      'note-2': { id: 'note-2', title: 'Another Note', content: 'Another content' }
-    }[id] || null)
-  })
+    getById: (id: string) =>
+      ({
+        'note-1': { id: 'note-1', title: 'Test Note', content: 'Test content' },
+        'note-2': {
+          id: 'note-2',
+          title: 'Another Note',
+          content: 'Another content',
+        },
+      })[id] || null,
+  }),
 }));
 
 vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
     modules: [
       { id: 'module-1', name: 'Test Module', description: 'Test description' },
-      { id: 'module-2', name: 'Another Module', description: 'Another description' }
+      {
+        id: 'module-2',
+        name: 'Another Module',
+        description: 'Another description',
+      },
     ],
-    getById: (id: string) => ({
-      'module-1': { id: 'module-1', name: 'Test Module', description: 'Test description' },
-      'module-2': { id: 'module-2', name: 'Another Module', description: 'Another description' }
-    }[id] || null)
-  })
+    getById: (id: string) =>
+      ({
+        'module-1': {
+          id: 'module-1',
+          name: 'Test Module',
+          description: 'Test description',
+        },
+        'module-2': {
+          id: 'module-2',
+          name: 'Another Module',
+          description: 'Another description',
+        },
+      })[id] || null,
+  }),
 }));
 
 vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
     parties: [
       { id: 'party-1', name: 'Test Party', characters: [] },
-      { id: 'party-2', name: 'Another Party', characters: [] }
+      { id: 'party-2', name: 'Another Party', characters: [] },
     ],
-    getById: (id: string) => ({
-      'party-1': { id: 'party-1', name: 'Test Party', characters: [] },
-      'party-2': { id: 'party-2', name: 'Another Party', characters: [] }
-    }[id] || null)
-  })
+    getById: (id: string) =>
+      ({
+        'party-1': { id: 'party-1', name: 'Test Party', characters: [] },
+        'party-2': { id: 'party-2', name: 'Another Party', characters: [] },
+      })[id] || null,
+  }),
 }));
 
 vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => ({
     monsters: [
-      { id: 'monster-1', name: 'Test Monster', type: 'Beast', description: 'Test description' },
-      { id: 'monster-2', name: 'Another Monster', type: 'Humanoid', description: 'Another description' }
+      {
+        id: 'monster-1',
+        name: 'Test Monster',
+        type: 'Beast',
+        description: 'Test description',
+      },
+      {
+        id: 'monster-2',
+        name: 'Another Monster',
+        type: 'Humanoid',
+        description: 'Another description',
+      },
     ],
-    getById: (id: string) => ({
-      'monster-1': { id: 'monster-1', name: 'Test Monster', type: 'Beast', description: 'Test description' },
-      'monster-2': { id: 'monster-2', name: 'Another Monster', type: 'Humanoid', description: 'Another description' }
-    }[id] || null)
-  })
+    getById: (id: string) =>
+      ({
+        'monster-1': {
+          id: 'monster-1',
+          name: 'Test Monster',
+          type: 'Beast',
+          description: 'Test description',
+        },
+        'monster-2': {
+          id: 'monster-2',
+          name: 'Another Monster',
+          type: 'Humanoid',
+          description: 'Another description',
+        },
+      })[id] || null,
+  }),
 }));
 
 vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => ({
     encounters: [
-      { id: 'encounter-1', name: 'Test Encounter', difficulty: 'medium', level: 5 },
-      { id: 'encounter-2', name: 'Another Encounter', difficulty: 'hard', level: 10 }
+      {
+        id: 'encounter-1',
+        name: 'Test Encounter',
+        difficulty: 'medium',
+        level: 5,
+      },
+      {
+        id: 'encounter-2',
+        name: 'Another Encounter',
+        difficulty: 'hard',
+        level: 10,
+      },
     ],
-    getById: (id: string) => ({
-      'encounter-1': { id: 'encounter-1', name: 'Test Encounter', difficulty: 'medium', level: 5 },
-      'encounter-2': { id: 'encounter-2', name: 'Another Encounter', difficulty: 'hard', level: 10 }
-    }[id] || null)
-  })
+    getById: (id: string) =>
+      ({
+        'encounter-1': {
+          id: 'encounter-1',
+          name: 'Test Encounter',
+          difficulty: 'medium',
+          level: 5,
+        },
+        'encounter-2': {
+          id: 'encounter-2',
+          name: 'Another Encounter',
+          difficulty: 'hard',
+          level: 10,
+        },
+      })[id] || null,
+  }),
 }));
 
 describe('Markdown Parser', () => {
@@ -91,7 +152,7 @@ describe('Markdown Parser', () => {
     it('should parse lists', () => {
       const input = '- Item 1\n- Item 2\n1. Numbered item';
       const result = parseMarkdown(input);
-      
+
       expect(result).toContain('<ul>');
       expect(result).toContain('<li>Item 1</li>');
       expect(result).toContain('<li>Item 2</li>');
@@ -102,7 +163,7 @@ describe('Markdown Parser', () => {
     it('should parse code blocks', () => {
       const input = '```javascript\nconst x = 1;\n```';
       const result = parseMarkdown(input);
-      
+
       expect(result).toContain('<pre><code class="language-javascript">');
       expect(result).toContain('const x = 1;');
     });
@@ -110,7 +171,7 @@ describe('Markdown Parser', () => {
     it('should parse inline code', () => {
       const input = 'Use `console.log()` for debugging';
       const result = parseMarkdown(input);
-      
+
       expect(result).toContain('<code>console.log()</code>');
     });
   });
@@ -174,7 +235,7 @@ describe('Markdown Parser', () => {
     it('should handle non-existent internal links', () => {
       const input = 'Check [Missing Note](note://non-existent)';
       const result = parseMarkdown(input);
-      
+
       // Should return the original text without creating a link
       expect(result).toContain('Check');
       expect(result).toContain('<a href="/notes/non-existent"'); // Still renders as a link, but entity may not exist
@@ -203,22 +264,25 @@ describe('Markdown Parser', () => {
     it('should parse external links', () => {
       const input = 'Visit [Google](https://google.com)';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('<a href="https://google.com" target="_blank" rel="noopener noreferrer" class="external-link">');
+
+      expect(result).toContain(
+        '<a href="https://google.com" target="_blank" rel="noopener noreferrer" class="external-link">',
+      );
       expect(result).toContain('Visit');
     });
 
     it('should handle external links with special characters', () => {
       const input = 'Check [this page](https://example.com/path?param=value)';
       const result = parseMarkdown(input);
-      
+
       expect(result).toContain('href="https://example.com/path?param=value"');
     });
   });
 
   describe('Mixed Content', () => {
     it('should handle mixed markdown and internal links', () => {
-      const input = '**Important**: Check [Test Note](note://note-1) for details about the [Test Monster](monster://monster-1).';
+      const input =
+        '**Important**: Check [Test Note](note://note-1) for details about the [Test Monster](monster://monster-1).';
       const result = parseMarkdown(input);
       expect(result).toContain('<strong>Important</strong>');
       const anchor1 = result.match(/<a [^>]+>Test Note<\/a>/)[0];
@@ -234,7 +298,8 @@ describe('Markdown Parser', () => {
     });
 
     it('should handle multiple links in one line', () => {
-      const input = '[Test Note](note://note-1) and [Test Module](module://module-1) and [Test Party](party://party-1)';
+      const input =
+        '[Test Note](note://note-1) and [Test Module](module://module-1) and [Test Party](party://party-1)';
       const result = parseMarkdown(input);
       const anchor1 = result.match(/<a [^>]+>Test Note<\/a>/)[0];
       expect(anchor1).toContain('href="/notes/note-1"');
@@ -254,7 +319,8 @@ describe('Markdown Parser', () => {
     });
 
     it('should handle links within lists', () => {
-      const input = '- Check [Test Note](note://note-1)\n- See [Test Module](module://module-1)';
+      const input =
+        '- Check [Test Note](note://note-1)\n- See [Test Module](module://module-1)';
       const result = parseMarkdown(input);
       expect(result).toContain('<ul>');
       const anchor1 = result.match(/<a [^>]+>Test Note<\/a>/)[0];
@@ -284,8 +350,10 @@ describe('Markdown Parser', () => {
     it('should handle plain text without markdown', () => {
       const input = 'Just plain text without any markdown formatting';
       const result = parseMarkdown(input);
-      
-      expect(result).toContain('Just plain text without any markdown formatting');
+
+      expect(result).toContain(
+        'Just plain text without any markdown formatting',
+      );
     });
 
     it('should handle partial internal link syntax', () => {
@@ -305,7 +373,9 @@ describe('Markdown Parser', () => {
       const input = '- [ ] Unchecked item';
       const result = parseMarkdown(input);
       expect(result).toContain('<ul');
-      expect(result).toContain('<input type="checkbox" disabled class="task-list-checkbox">');
+      expect(result).toContain(
+        '<input type="checkbox" disabled class="task-list-checkbox">',
+      );
       expect(result).toContain('Unchecked item');
     });
 
@@ -313,15 +383,21 @@ describe('Markdown Parser', () => {
       const input = '- [x] Checked item';
       const result = parseMarkdown(input);
       expect(result).toContain('<ul');
-      expect(result).toMatch(/<input type="checkbox" (checked disabled|disabled checked) class="task-list-checkbox">/);
+      expect(result).toMatch(
+        /<input type="checkbox" (checked disabled|disabled checked) class="task-list-checkbox">/,
+      );
       expect(result).toContain('Checked item');
     });
 
     it('should render mixed checked and unchecked items', () => {
       const input = '- [ ] Unchecked\n- [x] Checked';
       const result = parseMarkdown(input);
-      expect(result).toMatch(/<input type="checkbox" disabled class="task-list-checkbox">/);
-      expect(result).toMatch(/<input type="checkbox" (checked disabled|disabled checked) class="task-list-checkbox">/);
+      expect(result).toMatch(
+        /<input type="checkbox" disabled class="task-list-checkbox">/,
+      );
+      expect(result).toMatch(
+        /<input type="checkbox" (checked disabled|disabled checked) class="task-list-checkbox">/,
+      );
     });
 
     it('should not affect normal lists', () => {
@@ -335,14 +411,18 @@ describe('Markdown Parser', () => {
     it('should render enabled checkboxes if env.taskCheckboxEnabled is true', () => {
       const input = '- [x] Enabled checked item';
       const result = parseMarkdown(input, { taskCheckboxEnabled: true });
-      expect(result).toContain('<input type="checkbox" checked class="task-list-checkbox">');
+      expect(result).toContain(
+        '<input type="checkbox" checked class="task-list-checkbox">',
+      );
       expect(result).not.toContain('disabled');
     });
 
     it('should render enabled unchecked checkboxes if env.taskCheckboxEnabled is true', () => {
       const input = '- [ ] Enabled unchecked item';
       const result = parseMarkdown(input, { taskCheckboxEnabled: true });
-      expect(result).toContain('<input type="checkbox" class="task-list-checkbox">');
+      expect(result).toContain(
+        '<input type="checkbox" class="task-list-checkbox">',
+      );
       expect(result).not.toContain('disabled');
     });
   });
@@ -364,10 +444,15 @@ describe('Markdown Parser', () => {
 
   describe('Heading ID behavior', () => {
     it('should support {#KIND-id} for valid kinds only', () => {
-      const input = '# Some Note {#note-123}\n# Some Module {#module-456}\n# Not Special {#foo-789}';
+      const input =
+        '# Some Note {#note-123}\n# Some Module {#module-456}\n# Not Special {#foo-789}';
       const result = parseMarkdown(input);
-      expect(result).toContain('<h1 id="note-123" data-id="123" data-kind="note">Some Note</h1>');
-      expect(result).toContain('<h1 id="module-456" data-id="456" data-kind="module">Some Module</h1>');
+      expect(result).toContain(
+        '<h1 id="note-123" data-id="123" data-kind="note">Some Note</h1>',
+      );
+      expect(result).toContain(
+        '<h1 id="module-456" data-id="456" data-kind="module">Some Module</h1>',
+      );
       // Should not parse for unknown kind
       expect(result).toContain('<h1>Not Special {#foo-789}</h1>');
       // Should not contain {#note-123} or {#module-456} in the heading text
@@ -378,7 +463,8 @@ describe('Markdown Parser', () => {
 
   describe('Mention Extraction', () => {
     it('should extract mentioned entities from text', () => {
-      const input = '[Test Note](note://note-1) and [Alias](monster://monster-2) and [Test Party](party://party-1)';
+      const input =
+        '[Test Note](note://note-1) and [Alias](monster://monster-2) and [Test Party](party://party-1)';
       const result = extractMentionedEntities(input);
       expect(result).toEqual([
         { kind: 'note', id: 'note-1' },
@@ -470,4 +556,21 @@ describe('Markdown Parser', () => {
       expect(getMentionableEntities('unknown')).toBeUndefined();
     });
   });
-}); 
+
+  describe('Tag links', () => {
+    it('renders hashtags as links to the filtered note list', () => {
+      const result = parseMarkdown('Travel to #harbor and #Подземелье');
+      expect(result).toContain('class="tag-link"');
+      expect(result).toContain('href="/notes?tag=harbor"');
+      expect(result).toContain('data-tag="harbor"');
+      expect(result).toContain(
+        'href="/notes?tag=%D0%9F%D0%BE%D0%B4%D0%B7%D0%B5%D0%BC%D0%B5%D0%BB%D1%8C%D0%B5"',
+      );
+    });
+
+    it('does not tag headings, mid-word hashes or inline code', () => {
+      const result = parseMarkdown('# Heading\n\nword#tag `#code`');
+      expect(result).not.toContain('tag-link');
+    });
+  });
+});

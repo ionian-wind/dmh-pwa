@@ -57,7 +57,13 @@ For list items beginning with `[ ]`, `[x]`, or `[X]`, the renderer:
 
 `Markdown.vue` passes `{ taskCheckboxEnabled }` as `env` when rendering.
 
-### 3. Heading anchors
+### 3. Tag links
+
+Inline `#tag` text is rendered as `<a class="tag-link" data-tag="tag"
+ href="/notes?tag=tag">#tag</a>`. Headings, inline code, and `{#...}` attribute
+suffixes are not converted. Clicking a tag navigates to the filtered note list.
+
+### 4. Heading anchors
 
 Syntax: `## Title {#kind-id}`.
 

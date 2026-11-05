@@ -259,4 +259,17 @@ describe('Markdown', () => {
     await input.trigger('change');
     expect(wrapper.emitted('update:content')).toBeUndefined();
   });
+
+  it('navigates to the filtered note list for tag links', async () => {
+    const pushState = vi.spyOn(history, 'pushState');
+    const { wrapper } = await mountMarkdown({ content: 'Travel to #harbor' });
+
+    await wrapper.find('.tag-link').trigger('click');
+
+    expect(pushState).toHaveBeenCalledWith(
+      history.state,
+      '',
+      '/notes?tag=harbor',
+    );
+  });
 });

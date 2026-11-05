@@ -79,9 +79,19 @@ function getEntity(kind: string, id: string) {
 }
 
 function handleInternalLinkClick(e: MouseEvent) {
-  const link = (e.target as HTMLElement).closest(
-    '.internal-link',
-  ) as HTMLAnchorElement | null;
+  const target = e.target as HTMLElement;
+  const tagLink = target.closest('.tag-link') as HTMLAnchorElement | null;
+  if (tagLink) {
+    const href = tagLink.getAttribute('href');
+    if (href) {
+      e.preventDefault();
+      history.pushState(history.state, '', href);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    return;
+  }
+
+  const link = target.closest('.internal-link') as HTMLAnchorElement | null;
   if (!link) return;
 
   const kind = link.getAttribute('data-kind');

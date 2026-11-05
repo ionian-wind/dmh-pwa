@@ -233,6 +233,47 @@ const md = new MarkdownIt({
   linkify: true,
   breaks: false,
 });
+
+// --- Tag links (`#tag` -> /notes?tag=tag) ---
+const tagLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
+  md.inline.ruler.before(
+    'emphasis',
+    'tag_link',
+    (state: any, silent: boolean) => {
+      if (state.src.charCodeAt(state.pos) !== 0x23) return false;
+
+      const previous = state.pos > 0 ? state.src[state.pos - 1] : '';
+      if (previous && !/[\s(["'>]/.test(previous)) return false;
+
+      const lineStart = state.src.lastIndexOf('\n', state.pos - 1) + 1;
+      const beforeCursor = state.src.slice(lineStart, state.pos);
+      if (beforeCursor.lastIndexOf('{') > beforeCursor.lastIndexOf('}')) {
+        return false;
+      }
+
+      const match = /^#([\p{L}\p{N}_-]+)/u.exec(state.src.slice(state.pos));
+      if (!match) return false;
+
+      const tag = match[1];
+      if (!silent) {
+        let token = state.push('link_open', 'a', 1);
+        token.attrs = [
+          ['href', `/notes?tag=${encodeURIComponent(tag)}`],
+          ['class', 'tag-link'],
+          ['data-tag', tag],
+        ];
+        token = state.push('text', '', 0);
+        token.content = `#${tag}`;
+        state.push('link_close', 'a', -1);
+      }
+
+      state.pos += match[0].length;
+      return true;
+    },
+  );
+};
+
+md.use(tagLinkPlugin);
 md.use(internalEntityLinkPlugin);
 md.use(checkboxPlugin);
 md.use(customHeaderPlugin);
@@ -294,7 +335,14 @@ const dangerousTags = new Set([
   'button',
 ]);
 
-const globalAttributes = ['class', 'id', 'title', 'data-kind', 'data-id'];
+const globalAttributes = [
+  'class',
+  'id',
+  'title',
+  'data-kind',
+  'data-id',
+  'data-tag',
+];
 const tagAttributes: Record<string, string[]> = {
   a: ['href', 'name', 'target', 'rel'],
   img: ['src', 'alt', 'width', 'height'],
