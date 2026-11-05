@@ -252,10 +252,13 @@ unmount. The `filesStore` is loaded but unused.
 - `PlaylistList` shows "All Tracks", then playlists. In edit mode playlists use
   a per-row drag handle for sorting; clicking the row selects the playlist.
 - A View/Edit mode switch sits at the bottom of the playlist sidebar.
-  - View mode: no drag handles, no create row, no playlist manage buttons on
-    hover, and no Remove item in track menus.
+  - View mode: no drag handles, no playlist manage buttons on hover, and no
+    Remove item in track menus.
   - Edit mode: sorting handles appear, playlist manage buttons show on hover,
     and track menus include Remove.
+  - The "New playlist" row is always available in both modes.
+- The All Tracks row and any playlist containing the currently playing track
+  get a left accent border.
 - Playlist sort order is persisted as `sortOrder`; sorting is available only
   in edit mode.
 - Edit opens `PlaylistEditor` (name, modules, description).

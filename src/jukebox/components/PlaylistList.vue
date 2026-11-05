@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
@@ -23,9 +24,17 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 
 const playlistsStore = useJukeboxPlaylistsStore();
+const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();
 const isEditMode = useJukeboxEditMode();
 const playlists = playlistsStore.items;
+const activeTrackId = computed(() => playerStore.currentTrack?.id ?? null);
+
+function playlistHasActiveTrack(playlist: JukeboxPlaylist) {
+  return (
+    !!activeTrackId.value && playlist.trackIds.includes(activeTrackId.value)
+  );
+}
 
 const filteredPlaylists = computed(() => playlists.value || []);
 const selectedPlaylistId = ref<string | null>(
@@ -182,8 +191,10 @@ onMounted(async () => {
       <QList class="q-pa-none q-mb-none">
         <QItem
           clickable
+          class="playlist-all-tracks"
           :active="selectedPlaylistId === null"
           :active-class="'bg-secondary'"
+          :class="{ 'has-active-track': !!activeTrackId }"
           v-ripple
           @click="setSelectedPlaylist(null)"
         >
@@ -212,6 +223,7 @@ onMounted(async () => {
             v-ripple
             @click="setSelectedPlaylist(playlist.id)"
             class="playlist-item"
+            :class="{ 'has-active-track': playlistHasActiveTrack(playlist) }"
           >
             <QItemSection
               v-if="isEditMode"
@@ -264,7 +276,7 @@ onMounted(async () => {
     </QScrollArea>
 
     <QSeparator />
-    <QList v-if="isEditMode">
+    <QList>
       <QItem clickable v-ripple @click="openPlaylistModal(null)">
         <QItemSection>{{ t('playlist.createNew') }}</QItemSection>
         <QItemSection side>
@@ -321,6 +333,10 @@ onMounted(async () => {
 
 .playlist-drag-handle:active {
   cursor: grabbing;
+}
+
+.has-active-track {
+  box-shadow: inset 3px 0 0 var(--q-primary);
 }
 
 .playlist-actions {

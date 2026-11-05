@@ -5,6 +5,7 @@ import SortableList from '@/components/common/SortableList.vue';
 
 import PlaylistList from '@/jukebox/components/PlaylistList.vue';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
@@ -253,7 +254,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
     wrapper.unmount();
   });
 
-  it('hides drag handles and create row in view mode', async () => {
+  it('hides drag handles in view mode but keeps the create action', async () => {
     seed();
     useJukeboxEditMode().value = false;
     const wrapper = mountList();
@@ -264,7 +265,7 @@ describe('PlaylistList drag-and-drop and selection', () => {
     expect(wrapper.find('.playlist-list-container').classes()).not.toContain(
       'is-edit-mode',
     );
-    expect(wrapper.text()).not.toContain('New playlist');
+    expect(wrapper.text()).toContain('New playlist');
 
     await wrapper.find('.jukebox-edit-mode').trigger('click');
     await flushPromises();
@@ -295,6 +296,26 @@ describe('PlaylistList drag-and-drop and selection', () => {
     await checkboxes[1].trigger('change');
 
     expect([...bulk.selectedPlaylistIds.value]).toEqual(['p2', 'p1']);
+    wrapper.unmount();
+  });
+
+  it('marks the All Tracks row and playlists containing the active track', async () => {
+    const store = seed();
+    store.items.value[0].trackIds = ['t1'];
+    const player = useJukeboxPlayerStore();
+    player.currentTrack = { id: 't1', fileId: 'f1', title: 'Active' } as any;
+
+    const wrapper = mountList();
+    await flushPromises();
+
+    expect(wrapper.find('.playlist-all-tracks').classes()).toContain(
+      'has-active-track',
+    );
+    const rows = wrapper.findAll('.playlist-item');
+    const containing = rows.find((row) => row.text().includes('Second'));
+    const other = rows.find((row) => row.text().includes('First'));
+    expect(containing?.classes()).toContain('has-active-track');
+    expect(other?.classes()).not.toContain('has-active-track');
     wrapper.unmount();
   });
 });
