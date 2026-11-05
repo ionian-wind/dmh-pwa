@@ -13,6 +13,7 @@ import {
 import type { JukeboxTrack } from '@/jukebox/types';
 
 import { formatTime } from '../utils';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import TrackInfo from './TrackInfo.vue';
 
@@ -37,11 +38,23 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const playerStore = useJukeboxPlayerStore();
 const isMenuOpen = ref(false);
 const { selectedTrackIds, hasSelectedPlaylists, toggleTrack } =
   useJukeboxBulkSelection();
 const bulkSelected = computed(() => selectedTrackIds.value.has(props.track.id));
 const bulkShiftClick = ref(false);
+const waveformProgress = computed(() => {
+  if (!props.isPlaying || playerStore.currentTrack?.id !== props.track.id) {
+    return 0;
+  }
+  const duration = playerStore.duration || props.track.duration || 0;
+  if (duration <= 0) return 0;
+  return Math.min(1, Math.max(0, playerStore.currentTime / duration));
+});
+const playedWaveformStyle = computed(() => ({
+  clipPath: `inset(0 ${(1 - waveformProgress.value) * 100}% 0 0)`,
+}));
 
 function captureBulkClick(event: MouseEvent) {
   bulkShiftClick.value = event.shiftKey;
@@ -86,12 +99,19 @@ const trackColor = computed(() => props.track.color || 'transparent');
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
-    <div
-      v-if="isPlaying && track.waveform"
-      class="track-waveform"
-      aria-hidden="true"
-      v-html="track.waveform"
-    />
+    <template v-if="isPlaying && track.waveform">
+      <div
+        class="track-waveform track-waveform--base"
+        aria-hidden="true"
+        v-html="track.waveform"
+      />
+      <div
+        class="track-waveform track-waveform--played"
+        :style="playedWaveformStyle"
+        aria-hidden="true"
+        v-html="track.waveform"
+      />
+    </template>
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
       <IconGripVertical :size="18" />
     </QItemSection>
@@ -193,9 +213,16 @@ const trackColor = computed(() => props.track.color || 'transparent');
   inset: 0;
   z-index: 0;
   color: var(--q-primary);
-  opacity: 0.3;
   pointer-events: none;
   overflow: hidden;
+}
+
+.track-waveform--base {
+  opacity: 0.16;
+}
+
+.track-waveform--played {
+  opacity: 0.7;
 }
 
 .track-waveform :deep(svg) {
