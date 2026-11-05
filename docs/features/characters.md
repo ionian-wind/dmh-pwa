@@ -62,8 +62,9 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - Renders `notes` as plain text (not Markdown).
 - Edit modal, delete with confirmation, then `BaseEntityView` navigates to the
   list.
-- Shows mentions and backlinks via `<template #sidepanel>` plus linked ambient
-  scenes.
+- Uses `CharacterViewSidebar` through the shared right drawer, wrapped in the
+  same `side-panel-content q-pa-md` layout as the note, monster, encounter and
+  party sidebars. It shows mentions, backlinks, then linked ambient scenes.
 
 ## Relationships and lifecycle
 

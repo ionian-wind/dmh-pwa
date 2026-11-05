@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Mentions from '@/components/common/Mentions.vue';
-import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
+import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
 import { useMentionsStore } from '@/utils/storage';
+import { useRightDrawer } from '@/composables/useLayout';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 
@@ -55,21 +55,19 @@ function closeEditor() {
 // Computed properties for BaseEntityView
 const characterTitle = computed(() => character.value?.name || '');
 
-const mentionedEntities = computed(() => {
-  if (!character.value) return [];
-  return mentionsStore.getLinks({ kind: 'character', id: character.value.id });
-});
-const mentionedInEntities = computed(() => {
-  if (!character.value) return [];
-  return mentionsStore.getBacklinks({
-    kind: 'character',
-    id: character.value.id,
-  });
-});
+const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await characterStore.load();
   await mentionsStore.load();
+  rightDrawer.set({
+    component: CharacterViewSidebar,
+    props: { character },
+  });
+});
+
+onBeforeUnmount(() => {
+  rightDrawer.clear();
 });
 
 async function handleEditorDelete() {
@@ -109,19 +107,6 @@ async function handleEditorDelete() {
         @submit="handleSave"
         @delete="handleEditorDelete"
         @cancel="closeEditor"
-      />
-    </template>
-
-    <template #sidepanel>
-      <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
-      <Mentions
-        :title="t('common.mentionedIn')"
-        :entities="mentionedInEntities"
-      />
-      <EntityScenesPanel
-        v-if="character"
-        entity-type="character"
-        :entity-id="character.id"
       />
     </template>
   </BaseEntityView>
