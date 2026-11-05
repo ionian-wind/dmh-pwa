@@ -21,9 +21,10 @@ const props = withDefaults(
     isSelected?: boolean;
     isPlaying?: boolean;
     draggable?: boolean;
+    selectable?: boolean;
     showRemove?: boolean;
   }>(),
-  { showRemove: true },
+  { showRemove: true, selectable: false },
 );
 
 const emit = defineEmits<{
@@ -74,7 +75,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
       <IconGripVertical :size="18" />
     </QItemSection>
-    <QItemSection v-if="draggable" side class="track-bulk-select" @click.stop>
+    <QItemSection v-if="selectable" side class="track-bulk-select" @click.stop>
       <QCheckbox v-model="bulkSelected" dense />
     </QItemSection>
     <QItemSection>

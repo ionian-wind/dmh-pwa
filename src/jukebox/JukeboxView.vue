@@ -302,20 +302,25 @@ const trackClick = (track: JukeboxTrack) =>
     ? playerStore.togglePlay()
     : playTrackFromPlaylist(track);
 
-function cardProps(track: JukeboxTrack) {
-  const active = playerStore.trackIsActive(track, selectedPlaylistId.value);
-  return {
-    track,
-    isSelected: active,
-    isPlaying: playerStore.isPlaying && active,
-    onAddToPlaylist: () => openAddToPlaylistModal(track),
-    onRemove: () => removeTrack(track),
-    onPlay: () => trackClick(track),
-    onPlayNext: () => playerStore.queueTrackNext(track),
-    onPlayLast: () => playerStore.queueTrackLast(track),
-    showRemove: isEditMode.value,
+const cardProps = computed(() => {
+  const editMode = isEditMode.value;
+
+  return (track: JukeboxTrack) => {
+    const active = playerStore.trackIsActive(track, selectedPlaylistId.value);
+    return {
+      track,
+      isSelected: active,
+      isPlaying: playerStore.isPlaying && active,
+      onAddToPlaylist: () => openAddToPlaylistModal(track),
+      onRemove: () => removeTrack(track),
+      onPlay: () => trackClick(track),
+      onPlayNext: () => playerStore.queueTrackNext(track),
+      onPlayLast: () => playerStore.queueTrackLast(track),
+      selectable: editMode,
+      showRemove: editMode,
+    };
   };
-}
+});
 
 async function onTracksSorted(newOrder: JukeboxTrack[]) {
   if (!selectedPlaylistId.value) return;

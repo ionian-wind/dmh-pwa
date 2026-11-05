@@ -553,10 +553,28 @@ describe('JukeboxView', () => {
     const { list } = await mountView();
     expect(list.props('draggable')).toBe(false);
     expect((list.props('cardProps') as any)(track).showRemove).toBe(false);
+    expect((list.props('cardProps') as any)(track).selectable).toBe(false);
 
     useJukeboxEditMode().value = true;
     await nextTick();
     expect(list.props('draggable')).toBe(true);
     expect((list.props('cardProps') as any)(track).showRemove).toBe(true);
+    expect((list.props('cardProps') as any)(track).selectable).toBe(true);
+  });
+
+  it('shows bulk selection for all tracks without enabling sorting', async () => {
+    const track = { id: 't1', title: 'One' } as JukeboxTrack;
+    mocks.tracks.items.value = [track];
+    useConfigStore().jukeboxActivePlaylistId = null;
+
+    const { list } = await mountView();
+
+    useJukeboxEditMode().value = true;
+    await nextTick();
+
+    expect(list.props('draggable')).toBe(false);
+    expect((list.props('cardProps') as any)(track)).toEqual(
+      expect.objectContaining({ selectable: true, showRemove: true }),
+    );
   });
 });

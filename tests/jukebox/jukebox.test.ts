@@ -176,7 +176,11 @@ describe('jukebox store integration', () => {
   it('marks draggable tracks and emits play on click', async () => {
     const track = await seedTrack('Tavern Theme');
     const wrapper = mount(TrackCard, {
-      props: { track: { ...track, duration: undefined }, draggable: true },
+      props: {
+        track: { ...track, duration: undefined },
+        draggable: true,
+        selectable: true,
+      },
     });
 
     const item = wrapper.find('.track-item');
@@ -205,6 +209,19 @@ describe('jukebox store integration', () => {
     expect(staticCard.find('.track-bulk-select').exists()).toBe(false);
     expect(staticCard.text()).toContain('0:42');
     staticCard.unmount();
+  });
+
+  it('shows bulk selection without drag handles when selectable', async () => {
+    const track = await seedTrack('All Tracks Song');
+    const wrapper = mount(TrackCard, {
+      props: { track, selectable: true },
+    });
+
+    expect(wrapper.find('.track-drag-handle').exists()).toBe(false);
+    expect(
+      wrapper.find('.track-bulk-select input[type="checkbox"]').exists(),
+    ).toBe(true);
+    wrapper.unmount();
   });
 
   it('toggles track membership in an existing playlist', async () => {

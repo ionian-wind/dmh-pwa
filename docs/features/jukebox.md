@@ -203,8 +203,10 @@ position until `onplay/onseek` updates it.
   drag handle; reorder writes `playlist.trackIds` and resorts the queue.
   Clicking the row itself plays the track. A pointer down/up on a handle without
   a positional change is ignored and does not resort the queue.
-- Edit mode also shows a bulk-selection checkbox after each track and playlist
-  drag handle. The checkbox toggles visually but bulk actions are not wired yet.
+- Edit mode also shows bulk-selection checkboxes for tracks and playlists. Tracks
+  in the All Tracks view still get a checkbox (though they have no sortable
+  order), so they can be selected without drag handles. The checkbox toggles
+  visually but bulk actions are not wired yet.
 - Track click toggles play if it is the active track, otherwise starts it from
   the playlist.
 - A per-row icon-only actions menu (`IconDotsVertical`) contains Add to
