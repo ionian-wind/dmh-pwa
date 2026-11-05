@@ -22,6 +22,8 @@ Emits: `view`, `edit`, `delete`.
   toolbar sits below the content rather than covering it.
 - A matching negative bottom margin keeps the grid/flex layout height stable:
   the hovered card expands downward over following cards without moving them.
+- The list reserves bottom space for a hovered last-row card, so the page
+  scrollbar length stays constant.
 - Touch devices keep actions in normal flow and permanently visible.
 - Copy is supported when `showCopy` is set; domain cards enable it.
 

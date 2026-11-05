@@ -330,3 +330,11 @@ onBeforeUnmount(() => {
     <slot />
   </div>
 </template>
+
+<style scoped>
+.base-list-container {
+  /* Room for the hovered last-row card action bar, so the page scrollbar
+     length stays stable while cards expand over their neighbours. */
+  padding-bottom: 76px;
+}
+</style>
