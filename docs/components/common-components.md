@@ -17,13 +17,9 @@ Emits: `view`, `edit`, `delete`.
   comments/empty text, handles fragments).
 - Actions row renders if a slot exists or any action flag is set.
 - Actions are hidden until the card is hovered or contains keyboard focus
-  (`focus-within`).
-- On hover the card gains bottom padding equal to the action-bar height, so the
-  toolbar sits below the content rather than covering it.
-- A matching negative bottom margin keeps the grid/flex layout height stable:
-  the hovered card expands downward over following cards without moving them.
-- The list reserves bottom space for a hovered last-row card, so the page
-  scrollbar length stays constant.
+  (`focus-within`), then overlay the bottom of the card as a gradient bar.
+- Card dimensions stay fixed on hover, so leaving a card does not cause layout
+  shifts or hover flicker.
 - Touch devices keep actions in normal flow and permanently visible.
 - Copy is supported when `showCopy` is set; domain cards enable it.
 - When `dragEntity` (`{ kind, id, title }`) is present, a drag handle appears
