@@ -119,10 +119,12 @@ Attributes: `kind`, `id`, `href`, `title`.
 
 ## Raw Markdown mode
 
-A Quasar `QEditor` with `:toolbar="[]"`. Because QEditor works in HTML while
-notes store Markdown, `markdownRaw.ts` converts newlines/escaping in both
-directions. It does not provide syntax highlighting, link autocomplete, or a
-preview.
+A flat, square Quasar `QEditor` with `:toolbar="[]"` and no outline. Because
+QEditor works in HTML while notes store Markdown, `markdownRaw.ts` converts
+newlines/escaping in both directions. Paste events are intercepted per the
+Quasar docs plaintext-paste example: only `text/plain` is inserted through
+`runCmd('insertText', ...)`, so rich markup and pasted images are discarded. It
+does not provide syntax highlighting, link autocomplete, or a preview.
 
 ## Persistence path
 

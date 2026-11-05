@@ -42,6 +42,7 @@ const modelValueProxy = computed({
 });
 
 const rawHtml = ref(markdownToEditorHtml(props.modelValue));
+const rawEditorRef = ref<any>(null);
 
 watch(
   () => props.modelValue,
@@ -55,6 +56,29 @@ watch(
 function onRawUpdate(html: string) {
   rawHtml.value = html;
   emit('update:modelValue', editorHtmlToMarkdown(html));
+}
+
+/**
+ * Force plain-text pasting. QEditor's contentEditable otherwise preserves
+ * markup from copied rich text. Based on the Quasar docs example.
+ */
+function onRawPaste(evt: any) {
+  if (evt.target?.nodeName === 'INPUT') return;
+
+  let text = '';
+  evt.preventDefault();
+  evt.stopPropagation();
+
+  if (evt.originalEvent?.clipboardData?.getData) {
+    text = evt.originalEvent.clipboardData.getData('text/plain');
+    rawEditorRef.value?.runCmd('insertText', text);
+  } else if (evt.clipboardData?.getData) {
+    text = evt.clipboardData.getData('text/plain');
+    rawEditorRef.value?.runCmd('insertText', text);
+  } else if ((window as any).clipboardData?.getData) {
+    text = (window as any).clipboardData.getData('Text');
+    rawEditorRef.value?.runCmd('ms-pasteTextOnly', text);
+  }
 }
 
 function getCurrentMarkdown() {
@@ -99,11 +123,15 @@ defineExpose({ getMarkdown });
     <!-- Raw Markdown Editor -->
     <QEditor
       v-else
+      ref="rawEditorRef"
+      flat
+      square
       :toolbar="[]"
       :model-value="rawHtml"
       :placeholder="props.placeholder"
       class="raw-textarea"
       v-bind="attrs"
+      @paste="onRawPaste"
       @update:model-value="onRawUpdate"
     />
   </div>
