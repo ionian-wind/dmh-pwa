@@ -159,4 +159,39 @@ describe('NoteEditor content types', () => {
       tags: ['lore'],
     });
   });
+
+  it('exposes note options from an icon-only footer button', () => {
+    const wrapper = mountEditor({ note: baseNote });
+    const options = wrapper.find('.note-options-button');
+
+    expect(options.exists()).toBe(true);
+    expect(options.attributes('title')).toBe('options');
+    expect(options.attributes('aria-label')).toBe('options');
+    expect(options.find('svg').exists()).toBe(true);
+    expect(options.findComponent({ name: 'ColorPicker' }).exists()).toBe(true);
+  });
+
+  it('shows markdown help only in raw mode and opens the help dialog', async () => {
+    const wrapper = mountEditor({ note: baseNote });
+
+    expect(wrapper.find('.note-help-button').exists()).toBe(false);
+
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    await flushPromises();
+
+    const help = wrapper.find('.note-help-button');
+    expect(help.exists()).toBe(true);
+    expect(help.find('svg').exists()).toBe(true);
+
+    await help.trigger('click');
+    await flushPromises();
+
+    const dialog = wrapper.findComponent({ name: 'MarkdownHelpDialog' });
+    expect(dialog.exists()).toBe(true);
+    expect(dialog.props('isOpen')).toBe(true);
+    expect(wrapper.text()).toContain('Formatting Help');
+    wrapper.unmount();
+  });
 });

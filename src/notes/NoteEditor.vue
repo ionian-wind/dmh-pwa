@@ -9,7 +9,9 @@ import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import NoteCanvas from './NoteCanvas.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
+import { IconDots, IconHelp } from '@tabler/icons-vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 
@@ -46,6 +48,7 @@ const editedNote = ref<Note>({
 
 const lastNoteId = ref<string | null>(null);
 const isWYSIWYGMode = ref(true);
+const isHelpOpen = ref(false);
 
 const noteContent = computed({
   get: () => editedNote.value.content,
@@ -153,43 +156,7 @@ function handleDelete() {
           />
         </div>
         <div class="q-mb-md">
-          <NoteTypeSelector
-            :allow-create="true"
-            v-model="editedNote.typeId"
-            :module-id="editedNote.moduleId"
-          />
-        </div>
-        <div class="q-mb-md">
-          <TagSelector
-            v-model="editedNote.tags"
-            :entity-type="'note'"
-            :current-entity-id="editedNote.id"
-          />
-        </div>
-        <div class="q-mb-md">
-          <ColorPicker
-            id="note-background-color"
-            v-model="editedNote.backgroundColor"
-            :label="t('editor.backgroundColor')"
-            clearable
-            :clear-label="t('common.clear')"
-          />
-        </div>
-        <div class="q-mb-md">
-          <div
-            v-if="editedNote.contentType === 'text'"
-            class="row justify-between"
-          >
-            <div class="col">
-              <h5>{{ t('editor.content') }}</h5>
-            </div>
-            <div class="editor-toggle text-right col">
-              <QToggle left-label v-model="isWYSIWYGMode">
-                {{ t('markdownEditor.visualMode') }}
-              </QToggle>
-            </div>
-          </div>
-          <h5 v-else>{{ t('editor.content') }}</h5>
+          <h5>{{ t('editor.content') }}</h5>
 
           <slot
             name="content"
@@ -230,6 +197,57 @@ function handleDelete() {
       />
     </template>
 
+    <template #footer>
+      <div class="note-footer-actions q-mr-auto row items-center q-gutter-sm">
+        <QBtn
+          flat
+          round
+          class="note-options-button"
+          title="options"
+          aria-label="options"
+        >
+          <IconDots />
+          <QMenu class="note-options-menu">
+            <QCard class="note-options-card q-pa-md">
+              <div class="q-gutter-md">
+                <NoteTypeSelector
+                  :allow-create="true"
+                  v-model="editedNote.typeId"
+                  :module-id="editedNote.moduleId"
+                />
+                <TagSelector
+                  v-model="editedNote.tags"
+                  :entity-type="'note'"
+                  :current-entity-id="editedNote.id"
+                />
+                <ColorPicker
+                  id="note-background-color"
+                  v-model="editedNote.backgroundColor"
+                  :label="t('editor.backgroundColor')"
+                  clearable
+                  :clear-label="t('common.clear')"
+                />
+                <QToggle left-label v-model="isWYSIWYGMode">
+                  {{ t('markdownEditor.visualMode') }}
+                </QToggle>
+              </div>
+            </QCard>
+          </QMenu>
+        </QBtn>
+        <QBtn
+          v-if="!isWYSIWYGMode"
+          flat
+          round
+          class="note-help-button"
+          :title="t('markdownEditor.formattingHelp')"
+          :aria-label="t('markdownEditor.formattingHelp')"
+          @click="isHelpOpen = true"
+        >
+          <IconHelp />
+        </QBtn>
+      </div>
+    </template>
+
     <div
       v-if="validationError"
       class="q-mt-md q-mb-md text-negative bg-grey-1 q-pa-sm rounded-borders"
@@ -237,4 +255,6 @@ function handleDelete() {
       {{ validationError }}
     </div>
   </BaseModal>
+
+  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>

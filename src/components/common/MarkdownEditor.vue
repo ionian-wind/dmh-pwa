@@ -27,7 +27,6 @@ const props = defineProps<{
   rows?: number;
   className?: string;
   label?: string;
-  hideFormattingHelp?: boolean;
   enableMentions?: boolean;
   currentEntityType?: string;
   currentEntityId?: string;
@@ -93,80 +92,6 @@ defineExpose({ getMarkdown });
         dense
         outlined
       />
-
-      <QCard flat bordered v-if="!props.hideFormattingHelp" class="q-mt-md">
-        <QCardSection>
-          <h4>{{ t('markdownEditor.formattingHelp') }}</h4>
-        </QCardSection>
-        <QCardSection class="row">
-          <div class="col">
-            <span class="help-title">
-              {{ t('markdownEditor.help.internalLinks') }}
-            </span>
-            <code>[title](type://id)</code>
-            <p>{{ t('markdownEditor.help.linkToOtherEntities') }}</p>
-            <ul>
-              <li>
-                <code>[Note Title](note://123)</code> -
-                {{ t('markdownEditor.help.linkToNote') }}
-              </li>
-              <li>
-                <code>[Module Name](module://123)</code> -
-                {{ t('markdownEditor.help.linkToModule') }}
-              </li>
-              <li>
-                <code>[Party Name](party://123)</code> -
-                {{ t('markdownEditor.help.linkToParty') }}
-              </li>
-              <li>
-                <code>[Monster Name](monster://123)</code> -
-                {{ t('markdownEditor.help.linkToMonster') }}
-              </li>
-              <li>
-                <code>[Encounter Name](encounter://123)</code> -
-                {{ t('markdownEditor.help.linkToEncounter') }}
-              </li>
-            </ul>
-          </div>
-          <div class="col">
-            <span class="help-title">
-              {{ t('markdownEditor.help.markdown') }}
-            </span>
-            <p>{{ t('markdownEditor.help.basicFormatting') }}</p>
-            <ul>
-              <li>
-                <code>**bold**</code> -
-                <strong>{{ t('markdownEditor.help.boldText') }}</strong>
-              </li>
-              <li>
-                <code>*italic*</code> -
-                <em>{{ t('markdownEditor.help.italicText') }}</em>
-              </li>
-              <li>
-                <code># Heading</code> -
-                {{ t('markdownEditor.help.sectionHeading') }}
-              </li>
-              <li>
-                <code>- item</code> - {{ t('markdownEditor.help.bulletList') }}
-              </li>
-              <li>
-                <code>1. item</code> -
-                {{ t('markdownEditor.help.numberedList') }}
-              </li>
-              <li>
-                <code>- [ ] Task item</code> {{ t('markdownEditor.help.or') }}
-                <code>- [x] {{ t('markdownEditor.help.completedTask') }}</code>
-                -
-                {{ t('markdownEditor.help.taskList') }}
-              </li>
-            </ul>
-            <p>
-              <em>{{ t('markdownEditor.help.taskLists') }}</em>
-              {{ t('markdownEditor.help.taskListsWillRender') }}
-            </p>
-          </div>
-        </QCardSection>
-      </QCard>
     </div>
   </div>
 </template>

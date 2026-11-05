@@ -79,10 +79,14 @@ Fields:
   - `text` notes use the Milkdown editor and its raw/visual toggle.
   - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
     Quickdraw editor.
-- Note type selector and tag selector. The module link lives in the dialog's
-  linked-entities tab.
-- Optional background colour (`backgroundColor`). It is rendered behind the
-  note content on the detail page and note cards.
+- An icon-only **options** button in the dialog footer opens a popup with the
+  note type selector, tag selector, optional background colour
+  (`backgroundColor`) and the visual-editor toggle. The colour is rendered
+  behind the note content on the detail page and note cards.
+- When the visual editor is off, an icon-only help button appears next to
+  **options**. It opens `MarkdownHelpDialog` with markdown formatting and
+  internal-link help.
+- The module link lives in the dialog's linked-entities tab.
 
 Behavior:
 
