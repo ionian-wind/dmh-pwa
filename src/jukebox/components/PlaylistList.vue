@@ -12,7 +12,7 @@ import SortableList from '@/components/common/SortableList.vue';
 import {
   IconEdit,
   IconGripVertical,
-  IconLiveView,
+  IconEye,
   IconPlus,
   IconPencil,
   IconX,
@@ -259,7 +259,7 @@ onMounted(async () => {
               :aria-pressed="!isEditMode"
               @click="isEditMode = false"
             >
-              <IconLiveView :size="18" />
+              <IconEye :size="18" />
             </QBtn>
             <QBtn
               class="jukebox-edit-mode"
