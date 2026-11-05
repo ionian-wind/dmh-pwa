@@ -39,8 +39,10 @@ See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities)
   is stored as a `Blob` (`picture`) plus derived `color`/`palette`.
 - `JukeboxTrack.waveform` holds a generated inline SVG waveform string, or
   `null` when the audio could not be decoded. While a track is playing, its
-  `TrackCard` row renders that SVG as a background waveform: a dim full-width
-  layer plus a brighter layer clipped to the current playback progress.
+  `TrackCard` row renders that SVG as a background waveform: a dim layer plus a
+  brighter layer clipped to the current playback progress. The waveform area
+  starts after the album artwork/icon and keeps left and right padding inside
+  the track text column.
 - `JukeboxPlaylist` stores `trackIds` in display order; `sortOrder` orders
   playlists; `moduleIds` links playlists to modules.
 - `JukeboxTrack.playlistIds` is declared but never maintained; membership is

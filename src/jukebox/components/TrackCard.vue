@@ -99,19 +99,6 @@ const trackColor = computed(() => props.track.color || 'transparent');
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
-    <template v-if="isPlaying && track.waveform">
-      <div
-        class="track-waveform track-waveform--base"
-        aria-hidden="true"
-        v-html="track.waveform"
-      />
-      <div
-        class="track-waveform track-waveform--played"
-        :style="playedWaveformStyle"
-        aria-hidden="true"
-        v-html="track.waveform"
-      />
-    </template>
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
       <IconGripVertical :size="18" />
     </QItemSection>
@@ -129,7 +116,20 @@ const trackColor = computed(() => props.track.color || 'transparent');
         @update:model-value="updateBulkSelection"
       />
     </QItemSection>
-    <QItemSection>
+    <QItemSection class="track-main">
+      <template v-if="isPlaying && track.waveform">
+        <div
+          class="track-waveform track-waveform--base"
+          aria-hidden="true"
+          v-html="track.waveform"
+        />
+        <div
+          class="track-waveform track-waveform--played"
+          :style="playedWaveformStyle"
+          aria-hidden="true"
+          v-html="track.waveform"
+        />
+      </template>
       <TrackInfo
         :artwork-size="'60px'"
         :track="track"
@@ -208,13 +208,25 @@ const trackColor = computed(() => props.track.color || 'transparent');
   /*position: relative;*/
   overflow: hidden;
 }
+.track-main {
+  position: relative;
+}
+
 .track-waveform {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: calc(60px + 20px);
+  right: 12px;
   z-index: 0;
   color: var(--q-primary);
   pointer-events: none;
   overflow: hidden;
+}
+
+.track-main :deep(.track-info-row) {
+  position: relative;
+  z-index: 1;
 }
 
 .track-waveform--base {
