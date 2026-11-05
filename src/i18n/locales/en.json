@@ -782,7 +782,10 @@
     "openJukebox": "Open Jukebox",
     "viewMode": "View mode",
     "editMode": "Edit mode",
-    "trackNotAvailable": "Track not available"
+    "trackNotAvailable": "Track not available",
+    "bulkEditTracks": "Edit selected tracks",
+    "bulkEditPlaylists": "Edit selected playlists",
+    "bulkDeleteConfirm": "Delete {count} selected item(s)?"
   },
   "ambientSoundPage": {
     "title": "Ambient Sound",

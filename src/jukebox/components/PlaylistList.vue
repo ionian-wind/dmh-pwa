@@ -4,6 +4,7 @@ import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
 import SortableList from '@/components/common/SortableList.vue';
@@ -33,14 +34,8 @@ const selectedPlaylistId = ref<string | null>(
 const sortedPlaylists = ref<JukeboxPlaylist[]>([]);
 const isPlaylistModalOpen = ref(false);
 const playlistToEdit = ref<JukeboxPlaylist | null>(null);
-const bulkSelected = ref<Set<string>>(new Set());
-
-function toggleBulkSelection(playlistId: string, selected: boolean) {
-  const next = new Set(bulkSelected.value);
-  if (selected) next.add(playlistId);
-  else next.delete(playlistId);
-  bulkSelected.value = next;
-}
+const { selectedPlaylistIds, hasSelectedTracks, togglePlaylist } =
+  useJukeboxBulkSelection();
 
 // watch(
 //   filteredPlaylists,
@@ -206,10 +201,11 @@ onMounted(async () => {
               @click.stop
             >
               <QCheckbox
-                :model-value="bulkSelected.has(playlist.id)"
+                :model-value="selectedPlaylistIds.has(playlist.id)"
+                :disable="hasSelectedTracks"
                 dense
                 @update:model-value="
-                  (value) => toggleBulkSelection(playlist.id, value)
+                  (value) => togglePlaylist(playlist.id, value)
                 "
               />
             </QItemSection>

@@ -19,6 +19,7 @@ API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 | `src/jukebox/components/SoundControlDialog.vue` | Snapable global sound-control panel (music player now)   |
 | `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                          |
 | `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                     |
+| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist/module link editing                        |
 | `src/jukebox/components/TrackCard.vue`          | Track row                                                |
 | `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                     |
 | `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                   |
@@ -216,8 +217,20 @@ position until `onplay/onseek` updates it.
   a positional change is ignored and does not resort the queue.
 - Edit mode also shows bulk-selection checkboxes for tracks and playlists. Tracks
   in the All Tracks view still get a checkbox (though they have no sortable
-  order), so they can be selected without drag handles. The checkbox toggles
-  visually but bulk actions are not wired yet.
+  order), so they can be selected without drag handles.
+- Selection is exclusive: selecting tracks disables playlist checkboxes and
+  selecting playlists disables track checkboxes.
+- While edit mode is on and at least one row is selected, the main header shows
+  an Edit/Delete button group next to the sidebar toggle.
+  - Edit on selected tracks opens a playlist linking modal; applying it adds
+    the selected tracks to checked playlists and removes them from unchecked
+    playlists.
+  - Edit on selected playlists opens a module linking modal; applying it sets
+    the selected module links on every selected playlist.
+  - Delete confirms once, then removes all selected tracks/playlists. Deleting
+    the active playlist clears the active selection.
+- Selection is cleared when leaving edit mode, switching playlists, or applying
+  a bulk action.
 - Track click toggles play if it is the active track, otherwise starts it from
   the playlist.
 - A per-row icon-only actions menu (`IconDotsVertical`) contains Add to

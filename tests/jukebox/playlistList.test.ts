@@ -7,6 +7,7 @@ import PlaylistList from '@/jukebox/components/PlaylistList.vue';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 
 const EditorStub = defineComponent({
   name: 'PlaylistEditor',
@@ -64,6 +65,7 @@ function seed() {
 
 describe('PlaylistList drag-and-drop and selection', () => {
   beforeEach(() => {
+    useJukeboxBulkSelection().clearSelection();
     useConfigStore().jukeboxActivePlaylistId = null;
     useJukeboxEditMode().value = true;
   });

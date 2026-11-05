@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { h, nextTick } from 'vue';
@@ -14,6 +14,7 @@ import {
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 
 const provides = {};
 
@@ -28,6 +29,10 @@ async function seedTrack(title = 'Tavern Theme') {
 }
 
 describe('jukebox store integration', () => {
+  beforeEach(() => {
+    useJukeboxBulkSelection().clearSelection();
+  });
+
   it('builds the queue from jukebox store arrays', async () => {
     const tracks = useJukeboxTracksStore();
     await seedTrack('One');

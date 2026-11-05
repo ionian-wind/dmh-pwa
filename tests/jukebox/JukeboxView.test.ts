@@ -6,6 +6,7 @@ import JukeboxView from '@/jukebox/JukeboxView.vue';
 import type { JukeboxTrack } from '@/jukebox/types';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 
 const mocks = vi.hoisted(() => ({
   tracks: {
@@ -19,6 +20,7 @@ const mocks = vi.hoisted(() => ({
     load: vi.fn().mockResolvedValue(undefined),
     getById: vi.fn(),
     update: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
   },
   files: { load: vi.fn().mockResolvedValue(undefined) },
   picture: { clearCache: vi.fn() },
@@ -89,10 +91,25 @@ const BaseListViewStub = defineComponent({
     cardProps: Function,
     draggable: Boolean,
     dragHandle: String,
+    headerButtons: Array,
   },
   emits: ['create', 'sort'],
   setup(_, { slots }) {
     return () => h('div', { 'data-stub': 'BaseListView' }, slots.default?.());
+  },
+});
+
+const BulkLinkingStub = defineComponent({
+  name: 'BulkLinkingModal',
+  props: {
+    modelValue: Boolean,
+    title: String,
+    kind: String,
+    links: Array,
+  },
+  emits: ['update:modelValue', 'submit'],
+  setup() {
+    return () => h('div', { 'data-stub': 'BulkLinkingModal' });
   },
 });
 
@@ -127,6 +144,7 @@ async function mountView() {
       stubs: {
         BaseListView: BaseListViewStub,
         AddToPlaylistModal: AddToPlaylistStub,
+        BulkLinkingModal: BulkLinkingStub,
         JukeboxPlayer: true,
         TrackCard: true,
       },
@@ -153,6 +171,7 @@ describe('JukeboxView', () => {
   });
 
   beforeEach(() => {
+    useJukeboxBulkSelection().clearSelection();
     mocks.tracks.items.value = [];
     mocks.playlists.items.value = [];
     mocks.tracks.create.mockReset();
@@ -576,5 +595,161 @@ describe('JukeboxView', () => {
     expect((list.props('cardProps') as any)(track)).toEqual(
       expect.objectContaining({ selectable: true, showRemove: true }),
     );
+  });
+
+  it('shows bulk actions only in edit mode with a selection', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const track = { id: 't1', title: 'One' } as JukeboxTrack;
+    mocks.tracks.items.value = [track];
+
+    const { list } = await mountView();
+    expect(list.props('headerButtons')).toEqual([]);
+
+    useJukeboxEditMode().value = true;
+    await nextTick();
+    expect(list.props('headerButtons')).toEqual([]);
+
+    bulk.toggleTrack('t1', true);
+    await nextTick();
+    expect(
+      (list.props('headerButtons') as any[]).map((button) => button.title),
+    ).toEqual(['common.edit', 'common.delete']);
+
+    useJukeboxEditMode().value = false;
+    await nextTick();
+    expect(list.props('headerButtons')).toEqual([]);
+    expect(bulk.selectedTrackIds.value.size).toBe(0);
+  });
+
+  it('deletes selected tracks in bulk', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const track = {
+      id: 't1',
+      fileId: 'f1',
+      title: 'One',
+      playlistIds: [],
+    } as JukeboxTrack;
+    mocks.tracks.items.value = [track];
+    mocks.playlists.items.value = [
+      { id: 'p1', name: 'Set', trackIds: ['t1'], moduleIds: [] },
+    ];
+
+    const { list } = await mountView();
+    useJukeboxEditMode().value = true;
+    bulk.toggleTrack('t1', true);
+    await nextTick();
+
+    const [, deleteButton] = list.props('headerButtons') as any[];
+    await deleteButton.event(new Event('click'));
+    await flushPromises();
+
+    expect(mocks.tracks.remove).toHaveBeenCalledWith('t1');
+    expect(mocks.playlists.update).toHaveBeenCalledWith('p1', {
+      trackIds: [],
+    });
+    expect(bulk.selectedTrackIds.value.size).toBe(0);
+  });
+
+  it('deletes selected playlists in bulk and clears the active playlist', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const config = useConfigStore();
+    config.jukeboxActivePlaylistId = 'p1';
+    mocks.playlists.items.value = [
+      { id: 'p1', name: 'Set', trackIds: [], moduleIds: [] },
+    ];
+
+    const { list } = await mountView();
+    useJukeboxEditMode().value = true;
+    bulk.togglePlaylist('p1', true);
+    await nextTick();
+
+    const [, deleteButton] = list.props('headerButtons') as any[];
+    await deleteButton.event(new Event('click'));
+    await flushPromises();
+
+    expect(mocks.playlists.remove).toHaveBeenCalledWith('p1');
+    expect(config.jukeboxActivePlaylistId).toBeNull();
+    expect(bulk.selectedPlaylistIds.value.size).toBe(0);
+  });
+
+  it('applies bulk playlist links to selected tracks', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const track = {
+      id: 't1',
+      fileId: 'f1',
+      title: 'One',
+      playlistIds: [],
+    } as JukeboxTrack;
+    mocks.tracks.items.value = [track];
+    mocks.playlists.items.value = [
+      { id: 'p1', name: 'One', trackIds: ['t1'], moduleIds: [] },
+      { id: 'p2', name: 'Two', trackIds: [], moduleIds: [] },
+    ];
+
+    const { wrapper, list } = await mountView();
+    useJukeboxEditMode().value = true;
+    bulk.toggleTrack('t1', true);
+    await nextTick();
+
+    const [editButton] = list.props('headerButtons') as any[];
+    await editButton.event(new Event('click'));
+    await nextTick();
+
+    const modal = wrapper.findAllComponents(BulkLinkingStub)[0];
+    expect(modal.props()).toMatchObject({
+      modelValue: true,
+      kind: 'playlist',
+      links: [{ kind: 'playlist', id: 'p1' }],
+    });
+
+    modal.vm.$emit('submit', [{ kind: 'playlist', id: 'p2' }]);
+    await flushPromises();
+
+    expect(mocks.playlists.update).toHaveBeenCalledWith('p1', {
+      trackIds: [],
+    });
+    expect(mocks.playlists.update).toHaveBeenCalledWith('p2', {
+      trackIds: ['t1'],
+    });
+    expect(bulk.selectedTrackIds.value.size).toBe(0);
+  });
+
+  it('applies bulk module links to selected playlists', async () => {
+    const bulk = useJukeboxBulkSelection();
+    mocks.playlists.items.value = [
+      { id: 'p1', name: 'One', trackIds: [], moduleIds: ['m1'] },
+      { id: 'p2', name: 'Two', trackIds: [], moduleIds: ['m2'] },
+    ];
+
+    const { wrapper, list } = await mountView();
+    useJukeboxEditMode().value = true;
+    bulk.togglePlaylist('p1', true);
+    bulk.togglePlaylist('p2', true);
+    await nextTick();
+
+    const [editButton] = list.props('headerButtons') as any[];
+    await editButton.event(new Event('click'));
+    await nextTick();
+
+    const modal = wrapper.findAllComponents(BulkLinkingStub)[1];
+    expect(modal.props()).toMatchObject({
+      modelValue: true,
+      kind: 'module',
+      links: [
+        { kind: 'module', id: 'm1' },
+        { kind: 'module', id: 'm2' },
+      ],
+    });
+
+    modal.vm.$emit('submit', [{ kind: 'module', id: 'm3' }]);
+    await flushPromises();
+
+    expect(mocks.playlists.update).toHaveBeenCalledWith('p1', {
+      moduleIds: ['m3'],
+    });
+    expect(mocks.playlists.update).toHaveBeenCalledWith('p2', {
+      moduleIds: ['m3'],
+    });
+    expect(bulk.selectedPlaylistIds.value.size).toBe(0);
   });
 });

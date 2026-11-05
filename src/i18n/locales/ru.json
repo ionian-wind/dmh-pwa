@@ -783,7 +783,10 @@
     "openJukebox": "Открыть джукбокс",
     "viewMode": "Режим просмотра",
     "editMode": "Режим редактирования",
-    "trackNotAvailable": "Трек недоступен"
+    "trackNotAvailable": "Трек недоступен",
+    "bulkEditTracks": "Редактировать выбранные треки",
+    "bulkEditPlaylists": "Редактировать выбранные плейлисты",
+    "bulkDeleteConfirm": "Удалить выбранные элементы ({count})?"
   },
   "ambientSoundPage": {
     "title": "Амбиент",

@@ -21,10 +21,13 @@ import { useI18n } from 'vue-i18n';
 import { debugError } from '@/utils/debug';
 import PlaylistList from './components/PlaylistList.vue';
 import { confirm } from '@/dialogs';
-import { IconPlaylist } from '@tabler/icons-vue';
+import { IconPencil, IconPlaylist, IconTrash } from '@tabler/icons-vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import { createWaveformSvg } from '@/jukebox/utils/waveform';
+import BulkLinkingModal from '@/jukebox/components/BulkLinkingModal.vue';
+import type { MapEntityRef } from '@/maps/types';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
@@ -66,11 +69,57 @@ function openAddToPlaylistModal(track: JukeboxTrack) {
 
 const playerStore = useJukeboxPlayerStore();
 const isEditMode = useJukeboxEditMode();
+const {
+  selectedTrackIds,
+  selectedPlaylistIds,
+  hasSelectedTracks,
+  hasSelectedPlaylists,
+  hasSelection,
+  clearSelection,
+} = useJukeboxBulkSelection();
+
+const isBulkTrackEditorOpen = ref(false);
+const isBulkPlaylistEditorOpen = ref(false);
+const bulkTrackLinks = ref<MapEntityRef[]>([]);
+const bulkPlaylistLinks = ref<MapEntityRef[]>([]);
 
 function playTrackFromPlaylist(track: JukeboxTrack) {
   // When a track is played, update configStore to match the current selected playlist
   // configStore.jukeboxActivePlaylistId = selectedPlaylistId.value;
   playerStore.playTrackFromPlaylist(track);
+}
+
+async function deleteTrack(track: JukeboxTrack) {
+  await playerStore.removeTrackFromQueue(track);
+
+  const playlistsToUpdate = playlistsStore.items.value.filter(
+    (p: JukeboxPlaylist) => p.trackIds.includes(track.id),
+  );
+
+  await Promise.all(
+    playlistsToUpdate.map((p) =>
+      playlistsStore.update(p.id, {
+        trackIds: p.trackIds.filter((tid: string) => tid !== track.id),
+      }),
+    ),
+  );
+
+  await tracksStore.remove(track.id);
+
+  const sharesFile = tracks.value.some(
+    (t) => t.id !== track.id && t.fileId === track.fileId,
+  );
+  if (track.fileId && !sharesFile) {
+    try {
+      await deleteJukeboxFile(track.fileId);
+    } catch (e) {
+      debugError(`Failed to delete file handle for track ${track.id}:`, e);
+    }
+  }
+  const trackIndex = draggableTracks.value.findIndex((t) => t.id === track.id);
+  if (trackIndex > -1) {
+    draggableTracks.value.splice(trackIndex, 1);
+  }
 }
 
 async function removeTrack(track: JukeboxTrack) {
@@ -79,40 +128,150 @@ async function removeTrack(track: JukeboxTrack) {
       t('common.confirmDelete', { title: track.title || track.fileId }),
     )
   ) {
-    await playerStore.removeTrackFromQueue(track);
-
-    const playlistsToUpdate = playlistsStore.items.value.filter(
-      (p: JukeboxPlaylist) => p.trackIds.includes(track.id),
-    );
-
-    await Promise.all(
-      playlistsToUpdate.map((p) =>
-        playlistsStore.update(p.id, {
-          trackIds: p.trackIds.filter((tid: string) => tid !== track.id),
-        }),
-      ),
-    );
-
-    await tracksStore.remove(track.id);
-
-    const sharesFile = tracks.value.some(
-      (t) => t.id !== track.id && t.fileId === track.fileId,
-    );
-    if (track.fileId && !sharesFile) {
-      try {
-        await deleteJukeboxFile(track.fileId);
-      } catch (e) {
-        debugError(`Failed to delete file handle for track ${track.id}:`, e);
-      }
-    }
-    const trackIndex = draggableTracks.value.findIndex(
-      (t) => t.id === track.id,
-    );
-    if (trackIndex > -1) {
-      draggableTracks.value.splice(trackIndex, 1);
-    }
+    await deleteTrack(track);
   }
 }
+
+function openBulkTrackEditor() {
+  const playlistIds = new Set<string>();
+  for (const playlist of playlistsStore.items.value) {
+    if (playlist.trackIds.some((id) => selectedTrackIds.value.has(id))) {
+      playlistIds.add(playlist.id);
+    }
+  }
+  bulkTrackLinks.value = [...playlistIds].map((id) => ({
+    kind: 'playlist',
+    id,
+  }));
+  isBulkTrackEditorOpen.value = true;
+}
+
+async function applyBulkTrackLinks(links: MapEntityRef[]) {
+  const trackIds = [...selectedTrackIds.value];
+  const linkedPlaylistIds = new Set(
+    links.filter((link) => link.kind === 'playlist').map((link) => link.id),
+  );
+
+  await Promise.all(
+    playlistsStore.items.value.map(async (playlist) => {
+      const nextTrackIds = new Set(playlist.trackIds);
+      const shouldContainTracks = linkedPlaylistIds.has(playlist.id);
+      let changed = false;
+
+      for (const trackId of trackIds) {
+        if (shouldContainTracks && !nextTrackIds.has(trackId)) {
+          nextTrackIds.add(trackId);
+          changed = true;
+        } else if (!shouldContainTracks && nextTrackIds.has(trackId)) {
+          nextTrackIds.delete(trackId);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        await playlistsStore.update(playlist.id, {
+          trackIds: [...nextTrackIds],
+        });
+      }
+    }),
+  );
+
+  playerStore.actualiseQueue();
+  isBulkTrackEditorOpen.value = false;
+  clearSelection();
+}
+
+function openBulkPlaylistEditor() {
+  const moduleIds = new Set<string>();
+  for (const playlist of playlistsStore.items.value) {
+    if (!selectedPlaylistIds.value.has(playlist.id)) continue;
+    for (const moduleId of playlist.moduleIds ?? []) {
+      moduleIds.add(moduleId);
+    }
+  }
+  bulkPlaylistLinks.value = [...moduleIds].map((id) => ({
+    kind: 'module',
+    id,
+  }));
+  isBulkPlaylistEditorOpen.value = true;
+}
+
+async function applyBulkPlaylistLinks(links: MapEntityRef[]) {
+  const moduleIds = links
+    .filter((link) => link.kind === 'module')
+    .map((link) => link.id);
+
+  await Promise.all(
+    [...selectedPlaylistIds.value].map((playlistId) =>
+      playlistsStore.update(playlistId, { moduleIds }),
+    ),
+  );
+
+  isBulkPlaylistEditorOpen.value = false;
+  clearSelection();
+}
+
+async function deleteSelectedItems() {
+  const total = selectedTrackIds.value.size + selectedPlaylistIds.value.size;
+  if (total === 0) return;
+
+  if (!(await confirm(t('jukebox.bulkDeleteConfirm', { count: total })))) {
+    return;
+  }
+
+  const tracksToDelete = [...tracks.value].filter((track) =>
+    selectedTrackIds.value.has(track.id),
+  );
+  for (const track of tracksToDelete) {
+    await deleteTrack(track);
+  }
+
+  const playlistIds = [...selectedPlaylistIds.value];
+  if (
+    selectedPlaylistId.value &&
+    playlistIds.includes(selectedPlaylistId.value)
+  ) {
+    selectedPlaylistId.value = null;
+    configStore.jukeboxActivePlaylistId = null;
+  }
+  await Promise.all(
+    playlistIds.map((playlistId) => playlistsStore.remove(playlistId)),
+  );
+
+  clearSelection();
+}
+
+const bulkHeaderButtons = computed(() => {
+  if (!isEditMode.value || !hasSelection.value) return [];
+
+  return [
+    {
+      icon: IconPencil,
+      color: 'primary',
+      title: 'common.edit',
+      event: hasSelectedTracks.value
+        ? openBulkTrackEditor
+        : openBulkPlaylistEditor,
+    },
+    {
+      icon: IconTrash,
+      color: 'negative',
+      title: 'common.delete',
+      event: deleteSelectedItems,
+    },
+  ];
+});
+
+watch(isEditMode, (enabled) => {
+  if (enabled) return;
+  clearSelection();
+  isBulkTrackEditorOpen.value = false;
+  isBulkPlaylistEditorOpen.value = false;
+});
+
+watch(selectedPlaylistId, () => {
+  clearSelection();
+});
 
 const filteredTracks = computed(() =>
   selectedPlaylistId.value
@@ -342,6 +501,7 @@ const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   isEditMode.value = false;
+  clearSelection();
   await Promise.all([
     tracksStore.load(),
     playlistsStore.load(),
@@ -361,6 +521,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  clearSelection();
   pictureUrlCacheStore.clearCache();
   rightDrawer.clear();
   layout.setBottomDrawerContent(null);
@@ -390,10 +551,25 @@ onBeforeUnmount(() => {
       drag-handle=".track-drag-handle"
       @sort="onTracksSorted"
       :right-drawer-icon="IconPlaylist"
+      :header-buttons="bulkHeaderButtons"
     >
       <AddToPlaylistModal
         v-model="isAddToPlaylistModalOpen"
         :track="trackToAddToPlaylist"
+      />
+      <BulkLinkingModal
+        v-model="isBulkTrackEditorOpen"
+        :title="t('jukebox.bulkEditTracks')"
+        kind="playlist"
+        :links="bulkTrackLinks"
+        @submit="applyBulkTrackLinks"
+      />
+      <BulkLinkingModal
+        v-model="isBulkPlaylistEditorOpen"
+        :title="t('jukebox.bulkEditPlaylists')"
+        kind="module"
+        :links="bulkPlaylistLinks"
+        @submit="applyBulkPlaylistLinks"
       />
     </BaseListView>
   </div>

@@ -174,6 +174,7 @@ watch(
     props.showSearch,
     props.searchQuery,
     props.searchPlaceholder,
+    props.headerButtons,
   ],
   syncHeaderProps,
 );

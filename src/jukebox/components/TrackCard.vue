@@ -13,6 +13,7 @@ import {
 import type { JukeboxTrack } from '@/jukebox/types';
 
 import { formatTime } from '../utils';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import TrackInfo from './TrackInfo.vue';
 
 const props = withDefaults(
@@ -37,7 +38,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const isMenuOpen = ref(false);
-const bulkSelected = ref(false);
+const { selectedTrackIds, hasSelectedPlaylists, toggleTrack } =
+  useJukeboxBulkSelection();
+const bulkSelected = computed(() => selectedTrackIds.value.has(props.track.id));
 
 const handleAddToPlaylist = () => {
   emit('add-to-playlist', props.track);
@@ -77,7 +80,12 @@ const trackColor = computed(() => props.track.color || 'transparent');
       <IconGripVertical :size="18" />
     </QItemSection>
     <QItemSection v-if="selectable" side class="track-bulk-select" @click.stop>
-      <QCheckbox v-model="bulkSelected" dense />
+      <QCheckbox
+        :model-value="bulkSelected"
+        :disable="hasSelectedPlaylists"
+        dense
+        @update:model-value="(value) => toggleTrack(track.id, value)"
+      />
     </QItemSection>
     <QItemSection>
       <TrackInfo
