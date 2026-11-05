@@ -117,19 +117,22 @@ const trackColor = computed(() => props.track.color || 'transparent');
       />
     </QItemSection>
     <QItemSection class="track-main">
-      <template v-if="isPlaying && track.waveform">
+      <div
+        v-if="track.waveform"
+        class="track-waveform"
+        :class="{ 'track-waveform--visible': isPlaying }"
+        aria-hidden="true"
+      >
         <div
-          class="track-waveform track-waveform--base"
-          aria-hidden="true"
+          class="track-waveform-layer track-waveform--base"
           v-html="track.waveform"
         />
         <div
-          class="track-waveform track-waveform--played"
+          class="track-waveform-layer track-waveform--played"
           :style="playedWaveformStyle"
-          aria-hidden="true"
           v-html="track.waveform"
         />
-      </template>
+      </div>
       <TrackInfo
         :artwork-size="'60px'"
         :track="track"
@@ -222,6 +225,22 @@ const trackColor = computed(() => props.track.color || 'transparent');
   color: var(--q-primary);
   pointer-events: none;
   overflow: hidden;
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: center;
+  transition:
+    transform 260ms ease,
+    opacity 260ms ease;
+}
+
+.track-waveform--visible {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.track-waveform-layer {
+  position: absolute;
+  inset: 0;
 }
 
 .track-main :deep(.track-info-row) {
@@ -237,13 +256,13 @@ const trackColor = computed(() => props.track.color || 'transparent');
   opacity: 0.7;
 }
 
-.track-waveform :deep(svg) {
+.track-waveform-layer :deep(svg) {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.track-waveform :deep(path) {
+.track-waveform-layer :deep(path) {
   stroke: currentColor;
 }
 

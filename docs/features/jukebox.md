@@ -42,7 +42,8 @@ See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities)
   `TrackCard` row renders that SVG as a background waveform: a dim layer plus a
   brighter layer clipped to the current playback progress. The waveform area
   starts after the album artwork/icon and keeps left and right padding inside
-  the track text column.
+  the track text column. Play/pause animates the waveform between zero height
+  and its full row height.
 - `JukeboxPlaylist` stores `trackIds` in display order; `sortOrder` orders
   playlists; `moduleIds` links playlists to modules.
 - `JukeboxTrack.playlistIds` is declared but never maintained; membership is

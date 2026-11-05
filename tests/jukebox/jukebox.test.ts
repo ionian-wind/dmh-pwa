@@ -290,11 +290,15 @@ describe('jukebox store integration', () => {
       props: { track, isPlaying: true },
     });
 
-    const waveforms = wrapper.findAll('.track-waveform');
-    expect(waveforms).toHaveLength(2);
-    expect(waveforms[0].html()).toContain('<svg');
-    expect(waveforms[0].html()).toContain('M0 1L0 9');
-    expect(waveforms[1].attributes('style')).toContain('inset(0 75% 0 0)');
+    const waveform = wrapper.find('.track-waveform');
+    expect(waveform.exists()).toBe(true);
+    expect(waveform.classes()).toContain('track-waveform--visible');
+    expect(waveform.findAll('.track-waveform-layer')).toHaveLength(2);
+    expect(waveform.find('.track-waveform--base').html()).toContain('<svg');
+    expect(waveform.find('.track-waveform--base').html()).toContain('M0 1L0 9');
+    expect(
+      waveform.find('.track-waveform--played').attributes('style'),
+    ).toContain('inset(0 75% 0 0)');
 
     player.currentTime = 150;
     await nextTick();
@@ -303,7 +307,10 @@ describe('jukebox store integration', () => {
     ).toContain('inset(0 25% 0 0)');
 
     await wrapper.setProps({ isPlaying: false });
-    expect(wrapper.find('.track-waveform').exists()).toBe(false);
+    expect(wrapper.find('.track-waveform').exists()).toBe(true);
+    expect(wrapper.find('.track-waveform').classes()).not.toContain(
+      'track-waveform--visible',
+    );
     wrapper.unmount();
   });
 
