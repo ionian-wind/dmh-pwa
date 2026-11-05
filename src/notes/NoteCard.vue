@@ -128,7 +128,7 @@ function handleDownload() {
       <Button
         v-if="clamped"
         size="small"
-        variant="secondary"
+        variant="ghost"
         @click="toggleExpand"
         :title="expanded ? t('common.collapse') : t('common.expand')"
       >

@@ -185,3 +185,10 @@ defineExpose({
   getMarkdown: () => crepeInstance.value?.getMarkdown() ?? '',
 });
 </script>
+
+<style scoped>
+:global(.milkdown .ProseMirror .tag-link) {
+  color: var(--crepe-color-primary);
+  text-decoration: underline;
+}
+</style>

@@ -8,6 +8,7 @@ interface Props {
     | 'warning'
     | 'link'
     | 'light'
+    | 'ghost'
     | 'none';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
@@ -48,6 +49,7 @@ const colorMap: Record<string, string> = {
   warning: 'warning',
   link: 'primary',
   light: 'grey-2',
+  ghost: 'standard',
   none: '',
 };
 
@@ -62,6 +64,7 @@ const sizeMap: Record<string, string> = {
 <template>
   <QBtn
     :type="type"
+    :flat="variant === 'ghost'"
     :color="colorMap[variant]"
     :size="sizeMap[size]"
     :disable="disabled || loading"

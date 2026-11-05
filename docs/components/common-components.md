@@ -289,9 +289,9 @@ Presentational chip with optional remove button and icon slot.
 ### `Button.vue`
 
 Quasar `QBtn` wrapper with semantic `variant` (`primary`, `secondary`,
-`danger`, `success`, `warning`, `link`, `light`, `none`) and `size`
-(`small`/`medium`/`large`). Maps to Quasar colors/sizes and stops click
-propagation.
+`danger`, `success`, `warning`, `link`, `light`, `ghost`, `none`) and `size`
+(`small`/`medium`/`large`). `ghost` maps to a flat, transparent, neutral button.
+Maps to Quasar colors/sizes and stops click propagation.
 
 Caveat: `v-bind="$attrs"` comes after `@click`, so an inherited `onClick`
 could be bound twice; callers generally use `@click`.

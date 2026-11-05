@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { findTagAutocomplete } from '@/components/common/milkdown/plugins/tagAutocomplete';
+import {
+  findTagAutocomplete,
+  findTagRanges,
+} from '@/components/common/milkdown/plugins/tagAutocomplete';
 
 describe('tag autocomplete query detection', () => {
   it('detects a tag query after whitespace', () => {
@@ -31,5 +34,19 @@ describe('tag autocomplete query detection', () => {
     expect(findTagAutocomplete('# Heading', 9)).toBeNull();
     expect(findTagAutocomplete('word#tag', 8)).toBeNull();
     expect(findTagAutocomplete('plain text', 10)).toBeNull();
+  });
+
+  describe('tag decoration ranges', () => {
+    it('finds all inline tags with their source ranges', () => {
+      expect(findTagRanges('Travel #harbor and #forest')).toEqual([
+        { tag: 'harbor', start: 7, end: 14 },
+        { tag: 'forest', start: 19, end: 26 },
+      ]);
+    });
+
+    it('does not treat headings or mid-word hashes as tags', () => {
+      expect(findTagRanges('# Heading')).toEqual([]);
+      expect(findTagRanges('word#tag')).toEqual([]);
+    });
   });
 });
