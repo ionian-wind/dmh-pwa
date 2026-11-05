@@ -22,6 +22,7 @@ const handleCopy = () => emit('copy', props.module);
     @delete="handleDelete"
     @copy="handleCopy"
     :title="module.name"
+    :drag-entity="{ kind: 'module', id: module.id, title: module.name }"
   >
     <div class="description" v-if="module.description">
       <p>{{ module.description }}</p>

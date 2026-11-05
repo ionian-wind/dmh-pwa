@@ -76,6 +76,11 @@ function handleCopy() {
     @delete="handleDelete"
     @copy="handleCopy"
     :title="encounter.name"
+    :drag-entity="{
+      kind: 'encounter',
+      id: encounter.id,
+      title: encounter.name,
+    }"
   >
     <div class="encounter-meta">
       <span class="meta-item"

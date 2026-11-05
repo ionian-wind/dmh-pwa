@@ -38,5 +38,10 @@ function handleCopy() {
     @delete="handleDelete"
     @copy="handleCopy"
     :title="character.name"
+    :drag-entity="{
+      kind: 'character',
+      id: character.id,
+      title: character.name,
+    }"
   />
 </template>

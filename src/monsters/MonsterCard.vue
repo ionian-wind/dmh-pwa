@@ -32,5 +32,6 @@ const handleCopy = () => emit('copy', props.monster);
     @delete="handleDelete"
     @copy="handleCopy"
     :title="monster.name"
+    :drag-entity="{ kind: 'monster', id: monster.id, title: monster.name }"
   />
 </template>

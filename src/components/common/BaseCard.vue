@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { computed, useSlots, Fragment, Comment } from 'vue';
-import { IconEye, IconPencil, IconTrash, IconCopy } from '@tabler/icons-vue';
+import { computed, ref, useSlots, Fragment, Comment, type PropType } from 'vue';
+import {
+  IconEye,
+  IconPencil,
+  IconTrash,
+  IconCopy,
+  IconGripVertical,
+} from '@tabler/icons-vue';
+import {
+  ENTITY_LINK_ICONS,
+  type EntityDragData,
+} from './entityDragLinking/registry';
+import { useEntityDragLinking } from './entityDragLinking/useEntityDragLinking';
 
 const { t } = useI18n();
 
@@ -11,11 +22,41 @@ const props = defineProps({
   showDelete: { type: Boolean, default: false },
   showCopy: { type: Boolean, default: false },
   title: { type: String, default: '' },
+  dragEntity: {
+    type: Object as PropType<EntityDragData | null>,
+    default: null,
+  },
 });
 
 const emit = defineEmits(['view', 'edit', 'delete', 'copy']);
 
 const slots = useSlots();
+const { startDrag, endDrag } = useEntityDragLinking();
+const dragGhost = ref<HTMLElement | null>(null);
+const isDraggingEntity = ref(false);
+const dragIcon = computed(() =>
+  props.dragEntity ? ENTITY_LINK_ICONS[props.dragEntity.kind] : null,
+);
+
+function onDragStart(event: DragEvent) {
+  if (!props.dragEntity || !event.dataTransfer) return;
+
+  isDraggingEntity.value = true;
+  startDrag(props.dragEntity);
+  event.dataTransfer.effectAllowed = 'link';
+  event.dataTransfer.setData(
+    'application/x-dmh-entity',
+    JSON.stringify(props.dragEntity),
+  );
+  if (dragGhost.value) {
+    event.dataTransfer.setDragImage(dragGhost.value, 16, 16);
+  }
+}
+
+function onDragEnd() {
+  isDraggingEntity.value = false;
+  endDrag();
+}
 
 function isVNodeContent(vnode: any): boolean {
   if (vnode.type === Comment) return false;
@@ -36,15 +77,30 @@ const hasContent = computed(() => {
 </script>
 
 <template>
-  <QCard class="base-card">
+  <QCard class="base-card" :class="{ 'is-dragging-entity': isDraggingEntity }">
     <QCardSection
       v-if="$slots.header || title"
-      class="base-card-header"
+      class="base-card-header row items-center no-wrap"
       @click="$emit('view')"
       style="cursor: pointer"
     >
-      <h5 v-if="title">{{ title }}</h5>
-      <slot name="header" />
+      <div class="col">
+        <h5 v-if="title">{{ title }}</h5>
+        <slot name="header" />
+      </div>
+      <div
+        v-if="dragEntity"
+        class="entity-drag-handle"
+        draggable="true"
+        :title="t('common.dragToLink')"
+        :aria-label="t('common.dragToLink')"
+        @click.stop
+        @mousedown.stop
+        @dragstart.stop="onDragStart"
+        @dragend.stop="onDragEnd"
+      >
+        <IconGripVertical :size="18" />
+      </div>
     </QCardSection>
     <QCardSection v-if="hasContent" class="base-card-content q-pt-none">
       <slot />
@@ -125,6 +181,19 @@ const hasContent = computed(() => {
         </QBtn>
       </QBtnGroup>
     </QCardActions>
+
+    <div
+      v-if="dragEntity && dragIcon"
+      ref="dragGhost"
+      class="entity-drag-ghost"
+    >
+      <QCard
+        class="entity-drag-ghost-card row items-center no-wrap q-pa-sm q-gutter-sm"
+      >
+        <component :is="dragIcon" :size="24" />
+        <span class="ellipsis">{{ dragEntity.title }}</span>
+      </QCard>
+    </div>
   </QCard>
 </template>
 
@@ -132,6 +201,51 @@ const hasContent = computed(() => {
 .base-card {
   position: relative;
   --card-actions-height: 52px;
+}
+
+.base-card.is-dragging-entity {
+  opacity: 0.35;
+}
+
+.entity-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  color: var(--color-text-light);
+  cursor: grab;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.base-card:hover .entity-drag-handle,
+.base-card:focus-within .entity-drag-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .entity-drag-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.entity-drag-handle:active {
+  cursor: grabbing;
+}
+
+.entity-drag-ghost {
+  position: fixed;
+  top: -10000px;
+  left: -10000px;
+  pointer-events: none;
+}
+
+.entity-drag-ghost-card {
+  max-width: 260px;
+  color: var(--color-text);
 }
 
 .base-card:hover,

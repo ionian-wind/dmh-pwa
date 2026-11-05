@@ -350,7 +350,8 @@
     "overview": "Обзор",
     "noLinkedEntities": "Связанных сущностей нет.",
     "selectAll": "Выбрать все",
-    "cancelSelection": "Отменить выбор"
+    "cancelSelection": "Отменить выбор",
+    "dragToLink": "Перетащите для связи"
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",

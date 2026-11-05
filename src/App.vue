@@ -8,6 +8,7 @@ import PWAStatus from '@/components/PWAStatus.vue';
 import CommitBadge from '@/components/CommitBadge.vue';
 import CalculatorDialog from '@/calculator/CalculatorView.vue';
 import MentionModalStack from '@/components/common/MentionModalStack.vue';
+import EntityDragLinkingOverlay from '@/components/common/entityDragLinking/EntityDragLinkingOverlay.vue';
 import { Section } from '@/types';
 import SettingsDialog from '@/components/SettingsDialog.vue';
 import { provideLayout, unwrapProps } from '@/composables/useLayout';
@@ -542,6 +543,7 @@ function openJukebox() {
       <CommitBadge />
       <!-- Global Mention Modal Stack -->
       <MentionModalStack />
+      <EntityDragLinkingOverlay />
       <CalculatorDialog v-model="isCalculatorPopupOpen" />
       <SoundControlDialog
         v-model="isSoundControlOpen"

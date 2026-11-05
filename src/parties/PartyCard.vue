@@ -42,6 +42,7 @@ const modules = computed(() =>
     @delete="handleDelete"
     @copy="handleCopy"
     :title="party.name"
+    :drag-entity="{ kind: 'party', id: party.id, title: party.name }"
   >
     <p v-if="party.description" class="description">{{ party.description }}</p>
     <div class="party-meta">

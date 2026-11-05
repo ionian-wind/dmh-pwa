@@ -71,6 +71,7 @@ function handleDownload() {
     @edit="handleEdit"
     @delete="handleDelete"
     @copy="handleCopy"
+    :drag-entity="{ kind: 'note', id: note.id, title: note.title }"
   >
     <template #header>
       <div class="row items-center q-gutter-xs">

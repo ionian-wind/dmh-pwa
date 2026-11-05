@@ -8,7 +8,7 @@ covered in their feature documents.
 
 ### `BaseCard.vue`
 
-Props: `showView`, `showEdit`, `showDelete`, `title`.
+Props: `showView`, `showEdit`, `showDelete`, `title`, `dragEntity`.
 Slots: `header`, default, `actions`.
 Emits: `view`, `edit`, `delete`.
 
@@ -26,6 +26,9 @@ Emits: `view`, `edit`, `delete`.
   scrollbar length stays constant.
 - Touch devices keep actions in normal flow and permanently visible.
 - Copy is supported when `showCopy` is set; domain cards enable it.
+- When `dragEntity` (`{ kind, id, title }`) is present, a drag handle appears
+  at the right edge of the title on hover. Dragging uses a small offscreen
+  `QCard` ghost with the entity icon and title.
 
 ### Domain cards
 
@@ -167,6 +170,28 @@ linking flow. After saving, the new entity is selected and marked “Created” 
 it can be linked immediately. Linked rows highlight on hover and expose the
 unlink action only on hover or keyboard focus. Internal options such as note
 types and map layers keep their dedicated selectors.
+
+### Entity drag linking
+
+Domain cards provide `dragEntity` metadata to `BaseCard`. Starting a drag opens
+`EntityDragLinkingOverlay`, a semi-transparent full-screen drop area containing
+large `QCard` targets for the entity kinds the dragged model can link to.
+Dropping on a kind opens `EntityLinkingDialog` for that kind; applying the
+dialog writes the relationship to the model fields:
+
+| Source    | Link targets                                                 |
+| --------- | ------------------------------------------------------------ |
+| Note      | Module, Location                                             |
+| Module    | Note, Party, Monster, Encounter, Location                    |
+| Party     | Module, Character, Location                                  |
+| Character | Party, Location                                              |
+| Monster   | Module, Encounter, Location                                  |
+| Encounter | Module, Monster, Location                                    |
+| Location  | Note, Module, Party, Monster, Encounter, Character, Location |
+
+Relations stored on the target side are updated in reverse: for example,
+dropping a Character on Party updates `party.characters`, and dropping a Monster
+on Encounter updates `encounter.monsters`.
 
 ### `SortableList.vue`
 

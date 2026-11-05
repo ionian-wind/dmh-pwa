@@ -349,7 +349,8 @@
     "overview": "Overview",
     "noLinkedEntities": "No linked entities.",
     "selectAll": "Select all",
-    "cancelSelection": "Cancel selection"
+    "cancelSelection": "Cancel selection",
+    "dragToLink": "Drag to link"
   },
   "validation": {
     "required": "This field is required",

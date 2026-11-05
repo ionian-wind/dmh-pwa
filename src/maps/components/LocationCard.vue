@@ -22,6 +22,11 @@ const { t } = useI18n();
     showEdit
     showDelete
     :title="location.name || t('maps.untitledLocation')"
+    :drag-entity="{
+      kind: 'location',
+      id: location.id,
+      title: location.name || t('maps.untitledLocation'),
+    }"
     class="location-card"
     @view="emit('view', props.location)"
     @edit="emit('edit', props.location)"
