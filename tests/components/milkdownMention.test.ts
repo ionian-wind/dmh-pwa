@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildMentionMenu,
   buildMentionToolbar,
+  clearMentionMark,
   insertMentionCommand,
   isMentionActive,
   mentionMark,
@@ -262,5 +263,51 @@ describe('milkdown mention plugin helpers', () => {
 
     expect(isMentionActive(ctx, 'note')).toBe(true);
     expect(isMentionActive(ctx, 'party')).toBe(false);
+  });
+
+  it('clears a mention mark from the cursor', () => {
+    const mentionType = { name: 'mention' };
+    const mark = { type: mentionType, attrs: { kind: 'monster' } };
+    const node = { isText: true, nodeSize: 6, marks: [mark] };
+    const parent = {
+      forEach: (cb: Function) => cb(node, 0),
+    };
+    const tr = { removeMark: vi.fn().mockReturnThis() };
+    const view = {
+      state: {
+        schema: { marks: { mention: mentionType } },
+        selection: { empty: true, from: 2, $from: { start: () => 0, parent } },
+        tr,
+      },
+      dispatch: vi.fn(),
+      focus: vi.fn(),
+    };
+    const ctx = { get: () => view };
+
+    expect(clearMentionMark(ctx, 'monster')).toBe(true);
+    expect(tr.removeMark).toHaveBeenCalledWith(0, 6, mentionType);
+    expect(view.dispatch).toHaveBeenCalledWith(tr);
+  });
+
+  it('does nothing when the cursor is not inside that mention kind', () => {
+    const mentionType = { name: 'mention' };
+    const node = {
+      isText: true,
+      nodeSize: 6,
+      marks: [{ type: mentionType, attrs: { kind: 'note' } }],
+    };
+    const parent = { forEach: (cb: Function) => cb(node, 0) };
+    const view = {
+      state: {
+        schema: { marks: { mention: mentionType } },
+        selection: { empty: true, from: 2, $from: { start: () => 0, parent } },
+        tr: { removeMark: vi.fn() },
+      },
+      dispatch: vi.fn(),
+      focus: vi.fn(),
+    };
+
+    expect(clearMentionMark({ get: () => view }, 'monster')).toBe(false);
+    expect(view.dispatch).not.toHaveBeenCalled();
   });
 });

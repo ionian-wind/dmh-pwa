@@ -346,25 +346,70 @@ function getEditorView(ctx: any) {
   return null;
 }
 
+function isMentionMark(mark: any, kind: string) {
+  return mark?.type?.name === 'mention' && mark.attrs?.kind === kind;
+}
+
 export function isMentionActive(ctx: any, kind: string): boolean {
   const editorView = getEditorView(ctx);
   const state = editorView?.state;
   if (!state?.selection) return false;
 
   const { selection, storedMarks, doc } = state;
-  const isKind = (mark: any) =>
-    mark?.type?.name === 'mention' && mark.attrs?.kind === kind;
 
   if (selection.empty) {
     const marks = storedMarks || selection.$from?.marks?.() || [];
-    return marks.some(isKind);
+    return marks.some((mark: any) => isMentionMark(mark, kind));
   }
 
   let active = false;
   doc?.nodesBetween?.(selection.from, selection.to, (node: any) => {
-    if (node.isText && node.marks?.some(isKind)) active = true;
+    if (
+      node.isText &&
+      node.marks?.some((mark: any) => isMentionMark(mark, kind))
+    ) {
+      active = true;
+    }
   });
   return active;
+}
+
+/** Remove the mention mark of `kind` from the cursor/selection. */
+export function clearMentionMark(ctx: any, kind: string): boolean {
+  const editorView = getEditorView(ctx);
+  const state = editorView?.state;
+  const mentionType = state?.schema?.marks?.mention;
+  if (!state?.selection || !mentionType) return false;
+
+  const { selection } = state;
+  let from = selection.from;
+  let to = selection.to;
+
+  if (selection.empty) {
+    const $from = selection.$from;
+    const parentStart = $from.start();
+    let found = false;
+    $from.parent?.forEach?.((node: any, offset: number) => {
+      const start = parentStart + offset;
+      const end = start + node.nodeSize;
+      if (
+        selection.from >= start &&
+        selection.from <= end &&
+        node.isText &&
+        node.marks?.some((mark: any) => isMentionMark(mark, kind))
+      ) {
+        from = start;
+        to = end;
+        found = true;
+      }
+    });
+    if (!found) return false;
+  }
+
+  if (from === to) return false;
+  editorView.dispatch(state.tr.removeMark(from, to, mentionType));
+  editorView.focus?.();
+  return true;
 }
 
 type Translate = (key: string) => string;
@@ -384,7 +429,10 @@ export const buildMentionToolbar = (
       icon,
       label: translate(label),
       active: (ctx: any) => isMentionActive(ctx, kind),
-      onRun: (ctx: any) => insertMentionMark(ctx, kind, label, 'Toolbar'),
+      onRun: (ctx: any) =>
+        isMentionActive(ctx, kind)
+          ? clearMentionMark(ctx, kind)
+          : insertMentionMark(ctx, kind, label, 'Toolbar'),
     });
   });
 };

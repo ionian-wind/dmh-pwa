@@ -239,3 +239,64 @@ h6 {
 .tag:hover {
   color: var(--color-primary);
 }
+
+/* Mention / internal entity links */
+.internal-link {
+  --mention-color: var(--color-info-dark);
+  display: inline;
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: var(--color-info-light);
+  color: var(--mention-color);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    text-decoration-color 0.15s ease;
+}
+
+.internal-link:hover {
+  filter: brightness(0.96);
+}
+
+.internal-link.note-link {
+  --mention-color: var(--color-info-dark);
+  background: var(--color-info-light);
+}
+
+.internal-link.module-link {
+  --mention-color: #6a1b9a;
+  background: var(--color-misc-light);
+}
+
+.internal-link.party-link {
+  --mention-color: var(--color-success-dark);
+  background: var(--color-success-light);
+}
+
+.internal-link.monster-link {
+  --mention-color: var(--color-danger-dark);
+  background: var(--color-danger-light);
+}
+
+.internal-link.encounter-link {
+  --mention-color: var(--color-warning-dark);
+  background: var(--color-warning-light);
+}
+
+.internal-link.character-link {
+  --mention-color: var(--color-text);
+  background: var(--color-background-soft);
+}
+
+.internal-link.location-link {
+  --mention-color: #00695c;
+  background: #e0f7fa;
+}
+
+/* Crepe's link theme overrides plain anchors; keep mention colours there too. */
+.milkdown .ProseMirror .internal-link {
+  color: var(--mention-color);
+  text-decoration: underline dotted;
+}
