@@ -7,7 +7,12 @@ import type { JukeboxPlaylist } from '@/jukebox/types';
 
 import SortableList from '@/components/common/SortableList.vue';
 
-import { IconPlus, IconPencil, IconX } from '@tabler/icons-vue';
+import {
+  IconGripVertical,
+  IconPlus,
+  IconPencil,
+  IconX,
+} from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
 import { useI18n } from 'vue-i18n';
 
@@ -157,7 +162,7 @@ onMounted(async () => {
         v-model="sortedPlaylists"
         tag="div"
         class="playlist-list"
-        handle=".playlist-item"
+        handle=".playlist-drag-handle"
         item-key="id"
         @end="onPlaylistSortEnd"
       >
@@ -170,6 +175,9 @@ onMounted(async () => {
             @click="setSelectedPlaylist(playlist.id)"
             class="playlist-item"
           >
+            <QItemSection side class="playlist-drag-handle" @click.stop>
+              <IconGripVertical :size="16" />
+            </QItemSection>
             <QItemSection>
               {{ playlist.name }}
             </QItemSection>
@@ -215,6 +223,15 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.playlist-drag-handle {
+  cursor: grab;
+  color: var(--color-text-lighter);
+}
+
+.playlist-drag-handle:active {
+  cursor: grabbing;
+}
+
 .playlist-actions {
   display: none;
 }

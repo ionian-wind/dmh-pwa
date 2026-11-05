@@ -209,7 +209,8 @@ unmount. The `filesStore` is loaded but unused.
 
 ## Playlists
 
-- `PlaylistList` shows "All Tracks", then playlists sortable via drag.
+- `PlaylistList` shows "All Tracks", then playlists sortable via a per-row
+  drag handle; clicking the row selects the playlist.
 - Playlist sort order is persisted as `sortOrder`.
 - Edit opens `PlaylistEditor` (name, modules, description).
 - `AddToPlaylistModal` toggles track membership in existing playlists and can

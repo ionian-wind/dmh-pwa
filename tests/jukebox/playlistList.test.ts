@@ -82,6 +82,8 @@ describe('PlaylistList drag-and-drop and selection', () => {
 
     const draggable = wrapper.findComponent(SortableList);
     expect(draggable.exists()).toBe(true);
+    expect(draggable.props('handle')).toBe('.playlist-drag-handle');
+    expect(wrapper.findAll('.playlist-drag-handle')).toHaveLength(2);
     draggable.vm.$emit('update:modelValue', [
       store.items.value[0],
       store.items.value[1],
@@ -123,6 +125,10 @@ describe('PlaylistList drag-and-drop and selection', () => {
     const config = useConfigStore();
     const wrapper = mountList();
     await flushPromises();
+
+    const handle = wrapper.findAll('.playlist-drag-handle')[0];
+    await handle.trigger('click');
+    expect(config.jukeboxActivePlaylistId).toBeNull();
 
     const items = wrapper.findAll('.playlist-item');
     await items[0].trigger('click');
