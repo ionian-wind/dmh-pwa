@@ -28,10 +28,10 @@ using integer (`bigint`) weights. A Vue page under
   Monaco markers for syntax-error ranges. Completion labels/details and
   code-piece source labels follow the current UI language.
 - Syntax errors are structured by the parser (unexpected token/character,
-  expected token types, source range), formatted into human-readable localized
-  text, and shown in the error banner with a clickable `line N, column M` link
-  that moves the editor cursor to the error. Marker hover text uses the same
-  localized message.
+  expected token types, source range). Fault-tolerant parsing collects multiple
+  errors via `DiceSyntaxError.errors`, and Monaco shows a marker for each issue.
+  Messages are localized and the error banner links to the first issue with a
+  clickable `line N, column M` link that moves the editor cursor there.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,

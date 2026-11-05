@@ -96,10 +96,12 @@ npx vitest run src/utils/dice-probability-calculator
 
 The probability-calculator suite covers parsing, arithmetic, sequences, order
 statistics, built-ins, function casting, loops, conditionals, settings,
-recursion and structured error handling. Parser errors expose a stable code,
-expected token types, found text and a 1-based source range for editor markers;
-`src/probability-calculator/syntaxErrors.ts` turns those details into localized
-UI text.
+recursion and structured error handling. The parser uses Chevrotain recovery
+heuristics and reports every recoverable syntax issue via
+`DiceSyntaxError.errors`; top-level fields mirror the first issue. Each issue
+exposes a stable code, expected token types, found text and a 1-based source
+range for editor markers. `src/probability-calculator/syntaxErrors.ts` turns
+those details into localized UI text.
 `__tests__/articles.test.ts` mirrors the programs and published results from
 the official AnyDice articles. `__tests__/official-docs.test.ts` covers every
 page of the official documentation.

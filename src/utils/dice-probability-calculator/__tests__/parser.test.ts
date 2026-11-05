@@ -201,4 +201,18 @@ describe('dice probability calculator parser', () => {
       ],
     });
   });
+
+  it('collects multiple syntax errors instead of stopping at the first', () => {
+    try {
+      parse('output 1 +\noutput {1 2}\noutput )');
+      throw new Error('Expected parse to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DiceSyntaxError);
+      const syntaxError = error as DiceSyntaxError;
+      expect(syntaxError.errors.length).toBeGreaterThanOrEqual(2);
+      expect(syntaxError.errors[0]).toBeInstanceOf(DiceSyntaxError);
+      expect(syntaxError.errors.some((issue) => issue.line > 1)).toBe(true);
+      expect(syntaxError.message.split('; ').length).toBeGreaterThanOrEqual(2);
+    }
+  });
 });

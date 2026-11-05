@@ -241,19 +241,23 @@ function clearSyntaxMarkers() {
 function markSyntaxError(caught: DiceSyntaxError) {
   const model = editorRef.value?.getEditor()?.getModel();
   if (!model) return;
-  monaco.editor.setModelMarkers(model, MARKER_OWNER, [
-    {
-      startLineNumber: caught.line,
-      startColumn: caught.column,
-      endLineNumber: caught.endLine,
-      endColumn: caught.endColumn,
-      message: `${formatDiceSyntaxError(caught, t)} (${t(
+  const issues =
+    caught.errors && caught.errors.length > 0 ? caught.errors : [caught];
+  monaco.editor.setModelMarkers(
+    model,
+    MARKER_OWNER,
+    issues.map((issue) => ({
+      startLineNumber: issue.line,
+      startColumn: issue.column,
+      endLineNumber: issue.endLine,
+      endColumn: issue.endColumn,
+      message: `${formatDiceSyntaxError(issue, t)} (${t(
         'probabilityCalculator.syntaxErrors.location',
-        { line: caught.line, column: caught.column },
+        { line: issue.line, column: issue.column },
       )})`,
       severity: monaco.MarkerSeverity.Error,
-    },
-  ]);
+    })),
+  );
 }
 
 async function runCalculation() {

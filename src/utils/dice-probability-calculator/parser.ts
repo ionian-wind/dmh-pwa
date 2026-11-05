@@ -54,7 +54,7 @@ import {
 export class DiceParser extends CstParser {
   constructor() {
     super(allTokens, {
-      recoveryEnabled: false,
+      recoveryEnabled: true,
       nodeLocationTracking: 'full',
       errorMessageProvider: parserErrorMessageProvider,
     });
@@ -359,75 +359,121 @@ function unexpectedCharacter(message: string, input: string, offset: number) {
   return input.charAt(offset) || undefined;
 }
 
+function lexerErrorToIssue(
+  error: {
+    message: string;
+    offset: number;
+    line: number;
+    column: number;
+    length: number;
+    code?: string;
+    found?: string;
+  },
+  input: string,
+): DiceSyntaxError {
+  const found =
+    error.found ?? unexpectedCharacter(error.message, input, error.offset);
+  return new DiceSyntaxError(
+    error.message,
+    error.line,
+    error.column,
+    error.line,
+    error.column + Math.max(1, error.length),
+    {
+      code: (error.code as DiceSyntaxError['code']) ?? 'unexpected-character',
+      found,
+    },
+  );
+}
+
+function parserErrorToIssue(error: any): DiceSyntaxError {
+  const token = error.token;
+  const previous = error.previousToken;
+  const hasStart =
+    token !== undefined &&
+    (token.startLine ?? -1) > 0 &&
+    (token.startColumn ?? -1) > 0;
+  const hasEnd =
+    token !== undefined &&
+    (token.endLine ?? -1) > 0 &&
+    (token.endColumn ?? -1) > 0;
+  const line = hasStart
+    ? (token!.startLine as number)
+    : (previous?.endLine ?? 1);
+  const column = hasStart
+    ? (token!.startColumn as number)
+    : (previous?.endColumn ?? 0) + 1;
+  const endLine = hasEnd ? (token!.endLine as number) : line;
+  const endColumn = hasEnd ? (token!.endColumn as number) + 1 : column + 1;
+  const decoded = decodeSyntaxErrorMetadata(error.message);
+  const metadata = decoded.metadata;
+  const foundKind = metadata?.foundKind ?? token?.tokenType?.name;
+  const found = metadata?.found ?? (token?.image?.trim() || undefined);
+  const expected = metadata?.expected ?? [];
+  const endOfInput = !token || foundKind === 'EOF';
+
+  return new DiceSyntaxError(
+    decoded.message,
+    line,
+    column,
+    endLine,
+    endColumn,
+    {
+      code:
+        metadata?.code ??
+        (endOfInput
+          ? 'unexpected-end-of-input'
+          : expected.length > 0
+            ? 'unexpected-token'
+            : 'invalid-syntax'),
+      expected,
+      found,
+      foundKind,
+    },
+  );
+}
+
+function dedupeIssues(issues: DiceSyntaxError[]): DiceSyntaxError[] {
+  const seen = new Set<string>();
+  return issues.filter((issue) => {
+    const key = `${issue.line}:${issue.column}:${issue.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function combinedSyntaxError(issues: DiceSyntaxError[]): DiceSyntaxError {
+  const errors = dedupeIssues(issues);
+  const first = errors[0];
+  return new DiceSyntaxError(
+    errors.map((error) => error.message).join('; '),
+    first.line,
+    first.column,
+    first.endLine,
+    first.endColumn,
+    {
+      code: first.code,
+      found: first.found,
+      foundKind: first.foundKind,
+      expected: first.expected,
+      errors,
+    },
+  );
+}
+
 export function parseCst(input: string) {
   const { tokens, errors } = tokenize(input);
   if (errors.length > 0) {
-    const first = errors[0];
-    const found =
-      first.found ?? unexpectedCharacter(first.message, input, first.offset);
-    throw new DiceSyntaxError(
-      errors.map((error) => error.message).join('; '),
-      first.line,
-      first.column,
-      first.line,
-      first.column + Math.max(1, first.length),
-      {
-        code: first.code ?? 'unexpected-character',
-        found,
-      },
+    throw combinedSyntaxError(
+      errors.map((error) => lexerErrorToIssue(error, input)),
     );
   }
   const parser = new DiceParser();
   parser.input = tokens;
   const cst = parser.program();
   if (parser.errors.length > 0) {
-    const first = parser.errors[0];
-    const token = first.token;
-    const previous = (first as { previousToken?: typeof token }).previousToken;
-    const hasStart =
-      token !== undefined &&
-      (token.startLine ?? -1) > 0 &&
-      (token.startColumn ?? -1) > 0;
-    const hasEnd =
-      token !== undefined &&
-      (token.endLine ?? -1) > 0 &&
-      (token.endColumn ?? -1) > 0;
-    const line = hasStart
-      ? (token!.startLine as number)
-      : (previous?.endLine ?? 1);
-    const column = hasStart
-      ? (token!.startColumn as number)
-      : (previous?.endColumn ?? 0) + 1;
-    const endLine = hasEnd ? (token!.endLine as number) : line;
-    const endColumn = hasEnd ? (token!.endColumn as number) + 1 : column + 1;
-    const decoded = decodeSyntaxErrorMetadata(first.message);
-    const metadata = decoded.metadata;
-    const foundKind = metadata?.foundKind ?? token?.tokenType?.name;
-    const found = metadata?.found ?? (token?.image?.trim() || undefined);
-    const expected = metadata?.expected ?? [];
-    const endOfInput = !token || foundKind === 'EOF';
-
-    throw new DiceSyntaxError(
-      parser.errors
-        .map((error) => decodeSyntaxErrorMetadata(error.message).message)
-        .join('; '),
-      line,
-      column,
-      endLine,
-      endColumn,
-      {
-        code:
-          metadata?.code ??
-          (endOfInput
-            ? 'unexpected-end-of-input'
-            : expected.length > 0
-              ? 'unexpected-token'
-              : 'invalid-syntax'),
-        expected,
-        found,
-        foundKind,
-      },
-    );
+    throw combinedSyntaxError(parser.errors.map(parserErrorToIssue));
   }
   return cst;
 }

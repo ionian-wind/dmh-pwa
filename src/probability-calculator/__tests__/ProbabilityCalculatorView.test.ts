@@ -515,4 +515,32 @@ describe('ProbabilityCalculatorView', () => {
     expect(wrapper.text()).toContain('Calculation error');
     wrapper.unmount();
   });
+
+  it('marks every reported syntax issue', async () => {
+    const wrapper = await mountPage();
+    const vm = wrapper.vm as any;
+    const base = {
+      endLine: 1,
+      endColumn: 2,
+      expected: [],
+      code: 'invalid-syntax',
+      message: 'bad',
+    };
+
+    vm.markSyntaxError({
+      ...base,
+      line: 1,
+      column: 1,
+      errors: [
+        { ...base, line: 1, column: 1, message: 'first' },
+        { ...base, line: 2, column: 3, message: 'second' },
+      ],
+    });
+
+    const markers = markerState.setModelMarkers.mock.calls.at(-1)?.[2] as any[];
+    expect(markers).toHaveLength(2);
+    expect(markers[0]).toMatchObject({ startLineNumber: 1, startColumn: 1 });
+    expect(markers[1]).toMatchObject({ startLineNumber: 2, startColumn: 3 });
+    wrapper.unmount();
+  });
 });
