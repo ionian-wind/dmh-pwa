@@ -351,7 +351,16 @@
     "selectAll": "Select all",
     "cancelSelection": "Cancel selection",
     "dragToLink": "Drag to link",
-    "linkEntityTo": "Link {type} to:"
+    "linkEntityTo": "Link {type} to:",
+    "entityAccusative": {
+      "note": "Note",
+      "module": "Module",
+      "party": "Party",
+      "monster": "Monster",
+      "encounter": "Encounter",
+      "character": "Character",
+      "location": "Location"
+    }
   },
   "validation": {
     "required": "This field is required",

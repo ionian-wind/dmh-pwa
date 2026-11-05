@@ -352,7 +352,16 @@
     "selectAll": "Выбрать все",
     "cancelSelection": "Отменить выбор",
     "dragToLink": "Перетащите для связи",
-    "linkEntityTo": "Связать {type} с:"
+    "linkEntityTo": "Связать {type} с:",
+    "entityAccusative": {
+      "note": "Заметку",
+      "module": "Модуль",
+      "party": "Группу",
+      "monster": "Монстра",
+      "encounter": "Схватку",
+      "character": "Персонажа",
+      "location": "Локацию"
+    }
   },
   "validation": {
     "required": "Это поле обязательно для заполнения",

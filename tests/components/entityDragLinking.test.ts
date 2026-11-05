@@ -92,7 +92,7 @@ describe('entity drag linking UI', () => {
     const cards = wrapper.findAll('.entity-drag-drop-card');
     expect(cards).toHaveLength(2);
     expect(wrapper.find('.entity-drag-overlay-title').text()).toBe(
-      'Link Notes to:',
+      'Link Note to:',
     );
     expect(cards.map((card) => card.attributes('aria-label'))).toEqual([
       'Modules',

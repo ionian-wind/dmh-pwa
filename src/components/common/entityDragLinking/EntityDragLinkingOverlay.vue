@@ -46,6 +46,10 @@ function labelFor(kind: EntityLinkKind) {
   return t(getEntityKindOption(kind)?.labelKey ?? 'common.linkedEntities');
 }
 
+function accusativeLabelFor(kind: EntityLinkKind) {
+  return t(`common.entityAccusative.${kind}`);
+}
+
 function drop(kind: EntityLinkKind) {
   hoveredKind.value = null;
   dropOnKind(kind);
@@ -64,7 +68,7 @@ function drop(kind: EntityLinkKind) {
         <div class="entity-drag-overlay-title">
           {{
             t('common.linkEntityTo', {
-              type: draggedEntity ? labelFor(draggedEntity.kind) : '',
+              type: draggedEntity ? accusativeLabelFor(draggedEntity.kind) : '',
             })
           }}
         </div>
