@@ -191,4 +191,9 @@ defineExpose({
   color: var(--crepe-color-primary);
   text-decoration: underline;
 }
+
+:global(.milkdown .milkdown-slash-menu svg.mention-tabler-icon),
+:global(.milkdown .milkdown-toolbar svg.mention-tabler-icon) {
+  filter: invert(1);
+}
 </style>

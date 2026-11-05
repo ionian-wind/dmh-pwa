@@ -244,13 +244,21 @@ export const mentionFeature = (ctx: any) => {
   ctx.use(mentionMark);
 };
 
+function mentionIcon(svg: string) {
+  return svg.replace('class="', 'class="mention-tabler-icon ');
+}
+
 const mentionKinds = [
-  { kind: 'note', label: 'notes.title', icon: iconNote },
-  { kind: 'module', label: 'modules.title', icon: iconBook },
-  { kind: 'party', label: 'parties.title', icon: iconUsers },
-  { kind: 'monster', label: 'monsters.title', icon: iconGhost },
-  { kind: 'encounter', label: 'encounters.title', icon: iconSwords },
-  { kind: 'location', label: 'maps.locations', icon: iconMap },
+  { kind: 'note', label: 'notes.title', icon: mentionIcon(iconNote) },
+  { kind: 'module', label: 'modules.title', icon: mentionIcon(iconBook) },
+  { kind: 'party', label: 'parties.title', icon: mentionIcon(iconUsers) },
+  { kind: 'monster', label: 'monsters.title', icon: mentionIcon(iconGhost) },
+  {
+    kind: 'encounter',
+    label: 'encounters.title',
+    icon: mentionIcon(iconSwords),
+  },
+  { kind: 'location', label: 'maps.locations', icon: mentionIcon(iconMap) },
 ];
 
 type Translate = (key: string) => string;
