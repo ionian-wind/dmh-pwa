@@ -69,7 +69,7 @@ const canCreate = computed(
 );
 
 const popupStyle = computed<StyleValue>(() => ({
-  position: 'absolute',
+  position: 'fixed',
   top: `${props.position.top}px`,
   left: `${props.position.left}px`,
   zIndex: 1000,
