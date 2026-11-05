@@ -862,4 +862,20 @@ describe('jukebox player store', () => {
       }),
     );
   });
+
+  it('keeps All Tracks as the playback context for a track in a playlist', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two');
+    mocks.tracks.items.value = [one, two];
+    mocks.playlists.items.value = [{ id: 'p1', trackIds: ['one'] }];
+    config.jukeboxActivePlaylistId = null;
+
+    await player.playTrackFromPlaylist(one);
+
+    expect(player.queuePlaylistId).toBeNull();
+    expect(config.jukeboxLastPlaylistId).toBeNull();
+    expect(player.queue.map((item) => item.id)).toEqual(['one', 'two']);
+  });
 });

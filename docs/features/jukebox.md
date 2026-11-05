@@ -144,11 +144,16 @@ exists.
 - Filter `disabled`.
 - If shuffle, `.toSorted(() => 0.5 - rng())` (a biased random comparator).
 
-`queuePlaylistId` is captured when a track starts:
+`queuePlaylistId` is captured when a track starts and follows the browsed
+context:
 
-- Prefer the currently browsed playlist when it contains the track.
-- Otherwise use the first playlist that contains the track.
-- Otherwise `null`, meaning all tracks.
+- If a playlist is selected and contains the track, use that playlist.
+- If All Tracks is selected, use `null` even when the track also belongs to a
+  playlist.
+- If the selected playlist does not contain the track, fall back to `null`.
+
+The chosen context is persisted as `jukeboxLastPlaylistId` alongside the last
+track.
 
 `actualiseQueue()` rebuilds the queue when the playback playlist changes,
 shuffle toggles, playlist contents change, or explicitly after

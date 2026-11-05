@@ -229,15 +229,12 @@ export const useJukeboxPlayerStore = defineStore(
       track: JukeboxTrack,
       preferredPlaylistId: string | null = null,
     ): string | null {
-      if (preferredPlaylistId) {
-        const preferred = playlistsStore.getById(preferredPlaylistId);
-        if (preferred?.trackIds.includes(track.id)) return preferredPlaylistId;
-      }
+      if (!preferredPlaylistId) return null;
 
-      const containing = playlistsStore.items.value.find((playlist) =>
-        playlist.trackIds.includes(track.id),
-      );
-      return containing?.id ?? null;
+      const preferred = playlistsStore.getById(preferredPlaylistId);
+      return preferred?.trackIds.includes(track.id)
+        ? preferredPlaylistId
+        : null;
     }
 
     async function restoreLastTrack() {
