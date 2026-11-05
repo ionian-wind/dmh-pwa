@@ -180,7 +180,7 @@ pipeline. In short:
 
 - Entity links use `[label](kind://id)`.
 - Rendering rewrites them to SPA routes and adds `data-kind`/`data-id`.
-- `ModuleDocumentView` enables mention modals; cards do not.
+- `NoteView` and `ModuleDocumentView` enable mention modals; cards do not.
 - Only note content is indexed; other entity mentions are not.
 
 ## Persistence fields

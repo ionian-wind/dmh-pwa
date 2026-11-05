@@ -215,6 +215,7 @@ async function handleEditorDelete() {
         <Markdown
           v-else
           :taskCheckboxEnabled="true"
+          :enableMentionModal="true"
           :content="noteContent"
           @update:content="handleMarkdownContentChange"
         />

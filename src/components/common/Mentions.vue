@@ -7,6 +7,7 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { cropTitle } from '@/utils/cropTitle';
 import { useI18n } from 'vue-i18n';
+import EntityGroup from './EntityGroup.vue';
 
 interface EntityRef {
   kind: string;
@@ -95,8 +96,7 @@ const groupedEntities = computed(() => {
 </script>
 
 <template>
-  <div class="mentions-aside">
-    <h5 class="mentions-title">{{ title }}</h5>
+  <EntityGroup class="mentions-aside" :title="title">
     <template v-if="entities.length">
       <div
         v-for="(group, kind) in groupedEntities"
@@ -119,5 +119,5 @@ const groupedEntities = computed(() => {
     <template v-else>
       <div class="mentions-empty">{{ t('mentions.empty') }}</div>
     </template>
-  </div>
+  </EntityGroup>
 </template>

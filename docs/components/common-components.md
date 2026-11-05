@@ -353,7 +353,8 @@ translation keys that do not exist.
 - `EmptyState.vue` — shared centered icon/title/hint block used by ambient sound
   and entity list pages when no items are available. `BaseListView` splits its
   `emptyMessage` at the first sentence into the title and subtitle.
-- `Mentions.vue` — groups `{kind,id}` refs by kind and links to detail routes.
+- `Mentions.vue` — wraps each mention section in `EntityGroup`, groups
+  `{kind,id}` refs by kind, and links to detail routes.
 - `TableOfContents.vue` — TOC with scroll-spy. Entries are real `#anchor` links
   that also emit `item-click`; used by the module and probability-syntax
   sidepanels.

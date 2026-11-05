@@ -32,6 +32,7 @@ function handleClose() {
     :isOpen="showModal"
     :title="modalEntity?.title || modalEntity?.name || t('modal.entityDetails')"
     :showClose="true"
+    :showExpand="true"
     :modalId="modalId"
     @cancel="handleClose"
   >
