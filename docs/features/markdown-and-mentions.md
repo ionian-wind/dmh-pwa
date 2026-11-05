@@ -154,6 +154,8 @@ Typing `#` in the visual editor opens `TagInsertPopup.vue`:
   Matching is case-insensitive and prefix matches sort first.
 - Users can pick an existing tag or create `#query`.
 - The plugin replaces the typed `#query` range with `#tag` as plain text.
+- A ProseMirror decoration gives every `#tag` the `tag-link` class in Milkdown,
+  using the same colour/underline visual treatment as links.
 - After the note is saved, `src/utils/tags.ts` extracts hashtags from the
   content and merges them into `note.tags`. Markdown headings such as
   `# Heading` are ignored.
