@@ -13,6 +13,11 @@ describe('MarkdownHelpDialog', () => {
     expect(wrapper.text()).toContain('Formatting Help');
     expect(wrapper.text()).toContain('Internal Links');
     expect(wrapper.text()).toContain('[title](type://id)');
+    expect(wrapper.text()).toContain('Entity Mentions');
+    expect(wrapper.text()).toContain('[Tavern](note://123)');
+    expect(wrapper.text()).toContain('Tags');
+    expect(wrapper.text()).toContain('#tavern');
+    expect(wrapper.text()).toContain('# Heading');
     wrapper.unmount();
   });
 

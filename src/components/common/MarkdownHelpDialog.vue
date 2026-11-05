@@ -55,6 +55,30 @@ const { t } = useI18n();
               {{ t('markdownEditor.help.linkToEncounter') }}
             </li>
           </ul>
+
+          <span class="help-title">
+            {{ t('markdownEditor.help.mentions') }}
+          </span>
+          <p>{{ t('markdownEditor.help.mentionsDescription') }}</p>
+          <p>
+            <code>[Tavern](note://123)</code>
+            {{ t('markdownEditor.help.mentionExample') }}
+          </p>
+
+          <span class="help-title">
+            {{ t('markdownEditor.help.tags') }}
+          </span>
+          <p>{{ t('markdownEditor.help.tagsDescription') }}</p>
+          <ul>
+            <li>
+              <code>#tavern</code> -
+              {{ t('markdownEditor.help.tagExample') }}
+            </li>
+            <li>
+              <code># Heading</code> -
+              {{ t('markdownEditor.help.tagsNotHeadings') }}
+            </li>
+          </ul>
         </div>
         <div class="col-12 col-md-6">
           <span class="help-title">

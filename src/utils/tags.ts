@@ -20,11 +20,11 @@ export function mergeHashtags(existing: string[], content: string): string[] {
   return result;
 }
 
-/** Remove every inline hashtag occurrence for a tag from note content. */
+/** Strip the hashtag marker so the tag remains as plain text. */
 export function removeHashtag(content: string, tag: string): string {
   const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return content.replace(
-    new RegExp(`(^|[\\s(["'>])#${escaped}(?![\\p{L}\\p{N}_-])`, 'gu'),
-    '$1',
+    new RegExp(`(^|[\\s(["'>])#(${escaped})(?![\\p{L}\\p{N}_-])`, 'gu'),
+    '$1$2',
   );
 }

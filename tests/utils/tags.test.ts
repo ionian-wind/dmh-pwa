@@ -23,13 +23,12 @@ describe('hashtags', () => {
     ]);
   });
 
-  it('removes hashtags from content while keeping other tags', () => {
+  it('strips hashtag markers while keeping the text', () => {
     const content = removeHashtag(
       'Visit #harbor and #forest. Return to #harbor.',
       'harbor',
     );
 
-    expect(content).not.toContain('#harbor');
-    expect(content).toContain('#forest');
+    expect(content).toBe('Visit harbor and #forest. Return to harbor.');
   });
 });

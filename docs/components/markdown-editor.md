@@ -34,7 +34,8 @@ Emits `update:modelValue`, exposes `getMarkdown()`.
 - Visual mode: `MilkdownEditorWrapper` inside a borderless `QCard`.
 - Raw mode: a Quasar `QEditor` with an empty toolbar. Markdown text is
   converted to/from QEditor HTML with `markdownRaw.ts`. Formatting help lives
-  in `MarkdownHelpDialog`, opened from the note editor footer.
+  in `MarkdownHelpDialog`, opened from the note editor footer; it documents
+  markdown, internal links, entity mentions, and hashtag tags.
 - `getCurrentMarkdown()` returns the wrapper's Markdown when available,
   otherwise `modelValue`.
   If the user toggles from WYSIWYG to raw and edits, the ref may still hold the

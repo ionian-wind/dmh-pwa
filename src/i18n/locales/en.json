@@ -544,7 +544,14 @@
       "completedTask": "Completed task",
       "taskList": "Task list with checkboxes",
       "taskLists": "Task lists",
-      "taskListsWillRender": "written as - [ ] or - [x] will render as disabled checkboxes."
+      "taskListsWillRender": "written as - [ ] or - [x] will render as disabled checkboxes.",
+      "mentions": "Entity Mentions",
+      "mentionsDescription": "Use the mention buttons in the editor toolbar to link a note, module, party, monster, or encounter. Mentions use the same internal-link syntax:",
+      "mentionExample": "mentions the Tavern note.",
+      "tags": "Tags",
+      "tagsDescription": "Type # in the editor to search or create a tag, or write a hashtag directly. Tags are collected in the note options menu.",
+      "tagExample": "adds the “tavern” tag.",
+      "tagsNotHeadings": "Headings such as this are not treated as tags."
     },
     "placeholder": "Write here... Markdown supported",
     "crepe": {

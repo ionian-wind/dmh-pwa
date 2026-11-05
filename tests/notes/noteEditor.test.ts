@@ -224,9 +224,11 @@ describe('NoteEditor content types', () => {
     tagSelector.vm.$emit('update:modelValue', ['tagged', 'inline']);
     await nextTick();
 
-    expect(
-      wrapper.findComponent(MarkdownEditorStub).props('modelValue'),
-    ).not.toContain('#second');
+    const markdown = wrapper
+      .findComponent(MarkdownEditorStub)
+      .props('modelValue');
+    expect(markdown).not.toContain('#second');
+    expect(markdown).toContain('second');
     expect(wrapper.findComponent(TagSelectorStub).props('modelValue')).toEqual([
       'tagged',
       'inline',

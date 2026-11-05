@@ -85,8 +85,8 @@ Fields:
   detail page and note cards.
 - The visual-editor toggle sits in the footer between **options** and help.
 - When the visual editor is off, an icon-only help button appears next to the
-  toggle. It opens `MarkdownHelpDialog` with markdown formatting and
-  internal-link help.
+  toggle. It opens `MarkdownHelpDialog` with markdown formatting,
+  internal-link, entity mention, and tag help.
 - The title input is borderless and larger; there is no separate **Content**
   heading, and the visual/raw editors have no outer outline.
 - The module link lives in the dialog's linked-entities tab.
@@ -159,8 +159,8 @@ The only escape is delete + recreate.
 - `allTags` collects tags from every note (including hidden ones).
 - While editing, the note options menu's `TagSelector` shows saved tags plus
   hashtags currently present in the markdown content. Removing an inline tag
-  also removes its hashtag occurrences from the content so it is not merged
-  back on save.
+  strips the `#` markers from the content but keeps the tag word as plain text,
+  so it is not merged back on save.
 - The tag filter is exact-match (`note.tags.includes(tag)`), while the search
   box does substring matching.
 - Clicking a tag in `NoteCard` or `NoteViewSidebar` encodes the tag twice:
