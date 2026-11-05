@@ -84,7 +84,8 @@ const emit = defineEmits([
   'dragleave',
 ]);
 
-function handleSortEnd() {
+function handleSortEnd(event?: { oldIndex: number; newIndex: number }) {
+  if (event && event.oldIndex === event.newIndex) return;
   emit('sort', localItems.value);
 }
 

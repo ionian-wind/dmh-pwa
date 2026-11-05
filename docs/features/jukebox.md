@@ -192,7 +192,8 @@ position until `onplay/onseek` updates it.
   playlist's tracks, in playlist order.
 - In edit mode, a selected playlist's tracks can be sorted from their per-row
   drag handle; reorder writes `playlist.trackIds` and resorts the queue.
-  Clicking the row itself plays the track.
+  Clicking the row itself plays the track. A pointer down/up on a handle without
+  a positional change is ignored and does not resort the queue.
 - Edit mode also shows a bulk-selection checkbox after each track and playlist
   drag handle. The checkbox toggles visually but bulk actions are not wired yet.
 - Track click toggles play if it is the active track, otherwise starts it from

@@ -96,10 +96,10 @@ describe('SortableList', () => {
     wrapper.unmount();
   });
 
-  it('falls back to the old index when the item key is missing', async () => {
-    const items = [{ label: 'A' }];
-    const wrapper = mount(SortableList, {
-      props: { modelValue: items, itemKey: 'id' },
+  it('ignores drops without a resolvable or changed position', async () => {
+    const missingKeyItems = [{ label: 'A' }];
+    const missingKey = mount(SortableList, {
+      props: { modelValue: missingKeyItems, itemKey: 'id' },
       slots: {
         item: ({ element }: any) => h(Item, { label: element.label }),
       },
@@ -108,14 +108,42 @@ describe('SortableList', () => {
     mocks.droppableOptions.events.onDrop({
       draggingElements: {
         value: new Map([
+          [
+            'drag',
+            {
+              data: {
+                source: missingKeyItems,
+                index: 0,
+                item: missingKeyItems[0],
+              },
+            },
+          ],
+        ]),
+      },
+    });
+    expect(missingKey.emitted('end')).toBeUndefined();
+    expect(missingKey.emitted('update:modelValue')).toBeUndefined();
+    missingKey.unmount();
+
+    const items = [
+      { id: 'a', label: 'A' },
+      { id: 'b', label: 'B' },
+    ];
+    const wrapper = mount(SortableList, {
+      props: { modelValue: items, itemKey: 'id' },
+      slots: {
+        item: ({ element }: any) => h(Item, { label: element.label }),
+      },
+    });
+    mocks.droppableOptions.events.onDrop({
+      draggingElements: {
+        value: new Map([
           ['drag', { data: { source: items, index: 0, item: items[0] } }],
         ]),
       },
     });
-    expect(wrapper.emitted('end')?.[0]?.[0]).toEqual({
-      oldIndex: 0,
-      newIndex: 0,
-    });
+    expect(wrapper.emitted('end')).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     wrapper.unmount();
   });
 });

@@ -42,6 +42,12 @@ const { elementRef, isOvered } = useDroppable({
               (entry) => entry[props.itemKey] === item[props.itemKey],
             )
           : oldIndex;
+
+      // Pointer down/up without an actual positional change must not be
+      // treated as a sort. Besides avoiding redundant writes, this prevents a
+      // no-move click on a drag handle from resorting playback queues.
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
+
       emit('update:modelValue', next);
       emit('end', { oldIndex, newIndex });
     },

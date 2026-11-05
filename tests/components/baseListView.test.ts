@@ -231,11 +231,14 @@ describe('BaseListView', () => {
     expect(draggable.exists()).toBe(true);
     draggable.vm.$emit('update:modelValue', [{ id: 'b' }, { id: 'a' }]);
     await nextTick();
-    draggable.vm.$emit('end');
+    draggable.vm.$emit('end', { oldIndex: 0, newIndex: 1 });
     expect(wrapper.emitted('sort')?.[0]?.[0]).toEqual([
       { id: 'b' },
       { id: 'a' },
     ]);
+
+    draggable.vm.$emit('end', { oldIndex: 1, newIndex: 1 });
+    expect(wrapper.emitted('sort')).toHaveLength(1);
     wrapper.unmount();
   });
 
