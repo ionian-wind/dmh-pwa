@@ -142,8 +142,10 @@ Typing `#` in the visual editor opens `TagInsertPopup.vue`:
 
 - `plugins/tagAutocomplete.ts` watches document transactions and detects
   `#query` immediately before the caret.
-- Existing tags come from `noteStore.allTags`; matching is case-insensitive and
-  prefix matches sort first.
+- Suggestions merge saved `noteStore.allTags`, the current note's tag list
+  (including unsaved TagSelector changes), completed hashtags already in the
+  content, and tags inserted through the popup during the current edit session.
+  Matching is case-insensitive and prefix matches sort first.
 - Users can pick an existing tag or create `#query`.
 - The plugin replaces the typed `#query` range with `#tag` as plain text.
 - After the note is saved, `src/utils/tags.ts` extracts hashtags from the

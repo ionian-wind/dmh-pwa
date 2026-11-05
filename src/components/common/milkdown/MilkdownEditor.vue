@@ -3,7 +3,7 @@
     <Milkdown />
     <TagInsertPopup
       v-if="tagPopup.show"
-      :tags="noteStore.allTags"
+      :tags="tagSuggestions"
       :query="tagPopup.query"
       :position="tagPopup.position"
       :onSelect="insertTag"
@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { Milkdown, useEditor } from '@milkdown/vue';
 import { mentionFeature } from './plugins/mention';
@@ -32,6 +32,7 @@ import TagInsertPopup from './TagInsertPopup.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
 import { getMentionableEntities } from '@/utils/markdownParser';
 import { useNoteStore } from '@/stores/notes';
+import { extractHashtags } from '@/utils/tags';
 import { registerTagAutocompleteTrigger } from './plugins/tagAutocomplete';
 import { tagAutocompleteFeature } from './plugins/tagAutocomplete';
 import { useI18n } from 'vue-i18n';
@@ -40,12 +41,28 @@ const props = defineProps<{
   modelValue: string;
   currentEntityType: string;
   currentEntityId: string;
+  tags?: string[];
 }>();
 const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
 const noteStore = useNoteStore();
 
 const crepeInstance = ref<Crepe | null>(null);
+
+const recentTags = ref<string[]>([]);
+
+const tagSuggestions = computed(() => {
+  const tags = new Set<string>([
+    ...noteStore.allTags,
+    ...(props.tags ?? []),
+    ...recentTags.value,
+  ]);
+  const trailing = props.modelValue.trimEnd();
+  for (const tag of extractHashtags(props.modelValue)) {
+    if (!trailing.endsWith(`#${tag}`)) tags.add(tag);
+  }
+  return [...tags];
+});
 
 const tagPopup = ref({
   show: false,
@@ -84,6 +101,7 @@ function closeTagPopup() {
 
 function insertTag(tag: string) {
   if (!tagPopup.value.show) return;
+  if (!recentTags.value.includes(tag)) recentTags.value.push(tag);
   tagPopup.value.insert(tag);
   closeTagPopup();
 }

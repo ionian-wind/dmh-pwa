@@ -31,6 +31,7 @@ const props = defineProps<{
   enableMentions?: boolean;
   currentEntityType?: string;
   currentEntityId?: string;
+  tags?: string[];
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -111,10 +112,12 @@ defineExpose({ getMarkdown });
           v-if="props.enableMentions"
           :current-entity-type="props.currentEntityType || ''"
           :current-entity-id="props.currentEntityId || ''"
+          :tags="props.tags || []"
         />
         <MilkdownEditorWrapper
           ref="milkdownWrapperRef"
           v-model="modelValueProxy"
+          :tags="props.tags || []"
           v-else
         />
       </QCardSection>

@@ -180,6 +180,7 @@ function handleDelete() {
                   :placeholder="t('editor.contentPlaceholder')"
                   :current-entity-id="editedNote.id"
                   current-entity-type="note"
+                  :tags="editedNote.tags"
                 />
               </div>
             </div>
