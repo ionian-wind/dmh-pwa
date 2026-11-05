@@ -14,6 +14,7 @@ import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
+import { mergeHashtags, removeHashtag } from '@/utils/tags';
 
 const { t } = useI18n();
 
@@ -54,6 +55,25 @@ const noteContent = computed({
   get: () => editedNote.value.content,
   set: (val) => {
     editedNote.value.content = val;
+  },
+});
+
+const editorTags = computed({
+  get: () =>
+    mergeHashtags(
+      editedNote.value.tags ?? [],
+      editedNote.value.contentType === 'draw' ? '' : noteContent.value,
+    ),
+  set: (tags: string[]) => {
+    const removedTags = editorTags.value.filter((tag) => !tags.includes(tag));
+    let content = editedNote.value.content;
+    if (editedNote.value.contentType !== 'draw') {
+      for (const tag of removedTags) {
+        content = removeHashtag(content, tag);
+      }
+    }
+    editedNote.value.content = content;
+    editedNote.value.tags = tags;
   },
 });
 
@@ -213,7 +233,7 @@ function handleDelete() {
                   v-model="editedNote.typeId"
                 />
                 <TagSelector
-                  v-model="editedNote.tags"
+                  v-model="editorTags"
                   :entity-type="'note'"
                   :current-entity-id="editedNote.id"
                 />

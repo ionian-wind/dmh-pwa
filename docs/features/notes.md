@@ -157,6 +157,10 @@ The only escape is delete + recreate.
 ## Filtering and tags
 
 - `allTags` collects tags from every note (including hidden ones).
+- While editing, the note options menu's `TagSelector` shows saved tags plus
+  hashtags currently present in the markdown content. Removing an inline tag
+  also removes its hashtag occurrences from the content so it is not merged
+  back on save.
 - The tag filter is exact-match (`note.tags.includes(tag)`), while the search
   box does substring matching.
 - Clicking a tag in `NoteCard` or `NoteViewSidebar` encodes the tag twice:

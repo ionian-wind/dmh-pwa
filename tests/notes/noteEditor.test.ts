@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 
 import NoteEditor from '@/notes/NoteEditor.vue';
@@ -37,6 +37,15 @@ const MarkdownEditorStub = defineComponent({
   },
 });
 
+const TagSelectorStub = defineComponent({
+  name: 'TagSelector',
+  props: { modelValue: { type: Array, default: () => [] } },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'tag-selector-stub' });
+  },
+});
+
 const EntitiesLinkingStub = defineComponent({
   name: 'EntitiesLinking',
   props: { kind: String, modelValue: Array },
@@ -67,7 +76,7 @@ function mountEditor(props: Record<string, unknown>) {
         MarkdownEditor: MarkdownEditorStub,
         EntitiesLinking: EntitiesLinkingStub,
         NoteTypeSelector: true,
-        TagSelector: true,
+        TagSelector: TagSelectorStub,
       },
     },
   });
@@ -193,5 +202,39 @@ describe('NoteEditor content types', () => {
     expect(dialog.props('isOpen')).toBe(true);
     expect(wrapper.text()).toContain('Formatting Help');
     wrapper.unmount();
+  });
+
+  it('shows tags typed in the editor in the options menu', async () => {
+    const wrapper = mountEditor({
+      note: { ...baseNote, content: 'Intro', tags: ['tagged'] },
+    });
+
+    wrapper
+      .findComponent(MarkdownEditorStub)
+      .vm.$emit('update:modelValue', 'Intro #inline with #second');
+    await nextTick();
+
+    const tagSelector = wrapper.findComponent(TagSelectorStub);
+    expect(tagSelector.props('modelValue')).toEqual([
+      'tagged',
+      'inline',
+      'second',
+    ]);
+
+    tagSelector.vm.$emit('update:modelValue', ['tagged', 'inline']);
+    await nextTick();
+
+    expect(
+      wrapper.findComponent(MarkdownEditorStub).props('modelValue'),
+    ).not.toContain('#second');
+    expect(wrapper.findComponent(TagSelectorStub).props('modelValue')).toEqual([
+      'tagged',
+      'inline',
+    ]);
+
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      tags: ['tagged', 'inline'],
+    });
   });
 });
