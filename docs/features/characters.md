@@ -62,9 +62,9 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - Renders `notes` as plain text (not Markdown).
 - Edit modal, delete with confirmation, then `BaseEntityView` navigates to the
   list.
-- Uses `CharacterViewSidebar` through the shared right drawer. Mentions and
-  ambient scenes are separated into **Mentions** and **Scenes** tabs using the
-  shared `TabGroup` component.
+- Uses `CharacterViewSidebar` through the shared right drawer. Ambient scenes
+  and mentions are separated into **Scenes** and **Mentions** tabs using the
+  shared `TabGroup` component, with Mentions last.
 
 ## Relationships and lifecycle
 

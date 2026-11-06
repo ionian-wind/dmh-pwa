@@ -159,7 +159,7 @@ const moduleLinks = computed<MapEntityRef[]>(() => [
 
 const activeTab = ref('document');
 const sidePanelTab = ref('toc');
-const mentionsPanelTab = ref('mentions');
+const mentionsPanelTab = ref('scenes');
 const moduleDocumentViewRef = ref<any>(null);
 const activeAnchorId = ref<string | null>(null);
 const editingBookmark = ref<Bookmark | null>(null);
@@ -501,13 +501,20 @@ async function handleEditorDelete() {
             :align="'justify'"
             :title-align="'center'"
             :tabs="[
-              { id: 'mentions', label: t('common.mentions') },
               { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+              { id: 'mentions', label: t('common.mentions') },
             ]"
             v-model="mentionsPanelTab"
             size="sm"
           >
             <template #default>
+              <div v-show="mentionsPanelTab === 'scenes'">
+                <EntityScenesPanel
+                  v-if="module"
+                  entity-type="module"
+                  :entity-id="module.id"
+                />
+              </div>
               <div v-show="mentionsPanelTab === 'mentions'">
                 <Mentions
                   :title="t('common.mentions')"
@@ -516,13 +523,6 @@ async function handleEditorDelete() {
                 <Mentions
                   :title="t('common.mentionedIn')"
                   :entities="mentionedInEntities"
-                />
-              </div>
-              <div v-show="mentionsPanelTab === 'scenes'">
-                <EntityScenesPanel
-                  v-if="module"
-                  entity-type="module"
-                  :entity-id="module.id"
                 />
               </div>
             </template>

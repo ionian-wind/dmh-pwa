@@ -75,9 +75,9 @@ caller explicitly passes it. No caller passes it.
 
 ## Sidebar
 
-`MonsterViewSidebar` reads the plain `monster` prop and displays outgoing and
-incoming mentions plus linked ambient scenes, separated into **Mentions** and
-**Scenes** tabs.
+`MonsterViewSidebar` reads the plain `monster` prop and displays linked ambient
+scenes plus outgoing and incoming mentions, separated into **Scenes** and
+**Mentions** tabs, with Mentions last.
 
 ## Relationships
 

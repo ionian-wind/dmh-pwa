@@ -75,7 +75,7 @@ Other behavior:
 ## UI wiring
 
 `ModuleView` uses `<template #sidepanel>` (TOC/bookmarks/scenes tabs, or
-mentions/scenes tabs outside the document view) and
+scenes/mentions tabs outside the document view, with Mentions last) and
 `<template #actions>` (export). `BaseEntityTabView` now forwards these slots to
 `BaseEntityView`, which renders `actions`/`sub` and publishes the sidepanel to
 the right drawer. The module TOC/bookmarks sidebar and export button are

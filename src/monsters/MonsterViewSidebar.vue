@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const mentionsStore = useMentionsStore();
-const activeTab = ref('mentions');
+const activeTab = ref('scenes');
 
 const entityId = computed(() => props.monster?.id || '');
 const mentions = computed(() =>
@@ -27,8 +27,8 @@ const mentionedIn = computed(() =>
     : [],
 );
 const tabs = computed(() => [
-  { id: 'mentions', label: t('common.mentions') },
   { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+  { id: 'mentions', label: t('common.mentions') },
 ]);
 
 onMounted(() => mentionsStore.load());

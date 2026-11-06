@@ -49,6 +49,10 @@ describe('CharacterViewSidebar', () => {
     await flushPromises();
 
     expect(wrapper.find('.tab-group').exists()).toBe(true);
+    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
+      'Scenes',
+      'Mentions',
+    ]);
     const mentions = wrapper.findAllComponents(MentionsStub);
     expect(mentions).toHaveLength(2);
     expect(mentions[0].props('entities')).toEqual([{ kind: 'note', id: 'n1' }]);
