@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 
 import LocationView from '@/maps/views/LocationView.vue';
@@ -72,14 +72,24 @@ const MapTabStub = defineComponent({
   },
 });
 
+const ScenesStub = defineComponent({
+  name: 'EntityScenesPanel',
+  props: { entityType: String, entityId: String },
+  setup() {
+    return () => h('div', { class: 'scenes-stub' });
+  },
+});
+
 const BaseEntityTabViewStub = defineComponent({
   name: 'BaseEntityTabView',
   props: {
+    modelValue: String,
     tabs: { type: Array, default: () => [] },
     headerButtons: { type: Array, default: () => [] },
     onDelete: Function,
     onEdit: Function,
   },
+  emits: ['update:modelValue'],
   setup(props, { slots }) {
     return () =>
       h('div', [
@@ -126,7 +136,7 @@ function mountLocationView() {
     global: {
       stubs: {
         BaseEntityTabView: BaseEntityTabViewStub,
-        EntityScenesPanel: true,
+        EntityScenesPanel: ScenesStub,
         MapLocationEditor: MapLocationEditorStub,
         LocationMapTab: MapTabStub,
       },
@@ -151,7 +161,15 @@ describe('LocationView', () => {
     expect(tabs).toEqual(['main', 'map', 'backlinks', 'links']);
     expect(wrapper.find('[data-slot="main"]').text()).toContain('A busy port.');
     expect(wrapper.find('[data-slot="map"] .map-tab-stub').exists()).toBe(true);
+    expect(wrapper.find('.scenes-stub').exists()).toBe(true);
+    expect(wrapper.find('#location-map-sidebar').exists()).toBe(false);
+
+    wrapper
+      .findComponent(BaseEntityTabViewStub)
+      .vm.$emit('update:modelValue', 'map');
+    await nextTick();
     expect(wrapper.find('#location-map-sidebar').exists()).toBe(true);
+    expect(wrapper.find('.scenes-stub').exists()).toBe(false);
     wrapper.unmount();
   });
 
@@ -464,6 +482,7 @@ describe('LocationView', () => {
     expect(tabs).toEqual(['main', 'backlinks', 'links']);
     expect(tabs).not.toContain('map');
     expect(wrapper.find('#location-map-sidebar').exists()).toBe(false);
+    expect(wrapper.find('.scenes-stub').exists()).toBe(true);
     wrapper.unmount();
   });
 });

@@ -216,6 +216,8 @@ map. It contains:
   - Areas do not show their shape type in the list.
   - In edit mode rows have edit/delete actions and each layer has
     rename/delete controls. The base layer cannot be edited or deleted.
+- Outside the **Map** tab, the right sidebar displays the location's ambient
+  **Scenes** panel instead of an empty panel.
   - Hovering a row highlights the marker or area on the map.
 - **Add layer** is a menu-style row below the tabbed lists, shown only in edit
   mode.
