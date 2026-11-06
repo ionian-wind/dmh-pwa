@@ -25,7 +25,8 @@ Object stores are created lazily by migrations. Current stores:
 | `indexations_mentions` | `useMentionsStore`  | no                       |
 | `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed) |
 | `jukebox_tracks`       | `jukebox/stores`    | no                       |
-| `jukebox_files`        | `jukebox/stores`    | no                       |
+| `files`                | `utils/files`       | no                       |
+| `map_image_metadata`   | `maps/maps`         | no                       |
 | `migrations`           | migration runner    | no                       |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
@@ -230,15 +231,17 @@ existing migrations only create stores.
 
 `MAIN_STORE_NAMES` contains every object store:
 `characters, combats, encounters, monsters, modules, notes, noteTypes,
-parties, bookmarks, timers, jukebox_playlists, jukebox_tracks, jukebox_files,
-indexations_mentions`.
+parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
+files, map_image_metadata, indexations_mentions`.
 
 Backup encoding:
 
 - Normal records are written as JSON.
-- `jukebox_files` Blob sources are base64-encoded as `source.kind: 'blob-data'`.
+- `files` Blob sources are base64-encoded as `source.kind: 'blob-data'`.
 - FileSystem handles cannot be serialized; they are written as
   `source.kind: 'unavailable'` and may need relinking after restore.
+- Restoring an older backup converts legacy `jukebox_files` / `map_files`
+  entries into the generic file store.
 
 `restoreAllStores(blob)` iterates the same list, clears each store, and writes
 items one by one with validation. Restore is not a single cross-store

@@ -1,5 +1,6 @@
 import type { WithMetadata } from '@/types';
 import type { ImageMetadata } from './utils/imageWorker';
+import type { StoredFile, StoredFileSource } from '@/utils/files/types';
 
 export type MapEntityKind =
   | 'note'
@@ -74,18 +75,15 @@ export interface MapArea {
   color: string;
 }
 
-export type MapFileSource =
-  | { kind: 'handle'; handle: FileSystemFileHandle }
-  | { kind: 'blob'; blob: Blob };
+export type MapFileSource = StoredFileSource;
 
-export interface MapFile extends WithMetadata {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  source: MapFileSource;
+export interface MapFile extends StoredFile {
   imageMetadata?: ImageMetadata;
+}
+
+export interface MapImageMetadata extends WithMetadata {
+  id: string;
+  imageMetadata: ImageMetadata;
 }
 
 /** Legacy persisted map shape; merged into `MapLocation.map`. */

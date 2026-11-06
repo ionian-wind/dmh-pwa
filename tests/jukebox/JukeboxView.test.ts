@@ -23,14 +23,11 @@ const mocks = vi.hoisted(() => ({
     update: vi.fn().mockResolvedValue(undefined),
     remove: vi.fn().mockResolvedValue(undefined),
   },
-  files: { load: vi.fn().mockResolvedValue(undefined) },
   picture: { clearCache: vi.fn() },
-  getJukeboxFile: vi.fn(),
-  putJukeboxFile: vi.fn().mockResolvedValue(undefined),
-  deleteJukeboxFile: vi.fn().mockResolvedValue(undefined),
-  pickAudioFiles: vi.fn(),
-  getFile: vi.fn(),
-  getAsFileSystemHandle: vi.fn(),
+  importStoredFile: vi.fn(),
+  deleteFileIfUnreferenced: vi.fn().mockResolvedValue(undefined),
+  pickFiles: vi.fn(),
+  getPickedFileFromDataTransferItem: vi.fn(),
   extractTrackMetadata: vi.fn(),
   createWaveformSvg: vi.fn(),
   actualiseQueue: vi.fn(),
@@ -46,20 +43,24 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/jukebox/stores', () => ({
   useJukeboxTracksStore: () => mocks.tracks,
   useJukeboxPlaylistsStore: () => mocks.playlists,
-  useJukeboxFilesStore: () => mocks.files,
   usePictureUrlCacheStore: () => mocks.picture,
-  getJukeboxFile: mocks.getJukeboxFile,
-  putJukeboxFile: mocks.putJukeboxFile,
-  deleteJukeboxFile: mocks.deleteJukeboxFile,
+}));
+
+vi.mock('@/utils/files/fileStorage', () => ({
+  importStoredFile: mocks.importStoredFile,
+}));
+
+vi.mock('@/utils/files/fileReferences', () => ({
+  deleteFileIfUnreferenced: mocks.deleteFileIfUnreferenced,
 }));
 
 vi.mock('@/utils/files', () => ({
-  fileHandler: {
-    pickAudioFiles: mocks.pickAudioFiles,
-    getFile: mocks.getFile,
-    getAsFileSystemHandle: mocks.getAsFileSystemHandle,
-    extractTrackMetadata: mocks.extractTrackMetadata,
-  },
+  pickFiles: mocks.pickFiles,
+  getPickedFileFromDataTransferItem: mocks.getPickedFileFromDataTransferItem,
+}));
+
+vi.mock('@/utils/files/FileSystemUtils', () => ({
+  extractTrackMetadata: mocks.extractTrackMetadata,
 }));
 
 vi.mock('@/jukebox/utils/waveform', () => ({
@@ -189,11 +190,15 @@ describe('JukeboxView', () => {
     mocks.playlists.getById.mockImplementation((id: string) =>
       mocks.playlists.items.value.find((item) => item.id === id),
     );
-    mocks.getJukeboxFile.mockResolvedValue(undefined);
-    mocks.pickAudioFiles.mockResolvedValue([]);
-    mocks.deleteJukeboxFile.mockResolvedValue(undefined);
-    mocks.getFile.mockResolvedValue(audioFile());
-    mocks.getAsFileSystemHandle.mockResolvedValue(null);
+    mocks.importStoredFile.mockImplementation(async (file: File) => ({
+      file: {
+        id: `${file.name}-${file.lastModified}-${file.size}`,
+      },
+      created: true,
+    }));
+    mocks.pickFiles.mockResolvedValue([]);
+    mocks.getPickedFileFromDataTransferItem.mockResolvedValue(null);
+    mocks.deleteFileIfUnreferenced.mockResolvedValue(undefined);
     mocks.extractTrackMetadata.mockResolvedValue({
       title: 'Song',
       artist: 'Artist',
@@ -210,7 +215,7 @@ describe('JukeboxView', () => {
     const config = useConfigStore();
     mocks.playlists.items.value = [{ id: 'p1', trackIds: ['old'] }];
     config.jukeboxActivePlaylistId = 'p1';
-    mocks.pickAudioFiles.mockResolvedValue([
+    mocks.pickFiles.mockResolvedValue([
       { file: audioFile(), source: { kind: 'blob', blob: audioFile() } },
     ]);
 
@@ -218,7 +223,7 @@ describe('JukeboxView', () => {
     list.vm.$emit('create');
     await flushPromises();
 
-    expect(mocks.putJukeboxFile).toHaveBeenCalled();
+    expect(mocks.importStoredFile).toHaveBeenCalled();
     expect(mocks.extractTrackMetadata).toHaveBeenCalled();
     expect(mocks.createWaveformSvg).toHaveBeenCalledWith(expect.any(File));
     expect(mocks.tracks.create).toHaveBeenCalledWith(
@@ -236,7 +241,7 @@ describe('JukeboxView', () => {
 
   it('stores a null waveform when waveform generation fails', async () => {
     mocks.createWaveformSvg.mockRejectedValueOnce(new Error('decode failed'));
-    mocks.pickAudioFiles.mockResolvedValue([
+    mocks.pickFiles.mockResolvedValue([
       { file: audioFile(), source: { kind: 'blob', blob: audioFile() } },
     ]);
 
@@ -259,8 +264,7 @@ describe('JukeboxView', () => {
     const file = audioFile();
     Object.defineProperty(file, 'lastModified', { value: 0 });
     Object.defineProperty(file, 'size', { value: 5 });
-    mocks.getJukeboxFile.mockResolvedValue({ id: existing.fileId });
-    mocks.pickAudioFiles.mockResolvedValue([
+    mocks.pickFiles.mockResolvedValue([
       { file, source: { kind: 'blob', blob: file } },
     ]);
 
@@ -268,7 +272,7 @@ describe('JukeboxView', () => {
     list.vm.$emit('create');
     await flushPromises();
 
-    expect(mocks.putJukeboxFile).not.toHaveBeenCalled();
+    expect(mocks.extractTrackMetadata).not.toHaveBeenCalled();
     expect(mocks.extractTrackMetadata).not.toHaveBeenCalled();
     expect(mocks.tracks.create).not.toHaveBeenCalled();
   });
@@ -317,7 +321,7 @@ describe('JukeboxView', () => {
       trackIds: [],
     });
     expect(mocks.tracks.remove).toHaveBeenCalledWith('t1');
-    expect(mocks.deleteJukeboxFile).toHaveBeenCalledWith('f1');
+    expect(mocks.deleteFileIfUnreferenced).toHaveBeenCalledWith('f1');
   });
 
   it('keeps files shared by other tracks when removing a track', async () => {
@@ -328,7 +332,7 @@ describe('JukeboxView', () => {
 
     const card = (list.props('cardProps') as any)(first);
     await card.onRemove();
-    expect(mocks.deleteJukeboxFile).not.toHaveBeenCalled();
+    expect(mocks.deleteFileIfUnreferenced).toHaveBeenCalledWith('shared');
   });
 
   it('sorts tracks in the selected playlist', async () => {
@@ -354,8 +358,10 @@ describe('JukeboxView', () => {
   it('shows the drop zone and imports dropped audio files', async () => {
     const file = audioFile();
     const handle = { kind: 'file', getFile: vi.fn() };
-    mocks.getAsFileSystemHandle.mockResolvedValue(handle);
-    mocks.getFile.mockResolvedValue(file);
+    mocks.getPickedFileFromDataTransferItem.mockResolvedValue({
+      file,
+      source: { kind: 'handle', handle },
+    });
 
     const { wrapper } = await mountView();
     document.dispatchEvent(
@@ -386,7 +392,7 @@ describe('JukeboxView', () => {
     );
     await flushPromises();
 
-    expect(mocks.getFile).toHaveBeenCalledWith({ kind: 'handle', handle });
+    expect(mocks.getPickedFileFromDataTransferItem).toHaveBeenCalled();
     expect(mocks.tracks.create).toHaveBeenCalled();
   });
 
@@ -429,7 +435,10 @@ describe('JukeboxView', () => {
 
   it('handles dropdowns without data and extension-based audio files', async () => {
     const file = new File(['audio'], 'song.mp3', { type: '' });
-    mocks.getAsFileSystemHandle.mockResolvedValue(null);
+    mocks.getPickedFileFromDataTransferItem.mockResolvedValue({
+      file,
+      source: { kind: 'blob', blob: file },
+    });
 
     const { wrapper } = await mountView();
     document.dispatchEvent(dragEvent('drop', {}));
@@ -446,10 +455,9 @@ describe('JukeboxView', () => {
     wrapper.unmount();
   });
 
-  it('uses the file name when metadata has no title and keeps file dates', async () => {
-    mocks.getJukeboxFile.mockResolvedValue({ id: 'existing', createdAt: 123 });
+  it('uses the file name when metadata has no title', async () => {
     mocks.extractTrackMetadata.mockResolvedValue({});
-    mocks.pickAudioFiles.mockResolvedValue([
+    mocks.pickFiles.mockResolvedValue([
       {
         file: audioFile('untitled.mp3'),
         source: { kind: 'blob', blob: audioFile() },
@@ -460,9 +468,7 @@ describe('JukeboxView', () => {
     list.vm.$emit('create');
     await flushPromises();
 
-    expect(mocks.putJukeboxFile).toHaveBeenCalledWith(
-      expect.objectContaining({ createdAt: 123 }),
-    );
+    expect(mocks.importStoredFile).toHaveBeenCalled();
     expect(mocks.tracks.create).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'untitled' }),
     );
@@ -470,7 +476,7 @@ describe('JukeboxView', () => {
 
   it('guards concurrent imports and handles picker errors', async () => {
     let resolvePick: (value: any[]) => void = () => {};
-    mocks.pickAudioFiles.mockReturnValue(
+    mocks.pickFiles.mockReturnValue(
       new Promise((resolve) => {
         resolvePick = resolve;
       }),
@@ -479,7 +485,7 @@ describe('JukeboxView', () => {
     const { list } = await mountView();
     list.vm.$emit('create');
     list.vm.$emit('create');
-    expect(mocks.pickAudioFiles).toHaveBeenCalledTimes(1);
+    expect(mocks.pickFiles).toHaveBeenCalledTimes(1);
 
     document.dispatchEvent(dragEvent('drop', {}));
     await nextTick();
@@ -487,11 +493,11 @@ describe('JukeboxView', () => {
     resolvePick([]);
     await flushPromises();
 
-    mocks.pickAudioFiles.mockRejectedValue(new Error('picker failed'));
+    mocks.pickFiles.mockRejectedValue(new Error('picker failed'));
     list.vm.$emit('create');
     await flushPromises();
 
-    mocks.pickAudioFiles.mockRejectedValue(
+    mocks.pickFiles.mockRejectedValue(
       new DOMException('cancelled', 'AbortError'),
     );
     list.vm.$emit('create');
@@ -499,7 +505,9 @@ describe('JukeboxView', () => {
   });
 
   it('handles dropped-file and deletion errors without crashing', async () => {
-    mocks.getAsFileSystemHandle.mockRejectedValue(new Error('bad drop'));
+    mocks.getPickedFileFromDataTransferItem.mockRejectedValue(
+      new Error('bad drop'),
+    );
     const { wrapper, list } = await mountView();
 
     document.dispatchEvent(
@@ -516,7 +524,7 @@ describe('JukeboxView', () => {
       playlistIds: [],
     } as JukeboxTrack;
     mocks.tracks.items.value = [track];
-    mocks.deleteJukeboxFile.mockRejectedValue(new Error('file gone'));
+    mocks.deleteFileIfUnreferenced.mockRejectedValue(new Error('file gone'));
     const card = (list.props('cardProps') as any)(track);
     await card.onRemove();
     expect(mocks.tracks.remove).toHaveBeenCalledWith('t1');
@@ -537,7 +545,16 @@ describe('JukeboxView', () => {
 
   it('handles dropped blobs, skips non-audio files and cleans up listeners', async () => {
     const file = audioFile();
-    mocks.getAsFileSystemHandle.mockResolvedValue(null);
+    const text = new File(['text'], 'notes.txt', { type: 'text/plain' });
+    mocks.getPickedFileFromDataTransferItem
+      .mockResolvedValueOnce({
+        file,
+        source: { kind: 'blob', blob: file },
+      })
+      .mockResolvedValueOnce({
+        file: text,
+        source: { kind: 'blob', blob: text },
+      });
 
     const { wrapper } = await mountView();
     document.dispatchEvent(
@@ -784,7 +801,7 @@ describe('JukeboxView', () => {
 
   it('disables the add action while files are importing', async () => {
     let resolvePick: (value: any[]) => void = () => {};
-    mocks.pickAudioFiles.mockReturnValue(
+    mocks.pickFiles.mockReturnValue(
       new Promise((resolve) => {
         resolvePick = resolve;
       }),

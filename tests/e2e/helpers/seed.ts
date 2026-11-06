@@ -48,16 +48,27 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
       const fileId = `file-${mapId}`;
       const now = Date.now();
       const transaction = db.transaction(
-        ['maps', 'map_files', 'map_locations', 'notes'],
+        ['maps', 'files', 'map_image_metadata', 'map_locations', 'notes'],
         'readwrite',
       );
-      transaction.objectStore('map_files').put({
+      transaction.objectStore('files').put({
         id: fileId,
         name: 'world.svg',
         size: imageBlob.size,
         type: imageBlob.type,
         lastModified: now,
+        signature: JSON.stringify([
+          'world.svg',
+          imageBlob.size,
+          now,
+          imageBlob.type,
+        ]),
         source: { kind: 'blob', blob: imageBlob },
+        createdAt: now,
+        updatedAt: now,
+      });
+      transaction.objectStore('map_image_metadata').put({
+        id: fileId,
         imageMetadata: {
           width: 200,
           height: 100,

@@ -9,6 +9,7 @@ import i18n from './i18n';
 import { setupAnchorScrollHandler } from './utils/anchorScroll';
 import { useConfigStore } from './utils/configStore';
 import { initializeDatabase } from './utils/storage';
+import './utils/files/registerFileReferences';
 import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 import { debug, debugWarn, debugError } from './utils/debug';
 

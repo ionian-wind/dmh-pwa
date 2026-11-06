@@ -182,16 +182,19 @@ schema but the TS type uses optional strings.
 Defined in `src/jukebox/types.ts` and intentionally **not** schema-validated
 (FileSystem handles are not plain JSON).
 
-**JukeboxFile**
+**StoredFile** (`files` store)
 
 ```ts
 {
-  id, name, size, type, lastModified, createdAt, updatedAt,
+  id, name, size, type, lastModified, signature, createdAt, updatedAt,
   source:
     | { kind: 'handle'; handle: FileSystemFileHandle }
     | { kind: 'blob'; blob: Blob }
 }
 ```
+
+Files are deduplicated by the metadata signature
+`name | size | lastModified | type`. Business records reference `files.id`.
 
 **JukeboxTrack**
 
@@ -229,26 +232,26 @@ Defined in `src/maps/types.ts`; locations are schema-validated
 because they may contain `Blob`/`FileSystemFileHandle` sources. Map data is
 embedded in `MapLocation.map`; there is no runtime `MapEntity` store.
 
-**MapFile** (`map_files` store)
+**MapImageMetadata** (`map_image_metadata` store)
 
 ```ts
 {
-  id, name, size, type, lastModified, createdAt, updatedAt,
-  source:
-    | { kind: 'blob'; blob: Blob }
-    | { kind: 'handle'; handle: FileSystemFileHandle },
-  imageMetadata?: {
+  id, // references files.id
+  imageMetadata: {
     width, height, naturalWidth?, naturalHeight?, aspectRatio,
     fileSize?, mimeType?, color?, palette?
-  }
+  },
+  createdAt, updatedAt
 }
 ```
+
+Map image bytes live in the generic `files` store.
 
 **LocationMap** (`MapLocation.map`)
 
 ```ts
 {
-  fileId, // references map_files.id
+  fileId, // references files.id
   layers: MapLayer[],
   markers: MapMarker[],
   areas: MapArea[]

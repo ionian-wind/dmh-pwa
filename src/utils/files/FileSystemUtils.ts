@@ -1,31 +1,6 @@
 import { debug } from '@/utils/debug';
 import { debugError } from '@/utils/debug';
 
-export async function pickAudioFiles(): Promise<FileSystemFileHandle[]> {
-  // Only works in Chromium browsers
-  // @ts-ignore
-  const handles = await window.showOpenFilePicker({
-    multiple: true,
-    types: [
-      {
-        description: 'Audio Files',
-        accept: { 'audio/*': ['.mp3', '.wav', '.ogg', '.flac', '.aac'] },
-      },
-    ],
-    excludeAcceptAllOption: true,
-  });
-
-  debug(handles);
-
-  return handles;
-}
-
-export async function getFileFromHandle(
-  handle: FileSystemFileHandle,
-): Promise<File> {
-  return await handle.getFile();
-}
-
 async function getAudioMetadata(file: File): Promise<{ duration: number }> {
   return new Promise((resolve, reject) => {
     const audio = document.createElement('audio');

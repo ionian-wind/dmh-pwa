@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
-import { fileHandler } from '@/utils/files';
+import {
+  pickFiles as pickFileSources,
+  getPickedFileFromDataTransferItem,
+  type PickedFile,
+} from '@/utils/files';
+import { extractTrackMetadata } from '@/utils/files/FileSystemUtils';
 import {
   useJukeboxTracksStore,
   useJukeboxPlaylistsStore,
-  useJukeboxFilesStore,
-  deleteJukeboxFile,
-  putJukeboxFile,
-  getJukeboxFile,
   usePictureUrlCacheStore,
 } from '@/jukebox/stores';
+import { deleteFileIfUnreferenced } from '@/utils/files/fileReferences';
+import { importStoredFile } from '@/utils/files/fileStorage';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
@@ -32,7 +35,6 @@ import type { MapEntityRef } from '@/maps/types';
 
 const tracksStore = useJukeboxTracksStore();
 const playlistsStore = useJukeboxPlaylistsStore();
-const filesStore = useJukeboxFilesStore();
 const configStore = useConfigStore();
 
 const pictureUrlCacheStore = usePictureUrlCacheStore();
@@ -109,14 +111,11 @@ async function deleteTrack(track: JukeboxTrack) {
 
   await tracksStore.remove(track.id);
 
-  const sharesFile = tracks.value.some(
-    (t) => t.id !== track.id && t.fileId === track.fileId,
-  );
-  if (track.fileId && !sharesFile) {
+  if (track.fileId) {
     try {
-      await deleteJukeboxFile(track.fileId);
+      await deleteFileIfUnreferenced(track.fileId);
     } catch (e) {
-      debugError(`Failed to delete file handle for track ${track.id}:`, e);
+      debugError(`Failed to delete file for track ${track.id}:`, e);
     }
   }
   const trackIndex = draggableTracks.value.findIndex((t) => t.id === track.id);
@@ -297,37 +296,17 @@ watch(
   { immediate: true, deep: true },
 );
 
-async function processFiles(
-  files: {
-    file: File;
-    source:
-      | { kind: 'handle'; handle: FileSystemFileHandle }
-      | { kind: 'blob'; blob: Blob };
-  }[],
-) {
+async function processFiles(files: PickedFile[]) {
   const newTrackIds: string[] = [];
   for (const { file, source } of files) {
-    const fileId = `${file.name}-${file.lastModified}-${file.size}`;
-    const existingFile = await getJukeboxFile(fileId);
+    const imported = await importStoredFile(file, source);
+    const fileId = imported.file.id;
     const existingTrack = tracks.value.find((t) => t.fileId === fileId);
     if (existingTrack) {
       newTrackIds.push(existingTrack.id);
       continue;
     }
-    await putJukeboxFile({
-      id: fileId,
-      source: source,
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      lastModified: file.lastModified,
-      createdAt: existingFile?.createdAt || Date.now(),
-      updatedAt: Date.now(),
-    });
-    const trackMeta = (await fileHandler.extractTrackMetadata(file)) as Record<
-      string,
-      any
-    >;
+    const trackMeta = (await extractTrackMetadata(file)) as Record<string, any>;
     const waveform = await createWaveformSvg(file).catch(() => null);
     const newTrackData = {
       fileId,
@@ -366,11 +345,16 @@ async function processFiles(
   playerStore.actualiseQueue();
 }
 
-async function pickFiles() {
+async function pickAudioFiles() {
   if (isAddingTracks.value) return;
   isAddingTracks.value = true;
   try {
-    const files = await fileHandler.pickAudioFiles();
+    const files = await pickFileSources({
+      multiple: true,
+      description: 'Audio Files',
+      accept: { 'audio/*': ['.mp3', '.wav', '.ogg', '.flac', '.aac'] },
+      acceptAttribute: 'audio/*,.mp3,.wav,.ogg,.flac,.aac',
+    });
     await processFiles(files);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
@@ -396,34 +380,17 @@ async function onDrop(event: DragEvent) {
     const items = event.dataTransfer?.items;
     if (!items) return;
 
-    const files: {
-      file: File;
-      source:
-        | { kind: 'handle'; handle: FileSystemFileHandle }
-        | { kind: 'blob'; blob: Blob };
-    }[] = [];
+    const files: PickedFile[] = [];
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.kind === 'file') {
-        const handle = await fileHandler.getAsFileSystemHandle(item);
-        if (handle) {
-          const file = await fileHandler.getFile({ kind: 'handle', handle });
-          if (
-            file.type.startsWith('audio/') ||
-            /\.(mp3|wav|ogg|flac|aac)$/i.test(file.name)
-          ) {
-            files.push({ file, source: { kind: 'handle', handle } });
-          }
-        } else {
-          const file = item.getAsFile();
-          if (
-            file &&
-            (file.type.startsWith('audio/') ||
-              /\.(mp3|wav|ogg|flac|aac)$/i.test(file.name))
-          ) {
-            files.push({ file, source: { kind: 'blob', blob: file } });
-          }
-        }
+      if (item.kind !== 'file') continue;
+      const picked = await getPickedFileFromDataTransferItem(item);
+      if (
+        picked &&
+        (picked.file.type.startsWith('audio/') ||
+          /\.(mp3|wav|ogg|flac|aac)$/i.test(picked.file.name))
+      ) {
+        files.push(picked);
       }
     }
     if (files.length > 0) {
@@ -516,11 +483,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   isEditMode.value = false;
   clearSelection();
-  await Promise.all([
-    tracksStore.load(),
-    playlistsStore.load(),
-    filesStore.load(),
-  ]);
+  await Promise.all([tracksStore.load(), playlistsStore.load()]);
 
   rightDrawer.set({ component: PlaylistList });
   layout.setBottomDrawerContent({
@@ -578,7 +541,7 @@ onBeforeUnmount(() => {
       :card-props="cardProps"
       :show-search="false"
       :view-style="'list'"
-      @create="pickFiles"
+      @create="pickAudioFiles"
       :draggable="isEditMode && selectedPlaylistId !== null"
       drag-handle=".track-drag-handle"
       @sort="onTracksSorted"

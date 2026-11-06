@@ -14,10 +14,16 @@ import type {
 } from '../types';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
-import { createMapFileFromFile, getMapFileBlob } from '../utils/mapFileUtils';
+import {
+  createMapFileFromFile,
+  createMapFileFromHandle,
+  getMapFileBlob,
+} from '../utils/mapFileUtils';
 import { deleteMapFile, getMapFile, putMapFile } from '../maps';
 import { normalizeLocation, normalizeLocationMap } from '../utils/normalize';
 import { IconHelp } from '@tabler/icons-vue';
+import type { StoredFileSource } from '@/utils/files/types';
+import { pickFiles } from '@/utils/files';
 
 const props = defineProps<{
   location: MapLocation | null;
@@ -112,8 +118,18 @@ function setLinks(links: MapEntityRef[]) {
   draft.value.entities = links;
 }
 
-function chooseImage() {
-  fileInput.value?.click();
+async function chooseImage() {
+  const [picked] = await pickFiles({
+    multiple: false,
+    description: 'Images',
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'],
+    },
+    acceptAttribute: 'image/*',
+  });
+  if (picked) {
+    await applySelectedFile(picked.file, picked.source);
+  }
 }
 
 function clearMap() {
@@ -123,19 +139,18 @@ function clearMap() {
   draft.value.map = normalizeLocationMap();
 }
 
-async function onImageSelected(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
+async function applySelectedFile(file: File, source: StoredFileSource) {
   if (!file.type.startsWith('image/')) {
     alert(t('maps.imageProcessingError'));
-    input.value = '';
     return;
   }
 
   isProcessingImage.value = true;
   try {
-    const mapFile = await createMapFileFromFile(file);
+    const mapFile =
+      source.kind === 'handle'
+        ? await createMapFileFromHandle(source.handle, file.name)
+        : await createMapFileFromFile(file);
     pendingMapFile = mapFile;
     draft.value.map.fileId = mapFile.id;
     selectedFileName.value = mapFile.name;
@@ -145,6 +160,16 @@ async function onImageSelected(event: Event) {
     alert(t('maps.imageProcessingError'));
   } finally {
     isProcessingImage.value = false;
+  }
+}
+
+async function onImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    await applySelectedFile(file, { kind: 'blob', blob: file });
+  } finally {
     input.value = '';
   }
 }

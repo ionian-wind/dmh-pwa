@@ -2,13 +2,13 @@ import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import type { JukeboxTrack } from './types';
 import {
-  getJukeboxFile,
   useJukeboxPlaylistsStore,
   useJukeboxTracksStore,
   usePictureUrlCacheStore,
 } from './stores';
+import { getStoredFile } from '@/utils/files/fileStorage';
 import { JukeboxRepeatMode, useConfigStore } from '@/utils/configStore';
-import { fileHandler } from '@/utils/files';
+import { getFileFromSource, verifySourcePermission } from '@/utils/files';
 import { debug, debugError, debugWarn } from '@/utils/debug';
 import { rng } from '@/utils/random';
 import { Howl, Howler } from 'howler';
@@ -20,23 +20,6 @@ import {
 } from '@/utils/playbackCoordinator';
 
 const SMOOTH_TRACK_FADE_MS = 1200;
-
-// Helper to handle file permissions
-const verifyFilePermission = async (
-  handle: FileSystemFileHandle,
-  mode: 'read' | 'readwrite' = 'read',
-) => {
-  // @ts-ignore
-  const query = await handle.queryPermission({ mode });
-  if (query === 'granted') return true;
-  try {
-    // @ts-ignore
-    const request = await handle.requestPermission({ mode });
-    return request === 'granted';
-  } catch {
-    return false;
-  }
-};
 
 const isFileSystemFileHandle = (obj: any): obj is FileSystemFileHandle =>
   obj &&
@@ -426,22 +409,17 @@ export const useJukeboxPlayerStore = defineStore(
       seekTo: number = 0,
       smooth = false,
     ): Promise<boolean> => {
-      const fileRecord = await getJukeboxFile(track.fileId);
+      const fileRecord = await getStoredFile(track.fileId);
       if (!fileRecord || !fileRecord.source) {
         return false;
       }
-      if (fileRecord.source.kind === 'handle') {
-        const hasPerm = await verifyFilePermission(
-          fileRecord.source.handle,
-          'read',
-        );
-        if (!hasPerm) {
-          return false;
-        }
+      const hasPerm = await verifySourcePermission(fileRecord.source, 'read');
+      if (!hasPerm) {
+        return false;
       }
       let file: File;
       try {
-        file = await fileHandler.getFile(fileRecord.source);
+        file = await getFileFromSource(fileRecord.source);
       } catch (err) {
         debugError('🎵 JukeboxPlayer: Could not read track file', err);
         return false;

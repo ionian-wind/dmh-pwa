@@ -20,7 +20,6 @@ the public application flow.
 | `src/ambient-sound/components/SceneLinksPanel.vue`                          | Thin wrapper around `EntitiesLinking`.                                                                                                              |
 | `src/utils/dice-probability-calculator/tokens.ts`                           | Chevrotain token definitions; branch paths belong to the lexer library.                                                                             |
 | `src/maps/composables/useMapEntityCatalog.ts`                               | Adapter over the entity stores; behavior is covered through its consumers.                                                                          |
-| `src/utils/files/BlobFileHandler.ts`                                        | Browser file-picker adapter; picker events are environment-dependent.                                                                               |
 | `src/modules/ModuleDocumentTree.vue`                                        | Tree integration layer.                                                                                                                             |
 | `src/App.vue`, `src/main.ts`, `src/router.ts`                               | Application shell, bootstrap and route table.                                                                                                       |
 

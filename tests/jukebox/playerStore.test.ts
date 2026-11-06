@@ -7,7 +7,7 @@ import i18n from '@/i18n';
 
 const mocks = vi.hoisted(() => ({
   howls: [] as any[],
-  getJukeboxFile: vi.fn(),
+  getStoredFile: vi.fn(),
   getFile: vi.fn(),
   pictureUrl: vi.fn(() => 'blob:artwork'),
   tracks: {
@@ -83,12 +83,21 @@ vi.mock('howler', () => {
   };
 });
 
-vi.mock('@/utils/files', () => ({
-  fileHandler: { getFile: mocks.getFile },
+vi.mock('@/utils/files', async () => {
+  const { verifySourcePermission } = await vi.importActual<any>(
+    '@/utils/files/access',
+  );
+  return {
+    getFileFromSource: mocks.getFile,
+    verifySourcePermission,
+  };
+});
+
+vi.mock('@/utils/files/fileStorage', () => ({
+  getStoredFile: mocks.getStoredFile,
 }));
 
 vi.mock('@/jukebox/stores', () => ({
-  getJukeboxFile: mocks.getJukeboxFile,
   useJukeboxTracksStore: () => mocks.tracks,
   useJukeboxPlaylistsStore: () => mocks.playlists,
   usePictureUrlCacheStore: () => ({ getPictureUrl: mocks.pictureUrl }),
@@ -123,7 +132,7 @@ describe('jukebox player store', () => {
     setActivePinia(createPinia());
     mocks.howls.length = 0;
     vi.clearAllMocks();
-    mocks.getJukeboxFile.mockResolvedValue({
+    mocks.getStoredFile.mockResolvedValue({
       source: { kind: 'blob', blob: new Blob() },
     });
     mocks.getFile.mockResolvedValue(
@@ -445,7 +454,7 @@ describe('jukebox player store', () => {
     const one = track('one');
     mocks.tracks.items.value = [one];
     player.queue = [one];
-    mocks.getJukeboxFile.mockResolvedValue(undefined);
+    mocks.getStoredFile.mockResolvedValue(undefined);
 
     await player.playTrackFromPlaylist(one);
 
@@ -517,7 +526,7 @@ describe('jukebox player store', () => {
       queryPermission: vi.fn().mockResolvedValue('granted'),
       requestPermission: vi.fn(),
     };
-    mocks.getJukeboxFile.mockResolvedValueOnce({
+    mocks.getStoredFile.mockResolvedValueOnce({
       source: { kind: 'handle', handle: granted },
     });
     await player.playTrackFromPlaylist(one);
@@ -527,7 +536,7 @@ describe('jukebox player store', () => {
       queryPermission: vi.fn().mockResolvedValue('prompt'),
       requestPermission: vi.fn().mockResolvedValue('granted'),
     };
-    mocks.getJukeboxFile.mockResolvedValueOnce({
+    mocks.getStoredFile.mockResolvedValueOnce({
       source: { kind: 'handle', handle: requested },
     });
     await player.playTrackFromPlaylist(one);
@@ -537,7 +546,7 @@ describe('jukebox player store', () => {
       queryPermission: vi.fn().mockResolvedValue('prompt'),
       requestPermission: vi.fn().mockResolvedValue('denied'),
     };
-    mocks.getJukeboxFile.mockResolvedValueOnce({
+    mocks.getStoredFile.mockResolvedValueOnce({
       source: { kind: 'handle', handle: denied },
     });
     await player.playTrackFromPlaylist(one);
@@ -546,7 +555,7 @@ describe('jukebox player store', () => {
       queryPermission: vi.fn().mockResolvedValue('prompt'),
       requestPermission: vi.fn().mockRejectedValue(new Error('nope')),
     };
-    mocks.getJukeboxFile.mockResolvedValueOnce({
+    mocks.getStoredFile.mockResolvedValueOnce({
       source: { kind: 'handle', handle: throwing },
     });
     await expect(player.playTrackFromPlaylist(one)).resolves.toBeUndefined();
@@ -714,7 +723,7 @@ describe('jukebox player store', () => {
     const four = track('four');
     mocks.tracks.items.value = [one, two, three, four];
     player.queue = [one, two, three, four];
-    mocks.getJukeboxFile.mockImplementation(async (id: string) =>
+    mocks.getStoredFile.mockImplementation(async (id: string) =>
       id === 'file-two'
         ? undefined
         : { source: { kind: 'blob', blob: new Blob() } },
@@ -743,7 +752,7 @@ describe('jukebox player store', () => {
     const three = track('three');
     mocks.tracks.items.value = [one, two, three];
     player.queue = [one, two, three];
-    mocks.getJukeboxFile.mockImplementation(async (id: string) =>
+    mocks.getStoredFile.mockImplementation(async (id: string) =>
       id === 'file-two'
         ? undefined
         : { source: { kind: 'blob', blob: new Blob() } },
@@ -766,7 +775,7 @@ describe('jukebox player store', () => {
     const two = track('two');
     mocks.tracks.items.value = [one, two];
     player.queue = [one, two];
-    mocks.getJukeboxFile.mockImplementation(async (id: string) =>
+    mocks.getStoredFile.mockImplementation(async (id: string) =>
       id === 'file-two'
         ? undefined
         : { source: { kind: 'blob', blob: new Blob() } },

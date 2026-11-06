@@ -5,7 +5,9 @@ import {
   getAllMapFiles,
   getMapFile,
   putMapFile,
+  putMapImageMetadata,
 } from '@/maps/maps';
+import { registerFileReferenceProvider } from '@/utils/files/fileReferences';
 import { resetStoreCache } from '@/utils/storage';
 
 async function deleteDatabase() {
@@ -24,7 +26,15 @@ const file = {
   size: 10,
   type: 'image/png',
   lastModified: 1,
+  signature: '["world.png",10,1,"image/png"]',
   source: { kind: 'blob' as const, blob: new Blob(['image']) },
+  imageMetadata: {
+    width: 1,
+    height: 1,
+    aspectRatio: 1,
+    fileSize: 10,
+    mimeType: 'image/png',
+  },
   createdAt: 1,
   updatedAt: 1,
 };
@@ -50,5 +60,38 @@ describe('map file storage', () => {
 
     expect(await getMapFile('file1')).toBeUndefined();
     expect(await getAllMapFiles()).toEqual([]);
+  });
+
+  it('handles metadata without a file and files without metadata', async () => {
+    await putMapImageMetadata({
+      id: 'missing',
+      imageMetadata: {
+        width: 1,
+        height: 1,
+        aspectRatio: 1,
+      },
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    expect(await getAllMapFiles()).toEqual([]);
+
+    await putMapFile({ ...file, id: 'file2', imageMetadata: undefined });
+    const loaded = await getMapFile('file2');
+    expect(loaded?.imageMetadata).toBeUndefined();
+  });
+
+  it('keeps shared map files and metadata while referenced', async () => {
+    await putMapFile(file);
+    const unregister = registerFileReferenceProvider({
+      id: 'map-test',
+      isReferenced: (id) => id === 'file1',
+    });
+
+    await deleteMapFile('file1');
+    expect(await getMapFile('file1')).toMatchObject({ id: 'file1' });
+
+    unregister();
+    await deleteMapFile('file1');
+    expect(await getMapFile('file1')).toBeUndefined();
   });
 });

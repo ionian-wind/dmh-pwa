@@ -25,7 +25,7 @@ interface MapLocation extends WithMetadata {
 }
 ```
 
-- `map.fileId` references a `MapFile` in the `map_files` store.
+- `map.fileId` references a generic `StoredFile` in the `files` store.
 - `entities` links the location to modules and other entities.
 - `map.layers` organize markers and areas. The base layer always exists.
 - `map.markers` are placed at image-pixel coordinates `(x, y)`.
@@ -270,9 +270,10 @@ flows. Deleting a location removes it everywhere.
 1. Open **Maps** in the left navigation.
 2. Create a location or edit an existing one.
 3. Choose a name/description and optionally select a base image.
-4. On save, the image file is written to `map_files` only when needed. Replacing
-   or clearing an image deletes the previous `map_files` record. **Clear map**
-   resets the image, layers, markers and areas.
+4. On save, the image file is written to the generic `files` store and its
+   image metadata to `map_image_metadata`. Replacing or clearing an image
+   deletes the previous records when unreferenced. **Clear map** resets the
+   image, layers, markers and areas.
 5. Open the location and use the **Map** tab to add markers and areas.
 
 ### Place and edit markers
@@ -308,9 +309,11 @@ and inspect backlinks from markers and areas in other locations.
 ## Stores and files
 
 - `map_locations` — `MapLocation` records including embedded `map` data.
-- `map_files` — base images and extracted metadata.
+- `files` — shared generic blobs/handles, deduplicated by file signature.
+- `map_image_metadata` — image metadata keyed by `files.id`.
 - Legacy `maps` records are merged into locations by migration
   `0000000009_merge_maps_into_locations` and are not read by the app.
+- Legacy `map_files` rows are migrated into the generic store and cleared.
 
 Map file helpers:
 

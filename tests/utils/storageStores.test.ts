@@ -145,7 +145,7 @@ describe('IndexedDB storage', () => {
     expect(store.loaded).toBe(true);
   });
 
-  it('backs up and restores stores, including jukebox file blobs', async () => {
+  it('backs up and restores stores, including generic file blobs', async () => {
     await idbPutItem('notes', {
       id: 'n1',
       title: 'Note',
@@ -153,9 +153,13 @@ describe('IndexedDB storage', () => {
       updatedAt: 1,
     } as any);
     const blob = memoryBlob('audio-data');
-    await idbPutItem('jukebox_files', {
+    await idbPutItem('files', {
       id: 'f1',
       name: 'song.mp3',
+      size: blob.size,
+      type: blob.type,
+      lastModified: 1,
+      signature: '["song.mp3",10,1,"audio/mpeg"]',
       source: { kind: 'blob', blob },
       createdAt: 1,
       updatedAt: 1,
@@ -165,7 +169,7 @@ describe('IndexedDB storage', () => {
     expect(backup).toBeInstanceOf(Blob);
 
     await clearStore('notes');
-    await clearStore('jukebox_files');
+    await clearStore('files');
     await restoreAllStores(backup);
 
     const notes = await idbGetAllItems<any>('notes');
@@ -173,9 +177,67 @@ describe('IndexedDB storage', () => {
       expect.objectContaining({ id: 'n1', title: 'Note' }),
     ]);
 
-    const files = await idbGetAllItems<any>('jukebox_files');
+    const files = await idbGetAllItems<any>('files');
     expect(files[0].source.kind).toBe('blob');
     expect(files[0].source.blob).toBeDefined();
+  });
+
+  it('restores legacy file stores into generic files', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'jukebox_files.json',
+      JSON.stringify([
+        {
+          id: 'legacy-audio',
+          name: 'old.mp3',
+          size: 5,
+          type: 'audio/mpeg',
+          lastModified: 1,
+          source: {
+            kind: 'blob-data',
+            type: 'audio/mpeg',
+            data: btoa('audio'),
+          },
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ]),
+    );
+    zip.file(
+      'map_files.json',
+      JSON.stringify([
+        {
+          id: 'legacy-map',
+          name: 'old.png',
+          size: 3,
+          type: 'image/png',
+          lastModified: 2,
+          source: {
+            kind: 'blob-data',
+            type: 'image/png',
+            data: btoa('map'),
+          },
+          imageMetadata: { width: 1, height: 1, aspectRatio: 1 },
+          createdAt: 2,
+          updatedAt: 2,
+        },
+      ]),
+    );
+
+    await restoreAllStores(await zip.generateAsync({ type: 'blob' }));
+
+    const files = await idbGetAllItems<any>('files');
+    expect(files.map((file) => file.id).sort()).toEqual([
+      'legacy-audio',
+      'legacy-map',
+    ]);
+    expect(files.every((file) => file.source.kind === 'blob')).toBe(true);
+    expect(files.every((file) => typeof file.signature === 'string')).toBe(
+      true,
+    );
+    expect(await idbGetAllItems<any>('map_image_metadata')).toEqual([
+      expect.objectContaining({ id: 'legacy-map' }),
+    ]);
   });
 
   it('skips invalid JSON while restoring and clears existing stores', async () => {

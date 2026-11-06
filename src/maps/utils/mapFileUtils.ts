@@ -2,7 +2,11 @@ import { debug, debugError } from '@/utils/debug';
 import { extractImageMetadata } from './imageWorker';
 import type { ImageMetadata } from './imageWorker';
 import type { MapFile, MapFileSource } from '../types';
-import { generateId } from '@/utils/storage';
+import {
+  buildFileSignature,
+  createStoredFile,
+  findStoredFileBySignature,
+} from '@/utils/files/fileStorage';
 
 async function loadImageDimensions(blob: Blob): Promise<ImageMetadata> {
   if (typeof createImageBitmap === 'function') {
@@ -45,16 +49,18 @@ async function buildMapFile(
     }
   }
 
-  return {
-    id: generateId(),
-    name: name || file.name,
+  const signature = buildFileSignature({
+    name: file.name,
     size: file.size,
     type: file.type,
     lastModified: file.lastModified,
+  });
+  const existing = await findStoredFileBySignature(signature);
+  return {
+    ...(existing ?? createStoredFile(file, source)),
+    name: name || file.name,
     source,
     imageMetadata,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
   };
 }
 

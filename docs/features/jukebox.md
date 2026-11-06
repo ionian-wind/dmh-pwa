@@ -56,15 +56,15 @@ None of these stores use schema validation, because `FileSystemFileHandle` and
 
 Two entry points:
 
-1. **File picker** (`fileHandler.pickAudioFiles`):
+1. **File picker** (`pickFiles` from the generic file API):
    - Chromium with `showOpenFilePicker`: returns handles (persistent
      references; permission may be requested later).
-   - Other browsers: `BlobFileHandler` creates a temporary `<input type=file>`
-     and stores Blobs.
+   - Other browsers, or if the API fails: falls back to a temporary
+     `<input type=file>` and stores Blobs.
 2. **Drag and drop** on the document:
    - `onDragEnter/Over/Leave` track drag state and show a full-page drop zone.
-   - `onDrop` prefers `DataTransferItem.getAsFileSystemHandle()`; falls back to
-     `getAsFile()` Blob.
+   - `onDrop` uses `getPickedFileFromDataTransferItem()`, which prefers
+     `getAsFileSystemHandle()` and falls back to `getAsFile()`.
    - Only `audio/*` or `.mp3/.wav/.ogg/.flac/.aac` files are accepted.
 
 `processFiles`:
@@ -72,7 +72,7 @@ Two entry points:
 1. Computes the deterministic file ID.
 2. Reads any existing file record (to preserve `createdAt`).
 3. Writes the file record.
-4. Extracts metadata through `fileHandler.extractTrackMetadata`:
+4. Extracts metadata through `extractTrackMetadata`:
    - duration via an `<audio>` element,
    - tags/artwork via a dedicated worker (`music-metadata`, `OffscreenCanvas`),
    - dominant color and up to four palette colors via a bundled color extractor

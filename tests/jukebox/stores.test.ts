@@ -2,28 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import {
-  deleteJukeboxFile,
-  getAllJukeboxFiles,
-  getJukeboxFile,
   isFileSystemFileHandle,
-  putJukeboxFile,
   trackIsActive,
   usePictureUrlCacheStore,
 } from '@/jukebox/stores';
 
-const mocks = vi.hoisted(() => ({
-  idbGetItem: vi.fn(),
-  idbPutItem: vi.fn(),
-  idbDeleteItem: vi.fn(),
-  idbGetAllItems: vi.fn(),
-}));
-
 vi.mock('@/utils/storage', () => ({
   useStore: vi.fn(() => ({ items: { value: [] } })),
-  idbGetItem: mocks.idbGetItem,
-  idbPutItem: mocks.idbPutItem,
-  idbDeleteItem: mocks.idbDeleteItem,
-  idbGetAllItems: mocks.idbGetAllItems,
 }));
 
 describe('jukebox stores', () => {
@@ -39,22 +24,6 @@ describe('jukebox stores', () => {
     expect(isFileSystemFileHandle({ kind: 'file' })).toBe(true);
     expect(isFileSystemFileHandle({ kind: 'directory' })).toBe(false);
     expect(isFileSystemFileHandle(null)).toBeFalsy();
-  });
-
-  it('forwards file operations to IndexedDB', async () => {
-    const file = { id: 'f1', name: 'song.mp3' } as any;
-    mocks.idbGetItem.mockResolvedValue(file);
-    mocks.idbGetAllItems.mockResolvedValue([file]);
-
-    await expect(getJukeboxFile('f1')).resolves.toBe(file);
-    await expect(getAllJukeboxFiles()).resolves.toEqual([file]);
-    await putJukeboxFile(file);
-    await deleteJukeboxFile('f1');
-
-    expect(mocks.idbGetItem).toHaveBeenCalledWith('jukebox_files', 'f1');
-    expect(mocks.idbGetAllItems).toHaveBeenCalledWith('jukebox_files');
-    expect(mocks.idbPutItem).toHaveBeenCalledWith('jukebox_files', file);
-    expect(mocks.idbDeleteItem).toHaveBeenCalledWith('jukebox_files', 'f1');
   });
 
   it('caches picture URLs per blob identity and revokes them', () => {

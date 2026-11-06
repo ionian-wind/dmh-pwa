@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  extractTrackMetadata,
-  getFileFromHandle,
-  pickAudioFiles,
-} from '@/utils/files/FileSystemUtils';
+import { extractTrackMetadata } from '@/utils/files/FileSystemUtils';
 
 const originalCreateElement = document.createElement.bind(document);
 
@@ -45,35 +41,6 @@ describe('FileSystemUtils', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-  });
-
-  it('opens the browser file picker and returns handles', async () => {
-    const handle = { kind: 'file' };
-    (window as any).showOpenFilePicker = vi.fn().mockResolvedValue([handle]);
-
-    await expect(pickAudioFiles()).resolves.toEqual([handle]);
-    expect((window as any).showOpenFilePicker).toHaveBeenCalledWith({
-      multiple: true,
-      types: [
-        {
-          description: 'Audio Files',
-          accept: {
-            'audio/*': ['.mp3', '.wav', '.ogg', '.flac', '.aac'],
-          },
-        },
-      ],
-      excludeAcceptAllOption: true,
-    });
-  });
-
-  it('reads a file from a handle', async () => {
-    const file = new File(['x'], 'song.mp3');
-    const handle = {
-      getFile: vi.fn().mockResolvedValue(file),
-    } as unknown as FileSystemFileHandle;
-
-    await expect(getFileFromHandle(handle)).resolves.toBe(file);
-    expect(handle.getFile).toHaveBeenCalled();
   });
 
   it('extracts audio duration and worker metadata', async () => {

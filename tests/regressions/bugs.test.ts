@@ -3,10 +3,7 @@ import { computed } from 'vue';
 
 import router from '@/router';
 import { MAIN_STORE_NAMES } from '@/utils/storage';
-import {
-  getColor,
-  getPalette,
-} from '@/utils/files/worker/color-from-image';
+import { getColor, getPalette } from '@/utils/files/worker/color-from-image';
 import {
   getGradientContrastColor,
   useAnimatedGradient,
@@ -41,7 +38,8 @@ describe('regression: known bugs', () => {
         'timers',
         'jukebox_playlists',
         'jukebox_tracks',
-        'jukebox_files',
+        'files',
+        'map_image_metadata',
         'indexations_mentions',
       ]),
     );

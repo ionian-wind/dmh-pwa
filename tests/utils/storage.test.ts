@@ -33,7 +33,8 @@ describe('storage helpers', () => {
         'notes',
         'modules',
         'timers',
-        'jukebox_files',
+        'files',
+        'map_image_metadata',
         'indexations_mentions',
       ]),
     );

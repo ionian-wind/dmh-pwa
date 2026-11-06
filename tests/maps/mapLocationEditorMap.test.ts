@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   putMapFile: vi.fn(),
   deleteMapFile: vi.fn(),
   createMapFileFromFile: vi.fn(),
+  createMapFileFromHandle: vi.fn(),
   alert: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock('@/maps/maps', () => ({
 
 vi.mock('@/maps/utils/mapFileUtils', () => ({
   createMapFileFromFile: mocks.createMapFileFromFile,
+  createMapFileFromHandle: mocks.createMapFileFromHandle,
   getMapFileBlob: mocks.getMapFileBlob,
 }));
 
@@ -92,6 +94,8 @@ describe('MapLocationEditor map image', () => {
     mocks.getMapFile.mockResolvedValue(existingFile);
     mocks.getMapFileBlob.mockResolvedValue(new Blob(['old']));
     mocks.createMapFileFromFile.mockResolvedValue(newFile);
+    mocks.createMapFileFromHandle.mockResolvedValue(newFile);
+    delete (window as any).showOpenFilePicker;
     mocks.putMapFile.mockResolvedValue(undefined);
     mocks.deleteMapFile.mockResolvedValue(undefined);
     vi.spyOn(window, 'alert').mockImplementation(mocks.alert);
@@ -114,6 +118,31 @@ describe('MapLocationEditor map image', () => {
 
     expect(mocks.createMapFileFromFile).not.toHaveBeenCalled();
     expect(mocks.alert).toHaveBeenCalled();
+  });
+
+  it('prefers the File System Access picker when available', async () => {
+    const pickedFile = new File(['image'], 'handled.png', {
+      type: 'image/png',
+    });
+    const handle = {
+      kind: 'file',
+      name: 'handled.png',
+      getFile: vi.fn().mockResolvedValue(pickedFile),
+    } as unknown as FileSystemFileHandle;
+    (window as any).showOpenFilePicker = vi.fn().mockResolvedValue([handle]);
+    const wrapper = mountEditor({ location: null });
+
+    const select = wrapper.find('.map-image-field button');
+    await select.trigger('click');
+    await flushPromises();
+
+    expect((window as any).showOpenFilePicker).toHaveBeenCalled();
+    expect(mocks.createMapFileFromHandle).toHaveBeenCalledWith(
+      handle,
+      'handled.png',
+    );
+    expect(mocks.createMapFileFromFile).not.toHaveBeenCalled();
+    wrapper.unmount();
   });
 
   it('stores a replacement image and deletes the old file on save', async () => {

@@ -87,6 +87,72 @@ describe('database migrations', () => {
     reopened.close();
   });
 
+  it('migrates legacy file stores into generic files and map metadata', async () => {
+    await deleteDatabase();
+    const db = await openDB();
+    const now = Date.now();
+    const blob = new Blob(['legacy-audio'], { type: 'audio/mpeg' });
+    const tx = db.transaction(
+      ['jukebox_files', 'map_files', 'migrations'],
+      'readwrite',
+    );
+    tx.objectStore('jukebox_files').put({
+      id: 'j1',
+      name: 'song.mp3',
+      size: 13,
+      type: 'audio/mpeg',
+      lastModified: 10,
+      source: { kind: 'blob', blob },
+      createdAt: now,
+      updatedAt: now,
+    });
+    tx.objectStore('map_files').put({
+      id: 'm1',
+      name: 'map.png',
+      size: 13,
+      type: 'image/png',
+      lastModified: 20,
+      source: { kind: 'blob', blob: new Blob(['legacy-map']) },
+      imageMetadata: { width: 10, height: 20, aspectRatio: 0.5 },
+      createdAt: now,
+      updatedAt: now,
+    });
+    const applied = (await tx.objectStore('migrations').getAll()) as Array<{
+      id: string;
+      version: number;
+    }>;
+    const migration11 = applied.find((entry) => entry.version === 11);
+    expect(migration11).toBeTruthy();
+    tx.objectStore('migrations').delete(migration11!.id);
+    await tx.done;
+    db.close();
+
+    await resetStoreCache();
+    const reopened = await openDB();
+    const files = await reopened.getAll('files');
+    expect(files).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'j1',
+          signature: expect.any(String),
+        }),
+        expect.objectContaining({
+          id: 'm1',
+          signature: expect.any(String),
+        }),
+      ]),
+    );
+    expect(await reopened.getAll('map_image_metadata')).toEqual([
+      expect.objectContaining({
+        id: 'm1',
+        imageMetadata: expect.objectContaining({ width: 10, height: 20 }),
+      }),
+    ]);
+    expect(await reopened.getAll('jukebox_files')).toEqual([]);
+    expect(await reopened.getAll('map_files')).toEqual([]);
+    reopened.close();
+  });
+
   it('extracts embedded map locations into the global store', async () => {
     await deleteDatabase();
     const db = await openDB();

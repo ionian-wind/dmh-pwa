@@ -15,27 +15,6 @@ export interface JukeboxPlaylist extends WithId, WithTimestamps, WithMetadata {
   moduleIds?: string[];
 }
 
-export interface JukeboxFileHandle {
-  kind: 'handle';
-  handle: FileSystemFileHandle;
-}
-
-export interface JukeboxFileBlob {
-  kind: 'blob';
-  blob: Blob;
-}
-
-export type JukeboxFileSource = JukeboxFileHandle | JukeboxFileBlob;
-
-export interface JukeboxFile extends WithId, WithTimestamps, WithMetadata {
-  id: UUID;
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  source: JukeboxFileSource;
-}
-
 export interface JukeboxTrack extends WithMetadata {
   fileId: UUID;
   title: string;

@@ -9,6 +9,7 @@ import { WithMetadata } from '@/types';
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
+import { buildFileSignature } from './files/signature';
 import { debug } from './debug';
 
 export class StorageError extends Error {
@@ -485,11 +486,13 @@ export const MAIN_STORE_NAMES = [
   'notes',
   'noteTypes',
   'parties',
+  'map_locations',
   'bookmarks',
   'timers',
   'jukebox_playlists',
   'jukebox_tracks',
-  'jukebox_files',
+  'files',
+  'map_image_metadata',
   'indexations_mentions',
 ];
 
@@ -516,7 +519,7 @@ async function serializeStoreItems(
   storeName: string,
   items: any[],
 ): Promise<any[]> {
-  if (storeName !== 'jukebox_files') return items;
+  if (storeName !== 'files') return items;
 
   return Promise.all(
     items.map(async (item) => {
@@ -547,7 +550,7 @@ async function serializeStoreItems(
 }
 
 function deserializeStoreItems(storeName: string, items: any[]): any[] {
-  if (storeName !== 'jukebox_files') return items;
+  if (storeName !== 'files') return items;
 
   return items.map((item) => {
     const source = item?.source;
@@ -565,6 +568,61 @@ function deserializeStoreItems(storeName: string, items: any[]): any[] {
     }
     return item;
   });
+}
+
+interface LegacyRestoreData {
+  files: any[];
+  metadata: any[];
+}
+
+function hasReadableSource(source: any): boolean {
+  if (!source) return false;
+  if (source.kind === 'blob') return source.blob instanceof Blob;
+  return source.kind === 'handle';
+}
+
+async function readLegacyFileRestore(zip: JSZip): Promise<LegacyRestoreData> {
+  const files: any[] = [];
+  const metadata: any[] = [];
+  const legacyStores = ['jukebox_files', 'map_files'];
+  for (const storeName of legacyStores) {
+    const entry = zip.file(`${storeName}.json`);
+    if (!entry) continue;
+    let records: any[] = [];
+    try {
+      records = deserializeStoreItems(
+        'files',
+        JSON.parse(await entry.async('string')),
+      );
+    } catch {
+      continue;
+    }
+    for (const record of records) {
+      if (!record?.id || !hasReadableSource(record.source)) continue;
+      const identity = {
+        name: record.name || '',
+        size: Number(record.size) || 0,
+        type: record.type || '',
+        lastModified: Number(record.lastModified) || 0,
+      };
+      files.push({
+        ...record,
+        ...identity,
+        signature: buildFileSignature(identity),
+        createdAt: Number(record.createdAt) || Date.now(),
+        updatedAt: Number(record.updatedAt) || Date.now(),
+      });
+      if (record.imageMetadata) {
+        metadata.push({
+          id: record.id,
+          imageMetadata: record.imageMetadata,
+          createdAt: Number(record.createdAt) || Date.now(),
+          updatedAt: Number(record.updatedAt) || Date.now(),
+        });
+      }
+    }
+  }
+  return { files, metadata };
 }
 
 /**
@@ -586,17 +644,33 @@ export async function backupAllStores(): Promise<Blob> {
  */
 export async function restoreAllStores(zipFile: Blob): Promise<void> {
   const zip = await JSZip.loadAsync(zipFile);
+  const legacy = zip.file('files.json')
+    ? { files: [], metadata: [] }
+    : await readLegacyFileRestore(zip);
+
   for (const storeName of MAIN_STORE_NAMES) {
+    let items: any[] | null = null;
     const file = zip.file(`${storeName}.json`);
-    if (!file) continue;
-    const content = await file.async('string');
-    let items: any[] = [];
-    try {
-      items = deserializeStoreItems(storeName, JSON.parse(content));
-    } catch (e) {
-      // skip invalid JSON
-      continue;
+
+    if (file) {
+      const content = await file.async('string');
+      try {
+        items = deserializeStoreItems(storeName, JSON.parse(content));
+      } catch (e) {
+        // skip invalid JSON
+        continue;
+      }
+    } else if (storeName === 'files' && legacy.files.length > 0) {
+      items = legacy.files;
+    } else if (
+      storeName === 'map_image_metadata' &&
+      legacy.metadata.length > 0
+    ) {
+      items = legacy.metadata;
     }
+
+    if (items === null) continue;
+
     // Clear existing store
     await clearStore(storeName);
     // Add items
