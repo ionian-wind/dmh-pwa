@@ -15,6 +15,9 @@ Source content lives in `helpcenter/`:
 ```text
 helpcenter/
   .vitepress/config.mts
+  .vitepress/theme/index.ts
+  public/
+    icon-192.png
   index.md
   en/
     index.md
@@ -29,6 +32,8 @@ helpcenter/
     reference/
       index.md
       browsers.md
+      markdown.md
+      dice-probability-syntax.md
   ru/
     index.md
     getting-started/
@@ -39,6 +44,10 @@ helpcenter/
       index.md
       persistent-storage.md
       images/site-settings.svg
+    reference/
+      index.md
+      markdown.md
+      dice-probability-syntax.md
 ```
 
 Rules:
@@ -49,6 +58,17 @@ Rules:
 - Relative Markdown links and image paths are resolved by VitePress.
 - VitePress falls back to the default locale for missing translations when
   configured accordingly.
+
+## Branding
+
+The help center uses `helpcenter/public/icon-192.png` as:
+
+- the navbar logo (`themeConfig.logo`, resolved through the `/dmh-pwa/help/`
+  base);
+- the favicon and Apple touch icon in `head`;
+- the icon shown in the browser tab of every static help page.
+
+Replace that file to update all three; no config change is needed.
 
 ## Theme localization
 

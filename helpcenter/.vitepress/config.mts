@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress';
 import { fileURLToPath } from 'node:url';
 
+const base = '/dmh-pwa/help/';
 const outDir = fileURLToPath(new URL('../../dist/help', import.meta.url));
 
 const enSidebar = [
@@ -76,6 +77,7 @@ const ruSidebar = [
 ];
 
 const enTheme = {
+  logo: { src: '/icon-192.png', alt: "Owlbear's DMH" },
   outline: { level: [2, 3], label: 'On this page' },
   docFooter: { prev: 'Previous page', next: 'Next page' },
   darkModeSwitchLabel: 'Appearance',
@@ -120,6 +122,7 @@ const enTheme = {
 };
 
 const ruTheme = {
+  logo: { src: '/icon-192.png', alt: "Owlbear's DMH" },
   outline: { level: [2, 3], label: 'На этой странице' },
   docFooter: {
     prev: 'Предыдущая страница',
@@ -167,13 +170,17 @@ const ruTheme = {
 };
 
 export default defineConfig({
-  base: '/dmh-pwa/help/',
+  base,
   outDir,
   cleanUrls: false,
   title: 'Help center',
   description: 'Guides for installing and using Owlbear’s DMH.',
   lang: 'en',
-  head: [['meta', { name: 'theme-color', content: '#1e1e2e' }]],
+  head: [
+    ['meta', { name: 'theme-color', content: '#1e1e2e' }],
+    ['link', { rel: 'icon', type: 'image/png', href: `${base}icon-192.png` }],
+    ['link', { rel: 'apple-touch-icon', href: `${base}icon-192.png` }],
+  ],
   locales: {
     en: {
       label: 'English',
