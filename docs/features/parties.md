@@ -81,8 +81,8 @@ count uses `(party.characters || []).length`; module lookup assumes
 ## Sidebar
 
 `PartyViewSidebar` computes outgoing mentions and backlinks from the plain
-`party` prop and hosts the shared View/Edit and visual-editor controls. It has
-no Scenes tab and no party download.
+`party` prop and hosts the shared View/Edit and visual-editor controls. Mentions
+are hidden in edit mode. It has no Scenes tab and no party download.
 
 ## Relationships
 

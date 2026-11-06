@@ -58,7 +58,7 @@ onMounted(() => mentionsStore.load());
 
 <template>
   <div class="side-panel-content column full-height">
-    <div class="sidebar-tab-content col-grow q-pa-md">
+    <div v-if="!state.isEditMode" class="sidebar-tab-content col-grow q-pa-md">
       <Mentions :title="t('common.mentions')" :entities="mentions" />
       <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
     </div>

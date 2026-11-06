@@ -84,8 +84,8 @@ for the character list and map entity creation.
   `EntitiesLinking`.
 - Uses `CharacterViewSidebar` through the shared right drawer. Ambient scenes
   and mentions are separated into **Scenes** and **Mentions** tabs, with
-  Mentions last. The sidebar shares the note-style mode controls and keeps
-  scene/mention tabs visible in both modes.
+  Mentions last. The sidebar shares the note-style mode controls; Mentions is
+  hidden while editing, leaving the Scenes tab.
 - There are no tags, note types/options, or character download action.
 - Delete asks for confirmation; `BaseEntityView` navigates to the list.
 

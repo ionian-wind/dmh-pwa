@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InlineEditState, PlayerCharacter } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
@@ -36,10 +36,23 @@ const mentionedIn = computed(() =>
     ? mentionsStore.getBacklinks({ kind: 'character', id: entityId.value })
     : [],
 );
-const tabs = computed(() => [
-  { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
-  { id: 'mentions', label: t('common.mentions') },
-]);
+const tabs = computed(() =>
+  state.value.isEditMode
+    ? [{ id: 'scenes', label: t('ambientSoundPage.scenesTab') }]
+    : [
+        { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+        { id: 'mentions', label: t('common.mentions') },
+      ],
+);
+
+watch(
+  () => state.value.isEditMode,
+  (isEditing) => {
+    if (isEditing && activeTab.value === 'mentions') {
+      activeTab.value = 'scenes';
+    }
+  },
+);
 
 function setEditMode(value: boolean) {
   if (props.onSetEditMode) {
@@ -74,7 +87,10 @@ onMounted(() => mentionsStore.load());
               :entity-id="entityId"
             />
           </div>
-          <div v-show="activeTab === 'mentions'" class="q-pa-md">
+          <div
+            v-if="!state.isEditMode && activeTab === 'mentions'"
+            class="q-pa-md"
+          >
             <Mentions :title="t('common.mentions')" :entities="mentions" />
             <Mentions
               :title="t('common.mentionedIn')"

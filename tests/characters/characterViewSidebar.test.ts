@@ -54,6 +54,8 @@ describe('CharacterViewSidebar', () => {
       'Scenes',
       'Mentions',
     ]);
+    await wrapper.findAll('.tab-item')[1].trigger('click');
+    await nextTick();
     const mentions = wrapper.findAllComponents(MentionsStub);
     expect(mentions).toHaveLength(2);
     expect(mentions[0].props('entities')).toEqual([{ kind: 'note', id: 'n1' }]);
@@ -74,9 +76,11 @@ describe('CharacterViewSidebar', () => {
     wrapper.unmount();
   });
 
-  it('renders empty mentions without scenes when character is missing', () => {
+  it('renders empty mentions without scenes when character is missing', async () => {
     const wrapper = mountSidebar(null);
 
+    await wrapper.findAll('.tab-item')[1].trigger('click');
+    await nextTick();
     const mentions = wrapper.findAllComponents(MentionsStub);
     expect(mentions[0].props('entities')).toEqual([]);
     expect(mentions[1].props('entities')).toEqual([]);
@@ -114,6 +118,10 @@ describe('CharacterViewSidebar', () => {
 
     editState.isEditMode = true;
     await nextTick();
+    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
+      'Scenes',
+    ]);
+    expect(wrapper.findComponent(MentionsStub).exists()).toBe(false);
     expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);
     wrapper
       .findComponent({ name: 'QToggle' })
