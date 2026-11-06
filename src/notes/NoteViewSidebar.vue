@@ -5,12 +5,18 @@ import type { Note } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { useMentionsStore } from '@/utils/storage';
 import EntityGroup from '@/components/common/EntityGroup.vue';
+import TabGroup from '@/components/common/TabGroup.vue';
 import { IconEdit, IconEye } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
 const mentionsStore = useMentionsStore();
 const isEditMode = ref(false);
+const activeTab = ref('tags');
+const tabs = computed(() => [
+  { id: 'tags', label: t('tags.title') },
+  { id: 'mentions', label: t('common.mentions') },
+]);
 
 const props = defineProps<{
   note: Note;
@@ -36,25 +42,48 @@ onMounted(() => mentionsStore.load());
 </script>
 
 <template>
-  <div class="side-panel-content q-pa-md column full-height">
-    <div class="col-grow q-gutter-y-md">
-      <EntityGroup
-        v-if="props.note.tags?.length"
-        class="tags-section"
-        :title="t('tags.title')"
+  <div class="side-panel-content note-sidebar column full-height">
+    <div class="note-sidebar-content col-grow q-pa-md">
+      <TabGroup
+        :align="'justify'"
+        :title-align="'center'"
+        v-model="activeTab"
+        :tabs="tabs"
+        size="sm"
       >
-        <div class="tags">
-          <router-link
-            v-for="tag in props.note.tags"
-            :key="tag"
-            class="tag"
-            :to="{ path: '/notes', query: { tag: encodeURIComponent(tag) } }"
-            >#{{ tag }}</router-link
-          >
-        </div>
-      </EntityGroup>
-      <Mentions :title="t('common.mentions')" :entities="mentions" />
-      <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
+        <template #default>
+          <div v-show="activeTab === 'tags'">
+            <EntityGroup
+              v-if="props.note.tags?.length"
+              class="tags-section"
+              :title="t('tags.title')"
+            >
+              <div class="tags">
+                <router-link
+                  v-for="tag in props.note.tags"
+                  :key="tag"
+                  class="tag"
+                  :to="{
+                    path: '/notes',
+                    query: { tag: encodeURIComponent(tag) },
+                  }"
+                  >#{{ tag }}</router-link
+                >
+              </div>
+            </EntityGroup>
+            <div v-else class="text-caption text-grey-7 q-pa-sm">
+              {{ t('tagSelector.noTags') }}
+            </div>
+          </div>
+          <div v-show="activeTab === 'mentions'">
+            <Mentions :title="t('common.mentions')" :entities="mentions" />
+            <Mentions
+              :title="t('common.mentionedIn')"
+              :entities="mentionedIn"
+            />
+          </div>
+        </template>
+      </TabGroup>
     </div>
 
     <QSeparator />
@@ -90,3 +119,10 @@ onMounted(() => mentionsStore.load());
     </QList>
   </div>
 </template>
+
+<style scoped>
+.note-sidebar-content {
+  min-height: 0;
+  overflow-y: auto;
+}
+</style>

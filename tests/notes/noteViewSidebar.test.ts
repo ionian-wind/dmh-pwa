@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 
@@ -17,6 +18,8 @@ describe('NoteViewSidebar', () => {
     });
     expect(wrapper.findAll('.tag-link')).toHaveLength(2);
     expect(wrapper.find('.entity-group').exists()).toBe(true);
+    const tabs = wrapper.findAll('.tab-item');
+    expect(tabs.map((tab) => tab.text())).toEqual(['Tags', 'Mentions']);
     wrapper.unmount();
   });
 
@@ -26,6 +29,24 @@ describe('NoteViewSidebar', () => {
       global: { stubs: { RouterLink: RouterLinkStub } },
     });
     expect(wrapper.find('.tags-section').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('switches from the tags tab to mentions', async () => {
+    const wrapper = mount(NoteViewSidebar, {
+      props: {
+        note: { id: 'n1', title: 'Note', tags: ['combat'] } as any,
+      },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    const panels = wrapper.findAll('.tab-content > div');
+    expect((panels[0].element as HTMLElement).style.display).not.toBe('none');
+    expect((panels[1].element as HTMLElement).style.display).toBe('none');
+
+    await wrapper.findAll('.tab-item')[1].trigger('click');
+    await nextTick();
+    expect((panels[0].element as HTMLElement).style.display).toBe('none');
+    expect((panels[1].element as HTMLElement).style.display).not.toBe('none');
     wrapper.unmount();
   });
 
