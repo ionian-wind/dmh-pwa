@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
@@ -39,29 +39,32 @@ const loading = computed(() => !locationStore.isLoaded);
 const notFound = computed(() => locationStore.isLoaded && !location.value);
 const validationError = ref<string | null>(null);
 const isHelpOpen = ref(false);
+const activeTab = ref('main');
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
 
-const { editState, setEditMode, discardDraft } = useEntityEditMode<MapLocation>({
-  source: location,
-  clone: (source) => ({
-    ...source,
-    entities: (source.entities ?? []).map((entity) => ({ ...entity })),
-  }),
-  isDirty: (draft, source) =>
-    draft.name !== source.name ||
-    (draft.description ?? '') !== (source.description ?? '') ||
-    !refsEqual(draft.entities, source.entities),
-  onEnter: () => {
-    validationError.value = null;
+const { editState, setEditMode, discardDraft } = useEntityEditMode<MapLocation>(
+  {
+    source: location,
+    clone: (source) => ({
+      ...source,
+      entities: (source.entities ?? []).map((entity) => ({ ...entity })),
+    }),
+    isDirty: (draft, source) =>
+      draft.name !== source.name ||
+      (draft.description ?? '') !== (source.description ?? '') ||
+      !refsEqual(draft.entities, source.entities),
+    onEnter: () => {
+      validationError.value = null;
+    },
+    onDiscard: () => {
+      validationError.value = null;
+    },
+    prepare: prepareDraft,
+    save: persistDraft,
   },
-  onDiscard: () => {
-    validationError.value = null;
-  },
-  prepare: prepareDraft,
-  save: persistDraft,
-});
+);
 
 const tabs = computed(() => [
   {
@@ -72,9 +75,26 @@ const tabs = computed(() => [
   ...(location.value?.map?.fileId
     ? [{ id: 'map', label: t('maps.mapTab'), icon: IconMap }]
     : []),
-  { id: 'backlinks', label: t('maps.backlinks'), icon: IconMapPinned },
+  ...(editState.isEditMode
+    ? []
+    : [
+        {
+          id: 'backlinks',
+          label: t('maps.backlinks'),
+          icon: IconMapPinned,
+        },
+      ]),
   { id: 'links', label: t('common.linkedEntities'), icon: IconAffiliate },
 ]);
+
+watch(
+  () => editState.isEditMode,
+  (isEditing) => {
+    if (isEditing && activeTab.value === 'backlinks') {
+      activeTab.value = 'main';
+    }
+  },
+);
 
 const locationLinks = computed<MapEntityRef[]>(() => {
   const source = editState.draft ?? location.value;
@@ -189,8 +209,6 @@ const backlinkGroups = computed(() => {
     }))
     .filter((group) => group.markers.length > 0 || group.areas.length > 0);
 });
-
-const activeTab = ref('main');
 
 onMounted(async () => {
   await locationStore.load();
@@ -367,10 +385,7 @@ function openLocation(locationId: string) {
         class="side-panel-content column full-height"
       >
         <div class="sidebar-tab-content col-grow q-pa-md">
-          <EntityScenesPanel
-            entity-type="location"
-            :entity-id="location.id"
-          />
+          <EntityScenesPanel entity-type="location" :entity-id="location.id" />
         </div>
         <QSeparator />
         <EntityModeControls

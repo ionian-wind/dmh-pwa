@@ -240,8 +240,8 @@ These notifications never auto-dismiss (`timeout: 0`).
 
 ## Navigation chrome summary
 
-- **Header**: injected per route; includes create/edit/delete and custom header
-  buttons.
+- **Header**: injected per route; Delete sits at the far left, while
+  create/edit/custom actions stay on the right.
 - **Left drawer**: primary navigation + jukebox/calculator shortcuts.
 - **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists).
 - **Footer**: only the jukebox player.

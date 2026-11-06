@@ -147,10 +147,11 @@ Wraps `BaseEntityView` with `QTabs`/`QTabPanels`.
 
 Renders:
 
+- a leftmost delete `QBtnGroup`, before page-specific left buttons,
 - title or spacer,
 - optional search `QInput`,
 - a primary `QBtnGroup` containing `buttons[]` (icon, color, title key,
-  disabled, event) and create/edit/delete buttons,
+  disabled, event) plus create/edit buttons,
 - a vertical `QSeparator` when both primary actions and a sidebar exist,
 - a separate `QBtnGroup` with the right-drawer toggle.
 

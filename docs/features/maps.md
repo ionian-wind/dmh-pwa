@@ -251,7 +251,7 @@ A location detail page has four header tabs:
   switching tabs keeps the same mode.
 - **Backlinks** — markers and areas from other locations whose `locationId`
   points at this location, grouped by their owning location. The tab uses
-  `IconMapPinned`.
+  `IconMapPinned` and is hidden in edit mode.
 - **Linked entities** — modules and other linked entities. In edit mode every
   supported kind is editable through `EntitiesLinking`.
 

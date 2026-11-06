@@ -39,17 +39,19 @@ describe('ViewHeader action buttons', () => {
     const { wrapper, layout } = mountHeader();
     const groups = wrapper.findAll('[data-stub="QBtnGroup"]');
 
-    expect(groups).toHaveLength(2);
+    expect(groups).toHaveLength(3);
     expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(1);
 
-    const buttons = groups[0].findAll('button');
-    expect(buttons).toHaveLength(4);
+    const deleteButton = groups[0].find('button');
+    expect(deleteButton.attributes('aria-label')).toBe('Delete');
+
+    const buttons = groups[1].findAll('button');
+    expect(buttons).toHaveLength(3);
     expect(buttons[0].attributes('aria-label')).toBe('Bookmark');
     expect(buttons[1].attributes('aria-label')).toBe('Create');
     expect(buttons[2].attributes('aria-label')).toBe('Edit');
-    expect(buttons[3].attributes('aria-label')).toBe('Delete');
 
-    const drawerButton = groups[1].find('button');
+    const drawerButton = groups[2].find('button');
     expect(drawerButton.attributes('aria-label')).toBe('Toggle sidebar');
 
     const props = wrapper.props() as any;
@@ -60,7 +62,7 @@ describe('ViewHeader action buttons', () => {
     expect(props.onCreate).toHaveBeenCalledTimes(1);
     await buttons[2].trigger('click');
     expect(props.onEdit).toHaveBeenCalledTimes(1);
-    await buttons[3].trigger('click');
+    await deleteButton.trigger('click');
     expect(props.onDelete).toHaveBeenCalledTimes(1);
 
     expect(layout.rightDrawerOpen.value).toBe(true);
@@ -71,7 +73,7 @@ describe('ViewHeader action buttons', () => {
   it('disables edit while editing and renders no group without actions', () => {
     const { wrapper } = mountHeader({ isEditing: true });
     const buttons = wrapper
-      .findAll('[data-stub="QBtnGroup"]')[0]
+      .findAll('[data-stub="QBtnGroup"]')[1]
       .findAll('button');
     expect(buttons[2].attributes('disabled')).toBeDefined();
 
@@ -140,11 +142,13 @@ describe('ViewHeader action buttons', () => {
     });
 
     const groups = wrapper.findAll('[data-stub="QBtnGroup"]');
-    expect(groups).toHaveLength(3);
+    expect(groups).toHaveLength(4);
 
-    const leftButton = groups[0].find('button');
+    const leftGroup = groups.find((group) =>
+      group.find('.left-icon').exists(),
+    )!;
+    const leftButton = leftGroup.find('button');
     expect(leftButton.attributes('aria-label')).toBe('Bookmark');
-    expect(groups[0].find('.left-icon').exists()).toBe(true);
     await leftButton.trigger('click');
     expect(leftEvent).toHaveBeenCalledTimes(1);
   });

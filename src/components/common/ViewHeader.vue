@@ -170,15 +170,22 @@ const emit = defineEmits([
 const { rightDrawerContent, toggleRightDrawer } = useLayout();
 
 const hasPrimaryActions = computed(
-  () =>
-    props.buttons.length > 0 ||
-    props.showCreate ||
-    props.showEdit ||
-    props.showDelete,
+  () => props.buttons.length > 0 || props.showCreate || props.showEdit,
 );
 </script>
 
 <template>
+  <QBtnGroup v-if="props.showDelete" class="view-header-delete">
+    <QBtn
+      :color="'negative'"
+      @click="props.onDelete"
+      :title="t('common.delete')"
+      :aria-label="t('common.delete')"
+    >
+      <IconTrash />
+    </QBtn>
+  </QBtnGroup>
+
   <QBtnGroup v-if="props.leftButtons.length" class="view-header-left-actions">
     <QBtn
       v-for="(btn, index) in props.leftButtons"
@@ -269,16 +276,6 @@ const hasPrimaryActions = computed(
     >
       <IconPencil />
     </QBtn>
-
-    <QBtn
-      v-if="props.showDelete"
-      :color="'negative'"
-      @click="props.onDelete"
-      :title="t('common.delete')"
-      :aria-label="t('common.delete')"
-    >
-      <IconTrash />
-    </QBtn>
   </QBtnGroup>
 
   <QSeparator
@@ -299,6 +296,10 @@ const hasPrimaryActions = computed(
 </template>
 
 <style scoped>
+.view-header-delete {
+  margin-right: 0.25rem;
+}
+
 .view-header-tabs {
   position: absolute;
   left: 50%;

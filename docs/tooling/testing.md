@@ -79,10 +79,10 @@ Tests       1473 passed (1473)
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  95.81%
+Statements  95.80%
 Branches    87.03%
-Functions   95.63%
-Lines       97.16%
+Functions   95.64%
+Lines       97.15%
 ```
 
 `vitest.config.ts` enforces 87% statements, functions, branches and lines
