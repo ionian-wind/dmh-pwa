@@ -16,7 +16,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <QList>
+  <QList class="entity-mode-controls">
     <QItem v-if="isEditMode" class="entity-visual-mode-toggle">
       <QItemSection>
         {{ t('markdownEditor.visualMode') }}
@@ -59,3 +59,9 @@ const { t } = useI18n();
     </QItem>
   </QList>
 </template>
+
+<style scoped>
+.entity-mode-controls {
+  flex: 0 0 auto;
+}
+</style>
