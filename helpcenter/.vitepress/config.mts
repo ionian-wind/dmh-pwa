@@ -26,6 +26,14 @@ const enSidebar = [
     text: 'Reference',
     items: [
       {
+        text: 'Markdown formatting',
+        link: '/en/reference/markdown.html',
+      },
+      {
+        text: 'Dice probability syntax',
+        link: '/en/reference/dice-probability-syntax.html',
+      },
+      {
         text: 'Browser notes',
         link: '/en/reference/browsers.html',
       },
@@ -49,6 +57,19 @@ const ruSidebar = [
       {
         text: 'Постоянное хранилище',
         link: '/ru/troubleshooting/persistent-storage.html',
+      },
+    ],
+  },
+  {
+    text: 'Справочник',
+    items: [
+      {
+        text: 'Форматирование Markdown',
+        link: '/ru/reference/markdown.html',
+      },
+      {
+        text: 'Синтаксис кубиков',
+        link: '/ru/reference/dice-probability-syntax.html',
       },
     ],
   },

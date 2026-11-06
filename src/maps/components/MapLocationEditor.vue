@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import type {
   MapEntityKind,
   MapEntityRef,
@@ -39,7 +39,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const draft = ref<MapLocation>(createLocation());
 const isNew = ref(true);
 const selectedFileName = ref('');
@@ -47,7 +47,6 @@ const previewUrl = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const isProcessingImage = ref(false);
 const isWYSIWYGMode = ref(true);
-const isHelpOpen = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
@@ -303,15 +302,15 @@ function remove() {
           class="location-help-button"
           :title="t('markdownEditor.formattingHelp')"
           :aria-label="t('markdownEditor.formattingHelp')"
-          @click="isHelpOpen = true"
+          :href="helpHref('reference/markdown', getHelpLocale(locale))"
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <IconHelp />
         </QBtn>
       </div>
     </template>
   </BaseModal>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>
 
 <style scoped>

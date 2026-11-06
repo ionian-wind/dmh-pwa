@@ -6,8 +6,8 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import { useEncounterStore } from '@/stores/encounters';
 import { useMapLocationStore } from '@/maps/locations';
@@ -15,7 +15,7 @@ import type { MapEntityRef } from '@/maps/types';
 import { alert } from '@/dialogs';
 import { IconHelp } from '@tabler/icons-vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   monster: Monster | null;
@@ -45,7 +45,6 @@ const blankMonster = (): Monster => ({
 const editedMonster = ref<Monster>(blankMonster());
 const isEditing = computed(() => !!props.monster?.id);
 const isWYSIWYGMode = ref(true);
-const isHelpOpen = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
@@ -221,13 +220,13 @@ onMounted(async () => {
           class="monster-help-button"
           :title="t('markdownEditor.formattingHelp')"
           :aria-label="t('markdownEditor.formattingHelp')"
-          @click="isHelpOpen = true"
+          :href="helpHref('reference/markdown', getHelpLocale(locale))"
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <IconHelp />
         </QBtn>
       </div>
     </template>
   </BaseModal>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>

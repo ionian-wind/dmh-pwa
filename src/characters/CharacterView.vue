@@ -11,10 +11,10 @@ import type { PlayerCharacter } from '@/types';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
 import { IconHelp } from '@tabler/icons-vue';
@@ -28,7 +28,7 @@ import type { MapEntityRef } from '@/maps/types';
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const characterStore = useCharacterStore();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
@@ -43,7 +43,6 @@ const editorTabs = useEntityEditorTabs();
 const isLoaded = computed(() => characterStore.isLoaded);
 const notFound = computed(() => isLoaded.value && !character.value);
 const validationError = ref<string | null>(null);
-const isHelpOpen = ref(false);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
@@ -199,9 +198,9 @@ const headerButtons = computed(() => {
       color: 'primary',
       title: 'markdownEditor.formattingHelp',
       icon: IconHelp,
-      event: () => {
-        isHelpOpen.value = true;
-      },
+      href: helpHref('reference/markdown', getHelpLocale(locale.value)),
+      target: '_blank',
+      rel: 'noopener noreferrer',
     },
   ];
 });
@@ -308,6 +307,4 @@ onBeforeUnmount(() => {
       </div>
     </template>
   </BaseEntityTabView>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>

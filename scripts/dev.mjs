@@ -27,9 +27,10 @@ function shutdown(code) {
   setTimeout(() => process.exit(code), 800).unref();
 }
 
-function start(label, script) {
+function start(label, script, extraArgs = []) {
   const command = npmCli ? process.execPath : isWindows ? 'npm.cmd' : 'npm';
-  const args = npmCli ? [npmCli, 'run', script] : ['run', script];
+  const baseArgs = npmCli ? [npmCli, 'run', script] : ['run', script];
+  const args = extraArgs.length ? [...baseArgs, '--', ...extraArgs] : baseArgs;
   const child = spawn(command, args, {
     stdio: 'inherit',
     env: process.env,
@@ -57,5 +58,5 @@ function start(label, script) {
 process.on('SIGINT', () => shutdown(0));
 process.on('SIGTERM', () => shutdown(0));
 
-start('app', 'dev:app');
+start('app', 'dev:app', process.argv.slice(2));
 start('help', 'help:dev');

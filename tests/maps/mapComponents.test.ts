@@ -7,7 +7,6 @@ import ColorPicker from '@/components/common/ColorPicker.vue';
 import { MAP_MARKER_ICONS } from '@/maps/icons';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
 import MapLocationEditor from '@/maps/components/MapLocationEditor.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import MapMarkersPanel from '@/maps/components/MapMarkersPanel.vue';
 import type { MapLocation, MapMarker } from '@/maps/types';
 import { quasarStubs } from '../helpers/quasar-stubs';
@@ -281,11 +280,10 @@ describe('map location editor', () => {
 
     const help = wrapper.find('.location-help-button');
     expect(help.exists()).toBe(true);
-    await help.trigger('click');
-    await nextTick();
-    expect(wrapper.findComponent(MarkdownHelpDialog).props('isOpen')).toBe(
-      true,
+    expect(help.attributes('href')).toContain(
+      '/help/en/reference/markdown.html',
     );
+    expect(help.attributes('target')).toBe('_blank');
   });
 
   it('validates the name, deletes and cancels', async () => {

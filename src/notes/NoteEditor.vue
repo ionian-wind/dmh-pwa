@@ -9,11 +9,11 @@ import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
 import { IconDots, IconHelp } from '@tabler/icons-vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import type { MapEntityRef } from '@/maps/types';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   note: Note | null;
@@ -46,7 +46,6 @@ const editedNote = ref<Note>({
 
 const lastNoteId = ref<string | null>(null);
 const isWYSIWYGMode = ref(true);
-const isHelpOpen = ref(false);
 
 const noteContent = computed({
   get: () => editedNote.value.content,
@@ -226,7 +225,9 @@ function handleDelete() {
           class="note-help-button"
           :title="t('markdownEditor.formattingHelp')"
           :aria-label="t('markdownEditor.formattingHelp')"
-          @click="isHelpOpen = true"
+          :href="helpHref('reference/markdown', getHelpLocale(locale))"
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <IconHelp />
         </QBtn>
@@ -240,6 +241,4 @@ function handleDelete() {
       {{ validationError }}
     </div>
   </BaseModal>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>

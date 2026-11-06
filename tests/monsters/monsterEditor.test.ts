@@ -29,7 +29,6 @@ vi.mock('@/maps/locations', () => ({
 
 import MonsterEditor from '@/monsters/MonsterEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 
 const EntityMarkdownEditorStub = defineComponent({
   name: 'EntityMarkdownEditor',
@@ -172,11 +171,10 @@ describe('MonsterEditor', () => {
 
     const help = wrapper.find('.monster-help-button');
     expect(help.exists()).toBe(true);
-    await help.trigger('click');
-    await nextTick();
-    expect(wrapper.findComponent(MarkdownHelpDialog).props('isOpen')).toBe(
-      true,
+    expect(help.attributes('href')).toContain(
+      '/help/en/reference/markdown.html',
     );
+    expect(help.attributes('target')).toBe('_blank');
     wrapper.unmount();
   });
 

@@ -194,13 +194,10 @@ describe('NoteEditor content types', () => {
     expect(help.exists()).toBe(true);
     expect(help.find('svg').exists()).toBe(true);
 
-    await help.trigger('click');
-    await flushPromises();
-
-    const dialog = wrapper.findComponent({ name: 'MarkdownHelpDialog' });
-    expect(dialog.exists()).toBe(true);
-    expect(dialog.props('isOpen')).toBe(true);
-    expect(wrapper.text()).toContain('Formatting Help');
+    expect(help.attributes('href')).toContain(
+      '/help/en/reference/markdown.html',
+    );
+    expect(help.attributes('target')).toBe('_blank');
     wrapper.unmount();
   });
 

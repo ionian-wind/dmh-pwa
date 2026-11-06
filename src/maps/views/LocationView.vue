@@ -13,12 +13,12 @@ import {
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Markdown from '@/components/common/Markdown.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { alert, confirm } from '@/dialogs';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import LocationMapTab from '../components/LocationMapTab.vue';
@@ -29,7 +29,7 @@ import { useEntityEditMode } from '@/composables/useEntityEditMode';
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const locationStore = useMapLocationStore();
 
 const location = computed(() =>
@@ -38,7 +38,6 @@ const location = computed(() =>
 const loading = computed(() => !locationStore.isLoaded);
 const notFound = computed(() => locationStore.isLoaded && !location.value);
 const validationError = ref<string | null>(null);
-const isHelpOpen = ref(false);
 const activeTab = ref('main');
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
@@ -185,9 +184,9 @@ const headerButtons = computed(() => {
       color: 'primary',
       title: 'markdownEditor.formattingHelp',
       icon: IconHelp,
-      event: () => {
-        isHelpOpen.value = true;
-      },
+      href: helpHref('reference/markdown', getHelpLocale(locale.value)),
+      target: '_blank',
+      rel: 'noopener noreferrer',
     },
   ];
 });
@@ -397,8 +396,6 @@ function openLocation(locationId: string) {
       </div>
     </template>
   </BaseEntityTabView>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>
 
 <style scoped>

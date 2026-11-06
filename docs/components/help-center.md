@@ -128,10 +128,18 @@ in-app help links.
 The app links to the static pages in a new tab:
 
 - left menu → `Help center` (`target="_blank"`);
+- Markdown help buttons in entity editors and detail headers →
+  `reference/markdown`;
+- probability calculator syntax action →
+  `reference/dice-probability-syntax`;
+- install prompt → `getting-started/install`;
 - Settings persistent-storage denial message → install and site-settings guides
   (`target="_blank" rel="noopener noreferrer"`).
 
 `src/helpcenter/links.ts` builds the URL from `import.meta.env.BASE_URL`.
+Toolbar actions use a plain anchor (`href` + `target="_blank"`) through the
+shared `ViewHeader` button config; the old in-app help dialogs and the
+`/probability-calculator/syntax` route were removed.
 
 ## Search
 

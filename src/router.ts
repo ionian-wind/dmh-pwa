@@ -135,12 +135,6 @@ const router = createRouter({
         import('@/probability-calculator/ProbabilityCalculatorView.vue'),
       meta: { exact: true },
     },
-    {
-      path: '/probability-calculator/syntax',
-      name: 'probability-calculator-syntax',
-      component: () =>
-        import('@/probability-calculator/ProbabilitySyntaxView.vue'),
-    },
     // Locations routes
     {
       path: '/locations',

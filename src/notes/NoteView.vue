@@ -13,10 +13,10 @@ import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
@@ -30,7 +30,7 @@ import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const noteStore = useNoteStore();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
@@ -47,7 +47,6 @@ const notFound = computed(() => isLoaded.value && !note.value);
 const validationError = ref<string | null>(null);
 const noteContent = ref('');
 const canvasDirty = ref(false);
-const isHelpOpen = ref(false);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
@@ -262,9 +261,9 @@ const headerButtons = computed(() => {
       color: 'primary',
       title: 'markdownEditor.formattingHelp',
       icon: IconHelp,
-      event: () => {
-        isHelpOpen.value = true;
-      },
+      href: helpHref('reference/markdown', getHelpLocale(locale.value)),
+      target: '_blank',
+      rel: 'noopener noreferrer',
     },
   ];
 });
@@ -379,8 +378,6 @@ onBeforeUnmount(() => {
       />
     </template>
   </BaseEntityTabView>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>
 
 <style scoped>

@@ -26,7 +26,6 @@ vi.mock('@/maps/locations', () => ({
 
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 
 const EntityMarkdownEditorStub = defineComponent({
   name: 'EntityMarkdownEditor',
@@ -164,11 +163,10 @@ describe('CharacterEditor', () => {
 
     const help = wrapper.find('.character-help-button');
     expect(help.exists()).toBe(true);
-    await help.trigger('click');
-    await nextTick();
-    expect(wrapper.findComponent(MarkdownHelpDialog).props('isOpen')).toBe(
-      true,
+    expect(help.attributes('href')).toContain(
+      '/help/en/reference/markdown.html',
     );
+    expect(help.attributes('target')).toBe('_blank');
     wrapper.unmount();
   });
 

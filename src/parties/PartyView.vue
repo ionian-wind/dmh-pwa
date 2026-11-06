@@ -12,10 +12,10 @@ import { useCharacterStore } from '@/stores/characters';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
@@ -32,7 +32,7 @@ const router = useRouter();
 const partyStore = usePartyStore();
 const moduleStore = useModuleStore();
 const characterStore = useCharacterStore();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const party = ref<Party | null>(null);
 const activeTab = ref('main');
@@ -41,7 +41,6 @@ const editorTabs = useEntityEditorTabs();
 const isLoaded = computed(() => partyStore.isLoaded);
 const notFound = computed(() => isLoaded.value && !party.value);
 const validationError = ref<string | null>(null);
-const isHelpOpen = ref(false);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
@@ -222,9 +221,9 @@ const headerButtons = computed(() => {
       color: 'primary',
       title: 'markdownEditor.formattingHelp',
       icon: IconHelp,
-      event: () => {
-        isHelpOpen.value = true;
-      },
+      href: helpHref('reference/markdown', getHelpLocale(locale.value)),
+      target: '_blank',
+      rel: 'noopener noreferrer',
     },
   ];
 });
@@ -324,6 +323,4 @@ onBeforeUnmount(() => {
       </div>
     </template>
   </BaseEntityTabView>
-
-  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>

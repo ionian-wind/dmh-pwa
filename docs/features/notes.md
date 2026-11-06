@@ -91,8 +91,8 @@ Fields:
   content on the detail page and note cards.
 - The visual-editor toggle sits in the footer between **options** and help.
 - When the visual editor is off, an icon-only help button appears next to the
-  toggle. It opens `MarkdownHelpDialog` with markdown formatting,
-  internal-link, entity mention, and tag help.
+  toggle. It links to the static help-center page for Markdown formatting,
+  internal links, entity mentions and tags in a new tab.
 - The title input is borderless and larger; there is no separate **Content**
   heading, and the visual/raw editors have no outer outline.
 - The module link lives in the dialog's linked-entities tab.

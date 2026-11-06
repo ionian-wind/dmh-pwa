@@ -30,7 +30,10 @@ const props = defineProps({
         color: string;
         title: string;
         disabled?: boolean;
-        event: (
+        href?: string;
+        target?: string;
+        rel?: string;
+        event?: (
           evt: Event,
           go?: (opts?: {
             to?: any;
@@ -49,7 +52,10 @@ const props = defineProps({
         color: string;
         title: string;
         disabled?: boolean;
-        event: (
+        href?: string;
+        target?: string;
+        rel?: string;
+        event?: (
           evt: Event,
           go?: (opts?: {
             to?: any;
@@ -247,6 +253,9 @@ const hasPrimaryActions = computed(
       :key="index"
       :color="btn.color"
       @click="btn.event"
+      :href="btn.href"
+      :target="btn.target"
+      :rel="btn.rel"
       :title="t(btn.title)"
       :aria-label="t(btn.title)"
       :disable="btn.disabled"

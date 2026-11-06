@@ -43,6 +43,7 @@ import {
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
 import { formatDiceSyntaxError } from './syntaxErrors';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import {
   setAnyDiceCompletionCodePieces,
   setAnyDiceCompletionTranslator,
@@ -75,7 +76,7 @@ type DataModeChoice = DataMode | 'transposed' | 'summary';
 
 const STORAGE_KEY = 'dmh-probability-calculator:source';
 const DEFAULT_SOURCE = 'output 3d6';
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const router = useRouter();
 setAnyDiceCompletionTranslator((key, named) => t(key, named as any));
 
@@ -446,7 +447,12 @@ onMounted(() => {
           icon: IconHelpCircle,
           color: 'primary',
           title: 'probabilityCalculator.syntax',
-          event: () => router.push('/probability-calculator/syntax'),
+          href: helpHref(
+            'reference/dice-probability-syntax',
+            getHelpLocale(locale.value),
+          ),
+          target: '_blank',
+          rel: 'noopener noreferrer',
         },
       ],
     },

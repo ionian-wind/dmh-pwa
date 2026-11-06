@@ -3,7 +3,6 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 
 import LocationView from '@/maps/views/LocationView.vue';
-import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 
 const mocks = vi.hoisted(() => ({
   locationStore: {
@@ -265,11 +264,8 @@ describe('LocationView', () => {
       .findComponent(BaseEntityTabViewStub)
       .props('headerButtons') as any[];
     expect(headerButtons).toHaveLength(1);
-    headerButtons[0].event();
-    await nextTick();
-    expect(wrapper.findComponent(MarkdownHelpDialog).props('isOpen')).toBe(
-      true,
-    );
+    expect(headerButtons[0].href).toContain('/help/en/reference/markdown.html');
+    expect(headerButtons[0].target).toBe('_blank');
 
     await wrapper.find('.entity-view-mode').trigger('click');
     await flushPromises();

@@ -44,14 +44,15 @@ test('opens the probability calculator from the main menu', async ({
   await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });
 });
 
-test('opens the syntax reference from the calculator', async ({ page }) => {
+test('links to the static syntax reference', async ({ page }) => {
   await page.goto('/dmh-pwa/probability-calculator');
-  await page.getByRole('button', { name: 'Syntax reference' }).click();
-  await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator\/syntax$/);
-  await expect(page.getByText('AnyDice Syntax Reference')).toBeVisible();
-
-  await page.getByRole('button', { name: 'Back to calculator' }).click();
-  await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator$/);
+  const link = page.locator('a[href*="dice-probability-syntax.html"]');
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute(
+    'href',
+    /\/help\/(en|ru)\/reference\/dice-probability-syntax\.html$/,
+  );
+  await expect(link).toHaveAttribute('target', '_blank');
 });
 
 test('creates a share link with the source in the hash', async ({ page }) => {
@@ -134,27 +135,6 @@ test('localizes composer suggestions in Russian', async ({ page }) => {
     'Из фрагмента кода: Боевая библиотека',
   );
   await expect(suggestions).not.toContainText('From code piece');
-});
-
-test('shows a hideable syntax TOC with anchor links', async ({ page }) => {
-  await page.goto('/dmh-pwa/probability-calculator/syntax');
-
-  const toc = page.locator('.table-of-contents');
-  await expect(toc).toBeVisible();
-
-  await page.locator('a.syntax-section-link', { hasText: 'Functions' }).click();
-  await expect(page).toHaveURL(/#functions$/);
-  await expect(page.locator('#functions')).toBeVisible();
-  await expect(toc.locator('.toc-item.active')).toContainText('Functions');
-
-  await page.locator('#examples').scrollIntoViewIfNeeded();
-  await expect(toc.locator('.toc-item.active')).toContainText('Examples');
-
-  const toggle = page.getByRole('button', { name: 'Toggle sidebar' });
-  await toggle.click();
-  await expect(toc).not.toBeVisible();
-  await toggle.click();
-  await expect(toc).toBeVisible();
 });
 
 test('highlights syntax errors and clears them before the next calculation', async ({
