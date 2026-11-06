@@ -234,12 +234,6 @@ const tabs = computed(() => [
     badge: undefined,
   },
   {
-    id: 'links',
-    label: t('common.linkedEntities'),
-    icon: IconAffiliate,
-    badge: encounterLinks.value.length || undefined,
-  },
-  {
     id: 'monsters',
     label: t('encounters.tabs.monsters'),
     icon: IconGhost3,
@@ -250,6 +244,12 @@ const tabs = computed(() => [
     label: t('encounters.tabs.combats'),
     icon: IconSwords,
     badge: encounterCombats.value.length,
+  },
+  {
+    id: 'links',
+    label: t('common.linkedEntities'),
+    icon: IconAffiliate,
+    badge: encounterLinks.value.length || undefined,
   },
 ]);
 
