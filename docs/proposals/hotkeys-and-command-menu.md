@@ -12,6 +12,8 @@ while keeping every action available through the existing UI.
 
 - [`hotkeys-js`](https://github.com/jaywcjlove/hotkeys-js) — dependency
   candidate
+- [global-and-local-search.md](global-and-local-search.md) — entity search
+  results hosted by the command menu
 - [`vue-cmd-menu`](https://github.com/BetaHuhn/vue-cmd-menu) — UX inspiration
 - [feature-proposals.md](feature-proposals.md) — A3 and A5
 
@@ -524,7 +526,7 @@ Open questions:
 - Should create commands navigate with `?create=1` or use a shared command
   event/state?
 - Should the command menu include live entity search in phase 1, or only
-  actions?
+  actions? See [global-and-local-search.md](global-and-local-search.md).
 - Do we need nested command folders, or are flat sections enough?
 - Should `?` open shortcut help globally, or only inside the command menu?
 - Which combat/jukebox shortcuts are valuable enough to enable by default?

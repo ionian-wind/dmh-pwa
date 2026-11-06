@@ -27,8 +27,8 @@ folder structure, while keeping the help center fully static and offline.
 
 ### Out of scope
 
-- Searching campaign data (notes, NPCs, maps). That belongs to the command
-  menu/global entity search.
+- Searching campaign data (notes, NPCs, maps). That belongs to
+  [global-and-local-search.md](global-and-local-search.md).
 - Natural-language answers or an LLM.
 - Search analytics.
 - Searching images by their content.

@@ -89,6 +89,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture |
 | [proposals/hotkeys-and-command-menu.md](proposals/hotkeys-and-command-menu.md)           | Global hotkeys and the command menu                 |
 | [proposals/help-center-search.md](proposals/help-center-search.md)                       | Offline search across localized help pages          |
+| [proposals/global-and-local-search.md](proposals/global-and-local-search.md)             | Local fuzzy suggestions and global entity search    |
 | [proposals/pwa-hardening-plan.md](proposals/pwa-hardening-plan.md)                       | Manifest, install UX, safe-area and PWA audit plan  |
 | [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage   |
 | [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                |
