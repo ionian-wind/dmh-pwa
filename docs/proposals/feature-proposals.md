@@ -98,6 +98,23 @@ handoff. See [help-center-search.md](help-center-search.md).
 
 ## B. Notes and writing
 
+### A7. Scribe and Play modes (P1)
+
+**Value.** The app currently mixes preparation and session-running workflows.
+A DM preparing a campaign needs authoring and organization; a DM running the
+session needs fast access to combat, timers, scenes, search and prepared
+content.
+
+**Scope.** Add a persisted **Scribe / Play** mode switch. Scribe keeps the
+current preparation-oriented navigation and Home; Play prioritizes session
+tools, recent/pinned content and search. Play is a lens, not a separate data
+set or permission level: editing and management remain available.
+
+**Implementation.** Add `appMode` to `configStore`, a mode-aware navigation
+config and a Play dashboard. Reuse existing routes and components; do not
+duplicate `/scribe` and `/play` route trees. Pairs with the command menu and
+global search. See [scribe-and-play-modes.md](scribe-and-play-modes.md).
+
 ### B1. Restore the note metadata controls (done)
 
 Module, tag, and note-type selectors are enabled in `NoteEditor`; notes can
@@ -506,6 +523,6 @@ current whole-array store replacement; treat as a separate architecture.
 | Release              | Features                                                                                                                                                 |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Next (stabilize)** | A1 dashboard, B1 metadata controls, C4 persistence, D1 module nav, E1 jukebox fixes, G1 backup, H1 install, H6 search                                    |
-| **Following**        | A3 command menu, A5 hotkeys, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity                          |
+| **Following**        | A3 command menu, A5 hotkeys, A7 Scribe/Play modes, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity    |
 | **Later**            | A2 sessions, A6 help search, B3/B4 linking/history, C5/C6 loot/tables, D4/D5 import/versioning, E3–E5 audio, F2/F3 combat timers/dice, G2–G4 export/sync |
 | **Exploratory**      | C7 timeline, I1–I3 sharing/collaboration                                                                                                                 |
