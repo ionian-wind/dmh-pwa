@@ -218,6 +218,9 @@ map. It contains:
     rename/delete controls. The base layer cannot be edited or deleted.
 - Outside the **Map** tab, the right sidebar displays the location's ambient
   **Scenes** panel instead of an empty panel.
+  - The `#location-map-sidebar` teleport target stays mounted but hidden
+    outside the map tab, so `LocationMapTab` can always teleport its sidebar
+    after mount without racing the right drawer's render order.
   - Hovering a row highlights the marker or area on the map.
 - **Add layer** is a menu-style row below the tabbed lists, shown only in edit
   mode.

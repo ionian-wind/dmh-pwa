@@ -202,12 +202,12 @@ function openLocation(locationId: string) {
 
     <template #sidepanel>
       <div
-        v-if="activeTab === 'map' && location?.map?.fileId"
+        v-show="activeTab === 'map' && !!location?.map?.fileId"
         id="location-map-sidebar"
         class="location-map-sidebar"
       ></div>
       <EntityScenesPanel
-        v-else-if="location"
+        v-if="activeTab !== 'map' && location"
         entity-type="location"
         :entity-id="location.id"
       />

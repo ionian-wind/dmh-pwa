@@ -162,13 +162,15 @@ describe('LocationView', () => {
     expect(wrapper.find('[data-slot="main"]').text()).toContain('A busy port.');
     expect(wrapper.find('[data-slot="map"] .map-tab-stub').exists()).toBe(true);
     expect(wrapper.find('.scenes-stub').exists()).toBe(true);
-    expect(wrapper.find('#location-map-sidebar').exists()).toBe(false);
+    const mapSidebar = wrapper.find('#location-map-sidebar');
+    expect(mapSidebar.exists()).toBe(true);
+    expect((mapSidebar.element as HTMLElement).style.display).toBe('none');
 
     wrapper
       .findComponent(BaseEntityTabViewStub)
       .vm.$emit('update:modelValue', 'map');
     await nextTick();
-    expect(wrapper.find('#location-map-sidebar').exists()).toBe(true);
+    expect((mapSidebar.element as HTMLElement).style.display).not.toBe('none');
     expect(wrapper.find('.scenes-stub').exists()).toBe(false);
     wrapper.unmount();
   });
@@ -481,7 +483,9 @@ describe('LocationView', () => {
     const tabs = wrapper.findAll('.tab').map((tab) => tab.text());
     expect(tabs).toEqual(['main', 'backlinks', 'links']);
     expect(tabs).not.toContain('map');
-    expect(wrapper.find('#location-map-sidebar').exists()).toBe(false);
+    const mapSidebar = wrapper.find('#location-map-sidebar');
+    expect(mapSidebar.exists()).toBe(true);
+    expect((mapSidebar.element as HTMLElement).style.display).toBe('none');
     expect(wrapper.find('.scenes-stub').exists()).toBe(true);
     wrapper.unmount();
   });
