@@ -27,6 +27,7 @@ import ModuleDocumentTree from '@/modules/ModuleDocumentTree.vue';
 import ModuleDocumentView from '@/modules/ModuleDocumentView.vue';
 import JSZip from 'jszip';
 import { cropTitle } from '@/utils/cropTitle';
+import { saveBlob } from '@/utils/files';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { confirm } from '@/dialogs';
 import {
@@ -331,16 +332,11 @@ async function handleExportModule() {
   // Generate zip and trigger download
   const zipBuffer = await zip.generateAsync({ type: 'blob' });
   const zipFileName = `${module.value.name.replace(/[^a-zA-Z0-9]/g, '_')}_module.zip`;
-  const url = URL.createObjectURL(zipBuffer);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = zipFileName;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 100);
+  await saveBlob(zipBuffer, {
+    suggestedName: zipFileName,
+    mimeType: 'application/zip',
+    description: 'Module archive',
+  });
 }
 
 function openEditBookmark(bookmark: Bookmark) {

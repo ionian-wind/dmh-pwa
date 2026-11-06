@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  canUseDirectoryPicker,
   canUseFileSystemAccess,
   getFileFromSource,
   getPickedFileFromDataTransferItem,
   getUrlFromSource,
+  pickDirectory,
   pickFiles,
   revokeSourceUrl,
   verifySourcePermission,
@@ -28,11 +30,13 @@ describe('generic file API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete (window as any).showOpenFilePicker;
+    delete (window as any).showDirectoryPicker;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     delete (window as any).showOpenFilePicker;
+    delete (window as any).showDirectoryPicker;
   });
 
   it('picks handles when the File System Access API is available', async () => {
@@ -159,6 +163,137 @@ describe('generic file API', () => {
         getAsFile: () => null,
       } as any),
     ).resolves.toBeNull();
+  });
+
+  it('picks directory files recursively as handles', async () => {
+    const image = new File(['x'], 'map.png', { type: 'image/png' });
+    const untypedImage = new File(['x'], 'photo.png');
+    const text = new File(['x'], 'notes.txt', { type: 'text/plain' });
+    const imageHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(image),
+    };
+    const untypedImageHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(untypedImage),
+    };
+    const textHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(text),
+    };
+    const nestedDirectory = {
+      kind: 'directory',
+      async *values() {
+        yield imageHandle;
+        yield untypedImageHandle;
+      },
+    };
+    const root = {
+      kind: 'directory',
+      async *values() {
+        yield textHandle;
+        yield nestedDirectory;
+      },
+    };
+    (window as any).showDirectoryPicker = vi.fn().mockResolvedValue(root);
+    const onProgress = vi.fn();
+
+    expect(canUseDirectoryPicker()).toBe(true);
+    await expect(
+      pickDirectory({
+        accept: { 'image/*': ['.png'] },
+        recursive: true,
+        onProgress,
+      }),
+    ).resolves.toEqual([
+      { file: image, source: { kind: 'handle', handle: imageHandle } },
+      {
+        file: untypedImage,
+        source: { kind: 'handle', handle: untypedImageHandle },
+      },
+    ]);
+    expect(onProgress).toHaveBeenCalledWith(image, 1, 2);
+    expect(onProgress).toHaveBeenLastCalledWith(untypedImage, 2, 2);
+  });
+
+  it('stops collecting when the directory signal is aborted', async () => {
+    const root = {
+      kind: 'directory',
+      async *values() {
+        yield {
+          kind: 'file',
+          getFile: vi.fn(),
+        };
+      },
+    };
+    (window as any).showDirectoryPicker = vi.fn().mockResolvedValue(root);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(pickDirectory({ signal: controller.signal })).resolves.toEqual(
+      [],
+    );
+  });
+
+  it('matches exact MIME types and skips nested folders without recursion', async () => {
+    const text = new File(['x'], 'note.txt', { type: 'text/plain' });
+    const textHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(text),
+    };
+    const nestedFile = new File(['x'], 'nested.png', { type: 'image/png' });
+    const nestedDirectory = {
+      kind: 'directory',
+      async *values() {
+        yield {
+          kind: 'file',
+          getFile: vi.fn().mockResolvedValue(nestedFile),
+        };
+      },
+    };
+    const root = {
+      kind: 'directory',
+      async *values() {
+        yield textHandle;
+        yield nestedDirectory;
+      },
+    };
+    (window as any).showDirectoryPicker = vi.fn().mockResolvedValue(root);
+
+    await expect(
+      pickDirectory({ accept: { 'text/plain': [] } }),
+    ).resolves.toEqual([
+      { file: text, source: { kind: 'handle', handle: textHandle } },
+    ]);
+
+    await expect(pickDirectory()).resolves.toEqual([
+      { file: text, source: { kind: 'handle', handle: textHandle } },
+    ]);
+  });
+
+  it('returns empty when the directory picker is aborted', async () => {
+    (window as any).showDirectoryPicker = vi
+      .fn()
+      .mockRejectedValue({ name: 'AbortError' });
+
+    await expect(pickDirectory()).resolves.toEqual([]);
+  });
+
+  it('falls back to a webkitdirectory input', async () => {
+    const input = { ...fakeInput(), webkitdirectory: false };
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'input' ? (input as any) : originalCreateElement(tag),
+    );
+    const promise = pickDirectory({ acceptAttribute: 'image/*' });
+    const file = new File(['x'], 'map.png', { type: 'image/png' });
+    input.files = [file] as unknown as FileList;
+    input.onchange?.();
+
+    await expect(promise).resolves.toEqual([
+      { file, source: { kind: 'blob', blob: file } },
+    ]);
+    expect(input.webkitdirectory).toBe(true);
+    expect(input.multiple).toBe(true);
   });
 
   it('reads sources and checks handle permissions', async () => {

@@ -7,6 +7,7 @@ import {
   createStoredFile,
   findStoredFileBySignature,
 } from '@/utils/files/fileStorage';
+import { readOpfsFile } from '@/utils/files/opfs';
 
 async function loadImageDimensions(blob: Blob): Promise<ImageMetadata> {
   if (typeof createImageBitmap === 'function') {
@@ -78,6 +79,9 @@ export async function createMapFileFromHandle(
 
 export async function getMapFileBlob(mapFile: MapFile): Promise<Blob> {
   if (mapFile.source?.kind === 'blob') return mapFile.source.blob;
+  if (mapFile.source?.kind === 'opfs') {
+    return readOpfsFile(mapFile.source.path);
+  }
   if (mapFile.source?.kind === 'handle') {
     return mapFile.source.handle.getFile();
   }

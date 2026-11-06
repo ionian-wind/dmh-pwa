@@ -3,12 +3,14 @@
 ## Purpose
 
 The app reads user-selected files without uploading them. The generic file API
-supports two storage strategies behind one interface:
+supports three storage strategies behind one interface:
 
 1. **File System Access API** (preferred, Chromium): keep a
    `FileSystemFileHandle` in IndexedDB and re-read the file when needed.
    Permission may be requested again after reload.
-2. **Blob fallback** (Firefox/Safari or when the API fails): store the
+2. **OPFS** (origin-private file system): stream large fallback files into an
+   app-owned `files/` directory. Used for Blob picks at or above 8 MB.
+3. **Blob fallback** (Firefox/Safari or when the APIs fail): store the
    `File`/`Blob` itself in IndexedDB.
 
 Jukebox metadata extraction (title/artist/album/artwork/color) runs in a Web
@@ -16,19 +18,24 @@ Worker so the UI stays responsive.
 
 ## Key files
 
-| File                         | Role                                                    |
-| ---------------------------- | ------------------------------------------------------- |
-| `index.ts`                   | Public generic file API                                 |
-| `pickFiles.ts`               | Generic picker with File System Access → input fallback |
-| `access.ts`                  | Source → File/URL, permission checks                    |
-| `types.ts` / `signature.ts`  | Generic stored-file types and dedupe signature          |
-| `fileStorage.ts`             | Generic `files` IndexedDB CRUD and dedupe imports       |
-| `fileReferences.ts`          | Shared-file deletion reference providers                |
-| `registerFileReferences.ts`  | Jukebox/map reference providers                         |
-| `FileSystemUtils.ts`         | Audio duration probe + metadata worker orchestration    |
-| `worker/metadata.worker.ts`  | `music-metadata` parse + image color extraction         |
-| `worker/color-from-image.ts` | Average/prominent color and palette                     |
-| `src/jukebox/stores.ts`      | Jukebox track/playlist stores                           |
+| File                         | Role                                                   |
+| ---------------------------- | ------------------------------------------------------ |
+| `index.ts`                   | Public generic file API                                |
+| `pickFiles.ts`               | File/directory pickers with FSA → input fallback       |
+| `access.ts`                  | Source → File/URL, permission checks                   |
+| `types.ts` / `signature.ts`  | Generic stored-file types and dedupe signature         |
+| `fileStorage.ts`             | Generic `files` IndexedDB CRUD, dedupe and OPFS policy |
+| `opfs.ts`                    | OPFS read/write/delete/list/clear and threshold        |
+| `streams.ts`                 | Chunked copy with progress and cancellation            |
+| `save.ts`                    | Save picker + download fallback                        |
+| `persist.ts`                 | Storage estimate, persistence and byte formatting      |
+| `diagnostics.ts`             | File counts by source kind and unavailable records     |
+| `fileReferences.ts`          | Shared-file deletion reference providers               |
+| `registerFileReferences.ts`  | Jukebox/map reference providers                        |
+| `FileSystemUtils.ts`         | Audio duration probe + metadata worker orchestration   |
+| `worker/metadata.worker.ts`  | `music-metadata` parse + image color extraction        |
+| `worker/color-from-image.ts` | Average/prominent color and palette                    |
+| `src/jukebox/stores.ts`      | Jukebox track/playlist stores                          |
 
 ## Generic file API
 
@@ -37,13 +44,33 @@ Access and blob implementations stay hidden.
 
 ```ts
 pickFiles(options?): Promise<PickedFile[]>
+pickDirectory(options?): Promise<PickedFile[]>
 getPickedFileFromDataTransferItem(item): Promise<PickedFile | null>
 getFileFromSource(source): Promise<File>
 getUrlFromSource(source): Promise<string>
 verifySourcePermission(source, mode?): Promise<boolean>
 
-importStoredFile(file, source): Promise<{ file: StoredFile; created: boolean }>
+importFile(file, options?): Promise<{ file: StoredFile; created: boolean }>
+importStoredFile(file, source, options?): Promise<ImportedFile>
 deleteFileIfUnreferenced(fileId): Promise<boolean>
+
+copyBlob(blob, sink, options?): Promise<void>
+saveBlob(blob, options): Promise<'saved' | 'downloaded' | 'cancelled'>
+createObjectUrlHandle(blob): { url, revoke }
+
+supportsOpfs(): boolean
+writeOpfsFile(path, blob, options?): Promise<void>
+readOpfsFile(path): Promise<File>
+deleteOpfsFile(path): Promise<void>
+listOpfsFiles(dir?): Promise<OpfsFileInfo[]>
+clearOpfsFiles(): Promise<void>
+clearOpfsData(): Promise<void>
+
+getStorageEstimate(): Promise<StorageEstimateInfo>
+isStoragePersisted(): Promise<boolean>
+requestPersistentStorage(): Promise<boolean>
+formatBytes(bytes): string
+getFileStorageDiagnostics(): Promise<FileStorageDiagnostics>
 ```
 
 `PickedFile = { file: File; source: StoredFileSource }`.
@@ -62,12 +89,14 @@ fallback for browsers that never emit `cancel`.
 
 ## Source access
 
-- `getFileFromSource()` calls `handle.getFile()` for handles and reconstructs a
-  `File` from blob sources.
+- `getFileFromSource()` calls `handle.getFile()` for handles, reads an OPFS
+  file for OPFS sources, and reconstructs a `File` from blob sources.
 - `verifySourcePermission()` checks `queryPermission` first and only calls
-  `requestPermission` when needed. Blob sources always return `true`.
+  `requestPermission` when needed. Blob and OPFS sources always return `true`.
 - Drag/drop uses `getPickedFileFromDataTransferItem()`, which prefers
   `getAsFileSystemHandle()` and falls back to `getAsFile()`.
+- `pickDirectory()` recursively collects file handles (or a
+  `webkitdirectory` input fallback) for bulk imports.
 
 Handles survive page reloads in Chromium, but the browser may require a new
 permission grant. Tracks that fail permission simply fail to play.
@@ -145,41 +174,77 @@ interface StoredFile {
 }
 ```
 
-- `importStoredFile(file, source)` deduplicates by
+- `importStoredFile(file, source, options)` deduplicates by
   `name | size | lastModified | type` and returns either the existing record or
-  a new one.
+  a new one. With `storage: 'auto'`, handles are preserved zero-copy and Blob
+  fallbacks at or above `OPFS_THRESHOLD_BYTES` (8 MB) are streamed into OPFS.
+- `importFile(file, options)` is the convenience wrapper that defaults the
+  source to the picked Blob.
 - Jukebox tracks store `fileId → files.id`; they keep audio metadata separately
   in `jukebox_tracks`.
 - Maps store `map.fileId → files.id`; image metadata lives in
-  `map_image_metadata`.
+  `map_image_metadata`. Large Blob-backed map images are promoted to OPFS when
+  the location is saved.
 - Deleting business records calls `deleteFileIfUnreferenced(fileId)`, which
   checks registered jukebox/map reference providers before removing the
-  generic record.
+  generic record. `deleteStoredFile()` also removes the matching OPFS file.
 
 Legacy `jukebox_files` and `map_files` records are migrated into `files`
 preserving their IDs. The old stores are cleared and no longer used.
 
+### Source kinds
+
+```ts
+type StoredFileSource =
+  | { kind: 'blob'; blob: Blob }
+  | { kind: 'handle'; handle: FileSystemFileHandle }
+  | { kind: 'opfs'; path: string };
+```
+
+OPFS files live under `files/<fileId>` in the origin-private file system. The
+metadata (`name`, `type`, `size`, `lastModified`) remains in IndexedDB.
+
+### Large files
+
+`copyBlob()` reads a Blob in chunks, awaits the sink, reports progress and
+honours an `AbortSignal`. OPFS writes use it, so a large fallback file is never
+buffered as a second full-size copy. The File System Access save picker uses the
+same streaming path through `saveBlob()`.
+
 ## Backup implications
 
 Backup/restore includes `files`, `jukebox_tracks`, `jukebox_playlists` and
-`map_image_metadata`. Blob sources are serialized as base64 data; handles are
-marked unavailable because `FileSystemFileHandle` is not JSON-serializable.
-Restoring an older backup converts `jukebox_files.json` / `map_files.json` into
-the generic store.
+`map_image_metadata`.
+
+Backup v2 writes:
+
+- `manifest.json` with the format/version and store list;
+- `files.json` with StoredFile metadata;
+- binary `files/<fileId>` entries for Blob and OPFS sources.
+
+Handle sources are written as `unavailable` because a
+`FileSystemFileHandle` is not JSON-serializable. Restoring writes binary file
+entries back to OPFS when available and falls back to IDB Blobs. Restoring an
+older backup still converts `jukebox_files.json` / `map_files.json` and legacy
+`blob-data` entries.
 
 ## Limitations
 
-- No folder import.
+- No permission-reconnect flow for expired handles.
 - No MIME/extension validation beyond the picker filter.
 - Generic files deduplicate by metadata signature, not content hash.
 - No garbage collection for files that become orphaned during map image
   replacement.
-- No permission-reconnect flow.
-- No quota estimation.
+- No quota estimation warning before a write; the Settings panel reports usage
+  after the fact.
 - Worker-per-file and sequential metadata extraction make bulk import slow.
+- JSZip still reads a whole archive for `.spk` and module imports; very large
+  archives are not streamed entry-by-entry yet.
 - Color/palette output is currently wrong.
 - FileSystem handles cannot be serialized and may need relinking after restore.
 - Generic file IDs are generated; legacy IDs are preserved by migration.
+- Existing IndexedDB Blobs are not migrated to OPFS automatically; only new
+  large fallback imports use OPFS.
 
 See [proposals/generic-file-handling.md](../proposals/generic-file-handling.md)
 for the proposed OPFS, streaming, quota and binary-backup upgrade.

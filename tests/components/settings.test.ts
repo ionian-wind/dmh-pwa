@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { h, nextTick } from 'vue';
@@ -28,6 +28,17 @@ vi.mock('@/dialogs', async (importOriginal) => ({
   confirm: resetMocks.confirm,
 }));
 
+const storageMocks = vi.hoisted(() => ({
+  diagnostics: vi.fn(),
+  requestPersistence: vi.fn(),
+}));
+
+vi.mock('@/utils/files', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
+  getFileStorageDiagnostics: storageMocks.diagnostics,
+  requestPersistentStorage: storageMocks.requestPersistence,
+}));
+
 const QToggleStub = quasarStubs.QToggle;
 
 vi.mock('@/jukebox/playerStore', () => ({
@@ -46,6 +57,20 @@ vi.mock('@/stores/timers', () => ({
 }));
 
 describe('settings dialog', () => {
+  beforeEach(() => {
+    storageMocks.diagnostics.mockReset().mockResolvedValue({
+      supported: true,
+      usage: 1024,
+      quota: 10 * 1024,
+      persisted: false,
+      fileCount: 3,
+      totalFileBytes: 100,
+      byKind: { blob: 1, handle: 1, opfs: 1 },
+      unavailableCount: 0,
+    });
+    storageMocks.requestPersistence.mockReset().mockResolvedValue(true);
+  });
+
   it('shows the language selector and closes through the modal', async () => {
     const wrapper = mount(SettingsDialog, {
       props: { modelValue: true },
@@ -104,6 +129,26 @@ describe('settings dialog', () => {
 
     expect(resetMocks.clearAllAppData).not.toHaveBeenCalled();
     expect(resetMocks.reloadAppFromMainPage).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it('shows storage diagnostics and requests persistent storage', async () => {
+    const wrapper = mount(SettingsDialog, {
+      props: { modelValue: true },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Storage');
+    expect(wrapper.text()).toContain('1.0 KB of 10 KB used');
+    expect(wrapper.text()).toContain('3 files');
+    expect(wrapper.text()).toContain('Not granted');
+    expect(wrapper.text()).toContain('Local: 1 · OPFS: 1 · Linked: 1');
+
+    await wrapper.find('.settings-request-persistence').trigger('click');
+    await flushPromises();
+
+    expect(storageMocks.requestPersistence).toHaveBeenCalled();
+    expect(storageMocks.diagnostics).toHaveBeenCalledTimes(2);
     wrapper.unmount();
   });
 

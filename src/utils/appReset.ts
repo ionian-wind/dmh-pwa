@@ -1,4 +1,5 @@
 import { resetStoreCache } from './storage';
+import { clearOpfsData } from './files/opfs';
 
 function deleteDatabase(name: string): Promise<void> {
   return new Promise((resolve) => {
@@ -49,11 +50,13 @@ function clearCookies(): void {
 
 /**
  * Remove every piece of storage owned by this site: IndexedDB databases,
- * localStorage, sessionStorage, cookies, Cache Storage and service workers.
+ * OPFS files, localStorage, sessionStorage, cookies, Cache Storage and
+ * service workers.
  */
 export async function clearAllAppData(): Promise<void> {
   await resetStoreCache();
   await clearIndexedDatabases();
+  await clearOpfsData();
   try {
     localStorage.clear();
   } catch {

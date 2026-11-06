@@ -2,6 +2,7 @@ import { openDB, type IDBPDatabase } from 'idb';
 import JSZip from 'jszip';
 import type { NormalizedSoundPack, SoundPackManifest } from '../types';
 import { deepUnwrap } from '@/utils/deepUnwrap';
+import { saveBlob } from '@/utils/files/save';
 import {
   getLayerVariations,
   getOneShotSamples,
@@ -121,8 +122,7 @@ async function putPack(record: SoundPackRecord): Promise<void> {
 export async function importSoundPack(
   spkFile: File,
 ): Promise<NormalizedSoundPack> {
-  const arrayBuffer = await spkFile.arrayBuffer();
-  const zip = await JSZip.loadAsync(arrayBuffer);
+  const zip = await JSZip.loadAsync(spkFile);
   const manifestFile = zip.file('pack.json');
   if (!manifestFile) {
     throw new Error('Invalid sound pack: missing pack.json');
@@ -261,12 +261,11 @@ export async function exportSoundPackAsFile(packId: string): Promise<void> {
   if (!record) throw new Error('Pack not found');
 
   const content = await buildZip(record);
-  const url = URL.createObjectURL(content);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${record.manifest.id}.spk`;
-  a.click();
-  URL.revokeObjectURL(url);
+  await saveBlob(content, {
+    suggestedName: `${record.manifest.id}.spk`,
+    mimeType: 'application/zip',
+    description: 'Sound pack',
+  });
 }
 
 export async function exportSoundPack(packId: string): Promise<Blob> {

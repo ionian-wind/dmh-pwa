@@ -90,6 +90,13 @@ vi.mock('@/utils/files', async () => {
   return {
     getFileFromSource: mocks.getFile,
     verifySourcePermission,
+    createObjectUrlHandle: (blob: Blob) => {
+      const url = URL.createObjectURL(blob);
+      return {
+        url,
+        revoke: () => URL.revokeObjectURL(url),
+      };
+    },
   };
 });
 
@@ -147,6 +154,7 @@ describe('jukebox player store', () => {
       mocks.playlists.items.value.find((item) => item.id === id),
     );
     (URL as any).createObjectURL = vi.fn(() => 'blob:audio');
+    (URL as any).revokeObjectURL = vi.fn();
   });
 
   afterEach(() => {
@@ -359,6 +367,7 @@ describe('jukebox player store', () => {
     expect(player.currentTrack).toBeNull();
     expect(player.isPlaying).toBe(false);
     expect(player.currentTime).toBe(0);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:audio');
   });
 
   it('restores the last track during init without starting playback', async () => {

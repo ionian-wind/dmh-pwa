@@ -30,6 +30,7 @@ import { monaco } from '@/components/common/monaco';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { confirm, prompt } from '@/dialogs';
+import { saveBlob } from '@/utils/files/save';
 import {
   calculate,
   DiceSyntaxError,
@@ -384,12 +385,11 @@ async function copyExport() {
 
 function downloadExport() {
   const blob = new Blob([exportText.value], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'anydice-output.csv';
-  anchor.click();
-  URL.revokeObjectURL(url);
+  void saveBlob(blob, {
+    suggestedName: 'anydice-output.csv',
+    mimeType: 'text/csv',
+    description: 'CSV table',
+  });
 }
 
 function zoomChart(delta: number) {

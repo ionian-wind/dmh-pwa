@@ -10,6 +10,12 @@ import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
 import type { Migration } from '@/types/migration';
 import { buildFileSignature } from './files/signature';
+import {
+  clearOpfsFiles,
+  readOpfsFile,
+  supportsOpfs,
+  writeOpfsFile,
+} from './files/opfs';
 import { debug } from './debug';
 
 export class StorageError extends Error {
@@ -496,14 +502,17 @@ export const MAIN_STORE_NAMES = [
   'indexations_mentions',
 ];
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
+const BACKUP_FORMAT = 'dmh.backup';
+const BACKUP_VERSION = 2;
+
+function isBlobLike(value: any): value is Blob {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof value.arrayBuffer === 'function' &&
+    typeof value.slice === 'function' &&
+    typeof value.size === 'number'
+  );
 }
 
 function base64ToBlob(data: string, type: string): Blob {
@@ -518,6 +527,7 @@ function base64ToBlob(data: string, type: string): Blob {
 async function serializeStoreItems(
   storeName: string,
   items: any[],
+  zip: JSZip,
 ): Promise<any[]> {
   if (storeName !== 'files') return items;
 
@@ -525,16 +535,46 @@ async function serializeStoreItems(
     items.map(async (item) => {
       const source = item?.source;
       if (!source) return item;
-      if (source.kind === 'blob' && source.blob instanceof Blob) {
+
+      if (source.kind === 'blob' && isBlobLike(source.blob)) {
+        const entry = `files/${item.id}`;
+        zip.file(entry, source.blob);
         return {
           ...item,
           source: {
-            kind: 'blob-data',
+            kind: 'binary',
+            entry,
             type: source.blob.type,
-            data: arrayBufferToBase64(await source.blob.arrayBuffer()),
+            size: source.blob.size,
           },
         };
       }
+
+      if (source.kind === 'opfs') {
+        try {
+          const file = await readOpfsFile(source.path);
+          const entry = `files/${item.id}`;
+          zip.file(entry, file);
+          return {
+            ...item,
+            source: {
+              kind: 'binary',
+              entry,
+              type: file.type,
+              size: file.size,
+            },
+          };
+        } catch {
+          return {
+            ...item,
+            source: {
+              kind: 'unavailable',
+              reason: 'OPFS file is missing',
+            },
+          };
+        }
+      }
+
       if (source.kind === 'handle') {
         return {
           ...item,
@@ -544,6 +584,7 @@ async function serializeStoreItems(
           },
         };
       }
+
       return item;
     }),
   );
@@ -570,6 +611,59 @@ function deserializeStoreItems(storeName: string, items: any[]): any[] {
   });
 }
 
+async function deserializeFileItemsForRestore(
+  zip: JSZip,
+  items: any[],
+): Promise<any[]> {
+  const restored: any[] = [];
+
+  for (const item of items) {
+    const source = item?.source;
+
+    if (source?.kind === 'blob-data') {
+      restored.push(...deserializeStoreItems('files', [item]));
+      continue;
+    }
+
+    if (source?.kind === 'binary' && typeof source.entry === 'string') {
+      const entry = zip.file(source.entry);
+      if (!entry) {
+        restored.push({
+          ...item,
+          source: {
+            kind: 'unavailable',
+            reason: 'Backup file entry is missing',
+          },
+        });
+        continue;
+      }
+
+      const raw = await entry.async('blob');
+      const blob = source.type ? new Blob([raw], { type: source.type }) : raw;
+
+      if (supportsOpfs()) {
+        try {
+          await writeOpfsFile(source.entry, blob);
+          restored.push({
+            ...item,
+            source: { kind: 'opfs', path: source.entry },
+          });
+          continue;
+        } catch (error) {
+          debug('Failed to restore file into OPFS:', error);
+        }
+      }
+
+      restored.push({ ...item, source: { kind: 'blob', blob } });
+      continue;
+    }
+
+    restored.push(item);
+  }
+
+  return restored;
+}
+
 interface LegacyRestoreData {
   files: any[];
   metadata: any[];
@@ -577,8 +671,8 @@ interface LegacyRestoreData {
 
 function hasReadableSource(source: any): boolean {
   if (!source) return false;
-  if (source.kind === 'blob') return source.blob instanceof Blob;
-  return source.kind === 'handle';
+  if (source.kind === 'blob') return isBlobLike(source.blob);
+  return source.kind === 'handle' || source.kind === 'opfs';
 }
 
 async function readLegacyFileRestore(zip: JSZip): Promise<LegacyRestoreData> {
@@ -625,14 +719,54 @@ async function readLegacyFileRestore(zip: JSZip): Promise<LegacyRestoreData> {
   return { files, metadata };
 }
 
+async function validateBackupManifest(zip: JSZip): Promise<void> {
+  const entry = zip.file('manifest.json');
+  if (!entry) return;
+
+  let manifest: any;
+  try {
+    manifest = JSON.parse(await entry.async('string'));
+  } catch {
+    throw new Error('Invalid backup manifest');
+  }
+
+  if (manifest?.format && manifest.format !== BACKUP_FORMAT) {
+    throw new Error('Unsupported backup format');
+  }
+  if (
+    typeof manifest?.version === 'number' &&
+    manifest.version > BACKUP_VERSION
+  ) {
+    throw new Error('Backup was created by a newer app version');
+  }
+}
+
 /**
- * Backup all main stores as a zip file (returns a Blob)
+ * Backup all main stores as a zip file (returns a Blob). Large file bytes are
+ * stored as binary entries instead of base64 JSON payloads.
  */
 export async function backupAllStores(): Promise<Blob> {
   const zip = new JSZip();
+  zip.file(
+    'manifest.json',
+    JSON.stringify(
+      {
+        format: BACKUP_FORMAT,
+        version: BACKUP_VERSION,
+        createdAt: new Date().toISOString(),
+        appVersion: import.meta.env.VITE_APP_VERSION ?? 'dev',
+        stores: MAIN_STORE_NAMES,
+        fileEncoding: 'binary',
+        includesExternalFiles: false,
+      },
+      null,
+      2,
+    ),
+  );
+
   for (const storeName of MAIN_STORE_NAMES) {
     const items = await idbGetAllItems(storeName);
-    const serialized = await serializeStoreItems(storeName, items);
+    const serialized = await serializeStoreItems(storeName, items, zip);
     zip.file(`${storeName}.json`, JSON.stringify(serialized, null, 2));
   }
   return zip.generateAsync({ type: 'blob' });
@@ -644,9 +778,16 @@ export async function backupAllStores(): Promise<Blob> {
  */
 export async function restoreAllStores(zipFile: Blob): Promise<void> {
   const zip = await JSZip.loadAsync(zipFile);
+  await validateBackupManifest(zip);
+
   const legacy = zip.file('files.json')
     ? { files: [], metadata: [] }
     : await readLegacyFileRestore(zip);
+  const hasFiles = !!zip.file('files.json') || legacy.files.length > 0;
+
+  if (hasFiles && supportsOpfs()) {
+    await clearOpfsFiles();
+  }
 
   for (const storeName of MAIN_STORE_NAMES) {
     let items: any[] | null = null;
@@ -655,7 +796,11 @@ export async function restoreAllStores(zipFile: Blob): Promise<void> {
     if (file) {
       const content = await file.async('string');
       try {
-        items = deserializeStoreItems(storeName, JSON.parse(content));
+        const parsed = JSON.parse(content);
+        items =
+          storeName === 'files'
+            ? await deserializeFileItemsForRestore(zip, parsed)
+            : deserializeStoreItems(storeName, parsed);
       } catch (e) {
         // skip invalid JSON
         continue;

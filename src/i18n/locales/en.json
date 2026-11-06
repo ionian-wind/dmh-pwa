@@ -526,7 +526,19 @@
     "clearStorage": "Clear storage",
     "clearStorageHint": "Delete all saved notes, maps, media, settings and other app data from this browser.",
     "clearStorageButton": "Clear",
-    "clearStorageConfirm": "This will permanently delete all site storage: app data, settings, caches and service workers. The app will reload from the main page. Continue?"
+    "clearStorageConfirm": "This will permanently delete all site storage: app data, settings, caches and service workers. The app will reload from the main page. Continue?",
+    "storage": "Storage",
+    "storageHint": "Images, audio and other files are stored locally in this browser.",
+    "storageUsage": "{used} of {quota} used",
+    "storageUsageUnknown": "Storage usage is not available in this browser.",
+    "storagePersistent": "Persistent storage",
+    "storagePersistentHint": "Ask the browser to keep app data when storage is low.",
+    "storagePersistentGranted": "Granted",
+    "storagePersistentDenied": "Not granted",
+    "storageRequest": "Request",
+    "storageFiles": "{count} files",
+    "storageUnavailable": "{count} unavailable",
+    "storageBreakdown": "Local: {blob} · OPFS: {opfs} · Linked: {handle}"
   },
   "tags": {
     "title": "Tags"
@@ -815,7 +827,8 @@
     "trackNotAvailable": "Track not available",
     "bulkEditTracks": "Edit selected tracks",
     "bulkEditPlaylists": "Edit selected playlists",
-    "bulkDeleteConfirm": "Delete {count} selected item(s)?"
+    "bulkDeleteConfirm": "Delete {count} selected item(s)?",
+    "addFolder": "Add folder"
   },
   "ambientSoundPage": {
     "title": "Ambient Sound",

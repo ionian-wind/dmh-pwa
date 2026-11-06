@@ -234,14 +234,18 @@ existing migrations only create stores.
 parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
 files, map_image_metadata, indexations_mentions`.
 
-Backup encoding:
+Backup encoding (v2):
 
+- `manifest.json` records the format, version and store list.
 - Normal records are written as JSON.
-- `files` Blob sources are base64-encoded as `source.kind: 'blob-data'`.
+- `files.json` holds StoredFile metadata.
+- Blob and OPFS file bytes are written as binary `files/<fileId>` ZIP entries.
 - FileSystem handles cannot be serialized; they are written as
   `source.kind: 'unavailable'` and may need relinking after restore.
-- Restoring an older backup converts legacy `jukebox_files` / `map_files`
-  entries into the generic file store.
+- Restoring writes binary entries back to OPFS when available and falls back to
+  IDB Blobs.
+- Restoring an older backup still converts `jukebox_files` / `map_files`
+  entries and legacy `blob-data` sources into the generic file store.
 
 `restoreAllStores(blob)` iterates the same list, clears each store, and writes
 items one by one with validation. Restore is not a single cross-store

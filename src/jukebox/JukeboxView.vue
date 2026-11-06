@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import {
+  pickDirectory,
   pickFiles as pickFileSources,
   getPickedFileFromDataTransferItem,
   type PickedFile,
@@ -24,7 +25,12 @@ import { useI18n } from 'vue-i18n';
 import { debugError } from '@/utils/debug';
 import PlaylistList from './components/PlaylistList.vue';
 import { confirm } from '@/dialogs';
-import { IconPencil, IconPlaylist, IconTrash } from '@tabler/icons-vue';
+import {
+  IconFolder,
+  IconPencil,
+  IconPlaylist,
+  IconTrash,
+} from '@tabler/icons-vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
@@ -345,15 +351,19 @@ async function processFiles(files: PickedFile[]) {
   playerStore.actualiseQueue();
 }
 
+const AUDIO_PICK_OPTIONS = {
+  description: 'Audio Files',
+  accept: { 'audio/*': ['.mp3', '.wav', '.ogg', '.flac', '.aac'] },
+  acceptAttribute: 'audio/*,.mp3,.wav,.ogg,.flac,.aac',
+};
+
 async function pickAudioFiles() {
   if (isAddingTracks.value) return;
   isAddingTracks.value = true;
   try {
     const files = await pickFileSources({
       multiple: true,
-      description: 'Audio Files',
-      accept: { 'audio/*': ['.mp3', '.wav', '.ogg', '.flac', '.aac'] },
-      acceptAttribute: 'audio/*,.mp3,.wav,.ogg,.flac,.aac',
+      ...AUDIO_PICK_OPTIONS,
     });
     await processFiles(files);
   } catch (err) {
@@ -366,6 +376,35 @@ async function pickAudioFiles() {
     isAddingTracks.value = false;
   }
 }
+
+async function pickAudioFolder() {
+  if (isAddingTracks.value) return;
+  isAddingTracks.value = true;
+  try {
+    const files = await pickDirectory({
+      ...AUDIO_PICK_OPTIONS,
+      recursive: true,
+    });
+    await processFiles(files);
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      // User cancelled the folder picker.
+    } else {
+      debugError('Error picking or processing a folder:', err);
+    }
+  } finally {
+    isAddingTracks.value = false;
+  }
+}
+
+const headerButtons = computed(() => [
+  {
+    icon: IconFolder,
+    color: 'primary',
+    title: 'jukebox.addFolder',
+    event: pickAudioFolder,
+  },
+]);
 
 const isDragging = ref(false);
 
@@ -547,6 +586,7 @@ onBeforeUnmount(() => {
       @sort="onTracksSorted"
       :right-drawer-icon="IconPlaylist"
       :left-header-buttons="bulkHeaderButtons"
+      :header-buttons="headerButtons"
     >
       <AddToPlaylistModal
         v-model="isAddToPlaylistModalOpen"

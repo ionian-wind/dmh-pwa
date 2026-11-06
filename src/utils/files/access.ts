@@ -1,10 +1,14 @@
 import type { StoredFileSource } from './types';
+import { readOpfsFile } from './opfs';
 
 export async function getFileFromSource(
   source: StoredFileSource,
 ): Promise<File> {
   if (source.kind === 'handle') {
     return source.handle.getFile();
+  }
+  if (source.kind === 'opfs') {
+    return readOpfsFile(source.path);
   }
   const blob = source.blob;
   return new File([blob], (blob as File).name || 'unnamed', {

@@ -10,6 +10,7 @@ import { useCharacterStore } from '@/stores/characters';
 import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
+import { saveBlob } from '@/utils/files';
 import {
   parseModuleZip,
   importModuleFromZip,
@@ -98,22 +99,17 @@ onMounted(async () => {
 });
 
 function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 100);
+  return saveBlob(blob, {
+    suggestedName: filename,
+    mimeType: 'application/zip',
+    description: 'Backup archive',
+  });
 }
 
 async function handleBackup() {
   try {
     const blob = await backupAllStores();
-    downloadBlob(
+    await downloadBlob(
       blob,
       `dmh-backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.zip`,
     );

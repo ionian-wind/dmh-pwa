@@ -8,7 +8,12 @@ import {
 } from './stores';
 import { getStoredFile } from '@/utils/files/fileStorage';
 import { JukeboxRepeatMode, useConfigStore } from '@/utils/configStore';
-import { getFileFromSource, verifySourcePermission } from '@/utils/files';
+import {
+  createObjectUrlHandle,
+  getFileFromSource,
+  verifySourcePermission,
+  type ObjectUrlHandle,
+} from '@/utils/files';
 import { debug, debugError, debugWarn } from '@/utils/debug';
 import { rng } from '@/utils/random';
 import { Howl, Howler } from 'howler';
@@ -31,6 +36,7 @@ export const useJukeboxPlayerStore = defineStore(
   'jukeboxPlayer',
   () => {
     let howl: Howl | null = null;
+    let currentSourceUrl: ObjectUrlHandle | null = null;
     const configStore = useConfigStore();
 
     // Other Stores
@@ -424,7 +430,7 @@ export const useJukeboxPlayerStore = defineStore(
         debugError('🎵 JukeboxPlayer: Could not read track file', err);
         return false;
       }
-      const src = URL.createObjectURL(file);
+      const nextSourceUrl = createObjectUrlHandle(file);
       // Determine format from file.type or file.name
       let format: string | undefined;
       if (file.type) {
@@ -434,6 +440,7 @@ export const useJukeboxPlayerStore = defineStore(
       }
       if (howl) {
         const previousHowl = howl;
+        const previousSourceUrl = currentSourceUrl;
         if (smooth) {
           // Detach callbacks so the outgoing sound cannot advance the queue.
           previousHowl.off();
@@ -447,15 +454,23 @@ export const useJukeboxPlayerStore = defineStore(
               previousHowl.unload();
             } catch {
               // The sound may already have been unloaded.
+            } finally {
+              previousSourceUrl?.revoke();
             }
           }, SMOOTH_TRACK_FADE_MS + 50);
         } else {
           previousHowl.unload();
+          previousSourceUrl?.revoke();
         }
         howl = null;
+        currentSourceUrl = null;
+      } else if (currentSourceUrl) {
+        currentSourceUrl.revoke();
+        currentSourceUrl = null;
       }
+      currentSourceUrl = nextSourceUrl;
       howl = new Howl({
-        src: [src],
+        src: [nextSourceUrl.url],
         html5: true,
         volume: smooth ? 0 : volume.value,
         format: format ? [format] : undefined,
@@ -711,6 +726,8 @@ export const useJukeboxPlayerStore = defineStore(
         howl.unload();
         howl = null;
       }
+      currentSourceUrl?.revoke();
+      currentSourceUrl = null;
       stopProgressTimer();
       transitionInProgress = false;
       isPlaying.value = false;

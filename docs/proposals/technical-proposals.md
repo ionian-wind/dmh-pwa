@@ -130,19 +130,19 @@ a preview warning.
 
 ## 6. Backup/restore (mostly implemented)
 
-`MAIN_STORE_NAMES` now covers every store, Blob audio is base64-encoded, and
-restore reloads the page. Remaining: versioned manifest, transactional restore,
-and a reconnect flow for FileSystem handles. See
-[generic-file-handling.md](generic-file-handling.md) for the proposed binary
-backup format, OPFS storage and streaming path.
+`MAIN_STORE_NAMES` covers every store, file bytes are written as binary ZIP
+entries, restore reloads the page, and the backup includes a versioned
+manifest. Remaining: transactional restore and a reconnect flow for FileSystem
+handles. See [generic-file-handling.md](generic-file-handling.md) for the
+implemented OPFS, streaming and backup design.
 
 **Proposal.**
 1. Add `manifest.json` to the backup ZIP:
-   `{ format: 'dmh.backup', version: 1, createdAt, appVersion, stores: [...] }`.
+   `{ format: 'dmh.backup', version: 2, createdAt, appVersion, stores: [...] }`.
 2. Include every object store, including `timers`, `jukebox_*`, and
    `indexations_mentions`.
 3. For jukebox:
-   - export Blob files as binary entries (`files/<id>`),
+   - export Blob and OPFS files as binary entries (`files/<id>`),
    - export handle metadata with a warning that handles are origin/device
      bound,
    - provide a "relink" flow after restore.

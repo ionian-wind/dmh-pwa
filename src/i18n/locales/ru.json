@@ -527,7 +527,19 @@
     "clearStorage": "Очистить хранилище",
     "clearStorageHint": "Удалить все сохранённые заметки, карты, медиа, настройки и другие данные приложения из этого браузера.",
     "clearStorageButton": "Очистить",
-    "clearStorageConfirm": "Все данные сайта будут безвозвратно удалены: данные приложения, настройки, кеши и service workers. Приложение перезагрузится с главной страницы. Продолжить?"
+    "clearStorageConfirm": "Все данные сайта будут безвозвратно удалены: данные приложения, настройки, кеши и service workers. Приложение перезагрузится с главной страницы. Продолжить?",
+    "storage": "Хранилище",
+    "storageHint": "Изображения, аудио и другие файлы хранятся локально в этом браузере.",
+    "storageUsage": "Использовано {used} из {quota}",
+    "storageUsageUnknown": "Информация об использовании хранилища недоступна в этом браузере.",
+    "storagePersistent": "Постоянное хранилище",
+    "storagePersistentHint": "Попросить браузер сохранять данные при нехватке места.",
+    "storagePersistentGranted": "Предоставлено",
+    "storagePersistentDenied": "Не предоставлено",
+    "storageRequest": "Запросить",
+    "storageFiles": "Файлов: {count}",
+    "storageUnavailable": "Недоступно: {count}",
+    "storageBreakdown": "Локально: {blob} · OPFS: {opfs} · Ссылки: {handle}"
   },
   "tags": {
     "title": "Теги"
@@ -816,7 +828,8 @@
     "trackNotAvailable": "Трек недоступен",
     "bulkEditTracks": "Редактировать выбранные треки",
     "bulkEditPlaylists": "Редактировать выбранные плейлисты",
-    "bulkDeleteConfirm": "Удалить выбранные элементы ({count})?"
+    "bulkDeleteConfirm": "Удалить выбранные элементы ({count})?",
+    "addFolder": "Добавить папку"
   },
   "ambientSoundPage": {
     "title": "Амбиент",

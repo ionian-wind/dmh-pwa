@@ -9,6 +9,8 @@ import {
 } from '@/maps/maps';
 import { registerFileReferenceProvider } from '@/utils/files/fileReferences';
 import { resetStoreCache } from '@/utils/storage';
+import { OPFS_THRESHOLD_BYTES, readOpfsFile } from '@/utils/files/opfs';
+import { installFakeOpfs } from '../helpers/fakeOpfs';
 
 async function deleteDatabase() {
   await resetStoreCache();
@@ -78,6 +80,27 @@ describe('map file storage', () => {
     await putMapFile({ ...file, id: 'file2', imageMetadata: undefined });
     const loaded = await getMapFile('file2');
     expect(loaded?.imageMetadata).toBeUndefined();
+  });
+
+  it('promotes large fallback map images to OPFS', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      await putMapFile({
+        ...file,
+        id: 'big-map',
+        size: OPFS_THRESHOLD_BYTES,
+        source: { kind: 'blob', blob: new Blob(['big-map']) },
+      });
+
+      const loaded = await getMapFile('big-map');
+      expect(loaded?.source.kind).toBe('opfs');
+      if (loaded?.source.kind !== 'opfs') throw new Error('expected OPFS');
+      await expect(readOpfsFile(loaded.source.path)).resolves.toBeInstanceOf(
+        File,
+      );
+    } finally {
+      opfs.restore();
+    }
   });
 
   it('keeps shared map files and metadata while referenced', async () => {

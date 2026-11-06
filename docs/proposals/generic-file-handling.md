@@ -1,6 +1,10 @@
 # Generic File Handling and Large-File Storage
 
-**Status:** proposal — not implemented.
+**Status:** core phases implemented. OPFS, streaming helpers, the save picker,
+folder import, storage diagnostics and the binary backup v2 are in the tree.
+Remaining optional work: streaming ZIP extraction for very large archives,
+content hashing, a handle reconnect flow, lazy migration of existing IDB blobs,
+and "include external handles" in backups.
 
 **Scope:** every binary the app owns: jukebox audio, ambient sound packs,
 location map images, note attachments, module archives, and backups.
@@ -24,34 +28,65 @@ server-upload and PNG-trailer techniques.
 
 ## 1. Summary
 
-The current file layer already abstracts over two storage strategies:
+Before this work the file layer abstracted over two storage strategies:
 
 1. a `FileSystemFileHandle` for user-owned files (zero-copy, Chromium), and
 2. a `Blob` stored directly in IndexedDB (fallback).
 
-That is a good foundation, but it does not scale to large files, backups, or a
+That was a good foundation, but it did not scale to large files, backups, or a
 future image tool:
 
-- Large fallback files live inside IndexedDB, where structured-clone and
+- Large fallback files lived inside IndexedDB, where structured-clone and
   transaction costs are high.
-- Backup serializes every Blob as base64 inside JSON, inflating the archive and
+- Backup serialized every Blob as base64 inside JSON, inflating the archive and
   holding whole files in memory.
-- `importSoundPack()` reads the entire `.spk` with `arrayBuffer()` before
+- `importSoundPack()` read the entire `.spk` with `arrayBuffer()` before
   handing it to JSZip.
-- Object URLs are managed per feature; the jukebox player creates one per
-  track and never revokes it.
-- There is no folder import, save picker, quota display, persistent-storage
-  request, orphan garbage collection, or reconnect flow for lost handles.
+- Object URLs were managed per feature; the jukebox player created one per
+  track and never revoked it.
+- There was no folder import, save picker, quota display, persistent-storage
+  request, or OPFS storage.
 
-This proposal adds a **third source kind, OPFS**, a streaming API, a shared
-save helper, storage diagnostics, and a versioned backup format that stores
-file bytes as binary ZIP entries instead of base64 JSON.
+This work adds a **third source kind, OPFS**, a streaming API, a shared save
+helper, storage diagnostics, and a versioned backup format that stores file
+bytes as binary ZIP entries instead of base64 JSON.
 
 The guiding rule:
 
 > IndexedDB stores metadata. Large bytes live behind a source abstraction,
 > preferably as a file handle or an OPFS file, and are read or written as
 > streams.
+
+### Implementation notes
+
+Implemented in the current tree:
+
+- `StoredFileSource` now includes `{ kind: 'opfs'; path }`; handle and blob
+  sources remain supported.
+- `src/utils/files/opfs.ts` provides read/write/delete/list/clear operations and
+  an 8 MB fallback threshold.
+- `src/utils/files/streams.ts` provides chunked copying with progress and
+  cancellation.
+- Blob fallbacks at or above the threshold are written to OPFS during
+  `importStoredFile()`; handles are still preserved zero-copy.
+- `saveBlob()` uses the File System Access save picker when available and
+  streams into it, with an anchor-download fallback.
+- `pickDirectory()` adds File System Access folder picking and a
+  `webkitdirectory` fallback.
+- `persist.ts` and `diagnostics.ts` power the Settings → Storage panel.
+- Backup v2 writes `manifest.json`, `files.json` and binary `files/<id>`
+  entries; restore writes bytes back to OPFS when available and falls back to
+  IDB blobs.
+- Jukebox playback now revokes its object URL when the track changes or stops.
+- The Jukebox header has an "Add folder" action using `pickDirectory()`.
+
+Still open:
+
+- Streaming ZIP extraction for very large `.spk`/module archives. JSZip still
+  reads the archive as a whole, although it now receives the Blob directly.
+- Optional content hashing and lazy migration of existing IDB blob records.
+- Reconnect UI for expired handles and optional "include external files" in
+  backups.
 
 ---
 
@@ -80,7 +115,7 @@ The guiding rule:
 
 ---
 
-## 3. Current state
+## 3. Original state (before implementation)
 
 ### 3.1 Source kinds
 

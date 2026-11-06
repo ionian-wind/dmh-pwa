@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
@@ -7,8 +7,14 @@ import { useConfigStore } from '@/utils/configStore';
 import { confirm } from '@/dialogs';
 import { clearAllAppData, reloadAppFromMainPage } from '@/utils/appReset';
 import { debugError } from '@/utils/debug';
+import {
+  formatBytes,
+  getFileStorageDiagnostics,
+  requestPersistentStorage,
+  type FileStorageDiagnostics,
+} from '@/utils/files';
 
-defineProps<{
+const props = defineProps<{
   modelValue: boolean;
 }>();
 
@@ -19,6 +25,67 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const configStore = useConfigStore();
 const isClearingStorage = ref(false);
+const isRequestingPersistence = ref(false);
+const isLoadingStorage = ref(false);
+const storage = ref<FileStorageDiagnostics | null>(null);
+
+const storageUsage = computed(() => {
+  const info = storage.value;
+  if (!info) return '';
+  if (!info.supported || info.quota === null) {
+    return t('settings.storageUsageUnknown');
+  }
+  return t('settings.storageUsage', {
+    used: formatBytes(info.usage ?? 0),
+    quota: formatBytes(info.quota),
+  });
+});
+
+const storageFiles = computed(() =>
+  storage.value
+    ? t('settings.storageFiles', { count: storage.value.fileCount })
+    : '',
+);
+
+const storageBreakdown = computed(() =>
+  storage.value
+    ? t('settings.storageBreakdown', {
+        blob: storage.value.byKind.blob,
+        opfs: storage.value.byKind.opfs,
+        handle: storage.value.byKind.handle,
+      })
+    : '',
+);
+
+async function loadStorage() {
+  isLoadingStorage.value = true;
+  try {
+    storage.value = await getFileStorageDiagnostics();
+  } catch (error) {
+    debugError('Failed to read storage diagnostics:', error);
+    storage.value = null;
+  } finally {
+    isLoadingStorage.value = false;
+  }
+}
+
+async function requestPersistence() {
+  isRequestingPersistence.value = true;
+  try {
+    await requestPersistentStorage();
+    await loadStorage();
+  } finally {
+    isRequestingPersistence.value = false;
+  }
+}
+
+onMounted(loadStorage);
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) void loadStorage();
+  },
+);
 
 function close() {
   emit('update:modelValue', false);
@@ -148,6 +215,62 @@ async function clearStorage() {
     <section class="q-mt-lg" data-test="settings-content">
       <h5 class="q-mt-none q-mb-sm">{{ t('settings.content') }}</h5>
       <QList separator>
+        <QItem data-test="settings-storage">
+          <QItemSection>
+            <div>{{ t('settings.storage') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.storageHint') }}
+            </div>
+            <div v-if="storage" class="text-caption text-grey-7">
+              {{ storageBreakdown }}
+            </div>
+            <div
+              v-if="storage?.unavailableCount"
+              class="text-caption text-negative"
+            >
+              {{
+                t('settings.storageUnavailable', {
+                  count: storage.unavailableCount,
+                })
+              }}
+            </div>
+          </QItemSection>
+          <QItemSection side class="text-right">
+            <QSpinner v-if="isLoadingStorage" size="18px" color="primary" />
+            <div v-else class="text-caption">{{ storageUsage }}</div>
+            <div
+              v-if="!isLoadingStorage && storage"
+              class="text-caption text-grey-7"
+            >
+              {{ storageFiles }}
+            </div>
+          </QItemSection>
+        </QItem>
+        <QItem data-test="settings-persistence">
+          <QItemSection>
+            <div>{{ t('settings.storagePersistent') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.storagePersistentHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <div v-if="storage" class="text-caption q-mb-xs">
+              {{
+                storage.persisted
+                  ? t('settings.storagePersistentGranted')
+                  : t('settings.storagePersistentDenied')
+              }}
+            </div>
+            <QBtn
+              v-if="storage && !storage.persisted"
+              class="settings-request-persistence"
+              color="primary"
+              :label="t('settings.storageRequest')"
+              :loading="isRequestingPersistence"
+              @click="requestPersistence"
+            />
+          </QItemSection>
+        </QItem>
         <QItem>
           <QItemSection>
             <div>{{ t('settings.clearStorage') }}</div>

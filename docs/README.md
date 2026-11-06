@@ -113,7 +113,7 @@ src/
   schemas/                         JSON schemas used for write validation
   utils/storage.ts                 IndexedDB + base store + backup
   utils/markdownParser.ts          markdown-it renderer + entity link parsing
-  utils/files/                     File System Access / Blob + audio worker
+  utils/files/                     File System Access / OPFS / Blob + audio worker
   utils/dice-roller/               dice engine (work in progress)
   utils/dice-probability-calculator/ AnyDice-compatible probability library
   probability-calculator/          probability calculator page, Monaco + charts
@@ -131,7 +131,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **1485 / 1485 passing tests across 185 files** (after replacing obsolete suites
+   **1529 / 1529 passing tests across 189 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

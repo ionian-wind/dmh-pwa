@@ -7,10 +7,13 @@ import {
   getStoredFile,
   getStoredFileBlob,
   getStoredFileUrl,
+  importFile,
   importStoredFile,
   putStoredFile,
   revokeStoredFileUrl,
 } from '@/utils/files/fileStorage';
+import { OPFS_THRESHOLD_BYTES, readOpfsFile } from '@/utils/files/opfs';
+import { installFakeOpfs } from '../helpers/fakeOpfs';
 import {
   deleteFileIfUnreferenced,
   registerFileReferenceProvider,
@@ -126,5 +129,129 @@ describe('generic file storage', () => {
 
     await expect(getStoredFileBlob(stored)).resolves.toBeInstanceOf(File);
     expect(handle.getFile).toHaveBeenCalled();
+  });
+
+  it('stores large fallback files in OPFS and deletes them with the record', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      const sourceFile = new File(['opfs bytes'], 'song.mp3', {
+        type: 'audio/mpeg',
+      });
+      const imported = await importStoredFile(
+        sourceFile,
+        { kind: 'blob', blob: sourceFile },
+        { storage: 'opfs' },
+      );
+
+      expect(imported.file.source.kind).toBe('opfs');
+      const source = imported.file.source;
+      if (source.kind !== 'opfs') throw new Error('expected OPFS source');
+      expect(source.path).toBe(`files/${imported.file.id}`);
+      await expect(getStoredFileBlob(imported.file)).resolves.toBeInstanceOf(
+        Blob,
+      );
+      await expect(readOpfsFile(source.path)).resolves.toBeInstanceOf(File);
+
+      await deleteStoredFile(imported.file.id);
+      await expect(readOpfsFile(source.path)).rejects.toMatchObject({
+        name: 'NotFoundError',
+      });
+    } finally {
+      opfs.restore();
+    }
+  });
+
+  it('keeps small blobs in IndexedDB and preserves handles', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      const sourceFile = file('small.mp3', 4, 10);
+      const imported = await importFile(sourceFile);
+      expect(imported.file.source.kind).toBe('blob');
+
+      const handleFile = file('handled.mp3', 4, 11);
+      const handle = {
+        kind: 'file',
+        name: 'handled.mp3',
+      } as unknown as FileSystemFileHandle;
+      const fromHandle = await importFile(handleFile, {
+        source: { kind: 'handle', handle },
+      });
+      expect(fromHandle.created).toBe(true);
+      expect(fromHandle.file.source.kind).toBe('handle');
+    } finally {
+      opfs.restore();
+    }
+  });
+
+  it('throws when OPFS is requested but unavailable', async () => {
+    const sourceFile = file('fail.mp3');
+    await expect(
+      importStoredFile(
+        sourceFile,
+        { kind: 'blob', blob: sourceFile },
+        { storage: 'opfs' },
+      ),
+    ).rejects.toThrow('OPFS is not supported');
+  });
+
+  it('falls back to a blob when an automatic OPFS write fails', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      const filesDir = await opfs.root.getDirectoryHandle('files', {
+        create: true,
+      });
+      filesDir.getFileHandle = vi
+        .fn()
+        .mockRejectedValue(new Error('write failed'));
+      const big = file('big.mp3');
+      Object.defineProperty(big, 'size', { value: OPFS_THRESHOLD_BYTES });
+
+      const imported = await importStoredFile(
+        big,
+        { kind: 'blob', blob: big },
+        { storage: 'auto' },
+      );
+
+      expect(imported.file.source.kind).toBe('blob');
+    } finally {
+      opfs.restore();
+    }
+  });
+
+  it('keeps the record when an OPFS delete fails', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      await putStoredFile(
+        record({
+          id: 'opfs-delete',
+          source: { kind: 'opfs', path: 'files/opfs-delete' },
+        }),
+      );
+      opfs.root.getDirectoryHandle = vi
+        .fn()
+        .mockRejectedValue(new Error('delete failed'));
+
+      await expect(deleteStoredFile('opfs-delete')).resolves.toBeUndefined();
+      await expect(getStoredFile('opfs-delete')).resolves.toBeUndefined();
+    } finally {
+      opfs.restore();
+    }
+  });
+
+  it('removes the OPFS write when the metadata write fails', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      const bad = new File(['x'], 'bad.mp3', { type: 'audio/mpeg' });
+      Object.defineProperty(bad, 'name', { value: () => 'bad.mp3' });
+
+      await expect(
+        importStoredFile(bad, { kind: 'blob', blob: bad }, { storage: 'opfs' }),
+      ).rejects.toBeInstanceOf(Error);
+
+      const filesDir = await opfs.root.getDirectoryHandle('files');
+      expect(filesDir.children.size).toBe(0);
+    } finally {
+      opfs.restore();
+    }
   });
 });

@@ -10,6 +10,13 @@ import {
   isFileReferenced,
 } from '@/utils/files/fileReferences';
 import { getStoredFile, putStoredFile } from '@/utils/files/fileStorage';
+import {
+  OPFS_THRESHOLD_BYTES,
+  opfsPathFor,
+  supportsOpfs,
+  writeOpfsFile,
+} from '@/utils/files/opfs';
+import { debugError } from '@/utils/debug';
 
 const META_STORE = 'map_image_metadata';
 
@@ -52,13 +59,29 @@ export async function getAllMapFiles(): Promise<MapFile[]> {
 }
 
 export async function putMapFile(file: MapFile): Promise<void> {
-  await putStoredFile(file);
-  if (file.imageMetadata) {
+  let stored = file;
+
+  if (
+    file.source?.kind === 'blob' &&
+    file.size >= OPFS_THRESHOLD_BYTES &&
+    supportsOpfs()
+  ) {
+    try {
+      const path = opfsPathFor(file.id);
+      await writeOpfsFile(path, file.source.blob);
+      stored = { ...file, source: { kind: 'opfs', path } };
+    } catch (error) {
+      debugError('Failed to promote map file to OPFS:', error);
+    }
+  }
+
+  await putStoredFile(stored);
+  if (stored.imageMetadata) {
     await putMapImageMetadata({
-      id: file.id,
-      imageMetadata: file.imageMetadata,
-      createdAt: file.createdAt,
-      updatedAt: file.updatedAt,
+      id: stored.id,
+      imageMetadata: stored.imageMetadata,
+      createdAt: stored.createdAt,
+      updatedAt: stored.updatedAt,
     });
   }
 }

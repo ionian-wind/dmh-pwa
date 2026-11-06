@@ -199,10 +199,13 @@ Settings item. It currently has three sections:
   - Show player dialog (off → the Jukebox menu item opens `/jukebox`). This
     only controls the music player dialog, not future ambient controls.
 - **Content**
+  - **Storage** — reports usage/quota, file counts by source kind, unavailable
+    records and whether the origin has persistent storage. The **Request**
+    button calls `navigator.storage.persist()`.
   - **Clear storage** — danger button. Always asks for confirmation, even when
-    Confirm deletion is off. Confirming deletes all IndexedDB databases,
-    `localStorage`, `sessionStorage`, cookies, Cache Storage and service worker
-    registrations, then reloads the app at the main page.
+    Confirm deletion is off. Confirming deletes all IndexedDB databases, OPFS
+    files, `localStorage`, `sessionStorage`, cookies, Cache Storage and service
+    worker registrations, then reloads the app at the main page.
 
 The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits

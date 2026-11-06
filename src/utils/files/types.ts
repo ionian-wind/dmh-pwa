@@ -2,7 +2,16 @@ import type { WithMetadata } from '@/types';
 
 export type StoredFileSource =
   | { kind: 'blob'; blob: Blob }
-  | { kind: 'handle'; handle: FileSystemFileHandle };
+  | { kind: 'handle'; handle: FileSystemFileHandle }
+  | { kind: 'opfs'; path: string };
+
+export type FileStorageStrategy = 'auto' | 'handle' | 'opfs' | 'blob';
+
+export interface FileProgress {
+  loaded: number;
+  total: number;
+  percent: number;
+}
 
 export interface StoredFile extends WithMetadata {
   id: string;

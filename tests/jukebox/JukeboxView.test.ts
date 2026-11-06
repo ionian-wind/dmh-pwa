@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   importStoredFile: vi.fn(),
   deleteFileIfUnreferenced: vi.fn().mockResolvedValue(undefined),
   pickFiles: vi.fn(),
+  pickDirectory: vi.fn(),
   getPickedFileFromDataTransferItem: vi.fn(),
   extractTrackMetadata: vi.fn(),
   createWaveformSvg: vi.fn(),
@@ -56,6 +57,7 @@ vi.mock('@/utils/files/fileReferences', () => ({
 
 vi.mock('@/utils/files', () => ({
   pickFiles: mocks.pickFiles,
+  pickDirectory: mocks.pickDirectory,
   getPickedFileFromDataTransferItem: mocks.getPickedFileFromDataTransferItem,
 }));
 
@@ -94,11 +96,25 @@ const BaseListViewStub = defineComponent({
     draggable: Boolean,
     dragHandle: String,
     leftHeaderButtons: Array,
+    headerButtons: Array,
     createLoading: Boolean,
   },
   emits: ['create', 'sort'],
-  setup(_, { slots }) {
-    return () => h('div', { 'data-stub': 'BaseListView' }, slots.default?.());
+  setup(props, { slots }) {
+    return () =>
+      h('div', { 'data-stub': 'BaseListView' }, [
+        ...(props.headerButtons ?? []).map((button: any) =>
+          h(
+            'button',
+            {
+              class: 'stub-header-button',
+              onClick: button.event,
+            },
+            button.title,
+          ),
+        ),
+        slots.default?.(),
+      ]);
   },
 });
 
@@ -197,6 +213,7 @@ describe('JukeboxView', () => {
       created: true,
     }));
     mocks.pickFiles.mockResolvedValue([]);
+    mocks.pickDirectory.mockResolvedValue([]);
     mocks.getPickedFileFromDataTransferItem.mockResolvedValue(null);
     mocks.deleteFileIfUnreferenced.mockResolvedValue(undefined);
     mocks.extractTrackMetadata.mockResolvedValue({
@@ -237,6 +254,26 @@ describe('JukeboxView', () => {
       trackIds: ['old', 'track-1'],
     });
     expect(mocks.actualiseQueue).toHaveBeenCalled();
+  });
+
+  it('imports an audio folder from the header action', async () => {
+    mocks.pickDirectory.mockResolvedValue([
+      { file: audioFile(), source: { kind: 'blob', blob: audioFile() } },
+    ]);
+
+    const { wrapper } = await mountView();
+    const folderButton = wrapper
+      .findAll('.stub-header-button')
+      .find((button) => button.text() === 'jukebox.addFolder');
+
+    expect(folderButton).toBeTruthy();
+    await folderButton!.trigger('click');
+    await flushPromises();
+
+    expect(mocks.pickDirectory).toHaveBeenCalledWith(
+      expect.objectContaining({ recursive: true }),
+    );
+    expect(mocks.importStoredFile).toHaveBeenCalled();
   });
 
   it('stores a null waveform when waveform generation fails', async () => {
