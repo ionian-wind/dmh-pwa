@@ -69,6 +69,8 @@ describe('BaseCard entity dragging', () => {
     await nextTick();
     expect(shell.classes()).toContain('is-floating');
     expect(shell.attributes('style')).toContain('height: 150px');
+    expect(wrapper.find('.base-card').classes()).toContain('shadow-9');
+    expect(wrapper.find('.base-card').classes()).toContain('shadow-transition');
 
     await shell.trigger('mouseleave');
     vi.advanceTimersByTime(329);
@@ -84,6 +86,7 @@ describe('BaseCard entity dragging', () => {
     vi.advanceTimersByTime(331);
     await nextTick();
     expect(shell.classes()).not.toContain('is-floating');
+    expect(wrapper.find('.base-card').classes()).not.toContain('shadow-9');
     wrapper.unmount();
   });
 
@@ -118,17 +121,6 @@ describe('BaseCard entity dragging', () => {
     wrapper.unmount();
   });
 
-  it('does not float when hover-capable pointers are unavailable', async () => {
-    vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: false } as any);
-    const wrapper = mount(BaseCard, { props: { title: 'Card' } });
-    const shell = wrapper.find('.base-card-shell');
-
-    await shell.trigger('mouseenter');
-    await nextTick();
-    expect(shell.classes()).not.toContain('is-floating');
-    wrapper.unmount();
-  });
-
   it('raises each newly hovered card above cards still animating out', async () => {
     vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as any);
     const first = mount(BaseCard, { props: { title: 'First' } });
@@ -156,5 +148,15 @@ describe('BaseCard entity dragging', () => {
     ).toBeGreaterThan(secondZ);
     first.unmount();
     second.unmount();
+  });
+
+  it('ignores mouseleave before a card starts floating', async () => {
+    const wrapper = mount(BaseCard, { props: { title: 'Card' } });
+    const shell = wrapper.find('.base-card-shell');
+
+    await shell.trigger('mouseleave');
+    await nextTick();
+    expect(shell.classes()).not.toContain('is-floating');
+    wrapper.unmount();
   });
 });

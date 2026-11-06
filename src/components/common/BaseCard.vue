@@ -58,13 +58,11 @@ const shellStyle = computed(() => {
   };
 });
 
-function canFloat() {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(hover: hover)').matches
-  );
-}
+const cardFloatStyle = computed(() =>
+  isFloating.value
+    ? { position: 'absolute', top: '0', right: '0', left: '0' }
+    : undefined,
+);
 
 function clearFloatTimer() {
   if (floatEndTimer) {
@@ -73,15 +71,24 @@ function clearFloatTimer() {
   }
 }
 
-function beginFloat() {
-  if (!canFloat()) return;
+function measureRestingHeight() {
+  const shell = cardShell.value as HTMLElement;
 
+  // Temporarily remove hover expansion so a hover style flush cannot make the
+  // measured placeholder height include the action panel area.
+  shell.classList.add('is-measuring');
+  const height = shell.getBoundingClientRect().height;
+  shell.classList.remove('is-measuring');
+  return height;
+}
+
+function beginFloat() {
   // Every newly hovered card must paint above all cards that are still
   // animating out from an earlier hover.
   floatZIndex.value = nextFloatLayerZIndex();
 
   if (isFloating.value || !cardShell.value) return;
-  reservedHeight.value = cardShell.value.getBoundingClientRect().height;
+  reservedHeight.value = measureRestingHeight();
   isFloating.value = true;
 }
 
@@ -176,8 +183,12 @@ const hasContent = computed(() => {
     @focusout="onFocusOut"
   >
     <QCard
-      class="base-card"
-      :class="{ 'is-dragging-entity': isDraggingEntity }"
+      class="base-card shadow-transition"
+      :style="cardFloatStyle"
+      :class="{
+        'is-dragging-entity': isDraggingEntity,
+        'shadow-9': isFloating,
+      }"
     >
       <QCardSection
         v-if="$slots.header || title"
@@ -305,6 +316,12 @@ const hasContent = computed(() => {
 <style scoped>
 .base-card-shell {
   position: relative;
+}
+
+.base-card-shell.is-measuring .base-card {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  transition: none !important;
 }
 
 .base-card-shell.is-floating > .base-card {
