@@ -92,8 +92,7 @@
       "name": "Name",
       "description": "Description",
       "characters": "Characters",
-      "modules": "Modules",
-      "notes": "Notes"
+      "modules": "Modules"
     },
     "linkCharacters": "Link Characters"
   },

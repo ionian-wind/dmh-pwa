@@ -80,9 +80,9 @@ Coverage (V8, `npm run test:coverage`):
 
 ```
 Statements  95.81%
-Branches    87.07%
-Functions   95.58%
-Lines       97.17%
+Branches    87.03%
+Functions   95.61%
+Lines       97.18%
 ```
 
 `vitest.config.ts` enforces 87% statements, functions, branches and lines

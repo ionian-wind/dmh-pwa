@@ -28,7 +28,6 @@ type PartyForm = Omit<Party, 'id' | 'createdAt' | 'updatedAt'>;
 const editedParty = ref<PartyForm>({
   name: '',
   description: '',
-  notes: '',
   characters: [],
   moduleIds: [],
 });
@@ -59,12 +58,16 @@ watch(
   (newParty) => {
     if (newParty) {
       const { id, createdAt, updatedAt, ...partyData } = newParty;
-      editedParty.value = { ...partyData };
+      editedParty.value = {
+        name: partyData.name,
+        description: partyData.description ?? '',
+        characters: partyData.characters ?? [],
+        moduleIds: partyData.moduleIds ?? [],
+      };
     } else {
       editedParty.value = {
         name: '',
         description: '',
-        notes: '',
         characters: [],
         moduleIds: [],
       };
@@ -139,19 +142,6 @@ function handleDelete() {
               outlined
             />
           </div>
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-group">
-          <QInput
-            :label="t('parties.fields.notes')"
-            id="party-description"
-            v-model="editedParty.notes"
-            type="textarea"
-            :rows="5"
-            autogrow
-            outlined
-          />
         </div>
       </div>
     </template>

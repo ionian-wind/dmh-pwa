@@ -93,8 +93,7 @@
       "name": "Имя",
       "description": "Описание",
       "characters": "Персонажи",
-      "modules": "Модули",
-      "notes": "Заметки"
+      "modules": "Модули"
     },
     "linkCharacters": "Связать персонажей"
   },

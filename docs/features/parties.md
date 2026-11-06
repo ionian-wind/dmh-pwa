@@ -25,7 +25,6 @@ interface Party {
   updatedAt: number;
   name: string;
   description?: string;
-  notes?: string;
   characters: string[]; // character IDs
   moduleIds: string[]; // module IDs
 }
@@ -51,7 +50,7 @@ count uses `(party.characters || []).length`; module lookup assumes
 ## Editor
 
 - Name (required).
-- Description and notes textareas.
+- Description textarea. Parties have no notes field.
 - The **Linked entities** tab contains separate `EntitiesLinking` blocks for
   modules and characters.
 - Submit filters empty module IDs.

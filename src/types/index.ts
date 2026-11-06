@@ -92,7 +92,6 @@ export interface Party extends WithMetadata {
   name: string;
   description?: string;
   characters: UUID[];
-  notes?: string;
   moduleIds: UUID[];
 }
 
