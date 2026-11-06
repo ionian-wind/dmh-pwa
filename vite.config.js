@@ -4,6 +4,58 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
+import { buildHelpCenterAssets } from './scripts/build-helpcenter.mjs';
+
+function helpCenterStaticPlugin() {
+  let base = '/';
+
+  const contentType = (fileName) => {
+    if (fileName.endsWith('.html')) return 'text/html; charset=utf-8';
+    if (fileName.endsWith('.css')) return 'text/css; charset=utf-8';
+    if (fileName.endsWith('.svg')) return 'image/svg+xml';
+    if (fileName.endsWith('.png')) return 'image/png';
+    if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (fileName.endsWith('.webp')) return 'image/webp';
+    if (fileName.endsWith('.gif')) return 'image/gif';
+    return 'application/octet-stream';
+  };
+
+  return {
+    name: 'helpcenter-static-pages',
+    configResolved(config) {
+      base = config.base || '/';
+    },
+    async generateBundle() {
+      const assets = await buildHelpCenterAssets({ base });
+      for (const asset of assets) {
+        this.emitFile({
+          type: 'asset',
+          fileName: asset.fileName,
+          source: asset.source,
+        });
+      }
+    },
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = req.url?.split('?')[0] ?? '';
+        const helpPrefix = `${base.replace(/\/$/, '')}/help/`;
+        if (!url.startsWith(helpPrefix)) return next();
+
+        const fileName = `help/${decodeURIComponent(
+          url.slice(helpPrefix.length),
+        )}`;
+        const assets = await buildHelpCenterAssets({ base });
+        const asset = assets.find((entry) => entry.fileName === fileName);
+        if (!asset) return next();
+
+        res.setHeader('Content-Type', contentType(fileName));
+        res.end(asset.source);
+      });
+    },
+  };
+}
 
 export default defineConfig({
   base: '/dmh-pwa',
@@ -17,6 +69,7 @@ export default defineConfig({
         new URL('./src/assets/styles/quasar-variables.sass', import.meta.url),
       ),
     }),
+    helpCenterStaticPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'inline',

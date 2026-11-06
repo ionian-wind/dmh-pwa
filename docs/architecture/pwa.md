@@ -10,16 +10,16 @@ the legacy hand-written `public/manifest.json` and `public/sw.js` were removed.
 
 Configured in `vite.config.js`:
 
-| Field | Value |
-| --- | --- |
-| `name` | Owlbear's Dungeon Master Helper |
-| `short_name` | Owlbear's DMH |
-| `theme_color` / `background_color` | `#1e1e2e` |
-| `display` | `standalone` |
-| `orientation` | `portrait-primary` |
-| `scope` / `start_url` | `/dmh-pwa` |
-| Icons | 72, 96, 128, 144, 152, 192, 384, 512 px |
-| Categories | productivity, games, utilities |
+| Field                              | Value                                   |
+| ---------------------------------- | --------------------------------------- |
+| `name`                             | Owlbear's Dungeon Master Helper         |
+| `short_name`                       | Owlbear's DMH                           |
+| `theme_color` / `background_color` | `#1e1e2e`                               |
+| `display`                          | `standalone`                            |
+| `orientation`                      | `portrait-primary`                      |
+| `scope` / `start_url`              | `/dmh-pwa`                              |
+| Icons                              | 72, 96, 128, 144, 152, 192, 384, 512 px |
+| Categories                         | productivity, games, utilities          |
 
 The manifest link is injected by `vite-plugin-pwa` as
 `/dmh-pwa/manifest.webmanifest`; `index.html` keeps only the Apple/Microsoft
@@ -47,7 +47,9 @@ devOptions: { enabled: true, type: 'module' },
 
 The production build uses the Workbox-generated service worker. The legacy
 hand-written `public/sw.js` and `public/manifest.json` were removed; the PWA
-plugin is the single source of the manifest and worker.
+plugin is the single source of the manifest and worker. Static help pages under
+`dist/help/` are generated before the precache manifest and are available
+offline.
 
 ## Registration and update flow
 
@@ -62,6 +64,7 @@ precache. With `autoUpdate`:
 4. "Update now" calls `window.location.reload()`.
 
 `PWAStatus` also shows:
+
 - an offline badge when `navigator.onLine === false`,
 - a standalone badge when `display-mode: standalone` or
   `navigator.standalone === true`.
@@ -92,6 +95,7 @@ still resolves; Blob-sourced files are stored in IndexedDB and are fully
 offline.
 
 Requests that remain network-dependent:
+
 - Google Fonts / remote assets if any are added later,
 - none from the app itself today.
 

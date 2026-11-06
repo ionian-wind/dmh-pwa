@@ -179,11 +179,13 @@ describe('settings dialog', () => {
     const links = wrapper.findAll('.help-link');
     expect(links).toHaveLength(2);
     expect(links[0].attributes('href')).toContain(
-      '/help/getting-started/install',
+      '/help/en/getting-started/install.html',
     );
+    expect(links[0].attributes('target')).toBe('_blank');
     expect(links[1].attributes('href')).toContain(
-      '/help/troubleshooting/persistent-storage',
+      '/help/en/troubleshooting/persistent-storage.html',
     );
+    expect(links[1].attributes('rel')).toBe('noopener noreferrer');
     wrapper.unmount();
   });
 

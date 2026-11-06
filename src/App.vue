@@ -53,6 +53,7 @@ import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { usePageContentRect } from '@/composables/usePageContentRect';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
 
 const playerStore = useJukeboxPlayerStore();
 const timerStore = useTimerStore();
@@ -99,7 +100,7 @@ function toggleLeftMenu() {
   leftMenuMinimized.value = !leftMenuMinimized.value;
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const router = useRouter();
 
 interface SectionItem {
@@ -488,14 +489,14 @@ function openJukebox() {
               </QItemSection>
             </QItem>
             <QItem
+              tag="a"
               clickable
               data-test="open-help"
-              :active="router.currentRoute.value.path.startsWith('/help')"
-              :active-class="'bg-secondary'"
+              :href="helpHref('', getHelpLocale(locale))"
+              target="_blank"
+              rel="noopener noreferrer"
               :title="t('navigation.help')"
               :aria-label="t('navigation.help')"
-              v-ripple
-              :to="'/help'"
             >
               <QItemSection side><IconHelpCircle /></QItemSection>
               <QItemSection>{{ t('navigation.help') }}</QItemSection>

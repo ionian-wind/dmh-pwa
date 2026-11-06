@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { useConfigStore } from '@/utils/configStore';
-import router from '@/router';
 import { confirm } from '@/dialogs';
+import { getHelpLocale, helpHref, type HelpLocale } from '@/helpcenter/links';
 import { clearAllAppData, reloadAppFromMainPage } from '@/utils/appReset';
 import { debugError } from '@/utils/debug';
 import {
@@ -26,8 +26,9 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const configStore = useConfigStore();
+const helpLocale = computed<HelpLocale>(() => getHelpLocale(locale.value));
 const isClearingStorage = ref(false);
 const isRequestingPersistence = ref(false);
 const isLoadingStorage = ref(false);
@@ -144,15 +145,6 @@ watch(
 
 function close() {
   emit('update:modelValue', false);
-}
-
-function helpHref(path: string): string {
-  return router.resolve(`/help/${path}`).href;
-}
-
-function openHelp(path: string) {
-  close();
-  void router.push(`/help/${path}`);
 }
 
 async function clearStorage() {
@@ -334,8 +326,9 @@ async function clearStorage() {
                 <template #install>
                   <a
                     class="help-link"
-                    :href="helpHref('getting-started/install')"
-                    @click.prevent="openHelp('getting-started/install')"
+                    :href="helpHref('getting-started/install', helpLocale)"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     {{ t('settings.storagePersistentInstallLink') }}
                   </a>
@@ -343,10 +336,11 @@ async function clearStorage() {
                 <template #settings>
                   <a
                     class="help-link"
-                    :href="helpHref('troubleshooting/persistent-storage')"
-                    @click.prevent="
-                      openHelp('troubleshooting/persistent-storage')
+                    :href="
+                      helpHref('troubleshooting/persistent-storage', helpLocale)
                     "
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     {{ t('settings.storagePersistentSettingsLink') }}
                   </a>

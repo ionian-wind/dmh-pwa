@@ -2,16 +2,17 @@
 
 ## Purpose
 
-The help center renders static Markdown guides inside the app. It requires no
-server, works offline and participates in the same PWA precache as the rest of
-the application.
+The help center is a set of **static HTML pages**, not a Vue route. The build
+generates them from Markdown and emits them next to the app, so GitHub Pages can
+serve them directly without booting the SPA.
 
 ## Content layout
 
-Content lives outside `src/`:
+Source content lives in `helpcenter/`:
 
 ```text
 helpcenter/
+  help.css
   en/
     index.md
     getting-started/
@@ -22,6 +23,10 @@ helpcenter/
       index.md
       persistent-storage.md
       images/site-settings.svg
+    reference/
+      index.md
+      browsers.md
+      empty.md
   ru/
     index.md
     getting-started/
@@ -40,9 +45,11 @@ Rules:
 - Every folder has an `index.md`; it becomes the folder landing page.
 - Other `.md` files become child pages.
 - Images live next to the page that uses them (or in a shared subfolder).
-- Relative links between pages and relative image paths are resolved
-  automatically.
-- Missing pages fall back to English at read time.
+- Relative links between pages and relative image paths are resolved by the
+  static generator.
+- Missing pages fall back to English at generation time.
+- Files that exist only in English are still generated under `/help/en/...`;
+  Russian pages can link to them explicitly or omit them.
 
 ## Frontmatter
 
@@ -56,44 +63,67 @@ order: 10
 ---
 ```
 
-- `title` — used in the sidebar, breadcrumb and page heading.
-- `description` — short subtitle and search metadata later.
+- `title` — sidebar, breadcrumb and page heading.
+- `description` — subtitle and meta description.
 - `order` — lower numbers appear first; default is `1000`.
 
 If `title` is absent, the first `# Heading` is used, then a humanized filename.
-The leading H1 is removed from the rendered body so the view can render the
-title once.
+The leading H1 is removed from the rendered body so the page title is rendered
+once.
 
-## Routing
+## Generated URLs
 
-- `/help` — root `index.md`.
-- `/help/getting-started` — `getting-started/index.md`.
-- `/help/getting-started/install` — `getting-started/install.md`.
-- `/help/troubleshooting/persistent-storage` — the persistent-storage guide.
+For a deployment at `/dmh-pwa`:
 
-The current app locale selects the `en` or `ru` tree. Switching language
-re-renders the same route from the other tree.
+```text
+/dmh-pwa/help/en/index.html
+/dmh-pwa/help/en/getting-started/index.html
+/dmh-pwa/help/en/getting-started/install.html
+/dmh-pwa/help/ru/troubleshooting/persistent-storage.html
+/dmh-pwa/help/help.css
+/dmh-pwa/help/en/getting-started/images/install-menu.svg
+/dmh-pwa/help/index.html          # redirects to English root
+```
 
-## Rendering
+The generated pages are fully standalone: own `<html>`, meta tags, shared CSS,
+sidebar navigation, locale switch and a link back to the app.
 
-`src/helpcenter/content.ts`:
+## Building
 
-- loads Markdown and image URLs with `import.meta.glob`;
-- parses frontmatter and extracts titles;
-- builds a hierarchical navigation tree from the folder structure;
-- rewrites relative `.md` links to `/help/...` routes;
-- rewrites relative image paths to Vite-imported asset URLs;
-- renders Markdown with `markdown-it` (`html: false`, linkified links).
+`scripts/build-helpcenter.mjs`:
 
-`src/helpcenter/HelpCenterView.vue` renders:
+- reads all Markdown and non-Markdown files from `helpcenter/<locale>/`;
+- parses frontmatter and builds a hierarchical navigation tree;
+- rewrites relative `.md` links to generated `.html` URLs;
+- rewrites relative images to generated static asset URLs, with English
+  fallback;
+- renders Markdown with `markdown-it` (`html: false`);
+- escapes page titles, descriptions and navigation labels;
+- emits HTML, CSS and image assets.
 
-- a sticky sidebar tree (`HelpNav.vue`);
-- the page title and description;
-- the rendered Markdown;
-- a not-found state for unknown paths.
+`vite.config.js` registers `helpCenterStaticPlugin`:
 
-Internal links are intercepted in the article and pushed through Vue Router so
-the app does not reload.
+- **build:** emits the generated assets during `generateBundle`, before the PWA
+  plugin writes its precache manifest, so help pages are part of the offline
+  cache;
+- **dev:** a middleware serves the generated files from memory so help links
+  work during `npm run dev` before a production build.
+
+The output is written under `dist/help/` by Vite. GitHub Pages serves it at
+`/<base>/help/...` directly.
+
+## App links
+
+The app does not route to the help center. It links to the generated pages in a
+new tab:
+
+- left menu → `Help center` (`target="_blank"`);
+- Settings persistent-storage denial message → install and site-settings guides
+  (`target="_blank" rel="noopener noreferrer"`).
+
+`src/helpcenter/links.ts` builds the static URL from
+`import.meta.env.BASE_URL`, so the same code works in dev, preview and GitHub
+Pages.
 
 ## Images
 
@@ -103,26 +133,24 @@ Reference images relative to the Markdown file:
 ![The install control](images/install-menu.svg)
 ```
 
-If a Russian image is missing, the resolver falls back to the English asset at
-the same path. Use images for short diagrams, not for large screenshots; the
-whole help center is precached.
+If a Russian image is missing, the generator falls back to the English asset at
+the same path. Keep diagrams small; generated assets are precached.
 
 ## Adding a page
 
-1. Create the Markdown file in both locale trees (or only one while drafting).
+1. Create the Markdown file in the locale tree(s).
 2. Add frontmatter with `title` and `order`.
 3. Add the page to the parent `index.md` if it should be linked explicitly.
 4. Use relative `.md` links and relative image paths.
-5. Run the help center tests.
+5. Run the help center tests and `npm run build`.
 
 ## Tests
 
-- `tests/helpcenter/helpContent.test.ts` — loading, frontmatter, navigation,
-  link and asset resolution.
-- `tests/helpcenter/helpCenterView.test.ts` — rendering, navigation, images and
-  the not-found state.
+- `tests/helpcenter/links.test.ts` — static URL generation and locale mapping.
+- `tests/helpcenter/buildHelpCenter.test.ts` — generated HTML, navigation,
+  images, locale switch, external links and redirect page.
 
 ## Future
 
-Client-side help search is proposed in
+Client-side search over the generated pages is proposed in
 [help-center-search.md](../proposals/help-center-search.md).

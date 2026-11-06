@@ -39,6 +39,8 @@ with `legacy-peer-deps = true`.
 - `index.html` references `/src/main.ts` in dev; Vite rewrites for production.
 - The PWA plugin injects an inline service-worker registration; no separate
   `registerSW.js` is emitted.
+- `helpCenterStaticPlugin` generates static help pages under `dist/help/`
+  during `generateBundle`. They are included in the Workbox precache.
 
 ### Assets
 

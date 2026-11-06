@@ -90,9 +90,9 @@ to find an answer.
 body text, with ranked results and snippets. Search only the active locale,
 with English fallback for untranslated pages.
 
-**Implementation.** Derive an in-memory index from the Markdown pages already
-loaded by `src/helpcenter/content.ts`; add a search input to the help sidebar
-and a keyboard-navigable results list. See
+**Implementation.** Generate a `search.json` index per locale in
+`scripts/build-helpcenter.mjs`, add a static search input to the generated help
+pages, and render keyboard-navigable results. See
 [help-center-search.md](help-center-search.md).
 
 ---

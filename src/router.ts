@@ -19,7 +19,6 @@ const TimersView = () => import('@/timers/TimersView.vue');
 const AmbientSoundView = () => import('@/ambient-sound/AmbientSoundView.vue');
 const MapsView = () => import('@/maps/views/MapsView.vue');
 const LocationView = () => import('@/maps/views/LocationView.vue');
-const HelpCenterView = () => import('@/helpcenter/HelpCenterView.vue');
 // import AllIconsView from './views/AllIconsView.vue';
 
 const router = createRouter({
@@ -164,17 +163,6 @@ const router = createRouter({
     {
       path: '/ambient/:sceneId',
       redirect: { name: 'ambient-sound' },
-    },
-    // Help center
-    {
-      path: '/help',
-      name: 'help',
-      component: HelpCenterView,
-    },
-    {
-      path: '/help/:pathMatch(.*)*',
-      name: 'help-page',
-      component: HelpCenterView,
     },
     // 404 route
     {
