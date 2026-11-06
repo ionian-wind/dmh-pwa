@@ -21,10 +21,20 @@ vi.mock('quasar', () => {
     };
     return api;
   };
+  const useDialogPluginComponent = Object.assign(
+    () => ({
+      dialogRef: { value: null },
+      onDialogHide: vi.fn(),
+      onDialogOK: vi.fn(),
+      onDialogCancel: vi.fn(),
+    }),
+    { emits: ['ok', 'hide'] },
+  );
   return {
     Dialog: { create: vi.fn(chainable) },
     Notify: { create: vi.fn() },
     QVirtualScroll: {},
+    useDialogPluginComponent,
   };
 });
 

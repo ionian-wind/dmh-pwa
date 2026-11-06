@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import Mentions from '@/components/common/Mentions.vue';
-import { computed, onMounted, ref } from 'vue';
-import type { Note } from '@/types';
+import { computed, onMounted, reactive, ref } from 'vue';
+import type { Note, NoteEditState } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
+import NoteOptions from '@/notes/NoteOptions.vue';
 import { IconEdit, IconEye } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
 const mentionsStore = useMentionsStore();
-const isEditMode = ref(false);
+const localEditState = reactive<NoteEditState>({
+  isEditMode: false,
+  isVisualMode: true,
+  draft: null,
+});
 const activeTab = ref('tags');
 const tabs = computed(() => [
   { id: 'tags', label: t('tags.title') },
@@ -19,7 +24,12 @@ const tabs = computed(() => [
 
 const props = defineProps<{
   note: Note;
+  editState?: NoteEditState;
+  onSetEditMode?: (value: boolean) => void | Promise<void>;
 }>();
+
+const state = computed(() => props.editState ?? localEditState);
+const optionsNote = computed(() => state.value.draft ?? props.note);
 
 const mentions = computed(() => {
   return props.note
@@ -37,13 +47,36 @@ const mentionedIn = computed(() =>
     : [],
 );
 
+function setEditMode(value: boolean) {
+  if (props.onSetEditMode) {
+    void props.onSetEditMode(value);
+    return;
+  }
+  state.value.isEditMode = value;
+}
+
+function setVisualMode(value: boolean) {
+  state.value.isVisualMode = value;
+}
+
+function handleOptionsUpdate(updated: Note) {
+  if (state.value.draft) {
+    Object.assign(state.value.draft, updated);
+  }
+}
+
 onMounted(() => mentionsStore.load());
 </script>
 
 <template>
   <div class="side-panel-content note-sidebar column full-height">
     <div class="note-sidebar-content col-grow">
+      <div v-if="state.isEditMode" class="q-pa-md">
+        <NoteOptions :note="optionsNote" @update:note="handleOptionsUpdate" />
+      </div>
+
       <TabGroup
+        v-else
         :align="'justify'"
         :title-align="'center'"
         v-model="activeTab"
@@ -81,28 +114,40 @@ onMounted(() => mentionsStore.load());
 
     <QSeparator />
     <QList>
+      <QItem v-if="state.isEditMode" class="note-visual-mode-toggle">
+        <QItemSection>
+          {{ t('markdownEditor.visualMode') }}
+        </QItemSection>
+        <QItemSection side>
+          <QToggle
+            :model-value="state.isVisualMode"
+            @update:model-value="setVisualMode"
+          />
+        </QItemSection>
+      </QItem>
+
       <QItem class="note-mode-toggle">
         <QItemSection>
           <QBtnGroup spread class="full-width">
             <QBtn
               class="note-view-mode"
               color="primary"
-              :outline="isEditMode"
+              :outline="state.isEditMode"
               :title="t('common.viewMode')"
               :aria-label="t('common.viewMode')"
-              :aria-pressed="!isEditMode"
-              @click="isEditMode = false"
+              :aria-pressed="!state.isEditMode"
+              @click="setEditMode(false)"
             >
               <IconEye :size="18" />
             </QBtn>
             <QBtn
               class="note-edit-mode"
               color="primary"
-              :outline="!isEditMode"
+              :outline="!state.isEditMode"
               :title="t('common.editMode')"
               :aria-label="t('common.editMode')"
-              :aria-pressed="isEditMode"
-              @click="isEditMode = true"
+              :aria-pressed="state.isEditMode"
+              @click="setEditMode(true)"
             >
               <IconEdit :size="18" />
             </QBtn>

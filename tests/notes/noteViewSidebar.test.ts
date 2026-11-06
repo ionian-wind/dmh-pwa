@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { describe, expect, it, vi } from 'vitest';
+import { nextTick, reactive } from 'vue';
 import { mount } from '@vue/test-utils';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
+import type { Note, NoteEditState } from '@/types';
 
 const RouterLinkStub = {
   props: ['to'],
@@ -66,6 +67,74 @@ describe('NoteViewSidebar', () => {
     await view.trigger('click');
     expect(view.attributes('aria-pressed')).toBe('true');
     expect(edit.attributes('aria-pressed')).toBe('false');
+    wrapper.unmount();
+  });
+
+  it('shows note options and the visual editor toggle in edit mode', async () => {
+    const note = {
+      id: 'n1',
+      title: 'Note',
+      content: 'Content',
+      contentType: 'text',
+      tags: [],
+      moduleIds: [],
+      typeId: null,
+      hidden: false,
+      createdAt: 1,
+      updatedAt: 1,
+    } as Note;
+    const editState = reactive<NoteEditState>({
+      isEditMode: true,
+      isVisualMode: true,
+      draft: { ...note },
+    });
+    const setEditMode = vi.fn();
+
+    const wrapper = mount(NoteViewSidebar, {
+      props: { note, editState, onSetEditMode: setEditMode },
+      global: { stubs: { NoteOptions: true, RouterLink: RouterLinkStub } },
+    });
+
+    expect(wrapper.find('.tab-group').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'NoteOptions' }).exists()).toBe(true);
+    expect(wrapper.find('.note-visual-mode-toggle').exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'QToggle' }).props('modelValue')).toBe(
+      true,
+    );
+
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    expect(editState.isVisualMode).toBe(false);
+
+    await wrapper.find('.note-view-mode').trigger('click');
+    expect(setEditMode).toHaveBeenCalledWith(false);
+
+    await wrapper.find('.note-edit-mode').trigger('click');
+    expect(setEditMode).toHaveBeenCalledWith(true);
+    wrapper.unmount();
+  });
+
+  it('hides the options panel and visual toggle in view mode', () => {
+    const note = {
+      id: 'n1',
+      title: 'Note',
+      tags: [],
+    } as Note;
+    const editState = reactive<NoteEditState>({
+      isEditMode: false,
+      isVisualMode: true,
+      draft: null,
+    });
+
+    const wrapper = mount(NoteViewSidebar, {
+      props: { note, editState },
+      global: { stubs: { NoteOptions: true, RouterLink: RouterLinkStub } },
+    });
+
+    expect(wrapper.findComponent({ name: 'NoteOptions' }).exists()).toBe(false);
+    expect(wrapper.find('.note-visual-mode-toggle').exists()).toBe(false);
+    expect(wrapper.find('.tab-group').exists()).toBe(true);
     wrapper.unmount();
   });
 });

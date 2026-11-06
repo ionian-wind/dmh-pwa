@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import {
+  ref,
+  reactive,
+  onMounted,
+  onBeforeUnmount,
+  computed,
+  watch,
+} from 'vue';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
@@ -8,19 +15,26 @@ import { useMentionsStore } from '@/utils/storage';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import type { Note } from '@/types';
-import NoteEditor from '@/notes/NoteEditor.vue';
+import type { Note, NoteEditState } from '@/types';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
+import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 import Markdown from '@/components/common/Markdown.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import { downloadNote } from '@/notes/downloadNote';
-import { IconFileDownload } from '@tabler/icons-vue';
-import { confirm } from '@/dialogs';
+import { IconFileDownload, IconHelp } from '@tabler/icons-vue';
+import { alert, confirm } from '@/dialogs';
+import {
+  confirmUnsavedChanges,
+  type UnsavedChangesChoice,
+} from '@/dialogs/unsavedChanges';
 import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
@@ -33,14 +47,33 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 
-const isEditing = ref(false);
+const editState = reactive<NoteEditState>({
+  isEditMode: false,
+  isVisualMode: true,
+  draft: null,
+});
 const activeTab = ref('main');
-const tabs = useEntityViewTabs();
+const viewTabs = useEntityViewTabs();
+const editorTabs = useEntityEditorTabs();
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
+);
 const isLoaded = computed(() => noteStore.isLoaded);
 const note = ref<Note | null>(null);
 const notFound = computed(() => isLoaded.value && !note.value);
 const validationError = ref<string | null>(null);
 const noteContent = ref('');
+const canvasDirty = ref(false);
+const isHelpOpen = ref(false);
+const isDeleting = ref(false);
+const markdownEditorRef = ref<any>(null);
+const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 function updateNoteFromStore() {
   if (!noteStore.isLoaded) {
@@ -49,7 +82,7 @@ function updateNoteFromStore() {
   const found = noteStore.getById(route.params.id as string);
   if (found) {
     note.value = found;
-  } else {
+  } else if (!isDeleting.value) {
     router.push('/notes');
   }
 }
@@ -73,43 +106,91 @@ function handleMarkdownContentChange(newContent: string) {
   }
 }
 
-const handleEdit = () => {
-  isEditing.value = true;
-};
-
-const handleDownload = () => {
-  if (note.value) downloadNote(note.value);
-};
-
-const headerButtons = computed(() => [
-  {
-    color: 'warning',
-    title: 'common.download',
-    icon: IconFileDownload,
-    event: handleDownload,
-    disabled: note.value?.contentType === 'draw' && !note.value?.preview,
-  },
-]);
-
-const handleDelete = async () => {
-  if (!note.value) return false;
-  if (
-    !(await confirm(t('common.confirmDelete', { title: note.value.title })))
-  ) {
-    return false;
+function handleCanvasChange() {
+  const snapshot = canvasRef.value?.getSnapshot?.();
+  if (snapshot && editState.draft) {
+    editState.draft.content = snapshot;
   }
-  await noteStore.remove(note.value.id);
-  return true;
-};
-const handleCancel = () => {
-  isEditing.value = false;
-};
-const handleSubmit = async (editedNote: Note) => {
-  // Validate mentions
+  canvasDirty.value =
+    !!editState.draft && editState.draft.content !== (note.value?.content ?? '');
+}
+
+const draftTitle = computed({
+  get: () => editState.draft?.title ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.title = value;
+  },
+});
+
+const draftContent = computed({
+  get: () => editState.draft?.content ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.content = value;
+  },
+});
+
+const linkedModules = computed<MapEntityRef[]>(() =>
+  (editState.draft?.moduleIds ?? []).map((id) => ({
+    kind: 'module',
+    id,
+  })),
+);
+
+const noteLinks = computed<MapEntityRef[]>(() =>
+  (note.value?.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
+);
+
+function setLinkedModules(links: MapEntityRef[]) {
+  if (editState.draft) {
+    editState.draft.moduleIds = links.map((link) => link.id);
+  }
+}
+
+function arraysEqual(a: string[] = [], b: string[] = []) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+const isDirty = computed(() => {
+  if (!editState.isEditMode || !note.value || !editState.draft) return false;
+  const draft = editState.draft;
+  const base = note.value;
+  return (
+    canvasDirty.value ||
+    draft.title !== base.title ||
+    draft.content !== base.content ||
+    (draft.typeId ?? null) !== (base.typeId ?? null) ||
+    (draft.backgroundColor ?? '') !== (base.backgroundColor ?? '') ||
+    draft.hidden !== base.hidden ||
+    !arraysEqual(draft.tags, base.tags) ||
+    !arraysEqual(draft.moduleIds, base.moduleIds)
+  );
+});
+
+function enterEditMode() {
+  if (!note.value) return;
+  editState.draft = {
+    ...note.value,
+    tags: [...(note.value.tags ?? [])],
+    moduleIds: [...(note.value.moduleIds ?? [])],
+    contentType: note.value.contentType ?? 'text',
+    typeId: note.value.typeId ?? null,
+  };
+  validationError.value = null;
+  canvasDirty.value = false;
+  editState.isEditMode = true;
+}
+
+function discardDraft() {
+  editState.isEditMode = false;
+  editState.draft = null;
+  validationError.value = null;
+  canvasDirty.value = false;
+  if (note.value) noteContent.value = note.value.content;
+}
+
+function findMissingMentions(draft: Note): string[] {
   const mentions =
-    editedNote.contentType === 'draw'
-      ? []
-      : extractMentionedEntities(editedNote.content);
+    draft.contentType === 'draw' ? [] : extractMentionedEntities(draft.content);
   const missing: string[] = [];
   for (const mention of mentions) {
     let exists = false;
@@ -136,30 +217,146 @@ const handleSubmit = async (editedNote: Note) => {
       missing.push(`${mention.kind}:${mention.id}`);
     }
   }
-  if (missing.length > 0) {
-    validationError.value = `Cannot save: the following mentioned entities do not exist: ${missing.join(', ')}`;
-    return;
+  return missing;
+}
+
+async function saveDraft(): Promise<boolean> {
+  if (!editState.isEditMode) return true;
+
+  const draft = editState.draft;
+  if (!draft || !note.value) {
+    discardDraft();
+    return true;
   }
+
+  if (!isDirty.value) {
+    discardDraft();
+    return true;
+  }
+
+  if (draft.contentType === 'draw') {
+    const snapshot = canvasRef.value?.getSnapshot?.();
+    if (snapshot) draft.content = snapshot;
+    const preview = await canvasRef.value?.getPreview?.();
+    if (preview) draft.preview = preview;
+  } else if (markdownEditorRef.value?.getMarkdown) {
+    draft.content = markdownEditorRef.value.getMarkdown();
+  }
+
+  if (!draft.title?.trim()) {
+    activeTab.value = 'main';
+    await alert(t('editor.titleRequired'));
+    return false;
+  }
+
+  const missing = findMissingMentions(draft);
+  if (missing.length > 0) {
+    activeTab.value = 'main';
+    validationError.value = `Cannot save: the following mentioned entities do not exist: ${missing.join(', ')}`;
+    return false;
+  }
+
   validationError.value = null;
-  if (!note.value) return;
   try {
-    await noteStore.update(note.value.id, editedNote);
+    await noteStore.update(note.value.id, {
+      title: draft.title,
+      content: draft.content,
+      contentType: draft.contentType,
+      tags: draft.tags,
+      moduleIds: draft.moduleIds,
+      typeId: draft.typeId,
+      backgroundColor: draft.backgroundColor,
+      preview: draft.preview,
+    });
   } catch (error) {
+    activeTab.value = 'main';
     validationError.value =
       error instanceof Error ? error.message : String(error);
-    return;
+    return false;
   }
-  isEditing.value = false;
+
+  discardDraft();
   updateNoteFromStore();
+  return true;
+}
+
+async function setEditMode(value: boolean) {
+  if (value === editState.isEditMode) return;
+  if (value) {
+    enterEditMode();
+  } else {
+    await saveDraft();
+  }
+}
+
+const handleDownload = () => {
+  if (note.value) downloadNote(note.value);
+};
+
+const downloadButtons = computed(() =>
+  editState.isEditMode
+    ? []
+    : [
+        {
+          color: 'warning',
+          title: 'common.download',
+          icon: IconFileDownload,
+          event: handleDownload,
+          disabled: note.value?.contentType === 'draw' && !note.value?.preview,
+        },
+      ],
+);
+
+const headerButtons = computed(() =>
+  editState.isEditMode
+    ? [
+        {
+          color: 'primary',
+          title: 'markdownEditor.formattingHelp',
+          icon: IconHelp,
+          event: () => {
+            isHelpOpen.value = true;
+          },
+        },
+      ]
+    : [],
+);
+
+const handleDelete = async () => {
+  if (!note.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: note.value.title })))
+  ) {
+    return false;
+  }
+  isDeleting.value = true;
+  discardDraft();
+  await noteStore.remove(note.value.id);
+  return true;
 };
 
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title || '');
-const noteLinks = computed<MapEntityRef[]>(() =>
-  (note.value?.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
-);
 
 const rightDrawer = useRightDrawer();
+
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  if (!isDirty.value) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
+
+onBeforeRouteLeave(async () => {
+  if (!isDirty.value) return true;
+
+  const choice: UnsavedChangesChoice = await confirmUnsavedChanges();
+  if (choice === 'cancel') return false;
+  if (choice === 'discard') {
+    discardDraft();
+    return true;
+  }
+  return saveDraft();
+});
 
 onMounted(async () => {
   await noteStore.load();
@@ -169,19 +366,22 @@ onMounted(async () => {
   await monsterStore.load();
   await encounterStore.load();
 
-  rightDrawer.set({ component: NoteViewSidebar, props: { note } });
+  rightDrawer.set({
+    component: NoteViewSidebar,
+    props: {
+      note,
+      editState,
+      onSetEditMode: setEditMode,
+    },
+  });
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
   rightDrawer.clear();
 });
-
-async function handleEditorDelete() {
-  if (await handleDelete()) {
-    isEditing.value = false;
-    await router.push('/notes');
-  }
-}
 </script>
 
 <template>
@@ -190,16 +390,19 @@ async function handleEditorDelete() {
     entity-name="notes.title"
     list-route="/notes"
     :on-delete="handleDelete"
-    :on-edit="handleEdit"
-    :is-editing="isEditing"
+    :header-show-edit="false"
+    :header-show-delete="editState.isEditMode"
+    :is-editing="editState.isEditMode"
     :title="noteTitle"
     :not-found="notFound"
-    :left-header-buttons="headerButtons"
+    :left-header-buttons="downloadButtons"
+    :header-buttons="headerButtons"
     :tabs="tabs"
     v-model="activeTab"
   >
     <template #main>
       <div
+        v-if="!editState.isEditMode"
         class="note-content-surface"
         :style="
           note?.backgroundColor
@@ -220,24 +423,59 @@ async function handleEditorDelete() {
           @update:content="handleMarkdownContentChange"
         />
       </div>
+
+      <div v-else class="note-editor-content q-pa-md q-gutter-md">
+        <div class="q-mb-md">
+          <QInput
+            v-model="draftTitle"
+            :placeholder="t('editor.title')"
+            required
+            borderless
+            hide-bottom-space
+            input-style="font-size: 1.5rem; font-weight: 500;"
+            type="text"
+          />
+        </div>
+        <div class="q-mb-md">
+          <NoteCanvas
+            v-if="editState.draft?.contentType === 'draw'"
+            ref="canvasRef"
+            :model-value="draftContent"
+            @change="handleCanvasChange"
+          />
+          <MarkdownEditor
+            v-else
+            ref="markdownEditorRef"
+            v-model="draftContent"
+            enableMentions
+            :isWYSIWYGMode="editState.isVisualMode"
+            :placeholder="t('editor.contentPlaceholder')"
+            :current-entity-id="editState.draft?.id || ''"
+            current-entity-type="note"
+            :tags="editState.draft?.tags ?? []"
+          />
+        </div>
+        <div
+          v-if="validationError"
+          class="text-negative bg-grey-1 q-pa-sm rounded-borders"
+        >
+          {{ validationError }}
+        </div>
+      </div>
     </template>
 
     <template #links>
-      <EntityViewLinks :links="noteLinks" />
-    </template>
-
-    <template #editor>
-      <NoteEditor
-        v-if="isEditing"
-        :note="note"
-        :is-open="isEditing"
-        :validation-error="validationError"
-        @submit="handleSubmit"
-        @delete="handleEditorDelete"
-        @cancel="handleCancel"
+      <EntityViewLinks v-if="!editState.isEditMode" :links="noteLinks" />
+      <EntitiesLinking
+        v-else
+        kind="module"
+        :model-value="linkedModules"
+        @update:model-value="setLinkedModules"
       />
     </template>
   </BaseEntityTabView>
+
+  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>
 
 <style scoped>

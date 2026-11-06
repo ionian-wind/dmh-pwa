@@ -363,7 +363,10 @@
     },
     "openEntity": "Open entity",
     "viewMode": "View mode",
-    "editMode": "Edit mode"
+    "editMode": "Edit mode",
+    "unsavedChangesTitle": "Unsaved changes",
+    "unsavedChangesMessage": "You have unsaved changes. Save them before leaving?",
+    "doNotSave": "Do not save"
   },
   "validation": {
     "required": "This field is required",

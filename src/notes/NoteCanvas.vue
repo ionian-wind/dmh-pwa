@@ -10,10 +10,15 @@ const props = defineProps<{
   readonly?: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: 'change'): void;
+}>();
+
 const { locale } = useI18n();
 const container = useTemplateRef<HTMLDivElement>('container');
 let board: QuickdrawInstance | null = null;
 let stopLocale: (() => void) | null = null;
+let stopStoreListener: (() => void) | null = null;
 
 function parseSnapshot(value?: string): object | null {
   if (!value?.trim()) return null;
@@ -43,10 +48,13 @@ onMounted(() => {
   if (props.readonly) {
     board.editor.setReadonly(true);
   }
+  stopStoreListener = board.editor.store.listen(() => emit('change'));
   stopLocale = localizeQuickdraw(container.value, locale);
 });
 
 onBeforeUnmount(() => {
+  stopStoreListener?.();
+  stopStoreListener = null;
   stopLocale?.();
   stopLocale = null;
   board?.destroy();

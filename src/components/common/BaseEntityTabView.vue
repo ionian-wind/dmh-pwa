@@ -17,6 +17,8 @@ interface Props {
   onDelete?: () => Promise<boolean>;
   onEdit?: () => void;
   isEditing?: boolean;
+  headerShowEdit?: boolean;
+  headerShowDelete?: boolean;
   title?: string;
   subtitle?: string;
   loading?: boolean;

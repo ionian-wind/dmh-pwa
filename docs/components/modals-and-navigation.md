@@ -116,8 +116,16 @@ Thin wrappers around Quasar `Dialog`:
 ```ts
 alert(message, options?): Promise<void>
 confirm(message, options?): Promise<boolean>
+confirmUnsavedChanges(message?): Promise<'save' | 'discard' | 'cancel'>
 prompt(message, options?): Promise<string | null>
 ```
+
+`confirmUnsavedChanges` (in `src/dialogs/unsavedChanges.ts`) opens
+`UnsavedChangesDialog.vue` through Quasar's custom-component dialog API. It
+offers **Save**, **Do not save**, and **Cancel** and is used by the note detail
+page's navigation guard. The custom component is imported directly instead of
+being re-exported from the `src/dialogs` barrel, so normal confirm/alert users
+do not load it.
 
 All use `persistent: true`. Defaults are English ("OK", "Cancel", "Confirm",
 "Alert", "Prompt") rather than i18n keys.

@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, nextTick } from 'vue';
+import { ref, watch, computed } from 'vue';
 import type { Note, NoteContentType } from '@/types';
-import TagSelector from '../components/common/TagSelector.vue';
-import NoteTypeSelector from './NoteTypeSelector.vue';
-import ColorPicker from '@/components/common/ColorPicker.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import NoteCanvas from './NoteCanvas.vue';
+import NoteOptions from './NoteOptions.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
 import { IconDots, IconHelp } from '@tabler/icons-vue';
@@ -14,7 +12,6 @@ import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
-import { mergeHashtags, removeHashtag } from '@/utils/tags';
 
 const { t } = useI18n();
 
@@ -58,24 +55,9 @@ const noteContent = computed({
   },
 });
 
-const editorTags = computed({
-  get: () =>
-    mergeHashtags(
-      editedNote.value.tags ?? [],
-      editedNote.value.contentType === 'draw' ? '' : noteContent.value,
-    ),
-  set: (tags: string[]) => {
-    const removedTags = editorTags.value.filter((tag) => !tags.includes(tag));
-    let content = editedNote.value.content;
-    if (editedNote.value.contentType !== 'draw') {
-      for (const tag of removedTags) {
-        content = removeHashtag(content, tag);
-      }
-    }
-    editedNote.value.content = content;
-    editedNote.value.tags = tags;
-  },
-});
+function handleOptionsUpdate(updated: Note) {
+  Object.assign(editedNote.value, updated);
+}
 
 watch(
   () => props.note,
@@ -227,24 +209,10 @@ function handleDelete() {
           <IconDots />
           <QMenu class="note-options-menu">
             <QCard class="note-options-card q-pa-md">
-              <div class="q-gutter-md">
-                <NoteTypeSelector
-                  :allow-create="true"
-                  v-model="editedNote.typeId"
-                />
-                <TagSelector
-                  v-model="editorTags"
-                  :entity-type="'note'"
-                  :current-entity-id="editedNote.id"
-                />
-                <ColorPicker
-                  id="note-background-color"
-                  v-model="editedNote.backgroundColor"
-                  :label="t('editor.backgroundColor')"
-                  clearable
-                  :clear-label="t('common.clear')"
-                />
-              </div>
+              <NoteOptions
+                :note="editedNote"
+                @update:note="handleOptionsUpdate"
+              />
             </QCard>
           </QMenu>
         </QBtn>

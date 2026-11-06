@@ -14,10 +14,11 @@ used as hidden document sections inside modules.
 | `src/notes/NotesView.vue`                  | List page                                       |
 | `src/notes/NoteCard.vue`                   | Card with rendered Markdown and expand/collapse |
 | `src/notes/NoteEditor.vue`                 | Create/edit modal                               |
+| `src/notes/NoteOptions.vue`                | Type, tags and background options               |
 | `src/notes/NoteCanvas.vue`                 | Quickdraw canvas for `draw` notes               |
-| `src/notes/NoteView.vue`                   | Detail page                                     |
-| `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteEditor`)  |
-| `src/notes/NoteViewSidebar.vue`            | Tags + mentions sidebar                         |
+| `src/notes/NoteView.vue`                   | Detail page with inline view/edit mode          |
+| `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteOptions`) |
+| `src/notes/NoteViewSidebar.vue`            | Tags/mentions tabs and edit-mode options        |
 | `src/components/common/MarkdownEditor.vue` | Editor used by NoteEditor                       |
 | `src/components/common/Markdown.vue`       | Renderer used by cards and detail               |
 
@@ -66,7 +67,8 @@ editable in the note form; it is chosen by the create action.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
 
 The note detail header shows the same download action on the left side of the
-header, separate from the edit/delete buttons on the right.
+header while in view mode. It is hidden while editing; the edit-mode header
+instead shows delete plus a Markdown formatting-help action.
 
 The 600px clamp is hard-coded and does not account for viewport size.
 
@@ -80,9 +82,9 @@ Fields:
   - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
     Quickdraw editor.
 - An icon-only **options** button in the dialog footer opens a popup with the
-  note type selector, tag selector and optional background colour
-  (`backgroundColor`). The colour is rendered behind the note content on the
-  detail page and note cards.
+  shared `NoteOptions` controls: note type selector, tag selector and optional
+  background colour (`backgroundColor`). The colour is rendered behind the note
+  content on the detail page and note cards.
 - The visual-editor toggle sits in the footer between **options** and help.
 - When the visual editor is off, an icon-only help button appears next to the
   toggle. It opens `MarkdownHelpDialog` with markdown formatting,
@@ -108,28 +110,43 @@ created inside a module's document tree are still forced to `hidden: true` by
 ## Detail page (`NoteView.vue`)
 
 - Loads notes, modules, the mention index, parties, monsters, encounters.
-- Renders Markdown for text notes and a read-only `NoteCanvas` for drawing
-  notes.
 - Resolves the note from `noteStore.getById(route.params.id)`; redirects to
   `/notes` if missing after load.
-- Renders the note with `Markdown` and `taskCheckboxEnabled`.
-- Editing opens `NoteEditor` in the `#editor` slot.
+- Publishes `NoteViewSidebar` to the right drawer on mount and clears it on
+  unmount. The same reactive `NoteEditState` is shared with the sidebar, so its
+  View/Edit switch, visual-editor toggle and options panel stay in sync.
+- View mode renders the note with `Markdown` and `taskCheckboxEnabled`, or a
+  read-only `NoteCanvas` for drawing notes. The header shows only Download; the
+  Edit and Delete buttons are hidden.
 - `handleMarkdownContentChange` writes every checkbox toggle back to the store
   immediately, so task-list state is persisted live.
-- On editor submit it validates every `[title](kind://id)` mention against the
-  corresponding store. Missing entities block the save and display a
-  `validationError` string.
-- Delete asks for confirmation, removes the note, and `BaseEntityView` navigates
-  to `/notes`.
-- Publishes `NoteViewSidebar` to the right drawer on mount and clears it on
-  unmount.
 
-### Live editing vs. modal editing
+### Inline view/edit mode
 
-The detail page passes the current note content to `Markdown`, which is
-read-only except for task checkboxes. Editing requires opening the modal. Any
-change made through the modal's editor is emitted only on submit; task
-checkboxes in the read view write directly.
+Switching the sidebar to **Edit** starts a local draft and changes the page:
+
+- The main tab becomes the note editor from the edit dialog: borderless title
+  input plus `MarkdownEditor` (text) or `NoteCanvas` (draw). The tab icon and
+  label switch to the editor tabs.
+- The linked-entities tab becomes editable `EntitiesLinking`.
+- The header hides Download and shows Delete plus the Markdown formatting-help
+  action.
+- The sidebar hides the Tags/Mentions tabs and shows the shared `NoteOptions`
+  panel instead.
+- A **Visual Editor** switch sits above the View/Edit switch, styled like the
+  map sidebar's **Show Labels** row.
+
+Returning to **View mode** saves the draft. Before writing, text notes read the
+latest Markdown from the editor ref and drawing notes read a Quickdraw snapshot
+plus PNG preview. Every `[title](kind://id)` mention is validated against its
+store; missing entities block the save and keep edit mode active with a
+validation message. Notes with no changes skip the write.
+
+If the draft is dirty, route navigation opens a three-action dialog: **Save**,
+**Do not save**, or **Cancel**. Cancel returns `false` from
+`onBeforeRouteLeave` and keeps the current page; Save writes before continuing;
+Do not save discards the draft. A `beforeunload` listener also blocks/closes the
+tab with the browser's native prompt when the draft is dirty.
 
 ## Store (`stores/notes.ts`)
 
