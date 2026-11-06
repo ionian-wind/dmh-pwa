@@ -309,7 +309,13 @@ and the component emits `update:state` plus `finish`.
 
 - Adds and removes string tags with a standard outlined `QInput` and `QChip`
   list.
-- Used by the note editor.
+- Focusing or typing opens a suggestion menu sourced from `noteStore.allTags`
+  plus the currently selected tags. Suggestions exclude tags already selected
+  and sort prefix matches first.
+- When the typed text does not match an existing tag, the menu shows a
+  `Create #tag` action. Arrow keys move the highlight, Enter creates the typed
+  tag (or adds the highlighted suggestion), and Escape closes the menu.
+- Used by the note editor and the note detail sidebar options panel.
 - Duplicate/whitespace checks are minimal.
 
 ### `TagChip.vue`

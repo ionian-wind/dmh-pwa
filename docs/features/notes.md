@@ -131,7 +131,8 @@ Switching the sidebar to **Edit** starts a local draft and changes the page:
   label switch to the editor tabs.
 - The linked-entities tab becomes editable `EntitiesLinking`.
 - The header hides Download and shows Delete. When the visual editor is off it
-  also shows the Markdown formatting-help action.
+  also shows the Markdown formatting-help action. The duplicate page title is
+  hidden in edit mode, leaving only the editor's title input.
 - The sidebar hides the Tags/Mentions tabs and shows the shared `NoteOptions`
   panel instead.
 - A **Visual Editor** switch sits above the View/Edit switch, styled like the
@@ -176,7 +177,9 @@ The only escape is delete + recreate.
 
 - `allTags` collects tags from every note (including hidden ones).
 - While editing, the note options menu's `TagSelector` shows saved tags plus
-  hashtags currently present in the markdown content. Removing an inline tag
+  hashtags currently present in the markdown content. Focusing or typing in the
+  tag input opens suggestions from every note's tags; when the query does not
+  match an existing tag, the menu offers `Create #tag`. Removing an inline tag
   strips the `#` markers from the content but keeps the tag word as plain text,
   so it is not merged back on save.
 - The tag filter is exact-match (`note.tags.includes(tag)`), while the search
