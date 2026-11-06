@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="150" viewBox="0 0 720 150" role="img" aria-labelledby="title desc">
+  <title id="title">Install control in a browser toolbar</title>
+  <desc id="desc">A browser address bar with an install icon on the right.</desc>
+  <rect width="720" height="150" rx="14" fill="#f5f6f8"/>
+  <rect x="18" y="38" width="684" height="74" rx="12" fill="#ffffff" stroke="#c9ced6"/>
+  <circle cx="48" cy="75" r="8" fill="#8b95a5"/>
+  <circle cx="72" cy="75" r="8" fill="#b5bcc8"/>
+  <rect x="96" y="60" width="430" height="30" rx="8" fill="#eef1f5"/>
+  <text x="112" y="80" font-family="sans-serif" font-size="15" fill="#596273">dmh-pwa</text>
+  <rect x="620" y="58" width="42" height="34" rx="8" fill="#e8f1ff" stroke="#3d7fe0"/>
+  <path d="M641 68v11m0 0-5-5m5 5 5-5M632 84h18" fill="none" stroke="#3d7fe0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="552" y="82" text-anchor="end" font-family="sans-serif" font-size="15" fill="#3d7fe0">Install</text>
+</svg>

@@ -176,6 +176,14 @@ describe('settings dialog', () => {
     expect(
       wrapper.find('[data-test="settings-persistence-message"]').text(),
     ).toContain('did not grant persistent storage');
+    const links = wrapper.findAll('.help-link');
+    expect(links).toHaveLength(2);
+    expect(links[0].attributes('href')).toContain(
+      '/help/getting-started/install',
+    );
+    expect(links[1].attributes('href')).toContain(
+      '/help/troubleshooting/persistent-storage',
+    );
     wrapper.unmount();
   });
 

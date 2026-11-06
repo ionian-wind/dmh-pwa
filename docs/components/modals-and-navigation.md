@@ -202,8 +202,8 @@ Settings item. It currently has three sections:
   - **Storage** — reports usage/quota, file counts by source kind, unavailable
     records and whether the origin has persistent storage. The **Request**
     button calls `navigator.storage.persist()` and shows whether the browser
-    granted it; a denial usually means the app must be installed or the site
-    setting changed in the browser.
+    granted it; a denial links to the help center pages for installing the app
+    and reviewing site settings.
   - **Reconnect files** — appears when records are unavailable or a handle
     permission was lost. Picks replacements and relinks them by record ID.
   - **Move large files to OPFS** — appears when IndexedDB still has Blob-backed

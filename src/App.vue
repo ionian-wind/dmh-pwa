@@ -43,6 +43,7 @@ import {
   IconTool,
   IconChevronDown,
   IconSettings,
+  IconHelpCircle,
   IconMap,
   IconHeadphones,
 } from '@tabler/icons-vue';
@@ -485,6 +486,19 @@ function openJukebox() {
               <QItemSection>
                 {{ t('app.jukebox') }}
               </QItemSection>
+            </QItem>
+            <QItem
+              clickable
+              data-test="open-help"
+              :active="router.currentRoute.value.path.startsWith('/help')"
+              :active-class="'bg-secondary'"
+              :title="t('navigation.help')"
+              :aria-label="t('navigation.help')"
+              v-ripple
+              :to="'/help'"
+            >
+              <QItemSection side><IconHelpCircle /></QItemSection>
+              <QItemSection>{{ t('navigation.help') }}</QItemSection>
             </QItem>
             <QItem
               clickable

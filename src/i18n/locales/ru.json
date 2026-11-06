@@ -48,7 +48,8 @@
     "tools": "Инструменты",
     "ambientSound": "Амбиент",
     "maps": "Карты и локации",
-    "probabilityCalculator": "Калькулятор вероятностей"
+    "probabilityCalculator": "Калькулятор вероятностей",
+    "help": "Справочный центр"
   },
   "home": {
     "title": "Добро пожаловать в Dungeon Master Helper",
@@ -549,7 +550,9 @@
     "backupExternalFiles": "Включать связанные файлы в резервные копии",
     "backupExternalFilesHint": "Копировать внешние файлы File System Access в резервную копию. Архив может значительно увеличиться.",
     "storagePersistentGrantedMessage": "Постоянное хранилище предоставлено.",
-    "storagePersistentDeniedMessage": "Браузер не предоставил постоянное хранилище. Установите приложение или включите его в настройках сайта."
+    "storagePersistentDeniedMessage": "Браузер не предоставил постоянное хранилище. {install} или {settings}.",
+    "storagePersistentInstallLink": "Установите приложение",
+    "storagePersistentSettingsLink": "включите его в настройках сайта"
   },
   "tags": {
     "title": "Теги"
@@ -1212,5 +1215,10 @@
     "zoomIn": "Приблизить график",
     "zoomOut": "Отдалить график",
     "zoomReset": "Сбросить масштаб графика"
+  },
+  "help": {
+    "title": "Справочный центр",
+    "notFound": "Страница справки не найдена.",
+    "back": "Вернуться в справочный центр"
   }
 }

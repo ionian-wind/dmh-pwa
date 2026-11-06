@@ -17,6 +17,7 @@ exploratory.
 backup/restore. A DM needs "what happened last time and what is next".
 
 **Scope.**
+
 - Recently edited notes/modules (last 24h/7d).
 - Active combat (if any) and running timers with remaining time.
 - Next session date/notes.
@@ -80,6 +81,20 @@ individual key listeners. Inputs, textareas and contenteditable elements are
 ignored by default. Persist overrides in `configStore`.
 See [hotkeys-and-command-menu.md](hotkeys-and-command-menu.md).
 
+### A6. Help center search (P2)
+
+**Value.** The help center is growing; users should not have to browse folders
+to find an answer.
+
+**Scope.** Offline search over localized help titles, descriptions, headings and
+body text, with ranked results and snippets. Search only the active locale,
+with English fallback for untranslated pages.
+
+**Implementation.** Derive an in-memory index from the Markdown pages already
+loaded by `src/helpcenter/content.ts`; add a search input to the help sidebar
+and a keyboard-navigable results list. See
+[help-center-search.md](help-center-search.md).
+
 ---
 
 ## B. Notes and writing
@@ -97,6 +112,7 @@ Remaining follow-up: a tag-chip filter bar and autocomplete in `NotesView`.
 notes (NPC, location, quest) with typed fields.
 
 **Scope.**
+
 - Note type picker (restored).
 - A type editor with fields (`text`, `number`, `boolean`, date, select,
   multiselect).
@@ -113,6 +129,7 @@ notes (NPC, location, quest) with typed fields.
 **Value.** Entity links work but are hidden behind raw `kind://id` syntax.
 
 **Scope.**
+
 - `[[` autocomplete in raw mode (Milkdown already has a mention menu).
 - Backlinks panel that actually works (fix the sidebar prop bug).
 - "Unlinked mentions" (plain-text entity names) with a one-click link action.
@@ -254,6 +271,7 @@ with print CSS for a minimal PDF path.
 modules, and omits assets.
 
 **Scope.**
+
 - Versioned archive + manifest.
 - New IDs on merge; explicit replace mode.
 - Include bookmarks, cover, and optional assets.
@@ -426,6 +444,7 @@ compact mode.
 ### H3. Accessibility (P1)
 
 **Scope.**
+
 - Keyboard navigation for the tree, cards, and modals.
 - Focus management in modals (focus trap, return focus).
 - ARIA labels for icon-only buttons.
@@ -485,9 +504,9 @@ current whole-array store replacement; treat as a separate architecture.
 
 ## J. Suggested release slices
 
-| Release | Features |
-| --- | --- |
-| **Next (stabilize)** | A1 dashboard, B1 metadata controls, C4 persistence, D1 module nav, E1 jukebox fixes, G1 backup, H1 install, H6 search |
-| **Following** | A3 command menu, A5 hotkeys, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity |
-| **Later** | A2 sessions, B3/B4 linking/history, C5/C6 loot/tables, D4/D5 import/versioning, E3–E5 audio, F2/F3 combat timers/dice, G2–G4 export/sync |
-| **Exploratory** | C7 timeline, I1–I3 sharing/collaboration |
+| Release              | Features                                                                                                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next (stabilize)** | A1 dashboard, B1 metadata controls, C4 persistence, D1 module nav, E1 jukebox fixes, G1 backup, H1 install, H6 search                                    |
+| **Following**        | A3 command menu, A5 hotkeys, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity                          |
+| **Later**            | A2 sessions, A6 help search, B3/B4 linking/history, C5/C6 loot/tables, D4/D5 import/versioning, E3–E5 audio, F2/F3 combat timers/dice, G2–G4 export/sync |
+| **Exploratory**      | C7 timeline, I1–I3 sharing/collaboration                                                                                                                 |

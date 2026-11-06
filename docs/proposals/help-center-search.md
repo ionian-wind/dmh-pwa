@@ -1,0 +1,299 @@
+# Help Center Search
+
+**Status:** proposal — not implemented.
+
+**Priority:** P2.
+
+**Depends on:** the static help center in `helpcenter/` and
+[help-center.md](../components/help-center.md).
+
+**Goal:** let users find an answer inside the help center without knowing the
+folder structure, while keeping the help center fully static and offline.
+
+---
+
+## 1. Scope
+
+### In scope
+
+- Search titles, descriptions, headings and body text.
+- Search only the current locale, with English fallback where needed.
+- Rank title/heading matches above body matches.
+- Show a result title, section/path and a short snippet.
+- Keyboard navigation, Enter to open, Escape to close.
+- Work offline; no server or network search.
+- Open results at an optional heading anchor.
+
+### Out of scope
+
+- Searching campaign data (notes, NPCs, maps). That belongs to the command
+  menu/global entity search.
+- Natural-language answers or an LLM.
+- Search analytics.
+- Searching images by their content.
+
+---
+
+## 2. Current foundation
+
+Help pages are static Markdown files:
+
+```text
+helpcenter/
+  en/
+    index.md
+    getting-started/index.md
+    getting-started/install.md
+    troubleshooting/index.md
+    troubleshooting/persistent-storage.md
+  ru/
+    ...same structure...
+```
+
+`src/helpcenter/content.ts`:
+
+- loads Markdown and images with `import.meta.glob`;
+- parses frontmatter (`title`, `description`, `order`);
+- builds a hierarchical navigation tree;
+- resolves relative Markdown links and images;
+- renders Markdown with `markdown-it`.
+
+A search index can be derived from the same source pages without changing the
+content format.
+
+---
+
+## 3. Index design
+
+### 3.1 Build the index from source pages
+
+```ts
+interface HelpSearchRecord {
+  locale: 'en' | 'ru';
+  path: string; // '' for /help
+  title: string;
+  description: string;
+  headings: string[];
+  body: string;
+  keywords: string[]; // optional frontmatter keywords
+}
+```
+
+Add `keywords?: string[]` to the frontmatter parser later if needed.
+
+At startup, or in a worker, transform pages into searchable text:
+
+- normalize case;
+- strip Markdown syntax and frontmatter;
+- keep Cyrillic and Latin letters/numbers;
+- split into tokens;
+- keep a plain-text body for snippets.
+
+Do **not** parse the rendered HTML for search; use the Markdown body and
+headings. That keeps snippets readable and avoids markup fragments.
+
+### 3.2 Index location
+
+Option A — runtime index:
+
+- derive records from `getHelpPages(locale)` during app startup;
+- simplest, no build step;
+- fine for tens of pages.
+
+Option B — generated JSON:
+
+- a small build script writes `helpcenter/<locale>/search.json`;
+- app fetches it lazily when the help center/search opens;
+- better if the help center grows to hundreds of pages;
+- adds a build step and a network request (still cached/offline).
+
+Recommendation: start with Option A. Revisit if build size or first-use cost
+becomes noticeable.
+
+### 3.3 Tokenization and scoring
+
+Keep the implementation small:
+
+- lowercase both query and text;
+- support Cyrillic and Latin word characters;
+- prefix matching (typing `inst` matches `install`);
+- exact title match > title prefix > heading match > description > body;
+- all query tokens should match somewhere;
+- later, add simple stemming/transliteration if needed.
+
+Suggested score:
+
+| Match                     | Score       |
+| ------------------------- | ----------- |
+| Exact title               | 100         |
+| Title prefix              | 80          |
+| Title contains            | 60          |
+| Heading contains          | 40          |
+| Description contains      | 25          |
+| Body contains             | 10          |
+| Multiple body occurrences | small bonus |
+
+Do not add `fuse.js` for the first version. The page set is small and a
+deterministic scorer is easier to test. If search quality becomes a problem,
+evaluate Fuse.js/MiniSearch behind the same `searchHelp(query)` API.
+
+### 3.4 Locale behaviour
+
+- Search the active locale first.
+- If a page is missing in the active locale but exists in English, include the
+  English fallback result with a “English” marker.
+- Do not mix both locales in one result list by default; it makes snippets
+  confusing.
+- Rebuild or filter results when the app language changes.
+
+---
+
+## 4. UI
+
+### 4.1 Placement
+
+- A search input at the top of the help sidebar.
+- On mobile, a search field above the article or in a bottom sheet.
+- A “Search help” command in the global command menu later; it opens `/help`
+  with the search query focused.
+- Optional `?q=` query parameter so help searches can be linked.
+
+### 4.2 Results
+
+```text
+[ Search help… ]
+
+Install the app
+Getting started > Install the app
+…install Owlbear's DMH as a standalone app…
+
+Persistent storage
+Troubleshooting
+…the browser decides whether to grant it…
+```
+
+Each result shows:
+
+- title;
+- breadcrumb/path;
+- short snippet with the matched term highlighted;
+- optional shortcut hint.
+
+### 4.3 Keyboard
+
+- `/` focuses help search when the help center is open and focus is not in an
+  input.
+- `ArrowUp` / `ArrowDown` move the active result.
+- `Enter` opens it.
+- `Escape` clears the query and returns focus to the article.
+- Use combobox/listbox semantics if the results overlay is used.
+
+### 4.4 Empty and no-result states
+
+- Empty query: show navigation and popular/root pages instead of a blank list.
+- No results: show “No help pages found” and a link back to the help root.
+- Loading: only needed if the index is fetched/generated asynchronously.
+
+---
+
+## 5. Integration points
+
+| Area                   | Integration                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| `content.ts`           | expose plain-text pages/headings for indexing                         |
+| `helpcenter/search.ts` | tokenization, scoring, snippets, snippet highlighting                 |
+| `HelpCenterView.vue`   | search input, result panel, query parameter                           |
+| `HelpNav`              | hide or dim navigation while results are shown                        |
+| Router                 | optional `?q=` preserving the current page, or navigate to `/help?q=` |
+| Command menu (future)  | “Search help” command with a shared query                             |
+| i18n                   | labels and empty states                                               |
+
+Suggested files:
+
+```text
+src/helpcenter/search.ts
+src/helpcenter/components/HelpSearch.vue
+src/helpcenter/components/HelpSearchResult.vue
+```
+
+---
+
+## 6. Snippets and highlighting
+
+- Build snippets from the plain-text body windows around the first match.
+- Limit to roughly 120–180 characters.
+- Escape HTML before highlighting matched text.
+- Prefer word-boundary windows but do not cut UTF-8 characters.
+- Do not use `v-html` for user-entered query text; highlight tokens safely.
+
+---
+
+## 7. Testing
+
+### Unit
+
+- tokenization with Latin and Cyrillic text;
+- prefix matching;
+- title/heading/body ranking;
+- multi-token queries;
+- locale filtering and English fallback;
+- snippet extraction and escaping;
+- unknown query returns an empty list.
+
+### Component
+
+- typing updates results;
+- keyboard navigation wraps correctly;
+- Enter changes the route;
+- Escape clears/reset;
+- no results state;
+- query parameter restores the search.
+
+### E2E
+
+- Open `/help`, search for “storage”, open the persistent-storage page.
+- Switch language and search in Russian.
+- Use the command menu to open help search later.
+
+---
+
+## 8. Phases
+
+### Phase 1 — search module
+
+- Build an in-memory index from the current locale pages.
+- Implement tokenization, scoring and snippets.
+- Add unit tests.
+
+### Phase 2 — help UI
+
+- Add the sidebar search input.
+- Results list, keyboard navigation and no-result state.
+- Optional `?q=` query parameter.
+
+### Phase 3 — integration and polish
+
+- Command-menu entry.
+- English fallback marker.
+- Deep links to headings.
+- Revisit index generation if the help center grows.
+
+---
+
+## 9. Risks and open questions
+
+| Risk                             | Mitigation                                         |
+| -------------------------------- | -------------------------------------------------- |
+| Index grows with content         | start runtime; move to generated JSON/worker later |
+| Poor fuzzy matching              | deterministic prefix scoring; evaluate Fuse later  |
+| Cyrillic tokenization            | test Unicode word boundaries explicitly            |
+| Snippet HTML injection           | escape text, highlight safely                      |
+| Duplicate navigation and results | hide/dim nav while searching                       |
+| Locale mixing                    | filter by locale; mark fallback results            |
+
+Open questions:
+
+- Should search results replace the article or appear in a dropdown?
+- Should pressing `/` always focus search, or only when the help page is open?
+- Do we need heading anchors in the first version?
+- Should the command menu include help results alongside entity results?

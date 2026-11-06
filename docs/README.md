@@ -63,6 +63,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | Document                                                                   | Covers                                                 |
 | -------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [components/common-components.md](components/common-components.md)         | Shared cards, lists, headers, selectors, inputs        |
+| [components/help-center.md](components/help-center.md)                     | Static Markdown help center, locales, images and links |
 | [components/tree.md](components/tree.md)                                   | Recursive drag-and-drop tree used by the book editor   |
 | [components/markdown-editor.md](components/markdown-editor.md)             | Milkdown wrapper and mention insertion popup           |
 | [components/modals-and-navigation.md](components/modals-and-navigation.md) | Modal stack, dialogs, drawer injection, layout regions |
@@ -87,6 +88,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass        |
 | [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture |
 | [proposals/hotkeys-and-command-menu.md](proposals/hotkeys-and-command-menu.md)           | Global hotkeys and the command menu                 |
+| [proposals/help-center-search.md](proposals/help-center-search.md)                       | Offline search across localized help pages          |
 | [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage   |
 | [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                |
 | [proposals/image-filters-and-composition.md](proposals/image-filters-and-composition.md) | Filter stacks, layers and image composition         |
@@ -118,9 +120,11 @@ src/
   utils/dice-roller/               dice engine (work in progress)
   utils/dice-probability-calculator/ AnyDice-compatible probability library
   probability-calculator/          probability calculator page, Monaco + charts
+  helpcenter/                      help center reader, locale content loader
   components/                      shared UI + Tree + PWA + dialogs
   <domain>/                        one folder per feature domain
   i18n/locales/{en,ru}.json        translations
+helpcenter/                        localized Markdown help pages + images
 tests/                             Vitest suites (largely stale)
 scripts/                           offline content/migration tooling
 public/                            icons, legacy manifest, legacy sw.js, dice assets
@@ -132,7 +136,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **1542 / 1542 passing tests across 191 files** (after replacing obsolete suites
+   **1556 / 1556 passing tests across 193 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

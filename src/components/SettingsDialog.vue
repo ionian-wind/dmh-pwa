@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { useConfigStore } from '@/utils/configStore';
+import router from '@/router';
 import { confirm } from '@/dialogs';
 import { clearAllAppData, reloadAppFromMainPage } from '@/utils/appReset';
 import { debugError } from '@/utils/debug';
@@ -143,6 +144,15 @@ watch(
 
 function close() {
   emit('update:modelValue', false);
+}
+
+function helpHref(path: string): string {
+  return router.resolve(`/help/${path}`).href;
+}
+
+function openHelp(path: string) {
+  close();
+  void router.push(`/help/${path}`);
 }
 
 async function clearStorage() {
@@ -306,22 +316,43 @@ async function clearStorage() {
             <div class="text-caption text-grey-7">
               {{ t('settings.storagePersistentHint') }}
             </div>
-            <div
-              v-if="persistenceStatus"
-              class="text-caption"
-              :class="
-                persistenceStatus === 'granted'
-                  ? 'text-positive'
-                  : 'text-negative'
-              "
-              data-test="settings-persistence-message"
-            >
-              {{
-                persistenceStatus === 'granted'
-                  ? t('settings.storagePersistentGrantedMessage')
-                  : t('settings.storagePersistentDeniedMessage')
-              }}
-            </div>
+            <template v-if="persistenceStatus">
+              <div
+                v-if="persistenceStatus === 'granted'"
+                class="text-caption text-positive"
+                data-test="settings-persistence-message"
+              >
+                {{ t('settings.storagePersistentGrantedMessage') }}
+              </div>
+              <i18n-t
+                v-else
+                keypath="settings.storagePersistentDeniedMessage"
+                tag="div"
+                class="text-caption text-negative"
+                data-test="settings-persistence-message"
+              >
+                <template #install>
+                  <a
+                    class="help-link"
+                    :href="helpHref('getting-started/install')"
+                    @click.prevent="openHelp('getting-started/install')"
+                  >
+                    {{ t('settings.storagePersistentInstallLink') }}
+                  </a>
+                </template>
+                <template #settings>
+                  <a
+                    class="help-link"
+                    :href="helpHref('troubleshooting/persistent-storage')"
+                    @click.prevent="
+                      openHelp('troubleshooting/persistent-storage')
+                    "
+                  >
+                    {{ t('settings.storagePersistentSettingsLink') }}
+                  </a>
+                </template>
+              </i18n-t>
+            </template>
           </QItemSection>
           <QItemSection side>
             <div v-if="storage" class="text-caption q-mb-xs">
@@ -415,3 +446,10 @@ async function clearStorage() {
     </section>
   </BaseModal>
 </template>
+
+<style scoped>
+.help-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+</style>
