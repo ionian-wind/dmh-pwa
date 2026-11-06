@@ -48,15 +48,17 @@ export interface Note extends WithMetadata {
 }
 
 /**
- * Shared state for the note detail page's inline view/edit mode. The note view
+ * Shared state for an entity detail page's inline view/edit mode. The view
  * owns the state; the right sidebar receives the same reactive object so its
- * mode switch, visual-editor toggle and options panel stay in sync.
+ * mode switch, visual-editor toggle and optional options panel stay in sync.
  */
-export interface NoteEditState {
+export interface InlineEditState<T> {
   isEditMode: boolean;
   isVisualMode: boolean;
-  draft: Note | null;
+  draft: T | null;
 }
+
+export type NoteEditState = InlineEditState<Note>;
 
 export interface ModuleTreeNode {
   noteId: UUID;

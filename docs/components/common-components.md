@@ -356,6 +356,20 @@ value.
 Custom pointer/touch slider with horizontal/vertical modes. Clamps and steps
 values. Currently exercised by tests only.
 
+### Shared entity view/edit components
+
+- `EntityContentSurface.vue` — the note-style padded content surface used by
+  note and character detail view modes; accepts an optional background colour.
+- `EntityInlineEditor.vue` — borderless title/name input, content slot and
+  validation-error block used by note and character edit modes.
+- `EntityMarkdownEditor.vue` — shared `MarkdownEditor` wrapper with
+  `enableMentions`, entity context/tags and a `getMarkdown()` exposure.
+- `EntityModeControls.vue` — the sidebar visual-editor toggle plus View/Edit
+  switch shared by note and character sidebars.
+- `useEntityEditMode` (`src/composables/useEntityEditMode.ts`) — draft
+  lifecycle, dirty tracking, save-on-view, delete/discard callbacks,
+  route-leave confirmation and the `beforeunload` guard.
+
 ### `TabGroup.vue` / `TabPanel.vue`
 
 Labels may be translation keys or already-translated strings; keys are resolved

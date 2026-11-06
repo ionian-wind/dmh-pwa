@@ -59,12 +59,27 @@ Renders only the title. There is no summary, notes preview, or party badge.
 ## Detail page (`CharacterView.vue`)
 
 - Resolves the character from the store by route param.
-- Renders `notes` as plain text (not Markdown).
-- Edit modal, delete with confirmation, then `BaseEntityView` navigates to the
-  list.
+- Uses the same inline View/Edit experience as notes:
+  - View mode renders `notes` as Markdown (including task checkboxes) inside
+    the shared `EntityContentSurface`.
+  - Edit mode uses the shared `EntityInlineEditor` + `EntityMarkdownEditor`
+    with the character name as the title and `notes` as the note content.
+  - Switching back to View saves; dirty navigation shows the shared
+    unsaved-changes dialog; the header title is hidden while editing.
+  - Delete is only shown in edit mode; formatting help is shown when the raw
+    Markdown editor is active.
+- Header tabs are **View** and **Linked entities**; edit mode uses
+  **Main editor** and **Linked entities**.
+- The linked-entities tab shows the parties and locations linked to the
+  character. In edit mode both kinds are editable through `EntitiesLinking`.
 - Uses `CharacterViewSidebar` through the shared right drawer. Ambient scenes
-  and mentions are separated into **Scenes** and **Mentions** tabs using the
-  shared `TabGroup` component, with Mentions last.
+  and mentions are separated into **Scenes** and **Mentions** tabs, with
+  Mentions last. The sidebar shares the note-style mode controls and keeps
+  scene/mention tabs visible in both modes.
+- There are no tags, note types/options, or character download action.
+- Delete asks for confirmation; `BaseEntityView` navigates to the list.
+
+The create/edit modal (`CharacterEditor.vue`) remains for the character list.
 
 ## Relationships and lifecycle
 
@@ -77,6 +92,5 @@ Renders only the title. There is no summary, notes preview, or party badge.
 ## Limitations / gaps
 
 - No stats, HP, AC, level, class, race, equipment, spells, or portrait.
-- No character-to-party editing from the character side.
 - Delete asks for confirmation; there is no cascade cleanup.
 - No validation beyond a non-empty name.

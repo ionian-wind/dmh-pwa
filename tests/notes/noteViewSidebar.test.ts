@@ -59,8 +59,8 @@ describe('NoteViewSidebar', () => {
       props: { note: { id: 'n1', title: 'Note', tags: [] } as any },
     });
 
-    const view = wrapper.find('.note-view-mode');
-    const edit = wrapper.find('.note-edit-mode');
+    const view = wrapper.find('.entity-view-mode');
+    const edit = wrapper.find('.entity-edit-mode');
     expect(view.attributes('aria-pressed')).toBe('true');
     expect(edit.attributes('aria-pressed')).toBe('false');
 
@@ -101,7 +101,7 @@ describe('NoteViewSidebar', () => {
 
     expect(wrapper.find('.tab-group').exists()).toBe(false);
     expect(wrapper.findComponent({ name: 'NoteOptions' }).exists()).toBe(true);
-    expect(wrapper.find('.note-visual-mode-toggle').exists()).toBe(true);
+    expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);
     expect(wrapper.findComponent({ name: 'QToggle' }).props('modelValue')).toBe(
       true,
     );
@@ -111,10 +111,10 @@ describe('NoteViewSidebar', () => {
       .vm.$emit('update:modelValue', false);
     expect(editState.isVisualMode).toBe(false);
 
-    await wrapper.find('.note-view-mode').trigger('click');
+    await wrapper.find('.entity-view-mode').trigger('click');
     expect(setEditMode).toHaveBeenCalledWith(false);
 
-    await wrapper.find('.note-edit-mode').trigger('click');
+    await wrapper.find('.entity-edit-mode').trigger('click');
     expect(setEditMode).toHaveBeenCalledWith(true);
     wrapper.unmount();
   });
@@ -192,7 +192,7 @@ describe('NoteViewSidebar', () => {
     });
 
     expect(wrapper.findComponent({ name: 'NoteOptions' }).exists()).toBe(false);
-    expect(wrapper.find('.note-visual-mode-toggle').exists()).toBe(false);
+    expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(false);
     expect(wrapper.find('.tab-group').exists()).toBe(true);
     wrapper.unmount();
   });

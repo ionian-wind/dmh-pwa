@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick, reactive } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
+import type { InlineEditState, PlayerCharacter } from '@/types';
 
 const mocks = vi.hoisted(() => ({
   load: vi.fn().mockResolvedValue(undefined),
@@ -80,6 +81,44 @@ describe('CharacterViewSidebar', () => {
     expect(mentions[0].props('entities')).toEqual([]);
     expect(mentions[1].props('entities')).toEqual([]);
     expect(wrapper.findComponent(ScenesStub).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('wires the shared view/edit and visual mode controls', async () => {
+    const editState = reactive<InlineEditState<PlayerCharacter>>({
+      isEditMode: false,
+      isVisualMode: true,
+      draft: null,
+    });
+    const onSetEditMode = vi.fn();
+
+    const wrapper = mount(CharacterViewSidebar, {
+      props: {
+        character: { id: 'c1', name: 'Hero' } as PlayerCharacter,
+        editState,
+        onSetEditMode,
+      },
+      global: {
+        stubs: {
+          Mentions: MentionsStub,
+          EntityScenesPanel: ScenesStub,
+        },
+      },
+    });
+
+    expect(wrapper.find('.entity-view-mode').attributes('aria-pressed')).toBe(
+      'true',
+    );
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    expect(onSetEditMode).toHaveBeenCalledWith(true);
+
+    editState.isEditMode = true;
+    await nextTick();
+    expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    expect(editState.isVisualMode).toBe(false);
     wrapper.unmount();
   });
 });

@@ -1,117 +1,285 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useCharacterStore } from '@/stores/characters';
-import CharacterEditor from '@/characters/CharacterEditor.vue';
-import type { PlayerCharacter } from '@/types';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
-import { useMentionsStore } from '@/utils/storage';
-import { useRightDrawer } from '@/composables/useLayout';
 import { useI18n } from 'vue-i18n';
-import { confirm } from '@/dialogs';
+import { useCharacterStore } from '@/stores/characters';
+import { usePartyStore } from '@/stores/parties';
+import { useMentionsStore } from '@/utils/storage';
+import { useMapLocationStore } from '@/maps/locations';
+import type { PlayerCharacter } from '@/types';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
+import Markdown from '@/components/common/Markdown.vue';
+import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
+import { IconHelp } from '@tabler/icons-vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { alert, confirm } from '@/dialogs';
+import { useEntityEditMode } from '@/composables/useEntityEditMode';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useRightDrawer } from '@/composables/useLayout';
+import type { MapEntityRef } from '@/maps/types';
 
 const route = useRoute();
 const router = useRouter();
-const characterStore = useCharacterStore();
-const mentionsStore = useMentionsStore();
 const { t } = useI18n();
-const showEditor = ref(false);
+const characterStore = useCharacterStore();
+const partyStore = usePartyStore();
+const locationStore = useMapLocationStore();
+const mentionsStore = useMentionsStore();
+const relations = useEntityLinkRelations();
 
+const character = ref<PlayerCharacter | null>(null);
+const activeTab = ref('main');
+const viewTabs = useEntityViewTabs();
+const editorTabs = useEntityEditorTabs();
 const isLoaded = computed(() => characterStore.isLoaded);
-const character = computed(() =>
-  characterStore.getById(route.params.id as string),
-);
-const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !character.value);
+const validationError = ref<string | null>(null);
+const isHelpOpen = ref(false);
+const isDeleting = ref(false);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 
-function editCharacter() {
-  showEditor.value = true;
-}
-
-async function handleDelete() {
-  if (
-    character.value &&
-    (await confirm(t('common.confirmDelete', { title: character.value.name })))
-  ) {
-    await characterStore.remove(character.value.id);
-    return true;
+function updateCharacterFromStore() {
+  if (!characterStore.isLoaded) {
+    return;
   }
-  return false;
+  const found = characterStore.getById(route.params.id as string);
+  if (found) {
+    character.value = found as PlayerCharacter;
+  } else if (!isDeleting.value) {
+    router.push('/characters');
+  }
 }
 
-function handleSave(updated: PlayerCharacter) {
+watch(
+  [() => characterStore.items, () => characterStore.isLoaded],
+  updateCharacterFromStore,
+  { immediate: true },
+);
+
+const { editState, setEditMode, discardDraft } =
+  useEntityEditMode<PlayerCharacter>({
+    source: character,
+    clone: (source) => ({ ...source }),
+    isDirty: (draft, source) =>
+      draft.name !== source.name ||
+      (draft.notes ?? '') !== (source.notes ?? ''),
+    onEnter: () => {
+      validationError.value = null;
+    },
+    onDiscard: () => {
+      validationError.value = null;
+    },
+    prepare: prepareDraft,
+    save: persistDraft,
+  });
+
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
+);
+
+const draftName = computed({
+  get: () => editState.draft?.name ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.name = value;
+  },
+});
+
+const draftNotes = computed({
+  get: () => editState.draft?.notes ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.notes = value;
+  },
+});
+
+const characterLinks = computed<MapEntityRef[]>(() => {
+  const id = character.value?.id;
+  if (!id) return [];
+  return [
+    ...relations
+      .getLinkedIds('character', id, 'party')
+      .map((partyId) => ({ kind: 'party' as const, id: partyId })),
+    ...relations
+      .getLinkedIds('character', id, 'location')
+      .map((locationId) => ({ kind: 'location' as const, id: locationId })),
+  ];
+});
+
+async function setCharacterLinks(
+  kind: 'party' | 'location',
+  links: MapEntityRef[],
+) {
+  if (!character.value) return;
+  await relations.setLinkedIds(
+    'character',
+    character.value.id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
+
+function handleNotesChange(notes: string) {
   if (character.value) {
-    characterStore.update(character.value.id, updated);
-    characterStore.getById(character.value.id);
+    void characterStore.update(character.value.id, { notes });
   }
-  showEditor.value = false;
 }
 
-function closeEditor() {
-  showEditor.value = false;
+async function prepareDraft(draft: PlayerCharacter): Promise<boolean> {
+  if (markdownEditorRef.value?.getMarkdown) {
+    draft.notes = markdownEditorRef.value.getMarkdown();
+  }
+  if (!draft.name?.trim()) {
+    activeTab.value = 'main';
+    await alert(t('characterEditor.nameRequired'));
+    return false;
+  }
+  validationError.value = null;
+  return true;
 }
 
-// Computed properties for BaseEntityView
+async function persistDraft(draft: PlayerCharacter): Promise<boolean> {
+  if (!character.value) return false;
+  try {
+    await characterStore.update(character.value.id, {
+      name: draft.name,
+      notes: draft.notes,
+    });
+  } catch (error) {
+    activeTab.value = 'main';
+    validationError.value =
+      error instanceof Error ? error.message : String(error);
+    return false;
+  }
+  updateCharacterFromStore();
+  return true;
+}
+
 const characterTitle = computed(() => character.value?.name || '');
+
+const headerButtons = computed(() => {
+  if (!editState.isEditMode || editState.isVisualMode) return [];
+  return [
+    {
+      color: 'primary',
+      title: 'markdownEditor.formattingHelp',
+      icon: IconHelp,
+      event: () => {
+        isHelpOpen.value = true;
+      },
+    },
+  ];
+});
+
+const handleDelete = async () => {
+  if (!character.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: character.value.name })))
+  ) {
+    return false;
+  }
+  isDeleting.value = true;
+  discardDraft();
+  await characterStore.remove(character.value.id);
+  return true;
+};
 
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
-  await characterStore.load();
-  await mentionsStore.load();
+  await Promise.all([
+    characterStore.load(),
+    mentionsStore.load(),
+    partyStore.load(),
+    locationStore.load(),
+  ]);
+
   rightDrawer.set({
     component: CharacterViewSidebar,
-    props: { character },
+    props: {
+      character,
+      editState,
+      onSetEditMode: setEditMode,
+    },
   });
 });
 
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
-
-async function handleEditorDelete() {
-  if (await handleDelete()) {
-    showEditor.value = false;
-    await router.push('/characters');
-  }
-}
 </script>
 
 <template>
-  <BaseEntityView
+  <BaseEntityTabView
     :entity="character"
-    entity-name="t('characters.title')"
+    entity-name="characters.title"
     list-route="/characters"
     :on-delete="handleDelete"
-    :on-edit="editCharacter"
-    :is-editing="showEditor"
-    :title="characterTitle"
+    :header-show-edit="false"
+    :header-show-delete="editState.isEditMode"
+    :is-editing="editState.isEditMode"
+    :title="editState.isEditMode ? '' : characterTitle"
     :not-found="notFound"
-    :loading="loading"
+    :header-buttons="headerButtons"
+    :tabs="tabs"
+    v-model="activeTab"
   >
-    <div v-if="character" class="q-pa-md q-gutter-md">
-      <div v-if="character.notes" class="q-mb-md">
-        <h2>{{ t('notes.title') }}</h2>
-        <div class="q-pa-sm bg-grey-1 rounded-borders">
-          <p>{{ character.notes }}</p>
-        </div>
-      </div>
-    </div>
+    <template #main>
+      <EntityContentSurface v-if="!editState.isEditMode">
+        <Markdown
+          :taskCheckboxEnabled="true"
+          :enableMentionModal="true"
+          :content="character?.notes || ''"
+          @update:content="handleNotesChange"
+        />
+      </EntityContentSurface>
 
-    <!-- Editor Modal -->
-    <template #editor>
-      <CharacterEditor
-        :isOpen="showEditor"
-        :character="character"
-        @submit="handleSave"
-        @delete="handleEditorDelete"
-        @cancel="closeEditor"
-      />
+      <EntityInlineEditor
+        v-else
+        v-model:title="draftName"
+        :title-placeholder="t('characters.fields.name')"
+        :validation-error="validationError"
+      >
+        <EntityMarkdownEditor
+          ref="markdownEditorRef"
+          v-model="draftNotes"
+          :is-visual-mode="editState.isVisualMode"
+          :entity-id="editState.draft?.id || ''"
+          entity-type="character"
+          :placeholder="t('common.notes')"
+        />
+      </EntityInlineEditor>
     </template>
-  </BaseEntityView>
-</template>
 
-<style scoped>
-/* Removed custom layout classes. Use Quasar classes. */
-</style>
+    <template #links>
+      <EntityViewLinks v-if="!editState.isEditMode" :links="characterLinks" />
+      <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          kind="party"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('party', links)"
+        />
+        <EntitiesLinking
+          kind="location"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('location', links)"
+        />
+      </div>
+    </template>
+  </BaseEntityTabView>
+
+  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
+</template>

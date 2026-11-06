@@ -1,19 +1,29 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { PlayerCharacter } from '@/types';
+import type { InlineEditState, PlayerCharacter } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
+import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 
 const props = defineProps<{
   character: PlayerCharacter | null;
+  editState?: InlineEditState<PlayerCharacter>;
+  onSetEditMode?: (value: boolean) => void | Promise<void>;
 }>();
 
 const { t } = useI18n();
 const mentionsStore = useMentionsStore();
+const localEditState = reactive<InlineEditState<PlayerCharacter>>({
+  isEditMode: false,
+  isVisualMode: true,
+  draft: null,
+});
 const activeTab = ref('scenes');
+
+const state = computed(() => props.editState ?? localEditState);
 
 const entityId = computed(() => props.character?.id || '');
 const mentions = computed(() =>
@@ -30,6 +40,18 @@ const tabs = computed(() => [
   { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
   { id: 'mentions', label: t('common.mentions') },
 ]);
+
+function setEditMode(value: boolean) {
+  if (props.onSetEditMode) {
+    void props.onSetEditMode(value);
+    return;
+  }
+  state.value.isEditMode = value;
+}
+
+function setVisualMode(value: boolean) {
+  state.value.isVisualMode = value;
+}
 
 onMounted(() => mentionsStore.load());
 </script>
@@ -62,6 +84,14 @@ onMounted(() => mentionsStore.load());
         </template>
       </TabGroup>
     </div>
+
+    <QSeparator />
+    <EntityModeControls
+      :is-edit-mode="state.isEditMode"
+      :is-visual-mode="state.isVisualMode"
+      @update:is-edit-mode="setEditMode"
+      @update:is-visual-mode="setVisualMode"
+    />
   </div>
 </template>
 

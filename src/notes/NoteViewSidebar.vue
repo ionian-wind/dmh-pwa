@@ -5,9 +5,10 @@ import type { Note, NoteEditState } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
+import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import NoteOptions from '@/notes/NoteOptions.vue';
 import { downloadNote } from '@/notes/downloadNote';
-import { IconEdit, IconEye, IconFileDownload } from '@tabler/icons-vue';
+import { IconFileDownload } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
@@ -139,48 +140,12 @@ onMounted(() => mentionsStore.load());
     </QList>
 
     <QSeparator v-if="!state.isEditMode" />
-    <QList>
-      <QItem v-if="state.isEditMode" class="note-visual-mode-toggle">
-        <QItemSection>
-          {{ t('markdownEditor.visualMode') }}
-        </QItemSection>
-        <QItemSection side>
-          <QToggle
-            :model-value="state.isVisualMode"
-            @update:model-value="setVisualMode"
-          />
-        </QItemSection>
-      </QItem>
-
-      <QItem class="note-mode-toggle">
-        <QItemSection>
-          <QBtnGroup spread class="full-width">
-            <QBtn
-              class="note-view-mode"
-              color="primary"
-              :outline="state.isEditMode"
-              :title="t('common.viewMode')"
-              :aria-label="t('common.viewMode')"
-              :aria-pressed="!state.isEditMode"
-              @click="setEditMode(false)"
-            >
-              <IconEye :size="18" />
-            </QBtn>
-            <QBtn
-              class="note-edit-mode"
-              color="primary"
-              :outline="!state.isEditMode"
-              :title="t('common.editMode')"
-              :aria-label="t('common.editMode')"
-              :aria-pressed="state.isEditMode"
-              @click="setEditMode(true)"
-            >
-              <IconEdit :size="18" />
-            </QBtn>
-          </QBtnGroup>
-        </QItemSection>
-      </QItem>
-    </QList>
+    <EntityModeControls
+      :is-edit-mode="state.isEditMode"
+      :is-visual-mode="state.isVisualMode"
+      @update:is-edit-mode="setEditMode"
+      @update:is-visual-mode="setVisualMode"
+    />
   </div>
 </template>
 

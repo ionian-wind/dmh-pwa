@@ -1,13 +1,6 @@
 <script setup lang="ts">
-import {
-  ref,
-  reactive,
-  onMounted,
-  onBeforeUnmount,
-  computed,
-  watch,
-} from 'vue';
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
 import { useModuleStore } from '@/stores/modules';
@@ -15,12 +8,14 @@ import { useMentionsStore } from '@/utils/storage';
 import { usePartyStore } from '@/stores/parties';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
-import type { Note, NoteEditState } from '@/types';
+import type { Note } from '@/types';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
+import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
@@ -30,10 +25,7 @@ import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import { IconHelp } from '@tabler/icons-vue';
 import { alert, confirm } from '@/dialogs';
-import {
-  confirmUnsavedChanges,
-  type UnsavedChangesChoice,
-} from '@/dialogs/unsavedChanges';
+import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
@@ -46,23 +38,9 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 
-const editState = reactive<NoteEditState>({
-  isEditMode: false,
-  isVisualMode: true,
-  draft: null,
-});
 const activeTab = ref('main');
 const viewTabs = useEntityViewTabs();
 const editorTabs = useEntityEditorTabs();
-const tabs = computed(() =>
-  editState.isEditMode
-    ? editorTabs.value.map((tab) => ({
-        id: tab.name,
-        label: tab.title,
-        icon: tab.icon,
-      }))
-    : viewTabs.value,
-);
 const isLoaded = computed(() => noteStore.isLoaded);
 const note = ref<Note | null>(null);
 const notFound = computed(() => isLoaded.value && !note.value);
@@ -71,7 +49,9 @@ const noteContent = ref('');
 const canvasDirty = ref(false);
 const isHelpOpen = ref(false);
 const isDeleting = ref(false);
-const markdownEditorRef = ref<any>(null);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 function updateNoteFromStore() {
@@ -96,6 +76,48 @@ watch(
     if (n) noteContent.value = n.content;
   },
   { immediate: true },
+);
+
+const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
+  source: note,
+  clone: (source) => ({
+    ...source,
+    tags: [...(source.tags ?? [])],
+    moduleIds: [...(source.moduleIds ?? [])],
+    contentType: source.contentType ?? 'text',
+    typeId: source.typeId ?? null,
+  }),
+  isDirty: (draft, source) =>
+    canvasDirty.value ||
+    draft.title !== source.title ||
+    draft.content !== source.content ||
+    (draft.typeId ?? null) !== (source.typeId ?? null) ||
+    (draft.backgroundColor ?? '') !== (source.backgroundColor ?? '') ||
+    draft.hidden !== source.hidden ||
+    !arraysEqual(draft.tags, source.tags) ||
+    !arraysEqual(draft.moduleIds, source.moduleIds),
+  extraDirty: () => canvasDirty.value,
+  onEnter: () => {
+    validationError.value = null;
+    canvasDirty.value = false;
+  },
+  onDiscard: () => {
+    validationError.value = null;
+    canvasDirty.value = false;
+    if (note.value) noteContent.value = note.value.content;
+  },
+  prepare: prepareDraft,
+  save: persistDraft,
+});
+
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
 );
 
 function handleMarkdownContentChange(newContent: string) {
@@ -150,44 +172,6 @@ function arraysEqual(a: string[] = [], b: string[] = []) {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
-const isDirty = computed(() => {
-  if (!editState.isEditMode || !note.value || !editState.draft) return false;
-  const draft = editState.draft;
-  const base = note.value;
-  return (
-    canvasDirty.value ||
-    draft.title !== base.title ||
-    draft.content !== base.content ||
-    (draft.typeId ?? null) !== (base.typeId ?? null) ||
-    (draft.backgroundColor ?? '') !== (base.backgroundColor ?? '') ||
-    draft.hidden !== base.hidden ||
-    !arraysEqual(draft.tags, base.tags) ||
-    !arraysEqual(draft.moduleIds, base.moduleIds)
-  );
-});
-
-function enterEditMode() {
-  if (!note.value) return;
-  editState.draft = {
-    ...note.value,
-    tags: [...(note.value.tags ?? [])],
-    moduleIds: [...(note.value.moduleIds ?? [])],
-    contentType: note.value.contentType ?? 'text',
-    typeId: note.value.typeId ?? null,
-  };
-  validationError.value = null;
-  canvasDirty.value = false;
-  editState.isEditMode = true;
-}
-
-function discardDraft() {
-  editState.isEditMode = false;
-  editState.draft = null;
-  validationError.value = null;
-  canvasDirty.value = false;
-  if (note.value) noteContent.value = note.value.content;
-}
-
 function findMissingMentions(draft: Note): string[] {
   const mentions =
     draft.contentType === 'draw' ? [] : extractMentionedEntities(draft.content);
@@ -220,20 +204,7 @@ function findMissingMentions(draft: Note): string[] {
   return missing;
 }
 
-async function saveDraft(): Promise<boolean> {
-  if (!editState.isEditMode) return true;
-
-  const draft = editState.draft;
-  if (!draft || !note.value) {
-    discardDraft();
-    return true;
-  }
-
-  if (!isDirty.value) {
-    discardDraft();
-    return true;
-  }
-
+async function prepareDraft(draft: Note): Promise<boolean> {
   if (draft.contentType === 'draw') {
     const snapshot = canvasRef.value?.getSnapshot?.();
     if (snapshot) draft.content = snapshot;
@@ -257,6 +228,11 @@ async function saveDraft(): Promise<boolean> {
   }
 
   validationError.value = null;
+  return true;
+}
+
+async function persistDraft(draft: Note): Promise<boolean> {
+  if (!note.value) return false;
   try {
     await noteStore.update(note.value.id, {
       title: draft.title,
@@ -274,19 +250,8 @@ async function saveDraft(): Promise<boolean> {
       error instanceof Error ? error.message : String(error);
     return false;
   }
-
-  discardDraft();
   updateNoteFromStore();
   return true;
-}
-
-async function setEditMode(value: boolean) {
-  if (value === editState.isEditMode) return;
-  if (value) {
-    enterEditMode();
-  } else {
-    await saveDraft();
-  }
 }
 
 const headerButtons = computed(() => {
@@ -322,24 +287,6 @@ const noteTitle = computed(() => note.value?.title || '');
 
 const rightDrawer = useRightDrawer();
 
-function handleBeforeUnload(event: BeforeUnloadEvent) {
-  if (!isDirty.value) return;
-  event.preventDefault();
-  event.returnValue = '';
-}
-
-onBeforeRouteLeave(async () => {
-  if (!isDirty.value) return true;
-
-  const choice: UnsavedChangesChoice = await confirmUnsavedChanges();
-  if (choice === 'cancel') return false;
-  if (choice === 'discard') {
-    discardDraft();
-    return true;
-  }
-  return saveDraft();
-});
-
 onMounted(async () => {
   await noteStore.load();
   await moduleStore.load();
@@ -356,12 +303,9 @@ onMounted(async () => {
       onSetEditMode: setEditMode,
     },
   });
-
-  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload);
   rightDrawer.clear();
 });
 </script>
@@ -382,14 +326,9 @@ onBeforeUnmount(() => {
     v-model="activeTab"
   >
     <template #main>
-      <div
+      <EntityContentSurface
         v-if="!editState.isEditMode"
-        class="note-content-surface"
-        :style="
-          note?.backgroundColor
-            ? { backgroundColor: note.backgroundColor }
-            : undefined
-        "
+        :background-color="note?.backgroundColor"
       >
         <NoteCanvas
           v-if="note?.contentType === 'draw'"
@@ -403,46 +342,31 @@ onBeforeUnmount(() => {
           :content="noteContent"
           @update:content="handleMarkdownContentChange"
         />
-      </div>
+      </EntityContentSurface>
 
-      <div v-else class="note-editor-content q-pa-md q-gutter-md">
-        <div class="q-mb-md">
-          <QInput
-            v-model="draftTitle"
-            :placeholder="t('editor.title')"
-            required
-            borderless
-            hide-bottom-space
-            input-style="font-size: 1.5rem; font-weight: 500;"
-            type="text"
-          />
-        </div>
-        <div class="q-mb-md">
-          <NoteCanvas
-            v-if="editState.draft?.contentType === 'draw'"
-            ref="canvasRef"
-            :model-value="draftContent"
-            @change="handleCanvasChange"
-          />
-          <MarkdownEditor
-            v-else
-            ref="markdownEditorRef"
-            v-model="draftContent"
-            enableMentions
-            :isWYSIWYGMode="editState.isVisualMode"
-            :placeholder="t('editor.contentPlaceholder')"
-            :current-entity-id="editState.draft?.id || ''"
-            current-entity-type="note"
-            :tags="editState.draft?.tags ?? []"
-          />
-        </div>
-        <div
-          v-if="validationError"
-          class="text-negative bg-grey-1 q-pa-sm rounded-borders"
-        >
-          {{ validationError }}
-        </div>
-      </div>
+      <EntityInlineEditor
+        v-else
+        v-model:title="draftTitle"
+        :title-placeholder="t('editor.title')"
+        :validation-error="validationError"
+      >
+        <NoteCanvas
+          v-if="editState.draft?.contentType === 'draw'"
+          ref="canvasRef"
+          :model-value="draftContent"
+          @change="handleCanvasChange"
+        />
+        <EntityMarkdownEditor
+          v-else
+          ref="markdownEditorRef"
+          v-model="draftContent"
+          :is-visual-mode="editState.isVisualMode"
+          :entity-id="editState.draft?.id || ''"
+          entity-type="note"
+          :placeholder="t('editor.contentPlaceholder')"
+          :tags="editState.draft?.tags ?? []"
+        />
+      </EntityInlineEditor>
     </template>
 
     <template #links>
@@ -460,12 +384,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.note-content-surface {
-  min-height: 100%;
-  padding: 1rem;
-  border-radius: var(--border-radius);
-}
-
 .markdown-content {
   font-family: var(--font-family);
 }
