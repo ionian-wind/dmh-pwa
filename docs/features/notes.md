@@ -57,6 +57,8 @@ editable in the note form; it is chosen by the create action.
 - Displays the rendered Markdown inside a `600px` clamp for text notes.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
+- Clamped content fades into the card background at the bottom via a gradient
+  (using the note background colour when set).
 - Renders tags as clickable `#tag` labels that emit `tag-click`.
 - Applies the note's optional `backgroundColor` behind its content.
 - Has an `IconFileDownload` action: text notes download as `.md`, drawing

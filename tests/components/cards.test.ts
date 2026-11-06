@@ -148,6 +148,7 @@ describe('domain cards', () => {
     await nextTick();
     await nextTick();
 
+    expect(wrapper.find('.note-card-content').classes()).toContain('clamped');
     const expand = wrapper.findComponent(Button);
     expect(expand.exists()).toBe(true);
     await expand.trigger('click');

@@ -90,11 +90,10 @@ function handleDownload() {
         v-else
         ref="contentRef"
         :class="['note-card-content', { clamped: clamped && !expanded }]"
-        :style="
-          note.backgroundColor
-            ? { backgroundColor: note.backgroundColor }
-            : undefined
-        "
+        :style="{
+          backgroundColor: note.backgroundColor,
+          '--note-card-fade': note.backgroundColor || 'var(--color-background)',
+        }"
       >
         <Markdown :content="note.content" />
       </div>
@@ -141,9 +140,28 @@ function handleDownload() {
   border-radius: var(--border-radius-sm);
 }
 
+.note-card-content {
+  position: relative;
+}
+
 .note-card-content.clamped {
   max-height: 600px;
   overflow: hidden;
+}
+
+.note-card-content.clamped::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 72px;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--note-card-fade, var(--color-background))
+  );
 }
 
 .note-drawing-preview {

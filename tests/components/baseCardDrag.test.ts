@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import BaseCard from '@/components/common/BaseCard.vue';
@@ -7,6 +8,7 @@ import { useEntityDragLinking } from '@/components/common/entityDragLinking/useE
 describe('BaseCard entity dragging', () => {
   afterEach(() => {
     useEntityDragLinking().endDrag();
+    vi.useRealTimers();
   });
 
   it('shows a drag handle and a ghost for draggable cards', async () => {
