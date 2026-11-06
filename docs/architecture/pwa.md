@@ -130,6 +130,12 @@ Inline registration also avoids the Workbox warning about a missing precached
 server served a different registration script. After updating from an older
 dev worker, reload once so the new worker takes control.
 
+If `dev-dist/` is removed while the dev server is running, Vite can fail with
+`ENOENT: no such file or directory, open '.../dev-dist/sw.js'`. Regenerate it
+by briefly starting Vite (for example `npx vite --port 5174`) or restarting
+the dev server; no data or source files are affected. Avoid deleting
+`dev-dist/` while the dev server is active.
+
 ## Known issues
 
 - `registerType: 'autoUpdate'` combined with a manual "update now" prompt can
