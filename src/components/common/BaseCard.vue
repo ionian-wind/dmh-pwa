@@ -21,6 +21,7 @@ import {
   type EntityDragData,
 } from './entityDragLinking/registry';
 import { useEntityDragLinking } from './entityDragLinking/useEntityDragLinking';
+import { nextFloatLayerZIndex } from './entityDragLinking/floatLayer';
 
 const { t } = useI18n();
 
@@ -43,14 +44,19 @@ const { startDrag, endDrag } = useEntityDragLinking();
 const cardShell = ref<HTMLElement | null>(null);
 const isFloating = ref(false);
 const reservedHeight = ref<number | null>(null);
+const floatZIndex = ref(0);
 const isHovering = ref(false);
 let floatEndTimer: ReturnType<typeof setTimeout> | null = null;
 
-const shellStyle = computed(() =>
-  isFloating.value && reservedHeight.value !== null
-    ? { height: `${reservedHeight.value}px` }
-    : undefined,
-);
+const shellStyle = computed(() => {
+  if (!isFloating.value) return undefined;
+  return {
+    ...(reservedHeight.value !== null
+      ? { height: `${reservedHeight.value}px` }
+      : {}),
+    zIndex: String(floatZIndex.value),
+  };
+});
 
 function canFloat() {
   return (
@@ -68,7 +74,13 @@ function clearFloatTimer() {
 }
 
 function beginFloat() {
-  if (!canFloat() || isFloating.value || !cardShell.value) return;
+  if (!canFloat()) return;
+
+  // Every newly hovered card must paint above all cards that are still
+  // animating out from an earlier hover.
+  floatZIndex.value = nextFloatLayerZIndex();
+
+  if (isFloating.value || !cardShell.value) return;
   reservedHeight.value = cardShell.value.getBoundingClientRect().height;
   isFloating.value = true;
 }
@@ -293,10 +305,6 @@ const hasContent = computed(() => {
 <style scoped>
 .base-card-shell {
   position: relative;
-}
-
-.base-card-shell.is-floating {
-  z-index: 10;
 }
 
 .base-card-shell.is-floating > .base-card {

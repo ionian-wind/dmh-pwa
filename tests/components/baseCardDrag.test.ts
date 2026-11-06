@@ -128,4 +128,33 @@ describe('BaseCard entity dragging', () => {
     expect(shell.classes()).not.toContain('is-floating');
     wrapper.unmount();
   });
+
+  it('raises each newly hovered card above cards still animating out', async () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as any);
+    const first = mount(BaseCard, { props: { title: 'First' } });
+    const second = mount(BaseCard, { props: { title: 'Second' } });
+    const firstShell = first.find('.base-card-shell');
+    const secondShell = second.find('.base-card-shell');
+    for (const shell of [firstShell, secondShell]) {
+      Object.defineProperty(shell.element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ height: 100 }),
+      });
+    }
+
+    await firstShell.trigger('mouseenter');
+    await secondShell.trigger('mouseenter');
+    await nextTick();
+    const firstZ = Number((firstShell.element as HTMLElement).style.zIndex);
+    const secondZ = Number((secondShell.element as HTMLElement).style.zIndex);
+    expect(secondZ).toBeGreaterThan(firstZ);
+
+    await firstShell.trigger('mouseenter');
+    await nextTick();
+    expect(
+      Number((firstShell.element as HTMLElement).style.zIndex),
+    ).toBeGreaterThan(secondZ);
+    first.unmount();
+    second.unmount();
+  });
 });
