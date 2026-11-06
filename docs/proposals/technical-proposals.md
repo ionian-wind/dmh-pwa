@@ -132,7 +132,9 @@ a preview warning.
 
 `MAIN_STORE_NAMES` now covers every store, Blob audio is base64-encoded, and
 restore reloads the page. Remaining: versioned manifest, transactional restore,
-and a reconnect flow for FileSystem handles.
+and a reconnect flow for FileSystem handles. See
+[generic-file-handling.md](generic-file-handling.md) for the proposed binary
+backup format, OPFS storage and streaming path.
 
 **Proposal.**
 1. Add `manifest.json` to the backup ZIP:

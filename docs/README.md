@@ -79,13 +79,16 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 
 ### Cross-cutting analysis
 
-| Document                                                                 | Covers                                              |
-| ------------------------------------------------------------------------ | --------------------------------------------------- |
-| [integration/cross-part-behavior.md](integration/cross-part-behavior.md) | How parts call each other; end-to-end flows         |
-| [proposals/technical-proposals.md](proposals/technical-proposals.md)     | Engineering improvements and refactors              |
-| [proposals/bugs.md](proposals/bugs.md)                                   | Current defect status and resolved-item index       |
-| [proposals/fixes-applied.md](proposals/fixes-applied.md)                 | What was fixed in the first remediation pass        |
-| [proposals/feature-proposals.md](proposals/feature-proposals.md)         | Product features that fit the existing architecture |
+| Document                                                                                 | Covers                                              |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [integration/cross-part-behavior.md](integration/cross-part-behavior.md)                 | How parts call each other; end-to-end flows         |
+| [proposals/technical-proposals.md](proposals/technical-proposals.md)                     | Engineering improvements and refactors              |
+| [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index       |
+| [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass        |
+| [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture |
+| [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage   |
+| [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                |
+| [proposals/image-filters-and-composition.md](proposals/image-filters-and-composition.md) | Filter stacks, layers and image composition         |
 
 ## Conventions used in this documentation
 

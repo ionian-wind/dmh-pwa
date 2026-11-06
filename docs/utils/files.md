@@ -180,3 +180,6 @@ the generic store.
 - Color/palette output is currently wrong.
 - FileSystem handles cannot be serialized and may need relinking after restore.
 - Generic file IDs are generated; legacy IDs are preserved by migration.
+
+See [proposals/generic-file-handling.md](../proposals/generic-file-handling.md)
+for the proposed OPFS, streaming, quota and binary-backup upgrade.
