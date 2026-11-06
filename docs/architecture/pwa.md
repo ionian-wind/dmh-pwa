@@ -47,8 +47,8 @@ devOptions: { enabled: true, type: 'module' },
 
 The production build uses the Workbox-generated service worker. The legacy
 hand-written `public/sw.js` and `public/manifest.json` were removed; the PWA
-plugin is the single source of the manifest and worker. Static help pages under
-`dist/help/` are generated before the precache manifest and are available
+plugin is the single source of the manifest and worker. Static VitePress help
+pages under `dist/help/` are generated before the app build and are available
 offline.
 
 ## Registration and update flow

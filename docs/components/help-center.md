@@ -2,9 +2,11 @@
 
 ## Purpose
 
-The help center is a set of **static HTML pages**, not a Vue route. The build
-generates them from Markdown and emits them next to the app, so GitHub Pages can
-serve them directly without booting the SPA.
+The help center is a **VitePress** site built as static HTML and served directly
+by GitHub Pages. It does not boot the Vue app.
+
+VitePress provides the docs theme, sidebar, locale switcher, Markdown
+extensions, image handling and local search.
 
 ## Content layout
 
@@ -12,7 +14,8 @@ Source content lives in `helpcenter/`:
 
 ```text
 helpcenter/
-  help.css
+  .vitepress/config.mts
+  index.md
   en/
     index.md
     getting-started/
@@ -26,7 +29,6 @@ helpcenter/
     reference/
       index.md
       browsers.md
-      empty.md
   ru/
     index.md
     getting-started/
@@ -41,19 +43,16 @@ helpcenter/
 
 Rules:
 
-- `en/` and `ru/` are independent trees.
-- Every folder has an `index.md`; it becomes the folder landing page.
-- Other `.md` files become child pages.
-- Images live next to the page that uses them (or in a shared subfolder).
-- Relative links between pages and relative image paths are resolved by the
-  static generator.
-- Missing pages fall back to English at generation time.
-- Files that exist only in English are still generated under `/help/en/...`;
-  Russian pages can link to them explicitly or omit them.
+- `en/` and `ru/` are independent locale trees.
+- `index.md` is the folder landing page.
+- Images can live next to the page that uses them.
+- Relative Markdown links and image paths are resolved by VitePress.
+- VitePress falls back to the default locale for missing translations when
+  configured accordingly.
 
 ## Frontmatter
 
-All fields are optional:
+VitePress uses the normal Markdown frontmatter:
 
 ```md
 ---
@@ -63,13 +62,10 @@ order: 10
 ---
 ```
 
-- `title` — sidebar, breadcrumb and page heading.
-- `description` — subtitle and meta description.
-- `order` — lower numbers appear first; default is `1000`.
-
-If `title` is absent, the first `# Heading` is used, then a humanized filename.
-The leading H1 is removed from the rendered body so the page title is rendered
-once.
+- `title` — browser title and sidebar label context.
+- `description` — meta description.
+- `order` is available for custom ordering in content-loading code, but the
+  sidebar is currently configured explicitly in `.vitepress/config.mts`.
 
 ## Generated URLs
 
@@ -77,80 +73,69 @@ For a deployment at `/dmh-pwa`:
 
 ```text
 /dmh-pwa/help/en/index.html
-/dmh-pwa/help/en/getting-started/index.html
 /dmh-pwa/help/en/getting-started/install.html
 /dmh-pwa/help/ru/troubleshooting/persistent-storage.html
-/dmh-pwa/help/help.css
-/dmh-pwa/help/en/getting-started/images/install-menu.svg
-/dmh-pwa/help/index.html          # redirects to English root
+/dmh-pwa/help/assets/...
 ```
 
-The generated pages are fully standalone: own `<html>`, meta tags, shared CSS,
-sidebar navigation, locale switch and a link back to the app.
+`cleanUrls` is kept off so GitHub Pages can serve the `.html` files directly.
 
-## Building
+## Build and dev
 
-`scripts/build-helpcenter.mjs`:
+Package scripts:
 
-- reads all Markdown and non-Markdown files from `helpcenter/<locale>/`;
-- parses frontmatter and builds a hierarchical navigation tree;
-- rewrites relative `.md` links to generated `.html` URLs;
-- rewrites relative images to generated static asset URLs, with English
-  fallback;
-- renders Markdown with `markdown-it` (`html: false`);
-- escapes page titles, descriptions and navigation labels;
-- emits HTML, CSS and image assets.
+```bash
+npm run help:dev     # VitePress dev server on port 5174
+npm run help:build   # static pages into dist/help
+npm run build        # clean dist, build help, then build the app
+```
 
-`vite.config.js` registers `helpCenterStaticPlugin`:
+`npm run build` runs:
 
-- **build:** emits the generated assets during `generateBundle`, before the PWA
-  plugin writes its precache manifest, so help pages are part of the offline
-  cache;
-- **dev:** a middleware serves the generated files from memory so help links
-  work during `npm run dev` before a production build.
+1. `scripts/clean-dist.mjs`
+2. `vitepress build helpcenter`
+3. `vite build` with `emptyOutDir: false`
 
-The output is written under `dist/help/` by Vite. GitHub Pages serves it at
-`/<base>/help/...` directly.
+That order lets the PWA precache scan the generated help pages. The app dev
+server proxies `/dmh-pwa/help` to the VitePress dev server on port 5174, so run
+`npm run help:dev` alongside `npm run dev` when editing help content.
 
 ## App links
 
-The app does not route to the help center. It links to the generated pages in a
-new tab:
+The app links to the static pages in a new tab:
 
 - left menu → `Help center` (`target="_blank"`);
 - Settings persistent-storage denial message → install and site-settings guides
   (`target="_blank" rel="noopener noreferrer"`).
 
-`src/helpcenter/links.ts` builds the static URL from
-`import.meta.env.BASE_URL`, so the same code works in dev, preview and GitHub
-Pages.
+`src/helpcenter/links.ts` builds the URL from `import.meta.env.BASE_URL`.
 
-## Images
+## Search
 
-Reference images relative to the Markdown file:
+VitePress local search is enabled in `.vitepress/config.mts`:
 
-```md
-![The install control](images/install-menu.svg)
+```ts
+themeConfig: {
+  search: {
+    provider: 'local';
+  }
+}
 ```
 
-If a Russian image is missing, the generator falls back to the English asset at
-the same path. Keep diagrams small; generated assets are precached.
+It indexes English and Russian pages separately. A future application-level
+help search is still described in
+[help-center-search.md](../proposals/help-center-search.md), but most static
+search needs are already covered by VitePress.
 
 ## Adding a page
 
 1. Create the Markdown file in the locale tree(s).
-2. Add frontmatter with `title` and `order`.
-3. Add the page to the parent `index.md` if it should be linked explicitly.
-4. Use relative `.md` links and relative image paths.
-5. Run the help center tests and `npm run build`.
+2. Add frontmatter.
+3. Add a sidebar entry in `helpcenter/.vitepress/config.mts`.
+4. Use relative `.md` links and image paths.
+5. Run `npm run help:build` and `npm run build`.
 
 ## Tests
 
-- `tests/helpcenter/links.test.ts` — static URL generation and locale mapping.
-- `tests/helpcenter/buildHelpCenter.test.ts` — generated HTML, navigation,
-  images, locale switch, external links and redirect page.
-
-## Future
-
-Client-side search over the generated pages is proposed in
-[help-center-search.md](../proposals/help-center-search.md).
+- `tests/helpcenter/links.test.ts` — app-side static URL generation.
+- Build verification is done with `npm run help:build` and `npm run build`.

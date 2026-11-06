@@ -39,8 +39,9 @@ with `legacy-peer-deps = true`.
 - `index.html` references `/src/main.ts` in dev; Vite rewrites for production.
 - The PWA plugin injects an inline service-worker registration; no separate
   `registerSW.js` is emitted.
-- `helpCenterStaticPlugin` generates static help pages under `dist/help/`
-  during `generateBundle`. They are included in the Workbox precache.
+- `npm run build` first cleans `dist/`, then runs `vitepress build helpcenter`
+  into `dist/help/`, then `vite build` with `emptyOutDir: false`. Help pages
+  and their VitePress assets are included in the Workbox precache.
 
 ### Assets
 

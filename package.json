@@ -8,7 +8,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "help:dev": "vitepress dev helpcenter --port 5174",
+    "help:build": "vitepress build helpcenter",
+    "build": "node scripts/clean-dist.mjs && npm run help:build && vite build",
     "preview": "vite preview",
     "types-check": "npx vue-tsc --noEmit -p tsconfig.json",
     "test:watch": "vitest",
@@ -108,6 +110,7 @@
     "typescript": "6.0.3",
     "vite": "8.3.5",
     "vite-plugin-pwa": "2.0.0",
+    "vitepress": "1.6.4",
     "vitest": "5.1.0",
     "vue-tsc": "3.3.14"
   },

@@ -90,10 +90,9 @@ to find an answer.
 body text, with ranked results and snippets. Search only the active locale,
 with English fallback for untranslated pages.
 
-**Implementation.** Generate a `search.json` index per locale in
-`scripts/build-helpcenter.mjs`, add a static search input to the generated help
-pages, and render keyboard-navigable results. See
-[help-center-search.md](help-center-search.md).
+**Implementation.** VitePress local search already covers the static help site.
+The remaining work is an app-level “Search help” command and optional `?q=`
+handoff. See [help-center-search.md](help-center-search.md).
 
 ---
 
