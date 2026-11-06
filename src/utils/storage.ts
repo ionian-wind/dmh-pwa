@@ -1,6 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import { nanoid } from 'nanoid';
-import { openDB as idbOpenDB, IDBPDatabase } from 'idb';
+import Dexie, { type Table, type Transaction } from 'dexie';
 import { defineStore } from 'pinia';
 import JSZip from 'jszip';
 
@@ -8,7 +8,11 @@ import * as schemaValidator from './schemaValidator';
 import { WithMetadata } from '@/types';
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
-import type { Migration } from '@/types/migration';
+import type {
+  Migration,
+  MigrationStore,
+  MigrationTransaction,
+} from '@/types/migration';
 import { buildFileSignature } from './files/signature';
 import {
   clearOpfsFiles,
@@ -44,49 +48,109 @@ export function hasRequiredFields<T extends object>(
   return fields.every((field) => field in obj);
 }
 
-// --- IndexedDB Helper using idb ---
+// --- Dexie database ---
 const DB_NAME = 'dmh-db';
 const MIGRATIONS_STORE = 'migrations';
-let dbPromise: Promise<IDBPDatabase> | null = null;
+const DB_VERSION = Math.max(...sortedMigrations.map(({ version }) => version));
 
-async function openAndMigrate(): Promise<IDBPDatabase> {
-  const DB_VERSION = Math.max(
-    ...sortedMigrations.map(({ version }) => version),
-  );
+// All stores that may exist in the database. The main list is also used by
+// backup/restore; legacy stores remain declared so older databases can be
+// opened and their data migrated.
+export const MAIN_STORE_NAMES = [
+  'characters',
+  'combats',
+  'encounters',
+  'monsters',
+  'modules',
+  'notes',
+  'noteTypes',
+  'parties',
+  'map_locations',
+  'bookmarks',
+  'timers',
+  'jukebox_playlists',
+  'jukebox_tracks',
+  'files',
+  'map_image_metadata',
+  'indexations_mentions',
+];
 
-  const db = await idbOpenDB(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion, newVersion) {
-      const createStore = (storeName: string) => {
-        if (!db.objectStoreNames.contains(storeName)) {
-          db.createObjectStore(storeName, {
-            keyPath: 'id',
-            autoIncrement: false,
-          });
-        }
-      };
+const migrationStoreNames = sortedMigrations.flatMap(
+  (migration) => migration.affectedStores,
+);
+const SCHEMA_STORE_NAMES = Array.from(
+  new Set([
+    MIGRATIONS_STORE,
+    ...MAIN_STORE_NAMES,
+    ...migrationStoreNames,
+    'maps',
+    'map_files',
+    'jukebox_files',
+  ]),
+);
+const SCHEMA = Object.fromEntries(
+  SCHEMA_STORE_NAMES.map((storeName) => [storeName, 'id']),
+);
 
-      createStore(MIGRATIONS_STORE);
+export class DmhDatabase extends Dexie {
+  migrations!: Table<
+    { id: string; version: number; name: string; appliedAt: number },
+    string
+  >;
+  characters!: Table<any, string>;
+  combats!: Table<any, string>;
+  encounters!: Table<any, string>;
+  monsters!: Table<any, string>;
+  modules!: Table<any, string>;
+  notes!: Table<any, string>;
+  noteTypes!: Table<any, string>;
+  parties!: Table<any, string>;
+  map_locations!: Table<any, string>;
+  bookmarks!: Table<any, string>;
+  timers!: Table<any, string>;
+  jukebox_playlists!: Table<any, string>;
+  jukebox_tracks!: Table<any, string>;
+  jukebox_files!: Table<any, string>;
+  files!: Table<any, string>;
+  map_image_metadata!: Table<any, string>;
+  indexations_mentions!: Table<any, string>;
+  maps!: Table<any, string>;
+  map_files!: Table<any, string>;
 
-      // Use DB_VERSION if newVersion is null.
-      const effectiveNewVersion = newVersion ?? DB_VERSION;
-      for (const migration of sortedMigrations) {
-        if (
-          migration.version > oldVersion &&
-          migration.version <= effectiveNewVersion
-        ) {
-          migration.affectedStores.forEach((storeName) =>
-            createStore(storeName),
-          );
-        }
-      }
-    },
-  });
+  constructor() {
+    super(DB_NAME);
+    // Keep the legacy IndexedDB version so databases created by `idb` can be
+    // opened in place. Future migrations that add stores should also bump the
+    // migration version; indexes require a manual schema change here.
+    this.version(DB_VERSION).stores(SCHEMA);
+    this.on('versionchange', () => this.close());
+  }
+}
 
+let dbPromise: Promise<DmhDatabase> | null = null;
+
+function migrationTransaction(transaction: Transaction): MigrationTransaction {
+  const store = (name: string): MigrationStore => {
+    const table = transaction.table(name);
+    return {
+      getAll: () => table.toArray(),
+      put: (value) => table.put(value),
+      getAllKeys: () => table.toCollection().primaryKeys(),
+      delete: (key) => table.delete(key),
+      clear: () => table.clear(),
+    };
+  };
+  return { objectStore: store };
+}
+
+async function openAndMigrate(): Promise<DmhDatabase> {
+  const db = new DmhDatabase();
+  await db.open();
   await applyPendingMigrations(db);
   return db;
 }
 
-export function openDB(): Promise<IDBPDatabase> {
+export function openDB(): Promise<DmhDatabase> {
   if (!dbPromise) {
     dbPromise = openAndMigrate().catch((error) => {
       dbPromise = null;
@@ -97,16 +161,14 @@ export function openDB(): Promise<IDBPDatabase> {
 }
 
 /**
- * Run migrations that are not recorded in the migrations store. This happens
- * after the version-change transaction has completed, so migration code can
- * use normal read/write transactions instead of the fragile async chain inside
- * the upgrade callback.
+ * Run migrations that are not recorded in the migrations store. Dexie opens
+ * the legacy database at the same version, so existing data is preserved.
  */
 export async function applyPendingMigrations(
-  db: IDBPDatabase,
+  db: DmhDatabase,
   migrations: Migration[] = sortedMigrations,
 ): Promise<void> {
-  const applied = (await db.getAll(MIGRATIONS_STORE)) as Array<{
+  const applied = (await db.table(MIGRATIONS_STORE).toArray()) as Array<{
     version: number;
   }>;
   const appliedVersions = new Set(applied.map((record) => record.version));
@@ -122,29 +184,27 @@ export async function applyPendingMigrations(
     };
 
     const storeNames = Array.from(
-      new Set([
-        MIGRATIONS_STORE,
-        ...migration.affectedStores.filter((storeName) =>
-          db.objectStoreNames.contains(storeName),
-        ),
-      ]),
+      new Set([MIGRATIONS_STORE, ...migration.affectedStores]),
     );
-    const tx = db.transaction(storeNames, 'readwrite');
-    await migration.go(tx as any);
-    await tx.objectStore(MIGRATIONS_STORE).put(info);
-    await tx.done;
+    const tables = storeNames.map((storeName) => db.table(storeName));
+
+    await db.transaction('rw', tables, async (transaction) => {
+      await migration.go(migrationTransaction(transaction));
+      await transaction.table(MIGRATIONS_STORE).put(info);
+    });
+
     appliedVersions.add(migration.version);
     debug('{{{ MIGRATION loaded %o }}}', info);
   }
 }
 
-// --- Per-item CRUD helpers using idb ---
+// --- Per-item CRUD helpers backed by Dexie ---
 export async function idbGetItem<T>(
   storeName: string,
   id: string,
 ): Promise<T | undefined> {
   const db = await openDB();
-  return db.transaction(storeName).objectStore(storeName).get(id);
+  return db.table(storeName).get(id) as Promise<T | undefined>;
 }
 
 export async function idbPutItem<T extends { id: string }>(
@@ -165,7 +225,7 @@ export async function idbPutItem<T extends { id: string }>(
   }
 
   const db = await openDB();
-  await db.transaction(storeName, 'readwrite').objectStore(storeName).put(item);
+  await db.table(storeName).put(item);
 }
 
 export async function idbDeleteItem(
@@ -173,15 +233,12 @@ export async function idbDeleteItem(
   id: string,
 ): Promise<void> {
   const db = await openDB();
-  await db
-    .transaction(storeName, 'readwrite')
-    .objectStore(storeName)
-    .delete(id);
+  await db.table(storeName).delete(id);
 }
 
 export async function idbGetAllItems<T>(storeName: string): Promise<T[]> {
   const db = await openDB();
-  return db.transaction(storeName).objectStore(storeName).getAll();
+  return db.table(storeName).toArray() as Promise<T[]>;
 }
 
 export interface StorageOptions {
@@ -481,26 +538,6 @@ export async function initializeDatabase(): Promise<void> {
     throw error;
   }
 }
-
-// List of all main store names for backup/restore
-export const MAIN_STORE_NAMES = [
-  'characters',
-  'combats',
-  'encounters',
-  'monsters',
-  'modules',
-  'notes',
-  'noteTypes',
-  'parties',
-  'map_locations',
-  'bookmarks',
-  'timers',
-  'jukebox_playlists',
-  'jukebox_tracks',
-  'files',
-  'map_image_metadata',
-  'indexations_mentions',
-];
 
 const BACKUP_FORMAT = 'dmh.backup';
 const BACKUP_VERSION = 2;
@@ -862,11 +899,5 @@ export async function restoreAllStores(zipFile: Blob): Promise<void> {
  */
 export async function clearStore(storeName: string): Promise<void> {
   const db = await openDB();
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
-  const keys = await store.getAllKeys();
-  for (const key of keys) {
-    await store.delete(key);
-  }
-  await tx.done;
+  await db.table(storeName).clear();
 }

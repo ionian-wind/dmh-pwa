@@ -516,10 +516,7 @@ export interface SceneDef {
 
 /** Local user data; never stored inside the package manifest. */
 export type SceneLinkEntityType =
-  | 'location'
-  | 'module'
-  | 'encounter'
-  | 'character';
+  'location' | 'module' | 'encounter' | 'character';
 
 export interface SceneEntityLink {
   id: string;
@@ -945,37 +942,38 @@ export class AudioEngine {
 
 ### 6.1 Pack Storage (IndexedDB)
 
-Packs are stored in IndexedDB using the existing `idb` package:
+Packs are stored in IndexedDB using Dexie:
 
 ```typescript
 // src/ambient-sound/utils/packManager.ts
-import { openDB, type IDBPDatabase } from 'idb';
+import Dexie, { type Table } from 'dexie';
 import JSZip from 'jszip';
-import type { SoundPackData, SoundPackManifest } from '../types';
+import type { SoundPackManifest } from '../types';
 
 const DB_NAME = 'dmh-ambient-sound';
-const STORE_NAME = 'sound-packs';
+const DB_VERSION = 1;
 
-interface AmbientSoundDB extends IDBPDatabase {
-  soundPacks: {
-    key: string;
-    value: {
-      id: string;
-      manifest: SoundPackManifest;
-      audioBlobs: Map<string, Blob>;
-      addedAt: number;
-    };
-    indexes: { 'by-addedAt': number };
-  };
+interface SoundPackRecord {
+  id: string;
+  manifest: SoundPackManifest;
+  audioBlobs: Record<string, Blob>;
+  addedAt: number;
+  origin: 'imported' | 'created';
 }
 
-async function getDB(): Promise<AmbientSoundDB> {
-  return openDB(DB_NAME, 1, {
-    upgrade(db) {
-      const store = db.createObjectStore('soundPacks', { keyPath: 'id' });
-      store.createIndex('by-addedAt', 'addedAt');
-    },
-  });
+class AmbientSoundDatabase extends Dexie {
+  soundPacks!: Table<SoundPackRecord, string>;
+
+  constructor() {
+    super(DB_NAME);
+    this.version(DB_VERSION).stores({ soundPacks: 'id' });
+  }
+}
+
+async function getDB(): Promise<AmbientSoundDatabase> {
+  const db = new AmbientSoundDatabase();
+  await db.open();
+  return db;
 }
 
 export async function importSoundPack(

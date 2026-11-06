@@ -17,7 +17,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | UI framework      | Vue 3 (`<script setup>`), TypeScript                     |
 | Component library | Quasar 2 + Tabler icons                                  |
 | State             | Pinia 4 (setup stores) + `pinia-shared-state`            |
-| Storage           | IndexedDB through `idb`, JSON Schema validation with Ajv |
+| Storage           | IndexedDB through Dexie, JSON Schema validation with Ajv |
 | Build             | Vite 8, `vite-plugin-pwa` (Workbox)                      |
 | Markdown          | markdown-it for rendering, Milkdown/Crepe for editing    |
 | Audio             | Howler for playback, `music-metadata` in a web worker    |
@@ -138,7 +138,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **1546 / 1546 passing tests across 191 files** (after replacing obsolete suites
+   **1547 / 1547 passing tests across 191 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).

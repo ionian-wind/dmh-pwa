@@ -1,5 +1,4 @@
-import type { IDBPTransaction } from 'idb';
-import type { Migration } from '@/types/migration';
+import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { StoredFile } from '@/utils/files/types';
 import { buildFileSignature } from '@/utils/files/signature';
 
@@ -15,10 +14,7 @@ interface LegacyFileRecord {
   imageMetadata?: unknown;
 }
 
-async function clearStore(
-  tx: IDBPTransaction<any, string[], 'readwrite'>,
-  name: string,
-) {
+async function clearStore(tx: MigrationTransaction, name: string) {
   const store = tx.objectStore(name);
   const keys = await store.getAllKeys();
   for (const key of keys) {
@@ -30,12 +26,8 @@ const migration: Migration = {
   version: 11,
   name: 'generic_files_store',
   affectedStores: ['files', 'map_image_metadata', 'jukebox_files', 'map_files'],
-  async go(transaction: IDBPTransaction<unknown, string[], 'versionchange'>) {
-    const tx = transaction as unknown as IDBPTransaction<
-      any,
-      string[],
-      'readwrite'
-    >;
+  async go(transaction: MigrationTransaction) {
+    const tx = transaction;
     const filesStore = tx.objectStore('files');
     const metadataStore = tx.objectStore('map_image_metadata');
     const jukeboxFilesStore = tx.objectStore('jukebox_files');

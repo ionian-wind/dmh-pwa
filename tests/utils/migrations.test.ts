@@ -16,13 +16,13 @@ describe('database migrations', () => {
   it('records every migration exactly once', async () => {
     await deleteDatabase();
     const db = await openDB();
-    const first = await db.getAll('migrations');
+    const first = await db.migrations.toArray();
     expect(first.map((m) => m.version).sort()).toEqual(
       sortedMigrations.map((m) => m.version).sort(),
     );
 
     await openDB();
-    const second = await db.getAll('migrations');
+    const second = await db.migrations.toArray();
     expect(second).toHaveLength(first.length);
     db.close();
   });
@@ -32,7 +32,7 @@ describe('database migrations', () => {
     const [first, second] = await Promise.all([openDB(), openDB()]);
     expect(second).toBe(first);
 
-    const records = await first.getAll('migrations');
+    const records = await first.migrations.toArray();
     expect(records).toHaveLength(sortedMigrations.length);
     first.close();
   });
@@ -40,7 +40,7 @@ describe('database migrations', () => {
   it('creates the stores declared by migrations', async () => {
     await deleteDatabase();
     const db = await openDB();
-    const names = Array.from(db.objectStoreNames);
+    const names = db.tables.map((table) => table.name);
     expect(names).toEqual(
       expect.arrayContaining([
         'notes',
@@ -54,12 +54,25 @@ describe('database migrations', () => {
     db.close();
   });
 
+  it('declares every migration store in the Dexie schema', async () => {
+    await deleteDatabase();
+    const db = await openDB();
+    const names = new Set(db.tables.map((table) => table.name));
+
+    for (const migration of sortedMigrations) {
+      for (const storeName of migration.affectedStores) {
+        expect(names).toContain(storeName);
+      }
+    }
+
+    db.close();
+  });
+
   it('adds a default text contentType to existing notes', async () => {
     await deleteDatabase();
     const db = await openDB();
     const now = Date.now();
-    const tx = db.transaction(['notes', 'migrations'], 'readwrite');
-    tx.objectStore('notes').put({
+    await db.notes.put({
       id: 'note1',
       title: 'Legacy',
       content: 'Body',
@@ -70,19 +83,15 @@ describe('database migrations', () => {
       createdAt: now,
       updatedAt: now,
     });
-    const applied = (await tx.objectStore('migrations').getAll()) as Array<{
-      id: string;
-      version: number;
-    }>;
+    const applied = await db.migrations.toArray();
     const migration8 = applied.find((entry) => entry.version === 8);
     expect(migration8).toBeTruthy();
-    tx.objectStore('migrations').delete(migration8!.id);
-    await tx.done;
+    await db.migrations.delete(migration8!.id);
     db.close();
 
     await resetStoreCache();
     const reopened = await openDB();
-    const note = await reopened.get('notes', 'note1');
+    const note = await reopened.notes.get('note1');
     expect(note.contentType).toBe('text');
     reopened.close();
   });
@@ -92,11 +101,7 @@ describe('database migrations', () => {
     const db = await openDB();
     const now = Date.now();
     const blob = new Blob(['legacy-audio'], { type: 'audio/mpeg' });
-    const tx = db.transaction(
-      ['jukebox_files', 'map_files', 'migrations'],
-      'readwrite',
-    );
-    tx.objectStore('jukebox_files').put({
+    await db.jukebox_files.put({
       id: 'j1',
       name: 'song.mp3',
       size: 13,
@@ -106,7 +111,7 @@ describe('database migrations', () => {
       createdAt: now,
       updatedAt: now,
     });
-    tx.objectStore('map_files').put({
+    await db.map_files.put({
       id: 'm1',
       name: 'map.png',
       size: 13,
@@ -117,19 +122,15 @@ describe('database migrations', () => {
       createdAt: now,
       updatedAt: now,
     });
-    const applied = (await tx.objectStore('migrations').getAll()) as Array<{
-      id: string;
-      version: number;
-    }>;
+    const applied = await db.migrations.toArray();
     const migration11 = applied.find((entry) => entry.version === 11);
     expect(migration11).toBeTruthy();
-    tx.objectStore('migrations').delete(migration11!.id);
-    await tx.done;
+    await db.migrations.delete(migration11!.id);
     db.close();
 
     await resetStoreCache();
     const reopened = await openDB();
-    const files = await reopened.getAll('files');
+    const files = await reopened.files.toArray();
     expect(files).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -142,14 +143,14 @@ describe('database migrations', () => {
         }),
       ]),
     );
-    expect(await reopened.getAll('map_image_metadata')).toEqual([
+    expect(await reopened.map_image_metadata.toArray()).toEqual([
       expect.objectContaining({
         id: 'm1',
         imageMetadata: expect.objectContaining({ width: 10, height: 20 }),
       }),
     ]);
-    expect(await reopened.getAll('jukebox_files')).toEqual([]);
-    expect(await reopened.getAll('map_files')).toEqual([]);
+    expect(await reopened.jukebox_files.toArray()).toEqual([]);
+    expect(await reopened.map_files.toArray()).toEqual([]);
     reopened.close();
   });
 
@@ -157,8 +158,7 @@ describe('database migrations', () => {
     await deleteDatabase();
     const db = await openDB();
     const now = Date.now();
-    const tx = db.transaction(['maps', 'migrations'], 'readwrite');
-    tx.objectStore('maps').put({
+    await db.maps.put({
       id: 'map1',
       title: 'World',
       fileId: 'file1',
@@ -168,23 +168,19 @@ describe('database migrations', () => {
       createdAt: now,
       updatedAt: now,
     });
-    const applied = (await tx.objectStore('migrations').getAll()) as Array<{
-      id: string;
-      version: number;
-    }>;
+    const applied = await db.migrations.toArray();
     const migration5 = applied.find((entry) => entry.version === 5);
     const migration6 = applied.find((entry) => entry.version === 6);
     expect(migration5).toBeTruthy();
     expect(migration6).toBeTruthy();
-    tx.objectStore('migrations').delete(migration5!.id);
-    tx.objectStore('migrations').delete(migration6!.id);
-    await tx.done;
+    await db.migrations.delete(migration5!.id);
+    await db.migrations.delete(migration6!.id);
     db.close();
 
     await resetStoreCache();
     const reopened = await openDB();
-    const map = await reopened.get('maps', 'map1');
-    const location = await reopened.get('map_locations', 'l1');
+    const map = await reopened.maps.get('map1');
+    const location = await reopened.map_locations.get('l1');
 
     expect(map.locationId).toEqual('l1');
     expect(map.locationIds).toBeUndefined();

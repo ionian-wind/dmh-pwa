@@ -1,5 +1,4 @@
-import type { IDBPTransaction } from 'idb';
-import type { Migration } from '@/types/migration';
+import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { MapArea, MapEntity, MapMarker } from '../maps/types';
 import { MAP_BASE_LAYER_ID } from '../maps/utils/mapLayers';
 
@@ -7,12 +6,8 @@ const migration: Migration = {
   version: 7,
   name: 'add_map_layers',
   affectedStores: ['maps'],
-  async go(transaction: IDBPTransaction<unknown, string[], 'versionchange'>) {
-    const tx = transaction as unknown as IDBPTransaction<
-      any,
-      string[],
-      'readwrite'
-    >;
+  async go(transaction: MigrationTransaction) {
+    const tx = transaction;
     const mapsStore = tx.objectStore('maps');
     const maps = (await mapsStore.getAll()) as Array<
       MapEntity & {

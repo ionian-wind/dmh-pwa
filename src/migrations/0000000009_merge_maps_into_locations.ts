@@ -1,5 +1,4 @@
-import type { IDBPTransaction } from 'idb';
-import type { Migration } from '@/types/migration';
+import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { MapEntity, MapLocation } from '../maps/types';
 import { normalizeLocationMap } from '../maps/utils/normalize';
 
@@ -7,12 +6,8 @@ const migration: Migration = {
   version: 9,
   name: 'merge_maps_into_locations',
   affectedStores: ['maps', 'map_locations'],
-  async go(transaction: IDBPTransaction<unknown, string[], 'versionchange'>) {
-    const tx = transaction as unknown as IDBPTransaction<
-      any,
-      string[],
-      'readwrite'
-    >;
+  async go(transaction: MigrationTransaction) {
+    const tx = transaction;
     const mapsStore = tx.objectStore('maps');
     const locationsStore = tx.objectStore('map_locations');
     const maps = (await mapsStore.getAll()) as MapEntity[];

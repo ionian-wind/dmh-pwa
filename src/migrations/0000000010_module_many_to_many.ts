@@ -1,16 +1,11 @@
-import type { IDBPTransaction } from 'idb';
-import type { Migration } from '@/types/migration';
+import type { Migration, MigrationTransaction } from '@/types/migration';
 
 const migration: Migration = {
   version: 10,
   name: 'module_many_to_many',
   affectedStores: ['notes', 'encounters'],
-  async go(transaction: IDBPTransaction<unknown, string[], 'versionchange'>) {
-    const tx = transaction as unknown as IDBPTransaction<
-      any,
-      string[],
-      'readwrite'
-    >;
+  async go(transaction: MigrationTransaction) {
+    const tx = transaction;
 
     const notesStore = tx.objectStore('notes');
     const notes = (await notesStore.getAll()) as Array<Record<string, any>>;

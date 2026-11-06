@@ -34,31 +34,35 @@ generates IDs.
 
 ### Connection helper
 
-`openDB()` computes the schema version as the maximum migration version, then
-passes an `upgrade` callback to `idb.openDB`. During upgrade it:
+`openDB()` returns a singleton `DmhDatabase extends Dexie` for `dmh-db`.
+The database is declared at the maximum migration version, with the same store
+names and `keyPath: 'id'` that the legacy `idb` database used. That lets Dexie
+open existing databases in place instead of requiring an export/import step.
 
-1. Ensures the `migrations` store exists.
-2. Selects migrations with `version > oldVersion && version <= newVersion`.
-3. Creates every store listed in `affectedStores`.
-4. Runs migrations sequentially through a promise chain and records each
-   applied migration (`id`, `version`, `name`, `appliedAt`) in `migrations`.
+On open, `applyPendingMigrations()`:
 
-**Caveat:** the promise chain is not returned from `upgrade`. IndexedDB's
-`versionchange` transaction stays open while requests are pending, but the
-chain is asynchronous and the upgrade callback itself returns immediately. With
-the current no-op migrations this works in practice; a migration that awaits
-non-IDB work or issues requests after an `await` risks a
-`TransactionInactiveError`. A production-grade runner should await a single
-promise passed to `event.waitUntil`-style handling or use `idb`'s transaction
-lifetime rules explicitly.
+1. Reads applied migration records from `migrations`.
+2. Selects migrations whose version is not recorded.
+3. Runs each migration in a Dexie read/write transaction over its
+   `affectedStores` plus `migrations`.
+4. Adapts the Dexie transaction to the small object-store interface used by
+   migration code, then records the applied migration (`id`, `version`, `name`,
+   `appliedAt`).
+
+Migrations run after Dexie's schema is available, so they can use normal
+transactions and `await` safely. Schema-only migrations are no-ops; data
+migrations keep their historical transform logic.
 
 ### Low-level helpers
+
+Dexie-backed helpers keep their historical names so existing call sites and
+docs remain stable:
 
 - `idbGetItem(store, id)`
 - `idbPutItem(store, item)` — validates first if a schema is registered.
 - `idbDeleteItem(store, id)`
 - `idbGetAllItems(store)`
-- `clearStore(store)` — deletes keys then awaits `tx.done`.
+- `clearStore(store)` — clears the Dexie table.
 
 `idbPutItem` throws `StorageError` when Ajv reports errors. No view catches
 these specifically; they surface as rejected promises.
@@ -82,7 +86,7 @@ schema key. Validation happens in `idbPutItem`, i.e. on every `create` and
 - `load()` does not validate; malformed legacy data is accepted into memory.
 - Jukebox stores deliberately pass `validationSchema: undefined`.
 - Direct imports (`importModuleFromZip`, `restoreAllStores` uses `idbPutItem`)
-  need special attention: module import writes through a raw transaction and
+  need special attention: module import writes through a Dexie transaction and
   therefore **bypasses validation entirely**.
 - Ajv is configured without `strict: false` or formats; date-like strings are
   just strings.

@@ -1,17 +1,12 @@
-import type { IDBPTransaction } from 'idb';
-import type { Migration } from '@/types/migration';
+import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { MapEntity } from '../maps/types';
 
 const migration: Migration = {
   version: 6,
   name: 'map_location_one_to_one',
   affectedStores: ['maps'],
-  async go(transaction: IDBPTransaction<unknown, string[], 'versionchange'>) {
-    const tx = transaction as unknown as IDBPTransaction<
-      any,
-      string[],
-      'readwrite'
-    >;
+  async go(transaction: MigrationTransaction) {
+    const tx = transaction;
     const mapsStore = tx.objectStore('maps');
     const maps = (await mapsStore.getAll()) as Array<
       MapEntity & { locationIds?: string[] }

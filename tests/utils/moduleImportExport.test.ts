@@ -134,12 +134,17 @@ describe('module import timestamps', () => {
 
   it('imports a module, its notes and mention indexes', async () => {
     const put = vi.fn().mockResolvedValue(undefined);
-    const transaction = {
-      objectStore: vi.fn(() => ({ put })),
-      done: Promise.resolve(),
-    };
+    const bulkPut = vi.fn().mockResolvedValue(undefined);
+    const table = vi.fn(() => ({ put, bulkPut }));
+    const transaction = vi.fn(async (_mode, ...args: any[]) => {
+      const callback = args.at(-1);
+      return callback({ table });
+    });
     vi.mocked(openDB).mockResolvedValue({
-      transaction: vi.fn(() => transaction),
+      modules: {},
+      notes: {},
+      indexations_mentions: {},
+      transaction,
     } as any);
 
     const result = await importModuleFromZip({
@@ -160,12 +165,11 @@ describe('module import timestamps', () => {
 
     expect(result.noteCount).toBe(1);
     expect(result.moduleId).toBeTruthy();
-    expect(transaction.objectStore).toHaveBeenCalledWith('modules');
-    expect(transaction.objectStore).toHaveBeenCalledWith('notes');
-    expect(transaction.objectStore).toHaveBeenCalledWith(
-      'indexations_mentions',
-    );
-    expect(put).toHaveBeenCalledTimes(3);
+    expect(table).toHaveBeenCalledWith('modules');
+    expect(table).toHaveBeenCalledWith('notes');
+    expect(table).toHaveBeenCalledWith('indexations_mentions');
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(bulkPut).toHaveBeenCalledTimes(2);
   });
 
   it('fills missing tree ids and handles empty trees and note lists', () => {
@@ -196,11 +200,17 @@ describe('module import timestamps', () => {
 
   it('rejects invalid modules and notes and skips empty mention indexes', async () => {
     const put = vi.fn().mockResolvedValue(undefined);
+    const bulkPut = vi.fn().mockResolvedValue(undefined);
+    const table = vi.fn(() => ({ put, bulkPut }));
+    const transaction = vi.fn(async (_mode, ...args: any[]) => {
+      const callback = args.at(-1);
+      return callback({ table });
+    });
     vi.mocked(openDB).mockResolvedValue({
-      transaction: vi.fn(() => ({
-        objectStore: vi.fn(() => ({ put })),
-        done: Promise.resolve(),
-      })),
+      modules: {},
+      notes: {},
+      indexations_mentions: {},
+      transaction,
     } as any);
 
     vi.mocked(validateSchema).mockResolvedValueOnce({
@@ -233,16 +243,23 @@ describe('module import timestamps', () => {
       notes: [{ id: 'n1', title: 'Note', content: 'no mentions' } as any],
     });
     expect(result.noteCount).toBe(1);
-    expect(put).toHaveBeenCalledTimes(2);
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(bulkPut).toHaveBeenCalledTimes(2);
   });
 
   it('wraps storage failures in a StorageError', async () => {
     const put = vi.fn().mockRejectedValue(new Error('disk full'));
+    const bulkPut = vi.fn().mockResolvedValue(undefined);
+    const table = vi.fn(() => ({ put, bulkPut }));
+    const transaction = vi.fn(async (_mode, ...args: any[]) => {
+      const callback = args.at(-1);
+      return callback({ table });
+    });
     vi.mocked(openDB).mockResolvedValue({
-      transaction: vi.fn(() => ({
-        objectStore: vi.fn(() => ({ put })),
-        done: Promise.resolve(),
-      })),
+      modules: {},
+      notes: {},
+      indexations_mentions: {},
+      transaction,
     } as any);
 
     await expect(

@@ -224,20 +224,19 @@ export async function importModuleFromZip({
     .filter((record): record is { id: string; links: any[] } => !!record);
 
   const db = await openDB();
-  const tx = db.transaction(
-    ['modules', 'notes', 'indexations_mentions'],
-    'readwrite',
-  );
 
   try {
-    await tx.objectStore('modules').put(module);
-    for (const note of notes) {
-      await tx.objectStore('notes').put(note);
-    }
-    for (const record of indexRecords) {
-      await tx.objectStore('indexations_mentions').put(record);
-    }
-    await tx.done;
+    await db.transaction(
+      'rw',
+      db.modules,
+      db.notes,
+      db.indexations_mentions,
+      async (tx) => {
+        await tx.table('modules').put(module);
+        await tx.table('notes').bulkPut(notes);
+        await tx.table('indexations_mentions').bulkPut(indexRecords);
+      },
+    );
 
     return {
       moduleId: module.id,
