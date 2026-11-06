@@ -78,6 +78,17 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [tooling/testing.md](tooling/testing.md)                   | Test layout, current results, why tests fail          |
 | [tooling/build-and-deploy.md](tooling/build-and-deploy.md) | Vite config, PWA generation, CI/deploy                |
 
+### Plans
+
+Plans are committed work expected to be implemented. Proposals are optional
+ideas that may never be implemented.
+
+| Document                                                         | Covers                                             |
+| ---------------------------------------------------------------- | -------------------------------------------------- |
+| [plans/README.md](plans/README.md)                               | Plan conventions and current status                |
+| [plans/scribe-and-play-modes.md](plans/scribe-and-play-modes.md) | Scribe preparation and Play session modes          |
+| [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)       | Manifest, install UX, safe-area and PWA audit plan |
+
 ### Cross-cutting analysis
 
 | Document                                                                                 | Covers                                              |
@@ -90,8 +101,6 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [proposals/hotkeys-and-command-menu.md](proposals/hotkeys-and-command-menu.md)           | Global hotkeys and the command menu                 |
 | [proposals/help-center-search.md](proposals/help-center-search.md)                       | Offline search across localized help pages          |
 | [proposals/global-and-local-search.md](proposals/global-and-local-search.md)             | Local fuzzy suggestions and global entity search    |
-| [proposals/scribe-and-play-modes.md](proposals/scribe-and-play-modes.md)                 | Scribe preparation and Play session modes           |
-| [proposals/pwa-hardening-plan.md](proposals/pwa-hardening-plan.md)                       | Manifest, install UX, safe-area and PWA audit plan  |
 | [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage   |
 | [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                |
 | [proposals/image-filters-and-composition.md](proposals/image-filters-and-composition.md) | Filter stacks, layers and image composition         |

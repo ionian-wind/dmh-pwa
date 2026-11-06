@@ -1,6 +1,8 @@
 # Scribe and Play Modes
 
-**Status:** proposal — not implemented.
+**Status:** plan — not implemented; scheduled for implementation.
+
+This is a committed plan, not an optional proposal.
 
 **Priority:** P1.
 
@@ -187,8 +189,8 @@ Play depends on fast retrieval:
   - Scribe: create/organize/import actions first.
   - Play: combat, timers, scenes, search and quick-capture actions first.
   - Both modes expose the full command set through sections or “Manage”.
-- See [global-and-local-search.md](global-and-local-search.md) and
-  [hotkeys-and-command-menu.md](hotkeys-and-command-menu.md).
+- See [global-and-local-search.md](../proposals/global-and-local-search.md) and
+  [hotkeys-and-command-menu.md](../proposals/hotkeys-and-command-menu.md).
 
 ## 10. Data and routing
 
@@ -319,8 +321,8 @@ Open questions:
 
 ## 16. References
 
-- [feature-proposals.md](feature-proposals.md) — A1 session dashboard, A3
+- [feature-proposals.md](../proposals/feature-proposals.md) — A1 session dashboard, A3
   command menu, A5 hotkeys.
-- [global-and-local-search.md](global-and-local-search.md) — Play search.
-- [hotkeys-and-command-menu.md](hotkeys-and-command-menu.md) — command menu and
+- [global-and-local-search.md](../proposals/global-and-local-search.md) — Play search.
+- [hotkeys-and-command-menu.md](../proposals/hotkeys-and-command-menu.md) — command menu and
   mode-aware shortcuts.

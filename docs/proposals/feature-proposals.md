@@ -113,7 +113,7 @@ set or permission level: editing and management remain available.
 **Implementation.** Add `appMode` to `configStore`, a mode-aware navigation
 config and a Play dashboard. Reuse existing routes and components; do not
 duplicate `/scribe` and `/play` route trees. Pairs with the command menu and
-global search. See [scribe-and-play-modes.md](scribe-and-play-modes.md).
+global search. See [plans/scribe-and-play-modes.md](../plans/scribe-and-play-modes.md).
 
 ### B1. Restore the note metadata controls (done)
 
