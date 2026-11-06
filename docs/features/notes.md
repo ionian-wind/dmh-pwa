@@ -68,7 +68,8 @@ editable in the note form; it is chosen by the create action.
 
 The note detail header shows the same download action on the left side of the
 header while in view mode. It is hidden while editing; the edit-mode header
-instead shows delete plus a Markdown formatting-help action.
+instead shows delete and, when the visual editor is off, a Markdown
+formatting-help action.
 
 The 600px clamp is hard-coded and does not account for viewport size.
 
@@ -129,8 +130,8 @@ Switching the sidebar to **Edit** starts a local draft and changes the page:
   input plus `MarkdownEditor` (text) or `NoteCanvas` (draw). The tab icon and
   label switch to the editor tabs.
 - The linked-entities tab becomes editable `EntitiesLinking`.
-- The header hides Download and shows Delete plus the Markdown formatting-help
-  action.
+- The header hides Download and shows Delete. When the visual editor is off it
+  also shows the Markdown formatting-help action.
 - The sidebar hides the Tags/Mentions tabs and shows the shared `NoteOptions`
   panel instead.
 - A **Visual Editor** switch sits above the View/Edit switch, styled like the

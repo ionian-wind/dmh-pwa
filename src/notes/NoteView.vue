@@ -112,7 +112,8 @@ function handleCanvasChange() {
     editState.draft.content = snapshot;
   }
   canvasDirty.value =
-    !!editState.draft && editState.draft.content !== (note.value?.content ?? '');
+    !!editState.draft &&
+    editState.draft.content !== (note.value?.content ?? '');
 }
 
 const draftTitle = computed({
@@ -308,7 +309,7 @@ const downloadButtons = computed(() =>
 );
 
 const headerButtons = computed(() =>
-  editState.isEditMode
+  editState.isEditMode && !editState.isVisualMode
     ? [
         {
           color: 'primary',
