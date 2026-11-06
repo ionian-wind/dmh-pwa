@@ -23,8 +23,9 @@ Emits: `view`, `edit`, `delete`.
 - `BaseCard` wraps the card in a shell that reserves the card's resting height.
   While hovered, the real card is absolutely positioned inside that shell, so
   following cards keep their place and the hovered card paints above them.
-- Hover toggles Quasar's `shadow-5` with `shadow-transition` for a smooth
-  elevation change.
+- Hover toggles Quasar's `shadow-5`; the card's combined transition animates
+  both its height and box-shadow. On hover-out the shadow transition starts
+  immediately, while the card remains floating for the collapse animation.
 - On hover, the card first enters its floating state, then its height and action
   bar animate in together. On leave, the height and bar animate out together
   before the floating state ends and the card returns to normal flow.

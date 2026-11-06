@@ -43,10 +43,13 @@ const slots = useSlots();
 const { startDrag, endDrag } = useEntityDragLinking();
 const cardShell = ref<HTMLElement | null>(null);
 const isFloating = ref(false);
+const isExpanded = ref(false);
+const isShadowed = ref(false);
 const reservedHeight = ref<number | null>(null);
 const floatZIndex = ref(0);
 const isHovering = ref(false);
 let floatEndTimer: ReturnType<typeof setTimeout> | null = null;
+let expansionFrame: number | ReturnType<typeof setTimeout> | null = null;
 
 const shellStyle = computed(() => {
   if (!isFloating.value) return undefined;
@@ -71,25 +74,46 @@ function clearFloatTimer() {
   }
 }
 
-function measureRestingHeight() {
-  const shell = cardShell.value as HTMLElement;
+function clearExpansionFrame() {
+  if (expansionFrame === null) return;
+  if (typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(expansionFrame as number);
+  } else {
+    clearTimeout(expansionFrame as ReturnType<typeof setTimeout>);
+  }
+  expansionFrame = null;
+}
 
-  // Temporarily remove hover expansion so a hover style flush cannot make the
-  // measured placeholder height include the action panel area.
-  shell.classList.add('is-measuring');
-  const height = shell.getBoundingClientRect().height;
-  shell.classList.remove('is-measuring');
-  return height;
+function expandOnNextFrame() {
+  clearExpansionFrame();
+  const expand = () => {
+    expansionFrame = null;
+    if (isFloating.value) isExpanded.value = true;
+  };
+  if (typeof requestAnimationFrame === 'function') {
+    expansionFrame = requestAnimationFrame(expand);
+  } else {
+    expansionFrame = setTimeout(expand, 0);
+  }
 }
 
 function beginFloat() {
   // Every newly hovered card must paint above all cards that are still
   // animating out from an earlier hover.
   floatZIndex.value = nextFloatLayerZIndex();
+  isShadowed.value = true;
 
-  if (isFloating.value || !cardShell.value) return;
-  reservedHeight.value = measureRestingHeight();
+  if (!cardShell.value) return;
+  if (isFloating.value) {
+    expandOnNextFrame();
+    return;
+  }
+
+  // Measure before any expansion is applied, then float immediately and start
+  // the height/panel animation on the next frame.
+  reservedHeight.value = cardShell.value.getBoundingClientRect().height;
   isFloating.value = true;
+  expandOnNextFrame();
 }
 
 function scheduleEndFloat() {
@@ -97,6 +121,8 @@ function scheduleEndFloat() {
   clearFloatTimer();
   floatEndTimer = setTimeout(() => {
     isFloating.value = false;
+    isExpanded.value = false;
+    isShadowed.value = false;
     reservedHeight.value = null;
     floatEndTimer = null;
   }, 330);
@@ -111,6 +137,8 @@ function onMouseEnter() {
 function onMouseLeave() {
   isHovering.value = false;
   if (cardShell.value?.contains(document.activeElement)) return;
+  isExpanded.value = false;
+  isShadowed.value = false;
   scheduleEndFloat();
 }
 
@@ -122,10 +150,16 @@ function onFocusIn() {
 function onFocusOut(event: FocusEvent) {
   const next = event.relatedTarget as Node | null;
   if (next && cardShell.value?.contains(next)) return;
-  if (!isHovering.value) scheduleEndFloat();
+  if (isHovering.value) return;
+  isExpanded.value = false;
+  isShadowed.value = false;
+  scheduleEndFloat();
 }
 
-onBeforeUnmount(clearFloatTimer);
+onBeforeUnmount(() => {
+  clearFloatTimer();
+  clearExpansionFrame();
+});
 
 const dragGhost = ref<HTMLElement | null>(null);
 const isDraggingEntity = ref(false);
@@ -175,7 +209,7 @@ const hasContent = computed(() => {
   <div
     ref="cardShell"
     class="base-card-shell"
-    :class="{ 'is-floating': isFloating }"
+    :class="{ 'is-floating': isFloating, 'is-expanded': isExpanded }"
     :style="shellStyle"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
@@ -183,11 +217,11 @@ const hasContent = computed(() => {
     @focusout="onFocusOut"
   >
     <QCard
-      class="base-card shadow-transition"
+      class="base-card"
       :style="cardFloatStyle"
       :class="{
         'is-dragging-entity': isDraggingEntity,
-        'shadow-5': isFloating,
+        'shadow-5': isShadowed,
       }"
     >
       <QCardSection
@@ -318,12 +352,6 @@ const hasContent = computed(() => {
   position: relative;
 }
 
-.base-card-shell.is-measuring .base-card {
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
-  transition: none !important;
-}
-
 .base-card-shell.is-floating > .base-card {
   position: absolute;
   top: 0;
@@ -336,12 +364,11 @@ const hasContent = computed(() => {
   --card-actions-height: 52px;
   transition:
     padding-bottom 0.15s ease,
-    margin-bottom 0.15s ease;
+    margin-bottom 0.15s ease,
+    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.base-card:hover,
-.base-card:focus-within {
-  z-index: 5;
+.base-card-shell.is-expanded > .base-card {
   padding-bottom: var(--card-actions-height);
   margin-bottom: calc(-1 * var(--card-actions-height));
 }
@@ -362,8 +389,7 @@ const hasContent = computed(() => {
   transition: opacity 0.15s ease;
 }
 
-.base-card:hover .entity-drag-handle,
-.base-card:focus-within .entity-drag-handle {
+.base-card-shell.is-expanded .entity-drag-handle {
   opacity: 1;
   pointer-events: auto;
 }
@@ -408,15 +434,13 @@ const hasContent = computed(() => {
   transition: opacity 0.15s ease;
 }
 
-.base-card:hover :deep(.base-card-actions),
-.base-card:focus-within :deep(.base-card-actions) {
+.base-card-shell.is-expanded :deep(.base-card-actions) {
   opacity: 1;
   pointer-events: auto;
 }
 
 @media (hover: none) {
-  .base-card:hover,
-  .base-card:focus-within {
+  .base-card-shell.is-expanded > .base-card {
     padding-bottom: 0;
     margin-bottom: 0;
   }

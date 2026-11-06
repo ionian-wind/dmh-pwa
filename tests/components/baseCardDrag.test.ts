@@ -10,6 +10,7 @@ describe('BaseCard entity dragging', () => {
     useEntityDragLinking().endDrag();
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('shows a drag handle and a ghost for draggable cards', async () => {
@@ -70,9 +71,12 @@ describe('BaseCard entity dragging', () => {
     expect(shell.classes()).toContain('is-floating');
     expect(shell.attributes('style')).toContain('height: 150px');
     expect(wrapper.find('.base-card').classes()).toContain('shadow-5');
-    expect(wrapper.find('.base-card').classes()).toContain('shadow-transition');
 
     await shell.trigger('mouseleave');
+    await nextTick();
+    expect(shell.classes()).toContain('is-floating');
+    expect(wrapper.find('.base-card').classes()).not.toContain('shadow-5');
+
     vi.advanceTimersByTime(329);
     await nextTick();
     expect(shell.classes()).toContain('is-floating');
@@ -157,6 +161,78 @@ describe('BaseCard entity dragging', () => {
     await shell.trigger('mouseleave');
     await nextTick();
     expect(shell.classes()).not.toContain('is-floating');
+    wrapper.unmount();
+  });
+
+  it('expands on the next animation frame and collapses immediately', async () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      frames.push(cb);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    const wrapper = mount(BaseCard, { props: { title: 'Card' } });
+    const shell = wrapper.find('.base-card-shell');
+    Object.defineProperty(shell.element, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ height: 140 }),
+    });
+
+    await shell.trigger('mouseenter');
+    expect(shell.classes()).not.toContain('is-expanded');
+
+    frames.at(-1)?.(0);
+    await nextTick();
+    expect(shell.classes()).toContain('is-expanded');
+
+    await shell.trigger('mouseenter');
+    frames.at(-1)?.(0);
+    await nextTick();
+    expect(shell.classes()).toContain('is-expanded');
+
+    await shell.trigger('mouseleave');
+    await nextTick();
+    expect(shell.classes()).not.toContain('is-expanded');
+    wrapper.unmount();
+  });
+
+  it('falls back to a timeout when animation frames are unavailable', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    vi.stubGlobal('cancelAnimationFrame', undefined);
+    const wrapper = mount(BaseCard, { props: { title: 'Card' } });
+    const shell = wrapper.find('.base-card-shell');
+    Object.defineProperty(shell.element, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ height: 130 }),
+    });
+
+    await shell.trigger('mouseenter');
+    expect(shell.classes()).not.toContain('is-expanded');
+    vi.advanceTimersByTime(1);
+    await nextTick();
+    expect(shell.classes()).toContain('is-expanded');
+    wrapper.unmount();
+  });
+
+  it('stays floating when focus leaves while the pointer is still over the card', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as any);
+    const wrapper = mount(BaseCard, { props: { title: 'Card' } });
+    const shell = wrapper.find('.base-card-shell');
+    Object.defineProperty(shell.element, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ height: 120 }),
+    });
+
+    await shell.trigger('mouseenter');
+    await nextTick();
+    expect(shell.classes()).toContain('is-floating');
+
+    await shell.trigger('focusout', { relatedTarget: null });
+    vi.advanceTimersByTime(400);
+    await nextTick();
+    expect(shell.classes()).toContain('is-floating');
     wrapper.unmount();
   });
 });
