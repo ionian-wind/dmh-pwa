@@ -44,6 +44,7 @@ import {
 import { buildShareUrl, sourceFromHash } from './shareLink';
 import { formatDiceSyntaxError } from './syntaxErrors';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import { useUiTheme } from '@/composables/useUiTheme';
 import {
   setAnyDiceCompletionCodePieces,
   setAnyDiceCompletionTranslator,
@@ -77,6 +78,8 @@ type DataModeChoice = DataMode | 'transposed' | 'summary';
 const STORAGE_KEY = 'dmh-probability-calculator:source';
 const DEFAULT_SOURCE = 'output 3d6';
 const { t, locale } = useI18n();
+const { isDark } = useUiTheme();
+const monacoTheme = computed(() => (isDark.value ? 'vs-dark' : 'vs'));
 const router = useRouter();
 setAnyDiceCompletionTranslator((key, named) => t(key, named as any));
 
@@ -512,6 +515,7 @@ onBeforeUnmount(() => {
         ref="editorRef"
         v-model="source"
         :language="ANYDICE_LANGUAGE_ID"
+        :theme="monacoTheme"
         height="340px"
         :options="{
           ariaLabel: t('probabilityCalculator.source'),

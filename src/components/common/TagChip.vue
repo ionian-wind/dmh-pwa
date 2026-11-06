@@ -30,12 +30,12 @@ defineProps({ removable: Boolean });
   display: inline-flex;
   align-items: center;
   background: var(--color-background-soft);
-  color: var(--color-primary);
+  color: var(--color-accent);
   border-radius: 16px;
   padding: 0.2em 0.75em 0.2em 0.5em;
   font-size: 0.95em;
   margin-left: 0.5em;
-  border: 1px solid var(--color-primary);
+  border: 1px solid var(--color-accent);
   gap: 0.25em;
 }
 .remove-tag {

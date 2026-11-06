@@ -76,7 +76,7 @@ const modules = computed(() =>
 
 .character-count {
   font-weight: 500;
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .modules {

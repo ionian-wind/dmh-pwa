@@ -334,7 +334,7 @@ function openLocation(locationId: string) {
               clickable
               class="q-mb-xs bg-white rounded-borders"
               :style="{
-                borderLeft: `4px solid ${marker.color || 'var(--color-primary)'}`,
+                borderLeft: `4px solid ${marker.color || 'var(--color-accent)'}`,
               }"
               @click="openLocation(group.location.id)"
             >
@@ -356,7 +356,7 @@ function openLocation(locationId: string) {
               clickable
               class="q-mb-xs bg-white rounded-borders"
               :style="{
-                borderLeft: `4px solid ${area.color || 'var(--color-primary)'}`,
+                borderLeft: `4px solid ${area.color || 'var(--color-accent)'}`,
               }"
               @click="openLocation(group.location.id)"
             >

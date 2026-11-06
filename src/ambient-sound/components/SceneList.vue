@@ -90,7 +90,7 @@ function isPlaying(packId: string, sceneId: string) {
 }
 
 .scene-row.is-active {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-background-soft);
 }
 </style>

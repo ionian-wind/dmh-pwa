@@ -158,8 +158,8 @@ rebuilt on every Vite restart.
   repeatedly. `PWAStatus` ignores the first change after install, and with
   `skipWaiting` + `clientsClaim` a normal update produces one change.
 - PWA scope/start URL assumes deployment at `/dmh-pwa`.
-- `index.html` theme colors (`#1e1e2e`) match the header but the content theme
-  is light; install splash/status bar may feel inconsistent.
+- `index.html` theme colors (`#1e1e2e`) match the header; the content theme now
+  follows the UI theme setting (light by default).
 - `maximumFileSizeToCacheInBytes` of 30 MB is generous; a single large JS chunk
   or asset can slow first install.
 - Browsers without `beforeinstallprompt` need a manual install entry point.

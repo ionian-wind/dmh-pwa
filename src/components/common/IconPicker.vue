@@ -173,9 +173,9 @@ function select(icon: string) {
 
 .icon-picker-option:hover,
 .icon-picker-option.is-selected {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-info-light);
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .icon-picker-preview {
@@ -198,7 +198,7 @@ function select(icon: string) {
   width: 88px;
   height: 88px;
   font-size: 4rem;
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 .icon-picker-preview-name {

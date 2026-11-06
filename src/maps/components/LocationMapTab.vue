@@ -1472,7 +1472,7 @@ watch(isEditMode, (editing) => {
 }
 
 .is-active {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 

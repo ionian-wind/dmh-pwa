@@ -410,7 +410,7 @@ onBeforeUnmount(() => {
 }
 
 .markdown-content :deep(blockquote) {
-  border-left: 4px solid var(--color-primary);
+  border-left: 4px solid var(--color-accent);
   padding-left: 1em;
   margin: 1em 0;
   color: var(--color-text-light);

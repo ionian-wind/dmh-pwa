@@ -152,7 +152,7 @@ async function handleFileImport(event: Event) {
 
 .sound-pack-item.is-selected {
   background: var(--color-primary-light);
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
 

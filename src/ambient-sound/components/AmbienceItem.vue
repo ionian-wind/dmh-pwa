@@ -77,7 +77,7 @@ function isActiveSample(index: number): boolean {
 
 <style scoped>
 .is-active {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-background-soft);
 }
 

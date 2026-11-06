@@ -551,7 +551,12 @@
     "storagePersistentGrantedMessage": "Persistent storage granted.",
     "storagePersistentDeniedMessage": "The browser did not grant persistent storage. {install} or {settings}.",
     "storagePersistentInstallLink": "Install the app",
-    "storagePersistentSettingsLink": "enable it in site settings"
+    "storagePersistentSettingsLink": "enable it in site settings",
+    "uiTheme": "UI theme",
+    "uiThemeHint": "Light, dark or follow the system appearance.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeAuto": "Auto"
   },
   "tags": {
     "title": "Tags"

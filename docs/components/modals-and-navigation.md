@@ -184,6 +184,9 @@ Settings item. It currently has three sections:
 - **Interface**
   - **Language** — the `LanguageSwitcher` (`en` / `ru`), persisted in
     `configStore.savedLanguage`; Quasar’s locale follows the selection.
+  - **UI theme** — `QBtnToggle` with **Light** (default), **Dark** and
+    **Auto**. Persisted in `configStore.uiTheme`; `auto` follows the OS
+    `prefers-color-scheme` setting.
   - **Confirm deletion** — default `true`. When off, `confirm()` resolves
     `true` immediately without opening a confirmation dialog.
   - **Expand menu** — default `true`. When on, hovering the left menu expands it

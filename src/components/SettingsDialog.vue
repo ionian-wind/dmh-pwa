@@ -29,6 +29,11 @@ const emit = defineEmits<{
 const { t, locale } = useI18n();
 const configStore = useConfigStore();
 const helpLocale = computed<HelpLocale>(() => getHelpLocale(locale.value));
+const themeOptions = computed(() => [
+  { label: t('settings.themeLight'), value: 'light' },
+  { label: t('settings.themeDark'), value: 'dark' },
+  { label: t('settings.themeAuto'), value: 'auto' },
+]);
 const isClearingStorage = ref(false);
 const isRequestingPersistence = ref(false);
 const isLoadingStorage = ref(false);
@@ -191,6 +196,27 @@ async function clearStorage() {
           </QItemSection>
           <QItemSection side>
             <LanguageSwitcher />
+          </QItemSection>
+        </QItem>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('settings.uiTheme') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.uiThemeHint') }}
+            </div>
+            <div class="q-mt-sm">
+              <QBtnToggle
+                v-model="configStore.uiTheme"
+                :options="themeOptions"
+                class="settings-theme-toggle"
+                data-test="settings-ui-theme"
+                spread
+                no-caps
+                unelevated
+                size="sm"
+                toggle-color="primary"
+              />
+            </div>
           </QItemSection>
         </QItem>
         <QItem>
@@ -443,7 +469,7 @@ async function clearStorage() {
 
 <style scoped>
 .help-link {
-  color: var(--color-primary);
+  color: var(--color-accent);
   text-decoration: underline;
 }
 </style>

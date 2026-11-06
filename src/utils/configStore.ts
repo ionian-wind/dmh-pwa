@@ -35,7 +35,17 @@ export enum JukeboxRepeatMode {
   track = 'track',
 }
 
+export type UiTheme = 'light' | 'dark' | 'auto';
+
+const UI_THEMES: UiTheme[] = ['light', 'dark', 'auto'];
+
+function readUiTheme(): UiTheme {
+  const stored = getValue('uiTheme', 'light');
+  return UI_THEMES.includes(stored) ? stored : 'light';
+}
+
 export type ConfigStore = {
+  uiTheme: Ref<UiTheme>;
   jukeboxLastTrackId: Ref<string | null>;
   jukeboxLastPlaylistId: Ref<string | null>;
   jukeboxLastTrackProgress: Ref<number>;
@@ -57,6 +67,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
   'config',
   (): ConfigStore => {
     // Define your state here
+    const uiTheme = ref<UiTheme>(readUiTheme());
     const jukeboxLastTrackId = ref<string | null>(
       getValue('jukeboxLastTrackId', null),
     );
@@ -100,6 +111,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     );
 
     const config: ConfigStore = {
+      uiTheme,
       jukeboxLastTrackId,
       jukeboxLastPlaylistId,
       jukeboxLastTrackProgress,

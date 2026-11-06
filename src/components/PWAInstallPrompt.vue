@@ -133,7 +133,7 @@ onUnmounted(() => {
   align-self: center;
   margin-left: 0.5rem;
   font-size: 0.85rem;
-  color: var(--color-primary);
+  color: var(--color-accent);
   text-decoration: underline;
 }
 </style>

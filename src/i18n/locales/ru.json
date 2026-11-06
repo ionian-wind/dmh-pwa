@@ -552,7 +552,12 @@
     "storagePersistentGrantedMessage": "Постоянное хранилище предоставлено.",
     "storagePersistentDeniedMessage": "Браузер не предоставил постоянное хранилище. {install} или {settings}.",
     "storagePersistentInstallLink": "Установите приложение",
-    "storagePersistentSettingsLink": "включите его в настройках сайта"
+    "storagePersistentSettingsLink": "включите его в настройках сайта",
+    "uiTheme": "Тема интерфейса",
+    "uiThemeHint": "Светлая, тёмная или как в системе.",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "themeAuto": "Авто"
   },
   "tags": {
     "title": "Теги"

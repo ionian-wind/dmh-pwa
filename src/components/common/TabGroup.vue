@@ -227,7 +227,7 @@ watch(
 }
 
 .tab-item--active {
-  color: var(--color-primary);
+  color: var(--color-accent);
   background: var(--color-background);
 }
 
@@ -238,12 +238,12 @@ watch(
 
 /* Default variant */
 .tab-nav--default .tab-item--active {
-  border-bottom: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-accent);
 }
 
 .tab-group--vertical .tab-nav--default .tab-item--active {
   border-bottom: none;
-  border-right: 2px solid var(--color-primary);
+  border-right: 2px solid var(--color-accent);
 }
 
 /* Pills variant */
@@ -261,7 +261,7 @@ watch(
 .tab-nav--pills .tab-item--active {
   background: var(--color-primary);
   color: white;
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
 }
 
 /* Underline variant */
@@ -270,7 +270,7 @@ watch(
 }
 
 .tab-nav--underline .tab-item--active {
-  border-bottom: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-accent);
   margin-bottom: -2px;
 }
 
@@ -290,7 +290,7 @@ watch(
 .tab-nav--cards .tab-item--active {
   background: var(--color-primary);
   color: white;
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 

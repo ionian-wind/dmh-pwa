@@ -737,7 +737,7 @@ async function handleEditorDelete() {
 }
 
 .stat-value {
-  color: var(--color-primary);
+  color: var(--color-accent);
   font-weight: 600;
 }
 

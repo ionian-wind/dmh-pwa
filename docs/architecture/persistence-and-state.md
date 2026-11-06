@@ -186,8 +186,23 @@ persistence** rather than `pinia-plugin-persistedstate`.
   `jukeboxLastVolume`, `jukeboxActivePlaylistId`, `jukeboxRepeatMode`,
   `jukeboxShuffle`, `jukeboxSmoothTrackChange`,
   `jukeboxAnimatePlayerBackground`, `jukeboxDisplayCoverWhilePlaying`,
-  `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`.
+  `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`, `uiTheme`.
 - `savedLanguage` defaults to `window.navigator.language`.
+- `uiTheme` defaults to `light` and accepts `light`, `dark` or `auto`.
+
+### UI theme
+
+`uiTheme` is applied by `src/main.ts` through Quasar’s **Dark plugin**:
+
+- `light` → `Dark.set(false)`;
+- `dark` → `Dark.set(true)`;
+- `auto` → `Dark.set('auto')`, which follows `prefers-color-scheme`.
+
+`src/composables/useUiTheme.ts` exposes a reactive `isDark` value for parts
+that need the resolved theme, such as the Monaco editor (`vs` / `vs-dark`).
+Custom surfaces use `body.body--dark` overrides in
+`src/assets/styles/global.css`; Quasar components switch automatically.
+`index.html` reads the saved theme before the app boots to avoid a light flash.
 
 `pinia-shared-state` is also active for serializable stores, so they are
 synchronized between tabs when the browser supports it. There is no conflict

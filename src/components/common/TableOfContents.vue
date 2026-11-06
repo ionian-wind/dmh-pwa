@@ -259,16 +259,16 @@ function setTocItemRef(
 }
 
 .toc-link:hover {
-  color: var(--color-primary);
+  color: var(--color-accent);
   background: var(--color-background-mute);
 }
 
 /* Active state styling */
 .toc-item.active .toc-link {
-  color: var(--color-primary);
+  color: var(--color-accent);
   background: var(--color-primary-light, rgba(0, 123, 255, 0.1));
   font-weight: 600;
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-accent);
   padding-left: calc(0.5rem - 3px);
 }
 

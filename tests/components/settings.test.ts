@@ -91,10 +91,31 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Language');
     expect(wrapper.text()).not.toContain('Quasar');
     expect(wrapper.findComponent(LanguageSwitcher).exists()).toBe(true);
+    expect(wrapper.find('[data-test="settings-ui-theme"]').exists()).toBe(true);
 
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
     await nextTick();
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+    wrapper.unmount();
+  });
+
+  it('switches the UI theme from the interface settings', async () => {
+    const config = useConfigStore();
+    const wrapper = mount(SettingsDialog, {
+      props: { modelValue: true },
+    });
+    await nextTick();
+
+    const toggle = wrapper.findComponent({ name: 'QBtnToggle' });
+    expect(toggle.props('options').map((option: any) => option.value)).toEqual([
+      'light',
+      'dark',
+      'auto',
+    ]);
+    expect(toggle.props('modelValue')).toBe('light');
+
+    await toggle.findAll('button')[1].trigger('click');
+    expect(config.uiTheme).toBe('dark');
     wrapper.unmount();
   });
 

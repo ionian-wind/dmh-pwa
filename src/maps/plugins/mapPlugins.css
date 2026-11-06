@@ -26,6 +26,17 @@
   background: #fff;
 }
 
+body.body--dark .ol-map-actions.ol-control .ol-map-actions-trigger {
+  border-color: var(--color-border);
+  background: rgba(30, 30, 46, 0.92);
+  color: var(--color-text);
+}
+
+body.body--dark .ol-map-actions.ol-control .ol-map-actions-trigger:hover,
+body.body--dark .ol-map-actions.ol-control .ol-map-actions-trigger:focus {
+  background: var(--color-background-mute);
+}
+
 .ol-map-actions.ol-control .ol-map-actions-trigger.is-active {
   background: var(--color-primary);
   color: #fff;
