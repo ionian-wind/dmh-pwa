@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { useConfigStore } from '@/utils/configStore';
+import { confirm } from '@/dialogs';
+import { clearAllAppData, reloadAppFromMainPage } from '@/utils/appReset';
+import { debugError } from '@/utils/debug';
 
 defineProps<{
   modelValue: boolean;
@@ -14,9 +18,30 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const configStore = useConfigStore();
+const isClearingStorage = ref(false);
 
 function close() {
   emit('update:modelValue', false);
+}
+
+async function clearStorage() {
+  const confirmed = await confirm(t('settings.clearStorageConfirm'), {
+    force: true,
+    title: t('settings.clearStorage'),
+    okText: t('settings.clearStorageButton'),
+    cancelText: t('common.cancel'),
+    color: 'negative',
+  });
+  if (!confirmed) return;
+
+  isClearingStorage.value = true;
+  try {
+    await clearAllAppData();
+    reloadAppFromMainPage();
+  } catch (error) {
+    debugError('Failed to clear app storage:', error);
+    isClearingStorage.value = false;
+  }
 }
 </script>
 
@@ -115,6 +140,29 @@ function close() {
           </QItemSection>
           <QItemSection side>
             <QToggle v-model="configStore.jukeboxUseMiniPlayer" />
+          </QItemSection>
+        </QItem>
+      </QList>
+    </section>
+
+    <section class="q-mt-lg" data-test="settings-content">
+      <h5 class="q-mt-none q-mb-sm">{{ t('settings.content') }}</h5>
+      <QList separator>
+        <QItem>
+          <QItemSection>
+            <div>{{ t('settings.clearStorage') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.clearStorageHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QBtn
+              class="settings-clear-storage"
+              color="negative"
+              :label="t('settings.clearStorageButton')"
+              :loading="isClearingStorage"
+              @click="clearStorage"
+            />
           </QItemSection>
         </QItem>
       </QList>

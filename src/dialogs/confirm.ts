@@ -7,6 +7,8 @@ export interface ConfirmOptions {
   okText?: string;
   cancelText?: string;
   color?: string;
+  /** Always ask, even when the global delete-confirmation setting is off. */
+  force?: boolean;
   // Add more Quasar Dialog options as needed
 }
 
@@ -14,7 +16,7 @@ export function confirm(
   message: string,
   options: ConfirmOptions = {},
 ): Promise<boolean> {
-  if (!useConfigStore().confirmDelete) {
+  if (!options.force && !useConfigStore().confirmDelete) {
     return Promise.resolve(true);
   }
 

@@ -11,6 +11,23 @@ import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
+
+const resetMocks = vi.hoisted(() => ({
+  clearAllAppData: vi.fn(),
+  reloadAppFromMainPage: vi.fn(),
+  confirm: vi.fn(),
+}));
+
+vi.mock('@/utils/appReset', () => ({
+  clearAllAppData: resetMocks.clearAllAppData,
+  reloadAppFromMainPage: resetMocks.reloadAppFromMainPage,
+}));
+
+vi.mock('@/dialogs', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
+  confirm: resetMocks.confirm,
+}));
+
 const QToggleStub = quasarStubs.QToggle;
 
 vi.mock('@/jukebox/playerStore', () => ({
@@ -43,6 +60,50 @@ describe('settings dialog', () => {
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
     await nextTick();
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+    wrapper.unmount();
+  });
+
+  it('clears all site storage after confirmation and reloads', async () => {
+    resetMocks.confirm.mockReset().mockResolvedValue(true);
+    resetMocks.clearAllAppData.mockReset().mockResolvedValue(undefined);
+    resetMocks.reloadAppFromMainPage.mockReset();
+
+    const wrapper = mount(SettingsDialog, {
+      props: { modelValue: true },
+    });
+    await nextTick();
+
+    expect(wrapper.text()).toContain('Content');
+    expect(wrapper.text()).toContain('Clear storage');
+    const clear = wrapper.find('.settings-clear-storage');
+    expect(clear.attributes('color')).toBe('negative');
+
+    await clear.trigger('click');
+    await flushPromises();
+
+    expect(resetMocks.confirm).toHaveBeenCalledWith(
+      expect.stringContaining('permanently delete'),
+      expect.objectContaining({ force: true, color: 'negative' }),
+    );
+    expect(resetMocks.clearAllAppData).toHaveBeenCalled();
+    expect(resetMocks.reloadAppFromMainPage).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it('does not clear storage when confirmation is cancelled', async () => {
+    resetMocks.confirm.mockReset().mockResolvedValue(false);
+    resetMocks.clearAllAppData.mockReset();
+    resetMocks.reloadAppFromMainPage.mockReset();
+
+    const wrapper = mount(SettingsDialog, {
+      props: { modelValue: true },
+    });
+    await nextTick();
+    await wrapper.find('.settings-clear-storage').trigger('click');
+    await flushPromises();
+
+    expect(resetMocks.clearAllAppData).not.toHaveBeenCalled();
+    expect(resetMocks.reloadAppFromMainPage).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

@@ -179,7 +179,7 @@ clears it on unmount.
 ## Settings dialog
 
 `SettingsDialog.vue` is a `BaseModal` opened from the left navigation’s
-Settings item. It currently has two sections:
+Settings item. It currently has three sections:
 
 - **Interface**
   - **Language** — the `LanguageSwitcher` (`en` / `ru`), persisted in
@@ -198,6 +198,11 @@ Settings item. It currently has two sections:
   - Display cover while playing.
   - Show player dialog (off → the Jukebox menu item opens `/jukebox`). This
     only controls the music player dialog, not future ambient controls.
+- **Content**
+  - **Clear storage** — danger button. Always asks for confirmation, even when
+    Confirm deletion is off. Confirming deletes all IndexedDB databases,
+    `localStorage`, `sessionStorage`, cookies, Cache Storage and service worker
+    registrations, then reloads the app at the main page.
 
 The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits

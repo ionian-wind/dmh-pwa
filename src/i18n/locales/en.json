@@ -521,7 +521,12 @@
     "useMiniPlayerHint": "Show the music player dialog when opening Jukebox. Turn off to open the full Jukebox page instead.",
     "languageHint": "Choose the language used by the application.",
     "expandMenu": "Expand menu",
-    "expandMenuHint": "Expand the sidebar on hover. Turn off to keep icons only, with labels shown as hover hints."
+    "expandMenuHint": "Expand the sidebar on hover. Turn off to keep icons only, with labels shown as hover hints.",
+    "content": "Content",
+    "clearStorage": "Clear storage",
+    "clearStorageHint": "Delete all saved notes, maps, media, settings and other app data from this browser.",
+    "clearStorageButton": "Clear",
+    "clearStorageConfirm": "This will permanently delete all site storage: app data, settings, caches and service workers. The app will reload from the main page. Continue?"
   },
   "tags": {
     "title": "Tags"
