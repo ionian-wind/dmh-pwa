@@ -30,7 +30,7 @@ async function clearStorage() {
     title: t('settings.clearStorage'),
     okText: t('settings.clearStorageButton'),
     cancelText: t('common.cancel'),
-    color: 'negative',
+    okColor: 'negative',
   });
   if (!confirmed) return;
 

@@ -7,6 +7,8 @@ export interface ConfirmOptions {
   okText?: string;
   cancelText?: string;
   color?: string;
+  okColor?: string;
+  cancelColor?: string;
   /** Always ask, even when the global delete-confirmation setting is off. */
   force?: boolean;
   // Add more Quasar Dialog options as needed
@@ -20,21 +22,32 @@ export function confirm(
     return Promise.resolve(true);
   }
 
+  const {
+    okColor,
+    cancelColor,
+    force: _force,
+    okText,
+    cancelText,
+    title,
+    color,
+    ...dialogOptions
+  } = options;
+
   return new Promise((resolve) => {
     Dialog.create({
       message,
-      title: options.title || i18n.global.t('common.confirm'),
+      title: title || i18n.global.t('common.confirm'),
       ok: {
-        label: options.okText || i18n.global.t('common.ok'),
-        color: options.color || 'primary',
+        label: okText || i18n.global.t('common.ok'),
+        color: okColor || color || 'primary',
       },
       cancel: {
-        label: options.cancelText || i18n.global.t('common.cancel'),
-        color: options.color || 'secondary',
+        label: cancelText || i18n.global.t('common.cancel'),
+        color: cancelColor || color || 'secondary',
         textColor: 'dark',
       },
       persistent: true,
-      ...options,
+      ...dialogOptions,
     })
       .onOk(() => resolve(true))
       .onCancel(() => resolve(false));

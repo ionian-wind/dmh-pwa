@@ -83,7 +83,7 @@ describe('settings dialog', () => {
 
     expect(resetMocks.confirm).toHaveBeenCalledWith(
       expect.stringContaining('permanently delete'),
-      expect.objectContaining({ force: true, color: 'negative' }),
+      expect.objectContaining({ force: true, okColor: 'negative' }),
     );
     expect(resetMocks.clearAllAppData).toHaveBeenCalled();
     expect(resetMocks.reloadAppFromMainPage).toHaveBeenCalled();
