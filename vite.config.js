@@ -203,6 +203,9 @@ export default defineConfig({
       devOptions: {
         enabled: true,
         type: 'module',
+        // Dev builds only emit the worker itself, so the production glob
+        // patterns match nothing in dev-dist and Workbox logs a warning.
+        suppressWarnings: true,
       },
     }),
   ],

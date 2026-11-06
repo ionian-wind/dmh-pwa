@@ -125,6 +125,12 @@ Requests that remain network-dependent:
 `npm run dev`. This commonly causes stale-cache confusion; use a fresh
 profile or unregister the worker when debugging.
 
+Dev builds only emit the worker itself, so the production precache glob
+matches nothing in `dev-dist/` and Workbox warns about it.
+`devOptions.suppressWarnings: true` makes the dev build precache a tiny
+placeholder file instead, which keeps the dev log clean without changing
+production precaching.
+
 Inline registration also avoids the Workbox warning about a missing precached
 `/registerSW.js`: older builds precached that generated file, while the dev
 server served a different registration script. After updating from an older
