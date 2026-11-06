@@ -42,15 +42,18 @@ button that stamps created records.
 **Implementation.** New store + schema + migrations; add `sessionId?` to notes
 and combats (optional fields are schema-compatible).
 
-### A3. Quick capture / command palette (P1)
+### A3. Quick capture / command menu (P1)
 
 **Value.** Fast keyboard-first workflow at the table.
 
-**Scope.** `Ctrl/Cmd+K` palette: create note/character/monster/encounter,
+**Scope.** `Ctrl/Cmd+K` menu: create note/character/monster/encounter,
 navigate, run a timer, search across entities. Global shortcut.
 
-**Implementation.** A modal with a simple fuzzy list over loaded stores; reuse
-`useModalState` and router. This also gives the missing list search a home.
+**Implementation.** A Vue 3 command menu backed by a command registry, opened
+through the hotkey service. Reuse `useModalState` and the router. See
+[hotkeys-and-command-menu.md](hotkeys-and-command-menu.md) for the full design.
+The linked `vue-cmd-menu` library is Vue 2 only and should be treated as UX
+inspiration, not a dependency.
 
 ### A4. Undo for destructive actions (P1)
 
@@ -63,6 +66,19 @@ or a short-lived snapshot.
 **Implementation.** Store the deleted record(s) in memory for the toast
 duration; restore via `create`/`put`. Pairs with the integrity work in the
 technical proposals.
+
+### A5. Global hotkeys and shortcut customization (P1)
+
+**Value.** A DM can run common actions without leaving the keyboard.
+
+**Scope.** A scoped shortcut layer using `hotkeys-js`: global command menu and
+shortcut help, editor save, list search, jukebox/ambient playback, and a
+Settings recorder with conflict detection and reset.
+
+**Implementation.** Register shortcuts through a single service rather than
+individual key listeners. Inputs, textareas and contenteditable elements are
+ignored by default. Persist overrides in `configStore`.
+See [hotkeys-and-command-menu.md](hotkeys-and-command-menu.md).
 
 ---
 
@@ -472,6 +488,6 @@ current whole-array store replacement; treat as a separate architecture.
 | Release | Features |
 | --- | --- |
 | **Next (stabilize)** | A1 dashboard, B1 metadata controls, C4 persistence, D1 module nav, E1 jukebox fixes, G1 backup, H1 install, H6 search |
-| **Following** | A3 palette, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity |
+| **Following** | A3 command menu, A5 hotkeys, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity |
 | **Later** | A2 sessions, B3/B4 linking/history, C5/C6 loot/tables, D4/D5 import/versioning, E3–E5 audio, F2/F3 combat timers/dice, G2–G4 export/sync |
 | **Exploratory** | C7 timeline, I1–I3 sharing/collaboration |

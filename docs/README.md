@@ -86,6 +86,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index       |
 | [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass        |
 | [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture |
+| [proposals/hotkeys-and-command-menu.md](proposals/hotkeys-and-command-menu.md)           | Global hotkeys and the command menu                 |
 | [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage   |
 | [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                |
 | [proposals/image-filters-and-composition.md](proposals/image-filters-and-composition.md) | Filter stacks, layers and image composition         |
