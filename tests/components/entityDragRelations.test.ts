@@ -60,7 +60,10 @@ async function seedStores() {
     { id: 'p1', moduleIds: [], characters: [] },
     { id: 'p2', moduleIds: [], characters: [] },
   ];
-  mocks.stores.character.items.value = [{ id: 'c1' }, { id: 'c2' }];
+  mocks.stores.character.items.value = [
+    { id: 'c1', moduleIds: [] },
+    { id: 'c2', moduleIds: [] },
+  ];
   mocks.stores.monster.items.value = [
     { id: 'mo1', moduleIds: [] },
     { id: 'mo2', moduleIds: [] },
@@ -112,12 +115,13 @@ describe('entity drag link relations', () => {
     ]);
   });
 
-  it('links modules to notes, parties, monsters, encounters and locations', async () => {
+  it('links modules to notes, parties, monsters, encounters, characters and locations', async () => {
     const relations = useEntityLinkRelations();
     mocks.stores.note.items.value[0].moduleIds = ['m1'];
     mocks.stores.party.items.value[0].moduleIds = ['m1'];
     mocks.stores.monster.items.value[0].moduleIds = ['m1'];
     mocks.stores.encounter.items.value[0].moduleIds = ['m1'];
+    mocks.stores.character.items.value[0].moduleIds = ['m1'];
     mocks.stores.location.items.value[0].entities = [
       { kind: 'module', id: 'm1' },
     ];
@@ -126,6 +130,7 @@ describe('entity drag link relations', () => {
     expect(relations.getLinkedIds('module', 'm1', 'party')).toEqual(['p1']);
     expect(relations.getLinkedIds('module', 'm1', 'monster')).toEqual(['mo1']);
     expect(relations.getLinkedIds('module', 'm1', 'encounter')).toEqual(['e1']);
+    expect(relations.getLinkedIds('module', 'm1', 'character')).toEqual(['c1']);
     expect(relations.getLinkedIds('module', 'm1', 'location')).toEqual(['l1']);
 
     await relations.setLinkedIds('module', 'm1', 'note', ['n2']);
@@ -143,6 +148,10 @@ describe('entity drag link relations', () => {
     await relations.setLinkedIds('module', 'm1', 'encounter', ['e2']);
     expect(mocks.stores.encounter.items.value[0].moduleIds).toEqual([]);
     expect(mocks.stores.encounter.items.value[1].moduleIds).toEqual(['m1']);
+
+    await relations.setLinkedIds('module', 'm1', 'character', ['c2']);
+    expect(mocks.stores.character.items.value[0].moduleIds).toEqual([]);
+    expect(mocks.stores.character.items.value[1].moduleIds).toEqual(['m1']);
 
     await relations.setLinkedIds('module', 'm1', 'location', ['l2']);
     expect(mocks.stores.location.items.value[0].entities).toEqual([]);
@@ -171,20 +180,24 @@ describe('entity drag link relations', () => {
     expect(mocks.stores.location.items.value[0].entities).toEqual([]);
   });
 
-  it('links characters to parties and locations', async () => {
+  it('links characters to modules, parties and locations', async () => {
     const relations = useEntityLinkRelations();
+    mocks.stores.character.items.value[0].moduleIds = ['m1'];
     mocks.stores.party.items.value[0].characters = ['c1'];
     mocks.stores.location.items.value[0].entities = [
       { kind: 'character', id: 'c1' },
     ];
 
+    expect(relations.getLinkedIds('character', 'c1', 'module')).toEqual(['m1']);
     expect(relations.getLinkedIds('character', 'c1', 'party')).toEqual(['p1']);
     expect(relations.getLinkedIds('character', 'c1', 'location')).toEqual([
       'l1',
     ]);
 
+    await relations.setLinkedIds('character', 'c1', 'module', ['m2']);
     await relations.setLinkedIds('character', 'c1', 'party', ['p2']);
     await relations.setLinkedIds('character', 'c1', 'location', ['l2']);
+    expect(mocks.stores.character.items.value[0].moduleIds).toEqual(['m2']);
     expect(mocks.stores.party.items.value[0].characters).toEqual([]);
     expect(mocks.stores.party.items.value[1].characters).toEqual(['c1']);
     expect(mocks.stores.location.items.value[1].entities).toEqual([

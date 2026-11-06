@@ -103,6 +103,11 @@ export function useEntityLinkRelations() {
           .filter((encounter) => encounter.moduleIds?.includes(sourceId))
           .map((encounter) => encounter.id);
       }
+      if (targetKind === 'character') {
+        return items('character')
+          .filter((character) => character.moduleIds?.includes(sourceId))
+          .map((character) => character.id);
+      }
       if (targetKind === 'location') {
         return items('location')
           .filter((location) =>
@@ -123,6 +128,7 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'character') {
+      if (targetKind === 'module') return [...(source?.moduleIds ?? [])];
       if (targetKind === 'party') {
         return items('party')
           .filter((party) => party.characters?.includes(sourceId))
@@ -265,6 +271,18 @@ export function useEntityLinkRelations() {
       }
       return;
     }
+    if (sourceKind === 'module' && targetKind === 'character') {
+      for (const character of items('character')) {
+        const linked = character.moduleIds?.includes(sourceId) ?? false;
+        const shouldLink = ids.includes(character.id);
+        if (linked === shouldLink) continue;
+        const moduleIds = shouldLink
+          ? [...new Set([...(character.moduleIds ?? []), sourceId])]
+          : (character.moduleIds ?? []).filter((id: string) => id !== sourceId);
+        await stores.character.update(character.id, { moduleIds });
+      }
+      return;
+    }
     if (sourceKind === 'module' && targetKind === 'location') {
       await setLocationLinks('module', sourceId, ids);
       return;
@@ -283,6 +301,10 @@ export function useEntityLinkRelations() {
       return;
     }
 
+    if (sourceKind === 'character' && targetKind === 'module') {
+      await stores.character.update(sourceId, { moduleIds: ids });
+      return;
+    }
     if (sourceKind === 'character' && targetKind === 'party') {
       for (const party of items('party')) {
         const linked = party.characters?.includes(sourceId) ?? false;

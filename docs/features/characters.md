@@ -54,8 +54,8 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - `notes` uses the shared `EntityMarkdownEditor` (Milkdown / raw Markdown
   toggle) and is read back on submit with `getMarkdown()`.
 - Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
-- The linked-entities tab edits party/location links through
-  `EntitiesLinking`.
+- The linked-entities tab edits module/party/location links through
+  `EntitiesLinking`; module ids are saved with the character.
 - Footer has only the visual-editor toggle and, in raw mode, the Markdown
   formatting-help button. There are no note options, tags or note types.
 - `blankCharacter()` includes empty strings and current timestamps; the base
@@ -79,8 +79,9 @@ for the character list and map entity creation.
     Markdown editor is active.
 - Header tabs are **View** and **Linked entities**; edit mode uses
   **Main editor** and **Linked entities**.
-- The linked-entities tab shows the parties and locations linked to the
-  character. In edit mode both kinds are editable through `EntitiesLinking`.
+- The linked-entities tab shows the modules, parties and locations linked to
+  the character. In edit mode all three kinds are editable through
+  `EntitiesLinking`.
 - Uses `CharacterViewSidebar` through the shared right drawer. Ambient scenes
   and mentions are separated into **Scenes** and **Mentions** tabs, with
   Mentions last. The sidebar shares the note-style mode controls and keeps

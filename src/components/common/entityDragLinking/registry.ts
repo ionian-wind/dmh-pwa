@@ -48,9 +48,9 @@ export const ENTITY_LINK_ICONS: Record<EntityLinkKind, Component> = {
 /** Target kinds each entity model can represent a link to. */
 export const ENTITY_LINK_TARGETS: Record<EntityLinkKind, EntityLinkKind[]> = {
   note: ['module', 'location'],
-  module: ['note', 'party', 'monster', 'encounter', 'location'],
+  module: ['note', 'party', 'monster', 'encounter', 'character', 'location'],
   party: ['module', 'character', 'location'],
-  character: ['party', 'location'],
+  character: ['module', 'party', 'location'],
   monster: ['module', 'encounter', 'location'],
   encounter: ['module', 'monster', 'location'],
   location: [

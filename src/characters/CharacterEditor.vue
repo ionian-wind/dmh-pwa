@@ -67,21 +67,34 @@ const characterNotes = computed({
 
 const characterLinks = computed<MapEntityRef[]>(() => {
   const id = editedCharacter.value.id;
-  if (!id) return [];
   return [
-    ...relations
-      .getLinkedIds('character', id, 'party')
-      .map((partyId) => ({ kind: 'party' as const, id: partyId })),
-    ...relations
-      .getLinkedIds('character', id, 'location')
-      .map((locationId) => ({ kind: 'location' as const, id: locationId })),
+    ...(editedCharacter.value.moduleIds ?? []).map((moduleId) => ({
+      kind: 'module' as const,
+      id: moduleId,
+    })),
+    ...(id
+      ? relations
+          .getLinkedIds('character', id, 'party')
+          .map((partyId) => ({ kind: 'party' as const, id: partyId }))
+      : []),
+    ...(id
+      ? relations
+          .getLinkedIds('character', id, 'location')
+          .map((locationId) => ({ kind: 'location' as const, id: locationId }))
+      : []),
   ];
 });
 
 async function setCharacterLinks(
-  kind: 'party' | 'location',
+  kind: 'module' | 'party' | 'location',
   links: MapEntityRef[],
 ) {
+  if (kind === 'module') {
+    editedCharacter.value.moduleIds = links
+      .filter((link) => link.kind === 'module')
+      .map((link) => link.id);
+    return;
+  }
   if (!editedCharacter.value.id) return;
   await relations.setLinkedIds(
     'character',
@@ -171,6 +184,11 @@ function handleDelete() {
 
     <template #links>
       <div class="column q-gutter-md">
+        <EntitiesLinking
+          kind="module"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('module', links)"
+        />
         <EntitiesLinking
           kind="party"
           :model-value="characterLinks"

@@ -100,6 +100,7 @@ export interface Party extends WithMetadata {
 export interface Character extends WithMetadata {
   name: string;
   notes?: string;
+  moduleIds?: UUID[];
 }
 
 export interface PlayerCharacter extends Character {}

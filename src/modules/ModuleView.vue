@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
 import { usePartyStore } from '@/stores/parties';
+import { useCharacterStore } from '@/stores/characters';
 import { useMonsterStore } from '@/stores/monsters';
 import { useEncounterStore } from '@/stores/encounters';
 import { useNoteStore } from '@/stores/notes';
@@ -51,6 +52,7 @@ const router = useRouter();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
 const partyStore = usePartyStore();
+const characterStore = useCharacterStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const noteStore = useNoteStore();
@@ -76,6 +78,12 @@ const moduleParties = computed(() =>
 const moduleMonsters = computed(() =>
   monsterStore.items.filter((monster) =>
     monster.moduleIds?.includes(route.params.id as string),
+  ),
+);
+
+const moduleCharacters = computed(() =>
+  characterStore.items.filter((character) =>
+    character.moduleIds?.includes(route.params.id as string),
   ),
 );
 
@@ -146,6 +154,10 @@ const moduleLinks = computed<MapEntityRef[]>(() => [
     kind: 'monster' as const,
     id: monster.id,
   })),
+  ...moduleCharacters.value.map((character) => ({
+    kind: 'character' as const,
+    id: character.id,
+  })),
   ...moduleEncounters.value.map((encounter) => ({
     kind: 'encounter' as const,
     id: encounter.id,
@@ -169,6 +181,7 @@ onMounted(async () => {
   await Promise.all([
     moduleStore.load(),
     partyStore.load(),
+    characterStore.load(),
     monsterStore.load(),
     encounterStore.load(),
     noteStore.load(),

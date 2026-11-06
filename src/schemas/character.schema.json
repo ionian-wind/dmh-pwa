@@ -13,6 +13,12 @@
     "notes": {
       "type": "string"
     },
+    "moduleIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "createdAt": {
       "type": "number"
     },

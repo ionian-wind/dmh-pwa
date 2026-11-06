@@ -5,7 +5,7 @@
 A module is a campaign/book container. It groups:
 
 - a hierarchical tree of **hidden notes** that form a readable document,
-- visible notes, parties, monsters, encounters, playlists attached to it,
+- visible notes, parties, characters, monsters, encounters, playlists attached to it,
 - bookmarks for document sections.
 
 The "Book" tab concatenates hidden notes in tree order and renders them as one
@@ -38,12 +38,13 @@ continuous, virtualized document with a table of contents and bookmark controls.
 
 ## Module detail (`ModuleView.vue`)
 
-Loads modules, parties, monsters, encounters, notes, playlists, tracks,
-locations, the mention index, and bookmarks.
+Loads modules, parties, characters, monsters, encounters, notes, playlists,
+tracks, locations, the mention index, and bookmarks.
 
 Computed collections:
 
 - `moduleParties` — parties whose `moduleIds` include this module.
+- `moduleCharacters` — characters whose `moduleIds` include this module.
 - `moduleMonsters` — monsters whose `moduleIds` include this module.
 - `moduleEncounters` — encounters whose `moduleIds` include this module.
 - `moduleNotes` — notes whose `moduleIds` include this module and
@@ -53,8 +54,8 @@ Computed collections:
 - `moduleBookmarks` — bookmarks with this `moduleId`.
 
 Tabs: Book, Book Tree, Linked entities. The Linked entities tab collects
-locations (including their maps), parties, monsters, encounters, notes and
-playlists that reference this module and renders them read-only with
+locations (including their maps), parties, characters, monsters, encounters,
+notes and playlists that reference this module and renders them read-only with
 `EntityViewLinks`.
 
 Header actions intended: Export ZIP. Delete/edit come from `BaseEntityTabView`.
