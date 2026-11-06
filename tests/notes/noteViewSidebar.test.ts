@@ -17,7 +17,6 @@ describe('NoteViewSidebar', () => {
       global: { stubs: { RouterLink: RouterLinkStub } },
     });
     expect(wrapper.findAll('.tag-link')).toHaveLength(2);
-    expect(wrapper.find('.entity-group').exists()).toBe(true);
     const tabs = wrapper.findAll('.tab-item');
     expect(tabs.map((tab) => tab.text())).toEqual(['Tags', 'Mentions']);
     wrapper.unmount();

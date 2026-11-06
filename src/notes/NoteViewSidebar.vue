@@ -4,7 +4,6 @@ import { computed, onMounted, ref } from 'vue';
 import type { Note } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { useMentionsStore } from '@/utils/storage';
-import EntityGroup from '@/components/common/EntityGroup.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { IconEdit, IconEye } from '@tabler/icons-vue';
 
@@ -53,25 +52,19 @@ onMounted(() => mentionsStore.load());
       >
         <template #default>
           <div v-show="activeTab === 'tags'" class="q-pa-md">
-            <EntityGroup
-              v-if="props.note.tags?.length"
-              class="tags-section"
-              :title="t('tags.title')"
-            >
-              <div class="tags">
-                <router-link
-                  v-for="tag in props.note.tags"
-                  :key="tag"
-                  class="tag"
-                  :to="{
-                    path: '/notes',
-                    query: { tag: encodeURIComponent(tag) },
-                  }"
-                  >#{{ tag }}</router-link
-                >
-              </div>
-            </EntityGroup>
-            <div v-else class="text-caption text-grey-7 q-pa-sm">
+            <div v-if="props.note.tags?.length" class="tags tags-section">
+              <router-link
+                v-for="tag in props.note.tags"
+                :key="tag"
+                class="tag"
+                :to="{
+                  path: '/notes',
+                  query: { tag: encodeURIComponent(tag) },
+                }"
+                >#{{ tag }}</router-link
+              >
+            </div>
+            <div v-else class="text-caption text-grey-7">
               {{ t('tagSelector.noTags') }}
             </div>
           </div>
