@@ -69,7 +69,7 @@ describe('BaseCard entity dragging', () => {
     await nextTick();
     expect(shell.classes()).toContain('is-floating');
     expect(shell.attributes('style')).toContain('height: 150px');
-    expect(wrapper.find('.base-card').classes()).toContain('shadow-9');
+    expect(wrapper.find('.base-card').classes()).toContain('shadow-5');
     expect(wrapper.find('.base-card').classes()).toContain('shadow-transition');
 
     await shell.trigger('mouseleave');
@@ -86,7 +86,7 @@ describe('BaseCard entity dragging', () => {
     vi.advanceTimersByTime(331);
     await nextTick();
     expect(shell.classes()).not.toContain('is-floating');
-    expect(wrapper.find('.base-card').classes()).not.toContain('shadow-9');
+    expect(wrapper.find('.base-card').classes()).not.toContain('shadow-5');
     wrapper.unmount();
   });
 

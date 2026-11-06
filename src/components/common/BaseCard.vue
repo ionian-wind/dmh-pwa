@@ -187,7 +187,7 @@ const hasContent = computed(() => {
       :style="cardFloatStyle"
       :class="{
         'is-dragging-entity': isDraggingEntity,
-        'shadow-9': isFloating,
+        'shadow-5': isFloating,
       }"
     >
       <QCardSection
