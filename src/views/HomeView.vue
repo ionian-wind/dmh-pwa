@@ -11,6 +11,7 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
 import { saveBlob } from '@/utils/files';
+import { useConfigStore } from '@/utils/configStore';
 import {
   parseModuleZip,
   importModuleFromZip,
@@ -24,6 +25,7 @@ const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
+const configStore = useConfigStore();
 
 const { t } = useI18n();
 
@@ -108,7 +110,9 @@ function downloadBlob(blob: Blob, filename: string) {
 
 async function handleBackup() {
   try {
-    const blob = await backupAllStores();
+    const blob = await backupAllStores({
+      includeExternalFiles: configStore.backupIncludeExternalFiles,
+    });
     await downloadBlob(
       blob,
       `dmh-backup-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.zip`,

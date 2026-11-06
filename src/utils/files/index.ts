@@ -35,7 +35,11 @@ export {
   getStoredFileUrl,
   importFile,
   importStoredFile,
+  findStoredFileByContentHash,
+  migrateAllBlobFilesToOpfs,
+  migrateStoredFileToOpfs,
   putStoredFile,
+  relinkStoredFile,
   revokeStoredFileUrl,
 } from './fileStorage';
 export type { ImportFileOptions } from './fileStorage';
@@ -43,6 +47,9 @@ export type { CopyBlobOptions } from './streams';
 export { copyBlob } from './streams';
 export type { ObjectUrlHandle } from './objectUrls';
 export { createObjectUrlHandle } from './objectUrls';
+export { Sha256, hashBlob, hashText, sha256Hex } from './hash';
+export type { ZipEntries } from './zip';
+export { listZipFiles, openZip, readZipBlob, readZipText } from './zip';
 export {
   OPFS_THRESHOLD_BYTES,
   clearOpfsData,
@@ -64,7 +71,7 @@ export {
   isStoragePersisted,
   requestPersistentStorage,
 } from './persist';
-export type { FileStorageDiagnostics } from './diagnostics';
+export type { FileStorageDiagnostics, UnavailableFile } from './diagnostics';
 export { getFileStorageDiagnostics } from './diagnostics';
 export {
   deleteFileIfUnreferenced,

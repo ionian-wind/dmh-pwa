@@ -528,6 +528,7 @@ async function serializeStoreItems(
   storeName: string,
   items: any[],
   zip: JSZip,
+  options: BackupOptions,
 ): Promise<any[]> {
   if (storeName !== 'files') return items;
 
@@ -576,6 +577,25 @@ async function serializeStoreItems(
       }
 
       if (source.kind === 'handle') {
+        if (options.includeExternalFiles) {
+          try {
+            const file = await source.handle.getFile();
+            const entry = `files/${item.id}`;
+            zip.file(entry, file);
+            return {
+              ...item,
+              source: {
+                kind: 'binary',
+                entry,
+                type: file.type,
+                size: file.size,
+                external: true,
+              },
+            };
+          } catch (error) {
+            debug('Could not include external file in backup:', error);
+          }
+        }
         return {
           ...item,
           source: {
@@ -745,7 +765,14 @@ async function validateBackupManifest(zip: JSZip): Promise<void> {
  * Backup all main stores as a zip file (returns a Blob). Large file bytes are
  * stored as binary entries instead of base64 JSON payloads.
  */
-export async function backupAllStores(): Promise<Blob> {
+export interface BackupOptions {
+  /** Copy user-linked handles into the archive when permission allows. */
+  includeExternalFiles?: boolean;
+}
+
+export async function backupAllStores(
+  options: BackupOptions = {},
+): Promise<Blob> {
   const zip = new JSZip();
   zip.file(
     'manifest.json',
@@ -757,7 +784,7 @@ export async function backupAllStores(): Promise<Blob> {
         appVersion: import.meta.env.VITE_APP_VERSION ?? 'dev',
         stores: MAIN_STORE_NAMES,
         fileEncoding: 'binary',
-        includesExternalFiles: false,
+        includesExternalFiles: !!options.includeExternalFiles,
       },
       null,
       2,
@@ -766,7 +793,12 @@ export async function backupAllStores(): Promise<Blob> {
 
   for (const storeName of MAIN_STORE_NAMES) {
     const items = await idbGetAllItems(storeName);
-    const serialized = await serializeStoreItems(storeName, items, zip);
+    const serialized = await serializeStoreItems(
+      storeName,
+      items,
+      zip,
+      options,
+    );
     zip.file(`${storeName}.json`, JSON.stringify(serialized, null, 2));
   }
   return zip.generateAsync({ type: 'blob' });

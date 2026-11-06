@@ -539,7 +539,15 @@
     "storageRequest": "Запросить",
     "storageFiles": "Файлов: {count}",
     "storageUnavailable": "Недоступно: {count}",
-    "storageBreakdown": "Локально: {blob} · OPFS: {opfs} · Ссылки: {handle}"
+    "storageBreakdown": "Локально: {blob} · OPFS: {opfs} · Ссылки: {handle}",
+    "reconnectFiles": "Переподключить файлы",
+    "reconnectFilesHint": "Выберите исходные файлы, чтобы восстановить доступ к связанным записям.",
+    "reconnectedFiles": "Переподключено файлов: {count}.",
+    "migrateFiles": "Перенести большие файлы в OPFS",
+    "migrateFilesHint": "Перенести существующие большие локальные файлы из IndexedDB.",
+    "migratedFiles": "Перенесено файлов: {count}.",
+    "backupExternalFiles": "Включать связанные файлы в резервные копии",
+    "backupExternalFilesHint": "Копировать внешние файлы File System Access в резервную копию. Архив может значительно увеличиться."
   },
   "tags": {
     "title": "Теги"

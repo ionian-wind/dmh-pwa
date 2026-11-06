@@ -4,6 +4,12 @@ import type { NormalizedSoundPack, SoundPackManifest } from '../types';
 import { deepUnwrap } from '@/utils/deepUnwrap';
 import { saveBlob } from '@/utils/files/save';
 import {
+  openZip,
+  readZipBlob as readZipEntryBlob,
+  readZipText,
+  type ZipEntries,
+} from '@/utils/files/zip';
+import {
   getLayerVariations,
   getOneShotSamples,
   getSceneMusicFile,
@@ -51,18 +57,14 @@ function basename(path: string): string {
 }
 
 async function readZipBlob(
-  zip: JSZip,
+  entries: ZipEntries,
   candidates: string[],
 ): Promise<Blob | null> {
-  for (const candidate of candidates) {
-    const file = zip.file(candidate);
-    if (file) return file.async('blob');
-  }
-  return null;
+  return readZipEntryBlob(entries, candidates);
 }
 
 async function extractAudio(
-  zip: JSZip,
+  entries: ZipEntries,
   manifest: NormalizedSoundPack,
 ): Promise<Record<string, Blob>> {
   const audioBlobs: Record<string, Blob> = {};
@@ -71,7 +73,7 @@ async function extractAudio(
     for (const variation of getLayerVariations(ambience)) {
       for (const sample of variation.samples) {
         const name = basename(sample);
-        const blob = await readZipBlob(zip, [
+        const blob = await readZipBlob(entries, [
           sample,
           `ambiences/${name}`,
           `layers/${name}`,
@@ -85,7 +87,7 @@ async function extractAudio(
   for (const oneShot of manifest.oneShots) {
     for (const sample of getOneShotSamples(oneShot)) {
       const name = basename(sample);
-      const blob = await readZipBlob(zip, [
+      const blob = await readZipBlob(entries, [
         sample,
         `one-shots/${name}`,
         `sfx/${name}`,
@@ -100,7 +102,7 @@ async function extractAudio(
       for (const musicFile of preset.files) {
         const canonical = getSceneMusicFile(scene.id, musicFile);
         const name = basename(musicFile);
-        const blob = await readZipBlob(zip, [
+        const blob = await readZipBlob(entries, [
           canonical,
           musicFile,
           `music/${name}`,
@@ -122,21 +124,19 @@ async function putPack(record: SoundPackRecord): Promise<void> {
 export async function importSoundPack(
   spkFile: File,
 ): Promise<NormalizedSoundPack> {
-  const zip = await JSZip.loadAsync(spkFile);
-  const manifestFile = zip.file('pack.json');
-  if (!manifestFile) {
+  const entries = await openZip(spkFile);
+  const manifestText = await readZipText(entries, ['pack.json']);
+  if (manifestText === null) {
     throw new Error('Invalid sound pack: missing pack.json');
   }
 
-  const raw = JSON.parse(
-    await manifestFile.async('string'),
-  ) as SoundPackManifest;
+  const raw = JSON.parse(manifestText) as SoundPackManifest;
   if (!raw.id || !raw.name || !raw.version) {
     throw new Error('Invalid sound pack: missing required fields');
   }
 
   const manifest = normalizeSoundPack(raw);
-  const audioBlobs = await extractAudio(zip, manifest);
+  const audioBlobs = await extractAudio(entries, manifest);
   const existing = (await (await getDB()).get('soundPacks', manifest.id)) as
     SoundPackRecord | undefined;
 

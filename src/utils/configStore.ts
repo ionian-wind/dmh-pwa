@@ -49,6 +49,7 @@ export type ConfigStore = {
   jukeboxUseMiniPlayer: Ref<boolean>;
   expandMenu: Ref<boolean>;
   confirmDelete: Ref<boolean>;
+  backupIncludeExternalFiles: Ref<boolean>;
   savedLanguage: Ref<string>;
 };
 
@@ -87,6 +88,9 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     );
     const expandMenu = ref<boolean>(getValue('expandMenu', true));
     const confirmDelete = ref<boolean>(getValue('confirmDelete', true));
+    const backupIncludeExternalFiles = ref<boolean>(
+      getValue('backupIncludeExternalFiles', false),
+    );
     const browserLanguage = window?.navigator?.language ?? 'en';
     const savedLanguage = ref<string>(
       getValue(
@@ -109,6 +113,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
       jukeboxUseMiniPlayer,
       expandMenu,
       confirmDelete,
+      backupIncludeExternalFiles,
       savedLanguage,
     };
 

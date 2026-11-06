@@ -9,7 +9,10 @@ import {
   getStoredFileUrl,
   importFile,
   importStoredFile,
+  migrateAllBlobFilesToOpfs,
+  migrateStoredFileToOpfs,
   putStoredFile,
+  relinkStoredFile,
   revokeStoredFileUrl,
 } from '@/utils/files/fileStorage';
 import { OPFS_THRESHOLD_BYTES, readOpfsFile } from '@/utils/files/opfs';
@@ -131,6 +134,40 @@ describe('generic file storage', () => {
     expect(handle.getFile).toHaveBeenCalled();
   });
 
+  it('relinks a stored file without changing its ID', async () => {
+    await putStoredFile(
+      record({
+        id: 'relink-me',
+        source: { kind: 'opfs', path: 'files/relink-me' },
+      }),
+    );
+    const replacement = file('replacement.mp3', 7, 99);
+    const handle = {
+      kind: 'file',
+      name: 'replacement.mp3',
+    } as unknown as FileSystemFileHandle;
+
+    const updated = await relinkStoredFile('relink-me', replacement, {
+      kind: 'handle',
+      handle,
+    });
+
+    expect(updated).toMatchObject({
+      id: 'relink-me',
+      name: 'replacement.mp3',
+      size: 7,
+      lastModified: 99,
+      source: { kind: 'handle', handle },
+    });
+    await expect(getStoredFile('relink-me')).resolves.toMatchObject({
+      id: 'relink-me',
+      name: 'replacement.mp3',
+    });
+    await expect(
+      relinkStoredFile('missing', replacement, { kind: 'handle', handle }),
+    ).resolves.toBeUndefined();
+  });
+
   it('stores large fallback files in OPFS and deletes them with the record', async () => {
     const opfs = installFakeOpfs();
     try {
@@ -234,6 +271,89 @@ describe('generic file storage', () => {
       await expect(deleteStoredFile('opfs-delete')).resolves.toBeUndefined();
       await expect(getStoredFile('opfs-delete')).resolves.toBeUndefined();
     } finally {
+      opfs.restore();
+    }
+  });
+
+  it('deduplicates identical content when hashing is requested', async () => {
+    const firstFile = new File(['same bytes'], 'first.bin', {
+      type: 'application/octet-stream',
+    });
+    const secondFile = new File(['same bytes'], 'second.bin', {
+      type: 'application/octet-stream',
+    });
+
+    const first = await importStoredFile(
+      firstFile,
+      { kind: 'blob', blob: firstFile },
+      { contentHash: true },
+    );
+    const second = await importStoredFile(
+      secondFile,
+      { kind: 'blob', blob: secondFile },
+      { contentHash: true },
+    );
+
+    expect(second.created).toBe(false);
+    expect(second.file.id).toBe(first.file.id);
+    expect(second.file.contentHash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('migrates a large blob to OPFS lazily when it is read', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      const big = record({
+        id: 'lazy-large',
+        size: OPFS_THRESHOLD_BYTES,
+        source: { kind: 'blob', blob: new Blob(['lazy bytes']) },
+      });
+
+      await expect(getStoredFileBlob(big)).resolves.toBeInstanceOf(Blob);
+      const stored = await getStoredFile('lazy-large');
+      expect(stored?.source.kind).toBe('opfs');
+      if (stored?.source.kind !== 'opfs') throw new Error('expected OPFS');
+      await expect(readOpfsFile(stored.source.path)).resolves.toBeInstanceOf(
+        File,
+      );
+    } finally {
+      opfs.restore();
+    }
+  });
+
+  it('migrates large blobs in bulk and keeps failures as blobs', async () => {
+    const opfs = installFakeOpfs();
+    const originalStructuredClone = globalThis.structuredClone;
+    globalThis.structuredClone = (value: any) => value;
+
+    try {
+      await putStoredFile(
+        record({
+          id: 'bulk-large',
+          size: OPFS_THRESHOLD_BYTES,
+          source: { kind: 'blob', blob: new Blob(['bulk']) },
+        }),
+      );
+      await putStoredFile(record({ id: 'bulk-small', size: 1 }));
+
+      await expect(migrateAllBlobFilesToOpfs()).resolves.toBe(1);
+      await expect(getStoredFile('bulk-large')).resolves.toMatchObject({
+        source: { kind: 'opfs' },
+      });
+
+      const filesDir = await opfs.root.getDirectoryHandle('files');
+      await filesDir.getDirectoryHandle('nested', { create: true });
+      filesDir.getFileHandle = vi
+        .fn()
+        .mockRejectedValue(new Error('write failed'));
+      const failing = record({
+        id: 'migration-failure',
+        size: OPFS_THRESHOLD_BYTES,
+        source: { kind: 'blob', blob: new Blob(['fail']) },
+      });
+
+      await expect(migrateStoredFileToOpfs(failing)).resolves.toBe(failing);
+    } finally {
+      globalThis.structuredClone = originalStructuredClone;
       opfs.restore();
     }
   });

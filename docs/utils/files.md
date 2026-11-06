@@ -30,6 +30,8 @@ Worker so the UI stays responsive.
 | `save.ts`                    | Save picker + download fallback                        |
 | `persist.ts`                 | Storage estimate, persistence and byte formatting      |
 | `diagnostics.ts`             | File counts by source kind and unavailable records     |
+| `hash.ts`                    | Streaming SHA-256 + Web Crypto fast path               |
+| `zip.ts`                     | Blob-based ZIP reader for module/sound-pack imports    |
 | `fileReferences.ts`          | Shared-file deletion reference providers               |
 | `registerFileReferences.ts`  | Jukebox/map reference providers                        |
 | `FileSystemUtils.ts`         | Audio duration probe + metadata worker orchestration   |
@@ -52,7 +54,20 @@ verifySourcePermission(source, mode?): Promise<boolean>
 
 importFile(file, options?): Promise<{ file: StoredFile; created: boolean }>
 importStoredFile(file, source, options?): Promise<ImportedFile>
+relinkStoredFile(fileId, file, source, options?): Promise<StoredFile | undefined>
+migrateStoredFileToOpfs(file): Promise<StoredFile>
+migrateAllBlobFilesToOpfs(): Promise<number>
 deleteFileIfUnreferenced(fileId): Promise<boolean>
+
+hashBlob(blob, options?): Promise<string>
+hashText(text): Promise<string>
+sha256Hex(data): Promise<string>
+findStoredFileByContentHash(hash): Promise<StoredFile | undefined>
+
+openZip(blob): Promise<ZipEntries>
+readZipText(entries, candidates): Promise<string | null>
+readZipBlob(entries, candidates): Promise<Blob | null>
+listZipFiles(entries, prefix): ZipEntry[]
 
 copyBlob(blob, sink, options?): Promise<void>
 saveBlob(blob, options): Promise<'saved' | 'downloaded' | 'cancelled'>
@@ -168,6 +183,7 @@ interface StoredFile {
   type;
   lastModified;
   signature;
+  contentHash?;
   source;
   createdAt;
   updatedAt;
@@ -178,8 +194,15 @@ interface StoredFile {
   `name | size | lastModified | type` and returns either the existing record or
   a new one. With `storage: 'auto'`, handles are preserved zero-copy and Blob
   fallbacks at or above `OPFS_THRESHOLD_BYTES` (8 MB) are streamed into OPFS.
+- `contentHash: true` computes a SHA-256 and deduplicates by content as well as
+  metadata. Hashing streams for large files and uses Web Crypto for small ones.
 - `importFile(file, options)` is the convenience wrapper that defaults the
   source to the picked Blob.
+- `relinkStoredFile(fileId, file, source)` replaces a missing or
+  permission-lost source without changing the file ID or business references.
+- `migrateStoredFileToOpfs()` moves an existing large IDB blob to OPFS;
+  `getStoredFileBlob()` applies it lazily and the Settings panel can run it in
+  bulk.
 - Jukebox tracks store `fileId → files.id`; they keep audio metadata separately
   in `jukebox_tracks`.
 - Maps store `map.fileId → files.id`; image metadata lives in
@@ -223,28 +246,24 @@ Backup v2 writes:
 - binary `files/<fileId>` entries for Blob and OPFS sources.
 
 Handle sources are written as `unavailable` because a
-`FileSystemFileHandle` is not JSON-serializable. Restoring writes binary file
-entries back to OPFS when available and falls back to IDB Blobs. Restoring an
-older backup still converts `jukebox_files.json` / `map_files.json` and legacy
-`blob-data` entries.
+`FileSystemFileHandle` is not JSON-serializable. When
+`backupAllStores({ includeExternalFiles: true })` is used (and Settings has the
+matching toggle enabled), readable handles are copied into the archive as binary
+entries instead. Restoring writes binary file entries back to OPFS when
+available and falls back to IDB Blobs. Restoring an older backup still converts
+`jukebox_files.json` / `map_files.json` and legacy `blob-data` entries.
 
 ## Limitations
 
-- No permission-reconnect flow for expired handles.
-- No MIME/extension validation beyond the picker filter.
-- Generic files deduplicate by metadata signature, not content hash.
+- MIME/extension validation beyond the picker filter is not enforced.
 - No garbage collection for files that become orphaned during map image
   replacement.
-- No quota estimation warning before a write; the Settings panel reports usage
-  after the fact.
+- No quota warning before a write; the Settings panel reports usage after the
+  fact.
 - Worker-per-file and sequential metadata extraction make bulk import slow.
-- JSZip still reads a whole archive for `.spk` and module imports; very large
-  archives are not streamed entry-by-entry yet.
 - Color/palette output is currently wrong.
-- FileSystem handles cannot be serialized and may need relinking after restore.
+- FileSystem handles cannot be serialized; they are marked unavailable or
+  copied only when external files are explicitly included in a backup.
 - Generic file IDs are generated; legacy IDs are preserved by migration.
-- Existing IndexedDB Blobs are not migrated to OPFS automatically; only new
-  large fallback imports use OPFS.
-
-See [proposals/generic-file-handling.md](../proposals/generic-file-handling.md)
-for the proposed OPFS, streaming, quota and binary-backup upgrade.
+- Reconnect matching uses filename and size; a per-file picker would be more
+  precise for large libraries.

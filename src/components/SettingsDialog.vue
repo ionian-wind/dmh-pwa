@@ -10,6 +10,9 @@ import { debugError } from '@/utils/debug';
 import {
   formatBytes,
   getFileStorageDiagnostics,
+  migrateAllBlobFilesToOpfs,
+  pickFiles,
+  relinkStoredFile,
   requestPersistentStorage,
   type FileStorageDiagnostics,
 } from '@/utils/files';
@@ -27,6 +30,9 @@ const configStore = useConfigStore();
 const isClearingStorage = ref(false);
 const isRequestingPersistence = ref(false);
 const isLoadingStorage = ref(false);
+const isReconnecting = ref(false);
+const isMigrating = ref(false);
+const reconnectStatus = ref('');
 const storage = ref<FileStorageDiagnostics | null>(null);
 
 const storageUsage = computed(() => {
@@ -76,6 +82,48 @@ async function requestPersistence() {
     await loadStorage();
   } finally {
     isRequestingPersistence.value = false;
+  }
+}
+
+async function reconnectFiles() {
+  const unavailable = storage.value?.unavailableFiles ?? [];
+  if (!unavailable.length) return;
+
+  isReconnecting.value = true;
+  try {
+    const picked = await pickFiles({ multiple: true, description: 'Files' });
+    let reconnected = 0;
+
+    for (const record of unavailable) {
+      const match =
+        picked.find(
+          (entry) =>
+            entry.file.name === record.name &&
+            (!record.size || entry.file.size === record.size),
+        ) ?? picked.find((entry) => entry.file.name === record.name);
+      if (!match) continue;
+
+      await relinkStoredFile(record.id, match.file, match.source);
+      reconnected += 1;
+    }
+
+    reconnectStatus.value = t('settings.reconnectedFiles', {
+      count: reconnected,
+    });
+    await loadStorage();
+  } finally {
+    isReconnecting.value = false;
+  }
+}
+
+async function migrateStorage() {
+  isMigrating.value = true;
+  try {
+    const migrated = await migrateAllBlobFilesToOpfs();
+    reconnectStatus.value = t('settings.migratedFiles', { count: migrated });
+    await loadStorage();
+  } finally {
+    isMigrating.value = false;
   }
 }
 
@@ -269,6 +317,59 @@ async function clearStorage() {
               :loading="isRequestingPersistence"
               @click="requestPersistence"
             />
+          </QItemSection>
+        </QItem>
+        <QItem v-if="storage?.unavailableCount" data-test="settings-reconnect">
+          <QItemSection>
+            <div>{{ t('settings.reconnectFiles') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.reconnectFilesHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QBtn
+              class="settings-reconnect-files"
+              color="primary"
+              :label="t('settings.reconnectFiles')"
+              :loading="isReconnecting"
+              @click="reconnectFiles"
+            />
+          </QItemSection>
+        </QItem>
+        <QItem
+          v-if="storage && storage.byKind.blob > 0"
+          data-test="settings-migrate"
+        >
+          <QItemSection>
+            <div>{{ t('settings.migrateFiles') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.migrateFilesHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QBtn
+              class="settings-migrate-files"
+              color="primary"
+              :label="t('settings.migrateFiles')"
+              :loading="isMigrating"
+              @click="migrateStorage"
+            />
+          </QItemSection>
+        </QItem>
+        <QItem data-test="settings-backup-external">
+          <QItemSection>
+            <div>{{ t('settings.backupExternalFiles') }}</div>
+            <div class="text-caption text-grey-7">
+              {{ t('settings.backupExternalFilesHint') }}
+            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QToggle v-model="configStore.backupIncludeExternalFiles" />
+          </QItemSection>
+        </QItem>
+        <QItem v-if="reconnectStatus" data-test="settings-reconnect-status">
+          <QItemSection>
+            <div class="text-caption text-positive">{{ reconnectStatus }}</div>
           </QItemSection>
         </QItem>
         <QItem>

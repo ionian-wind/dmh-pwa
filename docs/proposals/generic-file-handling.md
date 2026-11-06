@@ -1,10 +1,9 @@
 # Generic File Handling and Large-File Storage
 
-**Status:** core phases implemented. OPFS, streaming helpers, the save picker,
-folder import, storage diagnostics and the binary backup v2 are in the tree.
-Remaining optional work: streaming ZIP extraction for very large archives,
-content hashing, a handle reconnect flow, lazy migration of existing IDB blobs,
-and "include external handles" in backups.
+**Status:** implemented, including the optional streaming ZIP reader, content
+hashing, lazy migration, reconnect flow and external-file backups. Remaining
+polish: a streaming ZIP writer for backups, a per-file reconnect picker, and a
+bulk rehash action.
 
 **Scope:** every binary the app owns: jukebox audio, ambient sound packs,
 location map images, note attachments, module archives, and backups.
@@ -79,14 +78,26 @@ Implemented in the current tree:
   IDB blobs.
 - Jukebox playback now revokes its object URL when the track changes or stops.
 - The Jukebox header has an "Add folder" action using `pickDirectory()`.
+- `zip.ts` uses `unzipit`'s Blob reader for module and sound-pack imports, so
+  the archive is read through slices instead of one full ArrayBuffer.
+- `hash.ts` provides a streaming SHA-256 for large files and a Web Crypto fast
+  path for small files; `importFile(..., { contentHash: true })` can deduplicate
+  by content.
+- `getStoredFileBlob()` lazily promotes large IDB blob records to OPFS, and
+  Settings can run the same migration in bulk.
+- Settings can reconnect unavailable/permission-missing files by picking
+  replacements and relinking them by ID.
+- `backupAllStores({ includeExternalFiles: true })` copies linked handles into
+  the archive when permission allows; Settings exposes the opt-in toggle.
 
-Still open:
+Remaining polish:
 
-- Streaming ZIP extraction for very large `.spk`/module archives. JSZip still
-  reads the archive as a whole, although it now receives the Blob directly.
-- Optional content hashing and lazy migration of existing IDB blob records.
-- Reconnect UI for expired handles and optional "include external files" in
-  backups.
+- Backup generation still assembles the ZIP as one Blob. A future streaming ZIP
+  writer could write directly to the save picker/OPFS.
+- Reconnect matches files by name and size; a per-file picker would be more
+  precise for large libraries.
+- Content hashing is opt-in at the API level; there is no bulk "rehash library"
+  action yet.
 
 ---
 
@@ -358,40 +369,33 @@ export async function copyBlob(
 
 ### 6.3 Archive imports
 
-`importSoundPack()` is the clearest current offender:
+`importSoundPack()` and `parseModuleZip()` read archives through
+`src/utils/files/zip.ts`, which wraps `unzipit`'s Blob reader:
 
 ```ts
-const arrayBuffer = await spkFile.arrayBuffer();
-const zip = await JSZip.loadAsync(arrayBuffer);
+const entries = await openZip(spkFile);
+const manifestText = await readZipText(entries, ['pack.json']);
+const audio = await readZipBlob(entries, [sample]);
 ```
 
-For a pack with large music files this creates several full-size copies: the
-File, the ArrayBuffer, the unzipped entries, and the stored Blobs.
-
-Proposed path:
-
-1. Stream the `.spk` into OPFS as a temporary archive.
-2. Parse the central directory and extract only `pack.json` first.
-3. Copy each audio entry to OPFS one at a time.
-4. Write the pack record only after all required files succeed.
-5. Delete the temporary archive.
-
-If a streaming ZIP dependency is not acceptable yet, keep JSZip for archives
-below the threshold and show a clear error for oversized packs.
+`unzipit` reads the central directory and individual entries via Blob slices
+instead of copying the whole archive into one ArrayBuffer. Audio entries are
+still materialized one at a time because the current sound-pack storage model
+keeps Blobs in IndexedDB.
 
 ### 6.4 Content hashing
 
-The existing `signature` is metadata-based:
+The metadata `signature` remains the default:
 
 ```ts
 name | size | lastModified | type;
 ```
 
-It avoids reading file contents, which is good for large files. A content hash
-would improve dedupe but must be computed incrementally. `crypto.subtle.digest`
-does not support streaming; use an incremental hash implementation (for
-example `hash-wasm`) if this becomes necessary. Do not read a 500 MB file into
-memory just to hash it.
+It avoids reading file contents, which is good for large files.
+`importStoredFile(..., { contentHash: true })` additionally computes a SHA-256
+and uses it for dedupe. `src/utils/files/hash.ts` uses Web Crypto for small
+files and an incremental SHA-256 for large ones, so a 500 MB file is never read
+into memory just to be hashed.
 
 ---
 
@@ -407,6 +411,7 @@ export interface ImportFileOptions {
   storage?: 'auto' | 'handle' | 'opfs' | 'blob';
   signal?: AbortSignal;
   onProgress?: (progress: FileProgress) => void;
+  contentHash?: boolean;
 }
 
 export interface SaveFileOptions {
@@ -721,14 +726,17 @@ The ambient store already tracks and revokes pack audio URLs.
 
 ## 14. Migration plan
 
-### Phase 0 — safe cleanup (low risk)
+The phases below are retained as the implementation history; all four are now
+in the tree.
+
+### Phase 0 — safe cleanup (completed)
 
 - Add `createObjectUrlHandle` and fix the jukebox leak.
 - Add shared `saveBlob()` and migrate existing downloads.
 - Add `navigator.storage.persist()` and a basic storage estimate.
 - Add tests for URL revocation and save fallbacks.
 
-### Phase 1 — OPFS adapter
+### Phase 1 — OPFS adapter (completed)
 
 - Add `supportsOpfs()`, read/write/delete helpers and the `opfs` source kind.
 - New blob imports above the threshold use OPFS.
@@ -736,7 +744,7 @@ The ambient store already tracks and revokes pack audio URLs.
 - Update backup serialization to understand `opfs` (still base64 at this
   stage if necessary).
 
-### Phase 2 — backup v2 and lazy migration
+### Phase 2 — backup v2 and lazy migration (completed)
 
 - Add `manifest.json` and binary `files/<id>` entries.
 - Keep legacy restore.
@@ -744,7 +752,7 @@ The ambient store already tracks and revokes pack audio URLs.
   access, with progress and a setting.
 - Add the storage diagnostics panel and reconnect flow.
 
-### Phase 3 — streaming and batch
+### Phase 3 — streaming and batch (completed)
 
 - Add streaming ZIP import for large `.spk`/module archives.
 - Add folder import.

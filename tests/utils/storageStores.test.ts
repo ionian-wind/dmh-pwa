@@ -202,6 +202,48 @@ describe('IndexedDB storage', () => {
     }
   });
 
+  it('includes external handle files when requested', async () => {
+    const originalStructuredClone = globalThis.structuredClone;
+    globalThis.structuredClone = (value: any) => value;
+
+    try {
+      const linkedFile = new File(['linked bytes'], 'linked.mp3', {
+        type: 'audio/mpeg',
+      });
+      const handle = {
+        kind: 'file',
+        name: 'linked.mp3',
+        getFile: vi.fn().mockResolvedValue(linkedFile),
+      };
+      await idbPutItem('files', {
+        id: 'h1',
+        name: 'linked.mp3',
+        size: linkedFile.size,
+        type: linkedFile.type,
+        lastModified: 1,
+        signature: 'linked',
+        source: { kind: 'handle', handle },
+        createdAt: 1,
+        updatedAt: 1,
+      } as any);
+
+      const backup = await backupAllStores({ includeExternalFiles: true });
+      const zip = await JSZip.loadAsync(backup);
+      expect(zip.file('files/h1')).toBeTruthy();
+      const manifest = JSON.parse(
+        (await zip.file('manifest.json')!.async('string')) ?? '{}',
+      );
+      expect(manifest.includesExternalFiles).toBe(true);
+      const files = JSON.parse(
+        (await zip.file('files.json')!.async('string')) ?? '[]',
+      );
+      expect(files[0].source.kind).toBe('binary');
+      expect(files[0].source.external).toBe(true);
+    } finally {
+      globalThis.structuredClone = originalStructuredClone;
+    }
+  });
+
   it('backs up and restores OPFS file bytes as OPFS sources', async () => {
     const opfs = installFakeOpfs();
     try {

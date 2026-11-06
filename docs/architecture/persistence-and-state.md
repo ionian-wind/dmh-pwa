@@ -241,7 +241,9 @@ Backup encoding (v2):
 - `files.json` holds StoredFile metadata.
 - Blob and OPFS file bytes are written as binary `files/<fileId>` ZIP entries.
 - FileSystem handles cannot be serialized; they are written as
-  `source.kind: 'unavailable'` and may need relinking after restore.
+  `source.kind: 'unavailable'` and may need relinking after restore. With
+  `includeExternalFiles: true`, readable handles are copied into the archive
+  instead.
 - Restoring writes binary entries back to OPFS when available and falls back to
   IDB Blobs.
 - Restoring an older backup still converts `jukebox_files` / `map_files`

@@ -159,4 +159,37 @@ describe('storage diagnostics', () => {
     expect(diagnostics.totalFileBytes).toBe(0);
     expect(diagnostics.byKind.opfs).toBe(1);
   });
+
+  it('lists unavailable and permission-missing files', async () => {
+    const originalStructuredClone = globalThis.structuredClone;
+    globalThis.structuredClone = (value: any) => value;
+
+    try {
+      await putStoredFile(
+        record(
+          'permission',
+          {
+            kind: 'handle',
+            handle: {
+              kind: 'file',
+              name: 'needs-permission.mp3',
+              queryPermission: async () => 'prompt',
+            } as any,
+          },
+          4,
+        ),
+      );
+      await putStoredFile(
+        record('unavailable', { kind: 'unavailable' } as any, 2),
+      );
+
+      const diagnostics = await getFileStorageDiagnostics();
+      expect(diagnostics.unavailableCount).toBe(2);
+      expect(
+        diagnostics.unavailableFiles.map((file) => file.reason).sort(),
+      ).toEqual(['permission', 'unavailable']);
+    } finally {
+      globalThis.structuredClone = originalStructuredClone;
+    }
+  });
 });

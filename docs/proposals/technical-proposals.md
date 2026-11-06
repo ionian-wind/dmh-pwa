@@ -132,9 +132,9 @@ a preview warning.
 
 `MAIN_STORE_NAMES` covers every store, file bytes are written as binary ZIP
 entries, restore reloads the page, and the backup includes a versioned
-manifest. Remaining: transactional restore and a reconnect flow for FileSystem
-handles. See [generic-file-handling.md](generic-file-handling.md) for the
-implemented OPFS, streaming and backup design.
+manifest. Remaining: transactional restore and richer per-file reconnect
+selection. See [generic-file-handling.md](generic-file-handling.md) for the
+implemented OPFS, streaming, hashing and backup design.
 
 **Proposal.**
 1. Add `manifest.json` to the backup ZIP:
@@ -143,9 +143,8 @@ implemented OPFS, streaming and backup design.
    `indexations_mentions`.
 3. For jukebox:
    - export Blob and OPFS files as binary entries (`files/<id>`),
-   - export handle metadata with a warning that handles are origin/device
-     bound,
-   - provide a "relink" flow after restore.
+   - optionally copy readable handle files into the archive,
+   - keep unavailable handle metadata and provide a Settings reconnect flow.
 4. Restore inside a single transaction (or a staging DB then swap).
 5. Validate every record; collect errors and continue in a "best effort" mode
    with a report.

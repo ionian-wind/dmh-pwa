@@ -202,6 +202,12 @@ Settings item. It currently has three sections:
   - **Storage** — reports usage/quota, file counts by source kind, unavailable
     records and whether the origin has persistent storage. The **Request**
     button calls `navigator.storage.persist()`.
+  - **Reconnect files** — appears when records are unavailable or a handle
+    permission was lost. Picks replacements and relinks them by record ID.
+  - **Move large files to OPFS** — appears when IndexedDB still has Blob-backed
+    records; migrates them to the origin-private file system.
+  - **Include linked files in backups** — opt-in copy of external File System
+    Access files into backup archives.
   - **Clear storage** — danger button. Always asks for confirmation, even when
     Confirm deletion is off. Confirming deletes all IndexedDB databases, OPFS
     files, `localStorage`, `sessionStorage`, cookies, Cache Storage and service

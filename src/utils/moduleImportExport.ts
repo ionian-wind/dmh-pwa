@@ -1,8 +1,8 @@
-import JSZip from 'jszip';
 import type { Module, Note, ModuleTreeNode } from '@/types';
 import { generateId, openDB, StorageError } from './storage';
 import { debugWarn } from './debug';
 import { extractMentionedEntities } from './markdownParser';
+import { listZipFiles, openZip, readZipText } from './files/zip';
 import {
   canValidate,
   registerValidationSchema,
@@ -61,15 +61,13 @@ export async function parseModuleZip(zipFile: Blob): Promise<{
   tree: any[];
   notes: any[];
 }> {
-  const zip = await JSZip.loadAsync(zipFile);
+  const entries = await openZip(zipFile);
 
   // Read module.json
-  const moduleFile = zip.file('module.json');
-  if (!moduleFile) {
+  const moduleContent = await readZipText(entries, ['module.json']);
+  if (moduleContent === null) {
     throw new Error('Module file not found in zip');
   }
-
-  const moduleContent = await moduleFile.async('string');
   let moduleData: any;
   try {
     moduleData = JSON.parse(moduleContent);
@@ -78,12 +76,10 @@ export async function parseModuleZip(zipFile: Blob): Promise<{
   }
 
   // Read tree.json
-  const treeFile = zip.file('tree.json');
-  if (!treeFile) {
+  const treeContent = await readZipText(entries, ['tree.json']);
+  if (treeContent === null) {
     throw new Error('Tree file not found in zip');
   }
-
-  const treeContent = await treeFile.async('string');
   let treeData: any[];
   try {
     treeData = JSON.parse(treeContent);
@@ -92,18 +88,11 @@ export async function parseModuleZip(zipFile: Blob): Promise<{
   }
 
   // Read all note files
-  const notesFolder = zip.folder('notes');
-  if (!notesFolder) {
-    throw new Error('Notes folder not found in zip');
-  }
-
-  const noteFiles = Object.values(notesFolder.files).filter(
-    (file) => !file.dir && file.name.startsWith('notes/'),
-  );
+  const noteFiles = listZipFiles(entries, 'notes/');
   const notes: any[] = [];
 
   for (const noteFile of noteFiles) {
-    const noteContent = await noteFile.async('string');
+    const noteContent = await noteFile.text();
     let noteData: any;
     try {
       noteData = JSON.parse(noteContent);

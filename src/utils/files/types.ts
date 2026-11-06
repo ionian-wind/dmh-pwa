@@ -20,6 +20,8 @@ export interface StoredFile extends WithMetadata {
   type: string;
   lastModified: number;
   signature: string;
+  /** Optional SHA-256 of the file bytes. */
+  contentHash?: string;
   source: StoredFileSource;
 }
 

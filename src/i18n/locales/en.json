@@ -538,7 +538,15 @@
     "storageRequest": "Request",
     "storageFiles": "{count} files",
     "storageUnavailable": "{count} unavailable",
-    "storageBreakdown": "Local: {blob} · OPFS: {opfs} · Linked: {handle}"
+    "storageBreakdown": "Local: {blob} · OPFS: {opfs} · Linked: {handle}",
+    "reconnectFiles": "Reconnect files",
+    "reconnectFilesHint": "Choose the original files to restore access to linked items.",
+    "reconnectedFiles": "{count} files reconnected.",
+    "migrateFiles": "Move large files to OPFS",
+    "migrateFilesHint": "Move existing large local files out of IndexedDB.",
+    "migratedFiles": "{count} files moved.",
+    "backupExternalFiles": "Include linked files in backups",
+    "backupExternalFilesHint": "Copy external File System Access files into the backup. This can make the archive much larger."
   },
   "tags": {
     "title": "Tags"

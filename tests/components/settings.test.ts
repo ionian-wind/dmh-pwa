@@ -31,12 +31,18 @@ vi.mock('@/dialogs', async (importOriginal) => ({
 const storageMocks = vi.hoisted(() => ({
   diagnostics: vi.fn(),
   requestPersistence: vi.fn(),
+  pickFiles: vi.fn(),
+  relink: vi.fn(),
+  migrate: vi.fn(),
 }));
 
 vi.mock('@/utils/files', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   getFileStorageDiagnostics: storageMocks.diagnostics,
   requestPersistentStorage: storageMocks.requestPersistence,
+  pickFiles: storageMocks.pickFiles,
+  relinkStoredFile: storageMocks.relink,
+  migrateAllBlobFilesToOpfs: storageMocks.migrate,
 }));
 
 const QToggleStub = quasarStubs.QToggle;
@@ -67,8 +73,12 @@ describe('settings dialog', () => {
       totalFileBytes: 100,
       byKind: { blob: 1, handle: 1, opfs: 1 },
       unavailableCount: 0,
+      unavailableFiles: [],
     });
     storageMocks.requestPersistence.mockReset().mockResolvedValue(true);
+    storageMocks.pickFiles.mockReset().mockResolvedValue([]);
+    storageMocks.relink.mockReset().mockResolvedValue(undefined);
+    storageMocks.migrate.mockReset().mockResolvedValue(0);
   });
 
   it('shows the language selector and closes through the modal', async () => {
@@ -152,6 +162,50 @@ describe('settings dialog', () => {
     wrapper.unmount();
   });
 
+  it('reconnects unavailable files and migrates large blobs', async () => {
+    const file = new File(['lost'], 'lost.mp3', { type: 'audio/mpeg' });
+    storageMocks.diagnostics.mockResolvedValue({
+      supported: true,
+      usage: 1024,
+      quota: 10 * 1024,
+      persisted: true,
+      fileCount: 1,
+      totalFileBytes: 4,
+      byKind: { blob: 1, handle: 0, opfs: 0 },
+      unavailableCount: 1,
+      unavailableFiles: [
+        {
+          id: 'f1',
+          name: 'lost.mp3',
+          size: 4,
+          type: 'audio/mpeg',
+          reason: 'unavailable',
+        },
+      ],
+    });
+    storageMocks.pickFiles.mockResolvedValue([
+      { file, source: { kind: 'blob', blob: file } },
+    ]);
+
+    const wrapper = mount(SettingsDialog, { props: { modelValue: true } });
+    await flushPromises();
+
+    await wrapper.find('.settings-reconnect-files').trigger('click');
+    await flushPromises();
+
+    expect(storageMocks.pickFiles).toHaveBeenCalled();
+    expect(storageMocks.relink).toHaveBeenCalledWith('f1', file, {
+      kind: 'blob',
+      blob: file,
+    });
+    expect(wrapper.text()).toContain('1 files reconnected.');
+
+    await wrapper.find('.settings-migrate-files').trigger('click');
+    await flushPromises();
+    expect(storageMocks.migrate).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
   it('updates interface and player options', async () => {
     const config = useConfigStore();
     config.confirmDelete = true;
@@ -160,6 +214,7 @@ describe('settings dialog', () => {
     config.jukeboxAnimatePlayerBackground = true;
     config.jukeboxDisplayCoverWhilePlaying = true;
     config.jukeboxUseMiniPlayer = true;
+    config.backupIncludeExternalFiles = false;
 
     const wrapper = mount(SettingsDialog, {
       props: { modelValue: true },
@@ -176,7 +231,7 @@ describe('settings dialog', () => {
     expect(wrapper.text()).toContain('Show player dialog');
 
     const toggles = wrapper.findAllComponents(QToggleStub);
-    expect(toggles).toHaveLength(6);
+    expect(toggles).toHaveLength(7);
 
     toggles[0].vm.$emit('update:modelValue', false);
     await nextTick();
@@ -211,6 +266,12 @@ describe('settings dialog', () => {
       .vm.$emit('update:modelValue', false);
     await nextTick();
     expect(config.jukeboxUseMiniPlayer).toBe(false);
+
+    wrapper
+      .findAllComponents(QToggleStub)[6]
+      .vm.$emit('update:modelValue', true);
+    await nextTick();
+    expect(config.backupIncludeExternalFiles).toBe(true);
     wrapper.unmount();
   });
 
