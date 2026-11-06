@@ -1,7 +1,8 @@
-import Dexie, { type Table } from 'dexie';
+import Dexie from 'dexie';
 import JSZip from 'jszip';
 import type { NormalizedSoundPack, SoundPackManifest } from '../types';
 import { deepUnwrap } from '@/utils/deepUnwrap';
+import { openDB, type DmhDatabase } from '@/utils/storage';
 import { saveBlob } from '@/utils/files/save';
 import {
   openZip,
@@ -16,8 +17,9 @@ import {
   normalizeSoundPack,
 } from './packData';
 
-const DB_NAME = 'dmh-ambient-sound';
-const DB_VERSION = 1;
+const LEGACY_DB_NAME = 'dmh-ambient-sound';
+const LEGACY_DB_VERSION = 1;
+const MERGED_KEY = 'dmh-ambient-sound-merged';
 
 interface SoundPackRecord {
   id: string;
@@ -27,30 +29,76 @@ interface SoundPackRecord {
   origin: 'imported' | 'created';
 }
 
-class AmbientSoundDatabase extends Dexie {
-  soundPacks!: Table<SoundPackRecord, string>;
-
-  constructor() {
-    super(DB_NAME);
-    // Same version/name as the legacy `idb` database, so existing packs open
-    // in place.
-    this.version(DB_VERSION).stores({ soundPacks: 'id' });
-    this.on('versionchange', () => {
-      this.close();
-      if (dbInstance === this) dbInstance = null;
-    });
+function hasMergedLegacyPacks(): boolean {
+  try {
+    return localStorage.getItem(MERGED_KEY) === '1';
+  } catch {
+    return false;
   }
 }
 
-let dbInstance: AmbientSoundDatabase | null = null;
+function markLegacyPacksMerged(): void {
+  try {
+    localStorage.setItem(MERGED_KEY, '1');
+  } catch {
+    // Storage may be unavailable; the migration stays idempotent.
+  }
+}
 
-async function getDB(): Promise<AmbientSoundDatabase> {
-  if (dbInstance) return dbInstance;
+let legacyMigration: Promise<void> | null = null;
+let dbPromise: Promise<DmhDatabase> | null = null;
 
-  const db = new AmbientSoundDatabase();
-  await db.open();
-  dbInstance = db;
-  return dbInstance;
+async function migrateLegacyPacks(db: DmhDatabase): Promise<void> {
+  if (legacyMigration) return legacyMigration;
+
+  legacyMigration = (async () => {
+    if (hasMergedLegacyPacks()) return;
+    if (!(await Dexie.exists(LEGACY_DB_NAME))) {
+      markLegacyPacksMerged();
+      return;
+    }
+
+    const legacy = new Dexie(LEGACY_DB_NAME);
+    legacy.version(LEGACY_DB_VERSION).stores({ soundPacks: 'id' });
+    try {
+      await legacy.open();
+      const packs = (await legacy
+        .table('soundPacks')
+        .toArray()) as SoundPackRecord[];
+      if (packs.length > 0) {
+        await db.sound_packs.bulkPut(packs);
+      }
+
+      // Only remove the old database once every record is present.
+      const targetCount = await db.sound_packs.count();
+      if (packs.length === 0 || targetCount >= packs.length) {
+        await Dexie.delete(LEGACY_DB_NAME);
+        markLegacyPacksMerged();
+      }
+    } finally {
+      legacy.close();
+    }
+  })().catch((error) => {
+    legacyMigration = null;
+    console.warn('Failed to merge legacy ambient sound packs:', error);
+  });
+
+  return legacyMigration;
+}
+
+async function getDB(): Promise<DmhDatabase> {
+  if (!dbPromise) {
+    dbPromise = openDB()
+      .then(async (db) => {
+        await migrateLegacyPacks(db);
+        return db;
+      })
+      .catch((error) => {
+        dbPromise = null;
+        throw error;
+      });
+  }
+  return dbPromise;
 }
 
 function stripOrigin(manifest: NormalizedSoundPack): NormalizedSoundPack {
@@ -124,7 +172,7 @@ async function extractAudio(
 
 async function putPack(record: SoundPackRecord): Promise<void> {
   const db = await getDB();
-  await db.soundPacks.put(deepUnwrap(record));
+  await db.sound_packs.put(deepUnwrap(record));
 }
 
 export async function importSoundPack(
@@ -143,7 +191,7 @@ export async function importSoundPack(
 
   const manifest = normalizeSoundPack(raw);
   const audioBlobs = await extractAudio(entries, manifest);
-  const existing = (await (await getDB()).soundPacks.get(manifest.id)) as
+  const existing = (await (await getDB()).sound_packs.get(manifest.id)) as
     SoundPackRecord | undefined;
 
   await putPack({
@@ -159,7 +207,7 @@ export async function importSoundPack(
 
 export async function getStoredPacks(): Promise<NormalizedSoundPack[]> {
   const db = await getDB();
-  const packs = (await db.soundPacks.toArray()) as SoundPackRecord[];
+  const packs = (await db.sound_packs.toArray()) as SoundPackRecord[];
   return packs
     .map((pack) => ({
       ...normalizeSoundPack(pack.manifest),
@@ -172,7 +220,8 @@ export async function getPack(
   packId: string,
 ): Promise<NormalizedSoundPack | null> {
   const db = await getDB();
-  const pack = (await db.soundPacks.get(packId)) as SoundPackRecord | undefined;
+  const pack = (await db.sound_packs.get(packId)) as
+    SoundPackRecord | undefined;
   return pack
     ? { ...normalizeSoundPack(pack.manifest), origin: pack.origin ?? 'created' }
     : null;
@@ -182,7 +231,8 @@ export async function getPackAudioBlobs(
   packId: string,
 ): Promise<Record<string, Blob>> {
   const db = await getDB();
-  const pack = (await db.soundPacks.get(packId)) as SoundPackRecord | undefined;
+  const pack = (await db.sound_packs.get(packId)) as
+    SoundPackRecord | undefined;
   return pack?.audioBlobs || {};
 }
 
@@ -198,12 +248,12 @@ export async function getPackBlobUrl(
 
 export async function deletePack(packId: string): Promise<void> {
   const db = await getDB();
-  await db.soundPacks.delete(packId);
+  await db.sound_packs.delete(packId);
 }
 
 export async function packExists(packId: string): Promise<boolean> {
   const db = await getDB();
-  return !!(await db.soundPacks.get(packId));
+  return !!(await db.sound_packs.get(packId));
 }
 
 export function revokeObjectURL(url: string): void {
@@ -220,7 +270,7 @@ export async function saveSoundPack(
     audioBlobs[path] = blob;
   }
 
-  const existing = (await (await getDB()).soundPacks.get(manifest.id)) as
+  const existing = (await (await getDB()).sound_packs.get(manifest.id)) as
     SoundPackRecord | undefined;
   await putPack({
     id: manifest.id,
@@ -237,7 +287,7 @@ export async function updatePackManifest(
   manifestInput: SoundPackManifest,
 ): Promise<NormalizedSoundPack> {
   const db = await getDB();
-  const existing = (await db.soundPacks.get(packId)) as
+  const existing = (await db.sound_packs.get(packId)) as
     SoundPackRecord | undefined;
   if (!existing) throw new Error('Pack not found');
 
@@ -260,7 +310,7 @@ async function buildZip(record: SoundPackRecord): Promise<Blob> {
 
 export async function exportSoundPackAsFile(packId: string): Promise<void> {
   const db = await getDB();
-  const record = (await db.soundPacks.get(packId)) as
+  const record = (await db.sound_packs.get(packId)) as
     SoundPackRecord | undefined;
   if (!record) throw new Error('Pack not found');
 
@@ -274,7 +324,7 @@ export async function exportSoundPackAsFile(packId: string): Promise<void> {
 
 export async function exportSoundPack(packId: string): Promise<Blob> {
   const db = await getDB();
-  const record = (await db.soundPacks.get(packId)) as
+  const record = (await db.sound_packs.get(packId)) as
     SoundPackRecord | undefined;
   if (!record) throw new Error('Pack not found');
   return buildZip(record);

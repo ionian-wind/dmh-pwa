@@ -165,6 +165,39 @@ describe('ambient pack manager', () => {
     expect(await manager.packExists('pack-1')).toBe(false);
   });
 
+  it('merges the legacy ambient database into the main database', async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('dmh-ambient-sound', 1);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore('soundPacks', { keyPath: 'id' });
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction('soundPacks', 'readwrite');
+        tx.objectStore('soundPacks').put({
+          id: 'legacy-pack',
+          manifest: { ...modernManifest, id: 'legacy-pack' },
+          audioBlobs: {},
+          addedAt: 1,
+          origin: 'imported',
+        });
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
+
+    const manager = await load();
+    const packs = await manager.getStoredPacks();
+    expect(packs.map((pack) => pack.id)).toContain('legacy-pack');
+
+    const databases = await indexedDB.databases();
+    expect(databases.map((db) => db.name)).not.toContain('dmh-ambient-sound');
+  });
+
   it('imports modern scenes and keeps audio paths', async () => {
     const manager = await load();
     const result = await manager.importSoundPack(

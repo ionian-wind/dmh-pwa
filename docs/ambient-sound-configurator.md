@@ -942,16 +942,16 @@ export class AudioEngine {
 
 ### 6.1 Pack Storage (IndexedDB)
 
-Packs are stored in IndexedDB using Dexie:
+Packs live in the main `dmh-db` Dexie database in the `sound_packs` table.
+They are intentionally excluded from `MAIN_STORE_NAMES`, so campaign backups
+stay small. A legacy separate database (`dmh-ambient-sound`) is merged into the
+main table on first use and deleted after the copy is verified.
 
 ```typescript
 // src/ambient-sound/utils/packManager.ts
-import Dexie, { type Table } from 'dexie';
 import JSZip from 'jszip';
+import { openDB } from '@/utils/storage';
 import type { SoundPackManifest } from '../types';
-
-const DB_NAME = 'dmh-ambient-sound';
-const DB_VERSION = 1;
 
 interface SoundPackRecord {
   id: string;
@@ -961,19 +961,8 @@ interface SoundPackRecord {
   origin: 'imported' | 'created';
 }
 
-class AmbientSoundDatabase extends Dexie {
-  soundPacks!: Table<SoundPackRecord, string>;
-
-  constructor() {
-    super(DB_NAME);
-    this.version(DB_VERSION).stores({ soundPacks: 'id' });
-  }
-}
-
-async function getDB(): Promise<AmbientSoundDatabase> {
-  const db = new AmbientSoundDatabase();
-  await db.open();
-  return db;
+async function getDB() {
+  return openDB();
 }
 
 export async function importSoundPack(
@@ -1028,7 +1017,7 @@ export async function importSoundPack(
   }
 
   const db = await getDB();
-  await db.put('soundPacks', {
+  await db.sound_packs.put({
     id: manifest.id,
     manifest,
     audioBlobs,
@@ -1040,19 +1029,19 @@ export async function importSoundPack(
 
 export async function getStoredPacks(): Promise<SoundPackManifest[]> {
   const db = await getDB();
-  const packs = await db.getAll('soundPacks');
+  const packs = await db.sound_packs.toArray();
   return packs.map((p) => p.manifest);
 }
 
 export async function getPackAudio(packId: string): Promise<Map<string, Blob>> {
   const db = await getDB();
-  const pack = await db.get('soundPacks', packId);
-  return pack?.audioBlobs || new Map();
+  const pack = await db.sound_packs.get(packId);
+  return pack?.audioBlobs || {};
 }
 
 export async function deletePack(packId: string): Promise<void> {
   const db = await getDB();
-  await db.delete('soundPacks', packId);
+  await db.sound_packs.delete(packId);
 }
 
 export function createObjectURL(blob: Blob): string {

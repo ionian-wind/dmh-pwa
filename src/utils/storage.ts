@@ -51,7 +51,11 @@ export function hasRequiredFields<T extends object>(
 // --- Dexie database ---
 const DB_NAME = 'dmh-db';
 const MIGRATIONS_STORE = 'migrations';
-const DB_VERSION = Math.max(...sortedMigrations.map(({ version }) => version));
+const MIGRATION_VERSION = Math.max(
+  ...sortedMigrations.map(({ version }) => version),
+);
+const SCHEMA_VERSION = 12;
+const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
 // All stores that may exist in the database. The main list is also used by
 // backup/restore; legacy stores remain declared so older databases can be
@@ -86,11 +90,40 @@ const SCHEMA_STORE_NAMES = Array.from(
     'maps',
     'map_files',
     'jukebox_files',
+    'sound_packs',
   ]),
 );
-const SCHEMA = Object.fromEntries(
-  SCHEMA_STORE_NAMES.map((storeName) => [storeName, 'id']),
-);
+
+// Explicit indexes for the queries the app performs. Any store added by a
+// migration but not listed here still gets the `id` primary key.
+const EXPLICIT_SCHEMA: Record<string, string> = {
+  migrations: 'id, version',
+  characters: 'id, updatedAt, *moduleIds',
+  combats: 'id, updatedAt, encounterId, partyId, status',
+  encounters: 'id, updatedAt, *moduleIds',
+  monsters: 'id, updatedAt, *moduleIds',
+  modules: 'id, updatedAt',
+  notes: 'id, updatedAt, createdAt, typeId, *tags, *moduleIds',
+  noteTypes: 'id, updatedAt',
+  parties: 'id, updatedAt, *moduleIds',
+  map_locations: 'id, updatedAt',
+  bookmarks: 'id, moduleId, noteId',
+  timers: 'id, updatedAt, status',
+  jukebox_playlists: 'id, updatedAt',
+  jukebox_tracks: 'id, updatedAt',
+  files: 'id, signature, contentHash, updatedAt',
+  map_image_metadata: 'id',
+  indexations_mentions: 'id',
+  maps: 'id',
+  map_files: 'id',
+  jukebox_files: 'id',
+  sound_packs: 'id, addedAt',
+};
+
+const SCHEMA: Record<string, string> = { ...EXPLICIT_SCHEMA };
+for (const storeName of SCHEMA_STORE_NAMES) {
+  if (!(storeName in SCHEMA)) SCHEMA[storeName] = 'id';
+}
 
 export class DmhDatabase extends Dexie {
   migrations!: Table<
@@ -114,14 +147,14 @@ export class DmhDatabase extends Dexie {
   files!: Table<any, string>;
   map_image_metadata!: Table<any, string>;
   indexations_mentions!: Table<any, string>;
+  sound_packs!: Table<any, string>;
   maps!: Table<any, string>;
   map_files!: Table<any, string>;
 
   constructor() {
     super(DB_NAME);
-    // Keep the legacy IndexedDB version so databases created by `idb` can be
-    // opened in place. Future migrations that add stores should also bump the
-    // migration version; indexes require a manual schema change here.
+    // Version 12 adds query indexes and the sound_packs store while keeping
+    // the legacy store names/key paths; migrations remain recorded separately.
     this.version(DB_VERSION).stores(SCHEMA);
     this.on('versionchange', () => this.close());
   }
@@ -239,6 +272,41 @@ export async function idbDeleteItem(
 export async function idbGetAllItems<T>(storeName: string): Promise<T[]> {
   const db = await openDB();
   return db.table(storeName).toArray() as Promise<T[]>;
+}
+
+export async function idbFindByIndex<T>(
+  storeName: string,
+  indexName: string,
+  value: string,
+): Promise<T | undefined> {
+  const db = await openDB();
+  return db.table(storeName).where(indexName).equals(value).first() as Promise<
+    T | undefined
+  >;
+}
+
+export async function idbPutItems<T extends { id: string }>(
+  storeName: string,
+  items: T[],
+): Promise<void> {
+  if (items.length === 0) return;
+
+  if (schemaValidator.canValidate(storeName)) {
+    for (const item of items) {
+      const { valid, errors } = await schemaValidator.validateSchema(
+        storeName,
+        item,
+      );
+      if (!valid) {
+        throw new StorageError(
+          `Validation failed for store '${storeName}': ${errors.join('; ')}`,
+        );
+      }
+    }
+  }
+
+  const db = await openDB();
+  await db.table(storeName).bulkPut(items);
 }
 
 export interface StorageOptions {
@@ -485,9 +553,7 @@ export function createIndexationStore(storeName: string) {
 
     async function clearAll() {
       links.value = {};
-      // Remove all records from the object store
-      const all = await idbGetAllItems<{ id: string }>(store);
-      await Promise.all(all.map((rec) => idbDeleteItem(store, rec.id)));
+      await clearStore(store);
     }
 
     function getBacklinks(target: EntityRef): EntityRef[] {
@@ -885,12 +951,9 @@ export async function restoreAllStores(zipFile: Blob): Promise<void> {
 
     if (items === null) continue;
 
-    // Clear existing store
+    // Clear existing store, then write the restored records in one batch.
     await clearStore(storeName);
-    // Add items
-    for (const item of items) {
-      await idbPutItem(storeName, item);
-    }
+    await idbPutItems(storeName, items);
   }
 }
 

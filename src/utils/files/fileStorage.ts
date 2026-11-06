@@ -3,6 +3,7 @@ import {
   idbDeleteItem,
   idbGetAllItems,
   idbGetItem,
+  idbFindByIndex,
   idbPutItem,
 } from '@/utils/storage';
 import { debugError } from '@/utils/debug';
@@ -100,15 +101,13 @@ export async function deleteStoredFile(id: string): Promise<void> {
 export async function findStoredFileBySignature(
   signature: string,
 ): Promise<StoredFile | undefined> {
-  const files = await getAllStoredFiles();
-  return files.find((file) => file.signature === signature);
+  return idbFindByIndex<StoredFile>(FILE_STORE, 'signature', signature);
 }
 
 export async function findStoredFileByContentHash(
   contentHash: string,
 ): Promise<StoredFile | undefined> {
-  const files = await getAllStoredFiles();
-  return files.find((file) => file.contentHash === contentHash);
+  return idbFindByIndex<StoredFile>(FILE_STORE, 'contentHash', contentHash);
 }
 
 /**

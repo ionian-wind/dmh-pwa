@@ -10,27 +10,31 @@ subsystem in the app: every feature goes through it.
 
 Object stores are created lazily by migrations. Current stores:
 
-| Store                  | Owner               | Schema-validated         |
-| ---------------------- | ------------------- | ------------------------ |
-| `characters`           | `stores/characters` | `character.schema.json`  |
-| `monsters`             | `stores/monsters`   | `monster.schema.json`    |
-| `notes`                | `stores/notes`      | `note.schema.json`       |
-| `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`   |
-| `parties`              | `stores/parties`    | `party.schema.json`      |
-| `modules`              | `stores/modules`    | `module.schema.json`     |
-| `encounters`           | `stores/encounters` | `encounter.schema.json`  |
-| `combats`              | `stores/combats`    | `combat.schema.json`     |
-| `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`   |
-| `timers`               | `stores/timers`     | `timer.schema.json`      |
-| `indexations_mentions` | `useMentionsStore`  | no                       |
-| `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed) |
-| `jukebox_tracks`       | `jukebox/stores`    | no                       |
-| `files`                | `utils/files`       | no                       |
-| `map_image_metadata`   | `maps/maps`         | no                       |
-| `migrations`           | migration runner    | no                       |
+| Store                  | Owner               | Schema-validated          |
+| ---------------------- | ------------------- | ------------------------- |
+| `characters`           | `stores/characters` | `character.schema.json`   |
+| `monsters`             | `stores/monsters`   | `monster.schema.json`     |
+| `notes`                | `stores/notes`      | `note.schema.json`        |
+| `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`    |
+| `parties`              | `stores/parties`    | `party.schema.json`       |
+| `modules`              | `stores/modules`    | `module.schema.json`      |
+| `encounters`           | `stores/encounters` | `encounter.schema.json`   |
+| `combats`              | `stores/combats`    | `combat.schema.json`      |
+| `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`    |
+| `timers`               | `stores/timers`     | `timer.schema.json`       |
+| `indexations_mentions` | `useMentionsStore`  | no                        |
+| `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed)  |
+| `jukebox_tracks`       | `jukebox/stores`    | no                        |
+| `files`                | `utils/files`       | no                        |
+| `map_image_metadata`   | `maps/maps`         | no                        |
+| `sound_packs`          | `ambient-sound`     | no (excluded from backup) |
+| `migrations`           | migration runner    | no                        |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
-generates IDs.
+generates IDs. Version 12 adds query indexes (`updatedAt`, `typeId`, tags,
+module ids, statuses) and the `sound_packs` store. `sound_packs` is not in
+`MAIN_STORE_NAMES`, so backup/restore leaves ambient audio out while campaign
+data stays portable.
 
 ### Connection helper
 
@@ -236,22 +240,28 @@ Current migrations:
 | 2       | `0000000002_bookmarks.ts`      | Adds `bookmarks`                      |
 | 3       | `0000000003_timers.ts`         | Adds `timers`                         |
 
-Sorted in `src/migrations/index.ts`. The version is the max migration number;
-adding a migration requires adding it to the `migrations` array (the generator
-reminds you, but does not edit the index).
+Sorted in `src/migrations/index.ts`. The database version is the maximum of the
+migration versions and `SCHEMA_VERSION` (12, which adds query indexes and the
+`sound_packs` store). Adding a migration requires adding it to the `migrations`
+array; new stores are also fed into the Dexie schema through
+`affectedStores`. Indexes require updating `EXPLICIT_SCHEMA`.
 
-Data-shape migrations (renames, defaults) are not implemented anywhere; all
-existing migrations only create stores.
+Migrations 1–4 are schema-only. Migrations 5–11 also transform data (map
+locations, layers, note content type, module links and legacy files).
 
 ## 7. Backup and restore
 
 `backupAllStores()` zips each store in `MAIN_STORE_NAMES` as
 `<store>.json` (pretty-printed array).
 
-`MAIN_STORE_NAMES` contains every object store:
+`MAIN_STORE_NAMES` lists the campaign stores included in a backup:
 `characters, combats, encounters, monsters, modules, notes, noteTypes,
 parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
 files, map_image_metadata, indexations_mentions`.
+
+It deliberately excludes `sound_packs`, so ambient audio packs do not bloat
+campaign backups, and the legacy `maps` / `map_files` / `jukebox_files` stores,
+which are no longer written.
 
 Backup encoding (v2):
 
