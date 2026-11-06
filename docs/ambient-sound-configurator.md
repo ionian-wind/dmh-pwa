@@ -595,7 +595,8 @@ button; playback starts from the scene view.
 
 **States**
 
-- No packages: empty state with “Import package”.
+- No packages: empty state with “Import package” and an **Import** button that
+  opens the `.spk` file picker.
 - Packages but no scenes: “This package has no scenes”.
 - Loading/importing: page-level spinner.
 
@@ -1438,9 +1439,9 @@ Add route to router:
 - Use existing `howler` package already in dependencies
 - Follow existing code style from jukebox module
 - Leverage existing Pinia store patterns with persistence
-- The main page injects `ViewHeader` through `useLayout`; pack management lives
-  in the right sidebar, and the Ambient Sound item sits under **Tools** in the
-  main menu.
+- The main page injects an untitled `ViewHeader` through `useLayout`; pack
+  management lives in the right sidebar, and the Ambient Sound item sits under
+  **Tools** in the main menu.
 - Page content uses the project's `QCard`/`QCardSection` layout, `TabGroup`,
   tabler icons, CSS theme variables and localized text rather than standalone
   page-level styling.

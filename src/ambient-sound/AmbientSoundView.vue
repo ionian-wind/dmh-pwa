@@ -25,6 +25,24 @@
       :icon="IconMusic"
       :title="t('ambientSoundPage.importPack')"
       :hint="t('ambientSoundPage.importPackHint')"
+    >
+      <QBtn
+        class="empty-state-import q-mt-lg"
+        color="positive"
+        size="lg"
+        @click="triggerFileInput"
+      >
+        <IconUpload :size="28" />
+        <span class="q-ml-sm">{{ t('common.import') }}</span>
+      </QBtn>
+    </EmptyState>
+
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".spk"
+      class="hidden-file-input"
+      @change="handleFileImport"
     />
 
     <ScenePlayerDialog
@@ -39,7 +57,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconMusic } from '@tabler/icons-vue';
+import { IconMusic, IconUpload } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityTabs from '@/components/common/EntityTabs.vue';
@@ -59,6 +77,7 @@ const rightDrawer = useRightDrawer();
 const activeTab = ref('scenes');
 const selectedScene = ref<{ packId: string; sceneId: string } | null>(null);
 const isSceneDialogOpen = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 // The app header is fixed above the page, so the sticky tabs must stop below it
 // instead of sliding underneath. Quasar sizes the page container to match.
 const headerOffset = ref(0);
@@ -80,11 +99,21 @@ function openScenePlayer(packId: string, sceneId: string) {
   isSceneDialogOpen.value = true;
 }
 
+function triggerFileInput() {
+  fileInput.value?.click();
+}
+
+async function handleFileImport(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (file) {
+    await store.importPack(file);
+    target.value = '';
+  }
+}
+
 onMounted(async () => {
-  layout.setTopMenuContent({
-    component: ViewHeader,
-    props: { title: t('ambientSoundPage.title') },
-  });
+  layout.setTopMenuContent({ component: ViewHeader });
   rightDrawer.set({ component: SoundPackSidebar });
   syncHeaderOffset();
   const header = document.querySelector<HTMLElement>('.q-header');
@@ -120,5 +149,9 @@ onUnmounted(() => {
 
 .ambient-tab-body {
   padding-top: 1rem;
+}
+
+.hidden-file-input {
+  display: none;
 }
 </style>

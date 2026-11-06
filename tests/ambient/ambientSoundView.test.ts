@@ -8,6 +8,7 @@ const storeMock = vi.hoisted(() => ({
   allScenes: [] as any[],
   loadStoredPacks: vi.fn().mockResolvedValue(undefined),
   stopPreview: vi.fn(),
+  importPack: vi.fn().mockResolvedValue(undefined),
 }));
 
 const layoutMock = vi.hoisted(() => ({
@@ -63,6 +64,7 @@ describe('AmbientSoundView', () => {
     for (const fn of [
       storeMock.loadStoredPacks,
       storeMock.stopPreview,
+      storeMock.importPack,
       layoutMock.setTopMenuContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
@@ -77,7 +79,7 @@ describe('AmbientSoundView', () => {
 
     const header = layoutMock.setTopMenuContent.mock.calls[0][0];
     expect(header.component).toBe(ViewHeader);
-    expect(header.props.title).toBe('Ambient Sound');
+    expect(header.props?.title).toBeUndefined();
     expect(rightDrawerMock.set).toHaveBeenCalledWith({
       component: SoundPackSidebar,
     });
@@ -142,6 +144,33 @@ describe('AmbientSoundView', () => {
     expect(wrapper.text()).toContain('Import Pack');
     expect(wrapper.text()).toContain('Import a package');
     expect(wrapper.findComponent({ name: 'SceneList' }).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('imports a sound pack from the empty state', async () => {
+    storeMock.storedPacks = [] as any;
+    const click = vi
+      .spyOn(HTMLInputElement.prototype, 'click')
+      .mockImplementation(() => {});
+    const wrapper = mount(AmbientSoundView, { global: { stubs } });
+    await flushPromises();
+
+    const importButton = wrapper.find('.empty-state-import');
+    expect(importButton.text()).toContain('Import');
+    await importButton.trigger('click');
+    expect(click).toHaveBeenCalled();
+
+    const fileInput = wrapper.find('input[type=file]');
+    const file = new File(['pack'], 'pack.spk');
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [file],
+    });
+    await fileInput.trigger('change');
+    await flushPromises();
+
+    expect(storeMock.importPack).toHaveBeenCalledWith(file);
+    click.mockRestore();
     wrapper.unmount();
   });
 
