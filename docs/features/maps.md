@@ -60,6 +60,11 @@ existing handle helper remains available for Chromium file-picker integrations.
 Image metadata (dimensions, MIME type, dominant color, palette) is extracted by
 `maps/worker/image.worker.ts` and stored on the file record.
 
+Blob-backed raster images larger than 1 MB are resized to fit within 8192 px
+and re-encoded as WebP before storage (`utils/images/optimizeImage.ts`). SVG,
+GIF (animation) and File System Access handle sources are left untouched. This
+keeps large battle maps from inflating IndexedDB/OPFS.
+
 ### Locations
 
 Locations are stored in `map_locations` and own their map data. The location

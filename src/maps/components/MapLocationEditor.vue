@@ -24,6 +24,7 @@ import { normalizeLocation, normalizeLocationMap } from '../utils/normalize';
 import { IconHelp } from '@tabler/icons-vue';
 import type { StoredFileSource } from '@/utils/files/types';
 import { pickFiles } from '@/utils/files';
+import { optimizeImageFile } from '@/utils/images/optimizeImage';
 
 const props = defineProps<{
   location: MapLocation | null;
@@ -147,15 +148,17 @@ async function applySelectedFile(file: File, source: StoredFileSource) {
 
   isProcessingImage.value = true;
   try {
+    const storedFile =
+      source.kind === 'handle' ? file : await optimizeImageFile(file);
     const mapFile =
       source.kind === 'handle'
         ? await createMapFileFromHandle(source.handle, file.name)
-        : await createMapFileFromFile(file);
+        : await createMapFileFromFile(storedFile);
     pendingMapFile = mapFile;
     draft.value.map.fileId = mapFile.id;
     selectedFileName.value = mapFile.name;
     revokePreview();
-    previewUrl.value = URL.createObjectURL(file);
+    previewUrl.value = URL.createObjectURL(storedFile);
   } catch {
     alert(t('maps.imageProcessingError'));
   } finally {

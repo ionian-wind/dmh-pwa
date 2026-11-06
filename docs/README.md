@@ -136,7 +136,7 @@ docs/                              this documentation
 Three facts materially affect how the code should be read:
 
 1. **The test suite is current and green.** `npm test` reports
-   **1544 / 1544 passing tests across 192 files** (after replacing obsolete suites
+   **1549 / 1549 passing tests across 193 files** (after replacing obsolete suites
    that targeted removed APIs). The dedicated regression suite is also green:
    `npm run test:regression` → **18 / 18 passing**. See
    [tooling/testing.md](tooling/testing.md).
