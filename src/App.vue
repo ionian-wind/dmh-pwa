@@ -156,6 +156,11 @@ const sections: SectionItem[] = [
 
 function isActive(item: SectionItem): boolean {
   const currentPath = router.currentRoute.value.path;
+  if (item.section === Section.MAPS) {
+    return (
+      currentPath.startsWith('/maps') || currentPath.startsWith('/locations')
+    );
+  }
   return currentPath.startsWith(item.path);
 }
 
