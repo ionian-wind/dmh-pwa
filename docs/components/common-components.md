@@ -23,8 +23,9 @@ Emits: `view`, `edit`, `delete`.
 - `BaseCard` wraps the card in a shell that reserves the card's resting height.
   While hovered, the real card is absolutely positioned inside that shell, so
   following cards keep their place and the hovered card paints above them.
-- Hover is sequenced to prevent edge flicker: the card expands before its
-  action bar fades in, and the bar fades out before the card collapses.
+- On hover, the card first enters its floating state, then its height and action
+  bar animate in together. On leave, the height and bar animate out together
+  before the floating state ends and the card returns to normal flow.
 - Touch devices keep actions in normal flow and permanently visible.
 - Copy is supported when `showCopy` is set; domain cards enable it.
 - When `dragEntity` (`{ kind, id, title }`) is present, a drag handle appears

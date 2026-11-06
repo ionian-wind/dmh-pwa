@@ -310,8 +310,8 @@ const hasContent = computed(() => {
   position: relative;
   --card-actions-height: 52px;
   transition:
-    padding-bottom 0.15s ease 0.15s,
-    margin-bottom 0.15s ease 0.15s;
+    padding-bottom 0.15s ease,
+    margin-bottom 0.15s ease;
 }
 
 .base-card:hover,
@@ -319,7 +319,6 @@ const hasContent = computed(() => {
   z-index: 5;
   padding-bottom: var(--card-actions-height);
   margin-bottom: calc(-1 * var(--card-actions-height));
-  transition-delay: 0s, 0s;
 }
 
 .base-card.is-dragging-entity {
@@ -382,14 +381,12 @@ const hasContent = computed(() => {
   );
   border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
   transition: opacity 0.15s ease;
-  transition-delay: 0s;
 }
 
 .base-card:hover :deep(.base-card-actions),
 .base-card:focus-within :deep(.base-card-actions) {
   opacity: 1;
   pointer-events: auto;
-  transition-delay: 0.15s;
 }
 
 @media (hover: none) {
