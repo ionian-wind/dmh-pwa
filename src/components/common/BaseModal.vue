@@ -63,6 +63,7 @@ const hasHeader = computed(
   () =>
     !!props.title ||
     !!slots['header-actions'] ||
+    !!slots['header-left-actions'] ||
     !!props.showExpand ||
     !!props.showClose ||
     !!props.tabs?.length,
@@ -186,6 +187,8 @@ function setExpanded(val: boolean) {
                 <IconArrowsMinimize v-if="isExpanded" />
                 <IconArrowsMaximize v-else />
               </QBtn>
+
+              <slot name="header-left-actions" />
 
               <span v-if="!props.tabs?.length">{{ title }}</span>
             </div>

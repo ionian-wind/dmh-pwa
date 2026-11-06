@@ -25,9 +25,10 @@ Props:
 Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
 `update:isExpanded`.
 
-When `tabs` is provided, `BaseModal` renders the tabs inside the header toolbar,
-centered between the expand/close controls, and renders the matching named slot
-as the dialog body. The text title is hidden while tabs are shown. A tab
+Header slots include `header-actions` on the right and `header-left-actions`
+next to the expand control. When `tabs` is provided, `BaseModal` renders the
+tabs inside the header toolbar, centered between the expand/close controls, and
+renders the matching named slot as the dialog body. The text title is hidden while tabs are shown. A tab
 definition is:
 
 ```ts
@@ -99,6 +100,8 @@ top (otherwise removes all occurrences). `currentModalId` is the top.
   the modal can open further entity modals.
 - Module/party show `description`; monster/encounter show `name` +
   `description`; unknown/missing entities show "not found".
+- When the mentioned entity kind has a detail route, an `IconExternalLink`
+  header action closes the modal and navigates to that entity view.
 - `openMentionModal` has a special case: if the newly requested entity equals
   the entity two levels down, it closes the current modal (acts like "back").
 

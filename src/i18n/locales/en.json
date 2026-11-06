@@ -360,7 +360,8 @@
       "encounter": "Encounter",
       "character": "Character",
       "location": "Location"
-    }
+    },
+    "openEntity": "Open entity"
   },
   "validation": {
     "required": "This field is required",

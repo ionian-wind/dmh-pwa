@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
+import { IconExternalLink } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
+import router from '@/router';
 
 const { currentMentionModal, currentModalId, closeMentionModal } =
   useModalState();
@@ -20,9 +22,39 @@ const showModal = computed(() => {
 const modalEntity = computed(() => currentMentionModal.value?.entity || null);
 const modalKind = computed(() => currentMentionModal.value?.kind || '');
 const modalId = computed(() => currentMentionModal.value?.modalId || '');
+const externalRoute = computed(() => {
+  const id = modalEntity.value?.id;
+  if (!id) return null;
+
+  switch (modalKind.value) {
+    case 'note':
+      return `/notes/${id}`;
+    case 'module':
+      return `/modules/${id}`;
+    case 'party':
+      return `/parties/${id}`;
+    case 'monster':
+      return `/monsters/${id}`;
+    case 'encounter':
+      return `/encounters/${id}`;
+    case 'character':
+      return `/characters/${id}`;
+    case 'location':
+      return `/locations/${id}`;
+    default:
+      return null;
+  }
+});
 
 function handleClose() {
   if (modalId.value) closeMentionModal(modalId.value);
+}
+
+function openExternalEntity() {
+  const route = externalRoute.value;
+  if (!route) return;
+  handleClose();
+  void router.push(route);
 }
 </script>
 
@@ -36,6 +68,19 @@ function handleClose() {
     :modalId="modalId"
     @cancel="handleClose"
   >
+    <template #header-left-actions>
+      <QBtn
+        v-if="externalRoute"
+        flat
+        variant="light"
+        :title="t('common.openEntity')"
+        :aria-label="t('common.openEntity')"
+        @click="openExternalEntity"
+      >
+        <IconExternalLink />
+      </QBtn>
+    </template>
+
     <template #default>
       <div v-if="modalEntity">
         <div v-if="modalKind === 'note'">
