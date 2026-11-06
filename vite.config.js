@@ -19,6 +19,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'inline',
       includeAssets: [
         'icon-192.png',
         'icon-512.png',

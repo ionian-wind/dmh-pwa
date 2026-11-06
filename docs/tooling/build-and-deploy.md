@@ -37,7 +37,8 @@ with `legacy-peer-deps = true`.
 - `dist/` — hashed JS/CSS, `index.html`, `manifest.webmanifest`, generated
   `sw.js`, `workbox-*.js`, icons and public assets.
 - `index.html` references `/src/main.ts` in dev; Vite rewrites for production.
-- The PWA plugin also emits `registerSW.js` and injects registration.
+- The PWA plugin injects an inline service-worker registration; no separate
+  `registerSW.js` is emitted.
 
 ### Assets
 

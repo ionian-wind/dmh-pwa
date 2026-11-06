@@ -31,6 +31,7 @@ metadata.
 
 ```js
 registerType: 'autoUpdate',
+injectRegister: 'inline',
 workbox: {
   maximumFileSizeToCacheInBytes: 30_000_000,
   globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
@@ -50,8 +51,9 @@ plugin is the single source of the manifest and worker.
 
 ## Registration and update flow
 
-`vite-plugin-pwa` injects `registerSW` by default (no explicit import visible
-in `main.ts`). With `autoUpdate`:
+`vite-plugin-pwa` injects an inline registration script into `index.html`
+(`injectRegister: 'inline'`); there is no separate `registerSW.js` file to
+precache. With `autoUpdate`:
 
 1. A new worker installs and activates.
 2. The page controller changes.
@@ -98,6 +100,11 @@ Requests that remain network-dependent:
 `devOptions.enabled: true` means a development service worker runs during
 `npm run dev`. This commonly causes stale-cache confusion; use a fresh
 profile or unregister the worker when debugging.
+
+Inline registration also avoids the Workbox warning about a missing precached
+`/registerSW.js`: older builds precached that generated file, while the dev
+server served a different registration script. After updating from an older
+dev worker, reload once so the new worker takes control.
 
 ## Known issues
 
