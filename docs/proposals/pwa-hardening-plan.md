@@ -47,7 +47,8 @@ CDN-hosted Workbox setup.
 - [ ] Test install and standalone launch on a physical Android device.
 - [ ] Test Add to Home Screen and standalone launch on iPhone/iPad.
 - [ ] Run the PWABuilder report against the deployed GitHub Pages URL.
-- [ ] Check the update banner across two builds.
+- [x] Check the update banner across two builds (verified with two production
+      builds on 2026-11-06: banner appears, one reload, no loop).
 - [ ] Verify installed shortcuts and persistent-storage state.
 - [ ] Capture replacement screenshots after major UI redesigns.
 

@@ -173,6 +173,11 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 30000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Inline registration bypasses the plugin's autoUpdate defaults, so
+        // activate and claim immediately; PWAStatus then shows the update
+        // banner for the resulting controller change.
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,

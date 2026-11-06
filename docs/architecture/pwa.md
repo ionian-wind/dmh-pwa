@@ -59,12 +59,15 @@ offline.
 
 `vite-plugin-pwa` injects an inline registration script into `index.html`
 (`injectRegister: 'inline'`); there is no separate `registerSW.js` file to
-precache. With `autoUpdate`:
+precache. Because inline registration bypasses the plugin’s `autoUpdate`
+defaults, `workbox.skipWaiting` and `workbox.clientsClaim` are set explicitly.
+With `autoUpdate`:
 
-1. A new worker installs and activates.
+1. A new worker installs, activates and claims open clients.
 2. The page controller changes.
 3. `PWAStatus.vue` listens for `navigator.serviceWorker.controllerchange` and
-   shows an "Update available" banner.
+   shows an "Update available" banner. The first change after a fresh install
+   is ignored.
 4. "Update now" calls `window.location.reload()`.
 
 `PWAStatus` also shows:
@@ -142,10 +145,18 @@ by briefly starting Vite (for example `npx vite --port 5174`) or restarting
 the dev server; no data or source files are affected. Avoid deleting
 `dev-dist/` while the dev server is active.
 
+A console message such as `The precached response for /dmh-pwa/ ... was not
+found` usually means the page is still controlled by a worker generated
+before a config change. Reload once; if it persists, unregister the worker in
+DevTools → Application → Service Workers and reload. The dev worker is
+rebuilt on every Vite restart.
+
 ## Known issues
 
 - `registerType: 'autoUpdate'` combined with a manual "update now" prompt can
-  produce a reload loop on some browsers if `controllerchange` fires repeatedly.
+  produce a reload loop on some browsers if `controllerchange` fires
+  repeatedly. `PWAStatus` ignores the first change after install, and with
+  `skipWaiting` + `clientsClaim` a normal update produces one change.
 - PWA scope/start URL assumes deployment at `/dmh-pwa`.
 - `index.html` theme colors (`#1e1e2e`) match the header but the content theme
   is light; install splash/status bar may feel inconsistent.
