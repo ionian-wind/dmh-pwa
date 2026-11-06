@@ -7,13 +7,13 @@ and free-text notes; the README's "stats, equipment, and notes" are aspirational
 
 ## Key files
 
-| File                                 | Role                |
-| ------------------------------------ | ------------------- |
-| `src/stores/characters.ts`           | Store + name search |
-| `src/characters/CharactersView.vue`  | List page           |
-| `src/characters/CharacterCard.vue`   | Card                |
-| `src/characters/CharacterEditor.vue` | Create/edit modal   |
-| `src/characters/CharacterView.vue`   | Detail page         |
+| File                                 | Role                                             |
+| ------------------------------------ | ------------------------------------------------ |
+| `src/stores/characters.ts`           | Store + name search logic (no list search field) |
+| `src/characters/CharactersView.vue`  | List page                                        |
+| `src/characters/CharacterCard.vue`   | Card                                             |
+| `src/characters/CharacterEditor.vue` | Create/edit modal                                |
+| `src/characters/CharacterView.vue`   | Detail page                                      |
 
 ## Data
 

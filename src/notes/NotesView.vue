@@ -124,10 +124,6 @@ async function handleCopy(note: Note) {
     :create-title="t('notes.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    show-search
-    :search-query="noteStore.searchQuery"
-    :search-placeholder="'common.search'"
-    @update:search-query="noteStore.setSearchQuery"
     @submit="handleSubmit"
     @cancel="pendingDrawNote = false"
     @delete="handleDelete"

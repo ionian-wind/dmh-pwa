@@ -72,9 +72,6 @@ function handleView(monster: Monster) {
     :create-title="t('monsters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    show-search
-    :search-query="monsterStore.searchQuery"
-    @update:search-query="monsterStore.setSearchQuery"
     @submit="handleSubmit"
     @copy="handleCopy"
     @view="handleView"

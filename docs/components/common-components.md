@@ -94,13 +94,14 @@ Behavior:
 - Emits `sort(localItems)` on drag end.
 - Internally opens the editor when a card emits `edit`; create resets the
   editing item.
-- Uses the typed `useLayout()` store to publish a `ViewHeader` with create and
-  optional search controls. Search props/events are forwarded from the list
-  view to the domain store.
+- Uses the typed `useLayout()` store to publish a `ViewHeader` with create
+  controls. Optional search props/events are still forwarded when supplied, but
+  no list view enables the header search field right now.
 - `@view`, `@edit`, `@delete`, `@tag-click`, `@copy` are re-emitted from cards.
 - The `draggable` branch binds the same card listeners as the other layouts,
   so cards remain interactive while sorting.
-- `show-search`, `search-query`, and `search-placeholder` are real props.
+- `show-search`, `search-query`, and `search-placeholder` remain available for
+  future use; the current list views do not set them.
 - `viewStyle` `masonry` uses four large columns, `grid` uses three; both use
   `q-col-gutter-*` so column widths stay centered and do not overflow.
 - `handleDelete` is an empty stub; deletion is delegated upward.
@@ -157,7 +158,7 @@ Renders:
 
 Title strings are treated as i18n keys (`t(btn.title)`, `t('common.create')`).
 Search state is controlled via `searchQuery` + `update:searchQuery`, but no
-caller passes these, and `BaseListView` never supplies them.
+caller passes these right now; the header search field is therefore hidden.
 
 ### `IconRightDrawer.vue`
 

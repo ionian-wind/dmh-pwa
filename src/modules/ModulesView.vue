@@ -134,10 +134,7 @@ function handleImportCancel() {
       :create-title="t('modules.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
-      show-search
-      :search-query="moduleStore.searchQuery"
-      @update:search-query="moduleStore.setSearchQuery"
-      @submit="handleSubmit"
+            @submit="handleSubmit"
       @delete="handleDelete"
       @copy="handleCopy"
     >

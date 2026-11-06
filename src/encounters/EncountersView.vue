@@ -89,10 +89,7 @@ async function handleCopy(encounter: Encounter) {
       :create-title="t('encounters.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
-      show-search
-      :search-query="encounterStore.searchQuery"
-      @update:search-query="encounterStore.setSearchQuery"
-      @submit="handleSubmit"
+            @submit="handleSubmit"
       @delete="handleDelete"
       @run-combat="handleRunCombat"
       @copy="handleCopy"

@@ -240,7 +240,7 @@ saved from the UI has:
   cannot be hidden.
 - Deleting a note does not remove its node from `module.noteTree` or its
   bookmark.
-- The note list has search and URL tag filtering, but no tag-chip filter bar.
+- The note list keeps URL tag filtering, but the header search field is not shown; the store search logic remains available.
 - Live checkbox writes bypass the mention validation performed on submit.
 - Editing from the list and editing from the detail page are two separate
   flows; the detail page's read view can lag behind store updates only until

@@ -79,9 +79,6 @@ async function handleCopy(character: PlayerCharacter) {
     :create-title="t('characters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    show-search
-    :search-query="characterStore.searchQuery"
-    @update:search-query="characterStore.setSearchQuery"
     @submit="handleSubmit"
     @delete="handleDelete"
     @copy="handleCopy"
