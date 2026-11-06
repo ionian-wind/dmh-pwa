@@ -1,44 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-
 import type { Monster } from '@/types';
-
-import { useMentionsStore } from '@/utils/storage';
-
-import Mentions from '@/components/common/Mentions.vue';
-import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
-
-const mentionsStore = useMentionsStore();
-const { t } = useI18n();
+import EntityMentionsScenesSidebar from '@/components/common/EntityMentionsScenesSidebar.vue';
 
 const props = defineProps<{
   monster: Monster;
 }>();
-
-const mentions = computed(() =>
-  props.monster
-    ? mentionsStore.getLinks({
-        kind: 'monster',
-        id: props.monster.id,
-      })
-    : [],
-);
-const mentionedIn = computed(() =>
-  props.monster
-    ? mentionsStore.getBacklinks({
-        kind: 'monster',
-        id: props.monster.id,
-      })
-    : [],
-);
-onMounted(() => mentionsStore.load());
 </script>
 
 <template>
-  <div class="side-panel-content q-pa-md">
-    <EntityScenesPanel entity-type="monster" :entity-id="monster.id" />
-    <Mentions :title="t('common.mentions')" :entities="mentions" />
-    <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
-  </div>
+  <EntityMentionsScenesSidebar
+    entity-type="monster"
+    :entity-id="props.monster.id"
+  />
 </template>

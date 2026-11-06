@@ -48,9 +48,7 @@ describe('CharacterViewSidebar', () => {
     const wrapper = mountSidebar({ id: 'c1', name: 'Hero' });
     await flushPromises();
 
-    expect(wrapper.classes()).toEqual(
-      expect.arrayContaining(['side-panel-content', 'q-pa-md']),
-    );
+    expect(wrapper.find('.tab-group').exists()).toBe(true);
     const mentions = wrapper.findAllComponents(MentionsStub);
     expect(mentions).toHaveLength(2);
     expect(mentions[0].props('entities')).toEqual([{ kind: 'note', id: 'n1' }]);
