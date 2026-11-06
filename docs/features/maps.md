@@ -64,10 +64,12 @@ Image metadata (dimensions, MIME type, dominant color, palette) is extracted by
 
 Locations are stored in `map_locations` and own their map data. The location
 detail page has **View**, **Map**, **Backlinks** and **Linked entities** tabs.
-View renders the location description; Map renders the location's image, layers,
-markers and areas; Backlinks lists markers and areas from other locations that
-point at this location; Linked entities shows notes, modules, parties, monsters,
-encounters, characters and playlists read-only.
+View uses the shared inline view/edit experience and renders the description as
+Markdown; Map renders the location's image, layers, markers and areas;
+Backlinks lists markers and areas from other locations that point at this
+location; Linked entities shows notes, modules, parties, monsters, encounters,
+characters and playlists. In edit mode the linked entities are editable, and
+the same location-level edit mode is shared with the Map tab.
 
 ### Layers
 
@@ -242,16 +244,24 @@ linked.
 
 A location detail page has four header tabs:
 
-- **View** — location description.
+- **View** — location description; in edit mode this becomes **Main editor**
+  with a borderless name field and shared Markdown description editor.
 - **Map** — the map image and editing UI. Hidden when the location has no map
-  image.
+  image. It shares the location-level View/Edit state with the main tab, so
+  switching tabs keeps the same mode.
 - **Backlinks** — markers and areas from other locations whose `locationId`
   points at this location, grouped by their owning location. The tab uses
   `IconMapPinned`.
-- **Linked entities** — modules and other linked entities, read-only.
+- **Linked entities** — modules and other linked entities. In edit mode every
+  supported kind is editable through `EntitiesLinking`.
 
-The location editor manages name, description, map image and linked entities.
-Deleting a location removes it everywhere.
+Outside the Map tab the right sidebar shows the Scenes content with the shared
+View/Edit and visual-editor controls. Header title hides in edit mode; Delete
+appears only in edit mode; formatting help appears in raw Markdown mode. Save
+happens when returning to View and dirty navigation uses the shared unsaved
+guard. The `MapLocationEditor` modal uses the same inline editor components,
+Markdown description, formatting help and View/Edit semantics for list/create
+flows. Deleting a location removes it everywhere.
 
 ## User flows
 

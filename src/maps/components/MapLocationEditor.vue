@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import type {
   MapEntityKind,
@@ -14,6 +17,7 @@ import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { createMapFileFromFile, getMapFileBlob } from '../utils/mapFileUtils';
 import { deleteMapFile, getMapFile, putMapFile } from '../maps';
 import { normalizeLocation, normalizeLocationMap } from '../utils/normalize';
+import { IconHelp } from '@tabler/icons-vue';
 
 const props = defineProps<{
   location: MapLocation | null;
@@ -35,6 +39,11 @@ const selectedFileName = ref('');
 const previewUrl = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const isProcessingImage = ref(false);
+const isWYSIWYGMode = ref(true);
+const isHelpOpen = ref(false);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 
 let originalFileId: string | null = null;
 let pendingMapFile: MapFile | null = null;
@@ -81,6 +90,14 @@ watch(
 onBeforeUnmount(revokePreview);
 
 const editorTabs = useEntityEditorTabs();
+
+const description = computed({
+  get: () => draft.value.description ?? '',
+  set: (value: string) => {
+    draft.value.description = value;
+  },
+});
+
 const linkKinds: MapEntityKind[] = [
   'note',
   'module',
@@ -137,6 +154,9 @@ async function submit() {
     alert(t('maps.locationNameRequired'));
     return;
   }
+  if (markdownEditorRef.value?.getMarkdown) {
+    draft.value.description = markdownEditorRef.value.getMarkdown();
+  }
 
   if (draft.value.map.fileId !== originalFileId) {
     if (pendingMapFile) {
@@ -178,68 +198,57 @@ function remove() {
     @cancel="emit('cancel')"
   >
     <template #main>
-      <div class="form-section">
-        <QInput
-          id="location-name"
-          v-model="draft.name"
-          :label="t('maps.locationName')"
-          type="text"
-          outlined
-          required
+      <EntityInlineEditor
+        v-model:title="draft.name"
+        :title-placeholder="t('maps.locationName')"
+      >
+        <EntityMarkdownEditor
+          ref="markdownEditorRef"
+          v-model="description"
+          :is-visual-mode="isWYSIWYGMode"
+          :entity-id="draft.id"
+          entity-type="location"
+          :placeholder="t('maps.locationDescription')"
         />
-      </div>
 
-      <div class="form-section">
-        <div class="form-group">
-          <QInput
-            id="location-description"
-            v-model="draft.description"
-            :label="t('maps.locationDescription')"
-            type="textarea"
-            :rows="3"
-            autogrow
-            outlined
-          />
-        </div>
-      </div>
-
-      <div class="form-section">
-        <div class="form-group map-image-field">
-          <label>{{ t('maps.image') }}</label>
-          <div class="row items-center q-gutter-sm">
-            <QBtn
-              flat
-              color="primary"
-              :loading="isProcessingImage"
-              :label="t('maps.selectFile')"
-              @click="chooseImage"
+        <div class="form-section q-mt-md">
+          <div class="form-group map-image-field">
+            <label>{{ t('maps.image') }}</label>
+            <div class="row items-center q-gutter-sm">
+              <QBtn
+                flat
+                color="primary"
+                :loading="isProcessingImage"
+                :label="t('maps.selectFile')"
+                @click="chooseImage"
+              />
+              <span v-if="selectedFileName" class="selected-file">
+                {{ selectedFileName }}
+              </span>
+              <QBtn
+                v-if="draft.map.fileId"
+                flat
+                color="negative"
+                :label="t('maps.clearMap')"
+                @click="clearMap"
+              />
+            </div>
+            <input
+              ref="fileInput"
+              class="hidden"
+              type="file"
+              accept="image/*"
+              @change="onImageSelected"
             />
-            <span v-if="selectedFileName" class="selected-file">
-              {{ selectedFileName }}
-            </span>
-            <QBtn
-              v-if="draft.map.fileId"
-              flat
-              color="negative"
-              :label="t('maps.clearMap')"
-              @click="clearMap"
+            <img
+              v-if="previewUrl"
+              :src="previewUrl"
+              :alt="t('maps.imagePreview')"
+              class="map-image-preview"
             />
           </div>
-          <input
-            ref="fileInput"
-            class="hidden"
-            type="file"
-            accept="image/*"
-            @change="onImageSelected"
-          />
-          <img
-            v-if="previewUrl"
-            :src="previewUrl"
-            :alt="t('maps.imagePreview')"
-            class="map-image-preview"
-          />
         </div>
-      </div>
+      </EntityInlineEditor>
     </template>
 
     <template #links>
@@ -253,7 +262,28 @@ function remove() {
         />
       </div>
     </template>
+
+    <template #footer>
+      <div class="q-mr-auto row items-center q-gutter-sm">
+        <QToggle left-label v-model="isWYSIWYGMode">
+          {{ t('markdownEditor.visualMode') }}
+        </QToggle>
+        <QBtn
+          v-if="!isWYSIWYGMode"
+          flat
+          round
+          class="location-help-button"
+          :title="t('markdownEditor.formattingHelp')"
+          :aria-label="t('markdownEditor.formattingHelp')"
+          @click="isHelpOpen = true"
+        >
+          <IconHelp />
+        </QBtn>
+      </div>
+    </template>
   </BaseModal>
+
+  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>
 
 <style scoped>

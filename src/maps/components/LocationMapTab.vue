@@ -81,6 +81,7 @@ import Circle from 'ol/style/Circle';
 import Icon from 'ol/style/Icon';
 import Text from 'ol/style/Text';
 import type { MapArea, MapAreaShape, MapLayer, MapLocation } from '../types';
+import type { InlineEditState } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
@@ -89,6 +90,8 @@ const { t, locale } = useI18n();
 
 const props = defineProps<{
   location?: MapLocation;
+  editState?: InlineEditState<MapLocation>;
+  onSetEditMode?: (value: boolean) => void | Promise<void>;
 }>();
 
 enableFrequentHitDetectionReads();
@@ -151,7 +154,17 @@ const imageLoadFailed = ref(false);
 const isMarkerEditorOpen = ref(false);
 const editingMarker = ref<MapMarker | null>(null);
 const isAddingMarker = ref(false);
-const isEditMode = ref(false);
+const localEditMode = ref(false);
+const isEditMode = computed({
+  get: () => props.editState?.isEditMode ?? localEditMode.value,
+  set: (value: boolean) => {
+    if (props.onSetEditMode) {
+      void props.onSetEditMode(value);
+      return;
+    }
+    localEditMode.value = value;
+  },
+});
 const showLabels = ref(true);
 const sidePanelTab = ref('markers');
 const hiddenLayerIds = ref<Set<string>>(new Set());

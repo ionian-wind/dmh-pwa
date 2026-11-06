@@ -3,6 +3,7 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 
 import LocationView from '@/maps/views/LocationView.vue';
+import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
 
 const mocks = vi.hoisted(() => ({
   locationStore: {
@@ -14,12 +15,14 @@ const mocks = vi.hoisted(() => ({
   },
   deleteLocation: vi.fn(),
   confirm: vi.fn().mockResolvedValue(true),
+  alert: vi.fn().mockResolvedValue(undefined),
   push: vi.fn(),
 }));
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { id: 'l1' } }),
   useRouter: () => ({ push: mocks.push }),
+  onBeforeRouteLeave: vi.fn(),
 }));
 
 vi.mock('@/maps/locations', () => ({
@@ -27,7 +30,7 @@ vi.mock('@/maps/locations', () => ({
   deleteMapLocation: mocks.deleteLocation,
 }));
 
-vi.mock('@/dialogs', () => ({ confirm: mocks.confirm }));
+vi.mock('@/dialogs', () => ({ confirm: mocks.confirm, alert: mocks.alert }));
 
 const MapLocationEditorStub = defineComponent({
   name: 'MapLocationEditor',
@@ -77,6 +80,25 @@ const ScenesStub = defineComponent({
   props: { entityType: String, entityId: String },
   setup() {
     return () => h('div', { class: 'scenes-stub' });
+  },
+});
+
+const EntityMarkdownEditorStub = defineComponent({
+  name: 'EntityMarkdownEditor',
+  props: ['modelValue', 'isVisualMode', 'entityId', 'entityType'],
+  emits: ['update:modelValue'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => 'Updated description' });
+    return () => h('div', { class: 'entity-markdown-editor-stub' });
+  },
+});
+
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: { kind: String, modelValue: Array },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
   },
 });
 
@@ -139,6 +161,8 @@ function mountLocationView() {
         EntityScenesPanel: ScenesStub,
         MapLocationEditor: MapLocationEditorStub,
         LocationMapTab: MapTabStub,
+        EntityMarkdownEditor: EntityMarkdownEditorStub,
+        EntitiesLinking: EntitiesLinkingStub,
       },
     },
   });
@@ -182,19 +206,164 @@ describe('LocationView', () => {
     const wrapper = mountLocationView();
     await flushPromises();
 
-    await wrapper.find('.entity-edit').trigger('click');
-    expect(wrapper.find('.location-editor-stub').exists()).toBe(true);
-    await wrapper.find('.editor-save').trigger('click');
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    await nextTick();
+    expect(wrapper.find('.entity-inline-editor').exists()).toBe(true);
+    await wrapper.find('.entity-inline-editor input').setValue('Updated town');
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
     expect(mocks.locationStore.update).toHaveBeenCalledWith(
       'l1',
       expect.objectContaining({ name: 'Updated town' }),
     );
-    await wrapper.find('.editor-cancel').trigger('click');
 
     await wrapper.find('.entity-delete').trigger('click');
     await flushPromises();
     expect(mocks.deleteLocation).toHaveBeenCalledWith('l1');
     expect(mocks.push).toHaveBeenCalledWith('/maps');
+    wrapper.unmount();
+  });
+
+  it('edits inline, saves description/links and exposes formatting help', async () => {
+    const current = {
+      ...location,
+      description: 'A busy port.',
+      map: { ...location.map, fileId: 'file1' },
+    };
+    mocks.locationStore.getById.mockReturnValue(current);
+    mocks.locationStore.items = [current];
+
+    const wrapper = mountLocationView();
+    await flushPromises();
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    await nextTick();
+    expect(wrapper.find('.entity-inline-editor').exists()).toBe(true);
+
+    await wrapper.find('.entity-inline-editor input').setValue('Updated town');
+    wrapper
+      .findComponent(EntityMarkdownEditorStub)
+      .vm.$emit('update:modelValue', 'Changed description');
+    await nextTick();
+
+    const linkBlocks = wrapper.findAllComponents(EntitiesLinkingStub);
+    expect(linkBlocks.length).toBeGreaterThan(0);
+    const moduleLinks = linkBlocks.find(
+      (block) => block.props('kind') === 'module',
+    )!;
+    moduleLinks.vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'note-1' },
+      { kind: 'module', id: 'module-2' },
+    ]);
+    await nextTick();
+
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    await nextTick();
+    const headerButtons = wrapper
+      .findComponent(BaseEntityTabViewStub)
+      .props('headerButtons') as any[];
+    expect(headerButtons).toHaveLength(1);
+    headerButtons[0].event();
+    await nextTick();
+    expect(wrapper.findComponent(MarkdownHelpDialog).props('isOpen')).toBe(
+      true,
+    );
+
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+    expect(mocks.locationStore.update).toHaveBeenCalledWith(
+      'l1',
+      expect.objectContaining({
+        name: 'Updated town',
+        description: 'Updated description',
+        entities: expect.arrayContaining([
+          { kind: 'note', id: 'note-1' },
+          { kind: 'module', id: 'module-2' },
+        ]),
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it('blocks saving without a location name', async () => {
+    mocks.locationStore.getById.mockReturnValue(location);
+    mocks.locationStore.items = [location];
+
+    const wrapper = mountLocationView();
+    await flushPromises();
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    await nextTick();
+    await wrapper.find('.entity-inline-editor input').setValue('   ');
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+
+    expect(mocks.alert).toHaveBeenCalled();
+    expect(wrapper.find('.entity-edit-mode').attributes('aria-pressed')).toBe(
+      'true',
+    );
+    wrapper.unmount();
+  });
+
+  it('updates view checkboxes, same-length link changes and save failures', async () => {
+    const current = {
+      ...location,
+      description: 'A busy port.',
+    };
+    mocks.locationStore.getById.mockReturnValue(current);
+    mocks.locationStore.items = [current];
+
+    const wrapper = mountLocationView();
+    await flushPromises();
+
+    wrapper
+      .findComponent({ name: 'Markdown' })
+      .vm.$emit('update:content', 'Checked via Markdown');
+    await flushPromises();
+    expect(mocks.locationStore.update).toHaveBeenCalledWith('l1', {
+      description: 'Checked via Markdown',
+    });
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    await nextTick();
+    const noteBlock = wrapper
+      .findAllComponents(EntitiesLinkingStub)
+      .find((block) => block.props('kind') === 'note')!;
+    noteBlock.vm.$emit('update:modelValue', [{ kind: 'note', id: 'note-2' }]);
+    await nextTick();
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+    expect(mocks.locationStore.update).toHaveBeenCalledWith(
+      'l1',
+      expect.objectContaining({
+        entities: [{ kind: 'note', id: 'note-2' }],
+      }),
+    );
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    await nextTick();
+    wrapper
+      .findAllComponents(EntitiesLinkingStub)
+      .find((block) => block.props('kind') === 'note')!
+      .vm.$emit('update:modelValue', [{ kind: 'note', id: 'note-3' }]);
+    await nextTick();
+
+    mocks.locationStore.update.mockRejectedValueOnce('boom');
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.entity-edit-mode').attributes('aria-pressed')).toBe(
+      'true',
+    );
+
+    mocks.locationStore.update.mockRejectedValueOnce(new Error('failed'));
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.entity-edit-mode').attributes('aria-pressed')).toBe(
+      'true',
+    );
+    mocks.locationStore.update.mockResolvedValue(undefined);
     wrapper.unmount();
   });
 
@@ -246,7 +415,10 @@ describe('LocationView', () => {
     expect(backlinks.text()).toContain('Castle');
     expect(backlinks.text()).toContain('Forest');
 
-    await backlinks.find('[data-stub="QItem"]').trigger('click');
+    const backlinkItems = backlinks.findAll('[data-stub="QItem"]');
+    await backlinkItems[0].trigger('click');
+    expect(mocks.push).toHaveBeenCalledWith('/locations/l2');
+    await backlinkItems[1].trigger('click');
     expect(mocks.push).toHaveBeenCalledWith('/locations/l2');
     wrapper.unmount();
   });
@@ -318,8 +490,6 @@ describe('LocationView', () => {
 
     await wrapper.find('.entity-delete').trigger('click');
     expect(mocks.deleteLocation).not.toHaveBeenCalled();
-    wrapper.findComponent(MapLocationEditorStub).vm.$emit('save', null);
-    expect(mocks.locationStore.update).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 
@@ -371,6 +541,15 @@ describe('LocationView', () => {
     expect(backlinks.text()).toContain('Untitled location');
     expect(backlinks.text()).toContain('Untitled marker');
     expect(backlinks.text()).toContain('Untitled area');
+
+    mocks.push.mockClear();
+    await backlinks.find('.cursor-pointer').trigger('click');
+    expect(mocks.push).toHaveBeenCalledWith('/locations/l2');
+    const backlinkItems = backlinks.findAll('[data-stub="QItem"]');
+    await backlinkItems[0].trigger('click');
+    expect(mocks.push).toHaveBeenCalledWith('/locations/l2');
+    await backlinkItems[1].trigger('click');
+    expect(mocks.push).toHaveBeenCalledWith('/locations/l2');
     wrapper.unmount();
   });
 
@@ -384,15 +563,6 @@ describe('LocationView', () => {
     await flushPromises();
     expect(mocks.deleteLocation).not.toHaveBeenCalled();
     wrapper.unmount();
-
-    mocks.locationStore.getById.mockReturnValue(location);
-    const withLocation = mountLocationView();
-    await flushPromises();
-    const editor = withLocation.findComponent(MapLocationEditorStub);
-    editor.vm.$emit('save', null);
-    await flushPromises();
-    expect(mocks.locationStore.update).not.toHaveBeenCalled();
-    withLocation.unmount();
   });
 
   it('uses the untitled fallback when deleting an unnamed location', async () => {

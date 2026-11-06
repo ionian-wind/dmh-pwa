@@ -67,6 +67,11 @@ function mountEditor(props: Record<string, unknown> = {}) {
       stubs: {
         EntitiesLinking: true,
         EntityScenesPanel: true,
+        EntityMarkdownEditor: {
+          name: 'EntityMarkdownEditor',
+          props: ['modelValue', 'isVisualMode', 'entityId', 'entityType'],
+          template: '<div class="entity-markdown-editor-stub" />',
+        },
       },
     },
   });
@@ -132,7 +137,7 @@ describe('MapLocationEditor map image', () => {
     const wrapper = mountEditor({ location: null });
     await flushPromises();
 
-    await wrapper.find('#location-name').setValue('New place');
+    await wrapper.find('.entity-inline-editor input').setValue('New place');
     await chooseFile(wrapper, 'new.png', 'image/png');
     await flushPromises();
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
