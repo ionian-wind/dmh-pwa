@@ -201,14 +201,6 @@ Relations stored on the target side are updated in reverse: for example,
 dropping a Character on Party updates `party.characters`, and dropping a Monster
 on Encounter updates `encounter.monsters`.
 
-### `EntityMentionsScenesSidebar.vue`
-
-Shared right-drawer sidebar for entities that support ambient scene links. It
-provides two `TabGroup` tabs — **Mentions** (outgoing and incoming) and
-**Scenes** — and loads the mention index on mount. Used by the monster,
-encounter, character, and module sidebars. Entities without scene links (notes,
-parties) keep their own simpler sidebars.
-
 ### `SortableList.vue`
 
 Generic drag-and-drop list built on `@vue-dnd-kit/core`. It accepts a

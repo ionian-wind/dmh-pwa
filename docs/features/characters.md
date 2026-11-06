@@ -63,8 +63,8 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - Edit modal, delete with confirmation, then `BaseEntityView` navigates to the
   list.
 - Uses `CharacterViewSidebar` through the shared right drawer. Mentions and
-  ambient scenes are separated into tabs using the shared
-  `EntityMentionsScenesSidebar` component.
+  ambient scenes are separated into **Mentions** and **Scenes** tabs using the
+  shared `TabGroup` component.
 
 ## Relationships and lifecycle
 

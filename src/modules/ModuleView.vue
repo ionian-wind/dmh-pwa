@@ -14,10 +14,11 @@ import type { Module, Bookmark } from '@/types';
 import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
+import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
-import EntityMentionsScenesSidebar from '@/components/common/EntityMentionsScenesSidebar.vue';
 import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/form/Button.vue';
@@ -48,6 +49,7 @@ interface TOCItem {
 const route = useRoute();
 const router = useRouter();
 const moduleStore = useModuleStore();
+const mentionsStore = useMentionsStore();
 const partyStore = usePartyStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
@@ -106,6 +108,15 @@ const moduleLocations = computed(() =>
   ),
 );
 
+const mentionedEntities = computed(() => {
+  if (!module.value) return [];
+  return mentionsStore.getLinks({ kind: 'module', id: module.value.id });
+});
+const mentionedInEntities = computed(() => {
+  if (!module.value) return [];
+  return mentionsStore.getBacklinks({ kind: 'module', id: module.value.id });
+});
+
 const moduleBookmarks = computed(() => {
   if (!module.value || !module.value.id) return [];
   return bookmarkStore.items.filter((b) => b.moduleId === module.value!.id);
@@ -148,6 +159,7 @@ const moduleLinks = computed<MapEntityRef[]>(() => [
 
 const activeTab = ref('document');
 const sidePanelTab = ref('toc');
+const mentionsPanelTab = ref('mentions');
 const moduleDocumentViewRef = ref<any>(null);
 const activeAnchorId = ref<string | null>(null);
 const editingBookmark = ref<Bookmark | null>(null);
@@ -162,6 +174,7 @@ onMounted(async () => {
     noteStore.load(),
     playlistsStore.load(),
     bookmarkStore.load(),
+    mentionsStore.load(),
     locationStore.load(),
   ]);
   // Listen for hash changes
@@ -483,11 +496,38 @@ async function handleEditorDelete() {
             </template>
           </TabGroup>
         </div>
-        <EntityMentionsScenesSidebar
-          v-else-if="activeTab !== 'document'"
-          entity-type="module"
-          :entity-id="module?.id || ''"
-        />
+        <div v-else-if="activeTab !== 'document'">
+          <TabGroup
+            :align="'justify'"
+            :title-align="'center'"
+            :tabs="[
+              { id: 'mentions', label: t('common.mentions') },
+              { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+            ]"
+            v-model="mentionsPanelTab"
+            size="sm"
+          >
+            <template #default>
+              <div v-show="mentionsPanelTab === 'mentions'">
+                <Mentions
+                  :title="t('common.mentions')"
+                  :entities="mentionedEntities"
+                />
+                <Mentions
+                  :title="t('common.mentionedIn')"
+                  :entities="mentionedInEntities"
+                />
+              </div>
+              <div v-show="mentionsPanelTab === 'scenes'">
+                <EntityScenesPanel
+                  v-if="module"
+                  entity-type="module"
+                  :entity-id="module.id"
+                />
+              </div>
+            </template>
+          </TabGroup>
+        </div>
       </template>
     </BaseEntityTabView>
 
