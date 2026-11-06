@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { computed, ref, useSlots, Fragment, Comment, type PropType } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  ref,
+  useSlots,
+  Fragment,
+  Comment,
+  type PropType,
+} from 'vue';
 import {
   IconEye,
   IconPencil,
@@ -32,6 +40,74 @@ const emit = defineEmits(['view', 'edit', 'delete', 'copy']);
 
 const slots = useSlots();
 const { startDrag, endDrag } = useEntityDragLinking();
+const cardShell = ref<HTMLElement | null>(null);
+const isFloating = ref(false);
+const reservedHeight = ref<number | null>(null);
+const isHovering = ref(false);
+let floatEndTimer: ReturnType<typeof setTimeout> | null = null;
+
+const shellStyle = computed(() =>
+  isFloating.value && reservedHeight.value !== null
+    ? { height: `${reservedHeight.value}px` }
+    : undefined,
+);
+
+function canFloat() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(hover: hover)').matches
+  );
+}
+
+function clearFloatTimer() {
+  if (floatEndTimer) {
+    clearTimeout(floatEndTimer);
+    floatEndTimer = null;
+  }
+}
+
+function beginFloat() {
+  if (!canFloat() || isFloating.value || !cardShell.value) return;
+  reservedHeight.value = cardShell.value.getBoundingClientRect().height;
+  isFloating.value = true;
+}
+
+function scheduleEndFloat() {
+  if (!isFloating.value) return;
+  clearFloatTimer();
+  floatEndTimer = setTimeout(() => {
+    isFloating.value = false;
+    reservedHeight.value = null;
+    floatEndTimer = null;
+  }, 330);
+}
+
+function onMouseEnter() {
+  isHovering.value = true;
+  clearFloatTimer();
+  beginFloat();
+}
+
+function onMouseLeave() {
+  isHovering.value = false;
+  if (cardShell.value?.contains(document.activeElement)) return;
+  scheduleEndFloat();
+}
+
+function onFocusIn() {
+  clearFloatTimer();
+  beginFloat();
+}
+
+function onFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null;
+  if (next && cardShell.value?.contains(next)) return;
+  if (!isHovering.value) scheduleEndFloat();
+}
+
+onBeforeUnmount(clearFloatTimer);
+
 const dragGhost = ref<HTMLElement | null>(null);
 const isDraggingEntity = ref(false);
 const dragIcon = computed(() =>
@@ -77,127 +153,159 @@ const hasContent = computed(() => {
 </script>
 
 <template>
-  <QCard class="base-card" :class="{ 'is-dragging-entity': isDraggingEntity }">
-    <QCardSection
-      v-if="$slots.header || title"
-      class="base-card-header row items-center no-wrap"
-      @click="$emit('view')"
-      style="cursor: pointer"
+  <div
+    ref="cardShell"
+    class="base-card-shell"
+    :class="{ 'is-floating': isFloating }"
+    :style="shellStyle"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
+    @focusin="onFocusIn"
+    @focusout="onFocusOut"
+  >
+    <QCard
+      class="base-card"
+      :class="{ 'is-dragging-entity': isDraggingEntity }"
     >
-      <div class="col">
-        <h5 v-if="title">{{ title }}</h5>
-        <slot name="header" />
-      </div>
-      <div
-        v-if="dragEntity"
-        class="entity-drag-handle"
-        draggable="true"
-        :title="t('common.dragToLink')"
-        :aria-label="t('common.dragToLink')"
-        @click.stop
-        @mousedown.stop
-        @dragstart.stop="onDragStart"
-        @dragend.stop="onDragEnd"
+      <QCardSection
+        v-if="$slots.header || title"
+        class="base-card-header row items-center no-wrap"
+        @click="$emit('view')"
+        style="cursor: pointer"
       >
-        <IconGripVertical :size="18" />
-      </div>
-    </QCardSection>
-    <QCardSection v-if="hasContent" class="base-card-content q-pt-none">
-      <slot />
-    </QCardSection>
+        <div class="col">
+          <h5 v-if="title">{{ title }}</h5>
+          <slot name="header" />
+        </div>
+        <div
+          v-if="dragEntity"
+          class="entity-drag-handle"
+          draggable="true"
+          :title="t('common.dragToLink')"
+          :aria-label="t('common.dragToLink')"
+          @click.stop
+          @mousedown.stop
+          @dragstart.stop="onDragStart"
+          @dragend.stop="onDragEnd"
+        >
+          <IconGripVertical :size="18" />
+        </div>
+      </QCardSection>
+      <QCardSection v-if="hasContent" class="base-card-content q-pt-none">
+        <slot />
+      </QCardSection>
 
-    <QCardActions
-      v-if="
-        $slots.actions ||
-        props.showView ||
-        props.showEdit ||
-        props.showDelete ||
-        props.showCopy
-      "
-      class="base-card-actions"
-      align="between"
-    >
-      <QSeparator />
-
-      <QBtnGroup flat v-if="$slots.actions" class="base-card-actions-left">
-        <slot name="actions" />
-      </QBtnGroup>
-
-      <QSpace
+      <QCardActions
         v-if="
-          $slots.actions &&
-          (props.showView ||
+          $slots.actions ||
+          props.showView ||
+          props.showEdit ||
+          props.showDelete ||
+          props.showCopy
+        "
+        class="base-card-actions"
+        align="between"
+      >
+        <QSeparator />
+
+        <QBtnGroup flat v-if="$slots.actions" class="base-card-actions-left">
+          <slot name="actions" />
+        </QBtnGroup>
+
+        <QSpace
+          v-if="
+            $slots.actions &&
+            (props.showView ||
+              props.showEdit ||
+              props.showDelete ||
+              props.showCopy)
+          "
+        />
+
+        <QBtnGroup
+          flat
+          v-if="
+            props.showView ||
             props.showEdit ||
             props.showDelete ||
-            props.showCopy)
-        "
-      />
+            props.showCopy
+          "
+        >
+          <QBtn
+            flat
+            v-if="props.showView"
+            color="standard"
+            size="small"
+            @click="$emit('view')"
+            :title="t('common.view')"
+          >
+            <IconEye />
+          </QBtn>
+          <QBtn
+            flat
+            v-if="props.showEdit"
+            color="positive"
+            size="small"
+            @click="$emit('edit')"
+            :title="t('common.edit')"
+          >
+            <IconPencil />
+          </QBtn>
+          <QBtn
+            flat
+            v-if="props.showCopy"
+            color="primary"
+            size="small"
+            @click="$emit('copy')"
+            :title="t('common.copy')"
+          >
+            <IconCopy />
+          </QBtn>
+          <QBtn
+            flat
+            v-if="props.showDelete"
+            color="negative"
+            size="small"
+            @click="$emit('delete')"
+            :title="t('common.delete')"
+          >
+            <IconTrash />
+          </QBtn>
+        </QBtnGroup>
+      </QCardActions>
 
-      <QBtnGroup
-        flat
-        v-if="
-          props.showView || props.showEdit || props.showDelete || props.showCopy
-        "
+      <div
+        v-if="dragEntity && dragIcon"
+        ref="dragGhost"
+        class="entity-drag-ghost"
       >
-        <QBtn
-          flat
-          v-if="props.showView"
-          color="standard"
-          size="small"
-          @click="$emit('view')"
-          :title="t('common.view')"
+        <QCard
+          class="entity-drag-ghost-card row items-center no-wrap q-pa-sm q-gutter-sm"
         >
-          <IconEye />
-        </QBtn>
-        <QBtn
-          flat
-          v-if="props.showEdit"
-          color="positive"
-          size="small"
-          @click="$emit('edit')"
-          :title="t('common.edit')"
-        >
-          <IconPencil />
-        </QBtn>
-        <QBtn
-          flat
-          v-if="props.showCopy"
-          color="primary"
-          size="small"
-          @click="$emit('copy')"
-          :title="t('common.copy')"
-        >
-          <IconCopy />
-        </QBtn>
-        <QBtn
-          flat
-          v-if="props.showDelete"
-          color="negative"
-          size="small"
-          @click="$emit('delete')"
-          :title="t('common.delete')"
-        >
-          <IconTrash />
-        </QBtn>
-      </QBtnGroup>
-    </QCardActions>
-
-    <div
-      v-if="dragEntity && dragIcon"
-      ref="dragGhost"
-      class="entity-drag-ghost"
-    >
-      <QCard
-        class="entity-drag-ghost-card row items-center no-wrap q-pa-sm q-gutter-sm"
-      >
-        <component :is="dragIcon" :size="24" />
-        <span class="ellipsis">{{ dragEntity.title }}</span>
-      </QCard>
-    </div>
-  </QCard>
+          <component :is="dragIcon" :size="24" />
+          <span class="ellipsis">{{ dragEntity.title }}</span>
+        </QCard>
+      </div>
+    </QCard>
+  </div>
 </template>
 
 <style scoped>
+.base-card-shell {
+  position: relative;
+}
+
+.base-card-shell.is-floating {
+  z-index: 10;
+}
+
+.base-card-shell.is-floating > .base-card {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
 .base-card {
   position: relative;
   --card-actions-height: 52px;

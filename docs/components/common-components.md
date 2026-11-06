@@ -20,10 +20,9 @@ Emits: `view`, `edit`, `delete`.
   (`focus-within`).
 - On hover the card gains bottom padding equal to the action-bar height, so the
   toolbar sits below the content rather than covering it.
-- A matching negative bottom margin keeps the grid/flex layout height stable:
-  the hovered card expands downward over following cards without moving them.
-- The list reserves bottom space for a hovered last-row card, so the page
-  scrollbar length stays constant.
+- `BaseCard` wraps the card in a shell that reserves the card's resting height.
+  While hovered, the real card is absolutely positioned inside that shell, so
+  following cards keep their place and the hovered card paints above them.
 - Hover is sequenced to prevent edge flicker: the card expands before its
   action bar fades in, and the bar fades out before the card collapses.
 - Touch devices keep actions in normal flow and permanently visible.
