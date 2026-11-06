@@ -50,6 +50,26 @@ Rules:
 - VitePress falls back to the default locale for missing translations when
   configured accordingly.
 
+## Theme localization
+
+Visible theme strings are configured per locale in
+`helpcenter/.vitepress/config.mts`:
+
+- `title` and `description`;
+- `outline.label`;
+- `docFooter.prev` / `next`;
+- menu, appearance, language-menu, skip-link and return-to-top labels;
+- local-search button and modal translations;
+- the 404 page text.
+
+VitePress 1.x still hardcodes a few screen-reader-only labels
+(“Main Navigation”, “Sidebar Navigation”, “Pager” and two aria labels).
+`helpcenter/.vitepress/theme/index.ts` extends the default theme and updates
+those labels after mount and on route changes, using the page’s `lang`.
+
+When adding a locale, add its visible strings to `config.mts` and its
+screen-reader labels to the theme helper.
+
 ## Frontmatter
 
 VitePress uses the normal Markdown frontmatter:
