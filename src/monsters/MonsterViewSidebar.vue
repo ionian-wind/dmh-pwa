@@ -1,19 +1,29 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { Monster } from '@/types';
+import type { InlineEditState, Monster } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
+import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 
 const props = defineProps<{
   monster: Monster;
+  editState?: InlineEditState<Monster>;
+  onSetEditMode?: (value: boolean) => void | Promise<void>;
 }>();
 
 const { t } = useI18n();
 const mentionsStore = useMentionsStore();
+const localEditState = reactive<InlineEditState<Monster>>({
+  isEditMode: false,
+  isVisualMode: true,
+  draft: null,
+});
 const activeTab = ref('scenes');
+
+const state = computed(() => props.editState ?? localEditState);
 
 const entityId = computed(() => props.monster?.id || '');
 const mentions = computed(() =>
@@ -26,10 +36,35 @@ const mentionedIn = computed(() =>
     ? mentionsStore.getBacklinks({ kind: 'monster', id: entityId.value })
     : [],
 );
-const tabs = computed(() => [
-  { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
-  { id: 'mentions', label: t('common.mentions') },
-]);
+const tabs = computed(() =>
+  state.value.isEditMode
+    ? [{ id: 'scenes', label: t('ambientSoundPage.scenesTab') }]
+    : [
+        { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+        { id: 'mentions', label: t('common.mentions') },
+      ],
+);
+
+watch(
+  () => state.value.isEditMode,
+  (isEditing) => {
+    if (isEditing && activeTab.value === 'mentions') {
+      activeTab.value = 'scenes';
+    }
+  },
+);
+
+function setEditMode(value: boolean) {
+  if (props.onSetEditMode) {
+    void props.onSetEditMode(value);
+    return;
+  }
+  state.value.isEditMode = value;
+}
+
+function setVisualMode(value: boolean) {
+  state.value.isVisualMode = value;
+}
 
 onMounted(() => mentionsStore.load());
 </script>
@@ -52,7 +87,10 @@ onMounted(() => mentionsStore.load());
               :entity-id="entityId"
             />
           </div>
-          <div v-show="activeTab === 'mentions'" class="q-pa-md">
+          <div
+            v-if="!state.isEditMode && activeTab === 'mentions'"
+            class="q-pa-md"
+          >
             <Mentions :title="t('common.mentions')" :entities="mentions" />
             <Mentions
               :title="t('common.mentionedIn')"
@@ -62,6 +100,14 @@ onMounted(() => mentionsStore.load());
         </template>
       </TabGroup>
     </div>
+
+    <QSeparator />
+    <EntityModeControls
+      :is-edit-mode="state.isEditMode"
+      :is-visual-mode="state.isVisualMode"
+      @update:is-edit-mode="setEditMode"
+      @update:is-visual-mode="setVisualMode"
+    />
   </div>
 </template>
 

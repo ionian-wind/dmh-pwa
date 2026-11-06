@@ -55,29 +55,41 @@ Schema requires `id`, `name`, timestamps; optional `notes` and `moduleIds`.
 `showActions` defaults to `undefined`, so all three actions are hidden unless a
 caller explicitly passes it. No caller passes it.
 
-## Editor
+## Editor (`MonsterEditor.vue`)
 
-- Name (required), module multi-select, notes textarea.
+- Name (required) and notes using the shared Markdown editor with visual/raw
+  toggle and formatting help.
+- Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
+- The linked-entities tab edits modules, encounters and locations through
+  `EntitiesLinking`.
 - `watch(props.monster, { deep: true })` copies the record; `watch(isOpen)`
-  resets only when there is no monster.
+  resets when closing or when no monster is selected.
 - Emits a full `Monster` object including id/timestamps; the store update
   ignores/overrides timestamps.
 - Validation only checks the name.
 
 ## Detail page (`MonsterView.vue`)
 
-- Loads monsters, publishes `MonsterViewSidebar` to the right drawer.
-- Renders `notes` as plain text in the **View** tab.
-- A **Linked entities** tab shows module membership read-only via
-  `EntityViewLinks`.
-- Edit modal and delete with confirmation; `BaseEntityTabView` navigates to
-  `/monsters` after a successful delete.
+- Loads monsters, encounters and locations.
+- Uses the shared inline View/Edit experience:
+  - View mode renders `notes` as Markdown inside `EntityContentSurface`.
+  - Edit mode uses `EntityInlineEditor` + `EntityMarkdownEditor`; switching
+    back to View saves, with the shared unsaved-change guard.
+  - Header title hides in edit mode; Delete appears only in edit mode, and
+    formatting help appears in raw Markdown mode.
+  - Header tabs switch between **View/Linked entities** and
+    **Main editor/Linked entities**.
+- The **Linked entities** tab shows modules, encounters and locations. Module
+  ids save with the monster; encounter/location links use the shared relation
+  helpers.
+- Delete asks for confirmation; `BaseEntityTabView` navigates to `/monsters`.
 
 ## Sidebar
 
-`MonsterViewSidebar` reads the plain `monster` prop and displays linked ambient
-scenes plus outgoing and incoming mentions, separated into **Scenes** and
-**Mentions** tabs, with Mentions last.
+`MonsterViewSidebar` displays linked ambient scenes plus outgoing and incoming
+mentions in **Scenes** and **Mentions** tabs, with Mentions last. It hosts the
+shared View/Edit and visual-editor controls; Mentions is hidden while editing,
+leaving the Scenes tab.
 
 ## Relationships
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import TimerListItem from '@/timers/TimerListItem.vue';
@@ -48,6 +48,15 @@ const EntitiesLinkingStub = {
   props: ['kind', 'modelValue'],
   template: '<div class="entities-linking-stub" />',
 };
+
+const EntityMarkdownEditorStub = defineComponent({
+  name: 'EntityMarkdownEditor',
+  props: ['modelValue', 'isVisualMode', 'entityId', 'entityType'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => 'Sneaky' });
+    return () => h('div', { class: 'entity-markdown-editor-stub' });
+  },
+});
 
 const baseTimer = {
   id: 't1',
@@ -115,11 +124,15 @@ describe('coverage gaps: small components', () => {
   it('submits and deletes a monster', async () => {
     const wrapper = mount(MonsterEditor, {
       props: { isOpen: true, monster: null },
-      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+      global: {
+        stubs: {
+          EntitiesLinking: EntitiesLinkingStub,
+          EntityMarkdownEditor: EntityMarkdownEditorStub,
+        },
+      },
     });
     const inputs = wrapper.findAllComponents(quasarStubs.QInput);
     inputs[0].vm.$emit('update:modelValue', 'Goblin');
-    inputs[1].vm.$emit('update:modelValue', 'Sneaky');
     await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await nextTick();
@@ -138,7 +151,12 @@ describe('coverage gaps: small components', () => {
     };
     const existing = mount(MonsterEditor, {
       props: { isOpen: true, monster: monster as any },
-      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+      global: {
+        stubs: {
+          EntitiesLinking: EntitiesLinkingStub,
+          EntityMarkdownEditor: EntityMarkdownEditorStub,
+        },
+      },
     });
     expect(existing.findComponent(BaseModal).props('showDelete')).toBe(true);
     existing.findComponent(BaseModal).vm.$emit('delete');
