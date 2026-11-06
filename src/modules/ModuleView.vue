@@ -496,37 +496,42 @@ async function handleEditorDelete() {
             </template>
           </TabGroup>
         </div>
-        <div v-else-if="activeTab !== 'document'">
-          <TabGroup
-            :align="'justify'"
-            :title-align="'center'"
-            :tabs="[
-              { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
-              { id: 'mentions', label: t('common.mentions') },
-            ]"
-            v-model="mentionsPanelTab"
-            size="sm"
-          >
-            <template #default>
-              <div v-show="mentionsPanelTab === 'scenes'">
-                <EntityScenesPanel
-                  v-if="module"
-                  entity-type="module"
-                  :entity-id="module.id"
-                />
-              </div>
-              <div v-show="mentionsPanelTab === 'mentions'">
-                <Mentions
-                  :title="t('common.mentions')"
-                  :entities="mentionedEntities"
-                />
-                <Mentions
-                  :title="t('common.mentionedIn')"
-                  :entities="mentionedInEntities"
-                />
-              </div>
-            </template>
-          </TabGroup>
+        <div
+          v-else-if="activeTab !== 'document'"
+          class="side-panel-content column full-height"
+        >
+          <div class="sidebar-tab-content col-grow">
+            <TabGroup
+              :align="'justify'"
+              :title-align="'center'"
+              :tabs="[
+                { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+                { id: 'mentions', label: t('common.mentions') },
+              ]"
+              v-model="mentionsPanelTab"
+              size="sm"
+            >
+              <template #default>
+                <div v-show="mentionsPanelTab === 'scenes'" class="q-pa-md">
+                  <EntityScenesPanel
+                    v-if="module"
+                    entity-type="module"
+                    :entity-id="module.id"
+                  />
+                </div>
+                <div v-show="mentionsPanelTab === 'mentions'" class="q-pa-md">
+                  <Mentions
+                    :title="t('common.mentions')"
+                    :entities="mentionedEntities"
+                  />
+                  <Mentions
+                    :title="t('common.mentionedIn')"
+                    :entities="mentionedInEntities"
+                  />
+                </div>
+              </template>
+            </TabGroup>
+          </div>
         </div>
       </template>
     </BaseEntityTabView>
@@ -562,5 +567,8 @@ async function handleEditorDelete() {
 </template>
 
 <style scoped>
-/* Removed .content-grid and .empty-state. Use Quasar classes. */
+.sidebar-tab-content {
+  min-height: 0;
+  overflow-y: auto;
+}
 </style>

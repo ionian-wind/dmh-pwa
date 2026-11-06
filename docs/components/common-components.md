@@ -369,7 +369,9 @@ A non-Quasar tab system:
   matches.
 - Supports variants (default/pills/underline/cards), sizes, closable/addable
   tabs, vertical mode.
-- Used by the module sidepanel.
+- Entity sidebars use the note variant: `side-panel-content` →
+  `sidebar-tab-content` → `TabGroup`, with each tab panel padded by `q-pa-md`.
+- Used by the note, character, monster, encounter and module sidebars.
 
 ### `PopoverPanel.vue`
 

@@ -80,7 +80,7 @@ onMounted(() => mentionsStore.load());
 
 <template>
   <div class="side-panel-content note-sidebar column full-height">
-    <div class="note-sidebar-content col-grow">
+    <div class="sidebar-tab-content col-grow">
       <div v-if="state.isEditMode" class="q-pa-md">
         <NoteOptions :note="optionsNote" @update:note="handleOptionsUpdate" />
       </div>
@@ -185,7 +185,7 @@ onMounted(() => mentionsStore.load());
 </template>
 
 <style scoped>
-.note-sidebar-content {
+.sidebar-tab-content {
   min-height: 0;
   overflow-y: auto;
 }

@@ -35,25 +35,39 @@ onMounted(() => mentionsStore.load());
 </script>
 
 <template>
-  <TabGroup
-    :align="'justify'"
-    :title-align="'center'"
-    v-model="activeTab"
-    :tabs="tabs"
-    size="sm"
-  >
-    <template #default>
-      <div v-show="activeTab === 'mentions'">
-        <Mentions :title="t('common.mentions')" :entities="mentions" />
-        <Mentions :title="t('common.mentionedIn')" :entities="mentionedIn" />
-      </div>
-      <div v-show="activeTab === 'scenes'">
-        <EntityScenesPanel
-          v-if="entityId"
-          entity-type="character"
-          :entity-id="entityId"
-        />
-      </div>
-    </template>
-  </TabGroup>
+  <div class="side-panel-content column full-height">
+    <div class="sidebar-tab-content col-grow">
+      <TabGroup
+        :align="'justify'"
+        :title-align="'center'"
+        v-model="activeTab"
+        :tabs="tabs"
+        size="sm"
+      >
+        <template #default>
+          <div v-show="activeTab === 'scenes'" class="q-pa-md">
+            <EntityScenesPanel
+              v-if="entityId"
+              entity-type="character"
+              :entity-id="entityId"
+            />
+          </div>
+          <div v-show="activeTab === 'mentions'" class="q-pa-md">
+            <Mentions :title="t('common.mentions')" :entities="mentions" />
+            <Mentions
+              :title="t('common.mentionedIn')"
+              :entities="mentionedIn"
+            />
+          </div>
+        </template>
+      </TabGroup>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.sidebar-tab-content {
+  min-height: 0;
+  overflow-y: auto;
+}
+</style>
