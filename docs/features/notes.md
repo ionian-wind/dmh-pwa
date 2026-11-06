@@ -64,6 +64,8 @@ editable in the note form; it is chosen by the create action.
 - Applies the note's optional `backgroundColor` behind its content.
 - Has an `IconFileDownload` action: text notes download as `.md`, drawing
   notes download their PNG preview. Drawings without a preview are disabled.
+  File names use `slugify(title)` plus the note id, e.g.
+  `session-notes-note-1.md`; Russian titles are transliterated.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
 
 In view mode the note detail right sidebar shows a pressable **Download** row
