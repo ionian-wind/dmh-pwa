@@ -380,6 +380,7 @@ const hasContent = computed(() => {
     transparent,
     var(--color-background) 35%
   );
+  border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
   transition: opacity 0.15s ease;
   transition-delay: 0s;
 }
