@@ -64,7 +64,7 @@ test('keeps marker and area sidebar tabs and shows map item popups', async ({
 test('shows map and location tabs and opens location details', async ({
   page,
 }) => {
-  await page.goto('/dmh-pwa/maps');
+  await page.goto('/dmh-pwa/locations');
 
   await expect(page.getByRole('tab', { name: 'Maps' })).toBeVisible();
   await expect(

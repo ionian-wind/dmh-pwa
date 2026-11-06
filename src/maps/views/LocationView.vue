@@ -227,7 +227,7 @@ async function handleDelete() {
   }
   discardDraft();
   await deleteMapLocation(location.value.id);
-  await router.push('/maps');
+  await router.push('/locations');
   return true;
 }
 
@@ -240,7 +240,7 @@ function openLocation(locationId: string) {
   <BaseEntityTabView
     :entity="location"
     entity-name="maps.location"
-    list-route="/maps"
+    list-route="/locations"
     :on-delete="handleDelete"
     :header-show-edit="false"
     :header-show-delete="editState.isEditMode"

@@ -220,7 +220,7 @@ describe('LocationView', () => {
     await wrapper.find('.entity-delete').trigger('click');
     await flushPromises();
     expect(mocks.deleteLocation).toHaveBeenCalledWith('l1');
-    expect(mocks.push).toHaveBeenCalledWith('/maps');
+    expect(mocks.push).toHaveBeenCalledWith('/locations');
     wrapper.unmount();
   });
 

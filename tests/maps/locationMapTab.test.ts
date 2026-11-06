@@ -254,11 +254,11 @@ async function mountMapView(props: Record<string, unknown> = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/maps', component: { render: () => h('div') } },
-      { path: '/maps/:id', component: { render: () => h('div') } },
+      { path: '/locations', component: { render: () => h('div') } },
+      { path: '/locations/:id', component: { render: () => h('div') } },
     ],
   });
-  await router.push('/maps/map1');
+  await router.push('/locations/map1');
   await router.isReady();
 
   const wrapper = mount(MapView, {

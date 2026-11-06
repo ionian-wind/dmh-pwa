@@ -141,16 +141,12 @@ const router = createRouter({
       component: () =>
         import('@/probability-calculator/ProbabilitySyntaxView.vue'),
     },
-    // Maps routes
+    // Locations routes
     {
-      path: '/maps',
-      name: 'maps',
+      path: '/locations',
+      name: 'locations',
       component: MapsView,
       meta: { exact: true },
-    },
-    {
-      path: '/maps/:id',
-      redirect: (to) => `/locations/${to.params.id}`,
     },
     {
       path: '/locations/:id',

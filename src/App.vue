@@ -137,7 +137,7 @@ const sections: SectionItem[] = [
   {
     section: Section.MAPS,
     label: 'navigation.maps',
-    path: '/maps',
+    path: '/locations',
     icon: IconMap,
   },
   {
@@ -156,11 +156,6 @@ const sections: SectionItem[] = [
 
 function isActive(item: SectionItem): boolean {
   const currentPath = router.currentRoute.value.path;
-  if (item.section === Section.MAPS) {
-    return (
-      currentPath.startsWith('/maps') || currentPath.startsWith('/locations')
-    );
-  }
   return currentPath.startsWith(item.path);
 }
 

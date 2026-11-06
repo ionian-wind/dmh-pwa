@@ -197,9 +197,9 @@ right-clicked point. Draw actions from the context menu use an
 
 ## Maps page
 
-The Maps page lists locations, each with its own map data and add, view, edit,
-and delete actions. There is no separate map list or map-detail route. Legacy
-`/maps/:id` URLs redirect to `/locations/:id`.
+The Maps page is served at `/locations` and lists locations, each with its own
+map data and add, view, edit, and delete actions. There is no separate map list
+or map-detail route. The old `/maps` paths are removed.
 
 Location cards show the location name and description. Deleting a location
 removes its map file and clears marker/area references from other locations.

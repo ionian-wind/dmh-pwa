@@ -27,7 +27,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
   const id = options.id ?? 'e2e-map';
   const title = options.title ?? 'E2E World';
 
-  await page.goto(`${APP_PATH}/maps`);
+  await page.goto(`${APP_PATH}/locations`);
   await waitForAppDatabase(page);
 
   await page.evaluate(
@@ -135,7 +135,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
     { mapId: id, mapTitle: title },
   );
 
-  await page.goto(`${APP_PATH}/maps/${id}`);
+  await page.goto(`${APP_PATH}/locations/${id}`);
   await dismissInstallPrompt(page);
   await page.locator('.ol-map-actions-trigger').waitFor({ state: 'attached' });
 }
