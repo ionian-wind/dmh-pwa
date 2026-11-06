@@ -43,7 +43,7 @@ onMounted(() => mentionsStore.load());
 
 <template>
   <div class="side-panel-content note-sidebar column full-height">
-    <div class="note-sidebar-content col-grow q-pa-md">
+    <div class="note-sidebar-content col-grow">
       <TabGroup
         :align="'justify'"
         :title-align="'center'"
@@ -52,7 +52,7 @@ onMounted(() => mentionsStore.load());
         size="sm"
       >
         <template #default>
-          <div v-show="activeTab === 'tags'">
+          <div v-show="activeTab === 'tags'" class="q-pa-md">
             <EntityGroup
               v-if="props.note.tags?.length"
               class="tags-section"
@@ -75,7 +75,7 @@ onMounted(() => mentionsStore.load());
               {{ t('tagSelector.noTags') }}
             </div>
           </div>
-          <div v-show="activeTab === 'mentions'">
+          <div v-show="activeTab === 'mentions'" class="q-pa-md">
             <Mentions :title="t('common.mentions')" :entities="mentions" />
             <Mentions
               :title="t('common.mentionedIn')"
