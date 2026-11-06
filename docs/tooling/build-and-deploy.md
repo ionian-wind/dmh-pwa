@@ -4,7 +4,8 @@
 
 ```bash
 npm install        # runs patch-package via postinstall
-npm run dev        # Vite dev server (PWA dev worker enabled)
+npm run dev        # Vite app + VitePress help server (PWA dev worker enabled)
+npm run dev:app    # Vite app only, without the help center proxy
 npm run build      # production build to dist/
 npm run preview    # serve the production build
 npm run test       # vitest run

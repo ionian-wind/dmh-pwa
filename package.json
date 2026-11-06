@@ -7,7 +7,8 @@
   "author": "",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
+    "dev:app": "vite",
     "help:dev": "vitepress dev helpcenter --port 5174",
     "help:build": "vitepress build helpcenter",
     "build": "node scripts/clean-dist.mjs && npm run help:build && vite build",

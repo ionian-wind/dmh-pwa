@@ -85,7 +85,9 @@ For a deployment at `/dmh-pwa`:
 Package scripts:
 
 ```bash
-npm run help:dev     # VitePress dev server on port 5174
+npm run dev          # app on 5173 + help center on 5174
+npm run dev:app      # app only, help links will fail
+npm run help:dev     # VitePress help server only
 npm run help:build   # static pages into dist/help
 npm run build        # clean dist, build help, then build the app
 ```
@@ -97,8 +99,9 @@ npm run build        # clean dist, build help, then build the app
 3. `vite build` with `emptyOutDir: false`
 
 That order lets the PWA precache scan the generated help pages. The app dev
-server proxies `/dmh-pwa/help` to the VitePress dev server on port 5174, so run
-`npm run help:dev` alongside `npm run dev` when editing help content.
+server proxies `/dmh-pwa/help` to the VitePress dev server on port 5174, so
+`npm run dev` starts both. Use `npm run dev:app` only when you do not need the
+in-app help links.
 
 ## App links
 
