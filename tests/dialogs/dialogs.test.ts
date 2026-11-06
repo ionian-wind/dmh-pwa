@@ -183,6 +183,7 @@ describe('dialog helpers', () => {
     expect(wrapper.text()).toContain('Unsaved changes');
     expect(wrapper.text()).toContain('Careful');
     expect(wrapper.find('.unsaved-save').text()).toBe('Save');
+    expect(wrapper.find('.unsaved-save').attributes('color')).toBe('positive');
     expect(wrapper.find('.unsaved-discard').text()).toBe('Do not save');
     expect(wrapper.find('.unsaved-cancel').text()).toBe('Cancel');
 

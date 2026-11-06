@@ -66,10 +66,11 @@ editable in the note form; it is chosen by the create action.
   notes download their PNG preview. Drawings without a preview are disabled.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
 
-The note detail header shows the same download action on the left side of the
-header while in view mode. It is hidden while editing; the edit-mode header
-instead shows delete and, when the visual editor is off, a Markdown
-formatting-help action.
+In view mode the note detail right sidebar shows a pressable **Download** row
+with a download icon above the View/Edit switch. It downloads text notes as
+`.md` and drawing notes as their PNG preview; drawings without a preview are
+disabled. The row is hidden while editing. The edit-mode header instead shows
+delete and, when the visual editor is off, a Markdown formatting-help action.
 
 The 600px clamp is hard-coded and does not account for viewport size.
 
@@ -117,8 +118,9 @@ created inside a module's document tree are still forced to `hidden: true` by
   unmount. The same reactive `NoteEditState` is shared with the sidebar, so its
   View/Edit switch, visual-editor toggle and options panel stay in sync.
 - View mode renders the note with `Markdown` and `taskCheckboxEnabled`, or a
-  read-only `NoteCanvas` for drawing notes. The header shows only Download; the
-  Edit and Delete buttons are hidden.
+  read-only `NoteCanvas` for drawing notes. The header has no entity actions besides
+  the sidebar toggle; the right sidebar shows the Download row, and the Edit
+  and Delete buttons are hidden.
 - `handleMarkdownContentChange` writes every checkbox toggle back to the store
   immediately, so task-list state is persisted live.
 

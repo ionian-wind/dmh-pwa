@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconX } from '@tabler/icons-vue';
 import { useNoteStore } from '@/stores/notes';
@@ -18,7 +18,6 @@ const noteStore = useNoteStore();
 const newTag = ref('');
 const suggestionsOpen = ref(false);
 const selectedIndex = ref(-1);
-let openTimer: ReturnType<typeof setTimeout> | null = null;
 
 const normalizedQuery = computed(() => newTag.value.trim().replace(/^#+/, ''));
 
@@ -60,23 +59,6 @@ const optionCount = computed(
 watch(newTag, (value) => {
   selectedIndex.value = -1;
   if (value) suggestionsOpen.value = true;
-});
-
-/**
- * Open after the current click/focus event completes. Opening synchronously
- * from focus lets the same click reach QMenu's click-outside handler, which
- * makes the suggestions flash and immediately close.
- */
-function openSuggestions() {
-  if (openTimer) clearTimeout(openTimer);
-  openTimer = setTimeout(() => {
-    openTimer = null;
-    suggestionsOpen.value = true;
-  }, 0);
-}
-
-onBeforeUnmount(() => {
-  if (openTimer) clearTimeout(openTimer);
 });
 
 function commitTag(tag: string) {
@@ -129,57 +111,61 @@ function selectCurrent() {
           :label="t('editor.tags')"
           :placeholder="t('tagSelector.addTag')"
           outlined
-          @focus="openSuggestions"
+          @focus="suggestionsOpen = true"
           @keydown.enter.prevent="selectCurrent"
           @keydown.down.prevent="moveSelection(1)"
           @keydown.up.prevent="moveSelection(-1)"
+          @keydown.tab="suggestionsOpen = false"
           @keydown.esc.prevent="suggestionsOpen = false"
         />
         <QMenu
           v-model="suggestionsOpen"
+          no-parent-event
           fit
           no-focus
           class="tag-suggestions-menu"
         >
-          <QList v-if="suggestionsOpen" dense class="tag-suggestions-list">
-            <QItem
-              v-for="(tag, index) in suggestions"
-              :key="tag"
-              clickable
-              class="tag-suggestion-item"
-              :class="{ 'tag-suggestion-active': index === selectedIndex }"
-              @click="commitTag(tag)"
-              @mouseenter="selectedIndex = index"
-            >
-              <QItemSection>#{{ tag }}</QItemSection>
-            </QItem>
-            <QItem
-              v-if="canCreate"
-              clickable
-              class="tag-create-option"
-              :class="{
-                'tag-suggestion-active': selectedIndex === suggestions.length,
-              }"
-              @click="addTag"
-              @mouseenter="selectedIndex = suggestions.length"
-            >
-              <QItemSection>
-                {{
-                  t('tagSelector.createTag', {
-                    tag: `#${normalizedQuery}`,
-                  })
-                }}
-              </QItemSection>
-            </QItem>
-            <QItem
-              v-if="suggestions.length === 0 && !canCreate"
-              class="tag-suggestions-empty"
-            >
-              <QItemSection class="text-caption text-grey-7">
-                {{ t('tagSelector.noTags') }}
-              </QItemSection>
-            </QItem>
-          </QList>
+          <div>
+            <QList v-if="suggestionsOpen" dense class="tag-suggestions-list">
+              <QItem
+                v-for="(tag, index) in suggestions"
+                :key="tag"
+                clickable
+                class="tag-suggestion-item"
+                :class="{ 'tag-suggestion-active': index === selectedIndex }"
+                @click="commitTag(tag)"
+                @mouseenter="selectedIndex = index"
+              >
+                <QItemSection>#{{ tag }}</QItemSection>
+              </QItem>
+              <QItem
+                v-if="canCreate"
+                clickable
+                class="tag-create-option"
+                :class="{
+                  'tag-suggestion-active': selectedIndex === suggestions.length,
+                }"
+                @click="addTag"
+                @mouseenter="selectedIndex = suggestions.length"
+              >
+                <QItemSection>
+                  {{
+                    t('tagSelector.createTag', {
+                      tag: `#${normalizedQuery}`,
+                    })
+                  }}
+                </QItemSection>
+              </QItem>
+              <QItem
+                v-if="suggestions.length === 0 && !canCreate"
+                class="tag-suggestions-empty"
+              >
+                <QItemSection class="text-caption text-grey-7">
+                  {{ t('tagSelector.noTags') }}
+                </QItemSection>
+              </QItem>
+            </QList>
+          </div>
         </QMenu>
       </div>
       <QBtn

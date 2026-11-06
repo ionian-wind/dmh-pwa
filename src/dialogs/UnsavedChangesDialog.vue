@@ -25,7 +25,7 @@ const { t } = useI18n();
       <QCardActions align="right">
         <QBtn
           class="unsaved-save"
-          color="primary"
+          color="positive"
           :label="t('common.save')"
           @click="onDialogOK('save')"
         />

@@ -28,8 +28,7 @@ import type { MapEntityRef } from '@/maps/types';
 import Markdown from '@/components/common/Markdown.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
-import { downloadNote } from '@/notes/downloadNote';
-import { IconFileDownload, IconHelp } from '@tabler/icons-vue';
+import { IconHelp } from '@tabler/icons-vue';
 import { alert, confirm } from '@/dialogs';
 import {
   confirmUnsavedChanges,
@@ -290,38 +289,20 @@ async function setEditMode(value: boolean) {
   }
 }
 
-const handleDownload = () => {
-  if (note.value) downloadNote(note.value);
-};
+const headerButtons = computed(() => {
+  if (!editState.isEditMode || editState.isVisualMode) return [];
 
-const downloadButtons = computed(() =>
-  editState.isEditMode
-    ? []
-    : [
-        {
-          color: 'warning',
-          title: 'common.download',
-          icon: IconFileDownload,
-          event: handleDownload,
-          disabled: note.value?.contentType === 'draw' && !note.value?.preview,
-        },
-      ],
-);
-
-const headerButtons = computed(() =>
-  editState.isEditMode && !editState.isVisualMode
-    ? [
-        {
-          color: 'primary',
-          title: 'markdownEditor.formattingHelp',
-          icon: IconHelp,
-          event: () => {
-            isHelpOpen.value = true;
-          },
-        },
-      ]
-    : [],
-);
+  return [
+    {
+      color: 'primary',
+      title: 'markdownEditor.formattingHelp',
+      icon: IconHelp,
+      event: () => {
+        isHelpOpen.value = true;
+      },
+    },
+  ];
+});
 
 const handleDelete = async () => {
   if (!note.value) return false;
@@ -396,7 +377,6 @@ onBeforeUnmount(() => {
     :is-editing="editState.isEditMode"
     :title="editState.isEditMode ? '' : noteTitle"
     :not-found="notFound"
-    :left-header-buttons="downloadButtons"
     :header-buttons="headerButtons"
     :tabs="tabs"
     v-model="activeTab"

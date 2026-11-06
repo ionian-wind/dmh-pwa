@@ -45,7 +45,6 @@ describe('TagSelector suggestions', () => {
     });
 
     await wrapper.find('input').trigger('focus');
-    await new Promise((resolve) => setTimeout(resolve, 0));
     await nextTick();
 
     expect(wrapper.find('.tag-suggestion-item').text()).toContain('#campaign');
@@ -187,21 +186,23 @@ describe('TagSelector suggestions', () => {
     wrapper.unmount();
   });
 
-  it('closes suggestions with Escape and clears the open timer on unmount', async () => {
+  it('closes suggestions with Escape and keeps them open on repeated clicks', async () => {
     seedTags(['campaign']);
     const wrapper = mount(TagSelector, {
       props: { modelValue: [] },
     });
 
     await wrapper.find('input').trigger('focus');
-    await wrapper.find('input').trigger('focus');
-    await new Promise((resolve) => setTimeout(resolve, 0));
     await nextTick();
+    expect(wrapper.find('.tag-suggestions-list').exists()).toBe(true);
+
+    await wrapper.find('input').trigger('focus');
+    await nextTick();
+    expect(wrapper.find('.tag-suggestions-list').exists()).toBe(true);
+
     await wrapper.find('input').trigger('keydown.esc');
     await nextTick();
     expect(wrapper.find('.tag-suggestions-list').exists()).toBe(false);
-
-    await wrapper.find('input').trigger('focus');
     wrapper.unmount();
   });
 

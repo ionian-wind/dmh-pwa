@@ -4,6 +4,10 @@ import { mount } from '@vue/test-utils';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import type { Note, NoteEditState } from '@/types';
 
+const downloadNote = vi.hoisted(() => vi.fn());
+
+vi.mock('@/notes/downloadNote', () => ({ downloadNote }));
+
 const RouterLinkStub = {
   props: ['to'],
   template: '<a class="tag-link"><slot /></a>',
@@ -112,6 +116,61 @@ describe('NoteViewSidebar', () => {
 
     await wrapper.find('.note-edit-mode').trigger('click');
     expect(setEditMode).toHaveBeenCalledWith(true);
+    wrapper.unmount();
+  });
+
+  it('downloads the note from a sidebar row in view mode', async () => {
+    const note = {
+      id: 'n1',
+      title: 'Note',
+      content: 'Content',
+      contentType: 'text',
+      tags: [],
+    } as Note;
+    const editState = reactive<NoteEditState>({
+      isEditMode: false,
+      isVisualMode: true,
+      draft: null,
+    });
+
+    const wrapper = mount(NoteViewSidebar, {
+      props: { note, editState },
+      global: { stubs: { NoteOptions: true, RouterLink: RouterLinkStub } },
+    });
+
+    const row = wrapper.find('.note-download');
+    expect(row.text()).toContain('Download');
+    expect(row.find('svg').exists()).toBe(true);
+    await row.trigger('click');
+    expect(downloadNote).toHaveBeenCalledWith(note);
+    wrapper.unmount();
+  });
+
+  it('hides download in edit mode and disables it without a drawing preview', async () => {
+    const note = {
+      id: 'n1',
+      title: 'Sketch',
+      content: '',
+      contentType: 'draw',
+      preview: undefined,
+      tags: [],
+    } as Note;
+    const editState = reactive<NoteEditState>({
+      isEditMode: true,
+      isVisualMode: true,
+      draft: { ...note },
+    });
+
+    const wrapper = mount(NoteViewSidebar, {
+      props: { note, editState },
+      global: { stubs: { NoteOptions: true, RouterLink: RouterLinkStub } },
+    });
+
+    expect(wrapper.find('.note-download').exists()).toBe(false);
+    editState.isEditMode = false;
+    await nextTick();
+    await wrapper.find('.note-download').trigger('click');
+    expect(downloadNote).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 

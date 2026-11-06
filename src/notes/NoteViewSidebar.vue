@@ -6,7 +6,8 @@ import { useI18n } from 'vue-i18n';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import NoteOptions from '@/notes/NoteOptions.vue';
-import { IconEdit, IconEye } from '@tabler/icons-vue';
+import { downloadNote } from '@/notes/downloadNote';
+import { IconEdit, IconEye, IconFileDownload } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
@@ -30,6 +31,9 @@ const props = defineProps<{
 
 const state = computed(() => props.editState ?? localEditState);
 const optionsNote = computed(() => state.value.draft ?? props.note);
+const downloadDisabled = computed(
+  () => props.note?.contentType === 'draw' && !props.note?.preview,
+);
 
 const mentions = computed(() => {
   return props.note
@@ -62,6 +66,12 @@ function setVisualMode(value: boolean) {
 function handleOptionsUpdate(updated: Note) {
   if (state.value.draft) {
     Object.assign(state.value.draft, updated);
+  }
+}
+
+function handleDownload() {
+  if (props.note && !downloadDisabled.value) {
+    downloadNote(props.note);
   }
 }
 
@@ -113,6 +123,22 @@ onMounted(() => mentionsStore.load());
     </div>
 
     <QSeparator />
+    <QList v-if="!state.isEditMode">
+      <QItem
+        class="note-download"
+        clickable
+        v-ripple
+        :disable="downloadDisabled"
+        @click="handleDownload"
+      >
+        <QItemSection>{{ t('common.download') }}</QItemSection>
+        <QItemSection side>
+          <IconFileDownload :size="18" />
+        </QItemSection>
+      </QItem>
+    </QList>
+
+    <QSeparator v-if="!state.isEditMode" />
     <QList>
       <QItem v-if="state.isEditMode" class="note-visual-mode-toggle">
         <QItemSection>
