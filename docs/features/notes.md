@@ -174,7 +174,8 @@ The only escape is delete + recreate.
 
 `NoteView` uses the standard **View** / **Linked entities** tabs in the
 app header panel. View renders the note body; Linked entities shows the
-note's module read-only. The right sidebar shows tags plus outgoing and incoming
+note's module read-only. The right sidebar shows a local View/Edit mode switch
+(not wired to note behavior yet), tags, plus outgoing and incoming
 mentions.
 
 ## Markdown and mentions

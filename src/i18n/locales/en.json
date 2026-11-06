@@ -361,7 +361,9 @@
       "character": "Character",
       "location": "Location"
     },
-    "openEntity": "Open entity"
+    "openEntity": "Open entity",
+    "viewMode": "View mode",
+    "editMode": "Edit mode"
   },
   "validation": {
     "required": "This field is required",

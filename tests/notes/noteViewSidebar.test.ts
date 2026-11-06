@@ -28,4 +28,24 @@ describe('NoteViewSidebar', () => {
     expect(wrapper.find('.tags-section').exists()).toBe(false);
     wrapper.unmount();
   });
+
+  it('shows a local view/edit mode switch without wiring it to the note', async () => {
+    const wrapper = mount(NoteViewSidebar, {
+      props: { note: { id: 'n1', title: 'Note', tags: [] } as any },
+    });
+
+    const view = wrapper.find('.note-view-mode');
+    const edit = wrapper.find('.note-edit-mode');
+    expect(view.attributes('aria-pressed')).toBe('true');
+    expect(edit.attributes('aria-pressed')).toBe('false');
+
+    await edit.trigger('click');
+    expect(view.attributes('aria-pressed')).toBe('false');
+    expect(edit.attributes('aria-pressed')).toBe('true');
+
+    await view.trigger('click');
+    expect(view.attributes('aria-pressed')).toBe('true');
+    expect(edit.attributes('aria-pressed')).toBe('false');
+    wrapper.unmount();
+  });
 });
