@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import type { PlayerCharacter, UUID } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import MarkdownHelpDialog from '@/components/common/MarkdownHelpDialog.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { usePartyStore } from '@/stores/parties';
+import { useMapLocationStore } from '@/maps/locations';
+import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
+import { IconHelp } from '@tabler/icons-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -24,6 +34,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const partyStore = usePartyStore();
+const locationStore = useMapLocationStore();
+const relations = useEntityLinkRelations();
 
 const blankCharacter = (): PlayerCharacter => ({
   id: '',
@@ -37,6 +50,50 @@ const editedCharacter = ref<PlayerCharacter>(
   props.character ? { ...props.character } : blankCharacter(),
 );
 const isEditing = computed(() => !!(props.character && props.character.id));
+const isWYSIWYGMode = ref(true);
+const isHelpOpen = ref(false);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
+
+const tabs = useEntityEditorTabs();
+
+const characterNotes = computed({
+  get: () => editedCharacter.value.notes ?? '',
+  set: (value: string) => {
+    editedCharacter.value.notes = value;
+  },
+});
+
+const characterLinks = computed<MapEntityRef[]>(() => {
+  const id = editedCharacter.value.id;
+  if (!id) return [];
+  return [
+    ...relations
+      .getLinkedIds('character', id, 'party')
+      .map((partyId) => ({ kind: 'party' as const, id: partyId })),
+    ...relations
+      .getLinkedIds('character', id, 'location')
+      .map((locationId) => ({ kind: 'location' as const, id: locationId })),
+  ];
+});
+
+async function setCharacterLinks(
+  kind: 'party' | 'location',
+  links: MapEntityRef[],
+) {
+  if (!editedCharacter.value.id) return;
+  await relations.setLinkedIds(
+    'character',
+    editedCharacter.value.id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
+
+onMounted(async () => {
+  await Promise.all([partyStore.load(), locationStore.load()]);
+});
 
 watch(
   () => props.character,
@@ -54,12 +111,16 @@ watch(
 
 function resetForm() {
   editedCharacter.value = blankCharacter();
+  isWYSIWYGMode.value = true;
 }
 
 async function handleSubmit() {
   if (!editedCharacter.value.name) {
     await alert(t('characterEditor.nameRequired'));
     return;
+  }
+  if (markdownEditorRef.value?.getMarkdown) {
+    editedCharacter.value.notes = markdownEditorRef.value.getMarkdown();
   }
   emit('submit', { ...editedCharacter.value });
   resetForm();
@@ -83,41 +144,65 @@ function handleDelete() {
     :showSubmit="true"
     :showCancel="true"
     :showDelete="!!character"
+    :showExpand="true"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="tabs"
     modalId="character-editor"
     @submit="handleSubmit"
     @delete="handleDelete"
     @cancel="handleCancel"
   >
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            :label="t('characters.fields.name')"
-            id="encounter-name"
-            v-model="editedCharacter.name"
-            type="text"
-            required
-            outlined
-          />
-        </div>
+    <template #main>
+      <EntityInlineEditor
+        v-model:title="editedCharacter.name"
+        :title-placeholder="t('characters.fields.name')"
+      >
+        <EntityMarkdownEditor
+          ref="markdownEditorRef"
+          v-model="characterNotes"
+          :is-visual-mode="isWYSIWYGMode"
+          :entity-id="editedCharacter.id"
+          entity-type="character"
+          :placeholder="t('common.notes')"
+        />
+      </EntityInlineEditor>
+    </template>
+
+    <template #links>
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          kind="party"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('party', links)"
+        />
+        <EntitiesLinking
+          kind="location"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('location', links)"
+        />
       </div>
-    </div>
-    <div class="form-section">
-      <div class="form-grid">
-        <div class="form-group">
-          <QInput
-            :label="t('common.notes')"
-            id="character-description"
-            v-model="editedCharacter.notes"
-            type="textarea"
-            :rows="5"
-            autogrow
-            outlined
-          />
-        </div>
+    </template>
+
+    <template #footer>
+      <div class="q-mr-auto row items-center q-gutter-sm">
+        <QToggle left-label v-model="isWYSIWYGMode">
+          {{ t('markdownEditor.visualMode') }}
+        </QToggle>
+        <QBtn
+          v-if="!isWYSIWYGMode"
+          flat
+          round
+          class="character-help-button"
+          :title="t('markdownEditor.formattingHelp')"
+          :aria-label="t('markdownEditor.formattingHelp')"
+          @click="isHelpOpen = true"
+        >
+          <IconHelp />
+        </QBtn>
       </div>
-    </div>
+    </template>
   </BaseModal>
+
+  <MarkdownHelpDialog v-model:is-open="isHelpOpen" />
 </template>

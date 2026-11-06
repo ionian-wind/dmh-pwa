@@ -29,6 +29,16 @@ import { quasarStubs } from '../helpers/quasar-stubs';
 
 const QInput = quasarStubs.QInput;
 
+const EntityMarkdownEditorStub = defineComponent({
+  name: 'EntityMarkdownEditor',
+  props: ['modelValue', 'isVisualMode', 'entityId', 'entityType', 'tags'],
+  emits: ['update:modelValue'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => 'Notes' });
+    return () => h('div', { class: 'entity-markdown-editor-stub' });
+  },
+});
+
 describe('current shared components', () => {
   it('BaseCard renders content and emits actions', async () => {
     const wrapper = mount(BaseCard, {
@@ -812,11 +822,11 @@ describe('current editors', () => {
   it('CharacterEditor submits a name and notes', async () => {
     const wrapper = mount(CharacterEditor, {
       props: { isOpen: true, character: null },
+      global: { stubs: { EntityMarkdownEditor: EntityMarkdownEditorStub } },
     });
 
     const inputs = wrapper.findAllComponents(QInput);
     inputs[0].vm.$emit('update:modelValue', 'Alice');
-    inputs[1].vm.$emit('update:modelValue', 'Notes');
     await nextTick();
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');

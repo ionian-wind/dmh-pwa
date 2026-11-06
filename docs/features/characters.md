@@ -48,13 +48,22 @@ reference on the character.
 
 Renders only the title. There is no summary, notes preview, or party badge.
 
-## Editor
+## Editor (`CharacterEditor.vue`)
 
-- Name (required) and notes textarea.
+- Name (required; empty triggers `alert(t('characterEditor.nameRequired'))`).
+- `notes` uses the shared `EntityMarkdownEditor` (Milkdown / raw Markdown
+  toggle) and is read back on submit with `getMarkdown()`.
+- Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
+- The linked-entities tab edits party/location links through
+  `EntitiesLinking`.
+- Footer has only the visual-editor toggle and, in raw mode, the Markdown
+  formatting-help button. There are no note options, tags or note types.
 - `blankCharacter()` includes empty strings and current timestamps; the base
   store replaces timestamps on create.
 - `watch(props.isOpen)` resets the form when the modal closes.
-- No party assignment; party membership is managed from `PartyView`.
+
+The detail page uses inline editing instead of this modal; the modal remains
+for the character list and map entity creation.
 
 ## Detail page (`CharacterView.vue`)
 

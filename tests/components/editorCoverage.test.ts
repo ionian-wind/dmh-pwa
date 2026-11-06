@@ -28,6 +28,12 @@ const EntitiesLinkingStub = {
   template: '<div class="entities-linking-stub" />',
 };
 
+const EntityMarkdownEditorStub = {
+  name: 'EntityMarkdownEditor',
+  props: ['modelValue', 'isVisualMode', 'entityId', 'entityType'],
+  template: '<div class="entity-markdown-editor-stub" />',
+};
+
 describe('editor coverage gaps', () => {
   it('CharacterEditor resets on close, validates names and cancels', async () => {
     const character = {
@@ -40,7 +46,12 @@ describe('editor coverage gaps', () => {
     };
     const wrapper = mount(CharacterEditor, {
       props: { isOpen: true, character: character as any },
-      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+      global: {
+        stubs: {
+          EntitiesLinking: EntitiesLinkingStub,
+          EntityMarkdownEditor: EntityMarkdownEditorStub,
+        },
+      },
     });
     await wrapper.setProps({ isOpen: false });
     expect(wrapper.findComponent(BaseModal).props('isOpen')).toBe(false);
