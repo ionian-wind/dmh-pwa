@@ -2,7 +2,7 @@
 import { computed, watchEffect } from 'vue';
 import { IconExternalLink } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import Markdown from '@/components/common/Markdown.vue';
+import EntityMainContent from '@/components/common/EntityMainContent.vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
 import router from '@/router';
@@ -22,6 +22,12 @@ const showModal = computed(() => {
 const modalEntity = computed(() => currentMentionModal.value?.entity || null);
 const modalKind = computed(() => currentMentionModal.value?.kind || '');
 const modalId = computed(() => currentMentionModal.value?.modalId || '');
+const modalTitle = computed(
+  () =>
+    modalEntity.value?.title ||
+    modalEntity.value?.name ||
+    t('modal.entityDetails'),
+);
 const externalRoute = computed(() => {
   const id = modalEntity.value?.id;
   if (!id) return null;
@@ -62,7 +68,6 @@ function openExternalEntity() {
   <BaseModal
     v-if="showModal"
     :isOpen="showModal"
-    :title="modalEntity?.title || modalEntity?.name || t('modal.entityDetails')"
     :showClose="true"
     :showExpand="true"
     :modalId="modalId"
@@ -83,30 +88,14 @@ function openExternalEntity() {
 
     <template #default>
       <div v-if="modalEntity">
-        <div v-if="modalKind === 'note'">
-          <Markdown
-            :content="modalEntity.content || ''"
-            :enableMentionModal="true"
-          />
-        </div>
-        <div v-else-if="modalKind === 'module'">
-          <div>{{ modalEntity.description }}</div>
-        </div>
-        <div v-else-if="modalKind === 'party'">
-          <div>{{ modalEntity.description }}</div>
-        </div>
-        <div v-else-if="modalKind === 'monster'">
-          <h2>{{ modalEntity.name }}</h2>
-          <div v-if="modalEntity.description">
-            {{ modalEntity.description }}
-          </div>
-        </div>
-        <div v-else-if="modalKind === 'encounter'">
-          <h2>{{ modalEntity.name }}</h2>
-          <div v-if="modalEntity.description">
-            {{ modalEntity.description }}
-          </div>
-        </div>
+        <header class="mention-modal-header q-mb-md">
+          <h1
+            class="mention-modal-title entity-page-title text-h5 text-weight-medium q-ma-none"
+          >
+            {{ modalTitle }}
+          </h1>
+        </header>
+        <EntityMainContent :kind="modalKind" :entity="modalEntity" />
       </div>
       <div v-else>
         <div style="color: var(--color-danger, red)">

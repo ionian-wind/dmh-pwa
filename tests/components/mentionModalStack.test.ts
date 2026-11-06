@@ -40,17 +40,33 @@ describe('MentionModalStack', () => {
   });
 
   it.each([
-    ['module', { id: 'm1', name: 'Module', description: 'Module desc' }],
-    ['party', { id: 'p1', name: 'Party', description: 'Party desc' }],
-    ['monster', { id: 'mo1', name: 'Goblin', description: 'Monster desc' }],
-    ['encounter', { id: 'e1', name: 'Ambush', description: 'Encounter desc' }],
-  ])('renders %s mentions', async (kind, entity) => {
+    [
+      'module',
+      { id: 'm1', name: 'Module', description: 'Module desc' },
+      'Module desc',
+    ],
+    [
+      'party',
+      { id: 'p1', name: 'Party', description: 'Party desc' },
+      'Party desc',
+    ],
+    [
+      'monster',
+      { id: 'mo1', name: 'Goblin', notes: 'Monster notes' },
+      'Monster notes',
+    ],
+    [
+      'encounter',
+      { id: 'e1', name: 'Ambush', description: 'Encounter desc' },
+      'Encounter desc',
+    ],
+  ])('renders %s mentions', async (kind, entity, content) => {
     const wrapper = mount(MentionModalStack);
     openMentionModal(`${kind}-modal`, entity, kind);
     await nextTick();
 
     expect(wrapper.text()).toContain(entity.name);
-    expect(wrapper.text()).toContain('desc');
+    expect(wrapper.text()).toContain(content);
     wrapper.unmount();
   });
 
@@ -104,6 +120,27 @@ describe('MentionModalStack', () => {
 
     expect(wrapper.find('button[aria-label="Open entity"]').exists()).toBe(
       false,
+    );
+    wrapper.unmount();
+  });
+
+  it('renders drawing note previews in mention dialogs', async () => {
+    const wrapper = mount(MentionModalStack);
+    openMentionModal(
+      'draw-modal',
+      {
+        id: 'n2',
+        title: 'Sketch',
+        contentType: 'draw',
+        preview: 'data:image/png;base64,preview',
+        content: '{}',
+      },
+      'note',
+    );
+    await nextTick();
+
+    expect(wrapper.find('img.note-drawing-preview').attributes('src')).toBe(
+      'data:image/png;base64,preview',
     );
     wrapper.unmount();
   });

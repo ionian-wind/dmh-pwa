@@ -95,11 +95,15 @@ top (otherwise removes all occurrences). `currentModalId` is the top.
 
 `MentionModalStack.vue` is mounted once in `App.vue`:
 
-- Shows the top mention modal when its `modalId` is current.
+- Shows the top mention modal when its `modalId` is current. The entity title is
+  rendered inside the dialog body using the same `entity-page-title` heading
+  markup as entity detail pages.
 - Renders note content as `Markdown` with `enableMentionModal`, so links inside
   the modal can open further entity modals.
-- Module/party show `description`; monster/encounter show `name` +
-  `description`; unknown/missing entities show "not found".
+- Body content reuses `EntityMainContent`, mirroring the entity view's main
+  information tab (note markdown/drawing preview, module/party/location
+  description, monster/character notes, encounter description) without tabs or
+  sidebar. Unknown/missing entities show "not found".
 - When the mentioned entity kind has a detail route, an `IconExternalLink`
   header action closes the modal and navigates to that entity view.
 - `openMentionModal` has a special case: if the newly requested entity equals
