@@ -159,6 +159,23 @@ describe('settings dialog', () => {
 
     expect(storageMocks.requestPersistence).toHaveBeenCalled();
     expect(storageMocks.diagnostics).toHaveBeenCalledTimes(2);
+    expect(
+      wrapper.find('[data-test="settings-persistence-message"]').text(),
+    ).toContain('Persistent storage granted.');
+    wrapper.unmount();
+  });
+
+  it('explains when the browser denies persistent storage', async () => {
+    storageMocks.requestPersistence.mockResolvedValue(false);
+    const wrapper = mount(SettingsDialog, { props: { modelValue: true } });
+    await flushPromises();
+
+    await wrapper.find('.settings-request-persistence').trigger('click');
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-test="settings-persistence-message"]').text(),
+    ).toContain('did not grant persistent storage');
     wrapper.unmount();
   });
 

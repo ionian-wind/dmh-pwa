@@ -546,7 +546,9 @@
     "migrateFilesHint": "Move existing large local files out of IndexedDB.",
     "migratedFiles": "{count} files moved.",
     "backupExternalFiles": "Include linked files in backups",
-    "backupExternalFilesHint": "Copy external File System Access files into the backup. This can make the archive much larger."
+    "backupExternalFilesHint": "Copy external File System Access files into the backup. This can make the archive much larger.",
+    "storagePersistentGrantedMessage": "Persistent storage granted.",
+    "storagePersistentDeniedMessage": "The browser did not grant persistent storage. Install the app or enable it in site settings."
   },
   "tags": {
     "title": "Tags"

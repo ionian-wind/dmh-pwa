@@ -33,6 +33,7 @@ const isLoadingStorage = ref(false);
 const isReconnecting = ref(false);
 const isMigrating = ref(false);
 const reconnectStatus = ref('');
+const persistenceStatus = ref<'granted' | 'denied' | null>(null);
 const storage = ref<FileStorageDiagnostics | null>(null);
 
 const storageUsage = computed(() => {
@@ -78,8 +79,10 @@ async function loadStorage() {
 async function requestPersistence() {
   isRequestingPersistence.value = true;
   try {
-    await requestPersistentStorage();
+    const granted = await requestPersistentStorage();
     await loadStorage();
+    persistenceStatus.value =
+      granted || storage.value?.persisted ? 'granted' : 'denied';
   } finally {
     isRequestingPersistence.value = false;
   }
@@ -131,7 +134,10 @@ onMounted(loadStorage);
 watch(
   () => props.modelValue,
   (open) => {
-    if (open) void loadStorage();
+    if (open) {
+      persistenceStatus.value = null;
+      void loadStorage();
+    }
   },
 );
 
@@ -299,6 +305,22 @@ async function clearStorage() {
             <div>{{ t('settings.storagePersistent') }}</div>
             <div class="text-caption text-grey-7">
               {{ t('settings.storagePersistentHint') }}
+            </div>
+            <div
+              v-if="persistenceStatus"
+              class="text-caption"
+              :class="
+                persistenceStatus === 'granted'
+                  ? 'text-positive'
+                  : 'text-negative'
+              "
+              data-test="settings-persistence-message"
+            >
+              {{
+                persistenceStatus === 'granted'
+                  ? t('settings.storagePersistentGrantedMessage')
+                  : t('settings.storagePersistentDeniedMessage')
+              }}
             </div>
           </QItemSection>
           <QItemSection side>

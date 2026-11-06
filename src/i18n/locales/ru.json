@@ -547,7 +547,9 @@
     "migrateFilesHint": "Перенести существующие большие локальные файлы из IndexedDB.",
     "migratedFiles": "Перенесено файлов: {count}.",
     "backupExternalFiles": "Включать связанные файлы в резервные копии",
-    "backupExternalFilesHint": "Копировать внешние файлы File System Access в резервную копию. Архив может значительно увеличиться."
+    "backupExternalFilesHint": "Копировать внешние файлы File System Access в резервную копию. Архив может значительно увеличиться.",
+    "storagePersistentGrantedMessage": "Постоянное хранилище предоставлено.",
+    "storagePersistentDeniedMessage": "Браузер не предоставил постоянное хранилище. Установите приложение или включите его в настройках сайта."
   },
   "tags": {
     "title": "Теги"
