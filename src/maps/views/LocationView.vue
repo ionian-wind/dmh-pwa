@@ -245,7 +245,7 @@ function openLocation(locationId: string) {
     :header-show-edit="false"
     :header-show-delete="editState.isEditMode"
     :is-editing="editState.isEditMode"
-    :title="editState.isEditMode ? '' : location?.name"
+    :title="editState.isEditMode || activeTab === 'map' ? '' : location?.name"
     :not-found="notFound"
     :loading="loading"
     :header-buttons="headerButtons"
