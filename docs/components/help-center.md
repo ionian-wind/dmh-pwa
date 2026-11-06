@@ -161,6 +161,12 @@ Toolbar actions use a plain anchor (`href` + `target="_blank"`) through the
 shared `ViewHeader` button config; the old in-app help dialogs and the
 `/probability-calculator/syntax` route were removed.
 
+The help-center navbar **Open app** item uses `HelpOpenAppLink` rather than a
+normal VitePress `nav` link, because VitePress prefixes internal nav links with
+the `/dmh-pwa/help/` base. The component derives `/dmh-pwa/` from
+`import.meta.env.BASE_URL` and uses `target="_self"` so VitePress’s SPA router
+loads the app shell as a real page instead of treating it as a help route.
+
 ## Search
 
 VitePress local search is enabled in `.vitepress/config.mts`:

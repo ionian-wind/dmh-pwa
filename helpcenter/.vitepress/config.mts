@@ -189,7 +189,7 @@ export default defineConfig({
       title: 'Help center',
       description: 'Guides for installing and using Owlbear’s DMH.',
       themeConfig: {
-        nav: [{ text: 'Open app', link: '/dmh-pwa/' }],
+        nav: [{ component: 'HelpOpenAppLink', props: { label: 'Open app' } }],
         sidebar: enSidebar,
         ...enTheme,
       },
@@ -201,7 +201,12 @@ export default defineConfig({
       title: 'Справочный центр',
       description: 'Руководства по установке и использованию Owlbear’s DMH.',
       themeConfig: {
-        nav: [{ text: 'Открыть приложение', link: '/dmh-pwa/' }],
+        nav: [
+          {
+            component: 'HelpOpenAppLink',
+            props: { label: 'Открыть приложение' },
+          },
+        ],
         sidebar: ruSidebar,
         ...ruTheme,
       },

@@ -3,6 +3,7 @@ import { useRoute } from 'vitepress';
 import { h, nextTick, onMounted, watch } from 'vue';
 import type { SetupContext } from 'vue';
 import type { Theme } from 'vitepress';
+import HelpOpenAppLink from './HelpOpenAppLink.vue';
 
 type Locale = 'en' | 'ru';
 
@@ -86,4 +87,7 @@ const Layout = {
 export default {
   extends: DefaultTheme,
   Layout,
+  enhanceApp({ app }) {
+    app.component('HelpOpenAppLink', HelpOpenAppLink);
+  },
 } satisfies Theme;
