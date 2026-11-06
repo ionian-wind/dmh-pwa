@@ -47,36 +47,42 @@ Shows name, description, character count, and module names. The character
 count uses `(party.characters || []).length`; module lookup assumes
 `moduleIds` exists.
 
-## Editor
+## Editor (`PartyEditor.vue`)
 
 - Name (required).
-- Description textarea. Parties have no notes field.
+- Description uses the shared Markdown editor with visual/raw toggle and
+  formatting help. Parties have no notes field.
+- Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
 - The **Linked entities** tab contains separate `EntitiesLinking` blocks for
   modules and characters.
-- Submit filters empty module IDs.
-
-Character membership can also be managed from the party detail page.
+- Submit reads the latest Markdown and filters empty module IDs.
 
 ## Detail page (`PartyView.vue`)
 
 - Resolves party from store by route param.
 - Loads characters and modules.
-- `partyCharacters` filters loaded characters by `party.characters` for the page
-  subtitle.
-- The **View** tab shows the party description.
-- The **Linked entities** tab shows modules and characters read-only.
-- Link management moves to `PartyEditor`; the view no longer has unlink buttons
-  or a separate link modal.
+- Uses the shared inline View/Edit experience:
+  - View mode renders `description` as Markdown inside
+    `EntityContentSurface`.
+  - Edit mode uses `EntityInlineEditor` + `EntityMarkdownEditor`; switching
+    back to View saves, and dirty navigation uses the shared unsaved guard.
+  - Header title and subtitle hide in edit mode; Delete appears only in edit
+    mode, and formatting help appears in raw Markdown mode.
+  - Header tabs switch between **View/Linked entities** and
+    **Main editor/Linked entities**.
+- The **Linked entities** tab shows modules and characters. In edit mode both
+  are editable through `EntitiesLinking` and saved with the party.
+- `partySubtitle` is computed in English ("Modules: … • N characters") and is
+  displayed under the page title in view mode only.
 - Delete uses the app confirm dialog, then `BaseEntityTabView` navigates back to
   `/parties`. It does not delete associated combats.
-- `partySubtitle` is computed in English ("Modules: … • N characters") and is
-  displayed under the page title.
 - Publishes `PartyViewSidebar` to the right drawer.
 
 ## Sidebar
 
 `PartyViewSidebar` computes outgoing mentions and backlinks from the plain
-`party` prop.
+`party` prop and hosts the shared View/Edit and visual-editor controls. It has
+no Scenes tab and no party download.
 
 ## Relationships
 

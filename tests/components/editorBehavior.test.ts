@@ -140,7 +140,7 @@ describe('editor behavior', () => {
     linkBlock(wrapper, 'character').vm.$emit('update:modelValue', [
       { kind: 'character', id: 'c1' },
     ]);
-    await wrapper.find('#party-name').setValue('Company');
+    await wrapper.find('.entity-inline-editor input').setValue('Company');
     await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
