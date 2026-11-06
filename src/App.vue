@@ -552,8 +552,7 @@ function openJukebox() {
     </QLayout>
     <div>
       <!-- PWA Components -->
-      <!-- Install prompt temporarily disabled while the flow is being finished. -->
-      <PWAInstallPrompt :enabled="false" />
+      <PWAInstallPrompt />
       <PWAStatus />
       <CommitBadge />
       <!-- Global Mention Modal Stack -->

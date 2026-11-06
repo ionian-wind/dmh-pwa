@@ -10,16 +10,20 @@ the legacy hand-written `public/manifest.json` and `public/sw.js` were removed.
 
 Configured in `vite.config.js`:
 
-| Field                              | Value                                   |
-| ---------------------------------- | --------------------------------------- |
-| `name`                             | Owlbear's Dungeon Master Helper         |
-| `short_name`                       | Owlbear's DMH                           |
-| `theme_color` / `background_color` | `#1e1e2e`                               |
-| `display`                          | `standalone`                            |
-| `orientation`                      | `portrait-primary`                      |
-| `scope` / `start_url`              | `/dmh-pwa`                              |
-| Icons                              | 72, 96, 128, 144, 152, 192, 384, 512 px |
-| Categories                         | productivity, games, utilities          |
+| Field                              | Value                                           |
+| ---------------------------------- | ----------------------------------------------- |
+| `id`                               | `/dmh-pwa/`                                     |
+| `name`                             | Owlbear's Dungeon Master Helper                 |
+| `short_name`                       | Owlbear's DMH                                   |
+| `theme_color` / `background_color` | `#1e1e2e`                                       |
+| `display`                          | `standalone`                                    |
+| `orientation`                      | `any`                                           |
+| `scope` / `start_url`              | `/dmh-pwa/`                                     |
+| `launch_handler`                   | `{ client_mode: 'focus-existing' }`             |
+| Shortcuts                          | Notes, Timers, Jukebox, Help center             |
+| Screenshots                        | `public/screenshots/app-desktop.png` and mobile |
+| Icons                              | 72, 96, 128, 144, 152, 192, 384, 512 px         |
+| Categories                         | productivity, games, utilities                  |
 
 The manifest link is injected by `vite-plugin-pwa` as
 `/dmh-pwa/manifest.webmanifest`; `index.html` keeps only the Apple/Microsoft
@@ -80,12 +84,28 @@ fires `beforeinstallprompt`.
 
 - The event is captured and stored; the browser’s own install UI remains
   available, and the banner’s Install button calls `prompt()`.
-- The banner's Install button calls `prompt()` and records the user's choice.
+- The banner’s Install button calls `prompt()` and records the user’s choice.
 - `appinstalled` hides the banner.
+- The banner is localized and includes an **Installation help** link to the
+  static help center.
 - Listeners are removed on unmount.
 - Browsers that do not fire `beforeinstallprompt` (notably iOS Safari) still
-  need manual install instructions; the standard browser install UI remains
-  available.
+  need manual install instructions; the help center covers this.
+
+## Safe-area handling
+
+`index.html` uses `viewport-fit=cover`. `src/assets/styles/global.css` defines
+`--safe-top/right/bottom/left` from `env(safe-area-inset-*)` and applies them
+to:
+
+- the main header toolbar,
+- left and right drawer content,
+- the footer and bottom player,
+- bottom-positioned sound controls,
+- the PWA update/install banners and status chips.
+
+Verify these on a real notched device or emulator; desktop browser resize does
+not emulate safe-area insets.
 
 ## Offline data behavior
 

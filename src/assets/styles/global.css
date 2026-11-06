@@ -1,4 +1,10 @@
 :root {
+  /* Safe-area insets for installed/standalone mode */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
   /* Colors */
   --color-primary: rgba(30, 30, 46);
   --color-primary-dark: rgba(45, 45, 68);
@@ -304,4 +310,27 @@ h6 {
 html.entity-drag-active,
 body.entity-drag-active {
   overflow: hidden !important;
+}
+
+/* Standalone/PWA safe-area handling. */
+#main_header .q-toolbar {
+  padding-top: var(--safe-top);
+  padding-left: max(8px, var(--safe-left));
+  padding-right: max(8px, var(--safe-right));
+}
+
+#main_menu .q-drawer__content,
+.right-sidebar .q-drawer__content {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  padding-bottom: var(--safe-bottom);
+}
+
+.q-footer,
+.footer-flush {
+  padding-bottom: var(--safe-bottom);
+}
+
+.sound-control-dialog .sound-control-frame {
+  padding-bottom: var(--safe-bottom);
 }

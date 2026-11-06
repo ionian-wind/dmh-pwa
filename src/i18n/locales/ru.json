@@ -688,7 +688,13 @@
     "updateNow": "Обновить сейчас",
     "later": "Позже",
     "offlineMode": "Автономный режим",
-    "appMode": "Режим приложения"
+    "appMode": "Режим приложения",
+    "installTitle": "Установите Owlbear's Dungeon Master Helper",
+    "installDescription": "Добавьте приложение на главный экран для быстрого доступа и работы офлайн.",
+    "installRetry": "Вы отклонили установку. Попробовать снова?",
+    "install": "Установить",
+    "notNow": "Не сейчас",
+    "installHelp": "Как установить"
   },
   "importValidation": {
     "title": "Результаты проверки импорта",

@@ -31,6 +31,7 @@ export default defineConfig({
         'icon-384.png',
       ],
       manifest: {
+        id: '/dmh-pwa/',
         name: "Owlbear's Dungeon Master Helper",
         short_name: "Owlbear's DMH",
         description:
@@ -38,9 +39,84 @@ export default defineConfig({
         theme_color: '#1e1e2e',
         background_color: '#1e1e2e',
         display: 'standalone',
-        orientation: 'portrait-primary',
-        scope: '/dmh-pwa',
-        start_url: '/dmh-pwa',
+        orientation: 'any',
+        scope: '/dmh-pwa/',
+        start_url: '/dmh-pwa/',
+        launch_handler: {
+          client_mode: 'focus-existing',
+        },
+        prefer_related_applications: false,
+        related_applications: [],
+        shortcuts: [
+          {
+            name: 'Notes',
+            short_name: 'Notes',
+            description: 'Open campaign notes',
+            url: '/dmh-pwa/notes',
+            icons: [
+              {
+                src: '/dmh-pwa/icon-96.png',
+                sizes: '96x96',
+                type: 'image/png',
+              },
+            ],
+          },
+          {
+            name: 'Timers',
+            short_name: 'Timers',
+            description: 'Open countdown timers',
+            url: '/dmh-pwa/timers',
+            icons: [
+              {
+                src: '/dmh-pwa/icon-96.png',
+                sizes: '96x96',
+                type: 'image/png',
+              },
+            ],
+          },
+          {
+            name: 'Jukebox',
+            short_name: 'Jukebox',
+            description: 'Open the music player',
+            url: '/dmh-pwa/jukebox',
+            icons: [
+              {
+                src: '/dmh-pwa/icon-96.png',
+                sizes: '96x96',
+                type: 'image/png',
+              },
+            ],
+          },
+          {
+            name: 'Help center',
+            short_name: 'Help',
+            description: 'Open installation and troubleshooting guides',
+            url: '/dmh-pwa/help/en/index.html',
+            icons: [
+              {
+                src: '/dmh-pwa/icon-96.png',
+                sizes: '96x96',
+                type: 'image/png',
+              },
+            ],
+          },
+        ],
+        screenshots: [
+          {
+            src: '/dmh-pwa/screenshots/app-desktop.png',
+            sizes: '1280x800',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Owlbear’s DMH notes workspace',
+          },
+          {
+            src: '/dmh-pwa/screenshots/app-mobile.png',
+            sizes: '390x844',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Owlbear’s DMH on a phone',
+          },
+        ],
         icons: [
           {
             src: '/dmh-pwa/icon-192.png',

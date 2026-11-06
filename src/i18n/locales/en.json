@@ -687,7 +687,13 @@
     "updateNow": "Update Now",
     "later": "Later",
     "offlineMode": "Offline Mode",
-    "appMode": "App Mode"
+    "appMode": "App Mode",
+    "installTitle": "Install Owlbear's Dungeon Master Helper",
+    "installDescription": "Add this app to your home screen for quick access and offline use.",
+    "installRetry": "You dismissed the install prompt. Would you like to try again?",
+    "install": "Install",
+    "notNow": "Not now",
+    "installHelp": "Installation help"
   },
   "importValidation": {
     "title": "Import Validation Results",
