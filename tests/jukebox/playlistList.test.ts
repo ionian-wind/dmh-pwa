@@ -11,6 +11,8 @@ import { useJukeboxEditMode } from '@/jukebox/composables/useJukeboxEditMode';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 const EditorStub = defineComponent({
   name: 'PlaylistEditor',
   props: { modelValue: Boolean, playlist: Object },

@@ -199,6 +199,23 @@ body.body--dark .internal-link:hover {
   background: transparent;
 }
 
+/*
+ * Entity detail pages: keep the tab panel transparent so the page title stays
+ * on the page background, and make the content/editor surface the light block
+ * in both view and edit modes.
+ */
+.base-entity-view .q-tab-panels {
+  background: transparent;
+}
+
+.entity-content-surface {
+  background: var(--color-background);
+}
+
+body.body--dark .entity-content-surface {
+  background: var(--q-dark);
+}
+
 /* Crepe / Milkdown editor palette. */
 body.body--dark .milkdown,
 body.body--dark .markdown-content {
