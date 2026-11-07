@@ -6,6 +6,7 @@ import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
+import { IconAt } from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const props = defineProps<{
@@ -41,7 +42,7 @@ const tabs = computed(() =>
     ? [{ id: 'scenes', label: t('ambientSoundPage.scenesTab') }]
     : [
         { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
-        { id: 'mentions', label: t('common.mentions') },
+        { id: 'mentions', label: t('common.mentions'), icon: IconAt },
       ],
 );
 
@@ -78,6 +79,7 @@ onMounted(() => mentionsStore.load());
         v-model="activeTab"
         :tabs="tabs"
         size="sm"
+        icon-only
       >
         <template #default>
           <div v-show="activeTab === 'scenes'" class="q-pa-md">

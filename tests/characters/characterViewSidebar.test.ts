@@ -52,9 +52,13 @@ describe('CharacterViewSidebar', () => {
     expect(wrapper.find('.tab-group').exists()).toBe(true);
     expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
       'Scenes',
-      'Mentions',
+      '',
     ]);
-    await wrapper.findAll('.tab-item')[1].trigger('click');
+    const mentionsTab = wrapper.findAll('.tab-item')[1];
+    expect(mentionsTab.attributes('aria-label')).toBe('Mentions');
+    expect(mentionsTab.find('.tab-icon').exists()).toBe(true);
+    expect(mentionsTab.find('.tab-label').exists()).toBe(false);
+    await mentionsTab.trigger('click');
     await nextTick();
     const mentions = wrapper.findAllComponents(MentionsStub);
     expect(mentions).toHaveLength(2);
