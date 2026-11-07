@@ -156,7 +156,7 @@ const isSettingsOpen = ref(false);
             <IconMenu2 />
           </QBtn>
 
-          <QSeparator vertical v-if="topMenuContent" />
+          <QSeparator vertical v-if="topMenuContent" class="q-mr-sm" />
 
           <component
             v-if="topMenuContent"

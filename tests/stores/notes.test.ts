@@ -18,8 +18,6 @@ describe('note store', () => {
       content: 'See [Alice](monster://m1)',
       typeId: null,
       tags: ['session'],
-      moduleIds: [],
-      hidden: false,
     });
 
     expect(mentionsMock.setLinks).toHaveBeenCalledWith(
@@ -42,21 +40,6 @@ describe('note store', () => {
     });
   });
 
-  it('never changes hidden after creation', async () => {
-    const store = useNoteStore();
-    const created = await store.create({
-      title: 'Hidden doc',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleIds: ['m1'],
-      hidden: true,
-    });
-
-    const updated = await store.update(created.id, { hidden: false } as any);
-    expect(updated.hidden).toBe(true);
-  });
-
   it('filters by search and tag and exposes all tags', async () => {
     const store = useNoteStore();
     await store.create({
@@ -64,16 +47,12 @@ describe('note store', () => {
       content: 'Goblin ambush',
       typeId: null,
       tags: ['combat'],
-      moduleIds: [],
-      hidden: false,
     });
     await store.create({
       title: 'Roleplay',
       content: 'Tavern scene',
       typeId: null,
       tags: ['social'],
-      moduleIds: [],
-      hidden: false,
     });
 
     store.setSearchQuery('goblin');
@@ -92,8 +71,6 @@ describe('note store', () => {
       content: '# Heading\nVisit #harbor and #forest.',
       typeId: null,
       tags: ['session'],
-      moduleIds: [],
-      hidden: false,
     });
 
     expect(created.tags).toEqual(['session', 'harbor', 'forest']);

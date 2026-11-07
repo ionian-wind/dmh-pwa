@@ -78,7 +78,6 @@ describe('database migrations', () => {
       typeId: null,
       tags: [],
       moduleId: null,
-      hidden: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -107,7 +106,6 @@ describe('database migrations', () => {
       typeId: null,
       tags: [],
       moduleIds: ['m1'],
-      hidden: false,
       createdAt: now,
       updatedAt: now,
     });

@@ -137,7 +137,7 @@ export const useNoteStore = defineStore('notes', () => {
 
 | Store               | ID           | Extra behavior                                                                                |
 | ------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove, `hidden` protection |
+| `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove                      |
 | `useCharacterStore` | `characters` | Name search                                                                                   |
 | `useMonsterStore`   | `monsters`   | Name search                                                                                   |
 | `usePartyStore`     | `parties`    | Name search                                                                                   |
@@ -243,9 +243,9 @@ Adding a migration requires adding it to the `migrations`
 array; new stores are also fed into the Dexie schema through
 `affectedStores`. Indexes require updating `EXPLICIT_SCHEMA`.
 
-Migrations 1–4 are schema-only. Migrations 5–9 and 11–12 also transform data
-(map locations, layers, note content type, legacy files and removing module
-link fields).
+Migrations 1–4 are schema-only. Migrations 5–9 and 11–13 also transform data
+(map locations, layers, note content type, legacy files, removing module link
+fields and the note `hidden` flag).
 
 ## 7. Backup and restore
 

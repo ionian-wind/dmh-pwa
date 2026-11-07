@@ -239,7 +239,6 @@ describe('editor behavior', () => {
       contentType: 'text',
       typeId: null,
       tags: [],
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     };
@@ -277,7 +276,6 @@ describe('editor behavior', () => {
       contentType: 'text',
       typeId: null,
       tags: [],
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     };
@@ -312,7 +310,6 @@ describe('editor behavior', () => {
           contentType: 'draw',
           typeId: null,
           tags: [],
-          hidden: false,
           createdAt: 1,
           updatedAt: 1,
         },

@@ -25,15 +25,13 @@ Markdown, support internal entity links, and drive the mention index.
 
 - Loads notes, monsters, and parties on mount.
 - Renders `BaseListView` with `NoteCard` and `NoteEditor`.
-- Shows `noteStore.filtered.filter(n => !n.hidden)`, so hidden notes
-  never appear in the general notes list.
+- Renders `noteStore.filtered` directly.
 - Card props pass `onView`, `onEdit`, and `onDelete`.
 - The header has a second create action: a warning-coloured `IconBrush` button
   that opens the editor with `contentType: 'draw'`. The regular create button
   opens a `text` note.
 - Delete uses the app confirm dialog with `common.confirmDelete`.
-- Copy strips `id/createdAt/updatedAt`, forces `hidden: false`, and creates a
-  duplicate.
+- Copy strips `id/createdAt/updatedAt` and creates a duplicate.
 - Tag clicks navigate to `/notes?tag=<encoded>`.
 - A `watch` on `route.query.tag` sets the store's tag filter. The filter is
   the only list filter that is reachable from the UI.
@@ -97,7 +95,7 @@ Behavior:
 - On submit, text notes read the latest Markdown from the Milkdown ref; draw
   notes read a Quickdraw JSON snapshot and generate a small PNG preview using
   `editor.exportImage()`.
-- New notes are created by the parent with `hidden: false`; drawing notes keep
+- New notes are created by the parent; drawing notes keep
   `contentType: 'draw'`.
 
 A note created from the list can carry `typeId` and tags.
@@ -160,17 +158,12 @@ allTags: ComputedRef<string[]>;
 Overrides:
 
 - `create(note)` → `base.create` + `indexation.setLinks({kind:'note', id}, mentions)`.
-- `update(id, patch)` → forcibly restores the original `hidden` value, then
-  reindexes mentions.
+- `update(id, patch)` → `base.update`, then reindexes mentions.
 - `remove(id)` → `base.remove` + `indexation.clearLinks`.
-
-The hidden protection means a note created as visible can never become a
-document note, and a document note can never become visible through updates.
-The only escape is delete + recreate.
 
 ## Filtering and tags
 
-- `allTags` collects tags from every note (including hidden ones).
+- `allTags` collects tags from every note.
 - While editing, the note options menu's `TagSelector` shows saved tags plus
   hashtags currently present in the markdown content. Focusing or typing in the
   tag input opens suggestions from every note's tags; when the query does not
@@ -262,7 +255,6 @@ saved from the UI has:
   "content": "…",
   "typeId": null,
   "tags": [],
-  "hidden": false,
   "createdAt": 0,
   "updatedAt": 0
 }
@@ -270,7 +262,6 @@ saved from the UI has:
 
 ## Limitations and known problems
 
-- Document-note status (`hidden`) is internal and preserved across updates.
 - Deleting a note does not remove its bookmark.
 - The note list keeps URL tag filtering, but the header search field is not shown; the store search logic remains available.
 - Live checkbox writes bypass the mention validation performed on submit.

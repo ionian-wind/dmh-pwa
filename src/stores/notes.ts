@@ -43,20 +43,14 @@ export const useNoteStore = defineStore('notes', () => {
     id: string,
     patch: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>>,
   ) {
-    // Prevent 'hidden' from being changed after creation
     const original = base.getById(id);
-    const patchWithoutHidden = { ...patch };
-    if (original && 'hidden' in original) {
-      patchWithoutHidden.hidden = original.hidden;
-    }
-    const contentType =
-      patchWithoutHidden.contentType ?? original?.contentType ?? 'text';
-    const content = patchWithoutHidden.content ?? original?.content ?? '';
-    let tags = patchWithoutHidden.tags ?? original?.tags ?? [];
-    if ('content' in patchWithoutHidden && contentType !== 'draw') {
+    const contentType = patch.contentType ?? original?.contentType ?? 'text';
+    const content = patch.content ?? original?.content ?? '';
+    let tags = patch.tags ?? original?.tags ?? [];
+    if ('content' in patch && contentType !== 'draw') {
       tags = mergeHashtags(tags, content);
     }
-    const updated = await base.update(id, { ...patchWithoutHidden, tags });
+    const updated = await base.update(id, { ...patch, tags });
     // Indexation
     const from = { kind: 'note', id };
     const mentioned =

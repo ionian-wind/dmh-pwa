@@ -75,7 +75,6 @@ describe('domain cards', () => {
       tags: ['session', 'combat'],
       typeId: null,
       moduleIds: [],
-      hidden: false,
       createdAt: 0,
       updatedAt: 0,
     } as any;
@@ -102,7 +101,6 @@ describe('domain cards', () => {
       tags: [],
       typeId: null,
       moduleIds: [],
-      hidden: false,
       createdAt: 0,
       updatedAt: 0,
     } as any;
@@ -129,7 +127,6 @@ describe('domain cards', () => {
       tags: [],
       typeId: null,
       moduleIds: [],
-      hidden: false,
       createdAt: 0,
       updatedAt: 0,
     } as any;

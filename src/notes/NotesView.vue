@@ -90,7 +90,6 @@ function handleSubmit(note: Note) {
   } else {
     noteStore.create({
       ...note,
-      hidden: false,
       contentType: note.contentType ?? 'text',
     });
   }
@@ -102,7 +101,7 @@ async function handleCopy(note: Note) {
   debug('NotesView handleCopy', note);
   // Copy all fields except id, createdAt, updatedAt
   const { id, createdAt, updatedAt, ...rest } = note;
-  await noteStore.create({ ...rest, hidden: false });
+  await noteStore.create(rest);
 }
 </script>
 
@@ -110,7 +109,7 @@ async function handleCopy(note: Note) {
   <BaseListView
     ref="listRef"
     :header-buttons="headerButtons"
-    :items="noteStore.filtered.filter((n) => !n.hidden)"
+    :items="noteStore.filtered"
     :card-component="NoteCard"
     :editor-component="NoteEditor"
     :empty-message="t('common.emptyNotes')"

@@ -39,7 +39,6 @@ const editedNote = ref<Note>({
   contentType: props.contentType ?? 'text',
   tags: [],
   typeId: null,
-  hidden: false,
 });
 
 const lastNoteId = ref<string | null>(null);
@@ -76,7 +75,6 @@ watch(
         contentType: props.contentType ?? 'text',
         tags: [],
         typeId: null,
-        hidden: false,
       };
       lastNoteId.value = null;
     }
@@ -140,46 +138,42 @@ function handleDelete() {
   >
     <template #main>
       <div class="q-pa-md q-gutter-md">
-        <div class="q-mb-md">
-          <QInput
-            v-model="editedNote.title"
-            :placeholder="t('editor.title')"
-            required
-            borderless
-            hide-bottom-space
-            input-style="font-size: 1.5rem; font-weight: 500;"
-            type="text"
-          />
-        </div>
-        <div class="q-mb-md">
-          <slot
-            name="content"
-            :note="editedNote"
-            :content-type="editedNote.contentType"
-            :update-content="(value: string) => (noteContent = value)"
-          >
-            <div class="row q-col-gutter-md">
-              <div class="col-12">
-                <NoteCanvas
-                  v-if="editedNote.contentType === 'draw'"
-                  ref="canvasRef"
-                  :model-value="editedNote.content"
-                />
-                <MarkdownEditor
-                  v-else
-                  ref="markdownEditorRef"
-                  v-model="noteContent"
-                  enableMentions
-                  :isWYSIWYGMode="isWYSIWYGMode"
-                  :placeholder="t('editor.contentPlaceholder')"
-                  :current-entity-id="editedNote.id"
-                  current-entity-type="note"
-                  :tags="editedNote.tags"
-                />
-              </div>
+        <QInput
+          v-model="editedNote.title"
+          :placeholder="t('editor.title')"
+          required
+          borderless
+          hide-bottom-space
+          input-style="font-size: 1.5rem; font-weight: 500;"
+          type="text"
+        />
+        <slot
+          name="content"
+          :note="editedNote"
+          :content-type="editedNote.contentType"
+          :update-content="(value: string) => (noteContent = value)"
+        >
+          <div class="row q-col-gutter-md">
+            <div class="col-12">
+              <NoteCanvas
+                v-if="editedNote.contentType === 'draw'"
+                ref="canvasRef"
+                :model-value="editedNote.content"
+              />
+              <MarkdownEditor
+                v-else
+                ref="markdownEditorRef"
+                v-model="noteContent"
+                enableMentions
+                :isWYSIWYGMode="isWYSIWYGMode"
+                :placeholder="t('editor.contentPlaceholder')"
+                :current-entity-id="editedNote.id"
+                current-entity-type="note"
+                :tags="editedNote.tags"
+              />
             </div>
-          </slot>
-        </div>
+          </div>
+        </slot>
       </div>
     </template>
 

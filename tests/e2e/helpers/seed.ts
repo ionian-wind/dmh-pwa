@@ -93,9 +93,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         content: '',
         contentType: 'text',
         tags: [],
-        moduleIds: [],
         typeId: null,
-        hidden: false,
         createdAt: now,
         updatedAt: now,
       });
@@ -105,9 +103,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         content: '',
         contentType: 'text',
         tags: [],
-        moduleIds: [],
         typeId: null,
-        hidden: false,
         createdAt: now,
         updatedAt: now,
       });

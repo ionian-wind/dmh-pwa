@@ -14,7 +14,6 @@ function seedTags(tags: string[]) {
     typeId: null,
     tags: [tag],
     moduleIds: [],
-    hidden: false,
     createdAt: index,
     updatedAt: index,
   }));

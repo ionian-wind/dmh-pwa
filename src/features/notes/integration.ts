@@ -37,7 +37,7 @@ export const notesFeature: FeatureIntegration = {
     route: '/notes',
     icon: '📜',
     load: () => noteStore().load(),
-    count: () => noteStore().items.filter((note) => !note.hidden).length,
+    count: () => noteStore().items.length,
   },
   homeActions: [],
   globalComponents: [],
@@ -53,7 +53,6 @@ export const notesFeature: FeatureIntegration = {
         const data = stripEntityMeta(payload as Record<string, unknown>);
         const note = await useNoteStore().create({
           ...(data as any),
-          hidden: false,
           contentType: (data as any).contentType ?? 'text',
         });
         return { id: note.id, label: note.title };

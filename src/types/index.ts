@@ -41,7 +41,6 @@ export interface Note extends WithMetadata {
   tags: string[];
   parentId?: UUID;
   metadata?: Record<string, unknown>;
-  hidden: boolean; // If true, note is hidden from general listing (e.g. document tree notes)
 }
 
 /**

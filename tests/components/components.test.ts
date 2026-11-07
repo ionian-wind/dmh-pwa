@@ -759,7 +759,6 @@ describe('current domain cards', () => {
           tags: ['session'],
           typeId: null,
           moduleIds: [],
-          hidden: false,
           createdAt: 0,
           updatedAt: 0,
         },

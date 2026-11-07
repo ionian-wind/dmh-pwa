@@ -43,7 +43,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 
 | Document                                                                                         | Covers                                                                   |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| [features/notes.md](features/notes.md)                                                           | Note list, editor, detail page, tags, hidden notes                       |
+| [features/notes.md](features/notes.md)                                                           | Note list, editor, detail page, tags                                     |
 | [features/characters.md](features/characters.md)                                                 | Player characters                                                        |
 | [features/parties.md](features/parties.md)                                                       | Parties and character membership                                         |
 | [features/monsters.md](features/monsters.md)                                                     | Monsters                                                                 |
@@ -113,8 +113,6 @@ ideas that may never be implemented.
   (`useStore()` in `src/utils/storage.ts`).
 - **Base store** = the shared CRUD wrapper around one IndexedDB object store.
 - **Entity** = a persisted record with `id`, `createdAt`, `updatedAt`.
-- **Hidden note** = a note with `hidden === true`, excluded from the normal
-  notes list.
 - A code path described as "not wired" exists in the repository but is never
   reached by the running application.
 

@@ -12,23 +12,20 @@ const emit = defineEmits<{
 
 <template>
   <div class="entity-inline-editor q-pa-md q-gutter-md">
-    <div class="q-mb-md">
-      <QInput
-        :model-value="title"
-        @update:model-value="
+    <QInput
+      :model-value="title"
+      @update:model-value="
           (value) => emit('update:title', String(value ?? ''))
         "
-        :placeholder="titlePlaceholder"
-        required
-        borderless
-        hide-bottom-space
-        input-style="font-size: 1.5rem; font-weight: 500;"
-        type="text"
-      />
-    </div>
-    <div class="q-mb-md">
-      <slot />
-    </div>
+      :placeholder="titlePlaceholder"
+      required
+      borderless
+      hide-bottom-space
+      input-style="font-size: 1.5rem; font-weight: 500;"
+      type="text"
+    />
+    <slot />
+    
     <div
       v-if="validationError"
       class="text-negative bg-grey-1 q-pa-sm rounded-borders"

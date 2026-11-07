@@ -19,14 +19,16 @@ migrations, import/export and backup support.
 
 ## Notes
 
-- Module document notes used `hidden`. The field stays as a generic note flag;
-  only the module-specific `setHidden` path is removed.
+- Module document notes used `hidden`; the flag is removed and migration 13
+  strips it from existing notes.
 - Existing databases get migration 12 (`remove_module_data`) that strips
   `moduleIds`, removes `kind: 'module'` map/mention references, deletes
   module-owned bookmarks and purges module scene links from local storage. The
   `modules` store is dropped by the Dexie schema version bump to 13.
 - Backups no longer include `modules`, and restoring an older backup ignores
   its `modules` payload.
+- Notes no longer carry the module-only `hidden` flag; migration 13 strips it
+  from existing records.
 
 ## Verification
 

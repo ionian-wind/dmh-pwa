@@ -127,7 +127,6 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
     draft.title !== source.title ||
     draft.content !== source.content ||
     (draft.typeId ?? null) !== (source.typeId ?? null) ||
-    draft.hidden !== source.hidden ||
     !arraysEqual(draft.tags, source.tags),
   extraDirty: () => canvasDirty.value,
   onEnter: () => {

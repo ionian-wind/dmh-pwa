@@ -71,8 +71,8 @@ describe('HomeView', () => {
 
   it('shows stats from all stores', async () => {
     seedMockStore('notes', [
-      { id: 'n1', title: 'Visible', hidden: false },
-      { id: 'n2', title: 'Hidden', hidden: true },
+      { id: 'n1', title: 'Visible' },
+      { id: 'n2', title: 'Second' },
     ]);
     seedMockStore('characters', [{ id: 'c1', name: 'Hero' }]);
     seedMockStore('parties', [{ id: 'p1', name: 'Party' }]);
@@ -81,7 +81,7 @@ describe('HomeView', () => {
 
     const wrapper = await mountHome();
     expect(wrapper.findAll('.stat-card')).toHaveLength(5);
-    expect(wrapper.text()).toContain('1');
+    expect(wrapper.text()).toContain('2');
     wrapper.unmount();
   });
 

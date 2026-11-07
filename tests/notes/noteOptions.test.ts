@@ -11,7 +11,6 @@ const baseNote: Note = {
   typeId: null,
   tags: ['tagged'],
   moduleIds: [],
-  hidden: false,
   createdAt: 1,
   updatedAt: 1,
 };

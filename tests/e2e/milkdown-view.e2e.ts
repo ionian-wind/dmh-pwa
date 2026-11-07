@@ -38,8 +38,6 @@ test('renders note content with the Milkdown view and toggles tasks', async ({
         contentType: 'text',
         typeId: null,
         tags: ['harbor'],
-        moduleIds: [],
-        hidden: false,
         createdAt: now,
         updatedAt: now,
       });

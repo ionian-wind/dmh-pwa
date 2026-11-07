@@ -210,7 +210,7 @@ describe('list views', () => {
     wrapper.unmount();
   });
 
-  it('handles note actions, tag filters and hidden defaults', async () => {
+  it('handles note actions and tag filters', async () => {
     const { wrapper, router } = await mountView(NotesView, '/notes');
     const store = useNoteStore();
     vi.spyOn(store, 'create').mockResolvedValue({} as any);
@@ -250,14 +250,13 @@ describe('list views', () => {
 
     expect(store.update).toHaveBeenCalled();
     expect(store.create).toHaveBeenCalledWith(
-      expect.objectContaining({ hidden: false, title: 'New note' }),
+      expect.objectContaining({ title: 'New note' }),
     );
     expect(store.create).toHaveBeenCalledWith(
-      expect.objectContaining({ hidden: false, title: 'Session' }),
+      expect.objectContaining({ title: 'Session' }),
     );
     expect(store.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        hidden: false,
         title: 'Sketch',
         contentType: 'draw',
       }),

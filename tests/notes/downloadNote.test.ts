@@ -11,7 +11,6 @@ function note(overrides: Partial<Note> = {}): Note {
     tags: [],
     typeId: null,
     moduleIds: [],
-    hidden: false,
     createdAt: 0,
     updatedAt: 0,
     ...overrides,

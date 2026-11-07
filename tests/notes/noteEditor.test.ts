@@ -64,7 +64,6 @@ const baseNote = {
   typeId: null,
   tags: [],
   moduleIds: [],
-  hidden: false,
   createdAt: 1,
   updatedAt: 1,
 } as const;

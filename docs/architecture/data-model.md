@@ -34,16 +34,9 @@
 | `tags`        | `string[]`         | Used for card chips and route-based tag filtering            |
 | `parentId`    | `string?`          | Declared in TS, not persisted by schemas/UI                  |
 | `metadata`    | `object?`          | Declared in TS, unused                                       |
-| `hidden`      | `boolean`          | `true` = document-tree note, excluded from normal note list  |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
-`typeId`, `tags`, `createdAt`, `updatedAt`. `hidden` is not listed
-but is accepted because additional properties are allowed.
-
-**Hidden-note semantics.** A note with `hidden: true` is filtered out of
-`NotesView` (`noteStore.filtered.filter(n => !n.hidden)`) and cannot be toggled
-after creation because `noteStore.update()` restores the original `hidden`
-value (`src/stores/notes.ts`).
+`typeId`, `tags`, `createdAt`, `updatedAt`.
 
 ### NoteType
 
@@ -342,14 +335,13 @@ There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 
 ## Schema/Type drift
 
-| Area                                         | TS               | JSON Schema      | Effect                           |
-| -------------------------------------------- | ---------------- | ---------------- | -------------------------------- |
-| `Note.hidden`                                | required boolean | absent           | accepted, not validated          |
-| `NoteType.description/color/icon/fields`     | present          | absent           | same                             |
-| `Encounter.notes`, `Party.description/notes` | present          | absent           | same                             |
-| `Combatant.name`                             | required         | absent           | creators omit it                 |
-| `Timer.title/description`                    | optional string  | `string \| null` | nulls pass validation but not TS |
-| Bookmarks noteId                             | string           | string           | semantic ambiguity, not drift    |
+| Area                                         | TS              | JSON Schema      | Effect                           |
+| -------------------------------------------- | --------------- | ---------------- | -------------------------------- |
+| `NoteType.description/color/icon/fields`     | present         | absent           | same                             |
+| `Encounter.notes`, `Party.description/notes` | present         | absent           | same                             |
+| `Combatant.name`                             | required        | absent           | creators omit it                 |
+| `Timer.title/description`                    | optional string | `string \| null` | nulls pass validation but not TS |
+| Bookmarks noteId                             | string          | string           | semantic ambiguity, not drift    |
 
 Because schemas are only applied on **write**, legacy or imported records that
 were written before a schema change are not re-validated on load.

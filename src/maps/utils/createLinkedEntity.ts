@@ -33,7 +33,6 @@ export async function createLinkedEntity(
       const data = stripEntityMeta(payload as Record<string, unknown>);
       const note = await useNoteStore().create({
         ...(data as any),
-        hidden: false,
         contentType: (data as any).contentType ?? 'text',
       });
       return { id: note.id, label: note.title };

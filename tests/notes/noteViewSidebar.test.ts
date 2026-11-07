@@ -78,7 +78,6 @@ describe('NoteViewSidebar', () => {
       tags: [],
       moduleIds: [],
       typeId: null,
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     } as Note;
@@ -133,7 +132,6 @@ describe('NoteViewSidebar', () => {
       tags: [],
       moduleIds: [],
       typeId: null,
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     } as Note;
@@ -201,7 +199,6 @@ describe('NoteViewSidebar', () => {
       tags: [],
       moduleIds: [],
       typeId: null,
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     } as Note;
