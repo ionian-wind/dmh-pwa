@@ -5,6 +5,7 @@ import {
   onBeforeUnmount,
   ref,
   useSlots,
+  watch,
   Fragment,
   Comment,
   type PropType,
@@ -30,6 +31,7 @@ const props = defineProps({
   showEdit: { type: Boolean, default: false },
   showDelete: { type: Boolean, default: false },
   showCopy: { type: Boolean, default: false },
+  hoverExpand: { type: Boolean, default: true },
   title: { type: String, default: '' },
   dragEntity: {
     type: Object as PropType<EntityDragData | null>,
@@ -98,6 +100,7 @@ function expandOnNextFrame() {
 }
 
 function beginFloat() {
+  if (!props.hoverExpand) return;
   // Every newly hovered card must paint above all cards that are still
   // animating out from an earlier hover.
   floatZIndex.value = nextFloatLayerZIndex();
@@ -129,12 +132,14 @@ function scheduleEndFloat() {
 }
 
 function onMouseEnter() {
+  if (!props.hoverExpand) return;
   isHovering.value = true;
   clearFloatTimer();
   beginFloat();
 }
 
 function onMouseLeave() {
+  if (!props.hoverExpand) return;
   isHovering.value = false;
   if (cardShell.value?.contains(document.activeElement)) return;
   isExpanded.value = false;
@@ -143,11 +148,13 @@ function onMouseLeave() {
 }
 
 function onFocusIn() {
+  if (!props.hoverExpand) return;
   clearFloatTimer();
   beginFloat();
 }
 
 function onFocusOut(event: FocusEvent) {
+  if (!props.hoverExpand) return;
   const next = event.relatedTarget as Node | null;
   if (next && cardShell.value?.contains(next)) return;
   if (isHovering.value) return;
@@ -160,6 +167,19 @@ onBeforeUnmount(() => {
   clearFloatTimer();
   clearExpansionFrame();
 });
+
+watch(
+  () => props.hoverExpand,
+  (enabled) => {
+    if (enabled) return;
+    clearFloatTimer();
+    clearExpansionFrame();
+    isFloating.value = false;
+    isExpanded.value = false;
+    isShadowed.value = false;
+    reservedHeight.value = null;
+  },
+);
 
 const dragGhost = ref<HTMLElement | null>(null);
 const isDraggingEntity = ref(false);

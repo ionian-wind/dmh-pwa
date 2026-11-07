@@ -64,6 +64,8 @@ function handleDownload() {
 </script>
 <template>
   <BaseCard
+    :class="{ 'note-card-expanded': expanded }"
+    :hover-expand="!expanded"
     showView
     showEdit
     showDelete
@@ -135,6 +137,71 @@ function handleDownload() {
 .note-card-content {
   padding: 0.5rem;
   border-radius: var(--border-radius-sm);
+}
+
+/* Expanded note cards fill the available workspace below the app header. */
+.note-card-expanded {
+  position: fixed;
+  top: 67px;
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  z-index: 2000;
+}
+
+@media (min-width: 1024px) {
+  .note-card-expanded {
+    left: 80px;
+  }
+}
+
+.note-card-expanded :deep(.base-card) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: var(--card-actions-height);
+  box-shadow: var(--shadow-lg);
+}
+
+.note-card-expanded :deep(.base-card-content) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.note-card-expanded :deep(.base-card-content) > div {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.note-card-expanded .note-card-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.note-card-expanded .note-card-content.clamped {
+  max-height: none;
+  overflow-y: auto;
+}
+
+.note-card-expanded .note-card-footer {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 599px) {
+  .note-card-expanded {
+    top: 59px;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+  }
 }
 
 .note-card-content {
