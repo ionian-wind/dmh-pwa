@@ -182,6 +182,37 @@ const md = new MarkdownIt({
   breaks: false,
 });
 
+const EMBEDDED_IMAGE_PLACEHOLDER =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+const embeddedImageSourcePlugin: PluginSimple = (md: MarkdownItInstance) => {
+  const defaultImageRender =
+    md.renderer.rules.image ||
+    function (tokens: any, idx: number, options: any, _env: any, self: any) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.image = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
+    const token = tokens[idx];
+    const src = token.attrGet('src') || '';
+    if (src.startsWith('drawing://')) {
+      token.attrSet('data-drawing-src', src);
+      token.attrSet('src', EMBEDDED_IMAGE_PLACEHOLDER);
+    } else if (src.startsWith('dmh-file://')) {
+      token.attrSet('data-file-src', src);
+      token.attrSet('src', EMBEDDED_IMAGE_PLACEHOLDER);
+    }
+    return defaultImageRender(tokens, idx, options, env, self);
+  };
+};
+
+md.use(embeddedImageSourcePlugin);
+
 // --- Tag links (`#tag` -> /notes?tag=tag) ---
 const tagLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
   md.inline.ruler.before(
@@ -293,7 +324,7 @@ const globalAttributes = [
 ];
 const tagAttributes: Record<string, string[]> = {
   a: ['href', 'name', 'target', 'rel'],
-  img: ['src', 'alt', 'width', 'height'],
+  img: ['src', 'alt', 'width', 'height', 'data-drawing-src', 'data-file-src'],
   input: ['type', 'checked', 'disabled'],
   code: ['class'],
   th: ['align'],

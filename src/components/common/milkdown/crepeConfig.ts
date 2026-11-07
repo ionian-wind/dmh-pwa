@@ -1,5 +1,6 @@
 import { CrepeFeature } from '@milkdown/crepe';
 import { buildMentionMenu, buildMentionToolbar } from './plugins/mention';
+import { buildDrawingMenu } from './plugins/drawing';
 import {
   resolveStoredFileUrl,
   uploadStoredFile,
@@ -87,7 +88,10 @@ export function createCrepeFeatureConfig(translate: Translate) {
         table: { label: t('table'), icon: tableIcon },
         math: { label: t('math'), icon: mathIcon },
       },
-      buildMenu: (builder: any) => buildMentionMenu(builder, translate),
+      buildMenu: (builder: any) => {
+        buildMentionMenu(builder, translate);
+        buildDrawingMenu(builder, translate);
+      },
     },
     [CrepeFeature.Toolbar]: {
       boldIcon,

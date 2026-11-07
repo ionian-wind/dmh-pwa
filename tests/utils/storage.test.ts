@@ -31,6 +31,7 @@ describe('storage helpers', () => {
     expect(MAIN_STORE_NAMES).toEqual(
       expect.arrayContaining([
         'notes',
+        'drawings',
         'timers',
         'files',
         'map_image_metadata',

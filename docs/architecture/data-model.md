@@ -48,6 +48,17 @@ Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
 }
 ```
 
+### Drawing
+
+| Field      | Type     | Notes                              |
+| ---------- | -------- | ---------------------------------- |
+| `snapshot` | `string` | Quickdraw JSON snapshot            |
+| `preview`  | `string` | PNG data URL rendered in documents |
+
+Drawing blocks in notes store a stable `drawing://<id>` image URL in Markdown;
+the block caption is serialized as the Markdown image title. Deleting a drawing
+block removes both the node and the `drawings` record.
+
 ### NoteType
 
 | Field                          | Type               | Notes                          |

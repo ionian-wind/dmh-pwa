@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CrepeFeature } from '@milkdown/crepe';
 
 import { createCrepeFeatureConfig } from '@/components/common/milkdown/crepeConfig';
+import { buildDrawingMenu } from '@/components/common/milkdown/plugins/drawing';
 import {
   resolveStoredFileUrl,
   uploadStoredFile,
@@ -99,6 +100,25 @@ describe('Crepe localization config', () => {
     );
     expect(config[CrepeFeature.LinkTooltip].removeButton).toContain(
       'icon-tabler-x',
+    );
+  });
+
+  it('adds a drawing item to the advanced block menu', () => {
+    const addItem = vi.fn();
+    const builder = {
+      getGroup: vi.fn(() => ({ addItem })),
+    };
+
+    buildDrawingMenu(builder, translate);
+
+    expect(builder.getGroup).toHaveBeenCalledWith('advanced');
+    expect(addItem).toHaveBeenCalledWith(
+      'drawing',
+      expect.objectContaining({
+        label: 'ru:drawing.add',
+        icon: expect.any(String),
+        onRun: expect.any(Function),
+      }),
     );
   });
 

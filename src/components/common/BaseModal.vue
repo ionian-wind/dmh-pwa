@@ -33,6 +33,7 @@ const props = withDefaults(
     isExpanded?: boolean;
     disableSubmit?: boolean;
     useModalStack?: boolean;
+    fillContent?: boolean;
     tabs?: Array<{
       name: string;
       title?: string;
@@ -226,10 +227,14 @@ function setExpanded(val: boolean) {
             </div>
           </QToolbar>
         </QCardSection>
-        <QScrollArea class="fit q-pa-sm">
+        <QScrollArea
+          class="fit q-pa-sm"
+          :class="{ 'modal-scroll--fill': props.fillContent }"
+        >
           <form
             @submit.prevent="$emit('submit')"
             class="modal-form q-gutter-y-md"
+            :class="{ 'modal-form--fill': props.fillContent }"
           >
             <template v-if="props.tabs?.length">
               <QTabPanels v-model="currentTab" animated class="q-pa-none">
@@ -285,5 +290,22 @@ function setExpanded(val: boolean) {
 <style scoped>
 .modal-header {
   padding-bottom: 0;
+}
+
+.modal-scroll--fill :deep(.q-scrollarea__content) {
+  height: 100%;
+  min-height: 100%;
+}
+
+.modal-form--fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.modal-form--fill > :deep(*) {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 </style>

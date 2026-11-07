@@ -81,6 +81,14 @@ export interface NoteTypeField {
   defaultValue?: unknown;
 }
 
+export interface Drawing extends WithMetadata {
+  id: UUID;
+  /** Quickdraw JSON snapshot. */
+  snapshot: string;
+  /** PNG data URL used to render the drawing in documents. */
+  preview: string;
+}
+
 export interface Party extends WithMetadata {
   name: string;
   description?: string;

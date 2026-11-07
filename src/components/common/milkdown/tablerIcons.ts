@@ -2,6 +2,7 @@ import alignCenterIcon from '@tabler/icons/outline/align-center.svg?raw';
 import alignLeftIcon from '@tabler/icons/outline/align-left.svg?raw';
 import alignRightIcon from '@tabler/icons/outline/align-right.svg?raw';
 import boldIcon from '@tabler/icons/outline/bold.svg?raw';
+import brushIcon from '@tabler/icons/outline/brush.svg?raw';
 import checkIcon from '@tabler/icons/outline/check.svg?raw';
 import listCheckIcon from '@tabler/icons/outline/list-check.svg?raw';
 import chevronDownIcon from '@tabler/icons/outline/chevron-down.svg?raw';
@@ -37,6 +38,7 @@ import squareCheckIcon from '@tabler/icons/outline/square-check.svg?raw';
 import strikethroughIcon from '@tabler/icons/outline/strikethrough.svg?raw';
 import tableIcon from '@tabler/icons/outline/table.svg?raw';
 import textCaptionIcon from '@tabler/icons/outline/text-caption.svg?raw';
+import trashIcon from '@tabler/icons/outline/trash.svg?raw';
 import uploadIcon from '@tabler/icons/outline/upload.svg?raw';
 import columnInsertRightIcon from '@tabler/icons/outline/column-insert-right.svg?raw';
 import columnRemoveIcon from '@tabler/icons/outline/column-remove.svg?raw';
@@ -50,6 +52,7 @@ export {
   alignLeftIcon,
   alignRightIcon,
   boldIcon,
+  brushIcon,
   checkIcon,
   listCheckIcon,
   chevronDownIcon,
@@ -89,6 +92,7 @@ export {
   strikethroughIcon,
   tableIcon,
   textCaptionIcon,
+  trashIcon,
   uploadIcon,
   xIcon,
 };

@@ -95,4 +95,20 @@ describe('markdown file URLs', () => {
     expect(root.querySelector('img')?.getAttribute('src')).toBe('blob:file-1');
     expect(root.querySelector('a')?.getAttribute('href')).toBe('blob:file-2');
   });
+
+  it('hydrates deferred image placeholders', async () => {
+    mocks.getStoredFile.mockImplementation(async (id: string) => ({ id }));
+    mocks.getStoredFileUrl.mockImplementation(async (file: any) => {
+      return `blob:${file.id}`;
+    });
+
+    const root = document.createElement('div');
+    root.innerHTML =
+      '<img src="data:image/gif;base64,placeholder" data-file-src="dmh-file://file-3">';
+    await hydrateStoredFileUrls(root);
+
+    const image = root.querySelector('img');
+    expect(image?.getAttribute('src')).toBe('blob:file-3');
+    expect(image?.hasAttribute('data-file-src')).toBe(false);
+  });
 });

@@ -402,8 +402,7 @@ describe('Markdown Parser', () => {
 
   describe('Heading ID behavior', () => {
     it('should support {#KIND-id} for valid kinds only', () => {
-      const input =
-        '# Some Note {#note-123}\n# Not Special {#foo-789}';
+      const input = '# Some Note {#note-123}\n# Not Special {#foo-789}';
       const result = parseMarkdown(input);
       expect(result).toContain(
         '<h1 id="note-123" data-id="123" data-kind="note">Some Note</h1>',
@@ -430,6 +429,34 @@ describe('Markdown Parser', () => {
       const input = 'No mentions here!';
       const result = extractMentionedEntities(input);
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('Embedded image sources', () => {
+    const placeholder =
+      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+    it('defers drawing URLs to a data attribute', () => {
+      const result = parseMarkdown('![drawing](drawing://draw-1 "Caption")');
+      expect(result).toContain(`src="${placeholder}"`);
+      expect(result).toContain('data-drawing-src="drawing://draw-1"');
+      expect(result).toContain('title="Caption"');
+      expect(result).not.toMatch(/<img src="drawing:\/\//);
+    });
+
+    it('defers stored file URLs to a data attribute', () => {
+      const result = parseMarkdown('![photo](dmh-file://file-1)');
+      expect(result).toContain(`src="${placeholder}"`);
+      expect(result).toContain('data-file-src="dmh-file://file-1"');
+      expect(result).not.toMatch(/<img src="dmh-file:\/\//);
+    });
+
+    it('keeps deferred image attributes when sanitizing', () => {
+      const result = sanitizeMarkdownHtml(
+        '<img src="drawing://draw-1" data-drawing-src="drawing://draw-1" onerror="x">',
+      );
+      expect(result).toContain('data-drawing-src="drawing://draw-1"');
+      expect(result).not.toContain('onerror');
     });
   });
 

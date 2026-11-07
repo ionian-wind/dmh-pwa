@@ -18,7 +18,9 @@ const ambientSoundStore = useAmbientSoundStore();
     :aria-label="t('navigation.ambientSound')"
   >
     <QItemSection side>
-      <IconHeadphones :class="{ 'ambient-playing': ambientSoundStore.isPlaying }" />
+      <IconHeadphones
+        :class="{ 'ambient-playing': ambientSoundStore.isPlaying }"
+      />
     </QItemSection>
     <QItemSection>{{ t('navigation.ambientSound') }}</QItemSection>
   </QItem>

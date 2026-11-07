@@ -126,6 +126,18 @@ than markdown-it for batch card rendering. See
   available.
 - Crepe UI icons are Tabler SVGs from `milkdown/tablerIcons.ts`.
 
+## Drawing blocks
+
+- The block menu / slash menu has a **Drawing** item.
+- Adding or editing opens a Quickdraw canvas modal with OK and Cancel.
+- Drawings are stored in the `drawings` store and serialized in Markdown as
+  `![drawing](drawing://<id> "caption")`.
+- Drawing blocks can have a caption, edited inline like image captions.
+- Edit and delete actions appear on the block; deleting removes the node from
+  the note and the drawing record from IndexedDB.
+- Note cards resolve `drawing://` images to stored PNG previews with
+  `hydrateDrawingUrls()`.
+
 ## Renderer (`Markdown.vue`)
 
 Used by note cards and other surfaces that need a

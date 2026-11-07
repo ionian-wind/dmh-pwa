@@ -18,6 +18,13 @@
       :onSelect="mentionPopup.onSelect"
       :onClose="closeMentionPopup"
     />
+    <DrawingEditorModal
+      v-if="drawingModal.show"
+      :is-open="drawingModal.show"
+      :drawing="drawingModal.drawing"
+      @submit="handleDrawingSubmit"
+      @cancel="closeDrawingModal"
+    />
   </div>
 </template>
 
@@ -42,7 +49,17 @@ import { collectTocItems, tocFeature } from './plugins/toc';
 import { READONLY_CREPE_FEATURES } from './features';
 import MentionInsertPopup from './MentionInsertPopup.vue';
 import TagInsertPopup from './TagInsertPopup.vue';
+import DrawingEditorModal from '@/drawings/DrawingEditorModal.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
+import {
+  drawingFeature,
+  insertDrawingNode,
+  registerDrawingModalTrigger,
+  unregisterDrawingModalTrigger,
+} from './plugins/drawing';
+import type { DrawingModalRequest } from './plugins/drawing';
+import type { Drawing } from '@/types';
+import { getDrawing, saveDrawing } from '@/drawings/storage';
 import { getMentionableEntities } from '@/utils/markdownParser';
 import { featureLinkKinds } from 'virtual:feature-links';
 import { extractHashtags } from '@/utils/tags';
@@ -164,6 +181,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   fileUrlObserver?.disconnect();
   fileUrlObserver = null;
+  if (!props.readonly) {
+    unregisterDrawingModalTrigger(handleDrawingRequest);
+  }
 });
 
 // Helper to get mentionable entities for a kind, excluding the current entity
@@ -206,6 +226,41 @@ if (!props.readonly) {
   });
 }
 
+const drawingModal = ref<{
+  show: boolean;
+  drawing: Drawing | null;
+  request: DrawingModalRequest | null;
+}>({ show: false, drawing: null, request: null });
+
+const handleDrawingRequest = async (request: DrawingModalRequest) => {
+  const drawing = request.drawingId
+    ? ((await getDrawing(request.drawingId)) ?? null)
+    : null;
+  drawingModal.value = { show: true, drawing, request };
+};
+
+if (!props.readonly) {
+  registerDrawingModalTrigger(handleDrawingRequest);
+}
+
+function closeDrawingModal() {
+  drawingModal.value = { show: false, drawing: null, request: null };
+}
+
+async function handleDrawingSubmit(payload: {
+  snapshot: string;
+  preview: string;
+}) {
+  const current = drawingModal.value;
+  if (!current.request) return;
+  const saved = await saveDrawing(payload, current.drawing?.id);
+  current.request.onSaved?.(saved);
+  if (!current.drawing) {
+    insertDrawingNode(current.request.ctx, saved.id);
+  }
+  closeDrawingModal();
+}
+
 const lastAppliedValue = ref(props.modelValue);
 
 // @ts-ignore: Type mismatch due to dynamic plugin system
@@ -217,7 +272,8 @@ useEditor((root) => {
     featureConfigs: createCrepeFeatureConfig(t),
   })
     .addFeature(mentionFeature)
-    .addFeature(headingAnchorFeature);
+    .addFeature(headingAnchorFeature)
+    .addFeature(drawingFeature);
 
   if (props.readonly) {
     crepe.addFeature(tagDecorationFeature).addFeature(tocFeature);

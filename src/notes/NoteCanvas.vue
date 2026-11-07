@@ -8,6 +8,7 @@ import { localizeQuickdraw } from './quickdrawLocale';
 const props = defineProps<{
   modelValue?: string;
   readonly?: boolean;
+  fill?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -87,7 +88,11 @@ defineExpose({ getSnapshot, getPreview });
 </script>
 
 <template>
-  <div ref="container" class="note-canvas" />
+  <div
+    ref="container"
+    class="note-canvas"
+    :class="{ 'note-canvas--fill': props.fill }"
+  />
 </template>
 
 <style scoped>
@@ -97,5 +102,12 @@ defineExpose({ getSnapshot, getPreview });
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
+}
+
+.note-canvas--fill {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 </style>

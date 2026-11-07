@@ -11,6 +11,7 @@ import {
 } from 'vue';
 import { parseMarkdown } from '@/utils/markdownParser';
 import { hydrateStoredFileUrls } from '@/utils/files/markdownUrls';
+import { hydrateDrawingUrls } from '@/drawings/markdown';
 import { featureLinkKinds } from 'virtual:feature-links';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
@@ -197,6 +198,7 @@ onMounted(async () => {
       rootEl.value.addEventListener('change', handleCheckboxChange, true);
     }
     void hydrateStoredFileUrls(rootEl.value);
+    void hydrateDrawingUrls(rootEl.value);
   }
   window.addEventListener('hashchange', scrollToAnchorIfNeeded);
 
@@ -234,7 +236,10 @@ watch(
 
 watch(parsed, async () => {
   await nextTick();
-  if (rootEl.value) void hydrateStoredFileUrls(rootEl.value);
+  if (rootEl.value) {
+    void hydrateStoredFileUrls(rootEl.value);
+    void hydrateDrawingUrls(rootEl.value);
+  }
 });
 </script>
 

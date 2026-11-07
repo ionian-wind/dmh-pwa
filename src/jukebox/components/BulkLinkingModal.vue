@@ -39,7 +39,10 @@ watch(
 );
 
 function submit() {
-  emit('submit', localLinks.value.map((link) => ({ ...link })));
+  emit(
+    'submit',
+    localLinks.value.map((link) => ({ ...link })),
+  );
 }
 </script>
 

@@ -54,7 +54,7 @@ const MIGRATIONS_STORE = 'migrations';
 const MIGRATION_VERSION = Math.max(
   ...sortedMigrations.map(({ version }) => version),
 );
-const SCHEMA_VERSION = 13;
+const SCHEMA_VERSION = 14;
 const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
 // All stores that may exist in the database. The main list is also used by
@@ -63,6 +63,7 @@ const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 export const MAIN_STORE_NAMES = [
   'characters',
   'combats',
+  'drawings',
   'encounters',
   'monsters',
   'notes',
@@ -99,6 +100,7 @@ const EXPLICIT_SCHEMA: Record<string, string> = {
   migrations: 'id, version',
   characters: 'id, updatedAt',
   combats: 'id, updatedAt, encounterId, partyId, status',
+  drawings: 'id, updatedAt',
   encounters: 'id, updatedAt',
   monsters: 'id, updatedAt',
   notes: 'id, updatedAt, createdAt, typeId, *tags',
@@ -130,6 +132,7 @@ export class DmhDatabase extends Dexie {
   >;
   characters!: Table<any, string>;
   combats!: Table<any, string>;
+  drawings!: Table<any, string>;
   encounters!: Table<any, string>;
   monsters!: Table<any, string>;
   notes!: Table<any, string>;
@@ -150,9 +153,9 @@ export class DmhDatabase extends Dexie {
 
   constructor() {
     super(DB_NAME);
-    // Version 13 drops the removed modules store and its indexes while
-    // keeping the legacy store names/key paths; migrations remain recorded
-    // separately.
+    // Version 14 adds the drawings store; version 13 dropped the removed
+    // modules store and its indexes. Legacy store names/key paths are kept and
+    // migrations remain recorded separately.
     this.version(DB_VERSION).stores(SCHEMA);
     this.on('versionchange', () => this.close());
   }

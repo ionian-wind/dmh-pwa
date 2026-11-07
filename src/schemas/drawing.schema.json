@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Drawing",
+  "type": "object",
+  "required": ["id", "snapshot", "preview", "createdAt", "updatedAt"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the drawing"
+    },
+    "snapshot": {
+      "type": "string",
+      "description": "Quickdraw JSON snapshot"
+    },
+    "preview": {
+      "type": "string",
+      "description": "PNG data URL used to render the drawing"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Timestamp when the drawing was created"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Timestamp when the drawing was last updated"
+    }
+  }
+}

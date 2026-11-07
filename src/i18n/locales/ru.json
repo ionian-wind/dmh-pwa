@@ -220,6 +220,12 @@
       "none": "Боев пока нет"
     }
   },
+  "drawing": {
+    "add": "Рисунок",
+    "edit": "Редактировать рисунок",
+    "delete": "Удалить рисунок",
+    "captionPlaceholder": "Подпись к рисунку"
+  },
   "common": {
     "mainEditor": "Основной редактор",
     "tableOfContents": "Оглавление",

@@ -54,15 +54,20 @@ export async function resolveStoredFileUrl(url: string): Promise<string> {
 /** Replace stored-file URLs with renderable object URLs inside rendered HTML. */
 export async function hydrateStoredFileUrls(root: ParentNode): Promise<void> {
   const nodes = root.querySelectorAll<HTMLElement>(
-    'img[src^="dmh-file://"], a[href^="dmh-file://"]',
+    'img[src^="dmh-file://"], img[data-file-src], a[href^="dmh-file://"]',
   );
   await Promise.all(
     [...nodes].map(async (node) => {
       const attr = node.tagName === 'A' ? 'href' : 'src';
-      const value = node.getAttribute(attr);
+      const value =
+        node.getAttribute(node.tagName === 'A' ? 'href' : 'data-file-src') ??
+        node.getAttribute(attr);
       if (!value) return;
       const resolved = await resolveStoredFileUrl(value);
-      if (resolved) node.setAttribute(attr, resolved);
+      if (resolved) {
+        node.setAttribute(attr, resolved);
+        node.removeAttribute('data-file-src');
+      }
     }),
   );
 }

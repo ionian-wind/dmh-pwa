@@ -219,6 +219,12 @@
       "none": "No combats yet"
     }
   },
+  "drawing": {
+    "add": "Drawing",
+    "edit": "Edit drawing",
+    "delete": "Delete drawing",
+    "captionPlaceholder": "Drawing caption"
+  },
   "common": {
     "mainEditor": "Main editor",
     "tableOfContents": "Table of Contents",
