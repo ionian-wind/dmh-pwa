@@ -5,6 +5,8 @@ import { mount } from '@vue/test-utils';
 import PartyEditor from '@/parties/PartyEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 const EntitiesLinkingStub = defineComponent({
   name: 'EntitiesLinking',
   props: { kind: String, modelValue: Array },

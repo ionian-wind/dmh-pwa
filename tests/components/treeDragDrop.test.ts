@@ -31,6 +31,8 @@ import Tree from '@/components/Tree/Tree.vue';
 import TreeControls from '@/components/Tree/TreeControls.vue';
 import ModuleDocumentTree from '@/modules/ModuleDocumentTree.vue';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 const data = [
   {
     id: 'a',

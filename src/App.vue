@@ -147,7 +147,7 @@ const isSettingsOpen = ref(false);
     <QLayout view="hHh LpR lFr">
       <QHeader bordered class="bg-primary text-white" id="main_header">
         <QToolbar class="text-white justify-between">
-          <QBtn dense flat @click="toggleLeftDrawer" class="q-mr-sm">
+          <QBtn dense flat @click="toggleLeftDrawer" class="q-ml-xs q-mr-sm">
             <IconMenu2 />
           </QBtn>
 

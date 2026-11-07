@@ -34,6 +34,12 @@ vi.mock('@/dialogs', () => ({
   prompt: mocks.prompt,
 }));
 
+// The real scenes panel loads ambient-sound stores from IndexedDB on mount.
+// This test only covers the map surface, so keep that panel out of the tree.
+vi.mock('virtual:feature-entity-panels', () => ({
+  entityScenesPanel: undefined,
+}));
+
 vi.mock('@/maps/utils/mapFileUtils', () => ({
   getMapFileBlob: mocks.getMapFileBlob,
   revokeMapFileUrl: vi.fn(),

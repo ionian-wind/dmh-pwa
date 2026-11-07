@@ -13,6 +13,8 @@ import MonstersView from '@/monsters/MonstersView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
 import TimersView from '@/timers/TimersView.vue';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 function makeRouter() {
   return createRouter({
     history: createMemoryHistory(),

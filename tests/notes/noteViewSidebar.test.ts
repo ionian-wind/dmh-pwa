@@ -4,6 +4,8 @@ import { mount } from '@vue/test-utils';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import type { Note, NoteEditState } from '@/types';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 const downloadNote = vi.hoisted(() => vi.fn());
 
 vi.mock('@/notes/downloadNote', () => ({ downloadNote }));
