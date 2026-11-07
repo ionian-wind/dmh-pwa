@@ -194,6 +194,11 @@ body.body--dark .internal-link:hover {
   filter: brightness(1.15);
 }
 
+/* Let the surrounding card/surface provide the editor background. */
+.milkdown {
+  background: transparent;
+}
+
 /* Crepe / Milkdown editor palette. */
 body.body--dark .milkdown,
 body.body--dark .markdown-content {
@@ -416,6 +421,16 @@ h6 {
 
 .tag:hover {
   color: var(--color-accent);
+}
+
+/*
+ * Quasar outline buttons use their `color` prop for both text and border.
+ * Primary/grey colours vanish on dark surfaces, so use the theme text and
+ * border colours for every outline button in dark mode.
+ */
+body.body--dark .q-btn--outline {
+  color: var(--color-text) !important;
+  border-color: var(--color-border-dark) !important;
 }
 
 /* Mention / internal entity links */
