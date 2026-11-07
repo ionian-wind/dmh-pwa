@@ -2,7 +2,8 @@
 
 **Status:** implemented (phases 1–4); static renderer evaluated and not adopted.
 
-**Implementation commit:** `734fe82b` (detail-view renderer).
+**Implementation commits:** `734fe82b` (detail-view renderer), `0446e415`
+(static renderer + performance evaluation).
 
 **Goal:** render Markdown detail views with the same Milkdown/Crepe pipeline
 that the editor uses, so reading and editing produce the same result for
