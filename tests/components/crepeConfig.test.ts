@@ -47,6 +47,10 @@ describe('Crepe localization config', () => {
       boldLabel: 'ru:markdownEditor.crepe.bold',
       italicLabel: 'ru:markdownEditor.crepe.italic',
       linkLabel: 'ru:markdownEditor.crepe.link',
+      boldIcon: expect.stringContaining('icon-tabler-bold'),
+      italicIcon: expect.stringContaining('icon-tabler-italic'),
+      linkIcon: expect.stringContaining('icon-tabler-link'),
+      strikethroughIcon: expect.stringContaining('icon-tabler-strikethrough'),
     });
     expect(toolbar.headingOptions).toHaveLength(7);
     expect(toolbar.headingOptions[0]).toEqual({
