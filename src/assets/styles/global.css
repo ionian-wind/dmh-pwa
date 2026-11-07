@@ -39,6 +39,7 @@
   --color-background-soft: #f5f5f5;
   --color-background-mute: #f0f0f0;
   --color-background-dark: #1e1e2e;
+  --color-card-background: #fff;
 
   /* Border Colors */
   --color-border: #ddd;
@@ -115,6 +116,7 @@ body.body--dark {
   --color-background-soft: #1e1e2e;
   --color-background-mute: #262637;
   --color-background-dark: #0f0f16;
+  --color-card-background: var(--q-dark);
 
   --color-border: #35354a;
   --color-border-light: #2a2a3d;
@@ -212,8 +214,9 @@ body.body--dark .internal-link:hover {
   background: var(--color-background);
 }
 
-body.body--dark .entity-content-surface {
-  background: var(--q-dark);
+/* Inline editors live directly on the page background. */
+.entity-inline-editor .q-card {
+  background: transparent;
 }
 
 /* Crepe / Milkdown editor palette. */

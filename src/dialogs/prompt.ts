@@ -39,8 +39,7 @@ export function prompt(
       },
       cancel: {
         label: cancelText || i18n.global.t('common.cancel'),
-        color: color || 'secondary',
-        textColor: 'dark',
+        color: color || 'grey-7',
       },
       persistent: true,
       ...dialogOptions,

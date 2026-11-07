@@ -43,8 +43,7 @@ export function confirm(
       },
       cancel: {
         label: cancelText || i18n.global.t('common.cancel'),
-        color: cancelColor || color || 'secondary',
-        textColor: 'dark',
+        color: cancelColor || color || 'grey-7',
       },
       persistent: true,
       ...dialogOptions,

@@ -43,8 +43,7 @@ describe('dialog helpers', () => {
         ok: expect.objectContaining({ label: 'OK', color: 'primary' }),
         cancel: expect.objectContaining({
           label: 'Cancel',
-          color: 'secondary',
-          textColor: 'dark',
+          color: 'grey-7',
         }),
       }),
     );
@@ -72,8 +71,7 @@ describe('dialog helpers', () => {
         ok: expect.objectContaining({ label: 'ОК', color: 'primary' }),
         cancel: expect.objectContaining({
           label: 'Отмена',
-          color: 'secondary',
-          textColor: 'dark',
+          color: 'grey-7',
         }),
       }),
     );
@@ -98,7 +96,6 @@ describe('dialog helpers', () => {
         cancel: expect.objectContaining({
           label: 'No',
           color: 'warning',
-          textColor: 'dark',
         }),
       }),
     );
@@ -143,7 +140,6 @@ describe('dialog helpers', () => {
         cancel: expect.objectContaining({
           label: 'Discard',
           color: 'secondary',
-          textColor: 'dark',
         }),
       }),
     );

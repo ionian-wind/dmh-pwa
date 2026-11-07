@@ -96,7 +96,7 @@ async function handleRestore(event: Event) {
           :label="t('backup.backup')"
           @click="handleBackup"
         />
-        <QBtn color="secondary" text-color="dark" :label="t('backup.restore')">
+        <QBtn color="grey-7" :label="t('backup.restore')">
           <input
             type="file"
             accept=".zip"

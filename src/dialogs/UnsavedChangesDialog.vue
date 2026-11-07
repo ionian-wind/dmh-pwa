@@ -37,8 +37,7 @@ const { t } = useI18n();
         />
         <QBtn
           class="unsaved-cancel"
-          color="secondary"
-          text-color="dark"
+          color="grey-7"
           :label="t('common.cancel')"
           @click="onDialogCancel"
         />

@@ -156,7 +156,7 @@ function handleDownload() {
   background: linear-gradient(
     to bottom,
     transparent,
-    var(--note-card-fade, var(--color-background))
+    var(--note-card-fade, var(--color-card-background))
   );
 }
 

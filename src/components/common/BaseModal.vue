@@ -263,13 +263,7 @@ function setExpanded(val: boolean) {
             :label="deleteLabel || t('common.delete')"
             @click="$emit('delete')"
           />
-          <QBtn
-            flat
-            v-if="showCancel"
-            color="standard"
-            text-color="dark"
-            @click="requestClose"
-          >
+          <QBtn flat v-if="showCancel" color="grey-7" @click="requestClose">
             {{ cancelLabel || t('common.cancel') }}
           </QBtn>
           <QBtn

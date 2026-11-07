@@ -311,7 +311,7 @@ const hasContent = computed(() => {
           <QBtn
             flat
             v-if="props.showCopy"
-            color="primary"
+            color="standard"
             size="small"
             @click="$emit('copy')"
             :title="t('common.copy')"
@@ -428,7 +428,7 @@ const hasContent = computed(() => {
   background: linear-gradient(
     to bottom,
     transparent,
-    var(--color-background) 35%
+    var(--color-card-background) 35%
   );
   border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
   transition: opacity 0.15s ease;
