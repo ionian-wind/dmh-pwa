@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div ref="rootEl">
     <Milkdown />
     <TagInsertPopup
       v-if="!props.readonly && tagPopup.show"
@@ -22,7 +22,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
 import { Crepe } from '@milkdown/crepe';
 import { Milkdown, useEditor } from '@milkdown/vue';
 import { replaceAll } from '@milkdown/kit/utils';
@@ -39,6 +46,7 @@ import { registerMentionPopupTrigger } from './plugins/mention';
 import { getMentionableEntities } from '@/utils/markdownParser';
 import { featureLinkKinds } from 'virtual:feature-links';
 import { extractHashtags } from '@/utils/tags';
+import { hydrateStoredFileUrls } from '@/utils/files/markdownUrls';
 import { registerTagAutocompleteTrigger } from './plugins/tagAutocomplete';
 import { tagAutocompleteFeature } from './plugins/tagAutocomplete';
 import { useI18n } from 'vue-i18n';
@@ -57,6 +65,8 @@ const noteStore = featureLinkKinds
   ?.useStore() as any;
 
 const crepeInstance = shallowRef<Crepe | null>(null);
+const rootEl = ref<HTMLElement | null>(null);
+let fileUrlObserver: MutationObserver | null = null;
 
 const recentTags = ref<string[]>([]);
 
@@ -136,6 +146,24 @@ onMounted(() => {
   if (!props.readonly && noteStore && !noteStore.isLoaded) {
     void noteStore.load();
   }
+
+  if (rootEl.value) {
+    void hydrateStoredFileUrls(rootEl.value);
+    if (typeof MutationObserver !== 'undefined') {
+      fileUrlObserver = new MutationObserver(() => {
+        if (rootEl.value) void hydrateStoredFileUrls(rootEl.value);
+      });
+      fileUrlObserver.observe(rootEl.value, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+});
+
+onBeforeUnmount(() => {
+  fileUrlObserver?.disconnect();
+  fileUrlObserver = null;
 });
 
 // Helper to get mentionable entities for a kind, excluding the current entity
@@ -238,6 +266,15 @@ defineExpose({
 :global(.milkdown .ProseMirror .tag-link) {
   color: var(--crepe-color-primary);
   text-decoration: underline;
+}
+
+/* Uploads go through the application file store; direct link entry is disabled. */
+:global(.milkdown .image-edit .link-input-area) {
+  display: none;
+}
+
+:global(.milkdown .image-edit .link-importer .placeholder .text) {
+  display: none;
 }
 
 :global(

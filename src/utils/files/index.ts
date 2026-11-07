@@ -47,6 +47,15 @@ export type { CopyBlobOptions } from './streams';
 export { copyBlob } from './streams';
 export type { ObjectUrlHandle } from './objectUrls';
 export { createObjectUrlHandle } from './objectUrls';
+export {
+  FILE_MARKDOWN_SCHEME,
+  clearStoredFileUrlCache,
+  fileMarkdownUrl,
+  hydrateStoredFileUrls,
+  parseFileMarkdownUrl,
+  resolveStoredFileUrl,
+  uploadStoredFile,
+} from './markdownUrls';
 export { Sha256, hashBlob, hashText, sha256Hex } from './hash';
 export type { ZipEntries } from './zip';
 export { listZipFiles, openZip, readZipBlob, readZipText } from './zip';

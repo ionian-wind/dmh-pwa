@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import './markdown-content.css';
-import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue';
+import {
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  watch,
+  nextTick,
+  shallowRef,
+} from 'vue';
 import { parseMarkdown } from '@/utils/markdownParser';
+import { hydrateStoredFileUrls } from '@/utils/files/markdownUrls';
 import { featureLinkKinds } from 'virtual:feature-links';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
@@ -187,6 +196,7 @@ onMounted(async () => {
     if (props.taskCheckboxEnabled) {
       rootEl.value.addEventListener('change', handleCheckboxChange, true);
     }
+    void hydrateStoredFileUrls(rootEl.value);
   }
   window.addEventListener('hashchange', scrollToAnchorIfNeeded);
 
@@ -221,6 +231,11 @@ watch(
     }
   },
 );
+
+watch(parsed, async () => {
+  await nextTick();
+  if (rootEl.value) void hydrateStoredFileUrls(rootEl.value);
+});
 </script>
 
 <template>

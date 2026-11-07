@@ -114,6 +114,18 @@ singleton static Milkdown renderer is available in
 than markdown-it for batch card rendering. See
 [`../architecture/markdown-rendering-performance.md`](../architecture/markdown-rendering-performance.md).
 
+## Images and uploaded files
+
+- Crepe image uploads go through the application file layer
+  (`uploadStoredFile()` → `files` store / OPFS).
+- Markdown stores stable `dmh-file://<fileId>` references, not transient blob
+  URLs.
+- Milkdown resolves them with `proxyDomURL`; `Markdown.vue` resolves rendered
+  images and links with `hydrateStoredFileUrls()`.
+- Direct link entry in Crepe image blocks is disabled; only file upload is
+  available.
+- Crepe UI icons are Tabler SVGs from `milkdown/tablerIcons.ts`.
+
 ## Renderer (`Markdown.vue`)
 
 Used by note cards and other surfaces that need a

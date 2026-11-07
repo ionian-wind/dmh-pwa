@@ -31,6 +31,7 @@ Worker so the UI stays responsive.
 | `persist.ts`                 | Storage estimate, persistence and byte formatting      |
 | `diagnostics.ts`             | File counts by source kind and unavailable records     |
 | `hash.ts`                    | Streaming SHA-256 + Web Crypto fast path               |
+| `markdownUrls.ts`            | `dmh-file://` markdown refs and object-URL resolution  |
 | `zip.ts`                     | Blob-based ZIP reader for sound-pack imports           |
 | `fileReferences.ts`          | Shared-file deletion reference providers               |
 | `registerFileReferences.ts`  | Jukebox/map reference providers                        |

@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { CrepeFeature } from '@milkdown/crepe';
 
 import { createCrepeFeatureConfig } from '@/components/common/milkdown/crepeConfig';
+import {
+  resolveStoredFileUrl,
+  uploadStoredFile,
+} from '@/utils/files/markdownUrls';
 
 const translate = (key: string) => `ru:${key}`;
 
@@ -52,6 +56,34 @@ describe('Crepe localization config', () => {
     expect(config[CrepeFeature.Placeholder]).toEqual({
       text: 'ru:markdownEditor.placeholder',
     });
+  });
+
+  it('uses app file handling for image uploads', () => {
+    const config = createCrepeFeatureConfig(translate) as any;
+    const image = config[CrepeFeature.ImageBlock];
+
+    expect(image.inlineOnUpload).toBe(uploadStoredFile);
+    expect(image.blockOnUpload).toBe(uploadStoredFile);
+    expect(image.proxyDomURL).toBe(resolveStoredFileUrl);
+    expect(image.inlineImageIcon).toContain('icon-tabler-photo');
+  });
+
+  it('uses Tabler icons across Crepe features', () => {
+    const config = createCrepeFeatureConfig(translate) as any;
+
+    expect(config[CrepeFeature.Toolbar].boldIcon).toContain('icon-tabler-bold');
+    expect(config[CrepeFeature.ListItem].checkBoxCheckedIcon).toContain(
+      'icon-tabler-square-check',
+    );
+    expect(config[CrepeFeature.Table].addRowIcon).toContain(
+      'icon-tabler-row-insert-bottom',
+    );
+    expect(config[CrepeFeature.BlockEdit].handleDragIcon).toContain(
+      'icon-tabler-grip-vertical',
+    );
+    expect(config[CrepeFeature.LinkTooltip].removeButton).toContain(
+      'icon-tabler-x',
+    );
   });
 
   it('localizes existing toolbar group labels and mention items', () => {
