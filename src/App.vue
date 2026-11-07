@@ -147,7 +147,12 @@ const isSettingsOpen = ref(false);
     <QLayout view="hHh LpR lFr">
       <QHeader bordered class="bg-primary text-white" id="main_header">
         <QToolbar class="text-white justify-between">
-          <QBtn dense flat @click="toggleLeftDrawer" class="q-ml-xs q-mr-sm">
+          <QBtn
+            dense
+            flat
+            @click="toggleLeftDrawer"
+            class="menu-toggle q-mr-sm"
+          >
             <IconMenu2 />
           </QBtn>
 
@@ -350,6 +355,15 @@ const isSettingsOpen = ref(false);
 
 .q-toolbar {
   position: relative;
+}
+
+/* Match the collapsed drawer column so the hamburger block lines up with it. */
+:deep(.menu-toggle) {
+  width: 40px;
+  min-width: 40px;
+  height: 50px;
+  margin-left: 0;
+  border-radius: 0;
 }
 
 .jukebox-playing {

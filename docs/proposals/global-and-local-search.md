@@ -9,7 +9,9 @@
 
 **Goal:** make campaign content findable without duplicating search logic in
 every list view. Local suggestions should feel instant and typo-tolerant, while
-global search should cover note bodies and all entity types offline.
+the global search overlay should behave like an omnisearch bar with selectable
+scopes: the current entity, the current entity plus its direct links, or all
+campaign content. All scopes search offline.
 
 **Library direction:**
 
@@ -51,6 +53,7 @@ global search should cover note bodies and all entity types offline.
 - Ranking, result snippets and keyboard navigation.
 - Incremental index updates when stores change.
 - English and Russian content.
+- An omnisearch-style scope selector in the search overlay.
 
 ### Out of scope
 
@@ -62,6 +65,75 @@ global search should cover note bodies and all entity types offline.
 - Replacing the command menu; search results can be combined with commands
   later, but the APIs stay separate.
 - Reintroducing a permanent search input in every list header.
+
+### 2.1 Search scopes
+
+The search overlay is one omnisearch surface with a selectable scope, similar to
+GitHub's search box with its scope/mode menu. Do not build three separate search
+inputs or dialogs.
+
+| Scope          | Internal value | Searches                                                        |
+| -------------- | -------------- | --------------------------------------------------------------- |
+| This entity    | `entity`       | Only the currently open entity's title, body/notes, tags/fields |
+| Entity + links | `linked`       | The current entity plus all directly linked entities            |
+| Everything     | `global`       | Every indexed note, entity and document page                    |
+
+Scope rules:
+
+- `entity` and `linked` are available only on an entity detail page.
+- Home and list views expose only `global`; the selector can hide unavailable
+  scopes or show them disabled with an explanation.
+- The overlay remembers the last used scope, but never restores `entity` or
+  `linked` on a page without a current entity.
+- `Ctrl/Cmd+K` opens the same overlay from anywhere. On a detail page it
+  defaults to the last scope; otherwise it defaults to `global`.
+- Scope names and descriptions are translated; the selector must be usable with
+  the keyboard alone (for example `Alt+1`, `Alt+2`, `Alt+3`).
+- The placeholder and empty state change with the scope:
+  - “Search this note…” / “Search this entity…”;
+  - “Search this note and its links…”;
+  - “Search everything…”.
+
+Direct links for `linked` are one hop only in v1. Resolve them with the same
+metadata the entity sidebars already use:
+
+- outgoing mentions from the mention index;
+- `moduleIds` and module-document notes;
+- party characters;
+- encounter parties, monsters, characters and locations;
+- explicit entity refs on locations, markers and linked-entity panels.
+
+Do not recursively expand links in v1. Backlinks and two-hop links are a later
+option if users ask for them.
+
+Scope resolution lives in a small `useSearchScope()` helper:
+
+```ts
+export type SearchScope = 'entity' | 'linked' | 'global';
+
+export interface SearchContext {
+  kind?: SearchKind;
+  entityId?: string;
+  /** IDs in the linked scope, including the current entity. */
+  allowedIds?: Set<string>;
+}
+
+export interface SearchQuery {
+  text: string;
+  scope: SearchScope;
+  context?: SearchContext;
+}
+```
+
+The global index stays one index. Scope filtering is applied to the merged hit
+list:
+
+- `entity`: allowed IDs contain only `kind:entityId`;
+- `linked`: allowed IDs contain the current entity and its direct links;
+- `global`: no ID filter.
+
+This keeps the index lifecycle simple and avoids rebuilding a per-entity index
+when the user changes pages.
 
 ## 3. Library evaluation
 
@@ -116,6 +188,7 @@ src/search/
   documentBuilder.ts       # store entity -> index document
   globalSearch.ts          # query planning, ranking, merging, snippets
   useGlobalSearch.ts       # Vue composable + debounce + state
+  useSearchScope.ts        # current entity/context -> scope + allowed IDs
   global.worker.ts         # phase 3: index/query in a worker
 ```
 
@@ -132,6 +205,20 @@ export type SearchKind =
   | 'encounter'
   | 'location'
   | 'noteType';
+
+export type SearchScope = 'entity' | 'linked' | 'global';
+
+export interface SearchContext {
+  kind?: SearchKind;
+  entityId?: string;
+  allowedIds?: Set<string>;
+}
+
+export interface SearchQuery {
+  text: string;
+  scope: SearchScope;
+  context?: SearchContext;
+}
 
 export interface SuggestionSource {
   id: string;
@@ -163,7 +250,22 @@ export interface GlobalSearchHit {
 }
 ```
 
-No component should import Fuse or FlexSearch directly.
+The scope resolver is intentionally UI-agnostic:
+
+```ts
+export interface SearchScopeState {
+  scope: Ref<SearchScope>;
+  availableScopes: ComputedRef<SearchScope[]>;
+  context: ComputedRef<SearchContext | undefined>;
+  setScope(scope: SearchScope): void;
+}
+
+export function useSearchScope(): SearchScopeState;
+```
+
+`useGlobalSearch` accepts the scope and context, so the dialog only renders the
+selector and calls `setScope()`. No component should import Fuse or FlexSearch
+directly.
 
 ## 5. Local suggestions
 
@@ -354,7 +456,8 @@ Notes:
 
 Query flow:
 
-1. Normalize and trim the query.
+1. Normalize and trim the query, then resolve the active scope and its
+   `allowedIds` set (`entity`, `linked` or `global`).
 2. Require at least 2 characters for content search; allow 1 character for
    title prefix matches.
 3. Query the fields separately so title matches can be ranked above body
@@ -362,7 +465,12 @@ Query flow:
    - title, tags, subtitle, body;
    - each with its own limit (for example 20/20/20/40).
 4. Merge by `kind:entityId`, keeping the best field rank.
-5. Apply boosts:
+5. Filter the merged hits by `allowedIds` when the scope is `entity` or
+   `linked`. Do this before boosts so filtered-out results never occupy a
+   visible slot.
+6. In `linked` scope, prefer the current entity on ties so the page the user is
+   already reading stays first.
+7. Apply boosts:
 
 | Signal                       | Boost                                |
 | ---------------------------- | ------------------------------------ |
@@ -374,8 +482,8 @@ Query flow:
 | Updated within 30 days       | small recency boost                  |
 | Current module/party context | small contextual boost, if available |
 
-6. Sort by combined score, then `updatedAt`, then title.
-7. Limit to 5 per entity kind in the default view; “Show all” expands the
+8. Sort by combined score, then `updatedAt`, then title.
+9. Limit to 5 per entity kind in the default view; “Show all” expands the
    result list.
 
 FlexSearch’s per-field result order already approximates relevance; the rank
@@ -411,30 +519,51 @@ Optional later phase:
 
 ## 7. UI and interaction
 
-### 7.1 Global search
+### 7.1 Omnisearch overlay
 
 - Open from the command menu (`Ctrl/Cmd+K`) and a header search button.
 - The overlay has:
   - autofocused input;
-  - sections by entity kind;
+  - a GitHub-style **scope selector** next to the input, showing the active
+    scope with an icon and label;
+  - sections by entity kind in `global`, by relation/current entity in
+    `linked`, and by matched field in `entity`;
   - result title, subtitle/context and snippet;
-  - a keyboard hint for opening;
+  - a keyboard hint for opening and changing scope;
   - “No results” and “Searching…” states;
   - recent searches/entities.
+- Scope selector:
+  - options: **This entity**, **Entity + links**, **Everything**;
+  - unavailable scopes are hidden or disabled when there is no current entity;
+  - the selected scope is persisted in `configStore` and restored only where
+    valid;
+  - selecting a scope keeps the current query and re-runs it without closing
+    the overlay;
+  - `Alt+1` / `Alt+2` / `Alt+3` switch scopes.
 - Keyboard:
   - `ArrowUp`/`ArrowDown` move;
   - `Enter` opens;
   - `Escape` closes;
   - `Tab` stays in the dialog;
+  - `Alt+1…3` change scope;
   - `role="combobox"`/`listbox`/`option` semantics.
-- Empty query shows recent entities and common destinations rather than an
-  empty box.
+- Empty query:
+  - `global`: recent entities and common destinations;
+  - `linked`: current entity and its direct links;
+  - `entity`: a short hint or the entity's field outline rather than an empty
+    box.
+- In `entity` scope, show which field matched (title, body, tags, notes) and
+  avoid kind sections because there is only one document.
+- In `linked` scope, show the current entity first and label linked results by
+  relation where known (module, mention, party member, encounter participant).
 - Opening a note result can deep-link to the note; heading anchors are optional.
 - Provide filters later (`kind`, module) using tags; do not add a filter bar in
   the first version.
 
 ### 7.2 Local suggestions
 
+- Local suggestions are not a fourth omnisearch scope. They stay in compact
+  anchored pickers for mentions and entity linking.
 - Mention/link popups keep their current compact anchored UI.
 - Show a maximum of 10–15 suggestions, scrollable, with keyboard selection.
 - Empty query shows recency/name order; typing reorders by relevance.
@@ -450,10 +579,11 @@ Optional later phase:
 | `MentionInsertPopup`  | Replace `includes()` filtering with `SuggestionIndex`              |
 | `EntitiesLinking`     | Shared suggestion source for linkable entities                     |
 | Domain stores         | `$subscribe` for incremental global-index updates                  |
-| `configStore`         | Persist recent searches and optional search preferences            |
+| `useSearchScope`      | Resolve `entity`/`linked` context and allowed IDs                  |
+| `configStore`         | Persist recent searches, active scope and optional preferences     |
 | `CommandMenu`         | Host global search results and the `Ctrl/Cmd+K` entry point        |
-| Router                | Resolve entity routes and note deep links                          |
-| `App.vue`             | Mount the global search overlay/service                            |
+| Router                | Resolve entity routes, note deep links and the current detail item |
+| `App.vue`             | Mount the omnisearch overlay/service and header search button      |
 | Backup/import/restore | Trigger `reindexAll()` after data replacement                      |
 | i18n                  | All placeholders, section labels, empty states and error messages  |
 | PWA                   | Worker/search chunks are precached; no network calls at query time |
@@ -464,6 +594,7 @@ Suggested UI files:
 src/components/search/GlobalSearchDialog.vue
 src/components/search/GlobalSearchResult.vue
 src/components/search/SearchHighlight.vue
+src/components/search/SearchScopePicker.vue
 src/components/search/useSearchKeyboard.ts
 src/components/common/MentionInsertPopup.vue   # existing, update filtering
 ```
@@ -501,6 +632,8 @@ Mitigations if targets fail:
   notes, truncation;
 - index lifecycle: add/update/remove, reindex, version invalidation;
 - ranking merge: title beats body, deduplication across fields, recency boost;
+- scope resolution: current entity, direct links, unavailable scopes, allowed-ID
+  filtering, current entity first in `linked`;
 - snippets: safe escaping, token boundaries, Cyrillic characters;
 - no-result and one-character behavior.
 
@@ -509,6 +642,9 @@ Mitigations if targets fail:
 - mention popup filters and keyboard selection with typos;
 - global dialog opens, focuses input, renders sections, navigates with arrows,
   opens on Enter and closes on Escape;
+- scope selector changes scope without closing or clearing the query;
+- unavailable scopes are disabled without a current entity;
+- `Alt+1`/`Alt+2`/`Alt+3` change scope;
 - loading/empty/error states;
 - focus restoration after closing.
 
@@ -517,6 +653,10 @@ Mitigations if targets fail:
 - `Ctrl/Cmd+K`, type a note title with a typo, open the note route;
 - search a Russian note body and find it;
 - search an entity name and confirm the correct detail route;
+- on a note detail page, `entity` scope returns only that note;
+- `linked` scope returns the note plus its module/mentioned entities;
+- `global` finds an unrelated note that is excluded from `entity`/`linked`;
+- switching scopes keeps the current query;
 - create/update/delete an entity and confirm the next query reflects it;
 - restore a backup and confirm the index rebuilds;
 - verify search works offline after the app has loaded once.
@@ -536,13 +676,14 @@ Do not merge the search implementation without a before/after measurement.
 - Replace mention/link-popup `includes()` filtering.
 - Add component tests for typos and Russian labels.
 
-### Phase 2 — global entity search
+### Phase 2 — omnisearch scopes
 
 - Add FlexSearch `Document` index and document builders.
 - Build lazily; add store subscriptions and `reindexAll()`.
-- Add global search dialog and ranking merge.
+- Add `useSearchScope()` and the `entity`/`linked`/`global` allowed-ID sets.
+- Add the omnisearch dialog, scope selector and ranking merge.
 - Integrate `Ctrl/Cmd+K` and the command-menu host.
-- Add unit tests and fixtures for all entity kinds.
+- Add unit tests and fixtures for all entity kinds and scopes.
 
 ### Phase 3 — quality and scale
 
@@ -571,6 +712,8 @@ Do not merge the search implementation without a before/after measurement.
 | Fuse scanning cost on large lists         | cap source, cache index, benchmark fuzzy-search alternative        |
 | Sensitive campaign text in a worker/cache | same-origin only; no network; clear caches on reset; document it   |
 | User confusion with two search surfaces   | one global overlay; local suggestions stay contextual              |
+| User confusion about the active scope     | explicit scope label, scope-aware placeholder, last valid scope    |
+| Scoped results look empty                 | scope-aware empty state with a one-click switch to `global`        |
 | Bundle growth                             | lazy-load global search and worker chunks; local Fuse in its chunk |
 
 Open questions:
@@ -578,6 +721,8 @@ Open questions:
 - Should hidden module-document notes appear in global search by default?
 - Should global search include actions/commands in the same ranked list, or
   keep commands in a separate section?
+- Should `linked` include backlinks as well as outgoing links, or stay one hop?
+- Should the last scope be remembered globally or per entity kind?
 - Is a worker necessary on the target low-end phone, or can the first version
   stay on the main thread?
 - Do we need persistent index caching, or is a sub-second rebuild acceptable?
@@ -589,6 +734,12 @@ Open questions:
 
 - Mention/link pickers tolerate typos and rank prefix matches first in English
   and Russian.
+- The omnisearch overlay offers `entity`, `linked` and `global` scopes with a
+  visible, keyboard-operable mode selector.
+- `entity` searches only the open entity; `linked` adds its direct links;
+  `global` searches all indexed content.
+- Unavailable scopes are disabled outside entity detail pages, and the last
+  valid scope is restored where appropriate.
 - Global search finds entities by title, body and tags, with title results
   ranked above body-only matches.
 - Results open the correct route and work offline.

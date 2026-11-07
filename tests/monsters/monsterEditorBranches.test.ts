@@ -4,6 +4,8 @@ import { mount } from '@vue/test-utils';
 import MonsterEditor from '@/monsters/MonsterEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 const alertMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@/dialogs', () => ({ alert: alertMock }));
 
