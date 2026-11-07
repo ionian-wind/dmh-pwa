@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, provide } from 'vue';
+import type { Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 export interface Tab {
   id: string;
   label: string;
-  icon?: string;
+  icon?: string | Component;
   disabled?: boolean;
   badge?: string | number;
 }
@@ -22,6 +23,7 @@ const props = defineProps<{
   disableTransition?: boolean;
   align?: 'left' | 'center' | 'right' | 'justify';
   titleAlign?: 'left' | 'center' | 'right';
+  iconOnly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +38,10 @@ const { t, te } = useI18n();
 function tabLabel(label: string): string {
   // Labels may be translation keys or already-translated strings.
   return te(label) ? t(label) : label;
+}
+
+function isComponentIcon(icon: unknown): icon is Component {
+  return icon !== null && typeof icon !== 'string';
 }
 
 const activeTab = computed({
@@ -119,9 +125,19 @@ watch(
           ]"
           @click="handleTabClick(tab)"
           :disabled="tab.disabled"
+          :title="tabLabel(tab.label)"
+          :aria-label="tabLabel(tab.label)"
         >
-          <span v-if="tab.icon" class="tab-icon">{{ tab.icon }}</span>
-          <span class="tab-label">{{ tabLabel(tab.label) }}</span>
+          <component
+            :is="tab.icon"
+            v-if="tab.icon && isComponentIcon(tab.icon)"
+            class="tab-icon"
+            :size="18"
+          />
+          <span v-else-if="tab.icon" class="tab-icon">{{ tab.icon }}</span>
+          <span v-if="!props.iconOnly || !tab.icon" class="tab-label">
+            {{ tabLabel(tab.label) }}
+          </span>
           <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
           <button
             v-if="closable && !tab.disabled"
@@ -296,6 +312,9 @@ watch(
 
 /* Tab elements */
 .tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.1em;
 }
 

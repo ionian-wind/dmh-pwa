@@ -31,12 +31,14 @@ describe('NoteViewSidebar', () => {
     });
     expect(wrapper.findAll('.tag-link')).toHaveLength(2);
     const tabs = wrapper.findAll('.tab-item');
-    expect(tabs.map((tab) => tab.text())).toEqual([
+    expect(tabs.map((tab) => tab.attributes('aria-label'))).toEqual([
       'Contents',
       'Bookmarks',
       'Tags',
       'Mentions',
     ]);
+    expect(tabs.every((tab) => tab.find('svg').exists())).toBe(true);
+    expect(wrapper.findAll('.tab-label')).toHaveLength(0);
     wrapper.unmount();
   });
 

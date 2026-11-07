@@ -14,8 +14,12 @@ import NoteOptions from '@/notes/NoteOptions.vue';
 import { downloadNote } from '@/notes/downloadNote';
 import {
   IconAlertTriangle,
+  IconAt,
   IconBookmark,
+  IconBookmarks,
   IconFileDownload,
+  IconHash,
+  IconListTree,
   IconPencil,
   IconTrash,
 } from '@tabler/icons-vue';
@@ -31,10 +35,10 @@ const localEditState = reactive<NoteEditState>({
 });
 const activeTab = ref('toc');
 const tabs = computed(() => [
-  { id: 'toc', label: t('notes.contents') },
-  { id: 'bookmarks', label: t('common.bookmarks') },
-  { id: 'tags', label: t('tags.title') },
-  { id: 'mentions', label: t('common.mentions') },
+  { id: 'toc', label: t('notes.contents'), icon: IconListTree },
+  { id: 'bookmarks', label: t('common.bookmarks'), icon: IconBookmarks },
+  { id: 'tags', label: t('tags.title'), icon: IconHash },
+  { id: 'mentions', label: t('common.mentions'), icon: IconAt },
 ]);
 
 const props = defineProps<{
@@ -185,6 +189,7 @@ onMounted(() => {
         v-model="activeTab"
         :tabs="tabs"
         size="sm"
+        icon-only
       >
         <template #default>
           <div v-show="activeTab === 'toc'" class="q-pa-md">
