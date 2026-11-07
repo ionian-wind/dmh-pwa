@@ -254,7 +254,7 @@ describe('editor behavior', () => {
       },
     });
 
-    expect(wrapper.findComponent(BaseModal).props('tabs')).toHaveLength(1);
+    expect(wrapper.findComponent(BaseModal).props('tabs')).toHaveLength(2);
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       id: 'n1',

@@ -61,6 +61,11 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
   return [
     ...(id
       ? relations
+          .getLinkedIds('monster', id, 'note')
+          .map((noteId) => ({ kind: 'note' as const, id: noteId }))
+      : []),
+    ...(id
+      ? relations
           .getLinkedIds('monster', id, 'encounter')
           .map((encounterId) => ({
             kind: 'encounter' as const,
@@ -77,7 +82,7 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
 });
 
 async function setMonsterLinks(
-  kind: 'encounter' | 'location',
+  kind: 'note' | 'encounter' | 'location',
   links: MapEntityRef[],
 ) {
   if (!editedMonster.value.id) return;
@@ -178,6 +183,12 @@ onMounted(async () => {
 
     <template #links>
       <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="monsterLinks"
+          @update:model-value="(links) => setMonsterLinks('note', links)"
+        />
         <EntitiesLinking
           v-if="featureStores.has('encounter')"
           kind="encounter"

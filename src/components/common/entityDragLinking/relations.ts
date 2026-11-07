@@ -28,6 +28,19 @@ function withoutEntity(
   );
 }
 
+export const NOTE_LINK_KINDS = [
+  'party',
+  'monster',
+  'encounter',
+  'character',
+] as const;
+
+function noteLinkIds(note: any, kind: EntityLinkKind) {
+  return ((note?.links ?? []) as MapEntityRef[])
+    .filter((link) => link.kind === kind)
+    .map((link) => link.id);
+}
+
 export function useEntityLinkRelations() {
   const stores = Object.fromEntries(
     featureLinkKinds.map((option) => [
@@ -72,6 +85,16 @@ export function useEntityLinkRelations() {
           .filter((location) => hasEntity(location.entities, 'note', sourceId))
           .map((location) => location.id);
       }
+      return noteLinkIds(source, targetKind);
+    }
+
+    if (
+      targetKind === 'note' &&
+      (NOTE_LINK_KINDS as readonly string[]).includes(sourceKind)
+    ) {
+      return items('note')
+        .filter((note) => noteLinkIds(note, sourceKind).includes(sourceId))
+        .map((note) => note.id);
     }
 
     if (sourceKind === 'party') {
@@ -170,6 +193,33 @@ export function useEntityLinkRelations() {
 
     if (sourceKind === 'note' && targetKind === 'location') {
       await setLocationLinks('note', sourceId, ids);
+      return;
+    }
+
+    if (sourceKind === 'note') {
+      if (targetKind === 'note') return;
+      const links = ((source?.links ?? []) as MapEntityRef[]).filter(
+        (link) => link.kind !== targetKind,
+      );
+      await stores.note.update(sourceId, {
+        links: [...links, ...ids.map((id) => ({ kind: targetKind, id }))],
+      });
+      return;
+    }
+
+    if (
+      targetKind === 'note' &&
+      (NOTE_LINK_KINDS as readonly string[]).includes(sourceKind)
+    ) {
+      for (const note of items('note')) {
+        const links = ((note.links ?? []) as MapEntityRef[]).filter(
+          (link) => !(link.kind === sourceKind && link.id === sourceId),
+        );
+        if (ids.includes(note.id)) {
+          links.push({ kind: sourceKind, id: sourceId });
+        }
+        await stores.note.update(note.id, { links });
+      }
       return;
     }
 

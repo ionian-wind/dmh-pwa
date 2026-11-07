@@ -97,6 +97,7 @@ describe('CharacterEditor', () => {
     const wrapper = mountEditor();
     await flushPromises();
 
+    expect(mocks.getLinkedIds).toHaveBeenCalledWith('character', 'c1', 'note');
     expect(mocks.getLinkedIds).toHaveBeenCalledWith('character', 'c1', 'party');
     expect(mocks.getLinkedIds).toHaveBeenCalledWith(
       'character',
@@ -105,9 +106,18 @@ describe('CharacterEditor', () => {
     );
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    expect(groups).toHaveLength(2);
+    expect(groups).toHaveLength(3);
 
     groups[0].vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n2' },
+      { kind: 'location', id: 'ignored' },
+    ]);
+    await flushPromises();
+    expect(mocks.setLinkedIds).toHaveBeenCalledWith('character', 'c1', 'note', [
+      'n2',
+    ]);
+
+    groups[1].vm.$emit('update:modelValue', [
       { kind: 'party', id: 'p2' },
       { kind: 'location', id: 'ignored' },
     ]);
@@ -119,7 +129,7 @@ describe('CharacterEditor', () => {
       ['p2'],
     );
 
-    groups[1].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
+    groups[2].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
     await flushPromises();
     expect(mocks.setLinkedIds).toHaveBeenCalledWith(
       'character',
@@ -135,7 +145,7 @@ describe('CharacterEditor', () => {
     await flushPromises();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'party', id: 'p2' }]);
+    groups[1].vm.$emit('update:modelValue', [{ kind: 'party', id: 'p2' }]);
     await flushPromises();
 
     expect(mocks.setLinkedIds).not.toHaveBeenCalled();

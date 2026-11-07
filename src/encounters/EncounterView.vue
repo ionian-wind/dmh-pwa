@@ -9,11 +9,15 @@ import { usePartyStore } from '@/stores/parties';
 import type { Encounter, Monster, Combat } from '@/types';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import type { MapEntityRef } from '@/maps/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
 import {
+  IconAffiliate,
   IconGhost3,
   IconInfoCircle,
   IconSwords,
@@ -26,6 +30,7 @@ import { useRightDrawer } from '@/composables/useLayout';
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const relations = useEntityLinkRelations();
 const encounterStore = useEncounterStore();
 const monsterStore = useMonsterStore();
 const combatStore = useCombatStore();
@@ -216,6 +221,14 @@ const handleViewCombat = (combat: Combat) => {
 };
 
 // Tab configuration
+const encounterLinks = computed<MapEntityRef[]>(() => {
+  const id = encounter.value?.id;
+  if (!id) return [];
+  return relations
+    .getLinkedIds('encounter', id, 'note')
+    .map((noteId) => ({ kind: 'note' as const, id: noteId }));
+});
+
 const tabs = computed(() => [
   {
     id: 'information',
@@ -234,6 +247,12 @@ const tabs = computed(() => [
     label: t('encounters.tabs.combats'),
     icon: IconSwords,
     badge: encounterCombats.value.length,
+  },
+  {
+    id: 'links',
+    label: t('common.linkedEntities'),
+    icon: IconAffiliate,
+    badge: encounterLinks.value.length || undefined,
   },
 ]);
 
@@ -291,6 +310,7 @@ onMounted(async () => {
     monsterStore.load(),
     combatStore.load(),
     partyStore.load(),
+    relations.loadFor('encounter', 'note'),
   ]);
 
   rightDrawer.set({
@@ -386,6 +406,9 @@ async function handleEditorDelete() {
             </table>
           </div>
         </div>
+      </template>
+      <template #links>
+        <EntityViewLinks :links="encounterLinks" />
       </template>
       <template #combats>
         <h2>{{ t('encounters.combats.title') }}</h2>

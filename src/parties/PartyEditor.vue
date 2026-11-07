@@ -8,6 +8,7 @@ import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import { useFeatureStores } from '@/composables/useFeatureStores';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import type { MapEntityRef } from '@/maps/types';
@@ -16,6 +17,7 @@ import { IconHelp } from '@tabler/icons-vue';
 
 const { t, locale } = useI18n();
 const featureStores = useFeatureStores();
+const relations = useEntityLinkRelations();
 
 const props = defineProps<{
   party: Party | null;
@@ -60,6 +62,25 @@ const description = computed({
 
 function setLinkedCharacters(links: MapEntityRef[]) {
   editedParty.value.characters = links.map((link) => link.id);
+}
+
+const linkedNotes = computed<MapEntityRef[]>(() => {
+  const id = props.party?.id;
+  return id
+    ? relations
+        .getLinkedIds('party', id, 'note')
+        .map((noteId) => ({ kind: 'note' as const, id: noteId }))
+    : [];
+});
+
+function setLinkedNotes(links: MapEntityRef[]) {
+  if (!props.party?.id) return;
+  void relations.setLinkedIds(
+    'party',
+    props.party.id,
+    'note',
+    links.filter((link) => link.kind === 'note').map((link) => link.id),
+  );
 }
 
 watch(
@@ -160,6 +181,12 @@ function handleDelete() {
 
     <template #links>
       <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note') && props.party"
+          kind="note"
+          :model-value="linkedNotes"
+          @update:model-value="setLinkedNotes"
+        />
         <EntitiesLinking
           v-if="featureStores.has('character')"
           kind="character"

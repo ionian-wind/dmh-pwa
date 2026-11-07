@@ -113,8 +113,8 @@ describe('MonsterEditor', () => {
     );
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
-    groups[1].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
+    groups[1].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
+    groups[2].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
     await flushPromises();
 
     expect(mocks.setLinkedIds).toHaveBeenCalledWith(
@@ -137,7 +137,7 @@ describe('MonsterEditor', () => {
     await flushPromises();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
+    groups[1].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
     await flushPromises();
     expect(mocks.setLinkedIds).not.toHaveBeenCalled();
 

@@ -18,6 +18,7 @@ import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import type { MapEntityRef } from '@/maps/types';
 
 import PartyViewSidebar from '@/parties/PartyViewSidebar.vue';
@@ -31,6 +32,7 @@ const route = useRoute();
 const router = useRouter();
 const partyStore = usePartyStore();
 const featureStores = useFeatureStores();
+const relations = useEntityLinkRelations();
 const { t, locale } = useI18n();
 
 const party = ref<Party | null>(null);
@@ -110,11 +112,16 @@ const partySubtitle = computed(() => {
 
 const partyLinks = computed<MapEntityRef[]>(() => {
   const source = editState.draft ?? party.value;
-  if (!source) return [];
-  return (source.characters ?? []).map((id) => ({
-    kind: 'character' as const,
-    id,
-  }));
+  if (!source?.id) return [];
+  return [
+    ...relations
+      .getLinkedIds('party', source.id, 'note')
+      .map((noteId) => ({ kind: 'note' as const, id: noteId })),
+    ...(source.characters ?? []).map((id) => ({
+      kind: 'character' as const,
+      id,
+    })),
+  ];
 });
 
 const draftName = computed({
@@ -141,6 +148,16 @@ function setLinkedCharacters(links: MapEntityRef[]) {
       .filter((link) => link.kind === 'character')
       .map((link) => link.id);
   }
+}
+
+function setLinkedNotes(links: MapEntityRef[]) {
+  if (!party.value) return;
+  void relations.setLinkedIds(
+    'party',
+    party.value.id,
+    'note',
+    links.filter((link) => link.kind === 'note').map((link) => link.id),
+  );
 }
 
 function handleDescriptionChange(description: string) {
@@ -213,7 +230,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
-    featureStores.load(['character']),
+    featureStores.load(['character', 'note']),
   ]);
   rightDrawer.set({
     component: PartyViewSidebar,
@@ -276,6 +293,12 @@ onBeforeUnmount(() => {
     <template #links>
       <EntityViewLinks v-if="!editState.isEditMode" :links="partyLinks" />
       <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="partyLinks"
+          @update:model-value="setLinkedNotes"
+        />
         <EntitiesLinking
           v-if="featureStores.has('character')"
           kind="character"

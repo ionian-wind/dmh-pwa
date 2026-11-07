@@ -9,7 +9,10 @@ import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
 import { IconDots, IconHelp } from '@tabler/icons-vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import type { MapEntityRef } from '@/maps/types';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { ensureBlockAnchors } from '@/utils/noteAnchors';
 
@@ -83,9 +86,43 @@ watch(
 );
 
 const editorTabs = useEntityEditorTabs();
-const tabs = computed(() =>
-  editorTabs.value.filter((tab) => tab.name !== 'links'),
-);
+const relations = useEntityLinkRelations();
+const noteLinkKinds = [
+  'character',
+  'monster',
+  'party',
+  'encounter',
+  'location',
+] as const;
+const tabs = computed(() => {
+  if (!editedNote.value.id) {
+    return editorTabs.value.filter((tab) => tab.name !== 'links');
+  }
+  return editorTabs.value;
+});
+
+const noteLinks = computed<MapEntityRef[]>(() => {
+  const id = editedNote.value.id;
+  if (!id) return [];
+  return noteLinkKinds.flatMap((kind) =>
+    relations
+      .getLinkedIds('note', id, kind)
+      .map((linkId) => ({ kind, id: linkId })),
+  );
+});
+
+function setNoteLinks(
+  kind: (typeof noteLinkKinds)[number],
+  links: MapEntityRef[],
+) {
+  if (!editedNote.value.id) return;
+  void relations.setLinkedIds(
+    'note',
+    editedNote.value.id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
 
 const markdownEditorRef = ref<any>(null);
 const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
@@ -174,6 +211,18 @@ function handleDelete() {
             </div>
           </div>
         </slot>
+      </div>
+    </template>
+
+    <template #links>
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-for="kind in noteLinkKinds"
+          :key="kind"
+          :kind="kind"
+          :model-value="noteLinks"
+          @update:model-value="(links) => setNoteLinks(kind, links)"
+        />
       </div>
     </template>
 

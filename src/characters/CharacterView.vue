@@ -111,6 +111,9 @@ const characterLinks = computed<MapEntityRef[]>(() => {
   if (!id) return [];
   return [
     ...relations
+      .getLinkedIds('character', id, 'note')
+      .map((noteId) => ({ kind: 'note' as const, id: noteId })),
+    ...relations
       .getLinkedIds('character', id, 'party')
       .map((partyId) => ({ kind: 'party' as const, id: partyId })),
     ...relations
@@ -120,7 +123,7 @@ const characterLinks = computed<MapEntityRef[]>(() => {
 });
 
 async function setCharacterLinks(
-  kind: 'party' | 'location',
+  kind: 'note' | 'party' | 'location',
   links: MapEntityRef[],
 ) {
   if (!character.value) return;
@@ -204,7 +207,7 @@ onMounted(async () => {
   await Promise.all([
     characterStore.load(),
     mentionsStore.load(),
-    featureStores.load(['party', 'location']),
+    featureStores.load(['party', 'location', 'note']),
   ]);
 
   rightDrawer.set({
@@ -267,6 +270,12 @@ onBeforeUnmount(() => {
     <template #links>
       <EntityViewLinks v-if="!editState.isEditMode" :links="characterLinks" />
       <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('note', links)"
+        />
         <EntitiesLinking
           v-if="featureStores.has('party')"
           kind="party"

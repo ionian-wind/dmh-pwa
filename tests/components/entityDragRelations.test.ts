@@ -96,6 +96,55 @@ describe('entity drag link relations', () => {
     ]);
   });
 
+  it('links notes to parties, monsters, encounters and characters', async () => {
+    const relations = useEntityLinkRelations();
+    const note = mocks.stores.note.items.value[0];
+    note.links = [
+      { kind: 'party', id: 'p1' },
+      { kind: 'monster', id: 'mo1' },
+      { kind: 'encounter', id: 'e1' },
+      { kind: 'character', id: 'c1' },
+    ];
+
+    expect(relations.getLinkedIds('note', 'n1', 'party')).toEqual(['p1']);
+    expect(relations.getLinkedIds('note', 'n1', 'monster')).toEqual(['mo1']);
+    expect(relations.getLinkedIds('note', 'n1', 'encounter')).toEqual(['e1']);
+    expect(relations.getLinkedIds('note', 'n1', 'character')).toEqual(['c1']);
+
+    await relations.setLinkedIds('note', 'n1', 'party', ['p2']);
+    expect(note.links.filter((link: any) => link.kind === 'party')).toEqual([
+      { kind: 'party', id: 'p2' },
+    ]);
+    expect(note.links.filter((link: any) => link.kind === 'monster')).toEqual([
+      { kind: 'monster', id: 'mo1' },
+    ]);
+  });
+
+  it('links parties, monsters, encounters and characters back to notes', async () => {
+    const relations = useEntityLinkRelations();
+    const note1 = mocks.stores.note.items.value[0];
+    const note2 = mocks.stores.note.items.value[1];
+    note1.links = [
+      { kind: 'party', id: 'p1' },
+      { kind: 'monster', id: 'mo1' },
+      { kind: 'encounter', id: 'e1' },
+      { kind: 'character', id: 'c1' },
+    ];
+
+    expect(relations.getLinkedIds('party', 'p1', 'note')).toEqual(['n1']);
+    expect(relations.getLinkedIds('monster', 'mo1', 'note')).toEqual(['n1']);
+    expect(relations.getLinkedIds('encounter', 'e1', 'note')).toEqual(['n1']);
+    expect(relations.getLinkedIds('character', 'c1', 'note')).toEqual(['n1']);
+
+    await relations.setLinkedIds('party', 'p1', 'note', ['n2']);
+    expect(
+      note1.links.some(
+        (link: any) => link.kind === 'party' && link.id === 'p1',
+      ),
+    ).toBe(false);
+    expect(note2.links).toContainEqual({ kind: 'party', id: 'p1' });
+  });
+
   it('links parties to characters and locations', async () => {
     const relations = useEntityLinkRelations();
     mocks.stores.party.items.value[0].characters = ['c1'];

@@ -64,8 +64,7 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Monster>({
     ...source,
   }),
   isDirty: (draft, source) =>
-    draft.name !== source.name ||
-    (draft.notes ?? '') !== (source.notes ?? ''),
+    draft.name !== source.name || (draft.notes ?? '') !== (source.notes ?? ''),
   onEnter: () => {
     validationError.value = null;
   },
@@ -107,6 +106,9 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
   if (!id) return [];
   return [
     ...relations
+      .getLinkedIds('monster', id, 'note')
+      .map((noteId) => ({ kind: 'note' as const, id: noteId })),
+    ...relations
       .getLinkedIds('monster', id, 'encounter')
       .map((encounterId) => ({ kind: 'encounter' as const, id: encounterId })),
     ...relations
@@ -116,7 +118,7 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
 });
 
 async function setMonsterLinks(
-  kind: 'encounter' | 'location',
+  kind: 'note' | 'encounter' | 'location',
   links: MapEntityRef[],
 ) {
   if (!monster.value) return;
@@ -197,7 +199,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await Promise.all([
     monsterStore.load(),
-    featureStores.load(['encounter', 'location']),
+    featureStores.load(['encounter', 'location', 'note']),
   ]);
   rightDrawer.set({
     component: MonsterViewSidebar,
@@ -259,6 +261,12 @@ onBeforeUnmount(() => {
     <template #links>
       <EntityViewLinks v-if="!editState.isEditMode" :links="monsterLinks" />
       <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="monsterLinks"
+          @update:model-value="(links) => setMonsterLinks('note', links)"
+        />
         <EntitiesLinking
           v-if="featureStores.has('encounter')"
           kind="encounter"

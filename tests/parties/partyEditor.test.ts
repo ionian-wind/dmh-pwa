@@ -70,7 +70,7 @@ describe('PartyEditor', () => {
     await nextTick();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'character', id: 'c2' }]);
+    groups[1].vm.$emit('update:modelValue', [{ kind: 'character', id: 'c2' }]);
     await nextTick();
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');

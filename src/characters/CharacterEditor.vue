@@ -68,6 +68,11 @@ const characterLinks = computed<MapEntityRef[]>(() => {
   return [
     ...(id
       ? relations
+          .getLinkedIds('character', id, 'note')
+          .map((noteId) => ({ kind: 'note' as const, id: noteId }))
+      : []),
+    ...(id
+      ? relations
           .getLinkedIds('character', id, 'party')
           .map((partyId) => ({ kind: 'party' as const, id: partyId }))
       : []),
@@ -80,7 +85,7 @@ const characterLinks = computed<MapEntityRef[]>(() => {
 });
 
 async function setCharacterLinks(
-  kind: 'party' | 'location',
+  kind: 'note' | 'party' | 'location',
   links: MapEntityRef[],
 ) {
   if (!editedCharacter.value.id) return;
@@ -172,6 +177,12 @@ function handleDelete() {
 
     <template #links>
       <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('note', links)"
+        />
         <EntitiesLinking
           v-if="featureStores.has('party')"
           kind="party"

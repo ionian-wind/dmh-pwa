@@ -54,6 +54,23 @@
       },
       "description": "Array of tags associated with the note"
     },
+    "links": {
+      "type": "array",
+      "description": "Cross-entity links stored on the note",
+      "items": {
+        "type": "object",
+        "required": ["kind", "id"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["party", "monster", "encounter", "character"]
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "createdAt": {
       "type": "number",
       "description": "Timestamp when the note was created"

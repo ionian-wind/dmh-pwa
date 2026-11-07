@@ -11,12 +11,16 @@ import type { TocItem } from '@/components/common/milkdown/plugins/toc';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import { ensureBlockAnchors } from '@/utils/noteAnchors';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import type { MapEntityRef } from '@/maps/types';
 import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
@@ -33,6 +37,14 @@ const noteStore = useNoteStore();
 const mentionsStore = useMentionsStore();
 const bookmarkStore = useBookmarkStore();
 const featureStores = useFeatureStores();
+const relations = useEntityLinkRelations();
+const noteLinkKinds = [
+  'character',
+  'monster',
+  'party',
+  'encounter',
+  'location',
+] as const;
 
 const activeTab = ref('main');
 const viewTabs = useEntityViewTabs();
@@ -144,15 +156,36 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
 
 const tabs = computed(() =>
   editState.isEditMode
-    ? editorTabs.value
-        .filter((tab) => tab.name !== 'links')
-        .map((tab) => ({
-          id: tab.name,
-          label: tab.title,
-          icon: tab.icon,
-        }))
-    : viewTabs.value.filter((tab) => tab.id !== 'links'),
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
 );
+
+const noteLinks = computed<MapEntityRef[]>(() => {
+  const id = note.value?.id;
+  if (!id) return [];
+  return noteLinkKinds.flatMap((kind) =>
+    relations
+      .getLinkedIds('note', id, kind)
+      .map((linkId) => ({ kind, id: linkId })),
+  );
+});
+
+function setNoteLinks(
+  kind: (typeof noteLinkKinds)[number],
+  links: MapEntityRef[],
+) {
+  if (!note.value) return;
+  void relations.setLinkedIds(
+    'note',
+    note.value.id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
 
 function handleMarkdownContentChange(newContent: string) {
   const content = ensureBlockAnchors(newContent);
@@ -379,6 +412,19 @@ onBeforeUnmount(() => {
           :tags="editState.draft?.tags ?? []"
         />
       </EntityInlineEditor>
+    </template>
+
+    <template #links>
+      <EntityViewLinks v-if="!editState.isEditMode" :links="noteLinks" />
+      <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          v-for="kind in noteLinkKinds"
+          :key="kind"
+          :kind="kind"
+          :model-value="noteLinks"
+          @update:model-value="(links) => setNoteLinks(kind, links)"
+        />
+      </div>
     </template>
   </BaseEntityTabView>
 </template>

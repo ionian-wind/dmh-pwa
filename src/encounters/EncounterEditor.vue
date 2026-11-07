@@ -2,6 +2,10 @@
 import { ref, watch, computed } from 'vue';
 import { Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
 
@@ -27,6 +31,27 @@ const editedEncounter = ref<EncounterFormData>({
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
+const editorTabs = useEntityEditorTabs();
+const relations = useEntityLinkRelations();
+
+const linkedNotes = computed<MapEntityRef[]>(() => {
+  const id = props.encounter?.id;
+  return id
+    ? relations
+        .getLinkedIds('encounter', id, 'note')
+        .map((noteId) => ({ kind: 'note' as const, id: noteId }))
+    : [];
+});
+
+function setLinkedNotes(links: MapEntityRef[]) {
+  if (!props.encounter?.id) return;
+  void relations.setLinkedIds(
+    'encounter',
+    props.encounter.id,
+    'note',
+    links.filter((link) => link.kind === 'note').map((link) => link.id),
+  );
+}
 
 const { t } = useI18n();
 
@@ -103,6 +128,7 @@ function handleDelete() {
     :showDelete="isEditing"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     modalId="encounter-editor-modal"
     @submit="handleSubmit"
     @delete="handleDelete"
@@ -147,6 +173,15 @@ function handleDelete() {
           />
         </div>
       </div>
+    </template>
+
+    <template #links>
+      <EntitiesLinking
+        v-if="props.encounter"
+        kind="note"
+        :model-value="linkedNotes"
+        @update:model-value="setLinkedNotes"
+      />
     </template>
   </BaseModal>
 </template>

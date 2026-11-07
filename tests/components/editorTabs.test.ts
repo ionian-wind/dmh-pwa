@@ -54,7 +54,7 @@ describe('entity editor tabs', () => {
       wrapper
         .findAllComponents(EntitiesLinkingStub)
         .map((block) => block.props('kind')),
-    ).toEqual(['character']);
+    ).toEqual(['note', 'character']);
 
     linkingBlock(wrapper, 'character').vm.$emit('update:modelValue', [
       { kind: 'character', id: 'c2' },

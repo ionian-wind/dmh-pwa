@@ -90,19 +90,23 @@ describe('entity drag linking UI', () => {
     expect(document.body.classList.contains('entity-drag-active')).toBe(true);
 
     const cards = wrapper.findAll('.entity-drag-drop-card');
-    expect(cards).toHaveLength(1);
+    expect(cards).toHaveLength(5);
     expect(wrapper.find('.entity-drag-overlay-title').text()).toBe(
       'Link Note to:',
     );
     expect(cards.map((card) => card.attributes('aria-label'))).toEqual([
+      'Parties',
+      'Monsters',
+      'Encounters',
+      'Characters',
       'Locations',
     ]);
 
-    await cards[0].trigger('dragenter');
+    await cards[4].trigger('dragenter');
     await nextTick();
     expect(
       wrapper
-        .findAll('.entity-drag-drop-card')[0]
+        .findAll('.entity-drag-drop-card')[4]
         .find('.entity-drag-drop-card-inner')
         .classes(),
     ).toContain('entity-drag-drop-card--hovered');
@@ -111,13 +115,13 @@ describe('entity drag linking UI', () => {
     await nextTick();
     expect(
       wrapper
-        .findAll('.entity-drag-drop-card')[0]
+        .findAll('.entity-drag-drop-card')[4]
         .find('.entity-drag-drop-card-inner')
         .classes(),
     ).not.toContain('entity-drag-drop-card--hovered');
 
-    await wrapper.findAll('.entity-drag-drop-card')[0].trigger('dragenter');
-    await wrapper.findAll('.entity-drag-drop-card')[0].trigger('drop');
+    await wrapper.findAll('.entity-drag-drop-card')[4].trigger('dragenter');
+    await wrapper.findAll('.entity-drag-drop-card')[4].trigger('drop');
     await nextTick();
 
     expect(wrapper.find('.entity-drag-overlay').exists()).toBe(false);
@@ -145,7 +149,7 @@ describe('entity drag linking UI', () => {
       },
     });
     await nextTick();
-    expect(wrapper.findAll('.entity-drag-drop-card')).toHaveLength(2);
+    expect(wrapper.findAll('.entity-drag-drop-card')).toHaveLength(3);
 
     await wrapper.find('.entity-drag-overlay').trigger('drop');
     expect(drag.isDragging.value).toBe(false);
