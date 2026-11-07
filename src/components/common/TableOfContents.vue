@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
-import { IconBookmark } from '@tabler/icons-vue';
+import { IconBookmark, IconBookmarkFilled } from '@tabler/icons-vue';
 
 interface TOCItem {
   id: string;
@@ -244,7 +244,8 @@ function setTocItemRef(
             "
             @click.stop.prevent="emit('bookmark-toggle', item)"
           >
-            <IconBookmark :size="14" />
+            <IconBookmarkFilled v-if="isBookmarked(item.anchorId)" :size="14" />
+            <IconBookmark v-else :size="14" />
           </button>
         </li>
       </ul>

@@ -2,6 +2,7 @@ import { $prose } from '@milkdown/utils';
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/kit/prose/view';
 import bookmarkIcon from '@tabler/icons/outline/bookmark.svg?raw';
+import bookmarkFilledIcon from '@tabler/icons/filled/bookmark.svg?raw';
 
 export interface TocItem {
   id: string;
@@ -107,7 +108,7 @@ function createBookmarkWidget(block: TocBlock) {
   button.dataset.title = block.title;
   button.setAttribute('contenteditable', 'false');
   button.setAttribute('aria-label', 'Bookmark');
-  button.innerHTML = bookmarkIcon;
+  button.innerHTML = `<span class="toc-bookmark-icon-outline">${bookmarkIcon}</span><span class="toc-bookmark-icon-filled">${bookmarkFilledIcon}</span>`;
   return button;
 }
 

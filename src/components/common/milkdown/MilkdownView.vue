@@ -321,4 +321,18 @@ defineExpose({
   width: 14px;
   height: 14px;
 }
+
+.milkdown-view :deep(.toc-bookmark-widget .toc-bookmark-icon-filled) {
+  display: none;
+}
+
+.milkdown-view
+  :deep(.toc-bookmark-widget.is-bookmarked .toc-bookmark-icon-outline) {
+  display: none;
+}
+
+.milkdown-view
+  :deep(.toc-bookmark-widget.is-bookmarked .toc-bookmark-icon-filled) {
+  display: inline-flex;
+}
 </style>

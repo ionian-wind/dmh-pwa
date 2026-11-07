@@ -15,7 +15,7 @@ import { downloadNote } from '@/notes/downloadNote';
 import {
   IconAlertTriangle,
   IconAt,
-  IconBookmark,
+  IconBookmarkFilled,
   IconBookmarks,
   IconFileDownload,
   IconHash,
@@ -146,12 +146,16 @@ async function toggleBookmark(item: TocItem) {
 
 function cropTitle(title: string) {
   const normalized = title.trim();
-  if (normalized.length <= 48) return normalized;
-  return `${normalized.slice(0, 47).trimEnd()}…`;
+  if (normalized.length <= 32) return normalized;
+  return `${normalized.slice(0, 29).trimEnd()}...`;
 }
 
 function bookmarkLabel(bookmark: Bookmark) {
   return cropTitle(bookmark.title || t('common.untitled'));
+}
+
+function bookmarkFullTitle(bookmark: Bookmark) {
+  return bookmark.title || t('common.untitled');
 }
 
 async function editBookmark(bookmark: Bookmark) {
@@ -250,7 +254,7 @@ onMounted(() => {
                     :title="
                       isBookmarkMissing(bookmark)
                         ? t('common.bookmarkMissing')
-                        : bookmarkLabel(bookmark)
+                        : bookmarkFullTitle(bookmark)
                     "
                     @click="
                       scrollToAnchor(bookmark.anchorId ?? bookmark.noteId)
@@ -260,7 +264,7 @@ onMounted(() => {
                       v-if="isBookmarkMissing(bookmark)"
                       :size="14"
                     />
-                    <IconBookmark v-else :size="14" />
+                    <IconBookmarkFilled v-else :size="14" />
                     <span>{{ bookmarkLabel(bookmark) }}</span>
                   </button>
                   <QBtn
@@ -348,12 +352,15 @@ onMounted(() => {
 .sidebar-tab-content {
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .bookmark-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .bookmark-row {
@@ -361,6 +368,8 @@ onMounted(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.15rem 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .bookmark-link {
@@ -376,9 +385,12 @@ onMounted(() => {
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .bookmark-link span {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -405,6 +417,7 @@ onMounted(() => {
 }
 
 .bookmark-action {
+  flex: 0 0 auto;
   color: var(--color-text-light);
 }
 
