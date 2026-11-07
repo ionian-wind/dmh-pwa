@@ -203,12 +203,14 @@ View/Edit mode switch.
 
 The note sidebar extracts a table of contents from the rendered note:
 
-- top-level headings and paragraphs appear in document order;
+- only top-level headings appear, in document order;
 - headings use their Markdown heading level for indentation;
-- paragraphs are shown as a smaller, muted row with a truncated text snippet;
-- clicking a row scrolls to the block and updates the URL hash;
-- the shared `TableOfContents` component tracks the active block while
+- clicking a row scrolls to the heading and updates the URL hash;
+- the shared `TableOfContents` component tracks the active heading while
   scrolling.
+
+Paragraphs still receive stable block anchors and can remain in existing
+bookmarks, but they are not listed in the Contents tab.
 
 Bookmarking:
 

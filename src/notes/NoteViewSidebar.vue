@@ -84,6 +84,10 @@ const bookmarkedAnchorIds = computed(
     ),
 );
 
+const headingItems = computed(() =>
+  (props.tocItems ?? []).filter((item) => item.kind !== 'paragraph'),
+);
+
 const tocAnchorIds = computed(
   () => new Set((props.tocItems ?? []).map((item) => item.anchorId)),
 );
@@ -194,8 +198,8 @@ onMounted(() => {
         <template #default>
           <div v-show="activeTab === 'toc'" class="q-pa-md">
             <TableOfContents
-              v-if="props.tocItems?.length"
-              :items="props.tocItems"
+              v-if="headingItems.length"
+              :items="headingItems"
               show-bookmark-action
               :bookmarked-ids="bookmarkedAnchorIds"
               :bookmark-label="t('common.bookmark')"

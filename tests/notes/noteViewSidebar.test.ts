@@ -106,8 +106,9 @@ describe('NoteViewSidebar', () => {
     });
     await nextTick();
 
-    expect(wrapper.findAll('.toc-item')).toHaveLength(2);
-    expect(wrapper.find('.toc-item--paragraph').exists()).toBe(true);
+    expect(wrapper.findAll('.toc-item')).toHaveLength(1);
+    expect(wrapper.findAll('.toc-item')[0].text()).toContain('Intro');
+    expect(wrapper.find('.toc-item--paragraph').exists()).toBe(false);
 
     const firstBookmark = wrapper.findAll('.toc-bookmark')[0];
     await firstBookmark.trigger('click');
