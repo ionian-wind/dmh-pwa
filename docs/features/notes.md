@@ -211,7 +211,8 @@ Paragraph text. <!-- dmh:block=note-block-def456 -->
 - Milkdown hides the comments in view/edit; markdown-it leaves them as
   invisible HTML comments.
 - `downloadNote()` strips the markers from user-facing Markdown downloads.
-- Raw Markdown mode shows the comments because it is a plain-text editor.
+- Raw Markdown mode hides the comments; unchanged lines keep their anchor IDs
+  when the source is edited and saved.
 
 The Milkdown implementation lives in
 `src/components/common/milkdown/plugins/headingAnchor.ts` (parsing and

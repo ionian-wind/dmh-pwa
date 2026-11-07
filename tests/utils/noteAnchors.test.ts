@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ensureBlockAnchors,
   extractBlockAnchorId,
+  preserveBlockAnchors,
   stripBlockAnchors,
 } from '@/utils/noteAnchors';
 
@@ -44,5 +45,25 @@ describe('note block anchors', () => {
   it('strips anchors for markdown downloads', () => {
     const anchored = ensureBlockAnchors('# Heading\n\nParagraph.');
     expect(stripBlockAnchors(anchored)).toBe('# Heading\n\nParagraph.');
+  });
+
+  it('re-attaches anchors to unchanged raw-editor lines', () => {
+    const anchored = ensureBlockAnchors('# Heading\n\nParagraph.');
+    const edited = preserveBlockAnchors(
+      '# Heading\n\nParagraph edited.',
+      anchored,
+    );
+
+    expect(edited.split('\n')[0]).toBe(anchored.split('\n')[0]);
+    // Changed lines keep their text but lose the old anchor so a new one can
+    // be generated on save.
+    expect(extractBlockAnchorId(edited.split('\n')[2])).toBeNull();
+  });
+
+  it('keeps anchors when raw content is unchanged', () => {
+    const anchored = ensureBlockAnchors('# Heading\n\nParagraph.');
+    expect(preserveBlockAnchors(stripBlockAnchors(anchored), anchored)).toBe(
+      anchored,
+    );
   });
 });

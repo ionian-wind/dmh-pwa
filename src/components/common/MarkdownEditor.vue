@@ -3,6 +3,7 @@ import { ref, watch, useAttrs, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MilkdownEditorWrapper from './milkdown/MilkdownEditorWrapper.vue';
 import { editorHtmlToMarkdown, markdownToEditorHtml } from './markdownRaw';
+import { preserveBlockAnchors, stripBlockAnchors } from '@/utils/noteAnchors';
 
 // Ref for MilkdownEditorWrapper to access getMarkdown
 const milkdownWrapperRef = ref<any>(null);
@@ -31,21 +32,25 @@ const modelValueProxy = computed({
   set: (val) => emit('update:modelValue', val),
 });
 
-const rawHtml = ref(markdownToEditorHtml(props.modelValue));
+const rawHtml = ref(markdownToEditorHtml(stripBlockAnchors(props.modelValue)));
 const rawEditorRef = ref<any>(null);
 
 watch(
   () => props.modelValue,
   (value) => {
-    if (value !== editorHtmlToMarkdown(rawHtml.value)) {
-      rawHtml.value = markdownToEditorHtml(value);
+    if (stripBlockAnchors(value) !== editorHtmlToMarkdown(rawHtml.value)) {
+      rawHtml.value = markdownToEditorHtml(stripBlockAnchors(value));
     }
   },
 );
 
 function onRawUpdate(html: string) {
   rawHtml.value = html;
-  emit('update:modelValue', editorHtmlToMarkdown(html));
+  emit('update:modelValue', withPreservedAnchors(editorHtmlToMarkdown(html)));
+}
+
+function withPreservedAnchors(markdown: string): string {
+  return preserveBlockAnchors(markdown, props.modelValue);
 }
 
 /**
@@ -75,7 +80,7 @@ function getCurrentMarkdown() {
   if (props.isWYSIWYGMode && milkdownWrapperRef.value?.getMarkdown) {
     return milkdownWrapperRef.value.getMarkdown();
   }
-  return editorHtmlToMarkdown(rawHtml.value);
+  return withPreservedAnchors(editorHtmlToMarkdown(rawHtml.value));
 }
 
 // Expose for parent (NoteEditor) to call on submit

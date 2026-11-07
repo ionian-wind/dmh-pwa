@@ -40,6 +40,22 @@ describe('MarkdownEditor raw mode', () => {
     wrapper.unmount();
   });
 
+  it('hides block anchors in raw mode and preserves them on update', async () => {
+    const wrapper = mountRaw(
+      'first <!-- dmh:block=note-block-one123 -->\nsecond',
+    );
+    const editor = wrapper.findComponent(QEditorStub);
+    expect(editor.props('modelValue')).toBe('first<br>second');
+
+    editor.vm.$emit('update:modelValue', '<div>first</div><div>second</div>');
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      'first <!-- dmh:block=note-block-one123 -->\nsecond',
+    ]);
+    wrapper.unmount();
+  });
+
   it('converts QEditor HTML back to markdown updates', async () => {
     const wrapper = mountRaw();
     wrapper
