@@ -61,7 +61,8 @@ A 22-line wrapper that provides `MilkdownProvider` and forwards `modelValue`,
   - feature configs from `crepeConfig.ts` for `Toolbar`, `BlockEdit` and
     `Placeholder`,
   - `.addFeature(mentionFeature)`,
-  - `.addFeature(headingAnchorFeature)` for `{#kind-id}` heading anchors,
+  - `.addFeature(headingAnchorFeature)` for `{#kind-id}` heading anchors and
+    persistent `<!-- dmh:block=… -->` heading/paragraph anchors,
   - `.addFeature(tagDecorationFeature)` in read-only mode, or
     `.addFeature(tagAutocompleteFeature)` in edit mode.
 - `crepeConfig.ts` maps Crepe toolbar/menu/placeholder labels and mention
@@ -70,7 +71,7 @@ A 22-line wrapper that provides `MilkdownProvider` and forwards `modelValue`,
 - Registers `api.markdownUpdated` to emit `update:modelValue` on every change
   in edit mode. In read-only mode it only records the applied Markdown so the
   external-value watcher can ignore its own echo.
-- Exposes `getMarkdown()`.
+- Exposes `getMarkdown()` and, in read-only mode, `getToc()`.
 - Shows `MentionInsertPopup` and the tag popup only in edit mode.
 - `getMentionables(kind)` resolves the store via
   `getMentionableEntities(kind)`, handles both unwrapped arrays and refs, and

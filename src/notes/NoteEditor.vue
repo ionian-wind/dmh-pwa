@@ -12,6 +12,7 @@ import { IconDots, IconHelp } from '@tabler/icons-vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import { ensureBlockAnchors } from '@/utils/noteAnchors';
 import type { MapEntityRef } from '@/maps/types';
 
 const { t, locale } = useI18n();
@@ -114,6 +115,11 @@ const handleSubmit = async () => {
       (await canvasRef.value?.getPreview()) || undefined;
   } else if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
     editedNote.value.content = markdownEditorRef.value.getMarkdown();
+  }
+  if (editedNote.value.contentType !== 'draw') {
+    editedNote.value.content = ensureBlockAnchors(
+      editedNote.value.content ?? '',
+    );
   }
   emit('submit', editedNote.value);
 };

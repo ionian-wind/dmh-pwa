@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, reactive } from 'vue';
 import { mount } from '@vue/test-utils';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import type { Note, NoteEditState } from '@/types';
+import { useBookmarkStore } from '@/stores/bookmarks';
+import { resetMockStores } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
@@ -16,6 +18,10 @@ const RouterLinkStub = {
 };
 
 describe('NoteViewSidebar', () => {
+  beforeEach(() => {
+    resetMockStores();
+  });
+
   it('renders note tags', () => {
     const wrapper = mount(NoteViewSidebar, {
       props: {
@@ -25,7 +31,12 @@ describe('NoteViewSidebar', () => {
     });
     expect(wrapper.findAll('.tag-link')).toHaveLength(2);
     const tabs = wrapper.findAll('.tab-item');
-    expect(tabs.map((tab) => tab.text())).toEqual(['Tags', 'Mentions']);
+    expect(tabs.map((tab) => tab.text())).toEqual([
+      'Contents',
+      'Bookmarks',
+      'Tags',
+      'Mentions',
+    ]);
     wrapper.unmount();
   });
 
@@ -38,7 +49,7 @@ describe('NoteViewSidebar', () => {
     wrapper.unmount();
   });
 
-  it('switches from the tags tab to mentions', async () => {
+  it('switches from contents to mentions', async () => {
     const wrapper = mount(NoteViewSidebar, {
       props: {
         note: { id: 'n1', title: 'Note', tags: ['combat'] } as any,
@@ -47,12 +58,114 @@ describe('NoteViewSidebar', () => {
     });
     const panels = wrapper.findAll('.tab-content > div');
     expect((panels[0].element as HTMLElement).style.display).not.toBe('none');
-    expect((panels[1].element as HTMLElement).style.display).toBe('none');
+    expect((panels[3].element as HTMLElement).style.display).toBe('none');
+
+    await wrapper.findAll('.tab-item')[3].trigger('click');
+    await nextTick();
+    expect((panels[0].element as HTMLElement).style.display).toBe('none');
+    expect((panels[3].element as HTMLElement).style.display).not.toBe('none');
+    wrapper.unmount();
+  });
+
+  it('renders contents and bookmarks the selected heading', async () => {
+    const note = {
+      id: 'n1',
+      title: 'Note',
+      content: '# Intro\n\nParagraph',
+      contentType: 'text',
+      tags: [],
+      moduleIds: [],
+      typeId: null,
+      hidden: false,
+      createdAt: 1,
+      updatedAt: 1,
+    } as Note;
+    const wrapper = mount(NoteViewSidebar, {
+      props: {
+        note,
+        tocItems: [
+          {
+            id: 'intro',
+            anchorId: 'intro',
+            level: 1,
+            title: 'Intro',
+            kind: 'heading',
+          },
+          {
+            id: 'note-paragraph-1',
+            anchorId: 'note-paragraph-1',
+            level: 0,
+            title: 'Paragraph',
+            kind: 'paragraph',
+          },
+        ],
+      },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    await nextTick();
+
+    expect(wrapper.findAll('.toc-item')).toHaveLength(2);
+    expect(wrapper.find('.toc-item--paragraph').exists()).toBe(true);
+
+    const firstBookmark = wrapper.findAll('.toc-bookmark')[0];
+    await firstBookmark.trigger('click');
+    await nextTick();
+
+    const store = useBookmarkStore();
+    expect(store.isAnchorBookmarked('note', 'n1', 'intro')).toBe(true);
+    expect(wrapper.findAll('.toc-bookmark')[0].classes()).toContain('active');
 
     await wrapper.findAll('.tab-item')[1].trigger('click');
     await nextTick();
-    expect((panels[0].element as HTMLElement).style.display).toBe('none');
-    expect((panels[1].element as HTMLElement).style.display).not.toBe('none');
+    expect(wrapper.find('.bookmark-row').text()).toContain('Intro');
+    wrapper.unmount();
+  });
+
+  it('marks and removes bookmarks whose block was deleted', async () => {
+    const note = {
+      id: 'n1',
+      title: 'Note',
+      content: '# Intro',
+      contentType: 'text',
+      tags: [],
+      moduleIds: [],
+      typeId: null,
+      hidden: false,
+      createdAt: 1,
+      updatedAt: 1,
+    } as Note;
+    const store = useBookmarkStore();
+    await store.addAnchorBookmark('note', 'n1', 'deleted-anchor', 'Deleted');
+
+    const wrapper = mount(NoteViewSidebar, {
+      props: {
+        note,
+        tocItems: [
+          {
+            id: 'intro',
+            anchorId: 'intro',
+            level: 1,
+            title: 'Intro',
+            kind: 'heading',
+          },
+        ],
+        tocReady: true,
+      },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    await nextTick();
+
+    await wrapper.findAll('.tab-item')[1].trigger('click');
+    await nextTick();
+
+    expect(wrapper.find('.bookmark-row--missing').exists()).toBe(true);
+    const removeMissing = wrapper.find('.remove-missing-bookmarks');
+    expect(removeMissing.exists()).toBe(true);
+
+    await removeMissing.trigger('click');
+    await nextTick();
+    expect(store.bookmarksFor('note', 'n1')).toHaveLength(0);
+    expect(wrapper.find('.bookmark-row--missing').exists()).toBe(false);
     wrapper.unmount();
   });
 

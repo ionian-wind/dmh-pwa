@@ -1,5 +1,6 @@
 import slugify from 'slugify';
 import type { Note } from '@/types';
+import { stripBlockAnchors } from '@/utils/noteAnchors';
 
 function safeFileName(title: string, extension: string, id: string): string {
   const base =
@@ -28,7 +29,7 @@ export function downloadNote(note: Note): boolean {
     return true;
   }
 
-  const blob = new Blob([note.content ?? ''], {
+  const blob = new Blob([stripBlockAnchors(note.content ?? '')], {
     type: 'text/markdown;charset=utf-8',
   });
   const url = URL.createObjectURL(blob);

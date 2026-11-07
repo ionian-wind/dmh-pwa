@@ -48,4 +48,33 @@ describe('bookmark store', () => {
     ).resolves.toBeUndefined();
     expect(store.items).toHaveLength(0);
   });
+
+  it('keeps note bookmarks separate from module bookmarks', async () => {
+    const store = useBookmarkStore();
+
+    await store.addAnchorBookmark(
+      'note',
+      'note-1',
+      'note-paragraph-1',
+      'Paragraph',
+    );
+    await store.addAnchorBookmark('module', 'module-1', 'heading-1', 'Heading');
+
+    expect(store.bookmarksFor('note', 'note-1')).toHaveLength(1);
+    expect(store.bookmarksFor('module', 'module-1')).toHaveLength(1);
+    expect(store.isAnchorBookmarked('note', 'note-1', 'note-paragraph-1')).toBe(
+      true,
+    );
+    expect(store.isBookmarked('module-1', 'heading-1')).toBe(true);
+    expect(store.isAnchorBookmarked('note', 'note-1', 'heading-1')).toBe(false);
+
+    await store.toggleAnchorBookmark(
+      'note',
+      'note-1',
+      'note-paragraph-1',
+      'Paragraph',
+    );
+    expect(store.bookmarksFor('note', 'note-1')).toHaveLength(0);
+    expect(store.items).toHaveLength(1);
+  });
 });

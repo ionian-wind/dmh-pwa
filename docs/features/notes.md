@@ -18,7 +18,7 @@ used as hidden document sections inside modules.
 | `src/notes/NoteCanvas.vue`                 | Quickdraw canvas for `draw` notes               |
 | `src/notes/NoteView.vue`                   | Detail page with inline view/edit mode          |
 | `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteOptions`) |
-| `src/notes/NoteViewSidebar.vue`            | Tags/mentions tabs and edit-mode options        |
+| `src/notes/NoteViewSidebar.vue`            | Contents/bookmarks/tags/mentions sidebar        |
 | `src/components/common/MarkdownEditor.vue` | Editor used by NoteEditor                       |
 | `src/components/common/Markdown.vue`       | Renderer used by cards and detail               |
 
@@ -195,9 +195,54 @@ The only escape is delete + recreate.
 
 `NoteView` uses the standard **View** / **Linked entities** tabs in the
 app header panel. View renders the note body; Linked entities shows the
-note's module read-only. The right sidebar shows **Tags** and **Mentions**
-tabs (tags first), followed by a full-width local View/Edit mode switch that is
-not wired to note behavior yet.
+note's module read-only. The right sidebar shows **Contents**, **Bookmarks**,
+**Tags** and **Mentions** tabs in that order, followed by a full-width local
+View/Edit mode switch.
+
+## Contents and bookmarks
+
+The note sidebar extracts a table of contents from the rendered note:
+
+- top-level headings and paragraphs appear in document order;
+- headings use their Markdown heading level for indentation;
+- paragraphs are shown as a smaller, muted row with a truncated text snippet;
+- clicking a row scrolls to the block and updates the URL hash;
+- the shared `TableOfContents` component tracks the active block while
+  scrolling.
+
+Bookmarking:
+
+- every Contents row has a bookmark action (visible on hover/focus);
+- the **Bookmarks** tab lists note bookmarks with click-to-scroll, rename and
+  delete actions;
+- bookmarks are stored in the shared `bookmarks` store with
+  `ownerKind: 'note'`, `ownerId: note.id` and `anchorId`;
+- missing anchors (after a block is deleted) are marked with a warning icon;
+  the row is disabled and the tab offers **Remove missing bookmarks**.
+
+### Stable block anchors
+
+Headings and paragraphs get persistent block IDs stored directly in the
+Markdown as HTML comments:
+
+```md
+## Heading <!-- dmh:block=note-block-abc123 -->
+
+Paragraph text. <!-- dmh:block=note-block-def456 -->
+```
+
+- The IDs are added on note load/save when missing.
+- Editing a block's text keeps the existing ID.
+- Deleting a block removes its marker, so its bookmark becomes missing.
+- Milkdown hides the comments in view/edit; markdown-it leaves them as
+  invisible HTML comments.
+- `downloadNote()` strips the markers from user-facing Markdown downloads.
+- Raw Markdown mode shows the comments because it is a plain-text editor.
+
+The Milkdown implementation lives in
+`src/components/common/milkdown/plugins/headingAnchor.ts` (parsing and
+serialization) and `plugins/toc.ts` (IDs, TOC extraction and decorations).
+`src/utils/noteAnchors.ts` adds, strips and reads the markers.
 
 ## Markdown and mentions
 

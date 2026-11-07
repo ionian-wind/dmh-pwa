@@ -1,24 +1,34 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
+import { IconBookmark } from '@tabler/icons-vue';
 
 interface TOCItem {
   id: string;
   level: number;
   anchorId: string;
   title: string;
+  kind?: 'heading' | 'paragraph';
 }
 
 const props = defineProps<{
   items: TOCItem[];
   activeAnchorId?: string | null;
+  showBookmarkAction?: boolean;
+  bookmarkedIds?: Set<string>;
+  bookmarkLabel?: string;
+  removeBookmarkLabel?: string;
 }>();
 
 const activeItemId = ref<string | null>(null);
 const tocNavRef = ref<HTMLElement | null>(null);
 const tocItemRefs = ref<{ [key: string]: HTMLElement | undefined }>({});
 
-const emit = defineEmits(['item-click']);
+const emit = defineEmits(['item-click', 'bookmark-toggle']);
+
+function isBookmarked(anchorId: string) {
+  return props.bookmarkedIds?.has(anchorId) ?? false;
+}
 
 function handleItemClick(anchorId: string, event: MouseEvent) {
   event.preventDefault();
@@ -209,6 +219,7 @@ function setTocItemRef(
             'toc-item',
             getIndentClass(item.level),
             getActiveClass(item.anchorId),
+            item.kind === 'paragraph' ? 'toc-item--paragraph' : '',
           ]"
           :ref="(el) => setTocItemRef(el, item)"
         >
@@ -220,6 +231,21 @@ function setTocItemRef(
           >
             {{ item.title }}
           </a>
+          <button
+            v-if="showBookmarkAction"
+            type="button"
+            class="toc-bookmark"
+            :class="{ active: isBookmarked(item.anchorId) }"
+            :title="
+              isBookmarked(item.anchorId) ? removeBookmarkLabel : bookmarkLabel
+            "
+            :aria-label="
+              isBookmarked(item.anchorId) ? removeBookmarkLabel : bookmarkLabel
+            "
+            @click.stop.prevent="emit('bookmark-toggle', item)"
+          >
+            <IconBookmark :size="14" />
+          </button>
         </li>
       </ul>
     </nav>
@@ -237,12 +263,19 @@ function setTocItemRef(
 .toc-item {
   margin: 0;
   padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .toc-link {
   display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   background: none;
   border: none;
   color: var(--color-text);
@@ -272,7 +305,49 @@ function setTocItemRef(
   padding-left: calc(0.5rem - 3px);
 }
 
+.toc-item--paragraph .toc-link {
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+}
+
+.toc-bookmark {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-lighter);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.toc-item:hover .toc-bookmark,
+.toc-bookmark:focus-visible,
+.toc-bookmark.active {
+  opacity: 1;
+}
+
+.toc-bookmark:hover {
+  color: var(--color-accent);
+  background: var(--color-background-mute);
+}
+
+.toc-bookmark.active {
+  color: var(--color-success);
+}
+
 /* Indentation for different levels */
+.toc-level-0,
+.toc-level-1,
 .toc-level-2 {
   padding-left: 0;
 }

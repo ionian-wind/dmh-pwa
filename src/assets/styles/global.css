@@ -450,6 +450,24 @@ body.body--dark .q-btn--outline {
   border-color: var(--color-border-dark) !important;
 }
 
+/* TOC anchors and temporary highlight when jumping to a heading/paragraph. */
+.toc-anchor-block {
+  scroll-margin-top: 64px;
+}
+
+.highlight-anchor {
+  animation: anchor-highlight 1.2s ease;
+}
+
+@keyframes anchor-highlight {
+  0% {
+    background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 /* Mention / internal entity links */
 .internal-link {
   --mention-color: var(--color-info-dark);

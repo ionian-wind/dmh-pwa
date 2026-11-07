@@ -20,6 +20,19 @@
       "type": "string",
       "description": "Title of the heading/bookmark"
     },
+    "ownerKind": {
+      "type": "string",
+      "enum": ["module", "note"],
+      "description": "Entity kind that owns the bookmark"
+    },
+    "ownerId": {
+      "type": "string",
+      "description": "ID of the owning module or note"
+    },
+    "anchorId": {
+      "type": "string",
+      "description": "Anchor ID of the bookmarked heading or paragraph"
+    },
     "createdAt": {
       "type": "number",
       "description": "Timestamp when the bookmark was created"

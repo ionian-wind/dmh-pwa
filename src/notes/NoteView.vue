@@ -6,7 +6,9 @@ import { features } from 'virtual:feature-flags';
 import { useNoteStore } from '@/stores/notes';
 import { useMentionsStore } from '@/utils/storage';
 import type { Note } from '@/types';
+import type { TocItem } from '@/components/common/milkdown/plugins/toc';
 import { extractMentionedEntities } from '@/utils/markdownParser';
+import { ensureBlockAnchors } from '@/utils/noteAnchors';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
@@ -41,6 +43,8 @@ const note = ref<Note | null>(null);
 const notFound = computed(() => isLoaded.value && !note.value);
 const validationError = ref<string | null>(null);
 const noteContent = ref('');
+const tocItems = ref<TocItem[]>([]);
+const tocReady = ref(false);
 const canvasDirty = ref(false);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
@@ -54,7 +58,14 @@ function updateNoteFromStore() {
   }
   const found = noteStore.getById(route.params.id as string);
   if (found) {
-    note.value = found;
+    const content =
+      found.contentType === 'draw'
+        ? found.content
+        : ensureBlockAnchors(found.content ?? '');
+    if (content !== found.content) {
+      void noteStore.update(found.id, { content });
+    }
+    note.value = { ...found, content };
   } else if (!isDeleting.value) {
     router.push('/notes');
   }
@@ -71,6 +82,20 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => note.value?.id,
+  () => {
+    tocItems.value = [];
+    tocReady.value =
+      note.value?.contentType === 'draw' || !note.value?.content?.trim();
+  },
+);
+
+function handleTocUpdate(items: typeof tocItems.value) {
+  tocItems.value = items;
+  tocReady.value = true;
+}
 
 const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
   source: note,
@@ -114,9 +139,10 @@ const tabs = computed(() =>
 );
 
 function handleMarkdownContentChange(newContent: string) {
-  noteContent.value = newContent;
+  const content = ensureBlockAnchors(newContent);
+  noteContent.value = content;
   if (note.value) {
-    noteStore.update(note.value.id, { content: newContent });
+    noteStore.update(note.value.id, { content });
   }
 }
 
@@ -223,7 +249,10 @@ async function persistDraft(draft: Note): Promise<boolean> {
   try {
     await noteStore.update(note.value.id, {
       title: draft.title,
-      content: draft.content,
+      content:
+        draft.contentType === 'draw'
+          ? draft.content
+          : ensureBlockAnchors(draft.content ?? ''),
       contentType: draft.contentType,
       tags: draft.tags,
       moduleIds: draft.moduleIds,
@@ -284,6 +313,8 @@ onMounted(async () => {
       note,
       editState,
       onSetEditMode: setEditMode,
+      tocItems,
+      tocReady,
     },
   });
 });
@@ -321,6 +352,7 @@ onBeforeUnmount(() => {
           :enableMentionModal="true"
           :content="noteContent"
           @update:content="handleMarkdownContentChange"
+          @toc-update="handleTocUpdate"
         />
       </EntityContentSurface>
 

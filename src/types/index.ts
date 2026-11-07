@@ -134,10 +134,17 @@ export interface Combat extends WithMetadata {
   notes?: string;
 }
 
+export type BookmarkOwnerKind = 'module' | 'note';
+
 export interface Bookmark extends WithMetadata {
+  /** Legacy module owner. Empty for note bookmarks. */
   moduleId: UUID;
+  /** Legacy module anchor. Mirrors anchorId for note bookmarks. */
   noteId: string;
   title: string;
+  ownerKind?: BookmarkOwnerKind;
+  ownerId?: UUID;
+  anchorId?: string;
 }
 
 export interface Timer extends WithMetadata {

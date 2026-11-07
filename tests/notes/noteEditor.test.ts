@@ -5,6 +5,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import NoteEditor from '@/notes/NoteEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { alert } from '@/dialogs';
+import { stripBlockAnchors } from '@/utils/noteAnchors';
 
 vi.mock('@/dialogs', () => ({
   alert: vi.fn().mockResolvedValue(undefined),
@@ -90,10 +91,10 @@ describe('NoteEditor content types', () => {
     expect(wrapper.findComponent({ name: 'NoteCanvas' }).exists()).toBe(false);
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      contentType: 'text',
-      content: '# Latest markdown',
-    });
+    const submitted = wrapper.emitted('submit')?.[0]?.[0] as any;
+    expect(submitted.contentType).toBe('text');
+    expect(stripBlockAnchors(submitted.content)).toBe('# Latest markdown');
+    expect(submitted.content).toContain('dmh:block=');
   });
 
   it('uses the canvas and reads a tldraw snapshot for drawing notes', async () => {

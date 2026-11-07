@@ -7,10 +7,12 @@
   >
     <MilkdownProvider>
       <MilkdownEditor
+        ref="editorRef"
         :model-value="content"
         current-entity-type=""
         current-entity-id=""
         readonly
+        @ready="handleReady"
       />
     </MilkdownProvider>
   </div>
@@ -34,11 +36,12 @@ const props = defineProps<{
   scrollToAnchor?: (id: string, heading?: HTMLElement) => void;
 }>();
 
-const emit = defineEmits(['update:content']);
+const emit = defineEmits(['update:content', 'toc-update']);
 
 const router = useRouter();
 const { openMentionModal } = useModalState();
 const rootEl = ref<HTMLElement | null>(null);
+const editorRef = ref<InstanceType<typeof MilkdownEditor> | null>(null);
 
 const entityStores = Object.fromEntries(
   featureLinkKinds.map((option) => [option.kind, option.useStore()]),
@@ -47,6 +50,10 @@ const enabledKinds = new Set(featureLinkKinds.map((option) => option.kind));
 
 function getEntity(kind: string, id: string) {
   return entityStores[kind]?.getById?.(id) ?? null;
+}
+
+function handleReady() {
+  emit('toc-update', editorRef.value?.getToc?.() ?? []);
 }
 
 function navigate(href: string) {
@@ -189,6 +196,14 @@ function handleTaskPointerDown(event: PointerEvent) {
 
 onMounted(async () => {
   await Promise.all(featureLinkKinds.map((option) => option.useStore().load()));
+});
+
+defineExpose({
+  getToc: () => editorRef.value?.getToc?.() ?? [],
+  scrollToAnchor: (anchorId: string) => {
+    const target = document.getElementById(anchorId);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  },
 });
 </script>
 

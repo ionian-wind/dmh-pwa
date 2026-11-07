@@ -98,6 +98,9 @@ Markdown-to-ProseMirror pipeline.
   the marker is removed, the heading gets `id="kind-id"`, `data-kind` and
   `data-id`, and the default heading-id generator is overridden so the anchor
   id is not replaced by a slug.
+- Note block anchors (`<!-- dmh:block=… -->`) are parsed by the same feature
+  and exposed as `blockAnchor` on headings and paragraphs. The read-only view
+  adds them to the TOC and keeps their IDs stable across content edits.
 - Task labels update only the matching Markdown source line and emit
   `update:content`. This preserves bullet markers, tag escaping and heading
   anchor markers instead of re-serializing the document.

@@ -26,10 +26,12 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 import { Crepe } from '@milkdown/crepe';
 import { Milkdown, useEditor } from '@milkdown/vue';
 import { replaceAll } from '@milkdown/kit/utils';
+import { editorViewCtx } from '@milkdown/kit/core';
 import { mentionFeature } from './plugins/mention';
 import { createCrepeFeatureConfig } from './crepeConfig';
 import { headingAnchorFeature } from './plugins/headingAnchor';
 import { tagDecorationFeature } from './plugins/tagDecoration';
+import { collectTocItems, tocFeature } from './plugins/toc';
 import { READONLY_CREPE_FEATURES } from './features';
 import MentionInsertPopup from './MentionInsertPopup.vue';
 import TagInsertPopup from './TagInsertPopup.vue';
@@ -48,7 +50,7 @@ const props = defineProps<{
   tags?: string[];
   readonly?: boolean;
 }>();
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'ready']);
 const { t } = useI18n();
 const noteStore = featureLinkKinds
   .find((option) => option.kind === 'note')
@@ -180,21 +182,25 @@ const lastAppliedValue = ref(props.modelValue);
 
 // @ts-ignore: Type mismatch due to dynamic plugin system
 useEditor((root) => {
-  crepeInstance.value = new Crepe({
+  const crepe = new Crepe({
     root,
     defaultValue: props.modelValue,
     features: props.readonly ? READONLY_CREPE_FEATURES : {},
     featureConfigs: createCrepeFeatureConfig(t),
   })
     .addFeature(mentionFeature)
-    .addFeature(headingAnchorFeature)
-    .addFeature(props.readonly ? tagDecorationFeature : tagAutocompleteFeature);
+    .addFeature(headingAnchorFeature);
 
   if (props.readonly) {
-    crepeInstance.value.setReadonly(true);
+    crepe.addFeature(tagDecorationFeature).addFeature(tocFeature);
+    crepe.setReadonly(true);
+  } else {
+    crepe.addFeature(tagAutocompleteFeature);
   }
 
-  crepeInstance.value.on((api) => {
+  crepeInstance.value = crepe;
+  crepe.on((api) => {
+    api.mounted(() => emit('ready'));
     api.markdownUpdated((_, markdown) => {
       if (props.readonly) {
         lastAppliedValue.value = markdown;
@@ -203,7 +209,7 @@ useEditor((root) => {
       emit('update:modelValue', markdown);
     });
   });
-  return crepeInstance.value;
+  return crepe;
 });
 
 watch(
@@ -215,11 +221,16 @@ watch(
     if (!crepe) return;
     lastAppliedValue.value = value;
     crepe.editor.action(replaceAll(value, true));
+    queueMicrotask(() => emit('ready'));
   },
 );
 
 defineExpose({
   getMarkdown: () => crepeInstance.value?.getMarkdown() ?? '',
+  getToc: () =>
+    crepeInstance.value?.editor.action((ctx) =>
+      collectTocItems(ctx.get(editorViewCtx).state.doc),
+    ) ?? [],
 });
 </script>
 
