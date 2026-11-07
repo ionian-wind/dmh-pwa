@@ -83,7 +83,7 @@ onUnmounted(() => {
     v-if="props.enabled && showInstallPrompt"
     class="pwa-install-banner-float shadow-1 absolute-bottom"
   >
-    <QBanner :class="'bg-secondary'">
+    <QBanner>
       <template #avatar>
         <QAvatar size="75px" :style="'square'">
           <img src="/dmh-pwa/icon-192.png" alt="Owlbear's DMH" />
@@ -129,6 +129,19 @@ onUnmounted(() => {
   transform: translateX(-50%);
   max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 32px);
   z-index: 2000;
+}
+
+.pwa-install-banner-float :deep(.q-banner) {
+  background: var(--color-background-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+.pwa-install-banner-float :deep(.q-banner__content),
+.pwa-install-banner-float h5,
+.pwa-install-banner-float p {
+  color: inherit;
 }
 
 .pwa-install-help {
