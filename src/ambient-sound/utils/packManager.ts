@@ -60,23 +60,25 @@ async function migrateLegacyPacks(db: DmhDatabase): Promise<void> {
 
     const legacy = new Dexie(LEGACY_DB_NAME);
     legacy.version(LEGACY_DB_VERSION).stores({ soundPacks: 'id' });
+    let packs: SoundPackRecord[] = [];
     try {
       await legacy.open();
-      const packs = (await legacy
-        .table('soundPacks')
-        .toArray()) as SoundPackRecord[];
-      if (packs.length > 0) {
-        await db.sound_packs.bulkPut(packs);
-      }
-
-      // Only remove the old database once every record is present.
-      const targetCount = await db.sound_packs.count();
-      if (packs.length === 0 || targetCount >= packs.length) {
-        await Dexie.delete(LEGACY_DB_NAME);
-        markLegacyPacksMerged();
-      }
+      packs = (await legacy.table('soundPacks').toArray()) as SoundPackRecord[];
     } finally {
+      // Close before deleting; otherwise Dexie requests a versionchange on
+      // this connection and logs a connection-deletion warning.
       legacy.close();
+    }
+
+    if (packs.length > 0) {
+      await db.sound_packs.bulkPut(packs);
+    }
+
+    // Only remove the old database once every record is present.
+    const targetCount = await db.sound_packs.count();
+    if (packs.length === 0 || targetCount >= packs.length) {
+      await Dexie.delete(LEGACY_DB_NAME);
+      markLegacyPacksMerged();
     }
   })().catch((error) => {
     legacyMigration = null;
