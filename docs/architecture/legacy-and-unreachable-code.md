@@ -18,7 +18,8 @@ the public application flow.
 | `src/notes/NoteViewSidebar.vue`                                             | Thin sidebar adapter around `Mentions`.                                                                                                             |
 | `src/ambient-sound/components/SceneLinksPanel.vue`                          | Thin wrapper around `EntitiesLinking`.                                                                                                              |
 | `src/utils/dice-probability-calculator/tokens.ts`                           | Chevrotain token definitions; branch paths belong to the lexer library.                                                                             |
-| `src/maps/composables/useMapEntityCatalog.ts`                               | Adapter over the entity stores; behavior is covered through its consumers.                                                                          |
+| `src/components/common/entityLinking/useMapEntityCatalog.ts`                | Adapter over the entity stores; behavior is covered through its consumers.                                                                          |
+| `src/features/**`, `src/composables/useFeatureStores.ts`                    | Build-time feature wiring; exercised through the production build matrix instead of unit coverage.                                                  |
 | `src/modules/ModuleDocumentTree.vue`                                        | Tree integration layer.                                                                                                                             |
 | `src/App.vue`, `src/main.ts`, `src/router.ts`                               | Application shell, bootstrap and route table.                                                                                                       |
 

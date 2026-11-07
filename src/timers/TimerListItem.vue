@@ -10,7 +10,7 @@ import {
 } from '@tabler/icons-vue';
 import type { Timer } from '@/types';
 import { useTimerStore } from '@/stores/timers';
-import { formatTime } from '@/jukebox/utils';
+import { formatTime } from '@/utils/formatTime';
 
 const timerStore = useTimerStore();
 const props = defineProps<{ timer: Timer }>();

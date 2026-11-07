@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { getEntityKindOption } from '@/maps/utils/entityRefs';
+import { getEntityKindOption } from '@/components/common/entityLinking/entityRefs';
 import {
   ENTITY_LINK_ICONS,
+  ENTITY_LINK_KINDS,
   ENTITY_LINK_TARGETS,
   type EntityLinkKind,
 } from './registry';
@@ -39,7 +40,11 @@ onBeforeUnmount(() => {
 });
 
 const targetKinds = computed(() =>
-  draggedEntity.value ? ENTITY_LINK_TARGETS[draggedEntity.value.kind] : [],
+  draggedEntity.value
+    ? ENTITY_LINK_TARGETS[draggedEntity.value.kind].filter((kind) =>
+        ENTITY_LINK_KINDS.includes(kind),
+      )
+    : [],
 );
 
 function labelFor(kind: EntityLinkKind) {

@@ -8,6 +8,7 @@ import { confirm } from '@/dialogs';
 import { getHelpLocale, helpHref, type HelpLocale } from '@/helpcenter/links';
 import { clearAllAppData, reloadAppFromMainPage } from '@/utils/appReset';
 import { debugError } from '@/utils/debug';
+import { features } from 'virtual:feature-flags';
 import {
   formatBytes,
   getFileStorageDiagnostics,
@@ -244,7 +245,7 @@ async function clearStorage() {
       </QList>
     </section>
 
-    <section data-test="settings-player">
+    <section v-if="features.jukebox" data-test="settings-player">
       <h5 class="q-mt-none q-mb-sm">{{ t('settings.player') }}</h5>
       <QList separator>
         <QItem>

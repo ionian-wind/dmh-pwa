@@ -3,7 +3,7 @@ import {
   DEFAULT_MARKER_COLOR,
   DEFAULT_MARKER_ICON,
   markerIconClass,
-} from '../icons';
+} from './icons';
 import { MAP_BASE_LAYER_ID, normalizeLayers } from './mapLayers';
 import type {
   LocationMap,
@@ -14,7 +14,7 @@ import type {
   MapEntityRef,
   MapLocation,
   MapMarker,
-} from '../types';
+} from '@/maps/types';
 
 export { DEFAULT_MARKER_COLOR, DEFAULT_MARKER_ICON };
 

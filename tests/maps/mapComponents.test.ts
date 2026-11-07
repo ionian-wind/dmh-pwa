@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils';
 
 import IconPicker from '@/components/common/IconPicker.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
-import { MAP_MARKER_ICONS } from '@/maps/icons';
+import { MAP_MARKER_ICONS } from '@/utils/maps/icons';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
 import MapLocationEditor from '@/maps/components/MapLocationEditor.vue';
 import MapMarkersPanel from '@/maps/components/MapMarkersPanel.vue';

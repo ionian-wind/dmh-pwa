@@ -1,5 +1,27 @@
 # Build, CI, and Deployment
 
+## Build-time feature flags
+
+Main-menu entities and tools can be removed from a production build with
+`VITE_FEATURE_*` environment variables. Missing values default to `true`;
+`false`/`0` disables a feature. Invalid values and invalid dependency
+combinations fail the build.
+
+```bash
+VITE_FEATURE_JUKEBOX=false VITE_FEATURE_AMBIENT=false npm run build
+```
+
+Copy `.env.template` to `.env` and edit it for a persistent local configuration.
+The same flags are documented in
+[`plans/feature-flags.md`](../plans/feature-flags.md).
+
+Strict verification builds every feature-off configuration and checks the
+bundle module graph:
+
+```bash
+npm run features:verify
+```
+
 ## Local development
 
 ```bash

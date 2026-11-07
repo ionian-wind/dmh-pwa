@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { markerIconClass } from '@/maps/icons';
+import { markerIconClass } from '@/utils/maps/icons';
 
 const props = withDefaults(
   defineProps<{

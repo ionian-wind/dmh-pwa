@@ -1,7 +1,6 @@
 import type { Module, Note, ModuleTreeNode } from '@/types';
 import { generateId, openDB, StorageError } from './storage';
 import { debugWarn } from './debug';
-import { extractMentionedEntities } from './markdownParser';
 import { listZipFiles, openZip, readZipText } from './files/zip';
 import {
   canValidate,
@@ -207,6 +206,7 @@ export async function importModuleFromZip({
     }
   }
 
+  const { extractMentionedEntities } = await import('./markdownParser');
   const indexRecords = notes
     .map((note) => {
       const links = extractMentionedEntities(note.content || '');

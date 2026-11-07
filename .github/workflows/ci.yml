@@ -30,6 +30,9 @@ jobs:
       - name: Test suite
         run: npm test
 
+      - name: Verify feature build matrix
+        run: npm run features:verify
+
       - name: Build app
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}

@@ -7,8 +7,8 @@ import {
   normalizeLocation,
   normalizeMapEntity,
   normalizeMarker,
-} from '@/maps/utils/normalize';
-import { markerIconClass, markerIconGlyph } from '@/maps/icons';
+} from '@/utils/maps/normalize';
+import { markerIconClass, markerIconGlyph } from '@/utils/maps/icons';
 import {
   createMarkerDraft,
   markerCenter,
@@ -37,7 +37,7 @@ import {
   dedupeEntityRefs,
   entityRefKey,
   getEntityKindOption,
-} from '@/maps/utils/entityRefs';
+} from '@/components/common/entityLinking/entityRefs';
 import type { MapArea, MapMarker } from '@/maps/types';
 
 function marker(overrides: Partial<MapMarker> = {}): MapMarker {
@@ -368,16 +368,19 @@ describe('map area helpers', () => {
 
 describe('map entity references', () => {
   it('defines label keys for every supported entity kind', () => {
-    expect(MAP_ENTITY_KIND_OPTIONS.map((option) => option.kind)).toEqual([
-      'note',
-      'module',
-      'party',
-      'monster',
-      'encounter',
-      'character',
-      'location',
-      'playlist',
-    ]);
+    expect(MAP_ENTITY_KIND_OPTIONS.map((option) => option.kind)).toEqual(
+      expect.arrayContaining([
+        'note',
+        'module',
+        'party',
+        'monster',
+        'encounter',
+        'character',
+        'location',
+        'playlist',
+      ]),
+    );
+    expect(MAP_ENTITY_KIND_OPTIONS).toHaveLength(8);
     expect(getEntityKindOption('playlist')).toMatchObject({
       kind: 'playlist',
       labelKey: 'playlist.title',

@@ -1,7 +1,7 @@
 import { generateId } from '@/utils/storage';
-import { DEFAULT_MARKER_COLOR } from '../icons';
+import { DEFAULT_MARKER_COLOR } from '@/utils/maps/icons';
 import { contrastTextColor, parseHexColor } from './colors';
-import { MAP_BASE_LAYER_ID } from './mapLayers';
+import { MAP_BASE_LAYER_ID } from '@/utils/maps/mapLayers';
 import type { MapArea, MapAreaShape } from '../types';
 
 export function createAreaDraft(

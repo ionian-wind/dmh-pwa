@@ -1,11 +1,5 @@
 import { toValue } from 'vue';
-import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useCharacterStore } from '@/stores/characters';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import { useMapLocationStore } from '@/maps/locations';
+import { featureLinkKinds } from 'virtual:feature-links';
 import type { MapEntityRef } from '@/maps/types';
 import type { EntityLinkKind } from './registry';
 
@@ -35,20 +29,18 @@ function withoutEntity(
 }
 
 export function useEntityLinkRelations() {
-  const stores: Record<EntityLinkKind, AnyStore> = {
-    note: useNoteStore() as unknown as AnyStore,
-    module: useModuleStore() as unknown as AnyStore,
-    party: usePartyStore() as unknown as AnyStore,
-    monster: useMonsterStore() as unknown as AnyStore,
-    encounter: useEncounterStore() as unknown as AnyStore,
-    character: useCharacterStore() as unknown as AnyStore,
-    location: useMapLocationStore() as unknown as AnyStore,
-  };
+  const stores = Object.fromEntries(
+    featureLinkKinds.map((option) => [
+      option.kind,
+      option.useStore() as unknown as AnyStore,
+    ]),
+  ) as Record<EntityLinkKind, AnyStore>;
 
   async function loadFor(
     sourceKind: EntityLinkKind,
     targetKind: EntityLinkKind,
   ) {
+    if (!stores[sourceKind] || !stores[targetKind]) return;
     await Promise.all([stores[sourceKind].load(), stores[targetKind].load()]);
   }
 
@@ -61,6 +53,7 @@ export function useEntityLinkRelations() {
     sourceId: string,
     targetKind: EntityLinkKind,
   ): string[] {
+    if (!stores[sourceKind] || !stores[targetKind]) return [];
     const source = stores[sourceKind].getById(sourceId);
 
     if (sourceKind === 'location') {
@@ -198,6 +191,7 @@ export function useEntityLinkRelations() {
     targetKind: EntityLinkKind,
     targetIds: string[],
   ): Promise<void> {
+    if (!stores[sourceKind] || !stores[targetKind]) return;
     const ids = targetIds.filter(
       (id) => !(targetKind === sourceKind && id === sourceId),
     );

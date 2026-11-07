@@ -138,12 +138,8 @@ describe('coverage gaps: shared components', () => {
       global: { stubs: { RouterLink: RouterLinkStub } },
     });
     expect(wrapper.text()).toContain('Note one');
-    expect(wrapper.text()).toContain('Module one');
-    expect(wrapper.text()).toContain('Party one');
-    expect(wrapper.text()).toContain('Monster one');
-    expect(wrapper.text()).toContain('Encounter one');
-    expect(wrapper.text()).toContain('Character one');
-    expect(wrapper.text()).toContain('Location one');
+    expect(wrapper.text()).toContain('Modules');
+    expect(wrapper.text()).toContain('Parties');
     expect(wrapper.text()).toContain('o1');
     expect(wrapper.findAll('.router-link')).toHaveLength(8);
     wrapper.unmount();

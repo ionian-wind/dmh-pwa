@@ -2,9 +2,17 @@
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
+import { createFeaturePlugin } from './scripts/feature-flags-plugin.mjs';
+import {
+  featureDefines,
+  resolveFeatureFlags,
+} from './scripts/feature-catalog.mjs';
+
+const featureFlags = resolveFeatureFlags({});
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [createFeaturePlugin(featureFlags), vue()],
+  define: featureDefines(featureFlags),
   test: {
     printConsoleTrace: true,
     disableConsoleIntercept: true,
@@ -43,7 +51,9 @@ export default defineConfig({
         'src/ambient-sound/components/SceneLinksPanel.vue',
         'src/utils/dice-probability-calculator/tokens.ts',
         'src/notes/NoteViewSidebar.vue',
-        'src/maps/composables/useMapEntityCatalog.ts',
+        'src/components/common/entityLinking/useMapEntityCatalog.ts',
+        'src/features/**',
+        'src/composables/useFeatureStores.ts',
         'src/utils/files/BlobFileHandler.ts',
         'src/utils/dice-roller/core/index.ts',
         'tests/**',

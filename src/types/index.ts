@@ -5,6 +5,7 @@ export type Timestamp = number;
 export type ComponentInjection = {
   component: any;
   props?: Record<string, any>;
+  flushFooter?: boolean;
 } | null;
 
 // Utility types

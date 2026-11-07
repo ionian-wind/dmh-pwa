@@ -1,14 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import EntityCreateDialog from '@/maps/components/EntityCreateDialog.vue';
+import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
 
 const mocks = vi.hoisted(() => ({
   createLinkedEntity: vi.fn(),
   alert: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/maps/utils/createLinkedEntity', () => ({
-  createLinkedEntity: mocks.createLinkedEntity,
+vi.mock('@/components/common/entityLinking/entityRefs', () => ({
+  getEntityKindOption: () => ({
+    create: mocks.createLinkedEntity,
+    editor: undefined,
+  }),
 }));
 
 vi.mock('@/dialogs', () => ({ alert: mocks.alert }));

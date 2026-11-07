@@ -3,11 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
 import { useMentionsStore } from '@/utils/storage';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
 import type { Note } from '@/types';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
@@ -27,16 +23,14 @@ import { IconHelp } from '@tabler/icons-vue';
 import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useRightDrawer } from '@/composables/useLayout';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 
 const route = useRoute();
 const router = useRouter();
 const { t, locale } = useI18n();
 const noteStore = useNoteStore();
-const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
+const featureStores = useFeatureStores();
 
 const activeTab = ref('main');
 const viewTabs = useEntityViewTabs();
@@ -182,16 +176,10 @@ function findMissingMentions(draft: Note): string[] {
         exists = !!noteStore.getById(mention.id);
         break;
       case 'module':
-        exists = !!moduleStore.getById(mention.id);
-        break;
       case 'party':
-        exists = !!partyStore.getById(mention.id);
-        break;
       case 'monster':
-        exists = !!monsterStore.getById(mention.id);
-        break;
       case 'encounter':
-        exists = !!encounterStore.getById(mention.id);
+        exists = !!featureStores.get(mention.kind, mention.id);
         break;
       default:
         exists = true; // ignore unknown kinds
@@ -288,11 +276,7 @@ const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await noteStore.load();
-  await moduleStore.load();
   await mentionsStore.load();
-  await partyStore.load();
-  await monsterStore.load();
-  await encounterStore.load();
 
   rightDrawer.set({
     component: NoteViewSidebar,

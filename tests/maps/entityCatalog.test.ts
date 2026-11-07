@@ -3,8 +3,8 @@ import { defineComponent, h } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
-import { useMapEntityCatalog } from '@/maps/composables/useMapEntityCatalog';
-import { MAP_ENTITY_KIND_OPTIONS } from '@/maps/utils/entityRefs';
+import { useMapEntityCatalog } from '@/components/common/entityLinking/useMapEntityCatalog';
+import { MAP_ENTITY_KIND_OPTIONS } from '@/components/common/entityLinking/entityRefs';
 import { resetMockStores } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));

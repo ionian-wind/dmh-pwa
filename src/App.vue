@@ -1,188 +1,65 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import PWAStatus from '@/components/PWAStatus.vue';
 import CommitBadge from '@/components/CommitBadge.vue';
-import CalculatorDialog from '@/calculator/CalculatorView.vue';
-import MentionModalStack from '@/components/common/MentionModalStack.vue';
-import EntityDragLinkingOverlay from '@/components/common/entityDragLinking/EntityDragLinkingOverlay.vue';
-import { Section } from '@/types';
 import SettingsDialog from '@/components/SettingsDialog.vue';
 import { provideLayout, unwrapProps } from '@/composables/useLayout';
 import { useConfigStore } from './utils/configStore';
+import { featureNavigation } from 'virtual:feature-navigation';
+import { featureGlobals } from 'virtual:feature-globals';
+import type { FeatureNavEntry } from '@/features/types';
 
 import {
   IconMaximize,
   IconMaximizeOff,
-  IconPlaylist,
-  IconNote,
-  IconUser,
-  IconUsers,
-  IconBook,
-  IconGhost3,
-  IconSwords,
-  IconClockHour1,
-  IconClockHour2,
-  IconClockHour3,
-  IconClockHour4,
-  IconClockHour5,
-  IconClockHour6,
-  IconClockHour7,
-  IconClockHour8,
-  IconClockHour9,
-  IconClockHour10,
-  IconClockHour11,
-  IconClockHour12,
   IconMenu2,
-  IconMusic,
-  IconCalculator,
-  IconChartLine,
   IconTool,
   IconChevronDown,
   IconSettings,
   IconHelpCircle,
-  IconMap,
-  IconHeadphones,
 } from '@tabler/icons-vue';
-import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
-import { useTimerStore } from './stores/timers';
-import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
-import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
-import { usePageContentRect } from '@/composables/usePageContentRect';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 
-const playerStore = useJukeboxPlayerStore();
-const timerStore = useTimerStore();
-const ambientSoundStore = useAmbientSoundStore();
 const configStore = useConfigStore();
+const { t, locale } = useI18n();
+const router = useRouter();
+const route = useRoute();
 
 const leftMenuMinimized = ref(false);
 const toolsExpanded = ref(false);
-const animationFrame = ref(0);
 
-const hours = [
-  IconClockHour4,
-  IconClockHour5,
-  IconClockHour6,
-  IconClockHour7,
-  IconClockHour8,
-  IconClockHour9,
-  IconClockHour10,
-  IconClockHour11,
-  IconClockHour12,
-  IconClockHour1,
-  IconClockHour2,
-  IconClockHour3,
-];
-
-const timerIcon = ref(IconClockHour4);
-
-watch(
-  () => timerStore.now,
-  () => {
-    if (timerStore.running) {
-      if (animationFrame.value === hours.length) {
-        animationFrame.value = 0;
-      }
-
-      timerIcon.value = hours[animationFrame.value];
-
-      animationFrame.value += 1;
-    }
-  },
+const primaryNavigation = computed(() =>
+  featureNavigation.filter((item) => item.placement === 'primary'),
 );
+const toolsNavigation = computed(() =>
+  featureNavigation.filter((item) => item.placement === 'tools'),
+);
+const footerNavigation = computed(() =>
+  featureNavigation.filter((item) => item.placement === 'footer'),
+);
+const hasTools = computed(() => toolsNavigation.value.length > 0);
 
-function toggleLeftMenu() {
-  leftMenuMinimized.value = !leftMenuMinimized.value;
-}
-
-const { t, locale } = useI18n();
-const router = useRouter();
-
-interface SectionItem {
-  section: Section;
-  label: string;
-  path: string;
-  icon: any; // Tabler icon component
-  ref?: boolean;
-}
-
-const sections: SectionItem[] = [
-  {
-    section: Section.NOTES,
-    label: 'navigation.notes',
-    path: '/notes',
-    icon: IconNote,
-  },
-  {
-    section: Section.CHARACTERS,
-    label: 'navigation.characters',
-    path: '/characters',
-    icon: IconUser,
-  },
-  {
-    section: Section.PARTIES,
-    label: 'navigation.parties',
-    path: '/parties',
-    icon: IconUsers,
-  },
-  {
-    section: Section.MONSTERS,
-    label: 'navigation.monsters',
-    path: '/monsters',
-    icon: IconGhost3,
-  },
-  {
-    section: Section.MAPS,
-    label: 'navigation.maps',
-    path: '/locations',
-    icon: IconMap,
-  },
-  {
-    section: Section.ENCOUNTERS,
-    label: 'navigation.encounters',
-    path: '/encounters',
-    icon: IconSwords,
-  },
-  {
-    section: Section.MODULES,
-    label: 'navigation.modules',
-    path: '/modules',
-    icon: IconBook,
-  },
-];
-
-function isActive(item: SectionItem): boolean {
+function isNavActive(item: FeatureNavEntry): boolean {
   const currentPath = router.currentRoute.value.path;
-  return currentPath.startsWith(item.path);
+  if (item.activePathPrefixes) {
+    return item.activePathPrefixes.some((prefix) =>
+      currentPath.startsWith(prefix),
+    );
+  }
+  return item.type === 'route' && currentPath.startsWith(item.path);
 }
 
-function isJukeboxActive(): boolean {
-  const currentPath = router.currentRoute.value.path;
-  return currentPath === '/jukebox';
-}
-
-function isProbabilityCalculatorActive(): boolean {
-  return router.currentRoute.value.path.startsWith('/probability-calculator');
-}
-
-function isToolsRoute(): boolean {
-  const path = router.currentRoute.value.path;
-  return (
-    path.startsWith('/timers') ||
-    path.startsWith('/probability-calculator') ||
-    path.startsWith('/ambient')
-  );
-}
-
+const toolsActive = computed(() =>
+  toolsNavigation.value.some((item) => isNavActive(item)),
+);
 watch(
   () => router.currentRoute.value.path,
   () => {
-    if (isToolsRoute()) toolsExpanded.value = true;
+    if (toolsActive.value) toolsExpanded.value = true;
   },
   { immediate: true },
 );
@@ -225,8 +102,6 @@ onMounted(async () => {
   document.addEventListener('mozfullscreenchange', updateFullscreenState);
   document.addEventListener('MSFullscreenChange', updateFullscreenState);
   updateFullscreenState();
-  await playerStore.init();
-  await timerStore.init();
 });
 
 onUnmounted(() => {
@@ -262,31 +137,11 @@ const {
   toggleRightDrawer,
 } = provideLayout();
 
-// The jukebox player should sit flush in the footer, without the default
-// footer padding, background, or elevated shadow ("gray boundaries").
 const hasPlayerFooter = computed(
-  () => bottomDrawerContent.value?.component === JukeboxPlayer,
+  () => bottomDrawerContent.value?.props?.flushFooter === true,
 );
 
-const pageContentRect = usePageContentRect();
-const isSoundControlOpen = ref(false);
-
-// The drawer widths are animated with CSS, so ResizeObserver does the steady
-// work. These watchers also cover the initial frame and browsers without
-// ResizeObserver.
-watch([rightDrawerOpen, leftDrawerOpen, miniState, rightDrawerContent], () => {
-  void nextTick(pageContentRect.update);
-});
-const isCalculatorPopupOpen = ref(false);
 const isSettingsOpen = ref(false);
-
-function openJukebox() {
-  if (configStore.jukeboxUseMiniPlayer) {
-    isSoundControlOpen.value = !isSoundControlOpen.value;
-    return;
-  }
-  router.push('/jukebox');
-}
 </script>
 
 <template>
@@ -321,39 +176,27 @@ function openJukebox() {
       >
         <div>
           <QList>
-            <template v-for="(menuItem, index) in sections" :key="index">
+            <template v-for="item in primaryNavigation" :key="item.id">
               <QItem
+                v-if="item.type === 'route'"
                 clickable
                 v-ripple
-                :active="isActive(menuItem)"
-                :active-class="'bg-secondary'"
-                :to="menuItem.path"
-                :title="t(menuItem.label)"
-                :aria-label="t(menuItem.label)"
+                :active="isNavActive(item)"
+                active-class="bg-secondary"
+                :to="item.path"
+                :title="t(item.labelKey)"
+                :aria-label="t(item.labelKey)"
               >
-                <QItemSection side>
-                  <component
-                    :is="
-                      menuItem.section === Section.TIMERS && menuItem.icon.value
-                        ? menuItem.icon.value
-                        : menuItem.icon
-                    "
-                    :key="
-                      menuItem.section === Section.TIMERS
-                        ? animationFrame
-                        : undefined
-                    "
-                  />
-                </QItemSection>
-                <QItemSection>
-                  {{ t(menuItem.label) }}
-                </QItemSection>
+                <QItemSection side><component :is="item.icon" /></QItemSection>
+                <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
             </template>
             <QItem
+              v-if="hasTools"
               clickable
               v-ripple
-              :active="false"
+              :active="toolsActive"
+              :active-class="'bg-secondary'"
               :title="t('navigation.tools')"
               :aria-label="t('navigation.tools')"
               @click="toolsExpanded = !toolsExpanded"
@@ -382,112 +225,53 @@ function openJukebox() {
               </QItemSection>
             </QItem>
             <QSlideTransition>
-              <div v-show="toolsExpanded">
-                <QItem
-                  clickable
-                  v-ripple
-                  :active="router.currentRoute.value.path.startsWith('/timers')"
-                  :active-class="'bg-secondary'"
-                  :to="'/timers'"
-                  :title="t('navigation.timers')"
-                  :aria-label="t('navigation.timers')"
-                >
-                  <QItemSection side>
-                    <component :is="timerIcon" :key="animationFrame" />
-                  </QItemSection>
-                  <QItemSection>{{ t('navigation.timers') }}</QItemSection>
-                </QItem>
-                <QItem
-                  clickable
-                  v-ripple
-                  :active="false"
-                  :title="t('app.calculator')"
-                  :aria-label="t('app.calculator')"
-                  @click="isCalculatorPopupOpen = !isCalculatorPopupOpen"
-                >
-                  <QItemSection side><IconCalculator /></QItemSection>
-                  <QItemSection>{{ t('app.calculator') }}</QItemSection>
-                </QItem>
-                <QItem
-                  clickable
-                  v-ripple
-                  :to="'/probability-calculator'"
-                  :active="isProbabilityCalculatorActive()"
-                  :active-class="'bg-secondary'"
-                  :title="t('navigation.probabilityCalculator')"
-                  :aria-label="t('navigation.probabilityCalculator')"
-                >
-                  <QItemSection side><IconChartLine /></QItemSection>
-                  <QItemSection>
-                    {{ t('navigation.probabilityCalculator') }}
-                  </QItemSection>
-                </QItem>
-                <QItem
-                  clickable
-                  v-ripple
-                  :to="'/ambient'"
-                  :active="
-                    router.currentRoute.value.path.startsWith('/ambient')
-                  "
-                  :active-class="'bg-secondary'"
-                  :title="t('navigation.ambientSound')"
-                  :aria-label="t('navigation.ambientSound')"
-                >
-                  <QItemSection side>
-                    <IconHeadphones
-                      :class="{
-                        'ambient-playing': ambientSoundStore.isPlaying,
-                      }"
-                    />
-                  </QItemSection>
-                  <QItemSection>
-                    {{ t('navigation.ambientSound') }}
-                  </QItemSection>
-                </QItem>
+              <div v-show="toolsExpanded && hasTools">
+                <template v-for="item in toolsNavigation" :key="item.id">
+                  <component
+                    :is="item.component"
+                    v-if="item.type === 'component'"
+                  />
+                  <QItem
+                    v-else
+                    clickable
+                    v-ripple
+                    :active="isNavActive(item)"
+                    active-class="bg-secondary"
+                    :to="item.path"
+                    :title="t(item.labelKey)"
+                    :aria-label="t(item.labelKey)"
+                  >
+                    <QItemSection side>
+                      <component :is="item.icon" />
+                    </QItemSection>
+                    <QItemSection>{{ t(item.labelKey) }}</QItemSection>
+                  </QItem>
+                </template>
               </div>
             </QSlideTransition>
           </QList>
         </div>
         <div>
           <QList>
-            <QItem
-              v-if="isJukeboxActive()"
-              clickable
-              v-ripple
-              :active="isJukeboxActive()"
-              :to="'/jukebox'"
-              :active-class="'bg-secondary'"
-              :title="t('app.jukebox')"
-              :aria-label="t('app.jukebox')"
-            >
-              <QItemSection side>
-                <IconMusic
-                  :class="{ 'jukebox-playing': playerStore.isPlaying }"
-                />
-              </QItemSection>
-              <QItemSection>
-                {{ t('app.jukebox') }}
-              </QItemSection>
-            </QItem>
-
-            <QItem
-              class="jukebox-button"
-              v-else
-              clickable
-              v-ripple
-              :title="t('app.jukebox')"
-              :aria-label="t('app.jukebox')"
-              @click="openJukebox"
-            >
-              <QItemSection side>
-                <IconMusic
-                  :class="{ 'jukebox-playing': playerStore.isPlaying }"
-                />
-              </QItemSection>
-              <QItemSection>
-                {{ t('app.jukebox') }}
-              </QItemSection>
-            </QItem>
+            <template v-for="item in footerNavigation" :key="item.id">
+              <component
+                :is="item.component"
+                v-if="item.type === 'component'"
+              />
+              <QItem
+                v-else
+                clickable
+                v-ripple
+                :active="isNavActive(item)"
+                active-class="bg-secondary"
+                :to="item.path"
+                :title="t(item.labelKey)"
+                :aria-label="t(item.labelKey)"
+              >
+                <QItemSection side><component :is="item.icon" /></QItemSection>
+                <QItemSection>{{ t(item.labelKey) }}</QItemSection>
+              </QItem>
+            </template>
             <QItem
               tag="a"
               clickable
@@ -555,14 +339,10 @@ function openJukebox() {
       <PWAInstallPrompt />
       <PWAStatus />
       <CommitBadge />
-      <!-- Global Mention Modal Stack -->
-      <MentionModalStack />
-      <EntityDragLinkingOverlay />
-      <CalculatorDialog v-model="isCalculatorPopupOpen" />
-      <SoundControlDialog
-        v-model="isSoundControlOpen"
-        :content-left="pageContentRect.left.value"
-        :content-width="pageContentRect.width.value"
+      <component
+        v-for="(globalComponent, index) in featureGlobals"
+        :is="globalComponent"
+        :key="index"
       />
       <SettingsDialog v-model="isSettingsOpen" />
     </div>

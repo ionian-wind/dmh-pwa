@@ -5,8 +5,8 @@ import { IconPlus, IconX } from '@tabler/icons-vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
-import { dedupeEntityRefs } from '@/maps/utils/entityRefs';
-import { useMapEntityCatalog } from '@/maps/composables/useMapEntityCatalog';
+import { dedupeEntityRefs } from '@/components/common/entityLinking/entityRefs';
+import { useMapEntityCatalog } from '@/components/common/entityLinking/useMapEntityCatalog';
 
 const props = withDefaults(
   defineProps<{

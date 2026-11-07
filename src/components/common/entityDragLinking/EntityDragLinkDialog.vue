@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
-import { getEntityKindOption } from '@/maps/utils/entityRefs';
+import { getEntityKindOption } from '@/components/common/entityLinking/entityRefs';
 import type { MapEntityRef } from '@/maps/types';
 import { useEntityLinkRelations } from './relations';
 import type { EntityDragData, EntityLinkKind } from './registry';

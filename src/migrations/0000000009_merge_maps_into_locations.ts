@@ -1,6 +1,6 @@
 import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { MapEntity, MapLocation } from '../maps/types';
-import { normalizeLocationMap } from '../maps/utils/normalize';
+import { normalizeLocationMap } from '../utils/maps/normalize';
 
 const migration: Migration = {
   version: 9,

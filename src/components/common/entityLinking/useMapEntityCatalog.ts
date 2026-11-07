@@ -2,7 +2,7 @@ import { computed, onMounted, toValue } from 'vue';
 import {
   MAP_ENTITY_KIND_OPTIONS,
   type MapEntityKindOption,
-} from '@/maps/utils/entityRefs';
+} from '@/components/common/entityLinking/entityRefs';
 import type { MapEntityRef } from '@/maps/types';
 
 export interface MapEntityCatalogGroup extends MapEntityKindOption {

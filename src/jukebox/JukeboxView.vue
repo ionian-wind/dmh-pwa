@@ -528,6 +528,7 @@ onMounted(async () => {
   layout.setBottomDrawerContent({
     component: JukeboxPlayer,
     props: { animatedBackground: true, showArtwork: false },
+    flushFooter: true,
   });
 
   document.addEventListener('dragenter', onDragEnter);

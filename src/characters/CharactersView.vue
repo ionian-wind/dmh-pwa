@@ -2,8 +2,6 @@
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
-import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
 import BaseListView from '@/components/common/BaseListView.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
@@ -12,17 +10,11 @@ import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 
 const characterStore = useCharacterStore();
-const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
 const router = useRouter();
 const { t } = useI18n();
 
 onMounted(async () => {
-  await Promise.all([
-    characterStore.load(),
-    partyStore.load(),
-    moduleStore.load(),
-  ]);
+  await Promise.all([characterStore.load()]);
 });
 
 function cardProps(character: PlayerCharacter) {

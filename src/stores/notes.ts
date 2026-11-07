@@ -3,9 +3,7 @@ import { ref, computed } from 'vue';
 import type { Note } from '@/types';
 import { useStore } from '@/utils/storage';
 import noteSchema from '@/schemas/note.schema.json';
-import { extractMentionedEntities } from '@/utils/markdownParser';
 import { useMentionsStore } from '@/utils/storage';
-import { useModuleStore } from './modules';
 import { debug } from '../utils/debug';
 import { mergeHashtags } from '@/utils/tags';
 
@@ -34,7 +32,9 @@ export const useNoteStore = defineStore('notes', () => {
     const mentioned =
       newNote.contentType === 'draw'
         ? []
-        : extractMentionedEntities(newNote.content);
+        : (await import('@/utils/markdownParser')).extractMentionedEntities(
+            newNote.content,
+          );
     await indexation.setLinks(from, mentioned);
     return newNote;
   }
@@ -62,7 +62,9 @@ export const useNoteStore = defineStore('notes', () => {
     const mentioned =
       updated.contentType === 'draw'
         ? []
-        : extractMentionedEntities(updated.content || '');
+        : (await import('@/utils/markdownParser')).extractMentionedEntities(
+            updated.content || '',
+          );
     await indexation.setLinks(from, mentioned);
     return updated;
   }
@@ -87,16 +89,22 @@ export const useNoteStore = defineStore('notes', () => {
     if (hidden && moduleIds.length === 0) {
       throw new Error('A note must belong to a module before it can be hidden');
     }
+    if (hidden && !__FEATURE_MODULES__) {
+      throw new Error('Module support is disabled in this build');
+    }
 
-    const modules = useModuleStore();
-    if (hidden) {
-      await Promise.all(
-        moduleIds.map((moduleId) => modules.addNoteToTree(moduleId, id)),
-      );
-    } else {
-      await Promise.all(
-        moduleIds.map((moduleId) => modules.removeNoteFromTree(moduleId, id)),
-      );
+    if (__FEATURE_MODULES__) {
+      const { useModuleStore } = await import('./modules');
+      const modules = useModuleStore();
+      if (hidden) {
+        await Promise.all(
+          moduleIds.map((moduleId) => modules.addNoteToTree(moduleId, id)),
+        );
+      } else {
+        await Promise.all(
+          moduleIds.map((moduleId) => modules.removeNoteFromTree(moduleId, id)),
+        );
+      }
     }
 
     return base.update(id, { hidden } as Partial<Note>);

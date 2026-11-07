@@ -13,6 +13,7 @@ For optional, exploratory ideas that may never be implemented, use
 | ------------------------------------------------- | ------------------------------- |
 | [Scribe and Play modes](scribe-and-play-modes.md) | planned — not implemented       |
 | [PWA hardening](pwa-hardening-plan.md)            | implemented; device checks left |
+| [Build-time feature flags](feature-flags.md)      | implemented; verification green |
 
 ## Conventions
 

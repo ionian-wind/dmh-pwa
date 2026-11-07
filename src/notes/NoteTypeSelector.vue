@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 import ColorPicker from '@/components/common/ColorPicker.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
-import { MAP_MARKER_ICONS, markerIconClass } from '@/maps/icons';
+import { MAP_MARKER_ICONS, markerIconClass } from '@/utils/maps/icons';
 
 const { modelValue, allowCreate } = defineProps<{
   modelValue: string | null;

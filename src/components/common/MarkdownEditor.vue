@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { ref, watch, useAttrs, computed } from 'vue';
-import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
 import { useI18n } from 'vue-i18n';
 import MilkdownEditorWrapper from './milkdown/MilkdownEditorWrapper.vue';
 import { editorHtmlToMarkdown, markdownToEditorHtml } from './markdownRaw';
@@ -13,12 +8,6 @@ import { editorHtmlToMarkdown, markdownToEditorHtml } from './markdownRaw';
 const milkdownWrapperRef = ref<any>(null);
 
 const { t } = useI18n();
-
-const noteStore = useNoteStore();
-const moduleStore = useModuleStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
 
 const props = defineProps<{
   // Toggle between visual editor and raw markdown

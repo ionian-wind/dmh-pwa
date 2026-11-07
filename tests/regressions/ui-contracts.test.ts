@@ -3,13 +3,17 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createI18n } from 'vue-i18n';
 
-vi.mock('@/utils/storage', () => ({
-  useMentionsStore: () => ({
-    getLinks: () => [{ kind: 'note', id: 'outgoing' }],
-    getBacklinks: () => [{ kind: 'note', id: 'incoming' }],
-    load: vi.fn(),
-  }),
-}));
+vi.mock('@/utils/storage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/storage')>();
+  return {
+    ...actual,
+    useMentionsStore: () => ({
+      getLinks: () => [{ kind: 'note', id: 'outgoing' }],
+      getBacklinks: () => [{ kind: 'note', id: 'incoming' }],
+      load: vi.fn(),
+    }),
+  };
+});
 
 vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({

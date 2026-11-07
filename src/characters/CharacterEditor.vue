@@ -8,8 +8,7 @@ import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
-import { usePartyStore } from '@/stores/parties';
-import { useMapLocationStore } from '@/maps/locations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
@@ -34,8 +33,7 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
-const partyStore = usePartyStore();
-const locationStore = useMapLocationStore();
+const featureStores = useFeatureStores();
 const relations = useEntityLinkRelations();
 
 const blankCharacter = (): PlayerCharacter => ({
@@ -104,7 +102,7 @@ async function setCharacterLinks(
 }
 
 onMounted(async () => {
-  await Promise.all([partyStore.load(), locationStore.load()]);
+  await featureStores.load(['party', 'location']);
 });
 
 watch(
@@ -184,16 +182,19 @@ function handleDelete() {
     <template #links>
       <div class="column q-gutter-md">
         <EntitiesLinking
+          v-if="featureStores.has('module')"
           kind="module"
           :model-value="characterLinks"
           @update:model-value="(links) => setCharacterLinks('module', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('party')"
           kind="party"
           :model-value="characterLinks"
           @update:model-value="(links) => setCharacterLinks('party', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('location')"
           kind="location"
           :model-value="characterLinks"
           @update:model-value="(links) => setCharacterLinks('location', links)"

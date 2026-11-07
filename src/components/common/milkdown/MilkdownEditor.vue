@@ -31,7 +31,7 @@ import MentionInsertPopup from './MentionInsertPopup.vue';
 import TagInsertPopup from './TagInsertPopup.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
 import { getMentionableEntities } from '@/utils/markdownParser';
-import { useNoteStore } from '@/stores/notes';
+import { featureLinkKinds } from 'virtual:feature-links';
 import { extractHashtags } from '@/utils/tags';
 import { registerTagAutocompleteTrigger } from './plugins/tagAutocomplete';
 import { tagAutocompleteFeature } from './plugins/tagAutocomplete';
@@ -45,7 +45,9 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
-const noteStore = useNoteStore();
+const noteStore = featureLinkKinds
+  .find((option) => option.kind === 'note')
+  ?.useStore() as any;
 
 const crepeInstance = ref<Crepe | null>(null);
 
@@ -53,7 +55,7 @@ const recentTags = ref<string[]>([]);
 
 const tagSuggestions = computed(() => {
   const tags = new Set<string>([
-    ...noteStore.allTags,
+    ...(noteStore?.allTags ?? []),
     ...(props.tags ?? []),
     ...recentTags.value,
   ]);
@@ -122,7 +124,7 @@ registerTagAutocompleteTrigger((payload) => {
 });
 
 onMounted(() => {
-  if (!noteStore.isLoaded) void noteStore.load();
+  if (noteStore && !noteStore.isLoaded) void noteStore.load();
 });
 
 // Helper to get mentionable entities for a kind, excluding the current entity

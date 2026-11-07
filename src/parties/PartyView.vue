@@ -6,8 +6,6 @@ import { useRoute, useRouter } from 'vue-router';
 import type { Party } from '@/types';
 
 import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
-import { useCharacterStore } from '@/stores/characters';
 
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
@@ -24,14 +22,14 @@ import type { MapEntityRef } from '@/maps/types';
 import PartyViewSidebar from '@/parties/PartyViewSidebar.vue';
 import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useRightDrawer } from '@/composables/useLayout';
 import { IconHelp } from '@tabler/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
 const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
-const characterStore = useCharacterStore();
+const featureStores = useFeatureStores();
 const { t, locale } = useI18n();
 
 const party = ref<Party | null>(null);
@@ -100,16 +98,16 @@ const partyTitle = computed(() => party.value?.name || '');
 
 const modules = computed(() =>
   (party.value?.moduleIds ?? [])
-    .map((id) => moduleStore.getById(id))
+    .map((id) => featureStores.get('module', id))
     .filter(Boolean),
 );
 
 const partyCharacters = computed(() => {
   const current = party.value;
   if (!current) return [];
-  return characterStore.items.filter((character) =>
-    current.characters.includes(character.id),
-  );
+  return featureStores
+    .items('character')
+    .filter((character) => current.characters.includes(character.id));
 });
 
 const partySubtitle = computed(() => {
@@ -246,8 +244,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
-    characterStore.load(),
-    moduleStore.load(),
+    featureStores.load(['character', 'module']),
   ]);
   rightDrawer.set({
     component: PartyViewSidebar,
@@ -311,11 +308,13 @@ onBeforeUnmount(() => {
       <EntityViewLinks v-if="!editState.isEditMode" :links="partyLinks" />
       <div v-else class="column q-gutter-md">
         <EntitiesLinking
+          v-if="featureStores.has('module')"
           kind="module"
           :model-value="partyLinks"
           @update:model-value="setLinkedModules"
         />
         <EntitiesLinking
+          v-if="featureStores.has('character')"
           kind="character"
           :model-value="partyLinks"
           @update:model-value="setLinkedCharacters"

@@ -1,5 +1,5 @@
 import { generateId } from '@/utils/storage';
-import type { MapLayer } from '../types';
+import type { MapLayer } from '@/maps/types';
 
 export const MAP_BASE_LAYER_ID = 'base';
 

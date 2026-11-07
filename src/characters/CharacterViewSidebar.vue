@@ -6,7 +6,7 @@ import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
+import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const props = defineProps<{
   character: PlayerCharacter | null;
@@ -82,7 +82,7 @@ onMounted(() => mentionsStore.load());
         <template #default>
           <div v-show="activeTab === 'scenes'" class="q-pa-md">
             <EntityScenesPanel
-              v-if="entityId"
+              v-if="entityId && EntityScenesPanel"
               entity-type="character"
               :entity-id="entityId"
             />

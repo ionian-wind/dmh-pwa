@@ -7,10 +7,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref, type Component } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
-import { createLinkedEntity } from '@/maps/utils/createLinkedEntity';
+import { getEntityKindOption } from '@/components/common/entityLinking/entityRefs';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
@@ -25,26 +25,10 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const isSaving = ref(false);
 
-const editors: Partial<Record<MapEntityKind, Component>> = {
-  note: defineAsyncComponent(() => import('@/notes/NoteEditor.vue')),
-  module: defineAsyncComponent(() => import('@/modules/ModuleEditor.vue')),
-  party: defineAsyncComponent(() => import('@/parties/PartyEditor.vue')),
-  monster: defineAsyncComponent(() => import('@/monsters/MonsterEditor.vue')),
-  encounter: defineAsyncComponent(
-    () => import('@/encounters/EncounterEditor.vue'),
-  ),
-  character: defineAsyncComponent(
-    () => import('@/characters/CharacterEditor.vue'),
-  ),
-  location: defineAsyncComponent(
-    () => import('@/maps/components/MapLocationEditor.vue'),
-  ),
-  playlist: defineAsyncComponent(
-    () => import('@/jukebox/components/PlaylistEditor.vue'),
-  ),
-};
-
-const editorComponent = computed(() => editors[props.kind]);
+const editorComponent = computed(() => {
+  const editor = getEntityKindOption(props.kind)?.editor;
+  return editor ? defineAsyncComponent(editor) : null;
+});
 
 const editorListeners = computed(() => {
   const listeners: Record<string, (...args: any[]) => void> = {
@@ -85,7 +69,7 @@ async function handleSubmit(payload: unknown) {
   if (isSaving.value) return;
   isSaving.value = true;
   try {
-    const created = await createLinkedEntity(props.kind, payload);
+    const created = await getEntityKindOption(props.kind)?.create?.(payload);
     if (!created) return;
     emit('created', {
       ref: { kind: props.kind, id: created.id },

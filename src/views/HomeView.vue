@@ -1,103 +1,31 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import { useCharacterStore } from '@/stores/characters';
 import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
 import { saveBlob } from '@/utils/files';
 import { useConfigStore } from '@/utils/configStore';
-import {
-  parseModuleZip,
-  importModuleFromZip,
-} from '@/utils/moduleImportExport';
-import { deepUnwrap } from '@/utils/deepUnwrap';
 import { alert } from '@/dialogs';
+import { featureHomeCards } from 'virtual:feature-home-cards';
+import { featureHomeActions } from 'virtual:feature-home-actions';
 
-const noteStore = useNoteStore();
-const moduleStore = useModuleStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
-const characterStore = useCharacterStore();
 const configStore = useConfigStore();
-
 const { t } = useI18n();
 
-const stats = computed(() => ({
-  notes: noteStore.items.filter((n) => !n.hidden).length,
-  characters: characterStore.items.length,
-  parties: partyStore.filtered.length,
-  monsters: monsterStore.filtered.length,
-  encounters: encounterStore.filtered.length,
-  modules: moduleStore.items.length,
-}));
-
-const statsCards = computed(() => [
-  {
-    id: 'notes',
-    key: 'notes',
-    title: 'home.stats.notes',
-    count: stats.value.notes,
-    icon: '📜',
-    route: '/notes',
-  },
-  {
-    id: 'parties',
-    key: 'parties',
-    title: 'home.stats.parties',
-    count: stats.value.parties,
-    icon: '👥',
-    route: '/parties',
-  },
-  {
-    id: 'monsters',
-    key: 'monsters',
-    title: 'home.stats.monsters',
-    count: stats.value.monsters,
-    icon: '🐉',
-    route: '/monsters',
-  },
-  {
-    id: 'encounters',
-    key: 'encounters',
-    title: 'home.stats.encounters',
-    count: stats.value.encounters,
-    icon: '⚔️',
-    route: '/encounters',
-  },
-  {
-    id: 'characters',
-    key: 'characters',
-    title: 'home.stats.characters',
-    count: stats.value.characters,
-    icon: '🧙🏻‍♂️',
-    route: '/characters',
-  },
-  {
-    id: 'modules',
-    key: 'modules',
-    title: 'home.stats.modules',
-    count: stats.value.modules,
-    icon: '📖',
-    route: '/modules',
-  },
-]);
+const statsCards = computed(() =>
+  featureHomeCards.map((card) => ({
+    id: card.id,
+    key: card.id,
+    title: card.titleKey,
+    count: card.count(),
+    icon: card.icon,
+    route: card.route,
+  })),
+);
 
 onMounted(async () => {
-  await Promise.all([
-    noteStore.load(),
-    characterStore.load(),
-    partyStore.load(),
-    monsterStore.load(),
-    encounterStore.load(),
-    moduleStore.load(),
-  ]);
+  await Promise.all(featureHomeCards.map((card) => card.load()));
 });
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -142,30 +70,6 @@ async function handleRestore(event: Event) {
   }
   input.value = '';
 }
-
-async function handleModuleImport(event: Event) {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-
-  try {
-    const { module, tree, notes } = await parseModuleZip(file);
-    const result = await importModuleFromZip(
-      deepUnwrap({ module, tree, notes }),
-    );
-    await alert(
-      t('backup.moduleImported') + ` ${result.noteCount} notes imported.`,
-    );
-
-    // Reload stores to show new data
-    await Promise.all([moduleStore.load(), noteStore.load()]);
-  } catch (e) {
-    await alert(
-      t('backup.moduleImportFailed') + (e instanceof Error ? e.message : e),
-    );
-  }
-  input.value = '';
-}
 </script>
 
 <template>
@@ -206,20 +110,11 @@ async function handleModuleImport(event: Event) {
             "
           />
         </QBtn>
-        <QBtn color="positive" :label="t('backup.importModule')">
-          <input
-            type="file"
-            accept=".zip"
-            @change="handleModuleImport"
-            style="
-              position: absolute;
-              opacity: 0;
-              width: 100%;
-              height: 100%;
-              cursor: pointer;
-            "
-          />
-        </QBtn>
+        <component
+          v-for="(action, index) in featureHomeActions"
+          :is="action"
+          :key="index"
+        />
       </div>
     </div>
     <BaseListView

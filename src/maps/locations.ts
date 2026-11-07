@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import type { MapLocation } from './types';
 import { useStore } from '@/utils/storage';
 import { deleteMapFile } from './maps';
-import { normalizeLocation } from './utils/normalize';
+import { normalizeLocation } from '@/utils/maps/normalize';
 import locationSchema from './schemas/mapLocation.schema.json';
 
 export const useMapLocationStore = defineStore('map_locations', () => {

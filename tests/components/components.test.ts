@@ -21,7 +21,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import NoteTypeSelector from '@/notes/NoteTypeSelector.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
-import { MAP_MARKER_ICONS } from '@/maps/icons';
+import { MAP_MARKER_ICONS } from '@/utils/maps/icons';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';

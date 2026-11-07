@@ -3,10 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '@/stores/characters';
-import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
 import { useMentionsStore } from '@/utils/storage';
-import { useMapLocationStore } from '@/maps/locations';
 import type { PlayerCharacter } from '@/types';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
@@ -23,6 +20,7 @@ import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useRightDrawer } from '@/composables/useLayout';
 import type { MapEntityRef } from '@/maps/types';
 
@@ -30,9 +28,7 @@ const route = useRoute();
 const router = useRouter();
 const { t, locale } = useI18n();
 const characterStore = useCharacterStore();
-const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
-const locationStore = useMapLocationStore();
+const featureStores = useFeatureStores();
 const mentionsStore = useMentionsStore();
 const relations = useEntityLinkRelations();
 
@@ -224,9 +220,7 @@ onMounted(async () => {
   await Promise.all([
     characterStore.load(),
     mentionsStore.load(),
-    moduleStore.load(),
-    partyStore.load(),
-    locationStore.load(),
+    featureStores.load(['module', 'party', 'location']),
   ]);
 
   rightDrawer.set({
@@ -290,16 +284,19 @@ onBeforeUnmount(() => {
       <EntityViewLinks v-if="!editState.isEditMode" :links="characterLinks" />
       <div v-else class="column q-gutter-md">
         <EntitiesLinking
+          v-if="featureStores.has('module')"
           kind="module"
           :model-value="characterLinks"
           @update:model-value="(links) => setCharacterLinks('module', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('party')"
           kind="party"
           :model-value="characterLinks"
           @update:model-value="(links) => setCharacterLinks('party', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('location')"
           kind="location"
           :model-value="characterLinks"
           @update:model-value="(links) => setCharacterLinks('location', links)"

@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { IconPencil, IconTrash } from '@tabler/icons-vue';
 import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { MapMarker } from '../types';
-import { markerIconClass } from '../icons';
+import { markerIconClass } from '@/utils/maps/icons';
 
 withDefaults(
   defineProps<{

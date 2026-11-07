@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import type { Party } from '@/types';
-import { useModuleStore } from '@/stores/modules';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import BaseCard from '@/components/common/BaseCard.vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'copy']);
-const moduleStore = useModuleStore();
+const featureStores = useFeatureStores();
 
 onMounted(async () => {
-  await moduleStore.load();
+  await featureStores.load(['module']);
 });
 
 function handleView() {
@@ -27,7 +27,7 @@ function handleCopy() {
 
 const modules = computed(() =>
   (props.party.moduleIds ?? [])
-    .map((id) => moduleStore.items.find((m) => m.id === id))
+    .map((id) => featureStores.get('module', id))
     .filter(Boolean),
 );
 </script>

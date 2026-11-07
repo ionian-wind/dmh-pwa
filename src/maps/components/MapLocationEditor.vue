@@ -20,7 +20,10 @@ import {
   getMapFileBlob,
 } from '../utils/mapFileUtils';
 import { deleteMapFile, getMapFile, putMapFile } from '../maps';
-import { normalizeLocation, normalizeLocationMap } from '../utils/normalize';
+import {
+  normalizeLocation,
+  normalizeLocationMap,
+} from '@/utils/maps/normalize';
 import { IconHelp } from '@tabler/icons-vue';
 import type { StoredFileSource } from '@/utils/files/types';
 import { pickFiles } from '@/utils/files';

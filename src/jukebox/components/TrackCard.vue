@@ -12,7 +12,7 @@ import {
 
 import type { JukeboxTrack } from '@/jukebox/types';
 
-import { formatTime } from '../utils';
+import { formatTime } from '@/utils/formatTime';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import TrackInfo from './TrackInfo.vue';

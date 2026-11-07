@@ -9,8 +9,7 @@ import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
-import { useEncounterStore } from '@/stores/encounters';
-import { useMapLocationStore } from '@/maps/locations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import type { MapEntityRef } from '@/maps/types';
 import { alert } from '@/dialogs';
 import { IconHelp } from '@tabler/icons-vue';
@@ -29,8 +28,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const encounterStore = useEncounterStore();
-const locationStore = useMapLocationStore();
+const featureStores = useFeatureStores();
 const relations = useEntityLinkRelations();
 
 const blankMonster = (): Monster => ({
@@ -151,7 +149,7 @@ function handleDelete() {
 }
 
 onMounted(async () => {
-  await Promise.all([encounterStore.load(), locationStore.load()]);
+  await featureStores.load(['encounter', 'location']);
 });
 </script>
 
@@ -191,16 +189,19 @@ onMounted(async () => {
     <template #links>
       <div class="column q-gutter-md">
         <EntitiesLinking
+          v-if="featureStores.has('module')"
           kind="module"
           :model-value="monsterLinks"
           @update:model-value="(links) => setMonsterLinks('module', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('encounter')"
           kind="encounter"
           :model-value="monsterLinks"
           @update:model-value="(links) => setMonsterLinks('encounter', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('location')"
           kind="location"
           :model-value="monsterLinks"
           @update:model-value="(links) => setMonsterLinks('location', links)"

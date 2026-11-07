@@ -12,8 +12,8 @@ import type {
   MapLocation,
   MapMarker,
 } from '../types';
-import { normalizeMarker } from '../utils/normalize';
-import { MAP_MARKER_ICONS } from '../icons';
+import { normalizeMarker } from '@/utils/maps/normalize';
+import { MAP_MARKER_ICONS } from '@/utils/maps/icons';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 
 const props = defineProps<{

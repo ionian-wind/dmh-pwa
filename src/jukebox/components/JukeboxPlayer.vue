@@ -9,7 +9,7 @@ import {
   getGradientContrastColor,
   useAnimatedGradient,
 } from '@/jukebox/useAnimatedGradient';
-import { formatTime } from '@/jukebox/utils';
+import { formatTime } from '@/utils/formatTime';
 
 // Tabler icons
 import {

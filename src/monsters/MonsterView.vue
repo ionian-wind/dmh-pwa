@@ -2,8 +2,6 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import { useMapLocationStore } from '@/maps/locations';
 import type { Monster } from '@/types';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
@@ -21,14 +19,14 @@ import MonsterViewSidebar from '@/monsters/MonsterViewSidebar.vue';
 import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useRightDrawer } from '@/composables/useLayout';
 import { IconHelp } from '@tabler/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
 const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
-const locationStore = useMapLocationStore();
+const featureStores = useFeatureStores();
 const relations = useEntityLinkRelations();
 const { t, locale } = useI18n();
 
@@ -215,8 +213,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await Promise.all([
     monsterStore.load(),
-    encounterStore.load(),
-    locationStore.load(),
+    featureStores.load(['encounter', 'location']),
   ]);
   rightDrawer.set({
     component: MonsterViewSidebar,
@@ -279,16 +276,19 @@ onBeforeUnmount(() => {
       <EntityViewLinks v-if="!editState.isEditMode" :links="monsterLinks" />
       <div v-else class="column q-gutter-md">
         <EntitiesLinking
+          v-if="featureStores.has('module')"
           kind="module"
           :model-value="monsterLinks"
           @update:model-value="(links) => setMonsterLinks('module', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('encounter')"
           kind="encounter"
           :model-value="monsterLinks"
           @update:model-value="(links) => setMonsterLinks('encounter', links)"
         />
         <EntitiesLinking
+          v-if="featureStores.has('location')"
           kind="location"
           :model-value="monsterLinks"
           @update:model-value="(links) => setMonsterLinks('location', links)"

@@ -2,13 +2,6 @@
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useCharacterStore } from '@/stores/characters';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import { useNoteStore } from '@/stores/notes';
-import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
-import { useMapLocationStore } from '@/maps/locations';
 import { useConfigStore } from '@/utils/configStore';
 import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Module, Bookmark } from '@/types';
@@ -18,8 +11,9 @@ import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import { useMentionsStore } from '@/utils/storage';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import TabGroup from '@/components/common/TabGroup.vue';
-import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
+import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import Button from '@/components/form/Button.vue';
@@ -52,13 +46,8 @@ const route = useRoute();
 const router = useRouter();
 const moduleStore = useModuleStore();
 const mentionsStore = useMentionsStore();
-const partyStore = usePartyStore();
-const characterStore = useCharacterStore();
-const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
-const noteStore = useNoteStore();
-const playlistsStore = useJukeboxPlaylistsStore();
-const locationStore = useMapLocationStore();
+const featureStores = useFeatureStores();
+const noteStore = featureStores.store('note');
 const configStore = useConfigStore();
 const bookmarkStore = useBookmarkStore();
 const { t } = useI18n();
@@ -71,50 +60,62 @@ const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !module.value);
 
 const moduleParties = computed(() =>
-  partyStore.items.filter((party) =>
-    party.moduleIds?.includes(route.params.id as string),
-  ),
+  featureStores
+    .items('party')
+    .filter((party) => party.moduleIds?.includes(route.params.id as string)),
 );
 
 const moduleMonsters = computed(() =>
-  monsterStore.items.filter((monster) =>
-    monster.moduleIds?.includes(route.params.id as string),
-  ),
+  featureStores
+    .items('monster')
+    .filter((monster) =>
+      monster.moduleIds?.includes(route.params.id as string),
+    ),
 );
 
 const moduleCharacters = computed(() =>
-  characterStore.items.filter((character) =>
-    character.moduleIds?.includes(route.params.id as string),
-  ),
+  featureStores
+    .items('character')
+    .filter((character) =>
+      character.moduleIds?.includes(route.params.id as string),
+    ),
 );
 
 const moduleEncounters = computed(() =>
-  encounterStore.items.filter((encounter) =>
-    encounter.moduleIds?.includes(route.params.id as string),
-  ),
+  featureStores
+    .items('encounter')
+    .filter((encounter) =>
+      encounter.moduleIds?.includes(route.params.id as string),
+    ),
 );
 
 const moduleNotes = computed(() => {
-  return noteStore.items.filter(
-    (note) =>
-      note.moduleIds?.includes(route.params.id as string) &&
-      note.hidden === false,
-  );
+  return featureStores
+    .items('note')
+    .filter(
+      (note) =>
+        note.moduleIds?.includes(route.params.id as string) &&
+        note.hidden === false,
+    );
 });
 
 const modulePlaylists = computed(() =>
-  playlistsStore.items.value.filter((playlist) =>
-    playlist.moduleIds?.includes(route.params.id as string),
-  ),
+  featureStores
+    .items('playlist')
+    .filter((playlist) =>
+      playlist.moduleIds?.includes(route.params.id as string),
+    ),
 );
 
 const moduleLocations = computed(() =>
-  locationStore.items.filter((location) =>
-    location.entities?.some(
-      (entity) =>
-        entity.kind === 'module' && entity.id === (route.params.id as string),
+  featureStores
+    .items('location')
+    .filter((location: any) =>
+      location.entities?.some(
+        (entity: MapEntityRef) =>
+          entity.kind === 'module' && entity.id === (route.params.id as string),
+      ),
     ),
-  ),
 );
 
 const mentionedEntities = computed(() => {
@@ -181,15 +182,17 @@ const editingTitle = ref('');
 onMounted(async () => {
   await Promise.all([
     moduleStore.load(),
-    partyStore.load(),
-    characterStore.load(),
-    monsterStore.load(),
-    encounterStore.load(),
-    noteStore.load(),
-    playlistsStore.load(),
+    featureStores.load([
+      'party',
+      'character',
+      'monster',
+      'encounter',
+      'note',
+      'playlist',
+      'location',
+    ]),
     bookmarkStore.load(),
     mentionsStore.load(),
-    locationStore.load(),
   ]);
   // Listen for hash changes
   window.addEventListener('hashchange', handleHashChange);
@@ -277,9 +280,9 @@ async function handleExportModule() {
   if (!module.value) return;
   // Gather module data
   const moduleId = module.value.id;
-  const moduleNotes = noteStore.items.filter((note) =>
-    note.moduleIds?.includes(moduleId),
-  );
+  const moduleNotes = featureStores
+    .items('note')
+    .filter((note) => note.moduleIds?.includes(moduleId));
   const tree = module.value.noteTree || [];
 
   // Prepare module.json (match markdown-to-json.js structure)
@@ -464,7 +467,7 @@ async function handleEditorDelete() {
                       {{
                         cropTitle(
                           bookmark.title ||
-                            noteStore.getById(bookmark.noteId)?.title ||
+                            featureStores.get('note', bookmark.noteId)?.title ||
                             t('common.untitled'),
                         )
                       }}
@@ -497,7 +500,7 @@ async function handleEditorDelete() {
               </div>
               <div v-show="sidePanelTab === 'scenes'">
                 <EntityScenesPanel
-                  v-if="module"
+                  v-if="module && EntityScenesPanel"
                   entity-type="module"
                   :entity-id="module.id"
                 />
@@ -523,7 +526,7 @@ async function handleEditorDelete() {
               <template #default>
                 <div v-show="mentionsPanelTab === 'scenes'" class="q-pa-md">
                   <EntityScenesPanel
-                    v-if="module"
+                    v-if="module && EntityScenesPanel"
                     entity-type="module"
                     :entity-id="module.id"
                   />

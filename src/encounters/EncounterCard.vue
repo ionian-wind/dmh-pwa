@@ -3,24 +3,20 @@ import type { Encounter } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
 import { computed, onMounted } from 'vue';
 import Button from '@/components/form/Button.vue';
-import { useModuleStore } from '@/stores/modules';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useI18n } from 'vue-i18n';
 import { IconSwords } from '@tabler/icons-vue';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
-const moduleStore = useModuleStore();
+const featureStores = useFeatureStores();
 const { t } = useI18n();
 
 const moduleName = computed(() => {
   const ids = props.encounter.moduleIds ?? [];
   if (ids.length === 0) return 'No Module';
   return ids
-    .map(
-      (id) =>
-        moduleStore.items.find((module) => module.id === id)?.name ??
-        'Unknown Module',
-    )
+    .map((id) => featureStores.get('module', id)?.name ?? 'Unknown Module')
     .join(', ');
 });
 
@@ -46,7 +42,7 @@ const monstersCount = computed(() => {
 });
 
 onMounted(async () => {
-  await moduleStore.load();
+  await featureStores.load(['module']);
 });
 
 function handleView() {

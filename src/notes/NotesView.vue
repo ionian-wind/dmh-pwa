@@ -7,9 +7,6 @@ import { IconBrush } from '@tabler/icons-vue';
 import type { Note, NoteContentType } from '@/types';
 
 import { useNoteStore } from '@/stores/notes';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useModuleStore } from '@/stores/modules';
 import { useNoteTypeStore } from '@/stores/noteTypes';
 import BaseListView from '@/components/common/BaseListView.vue';
 import NoteCard from '@/notes/NoteCard.vue';
@@ -20,9 +17,6 @@ import { debug } from '@/utils/debug';
 import { confirm } from '@/dialogs';
 
 const noteStore = useNoteStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
-const moduleStore = useModuleStore();
 const noteTypeStore = useNoteTypeStore();
 const listRef = ref<{ openCreate: () => void } | null>(null);
 const pendingDrawNote = ref(false);
@@ -40,7 +34,7 @@ watch(
 );
 
 onMounted(async () => {
-  await Promise.all([noteStore.load(), monsterStore.load(), partyStore.load()]);
+  await noteStore.load();
 });
 
 function cardProps(note: Note) {

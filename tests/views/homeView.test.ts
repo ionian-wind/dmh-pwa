@@ -4,6 +4,7 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import { h } from 'vue';
 
 import HomeView from '@/views/HomeView.vue';
+import ModulesHomeAction from '@/features/modules/HomeAction.vue';
 import { alert } from '@/dialogs';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
 import {
@@ -161,19 +162,20 @@ describe('HomeView', () => {
     const wrapper = await mountHome();
     const input = { files: [new File(['zip'], 'module.zip')], value: 'x' };
 
-    await (wrapper.vm as any).handleModuleImport({ target: input } as any);
+    const action = wrapper.findComponent(ModulesHomeAction);
+    await (action.vm as any).handleModuleImport({ target: input } as any);
     expect(parseModuleZip).toHaveBeenCalled();
     expect(importModuleFromZip).toHaveBeenCalled();
     expect(alert).toHaveBeenCalledWith(expect.stringContaining('2 notes'));
     expect(input.value).toBe('');
 
     vi.mocked(parseModuleZip).mockRejectedValueOnce(new Error('bad zip'));
-    await (wrapper.vm as any).handleModuleImport({
+    await (action.vm as any).handleModuleImport({
       target: { files: [new File(['x'], 'bad.zip')], value: '' },
     } as any);
     expect(alert).toHaveBeenCalledWith(expect.stringContaining('bad zip'));
 
-    await (wrapper.vm as any).handleModuleImport({
+    await (action.vm as any).handleModuleImport({
       target: { files: [], value: '' },
     } as any);
     wrapper.unmount();

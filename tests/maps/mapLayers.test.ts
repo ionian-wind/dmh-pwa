@@ -4,7 +4,7 @@ import {
   createBaseLayer,
   createLayer,
   normalizeLayers,
-} from '@/maps/utils/mapLayers';
+} from '@/utils/maps/mapLayers';
 
 describe('map layers', () => {
   it('creates the base layer and named layers', () => {

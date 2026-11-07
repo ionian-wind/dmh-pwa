@@ -7,12 +7,14 @@ import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import type { MapEntityRef } from '@/maps/types';
 import { alert } from '@/dialogs';
 import { IconHelp } from '@tabler/icons-vue';
 
 const { t, locale } = useI18n();
+const featureStores = useFeatureStores();
 
 const props = defineProps<{
   party: Party | null;
@@ -174,11 +176,13 @@ function handleDelete() {
     <template #links>
       <div class="column q-gutter-md">
         <EntitiesLinking
+          v-if="featureStores.has('module')"
           kind="module"
           :model-value="linkedModules"
           @update:model-value="setLinkedModules"
         />
         <EntitiesLinking
+          v-if="featureStores.has('character')"
           kind="character"
           :model-value="linkedCharacters"
           @update:model-value="setLinkedCharacters"

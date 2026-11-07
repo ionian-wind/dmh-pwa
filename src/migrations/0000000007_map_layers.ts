@@ -1,6 +1,6 @@
 import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { MapArea, MapEntity, MapMarker } from '../maps/types';
-import { MAP_BASE_LAYER_ID } from '../maps/utils/mapLayers';
+import { MAP_BASE_LAYER_ID } from '../utils/maps/mapLayers';
 
 const migration: Migration = {
   version: 7,

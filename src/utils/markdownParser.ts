@@ -1,76 +1,21 @@
 import MarkdownIt from 'markdown-it';
 import type { Env, MarkdownIt as MarkdownItInstance } from 'markdown-it';
-import { useModuleStore } from '@/stores/modules';
-import { useNoteStore } from '@/stores/notes';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import { useMapLocationStore } from '@/maps/locations';
+import { featureLinkKinds } from 'virtual:feature-links';
 
 type PluginSimple = (md: MarkdownItInstance) => void;
 
-const mentionKindMap = new Map([
-  [
-    'note',
+const mentionKindMap = new Map(
+  featureLinkKinds.map((option) => [
+    option.kind,
     {
-      useStore: useNoteStore,
-      titleKey: 'title',
+      useStore: option.useStore,
+      titleKey: option.titleField,
       idKey: 'id',
-      type: 'Note',
-      target: 'notes',
+      type: option.kind.charAt(0).toUpperCase() + option.kind.slice(1),
+      target: option.route('').replace(/^\//, '').replace(/\/$/, ''),
     },
-  ],
-  [
-    'module',
-    {
-      useStore: useModuleStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Module',
-      target: 'modules',
-    },
-  ],
-  [
-    'party',
-    {
-      useStore: usePartyStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Party',
-      target: 'parties',
-    },
-  ],
-  [
-    'monster',
-    {
-      useStore: useMonsterStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Monster',
-      target: 'monsters',
-    },
-  ],
-  [
-    'encounter',
-    {
-      useStore: useEncounterStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Encounter',
-      target: 'encounters',
-    },
-  ],
-  [
-    'location',
-    {
-      useStore: useMapLocationStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Location',
-      target: 'locations',
-    },
-  ],
-]);
+  ]),
+);
 
 // --- Internal Entity Link Plugin for markdown-it ---
 const entityLinkRegex =
@@ -95,14 +40,17 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
       if (match) {
         const kind = match[1];
         const id = match[2];
-        tokens[idx].attrSet('data-kind', kind);
-        tokens[idx].attrSet('data-id', id);
-        tokens[idx].attrJoin('class', `internal-link ${kind}-link`);
-        // Set SPA route for href
         const data = mentionKindMap.get(kind);
 
         if (data) {
+          tokens[idx].attrSet('data-kind', kind);
+          tokens[idx].attrSet('data-id', id);
+          tokens[idx].attrJoin('class', `internal-link ${kind}-link`);
           tokens[idx].attrSet('href', `/${data.target}/${id}`);
+        } else {
+          tokens[idx].attrSet('href', '');
+          tokens[idx].attrSet('aria-disabled', 'true');
+          tokens[idx].attrJoin('class', 'disabled-internal-link');
         }
       } else if (/^(https?:)?\/\//.test(href)) {
         // External link

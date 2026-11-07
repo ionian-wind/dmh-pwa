@@ -34,7 +34,8 @@
     "hook:format": "npx prettier --ignore-path .gitignore --write \"{src,tools,test,migrations}/**/*.{js,jsx,mjs,cjs,ts,tsx,md,vue}\"",
     "hook:lint": "npx eslint --ignore-path .gitignore",
     "prepare": "husky",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "features:verify": "node scripts/verify-feature-builds.mjs"
   },
   "dependencies": {
     "@3d-dice/dice-box": "1.1.4",

@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
 import type { Combat } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/form/Button.vue';
@@ -37,7 +36,6 @@ const characterStore = useCharacterStore();
 const monsterStore = useMonsterStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
 const { t } = useI18n();
 
 onMounted(async () => {
@@ -46,7 +44,6 @@ onMounted(async () => {
   await combatStore.load();
   await encounterStore.load();
   await partyStore.load();
-  await moduleStore.load();
 });
 
 const combat = ref<Combat | null>(null);

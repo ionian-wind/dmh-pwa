@@ -16,7 +16,7 @@ const catalog = vi.hoisted(() => ({
   ],
 }));
 
-vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
+vi.mock('@/components/common/entityLinking/useMapEntityCatalog', () => ({
   useMapEntityCatalog: () => ({
     groups: { value: catalog.groups },
     getLabel: (ref: { kind: string; id: string }) =>

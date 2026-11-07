@@ -35,7 +35,7 @@ import MapAreaEditor from '../components/MapAreaEditor.vue';
 import MapMarkersPanel from '../components/MapMarkersPanel.vue';
 import MapAreasPanel from '../components/MapAreasPanel.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
+import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 import { useMapLocationStore } from '../locations';
 import {
   MapActionsControl,
@@ -50,7 +50,7 @@ import '../plugins/mapPlugins.css';
 import { getMapFileBlob, revokeMapFileUrl } from '../utils/mapFileUtils';
 import { enableFrequentHitDetectionReads } from '../utils/canvasReadback';
 import { contrastTextColor } from '../utils/colors';
-import { normalizeLocationMap } from '../utils/normalize';
+import { normalizeLocationMap } from '@/utils/maps/normalize';
 import {
   createMarkerDraft,
   removeMarker,
@@ -64,14 +64,14 @@ import {
   removeArea,
   upsertArea,
 } from '../utils/mapAreas';
-import { MAP_BASE_LAYER_ID, createLayer } from '../utils/mapLayers';
+import { MAP_BASE_LAYER_ID, createLayer } from '@/utils/maps/mapLayers';
 import {
   imageToMapPoint,
   imageToMapPoints,
   mapToImagePoint,
   mapToImagePoints,
 } from '../utils/mapCoordinates';
-import { markerIconClass } from '../icons';
+import { markerIconClass } from '@/utils/maps/icons';
 import { createMapMarkerDataUri } from '../mapMarkerSvg';
 import { createBox } from 'ol/interaction/Draw';
 import Style from 'ol/style/Style';
@@ -1281,7 +1281,7 @@ watch(isEditMode, (editing) => {
               </div>
               <div v-show="sidePanelTab === 'scenes'">
                 <EntityScenesPanel
-                  v-if="sourceLocation"
+                  v-if="sourceLocation && EntityScenesPanel"
                   entity-type="location"
                   :entity-id="sourceLocation.id"
                 />

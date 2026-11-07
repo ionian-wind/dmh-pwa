@@ -20,10 +20,10 @@ import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { alert, confirm } from '@/dialogs';
-import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
+import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 import LocationMapTab from '../components/LocationMapTab.vue';
 import { deleteMapLocation, useMapLocationStore } from '../locations';
-import { markerIconClass } from '../icons';
+import { markerIconClass } from '@/utils/maps/icons';
 import type { MapEntityKind, MapEntityRef, MapLocation } from '../types';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
 
@@ -384,7 +384,11 @@ function openLocation(locationId: string) {
         class="side-panel-content column full-height"
       >
         <div class="sidebar-tab-content col-grow q-pa-md">
-          <EntityScenesPanel entity-type="location" :entity-id="location.id" />
+          <EntityScenesPanel
+            v-if="EntityScenesPanel"
+            entity-type="location"
+            :entity-id="location.id"
+          />
         </div>
         <QSeparator />
         <EntityModeControls

@@ -3,7 +3,7 @@ import { computed, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconPlus } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import EntityCreateDialog from '@/maps/components/EntityCreateDialog.vue';
+import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 
 const props = withDefaults(
