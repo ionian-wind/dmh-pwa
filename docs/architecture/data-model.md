@@ -32,11 +32,21 @@
 | `preview`     | `string?`          | Small PNG data URL preview for drawing notes                 |
 | `typeId`      | `string \| null`   | References a `NoteType`; UI for setting it is commented out  |
 | `tags`        | `string[]`         | Used for card chips and route-based tag filtering            |
+| `links`       | `NoteLink[]?`      | Links to parties, monsters, encounters and characters        |
 | `parentId`    | `string?`          | Declared in TS, not persisted by schemas/UI                  |
 | `metadata`    | `object?`          | Declared in TS, unused                                       |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
 `typeId`, `tags`, `createdAt`, `updatedAt`.
+
+`NoteLink`:
+
+```ts
+{
+  kind: 'party' | 'monster' | 'encounter' | 'character';
+  id: string;
+}
+```
 
 ### NoteType
 

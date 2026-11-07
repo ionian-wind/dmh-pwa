@@ -181,7 +181,10 @@ Overrides:
 
 ## Detail tabs
 
-`NoteView` uses the standard **View** tab in the app header panel.
+`NoteView` uses the standard **View** and **Linked entities** tabs. The links
+tab shows and edits the note's characters, monsters, parties, encounters and
+locations. Location links are stored on the location's `entities` list; the
+other links live in `note.links`.
 The right sidebar shows **Contents**, **Bookmarks**,
 **Tags** and **Mentions** tabs in that order, followed by a full-width local
 View/Edit mode switch.
@@ -255,6 +258,7 @@ saved from the UI has:
   "content": "…",
   "typeId": null,
   "tags": [],
+  "links": [],
   "createdAt": 0,
   "updatedAt": 0
 }
