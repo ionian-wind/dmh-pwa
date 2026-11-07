@@ -2,6 +2,8 @@
 
 **Status:** implemented (phases 1–3); phase 4 deferred.
 
+**Implementation commit:** `734fe82b` (detail-view renderer).
+
 **Goal:** render Markdown detail views with the same Milkdown/Crepe pipeline
 that the editor uses, so reading and editing produce the same result for
 headings, lists, tables, task items, mentions, tags and entity links.
