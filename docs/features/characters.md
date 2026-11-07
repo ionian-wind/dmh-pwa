@@ -35,7 +35,7 @@ reference on the character.
 
 ## List page (`CharactersView.vue`)
 
-- Loads characters, parties, modules on mount (parties/modules are loaded but
+- Loads characters and parties on mount (parties are loaded but
   unused).
 - `BaseListView` with `CharacterCard` and `CharacterEditor`.
 - Create/edit/delete/copy.
@@ -54,8 +54,8 @@ Renders only the title. There is no summary, notes preview, or party badge.
 - `notes` uses the shared `EntityMarkdownEditor` (Milkdown / raw Markdown
   toggle) and is read back on submit with `getMarkdown()`.
 - Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
-- The linked-entities tab edits module/party/location links through
-  `EntitiesLinking`; module ids are saved with the character.
+- The linked-entities tab edits party/location links through
+  `EntitiesLinking`.
 - Footer has only the visual-editor toggle and, in raw mode, the Markdown
   formatting-help button. There are no note options, tags or note types.
 - `blankCharacter()` includes empty strings and current timestamps; the base
@@ -79,8 +79,8 @@ for the character list and map entity creation.
     Markdown editor is active.
 - Header tabs are **View** and **Linked entities**; edit mode uses
   **Main editor** and **Linked entities**.
-- The linked-entities tab shows the modules, parties and locations linked to
-  the character. In edit mode all three kinds are editable through
+- The linked-entities tab shows the parties and locations linked to
+  the character. In edit mode both kinds are editable through
   `EntitiesLinking`.
 - Uses `CharacterViewSidebar` through the shared right drawer. Ambient scenes
   and mentions are separated into **Scenes** and **Mentions** tabs, with

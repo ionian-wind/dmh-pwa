@@ -6,7 +6,6 @@
     "id",
     "name",
     "characters",
-    "moduleIds",
     "createdAt",
     "updatedAt"
   ],
@@ -25,13 +24,6 @@
         "type": "string"
       },
       "description": "Array of character IDs in the party"
-    },
-    "moduleIds": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Array of module IDs this party belongs to"
     },
     "createdAt": {
       "type": "number",

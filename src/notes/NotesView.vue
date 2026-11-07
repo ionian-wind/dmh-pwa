@@ -43,7 +43,6 @@ function cardProps(note: Note) {
     onView: () => router.push(`/notes/${note.id}`),
     onEdit: () => handleEdit(note),
     onDelete: () => handleDelete(note),
-    moduleName: undefined,
   };
 }
 

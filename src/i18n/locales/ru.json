@@ -41,7 +41,6 @@
     "characters": "Персонажи",
     "encounters": "Схватки",
     "combats": "Бои",
-    "modules": "Модули",
     "configuration": "Настройки",
     "settings": "Настройки",
     "timers": "Таймеры",
@@ -59,8 +58,7 @@
       "parties": "Группы",
       "monsters": "Монстры",
       "characters": "Персонажи",
-      "encounters": "Столкновения",
-      "modules": "Модули"
+      "encounters": "Столкновения"
     }
   },
   "notes": {
@@ -74,8 +72,7 @@
       "title": "Заголовок",
       "content": "Содержание",
       "type": "Тип",
-      "tags": "Теги",
-      "module": "Модуль"
+      "tags": "Теги"
     },
     "types": {
       "general": "Общее",
@@ -94,8 +91,7 @@
     "fields": {
       "name": "Имя",
       "description": "Описание",
-      "characters": "Персонажи",
-      "modules": "Модули"
+      "characters": "Персонажи"
     },
     "linkCharacters": "Связать персонажей"
   },
@@ -114,8 +110,7 @@
       "hitPoints": "Хиты",
       "speed": "Скорость",
       "challengeRating": "Сложность",
-      "xp": "Опыта",
-      "module": "Модуль"
+      "xp": "Опыта"
     },
     "sizes": {
       "tiny": "Крошечный",
@@ -153,7 +148,6 @@
       "hitPoints": "Хиты",
       "armorClass": "Класс брони",
       "speed": "Скорость",
-      "module": "Модуль",
       "party": "Группа"
     },
     "stats": {
@@ -185,8 +179,7 @@
       "difficulty": "Сложность",
       "level": "Уровень",
       "monsters": "Монстры",
-      "xp": "Опыта",
-      "module": "Модуль"
+      "xp": "Опыта"
     },
     "difficulties": {
       "easy": "Лёгкая",
@@ -227,18 +220,6 @@
       "none": "Боев пока нет"
     }
   },
-  "modules": {
-    "title": "Модули",
-    "create": "Создать модуль",
-    "edit": "Редактировать модуль",
-    "delete": "Удалить модуль",
-    "namePlaceholder": "Введите название модуля",
-    "descriptionPlaceholder": "Введите описание модуля",
-    "fields": {
-      "name": "Имя",
-      "description": "Описание"
-    }
-  },
   "common": {
     "mainEditor": "Основной редактор",
     "tableOfContents": "Оглавление",
@@ -248,8 +229,6 @@
     "empty": "Элементы не найдены",
     "emptyNotes": "Пока нет заметок. Создайте свою первую заметку, чтобы начать!",
     "emptyMonsters": "Пока нет монстров. Создайте своего первого монстра, чтобы начать!",
-    "emptyModules": "Пока нет модулей. Создайте свой первый модуль, чтобы начать!",
-    "noModules": "Нет модулей",
     "emptyParties": "Пока нет групп. Создайте свою первую группу, чтобы начать!",
     "emptyEncounters": "Пока нет схваток. Создайте свою первую схватку, чтобы начать!",
     "emptyCharacters": "Пока нет персонажей. Создайте своего первого персонажа, чтобы начать!",
@@ -257,10 +236,6 @@
     "loading": "Загрузка...",
     "error": "Произошла ошибка",
     "success": "Операция выполнена успешно",
-    "noModule": "Без модуля",
-    "unknownModule": "Неизвестный модуль",
-    "anyModule": "Любой модуль",
-    "currentModule": "Текущий модуль",
     "unknownParty": "Неизвестная группа",
     "noDescription": "Описание не предоставлено",
     "linked": "Связан",
@@ -349,8 +324,6 @@
     "initiative": "Инициатива",
     "quantity": "Количество",
     "done": "Готово",
-    "module": "Модуль",
-    "moduleRequired": "Модуль обязателен",
     "dropAudioFiles": "Перетащите аудиофайлы сюда",
     "overview": "Обзор",
     "noLinkedEntities": "Связанных сущностей нет.",
@@ -360,7 +333,6 @@
     "linkEntityTo": "Связать {type} с:",
     "entityAccusative": {
       "note": "Заметку",
-      "module": "Модуль",
       "party": "Группу",
       "monster": "Монстра",
       "encounter": "Схватку",
@@ -404,8 +376,7 @@
     "parties": "Группы",
     "monsters": "Монстры",
     "characters": "Персонажи",
-    "encounters": "Схватки",
-    "modules": "Модули"
+    "encounters": "Схватки"
   },
   "combat": {
     "encounter": "Схватка",
@@ -435,7 +406,6 @@
     }
   },
   "encounterCard": {
-    "module": "Модуль:",
     "monsters": "Монстры:"
   },
   "partyView": {
@@ -447,19 +417,6 @@
     "linked": "Связан",
     "unlink": "Отвязать"
   },
-  "moduleView": {
-    "book": "Книга",
-    "bookTree": "Дерево книги",
-    "playlists": "Плейлисты",
-    "noDocument": "Для этого модуля не определена структура документа.",
-    "noParties": "В этом модуле нет групп",
-    "noMonsters": "В этом модуле нет монстров",
-    "noEncounters": "В этом модуле нет схваток",
-    "noNotes": "В этом модуле нет заметок",
-    "noPlaylists": "В этом модуле нет плейлистов",
-    "noMaps": "В этом модуле нет карт",
-    "noLocations": "В этом модуле нет локаций"
-  },
   "playlist": {
     "title": "Плейлист",
     "none": "Плейлисты не найдены. Пожалуйста, создайте один.",
@@ -467,8 +424,7 @@
     "namePlaceholder": "Название плейлиста",
     "fields": {
       "name": "Имя",
-      "description": "Описание",
-      "modules": "Модули"
+      "description": "Описание"
     }
   },
   "noteTypeSelector": {
@@ -482,10 +438,6 @@
     "add": "Добавить",
     "cancel": "Отмена"
   },
-  "moduleTreeNode": {
-    "untitled": "(без названия)",
-    "addNote": "Добавить заметку..."
-  },
   "editor": {
     "basicInformation": "Базовая информация",
     "content": "Содержание",
@@ -494,7 +446,6 @@
     "title": "Заголовок",
     "titleRequired": "Заголовок обязателен",
     "contentPlaceholder": "Введите содержание здесь...",
-    "module": "Модуль",
     "type": "Тип",
     "tags": "Теги"
   },
@@ -569,13 +520,10 @@
   "backup": {
     "backup": "Резервная копия",
     "restore": "Восстановить",
-    "importModule": "Импорт модуля",
     "backupCompleted": "Резервная копия создана успешно.",
     "backupFailed": "Ошибка создания резервной копии: ",
     "restoreCompleted": "Восстановление завершено успешно.",
-    "restoreFailed": "Ошибка восстановления: ",
-    "moduleImported": "Модуль импортирован успешно.",
-    "moduleImportFailed": "Ошибка импорта модуля: "
+    "restoreFailed": "Ошибка восстановления: "
   },
   "markdownEditor": {
     "rawMode": "Сырой Markdown",
@@ -676,16 +624,6 @@
     "install": "Установить",
     "notNow": "Не сейчас",
     "installHelp": "Как установить"
-  },
-  "importValidation": {
-    "title": "Результаты проверки импорта",
-    "treeMatches": "Структура дерева в module.json соответствует tree.json",
-    "treeMismatch": "Структура дерева в module.json не соответствует tree.json",
-    "missingNoteIds": "Отсутствующие noteIds в папке заметок:",
-    "andMore": "...и еще {count}",
-    "allNoteIdsPresent": "Все noteIds в дереве имеют соответствующие файлы заметок",
-    "orphanedNoteFiles": "Заброшенные файлы заметок (не упоминаются в дереве):",
-    "allNoteFilesReferenced": "Все файлы заметок упоминаются в дереве"
   },
   "calculator": {
     "calculator": "Калькулятор",
@@ -896,7 +834,7 @@
     "noAmbiencesInScene": "В сцене нет окружения",
     "noOneShotsInScene": "В сцене нет эффектов",
     "noSceneLinks": "Нет связанных сцен",
-    "sceneLinksHint": "Свяжите сцену из локации, модуля, энкаунтера или персонажа.",
+    "sceneLinksHint": "Свяжите сцену из локации, монстра, энкаунтера или персонажа.",
     "sceneMain": "Основное",
     "ambiences": "Окружение",
     "description": "Описание",

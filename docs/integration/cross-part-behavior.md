@@ -21,7 +21,7 @@ index.html
             ├─ timerStore.init()           (timers + global 1s poll)
             └─ router-view → HomeView
                  └─ loads notes, characters, parties, monsters,
-                    encounters, modules (6 × getAll)
+                    encounters (5 × getAll)
 ```
 
 Every route view then loads its own stores again. There is no shared
@@ -50,7 +50,7 @@ index correctly.
 ## 3. Editing a note from its detail page
 
 ```
-NoteView loads (notes, modules, mentions, parties, monsters, encounters)
+NoteView loads (notes, mentions, parties, monsters, encounters)
   └─ resolves note by route id
        ├─ read view: Markdown renders; task checkboxes can emit update:content
        │     └─ handleMarkdownContentChange → noteStore.update(content)
@@ -66,65 +66,11 @@ bypass it.
 
 Deleting a note removes the note and its outgoing index record, but leaves:
 
-- its node in any `module.noteTree`,
 - bookmarks pointing to it,
 - incoming links from other notes (those notes still render links to a missing
   entity; mention modals show "not found").
 
-## 4. Building and reading a module book
-
-```
-ModuleView loads module + all related stores
-  ├─ Book tab → ModuleDocumentView
-  │     ├─ hidden notes for module
-  │     ├─ buildChunks(tree): pre-order, inject "# title {#note-id}"
-  │     ├─ QVirtualScroll renders chunks
-  │     │     ├─ Bookmark (moduleId,noteId)
-  │     │     └─ Markdown (anchorMap, scrollToAnchor, mention modals)
-  │     └─ emits TOC + active anchor
-  └─ Book Tree tab → ModuleDocumentTree
-        ├─ convert tree ↔ ExtendedTreeNode
-        ├─ add/edit/remove notes (hidden:true, moduleIds)
-        └─ local tree watcher emits update:noteTree
-              └─ ModuleView.handleSaveNoteTree → moduleStore.update(noteTree)
-```
-
-The two tabs share the same `noteTree` and the same hidden notes. Editing the
-tree updates the store, and `ModuleDocumentView` watches the tree/notes and
-rebuilds its chunks. The module sidebar (TOC/bookmarks) and export action are
-forwarded through `BaseEntityTabView` and reachable.
-
-## 5. Module export → import (round trip)
-
-```
-ModuleView export
-  └─ collect module + all module notes (hidden and visible)
-       └─ JSZip: module.json, tree.json, notes/<id>.json, summary.json
-            └─ download blob
-
-HomeView import (or ModulesView if the button were enabled)
-  └─ parseModuleZip(blob)
-       ├─ require module.json, tree.json, notes/
-       └─ JSON.parse each note (invalid files skipped)
-  └─ [ModulesView only] validateModuleImport
-       ├─ missing note IDs / orphaned files / tree mismatch
-       └─ ImportValidationModal
-  └─ importModuleFromZip
-       ├─ module keeps its original id (comment claims new id)
-       ├─ notes keep ids; moduleIds := [module.id]; timestamps := now
-       ├─ raw transaction puts modules + notes (no schema validation)
-       └─ stores reloaded by caller (modules/notes only)
-```
-
-Consequences:
-
-- Importing the same archive twice creates a copy instead of overwriting.
-- IDs in the archive cannot collide with local records.
-- Notes are indexed for mentions during import.
-- The Markdown ZIP generator now uses one module ID and preserves note
-  formatting.
-
-## 6. Encounter → combat
+## 4. Encounter → combat
 
 ```
 EncounterView / EncountersView "Run combat"
@@ -151,7 +97,7 @@ In `CombatView`:
 Reloading mid-combat restores the current round, turn, acted/postponed flags,
 and initiative order.
 
-## 7. Party and character membership
+## 5. Party and character membership
 
 ```
 PartyView
@@ -169,7 +115,7 @@ Deleting a character leaves the ID in the party. `PartyView` simply doesn't
 render it, but the next party update re-saves the dangling ID. Historical
 combats keep the reference and display "Unknown Player".
 
-## 8. Encounter monster membership
+## 6. Encounter monster membership
 
 ```
 EncounterView
@@ -184,7 +130,7 @@ PartySelector
 Deleting a monster leaves the key; the encounter table hides it but the count
 remains in storage and export.
 
-## 9. Mentions and backlinks
+## 7. Mentions and backlinks
 
 ```
 noteStore.create/update
@@ -200,23 +146,7 @@ Only notes write the index. The four entity sidebars now read the plain entity
 prop and display outgoing/backlinks correctly. `CharacterView` asks for
 `kind:'character'`, but no writer ever produces character links.
 
-## 10. Module ↔ playlist ↔ jukebox
-
-```
-PlaylistEditor.moduleIds
-  └─ ModuleView.modulePlaylists filters by moduleIds
-       └─ PlaylistCard → "view" → /jukebox
-JukeboxView
-  └─ active playlist from configStore
-       ├─ playerStore.watchPlaylist → actualiseQueue
-       └─ filteredTracks = playlist.trackIds → trackStore
-```
-
-There is no "play this playlist" action from the module view
-(`handlePlayPlaylist` is a TODO). Clicking a playlist card only navigates to the
-jukebox; the user must select the playlist there.
-
-## 11. Backup / restore
+## 8. Backup / restore
 
 ```
 HomeView Backup
@@ -231,7 +161,7 @@ HomeView Restore
 FileSystem handles are written as unavailable and may need relinking. Restore
 is not transactional across stores.
 
-## 12. Shell chrome lifecycle
+## 9. Shell chrome lifecycle
 
 ```
 route enter
@@ -249,11 +179,11 @@ route leave
 
 Because these are global singleton refs, a view that forgets to clear leaves
 chrome behind. `BaseEntityView` publishes a `sidepanel` slot (used by
-`CharacterView` and `ModuleView`) and clears it on unmount. Right-drawer
+`CharacterView`) and clears it on unmount. Right-drawer
 clearing is owner-scoped, so one view cannot remove another's sidebar. The
 injected header is cleared by both base wrappers.
 
-## 13. Global timers and audio
+## 9. Global timers and audio
 
 - `playerStore` and `timerStore` are instantiated in `App.vue` and live for the
   app lifetime.
@@ -262,7 +192,7 @@ injected header is cleared by both base wrappers.
 - `pinia-shared-state` does not synchronize the Howl instance; a second tab
   has its own player but shares config (last track, volume), which can fight.
 
-## 14. Failure propagation
+## 10. Failure propagation
 
 There is almost no user-facing error handling:
 
@@ -276,7 +206,7 @@ There is almost no user-facing error handling:
 The result is a UI that usually degrades to empty lists or silent no-ops rather
 than explaining what went wrong.
 
-## 15. Seams that need a contract
+## 11. Seams that need a contract
 
 | Seam                     | Current state                                  | Needed contract                           |
 | ------------------------ | ---------------------------------------------- | ----------------------------------------- |

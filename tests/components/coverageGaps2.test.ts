@@ -21,10 +21,6 @@ const stores = vi.hoisted(() => ({
       id === 'n1' ? { id, title: 'Note one' } : undefined,
     ),
   },
-  modules: {
-    items: [{ id: 'm1', name: 'Module one' }],
-    load: vi.fn(),
-  },
   parties: {
     items: [{ id: 'p1', name: 'Party one' }],
     load: vi.fn(),
@@ -62,7 +58,6 @@ const stores = vi.hoisted(() => ({
 }));
 
 vi.mock('@/stores/notes', () => ({ useNoteStore: () => stores.notes }));
-vi.mock('@/stores/modules', () => ({ useModuleStore: () => stores.modules }));
 vi.mock('@/stores/parties', () => ({ usePartyStore: () => stores.parties }));
 vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => stores.monsters,
@@ -86,47 +81,12 @@ const RouterLinkStub = {
 };
 
 describe('coverage gaps: shared components', () => {
-  it('renders import validation details and actions', async () => {
-    const wrapper = mount(ImportValidationModal, {
-      props: {
-        isOpen: true,
-        result: {
-          treeMatchesModule: true,
-          missingNoteIds: [],
-          orphanedNoteFiles: [],
-        } as any,
-      },
-    });
-    expect(wrapper.text()).toContain('All noteIds in tree');
-    await wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await wrapper.findComponent(BaseModal).vm.$emit('cancel');
-    expect(wrapper.emitted('import')).toHaveLength(1);
-    expect(wrapper.emitted('cancel')).toHaveLength(1);
-
-    const invalid = mount(ImportValidationModal, {
-      props: {
-        isOpen: true,
-        result: {
-          treeMatchesModule: false,
-          missingNoteIds: Array.from({ length: 12 }, (_, i) => `n${i}`),
-          orphanedNoteFiles: Array.from({ length: 12 }, (_, i) => `f${i}`),
-        } as any,
-      },
-    });
-    expect(invalid.text()).toContain('n0');
-    expect(invalid.text()).toContain('f0');
-    expect(invalid.text()).toContain('and 2 more');
-    wrapper.unmount();
-    invalid.unmount();
-  });
-
   it('renders mention groups, routes and empty state', async () => {
     const wrapper = mount(Mentions, {
       props: {
         title: 'Mentions',
         entities: [
           { kind: 'note', id: 'n1' },
-          { kind: 'module', id: 'm1' },
           { kind: 'party', id: 'p1' },
           { kind: 'monster', id: 'mo1' },
           { kind: 'encounter', id: 'e1' },
@@ -138,10 +98,9 @@ describe('coverage gaps: shared components', () => {
       global: { stubs: { RouterLink: RouterLinkStub } },
     });
     expect(wrapper.text()).toContain('Note one');
-    expect(wrapper.text()).toContain('Modules');
     expect(wrapper.text()).toContain('Parties');
     expect(wrapper.text()).toContain('o1');
-    expect(wrapper.findAll('.router-link')).toHaveLength(8);
+    expect(wrapper.findAll('.router-link')).toHaveLength(7);
     wrapper.unmount();
 
     const empty = mount(Mentions, {

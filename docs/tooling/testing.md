@@ -145,15 +145,14 @@ The suite now includes direct tests for:
 - jukebox playback/queue transitions with a mocked Howler,
 - PWA install/update flows and event cleanup,
 - BaseListView/BaseEntityTabView integration, cards, controls and calculators,
-- module import/export, markdown sanitizing/task lists and mention plugin helpers,
+- markdown sanitizing/task lists and mention plugin helpers,
 - map canvas readback patching and the map-layers migration,
 - Monaco environment setup and the probability calculator page, code library,
   syntax page, editor completions, sharing, chart zoom and syntax markers,
 - note Markdown/PNG downloads and the shared `SidebarItem` component,
 - drag-and-drop and ordering paths: `BaseListView` sort events and drop
   handlers, playlist `sortOrder` persistence, jukebox file drops and track
-  reordering, the `Tree` drag handles/drop target wiring, and tree reorder
-  propagation from `ModuleDocumentTree`,
+  reordering,
 - structured Chevrotain error providers, human-readable localized syntax
   messages, and the error banner's line/column link to the editor position,
 - the syntax-page right-drawer TOC, clickable section-heading anchors, scroll

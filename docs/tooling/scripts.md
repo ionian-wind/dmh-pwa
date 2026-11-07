@@ -2,9 +2,9 @@
 
 ## Overview
 
-The repository ships five Node scripts plus an npm-exposed migration generator.
-They support offline content creation, icon generation, sound-pack packing, and
-a legacy import test. Most are standalone and are not part of the app bundle.
+The repository ships Node scripts plus an npm-exposed migration generator.
+They support icon generation, sound-pack packing, and build verification. Most
+are standalone and are not part of the app bundle.
 
 `package.json` scripts:
 
@@ -14,36 +14,7 @@ a legacy import test. Most are standalone and are not part of the app bundle.
 "unpack:sound": "node scripts/unpack-sound-pack.js"
 ```
 
-`markdown-to-json.js`, `generate-icon-list.js`, `svg-to-vue-icons.js`, and
-`test-import.js` are run directly with `node`.
-
-## `scripts/markdown-to-json.js`
-
-Converts a Markdown file into a module ZIP (see
-[features/module-import-export.md](../features/module-import-export.md) for the
-format and defects).
-
-Usage:
-
-```bash
-node scripts/markdown-to-json.js --name "Module Name" path/to/file.md
-```
-
-Pipeline:
-
-1. Parse `--name` and an optional Markdown path (default `docs/cos.md`).
-2. Split on headings; preserve note content as Markdown, clean only titles.
-3. Generate one module ID and `nanoid(10)` note IDs.
-4. Build a tree by heading level.
-5. Emit `module.json`, `tree.json`, `notes/*.json`, `summary.json` into
-   `output/<sanitized>_module.zip`.
-
-Remaining limitations:
-
-- Tree roots require level 1 headings; a document starting at `##` produces an
-  empty tree.
-- Duplicate headings create separate notes with the same title.
-- Output directory is created relative to the current working directory.
+`generate-icon-list.js` and `svg-to-vue-icons.js` are run directly with `node`.
 
 ## `generate-migration.js`
 
@@ -113,17 +84,6 @@ required; completely empty packages are rejected. Every ambience must provide
 at least one sample for every variation used anywhere in the package, so the
 global variation filter never hides a playable ambience.
 
-## `scripts/test-import.js`
-
-A standalone harness for the module import format. It likely exercises
-`parseModuleZip`/import logic outside the browser. It is not run by tests or CI.
-
-## `scripts/README.md`
-
-Documents only the Markdown converter. It matches the current output structure
-and default path; its large Curse of Strahd example cannot be reproduced from
-this repository (there is no `docs/cos.md`).
-
 ## `content/`
 
 Git-ignored local content area. The ambient-sound sample pack is generated here
@@ -159,9 +119,7 @@ single source of the manifest and service worker.
 
 ## Recommendations
 
-- Move the Markdown converter to `tools/` and add a real test that round-trips
-  a module ZIP through import.
-- Remove or document the unused icon/sound/test scripts.
+- Remove or document the unused icon/sound scripts.
 - Delete or archive stale root-level design documents.
 - Keep the WIP dice feature clearly marked rather than treating its current
   state as a defect.

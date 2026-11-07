@@ -73,8 +73,6 @@ const kindLabel = computed(() => {
   switch (props.kind) {
     case 'note':
       return t('notes.title');
-    case 'module':
-      return t('modules.title');
     case 'party':
       return t('parties.title');
     case 'monster':

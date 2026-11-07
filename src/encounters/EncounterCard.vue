@@ -1,24 +1,14 @@
 <script setup lang="ts">
 import type { Encounter } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import Button from '@/components/form/Button.vue';
-import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useI18n } from 'vue-i18n';
 import { IconSwords } from '@tabler/icons-vue';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
-const featureStores = useFeatureStores();
 const { t } = useI18n();
-
-const moduleName = computed(() => {
-  const ids = props.encounter.moduleIds ?? [];
-  if (ids.length === 0) return 'No Module';
-  return ids
-    .map((id) => featureStores.get('module', id)?.name ?? 'Unknown Module')
-    .join(', ');
-});
 
 const monstersCount = computed(() => {
   const monsters = props.encounter.monsters || {};
@@ -39,10 +29,6 @@ const monstersCount = computed(() => {
   }
 
   return `${kinds} (${total})`;
-});
-
-onMounted(async () => {
-  await featureStores.load(['module']);
 });
 
 function handleView() {
@@ -78,12 +64,6 @@ function handleCopy() {
       title: encounter.name,
     }"
   >
-    <div class="encounter-meta">
-      <span class="meta-item"
-        ><span class="label">{{ t('encounterCard.module') }}</span>
-        <span class="value">{{ moduleName }}</span></span
-      >
-    </div>
     <p v-if="encounter.description" class="description">
       {{ encounter.description }}
     </p>

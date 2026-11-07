@@ -111,7 +111,6 @@ describe('Markdown', () => {
 
   it('resolves mentions for every entity kind', async () => {
     seedMockStore('notes', [{ id: 'n1', title: 'Note' }]);
-    seedMockStore('modules', [{ id: 'mod1', name: 'Module' }]);
     seedMockStore('parties', [{ id: 'p1', name: 'Party' }]);
     seedMockStore('monsters', [{ id: 'mo1', name: 'Monster' }]);
     seedMockStore('encounters', [{ id: 'e1', name: 'Encounter' }]);
@@ -120,7 +119,6 @@ describe('Markdown', () => {
     const { wrapper } = await mountMarkdown({
       content: [
         '[Note](note://n1)',
-        '[Module](module://mod1)',
         '[Party](party://p1)',
         '[Monster](monster://mo1)',
         '[Encounter](encounter://e1)',
@@ -129,8 +127,8 @@ describe('Markdown', () => {
     });
 
     const links = wrapper.findAll('.internal-link');
-    expect(links).toHaveLength(5);
-    const expected = ['note', 'module', 'party', 'monster', 'encounter'];
+    expect(links).toHaveLength(4);
+    const expected = ['note', 'party', 'monster', 'encounter'];
     for (let i = 0; i < links.length; i += 1) {
       await links[i].trigger('click');
       await nextTick();

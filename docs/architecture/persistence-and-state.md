@@ -17,7 +17,6 @@ Object stores are created lazily by migrations. Current stores:
 | `notes`                | `stores/notes`      | `note.schema.json`        |
 | `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`    |
 | `parties`              | `stores/parties`    | `party.schema.json`       |
-| `modules`              | `stores/modules`    | `module.schema.json`      |
 | `encounters`           | `stores/encounters` | `encounter.schema.json`   |
 | `combats`              | `stores/combats`    | `combat.schema.json`      |
 | `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`    |
@@ -31,10 +30,10 @@ Object stores are created lazily by migrations. Current stores:
 | `migrations`           | migration runner    | no                        |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
-generates IDs. Version 12 adds query indexes (`updatedAt`, `typeId`, tags,
-module ids, statuses) and the `sound_packs` store. `sound_packs` is not in
-`MAIN_STORE_NAMES`, so backup/restore leaves ambient audio out while campaign
-data stays portable.
+generates IDs. Version 13 drops the removed `modules` store and its indexes;
+version 12 added query indexes (`updatedAt`, `typeId`, tags, statuses) and the
+`sound_packs` store. `sound_packs` is not in `MAIN_STORE_NAMES`, so
+backup/restore leaves ambient audio out while campaign data stays portable.
 
 ### Connection helper
 
@@ -89,9 +88,8 @@ schema key. Validation happens in `idbPutItem`, i.e. on every `create` and
 
 - `load()` does not validate; malformed legacy data is accepted into memory.
 - Jukebox stores deliberately pass `validationSchema: undefined`.
-- Direct imports (`importModuleFromZip`, `restoreAllStores` uses `idbPutItem`)
-  need special attention: module import writes through a Dexie transaction and
-  therefore **bypasses validation entirely**.
+- Direct imports (`restoreAllStores` uses `idbPutItem`) need special attention:
+  restore writes through a batch and bypasses per-record validation.
 - Ajv is configured without `strict: false` or formats; date-like strings are
   just strings.
 
@@ -143,11 +141,10 @@ export const useNoteStore = defineStore('notes', () => {
 | `useCharacterStore` | `characters` | Name search                                                                                   |
 | `useMonsterStore`   | `monsters`   | Name search                                                                                   |
 | `usePartyStore`     | `parties`    | Name search                                                                                   |
-| `useModuleStore`    | `modules`    | Name search, `getModuleName`                                                                  |
 | `useEncounterStore` | `encounters` | Name search                                                                                   |
 | `useCombatStore`    | `combats`    | Combatant/turn helpers, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
 | `useNoteTypeStore`  | `noteTypes`  | Name search                                                                                   |
-| `useBookmarkStore`  | `bookmarks`  | `findByModuleAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark`                      |
+| `useBookmarkStore`  | `bookmarks`  | `findByNoteAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark`                        |
 | `useTimerStore`     | `timers`     | `init`, `start/stop/reset`, ticking `now` ref, completion notifications                       |
 
 ### Filtering
@@ -241,13 +238,14 @@ Current migrations:
 | 3       | `0000000003_timers.ts`         | Adds `timers`                         |
 
 Sorted in `src/migrations/index.ts`. The database version is the maximum of the
-migration versions and `SCHEMA_VERSION` (12, which adds query indexes and the
-`sound_packs` store). Adding a migration requires adding it to the `migrations`
+migration versions and `SCHEMA_VERSION` (13, which drops the `modules` store).
+Adding a migration requires adding it to the `migrations`
 array; new stores are also fed into the Dexie schema through
 `affectedStores`. Indexes require updating `EXPLICIT_SCHEMA`.
 
-Migrations 1–4 are schema-only. Migrations 5–11 also transform data (map
-locations, layers, note content type, module links and legacy files).
+Migrations 1–4 are schema-only. Migrations 5–9 and 11–12 also transform data
+(map locations, layers, note content type, legacy files and removing module
+link fields).
 
 ## 7. Backup and restore
 
@@ -255,7 +253,7 @@ locations, layers, note content type, module links and legacy files).
 `<store>.json` (pretty-printed array).
 
 `MAIN_STORE_NAMES` lists the campaign stores included in a backup:
-`characters, combats, encounters, monsters, modules, notes, noteTypes,
+`characters, combats, encounters, monsters, notes, noteTypes,
 parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
 files, map_image_metadata, indexations_mentions`.
 

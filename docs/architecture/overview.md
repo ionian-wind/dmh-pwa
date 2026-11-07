@@ -116,11 +116,11 @@ render at the top of the page content. `JukeboxView` publishes `PlaylistList` to
 right drawer and `JukeboxPlayer` to the footer. `NoteView`, `PartyView`,
 `MonsterView`, and `EncounterView` publish their domain sidebar to the right
 drawer and clear it on unmount. `BaseEntityView` publishes a `sidepanel` slot
-for `CharacterView` and `ModuleView`.
+for `CharacterView`.
 
 ### Left navigation
 
-Sections (`Section` enum): Notes, Characters, Parties, Modules, Monsters,
+Sections (`Section` enum): Notes, Characters, Parties, Monsters,
 Encounters, Timers. Jukebox, Calculator, and Settings are secondary actions.
 Settings opens `SettingsDialog` (language selection lives there). The timers
 icon is animated by watching `timerStore.now` and cycling through twelve clock
@@ -155,8 +155,6 @@ routes highlight their list section. Jukebox is active only on `/jukebox`.
 | `/encounters`     | encounters       | EncountersView |
 | `/encounters/:id` | encounter-detail | EncounterView  |
 | `/combats/:id`    | combat-detail    | CombatView     |
-| `/modules`        | modules          | ModulesView    |
-| `/modules/:id`    | module-detail    | ModuleView     |
 | `/jukebox`        | jukebox          | JukeboxView    |
 | `/timers`         | timers           | TimersView     |
 | `/:catchAll(.*)`  | —                | NotFoundView   |

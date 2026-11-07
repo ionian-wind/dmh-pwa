@@ -76,40 +76,6 @@ export const useNoteStore = defineStore('notes', () => {
     await indexation.clearLinks(from);
   }
 
-  /**
-   * Explicitly convert a note between the normal note list and a module's
-   * hidden document tree. `update()` intentionally protects `hidden`; this is
-   * the dedicated conversion path.
-   */
-  async function setHidden(id: string, hidden: boolean) {
-    const note = base.getById(id);
-    if (!note) throw new Error(`Note '${id}' not found`);
-
-    const moduleIds = note.moduleIds ?? [];
-    if (hidden && moduleIds.length === 0) {
-      throw new Error('A note must belong to a module before it can be hidden');
-    }
-    if (hidden && !__FEATURE_MODULES__) {
-      throw new Error('Module support is disabled in this build');
-    }
-
-    if (__FEATURE_MODULES__) {
-      const { useModuleStore } = await import('./modules');
-      const modules = useModuleStore();
-      if (hidden) {
-        await Promise.all(
-          moduleIds.map((moduleId) => modules.addNoteToTree(moduleId, id)),
-        );
-      } else {
-        await Promise.all(
-          moduleIds.map((moduleId) => modules.removeNoteFromTree(moduleId, id)),
-        );
-      }
-    }
-
-    return base.update(id, { hidden } as Partial<Note>);
-  }
-
   const filtered = computed(() => {
     let result = base.items.value;
 
@@ -146,7 +112,6 @@ export const useNoteStore = defineStore('notes', () => {
     create,
     update,
     remove,
-    setHidden,
     setFilter: (query: string) => {
       searchQuery.value = query;
     },

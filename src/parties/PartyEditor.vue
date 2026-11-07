@@ -35,7 +35,6 @@ const editedParty = ref<PartyForm>({
   name: '',
   description: '',
   characters: [],
-  moduleIds: [],
 });
 
 const isWYSIWYGMode = ref(true);
@@ -44,10 +43,6 @@ const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
 );
 
 const editorTabs = useEntityEditorTabs();
-
-const linkedModules = computed<MapEntityRef[]>(() =>
-  (editedParty.value.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
-);
 
 const linkedCharacters = computed<MapEntityRef[]>(() =>
   (editedParty.value.characters ?? []).map((id) => ({
@@ -63,10 +58,6 @@ const description = computed({
   },
 });
 
-function setLinkedModules(links: MapEntityRef[]) {
-  editedParty.value.moduleIds = links.map((link) => link.id);
-}
-
 function setLinkedCharacters(links: MapEntityRef[]) {
   editedParty.value.characters = links.map((link) => link.id);
 }
@@ -79,14 +70,12 @@ watch(
         name: newParty.name,
         description: newParty.description ?? '',
         characters: newParty.characters ?? [],
-        moduleIds: newParty.moduleIds ?? [],
       };
     } else {
       editedParty.value = {
         name: '',
         description: '',
         characters: [],
-        moduleIds: [],
       };
     }
   },
@@ -105,7 +94,6 @@ function resetForm() {
     name: '',
     description: '',
     characters: [],
-    moduleIds: [],
   };
   isWYSIWYGMode.value = true;
 }
@@ -118,10 +106,6 @@ const handleSubmit = async () => {
   if (markdownEditorRef.value?.getMarkdown) {
     editedParty.value.description = markdownEditorRef.value.getMarkdown();
   }
-  // Ensure moduleIds is always an array of strings
-  editedParty.value.moduleIds = (editedParty.value.moduleIds || [])
-    .map((id: any) => (typeof id === 'string' ? id : id?.id || ''))
-    .filter(Boolean);
   emit('submit', {
     ...editedParty.value,
     id: props.party?.id ?? '',
@@ -176,12 +160,6 @@ function handleDelete() {
 
     <template #links>
       <div class="column q-gutter-md">
-        <EntitiesLinking
-          v-if="featureStores.has('module')"
-          kind="module"
-          :model-value="linkedModules"
-          @update:model-value="setLinkedModules"
-        />
         <EntitiesLinking
           v-if="featureStores.has('character')"
           kind="character"

@@ -4,11 +4,11 @@ import { useStore } from '@/utils/storage';
 import bookmarkSchema from '@/schemas/bookmark.schema.json';
 
 function ownerKind(bookmark: Bookmark): BookmarkOwnerKind {
-  return bookmark.ownerKind ?? 'module';
+  return bookmark.ownerKind ?? 'note';
 }
 
 function ownerId(bookmark: Bookmark) {
-  return bookmark.ownerId ?? bookmark.moduleId;
+  return bookmark.ownerId ?? '';
 }
 
 function anchorId(bookmark: Bookmark) {
@@ -56,7 +56,6 @@ export const useBookmarkStore = defineStore('bookmarks', () => {
   ) {
     if (isAnchorBookmarked(kind, id, anchor)) return;
     await base.create({
-      moduleId: kind === 'module' ? id : '',
       noteId: anchor,
       title,
       ownerKind: kind,
@@ -89,24 +88,24 @@ export const useBookmarkStore = defineStore('bookmarks', () => {
     }
   }
 
-  // Legacy module helpers used by ModuleView and Bookmark.vue.
-  function findByModuleAndAnchor(
-    moduleId: string,
+  // Legacy note helpers kept for callers that only know the anchor.
+  function findByNoteAndAnchor(
     noteId: string,
+    anchorId: string,
   ): Bookmark | undefined {
-    return findByOwnerAndAnchor('module', moduleId, noteId);
+    return findByOwnerAndAnchor('note', noteId, anchorId);
   }
 
-  function isBookmarked(moduleId: string, noteId: string): boolean {
-    return isAnchorBookmarked('module', moduleId, noteId);
+  function isBookmarked(noteId: string, anchorId: string): boolean {
+    return isAnchorBookmarked('note', noteId, anchorId);
   }
 
-  async function addBookmark(moduleId: string, noteId: string, title: string) {
-    await addAnchorBookmark('module', moduleId, noteId, title);
+  async function addBookmark(noteId: string, anchorId: string, title: string) {
+    await addAnchorBookmark('note', noteId, anchorId, title);
   }
 
-  async function removeBookmark(moduleId: string, noteId: string) {
-    await removeAnchorBookmark('module', moduleId, noteId);
+  async function removeBookmark(noteId: string, anchorId: string) {
+    await removeAnchorBookmark('note', noteId, anchorId);
   }
 
   return {
@@ -117,7 +116,7 @@ export const useBookmarkStore = defineStore('bookmarks', () => {
     addAnchorBookmark,
     removeAnchorBookmark,
     toggleAnchorBookmark,
-    findByModuleAndAnchor,
+    findByNoteAndAnchor,
     isBookmarked,
     addBookmark,
     removeBookmark,

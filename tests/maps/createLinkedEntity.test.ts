@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const storeMocks = vi.hoisted(() => ({
   note: { create: vi.fn() },
-  module: { create: vi.fn() },
   party: { create: vi.fn() },
   monster: { create: vi.fn() },
   encounter: { create: vi.fn() },
@@ -11,9 +10,6 @@ const storeMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/stores/notes', () => ({ useNoteStore: () => storeMocks.note }));
-vi.mock('@/stores/modules', () => ({
-  useModuleStore: () => storeMocks.module,
-}));
 vi.mock('@/stores/parties', () => ({ usePartyStore: () => storeMocks.party }));
 vi.mock('@/stores/monsters', () => ({
   useMonsterStore: () => storeMocks.monster,
@@ -40,10 +36,6 @@ describe('createLinkedEntity', () => {
       store.create.mockReset();
     }
     storeMocks.note.create.mockResolvedValue({ id: 'note-1', title: 'Note' });
-    storeMocks.module.create.mockResolvedValue({
-      id: 'module-1',
-      name: 'Module',
-    });
     storeMocks.party.create.mockResolvedValue({ id: 'party-1', name: 'Party' });
     storeMocks.monster.create.mockResolvedValue({
       id: 'monster-1',
@@ -87,7 +79,6 @@ describe('createLinkedEntity', () => {
   });
 
   it.each([
-    ['module', storeMocks.module, 'Module'],
     ['party', storeMocks.party, 'Party'],
     ['monster', storeMocks.monster, 'Monster'],
     ['encounter', storeMocks.encounter, 'Encounter'],

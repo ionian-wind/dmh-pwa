@@ -32,42 +32,18 @@
 | `preview`     | `string?`          | Small PNG data URL preview for drawing notes                 |
 | `typeId`      | `string \| null`   | References a `NoteType`; UI for setting it is commented out  |
 | `tags`        | `string[]`         | Used for card chips and route-based tag filtering            |
-| `moduleIds`   | `string[]`         | Linked modules; empty for free notes                         |
 | `parentId`    | `string?`          | Declared in TS, not persisted by schemas/UI                  |
 | `metadata`    | `object?`          | Declared in TS, unused                                       |
 | `hidden`      | `boolean`          | `true` = document-tree note, excluded from normal note list  |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
-`typeId`, `tags`, `moduleIds`, `createdAt`, `updatedAt`. `hidden` is not listed
+`typeId`, `tags`, `createdAt`, `updatedAt`. `hidden` is not listed
 but is accepted because additional properties are allowed.
 
-**Hidden-note semantics.** A note with `hidden: true`:
-
-- is filtered out of `NotesView` (`noteStore.filtered.filter(n => !n.hidden)`);
-- is excluded from `ModuleView`'s Notes tab (`hidden === false`);
-- is the only kind of note loaded by `ModuleDocumentTree` and
-  `ModuleDocumentView` for the book;
-- cannot be toggled after creation because `noteStore.update()` restores the
-  original `hidden` value (`src/stores/notes.ts`).
-
-### Module
-
-| Field         | Type                | Notes                            |
-| ------------- | ------------------- | -------------------------------- |
-| `name`        | `string`            | Required                         |
-| `description` | `string?`           | TS only; schema does not list it |
-| `settings`    | `object?`           | TS only, unused                  |
-| `noteTree`    | `ModuleTreeNode[]?` | Hierarchical document structure  |
-
-`ModuleTreeNode`:
-
-```ts
-{ noteId: string; children?: ModuleTreeNode[] }
-```
-
-The schema requires `children` on every node (even though the TS type marks it
-optional). The document tree component always writes `children` (possibly
-`undefined` in memory, omitted by JSON serialization).
+**Hidden-note semantics.** A note with `hidden: true` is filtered out of
+`NotesView` (`noteStore.filtered.filter(n => !n.hidden)`) and cannot be toggled
+after creation because `noteStore.update()` restores the original `hidden`
+value (`src/stores/notes.ts`).
 
 ### NoteType
 
@@ -83,12 +59,11 @@ fields. The note editor UI for selecting a type is commented out.
 
 ### Party
 
-| Field                  | Type       | Notes                          |
-| ---------------------- | ---------- | ------------------------------ |
-| `name`                 | `string`   | Required                       |
-| `description`, `notes` | `string?`  | Editor fields                  |
-| `characters`           | `string[]` | Character IDs                  |
-| `moduleIds`            | `string[]` | Many-to-many module membership |
+| Field                  | Type       | Notes         |
+| ---------------------- | ---------- | ------------- |
+| `name`                 | `string`   | Required      |
+| `description`, `notes` | `string?`  | Editor fields |
+| `characters`           | `string[]` | Character IDs |
 
 ### Character (PlayerCharacter)
 
@@ -103,23 +78,21 @@ type has only name and notes. Older test suites still assume `level`, `class`,
 
 ### Monster
 
-| Field       | Type        | Notes                          |
-| ----------- | ----------- | ------------------------------ |
-| `name`      | `string`    | Required                       |
-| `notes`     | `string?`   | Free text                      |
-| `moduleIds` | `string[]?` | Many-to-many module membership |
+| Field   | Type      | Notes     |
+| ------- | --------- | --------- |
+| `name`  | `string`  | Required  |
+| `notes` | `string?` | Free text |
 
 Again, no stat block/CR/HP fields exist.
 
 ### Encounter
 
-| Field         | Type                     | Notes                                      |
-| ------------- | ------------------------ | ------------------------------------------ |
-| `name`        | `string`                 | Required                                   |
-| `description` | `string?`                | Rendered with `v-html` in the detail view  |
-| `monsters`    | `Record<string, number>` | Monster ID → count (schema: 1..20)         |
-| `moduleIds`   | `string[]`               | At least one module required by the editor |
-| `notes`       | `string?`                | Free text                                  |
+| Field         | Type                     | Notes                                     |
+| ------------- | ------------------------ | ----------------------------------------- |
+| `name`        | `string`                 | Required                                  |
+| `description` | `string?`                | Rendered with `v-html` in the detail view |
+| `monsters`    | `Record<string, number>` | Monster ID → count (schema: 1..20)        |
+| `notes`       | `string?`                | Free text                                 |
 
 ### Combat
 
@@ -156,14 +129,16 @@ clean type check.
 
 ### Bookmark
 
-| Field      | Type     | Notes                                                         |
-| ---------- | -------- | ------------------------------------------------------------- |
-| `moduleId` | `string` | Owning module                                                 |
-| `noteId`   | `string` | Despite the name, stores a note/document ID                   |
-| `title`    | `string` | Editable label; created as `''` then resolved from note title |
+| Field       | Type     | Notes                                                         |
+| ----------- | -------- | ------------------------------------------------------------- |
+| `noteId`    | `string` | Legacy anchor mirror; matches `anchorId` for note bookmarks   |
+| `title`     | `string` | Editable label; created as `''` then resolved from note title |
+| `ownerKind` | `string` | Only `note` is supported                                      |
+| `ownerId`   | `string` | Owning note ID                                                |
+| `anchorId`  | `string` | Bookmarked heading/paragraph anchor                           |
 
 Uniqueness is enforced only in application code
-(`findByModuleAndAnchor`), not by an IndexedDB index.
+(`findByOwnerAndAnchor`), not by an IndexedDB index.
 
 ### Timer
 
@@ -221,7 +196,7 @@ Files are deduplicated by the metadata signature
 ```ts
 {
   id, createdAt, updatedAt,
-  name, description?, trackIds, sortOrder?, moduleIds?
+  name, description?, trackIds, sortOrder?
 }
 ```
 
@@ -317,7 +292,6 @@ Map image bytes live in the generic `files` store.
 ```ts
 {
   kind: 'note' |
-    'module' |
     'party' |
     'monster' |
     'encounter' |
@@ -333,14 +307,6 @@ Map image bytes live in the generic `files` store.
 
 ```mermaid
 erDiagram
-  MODULE }o--o{ NOTE : "note.moduleIds"
-  MODULE }o--o{ ENCOUNTER : "encounter.moduleIds"
-  MODULE }o--o{ PARTY : "party.moduleIds"
-  MODULE }o--o{ MONSTER : "monster.moduleIds"
-  MODULE }o--o{ PLAYLIST : "playlist.moduleIds"
-  MODULE ||--o{ BOOKMARK : "bookmark.moduleId"
-  MODULE ||--o{ MODULE_TREE_NODE : "noteTree"
-  MODULE_TREE_NODE }o--|| NOTE : "noteId"
   NOTE_TYPE ||--o{ NOTE : "note.typeId"
   PARTY }o--o{ CHARACTER : "party.characters"
   ENCOUNTER }o--o{ MONSTER : "encounter.monsters{count}"
@@ -366,11 +332,6 @@ currently only show note→entity and note→note connections.
 
 There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 
-- Deleting a module leaves notes with `moduleIds`, encounters with
-  `moduleIds`, bookmarks, and party/monster/playlist `moduleIds` pointing at a
-  missing module.
-- Deleting a note leaves nodes in `module.noteTree`. The book builder silently
-  skips missing notes, so the tree shows holes.
 - Deleting a character leaves it in `party.characters`; `PartyView` filters via
   `characterStore`, so it disappears from the list but the ID remains and is
   re-saved on the next party update.
@@ -381,16 +342,14 @@ There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 
 ## Schema/Type drift
 
-| Area                                         | TS               | JSON Schema      | Effect                                                                         |
-| -------------------------------------------- | ---------------- | ---------------- | ------------------------------------------------------------------------------ |
-| `Note.hidden`                                | required boolean | absent           | accepted, not validated                                                        |
-| `Module.description/settings`                | present          | absent           | stripped only if schema had `additionalProperties:false`; it does not, so kept |
-| `NoteType.description/color/icon/fields`     | present          | absent           | same                                                                           |
-| `Encounter.notes`, `Party.description/notes` | present          | absent           | same                                                                           |
-| `Combatant.name`                             | required         | absent           | creators omit it                                                               |
-| `ModuleTreeNode.children`                    | optional         | required         | in-memory trees may omit                                                       |
-| `Timer.title/description`                    | optional string  | `string \| null` | nulls pass validation but not TS                                               |
-| Bookmarks noteId                             | string           | string           | semantic ambiguity, not drift                                                  |
+| Area                                         | TS               | JSON Schema      | Effect                           |
+| -------------------------------------------- | ---------------- | ---------------- | -------------------------------- |
+| `Note.hidden`                                | required boolean | absent           | accepted, not validated          |
+| `NoteType.description/color/icon/fields`     | present          | absent           | same                             |
+| `Encounter.notes`, `Party.description/notes` | present          | absent           | same                             |
+| `Combatant.name`                             | required         | absent           | creators omit it                 |
+| `Timer.title/description`                    | optional string  | `string \| null` | nulls pass validation but not TS |
+| Bookmarks noteId                             | string           | string           | semantic ambiguity, not drift    |
 
 Because schemas are only applied on **write**, legacy or imported records that
 were written before a schema change are not re-validated on load.

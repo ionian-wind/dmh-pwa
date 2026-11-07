@@ -26,32 +26,6 @@ vi.mock('@/stores/notes', () => ({
   }),
 }));
 
-vi.mock('@/stores/modules', () => ({
-  useModuleStore: () => ({
-    modules: [
-      { id: 'module-1', name: 'Test Module', description: 'Test description' },
-      {
-        id: 'module-2',
-        name: 'Another Module',
-        description: 'Another description',
-      },
-    ],
-    getById: (id: string) =>
-      ({
-        'module-1': {
-          id: 'module-1',
-          name: 'Test Module',
-          description: 'Test description',
-        },
-        'module-2': {
-          id: 'module-2',
-          name: 'Another Module',
-          description: 'Another description',
-        },
-      })[id] || null,
-  }),
-}));
-
 vi.mock('@/stores/parties', () => ({
   usePartyStore: () => ({
     parties: [
@@ -188,17 +162,6 @@ describe('Markdown Parser', () => {
       expect(result).toContain('Check this');
     });
 
-    it('should parse module links', () => {
-      const input = 'See [Test Module](module://module-1) for details';
-      const result = parseMarkdown(input);
-      const anchor = result.match(/<a [^>]+>Test Module<\/a>/)[0];
-      expect(anchor).toContain('href="/modules/module-1"');
-      expect(anchor).toContain('class="internal-link module-link"');
-      expect(anchor).toContain('data-kind="module"');
-      expect(anchor).toContain('data-id="module-1"');
-      expect(result).toContain('See');
-    });
-
     it('should parse party links', () => {
       const input = 'The [Test Party](party://party-1) is ready';
       const result = parseMarkdown(input);
@@ -299,18 +262,13 @@ describe('Markdown Parser', () => {
 
     it('should handle multiple links in one line', () => {
       const input =
-        '[Test Note](note://note-1) and [Test Module](module://module-1) and [Test Party](party://party-1)';
+        '[Test Note](note://note-1) and [Test Party](party://party-1)';
       const result = parseMarkdown(input);
       const anchor1 = result.match(/<a [^>]+>Test Note<\/a>/)[0];
       expect(anchor1).toContain('href="/notes/note-1"');
       expect(anchor1).toContain('class="internal-link note-link"');
       expect(anchor1).toContain('data-kind="note"');
       expect(anchor1).toContain('data-id="note-1"');
-      const anchor2 = result.match(/<a [^>]+>Test Module<\/a>/)[0];
-      expect(anchor2).toContain('href="/modules/module-1"');
-      expect(anchor2).toContain('class="internal-link module-link"');
-      expect(anchor2).toContain('data-kind="module"');
-      expect(anchor2).toContain('data-id="module-1"');
       const anchor3 = result.match(/<a [^>]+>Test Party<\/a>/)[0];
       expect(anchor3).toContain('href="/parties/party-1"');
       expect(anchor3).toContain('class="internal-link party-link"');
@@ -320,7 +278,7 @@ describe('Markdown Parser', () => {
 
     it('should handle links within lists', () => {
       const input =
-        '- Check [Test Note](note://note-1)\n- See [Test Module](module://module-1)';
+        '- Check [Test Note](note://note-1)\n- See [Test Party](party://party-1)';
       const result = parseMarkdown(input);
       expect(result).toContain('<ul>');
       const anchor1 = result.match(/<a [^>]+>Test Note<\/a>/)[0];
@@ -328,11 +286,11 @@ describe('Markdown Parser', () => {
       expect(anchor1).toContain('class="internal-link note-link"');
       expect(anchor1).toContain('data-kind="note"');
       expect(anchor1).toContain('data-id="note-1"');
-      const anchor2 = result.match(/<a [^>]+>Test Module<\/a>/)[0];
-      expect(anchor2).toContain('href="/modules/module-1"');
-      expect(anchor2).toContain('class="internal-link module-link"');
-      expect(anchor2).toContain('data-kind="module"');
-      expect(anchor2).toContain('data-id="module-1"');
+      const anchor2 = result.match(/<a [^>]+>Test Party<\/a>/)[0];
+      expect(anchor2).toContain('href="/parties/party-1"');
+      expect(anchor2).toContain('class="internal-link party-link"');
+      expect(anchor2).toContain('data-kind="party"');
+      expect(anchor2).toContain('data-id="party-1"');
     });
   });
 
@@ -357,14 +315,14 @@ describe('Markdown Parser', () => {
     });
 
     it('should handle partial internal link syntax', () => {
-      const input = 'Check [note: and [Test Module](module://module-1)';
+      const input = 'Check [note: and [Test Party](party://party-1)';
       const result = parseMarkdown(input);
       expect(result).toContain('Check [note:');
-      const anchor = result.match(/<a [^>]+>Test Module<\/a>/)[0];
-      expect(anchor).toContain('href="/modules/module-1"');
-      expect(anchor).toContain('class="internal-link module-link"');
-      expect(anchor).toContain('data-kind="module"');
-      expect(anchor).toContain('data-id="module-1"');
+      const anchor = result.match(/<a [^>]+>Test Party<\/a>/)[0];
+      expect(anchor).toContain('href="/parties/party-1"');
+      expect(anchor).toContain('class="internal-link party-link"');
+      expect(anchor).toContain('data-kind="party"');
+      expect(anchor).toContain('data-id="party-1"');
     });
   });
 
@@ -445,19 +403,15 @@ describe('Markdown Parser', () => {
   describe('Heading ID behavior', () => {
     it('should support {#KIND-id} for valid kinds only', () => {
       const input =
-        '# Some Note {#note-123}\n# Some Module {#module-456}\n# Not Special {#foo-789}';
+        '# Some Note {#note-123}\n# Not Special {#foo-789}';
       const result = parseMarkdown(input);
       expect(result).toContain(
         '<h1 id="note-123" data-id="123" data-kind="note">Some Note</h1>',
       );
-      expect(result).toContain(
-        '<h1 id="module-456" data-id="456" data-kind="module">Some Module</h1>',
-      );
       // Should not parse for unknown kind
       expect(result).toContain('<h1>Not Special {#foo-789}</h1>');
-      // Should not contain {#note-123} or {#module-456} in the heading text
+      // Should not contain {#note-123} in the heading text
       expect(result).not.toContain('Some Note {#note-123}');
-      expect(result).not.toContain('Some Module {#module-456}');
     });
   });
 
@@ -532,11 +486,6 @@ describe('Markdown Parser', () => {
         titleKey: 'title',
         type: 'Note',
         target: 'notes',
-      });
-      expect(getMentionableEntities('module')).toMatchObject({
-        titleKey: 'name',
-        type: 'Module',
-        target: 'modules',
       });
       expect(getMentionableEntities('party')).toMatchObject({
         titleKey: 'name',

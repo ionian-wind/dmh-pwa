@@ -8,7 +8,6 @@ export const initialSchemaMigration: Migration = {
     'monsters',
     'notes',
     'parties',
-    'modules',
     'encounters',
     'combats',
     'noteTypes',

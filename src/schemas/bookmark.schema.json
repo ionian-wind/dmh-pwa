@@ -2,15 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Bookmark",
   "type": "object",
-  "required": ["id", "moduleId", "noteId", "title", "createdAt", "updatedAt"],
+  "required": ["id", "noteId", "title", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
       "description": "Unique identifier for the bookmark"
-    },
-    "moduleId": {
-      "type": "string",
-      "description": "ID of the module this bookmark belongs to"
     },
     "noteId": {
       "type": "string",
@@ -22,12 +18,12 @@
     },
     "ownerKind": {
       "type": "string",
-      "enum": ["module", "note"],
+      "enum": ["note"],
       "description": "Entity kind that owns the bookmark"
     },
     "ownerId": {
       "type": "string",
-      "description": "ID of the owning module or note"
+      "description": "ID of the owning note"
     },
     "anchorId": {
       "type": "string",

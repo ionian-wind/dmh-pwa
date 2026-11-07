@@ -7,7 +7,6 @@ import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 import { debug } from '@/utils/debug';
 import { featureLinkKinds } from 'virtual:feature-links';
 import iconNote from '@tabler/icons/outline/note.svg?raw';
-import iconBook from '@tabler/icons/outline/book.svg?raw';
 import iconUsers from '@tabler/icons/outline/users.svg?raw';
 import iconGhost from '@tabler/icons/outline/ghost-3.svg?raw';
 import iconSwords from '@tabler/icons/outline/swords.svg?raw';
@@ -398,7 +397,6 @@ function mentionIcon(svg: string) {
 
 const mentionIcons: Record<string, string> = {
   note: iconNote,
-  module: iconBook,
   party: iconUsers,
   monster: iconGhost,
   encounter: iconSwords,
@@ -407,7 +405,6 @@ const mentionIcons: Record<string, string> = {
 
 const MENTIONABLE_ORDER = [
   'note',
-  'module',
   'party',
   'monster',
   'encounter',

@@ -112,17 +112,17 @@ describe('map normalization', () => {
     expect(map.points).toBeUndefined();
   });
 
-  it('preserves module links on a map', () => {
+  it('preserves entity links on a map', () => {
     const map = normalizeMapEntity({
       id: 'map1',
       title: 'World',
       fileId: 'file1',
-      entities: [{ kind: 'module', id: 'mod1' }],
+      entities: [{ kind: 'note', id: 'n1' }],
       createdAt: 1,
       updatedAt: 2,
     } as any);
 
-    expect(map.entities).toEqual([{ kind: 'module', id: 'mod1' }]);
+    expect(map.entities).toEqual([{ kind: 'note', id: 'n1' }]);
   });
 
   it('prefers existing markers over legacy points', () => {
@@ -371,7 +371,6 @@ describe('map entity references', () => {
     expect(MAP_ENTITY_KIND_OPTIONS.map((option) => option.kind)).toEqual(
       expect.arrayContaining([
         'note',
-        'module',
         'party',
         'monster',
         'encounter',
@@ -380,7 +379,7 @@ describe('map entity references', () => {
         'playlist',
       ]),
     );
-    expect(MAP_ENTITY_KIND_OPTIONS).toHaveLength(8);
+    expect(MAP_ENTITY_KIND_OPTIONS).toHaveLength(7);
     expect(getEntityKindOption('playlist')).toMatchObject({
       kind: 'playlist',
       labelKey: 'playlist.title',

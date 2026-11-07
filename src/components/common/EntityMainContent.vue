@@ -36,14 +36,6 @@ const description = computed(() =>
       </div>
     </template>
 
-    <template v-else-if="kind === 'module'">
-      <div class="q-pa-md q-gutter-md">
-        <p v-if="entity?.description" class="text-body1">
-          {{ entity.description }}
-        </p>
-      </div>
-    </template>
-
     <template v-else-if="kind === 'party'">
       <div class="q-pa-md q-gutter-md">
         <p v-if="entity?.description" class="text-body1">

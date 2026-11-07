@@ -4,7 +4,6 @@ import type { StoredFile, StoredFileSource } from '@/utils/files/types';
 
 export type MapEntityKind =
   | 'note'
-  | 'module'
   | 'party'
   | 'monster'
   | 'encounter'
@@ -93,7 +92,7 @@ export interface MapEntity extends WithMetadata {
   fileId: string;
   locationId?: string | null;
   layers: MapLayer[];
-  /** Module and other entity links for the map itself. */
+  /** Entity links for the map itself. */
   entities: MapEntityRef[];
   /** @deprecated Embedded locations from older records; migrated to map_locations. */
   locations?: MapLocation[];

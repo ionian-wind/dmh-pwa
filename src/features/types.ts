@@ -7,7 +7,6 @@ export type FeatureId =
   | 'parties'
   | 'monsters'
   | 'encounters'
-  | 'modules'
   | 'maps'
   | 'jukebox'
   | 'ambient'

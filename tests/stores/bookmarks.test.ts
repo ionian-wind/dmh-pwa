@@ -15,26 +15,28 @@ describe('bookmark store', () => {
   it('adds, finds and removes bookmarks for a heading', async () => {
     const store = useBookmarkStore();
 
-    expect(store.isBookmarked('module-1', 'note-1')).toBe(false);
+    expect(store.isBookmarked('note-1', 'heading-1')).toBe(false);
 
-    await store.addBookmark('module-1', 'note-1', 'Heading');
-    expect(store.isBookmarked('module-1', 'note-1')).toBe(true);
-    expect(store.findByModuleAndAnchor('module-1', 'note-1')).toMatchObject({
-      moduleId: 'module-1',
-      noteId: 'note-1',
+    await store.addBookmark('note-1', 'heading-1', 'Heading');
+    expect(store.isBookmarked('note-1', 'heading-1')).toBe(true);
+    expect(store.findByNoteAndAnchor('note-1', 'heading-1')).toMatchObject({
+      noteId: 'heading-1',
+      ownerKind: 'note',
+      ownerId: 'note-1',
+      anchorId: 'heading-1',
       title: 'Heading',
     });
 
-    await store.removeBookmark('module-1', 'note-1');
-    expect(store.isBookmarked('module-1', 'note-1')).toBe(false);
-    expect(store.findByModuleAndAnchor('module-1', 'note-1')).toBeUndefined();
+    await store.removeBookmark('note-1', 'heading-1');
+    expect(store.isBookmarked('note-1', 'heading-1')).toBe(false);
+    expect(store.findByNoteAndAnchor('note-1', 'heading-1')).toBeUndefined();
   });
 
   it('does not duplicate an existing bookmark', async () => {
     const store = useBookmarkStore();
 
-    await store.addBookmark('module-1', 'note-1', 'Heading');
-    await store.addBookmark('module-1', 'note-1', 'Another heading');
+    await store.addBookmark('note-1', 'heading-1', 'Heading');
+    await store.addBookmark('note-1', 'heading-1', 'Another heading');
 
     expect(store.items).toHaveLength(1);
     expect(store.items[0].title).toBe('Heading');
@@ -49,7 +51,7 @@ describe('bookmark store', () => {
     expect(store.items).toHaveLength(0);
   });
 
-  it('keeps note bookmarks separate from module bookmarks', async () => {
+  it('keeps bookmarks separate by note', async () => {
     const store = useBookmarkStore();
 
     await store.addAnchorBookmark(
@@ -58,14 +60,14 @@ describe('bookmark store', () => {
       'note-paragraph-1',
       'Paragraph',
     );
-    await store.addAnchorBookmark('module', 'module-1', 'heading-1', 'Heading');
+    await store.addAnchorBookmark('note', 'note-2', 'heading-1', 'Heading');
 
     expect(store.bookmarksFor('note', 'note-1')).toHaveLength(1);
-    expect(store.bookmarksFor('module', 'module-1')).toHaveLength(1);
+    expect(store.bookmarksFor('note', 'note-2')).toHaveLength(1);
     expect(store.isAnchorBookmarked('note', 'note-1', 'note-paragraph-1')).toBe(
       true,
     );
-    expect(store.isBookmarked('module-1', 'heading-1')).toBe(true);
+    expect(store.isBookmarked('note-2', 'heading-1')).toBe(true);
     expect(store.isAnchorBookmarked('note', 'note-1', 'heading-1')).toBe(false);
 
     await store.toggleAnchorBookmark(

@@ -124,7 +124,6 @@ export { entityScenesPanel };`;
             'parties',
             'monsters',
             'encounters',
-            'modules',
             'maps',
           ].includes(feature.id),
         );

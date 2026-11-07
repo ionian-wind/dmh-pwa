@@ -33,7 +33,6 @@ Main entities are the only entities that can appear in the **Links** tab.
 | Character | `/characters/:id` | `CharacterEditor`   |
 | Encounter | `/encounters/:id` | `EncounterEditor`   |
 | Combat    | `/combats/:id`    | no editor yet       |
-| Module    | `/modules/:id`    | `ModuleEditor`      |
 | Location  | `/locations/:id`  | `MapLocationEditor` |
 
 A main entity may have no editor yet (currently Combat). If an editor is added
@@ -113,22 +112,21 @@ The links tab contains only references to main entities.
   - add button on the right,
   - linked entities in a virtual-scroll list with a remove action,
   - a searchable multi-select modal with a virtual-scroll result list.
-- Use `multiple=false` for single-value relationships (for example a note's
-  module or a map's location). Use the default `multiple=true` for collections.
+- Use `multiple=false` for single-value relationships (for example a map's
+  location). Use the default `multiple=true` for collections.
 - Internal entities must never be offered here.
 
 ## What counts as a link
 
 Use the following rule when deciding whether something moves to the Links tab.
 
-| Data shape                                                                                                            | Where it goes                                      |
-| --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Scalar fields owned by the entity                                                                                     | Main editor, first section                         |
-| Options pointing at internal entities                                                                                 | Main editor, second section                        |
-| Optional/required module references (`moduleIds`, multi-select)                                                       | Links tab, multi-select                            |
-| Optional single main-entity reference (`locationId`)                                                                  | Links tab, single-select                           |
-| `MapEntityRef[]`-style cross-entity links                                                                             | Links tab, grouped by entity type                  |
-| Owned structures with extra per-relation data (party members, encounter monster roster, module note tree, map layers) | Main editor, because they define the entity itself |
+| Data shape                                                                                          | Where it goes                                      |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Scalar fields owned by the entity                                                                   | Main editor, first section                         |
+| Options pointing at internal entities                                                               | Main editor, second section                        |
+| Optional single main-entity reference (`locationId`)                                                | Links tab, single-select                           |
+| `MapEntityRef[]`-style cross-entity links                                                           | Links tab, grouped by entity type                  |
+| Owned structures with extra per-relation data (party members, encounter monster roster, map layers) | Main editor, because they define the entity itself |
 
 The last row is important: not every reference is a generic link. If the
 relationship carries counts, ordering, tree structure, or other per-relation
@@ -150,19 +148,17 @@ save buttons inside tab content.
 
 Linkable editors already use the tab layout:
 
-| Editor              | Link blocks                                                           |
-| ------------------- | --------------------------------------------------------------------- |
-| `NoteEditor`        | Modules                                                               |
-| `PartyEditor`       | Modules, Characters                                                   |
-| `MonsterEditor`     | Modules                                                               |
-| `EncounterEditor`   | Modules                                                               |
-| `PlaylistEditor`    | Modules                                                               |
-| `MapLocationEditor` | Notes, Modules, Parties, Monsters, Encounters, Characters             |
-| `MapMarkerEditor`   | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters |
-| `MapAreaEditor`     | Locations + Notes, Modules, Parties, Monsters, Encounters, Characters |
+| Editor              | Link blocks                                         |
+| ------------------- | --------------------------------------------------- |
+| `PartyEditor`       | Characters                                          |
+| `MonsterEditor`     | Encounters, Locations                               |
+| `MapLocationEditor` | Notes, Parties, Monsters, Encounters, Characters    |
+| `MapMarkerEditor`   | Locations + Notes, Monsters, Encounters, Characters |
+| `MapAreaEditor`     | Locations + Notes, Monsters, Encounters, Characters |
 
-`CharacterEditor`, `ModuleEditor`, and `TimerEditor` have no main-entity links,
-so they keep a single form without tabs. Combat has no editor yet.
+`NoteEditor`, `EncounterEditor`, `PlaylistEditor`, `CharacterEditor`, and
+`TimerEditor` have no main-entity links, so they keep a single form without
+tabs. Combat has no editor yet.
 
 ## View pages mirror the editor
 

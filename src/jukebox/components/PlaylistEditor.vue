@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, type Ref, computed } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useJukeboxPlaylistsStore } from '../stores';
 import type { JukeboxPlaylist } from '../types';
 import type { UUID } from '@/types';
 import { useI18n } from 'vue-i18n';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
-import type { MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -24,14 +21,12 @@ type EditablePlaylist = {
   name: string;
   description?: string;
   trackIds: UUID[];
-  moduleIds?: string[];
 };
 
 const editedPlaylist: Ref<EditablePlaylist> = ref({
   name: '',
   description: '',
   trackIds: [],
-  moduleIds: [],
 });
 
 watch(
@@ -44,7 +39,6 @@ watch(
         name: '',
         description: '',
         trackIds: [],
-        moduleIds: [],
       };
     }
   },
@@ -60,21 +54,10 @@ watch(
         name: '',
         description: '',
         trackIds: [],
-        moduleIds: [],
       };
     }
   },
 );
-
-const editorTabs = useEntityEditorTabs();
-
-const linkedModules = computed<MapEntityRef[]>(() =>
-  (editedPlaylist.value.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
-);
-
-function setLinkedModules(links: MapEntityRef[]) {
-  editedPlaylist.value.moduleIds = links.map((link) => link.id);
-}
 
 async function save() {
   if (props.playlist && props.playlist.id) {
@@ -82,7 +65,6 @@ async function save() {
       name: editedPlaylist.value.name,
       description: editedPlaylist.value.description,
       trackIds: editedPlaylist.value.trackIds,
-      moduleIds: editedPlaylist.value.moduleIds,
     });
     emit('saved', updatedPlaylist);
   } else {
@@ -117,7 +99,6 @@ function handleDelete() {
     :showDelete="!!playlist"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
-    :tabs="editorTabs"
     @submit="save"
     @delete="handleDelete"
     @cancel="$emit('update:modelValue', false)"
@@ -152,14 +133,6 @@ function handleDelete() {
           </div>
         </div>
       </div>
-    </template>
-
-    <template #links>
-      <EntitiesLinking
-        kind="module"
-        :model-value="linkedModules"
-        @update:model-value="setLinkedModules"
-      />
     </template>
   </BaseModal>
 </template>

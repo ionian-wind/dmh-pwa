@@ -46,8 +46,6 @@ const editorProps = computed(() => {
   switch (props.kind) {
     case 'note':
       return { note: null, isOpen: true, useModalStack: false };
-    case 'module':
-      return { module: null, isOpen: true, useModalStack: false };
     case 'party':
       return { party: null, isOpen: true, useModalStack: false };
     case 'monster':

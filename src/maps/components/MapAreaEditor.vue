@@ -49,7 +49,6 @@ const layerOptions = computed(() =>
 const editorTabs = useEntityEditorTabs();
 const linkKinds: MapEntityKind[] = [
   'note',
-  'module',
   'monster',
   'encounter',
   'character',

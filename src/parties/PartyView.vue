@@ -67,13 +67,11 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Party>({
   source: party,
   clone: (source) => ({
     ...source,
-    moduleIds: [...(source.moduleIds ?? [])],
     characters: [...(source.characters ?? [])],
   }),
   isDirty: (draft, source) =>
     draft.name !== source.name ||
     (draft.description ?? '') !== (source.description ?? '') ||
-    !arraysEqual(draft.moduleIds, source.moduleIds) ||
     !arraysEqual(draft.characters, source.characters),
   onEnter: () => {
     validationError.value = null;
@@ -97,12 +95,6 @@ const tabs = computed(() =>
 
 const partyTitle = computed(() => party.value?.name || '');
 
-const modules = computed(() =>
-  (party.value?.moduleIds ?? [])
-    .map((id) => featureStores.get('module', id))
-    .filter(Boolean),
-);
-
 const partyCharacters = computed(() => {
   const current = party.value;
   if (!current) return [];
@@ -113,32 +105,16 @@ const partyCharacters = computed(() => {
 
 const partySubtitle = computed(() => {
   if (!party.value) return '';
-  const parts: string[] = [];
-  if (modules.value.length > 0) {
-    parts.push(
-      `Modules: ${modules.value
-        .map((module) => module?.name)
-        .filter(Boolean)
-        .join(', ')}`,
-    );
-  }
-  parts.push(`${partyCharacters.value.length} characters`);
-  return parts.join(' • ');
+  return `${partyCharacters.value.length} characters`;
 });
 
 const partyLinks = computed<MapEntityRef[]>(() => {
   const source = editState.draft ?? party.value;
   if (!source) return [];
-  return [
-    ...(source.moduleIds ?? []).map((id) => ({
-      kind: 'module' as const,
-      id,
-    })),
-    ...(source.characters ?? []).map((id) => ({
-      kind: 'character' as const,
-      id,
-    })),
-  ];
+  return (source.characters ?? []).map((id) => ({
+    kind: 'character' as const,
+    id,
+  }));
 });
 
 const draftName = computed({
@@ -157,14 +133,6 @@ const draftDescription = computed({
 
 function arraysEqual(a: string[] = [], b: string[] = []) {
   return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
-function setLinkedModules(links: MapEntityRef[]) {
-  if (editState.draft) {
-    editState.draft.moduleIds = links
-      .filter((link) => link.kind === 'module')
-      .map((link) => link.id);
-  }
 }
 
 function setLinkedCharacters(links: MapEntityRef[]) {
@@ -200,7 +168,6 @@ async function persistDraft(draft: Party): Promise<boolean> {
     await partyStore.update(party.value.id, {
       name: draft.name,
       description: draft.description,
-      moduleIds: draft.moduleIds,
       characters: draft.characters,
     });
   } catch (error) {
@@ -246,7 +213,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
-    featureStores.load(['character', 'module']),
+    featureStores.load(['character']),
   ]);
   rightDrawer.set({
     component: PartyViewSidebar,
@@ -309,12 +276,6 @@ onBeforeUnmount(() => {
     <template #links>
       <EntityViewLinks v-if="!editState.isEditMode" :links="partyLinks" />
       <div v-else class="column q-gutter-md">
-        <EntitiesLinking
-          v-if="featureStores.has('module')"
-          kind="module"
-          :model-value="partyLinks"
-          @update:model-value="setLinkedModules"
-        />
         <EntitiesLinking
           v-if="featureStores.has('character')"
           kind="character"

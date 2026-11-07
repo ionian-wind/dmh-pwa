@@ -12,10 +12,8 @@ import CharacterCard from '@/characters/CharacterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import MonsterCard from '@/monsters/MonsterCard.vue';
-import ModuleCard from '@/modules/ModuleCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
-import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseListView from '@/components/common/BaseListView.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import NoteTypeSelector from '@/notes/NoteTypeSelector.vue';
@@ -776,7 +774,7 @@ describe('current domain cards', () => {
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['session']);
   });
 
-  it('renders a legacy party without moduleIds', () => {
+  it('renders a party without optional fields', () => {
     const wrapper = mount(PartyCard, {
       props: {
         party: { id: 'p1', name: 'Legacy', characters: [] } as any,
@@ -793,15 +791,7 @@ describe('current domain cards', () => {
     expect(wrapper.findAll('button').length).toBeGreaterThan(0);
   });
 
-  it('renders module and encounter cards', () => {
-    const module = mount(ModuleCard, {
-      props: {
-        module: { id: 'mod', name: 'Module', description: 'Desc' },
-      },
-    });
-    expect(module.text()).toContain('Module');
-    expect(module.text()).toContain('Desc');
-
+  it('renders an encounter card', () => {
     const encounter = mount(EncounterCard, {
       props: {
         encounter: {
@@ -809,7 +799,6 @@ describe('current domain cards', () => {
           name: 'Ambush',
           description: 'Goblins',
           monsters: { m1: 2, m2: 1 },
-          moduleIds: ['mod'],
         },
       },
     });
@@ -910,21 +899,5 @@ describe('current editors', () => {
       .vm.$emit('update:modelValue', null);
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['']);
     wrapper.unmount();
-  });
-
-  it('ModuleEditor submits name and description', async () => {
-    const wrapper = mount(ModuleEditor, {
-      props: { isOpen: true, module: null },
-    });
-    const inputs = wrapper.findAllComponents(QInput);
-    inputs[0].vm.$emit('update:modelValue', 'Curse of Strahd');
-    await nextTick();
-
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await nextTick();
-
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      name: 'Curse of Strahd',
-    });
   });
 });

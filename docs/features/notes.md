@@ -3,8 +3,7 @@
 ## Purpose
 
 Free-form and campaign notes. Notes are the richest content type: they render
-Markdown, support internal entity links, drive the mention index, and can be
-used as hidden document sections inside modules.
+Markdown, support internal entity links, and drive the mention index.
 
 ## Key files
 
@@ -26,10 +25,9 @@ used as hidden document sections inside modules.
 
 - Loads notes, monsters, and parties on mount.
 - Renders `BaseListView` with `NoteCard` and `NoteEditor`.
-- Shows `noteStore.filtered.filter(n => !n.hidden)`, so hidden document notes
+- Shows `noteStore.filtered.filter(n => !n.hidden)`, so hidden notes
   never appear in the general notes list.
-- Card props pass `onView`, `onEdit`, `onDelete`, and `moduleName` (always
-  `undefined`).
+- Card props pass `onView`, `onEdit`, and `onDelete`.
 - The header has a second create action: a warning-coloured `IconBrush` button
   that opens the editor with `contentType: 'draw'`. The regular create button
   opens a `text` note.
@@ -91,7 +89,6 @@ Fields:
   internal links, entity mentions and tags in a new tab.
 - The title input is borderless and larger; there is no separate **Content**
   heading, and the visual/raw editors have no outer outline.
-- The module link lives in the dialog's linked-entities tab.
 
 Behavior:
 
@@ -103,13 +100,11 @@ Behavior:
 - New notes are created by the parent with `hidden: false`; drawing notes keep
   `contentType: 'draw'`.
 
-A note created from the list can now carry `moduleIds`, `typeId`, and tags. Notes
-created inside a module's document tree are still forced to `hidden: true` by
-`ModuleDocumentTree`.
+A note created from the list can carry `typeId` and tags.
 
 ## Detail page (`NoteView.vue`)
 
-- Loads notes, modules, the mention index, parties, monsters, encounters.
+- Loads notes, the mention index, parties, monsters, encounters.
 - Resolves the note from `noteStore.getById(route.params.id)`; redirects to
   `/notes` if missing after load.
 - Publishes `NoteViewSidebar` to the right drawer on mount and clears it on
@@ -193,9 +188,8 @@ The only escape is delete + recreate.
 
 ## Detail tabs
 
-`NoteView` uses the standard **View** / **Linked entities** tabs in the
-app header panel. View renders the note body; Linked entities shows the
-note's module read-only. The right sidebar shows **Contents**, **Bookmarks**,
+`NoteView` uses the standard **View** tab in the app header panel.
+The right sidebar shows **Contents**, **Bookmarks**,
 **Tags** and **Mentions** tabs in that order, followed by a full-width local
 View/Edit mode switch.
 
@@ -253,7 +247,7 @@ pipeline. In short:
 
 - Entity links use `[label](kind://id)`.
 - Rendering rewrites them to SPA routes and adds `data-kind`/`data-id`.
-- `NoteView` and `ModuleDocumentView` enable mention modals; cards do not.
+- `NoteView` enables mention modals; cards do not.
 - Only note content is indexed; other entity mentions are not.
 
 ## Persistence fields
@@ -268,7 +262,6 @@ saved from the UI has:
   "content": "…",
   "typeId": null,
   "tags": [],
-  "moduleIds": [],
   "hidden": false,
   "createdAt": 0,
   "updatedAt": 0
@@ -277,11 +270,8 @@ saved from the UI has:
 
 ## Limitations and known problems
 
-- Document-note status (`hidden`) is internal: it is set by the module
-  document flow, not by a user-facing editor control. A note without a module
-  cannot be hidden.
-- Deleting a note does not remove its node from `module.noteTree` or its
-  bookmark.
+- Document-note status (`hidden`) is internal and preserved across updates.
+- Deleting a note does not remove its bookmark.
 - The note list keeps URL tag filtering, but the header search field is not shown; the store search logic remains available.
 - Live checkbox writes bypass the mention validation performed on submit.
 - Editing from the list and editing from the detail page are two separate

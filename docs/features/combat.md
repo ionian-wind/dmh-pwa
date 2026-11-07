@@ -8,12 +8,12 @@ monster instances.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/combats.ts` | Combat store and turn helpers |
+| File                               | Role                                    |
+| ---------------------------------- | --------------------------------------- |
+| `src/stores/combats.ts`            | Combat store and turn helpers           |
 | `src/encounters/PartySelector.vue` | Creates a combat from encounter + party |
-| `src/encounters/CombatView.vue` | Combat runner UI |
-| `src/encounters/EncounterView.vue` | Lists combats for an encounter |
+| `src/encounters/CombatView.vue`    | Combat runner UI                        |
+| `src/encounters/EncounterView.vue` | Lists combats for an encounter          |
 
 ## Data
 
@@ -46,11 +46,11 @@ preparing ──start──▶ active ──end──▶ completed
 Store helpers:
 
 ```ts
-startCombat(id)    // preparing -> active, currentRound=1, currentTurn=0
-endCombat(id)      // active -> completed
-resetCombat(id)    // active: round=1, turn=0
-nextTurn(id)       // active: turn+1, round+1 at wrap
-previousTurn(id)   // active: turn-1, round-1 at wrap (min 1)
+startCombat(id); // preparing -> active, currentRound=1, currentTurn=0
+endCombat(id); // active -> completed
+resetCombat(id); // active: round=1, turn=0
+nextTurn(id); // active: turn+1, round+1 at wrap
+previousTurn(id); // active: turn-1, round-1 at wrap (min 1)
 ```
 
 `CombatView` does **not** use `nextTurn`/`previousTurn`; it implements its own
@@ -84,7 +84,7 @@ Notes:
 
 ## Combat runner (`CombatView.vue`)
 
-Loads characters, monsters, combats, encounters, parties, modules.
+Loads characters, monsters, combats, encounters, parties.
 
 ### Initialization
 
@@ -164,17 +164,17 @@ the combat is already populated, so the watcher does not re-run.
 
 All turn state is now written through `combatStore.update`:
 
-| Change | Persisted? |
-| --- | --- |
-| Combat created | yes |
-| Add participant | yes |
-| Initial combatant fill from encounter/party | yes |
-| Start combat + sorted combatants | yes |
-| Initiative edits while preparing | yes (on popup save) |
-| Next/previous turn | yes |
-| Round rollover | yes |
-| Postpone/activate | yes |
-| End combat | yes (`status` only) |
+| Change                                      | Persisted?          |
+| ------------------------------------------- | ------------------- |
+| Combat created                              | yes                 |
+| Add participant                             | yes                 |
+| Initial combatant fill from encounter/party | yes                 |
+| Start combat + sorted combatants            | yes                 |
+| Initiative edits while preparing            | yes (on popup save) |
+| Next/previous turn                          | yes                 |
+| Round rollover                              | yes                 |
+| Postpone/activate                           | yes                 |
+| End combat                                  | yes (`status` only) |
 
 The pure transitions live in `src/utils/combatTurn.ts` and are covered by
 `tests/regressions/bugs.test.ts`.

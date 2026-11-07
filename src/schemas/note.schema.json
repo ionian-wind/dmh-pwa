@@ -10,8 +10,7 @@
     "typeId",
     "tags",
     "createdAt",
-    "updatedAt",
-    "moduleIds"
+    "updatedAt"
   ],
   "properties": {
     "id": {
@@ -62,13 +61,6 @@
     "updatedAt": {
       "type": "number",
       "description": "Timestamp when the note was last updated"
-    },
-    "moduleIds": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "IDs of the modules this note is linked to"
     }
   }
 }

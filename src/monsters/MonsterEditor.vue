@@ -36,7 +36,6 @@ const blankMonster = (): Monster => ({
   id: '',
   name: '',
   notes: '',
-  moduleIds: [],
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });
@@ -60,10 +59,6 @@ const notes = computed({
 const monsterLinks = computed<MapEntityRef[]>(() => {
   const id = editedMonster.value.id;
   return [
-    ...(editedMonster.value.moduleIds ?? []).map((moduleId) => ({
-      kind: 'module' as const,
-      id: moduleId,
-    })),
     ...(id
       ? relations
           .getLinkedIds('monster', id, 'encounter')
@@ -82,15 +77,9 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
 });
 
 async function setMonsterLinks(
-  kind: 'module' | 'encounter' | 'location',
+  kind: 'encounter' | 'location',
   links: MapEntityRef[],
 ) {
-  if (kind === 'module') {
-    editedMonster.value.moduleIds = links
-      .filter((link) => link.kind === 'module')
-      .map((link) => link.id);
-    return;
-  }
   if (!editedMonster.value.id) return;
   await relations.setLinkedIds(
     'monster',
@@ -189,12 +178,6 @@ onMounted(async () => {
 
     <template #links>
       <div class="column q-gutter-md">
-        <EntitiesLinking
-          v-if="featureStores.has('module')"
-          kind="module"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('module', links)"
-        />
         <EntitiesLinking
           v-if="featureStores.has('encounter')"
           kind="encounter"

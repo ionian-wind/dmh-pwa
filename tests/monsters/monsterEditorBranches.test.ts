@@ -17,7 +17,7 @@ const EntitiesLinkingStub = {
 };
 
 describe('MonsterEditor branches', () => {
-  it('validates, resets and links modules', async () => {
+  it('validates and resets the form', async () => {
     const wrapper = mount(MonsterEditor, {
       props: { isOpen: true, monster: null },
       global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
@@ -30,7 +30,6 @@ describe('MonsterEditor branches', () => {
       id: 'm1',
       name: 'Goblin',
       notes: '',
-      moduleIds: ['mod1'],
       createdAt: 1,
       updatedAt: 1,
     };
@@ -38,14 +37,10 @@ describe('MonsterEditor branches', () => {
       props: { isOpen: true, monster: monster as any },
       global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
-    linked
-      .findComponent(EntitiesLinkingStub)
-      .vm.$emit('update:modelValue', [{ kind: 'module', id: 'mod2' }]);
-    await nextTick();
     linked.findComponent(BaseModal).vm.$emit('submit');
     await nextTick();
     expect(linked.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleIds: ['mod2'],
+      name: 'Goblin',
     });
 
     await linked.setProps({ isOpen: false });

@@ -101,7 +101,7 @@ top (otherwise removes all occurrences). `currentModalId` is the top.
 - Renders note content as `Markdown` with `enableMentionModal`, so links inside
   the modal can open further entity modals.
 - Body content reuses `EntityMainContent`, mirroring the entity view's main
-  information tab (note markdown/drawing preview, module/party/location
+  information tab (note markdown/drawing preview, party/location
   description, monster/character notes, encounter description) without tabs or
   sidebar. Unknown/missing entities show "not found".
 - When the mentioned entity kind has a detail route, an `IconExternalLink`
@@ -159,7 +159,6 @@ Consumers:
 | `MonsterView`                      | `MonsterViewSidebar`   | —               | `ViewHeader` |
 | `EncounterView`                    | `EncounterViewSidebar` | —               | `ViewHeader` |
 | `CharacterView`                    | `#sidepanel`           | —               | `ViewHeader` |
-| `ModuleView`                       | `#sidepanel`           | —               | `ViewHeader` |
 | `JukeboxView`                      | `PlaylistList`         | `JukeboxPlayer` | `ViewHeader` |
 
 Entity detail pages render their title/subtitle in the page content. The
@@ -173,7 +172,7 @@ toggle.
 
 Because the drawer content is a global singleton, navigating between pages
 relies on each view clearing its content. `BaseEntityView` publishes its
-`sidepanel` slot for views that need one (`CharacterView`, `ModuleView`) and
+`sidepanel` slot for views that need one (`CharacterView`) and
 clears it on unmount.
 
 ## Settings dialog

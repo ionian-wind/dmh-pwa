@@ -4,7 +4,6 @@ import type { MapEntityKind } from '@/maps/types';
 
 export type EntityLinkKind =
   | 'note'
-  | 'module'
   | 'party'
   | 'monster'
   | 'encounter'
@@ -26,21 +25,12 @@ export const ENTITY_LINK_ICONS = featureLinkIcons as Record<
 
 /** Target kinds each entity model can represent a link to. */
 export const ENTITY_LINK_TARGETS: Record<EntityLinkKind, EntityLinkKind[]> = {
-  note: ['module', 'location'],
-  module: ['note', 'party', 'monster', 'encounter', 'character', 'location'],
-  party: ['module', 'character', 'location'],
-  character: ['module', 'party', 'location'],
-  monster: ['module', 'encounter', 'location'],
-  encounter: ['module', 'monster', 'location'],
-  location: [
-    'note',
-    'module',
-    'party',
-    'monster',
-    'encounter',
-    'character',
-    'location',
-  ],
+  note: ['location'],
+  party: ['character', 'location'],
+  character: ['party', 'location'],
+  monster: ['encounter', 'location'],
+  encounter: ['monster', 'location'],
+  location: ['note', 'party', 'monster', 'encounter', 'character', 'location'],
 };
 
 export function toMapEntityKind(kind: EntityLinkKind): MapEntityKind {

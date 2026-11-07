@@ -62,12 +62,10 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Monster>({
   source: monster,
   clone: (source) => ({
     ...source,
-    moduleIds: [...(source.moduleIds ?? [])],
   }),
   isDirty: (draft, source) =>
     draft.name !== source.name ||
-    (draft.notes ?? '') !== (source.notes ?? '') ||
-    !arraysEqual(draft.moduleIds, source.moduleIds),
+    (draft.notes ?? '') !== (source.notes ?? ''),
   onEnter: () => {
     validationError.value = null;
   },
@@ -108,9 +106,6 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
   const id = monster.value?.id;
   if (!id) return [];
   return [
-    ...(editState.draft?.moduleIds ?? monster.value?.moduleIds ?? []).map(
-      (moduleId) => ({ kind: 'module' as const, id: moduleId }),
-    ),
     ...relations
       .getLinkedIds('monster', id, 'encounter')
       .map((encounterId) => ({ kind: 'encounter' as const, id: encounterId })),
@@ -120,23 +115,11 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
   ];
 });
 
-function arraysEqual(a: string[] = [], b: string[] = []) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
 async function setMonsterLinks(
-  kind: 'module' | 'encounter' | 'location',
+  kind: 'encounter' | 'location',
   links: MapEntityRef[],
 ) {
   if (!monster.value) return;
-  if (kind === 'module') {
-    if (editState.draft) {
-      editState.draft.moduleIds = links
-        .filter((link) => link.kind === 'module')
-        .map((link) => link.id);
-    }
-    return;
-  }
   await relations.setLinkedIds(
     'monster',
     monster.value.id,
@@ -170,7 +153,6 @@ async function persistDraft(draft: Monster): Promise<boolean> {
     await monsterStore.update(monster.value.id, {
       name: draft.name,
       notes: draft.notes,
-      moduleIds: draft.moduleIds,
     });
   } catch (error) {
     activeTab.value = 'main';
@@ -277,12 +259,6 @@ onBeforeUnmount(() => {
     <template #links>
       <EntityViewLinks v-if="!editState.isEditMode" :links="monsterLinks" />
       <div v-else class="column q-gutter-md">
-        <EntitiesLinking
-          v-if="featureStores.has('module')"
-          kind="module"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('module', links)"
-        />
         <EntitiesLinking
           v-if="featureStores.has('encounter')"
           kind="encounter"

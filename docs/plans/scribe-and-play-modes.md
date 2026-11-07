@@ -9,7 +9,7 @@ This is a committed plan, not an optional proposal.
 **Goal:** give the app two complementary working modes without splitting the
 data model:
 
-- **Scribe** — preparing for a session: write notes, organize modules and
+- **Scribe** — preparing for a session: write notes, organize the campaign and
   locations, build characters, parties, monsters and encounters, configure
   ambience and playlists.
 - **Play** — running the session: find and use prepared content quickly, run
@@ -27,7 +27,7 @@ primary.
 
 - The app has one navigation and one Home dashboard aimed mainly at
   preparation.
-- All major domains are already implemented: notes, modules, characters,
+- All major domains are already implemented: notes, characters,
   parties, monsters, encounters, combats, maps/locations, timers, jukebox and
   ambient sound.
 - The command-menu and global-search proposals provide the fast access Play
@@ -79,7 +79,7 @@ The current navigation stays essentially unchanged:
 - Parties
 - Monsters
 - Encounters
-- Modules
+- Notes
 - Maps / Locations
 - Tools (Jukebox, Ambient, Dice calculator, Timers)
 - Settings, Help
@@ -149,7 +149,7 @@ Keep the current Home layout with small adjustments:
 - add “Start Play” / “Resume session” shortcut;
 - show active combat/timers as “currently running” but keep preparation links
   primary;
-- keep backup/restore and import module actions.
+- keep backup/restore actions.
 
 Scribe does not need a new dashboard implementation; it can remain the current
 Home view with mode-aware labels.

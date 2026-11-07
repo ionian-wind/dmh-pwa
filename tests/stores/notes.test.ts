@@ -85,68 +85,6 @@ describe('note store', () => {
     expect(store.allTags.sort()).toEqual(['combat', 'social']);
   });
 
-  it('converts a document note to a regular note and detaches it from the tree', async () => {
-    const { useModuleStore } = await import('@/stores/modules');
-    const modules = useModuleStore();
-    const notes = useNoteStore();
-    const note = await notes.create({
-      title: 'Chapter',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleIds: ['m1'],
-      hidden: true,
-    });
-    await modules.create({
-      name: 'Book',
-      id: 'm1',
-      noteTree: [{ noteId: note.id, children: [] }],
-    } as any);
-
-    const updated = await notes.setHidden(note.id, false);
-
-    expect(updated.hidden).toBe(false);
-    expect(modules.getById('m1')?.noteTree).toEqual([]);
-  });
-
-  it('converts a regular note with a module into a document note at the tree root', async () => {
-    const { useModuleStore } = await import('@/stores/modules');
-    const modules = useModuleStore();
-    const notes = useNoteStore();
-    const note = await notes.create({
-      title: 'Chapter',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleIds: ['m2'],
-      hidden: false,
-    });
-    await modules.create({
-      name: 'Book',
-      id: 'm2',
-      noteTree: [],
-    } as any);
-
-    const updated = await notes.setHidden(note.id, true);
-
-    expect(updated.hidden).toBe(true);
-    expect(modules.getById('m2')?.noteTree?.[0]?.noteId).toBe(note.id);
-  });
-
-  it('refuses to hide a note that has no module', async () => {
-    const notes = useNoteStore();
-    const note = await notes.create({
-      title: 'Loose',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleIds: [],
-      hidden: false,
-    });
-
-    await expect(notes.setHidden(note.id, true)).rejects.toThrow('module');
-  });
-
   it('adds hashtags from saved content to the note tag list', async () => {
     const store = useNoteStore();
     const created = await store.create({

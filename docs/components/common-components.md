@@ -38,13 +38,13 @@ Emits: `view`, `edit`, `delete`.
 ### Domain cards
 
 Thin wrappers that forward events:
-`NoteCard`, `ModuleCard`, `PartyCard`, `MonsterCard`, `CharacterCard`,
+`NoteCard`, `PartyCard`, `MonsterCard`, `CharacterCard`,
 `EncounterCard`, `TrackCard` (jukebox, custom layout).
 
 Variations:
 
 - `NoteCard` renders Markdown, clamps at 600px, and has tag chips.
-- `ModuleCard`/`PartyCard` show descriptions and metadata.
+- `PartyCard` shows descriptions and metadata.
 - `MonsterCard` hides all actions unless `showActions` is passed (no caller
   does).
 - `EncounterCard` adds a run-combat button.
@@ -189,15 +189,14 @@ grid hides its own scrollbars and only scrolls when the viewport is too small.
 Dropping on a kind opens `EntityLinkingDialog` for that kind; applying the
 dialog writes the relationship to the model fields:
 
-| Source    | Link targets                                                 |
-| --------- | ------------------------------------------------------------ |
-| Note      | Module, Location                                             |
-| Module    | Note, Party, Monster, Encounter, Location                    |
-| Party     | Module, Character, Location                                  |
-| Character | Party, Location                                              |
-| Monster   | Module, Encounter, Location                                  |
-| Encounter | Module, Monster, Location                                    |
-| Location  | Note, Module, Party, Monster, Encounter, Character, Location |
+| Source    | Link targets                                         |
+| --------- | ---------------------------------------------------- |
+| Note      | Location                                             |
+| Party     | Character, Location                                  |
+| Character | Party, Location                                      |
+| Monster   | Encounter, Location                                  |
+| Encounter | Monster, Location                                    |
+| Location  | Note, Party, Monster, Encounter, Character, Location |
 
 Relations stored on the target side are updated in reverse: for example,
 dropping a Character on Party updates `party.characters`, and dropping a Monster
@@ -387,7 +386,7 @@ A non-Quasar tab system:
   tabs, vertical mode.
 - Entity sidebars use the note variant: `side-panel-content` →
   `sidebar-tab-content` → `TabGroup`, with each tab panel padded by `q-pa-md`.
-- Used by the note, character, monster, encounter and module sidebars.
+- Used by the note, character, monster and encounter sidebars.
 
 ### `PopoverPanel.vue`
 
@@ -415,11 +414,10 @@ translation keys that do not exist.
   `emptyMessage` at the first sentence into the title and subtitle.
 - `Mentions.vue` — wraps each mention section in `EntityGroup`, groups
   `{kind,id}` refs by kind, and links to detail routes. Resolves labels for
-  notes, modules, parties, monsters, encounters, characters and locations.
+  notes, parties, monsters, encounters, characters and locations.
 - `TableOfContents.vue` — TOC with scroll-spy. Entries are real `#anchor` links
-  that also emit `item-click`; used by the module and probability-syntax
+  that also emit `item-click`; used by the note and probability-syntax
   sidepanels.
-- `Bookmark.vue` — toggles a bookmark for a note in a module.
 - `BaseModal.vue` — see [modals-and-navigation.md](modals-and-navigation.md).
 - `Markdown.vue`, `MarkdownEditor.vue` — see
   [markdown-editor.md](markdown-editor.md).

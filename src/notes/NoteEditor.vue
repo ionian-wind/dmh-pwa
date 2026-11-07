@@ -9,11 +9,9 @@ import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
 import { IconDots, IconHelp } from '@tabler/icons-vue';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { ensureBlockAnchors } from '@/utils/noteAnchors';
-import type { MapEntityRef } from '@/maps/types';
 
 const { t, locale } = useI18n();
 
@@ -23,7 +21,6 @@ const props = defineProps<{
   useModalStack?: boolean;
   isEditing?: boolean;
   validationError?: string | null;
-  hideModuleSelector?: boolean;
   contentType?: NoteContentType;
 }>();
 
@@ -41,7 +38,6 @@ const editedNote = ref<Note>({
   content: '',
   contentType: props.contentType ?? 'text',
   tags: [],
-  moduleIds: [],
   typeId: null,
   hidden: false,
 });
@@ -67,7 +63,6 @@ watch(
       editedNote.value = {
         ...newNote,
         contentType: newNote.contentType ?? 'text',
-        moduleIds: newNote.moduleIds ?? [],
         typeId: newNote.typeId ?? null,
       };
       lastNoteId.value = newNote.id;
@@ -80,7 +75,6 @@ watch(
         content: '',
         contentType: props.contentType ?? 'text',
         tags: [],
-        moduleIds: [],
         typeId: null,
         hidden: false,
       };
@@ -91,15 +85,9 @@ watch(
 );
 
 const editorTabs = useEntityEditorTabs();
-const tabs = computed(() => (props.hideModuleSelector ? [] : editorTabs.value));
-
-const linkedModules = computed<MapEntityRef[]>(() =>
-  editedNote.value.moduleIds.map((id) => ({ kind: 'module', id })),
+const tabs = computed(() =>
+  editorTabs.value.filter((tab) => tab.name !== 'links'),
 );
-
-function setLinkedModules(links: MapEntityRef[]) {
-  editedNote.value.moduleIds = links.map((link) => link.id);
-}
 
 const markdownEditorRef = ref<any>(null);
 const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
@@ -193,14 +181,6 @@ function handleDelete() {
           </slot>
         </div>
       </div>
-    </template>
-
-    <template #links>
-      <EntitiesLinking
-        kind="module"
-        :model-value="linkedModules"
-        @update:model-value="setLinkedModules"
-      />
     </template>
 
     <template #footer>

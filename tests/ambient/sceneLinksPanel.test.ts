@@ -31,8 +31,8 @@ describe('SceneLinksPanel', () => {
         id: 'link-1',
         packageId: 'pack-1',
         sceneId: 'scene-1',
-        entityType: 'module',
-        entityId: 'module-1',
+        entityType: 'location',
+        entityId: 'location-1',
         createdAt: 1,
         updatedAt: 1,
       },
@@ -49,14 +49,13 @@ describe('SceneLinksPanel', () => {
 
     const selectors = wrapper.findAllComponents(EntitiesLinkingStub);
     expect(selectors.map((selector) => selector.props('kind'))).toEqual([
-      'module',
       'location',
       'monster',
       'character',
       'encounter',
     ]);
     expect(selectors[0].props('modelValue')).toEqual([
-      { kind: 'module', id: 'module-1' },
+      { kind: 'location', id: 'location-1' },
     ]);
     wrapper.unmount();
   });
@@ -68,7 +67,7 @@ describe('SceneLinksPanel', () => {
     });
 
     wrapper
-      .findAllComponents(EntitiesLinkingStub)[2]
+      .findAllComponents(EntitiesLinkingStub)[1]
       .vm.$emit('update:modelValue', [{ kind: 'monster', id: 'monster-1' }]);
 
     expect(storeMock.removeSceneLink).toHaveBeenCalledWith('link-1');

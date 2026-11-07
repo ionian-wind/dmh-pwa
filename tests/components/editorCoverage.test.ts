@@ -3,10 +3,8 @@ import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import CharacterEditor from '@/characters/CharacterEditor.vue';
-import ModuleEditor from '@/modules/ModuleEditor.vue';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import { quasarStubs } from '../helpers/quasar-stubs';
 
 const mocks = vi.hoisted(() => ({
   alert: vi.fn().mockResolvedValue(undefined),
@@ -62,42 +60,6 @@ describe('editor coverage gaps', () => {
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
     expect(wrapper.emitted('cancel')).toHaveLength(1);
     wrapper.unmount();
-  });
-
-  it('ModuleEditor validates names, submits existing modules and deletes', async () => {
-    const wrapper = mount(ModuleEditor, {
-      props: { isOpen: true, module: null },
-      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
-    });
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await nextTick();
-    expect(mocks.alert).toHaveBeenCalled();
-    wrapper.findComponent(BaseModal).vm.$emit('cancel');
-    expect(wrapper.emitted('cancel')).toHaveLength(1);
-
-    const moduleItem = {
-      id: 'mod1',
-      name: 'Campaign',
-      description: 'Desc',
-      createdAt: 1,
-      updatedAt: 1,
-    };
-    const existing = mount(ModuleEditor, {
-      props: { isOpen: true, module: moduleItem as any },
-    });
-    const inputs = existing.findAllComponents(quasarStubs.QInput);
-    inputs[0].vm.$emit('update:modelValue', 'Updated');
-    await nextTick();
-    existing.findComponent(BaseModal).vm.$emit('submit');
-    await nextTick();
-    expect(existing.emitted('submit')?.[0]?.[0]).toMatchObject({
-      id: 'mod1',
-      name: 'Updated',
-    });
-    existing.findComponent(BaseModal).vm.$emit('delete');
-    expect(existing.emitted('delete')?.[0]).toEqual(['mod1']);
-    wrapper.unmount();
-    existing.unmount();
   });
 
   it('PlaylistEditor resets on open, cancels and updates modal state', async () => {

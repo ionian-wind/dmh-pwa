@@ -6,7 +6,6 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import CharactersView from '@/characters/CharactersView.vue';
 import MonstersView from '@/monsters/MonstersView.vue';
 import PartiesView from '@/parties/PartiesView.vue';
-import ModulesView from '@/modules/ModulesView.vue';
 import NotesView from '@/notes/NotesView.vue';
 import TimersView from '@/timers/TimersView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
@@ -14,16 +13,10 @@ import EncountersView from '@/encounters/EncountersView.vue';
 import { useCharacterStore } from '@/stores/characters';
 import { useMonsterStore } from '@/stores/monsters';
 import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
 import { useNoteStore } from '@/stores/notes';
 import { useTimerStore } from '@/stores/timers';
 import { useEncounterStore } from '@/stores/encounters';
 import { confirm } from '@/dialogs';
-import {
-  importModuleFromZip,
-  parseModuleZip,
-  validateModuleImport,
-} from '@/utils/moduleImportExport';
 import { resetMockStores } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
@@ -43,12 +36,6 @@ vi.mock('@/notes/NoteCanvas.vue', async () => {
     }),
   };
 });
-
-vi.mock('@/utils/moduleImportExport', () => ({
-  parseModuleZip: vi.fn(),
-  validateModuleImport: vi.fn(),
-  importModuleFromZip: vi.fn(),
-}));
 
 const BaseListViewStub = defineComponent({
   name: 'BaseListView',
@@ -95,7 +82,6 @@ function makeRouter() {
       { path: '/characters/:id', component: { render: () => h('div') } },
       { path: '/monsters/:id', component: { render: () => h('div') } },
       { path: '/parties/:id', component: { render: () => h('div') } },
-      { path: '/modules/:id', component: { render: () => h('div') } },
       { path: '/notes', component: { render: () => h('div') } },
       { path: '/notes/:id', component: { render: () => h('div') } },
       { path: '/encounters/:id', component: { render: () => h('div') } },
@@ -115,7 +101,6 @@ async function mountView(component: any, path = '/') {
       stubs: {
         BaseListView: BaseListViewStub,
         PartySelector: PartySelectorStub,
-        ImportValidationModal: true,
       },
     },
   });
@@ -222,38 +207,6 @@ describe('list views', () => {
     expect(store.update).toHaveBeenCalled();
     expect(store.create).toHaveBeenCalledTimes(2);
     expect(store.remove).toHaveBeenCalledWith('p1');
-    wrapper.unmount();
-  });
-
-  it('handles module card actions, copy resets the note tree', async () => {
-    const { wrapper, router } = await mountView(ModulesView, '/');
-    const store = useModuleStore();
-    const create = vi.spyOn(store, 'create').mockResolvedValue({} as any);
-    vi.spyOn(store, 'update').mockResolvedValue({} as any);
-    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
-
-    const moduleItem = {
-      id: 'mod1',
-      name: 'Campaign',
-      noteTree: [{ id: 'note-1' }],
-    } as any;
-    const card = (list(wrapper).props('cardProps') as any)(moduleItem);
-    card.onView();
-    await flushPromises();
-    expect(router.currentRoute.value.path).toBe('/modules/mod1');
-
-    list(wrapper).vm.$emit('submit', moduleItem);
-    list(wrapper).vm.$emit('submit', { name: 'New module' });
-    list(wrapper).vm.$emit('copy', moduleItem);
-    await flushPromises();
-    expect(store.update).toHaveBeenCalled();
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Campaign', noteTree: [] }),
-    );
-    await expect(card.onDelete()).resolves.toBe(true);
-    expect(store.remove).toHaveBeenCalledWith('mod1');
-    vi.mocked(confirm).mockResolvedValue(false);
-    await expect(card.onDelete()).resolves.toBe(false);
     wrapper.unmount();
   });
 
@@ -406,54 +359,6 @@ describe('list views', () => {
     expect(store.remove).toHaveBeenCalledWith('e1');
     vi.mocked(confirm).mockResolvedValue(false);
     await expect(card.onDelete()).resolves.toBe(false);
-    wrapper.unmount();
-  });
-
-  it('imports modules from a zip and reports success or failure', async () => {
-    const { wrapper } = await mountView(ModulesView, '/');
-    const input = { files: [new File(['zip'], 'module.zip')], value: 'x' };
-    vi.mocked(parseModuleZip).mockResolvedValue({
-      module: { name: 'Imported' },
-      tree: [],
-      notes: [],
-    });
-    vi.mocked(validateModuleImport).mockReturnValue({
-      missingNoteIds: [],
-      orphanedNoteFiles: [],
-      treeMatchesModule: true,
-    });
-    vi.mocked(importModuleFromZip).mockResolvedValue({
-      moduleIds: ['m1'],
-      noteCount: 3,
-    });
-
-    const vm = wrapper.vm as any;
-    await vm.handleModuleImport({ target: input } as any);
-    expect(parseModuleZip).toHaveBeenCalled();
-    expect(validateModuleImport).toHaveBeenCalled();
-    expect(input.value).toBe('');
-
-    await vm.handleImportConfirm();
-    expect(importModuleFromZip).toHaveBeenCalled();
-    expect(wrapper.findComponent(ModulesView).exists()).toBe(true);
-
-    await vm.handleImportCancel();
-
-    vi.mocked(parseModuleZip).mockRejectedValueOnce(new Error('bad zip'));
-    await vm.handleModuleImport({
-      target: { files: [new File(['x'], 'bad.zip')], value: '' },
-    } as any);
-
-    vi.mocked(parseModuleZip).mockResolvedValue({
-      module: {},
-      tree: [],
-      notes: [],
-    });
-    vi.mocked(importModuleFromZip).mockRejectedValueOnce(new Error('write'));
-    await vm.handleModuleImport({
-      target: { files: [new File(['x'], 'module.zip')], value: '' },
-    } as any);
-    await vm.handleImportConfirm();
     wrapper.unmount();
   });
 });

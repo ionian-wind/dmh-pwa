@@ -7,16 +7,13 @@ import { useMonsterStore } from '@/stores/monsters';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
 import type { Encounter, Monster, Combat } from '@/types';
-import type { MapEntityRef } from '@/maps/types';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
-import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
 import {
-  IconAffiliate,
   IconGhost3,
   IconInfoCircle,
   IconSwords,
@@ -218,13 +215,6 @@ const handleViewCombat = (combat: Combat) => {
   router.push(`/combats/${combat.id}`);
 };
 
-const encounterLinks = computed<MapEntityRef[]>(() =>
-  (encounter.value?.moduleIds ?? []).map((id) => ({
-    kind: 'module',
-    id,
-  })),
-);
-
 // Tab configuration
 const tabs = computed(() => [
   {
@@ -244,12 +234,6 @@ const tabs = computed(() => [
     label: t('encounters.tabs.combats'),
     icon: IconSwords,
     badge: encounterCombats.value.length,
-  },
-  {
-    id: 'links',
-    label: t('common.linkedEntities'),
-    icon: IconAffiliate,
-    badge: encounterLinks.value.length || undefined,
   },
 ]);
 
@@ -402,9 +386,6 @@ async function handleEditorDelete() {
             </table>
           </div>
         </div>
-      </template>
-      <template #links>
-        <EntityViewLinks :links="encounterLinks" />
       </template>
       <template #combats>
         <h2>{{ t('encounters.combats.title') }}</h2>

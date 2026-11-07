@@ -55,10 +55,10 @@ describe('entity drag linking UI', () => {
     drag.startDrag({ kind: 'note', id: 'n1', title: 'Note' });
     expect(drag.isDragging.value).toBe(true);
 
-    drag.dropOnKind('module');
+    drag.dropOnKind('location');
     expect(drag.isDragging.value).toBe(false);
     expect(drag.dialogSource.value?.id).toBe('n1');
-    expect(drag.dialogTargetKind.value).toBe('module');
+    expect(drag.dialogTargetKind.value).toBe('location');
     expect(drag.isDialogOpen.value).toBe(true);
 
     drag.closeDialog();
@@ -90,12 +90,11 @@ describe('entity drag linking UI', () => {
     expect(document.body.classList.contains('entity-drag-active')).toBe(true);
 
     const cards = wrapper.findAll('.entity-drag-drop-card');
-    expect(cards).toHaveLength(2);
+    expect(cards).toHaveLength(1);
     expect(wrapper.find('.entity-drag-overlay-title').text()).toBe(
       'Link Note to:',
     );
     expect(cards.map((card) => card.attributes('aria-label'))).toEqual([
-      'Modules',
       'Locations',
     ]);
 
@@ -128,7 +127,7 @@ describe('entity drag linking UI', () => {
     const dialog = wrapper.findComponent(EntityDragLinkDialogStub);
     expect(dialog.props()).toMatchObject({
       source: { kind: 'note', id: 'n1', title: 'Note' },
-      kind: 'module',
+      kind: 'location',
     });
 
     dialog.vm.$emit('close');
@@ -146,7 +145,7 @@ describe('entity drag linking UI', () => {
       },
     });
     await nextTick();
-    expect(wrapper.findAll('.entity-drag-drop-card')).toHaveLength(3);
+    expect(wrapper.findAll('.entity-drag-drop-card')).toHaveLength(2);
 
     await wrapper.find('.entity-drag-overlay').trigger('drop');
     expect(drag.isDragging.value).toBe(false);
@@ -157,7 +156,7 @@ describe('entity drag linking UI', () => {
     const wrapper = mount(EntityDragLinkDialog, {
       props: {
         source: { kind: 'note', id: 'n1', title: 'Note' },
-        kind: 'module',
+        kind: 'location',
       },
       global: {
         stubs: { EntityLinkingDialog: EntityLinkingDialogStub },
@@ -165,12 +164,12 @@ describe('entity drag linking UI', () => {
     });
     await flushPromises();
 
-    expect(relationMocks.loadFor).toHaveBeenCalledWith('note', 'module');
+    expect(relationMocks.loadFor).toHaveBeenCalledWith('note', 'location');
     const dialog = wrapper.findComponent(EntityLinkingDialogStub);
     expect(dialog.props()).toMatchObject({
       isOpen: true,
-      kind: 'module',
-      title: 'Modules',
+      kind: 'location',
+      title: 'Locations',
       linkedIds: ['m1'],
       options: [
         { id: 'm1', label: 'Campaign' },
@@ -180,7 +179,7 @@ describe('entity drag linking UI', () => {
 
     dialog.vm.$emit('add', {
       refs: [
-        { kind: 'module', id: 'm2' },
+        { kind: 'location', id: 'm2' },
         { kind: 'note', id: 'ignored' },
       ],
     });
@@ -188,7 +187,7 @@ describe('entity drag linking UI', () => {
     expect(relationMocks.setLinkedIds).toHaveBeenCalledWith(
       'note',
       'n1',
-      'module',
+      'location',
       ['m2'],
     );
     expect(wrapper.emitted('close')).toHaveLength(1);

@@ -40,7 +40,6 @@
     "characters": "Characters",
     "encounters": "Encounters",
     "combats": "Combats",
-    "modules": "Modules",
     "configuration": "Configuration",
     "settings": "Settings",
     "timers": "Timers",
@@ -58,8 +57,7 @@
       "parties": "Parties",
       "monsters": "Monsters",
       "characters": "Characters",
-      "encounters": "Encounters",
-      "modules": "Modules"
+      "encounters": "Encounters"
     }
   },
   "notes": {
@@ -73,8 +71,7 @@
       "title": "Title",
       "content": "Content",
       "type": "Type",
-      "tags": "Tags",
-      "module": "Module"
+      "tags": "Tags"
     },
     "types": {
       "general": "General",
@@ -93,8 +90,7 @@
     "fields": {
       "name": "Name",
       "description": "Description",
-      "characters": "Characters",
-      "modules": "Modules"
+      "characters": "Characters"
     },
     "linkCharacters": "Link Characters"
   },
@@ -113,8 +109,7 @@
       "hitPoints": "Hit Points",
       "speed": "Speed",
       "challengeRating": "Challenge Rating",
-      "xp": "XP",
-      "module": "Module"
+      "xp": "XP"
     },
     "sizes": {
       "tiny": "Tiny",
@@ -152,7 +147,6 @@
       "hitPoints": "Hit Points",
       "armorClass": "Armor Class",
       "speed": "Speed",
-      "module": "Module",
       "party": "Party"
     },
     "stats": {
@@ -184,8 +178,7 @@
       "difficulty": "Difficulty",
       "level": "Level",
       "monsters": "Monsters",
-      "xp": "XP",
-      "module": "Module"
+      "xp": "XP"
     },
     "difficulties": {
       "easy": "Easy",
@@ -226,18 +219,6 @@
       "none": "No combats yet"
     }
   },
-  "modules": {
-    "title": "Modules",
-    "create": "Create Module",
-    "edit": "Edit Module",
-    "delete": "Delete Module",
-    "namePlaceholder": "Enter module name",
-    "descriptionPlaceholder": "Enter module description",
-    "fields": {
-      "name": "Name",
-      "description": "Description"
-    }
-  },
   "common": {
     "mainEditor": "Main editor",
     "tableOfContents": "Table of Contents",
@@ -247,8 +228,6 @@
     "empty": "No items found",
     "emptyNotes": "No notes yet. Create your first note to get started!",
     "emptyMonsters": "No monsters yet. Create your first monster to get started!",
-    "emptyModules": "No modules yet. Create your first module to get started!",
-    "noModules": "No Modules",
     "emptyParties": "No parties yet. Create your first party to get started!",
     "emptyEncounters": "No encounters yet. Create your first encounter to get started!",
     "emptyCharacters": "No characters yet. Create your first character to get started!",
@@ -256,10 +235,6 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Operation completed successfully",
-    "noModule": "Without Module",
-    "unknownModule": "Unknown Module",
-    "anyModule": "Any Module",
-    "currentModule": "Current Module",
     "unknownParty": "Unknown Party",
     "noDescription": "No description provided",
     "linked": "Linked",
@@ -348,8 +323,6 @@
     "initiative": "Initiative",
     "quantity": "Quantity",
     "done": "Done",
-    "module": "Module",
-    "moduleRequired": "Module is required",
     "dropAudioFiles": "Drop audio files here",
     "overview": "Overview",
     "noLinkedEntities": "No linked entities.",
@@ -359,7 +332,6 @@
     "linkEntityTo": "Link {type} to:",
     "entityAccusative": {
       "note": "Note",
-      "module": "Module",
       "party": "Party",
       "monster": "Monster",
       "encounter": "Encounter",
@@ -403,8 +375,7 @@
     "parties": "Parties",
     "monsters": "Monsters",
     "characters": "Characters",
-    "encounters": "Encounters",
-    "modules": "Modules"
+    "encounters": "Encounters"
   },
   "combat": {
     "encounter": "Encounter",
@@ -434,7 +405,6 @@
     }
   },
   "encounterCard": {
-    "module": "Module:",
     "monsters": "Monsters:"
   },
   "partyView": {
@@ -446,19 +416,6 @@
     "linked": "Linked",
     "unlink": "Unlink"
   },
-  "moduleView": {
-    "book": "Book",
-    "bookTree": "Book Tree",
-    "playlists": "Playlists",
-    "noDocument": "No document structure defined for this module.",
-    "noParties": "No parties in this module",
-    "noMonsters": "No monsters in this module",
-    "noEncounters": "No encounters in this module",
-    "noNotes": "No notes in this module",
-    "noPlaylists": "No playlists in this module",
-    "noMaps": "No maps in this module",
-    "noLocations": "No locations in this module"
-  },
   "playlist": {
     "title": "Playlist",
     "none": "No playlists found. Please create one first.",
@@ -466,8 +423,7 @@
     "namePlaceholder": "Playlist name",
     "fields": {
       "name": "Name",
-      "description": "Description",
-      "modules": "Modules"
+      "description": "Description"
     }
   },
   "noteTypeSelector": {
@@ -481,10 +437,6 @@
     "add": "Add",
     "cancel": "Cancel"
   },
-  "moduleTreeNode": {
-    "untitled": "(untitled)",
-    "addNote": "Add note..."
-  },
   "editor": {
     "basicInformation": "Basic Information",
     "content": "Content",
@@ -493,7 +445,6 @@
     "title": "Title",
     "titleRequired": "Title is required",
     "contentPlaceholder": "Enter content here...",
-    "module": "Module",
     "type": "Type",
     "tags": "Tags"
   },
@@ -568,13 +519,10 @@
   "backup": {
     "backup": "Backup",
     "restore": "Restore",
-    "importModule": "Import Module",
     "backupCompleted": "Backup completed successfully.",
     "backupFailed": "Backup failed: ",
     "restoreCompleted": "Restore completed successfully.",
-    "restoreFailed": "Restore failed: ",
-    "moduleImported": "Module imported successfully.",
-    "moduleImportFailed": "Module import failed: "
+    "restoreFailed": "Restore failed: "
   },
   "markdownEditor": {
     "rawMode": "Raw Markdown",
@@ -675,16 +623,6 @@
     "install": "Install",
     "notNow": "Not now",
     "installHelp": "Installation help"
-  },
-  "importValidation": {
-    "title": "Import Validation Results",
-    "treeMatches": "Tree structure in module.json matches tree.json",
-    "treeMismatch": "Tree structure in module.json does not match tree.json",
-    "missingNoteIds": "Missing noteIds in notes folder:",
-    "andMore": "...and {count} more",
-    "allNoteIdsPresent": "All noteIds in tree have corresponding note files",
-    "orphanedNoteFiles": "Orphaned note files (not referenced in tree):",
-    "allNoteFilesReferenced": "All note files are referenced in the tree"
   },
   "calculator": {
     "calculator": "Calculator",
@@ -895,7 +833,7 @@
     "noAmbiencesInScene": "No ambiences in this scene",
     "noOneShotsInScene": "No one-shots in this scene",
     "noSceneLinks": "No linked scenes",
-    "sceneLinksHint": "Link scenes from a location, module, encounter or character.",
+    "sceneLinksHint": "Link scenes from a location, monster, encounter or character.",
     "sceneMain": "Main",
     "ambiences": "Ambiences",
     "description": "Description",

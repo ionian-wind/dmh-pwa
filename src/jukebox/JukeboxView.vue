@@ -90,9 +90,7 @@ const {
 } = useJukeboxBulkSelection();
 
 const isBulkTrackEditorOpen = ref(false);
-const isBulkPlaylistEditorOpen = ref(false);
 const bulkTrackLinks = ref<MapEntityRef[]>([]);
-const bulkPlaylistLinks = ref<MapEntityRef[]>([]);
 
 function playTrackFromPlaylist(track: JukeboxTrack) {
   // When a track is played, update configStore to match the current selected playlist
@@ -189,36 +187,6 @@ async function applyBulkTrackLinks(links: MapEntityRef[]) {
   clearSelection();
 }
 
-function openBulkPlaylistEditor() {
-  const moduleIds = new Set<string>();
-  for (const playlist of playlistsStore.items.value) {
-    if (!selectedPlaylistIds.value.has(playlist.id)) continue;
-    for (const moduleId of playlist.moduleIds ?? []) {
-      moduleIds.add(moduleId);
-    }
-  }
-  bulkPlaylistLinks.value = [...moduleIds].map((id) => ({
-    kind: 'module',
-    id,
-  }));
-  isBulkPlaylistEditorOpen.value = true;
-}
-
-async function applyBulkPlaylistLinks(links: MapEntityRef[]) {
-  const moduleIds = links
-    .filter((link) => link.kind === 'module')
-    .map((link) => link.id);
-
-  await Promise.all(
-    [...selectedPlaylistIds.value].map((playlistId) =>
-      playlistsStore.update(playlistId, { moduleIds }),
-    ),
-  );
-
-  isBulkPlaylistEditorOpen.value = false;
-  clearSelection();
-}
-
 async function deleteSelectedItems() {
   const total = selectedTrackIds.value.size + selectedPlaylistIds.value.size;
   if (total === 0) return;
@@ -252,15 +220,7 @@ async function deleteSelectedItems() {
 const bulkHeaderButtons = computed(() => {
   if (!isEditMode.value || !hasSelection.value) return [];
 
-  return [
-    {
-      icon: IconPencil,
-      color: 'primary',
-      title: 'common.edit',
-      event: hasSelectedTracks.value
-        ? openBulkTrackEditor
-        : openBulkPlaylistEditor,
-    },
+  const buttons: any[] = [
     {
       icon: IconTrash,
       color: 'negative',
@@ -268,13 +228,23 @@ const bulkHeaderButtons = computed(() => {
       event: deleteSelectedItems,
     },
   ];
+
+  if (hasSelectedTracks.value) {
+    buttons.unshift({
+      icon: IconPencil,
+      color: 'primary',
+      title: 'common.edit',
+      event: openBulkTrackEditor,
+    });
+  }
+
+  return buttons;
 });
 
 watch(isEditMode, (enabled) => {
   if (enabled) return;
   clearSelection();
   isBulkTrackEditorOpen.value = false;
-  isBulkPlaylistEditorOpen.value = false;
 });
 
 watch(selectedPlaylistId, () => {
@@ -599,13 +569,6 @@ onBeforeUnmount(() => {
         kind="playlist"
         :links="bulkTrackLinks"
         @submit="applyBulkTrackLinks"
-      />
-      <BulkLinkingModal
-        v-model="isBulkPlaylistEditorOpen"
-        :title="t('jukebox.bulkEditPlaylists')"
-        kind="module"
-        :links="bulkPlaylistLinks"
-        @submit="applyBulkPlaylistLinks"
       />
     </BaseListView>
   </div>

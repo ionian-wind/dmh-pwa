@@ -11,15 +11,12 @@ import type { TocItem } from '@/components/common/milkdown/plugins/toc';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import { ensureBlockAnchors } from '@/utils/noteAnchors';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
-import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
-import type { MapEntityRef } from '@/maps/types';
 import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
@@ -122,7 +119,6 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
   clone: (source) => ({
     ...source,
     tags: [...(source.tags ?? [])],
-    moduleIds: [...(source.moduleIds ?? [])],
     contentType: source.contentType ?? 'text',
     typeId: source.typeId ?? null,
   }),
@@ -132,8 +128,7 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
     draft.content !== source.content ||
     (draft.typeId ?? null) !== (source.typeId ?? null) ||
     draft.hidden !== source.hidden ||
-    !arraysEqual(draft.tags, source.tags) ||
-    !arraysEqual(draft.moduleIds, source.moduleIds),
+    !arraysEqual(draft.tags, source.tags),
   extraDirty: () => canvasDirty.value,
   onEnter: () => {
     validationError.value = null;
@@ -150,12 +145,14 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
 
 const tabs = computed(() =>
   editState.isEditMode
-    ? editorTabs.value.map((tab) => ({
-        id: tab.name,
-        label: tab.title,
-        icon: tab.icon,
-      }))
-    : viewTabs.value,
+    ? editorTabs.value
+        .filter((tab) => tab.name !== 'links')
+        .map((tab) => ({
+          id: tab.name,
+          label: tab.title,
+          icon: tab.icon,
+        }))
+    : viewTabs.value.filter((tab) => tab.id !== 'links'),
 );
 
 function handleMarkdownContentChange(newContent: string) {
@@ -190,23 +187,6 @@ const draftContent = computed({
   },
 });
 
-const linkedModules = computed<MapEntityRef[]>(() =>
-  (editState.draft?.moduleIds ?? []).map((id) => ({
-    kind: 'module',
-    id,
-  })),
-);
-
-const noteLinks = computed<MapEntityRef[]>(() =>
-  (note.value?.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
-);
-
-function setLinkedModules(links: MapEntityRef[]) {
-  if (editState.draft) {
-    editState.draft.moduleIds = links.map((link) => link.id);
-  }
-}
-
 function arraysEqual(a: string[] = [], b: string[] = []) {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }
@@ -221,7 +201,6 @@ function findMissingMentions(draft: Note): string[] {
       case 'note':
         exists = !!noteStore.getById(mention.id);
         break;
-      case 'module':
       case 'party':
       case 'monster':
       case 'encounter':
@@ -275,7 +254,6 @@ async function persistDraft(draft: Note): Promise<boolean> {
           : ensureBlockAnchors(draft.content ?? ''),
       contentType: draft.contentType,
       tags: draft.tags,
-      moduleIds: draft.moduleIds,
       typeId: draft.typeId,
       preview: draft.preview,
     });
@@ -402,16 +380,6 @@ onBeforeUnmount(() => {
           :tags="editState.draft?.tags ?? []"
         />
       </EntityInlineEditor>
-    </template>
-
-    <template #links>
-      <EntityViewLinks v-if="!editState.isEditMode" :links="noteLinks" />
-      <EntitiesLinking
-        v-else
-        kind="module"
-        :model-value="linkedModules"
-        @update:model-value="setLinkedModules"
-      />
     </template>
   </BaseEntityTabView>
 </template>

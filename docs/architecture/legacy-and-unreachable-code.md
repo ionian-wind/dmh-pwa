@@ -10,7 +10,6 @@ the public application flow.
 | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/utils/dice-roller/plugins/dice/ast.ts`                                 | Legacy CST-to-AST mapper retained for the old dice-roller engine. Most remaining paths are fallbacks for CST shapes the current parser never emits. |
 | `src/utils/dice-roller/core/index.ts`                                       | Legacy dice-roller core. The probability calculator is the maintained evaluation path.                                                              |
-| `src/components/Tree/**`                                                    | Generated/copied tree components from `@vue-dnd-kit/components`; they are vendored UI primitives rather than project code.                          |
 | `src/components/common/milkdown/**`                                         | Milkdown editor integration wrappers.                                                                                                               |
 | `src/components/common/MarkdownEditor.vue`                                  | Integration wrapper that selects the Markdown/Milkdown editor implementation.                                                                       |
 | `src/components/common/MonacoEditor.vue`, `src/components/common/monaco.ts` | Monaco editor integration and its module loader.                                                                                                    |
@@ -20,7 +19,6 @@ the public application flow.
 | `src/utils/dice-probability-calculator/tokens.ts`                           | Chevrotain token definitions; branch paths belong to the lexer library.                                                                             |
 | `src/components/common/entityLinking/useMapEntityCatalog.ts`                | Adapter over the entity stores; behavior is covered through its consumers.                                                                          |
 | `src/features/**`, `src/composables/useFeatureStores.ts`                    | Build-time feature wiring; exercised through the production build matrix instead of unit coverage.                                                  |
-| `src/modules/ModuleDocumentTree.vue`                                        | Tree integration layer.                                                                                                                             |
 | `src/App.vue`, `src/main.ts`, `src/router.ts`                               | Application shell, bootstrap and route table.                                                                                                       |
 
 Generated output (`dist/`, `dev-dist/`, service workers), standalone scripts and

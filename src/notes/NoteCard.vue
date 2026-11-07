@@ -13,7 +13,7 @@ import {
 import { debug } from '@/utils/debug';
 import { downloadNote } from '@/notes/downloadNote';
 
-const props = defineProps<{ note: Note; moduleName?: string }>();
+const props = defineProps<{ note: Note }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
 
 const contentRef = ref<HTMLElement | null>(null);

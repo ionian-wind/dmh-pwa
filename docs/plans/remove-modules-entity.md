@@ -1,0 +1,37 @@
+# Remove the Modules entity
+
+Status: completed
+
+The Modules entity was removed completely so the concept can be rethought. This
+removes module code, module links on other entities, module data, schemas,
+migrations, import/export and backup support.
+
+## Scope
+
+- [x] Remove the Modules feature and standalone module code
+- [x] Remove module links from notes, characters, parties, monsters and encounters
+- [x] Remove module links from playlists, maps, locations and ambient sound scenes
+- [x] Remove module link kinds from drag-and-drop, mentions and entity creation
+- [x] Remove module storage, schemas, migrations and backup support
+- [x] Purge stored module data and `moduleIds` fields on upgrade
+- [x] Remove module strings from both locales and update module docs
+- [x] Update tests, run type checks, full suite and production build
+
+## Notes
+
+- Module document notes used `hidden`. The field stays as a generic note flag;
+  only the module-specific `setHidden` path is removed.
+- Existing databases get migration 12 (`remove_module_data`) that strips
+  `moduleIds`, removes `kind: 'module'` map/mention references, deletes
+  module-owned bookmarks and purges module scene links from local storage. The
+  `modules` store is dropped by the Dexie schema version bump to 13.
+- Backups no longer include `modules`, and restoring an older backup ignores
+  its `modules` payload.
+
+## Verification
+
+- `npm run types-check` passes.
+- Full suite: 192 files / 1534 tests pass.
+- `npm run build` passes; no module routes, stores or document code remain in
+  `dist`.
+- `npm run features:verify`: all 14 build configurations pass.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An encounter is a planned fight: a named, module-scoped set of monsters with
+An encounter is a planned fight: a named set of monsters with
 quantities. It is the template from which a combat is created.
 
 ## Key files
@@ -27,18 +27,17 @@ interface Encounter {
   name: string;
   description?: string;
   monsters: Record<string, number>; // monsterId -> count
-  moduleIds: string[];
   notes?: string;
 }
 ```
 
-Schema requires `name`, `monsters`, `moduleIds`, timestamps; monster counts are
+Schema requires `name`, `monsters`, timestamps; monster counts are
 constrained to 1..20. `description` and `notes` are allowed but not listed in
 the schema.
 
 ## List page (`EncountersView.vue`)
 
-- Loads encounters and modules.
+- Loads encounters.
 - `BaseListView` with `EncounterCard`/`EncounterEditor`.
 - Create/edit/delete/copy.
 - Delete confirmation uses `t('common.', ...)` — a missing key.
@@ -52,7 +51,6 @@ the schema.
 
 ## Card (`EncounterCard.vue`)
 
-- Module name lookup by `moduleIds` (joined for display).
 - Monster summary as `"<kinds> (<total>)"`.
 - Run-combat button in the card action slot.
 - Emits `view`, `edit`, `delete`, `run-combat`, `copy`.
@@ -60,10 +58,7 @@ the schema.
 ## Editor
 
 - Name (required).
-- The module link is edited in the **Linked entities** tab through an
-  `EntitiesLinking` block.
 - Description and notes.
-- Validation requires both name and at least one real `moduleId` in `moduleIds`.
 - `handleSubmit` emits and then calls `closeEditor`, which resets the form and
   emits `cancel`. Parents also close on submit; double-close is harmless but
   means the reset happens before the parent reads the emitted object (the
@@ -82,10 +77,10 @@ the emitted object for later use.
 
 ## Detail page (`EncounterView.vue`)
 
-Tabs: Information, Monsters, Combats, Linked entities (Linked entities is always the rightmost tab).
+Tabs: Information, Monsters, Combats.
 
-- Information: renders `encounter.description` with `v-html` (unsanitized).
-- Linked entities: shows the encounter's module read-only.
+- Information: renders `encounter.description` with `v-html` (sanitized via
+  `sanitizeHtmlContent`).
 - Monsters:
   - Loads all monsters and shows those whose IDs are keys of
     `encounter.monsters`.
@@ -97,8 +92,6 @@ Tabs: Information, Monsters, Combats, Linked entities (Linked entities is always
   status badge, and a view link.
 - Header has a Run Combat button that opens `PartySelector`.
 - Publishes `EncounterViewSidebar` to the right drawer.
-- `#sub` renders the module link; `BaseEntityTabView` forwards `sub` to
-  `BaseEntityView`.
 
 ## Delete behavior
 
@@ -119,7 +112,6 @@ See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 
 ## Relationships
 
-- `encounter.moduleIds` → modules (at least one required).
 - `encounter.monsters` → monster IDs with counts.
 - `combat.encounterId` → encounter.
 - Encounter-generated combats snapshot monster instances at creation.

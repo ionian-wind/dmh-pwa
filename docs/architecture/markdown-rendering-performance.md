@@ -3,10 +3,10 @@
 ## Purpose
 
 Record the phase 4 evaluation of the Milkdown view renderer. The question was
-whether note cards and virtualized module chunks should switch from markdown-it
+whether note cards should switch from markdown-it
 to a static Milkdown renderer for exact view/edit parity.
 
-**Decision:** keep markdown-it for cards and chunks. Detail views continue to
+**Decision:** keep markdown-it for cards. Detail views continue to
 use one read-only Crepe instance per page. The static Milkdown renderer exists
 and is tested, but is not used by the app.
 
@@ -40,7 +40,7 @@ benchmark entry is dev-only and is not included in the production build.
 Scenarios:
 
 - **markdown-it batch** — `parseMarkdown()` plus HTML insertion for the
-  selected documents (the current card/chunk path).
+  selected documents (the current card path).
 - **edit Crepe single** — a full Crepe editor with the largest dataset
   document.
 - **read-only Crepe single** — the same document in the read-only feature set.
@@ -77,13 +77,13 @@ Absolute numbers vary by machine. The relative result is stable:
 - One read-only Crepe instance is acceptable for a detail page, especially
   because the page already imported the editor chunk.
 - A static Milkdown renderer is roughly **5–6× slower** than markdown-it for
-  card/chunk batches.
+  card batches.
 - Mounting one Crepe instance per card would be far worse than either.
 
 ## Consequences
 
 - `MilkdownView` remains the detail-view renderer.
-- `NoteCard` and `ModuleDocumentView` keep `Markdown.vue` / markdown-it.
+- `NoteCard` keeps `Markdown.vue` / markdown-it.
 - `src/components/common/milkdown/staticRenderer.ts` is available for future
   experiments and is covered by `tests/components/staticRenderer.test.ts`.
 - `markdown-it` stays for exports and as the lightweight fallback.

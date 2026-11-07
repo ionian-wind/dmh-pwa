@@ -68,12 +68,10 @@ const { editState, setEditMode, discardDraft } =
     source: character,
     clone: (source) => ({
       ...source,
-      moduleIds: [...(source.moduleIds ?? [])],
     }),
     isDirty: (draft, source) =>
       draft.name !== source.name ||
-      (draft.notes ?? '') !== (source.notes ?? '') ||
-      !arraysEqual(draft.moduleIds, source.moduleIds),
+      (draft.notes ?? '') !== (source.notes ?? ''),
     onEnter: () => {
       validationError.value = null;
     },
@@ -112,9 +110,6 @@ const characterLinks = computed<MapEntityRef[]>(() => {
   const id = character.value?.id;
   if (!id) return [];
   return [
-    ...(editState.draft?.moduleIds ?? character.value?.moduleIds ?? []).map(
-      (moduleId) => ({ kind: 'module' as const, id: moduleId }),
-    ),
     ...relations
       .getLinkedIds('character', id, 'party')
       .map((partyId) => ({ kind: 'party' as const, id: partyId })),
@@ -124,23 +119,11 @@ const characterLinks = computed<MapEntityRef[]>(() => {
   ];
 });
 
-function arraysEqual(a: string[] = [], b: string[] = []) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
 async function setCharacterLinks(
-  kind: 'module' | 'party' | 'location',
+  kind: 'party' | 'location',
   links: MapEntityRef[],
 ) {
   if (!character.value) return;
-  if (kind === 'module') {
-    if (editState.draft) {
-      editState.draft.moduleIds = links
-        .filter((link) => link.kind === 'module')
-        .map((link) => link.id);
-    }
-    return;
-  }
   await relations.setLinkedIds(
     'character',
     character.value.id,
@@ -174,7 +157,6 @@ async function persistDraft(draft: PlayerCharacter): Promise<boolean> {
     await characterStore.update(character.value.id, {
       name: draft.name,
       notes: draft.notes,
-      moduleIds: draft.moduleIds,
     });
   } catch (error) {
     activeTab.value = 'main';
@@ -222,7 +204,7 @@ onMounted(async () => {
   await Promise.all([
     characterStore.load(),
     mentionsStore.load(),
-    featureStores.load(['module', 'party', 'location']),
+    featureStores.load(['party', 'location']),
   ]);
 
   rightDrawer.set({
@@ -285,12 +267,6 @@ onBeforeUnmount(() => {
     <template #links>
       <EntityViewLinks v-if="!editState.isEditMode" :links="characterLinks" />
       <div v-else class="column q-gutter-md">
-        <EntitiesLinking
-          v-if="featureStores.has('module')"
-          kind="module"
-          :model-value="characterLinks"
-          @update:model-value="(links) => setCharacterLinks('module', links)"
-        />
         <EntitiesLinking
           v-if="featureStores.has('party')"
           kind="party"

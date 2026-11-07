@@ -247,12 +247,12 @@ describe('LocationView', () => {
 
     const linkBlocks = wrapper.findAllComponents(EntitiesLinkingStub);
     expect(linkBlocks.length).toBeGreaterThan(0);
-    const moduleLinks = linkBlocks.find(
-      (block) => block.props('kind') === 'module',
+    const noteLinks = linkBlocks.find(
+      (block) => block.props('kind') === 'note',
     )!;
-    moduleLinks.vm.$emit('update:modelValue', [
+    noteLinks.vm.$emit('update:modelValue', [
       { kind: 'note', id: 'note-1' },
-      { kind: 'module', id: 'module-2' },
+      { kind: 'note', id: 'note-2' },
     ]);
     await nextTick();
 
@@ -276,7 +276,7 @@ describe('LocationView', () => {
         description: 'Updated description',
         entities: expect.arrayContaining([
           { kind: 'note', id: 'note-1' },
-          { kind: 'module', id: 'module-2' },
+          { kind: 'note', id: 'note-2' },
         ]),
       }),
     );

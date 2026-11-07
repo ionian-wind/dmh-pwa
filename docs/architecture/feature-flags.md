@@ -12,7 +12,6 @@ at build time; there is no runtime switching.
 | Parties                | `VITE_FEATURE_PARTIES`     | characters                    |
 | Monsters               | `VITE_FEATURE_MONSTERS`    | —                             |
 | Encounters + combat    | `VITE_FEATURE_ENCOUNTERS`  | monsters, characters, parties |
-| Modules                | `VITE_FEATURE_MODULES`     | notes, ambient                |
 | Maps/locations         | `VITE_FEATURE_MAPS`        | —                             |
 | Jukebox                | `VITE_FEATURE_JUKEBOX`     | —                             |
 | Ambient sound          | `VITE_FEATURE_AMBIENT`     | —                             |
@@ -52,7 +51,7 @@ emitted.
 
 Cross-feature surfaces use `featureLinkKinds` from `virtual:feature-links` and
 `useFeatureStores()` instead of statically importing every domain store. This
-keeps mentions, drag targets, entity linking, module views and note validation
+keeps mentions, drag targets, entity linking and note validation
 working with whatever subset is enabled.
 
 ## Data and backup

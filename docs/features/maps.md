@@ -26,7 +26,7 @@ interface MapLocation extends WithMetadata {
 ```
 
 - `map.fileId` references a generic `StoredFile` in the `files` store.
-- `entities` links the location to modules and other entities.
+- `entities` links the location to other entities.
 - `map.layers` organize markers and areas. The base layer always exists.
 - `map.markers` are placed at image-pixel coordinates `(x, y)`.
 - `map.areas` are drawn shapes stored with the location.
@@ -72,7 +72,7 @@ detail page has **View**, **Map**, **Backlinks** and **Linked entities** tabs.
 View uses the shared inline view/edit experience and renders the description as
 Markdown; Map renders the location's image, layers, markers and areas;
 Backlinks lists markers and areas from other locations that point at this
-location; Linked entities shows notes, modules, parties, monsters, encounters,
+location; Linked entities shows notes, parties, monsters, encounters,
 characters and playlists. In edit mode the linked entities are editable, and
 the same location-level edit mode is shared with the Map tab.
 
@@ -125,7 +125,7 @@ interface MapMarker {
 - Placing a marker: choose **Add marker**, then click the map. The marker editor
   opens with the clicked image coordinates.
 - A marker can link to one location and any number of other entities (notes,
-  modules, monsters, encounters, characters). Parties are not available as
+  monsters, encounters, characters). Parties are not available as
   marker links.
 - Icons are optional; new markers start with no icon.
 - Marker icons support both RPG Awesome (`ra-castle-emblem`) and Font Awesome
@@ -165,7 +165,7 @@ interface MapArea {
 - Areas render as semi-transparent fills with a stronger stroke on hover.
 - Clicking an area opens the area editor.
 - Each area supports title, description, optional RPG Awesome icon, colour,
-  one optional location, and linked entities. Areas can link to notes, modules,
+  one optional location, and linked entities. Areas can link to notes,
   monsters, encounters and characters, but not to parties, other areas or
   markers.
 - The area list is shown in the right sidebar **Areas** tab and supports
@@ -257,7 +257,7 @@ A location detail page has four header tabs:
 - **Backlinks** — markers and areas from other locations whose `locationId`
   points at this location, grouped by their owning location. The tab uses
   `IconMapPinned` and is hidden in edit mode.
-- **Linked entities** — modules and other linked entities. In edit mode every
+- **Linked entities** — linked entities. In edit mode every
   supported kind is editable through `EntitiesLinking`.
 
 Outside the Map tab the right sidebar shows the Scenes content with the shared
@@ -336,7 +336,6 @@ Map file helpers:
 ```ts
 type MapEntityKind =
   | 'note'
-  | 'module'
   | 'party'
   | 'monster'
   | 'encounter'

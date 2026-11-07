@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
 import { alert } from '@/dialogs';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
-import type { MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -26,20 +23,10 @@ const editedEncounter = ref<EncounterFormData>({
   name: '',
   description: '',
   monsters: {},
-  moduleIds: [],
   notes: '',
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
-const editorTabs = useEntityEditorTabs();
-
-const linkedModules = computed<MapEntityRef[]>(() =>
-  editedEncounter.value.moduleIds.map((id) => ({ kind: 'module', id })),
-);
-
-function setLinkedModules(links: MapEntityRef[]) {
-  editedEncounter.value.moduleIds = links.map((link) => link.id);
-}
 
 const { t } = useI18n();
 
@@ -54,7 +41,6 @@ watch(
         name: '',
         description: '',
         monsters: {},
-        moduleIds: [],
         notes: '',
       };
     }
@@ -67,7 +53,6 @@ const resetForm = () => {
     name: '',
     description: '',
     monsters: {},
-    moduleIds: [],
     notes: '',
   };
 };
@@ -75,11 +60,6 @@ const resetForm = () => {
 const handleSubmit = async () => {
   if (!editedEncounter.value.name) {
     await alert(t('common.nameRequired'));
-    return;
-  }
-
-  if (editedEncounter.value.moduleIds.length === 0) {
-    await alert(t('common.moduleRequired'));
     return;
   }
 
@@ -123,7 +103,6 @@ function handleDelete() {
     :showDelete="isEditing"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
-    :tabs="editorTabs"
     modalId="encounter-editor-modal"
     @submit="handleSubmit"
     @delete="handleDelete"
@@ -168,14 +147,6 @@ function handleDelete() {
           />
         </div>
       </div>
-    </template>
-
-    <template #links>
-      <EntitiesLinking
-        kind="module"
-        :model-value="linkedModules"
-        @update:model-value="setLinkedModules"
-      />
     </template>
   </BaseModal>
 </template>

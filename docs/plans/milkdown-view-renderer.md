@@ -21,7 +21,6 @@ and append `— done` plus the commit/date when a task is complete.
 | Canonical content format       | Markdown; no stored HTML snapshots                                      |
 | Detail-view renderer           | Read-only Milkdown/Crepe                                                |
 | Note-card renderer             | Keep markdown-it; static Milkdown measured ~5–6× slower                 |
-| Module document chunks         | Keep markdown-it; static renderer evaluated but not adopted             |
 | Crepe feature set in view      | Same schema-producing features; disable only UI-only features           |
 | Task checkbox toggling in view | Patch the matching Markdown source line, then emit updated Markdown     |
 | Mention kinds                  | Resolve from `featureLinkKinds`; disabled kinds must not open           |
@@ -34,8 +33,6 @@ and append `— done` plus the commit/date when a task is complete.
 
 - `NoteCard.vue` renders all notes in a masonry grid with `v-for`. One Crepe
   instance per card would be too expensive.
-- `ModuleDocumentView.vue` renders virtualized chunks. A single static
-  renderer is a better fit than one editor instance per visible chunk.
 - The existing tag/mention popup plugins use module-level singletons. A
   read-only view must not register those popup triggers.
 
@@ -55,7 +52,7 @@ and append `— done` plus the commit/date when a task is complete.
 
 ### Out of scope (phase 1)
 
-- Replacing `NoteCard.vue` or `ModuleDocumentView.vue`.
+- Replacing `NoteCard.vue`.
 - Removing `markdown-it` or `markdownParser.ts`.
 - Changing stored Markdown, IndexedDB schemas, migrations or backups.
 - Redesigning the editor.
@@ -78,7 +75,7 @@ MarkdownView.vue (new, read-only)
             └─ headingAnchorFeature
 
 Markdown.vue (unchanged in phase 1)
-  └─ markdownParser.ts (cards, module chunks, exports)
+  └─ markdownParser.ts (cards, exports)
 ```
 
 Planned files:
@@ -106,7 +103,7 @@ Planned files:
 ### Phase 0 — prerequisites and shared behavior
 
 - [x] `MDV-001` Inventory every `Markdown.vue` consumer — done. Detail views
-      use `MilkdownView`; `NoteCard` and `ModuleDocumentView` keep `Markdown`.
+      use `MilkdownView`; `NoteCard` keeps `Markdown`.
 - [x] `MDV-002` Replace hardcoded mention kinds in `mention.ts` with
       `featureLinkKinds` — done. The kind regex now accepts any `kind://id` and
       enabled kinds resolve their route from the feature catalog. The `map` /
@@ -156,8 +153,7 @@ Planned files:
 - [x] `MDV-023` Use `MilkdownView` in `CharacterView.vue` — done.
 - [x] `MDV-024` Use `MilkdownView` in `LocationView.vue` — done.
 - [x] `MDV-025` Use `MilkdownView` in `EntityMainContent.vue` — done.
-- [x] `MDV-026` Keep `Markdown` in `NoteCard.vue` and
-      `ModuleDocumentView.vue` — done. Cards and virtualized chunks stay on
+- [x] `MDV-026` Keep `Markdown` in `NoteCard.vue` — done. Cards stay on
       markdown-it.
 - [x] `MDV-027` Remove or scope old `.markdown-content` styles — done. The
       unused NoteView overrides were removed.
@@ -199,7 +195,7 @@ but the benchmark does not justify replacing markdown-it for cards or chunks.
       renderer normalizes mention links and post-processes tag links and
       external-link attributes.
 - [x] `MDV-043` Decide whether to keep markdown-it — done. Keep it for note
-      cards, virtualized module chunks, exports and legacy fallback.
+      cards, exports and legacy fallback.
 - [x] `MDV-044` Measure list and virtual-scroll performance — done with
       `markdown-dataset` via `npm run perf:markdown`. See
       [`../architecture/markdown-rendering-performance.md`](../architecture/markdown-rendering-performance.md).
@@ -216,7 +212,7 @@ but the benchmark does not justify replacing markdown-it for cards or chunks.
   Markdown.
 - `{#kind-id}` headings still produce usable anchors.
 - Disabled feature kinds cannot be opened from rendered content.
-- Note cards and module chunks keep their current performance profile.
+- Note cards keep their current performance profile.
 - No data schema, migration or backup changes.
 - `types-check`, targeted tests and the production build pass.
 
@@ -230,9 +226,7 @@ but the benchmark does not justify replacing markdown-it for cards or chunks.
 3. Click entity mentions with modals enabled and disabled.
 4. Click a tag link and confirm the notes list filters by that tag.
 5. Toggle a task item from the view and confirm the stored Markdown changed.
-6. Open a module document and confirm anchors still scroll and heading URLs
-   still work.
-7. Disable a feature in a test build and confirm its links in existing content
+6. Disable a feature in a test build and confirm its links in existing content
    remain non-interactive.
 
 ---

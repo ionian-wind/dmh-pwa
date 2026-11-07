@@ -57,18 +57,6 @@ export const FEATURES = [
     ],
   },
   {
-    id: 'modules',
-    envKey: 'VITE_FEATURE_MODULES',
-    requires: ['notes', 'ambient'],
-    integration: '@/features/modules/integration',
-    ownership: [
-      'src/modules/',
-      'src/stores/modules.ts',
-      'src/components/Tree/',
-      'src/schemas/module.schema.json',
-    ],
-  },
-  {
     id: 'maps',
     envKey: 'VITE_FEATURE_MAPS',
     requires: [],

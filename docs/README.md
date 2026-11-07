@@ -7,7 +7,7 @@
 ## What this project is
 
 **Owlbear's Dungeon Master Helper** (`dmh-pwa`) is a local-first Progressive
-Web App for running tabletop RPG sessions. It stores notes, modules, characters,
+Web App for running tabletop RPG sessions. It stores notes, characters,
 parties, monsters, encounters, combats, timers, and a local music jukebox in the
 browser. There is no server and no account system: all user data lives in
 IndexedDB, with a small amount of configuration in `localStorage`.
@@ -44,11 +44,9 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | Document                                                                                         | Covers                                                                   |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | [features/notes.md](features/notes.md)                                                           | Note list, editor, detail page, tags, hidden notes                       |
-| [features/modules-and-documents.md](features/modules-and-documents.md)                           | Modules, document tree, book rendering, TOC, bookmarks                   |
-| [features/module-import-export.md](features/module-import-export.md)                             | Module ZIP format, validation, import, export                            |
 | [features/characters.md](features/characters.md)                                                 | Player characters                                                        |
 | [features/parties.md](features/parties.md)                                                       | Parties and character membership                                         |
-| [features/monsters.md](features/monsters.md)                                                     | Monsters and module membership                                           |
+| [features/monsters.md](features/monsters.md)                                                     | Monsters                                                                 |
 | [features/encounters.md](features/encounters.md)                                                 | Encounter definitions and monster rosters                                |
 | [features/combat.md](features/combat.md)                                                         | Combat lifecycle, initiative, turns                                      |
 | [features/timers.md](features/timers.md)                                                         | Countdown timers and global timer loop                                   |
@@ -115,8 +113,8 @@ ideas that may never be implemented.
   (`useStore()` in `src/utils/storage.ts`).
 - **Base store** = the shared CRUD wrapper around one IndexedDB object store.
 - **Entity** = a persisted record with `id`, `createdAt`, `updatedAt`.
-- **Document note** = a note with `hidden === true`, used as a node in a
-  module's `noteTree` and rendered in the module "Book" tab.
+- **Hidden note** = a note with `hidden === true`, excluded from the normal
+  notes list.
 - A code path described as "not wired" exists in the repository but is never
   reached by the running application.
 

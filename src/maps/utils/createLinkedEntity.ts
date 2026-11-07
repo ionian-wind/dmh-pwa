@@ -1,6 +1,5 @@
 import { useCharacterStore } from '@/stores/characters';
 import { useEncounterStore } from '@/stores/encounters';
-import { useModuleStore } from '@/stores/modules';
 import { useMonsterStore } from '@/stores/monsters';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
@@ -38,12 +37,6 @@ export async function createLinkedEntity(
         contentType: (data as any).contentType ?? 'text',
       });
       return { id: note.id, label: note.title };
-    }
-    case 'module': {
-      const module = await useModuleStore().create(
-        stripEntityMeta(payload as Record<string, unknown>) as any,
-      );
-      return { id: module.id, label: module.name };
     }
     case 'party': {
       const party = await usePartyStore().create(

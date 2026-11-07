@@ -35,21 +35,20 @@ Core shell/settings/backup/PWA are not flaggable. The help-center static pages
 are always built; `VITE_FEATURE_HELP` controls only in-app help links and menu
 entries.
 
-| ID            | Env variable               | Owned code (initial ownership)                                                     | Hard dependencies |
-| ------------- | -------------------------- | ---------------------------------------------------------------------------------- | ----------------- |
-| `notes`       | `VITE_FEATURE_NOTES`       | `src/notes/**`, `src/stores/notes.ts`, note schema                                 | —                 |
-| `characters`  | `VITE_FEATURE_CHARACTERS`  | `src/characters/**`, `src/stores/characters.ts`, character schema                  | —                 |
-| `parties`     | `VITE_FEATURE_PARTIES`     | `src/parties/**`, `src/stores/parties.ts`, party schema                            | `characters`      |
-| `monsters`    | `VITE_FEATURE_MONSTERS`    | `src/monsters/**`, `src/stores/monsters.ts`, monster schema                        | —                 |
-| `encounters`  | `VITE_FEATURE_ENCOUNTERS`  | `src/encounters/**`, encounter/combat stores and schemas                           | `monsters`        |
-| `modules`     | `VITE_FEATURE_MODULES`     | `src/modules/**`, `src/stores/modules.ts`, module schema, `src/components/Tree/**` | `notes`           |
-| `maps`        | `VITE_FEATURE_MAPS`        | `src/maps/**`, map/location schemas                                                | —                 |
-| `jukebox`     | `VITE_FEATURE_JUKEBOX`     | `src/jukebox/**`                                                                   | —                 |
-| `ambient`     | `VITE_FEATURE_AMBIENT`     | `src/ambient-sound/**`                                                             | —                 |
-| `timers`      | `VITE_FEATURE_TIMERS`      | `src/timers/**`, `src/stores/timers.ts`, timer schema                              | —                 |
-| `calculator`  | `VITE_FEATURE_CALCULATOR`  | `src/calculator/**`                                                                | —                 |
-| `probability` | `VITE_FEATURE_PROBABILITY` | `src/probability-calculator/**`, `src/utils/dice-probability-calculator/**`        | —                 |
-| `help`        | `VITE_FEATURE_HELP`        | `src/features/help/**`; static `helpcenter/` always builds                         | —                 |
+| ID            | Env variable               | Owned code (initial ownership)                                              | Hard dependencies |
+| ------------- | -------------------------- | --------------------------------------------------------------------------- | ----------------- |
+| `notes`       | `VITE_FEATURE_NOTES`       | `src/notes/**`, `src/stores/notes.ts`, note schema                          | —                 |
+| `characters`  | `VITE_FEATURE_CHARACTERS`  | `src/characters/**`, `src/stores/characters.ts`, character schema           | —                 |
+| `parties`     | `VITE_FEATURE_PARTIES`     | `src/parties/**`, `src/stores/parties.ts`, party schema                     | `characters`      |
+| `monsters`    | `VITE_FEATURE_MONSTERS`    | `src/monsters/**`, `src/stores/monsters.ts`, monster schema                 | —                 |
+| `encounters`  | `VITE_FEATURE_ENCOUNTERS`  | `src/encounters/**`, encounter/combat stores and schemas                    | `monsters`        |
+| `maps`        | `VITE_FEATURE_MAPS`        | `src/maps/**`, map/location schemas                                         | —                 |
+| `jukebox`     | `VITE_FEATURE_JUKEBOX`     | `src/jukebox/**`                                                            | —                 |
+| `ambient`     | `VITE_FEATURE_AMBIENT`     | `src/ambient-sound/**`                                                      | —                 |
+| `timers`      | `VITE_FEATURE_TIMERS`      | `src/timers/**`, `src/stores/timers.ts`, timer schema                       | —                 |
+| `calculator`  | `VITE_FEATURE_CALCULATOR`  | `src/calculator/**`                                                         | —                 |
+| `probability` | `VITE_FEATURE_PROBABILITY` | `src/probability-calculator/**`, `src/utils/dice-probability-calculator/**` | —                 |
+| `help`        | `VITE_FEATURE_HELP`        | `src/features/help/**`; static `helpcenter/` always builds                  | —                 |
 
 Shared code is never owned by a feature: storage/migrations, backup/restore,
 settings, PWA shell, shared file utilities, mention/link infrastructure,
@@ -101,7 +100,6 @@ It exports:
 ```js
 export const FEATURES = [
   { id: 'notes', envKey: 'VITE_FEATURE_NOTES', requires: [] },
-  { id: 'modules', envKey: 'VITE_FEATURE_MODULES', requires: ['notes'] },
   // ...
 ];
 ```
@@ -146,7 +144,7 @@ Possible exports:
 - `globalComponents`
 - `linkKinds`
 - `dragTargets`
-- optional hub panels, e.g. module tabs, encounter sides, note selector items
+- optional hub panels, e.g. entity tabs, encounter sides, note selector items
 
 Feature integration modules may import their feature views/stores. Shared code
 must not import those directly.
@@ -181,7 +179,6 @@ mechanism.
 In the catalog:
 
 ```text
-modules    requires notes, ambient
 parties    requires characters
 encounters requires monsters, characters, parties
 ```
@@ -219,7 +216,6 @@ No disabled route record exists. Direct URLs fall through to the existing
 
 - Build Home cards from `virtual:feature-home-cards`.
 - Gate `load()` calls and stats per enabled feature.
-- Hide the module-import action when `modules` is disabled.
 
 ### 5.4 Settings and PWA
 
@@ -234,14 +230,12 @@ Gate these shared surfaces:
 - `MentionInsertPopup` / `Mentions`
 - `EntitiesLinking`
 - entity drag linking overlay and relations
-- note module selector and entity links
-- ModuleView tabs/sections for notes, parties, characters, monsters,
-  encounters, maps, jukebox
-- EncounterView and CombatView monster/party/character/module sections
+- note entity links
+- EncounterView and CombatView monster/party/character sections
 - Party editors/views character links
-- Character editors/views party, module and location links
+- Character editors/views party and location links
 - map/location links from other entities
-- backup/import actions that depend on notes/modules
+- backup/import actions that depend on notes
 
 Use generated integration panels where a section owns components; do not rely
 on `v-if` around a top-level import for strict exclusion.
@@ -333,10 +327,8 @@ The script should print the exact failing feature/config and module.
 - [x] `FF-023` Monsters integration: routes, nav, home card, link/drag kinds. — done
 - [x] `FF-024` Encounters integration: routes (including combat), nav, home — done
       card, link kinds.
-- [x] `FF-025` Modules integration: routes, nav, home card, link kinds, module — done
-      hub panels.
 - [x] `FF-026` Maps integration: routes, nav, home card, link/drag kinds. — done
-- [x] `FF-027` Jukebox integration: route, nav, globals, module playlists panel. — done
+- [x] `FF-027` Jukebox integration: route, nav, globals. — done
 - [x] `FF-028` Ambient integration: route, nav, globals. — done
 - [x] `FF-029` Timers integration: route, nav, globals. — done
 - [x] `FF-030` Calculator integration: global dialog, Tools nav entry. — done
@@ -374,13 +366,10 @@ The script should print the exact failing feature/config and module.
 - [x] `FF-060` Gate mention kinds and internal-link picking by feature. — done
 - [x] `FF-061` Gate `EntitiesLinking` kinds. — done
 - [x] `FF-062` Gate entity drag targets and relation logic. — done
-- [x] `FF-063` Gate note module selector and note entity links. — done
-- [x] `FF-064` Gate ModuleView panels for notes, parties, characters, monsters, — done
-      encounters, maps and jukebox.
-- [x] `FF-065` Gate EncounterView/CombatView monster, party, character and — done
-      module sections.
+- [x] `FF-065` Gate EncounterView/CombatView monster, party and — done
+      character sections.
 - [x] `FF-066` Gate character/party cross-links and location links. — done
-- [x] `FF-067` Gate map/location links from notes/modules/other entities. — done
+- [x] `FF-067` Gate map/location links from notes/other entities. — done
 - [x] `FF-068` Ensure disabled entity links in existing Markdown do not open — done
       broken routes; render as plain text or disable navigation.
 - [x] `FF-069` Leave search/command-menu hooks behind generated feature filters — done

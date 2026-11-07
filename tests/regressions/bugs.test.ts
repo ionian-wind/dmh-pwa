@@ -13,7 +13,6 @@ import {
   validateArray,
 } from '@/utils/schemaValidator';
 import { parseMarkdown } from '@/utils/markdownParser';
-import { remapImportedModule } from '@/utils/moduleImportExport';
 import { advanceTurn, rewindTurn } from '@/utils/combatTurn';
 import type { Combat, Combatant } from '@/types';
 
@@ -165,32 +164,6 @@ describe('regression: known bugs', () => {
     );
     expect(html).not.toContain('onerror');
     expect(html).not.toContain('<script');
-  });
-
-  it('remaps module and note IDs on import so archives do not overwrite', () => {
-    const input = {
-      module: { id: 'old-module', name: 'Module' },
-      tree: [{ noteId: 'old-note', children: [] }],
-      notes: [
-        {
-          id: 'old-note',
-          title: 'Note',
-          content: 'Body',
-          typeId: null,
-          tags: [],
-          moduleIds: ['old-module'],
-          hidden: true,
-        },
-      ],
-    };
-
-    const result = remapImportedModule(input as any);
-
-    expect(result.module.id).not.toBe('old-module');
-    expect(result.notes[0].id).not.toBe('old-note');
-    expect(result.notes[0].moduleIds).toEqual([result.module.id]);
-    expect(result.tree[0].noteId).toBe(result.notes[0].id);
-    expect(result.tree[0].children).toEqual([]);
   });
 });
 

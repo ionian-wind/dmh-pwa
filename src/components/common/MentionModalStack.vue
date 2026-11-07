@@ -40,8 +40,6 @@ const externalRoute = computed(() => {
   switch (modalKind.value) {
     case 'note':
       return `/notes/${id}`;
-    case 'module':
-      return `/modules/${id}`;
     case 'party':
       return `/parties/${id}`;
     case 'monster':

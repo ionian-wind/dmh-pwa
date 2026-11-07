@@ -46,7 +46,6 @@ declare const __FEATURE_CHARACTERS__: boolean;
 declare const __FEATURE_PARTIES__: boolean;
 declare const __FEATURE_MONSTERS__: boolean;
 declare const __FEATURE_ENCOUNTERS__: boolean;
-declare const __FEATURE_MODULES__: boolean;
 declare const __FEATURE_MAPS__: boolean;
 declare const __FEATURE_JUKEBOX__: boolean;
 declare const __FEATURE_AMBIENT__: boolean;

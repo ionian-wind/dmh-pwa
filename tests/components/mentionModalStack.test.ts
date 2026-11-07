@@ -49,11 +49,6 @@ describe('MentionModalStack', () => {
 
   it.each([
     [
-      'module',
-      { id: 'm1', name: 'Module', description: 'Module desc' },
-      'Module desc',
-    ],
-    [
       'party',
       { id: 'p1', name: 'Party', description: 'Party desc' },
       'Party desc',

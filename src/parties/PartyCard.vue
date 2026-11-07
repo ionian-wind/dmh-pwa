@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
 import type { Party } from '@/types';
-import { useFeatureStores } from '@/composables/useFeatureStores';
 import BaseCard from '@/components/common/BaseCard.vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'copy']);
-const featureStores = useFeatureStores();
-
-onMounted(async () => {
-  await featureStores.load(['module']);
-});
 
 function handleView() {
   emit('view', props.party);
@@ -24,12 +17,6 @@ function handleDelete() {
 function handleCopy() {
   emit('copy', props.party);
 }
-
-const modules = computed(() =>
-  (props.party.moduleIds ?? [])
-    .map((id) => featureStores.get('module', id))
-    .filter(Boolean),
-);
 </script>
 <template>
   <BaseCard
@@ -49,9 +36,6 @@ const modules = computed(() =>
       <span class="character-count"
         >{{ (party.characters || []).length }} characters</span
       >
-      <span v-if="modules.length > 0" class="modules">
-        {{ modules.map((m) => m!.name).join(', ') }}
-      </span>
     </div>
   </BaseCard>
 </template>
@@ -77,10 +61,6 @@ const modules = computed(() =>
 .character-count {
   font-weight: 500;
   color: var(--color-accent);
-}
-
-.modules {
-  font-style: italic;
 }
 
 .party-card-actions {

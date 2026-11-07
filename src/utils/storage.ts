@@ -54,7 +54,7 @@ const MIGRATIONS_STORE = 'migrations';
 const MIGRATION_VERSION = Math.max(
   ...sortedMigrations.map(({ version }) => version),
 );
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 13;
 const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
 // All stores that may exist in the database. The main list is also used by
@@ -65,7 +65,6 @@ export const MAIN_STORE_NAMES = [
   'combats',
   'encounters',
   'monsters',
-  'modules',
   'notes',
   'noteTypes',
   'parties',
@@ -98,16 +97,15 @@ const SCHEMA_STORE_NAMES = Array.from(
 // migration but not listed here still gets the `id` primary key.
 const EXPLICIT_SCHEMA: Record<string, string> = {
   migrations: 'id, version',
-  characters: 'id, updatedAt, *moduleIds',
+  characters: 'id, updatedAt',
   combats: 'id, updatedAt, encounterId, partyId, status',
-  encounters: 'id, updatedAt, *moduleIds',
-  monsters: 'id, updatedAt, *moduleIds',
-  modules: 'id, updatedAt',
-  notes: 'id, updatedAt, createdAt, typeId, *tags, *moduleIds',
+  encounters: 'id, updatedAt',
+  monsters: 'id, updatedAt',
+  notes: 'id, updatedAt, createdAt, typeId, *tags',
   noteTypes: 'id, updatedAt',
-  parties: 'id, updatedAt, *moduleIds',
+  parties: 'id, updatedAt',
   map_locations: 'id, updatedAt',
-  bookmarks: 'id, moduleId, noteId',
+  bookmarks: 'id, noteId',
   timers: 'id, updatedAt, status',
   jukebox_playlists: 'id, updatedAt',
   jukebox_tracks: 'id, updatedAt',
@@ -134,7 +132,6 @@ export class DmhDatabase extends Dexie {
   combats!: Table<any, string>;
   encounters!: Table<any, string>;
   monsters!: Table<any, string>;
-  modules!: Table<any, string>;
   notes!: Table<any, string>;
   noteTypes!: Table<any, string>;
   parties!: Table<any, string>;
@@ -153,8 +150,9 @@ export class DmhDatabase extends Dexie {
 
   constructor() {
     super(DB_NAME);
-    // Version 12 adds query indexes and the sound_packs store while keeping
-    // the legacy store names/key paths; migrations remain recorded separately.
+    // Version 13 drops the removed modules store and its indexes while
+    // keeping the legacy store names/key paths; migrations remain recorded
+    // separately.
     this.version(DB_VERSION).stores(SCHEMA);
     this.on('versionchange', () => this.close());
   }

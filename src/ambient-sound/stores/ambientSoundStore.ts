@@ -59,7 +59,12 @@ function snapIntensity(value: number): number {
 function loadLinks(): SceneEntityLink[] {
   try {
     const raw = localStorage.getItem(LINKS_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as SceneEntityLink[]) : [];
+    const links = raw ? (JSON.parse(raw) as SceneEntityLink[]) : [];
+    const filtered = links.filter(
+      (link) => String(link.entityType) !== 'module',
+    );
+    if (filtered.length !== links.length) saveLinks(filtered);
+    return filtered;
   } catch {
     return [];
   }

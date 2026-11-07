@@ -2,8 +2,8 @@
 
 ## Purpose
 
-A local music player for session ambience. Users add audio files, attach
-playlists to modules, and play music through a global howler-based player that
+A local music player for session ambience. Users add audio files, create
+playlists, and play music through a global howler-based player that
 survives navigation. Files are referenced either through the File System Access
 API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 
@@ -19,7 +19,7 @@ API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
 | `src/jukebox/components/SoundControlDialog.vue` | Snapable global sound-control panel (music player now) |
 | `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                        |
 | `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                   |
-| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist/module link editing                      |
+| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist link editing                             |
 | `src/jukebox/components/TrackCard.vue`          | Track row                                              |
 | `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                   |
 | `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                 |
@@ -45,7 +45,7 @@ See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities)
   the track text column. Play/pause animates the waveform between zero height
   and its full row height.
 - `JukeboxPlaylist` stores `trackIds` in display order; `sortOrder` orders
-  playlists; `moduleIds` links playlists to modules.
+  playlists.
 - `JukeboxTrack.playlistIds` is declared but never maintained; membership is
   read from playlists.
 
@@ -254,8 +254,6 @@ selection` clears the current selection. The panel reserves its own layout
   - Edit on selected tracks opens a playlist linking modal; applying it adds
     the selected tracks to checked playlists and removes them from unchecked
     playlists.
-  - Edit on selected playlists opens a module linking modal; applying it sets
-    the selected module links on every selected playlist.
   - Delete confirms once, then removes all selected tracks/playlists. Deleting
     the active playlist clears the active selection.
 - Selection is cleared when leaving edit mode, switching playlists, or applying
@@ -289,7 +287,7 @@ unmount. The `filesStore` is loaded but unused.
   affect this indicator.
 - Playlist sort order is persisted as `sortOrder`; sorting is available only
   in edit mode.
-- Edit opens `PlaylistEditor` (name, modules, description).
+- Edit opens `PlaylistEditor` (name, description).
 - `AddToPlaylistModal` uses the shared `EntitiesLinking` layout with
   `kind="playlist"`. Linked playlists show as remoable chips; the add dialog
   provides playlist search and creation. Linked playlists are pre-selected in

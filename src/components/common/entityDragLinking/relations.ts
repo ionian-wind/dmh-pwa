@@ -67,7 +67,6 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'note') {
-      if (targetKind === 'module') return [...(source?.moduleIds ?? [])];
       if (targetKind === 'location') {
         return items('location')
           .filter((location) => hasEntity(location.entities, 'note', sourceId))
@@ -75,43 +74,7 @@ export function useEntityLinkRelations() {
       }
     }
 
-    if (sourceKind === 'module') {
-      if (targetKind === 'note') {
-        return items('note')
-          .filter((note) => note.moduleIds?.includes(sourceId))
-          .map((note) => note.id);
-      }
-      if (targetKind === 'party') {
-        return items('party')
-          .filter((party) => party.moduleIds?.includes(sourceId))
-          .map((party) => party.id);
-      }
-      if (targetKind === 'monster') {
-        return items('monster')
-          .filter((monster) => monster.moduleIds?.includes(sourceId))
-          .map((monster) => monster.id);
-      }
-      if (targetKind === 'encounter') {
-        return items('encounter')
-          .filter((encounter) => encounter.moduleIds?.includes(sourceId))
-          .map((encounter) => encounter.id);
-      }
-      if (targetKind === 'character') {
-        return items('character')
-          .filter((character) => character.moduleIds?.includes(sourceId))
-          .map((character) => character.id);
-      }
-      if (targetKind === 'location') {
-        return items('location')
-          .filter((location) =>
-            hasEntity(location.entities, 'module', sourceId),
-          )
-          .map((location) => location.id);
-      }
-    }
-
     if (sourceKind === 'party') {
-      if (targetKind === 'module') return [...(source?.moduleIds ?? [])];
       if (targetKind === 'character') return [...(source?.characters ?? [])];
       if (targetKind === 'location') {
         return items('location')
@@ -121,7 +84,6 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'character') {
-      if (targetKind === 'module') return [...(source?.moduleIds ?? [])];
       if (targetKind === 'party') {
         return items('party')
           .filter((party) => party.characters?.includes(sourceId))
@@ -137,7 +99,6 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'monster') {
-      if (targetKind === 'module') return [...(source?.moduleIds ?? [])];
       if (targetKind === 'encounter') {
         return items('encounter')
           .filter((encounter) => Number(encounter.monsters?.[sourceId]) > 0)
@@ -153,7 +114,6 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'encounter') {
-      if (targetKind === 'module') return [...(source?.moduleIds ?? [])];
       if (targetKind === 'monster') return Object.keys(source?.monsters ?? {});
       if (targetKind === 'location') {
         return items('location')
@@ -208,84 +168,11 @@ export function useEntityLinkRelations() {
       return;
     }
 
-    if (sourceKind === 'note' && targetKind === 'module') {
-      await stores.note.update(sourceId, { moduleIds: ids });
-      return;
-    }
     if (sourceKind === 'note' && targetKind === 'location') {
       await setLocationLinks('note', sourceId, ids);
       return;
     }
 
-    if (sourceKind === 'module' && targetKind === 'note') {
-      for (const note of items('note')) {
-        const linked = note.moduleIds?.includes(sourceId) ?? false;
-        const shouldLink = ids.includes(note.id);
-        if (linked === shouldLink) continue;
-        const moduleIds = shouldLink
-          ? [...new Set([...(note.moduleIds ?? []), sourceId])]
-          : (note.moduleIds ?? []).filter((id: string) => id !== sourceId);
-        await stores.note.update(note.id, { moduleIds });
-      }
-      return;
-    }
-    if (sourceKind === 'module' && targetKind === 'party') {
-      for (const party of items('party')) {
-        const linked = party.moduleIds?.includes(sourceId) ?? false;
-        const shouldLink = ids.includes(party.id);
-        if (linked === shouldLink) continue;
-        const moduleIds = shouldLink
-          ? [...new Set([...(party.moduleIds ?? []), sourceId])]
-          : (party.moduleIds ?? []).filter((id: string) => id !== sourceId);
-        await stores.party.update(party.id, { moduleIds });
-      }
-      return;
-    }
-    if (sourceKind === 'module' && targetKind === 'monster') {
-      for (const monster of items('monster')) {
-        const linked = monster.moduleIds?.includes(sourceId) ?? false;
-        const shouldLink = ids.includes(monster.id);
-        if (linked === shouldLink) continue;
-        const moduleIds = shouldLink
-          ? [...new Set([...(monster.moduleIds ?? []), sourceId])]
-          : (monster.moduleIds ?? []).filter((id: string) => id !== sourceId);
-        await stores.monster.update(monster.id, { moduleIds });
-      }
-      return;
-    }
-    if (sourceKind === 'module' && targetKind === 'encounter') {
-      for (const encounter of items('encounter')) {
-        const linked = encounter.moduleIds?.includes(sourceId) ?? false;
-        const shouldLink = ids.includes(encounter.id);
-        if (linked === shouldLink) continue;
-        const moduleIds = shouldLink
-          ? [...new Set([...(encounter.moduleIds ?? []), sourceId])]
-          : (encounter.moduleIds ?? []).filter((id: string) => id !== sourceId);
-        await stores.encounter.update(encounter.id, { moduleIds });
-      }
-      return;
-    }
-    if (sourceKind === 'module' && targetKind === 'character') {
-      for (const character of items('character')) {
-        const linked = character.moduleIds?.includes(sourceId) ?? false;
-        const shouldLink = ids.includes(character.id);
-        if (linked === shouldLink) continue;
-        const moduleIds = shouldLink
-          ? [...new Set([...(character.moduleIds ?? []), sourceId])]
-          : (character.moduleIds ?? []).filter((id: string) => id !== sourceId);
-        await stores.character.update(character.id, { moduleIds });
-      }
-      return;
-    }
-    if (sourceKind === 'module' && targetKind === 'location') {
-      await setLocationLinks('module', sourceId, ids);
-      return;
-    }
-
-    if (sourceKind === 'party' && targetKind === 'module') {
-      await stores.party.update(sourceId, { moduleIds: ids });
-      return;
-    }
     if (sourceKind === 'party' && targetKind === 'character') {
       await stores.party.update(sourceId, { characters: ids });
       return;
@@ -295,10 +182,6 @@ export function useEntityLinkRelations() {
       return;
     }
 
-    if (sourceKind === 'character' && targetKind === 'module') {
-      await stores.character.update(sourceId, { moduleIds: ids });
-      return;
-    }
     if (sourceKind === 'character' && targetKind === 'party') {
       for (const party of items('party')) {
         const linked = party.characters?.includes(sourceId) ?? false;
@@ -316,10 +199,6 @@ export function useEntityLinkRelations() {
       return;
     }
 
-    if (sourceKind === 'monster' && targetKind === 'module') {
-      await stores.monster.update(sourceId, { moduleIds: ids });
-      return;
-    }
     if (sourceKind === 'monster' && targetKind === 'encounter') {
       for (const encounter of items('encounter')) {
         const linked = Number(encounter.monsters?.[sourceId]) > 0;
@@ -337,10 +216,6 @@ export function useEntityLinkRelations() {
       return;
     }
 
-    if (sourceKind === 'encounter' && targetKind === 'module') {
-      await stores.encounter.update(sourceId, { moduleIds: ids });
-      return;
-    }
     if (sourceKind === 'encounter' && targetKind === 'monster') {
       const current = { ...(source?.monsters ?? {}) };
       const monsters: Record<string, number> = {};

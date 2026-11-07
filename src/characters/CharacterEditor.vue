@@ -66,10 +66,6 @@ const characterNotes = computed({
 const characterLinks = computed<MapEntityRef[]>(() => {
   const id = editedCharacter.value.id;
   return [
-    ...(editedCharacter.value.moduleIds ?? []).map((moduleId) => ({
-      kind: 'module' as const,
-      id: moduleId,
-    })),
     ...(id
       ? relations
           .getLinkedIds('character', id, 'party')
@@ -84,15 +80,9 @@ const characterLinks = computed<MapEntityRef[]>(() => {
 });
 
 async function setCharacterLinks(
-  kind: 'module' | 'party' | 'location',
+  kind: 'party' | 'location',
   links: MapEntityRef[],
 ) {
-  if (kind === 'module') {
-    editedCharacter.value.moduleIds = links
-      .filter((link) => link.kind === 'module')
-      .map((link) => link.id);
-    return;
-  }
   if (!editedCharacter.value.id) return;
   await relations.setLinkedIds(
     'character',
@@ -182,12 +172,6 @@ function handleDelete() {
 
     <template #links>
       <div class="column q-gutter-md">
-        <EntitiesLinking
-          v-if="featureStores.has('module')"
-          kind="module"
-          :model-value="characterLinks"
-          @update:model-value="(links) => setCharacterLinks('module', links)"
-        />
         <EntitiesLinking
           v-if="featureStores.has('party')"
           kind="party"

@@ -25,7 +25,6 @@ const props = defineProps<{
 const store = useAmbientSoundStore();
 
 const linkKinds = [
-  'module',
   'location',
   'monster',
   'character',

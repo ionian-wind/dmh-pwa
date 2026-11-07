@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Markdown is the content format for notes and module documents. Entity detail
+Markdown is the content format for notes. Entity detail
 views now render it with the same Milkdown/Crepe pipeline as the editor; note
-cards and module document chunks keep the lighter markdown-it renderer. A
+cards keep the lighter markdown-it renderer. A
 separate index tracks which notes mention which entities.
 
 ## Key files
@@ -37,7 +37,7 @@ and installs three renderer plugins.
 ### 1. Internal entity links
 
 Syntax: `[label](kind://id)` where `kind` is one of
-`note | module | party | monster | encounter` and `id` matches
+`note | party | monster | encounter | location` and `id` matches
 `[A-Za-z0-9_-]+`.
 
 For matching links, the renderer:
@@ -78,8 +78,6 @@ If `kind` is a valid entity kind, the heading receives:
 - `data-id`, `data-kind`,
 - and the anchor suffix is removed from the displayed text.
 
-`ModuleDocumentView` relies on this to generate `id="note-<id>"` headings.
-
 ## View renderer (`MilkdownView.vue`)
 
 Entity detail views use a read-only Crepe instance so view and edit share one
@@ -109,8 +107,8 @@ Markdown-to-ProseMirror pipeline.
 - `MilkdownView` does not register the tag-autocomplete or mention-popup
   triggers, so it cannot steal them from an open editor.
 
-Note cards and module document chunks keep `Markdown.vue` because one Crepe
-instance per card would be too expensive and module chunks are virtualized. A
+Note cards keep `Markdown.vue` because one Crepe
+instance per card would be too expensive. A
 singleton static Milkdown renderer is available in
 `milkdown/staticRenderer.ts`, but benchmarks show it is roughly 5–6× slower
 than markdown-it for batch card rendering. See
@@ -118,7 +116,7 @@ than markdown-it for batch card rendering. See
 
 ## Renderer (`Markdown.vue`)
 
-Used by note cards, module document chunks and modules that still need a
+Used by note cards and other surfaces that need a
 lightweight read-only renderer.
 
 ### Styling
@@ -157,7 +155,7 @@ Known remaining differences are structural rather than typographic:
   - toggles the corresponding character in the source,
   - emits `update:content` with the new Markdown.
 - Sets up an `IntersectionObserver` but never uses `isVisible`.
-- Loads all stores on mount (notes, modules, parties, monsters, encounters) so
+- Loads all stores on mount (notes, parties, monsters, encounters) so
   mention modals can resolve entities.
 - Cache key ignores `anchorMap` and `enableMentionModal`, which is fine because
   those affect behavior, not HTML.
@@ -165,7 +163,7 @@ Known remaining differences are structural rather than typographic:
 ### Security note
 
 `html: true` plus `v-html` means raw HTML in note content is executed/rendered
-without sanitization. A malicious `.zip` module (imported via a path that
+without sanitization. A malicious `.zip` import (via a path that
 bypasses validation) or pasted HTML can inject scripts or event handlers.
 `sanitize-html` remains a dependency for the offline Markdown build script; the
 runtime uses the browser-safe DOMParser sanitizer described above.
@@ -205,7 +203,7 @@ exists, otherwise the bound `modelValue`. Raw-mode edits are bound through
 - normalizes any default-link marks with `kind://id` into mention marks after
   parse, so existing mentions render with mention styling in the editor,
 - serializes back to `[text](kind://id)`,
-- provides toolbar/block-menu groups for note/module/party/monster/encounter,
+- provides toolbar/block-menu groups for note/party/monster/encounter/location,
 - marks the matching toolbar item active when the cursor/selection is inside a
   mention of that kind; clicking the active button removes the mention mark,
 - opens a popup to choose an entity and inserts the mark at the selection.
@@ -249,8 +247,8 @@ returns `{ kind, id }[]`.
   `kind:id`.
 - Links inside code blocks are still matched (regex-based, not AST-based).
 - `kind://` URLs without a label (bare autolinks) are not matched.
-- Only enabled `featureLinkKinds` are mentionable (currently note, module,
-  party, monster, encounter and location); `character` is not a link kind even
+- Only enabled `featureLinkKinds` are mentionable (currently note, party,
+  monster, encounter and location); `character` is not a link kind even
   though `CharacterView` reads `kind: 'character'` from the index and nothing
   ever writes it.
 - Hashtags are extracted with a regex, not an AST, so `#tag` inside inline code
@@ -272,7 +270,7 @@ returns `{ kind, id }[]`.
 | `getBacklinks(target)`  | scans all keys                                      |
 | `clearAll()`            | wipes the store                                     |
 
-Only `noteStore.create/update/remove` call it. Nothing indexes module,
+Only `noteStore.create/update/remove` call it. Nothing indexes
 party, monster, encounter, or character content (none of those have content
 fields anyway).
 

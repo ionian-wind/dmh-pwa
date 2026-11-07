@@ -53,7 +53,6 @@ const monster = {
   id: 'm1',
   name: 'Goblin',
   notes: 'Old notes',
-  moduleIds: ['mod1'],
   createdAt: 1,
   updatedAt: 1,
 };
@@ -75,7 +74,7 @@ describe('MonsterEditor', () => {
     vi.clearAllMocks();
   });
 
-  it('submits the latest Markdown notes and module links', async () => {
+  it('submits the latest Markdown notes', async () => {
     const wrapper = mountEditor();
     await flushPromises();
 
@@ -87,11 +86,6 @@ describe('MonsterEditor', () => {
       .vm.$emit('update:modelValue', 'Changed notes');
     await nextTick();
 
-    const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    expect(groups).toHaveLength(3);
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'module', id: 'mod2' }]);
-    await nextTick();
-
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
 
@@ -99,7 +93,6 @@ describe('MonsterEditor', () => {
       id: 'm1',
       name: 'Goblin',
       notes: 'Latest notes',
-      moduleIds: ['mod2'],
     });
     wrapper.unmount();
   });
@@ -120,8 +113,8 @@ describe('MonsterEditor', () => {
     );
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[1].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
-    groups[2].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
+    groups[0].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
+    groups[1].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
     await flushPromises();
 
     expect(mocks.setLinkedIds).toHaveBeenCalledWith(
@@ -144,17 +137,15 @@ describe('MonsterEditor', () => {
     await flushPromises();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[1].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
+    groups[0].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
     await flushPromises();
     expect(mocks.setLinkedIds).not.toHaveBeenCalled();
 
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'module', id: 'mod2' }]);
-    await nextTick();
     await wrapper.find('.entity-inline-editor input').setValue('New Monster');
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleIds: ['mod2'],
+      name: 'New Monster',
     });
     wrapper.unmount();
   });

@@ -3,7 +3,7 @@
 ## Purpose
 
 Monster/NPC records used by encounters and combats. Like characters, the
-current record is intentionally minimal: name, notes, module membership.
+current record is intentionally minimal: name and notes.
 
 ## Key files
 
@@ -25,11 +25,10 @@ interface Monster {
   updatedAt: number;
   name: string;
   notes?: string;
-  moduleIds?: string[];
 }
 ```
 
-Schema requires `id`, `name`, timestamps; optional `notes` and `moduleIds`.
+Schema requires `id`, `name`, timestamps; optional `notes`.
 
 ## List page (`MonstersView.vue`)
 
@@ -60,7 +59,7 @@ caller explicitly passes it. No caller passes it.
 - Name (required) and notes using the shared Markdown editor with visual/raw
   toggle and formatting help.
 - Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
-- The linked-entities tab edits modules, encounters and locations through
+- The linked-entities tab edits encounters and locations through
   `EntitiesLinking`.
 - `watch(props.monster, { deep: true })` copies the record; `watch(isOpen)`
   resets when closing or when no monster is selected.
@@ -79,9 +78,8 @@ caller explicitly passes it. No caller passes it.
     formatting help appears in raw Markdown mode.
   - Header tabs switch between **View/Linked entities** and
     **Main editor/Linked entities**.
-- The **Linked entities** tab shows modules, encounters and locations. Module
-  ids save with the monster; encounter/location links use the shared relation
-  helpers.
+- The **Linked entities** tab shows encounters and locations.
+  Encounter/location links use the shared relation helpers.
 - Delete asks for confirmation; `BaseEntityTabView` navigates to `/monsters`.
 
 ## Sidebar
@@ -93,10 +91,8 @@ leaving the Scenes tab.
 
 ## Relationships
 
-- `monster.moduleIds` → modules (many-to-many).
 - `encounter.monsters` maps monster IDs to counts.
 - `combat.combatants[].referenceId` → monster IDs.
-- `ModuleView` filters monsters by `moduleIds.includes(module.id)`.
 
 ## Limitations
 

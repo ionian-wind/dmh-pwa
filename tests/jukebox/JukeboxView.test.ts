@@ -720,7 +720,7 @@ describe('JukeboxView', () => {
     bulk.togglePlaylist('p1', true);
     await nextTick();
 
-    const [, deleteButton] = list.props('leftHeaderButtons') as any[];
+    const [deleteButton] = list.props('leftHeaderButtons') as any[];
     await deleteButton.event(new Event('click'));
     await flushPromises();
 
@@ -769,45 +769,6 @@ describe('JukeboxView', () => {
       trackIds: ['t1'],
     });
     expect(bulk.selectedTrackIds.value.size).toBe(0);
-  });
-
-  it('applies bulk module links to selected playlists', async () => {
-    const bulk = useJukeboxBulkSelection();
-    mocks.playlists.items.value = [
-      { id: 'p1', name: 'One', trackIds: [], moduleIds: ['m1'] },
-      { id: 'p2', name: 'Two', trackIds: [], moduleIds: ['m2'] },
-    ];
-
-    const { wrapper, list } = await mountView();
-    useJukeboxEditMode().value = true;
-    bulk.togglePlaylist('p1', true);
-    bulk.togglePlaylist('p2', true);
-    await nextTick();
-
-    const [editButton] = list.props('leftHeaderButtons') as any[];
-    await editButton.event(new Event('click'));
-    await nextTick();
-
-    const modal = wrapper.findAllComponents(BulkLinkingStub)[1];
-    expect(modal.props()).toMatchObject({
-      modelValue: true,
-      kind: 'module',
-      links: [
-        { kind: 'module', id: 'm1' },
-        { kind: 'module', id: 'm2' },
-      ],
-    });
-
-    modal.vm.$emit('submit', [{ kind: 'module', id: 'm3' }]);
-    await flushPromises();
-
-    expect(mocks.playlists.update).toHaveBeenCalledWith('p1', {
-      moduleIds: ['m3'],
-    });
-    expect(mocks.playlists.update).toHaveBeenCalledWith('p2', {
-      moduleIds: ['m3'],
-    });
-    expect(bulk.selectedPlaylistIds.value.size).toBe(0);
   });
 
   it('selects every visible track from the bulk panel', async () => {

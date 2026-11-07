@@ -5,14 +5,13 @@ import { mount } from '@vue/test-utils';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
-import ModuleCard from '@/modules/ModuleCard.vue';
 import MonsterCard from '@/monsters/MonsterCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
 import { quasarStubs } from '../helpers/quasar-stubs';
-import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
+import { resetMockStores } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
@@ -47,21 +46,18 @@ describe('domain cards', () => {
     expect(wrapper.emitted('copy')?.[0]).toEqual([character]);
   });
 
-  it('PartyCard shows description, characters and modules and emits actions', async () => {
-    seedMockStore('modules', [{ id: 'm1', name: 'Campaign' }]);
+  it('PartyCard shows description and characters and emits actions', async () => {
     const party = {
       id: 'p1',
       name: 'Heroes',
       description: 'A brave group',
       characters: ['c1', 'c2'],
-      moduleIds: ['m1', 'missing'],
     } as any;
     const wrapper = mount(PartyCard, { props: { party } });
     await nextTick();
 
     expect(wrapper.text()).toContain('A brave group');
     expect(wrapper.text()).toContain('2 characters');
-    expect(wrapper.text()).toContain('Campaign');
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');
@@ -158,27 +154,6 @@ describe('domain cards', () => {
     );
   });
 
-  it('ModuleCard forwards every action with the module', async () => {
-    const module = { id: 'mod', name: 'Module', description: 'Desc' } as any;
-    const wrapper = mount(ModuleCard, { props: { module } });
-
-    const buttons = wrapper.findComponent(BaseCard).findAll('button');
-    for (const button of buttons) await button.trigger('click');
-
-    expect(wrapper.emitted('view')?.[0]).toEqual([module]);
-    expect(wrapper.emitted('edit')?.[0]).toEqual([module]);
-    expect(wrapper.emitted('delete')?.[0]).toEqual([module]);
-    expect(wrapper.emitted('copy')?.[0]).toEqual([module]);
-  });
-
-  it('ModuleCard omits an empty description', () => {
-    const wrapper = mount(ModuleCard, {
-      props: { module: { id: 'mod', name: 'Module' } as any },
-    });
-    expect(wrapper.find('.description').exists()).toBe(false);
-    wrapper.unmount();
-  });
-
   it('MonsterCard forwards actions and deletes by id', async () => {
     const monster = { id: 'mon', name: 'Goblin' } as any;
     const wrapper = mount(MonsterCard, {
@@ -214,25 +189,20 @@ describe('domain cards', () => {
     expect(wrapper.emitted('delete')?.[0]).toEqual([encounter]);
     expect(wrapper.emitted('copy')?.[0]).toEqual([encounter]);
     expect(wrapper.emitted('run-combat')?.[0]).toEqual([encounter]);
-    expect(wrapper.text()).toContain('No Module');
     expect(wrapper.text()).toContain('2 (3)');
   });
 
-  it('EncounterCard resolves modules and counts monsters defensively', async () => {
-    seedMockStore('modules', [{ id: 'mod', name: 'Curse of Strahd' }]);
-
+  it('EncounterCard counts monsters defensively', async () => {
     const known = mount(EncounterCard, {
       props: {
         encounter: {
           id: 'e1',
           name: 'Known',
           monsters: { goblin: 'many', ogre: 2 },
-          moduleIds: ['mod'],
         },
       },
     });
     await nextTick();
-    expect(known.text()).toContain('Curse of Strahd');
     expect(known.text()).toContain('2 (2)');
 
     const unknown = mount(EncounterCard, {
@@ -240,12 +210,10 @@ describe('domain cards', () => {
         encounter: {
           id: 'e2',
           name: 'Unknown',
-          moduleIds: ['missing'],
         },
       },
     });
     await nextTick();
-    expect(unknown.text()).toContain('Unknown Module');
     expect(unknown.text()).toContain('0 (0)');
 
     const noMonsters = mount(EncounterCard, {
@@ -254,12 +222,10 @@ describe('domain cards', () => {
           id: 'e3',
           name: 'Empty',
           monsters: null,
-          moduleIds: [],
         },
       },
     });
     await nextTick();
-    expect(noMonsters.text()).toContain('No Module');
     expect(noMonsters.text()).toContain('0 (0)');
   });
 

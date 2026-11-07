@@ -36,7 +36,6 @@ const party = {
   name: 'The Guild',
   description: 'Old description',
   characters: ['c1'],
-  moduleIds: ['m1'],
   createdAt: 1,
   updatedAt: 1,
 } satisfies Party;
@@ -58,7 +57,7 @@ describe('PartyEditor', () => {
     vi.clearAllMocks();
   });
 
-  it('submits the latest Markdown description and links', async () => {
+  it('submits the latest Markdown description and character links', async () => {
     const wrapper = mountEditor();
     await flushPromises();
 
@@ -71,8 +70,7 @@ describe('PartyEditor', () => {
     await nextTick();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'module', id: 'm2' }]);
-    groups[1].vm.$emit('update:modelValue', [{ kind: 'character', id: 'c2' }]);
+    groups[0].vm.$emit('update:modelValue', [{ kind: 'character', id: 'c2' }]);
     await nextTick();
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');
@@ -82,7 +80,6 @@ describe('PartyEditor', () => {
       id: 'p1',
       name: 'The Guild',
       description: 'Latest description',
-      moduleIds: ['m2'],
       characters: ['c2'],
     });
     wrapper.unmount();
@@ -103,7 +100,6 @@ describe('PartyEditor', () => {
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       id: 'p2',
       name: 'Legacy',
-      moduleIds: [],
       characters: [],
     });
     wrapper.unmount();

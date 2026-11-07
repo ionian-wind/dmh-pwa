@@ -32,10 +32,10 @@ describe('feature catalog', () => {
 
   it('fails invalid dependency combinations', () => {
     const flags = resolveFeatureFlags({});
-    flags.modules = true;
-    flags.notes = false;
+    flags.characters = false;
+    flags.parties = true;
     expect(() => assertFeatureDependencies(flags)).toThrow(
-      'VITE_FEATURE_MODULES=true requires VITE_FEATURE_NOTES=true',
+      'VITE_FEATURE_PARTIES=true requires VITE_FEATURE_CHARACTERS=true',
     );
   });
 
@@ -62,7 +62,6 @@ describe('feature virtual modules', () => {
   it('omits disabled integrations', () => {
     const flags = resolveFeatureFlags({
       VITE_FEATURE_NOTES: 'false',
-      VITE_FEATURE_MODULES: 'false',
       VITE_FEATURE_PROBABILITY: 'false',
     });
     const plugin = createFeaturePlugin(flags);

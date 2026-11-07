@@ -105,9 +105,9 @@ describe('CharacterEditor', () => {
     );
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    expect(groups).toHaveLength(3);
+    expect(groups).toHaveLength(2);
 
-    groups[1].vm.$emit('update:modelValue', [
+    groups[0].vm.$emit('update:modelValue', [
       { kind: 'party', id: 'p2' },
       { kind: 'location', id: 'ignored' },
     ]);
@@ -119,7 +119,7 @@ describe('CharacterEditor', () => {
       ['p2'],
     );
 
-    groups[2].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
+    groups[1].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
     await flushPromises();
     expect(mocks.setLinkedIds).toHaveBeenCalledWith(
       'character',
@@ -135,18 +135,16 @@ describe('CharacterEditor', () => {
     await flushPromises();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
-    groups[1].vm.$emit('update:modelValue', [{ kind: 'party', id: 'p2' }]);
+    groups[0].vm.$emit('update:modelValue', [{ kind: 'party', id: 'p2' }]);
     await flushPromises();
 
     expect(mocks.setLinkedIds).not.toHaveBeenCalled();
 
-    groups[0].vm.$emit('update:modelValue', [{ kind: 'module', id: 'm2' }]);
-    await nextTick();
     await wrapper.find('.entity-inline-editor input').setValue('New Hero');
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleIds: ['m2'],
+      name: 'New Hero',
     });
     wrapper.unmount();
   });

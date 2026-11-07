@@ -44,7 +44,6 @@ describe('database migrations', () => {
     expect(names).toEqual(
       expect.arrayContaining([
         'notes',
-        'modules',
         'bookmarks',
         'timers',
         'jukebox_tracks',
@@ -93,6 +92,87 @@ describe('database migrations', () => {
     const reopened = await openDB();
     const note = await reopened.notes.get('note1');
     expect(note.contentType).toBe('text');
+    reopened.close();
+  });
+
+  it('removes module links and module references', async () => {
+    await deleteDatabase();
+    const db = await openDB();
+    const now = Date.now();
+    await db.notes.put({
+      id: 'n1',
+      title: 'Note',
+      content: '',
+      contentType: 'text',
+      typeId: null,
+      tags: [],
+      moduleIds: ['m1'],
+      hidden: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.map_locations.put({
+      id: 'l1',
+      name: 'Location',
+      entities: [
+        { kind: 'module', id: 'm1' },
+        { kind: 'note', id: 'n1' },
+      ],
+      map: {
+        fileId: '',
+        layers: [],
+        markers: [
+          {
+            id: 'marker1',
+            title: 'Marker',
+            x: 0,
+            y: 0,
+            layerId: 'base',
+            entities: [{ kind: 'module', id: 'm1' }],
+            icon: '',
+            color: '',
+          },
+        ],
+        areas: [],
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.indexations_mentions.put({
+      id: 'note:n1',
+      links: [
+        { kind: 'module', id: 'm1' },
+        { kind: 'note', id: 'n2' },
+      ],
+    });
+    await db.bookmarks.put({
+      id: 'b1',
+      moduleId: 'm1',
+      noteId: 'anchor',
+      title: 'Anchor',
+      ownerKind: 'module',
+      ownerId: 'm1',
+      anchorId: 'anchor',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const applied = await db.migrations.toArray();
+    const migration12 = applied.find((entry) => entry.version === 12);
+    expect(migration12).toBeTruthy();
+    await db.migrations.delete(migration12!.id);
+    db.close();
+
+    await resetStoreCache();
+    const reopened = await openDB();
+    const note = await reopened.notes.get('n1');
+    expect(note.moduleIds).toBeUndefined();
+    const location = await reopened.map_locations.get('l1');
+    expect(location.entities).toEqual([{ kind: 'note', id: 'n1' }]);
+    expect(location.map.markers[0].entities).toEqual([]);
+    const mentions = await reopened.indexations_mentions.get('note:n1');
+    expect(mentions.links).toEqual([{ kind: 'note', id: 'n2' }]);
+    expect(await reopened.bookmarks.get('b1')).toBeUndefined();
     reopened.close();
   });
 
