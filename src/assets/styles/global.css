@@ -450,6 +450,18 @@ body.body--dark .q-btn--outline {
   border-color: var(--color-border-dark) !important;
 }
 
+/*
+ * Crepe renders the block/slash menu absolutely inside the editor. Quasar's
+ * tab panel clips its overflow, which crops the menu and adds an inner
+ * scrollbar. Let the menu escape only while it is open.
+ */
+.base-entity-view .q-tab-panels:has(.milkdown-slash-menu[data-show='true']),
+.base-entity-view
+  .q-tab-panels:has(.milkdown-slash-menu[data-show='true'])
+  .q-panel.scroll {
+  overflow: visible;
+}
+
 /* TOC anchors and temporary highlight when jumping to a heading/paragraph. */
 .toc-anchor-block {
   scroll-margin-top: 64px;
