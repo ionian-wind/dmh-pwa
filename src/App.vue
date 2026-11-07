@@ -299,6 +299,7 @@ const isSettingsOpen = ref(false);
         bordered
         show-if-above
         behavior="desktop"
+        :width="350"
         class="right-sidebar"
       >
         <component
