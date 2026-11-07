@@ -20,12 +20,10 @@ import {
   IconTool,
   IconChevronDown,
   IconSettings,
-  IconHelpCircle,
 } from '@tabler/icons-vue';
-import { getHelpLocale, helpHref } from '@/helpcenter/links';
 
 const configStore = useConfigStore();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
@@ -272,19 +270,6 @@ const isSettingsOpen = ref(false);
                 <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
             </template>
-            <QItem
-              tag="a"
-              clickable
-              data-test="open-help"
-              :href="helpHref('', getHelpLocale(locale))"
-              target="_blank"
-              rel="noopener noreferrer"
-              :title="t('navigation.help')"
-              :aria-label="t('navigation.help')"
-            >
-              <QItemSection side><IconHelpCircle /></QItemSection>
-              <QItemSection>{{ t('navigation.help') }}</QItemSection>
-            </QItem>
             <QItem
               clickable
               data-test="open-settings"

@@ -13,7 +13,8 @@ export type FeatureId =
   | 'ambient'
   | 'timers'
   | 'calculator'
-  | 'probability';
+  | 'probability'
+  | 'help';
 
 export interface FeatureNavRoute {
   type: 'route';

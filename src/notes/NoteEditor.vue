@@ -6,6 +6,7 @@ import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
 import NoteCanvas from './NoteCanvas.vue';
 import NoteOptions from './NoteOptions.vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
 import { IconDots, IconHelp } from '@tabler/icons-vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
@@ -219,7 +220,7 @@ function handleDelete() {
           {{ t('markdownEditor.visualMode') }}
         </QToggle>
         <QBtn
-          v-if="!isWYSIWYGMode"
+          v-if="!isWYSIWYGMode && features.help"
           flat
           round
           class="note-help-button"

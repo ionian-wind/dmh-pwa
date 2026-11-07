@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { IconDownload, IconX } from '@tabler/icons-vue';
 import { debug, debugError } from '@/utils/debug';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import { features } from 'virtual:feature-flags';
 
 const props = withDefaults(
   defineProps<{
@@ -107,6 +108,7 @@ onUnmounted(() => {
           {{ t('pwa.notNow') }}
         </QBtn>
         <a
+          v-if="features.help"
           class="pwa-install-help"
           :href="helpHref('getting-started/install', getHelpLocale(locale))"
           target="_blank"

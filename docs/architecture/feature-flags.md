@@ -19,6 +19,7 @@ at build time; there is no runtime switching.
 | Timers                 | `VITE_FEATURE_TIMERS`      | —                             |
 | Calculator             | `VITE_FEATURE_CALCULATOR`  | —                             |
 | Probability calculator | `VITE_FEATURE_PROBABILITY` | —                             |
+| Help center links      | `VITE_FEATURE_HELP`        | —                             |
 
 Missing values default to on. Accepted values are `true`/`false` and `1`/`0`.
 Unknown `VITE_FEATURE_*` keys or a dependent enabled without its prerequisite
@@ -55,6 +56,9 @@ keeps mentions, drag targets, entity linking, module views and note validation
 working with whatever subset is enabled.
 
 ## Data and backup
+
+The help-center static pages are always built into `dist/help`; `VITE_FEATURE_HELP`
+only removes the in-app Help menu and links to those pages.
 
 Feature flags do not change the database schema. All Dexie stores and migrations
 remain available, and campaign backups continue to include every store. Disabled

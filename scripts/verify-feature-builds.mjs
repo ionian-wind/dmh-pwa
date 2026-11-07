@@ -48,7 +48,7 @@ function build(config) {
       readFileSync('dist/manifest.webmanifest', 'utf8'),
     );
     const expectedShortcuts =
-      1 +
+      Number(config.flags.help) +
       Number(config.flags.notes) +
       Number(config.flags.timers) +
       Number(config.flags.jukebox);

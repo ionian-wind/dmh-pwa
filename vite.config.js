@@ -60,7 +60,7 @@ export default defineConfig(({ mode }) => {
       'Help',
       'Open installation and troubleshooting guides',
       '/dmh-pwa/help/en/index.html',
-      true,
+      flags.help,
     ),
   ].filter(Boolean);
 

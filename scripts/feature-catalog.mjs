@@ -108,6 +108,13 @@ export const FEATURES = [
     ownership: ['src/calculator/'],
   },
   {
+    id: 'help',
+    envKey: 'VITE_FEATURE_HELP',
+    requires: [],
+    integration: '@/features/help/integration',
+    ownership: ['src/features/help/'],
+  },
+  {
     id: 'probability',
     envKey: 'VITE_FEATURE_PROBABILITY',
     requires: [],

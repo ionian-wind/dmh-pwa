@@ -9,6 +9,7 @@ import {
   watch,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { Chart, Grid, Line, Responsive, Tooltip } from 'vue3-charts';
 import {
@@ -445,19 +446,21 @@ onMounted(() => {
     props: {
       title: t('probabilityCalculator.title'),
       rightDrawerIcon: IconCodeblock,
-      buttons: [
-        {
-          icon: IconHelpCircle,
-          color: 'primary',
-          title: 'probabilityCalculator.syntax',
-          href: helpHref(
-            'reference/dice-probability-syntax',
-            getHelpLocale(locale.value),
-          ),
-          target: '_blank',
-          rel: 'noopener noreferrer',
-        },
-      ],
+      buttons: features.help
+        ? [
+            {
+              icon: IconHelpCircle,
+              color: 'primary',
+              title: 'probabilityCalculator.syntax',
+              href: helpHref(
+                'reference/dice-probability-syntax',
+                getHelpLocale(locale.value),
+              ),
+              target: '_blank',
+              rel: 'noopener noreferrer',
+            },
+          ]
+        : [],
     },
   });
   rightDrawer.set({

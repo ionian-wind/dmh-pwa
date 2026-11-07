@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
@@ -299,7 +300,7 @@ function remove() {
           {{ t('markdownEditor.visualMode') }}
         </QToggle>
         <QBtn
-          v-if="!isWYSIWYGMode"
+          v-if="!isWYSIWYGMode && features.help"
           flat
           round
           class="location-help-button"

@@ -15,6 +15,7 @@ import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import MonsterViewSidebar from '@/monsters/MonsterViewSidebar.vue';
 import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
@@ -182,7 +183,8 @@ async function persistDraft(draft: Monster): Promise<boolean> {
 }
 
 const headerButtons = computed(() => {
-  if (!editState.isEditMode || editState.isVisualMode) return [];
+  if (!features.help || !editState.isEditMode || editState.isVisualMode)
+    return [];
   return [
     {
       color: 'primary',

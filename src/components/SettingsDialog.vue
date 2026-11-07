@@ -352,6 +352,7 @@ async function clearStorage() {
               >
                 <template #install>
                   <a
+                    v-if="features.help"
                     class="help-link"
                     :href="helpHref('getting-started/install', helpLocale)"
                     target="_blank"
@@ -362,6 +363,7 @@ async function clearStorage() {
                 </template>
                 <template #settings>
                   <a
+                    v-if="features.help"
                     class="help-link"
                     :href="
                       helpHref('troubleshooting/persistent-storage', helpLocale)

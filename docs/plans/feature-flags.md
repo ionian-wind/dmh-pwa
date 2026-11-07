@@ -31,7 +31,9 @@ and append `— done` plus the commit/date when a task is complete.
 
 ## 2. Feature matrix
 
-Core shell/settings/help/backup/PWA are not flaggable.
+Core shell/settings/backup/PWA are not flaggable. The help-center static pages
+are always built; `VITE_FEATURE_HELP` controls only in-app help links and menu
+entries.
 
 | ID            | Env variable               | Owned code (initial ownership)                                                     | Hard dependencies |
 | ------------- | -------------------------- | ---------------------------------------------------------------------------------- | ----------------- |
@@ -47,9 +49,10 @@ Core shell/settings/help/backup/PWA are not flaggable.
 | `timers`      | `VITE_FEATURE_TIMERS`      | `src/timers/**`, `src/stores/timers.ts`, timer schema                              | —                 |
 | `calculator`  | `VITE_FEATURE_CALCULATOR`  | `src/calculator/**`                                                                | —                 |
 | `probability` | `VITE_FEATURE_PROBABILITY` | `src/probability-calculator/**`, `src/utils/dice-probability-calculator/**`        | —                 |
+| `help`        | `VITE_FEATURE_HELP`        | `src/features/help/**`; static `helpcenter/` always builds                         | —                 |
 
 Shared code is never owned by a feature: storage/migrations, backup/restore,
-settings, help, PWA shell, shared file utilities, mention/link infrastructure,
+settings, PWA shell, shared file utilities, mention/link infrastructure,
 shared Markdown editor/renderer. Shared code may remain when its last consumer
 is enabled; feature-specific imports must be gated.
 
@@ -430,6 +433,7 @@ The script should print the exact failing feature/config and module.
 - [x] `FF-106` Smoke-test every feature in the all-on build. — done
 - [x] `FF-107` Confirm disabled direct URLs return 404. — done
 - [x] `FF-108` Mark all completed tasks `done` in this plan and the docs plan. — done
+- [x] `FF-109` Add `VITE_FEATURE_HELP` for in-app help links while always building the static help pages. — done
 
 ---
 
@@ -438,8 +442,9 @@ The script should print the exact failing feature/config and module.
 - Build-time flags work for all 12 menu entities/tools.
 - Missing flags default to on; invalid/unknown flags fail the build.
 - Invalid dependency combinations fail the build with actionable messages.
-- All-off build contains only core shell, settings, help, backup/PWA and shared
-  storage.
+- All-off build contains only core shell, settings, backup/PWA and shared
+  storage; help-center pages still build statically, but in-app help links are
+  absent when `VITE_FEATURE_HELP=false`.
 - No disabled feature routes, chunks, stores, components, icons, CSS, nav/home
   entries or globals appear in a production build.
 - Disabled direct URLs show the existing 404 page.

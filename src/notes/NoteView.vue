@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { useNoteStore } from '@/stores/notes';
 import { useMentionsStore } from '@/utils/storage';
 import type { Note } from '@/types';
@@ -242,7 +243,8 @@ async function persistDraft(draft: Note): Promise<boolean> {
 }
 
 const headerButtons = computed(() => {
-  if (!editState.isEditMode || editState.isVisualMode) return [];
+  if (!features.help || !editState.isEditMode || editState.isVisualMode)
+    return [];
 
   return [
     {

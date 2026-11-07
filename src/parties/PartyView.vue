@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { useRoute, useRouter } from 'vue-router';
 
 import type { Party } from '@/types';
@@ -213,7 +214,8 @@ async function persistDraft(draft: Party): Promise<boolean> {
 }
 
 const headerButtons = computed(() => {
-  if (!editState.isEditMode || editState.isVisualMode) return [];
+  if (!features.help || !editState.isEditMode || editState.isVisualMode)
+    return [];
   return [
     {
       color: 'primary',

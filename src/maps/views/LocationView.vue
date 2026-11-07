@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import {
   IconAffiliate,
   IconEye,
@@ -178,7 +179,8 @@ async function persistDraft(draft: MapLocation): Promise<boolean> {
 }
 
 const headerButtons = computed(() => {
-  if (!editState.isEditMode || editState.isVisualMode) return [];
+  if (!features.help || !editState.isEditMode || editState.isVisualMode)
+    return [];
   return [
     {
       color: 'primary',

@@ -11,6 +11,7 @@ import { useEntityLinkRelations } from '@/components/common/entityDragLinking/re
 import { useFeatureStores } from '@/composables/useFeatureStores';
 import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
 import { IconHelp } from '@tabler/icons-vue';
 
@@ -208,7 +209,7 @@ function handleDelete() {
           {{ t('markdownEditor.visualMode') }}
         </QToggle>
         <QBtn
-          v-if="!isWYSIWYGMode"
+          v-if="!isWYSIWYGMode && features.help"
           flat
           round
           class="character-help-button"

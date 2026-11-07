@@ -53,3 +53,4 @@ declare const __FEATURE_AMBIENT__: boolean;
 declare const __FEATURE_TIMERS__: boolean;
 declare const __FEATURE_CALCULATOR__: boolean;
 declare const __FEATURE_PROBABILITY__: boolean;
+declare const __FEATURE_HELP__: boolean;
