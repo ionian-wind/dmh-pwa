@@ -206,9 +206,6 @@ onMounted(() => {
               @item-click="scrollToAnchor"
               @bookmark-toggle="toggleBookmark"
             />
-            <div v-else class="text-caption text-grey-7">
-              {{ t('common.noTableOfContents') }}
-            </div>
           </div>
 
           <div v-show="activeTab === 'bookmarks'" class="q-pa-md">
