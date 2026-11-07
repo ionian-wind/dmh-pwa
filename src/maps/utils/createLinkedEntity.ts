@@ -6,6 +6,7 @@ import { usePartyStore } from '@/stores/parties';
 import { useMapLocationStore } from '@/maps/locations';
 import type { MapEntityKind, MapLocation } from '@/maps/types';
 import type { JukeboxPlaylist } from '@/jukebox/types';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 
 export interface CreatedEntity {
   id: string;
@@ -35,7 +36,7 @@ export async function createLinkedEntity(
         ...(data as any),
         contentType: (data as any).contentType ?? 'text',
       });
-      return { id: note.id, label: note.title };
+      return { id: note.id, label: noteDisplayTitle(note) || note.id };
     }
     case 'party': {
       const party = await usePartyStore().create(

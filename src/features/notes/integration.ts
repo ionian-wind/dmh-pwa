@@ -1,6 +1,7 @@
 import type { FeatureIntegration } from '@/features/types';
 import { stripEntityMeta } from '@/features/create';
 import { useNoteStore } from '@/stores/notes';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 import { IconNote } from '@tabler/icons-vue';
 
 const noteStore = () => useNoteStore();
@@ -55,7 +56,7 @@ export const notesFeature: FeatureIntegration = {
           ...(data as any),
           contentType: (data as any).contentType ?? 'text',
         });
-        return { id: note.id, label: note.title };
+        return { id: note.id, label: noteDisplayTitle(note) || note.id };
       },
       useStore: useNoteStore,
     },

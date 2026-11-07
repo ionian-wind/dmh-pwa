@@ -4,6 +4,7 @@ import {
   type MapEntityKindOption,
 } from '@/components/common/entityLinking/entityRefs';
 import type { MapEntityRef } from '@/maps/types';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 
 export interface MapEntityCatalogGroup extends MapEntityKindOption {
   items: Array<{ id: string; label: string }>;
@@ -31,7 +32,10 @@ export function useMapEntityCatalog() {
       const items = (Array.isArray(storedItems) ? storedItems : []).map(
         (item) => ({
           id: item.id,
-          label: String(item[option.titleField] || item.id),
+          label:
+            option.kind === 'note'
+              ? noteDisplayTitle(item) || String(item.id)
+              : String(item[option.titleField] || item.id),
         }),
       );
       return { ...option, items };

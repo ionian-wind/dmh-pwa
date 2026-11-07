@@ -5,6 +5,7 @@ import { Transform } from '@milkdown/kit/prose/transform';
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 
 import { debug } from '@/utils/debug';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 import { featureLinkKinds } from 'virtual:feature-links';
 import iconNote from '@tabler/icons/outline/note.svg?raw';
 import iconUsers from '@tabler/icons/outline/users.svg?raw';
@@ -195,8 +196,9 @@ function insertMentionMark(
                   '\u200b',
                   '\u200b',
                 ) ||
-                mention.title ||
-                mention.name;
+                (kind === 'note'
+                  ? noteDisplayTitle(mention)
+                  : mention.title || mention.name);
               const mentionMarkType = schema.marks.mention;
               if (!mentionMarkType) return false;
               let tr = state.tr.delete(selection.from, selection.to);
@@ -403,13 +405,7 @@ const mentionIcons: Record<string, string> = {
   location: iconMap,
 };
 
-const MENTIONABLE_ORDER = [
-  'note',
-  'party',
-  'monster',
-  'encounter',
-  'location',
-];
+const MENTIONABLE_ORDER = ['note', 'party', 'monster', 'encounter', 'location'];
 const MENTIONABLE_KINDS = new Set(MENTIONABLE_ORDER);
 
 const mentionKinds = featureLinkKinds

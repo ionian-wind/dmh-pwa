@@ -12,6 +12,7 @@ import {
 } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
 import { downloadNote } from '@/notes/downloadNote';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 
 const props = defineProps<{ note: Note }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'tag-click', 'copy']);
@@ -71,11 +72,11 @@ function handleDownload() {
     @edit="handleEdit"
     @delete="handleDelete"
     @copy="handleCopy"
-    :drag-entity="{ kind: 'note', id: note.id, title: note.title }"
+    :drag-entity="{ kind: 'note', id: note.id, title: noteDisplayTitle(note) }"
   >
     <template #header>
       <div class="row items-center q-gutter-xs">
-        <h5 class="q-ma-none">{{ note.title || t('common.untitled') }}</h5>
+        <h5 v-if="note.title?.trim()" class="q-ma-none">{{ note.title }}</h5>
       </div>
     </template>
 

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import { getEntityKindOption } from '@/components/common/entityLinking/entityRefs';
 import type { MapEntityRef } from '@/maps/types';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 import { useEntityLinkRelations } from './relations';
 import type { EntityDragData, EntityLinkKind } from './registry';
 import { toMapEntityKind } from './registry';
@@ -33,9 +34,12 @@ const options = computed(() =>
     )
     .map((entity) => ({
       id: entity.id,
-      label: String(
-        entity[optionConfig.value?.titleField ?? 'name'] || entity.id,
-      ),
+      label:
+        props.kind === 'note'
+          ? noteDisplayTitle(entity) || String(entity.id)
+          : String(
+              entity[optionConfig.value?.titleField ?? 'name'] || entity.id,
+            ),
     })),
 );
 

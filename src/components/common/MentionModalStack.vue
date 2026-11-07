@@ -7,6 +7,7 @@ import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
 import router from '@/router';
 import { featureLinkKinds } from 'virtual:feature-links';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 
 const { currentMentionModal, currentModalId, closeMentionModal } =
   useModalState();
@@ -25,8 +26,10 @@ const modalKind = computed(() => currentMentionModal.value?.kind || '');
 const modalId = computed(() => currentMentionModal.value?.modalId || '');
 const modalTitle = computed(
   () =>
-    modalEntity.value?.title ||
-    modalEntity.value?.name ||
+    modalEntity.value?.title?.trim() ||
+    (modalKind.value === 'note'
+      ? noteDisplayTitle(modalEntity.value)
+      : modalEntity.value?.name) ||
     t('modal.entityDetails'),
 );
 const externalRoute = computed(() => {

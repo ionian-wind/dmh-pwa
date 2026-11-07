@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { cropTitle } from '@/utils/cropTitle';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 import { useI18n } from 'vue-i18n';
 import { featureLinkKinds } from 'virtual:feature-links';
 import EntityGroup from './EntityGroup.vue';
@@ -40,6 +41,9 @@ function getEntityDisplay(entity: EntityRef) {
   const store = stores[entity.kind];
   if (!option || !store) return entity.id;
   const record = store.getById?.(entity.id);
+  if (entity.kind === 'note' && record) {
+    return noteDisplayTitle(record) || entity.id;
+  }
   const label = record?.[option.titleField] || entity.id;
   return cropTitle(label);
 }

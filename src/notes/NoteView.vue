@@ -10,6 +10,7 @@ import type { Note } from '@/types';
 import type { TocItem } from '@/components/common/milkdown/plugins/toc';
 import { extractMentionedEntities } from '@/utils/markdownParser';
 import { ensureBlockAnchors } from '@/utils/noteAnchors';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
@@ -318,7 +319,9 @@ const headerButtons = computed(() => {
 const handleDelete = async () => {
   if (!note.value) return false;
   if (
-    !(await confirm(t('common.confirmDelete', { title: note.value.title })))
+    !(await confirm(
+      t('common.confirmDelete', { title: noteDisplayTitle(note.value) }),
+    ))
   ) {
     return false;
   }
@@ -329,7 +332,7 @@ const handleDelete = async () => {
 };
 
 // Computed properties for BaseEntityView
-const noteTitle = computed(() => note.value?.title || t('common.untitled'));
+const noteTitle = computed(() => note.value?.title?.trim() || '');
 
 const rightDrawer = useRightDrawer();
 

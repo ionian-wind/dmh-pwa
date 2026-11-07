@@ -7,6 +7,7 @@ import { IconBrush } from '@tabler/icons-vue';
 import type { Note, NoteContentType } from '@/types';
 
 import { useNoteStore } from '@/stores/notes';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 import { useNoteTypeStore } from '@/stores/noteTypes';
 import BaseListView from '@/components/common/BaseListView.vue';
 import NoteCard from '@/notes/NoteCard.vue';
@@ -76,7 +77,9 @@ function handleEdit(note: Note) {
 async function handleDelete(note: Note) {
   if (
     note.id &&
-    (await confirm(t('common.confirmDelete', { title: note.title })))
+    (await confirm(
+      t('common.confirmDelete', { title: noteDisplayTitle(note) }),
+    ))
   ) {
     await noteStore.remove(note.id);
     return true;

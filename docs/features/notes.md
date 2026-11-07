@@ -75,7 +75,9 @@ The 600px clamp is hard-coded and does not account for viewport size.
 Fields:
 
 - Title (optional; empty is allowed when content is present). Submission with
-  both empty triggers `alert(t('editor.titleOrContentRequired'))`.
+  both empty triggers `alert(t('editor.titleOrContentRequired'))`. When the
+  title is empty, note cards and the detail header omit it; other labels use
+  the first content line, cropped with `...` when long.
 - Content, rendered through a named `content` slot:
   - `text` notes use the Milkdown editor and its raw/visual toggle.
   - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
