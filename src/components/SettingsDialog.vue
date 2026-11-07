@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { IconMoonStars, IconSun, IconSunMoon } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { useConfigStore } from '@/utils/configStore';
@@ -31,9 +32,30 @@ const { t, locale } = useI18n();
 const configStore = useConfigStore();
 const helpLocale = computed<HelpLocale>(() => getHelpLocale(locale.value));
 const themeOptions = computed(() => [
-  { label: t('settings.themeLight'), value: 'light' },
-  { label: t('settings.themeDark'), value: 'dark' },
-  { label: t('settings.themeAuto'), value: 'auto' },
+  {
+    slot: 'light',
+    value: 'light',
+    attrs: {
+      'aria-label': t('settings.themeLight'),
+      title: t('settings.themeLight'),
+    },
+  },
+  {
+    slot: 'dark',
+    value: 'dark',
+    attrs: {
+      'aria-label': t('settings.themeDark'),
+      title: t('settings.themeDark'),
+    },
+  },
+  {
+    slot: 'auto',
+    value: 'auto',
+    attrs: {
+      'aria-label': t('settings.themeAuto'),
+      title: t('settings.themeAuto'),
+    },
+  },
 ]);
 const isClearingStorage = ref(false);
 const isRequestingPersistence = ref(false);
@@ -205,19 +227,28 @@ async function clearStorage() {
             <div class="text-caption text-grey-7">
               {{ t('settings.uiThemeHint') }}
             </div>
-            <div class="q-mt-sm">
-              <QBtnToggle
-                v-model="configStore.uiTheme"
-                :options="themeOptions"
-                class="settings-theme-toggle"
-                data-test="settings-ui-theme"
-                spread
-                no-caps
-                unelevated
-                size="sm"
-                toggle-color="primary"
-              />
-            </div>
+          </QItemSection>
+          <QItemSection side>
+            <QBtnToggle
+              v-model="configStore.uiTheme"
+              :options="themeOptions"
+              class="settings-theme-toggle"
+              data-test="settings-ui-theme"
+              no-caps
+              unelevated
+              size="sm"
+              toggle-color="primary"
+            >
+              <template #light>
+                <IconSun :size="20" />
+              </template>
+              <template #dark>
+                <IconMoonStars :size="20" />
+              </template>
+              <template #auto>
+                <IconSunMoon :size="20" />
+              </template>
+            </QBtnToggle>
           </QItemSection>
         </QItem>
         <QItem>

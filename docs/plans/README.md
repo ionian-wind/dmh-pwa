@@ -9,11 +9,12 @@ For optional, exploratory ideas that may never be implemented, use
 
 ## Current plans
 
-| Plan                                              | Status                          |
-| ------------------------------------------------- | ------------------------------- |
-| [Scribe and Play modes](scribe-and-play-modes.md) | planned — not implemented       |
-| [PWA hardening](pwa-hardening-plan.md)            | implemented; device checks left |
-| [Build-time feature flags](feature-flags.md)      | implemented; verification green |
+| Plan                                                | Status                          |
+| --------------------------------------------------- | ------------------------------- |
+| [Scribe and Play modes](scribe-and-play-modes.md)   | planned — not implemented       |
+| [Milkdown view renderer](milkdown-view-renderer.md) | planned — not implemented       |
+| [PWA hardening](pwa-hardening-plan.md)              | implemented; device checks left |
+| [Build-time feature flags](feature-flags.md)        | implemented; verification green |
 
 ## Conventions
 

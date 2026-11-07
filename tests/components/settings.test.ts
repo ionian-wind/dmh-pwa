@@ -112,9 +112,23 @@ describe('settings dialog', () => {
       'dark',
       'auto',
     ]);
+    expect(toggle.props('options').map((option: any) => option.slot)).toEqual([
+      'light',
+      'dark',
+      'auto',
+    ]);
     expect(toggle.props('modelValue')).toBe('light');
 
-    await toggle.findAll('button')[1].trigger('click');
+    const buttons = toggle.findAll('button');
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      expect(button.find('svg').exists()).toBe(true);
+    }
+    expect(buttons[0].attributes('aria-label')).toBe('Light');
+    expect(buttons[1].attributes('aria-label')).toBe('Dark');
+    expect(buttons[2].attributes('aria-label')).toBe('Auto');
+
+    await buttons[1].trigger('click');
     expect(config.uiTheme).toBe('dark');
     wrapper.unmount();
   });
