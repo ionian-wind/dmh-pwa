@@ -155,7 +155,7 @@ describe('milkdown mention plugin helpers', () => {
       schema.toDOM({
         attrs: { kind: 'note', id: 'n1', href: 'note://n1', title: 'N' },
       })[1],
-    ).toMatchObject({ href: 'note://n1', title: 'N' });
+    ).toMatchObject({ href: '/notes/n1', title: 'N' });
 
     expect(schema.parseMarkdown.match({ type: 'link', url: 'note://n1' })).toBe(
       true,
@@ -182,7 +182,7 @@ describe('milkdown mention plugin helpers', () => {
     expect(state.openMark).toHaveBeenCalledWith(markType, {
       kind: 'monster',
       id: 'm1',
-      href: 'monster://m1',
+      href: null,
       title: 'Goblin',
     });
     expect(state.next).toHaveBeenCalled();

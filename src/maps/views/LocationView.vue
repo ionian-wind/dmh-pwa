@@ -19,7 +19,7 @@ import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
-import Markdown from '@/components/common/Markdown.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import { alert, confirm } from '@/dialogs';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 import LocationMapTab from '../components/LocationMapTab.vue';
@@ -256,7 +256,7 @@ function openLocation(locationId: string) {
   >
     <template #main>
       <EntityContentSurface v-if="!editState.isEditMode">
-        <Markdown
+        <MilkdownView
           v-if="location?.description"
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"

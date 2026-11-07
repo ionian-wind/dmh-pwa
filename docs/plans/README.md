@@ -12,7 +12,7 @@ For optional, exploratory ideas that may never be implemented, use
 | Plan                                                | Status                          |
 | --------------------------------------------------- | ------------------------------- |
 | [Scribe and Play modes](scribe-and-play-modes.md)   | planned — not implemented       |
-| [Milkdown view renderer](milkdown-view-renderer.md) | planned — not implemented       |
+| [Milkdown view renderer](milkdown-view-renderer.md) | implemented; phase 4 deferred   |
 | [PWA hardening](pwa-hardening-plan.md)              | implemented; device checks left |
 | [Build-time feature flags](feature-flags.md)        | implemented; verification green |
 

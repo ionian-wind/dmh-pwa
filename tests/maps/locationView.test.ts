@@ -315,7 +315,7 @@ describe('LocationView', () => {
     await flushPromises();
 
     wrapper
-      .findComponent({ name: 'Markdown' })
+      .findComponent({ name: 'MilkdownView' })
       .vm.$emit('update:content', 'Checked via Markdown');
     await flushPromises();
     expect(mocks.locationStore.update).toHaveBeenCalledWith('l1', {

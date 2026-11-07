@@ -17,7 +17,7 @@ import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
-import Markdown from '@/components/common/Markdown.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import { IconHelp } from '@tabler/icons-vue';
@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
           :model-value="noteContent"
           readonly
         />
-        <Markdown
+        <MilkdownView
           v-else
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"
@@ -365,59 +365,3 @@ onBeforeUnmount(() => {
     </template>
   </BaseEntityTabView>
 </template>
-
-<style scoped>
-.markdown-content {
-  font-family: var(--font-family);
-}
-
-.markdown-content :deep(h1),
-.markdown-content :deep(h2),
-.markdown-content :deep(h3),
-.markdown-content :deep(h4),
-.markdown-content :deep(h5),
-.markdown-content :deep(h6) {
-  margin: 1.5em 0 0.5em;
-  color: var(--color-text);
-}
-
-.markdown-content :deep(p) {
-  margin: 1em 0;
-}
-
-.markdown-content :deep(ul),
-.markdown-content :deep(ol) {
-  margin: 1em 0;
-  padding-left: 2em;
-}
-
-.markdown-content :deep(li) {
-  margin: 0.5em 0;
-}
-
-.markdown-content :deep(blockquote) {
-  border-left: 4px solid var(--color-accent);
-  padding-left: 1em;
-  margin: 1em 0;
-  color: var(--color-text-light);
-}
-
-.markdown-content :deep(code) {
-  background: var(--color-background-soft);
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
-  font-family: monospace;
-}
-
-.markdown-content :deep(pre) {
-  background: var(--color-background-soft);
-  padding: 1em;
-  border-radius: var(--border-radius);
-  overflow-x: auto;
-}
-
-.markdown-content :deep(pre code) {
-  background: none;
-  padding: 0;
-}
-</style>

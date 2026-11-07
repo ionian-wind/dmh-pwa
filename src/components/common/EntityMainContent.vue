@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Markdown from '@/components/common/Markdown.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import { sanitizeHtmlContent } from '@/utils/markdownParser';
 
 const props = defineProps<{
@@ -34,7 +34,7 @@ const description = computed(() =>
           :alt="entity.title || ''"
           class="note-drawing-preview"
         />
-        <Markdown
+        <MilkdownView
           v-else-if="entity?.contentType !== 'draw'"
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"

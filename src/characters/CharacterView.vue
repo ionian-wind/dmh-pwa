@@ -13,7 +13,7 @@ import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
-import Markdown from '@/components/common/Markdown.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
 import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
 import { IconHelp } from '@tabler/icons-vue';
 import { useEntityViewTabs } from '@/components/common/entityViewTabs';
@@ -257,7 +257,7 @@ onBeforeUnmount(() => {
   >
     <template #main>
       <EntityContentSurface v-if="!editState.isEditMode">
-        <Markdown
+        <MilkdownView
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"
           :content="character?.notes || ''"

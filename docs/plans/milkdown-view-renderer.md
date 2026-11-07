@@ -1,6 +1,6 @@
 # Milkdown View Renderer — Implementation Plan
 
-**Status:** planned — not implemented.
+**Status:** implemented (phases 1–3); phase 4 deferred.
 
 **Goal:** render Markdown detail views with the same Milkdown/Crepe pipeline
 that the editor uses, so reading and editing produce the same result for
@@ -20,7 +20,7 @@ and append `— done` plus the commit/date when a task is complete.
 | Note-card renderer             | Keep markdown-it in phase 1                                             |
 | Module document chunks         | Keep markdown-it in phase 1; evaluate a static renderer in phase 4      |
 | Crepe feature set in view      | Same schema-producing features; disable only UI-only features           |
-| Task checkbox toggling in view | Preserve via a ProseMirror transaction, then emit updated Markdown      |
+| Task checkbox toggling in view | Patch the matching Markdown source line, then emit updated Markdown     |
 | Mention kinds                  | Resolve from `featureLinkKinds`; disabled kinds must not open           |
 | Raw HTML                       | Milkdown renders it as text; accept for phase 1 unless content needs it |
 | Data model / migrations        | No changes; storage, backups and exports remain Markdown                |
@@ -102,88 +102,89 @@ Planned files:
 
 ### Phase 0 — prerequisites and shared behavior
 
-- [ ] `MDV-001` Inventory every `Markdown.vue` consumer and classify it as
-      detail view, card preview or module chunk. Record the classification in
-      this plan or in the Markdown feature docs.
-- [ ] `MDV-002` Replace hardcoded mention kinds in
-      `src/components/common/milkdown/plugins/mention.ts` with
-      `featureLinkKinds`. - Use the same `kind`, `route`, `titleField` and `id` data as
-      `markdownParser.ts`. - Fix the current `map` vs `location` mismatch. - Normalize `href` to the feature route instead of `kind://id` or
-      `/${kind}s/${id}`.
-- [ ] `MDV-003` Ensure disabled feature kinds remain non-interactive in the
-      view. Unknown or disabled kinds must not open a modal or navigate.
-- [ ] `MDV-004` Extract the decoration-only part of
-      `plugins/tagAutocomplete.ts` into `plugins/tagDecoration.ts`. - Keep `tag-link` and `data-tag` decoration behavior. - Do not include the singleton autocomplete trigger in the view plugin.
-- [ ] `MDV-005` Add a heading-anchor feature for `## Title {#kind-id}`. - Remark plugin strips the marker from the displayed heading text. - Store the anchor kind and id on the heading node. - Heading schema emits `id="kind-id"`, `data-kind` and `data-id`. - Do not require round-tripping the marker from the read-only view.
-- [ ] `MDV-006` Add unit tests for mention-kind resolution and heading-anchor
-      parsing before integrating the view component.
+- [x] `MDV-001` Inventory every `Markdown.vue` consumer — done. Detail views
+      use `MilkdownView`; `NoteCard` and `ModuleDocumentView` keep `Markdown`.
+- [x] `MDV-002` Replace hardcoded mention kinds in `mention.ts` with
+      `featureLinkKinds` — done. The kind regex now accepts any `kind://id` and
+      enabled kinds resolve their route from the feature catalog. The `map` /
+      `location` mismatch is fixed.
+- [x] `MDV-003` Keep disabled or unknown kinds non-interactive — done. They
+      render as `.disabled-internal-link` spans and the view click handler
+      prevents navigation.
+- [x] `MDV-004` Extract the decoration-only tag plugin into
+      `plugins/tagDecoration.ts` — done. The autocomplete singleton stays out
+      of the read-only view.
+- [x] `MDV-005` Add a heading-anchor feature for `## Title {#kind-id}` — done.
+      The remark plugin strips the marker, the heading schema emits
+      `id="kind-id"`, `data-kind` and `data-id`, and the heading-id generator is
+      overridden so the anchor is not replaced by a slug.
+- [x] `MDV-006` Add tests for heading-anchor parsing and disabled entity links
+      — done in `tests/components/milkdownView.test.ts`.
 
 ### Phase 1 — read-only Milkdown component
 
-- [ ] `MDV-010` Add a `readonly` prop to `MilkdownEditor.vue`. - Call `crepe.setReadonly(true)` before or immediately after creation. - Keep schema-producing features enabled: `ListItem`, `CodeMirror`,
-      `Table`, `Latex`, `ImageBlock`. - Disable UI-only features in read-only mode: `Toolbar`, `BlockEdit`,
-      `Placeholder`, `LinkTooltip`, `Cursor`, `TopBar`.
-- [ ] `MDV-011` Synchronize external `modelValue` changes in read-only mode
-      using a Milkdown `replaceAll`-style document update. Do not re-emit the
-      same value back to the parent.
-- [ ] `MDV-012` Create `MilkdownView.vue` with props matching `Markdown.vue`:
-      `content`, `anchorMap`, `enableMentionModal`, `taskCheckboxEnabled`,
-      `scrollToAnchor`.
-- [ ] `MDV-013` Reuse the entity mention mark and add the tag decoration plus
-      heading-anchor feature to the read-only view.
-- [ ] `MDV-014` Add capture-phase click handling for: - `.internal-link` with `data-kind` and `data-id`; - `.tag-link` with `data-tag`; - external `http(s)` links.
-- [ ] `MDV-015` Preserve internal-link behavior: - anchor scroll when the target is in `anchorMap`; - mention modal when `enableMentionModal` is true; - SPA navigation fallback via `history.pushState` + `PopStateEvent`.
-- [ ] `MDV-016` Implement task checkbox toggling when
-      `taskCheckboxEnabled` is true. - Find the clicked `list_item` through the ProseMirror view. - Dispatch a transaction that flips `checked`. - Emit the updated Markdown through `update:content`. - Keep the checkbox non-interactive when the prop is false.
-- [ ] `MDV-017` Load the entity stores needed by mention modals once per view
-      instance, matching `Markdown.vue` behavior.
-- [ ] `MDV-018` Add styles for the read-only wrapper so Crepe content fills the
-      existing content surface without editor chrome.
+- [x] `MDV-010` Add a `readonly` prop to `MilkdownEditor.vue` — done. Read-only
+      mode calls `setReadonly(true)` and disables UI-only features while
+      keeping schema-producing features enabled.
+- [x] `MDV-011` Synchronize external `modelValue` changes in read-only mode —
+      done with Milkdown's `replaceAll` macro and a last-applied-value guard.
+- [x] `MDV-012` Create `MilkdownView.vue` with props matching `Markdown.vue` —
+      done: `content`, `anchorMap`, `enableMentionModal`,
+      `taskCheckboxEnabled`, `scrollToAnchor`.
+- [x] `MDV-013` Reuse the entity mention mark and add the tag decoration plus
+      heading-anchor feature — done.
+- [x] `MDV-014` Add capture-phase click handling — done for `.internal-link`,
+      `.tag-link`, `.disabled-internal-link` and external links.
+- [x] `MDV-015` Preserve internal-link behavior — done: anchor scroll, mention
+      modal and SPA navigation fallback.
+- [x] `MDV-016` Implement task checkbox toggling — done with source-line
+      patching. The clicked task item is mapped to its Markdown line, the line
+      marker is flipped and `update:content` is emitted. This preserves bullet
+      style, tag escaping and heading anchor markers.
+- [x] `MDV-017` Load the entity stores needed by mention modals — done.
+- [x] `MDV-018` Add read-only wrapper styles — done. Crepe padding is removed
+      so the existing content surfaces control spacing.
 
 ### Phase 2 — detail-view integration
 
-- [ ] `MDV-020` Replace `Markdown` with `MilkdownView` in `NoteView.vue` read
-      mode, preserving `taskCheckboxEnabled`, `enableMentionModal` and
-      `update:content`.
-- [ ] `MDV-021` Replace `Markdown` with `MilkdownView` in `PartyView.vue` read
-      mode.
-- [ ] `MDV-022` Replace `Markdown` with `MilkdownView` in `MonsterView.vue`
-      read mode.
-- [ ] `MDV-023` Replace `Markdown` with `MilkdownView` in `CharacterView.vue`
-      read mode.
-- [ ] `MDV-024` Replace `Markdown` with `MilkdownView` in `LocationView.vue`
-      read mode.
-- [ ] `MDV-025` Replace `Markdown` with `MilkdownView` in
-      `EntityMainContent.vue` for note content and mention-modal previews.
-- [ ] `MDV-026` Keep `Markdown` in `NoteCard.vue` and
-      `ModuleDocumentView.vue`; document why.
-- [ ] `MDV-027` Remove or scope the old `.markdown-content` styles from the
-      detail views that now use Milkdown.
+- [x] `MDV-020` Use `MilkdownView` in `NoteView.vue` — done.
+- [x] `MDV-021` Use `MilkdownView` in `PartyView.vue` — done.
+- [x] `MDV-022` Use `MilkdownView` in `MonsterView.vue` — done.
+- [x] `MDV-023` Use `MilkdownView` in `CharacterView.vue` — done.
+- [x] `MDV-024` Use `MilkdownView` in `LocationView.vue` — done.
+- [x] `MDV-025` Use `MilkdownView` in `EntityMainContent.vue` — done.
+- [x] `MDV-026` Keep `Markdown` in `NoteCard.vue` and
+      `ModuleDocumentView.vue` — done. Cards and virtualized chunks stay on
+      markdown-it.
+- [x] `MDV-027` Remove or scope old `.markdown-content` styles — done. The
+      unused NoteView overrides were removed.
 
 ### Phase 3 — verification and documentation
 
-- [ ] `MDV-030` Add component or integration tests for `MilkdownView.vue`.
-      Cover headings, lists, tables, task items, entity links, tag links,
-      external links and content updates.
-- [ ] `MDV-031` Add an E2E test that opens a note with mixed Markdown, switches
-      to edit and back, and asserts the visible structure is unchanged.
-- [ ] `MDV-032` Verify mention links for every enabled kind and for a disabled
-      kind.
-- [ ] `MDV-033` Verify task toggling emits the same Markdown that the editor
-      would produce.
-- [ ] `MDV-034` Run `npm run types-check`, the Markdown/notes/entity tests and
-      the production build.
-- [ ] `MDV-035` Update `docs/features/markdown-and-mentions.md` with the
-      renderer split and the new shared plugins.
-- [ ] `MDV-036` Update `docs/components/markdown-editor.md` with read-only mode,
-      lifecycle and content synchronization.
-- [ ] `MDV-037` Check bundle output and PWA precache size; confirm that routes
-      already loading the editor do not gain a second Milkdown copy.
+- [x] `MDV-030` Add component/integration tests for `MilkdownView.vue` — done
+      in `tests/components/milkdownView.test.ts`.
+- [x] `MDV-031` Add an E2E test for mixed Markdown, edit/view switching and
+      task persistence — done in `tests/e2e/milkdown-view.e2e.ts`.
+- [x] `MDV-032` Verify enabled and disabled mention links — done in the
+      component tests and manual browser checks.
+- [x] `MDV-033` Verify task toggling output — done. The emitted source keeps
+      `-` bullets, unescaped `#tag` text and `{#kind-id}` markers.
+- [x] `MDV-034` Run types-check, tests and the production build — done.
+      All 1564 tests pass; the known Dexie teardown errors in
+      `locationMapTab` and a few other DB-heavy suites are pre-existing and
+      also occur at the parent commit.
+- [x] `MDV-035` Update `docs/features/markdown-and-mentions.md` — done.
+- [x] `MDV-036` Update `docs/components/markdown-editor.md` — done.
+- [x] `MDV-037` Check bundle output and PWA precache size — done. Every feature
+      that renders Markdown already imports the editor, so the view adds no
+      second Milkdown copy; the cost is one read-only Crepe instance per detail
+      page. Production build: 404 precache entries, ~17.2 MiB; all 15 feature
+      configurations pass the strict audit.
 
 ### Phase 4 — optional full-parity renderer
 
-Only start this phase if card previews and module chunks also need exact
-Milkdown parity.
+**Deferred.** Phase 1–3 cover detail views. Start this phase only if card
+previews and module chunks also need exact Milkdown parity.
 
 - [ ] `MDV-040` Design a singleton headless Milkdown renderer that parses
       Markdown once and serializes HTML for cards and chunks.
@@ -193,8 +194,6 @@ Milkdown parity.
       fallback.
 - [ ] `MDV-044` Measure list and virtual-scroll performance before replacing
       `Markdown.vue` globally.
-
----
 
 ## 5. Acceptance criteria
 

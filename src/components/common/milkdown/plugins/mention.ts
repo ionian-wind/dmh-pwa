@@ -4,6 +4,7 @@ import { editorViewCtx } from '@milkdown/kit/core';
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 
 import { debug } from '@/utils/debug';
+import { featureLinkKinds } from 'virtual:feature-links';
 import iconNote from '@tabler/icons/outline/note.svg?raw';
 import iconBook from '@tabler/icons/outline/book.svg?raw';
 import iconUsers from '@tabler/icons/outline/users.svg?raw';
@@ -11,9 +12,19 @@ import iconGhost from '@tabler/icons/outline/ghost-3.svg?raw';
 import iconSwords from '@tabler/icons/outline/swords.svg?raw';
 import iconMap from '@tabler/icons/outline/map.svg?raw';
 
-// Regex for internal entity links
-const entityLinkRegex =
-  /^(note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)$/;
+// Match any `kind://id` link. Enabled kinds become mention links; unknown or
+// disabled kinds are rendered as disabled links by the mark's toDOM.
+const entityLinkRegex = /^([a-z]+):\/\/([a-zA-Z0-9_-]+)$/;
+const enabledKinds = new Set(featureLinkKinds.map((option) => option.kind));
+
+function isEnabledKind(kind: string) {
+  return enabledKinds.has(kind);
+}
+
+function mentionHref(kind: string, id: string) {
+  const option = featureLinkKinds.find((entry) => entry.kind === kind);
+  return option ? option.route(id) : '';
+}
 
 // 1. Define the mention mark schema
 export const mentionMark = $markSchema('mention', () => ({
@@ -35,11 +46,23 @@ export const mentionMark = $markSchema('mention', () => ({
     },
   ],
   toDOM: (mark) => {
-    const { kind, id, href, title } = mark.attrs;
+    const { kind, id, title } = mark.attrs;
+    if (!isEnabledKind(kind)) {
+      return [
+        'span',
+        {
+          class: 'disabled-internal-link',
+          'aria-disabled': 'true',
+          title,
+        },
+        0,
+      ];
+    }
+
     return [
       'a',
       {
-        href: href || `/${kind}s/${id}`,
+        href: mentionHref(kind, id) || mark.attrs.href || '',
         'data-kind': kind,
         'data-id': id,
         class: `internal-link ${kind}-link`,
@@ -59,7 +82,7 @@ export const mentionMark = $markSchema('mention', () => ({
       state.openMark(markType, {
         kind,
         id,
-        href: node.url,
+        href: null,
         title: node.title,
       });
       state.next(node.children);
@@ -184,7 +207,7 @@ function insertMentionMark(
                 mentionMarkType.create({
                   kind,
                   id: mention.id,
-                  href: `${kind}://`,
+                  href: mentionHref(kind, mention.id),
                   title: selectedText,
                 }),
               );
@@ -227,7 +250,7 @@ function insertMentionMark(
           mentionMarkType.create({
             kind,
             id: '', // No id yet
-            href: `${kind}://`,
+            href: null,
             title: selectedText,
           }),
         );
@@ -321,18 +344,36 @@ function mentionIcon(svg: string) {
   return svg.replace('class="', 'class="mention-tabler-icon ');
 }
 
-const mentionKinds = [
-  { kind: 'note', label: 'notes.title', icon: mentionIcon(iconNote) },
-  { kind: 'module', label: 'modules.title', icon: mentionIcon(iconBook) },
-  { kind: 'party', label: 'parties.title', icon: mentionIcon(iconUsers) },
-  { kind: 'monster', label: 'monsters.title', icon: mentionIcon(iconGhost) },
-  {
-    kind: 'encounter',
-    label: 'encounters.title',
-    icon: mentionIcon(iconSwords),
-  },
-  { kind: 'location', label: 'maps.locations', icon: mentionIcon(iconMap) },
+const mentionIcons: Record<string, string> = {
+  note: iconNote,
+  module: iconBook,
+  party: iconUsers,
+  monster: iconGhost,
+  encounter: iconSwords,
+  location: iconMap,
+};
+
+const MENTIONABLE_ORDER = [
+  'note',
+  'module',
+  'party',
+  'monster',
+  'encounter',
+  'location',
 ];
+const MENTIONABLE_KINDS = new Set(MENTIONABLE_ORDER);
+
+const mentionKinds = featureLinkKinds
+  .filter((option) => MENTIONABLE_KINDS.has(option.kind))
+  .sort(
+    (a, b) =>
+      MENTIONABLE_ORDER.indexOf(a.kind) - MENTIONABLE_ORDER.indexOf(b.kind),
+  )
+  .map((option) => ({
+    kind: option.kind,
+    label: option.labelKey,
+    icon: mentionIcon(mentionIcons[option.kind] ?? iconNote),
+  }));
 
 function getEditorView(ctx: any) {
   for (const key of [editorViewCtx, 'editorView', 'view']) {

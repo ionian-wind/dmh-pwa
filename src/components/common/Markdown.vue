@@ -85,7 +85,8 @@ function handleInternalLinkClick(e: MouseEvent) {
     if (anchorMap.has(id)) {
       const anchor =
         rootEl.value && rootEl.value.contains(link)
-          ? (rootEl.value.querySelector(`#${CSS.escape(id)}`) as HTMLElement)
+          ? ((rootEl.value.querySelector(`#${CSS.escape(`${kind}-${id}`)}`) ??
+              rootEl.value.querySelector(`#${CSS.escape(id)}`)) as HTMLElement)
           : null;
       if (anchor) {
         e.preventDefault();

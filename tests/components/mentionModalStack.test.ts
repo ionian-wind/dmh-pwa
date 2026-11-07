@@ -6,6 +6,14 @@ import MentionModalStack from '@/components/common/MentionModalStack.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useModalState } from '@/composables/useModalState';
 
+vi.mock('@/components/common/milkdown/MilkdownView.vue', () => ({
+  default: {
+    name: 'MilkdownView',
+    props: ['content', 'enableMentionModal', 'taskCheckboxEnabled'],
+    template: '<div class="milkdown-view-stub">{{ content }}</div>',
+  },
+}));
+
 const routerMocks = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock('@/router', () => ({ default: { push: routerMocks.push } }));
 

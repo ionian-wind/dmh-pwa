@@ -2,22 +2,27 @@
 
 ## Purpose
 
-Markdown is the content format for notes and module documents. A custom
-markdown-it pipeline adds internal entity links, task lists, heading anchors,
-and external-link handling. A separate index tracks which notes mention which
-entities.
+Markdown is the content format for notes and module documents. Entity detail
+views now render it with the same Milkdown/Crepe pipeline as the editor; note
+cards and module document chunks keep the lighter markdown-it renderer. A
+separate index tracks which notes mention which entities.
 
 ## Key files
 
-| File                                         | Role                                                 |
-| -------------------------------------------- | ---------------------------------------------------- |
-| `src/utils/markdownParser.ts`                | markdown-it instance, plugins, mention extraction    |
-| `src/components/common/Markdown.vue`         | Renderer (v-html) + checkbox handling + link routing |
-| `src/components/common/MarkdownEditor.vue`   | WYSIWYG/raw editor switch                            |
-| `src/components/common/milkdown/*`           | Crepe integration and mention insertion              |
-| `src/utils/storage.ts#createIndexationStore` | Mention index                                        |
-| `src/stores/notes.ts`                        | Writes the index on note save/delete                 |
-| `src/components/common/Mentions.vue`         | Renders mention/backlink lists                       |
+| File                                                      | Role                                                    |
+| --------------------------------------------------------- | ------------------------------------------------------- |
+| `src/utils/markdownParser.ts`                             | markdown-it instance, plugins, mention extraction       |
+| `src/components/common/Markdown.vue`                      | markdown-it renderer for cards/chunks + link routing    |
+| `src/components/common/milkdown/MilkdownView.vue`         | Read-only Milkdown view for detail pages                |
+| `src/components/common/milkdown/MilkdownEditor.vue`       | Crepe editor/read-only host                             |
+| `src/components/common/milkdown/plugins/mention.ts`       | Mention mark, normalization, toolbar/menu entries       |
+| `src/components/common/milkdown/plugins/headingAnchor.ts` | `{#kind-id}` remark plugin and heading schema extension |
+| `src/components/common/milkdown/plugins/tagDecoration.ts` | Decoration-only `#tag` styling                          |
+| `src/components/common/MarkdownEditor.vue`                | WYSIWYG/raw editor switch                               |
+| `src/components/common/milkdown/*`                        | Crepe integration and mention insertion                 |
+| `src/utils/storage.ts#createIndexationStore`              | Mention index                                           |
+| `src/stores/notes.ts`                                     | Writes the index on note save/delete                    |
+| `src/components/common/Mentions.vue`                      | Renders mention/backlink lists                          |
 
 ## Rendering pipeline (`markdownParser.ts`)
 
@@ -75,7 +80,39 @@ If `kind` is a valid entity kind, the heading receives:
 
 `ModuleDocumentView` relies on this to generate `id="note-<id>"` headings.
 
+## View renderer (`MilkdownView.vue`)
+
+Entity detail views use a read-only Crepe instance so view and edit share one
+Markdown-to-ProseMirror pipeline.
+
+- `MilkdownEditor` receives `readonly`, calls `crepe.setReadonly(true)` and
+  disables UI-only features (toolbar, block edit, placeholder, link tooltip,
+  cursor, top bar). Schema-producing features (lists, tables, code, math,
+  images) stay enabled.
+- Entity mentions use the same mark as the editor. Enabled kinds resolve their
+  route from `featureLinkKinds`; disabled or unknown kinds render as
+  non-interactive `.disabled-internal-link` spans.
+- Tags keep the `tag-link` decoration and `data-tag`; clicking one navigates to
+  `/notes?tag=...`.
+- `{#kind-id}` headings are parsed by the shared `headingAnchorFeature`:
+  the marker is removed, the heading gets `id="kind-id"`, `data-kind` and
+  `data-id`, and the default heading-id generator is overridden so the anchor
+  id is not replaced by a slug.
+- Task labels update only the matching Markdown source line and emit
+  `update:content`. This preserves bullet markers, tag escaping and heading
+  anchor markers instead of re-serializing the document.
+- External links open in a new tab; internal links use the same anchor,
+  mention-modal and SPA-navigation fallbacks as `Markdown.vue`.
+- `MilkdownView` does not register the tag-autocomplete or mention-popup
+  triggers, so it cannot steal them from an open editor.
+
+Note cards and module document chunks keep `Markdown.vue` because one Crepe
+instance per card would be too expensive and module chunks are virtualized.
+
 ## Renderer (`Markdown.vue`)
+
+Used by note cards, module document chunks and modules that still need a
+lightweight read-only renderer.
 
 - Memoizes parsed HTML by `content + taskCheckboxEnabled` in a shallow `Map`
   capped at 100 entries.
@@ -126,9 +163,13 @@ exists, otherwise the bound `modelValue`. Raw-mode edits are bound through
 
 - creates a `Crepe` instance with the current Markdown as default value,
 - adds a custom `mentionFeature` (mark schema),
+- adds `headingAnchorFeature` so `{#kind-id}` anchors work in both view and
+  edit,
+- adds `tagAutocompleteFeature` in edit mode and `tagDecorationFeature` in
+  read-only mode,
 - wires toolbar/block menu builders,
-- emits Markdown on every editor update,
-- exposes `getMarkdown()`.
+- emits Markdown on every editor update (edit mode only),
+- exposes `getMarkdown()`, `getEditor()` and `getEditorView()`.
 
 `plugins/mention.ts`:
 
@@ -182,9 +223,10 @@ returns `{ kind, id }[]`.
   `kind:id`.
 - Links inside code blocks are still matched (regex-based, not AST-based).
 - `kind://` URLs without a label (bare autolinks) are not matched.
-- Only five kinds are supported; `character` is not mentionable even though
-  `CharacterView` reads `kind: 'character'` from the index and nothing ever
-  writes it.
+- Only enabled `featureLinkKinds` are mentionable (currently note, module,
+  party, monster, encounter and location); `character` is not a link kind even
+  though `CharacterView` reads `kind: 'character'` from the index and nothing
+  ever writes it.
 - Hashtags are extracted with a regex, not an AST, so `#tag` inside inline code
   is also added to `note.tags`.
 
@@ -216,7 +258,9 @@ The four entity sidebars now read the plain entity prop (`props.note`,
 
 ## Limitations
 
-- Unsanitized HTML rendering (security).
+- Raw HTML is supported by the markdown-it renderer (`html: true` plus the
+  DOMParser sanitizer) but Milkdown renders raw HTML as text. Content that
+  relies on raw HTML looks different in detail views.
 - Entity link regex cannot express IDs outside `[A-Za-z0-9_-]`.
 - No character links.
 - Mention index not rebuilt on import/restore.
@@ -224,5 +268,7 @@ The four entity sidebars now read the plain entity prop (`props.note`,
 - No wiki-style `[[link]]` syntax; only Markdown links.
 - Task list toggling is line-based and assumes checkboxes map one-to-one to
   list lines.
-- `Markdown` loads five stores per instance; a note list with many cards
-  triggers repeated `load()` calls (each `getAll`), which is wasteful.
+- `MilkdownView` loads every enabled entity store per instance; a detail page
+  normally has one instance, but opening a mention modal creates another.
+- `Markdown` still loads all link-kind stores per card; a note list with many
+  cards triggers repeated `load()` calls (each `getAll`), which is wasteful.
