@@ -15,7 +15,6 @@ import { downloadNote } from '@/notes/downloadNote';
 import {
   IconAlertTriangle,
   IconAt,
-  IconBookmarkFilled,
   IconBookmarks,
   IconFileDownload,
   IconHash,
@@ -154,10 +153,6 @@ function bookmarkLabel(bookmark: Bookmark) {
   return cropTitle(bookmark.title || t('common.untitled'));
 }
 
-function bookmarkFullTitle(bookmark: Bookmark) {
-  return bookmark.title || t('common.untitled');
-}
-
 async function editBookmark(bookmark: Bookmark) {
   const title = await prompt(t('common.editBookmark'), {
     title: t('common.editBookmark'),
@@ -254,7 +249,7 @@ onMounted(() => {
                     :title="
                       isBookmarkMissing(bookmark)
                         ? t('common.bookmarkMissing')
-                        : bookmarkFullTitle(bookmark)
+                        : bookmarkLabel(bookmark)
                     "
                     @click="
                       scrollToAnchor(bookmark.anchorId ?? bookmark.noteId)
@@ -264,7 +259,6 @@ onMounted(() => {
                       v-if="isBookmarkMissing(bookmark)"
                       :size="14"
                     />
-                    <IconBookmarkFilled v-else :size="14" />
                     <span>{{ bookmarkLabel(bookmark) }}</span>
                   </button>
                   <QBtn
