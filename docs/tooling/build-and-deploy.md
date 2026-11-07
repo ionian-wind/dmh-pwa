@@ -36,6 +36,14 @@ npm run format     # prettier via lint-staged config
 npm run lint       # eslint
 ```
 
+If the dev server reports `504 (Outdated Optimize Dep)` for a dependency such
+as `howler.js` or `mathjs.js`, stop the dev server, remove
+`node_modules/.vite`, and start it again. This usually happens after Vite
+re-optimizes dependencies while a browser tab is still using the old hash.
+
+The dev watcher ignores `dist/`, `coverage/`, `dev-dist/` and the VitePress cache
+so builds and coverage runs do not trigger app reloads.
+
 Node version is pinned by `.nvmrc` to **22.20.0**; CI uses Node 22. The
 `package.json` README prerequisite of "Node 18+" is outdated.
 

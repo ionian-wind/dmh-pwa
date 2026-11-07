@@ -229,6 +229,14 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/dmh-pwa/help': 'http://localhost:5174',
       },
+      watch: {
+        ignored: [
+          '**/dist/**',
+          '**/coverage/**',
+          '**/dev-dist/**',
+          '**/helpcenter/.vitepress/cache/**',
+        ],
+      },
     },
     preview: {
       proxy: {},
