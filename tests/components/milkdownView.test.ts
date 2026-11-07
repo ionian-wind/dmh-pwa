@@ -150,6 +150,23 @@ describe('MilkdownView', () => {
     wrapper.unmount();
   });
 
+  it('emits bookmark toggles from hover bookmark widgets', async () => {
+    const { wrapper } = await mountView();
+    const widget = appendElement(
+      wrapper,
+      '<button type="button" class="toc-bookmark-widget" data-anchor-id="note-block-x" data-title="Heading">Bookmark</button>',
+    );
+    await wrapper.setProps({ bookmarkedIds: new Set(['note-block-x']) });
+    await nextTick();
+
+    expect(widget.classList.contains('is-bookmarked')).toBe(true);
+    widget.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(wrapper.emitted('bookmark-toggle')?.[0]).toEqual([
+      { anchorId: 'note-block-x', title: 'Heading' },
+    ]);
+    wrapper.unmount();
+  });
+
   it('extracts and removes a heading anchor marker', () => {
     const heading = {
       type: 'heading',

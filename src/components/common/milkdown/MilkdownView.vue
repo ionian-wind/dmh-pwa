@@ -2,6 +2,7 @@
   <div
     ref="rootEl"
     class="milkdown-view"
+    :class="{ 'has-bookmarks': bookmarkedIds !== undefined }"
     @click.capture="handleLinkClick"
     @pointerdown.capture="handleTaskPointerDown"
   >
@@ -19,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { MilkdownProvider } from '@milkdown/vue';
 import { useRouter } from 'vue-router';
 import { nanoid } from 'nanoid';
@@ -34,9 +35,10 @@ const props = defineProps<{
   enableMentionModal?: boolean;
   taskCheckboxEnabled?: boolean;
   scrollToAnchor?: (id: string, heading?: HTMLElement) => void;
+  bookmarkedIds?: Set<string>;
 }>();
 
-const emit = defineEmits(['update:content', 'toc-update']);
+const emit = defineEmits(['update:content', 'toc-update', 'bookmark-toggle']);
 
 const router = useRouter();
 const { openMentionModal } = useModalState();
@@ -52,9 +54,30 @@ function getEntity(kind: string, id: string) {
   return entityStores[kind]?.getById?.(id) ?? null;
 }
 
+function syncBookmarkWidgets() {
+  if (!rootEl.value) return;
+  rootEl.value
+    .querySelectorAll<HTMLElement>('.toc-bookmark-widget')
+    .forEach((widget) => {
+      const anchorId = widget.dataset.anchorId;
+      widget.classList.toggle(
+        'is-bookmarked',
+        !!anchorId && (props.bookmarkedIds?.has(anchorId) ?? false),
+      );
+    });
+}
+
 function handleReady() {
   emit('toc-update', editorRef.value?.getToc?.() ?? []);
+  void nextTick(syncBookmarkWidgets);
 }
+
+watch(
+  () => props.bookmarkedIds,
+  () => {
+    void nextTick(syncBookmarkWidgets);
+  },
+);
 
 function navigate(href: string) {
   history.pushState(history.state, '', href);
@@ -73,6 +96,22 @@ function findAnchor(kind: string, id: string) {
 function handleLinkClick(event: MouseEvent) {
   const target = event.target as HTMLElement | null;
   if (!target) return;
+
+  const bookmarkWidget = target.closest(
+    '.toc-bookmark-widget',
+  ) as HTMLElement | null;
+  if (bookmarkWidget) {
+    event.preventDefault();
+    event.stopPropagation();
+    const anchorId = bookmarkWidget.dataset.anchorId;
+    if (anchorId) {
+      emit('bookmark-toggle', {
+        anchorId,
+        title: bookmarkWidget.dataset.title || '',
+      });
+    }
+    return;
+  }
 
   const tagLink = target.closest('.tag-link') as HTMLElement | null;
   if (tagLink) {
@@ -230,5 +269,56 @@ defineExpose({
 .milkdown-view :deep(.disabled-internal-link) {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.milkdown-view :deep(.toc-anchor-block) {
+  position: relative;
+}
+
+.milkdown-view :deep(.toc-bookmark-widget) {
+  position: absolute;
+  left: -30px;
+  top: 0.3em;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-lighter);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.milkdown-view:not(.has-bookmarks) :deep(.toc-bookmark-widget) {
+  display: none;
+}
+
+.milkdown-view :deep(.toc-anchor-block:hover .toc-bookmark-widget),
+.milkdown-view :deep(.toc-bookmark-widget:focus-visible),
+.milkdown-view :deep(.toc-bookmark-widget.is-bookmarked) {
+  opacity: 1;
+}
+
+.milkdown-view :deep(.toc-bookmark-widget:hover) {
+  color: var(--color-accent);
+  background: var(--color-background-mute);
+}
+
+.milkdown-view :deep(.toc-bookmark-widget.is-bookmarked) {
+  color: var(--color-success);
+}
+
+.milkdown-view :deep(.toc-bookmark-widget svg) {
+  width: 14px;
+  height: 14px;
 }
 </style>

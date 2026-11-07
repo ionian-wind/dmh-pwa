@@ -1,6 +1,7 @@
 import { $prose } from '@milkdown/utils';
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/kit/prose/view';
+import bookmarkIcon from '@tabler/icons/outline/bookmark.svg?raw';
 
 export interface TocItem {
   id: string;
@@ -98,6 +99,18 @@ export function collectTocItems(doc: any): TocItem[] {
   return items;
 }
 
+function createBookmarkWidget(block: TocBlock) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'toc-bookmark-widget';
+  button.dataset.anchorId = block.anchorId;
+  button.dataset.title = block.title;
+  button.setAttribute('contenteditable', 'false');
+  button.setAttribute('aria-label', 'Bookmark');
+  button.innerHTML = bookmarkIcon;
+  return button;
+}
+
 function buildTocDecorations(doc: any) {
   const decorations: Decoration[] = [];
   walkTocBlocks(doc, (block) => {
@@ -107,6 +120,10 @@ function buildTocDecorations(doc: any) {
         'data-toc-id': block.anchorId,
         'data-toc-kind': block.kind,
         class: 'toc-anchor-block',
+      }),
+      Decoration.widget(block.pos + 1, () => createBookmarkWidget(block), {
+        side: -1,
+        key: `toc-bookmark-${block.anchorId}`,
       }),
     );
   });

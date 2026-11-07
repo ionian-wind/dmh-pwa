@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
 import { useNoteStore } from '@/stores/notes';
 import { useMentionsStore } from '@/utils/storage';
+import { useBookmarkStore } from '@/stores/bookmarks';
 import type { Note } from '@/types';
 import type { TocItem } from '@/components/common/milkdown/plugins/toc';
 import { extractMentionedEntities } from '@/utils/markdownParser';
@@ -33,6 +34,7 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const noteStore = useNoteStore();
 const mentionsStore = useMentionsStore();
+const bookmarkStore = useBookmarkStore();
 const featureStores = useFeatureStores();
 
 const activeTab = ref('main');
@@ -45,6 +47,14 @@ const validationError = ref<string | null>(null);
 const noteContent = ref('');
 const tocItems = ref<TocItem[]>([]);
 const tocReady = ref(false);
+const bookmarkedAnchorIds = computed(
+  () =>
+    new Set(
+      (note.value ? bookmarkStore.bookmarksFor('note', note.value.id) : []).map(
+        (bookmark) => bookmark.anchorId ?? bookmark.noteId,
+      ),
+    ),
+);
 const canvasDirty = ref(false);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
@@ -95,6 +105,16 @@ watch(
 function handleTocUpdate(items: typeof tocItems.value) {
   tocItems.value = items;
   tocReady.value = true;
+}
+
+function handleBookmarkToggle(payload: { anchorId: string; title: string }) {
+  if (!note.value) return;
+  void bookmarkStore.toggleAnchorBookmark(
+    'note',
+    note.value.id,
+    payload.anchorId,
+    payload.title,
+  );
 }
 
 const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
@@ -306,6 +326,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await noteStore.load();
   await mentionsStore.load();
+  await bookmarkStore.load();
 
   rightDrawer.set({
     component: NoteViewSidebar,
@@ -351,8 +372,10 @@ onBeforeUnmount(() => {
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"
           :content="noteContent"
+          :bookmarked-ids="bookmarkedAnchorIds"
           @update:content="handleMarkdownContentChange"
           @toc-update="handleTocUpdate"
+          @bookmark-toggle="handleBookmarkToggle"
         />
       </EntityContentSurface>
 
