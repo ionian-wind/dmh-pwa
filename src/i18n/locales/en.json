@@ -490,8 +490,7 @@
     "contentPlaceholder": "Enter content here...",
     "module": "Module",
     "type": "Type",
-    "tags": "Tags",
-    "backgroundColor": "Background color"
+    "tags": "Tags"
   },
   "partySelector": {
     "chooseParty": "Choose a party...",

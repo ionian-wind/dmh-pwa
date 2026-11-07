@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import type { Note } from '@/types';
 import TagSelector from '@/components/common/TagSelector.vue';
 import NoteTypeSelector from '@/notes/NoteTypeSelector.vue';
-import ColorPicker from '@/components/common/ColorPicker.vue';
 import { mergeHashtags, removeHashtag } from '@/utils/tags';
 
 const props = defineProps<{
@@ -15,8 +13,6 @@ const emit = defineEmits<{
   (e: 'update:note', note: Note): void;
 }>();
 
-const { t } = useI18n();
-
 function patchNote(patch: Partial<Note>) {
   emit('update:note', { ...props.note, ...patch });
 }
@@ -24,11 +20,6 @@ function patchNote(patch: Partial<Note>) {
 const typeId = computed({
   get: () => props.note.typeId ?? null,
   set: (value: string | null) => patchNote({ typeId: value }),
-});
-
-const backgroundColor = computed({
-  get: () => props.note.backgroundColor,
-  set: (value: string) => patchNote({ backgroundColor: value }),
 });
 
 const editorTags = computed({
@@ -57,13 +48,6 @@ const editorTags = computed({
       v-model="editorTags"
       :entity-type="'note'"
       :current-entity-id="note.id"
-    />
-    <ColorPicker
-      id="note-background-color"
-      v-model="backgroundColor"
-      :label="t('editor.backgroundColor')"
-      clearable
-      :clear-label="t('common.clear')"
     />
   </div>
 </template>

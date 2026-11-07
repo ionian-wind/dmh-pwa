@@ -90,10 +90,6 @@ function handleDownload() {
         v-else
         ref="contentRef"
         :class="['note-card-content', { clamped: clamped && !expanded }]"
-        :style="{
-          backgroundColor: note.backgroundColor,
-          '--note-card-fade': note.backgroundColor || 'var(--color-background)',
-        }"
       >
         <Markdown :content="note.content" />
       </div>

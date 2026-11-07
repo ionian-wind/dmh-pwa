@@ -86,7 +86,6 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
     draft.title !== source.title ||
     draft.content !== source.content ||
     (draft.typeId ?? null) !== (source.typeId ?? null) ||
-    (draft.backgroundColor ?? '') !== (source.backgroundColor ?? '') ||
     draft.hidden !== source.hidden ||
     !arraysEqual(draft.tags, source.tags) ||
     !arraysEqual(draft.moduleIds, source.moduleIds),
@@ -229,7 +228,6 @@ async function persistDraft(draft: Note): Promise<boolean> {
       tags: draft.tags,
       moduleIds: draft.moduleIds,
       typeId: draft.typeId,
-      backgroundColor: draft.backgroundColor,
       preview: draft.preview,
     });
   } catch (error) {
@@ -311,10 +309,7 @@ onBeforeUnmount(() => {
     v-model="activeTab"
   >
     <template #main>
-      <EntityContentSurface
-        v-if="!editState.isEditMode"
-        :background-color="note?.backgroundColor"
-      >
+      <EntityContentSurface v-if="!editState.isEditMode">
         <NoteCanvas
           v-if="note?.contentType === 'draw'"
           :model-value="noteContent"

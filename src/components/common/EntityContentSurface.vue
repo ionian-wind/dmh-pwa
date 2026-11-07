@@ -1,14 +1,5 @@
-<script setup lang="ts">
-defineProps<{
-  backgroundColor?: string;
-}>();
-</script>
-
 <template>
-  <div
-    class="entity-content-surface"
-    :style="backgroundColor ? { backgroundColor } : undefined"
-  >
+  <div class="entity-content-surface">
     <slot />
   </div>
 </template>

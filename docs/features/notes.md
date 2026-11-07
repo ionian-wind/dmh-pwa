@@ -58,10 +58,8 @@ editable in the note form; it is chosen by the create action.
 - Displays the rendered Markdown inside a `600px` clamp for text notes.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
-- Clamped content fades into the card background at the bottom via a gradient
-  (using the note background colour when set).
+- Clamped content fades into the card background at the bottom via a gradient.
 - Renders tags as clickable `#tag` labels that emit `tag-click`.
-- Applies the note's optional `backgroundColor` behind its content.
 - Has an `IconFileDownload` action: text notes download as `.md`, drawing
   notes download their PNG preview. Drawings without a preview are disabled.
   File names use `slugify(title)` plus the note id, e.g.
@@ -86,9 +84,7 @@ Fields:
   - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
     Quickdraw editor.
 - An icon-only **options** button in the dialog footer opens a popup with the
-  shared `NoteOptions` controls: note type selector, tag selector and optional
-  background colour (`backgroundColor`). The colour is rendered behind the note
-  content on the detail page and note cards.
+  shared `NoteOptions` controls: note type selector and tag selector.
 - The visual-editor toggle sits in the footer between **options** and help.
 - When the visual editor is off, an icon-only help button appears next to the
   toggle. It links to the static help-center page for Markdown formatting,
@@ -226,7 +222,6 @@ saved from the UI has:
   "typeId": null,
   "tags": [],
   "moduleIds": [],
-  "backgroundColor": "",
   "hidden": false,
   "createdAt": 0,
   "updatedAt": 0

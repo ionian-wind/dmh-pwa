@@ -23,25 +23,23 @@ function mountOptions(note: Note = baseNote) {
       stubs: {
         NoteTypeSelector: true,
         TagSelector: true,
-        ColorPicker: true,
       },
     },
   });
 }
 
 describe('NoteOptions', () => {
-  it('renders type, tags and background controls', () => {
+  it('renders type and tag controls', () => {
     const wrapper = mountOptions();
 
     expect(wrapper.findComponent({ name: 'NoteTypeSelector' }).exists()).toBe(
       true,
     );
     expect(wrapper.findComponent({ name: 'TagSelector' }).exists()).toBe(true);
-    expect(wrapper.findComponent({ name: 'ColorPicker' }).exists()).toBe(true);
     wrapper.unmount();
   });
 
-  it('emits type and colour changes', () => {
+  it('emits type changes', () => {
     const wrapper = mountOptions();
 
     wrapper
@@ -49,13 +47,6 @@ describe('NoteOptions', () => {
       .vm.$emit('update:modelValue', 'type-1');
     expect(wrapper.emitted('update:note')?.[0]?.[0]).toMatchObject({
       typeId: 'type-1',
-    });
-
-    wrapper
-      .findComponent({ name: 'ColorPicker' })
-      .vm.$emit('update:modelValue', '#ffeeaa');
-    expect(wrapper.emitted('update:note')?.[1]?.[0]).toMatchObject({
-      backgroundColor: '#ffeeaa',
     });
     wrapper.unmount();
   });

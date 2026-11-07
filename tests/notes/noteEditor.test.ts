@@ -126,21 +126,6 @@ describe('NoteEditor content types', () => {
     expect(wrapper.emitted('submit')).toBeUndefined();
   });
 
-  it('edits and preserves the note background colour', async () => {
-    const wrapper = mountEditor({
-      note: { ...baseNote, backgroundColor: '#ffeeaa' },
-    });
-
-    const picker = wrapper.findComponent({ name: 'ColorPicker' });
-    expect(picker.exists()).toBe(true);
-    expect(picker.props('modelValue')).toBe('#ffeeaa');
-
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      backgroundColor: '#ffeeaa',
-    });
-  });
-
   it('binds title, type, tags, mode toggle and content updates', async () => {
     const wrapper = mountEditor({ note: baseNote });
 
@@ -177,7 +162,10 @@ describe('NoteEditor content types', () => {
     expect(options.attributes('title')).toBe('options');
     expect(options.attributes('aria-label')).toBe('options');
     expect(options.find('svg').exists()).toBe(true);
-    expect(options.findComponent({ name: 'ColorPicker' }).exists()).toBe(true);
+    expect(options.findComponent({ name: 'NoteTypeSelector' }).exists()).toBe(
+      true,
+    );
+    expect(options.findComponent({ name: 'TagSelector' }).exists()).toBe(true);
   });
 
   it('shows markdown help only in raw mode and opens the help dialog', async () => {

@@ -38,8 +38,6 @@ export interface Note extends WithMetadata {
   contentType: NoteContentType;
   /** Small PNG data URL preview for drawing notes. */
   preview?: string;
-  /** Optional CSS background colour for the note surface. */
-  backgroundColor?: string;
   typeId: UUID | null;
   tags: string[];
   moduleIds: UUID[];

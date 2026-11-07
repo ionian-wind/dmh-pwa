@@ -491,8 +491,7 @@
     "contentPlaceholder": "Введите содержание здесь...",
     "module": "Модуль",
     "type": "Тип",
-    "tags": "Теги",
-    "backgroundColor": "Цвет фона"
+    "tags": "Теги"
   },
   "partySelector": {
     "chooseParty": "Выберите группу...",

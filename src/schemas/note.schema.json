@@ -35,10 +35,6 @@
       "type": "string",
       "description": "Small PNG data URL preview for drawing notes"
     },
-    "backgroundColor": {
-      "type": "string",
-      "description": "Optional CSS background colour for the note surface"
-    },
     "typeId": {
       "oneOf": [
         {

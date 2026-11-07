@@ -20,14 +20,7 @@ const description = computed(() =>
 <template>
   <div class="entity-main-content">
     <template v-if="kind === 'note'">
-      <div
-        class="note-content-surface"
-        :style="
-          entity?.backgroundColor
-            ? { backgroundColor: entity.backgroundColor }
-            : undefined
-        "
-      >
+      <div class="note-content-surface">
         <img
           v-if="entity?.contentType === 'draw' && entity?.preview"
           :src="entity.preview"

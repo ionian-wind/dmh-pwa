@@ -24,16 +24,12 @@ const MarkdownEditorStub = defineComponent({
 });
 
 describe('shared entity view components', () => {
-  it('EntityContentSurface renders a slot with an optional background', () => {
+  it('EntityContentSurface renders its slot', () => {
     const wrapper = mount(EntityContentSurface, {
-      props: { backgroundColor: '#ffeeaa' },
       slots: { default: 'Body' },
     });
 
     expect(wrapper.text()).toBe('Body');
-    expect(wrapper.attributes('style')).toContain(
-      'background-color: rgb(255, 238, 170)',
-    );
     wrapper.unmount();
   });
 
