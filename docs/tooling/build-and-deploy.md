@@ -36,6 +36,16 @@ npm run format     # prettier via lint-staged config
 npm run lint       # eslint
 ```
 
+`npm run dev` serves both sites from the app origin:
+
+- app: <http://localhost:5173/dmh-pwa/>
+- help center: <http://localhost:5173/dmh-pwa/help/> (proxied to VitePress)
+
+The VitePress server on port `5174` can also be opened directly. It keeps
+`/dmh-pwa/help/` and redirects every other `/dmh-pwa/*` route to the app on
+port `5173`, so either entry point works. In production both paths are served
+from the same origin.
+
 If the dev server reports `504 (Outdated Optimize Dep)` for a dependency such
 as `howler.js` or `mathjs.js`, stop the dev server, remove
 `node_modules/.vite`, and start it again. This usually happens after Vite

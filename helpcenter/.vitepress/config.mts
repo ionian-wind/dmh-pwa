@@ -213,4 +213,53 @@ export default defineConfig({
     },
   },
   themeConfig: enTheme,
+  vite: {
+    plugins: [
+      {
+        name: 'dmh-app-root-redirect',
+        apply: 'serve',
+        configureServer(server) {
+          const appPort = '5173';
+          const helpBase = '/dmh-pwa/help';
+
+          server.middlewares.use((req, res, next) => {
+            const host = req.headers.host ?? 'localhost:5174';
+            const url = new URL(req.url ?? '/', `http://${host}`);
+
+            // Canonicalize the help entry point so it works with or without a
+            // trailing slash.
+            if (url.pathname === helpBase) {
+              // Keep this relative so it also works when the help server is
+              // reached through the Vite proxy on the app port.
+              res.statusCode = 301;
+              res.setHeader('Location', `${helpBase}/${url.search}`);
+              res.end();
+              return;
+            }
+
+            // The help server only owns /dmh-pwa/help/. Any other app route
+            // belongs to the Vite dev server, so send it there instead of
+            // showing VitePress' "did you mean" 404 page.
+            if (
+              url.pathname === '/dmh-pwa' ||
+              (url.pathname.startsWith('/dmh-pwa/') &&
+                !url.pathname.startsWith(`${helpBase}/`))
+            ) {
+              const appUrl = new URL(
+                url.pathname + url.search,
+                `http://${host}`,
+              );
+              appUrl.port = appPort;
+              res.statusCode = 302;
+              res.setHeader('Location', appUrl.toString());
+              res.end();
+              return;
+            }
+
+            next();
+          });
+        },
+      },
+    ],
+  },
 });
