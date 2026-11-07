@@ -3,12 +3,11 @@ import alignLeftIcon from '@tabler/icons/outline/align-left.svg?raw';
 import alignRightIcon from '@tabler/icons/outline/align-right.svg?raw';
 import boldIcon from '@tabler/icons/outline/bold.svg?raw';
 import checkIcon from '@tabler/icons/outline/check.svg?raw';
-import checklistIcon from '@tabler/icons/outline/checklist.svg?raw';
+import listCheckIcon from '@tabler/icons/outline/list-check.svg?raw';
 import chevronDownIcon from '@tabler/icons/outline/chevron-down.svg?raw';
 import chevronLeftIcon from '@tabler/icons/outline/chevron-left.svg?raw';
 import chevronRightIcon from '@tabler/icons/outline/chevron-right.svg?raw';
 import codeIcon from '@tabler/icons/outline/code.svg?raw';
-import codeBlockIcon from '@tabler/icons/outline/file-code.svg?raw';
 import copyIcon from '@tabler/icons/outline/copy.svg?raw';
 import cornerDownLeftIcon from '@tabler/icons/outline/corner-down-left.svg?raw';
 import eyeIcon from '@tabler/icons/outline/eye.svg?raw';
@@ -44,6 +43,7 @@ import columnRemoveIcon from '@tabler/icons/outline/column-remove.svg?raw';
 import xIcon from '@tabler/icons/outline/x.svg?raw';
 
 const paragraphIcon = alignLeftIcon;
+const codeBlockIcon = codeIcon;
 
 export {
   alignCenterIcon,
@@ -51,7 +51,7 @@ export {
   alignRightIcon,
   boldIcon,
   checkIcon,
-  checklistIcon,
+  listCheckIcon,
   chevronDownIcon,
   chevronLeftIcon,
   chevronRightIcon,

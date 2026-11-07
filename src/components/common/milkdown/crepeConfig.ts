@@ -10,7 +10,7 @@ import {
   alignRightIcon,
   boldIcon,
   checkIcon,
-  checklistIcon,
+  listCheckIcon,
   chevronDownIcon,
   chevronLeftIcon,
   chevronRightIcon,
@@ -78,7 +78,7 @@ export function createCrepeFeatureConfig(translate: Translate) {
         label: t('list'),
         bulletList: { label: t('bulletList'), icon: listIcon },
         orderedList: { label: t('orderedList'), icon: listNumbersIcon },
-        taskList: { label: t('taskList'), icon: checklistIcon },
+        taskList: { label: t('taskList'), icon: listCheckIcon },
       },
       advancedGroup: {
         label: t('advanced'),
@@ -184,7 +184,7 @@ export function createCrepeFeatureConfig(translate: Translate) {
       hrIcon: separatorIcon,
       bulletListIcon: listIcon,
       orderedListIcon: listNumbersIcon,
-      taskListIcon: checklistIcon,
+      taskListIcon: listCheckIcon,
       chevronDownIcon,
     },
     [CrepeFeature.AI]: {

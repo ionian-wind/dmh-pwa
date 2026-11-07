@@ -81,6 +81,18 @@ describe('Crepe localization config', () => {
     expect(config[CrepeFeature.BlockEdit].handleDragIcon).toContain(
       'icon-tabler-grip-vertical',
     );
+    expect(config[CrepeFeature.BlockEdit].advancedGroup.table.icon).toContain(
+      'icon-tabler-table',
+    );
+    expect(config[CrepeFeature.BlockEdit].advancedGroup.image.icon).toContain(
+      'icon-tabler-photo',
+    );
+    expect(
+      config[CrepeFeature.BlockEdit].advancedGroup.codeBlock.icon,
+    ).toContain('icon-tabler-code');
+    expect(config[CrepeFeature.BlockEdit].listGroup.taskList.icon).toContain(
+      'icon-tabler-list-check',
+    );
     expect(config[CrepeFeature.LinkTooltip].removeButton).toContain(
       'icon-tabler-x',
     );
