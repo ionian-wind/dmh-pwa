@@ -63,7 +63,6 @@ const baseNote = {
   contentType: 'text',
   typeId: null,
   tags: [],
-  moduleIds: [],
   createdAt: 1,
   updatedAt: 1,
 } as const;
@@ -119,11 +118,70 @@ describe('NoteEditor content types', () => {
     expect(wrapper.findComponent({ name: 'NoteCanvas' }).exists()).toBe(true);
   });
 
-  it('requires a title before submitting', async () => {
-    const wrapper = mountEditor({ note: null });
+  it('rejects a note when both title and content are empty', async () => {
+    const EmptyEditorStub = defineComponent({
+      name: 'MarkdownEditor',
+      props: { modelValue: String },
+      setup(_, { expose }) {
+        expose({ getMarkdown: () => '' });
+        return () => h('div', { class: 'markdown-editor-stub' });
+      },
+    });
+    const wrapper = mount(NoteEditor, {
+      props: { isOpen: true, note: null },
+      global: {
+        stubs: {
+          MarkdownEditor: EmptyEditorStub,
+          EntitiesLinking: EntitiesLinkingStub,
+          NoteTypeSelector: true,
+          TagSelector: TagSelectorStub,
+        },
+      },
+    });
+
     wrapper.findComponent(BaseModal).vm.$emit('submit');
-    expect(alert).toHaveBeenCalled();
+    await flushPromises();
+    expect(alert).toHaveBeenCalledWith('Enter a title or content.');
     expect(wrapper.emitted('submit')).toBeUndefined();
+  });
+
+  it('saves a note with a title and empty content', async () => {
+    const EmptyEditorStub = defineComponent({
+      name: 'MarkdownEditor',
+      props: { modelValue: String },
+      setup(_, { expose }) {
+        expose({ getMarkdown: () => '' });
+        return () => h('div', { class: 'markdown-editor-stub' });
+      },
+    });
+    const wrapper = mount(NoteEditor, {
+      props: { isOpen: true, note: { ...baseNote, content: '' } },
+      global: {
+        stubs: {
+          MarkdownEditor: EmptyEditorStub,
+          EntitiesLinking: EntitiesLinkingStub,
+          NoteTypeSelector: true,
+          TagSelector: TagSelectorStub,
+        },
+      },
+    });
+
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await flushPromises();
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      title: 'Note',
+    });
+  });
+
+  it('saves a note with content and no title', async () => {
+    const wrapper = mountEditor({ note: { ...baseNote, title: '' } });
+
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await flushPromises();
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      title: '',
+      content: expect.stringContaining('Latest markdown'),
+    });
   });
 
   it('binds title, type, tags, mode toggle and content updates', async () => {

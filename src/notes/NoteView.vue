@@ -258,9 +258,9 @@ async function prepareDraft(draft: Note): Promise<boolean> {
     draft.content = markdownEditorRef.value.getMarkdown();
   }
 
-  if (!draft.title?.trim()) {
+  if (!draft.title?.trim() && !draft.content?.trim()) {
     activeTab.value = 'main';
-    await alert(t('editor.titleRequired'));
+    await alert(t('editor.titleOrContentRequired'));
     return false;
   }
 
@@ -329,7 +329,7 @@ const handleDelete = async () => {
 };
 
 // Computed properties for BaseEntityView
-const noteTitle = computed(() => note.value?.title || '');
+const noteTitle = computed(() => note.value?.title || t('common.untitled'));
 
 const rightDrawer = useRightDrawer();
 
@@ -393,6 +393,7 @@ onBeforeUnmount(() => {
         v-else
         v-model:title="draftTitle"
         :title-placeholder="t('editor.title')"
+        :title-required="false"
         :validation-error="validationError"
       >
         <NoteCanvas

@@ -26,7 +26,7 @@
 
 | Field         | Type               | Notes                                                        |
 | ------------- | ------------------ | ------------------------------------------------------------ |
-| `title`       | `string`           | Required by schema and UI                                    |
+| `title`       | `string`           | May be empty when the note has content                       |
 | `content`     | `string`           | Markdown source, or a Quickdraw JSON snapshot for draw notes |
 | `contentType` | `'text' \| 'draw'` | Note content kind; defaults to `text`                        |
 | `preview`     | `string?`          | Small PNG data URL preview for drawing notes                 |

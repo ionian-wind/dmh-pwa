@@ -443,7 +443,7 @@
     "description": "Description",
     "notes": "Notes",
     "title": "Title",
-    "titleRequired": "Title is required",
+    "titleOrContentRequired": "Enter a title or content.",
     "contentPlaceholder": "Enter content here...",
     "type": "Type",
     "tags": "Tags"

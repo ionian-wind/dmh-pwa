@@ -42,6 +42,16 @@ const MarkdownEditorStub = defineComponent({
   },
 });
 
+const EmptyMarkdownEditorStub = defineComponent({
+  name: 'MarkdownEditor',
+  props: { modelValue: String },
+  emits: ['update:modelValue'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => '' });
+    return () => h('div', { class: 'markdown-editor-stub' });
+  },
+});
+
 const EntitiesLinkingStub = defineComponent({
   name: 'EntitiesLinking',
   props: { kind: String, modelValue: Array },
@@ -283,7 +293,7 @@ describe('editor behavior', () => {
       props: { note, isOpen: true },
       global: {
         stubs: {
-          MarkdownEditor: MarkdownEditorStub,
+          MarkdownEditor: EmptyMarkdownEditorStub,
           EntitiesLinking: EntitiesLinkingStub,
           NoteTypeSelector: true,
           TagSelector: true,

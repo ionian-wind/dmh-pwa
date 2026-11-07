@@ -128,10 +128,6 @@ const markdownEditorRef = ref<any>(null);
 const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 const handleSubmit = async () => {
-  if (!editedNote.value.title) {
-    await alert(t('editor.titleRequired'));
-    return;
-  }
   if (editedNote.value.contentType === 'draw') {
     editedNote.value.content = canvasRef.value?.getSnapshot() ?? '';
     editedNote.value.preview =
@@ -143,6 +139,10 @@ const handleSubmit = async () => {
     editedNote.value.content = ensureBlockAnchors(
       editedNote.value.content ?? '',
     );
+  }
+  if (!editedNote.value.title?.trim() && !editedNote.value.content?.trim()) {
+    await alert(t('editor.titleOrContentRequired'));
+    return;
   }
   emit('submit', editedNote.value);
 };
@@ -178,7 +178,6 @@ function handleDelete() {
         <QInput
           v-model="editedNote.title"
           :placeholder="t('editor.title')"
-          required
           borderless
           hide-bottom-space
           input-style="font-size: 1.5rem; font-weight: 500;"

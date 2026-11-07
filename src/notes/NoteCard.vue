@@ -75,7 +75,7 @@ function handleDownload() {
   >
     <template #header>
       <div class="row items-center q-gutter-xs">
-        <h5 class="q-ma-none">{{ note.title }}</h5>
+        <h5 class="q-ma-none">{{ note.title || t('common.untitled') }}</h5>
       </div>
     </template>
 

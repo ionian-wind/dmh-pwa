@@ -444,7 +444,7 @@
     "description": "Описание",
     "notes": "Заметки",
     "title": "Заголовок",
-    "titleRequired": "Заголовок обязателен",
+    "titleOrContentRequired": "Введите заголовок или содержание.",
     "contentPlaceholder": "Введите содержание здесь...",
     "type": "Тип",
     "tags": "Теги"
