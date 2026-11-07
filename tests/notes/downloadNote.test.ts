@@ -7,10 +7,8 @@ function note(overrides: Partial<Note> = {}): Note {
     id: 'note-1',
     title: 'Session notes',
     content: '# Session\n\nHello',
-    contentType: 'text',
     tags: [],
     typeId: null,
-    moduleIds: [],
     createdAt: 0,
     updatedAt: 0,
     ...overrides,
@@ -25,7 +23,7 @@ describe('note downloads', () => {
     clickedAnchor = null;
   });
 
-  it('downloads text notes as markdown', () => {
+  it('downloads notes as markdown', () => {
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       value: vi.fn(() => 'blob:note'),
@@ -44,34 +42,6 @@ describe('note downloads', () => {
     expect(clickedAnchor?.download).toBe('session-notes-note-1.md');
     expect(clickedAnchor?.href).toContain('blob:note');
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:note');
-  });
-
-  it('downloads drawing previews as png', () => {
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
-      this: HTMLAnchorElement,
-    ) {
-      clickedAnchor = this;
-    });
-
-    expect(
-      downloadNote(
-        note({
-          contentType: 'draw',
-          content: '{"shapes":[]}',
-          preview: 'data:image/png;base64,abc',
-        }),
-      ),
-    ).toBe(true);
-    expect(clickedAnchor?.download).toBe('session-notes-note-1.png');
-    expect(clickedAnchor?.href).toBe('data:image/png;base64,abc');
-  });
-
-  it('does not download a drawing without a preview', () => {
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click');
-    expect(
-      downloadNote(note({ contentType: 'draw', preview: undefined })),
-    ).toBe(false);
-    expect(click).not.toHaveBeenCalled();
   });
 
   it('slugifies titles and appends the entity id', () => {

@@ -21,14 +21,7 @@ const description = computed(() =>
   <div class="entity-main-content">
     <template v-if="kind === 'note'">
       <div class="note-content-surface">
-        <img
-          v-if="entity?.contentType === 'draw' && entity?.preview"
-          :src="entity.preview"
-          :alt="entity.title || ''"
-          class="note-drawing-preview"
-        />
         <MilkdownView
-          v-else-if="entity?.contentType !== 'draw'"
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"
           :content="entity?.content || ''"
@@ -79,12 +72,5 @@ const description = computed(() =>
   min-height: 100%;
   padding: 1rem;
   border-radius: var(--border-radius);
-}
-
-.note-drawing-preview {
-  width: 100%;
-  max-height: 180px;
-  border-radius: var(--border-radius);
-  object-fit: contain;
 }
 </style>

@@ -73,7 +73,6 @@ describe('createLinkedEntity', () => {
     expect(storeMocks.note.create).toHaveBeenCalledWith({
       title: 'Note',
       content: 'Body',
-      contentType: 'text',
     });
   });
 

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import mapLocations from '@/migrations/0000000005_map_locations';
 import mapLocationOneToOne from '@/migrations/0000000006_map_location_one_to_one';
 import noteContentType from '@/migrations/0000000008_note_content_type';
+import removeNoteContentType from '@/migrations/0000000015_remove_note_content_type';
 
 function transactionWith(storeData: Record<string, any[]>) {
   const stores = new Map<string, any>();
@@ -135,5 +136,61 @@ describe('map location migrations', () => {
       { id: 'n3', contentType: 'text' },
       { id: 'n4', contentType: 'text' },
     ]);
+  });
+
+  it('moves legacy drawing notes into the drawings store', async () => {
+    const now = 42;
+    const { stores, transaction } = transactionWith({
+      notes: [
+        {
+          id: 'n1',
+          title: 'Text',
+          content: '# Hi',
+          contentType: 'text',
+          preview: 'stale',
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'n2',
+          title: 'Sketch',
+          content: '{"shape":1}',
+          contentType: 'draw',
+          preview: 'data:image/png;base64,abc',
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+      drawings: [],
+    });
+
+    await removeNoteContentType.go(transaction);
+
+    const savedNotes = stores
+      .get('notes')
+      .put.mock.calls.map((call: any[]) => call[0]);
+    expect(savedNotes).toHaveLength(2);
+
+    const text = savedNotes.find((note: any) => note.id === 'n1');
+    expect(text.contentType).toBeUndefined();
+    expect(text.preview).toBeUndefined();
+    expect(text.content).toBe('# Hi');
+
+    const drawn = savedNotes.find((note: any) => note.id === 'n2');
+    expect(drawn.contentType).toBeUndefined();
+    expect(drawn.preview).toBeUndefined();
+
+    const savedDrawings = stores
+      .get('drawings')
+      .put.mock.calls.map((call: any[]) => call[0]);
+    expect(savedDrawings).toEqual([
+      expect.objectContaining({
+        snapshot: '{"shape":1}',
+        preview: 'data:image/png;base64,abc',
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ]);
+    expect(drawn.content).toBe(`![drawing](drawing://${savedDrawings[0].id})`);
   });
 });

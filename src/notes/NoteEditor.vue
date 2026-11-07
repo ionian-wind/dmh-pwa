@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import type { Note, NoteContentType } from '@/types';
+import type { Note } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
-import NoteCanvas from './NoteCanvas.vue';
 import NoteOptions from './NoteOptions.vue';
 import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
@@ -24,7 +23,6 @@ const props = defineProps<{
   useModalStack?: boolean;
   isEditing?: boolean;
   validationError?: string | null;
-  contentType?: NoteContentType;
 }>();
 
 const emit = defineEmits<{
@@ -39,7 +37,6 @@ const editedNote = ref<Note>({
   id: '',
   title: '',
   content: '',
-  contentType: props.contentType ?? 'text',
   tags: [],
   typeId: null,
 });
@@ -64,7 +61,6 @@ watch(
     if (newNote && newNote.id !== lastNoteId.value) {
       editedNote.value = {
         ...newNote,
-        contentType: newNote.contentType ?? 'text',
         typeId: newNote.typeId ?? null,
       };
       lastNoteId.value = newNote.id;
@@ -75,7 +71,6 @@ watch(
         id: '',
         title: '',
         content: '',
-        contentType: props.contentType ?? 'text',
         tags: [],
         typeId: null,
       };
@@ -125,21 +120,12 @@ function setNoteLinks(
 }
 
 const markdownEditorRef = ref<any>(null);
-const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 const handleSubmit = async () => {
-  if (editedNote.value.contentType === 'draw') {
-    editedNote.value.content = canvasRef.value?.getSnapshot() ?? '';
-    editedNote.value.preview =
-      (await canvasRef.value?.getPreview()) || undefined;
-  } else if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
+  if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
     editedNote.value.content = markdownEditorRef.value.getMarkdown();
   }
-  if (editedNote.value.contentType !== 'draw') {
-    editedNote.value.content = ensureBlockAnchors(
-      editedNote.value.content ?? '',
-    );
-  }
+  editedNote.value.content = ensureBlockAnchors(editedNote.value.content ?? '');
   if (!editedNote.value.title?.trim() && !editedNote.value.content?.trim()) {
     await alert(t('editor.titleOrContentRequired'));
     return;
@@ -186,18 +172,11 @@ function handleDelete() {
         <slot
           name="content"
           :note="editedNote"
-          :content-type="editedNote.contentType"
           :update-content="(value: string) => (noteContent = value)"
         >
           <div class="row q-col-gutter-md">
             <div class="col-12">
-              <NoteCanvas
-                v-if="editedNote.contentType === 'draw'"
-                ref="canvasRef"
-                :model-value="editedNote.content"
-              />
               <MarkdownEditor
-                v-else
                 ref="markdownEditorRef"
                 v-model="noteContent"
                 enableMentions

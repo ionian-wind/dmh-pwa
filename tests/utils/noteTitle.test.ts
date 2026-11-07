@@ -5,7 +5,6 @@ function note(overrides: Record<string, unknown>) {
   return {
     title: '',
     content: '',
-    contentType: 'text' as const,
     ...overrides,
   };
 }
@@ -38,11 +37,8 @@ describe('noteDisplayTitle', () => {
     expect(title.length).toBeLessThanOrEqual(40);
   });
 
-  it('returns an empty string for empty or drawing notes', () => {
+  it('returns an empty string for empty notes', () => {
     expect(noteDisplayTitle(note({}))).toBe('');
-    expect(
-      noteDisplayTitle(note({ contentType: 'draw', content: '{"shape":1}' })),
-    ).toBe('');
     expect(noteDisplayTitle(null)).toBe('');
   });
 });

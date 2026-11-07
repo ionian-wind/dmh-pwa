@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Free-form and campaign notes. Notes are the richest content type: they render
-Markdown, support internal entity links, and drive the mention index.
+Free-form and campaign notes. Notes render Markdown, can embed drawing blocks,
+support internal entity links, and drive the mention index.
 
 ## Key files
 
@@ -14,7 +14,8 @@ Markdown, support internal entity links, and drive the mention index.
 | `src/notes/NoteCard.vue`                   | Card with rendered Markdown and expand/collapse |
 | `src/notes/NoteEditor.vue`                 | Create/edit modal                               |
 | `src/notes/NoteOptions.vue`                | Type, tags and background options               |
-| `src/notes/NoteCanvas.vue`                 | Quickdraw canvas for `draw` notes               |
+| `src/drawings/DrawingEditorModal.vue`      | Quickdraw modal used by drawing blocks          |
+| `src/notes/NoteCanvas.vue`                 | Quickdraw canvas wrapper used by the modal      |
 | `src/notes/NoteView.vue`                   | Detail page with inline view/edit mode          |
 | `src/notes/NoteTypeSelector.vue`           | Note type management (mounted in `NoteOptions`) |
 | `src/notes/NoteViewSidebar.vue`            | Contents/bookmarks/tags/mentions sidebar        |
@@ -27,45 +28,27 @@ Markdown, support internal entity links, and drive the mention index.
 - Renders `BaseListView` with `NoteCard` and `NoteEditor`.
 - Renders `noteStore.filtered` directly.
 - Card props pass `onView`, `onEdit`, and `onDelete`.
-- The header has a second create action: a warning-coloured `IconBrush` button
-  that opens the editor with `contentType: 'draw'`. The regular create button
-  opens a `text` note.
 - Delete uses the app confirm dialog with `common.confirmDelete`.
 - Copy strips `id/createdAt/updatedAt` and creates a duplicate.
 - Tag clicks navigate to `/notes?tag=<encoded>`.
 - A `watch` on `route.query.tag` sets the store's tag filter. The filter is
   the only list filter that is reachable from the UI.
 
-## Content types
-
-A note has an internal `contentType` field with two values:
-
-| Value  | Meaning                                                |
-| ------ | ------------------------------------------------------ |
-| `text` | Markdown content, the default and legacy type          |
-| `draw` | Infinite-canvas drawing stored as a Quickdraw snapshot |
-
-Existing notes are migrated to `contentType: 'text'`. The type is not directly
-editable in the note form; it is chosen by the create action.
-
 ## Card (`NoteCard.vue`)
 
-- Drawing notes show their saved PNG preview instead of a text placeholder.
-- Displays the rendered Markdown inside a `600px` clamp for text notes.
+- Displays the rendered Markdown inside a `600px` clamp.
 - Measures `scrollHeight` after mount and on content change to decide whether
   to show an expand/collapse button.
 - Clamped content fades into the card background at the bottom via a gradient.
 - Renders tags as clickable `#tag` labels that emit `tag-click`.
-- Has an `IconFileDownload` action: text notes download as `.md`, drawing
-  notes download their PNG preview. Drawings without a preview are disabled.
+- Has an `IconFileDownload` action that downloads the note as `.md`.
   File names use `slugify(title)` plus the note id, e.g.
   `session-notes-note-1.md`; Russian titles are transliterated.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
 
 In view mode the note detail right sidebar shows a pressable **Download** row
-with a download icon above the View/Edit switch. It downloads text notes as
-`.md` and drawing notes as their PNG preview; drawings without a preview are
-disabled. The row is hidden while editing. The edit-mode header instead shows
+with a download icon above the View/Edit switch. It downloads the note as
+`.md`. The row is hidden while editing. The edit-mode header instead shows
 delete and, when the visual editor is off, a Markdown formatting-help action.
 
 The 600px clamp is hard-coded and does not account for viewport size.
@@ -78,10 +61,9 @@ Fields:
   both empty triggers `alert(t('editor.titleOrContentRequired'))`. When the
   title is empty, note cards and the detail header omit it; other labels use
   the first content line, cropped with `...` when long.
-- Content, rendered through a named `content` slot:
-  - `text` notes use the Milkdown editor and its raw/visual toggle.
-  - `draw` notes use `NoteCanvas`, a Vue wrapper around the plain-JS
-    Quickdraw editor.
+- Content, rendered through a named `content` slot and the Milkdown editor with
+  its raw/visual toggle. Drawing blocks are inserted from the slash menu and
+  open the Quickdraw modal.
 - An icon-only **options** button in the dialog footer opens a popup with the
   shared `NoteOptions` controls: note type selector and tag selector.
 - The visual-editor toggle sits in the footer between **options** and help.
@@ -95,11 +77,10 @@ Behavior:
 
 - `editedNote` is initialized from `props.note` when its `id` changes; a
   `lastNoteId` guard prevents re-initializing while typing.
-- On submit, text notes read the latest Markdown from the Milkdown ref; draw
-  notes read a Quickdraw JSON snapshot and generate a small PNG preview using
-  `editor.exportImage()`.
-- New notes are created by the parent; drawing notes keep
-  `contentType: 'draw'`.
+- On submit, the latest Markdown is read from the Milkdown ref and block anchors
+  are added.
+- New notes are created by the parent; drawings live inside the Markdown
+  content as drawing blocks.
 
 A note created from the list can carry `typeId` and tags.
 
@@ -111,10 +92,9 @@ A note created from the list can carry `typeId` and tags.
 - Publishes `NoteViewSidebar` to the right drawer on mount and clears it on
   unmount. The same reactive `NoteEditState` is shared with the sidebar, so its
   View/Edit switch, visual-editor toggle and options panel stay in sync.
-- View mode renders the note with `Markdown` and `taskCheckboxEnabled`, or a
-  read-only `NoteCanvas` for drawing notes. The header has no entity actions besides
-  the sidebar toggle; the right sidebar shows the Download row, and the Edit
-  and Delete buttons are hidden.
+- View mode renders the note with `MilkdownView` and `taskCheckboxEnabled`. The
+  header has no entity actions besides the sidebar toggle; the right sidebar
+  shows the Download row, and the Edit and Delete buttons are hidden.
 - `handleMarkdownContentChange` writes every checkbox toggle back to the store
   immediately, so task-list state is persisted live.
 
@@ -123,8 +103,8 @@ A note created from the list can carry `typeId` and tags.
 Switching the sidebar to **Edit** starts a local draft and changes the page:
 
 - The main tab becomes the note editor from the edit dialog: borderless title
-  input plus `MarkdownEditor` (text) or `NoteCanvas` (draw). The tab icon and
-  label switch to the editor tabs.
+  input plus `EntityMarkdownEditor`. The tab icon and label switch to the
+  editor tabs.
 - The linked-entities tab becomes editable `EntitiesLinking`.
 - The header hides Download and shows Delete. When the visual editor is off it
   also shows the Markdown formatting-help action. The duplicate page title is
@@ -134,11 +114,10 @@ Switching the sidebar to **Edit** starts a local draft and changes the page:
 - A **Visual Editor** switch sits above the View/Edit switch, styled like the
   map sidebar's **Show Labels** row.
 
-Returning to **View mode** saves the draft. Before writing, text notes read the
-latest Markdown from the editor ref and drawing notes read a Quickdraw snapshot
-plus PNG preview. Every `[title](kind://id)` mention is validated against its
-store; missing entities block the save and keep edit mode active with a
-validation message. Notes with no changes skip the write.
+Returning to **View mode** saves the draft. Before writing, the latest Markdown
+is read from the editor ref. Every `[title](kind://id)` mention is validated
+against its store; missing entities block the save and keep edit mode active
+with a validation message. Notes with no changes skip the write.
 
 If the draft is dirty, route navigation opens a three-action dialog: **Save**,
 **Do not save**, or **Cancel**. Cancel returns `false` from

@@ -50,9 +50,6 @@ const props = defineProps<{
 
 const state = computed(() => props.editState ?? localEditState);
 const optionsNote = computed(() => state.value.draft ?? props.note);
-const downloadDisabled = computed(
-  () => props.note?.contentType === 'draw' && !props.note?.preview,
-);
 
 const mentions = computed(() => {
   return props.note
@@ -119,7 +116,7 @@ function handleOptionsUpdate(updated: Note) {
 }
 
 function handleDownload() {
-  if (props.note && !downloadDisabled.value) {
+  if (props.note) {
     downloadNote(props.note);
   }
 }
@@ -315,13 +312,7 @@ onMounted(() => {
 
     <QSeparator />
     <QList v-if="!state.isEditMode">
-      <QItem
-        class="note-download"
-        clickable
-        v-ripple
-        :disable="downloadDisabled"
-        @click="handleDownload"
-      >
+      <QItem class="note-download" clickable v-ripple @click="handleDownload">
         <QItemSection>{{ t('common.download') }}</QItemSection>
         <QItemSection side>
           <IconFileDownload :size="18" />

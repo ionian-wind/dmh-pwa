@@ -10,10 +10,8 @@ function seedTags(tags: string[]) {
     id: `n${index}`,
     title: `Note ${index}`,
     content: '',
-    contentType: 'text' as const,
     typeId: null,
     tags: [tag],
-    moduleIds: [],
     createdAt: index,
     updatedAt: index,
   }));

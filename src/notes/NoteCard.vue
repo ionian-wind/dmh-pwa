@@ -2,7 +2,7 @@
 import type { Note } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
-import { computed, ref, onMounted, nextTick, watch } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -22,7 +22,6 @@ const clamped = ref(false);
 const expanded = ref(false);
 
 const { t } = useI18n();
-const isDrawing = computed(() => props.note.contentType === 'draw');
 
 function checkClamped() {
   if (contentRef.value) {
@@ -82,15 +81,8 @@ function handleDownload() {
       </div>
     </template>
 
-    <div v-if="isDrawing || note.content?.length > 0 || note.tags?.length > 0">
-      <img
-        v-if="isDrawing && note.preview"
-        :src="note.preview"
-        :alt="note.title"
-        class="note-drawing-preview"
-      />
+    <div v-if="note.content?.length > 0 || note.tags?.length > 0">
       <div
-        v-else
         ref="contentRef"
         :class="['note-card-content', { clamped: clamped && !expanded }]"
       >
@@ -115,7 +107,6 @@ function handleDownload() {
         color="warning"
         :title="t('common.download')"
         :aria-label="t('common.download')"
-        :disable="isDrawing && !note.preview"
         @click.stop="handleDownload"
       >
         <IconFileDownload />
@@ -226,12 +217,5 @@ function handleDownload() {
     transparent,
     var(--note-card-fade, var(--color-card-background))
   );
-}
-
-.note-drawing-preview {
-  width: 100%;
-  max-height: 180px;
-  border-radius: var(--border-radius);
-  object-fit: contain;
 }
 </style>

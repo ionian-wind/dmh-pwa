@@ -23,7 +23,6 @@ import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import type { MapEntityRef } from '@/maps/types';
 import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
-import NoteCanvas from '@/notes/NoteCanvas.vue';
 import NoteViewSidebar from '@/notes/NoteViewSidebar.vue';
 import { IconHelp } from '@tabler/icons-vue';
 import { alert, confirm } from '@/dialogs';
@@ -65,12 +64,10 @@ const bookmarkedAnchorIds = computed(
       ),
     ),
 );
-const canvasDirty = ref(false);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
-const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 function updateNoteFromStore() {
   if (!noteStore.isLoaded) {
@@ -78,10 +75,7 @@ function updateNoteFromStore() {
   }
   const found = noteStore.getById(route.params.id as string);
   if (found) {
-    const content =
-      found.contentType === 'draw'
-        ? found.content
-        : ensureBlockAnchors(found.content ?? '');
+    const content = ensureBlockAnchors(found.content ?? '');
     if (content !== found.content) {
       void noteStore.update(found.id, { content });
     }
@@ -107,8 +101,7 @@ watch(
   () => note.value?.id,
   () => {
     tocItems.value = [];
-    tocReady.value =
-      note.value?.contentType === 'draw' || !note.value?.content?.trim();
+    tocReady.value = !note.value?.content?.trim();
   },
 );
 
@@ -132,23 +125,18 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Note>({
   clone: (source) => ({
     ...source,
     tags: [...(source.tags ?? [])],
-    contentType: source.contentType ?? 'text',
     typeId: source.typeId ?? null,
   }),
   isDirty: (draft, source) =>
-    canvasDirty.value ||
     draft.title !== source.title ||
     draft.content !== source.content ||
     (draft.typeId ?? null) !== (source.typeId ?? null) ||
     !arraysEqual(draft.tags, source.tags),
-  extraDirty: () => canvasDirty.value,
   onEnter: () => {
     validationError.value = null;
-    canvasDirty.value = false;
   },
   onDiscard: () => {
     validationError.value = null;
-    canvasDirty.value = false;
     if (note.value) noteContent.value = note.value.content;
   },
   prepare: prepareDraft,
@@ -196,16 +184,6 @@ function handleMarkdownContentChange(newContent: string) {
   }
 }
 
-function handleCanvasChange() {
-  const snapshot = canvasRef.value?.getSnapshot?.();
-  if (snapshot && editState.draft) {
-    editState.draft.content = snapshot;
-  }
-  canvasDirty.value =
-    !!editState.draft &&
-    editState.draft.content !== (note.value?.content ?? '');
-}
-
 const draftTitle = computed({
   get: () => editState.draft?.title ?? '',
   set: (value: string) => {
@@ -225,8 +203,7 @@ function arraysEqual(a: string[] = [], b: string[] = []) {
 }
 
 function findMissingMentions(draft: Note): string[] {
-  const mentions =
-    draft.contentType === 'draw' ? [] : extractMentionedEntities(draft.content);
+  const mentions = extractMentionedEntities(draft.content);
   const missing: string[] = [];
   for (const mention of mentions) {
     let exists = false;
@@ -250,12 +227,7 @@ function findMissingMentions(draft: Note): string[] {
 }
 
 async function prepareDraft(draft: Note): Promise<boolean> {
-  if (draft.contentType === 'draw') {
-    const snapshot = canvasRef.value?.getSnapshot?.();
-    if (snapshot) draft.content = snapshot;
-    const preview = await canvasRef.value?.getPreview?.();
-    if (preview) draft.preview = preview;
-  } else if (markdownEditorRef.value?.getMarkdown) {
+  if (markdownEditorRef.value?.getMarkdown) {
     draft.content = markdownEditorRef.value.getMarkdown();
   }
 
@@ -281,14 +253,9 @@ async function persistDraft(draft: Note): Promise<boolean> {
   try {
     await noteStore.update(note.value.id, {
       title: draft.title,
-      content:
-        draft.contentType === 'draw'
-          ? draft.content
-          : ensureBlockAnchors(draft.content ?? ''),
-      contentType: draft.contentType,
+      content: ensureBlockAnchors(draft.content ?? ''),
       tags: draft.tags,
       typeId: draft.typeId,
-      preview: draft.preview,
     });
   } catch (error) {
     activeTab.value = 'main';
@@ -375,13 +342,7 @@ onBeforeUnmount(() => {
   >
     <template #main>
       <EntityContentSurface v-if="!editState.isEditMode">
-        <NoteCanvas
-          v-if="note?.contentType === 'draw'"
-          :model-value="noteContent"
-          readonly
-        />
         <MilkdownView
-          v-else
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"
           :content="noteContent"
@@ -399,14 +360,7 @@ onBeforeUnmount(() => {
         :title-required="false"
         :validation-error="validationError"
       >
-        <NoteCanvas
-          v-if="editState.draft?.contentType === 'draw'"
-          ref="canvasRef"
-          :model-value="draftContent"
-          @change="handleCanvasChange"
-        />
         <EntityMarkdownEditor
-          v-else
           ref="markdownEditorRef"
           v-model="draftContent"
           :is-visual-mode="editState.isVisualMode"

@@ -29,8 +29,6 @@ export enum Section {
 }
 
 // Core types
-export type NoteContentType = 'text' | 'draw';
-
 export type NoteLinkKind = 'party' | 'monster' | 'encounter' | 'character';
 
 export interface NoteLink {
@@ -41,9 +39,6 @@ export interface NoteLink {
 export interface Note extends WithMetadata {
   title: string;
   content: string;
-  contentType: NoteContentType;
-  /** Small PNG data URL preview for drawing notes. */
-  preview?: string;
   typeId: UUID | null;
   tags: string[];
   /** Cross-entity links stored on the note; location links live on the location. */

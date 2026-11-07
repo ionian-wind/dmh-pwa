@@ -32,10 +32,7 @@ export async function createLinkedEntity(
   switch (kind) {
     case 'note': {
       const data = stripEntityMeta(payload as Record<string, unknown>);
-      const note = await useNoteStore().create({
-        ...(data as any),
-        contentType: (data as any).contentType ?? 'text',
-      });
+      const note = await useNoteStore().create(data as any);
       return { id: note.id, label: noteDisplayTitle(note) || note.id };
     }
     case 'party': {

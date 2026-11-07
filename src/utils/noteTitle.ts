@@ -26,11 +26,11 @@ function plainText(line: string): string {
  * three dots when it is too long.
  */
 export function noteDisplayTitle(
-  note: Pick<Note, 'title' | 'content' | 'contentType'> | null | undefined,
+  note: Pick<Note, 'title' | 'content'> | null | undefined,
 ): string {
   const title = note?.title?.trim();
   if (title) return title;
-  if (!note || note.contentType === 'draw') return '';
+  if (!note) return '';
 
   const line = plainText(firstContentLine(note.content ?? ''));
   if (line.length <= MAX_LENGTH) return line;

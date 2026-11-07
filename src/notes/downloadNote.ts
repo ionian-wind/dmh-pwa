@@ -19,16 +19,9 @@ function triggerDownload(href: string, filename: string): void {
 }
 
 /**
- * Download a text note as Markdown or a drawing note as PNG.
- * Returns false when a drawing note has no stored preview.
+ * Download a note as Markdown.
  */
 export function downloadNote(note: Note): boolean {
-  if (note.contentType === 'draw') {
-    if (!note.preview) return false;
-    triggerDownload(note.preview, safeFileName(note.title, 'png', note.id));
-    return true;
-  }
-
   const blob = new Blob([stripBlockAnchors(note.content ?? '')], {
     type: 'text/markdown;charset=utf-8',
   });

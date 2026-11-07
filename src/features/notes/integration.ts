@@ -52,10 +52,7 @@ export const notesFeature: FeatureIntegration = {
       editor: () => import('@/notes/NoteEditor.vue'),
       create: async (payload) => {
         const data = stripEntityMeta(payload as Record<string, unknown>);
-        const note = await useNoteStore().create({
-          ...(data as any),
-          contentType: (data as any).contentType ?? 'text',
-        });
+        const note = await useNoteStore().create(data as any);
         return { id: note.id, label: noteDisplayTitle(note) || note.id };
       },
       useStore: useNoteStore,

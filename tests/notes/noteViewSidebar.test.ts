@@ -74,7 +74,6 @@ describe('NoteViewSidebar', () => {
       id: 'n1',
       title: 'Note',
       content: '# Intro\n\nParagraph',
-      contentType: 'text',
       tags: [],
       moduleIds: [],
       typeId: null,
@@ -128,7 +127,6 @@ describe('NoteViewSidebar', () => {
       id: 'n1',
       title: 'Note',
       content: '# Intro',
-      contentType: 'text',
       tags: [],
       moduleIds: [],
       typeId: null,
@@ -195,7 +193,6 @@ describe('NoteViewSidebar', () => {
       id: 'n1',
       title: 'Note',
       content: 'Content',
-      contentType: 'text',
       tags: [],
       moduleIds: [],
       typeId: null,
@@ -239,7 +236,6 @@ describe('NoteViewSidebar', () => {
       id: 'n1',
       title: 'Note',
       content: 'Content',
-      contentType: 'text',
       tags: [],
     } as Note;
     const editState = reactive<NoteEditState>({
@@ -261,13 +257,11 @@ describe('NoteViewSidebar', () => {
     wrapper.unmount();
   });
 
-  it('hides download in edit mode and disables it without a drawing preview', async () => {
+  it('hides download in edit mode', async () => {
     const note = {
       id: 'n1',
       title: 'Sketch',
       content: '',
-      contentType: 'draw',
-      preview: undefined,
       tags: [],
     } as Note;
     const editState = reactive<NoteEditState>({
@@ -285,7 +279,7 @@ describe('NoteViewSidebar', () => {
     editState.isEditMode = false;
     await nextTick();
     await wrapper.find('.note-download').trigger('click');
-    expect(downloadNote).not.toHaveBeenCalled();
+    expect(downloadNote).toHaveBeenCalledWith(note);
     wrapper.unmount();
   });
 

@@ -1,26 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { IconBrush } from '@tabler/icons-vue';
 
-import type { Note, NoteContentType } from '@/types';
+import type { Note } from '@/types';
 
 import { useNoteStore } from '@/stores/notes';
 import { noteDisplayTitle } from '@/utils/noteTitle';
-import { useNoteTypeStore } from '@/stores/noteTypes';
 import BaseListView from '@/components/common/BaseListView.vue';
 import NoteCard from '@/notes/NoteCard.vue';
 import NoteEditor from '@/notes/NoteEditor.vue';
-import TagChip from '@/components/common/TagChip.vue';
 
 import { debug } from '@/utils/debug';
 import { confirm } from '@/dialogs';
 
 const noteStore = useNoteStore();
-const noteTypeStore = useNoteTypeStore();
-const listRef = ref<{ openCreate: () => void } | null>(null);
-const pendingDrawNote = ref(false);
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
@@ -48,28 +42,11 @@ function cardProps(note: Note) {
 }
 
 function editorProps(note: Note | null) {
-  const contentType: NoteContentType | undefined =
-    !note && pendingDrawNote.value ? 'draw' : undefined;
   return {
     note,
     isOpen: true,
-    contentType,
   };
 }
-
-function createDrawNote() {
-  pendingDrawNote.value = true;
-  listRef.value?.openCreate();
-}
-
-const headerButtons = [
-  {
-    icon: IconBrush,
-    color: 'warning',
-    title: 'notes.createDrawing',
-    event: createDrawNote,
-  },
-];
 
 function handleEdit(note: Note) {
   // handled by BaseListView
@@ -87,14 +64,10 @@ async function handleDelete(note: Note) {
   return false;
 }
 function handleSubmit(note: Note) {
-  pendingDrawNote.value = false;
   if (note.id) {
     noteStore.update(note.id, note);
   } else {
-    noteStore.create({
-      ...note,
-      contentType: note.contentType ?? 'text',
-    });
+    noteStore.create(note);
   }
 }
 function handleTagClick(tag: string) {
@@ -110,8 +83,6 @@ async function handleCopy(note: Note) {
 
 <template>
   <BaseListView
-    ref="listRef"
-    :header-buttons="headerButtons"
     :items="noteStore.filtered"
     :card-component="NoteCard"
     :editor-component="NoteEditor"
@@ -120,7 +91,6 @@ async function handleCopy(note: Note) {
     :card-props="cardProps"
     :editor-props="editorProps"
     @submit="handleSubmit"
-    @cancel="pendingDrawNote = false"
     @delete="handleDelete"
     @tag-click="handleTagClick"
     @copy="handleCopy"

@@ -91,32 +91,21 @@ describe('domain cards', () => {
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['combat']);
   });
 
-  it('renders note preview and text without a title icon', () => {
+  it('renders the note title without a title icon', () => {
     const note = {
       id: 'n1',
       title: 'Sketch',
-      content: '',
-      contentType: 'draw',
-      preview: 'data:image/png;base64,preview',
+      content: 'A sketch note',
       tags: [],
       typeId: null,
-      moduleIds: [],
       createdAt: 0,
       updatedAt: 0,
     } as any;
 
-    const drawing = mount(NoteCard, { props: { note } });
-    expect(drawing.find('h5').text()).toBe('Sketch');
-    expect(drawing.find('h5').find('svg').exists()).toBe(false);
-    expect(drawing.find('img').attributes('src')).toBe(
-      'data:image/png;base64,preview',
-    );
-
-    const text = mount(NoteCard, {
-      props: { note: { ...note, contentType: 'text' } },
-    });
-    expect(text.find('h5').text()).toBe('Sketch');
-    expect(text.find('h5').find('svg').exists()).toBe(false);
+    const wrapper = mount(NoteCard, { props: { note } });
+    expect(wrapper.find('h5').text()).toBe('Sketch');
+    expect(wrapper.find('h5').find('svg').exists()).toBe(false);
+    expect(wrapper.find('.note-card-content').exists()).toBe(true);
   });
 
   it('NoteCard expands clamped content', async () => {

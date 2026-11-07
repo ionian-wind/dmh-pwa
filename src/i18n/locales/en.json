@@ -64,7 +64,6 @@
     "title": "Notes",
     "contents": "Contents",
     "create": "Create Note",
-    "createDrawing": "Create drawing note",
     "edit": "Edit Note",
     "delete": "Delete Note",
     "fields": {

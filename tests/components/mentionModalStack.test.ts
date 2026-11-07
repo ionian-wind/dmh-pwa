@@ -126,25 +126,4 @@ describe('MentionModalStack', () => {
     );
     wrapper.unmount();
   });
-
-  it('renders drawing note previews in mention dialogs', async () => {
-    const wrapper = mount(MentionModalStack);
-    openMentionModal(
-      'draw-modal',
-      {
-        id: 'n2',
-        title: 'Sketch',
-        contentType: 'draw',
-        preview: 'data:image/png;base64,preview',
-        content: '{}',
-      },
-      'note',
-    );
-    await nextTick();
-
-    expect(wrapper.find('img.note-drawing-preview').attributes('src')).toBe(
-      'data:image/png;base64,preview',
-    );
-    wrapper.unmount();
-  });
 });

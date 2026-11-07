@@ -6,7 +6,6 @@
     "id",
     "title",
     "content",
-    "contentType",
     "typeId",
     "tags",
     "createdAt",
@@ -23,16 +22,7 @@
     },
     "content": {
       "type": "string",
-      "description": "Markdown source or a Quickdraw snapshot JSON string"
-    },
-    "contentType": {
-      "type": "string",
-      "enum": ["text", "draw"],
-      "description": "Note content kind"
-    },
-    "preview": {
-      "type": "string",
-      "description": "Small PNG data URL preview for drawing notes"
+      "description": "Markdown source for the note"
     },
     "typeId": {
       "oneOf": [

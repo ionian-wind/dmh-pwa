@@ -11,23 +11,6 @@ vi.mock('@/dialogs', () => ({
   alert: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/notes/NoteCanvas.vue', async () => {
-  const { defineComponent, h } = await import('vue');
-  return {
-    default: defineComponent({
-      name: 'NoteCanvas',
-      props: { modelValue: String, readonly: Boolean },
-      setup(_, { expose }) {
-        expose({
-          getSnapshot: () => '{"document":"snapshot"}',
-          getPreview: () => Promise.resolve('data:image/png;base64,preview'),
-        });
-        return () => h('div', { class: 'note-canvas-stub' });
-      },
-    }),
-  };
-});
-
 const MarkdownEditorStub = defineComponent({
   name: 'MarkdownEditor',
   props: { modelValue: String },
@@ -60,7 +43,6 @@ const baseNote = {
   id: 'n1',
   title: 'Note',
   content: '',
-  contentType: 'text',
   typeId: null,
   tags: [],
   createdAt: 1,
@@ -81,41 +63,16 @@ function mountEditor(props: Record<string, unknown>) {
   });
 }
 
-describe('NoteEditor content types', () => {
-  it('uses the markdown editor and reads its latest content for text notes', async () => {
+describe('NoteEditor', () => {
+  it('uses the markdown editor and reads its latest content', async () => {
     const wrapper = mountEditor({ note: baseNote });
 
     expect(wrapper.findComponent(MarkdownEditorStub).exists()).toBe(true);
-    expect(wrapper.findComponent({ name: 'NoteCanvas' }).exists()).toBe(false);
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     const submitted = wrapper.emitted('submit')?.[0]?.[0] as any;
-    expect(submitted.contentType).toBe('text');
     expect(stripBlockAnchors(submitted.content)).toBe('# Latest markdown');
     expect(submitted.content).toContain('dmh:block=');
-  });
-
-  it('uses the canvas and reads a tldraw snapshot for drawing notes', async () => {
-    const wrapper = mountEditor({
-      note: { ...baseNote, contentType: 'draw' },
-    });
-
-    expect(wrapper.findComponent({ name: 'NoteCanvas' }).exists()).toBe(true);
-    expect(wrapper.findComponent(MarkdownEditorStub).exists()).toBe(false);
-
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await flushPromises();
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      contentType: 'draw',
-      content: '{"document":"snapshot"}',
-      preview: 'data:image/png;base64,preview',
-    });
-  });
-
-  it('starts a new drawing note from the contentType prop', () => {
-    const wrapper = mountEditor({ note: null, contentType: 'draw' });
-
-    expect(wrapper.findComponent({ name: 'NoteCanvas' }).exists()).toBe(true);
   });
 
   it('rejects a note when both title and content are empty', async () => {

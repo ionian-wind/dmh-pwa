@@ -13,6 +13,7 @@ import migration11 from './0000000011_generic_files';
 import migration12 from './0000000012_remove_module_data';
 import migration13 from './0000000013_remove_note_hidden';
 import migration14 from './0000000014_drawings';
+import migration15 from './0000000015_remove_note_content_type';
 
 export const migrations: Migration[] = [
   initialSchemaMigration,
@@ -28,6 +29,7 @@ export const migrations: Migration[] = [
   migration12,
   migration13,
   migration14,
+  migration15,
 ];
 
 // Sort migrations by version to ensure they run in order

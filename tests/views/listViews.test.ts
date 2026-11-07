@@ -25,17 +25,6 @@ vi.mock('@/dialogs', () => ({
   alert: vi.fn().mockResolvedValue(undefined),
   prompt: vi.fn(),
 }));
-vi.mock('@/notes/NoteCanvas.vue', async () => {
-  const { defineComponent, h } = await import('vue');
-  return {
-    default: defineComponent({
-      name: 'NoteCanvas',
-      setup() {
-        return () => h('div', { class: 'note-canvas-stub' });
-      },
-    }),
-  };
-});
 
 const BaseListViewStub = defineComponent({
   name: 'BaseListView',
@@ -228,22 +217,14 @@ describe('list views', () => {
     expect(list(wrapper).props('emptyMessage')).toContain(
       'Create your first note',
     );
-    const headerButtons = list(wrapper).props('headerButtons') as any[];
-    expect(headerButtons[0]).toMatchObject({
-      color: 'warning',
-      title: 'notes.createDrawing',
+    expect(list(wrapper).props('headerButtons') ?? []).toEqual([]);
+    expect((list(wrapper).props('editorProps') as any)(null)).toMatchObject({
+      note: null,
+      isOpen: true,
     });
-    headerButtons[0].event();
-    expect((list(wrapper).props('editorProps') as any)(null).contentType).toBe(
-      'draw',
-    );
 
     list(wrapper).vm.$emit('submit', note);
     list(wrapper).vm.$emit('submit', { title: 'New note' });
-    list(wrapper).vm.$emit('submit', {
-      title: 'Sketch',
-      contentType: 'draw',
-    });
     list(wrapper).vm.$emit('copy', note);
     list(wrapper).vm.$emit('tag-click', 'combat');
     await flushPromises();
@@ -255,18 +236,9 @@ describe('list views', () => {
     expect(store.create).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Session' }),
     );
-    expect(store.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Sketch',
-        contentType: 'draw',
-      }),
-    );
     expect(router.currentRoute.value.query.tag).toBe('combat');
 
     list(wrapper).vm.$emit('cancel');
-    expect((list(wrapper).props('editorProps') as any)(null).contentType).toBe(
-      undefined,
-    );
     await expect(card.onDelete()).resolves.toBe(true);
     expect(store.remove).toHaveBeenCalledWith('n1');
     vi.mocked(confirm).mockResolvedValue(false);

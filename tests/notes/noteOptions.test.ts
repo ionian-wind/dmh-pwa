@@ -7,10 +7,8 @@ const baseNote: Note = {
   id: 'n1',
   title: 'Note',
   content: 'Intro #inline',
-  contentType: 'text',
   typeId: null,
   tags: ['tagged'],
-  moduleIds: [],
   createdAt: 1,
   updatedAt: 1,
 };
@@ -60,25 +58,6 @@ describe('NoteOptions', () => {
     const updated = wrapper.emitted('update:note')?.[0]?.[0] as Note;
     expect(updated.tags).toEqual(['tagged']);
     expect(updated.content).not.toContain('#inline');
-    wrapper.unmount();
-  });
-
-  it('ignores drawing content when merging tags', () => {
-    const wrapper = mountOptions({
-      ...baseNote,
-      contentType: 'draw',
-      content: '{"document":{}}',
-    });
-
-    expect(
-      wrapper.findComponent({ name: 'TagSelector' }).props('modelValue'),
-    ).toEqual(['tagged']);
-
-    wrapper
-      .findComponent({ name: 'TagSelector' })
-      .vm.$emit('update:modelValue', []);
-    const updated = wrapper.emitted('update:note')?.[0]?.[0] as Note;
-    expect(updated.content).toBe('{"document":{}}');
     wrapper.unmount();
   });
 

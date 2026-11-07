@@ -370,8 +370,7 @@ Indexing rules:
 
 - Strip Markdown syntax, URLs, image data URLs, mention IDs and code-only
   noise before indexing bodies; keep human-readable text.
-- Drawing notes (`contentType: 'draw'`) index title, tags and linked entities
-  only; no OCR.
+- Drawing blocks contribute their captions and surrounding Markdown; no OCR.
 - Hidden module-document notes are included and labelled as document pages, so
   campaign text remains discoverable.
 - Truncate extremely large bodies for indexing (for example 50,000 characters

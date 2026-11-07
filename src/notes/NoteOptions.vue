@@ -23,18 +23,12 @@ const typeId = computed({
 });
 
 const editorTags = computed({
-  get: () =>
-    mergeHashtags(
-      props.note.tags ?? [],
-      props.note.contentType === 'draw' ? '' : props.note.content,
-    ),
+  get: () => mergeHashtags(props.note.tags ?? [], props.note.content),
   set: (tags: string[]) => {
     const removedTags = editorTags.value.filter((tag) => !tags.includes(tag));
     let content = props.note.content;
-    if (props.note.contentType !== 'draw') {
-      for (const tag of removedTags) {
-        content = removeHashtag(content, tag);
-      }
+    for (const tag of removedTags) {
+      content = removeHashtag(content, tag);
     }
     patchNote({ content, tags });
   },

@@ -24,17 +24,15 @@
 
 ### Note
 
-| Field         | Type               | Notes                                                        |
-| ------------- | ------------------ | ------------------------------------------------------------ |
-| `title`       | `string`           | May be empty when the note has content                       |
-| `content`     | `string`           | Markdown source, or a Quickdraw JSON snapshot for draw notes |
-| `contentType` | `'text' \| 'draw'` | Note content kind; defaults to `text`                        |
-| `preview`     | `string?`          | Small PNG data URL preview for drawing notes                 |
-| `typeId`      | `string \| null`   | References a `NoteType`; UI for setting it is commented out  |
-| `tags`        | `string[]`         | Used for card chips and route-based tag filtering            |
-| `links`       | `NoteLink[]?`      | Links to parties, monsters, encounters and characters        |
-| `parentId`    | `string?`          | Declared in TS, not persisted by schemas/UI                  |
-| `metadata`    | `object?`          | Declared in TS, unused                                       |
+| Field      | Type             | Notes                                                         |
+| ---------- | ---------------- | ------------------------------------------------------------- |
+| `title`    | `string`         | May be empty when the note has content                        |
+| `content`  | `string`         | Markdown source; drawings are embedded as `drawing://` blocks |
+| `typeId`   | `string \| null` | References a `NoteType`; UI for setting it is commented out   |
+| `tags`     | `string[]`       | Used for card chips and route-based tag filtering             |
+| `links`    | `NoteLink[]?`    | Links to parties, monsters, encounters and characters         |
+| `parentId` | `string?`        | Declared in TS, not persisted by schemas/UI                   |
+| `metadata` | `object?`        | Declared in TS, unused                                        |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
 `typeId`, `tags`, `createdAt`, `updatedAt`.

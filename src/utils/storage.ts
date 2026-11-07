@@ -54,7 +54,7 @@ const MIGRATIONS_STORE = 'migrations';
 const MIGRATION_VERSION = Math.max(
   ...sortedMigrations.map(({ version }) => version),
 );
-const SCHEMA_VERSION = 14;
+const SCHEMA_VERSION = 15;
 const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
 // All stores that may exist in the database. The main list is also used by
@@ -154,8 +154,9 @@ export class DmhDatabase extends Dexie {
   constructor() {
     super(DB_NAME);
     // Version 14 adds the drawings store; version 13 dropped the removed
-    // modules store and its indexes. Legacy store names/key paths are kept and
-    // migrations remain recorded separately.
+    // modules store and its indexes. Version 15 removes note content types.
+    // Legacy store names/key paths are kept and migrations remain recorded
+    // separately.
     this.version(DB_VERSION).stores(SCHEMA);
     this.on('versionchange', () => this.close());
   }

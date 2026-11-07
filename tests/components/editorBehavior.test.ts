@@ -15,23 +15,6 @@ vi.mock('@/dialogs', () => ({
   confirm: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/notes/NoteCanvas.vue', async () => {
-  const { defineComponent, h } = await import('vue');
-  return {
-    default: defineComponent({
-      name: 'NoteCanvas',
-      props: { modelValue: String },
-      setup(_, { expose }) {
-        expose({
-          getSnapshot: () => '{"document":"snapshot"}',
-          getPreview: () => Promise.resolve('data:image/png;base64,preview'),
-        });
-        return () => h('div', { class: 'note-canvas-stub' });
-      },
-    }),
-  };
-});
-
 const MarkdownEditorStub = defineComponent({
   name: 'MarkdownEditor',
   props: { modelValue: String },
@@ -246,7 +229,6 @@ describe('editor behavior', () => {
       id: 'n1',
       title: 'Note',
       content: '',
-      contentType: 'text',
       typeId: null,
       tags: [],
       createdAt: 1,
@@ -283,7 +265,6 @@ describe('editor behavior', () => {
       id: 'n1',
       title: 'Note',
       content: '',
-      contentType: 'text',
       typeId: null,
       tags: [],
       createdAt: 1,
@@ -307,40 +288,6 @@ describe('editor behavior', () => {
     await flushPromises();
     expect(alertMock).toHaveBeenCalled();
     expect(wrapper.emitted('submit')).toBeUndefined();
-    wrapper.unmount();
-  });
-
-  it('uses the canvas snapshot for drawing notes with an empty preview', async () => {
-    const wrapper = mount(NoteEditor, {
-      props: {
-        note: {
-          id: 'n2',
-          title: 'Sketch',
-          content: '',
-          contentType: 'draw',
-          typeId: null,
-          tags: [],
-          createdAt: 1,
-          updatedAt: 1,
-        },
-        isOpen: true,
-      },
-      global: {
-        stubs: {
-          MarkdownEditor: MarkdownEditorStub,
-          EntitiesLinking: EntitiesLinkingStub,
-          NoteTypeSelector: true,
-          TagSelector: true,
-        },
-      },
-    });
-
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await flushPromises();
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      content: '{"document":"snapshot"}',
-      preview: 'data:image/png;base64,preview',
-    });
     wrapper.unmount();
   });
 });

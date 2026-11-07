@@ -18,23 +18,15 @@ export const useNoteStore = defineStore('notes', () => {
 
   async function create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) {
     debug('noteStore.create called', note);
-    const contentType = note.contentType ?? 'text';
     const newNote = await base.create({
       ...note,
-      contentType,
-      tags: mergeHashtags(
-        note.tags ?? [],
-        contentType === 'draw' ? '' : note.content,
-      ),
+      tags: mergeHashtags(note.tags ?? [], note.content),
     });
     // Indexation
     const from = { kind: 'note', id: newNote.id };
-    const mentioned =
-      newNote.contentType === 'draw'
-        ? []
-        : (await import('@/utils/markdownParser')).extractMentionedEntities(
-            newNote.content,
-          );
+    const mentioned = (
+      await import('@/utils/markdownParser')
+    ).extractMentionedEntities(newNote.content);
     await indexation.setLinks(from, mentioned);
     return newNote;
   }
@@ -44,21 +36,17 @@ export const useNoteStore = defineStore('notes', () => {
     patch: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>>,
   ) {
     const original = base.getById(id);
-    const contentType = patch.contentType ?? original?.contentType ?? 'text';
     const content = patch.content ?? original?.content ?? '';
     let tags = patch.tags ?? original?.tags ?? [];
-    if ('content' in patch && contentType !== 'draw') {
+    if ('content' in patch) {
       tags = mergeHashtags(tags, content);
     }
     const updated = await base.update(id, { ...patch, tags });
     // Indexation
     const from = { kind: 'note', id };
-    const mentioned =
-      updated.contentType === 'draw'
-        ? []
-        : (await import('@/utils/markdownParser')).extractMentionedEntities(
-            updated.content || '',
-          );
+    const mentioned = (
+      await import('@/utils/markdownParser')
+    ).extractMentionedEntities(updated.content || '');
     await indexation.setLinks(from, mentioned);
     return updated;
   }
@@ -83,8 +71,7 @@ export const useNoteStore = defineStore('notes', () => {
       result = result.filter(
         (note) =>
           note.title.toLowerCase().includes(query) ||
-          (note.contentType !== 'draw' &&
-            note.content.toLowerCase().includes(query)) ||
+          note.content.toLowerCase().includes(query) ||
           note.tags.some((tag) => tag.toLowerCase().includes(query)),
       );
     }

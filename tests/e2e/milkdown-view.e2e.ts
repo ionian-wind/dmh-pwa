@@ -35,7 +35,6 @@ test('renders note content with the Milkdown view and toggles tasks', async ({
         id: noteId,
         title: 'Milkdown view e2e',
         content,
-        contentType: 'text',
         typeId: null,
         tags: ['harbor'],
         createdAt: now,
