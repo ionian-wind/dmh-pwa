@@ -107,7 +107,11 @@ Markdown-to-ProseMirror pipeline.
   triggers, so it cannot steal them from an open editor.
 
 Note cards and module document chunks keep `Markdown.vue` because one Crepe
-instance per card would be too expensive and module chunks are virtualized.
+instance per card would be too expensive and module chunks are virtualized. A
+singleton static Milkdown renderer is available in
+`milkdown/staticRenderer.ts`, but benchmarks show it is roughly 5–6× slower
+than markdown-it for batch card rendering. See
+[`../architecture/markdown-rendering-performance.md`](../architecture/markdown-rendering-performance.md).
 
 ## Renderer (`Markdown.vue`)
 

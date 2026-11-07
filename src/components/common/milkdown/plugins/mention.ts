@@ -1,6 +1,7 @@
 import { $markSchema, $prose } from '@milkdown/utils';
 import { $command } from '@milkdown/kit/utils';
 import { editorViewCtx } from '@milkdown/kit/core';
+import { Transform } from '@milkdown/kit/prose/transform';
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 
 import { debug } from '@/utils/debug';
@@ -262,6 +263,57 @@ function insertMentionMark(
     debug(`[${source}] Error inserting mention mark:`, error);
   }
   return false;
+}
+
+/**
+ * Normalize `kind://id` link marks into mention marks on a parsed document.
+ * This is used by the static renderer, which serializes a parsed doc without
+ * creating a live editor view.
+ */
+export function normalizeMentionDoc(doc: any, schema: any) {
+  const linkType = schema?.marks?.link;
+  const mentionType = schema?.marks?.mention;
+  if (!linkType || !mentionType) return doc;
+
+  const matches: Array<{
+    pos: number;
+    size: number;
+    kind: string;
+    id: string;
+    title: string;
+  }> = [];
+
+  doc.descendants((node: any, pos: number) => {
+    if (!node.isText || !node.marks?.length) return;
+    const link = node.marks.find((mark: any) => mark.type === linkType);
+    const match = link && entityLinkRegex.exec(String(link.attrs?.href ?? ''));
+    if (!match) return;
+    matches.push({
+      pos,
+      size: node.nodeSize,
+      kind: match[1],
+      id: match[2],
+      title: link.attrs?.title || node.text,
+    });
+  });
+
+  if (matches.length === 0) return doc;
+
+  const tr = new Transform(doc);
+  for (const entry of matches) {
+    tr.removeMark(entry.pos, entry.pos + entry.size, linkType);
+    tr.addMark(
+      entry.pos,
+      entry.pos + entry.size,
+      mentionType.create({
+        kind: entry.kind,
+        id: entry.id,
+        href: null,
+        title: entry.title,
+      }),
+    );
+  }
+  return tr.doc;
 }
 
 /**

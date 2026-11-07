@@ -1,6 +1,6 @@
 # Milkdown View Renderer — Implementation Plan
 
-**Status:** implemented (phases 1–3); phase 4 deferred.
+**Status:** implemented (phases 1–4); static renderer evaluated and not adopted.
 
 **Implementation commit:** `734fe82b` (detail-view renderer).
 
@@ -19,8 +19,8 @@ and append `— done` plus the commit/date when a task is complete.
 | ------------------------------ | ----------------------------------------------------------------------- |
 | Canonical content format       | Markdown; no stored HTML snapshots                                      |
 | Detail-view renderer           | Read-only Milkdown/Crepe                                                |
-| Note-card renderer             | Keep markdown-it in phase 1                                             |
-| Module document chunks         | Keep markdown-it in phase 1; evaluate a static renderer in phase 4      |
+| Note-card renderer             | Keep markdown-it; static Milkdown measured ~5–6× slower                 |
+| Module document chunks         | Keep markdown-it; static renderer evaluated but not adopted             |
 | Crepe feature set in view      | Same schema-producing features; disable only UI-only features           |
 | Task checkbox toggling in view | Patch the matching Markdown source line, then emit updated Markdown     |
 | Mention kinds                  | Resolve from `featureLinkKinds`; disabled kinds must not open           |
@@ -183,19 +183,27 @@ Planned files:
       page. Production build: 404 precache entries, ~17.2 MiB; all 15 feature
       configurations pass the strict audit.
 
-### Phase 4 — optional full-parity renderer
+### Phase 4 — full-parity renderer evaluation
 
-**Deferred.** Phase 1–3 cover detail views. Start this phase only if card
-previews and module chunks also need exact Milkdown parity.
+**Completed as an evaluation.** The static renderer is implemented and tested,
+but the benchmark does not justify replacing markdown-it for cards or chunks.
 
-- [ ] `MDV-040` Design a singleton headless Milkdown renderer that parses
-      Markdown once and serializes HTML for cards and chunks.
-- [ ] `MDV-041` Provide a static task-list `toDOM` with real checkboxes.
-- [ ] `MDV-042` Reuse the mention, tag and heading-anchor plugins.
-- [ ] `MDV-043` Decide whether to keep `markdown-it` for exports and legacy
-      fallback.
-- [ ] `MDV-044` Measure list and virtual-scroll performance before replacing
-      `Markdown.vue` globally.
+- [x] `MDV-040` Design a singleton headless Milkdown renderer — done in
+      `src/components/common/milkdown/staticRenderer.ts`. It uses one hidden
+      Crepe instance and serializes with `DOMSerializer`.
+- [x] `MDV-041` Provide static task-list checkboxes — done. Serialized
+      `li[data-item-type="task"]` nodes get disabled
+      `.task-list-checkbox` inputs.
+- [x] `MDV-042` Reuse the mention, tag and heading-anchor plugins — done. The
+      renderer normalizes mention links and post-processes tag links and
+      external-link attributes.
+- [x] `MDV-043` Decide whether to keep markdown-it — done. Keep it for note
+      cards, virtualized module chunks, exports and legacy fallback.
+- [x] `MDV-044` Measure list and virtual-scroll performance — done with
+      `markdown-dataset` via `npm run perf:markdown`. See
+      [`../architecture/markdown-rendering-performance.md`](../architecture/markdown-rendering-performance.md).
+      Static Milkdown is ~5–6× slower than markdown-it for card batches, so it
+      is not adopted globally.
 
 ## 5. Acceptance criteria
 

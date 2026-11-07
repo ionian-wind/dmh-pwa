@@ -23,13 +23,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef, watch } from 'vue';
-import { Crepe, CrepeFeature } from '@milkdown/crepe';
+import { Crepe } from '@milkdown/crepe';
 import { Milkdown, useEditor } from '@milkdown/vue';
 import { replaceAll } from '@milkdown/kit/utils';
 import { mentionFeature } from './plugins/mention';
 import { createCrepeFeatureConfig } from './crepeConfig';
 import { headingAnchorFeature } from './plugins/headingAnchor';
 import { tagDecorationFeature } from './plugins/tagDecoration';
+import { READONLY_CREPE_FEATURES } from './features';
 import MentionInsertPopup from './MentionInsertPopup.vue';
 import TagInsertPopup from './TagInsertPopup.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
@@ -175,16 +176,6 @@ if (!props.readonly) {
   });
 }
 
-const readonlyFeatures = {
-  [CrepeFeature.Toolbar]: false,
-  [CrepeFeature.BlockEdit]: false,
-  [CrepeFeature.Placeholder]: false,
-  [CrepeFeature.LinkTooltip]: false,
-  [CrepeFeature.Cursor]: false,
-  [CrepeFeature.TopBar]: false,
-  [CrepeFeature.AI]: false,
-};
-
 const lastAppliedValue = ref(props.modelValue);
 
 // @ts-ignore: Type mismatch due to dynamic plugin system
@@ -192,7 +183,7 @@ useEditor((root) => {
   crepeInstance.value = new Crepe({
     root,
     defaultValue: props.modelValue,
-    features: props.readonly ? readonlyFeatures : {},
+    features: props.readonly ? READONLY_CREPE_FEATURES : {},
     featureConfigs: createCrepeFeatureConfig(t),
   })
     .addFeature(mentionFeature)

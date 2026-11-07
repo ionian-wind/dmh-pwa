@@ -180,6 +180,11 @@ keystroke, `modelValue` is usually already current. Detail views use
 mention modals, task line toggling and heading-anchor extraction.
 `tests/e2e/milkdown-view.e2e.ts` covers read-only rendering, switching to edit
 and back, and persisting a task toggle.
+`tests/components/staticRenderer.test.ts` covers the singleton static renderer.
+
+Performance is measured with `npm run perf:markdown` against
+`markdown-dataset`; results and the adoption decision are documented in
+[`../architecture/markdown-rendering-performance.md`](../architecture/markdown-rendering-performance.md).
 
 The Milkdown/Crepe dependency is heavy (multiple packages at v7.23.0) and is a
 significant share of the bundle. Every feature that renders Markdown already
