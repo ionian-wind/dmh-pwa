@@ -118,6 +118,25 @@ than markdown-it for batch card rendering. See
 Used by note cards, module document chunks and modules that still need a
 lightweight read-only renderer.
 
+### Styling
+
+`src/components/common/markdown-content.css` mirrors Milkdown/Crepe's reset,
+list, table and link typography so cards and chunks look like detail views:
+
+- the same `--crepe-*` colours, fonts, heading sizes and margins;
+- the same paragraph, inline-code, pre, blockquote and horizontal-rule styles;
+- the same table borders/padding and task-list checkbox treatment;
+- mention links keep their entity colour and chip padding;
+- dark-mode variables come from the shared
+  `body.body--dark .markdown-content` rule.
+
+Known remaining differences are structural rather than typographic:
+
+- markdown-it emits plain `<pre><code>` blocks, while the Milkdown view uses
+  CodeMirror with syntax colours, line numbers and a copy button;
+- markdown-it tight lists keep text directly inside `<li>`, while Milkdown
+  wraps list content in paragraph nodes.
+
 - Memoizes parsed HTML by `content + taskCheckboxEnabled` in a shallow `Map`
   capped at 100 entries.
 - Injects `v-html` into a root element and attaches a capture-phase click

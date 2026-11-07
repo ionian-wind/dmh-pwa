@@ -195,7 +195,8 @@ body.body--dark .internal-link:hover {
 }
 
 /* Crepe / Milkdown editor palette. */
-body.body--dark .milkdown {
+body.body--dark .milkdown,
+body.body--dark .markdown-content {
   --crepe-color-background: #14141d;
   --crepe-color-on-background: #e6e6f0;
   --crepe-color-surface: #1e1e2e;

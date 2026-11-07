@@ -191,3 +191,8 @@ significant share of the bundle. Every feature that renders Markdown already
 imports an editor, so the view component does not introduce a second copy; the
 remaining cost is one read-only Crepe instance per detail page, not per note
 card.
+
+The markdown-it card/chunk renderer uses
+`src/components/common/markdown-content.css` to mirror Crepe's typography,
+tables, lists, links and dark-mode variables. Code blocks remain plain
+`<pre><code>` because markdown-it does not run CodeMirror.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import './markdown-content.css';
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue';
 import { parseMarkdown } from '@/utils/markdownParser';
 import { featureLinkKinds } from 'virtual:feature-links';
@@ -224,7 +225,7 @@ watch(
 
 <template>
   <div class="markdown-content" ref="rootEl">
-    <div v-html="parsed"></div>
+    <div class="markdown-content-body" v-html="parsed"></div>
   </div>
 </template>
 
