@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconPlus, IconX } from '@tabler/icons-vue';
+import { IconPlus, IconSearch, IconX } from '@tabler/icons-vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
+import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 import { dedupeEntityRefs } from '@/components/common/entityLinking/entityRefs';
 import { useMapEntityCatalog } from '@/components/common/entityLinking/useMapEntityCatalog';
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { groups, getLabel } = useMapEntityCatalog();
 const isModalOpen = ref(false);
+const isCreateOpen = ref(false);
 const createdLabels = ref<Record<string, string>>({});
 
 const group = computed(() =>
@@ -76,6 +78,18 @@ function handleAdd(payload: {
   isModalOpen.value = false;
 }
 
+function handleCreated(payload: { ref: MapEntityRef; label: string }) {
+  createdLabels.value = {
+    ...createdLabels.value,
+    [payload.ref.id]: payload.label,
+  };
+  const base = props.multiple
+    ? props.modelValue
+    : props.modelValue.filter((ref) => ref.kind !== props.kind);
+  emit('update:modelValue', dedupeEntityRefs([...base, payload.ref]));
+  isCreateOpen.value = false;
+}
+
 function removeLink(ref: MapEntityRef) {
   emit(
     'update:modelValue',
@@ -94,10 +108,21 @@ function removeLink(ref: MapEntityRef) {
           v-if="!readonly"
           flat
           round
-          class="entity-group-add"
-          :title="t('common.add')"
-          :aria-label="t('common.add')"
+          class="entity-group-search"
+          :title="t('common.searchAndLink')"
+          :aria-label="t('common.searchAndLink')"
           @click="isModalOpen = true"
+        >
+          <IconSearch :size="18" />
+        </QBtn>
+        <QBtn
+          v-if="!readonly"
+          flat
+          round
+          class="entity-group-add"
+          :title="t('common.addAndLink')"
+          :aria-label="t('common.addAndLink')"
+          @click="isCreateOpen = true"
         >
           <IconPlus :size="18" />
         </QBtn>
@@ -148,11 +173,19 @@ function removeLink(ref: MapEntityRef) {
       @add="handleAdd"
       @cancel="isModalOpen = false"
     />
+
+    <EntityCreateDialog
+      v-if="!readonly && isCreateOpen"
+      :kind="kind"
+      @created="handleCreated"
+      @cancel="isCreateOpen = false"
+    />
   </div>
 </template>
 
 <style scoped>
-.entity-group-add {
+.entity-group-add,
+.entity-group-search {
   color: var(--color-accent);
 }
 

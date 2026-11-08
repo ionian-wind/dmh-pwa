@@ -103,7 +103,7 @@ describe('EntitiesLinking', () => {
     });
 
     expect(wrapper.text()).toContain('Custom notes');
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
 
     expect(wrapper.text()).toContain('External note');
     expect(wrapper.text()).not.toContain('Alpha note');
@@ -120,7 +120,7 @@ describe('EntitiesLinking', () => {
       },
     });
 
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
 
     const optionRows = wrapper
       .findAll('[data-stub="QItem"]')
@@ -150,7 +150,7 @@ describe('EntitiesLinking', () => {
       },
     });
 
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
     const createButton = wrapper.find('button[aria-label="Create"]');
     expect(createButton.exists()).toBe(true);
     await createButton.trigger('click');
@@ -178,6 +178,41 @@ describe('EntitiesLinking', () => {
     ]);
   });
 
+  it('creates and links an entity directly from the add-and-link action', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [{ kind: 'note', id: 'n1' }],
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('button[aria-label="Add and link"]').trigger('click');
+
+    const createDialog = wrapper.findComponent(EntityCreateDialogStub);
+    expect(createDialog.exists()).toBe(true);
+    expect(createDialog.props('kind')).toBe('note');
+
+    createDialog.vm.$emit('created', {
+      ref: { kind: 'note', id: 'n3' },
+      label: 'Gamma note',
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      [
+        { kind: 'note', id: 'n1' },
+        { kind: 'note', id: 'n3' },
+      ],
+    ]);
+    expect(wrapper.findComponent(EntityCreateDialogStub).exists()).toBe(false);
+  });
+
   it('hides add and remove actions in readonly mode', () => {
     const wrapper = mount(EntitiesLinking, {
       props: {
@@ -194,7 +229,12 @@ describe('EntitiesLinking', () => {
     });
 
     expect(wrapper.text()).toContain('Alpha note');
-    expect(wrapper.find('button[aria-label="Add"]').exists()).toBe(false);
+    expect(wrapper.find('button[aria-label="Search and link"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="Add and link"]').exists()).toBe(
+      false,
+    );
     expect(wrapper.find('button[aria-label="Remove"]').exists()).toBe(false);
     expect(wrapper.findComponent(EntityCreateDialogStub).exists()).toBe(false);
   });
@@ -210,7 +250,7 @@ describe('EntitiesLinking', () => {
       },
     });
 
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
     expect(wrapper.findComponent(QVirtualScrollStub).exists()).toBe(true);
 
     const search = wrapper.find('input');
@@ -258,7 +298,7 @@ describe('EntitiesLinking', () => {
       },
     });
 
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
 
     const alpha = wrapper
       .findAll('.entity-option')
