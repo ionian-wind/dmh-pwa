@@ -18,6 +18,10 @@ defineProps<{
 </script>
 
 <style scoped>
+.entity-group-header :deep(.q-separator) {
+  background: var(--color-separator);
+}
+
 .entity-group + .entity-group {
   margin-top: 1.25rem;
 }

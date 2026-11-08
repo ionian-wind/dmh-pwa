@@ -46,6 +46,7 @@
   --color-border: #ddd;
   --color-border-light: #eee;
   --color-border-dark: #ccc;
+  --color-separator: #e0e0e0;
 
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -123,6 +124,7 @@ body.body--dark {
   --color-border: #35354a;
   --color-border-light: #2a2a3d;
   --color-border-dark: #46465e;
+  --color-separator: #4f4f6b;
 
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
