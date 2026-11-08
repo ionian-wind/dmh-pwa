@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
@@ -9,9 +9,16 @@ import { toggleSoundControl } from './state';
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const configStore = useConfigStore();
 const playerStore = useJukeboxPlayerStore();
 const isRoute = computed(() => !configStore.jukeboxUseMiniPlayer);
+const isJukeboxArea = computed(
+  () =>
+    route.path === '/jukebox' ||
+    route.path === '/ambient' ||
+    route.path.startsWith('/ambient/'),
+);
 
 function openJukebox() {
   if (configStore.jukeboxUseMiniPlayer) {
@@ -28,7 +35,7 @@ function openJukebox() {
     clickable
     v-ripple
     :to="isRoute ? '/jukebox' : undefined"
-    :active="isRoute && $route.path === '/jukebox'"
+    :active="isJukeboxArea"
     active-class="bg-secondary"
     :title="t('app.jukebox')"
     :aria-label="t('app.jukebox')"
