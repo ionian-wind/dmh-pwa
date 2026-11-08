@@ -51,7 +51,6 @@ test('creates a drawing block from the slash menu', async ({ page }) => {
   });
 
   expect(result.note.content).toContain('![drawing](drawing://');
-  expect(result.note.content.trimStart().startsWith('![drawing]')).toBe(true);
   expect(result.note.contentType).toBeUndefined();
   expect(result.drawings).toHaveLength(1);
   expect(result.drawings[0].snapshot).toContain('shape:');

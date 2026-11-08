@@ -3,6 +3,7 @@ import mapLocations from '@/migrations/0000000005_map_locations';
 import mapLocationOneToOne from '@/migrations/0000000006_map_location_one_to_one';
 import noteContentType from '@/migrations/0000000008_note_content_type';
 import removeNoteContentType from '@/migrations/0000000015_remove_note_content_type';
+import stripEscapedAnchorSpaces from '@/migrations/0000000016_strip_escaped_block_anchor_spaces';
 
 function transactionWith(storeData: Record<string, any[]>) {
   const stores = new Map<string, any>();
@@ -192,5 +193,31 @@ describe('map location migrations', () => {
       }),
     ]);
     expect(drawn.content).toBe(`![drawing](drawing://${savedDrawings[0].id})`);
+  });
+
+  it('strips escaped spaces before block anchors', async () => {
+    const { stores, transaction } = transactionWith({
+      notes: [
+        {
+          id: 'n1',
+          content:
+            'First \\ <!-- dmh:block=note-block-one -->\n\nSecond <!-- dmh:block=note-block-two -->',
+        },
+        { id: 'n2', content: 'No anchors' },
+      ],
+    });
+
+    await stripEscapedAnchorSpaces.go(transaction);
+
+    const saved = stores
+      .get('notes')
+      .put.mock.calls.map((call: any[]) => call[0]);
+    expect(saved).toEqual([
+      {
+        id: 'n1',
+        content:
+          'First <!-- dmh:block=note-block-one -->\n\nSecond <!-- dmh:block=note-block-two -->',
+      },
+    ]);
   });
 });

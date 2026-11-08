@@ -13,7 +13,6 @@ import {
 } from '@/drawings/markdown';
 import DrawingBlockView from '../DrawingBlockView.vue';
 import { brushIcon } from '../tablerIcons';
-import { clearSlashMenuText } from './slashMenu';
 
 export interface DrawingModalRequest {
   ctx: any;
@@ -235,9 +234,6 @@ export function buildDrawingMenu(
   advanced.addItem('drawing', {
     label: translate('drawing.add'),
     icon: brushIcon,
-    onRun: (ctx: any) => {
-      clearSlashMenuText(ctx);
-      requestDrawingModal({ ctx });
-    },
+    onRun: (ctx: any) => requestDrawingModal({ ctx }),
   });
 }

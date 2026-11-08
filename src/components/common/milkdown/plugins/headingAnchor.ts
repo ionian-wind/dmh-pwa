@@ -8,6 +8,7 @@ import { featureLinkKinds } from 'virtual:feature-links';
 
 const HEADING_ANCHOR_PATTERN = /\s*\{#([a-zA-Z]+)-([a-zA-Z0-9_-]+)\}\s*$/;
 const BLOCK_ANCHOR_PATTERN = /<!--\s*dmh:block=([A-Za-z0-9_-]+)\s*-->/;
+const ESCAPED_SPACE_SUFFIX = /[ \t]*\\[ \t]*$/;
 const enabledKinds = new Set(featureLinkKinds.map((option) => option.kind));
 
 export interface HeadingAnchor {
@@ -53,7 +54,9 @@ export function extractBlockAnchor(node: any): string | null {
       node.children.splice(index, 1);
       const previous = node.children[index - 1];
       if (previous?.type === 'text' && typeof previous.value === 'string') {
-        previous.value = previous.value.trimEnd();
+        previous.value = previous.value
+          .replace(ESCAPED_SPACE_SUFFIX, '')
+          .trimEnd();
       }
       return match[1];
     }
@@ -61,7 +64,10 @@ export function extractBlockAnchor(node: any): string | null {
     if (child?.type === 'text' && typeof child.value === 'string') {
       const match = BLOCK_ANCHOR_PATTERN.exec(child.value);
       if (!match) continue;
-      child.value = child.value.replace(BLOCK_ANCHOR_PATTERN, '').trimEnd();
+      child.value = child.value
+        .replace(BLOCK_ANCHOR_PATTERN, '')
+        .replace(ESCAPED_SPACE_SUFFIX, '')
+        .trimEnd();
       return match[1];
     }
   }
@@ -161,7 +167,7 @@ export const headingAnchorSchema = headingSchema.extendSchema((prev) => {
           }
           if (node.attrs.blockAnchor) {
             state.addNode(
-              'text',
+              'html',
               undefined,
               ` <!-- dmh:block=${node.attrs.blockAnchor} -->`,
             );
@@ -210,7 +216,7 @@ export const paragraphBlockAnchorSchema = paragraphSchema.extendSchema(
             state.next(node.content);
             if (node.attrs.blockAnchor) {
               state.addNode(
-                'text',
+                'html',
                 undefined,
                 ` <!-- dmh:block=${node.attrs.blockAnchor} -->`,
               );
