@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -26,6 +33,11 @@ const configStore = useConfigStore();
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
+
+// Keep encounters-owned code out of builds where encounters are disabled.
+const ActiveCombatButton = __FEATURE_ENCOUNTERS__
+  ? defineAsyncComponent(() => import('@/encounters/ActiveCombatButton.vue'))
+  : null;
 
 const leftMenuMinimized = ref(false);
 const toolsExpanded = ref(false);
@@ -163,6 +175,8 @@ const isSettingsOpen = ref(false);
             :is="topMenuContent.component"
             v-bind="topMenuContent.props"
           ></component>
+
+          <component :is="ActiveCombatButton" v-if="ActiveCombatButton" />
         </QToolbar>
       </QHeader>
 
