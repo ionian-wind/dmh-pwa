@@ -162,7 +162,7 @@ Contains this documentation plus the pre-existing
 summary describes a `createBaseStore.ts` that does not exist and an `isLoading`
 field that the current base store does not expose. Treat it as historical.
 Dice-roller notation and architecture notes are consolidated in
-[`features/dice-roller.md`](../features/dice-roller.md).
+[`plans/dice-roller.md`](../plans/dice-roller.md).
 
 ## `patches/`
 

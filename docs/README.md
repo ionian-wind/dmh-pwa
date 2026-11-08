@@ -54,7 +54,6 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [ambient-sound-configurator.md](ambient-sound-configurator.md)                                     | Ambient sound packs, scenes, layers and playback                            |
 | [features/maps.md](features/maps.md)                                                               | Map images, locations, entity bindings, markers and icons                   |
 | [features/calculator.md](features/calculator.md)                                                   | Arithmetic and unit converter dialog                                        |
-| [features/dice-roller.md](features/dice-roller.md)                                                 | Consolidated dice roller feature, notation spec and branch comparison       |
 | [features/dice-probability-calculator/README.md](features/dice-probability-calculator/README.md)   | AnyDice-compatible probability library, specification and validation matrix |
 | [features/dice-probability-calculator/library.md](features/dice-probability-calculator/library.md) | Probability library API and usage                                           |
 | [features/dice-probability-calculator/spec.md](features/dice-probability-calculator/spec.md)       | Probability language specification                                          |
@@ -93,6 +92,7 @@ implemented.
 | [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)         | Manifest, install UX, safe-area and PWA audit plan |
 | [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md) | Milkdown detail-view renderer plan and status      |
 | [plans/remove-modules-entity.md](plans/remove-modules-entity.md)   | Completed Modules removal and migration record     |
+| [plans/dice-roller.md](plans/dice-roller.md)                       | Dice roller notation, architecture and branch plan |
 
 ### Cross-cutting analysis
 

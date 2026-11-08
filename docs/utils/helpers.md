@@ -113,7 +113,7 @@ See [utils/files.md](files.md).
 
 ## `src/utils/dice-roller/*`
 
-See [features/dice-roller.md](../features/dice-roller.md).
+See [plans/dice-roller.md](../plans/dice-roller.md).
 
 ## `src/utils/dice-probability-calculator/*`
 
