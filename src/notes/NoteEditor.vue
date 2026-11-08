@@ -89,12 +89,7 @@ const noteLinkKinds = [
   'encounter',
   'location',
 ] as const;
-const tabs = computed(() => {
-  if (!editedNote.value.id) {
-    return editorTabs.value.filter((tab) => tab.name !== 'links');
-  }
-  return editorTabs.value;
-});
+const tabs = computed(() => editorTabs.value);
 
 const noteLinks = computed<MapEntityRef[]>(() => {
   const id = editedNote.value.id;

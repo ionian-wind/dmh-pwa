@@ -303,6 +303,7 @@ onMounted(async () => {
                 <QBtn
                   :size="'sm'"
                   flat
+                  color="negative"
                   @click.stop="removePlaylist(playlist.id)"
                 >
                   <IconX :size="18" />
@@ -416,7 +417,7 @@ onMounted(async () => {
   display: none;
 }
 
-.playlist-list-container.is-edit-mode .playlist-item:hover .playlist-actions {
+.playlist-list-container.is-edit-mode .playlist-item .playlist-actions {
   display: flex;
 }
 </style>

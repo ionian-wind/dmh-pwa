@@ -64,6 +64,18 @@ function mountEditor(props: Record<string, unknown>) {
 }
 
 describe('NoteEditor', () => {
+  it('shows the linked entities tab when creating a note', () => {
+    const wrapper = mountEditor({ note: null });
+
+    expect(
+      wrapper
+        .findComponent(BaseModal)
+        .props('tabs')
+        .map((tab: any) => tab.name),
+    ).toEqual(['main', 'links']);
+    wrapper.unmount();
+  });
+
   it('uses the markdown editor and reads its latest content', async () => {
     const wrapper = mountEditor({ note: baseNote });
 
