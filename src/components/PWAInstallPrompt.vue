@@ -99,14 +99,6 @@ onUnmounted(() => {
       </p>
 
       <template #action>
-        <QBtn @click="installApp" color="positive" size="small">
-          <IconDownload />
-          {{ t('pwa.install') }}
-        </QBtn>
-        <QBtn @click="dismissPrompt" color="primary" size="small">
-          <IconX />
-          {{ t('pwa.notNow') }}
-        </QBtn>
         <a
           v-if="features.help"
           class="pwa-install-help"
@@ -116,6 +108,14 @@ onUnmounted(() => {
         >
           {{ t('pwa.installHelp') }}
         </a>
+        <QBtn @click="dismissPrompt" color="primary" size="small">
+          <IconX />
+          {{ t('pwa.notNow') }}
+        </QBtn>
+        <QBtn @click="installApp" color="positive" size="small">
+          <IconDownload />
+          {{ t('pwa.install') }}
+        </QBtn>
       </template>
     </QBanner>
   </div>
@@ -146,7 +146,7 @@ onUnmounted(() => {
 
 .pwa-install-help {
   align-self: center;
-  margin-left: 0.5rem;
+  margin-right: 0.5rem;
   font-size: 0.85rem;
   color: var(--color-accent);
   text-decoration: underline;

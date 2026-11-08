@@ -63,6 +63,14 @@ describe('PWA components', () => {
       '/help/en/getting-started/install.html',
     );
     expect(helpLink.attributes('target')).toBe('_blank');
+    expect(
+      [...wrapper.element.querySelectorAll('.pwa-install-help, button')].map(
+        (element) =>
+          element.classList.contains('pwa-install-help')
+            ? 'help'
+            : element.textContent?.trim(),
+      ),
+    ).toEqual(['help', 'Not now', 'Install']);
     const installButton = wrapper
       .findAll('button')
       .find((button) => button.text().includes('Install'));
