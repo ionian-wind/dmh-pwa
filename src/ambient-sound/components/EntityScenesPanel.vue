@@ -44,9 +44,6 @@
           </QItemSection>
           <QItemSection>
             <div>{{ item.name }}</div>
-            <div v-if="item.subtitle" class="text-caption text-grey-7">
-              {{ item.subtitle }}
-            </div>
           </QItemSection>
           <QItemSection side class="scene-link-actions row items-center">
             <template v-if="item.type === 'scene'">
@@ -279,14 +276,12 @@ const mixedItems = computed(() =>
       type: 'scene' as const,
       key: `scene:${scene.pack.id}:${scene.scene.id}`,
       name: scene.scene.name,
-      subtitle: scene.pack.name,
       scene,
     })),
     ...linkedPlaylists.value.map((playlist) => ({
       type: 'playlist' as const,
       key: `playlist:${playlist.id}`,
       name: playlist.name,
-      subtitle: playlist.description ?? '',
       playlist,
     })),
   ].sort((a, b) => a.name.localeCompare(b.name)),
@@ -410,11 +405,6 @@ onMounted(async () => {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-}
-
-.scene-link-item,
-.playlist-link-item {
-  border-radius: var(--border-radius);
 }
 
 .scene-link-item--selected {
