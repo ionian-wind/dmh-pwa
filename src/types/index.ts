@@ -109,6 +109,8 @@ export interface Combatant extends WithMetadata {
   initiative: number;
   hasActed: boolean;
   isPostponed: boolean;
+  /** Excluded combatants stay in the list but are skipped in the turn cycle. */
+  isExcluded?: boolean;
 }
 
 export interface Encounter extends WithMetadata {

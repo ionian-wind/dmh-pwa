@@ -418,6 +418,7 @@
     "nextTurn": "Next turn",
     "postpone": "Postpone turn",
     "excludeParticipant": "Exclude from turn order",
+    "returnParticipant": "Return to turn order",
     "activatePostponed": "Activate participant",
     "notes": "Notes",
     "noActive": "No active combat found for this encounter.",

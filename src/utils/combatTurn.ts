@@ -20,13 +20,15 @@ function startNextRound(
   combatants: Combatant[],
   currentRound: number,
 ): TurnResult {
+  const sorted = sortByInitiative(combatants).map((combatant) => ({
+    ...combatant,
+    hasActed: false,
+    isPostponed: false,
+  }));
+  const firstAvailable = sorted.findIndex((combatant) => !combatant.isExcluded);
   return {
-    combatants: sortByInitiative(combatants).map((combatant) => ({
-      ...combatant,
-      hasActed: false,
-      isPostponed: false,
-    })),
-    currentTurn: 0,
+    combatants: sorted,
+    currentTurn: firstAvailable === -1 ? 0 : firstAvailable,
     currentRound: currentRound + 1,
   };
 }
@@ -51,13 +53,17 @@ export function advanceTurn(combat: TurnState): TurnResult {
     combatants.length - 1,
   );
   const current = combatants[currentTurn];
-  if (current && !current.isPostponed) {
+  if (current && !current.isPostponed && !current.isExcluded) {
     current.hasActed = true;
   }
 
   let nextTurn = -1;
   for (let i = currentTurn + 1; i < combatants.length; i++) {
-    if (!combatants[i].hasActed && !combatants[i].isPostponed) {
+    if (
+      !combatants[i].hasActed &&
+      !combatants[i].isPostponed &&
+      !combatants[i].isExcluded
+    ) {
       nextTurn = i;
       break;
     }
@@ -95,9 +101,13 @@ export function rewindTurn(combat: TurnState): TurnResult {
   let previousTurn = currentTurn - 1;
   let currentRound = combat.currentRound;
 
-  if (previousTurn < 0) {
-    previousTurn = combatants.length - 1;
-    currentRound = Math.max(1, currentRound - 1);
+  for (let guard = 0; guard <= combatants.length; guard++) {
+    if (previousTurn < 0) {
+      previousTurn = combatants.length - 1;
+      currentRound = Math.max(1, currentRound - 1);
+    }
+    if (!combatants[previousTurn]?.isExcluded) break;
+    previousTurn -= 1;
   }
 
   const previous = combatants[previousTurn];

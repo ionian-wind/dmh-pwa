@@ -7,6 +7,7 @@ import {
   IconFlag,
   IconGhost3,
   IconPlayerPause,
+  IconRestore,
   IconUser,
   IconX,
 } from '@tabler/icons-vue';
@@ -140,20 +141,37 @@ async function activate(combat: Combat, index: number) {
 }
 
 async function exclude(combat: Combat, combatant: Combatant, index: number) {
-  const wasActive = index === combat.currentTurn;
-  const updated = await combatStore.removeCombatant(combat.id, combatant.id);
-  if (!updated) return;
+  await setParticipantExcluded(combat, index, true);
+}
 
-  const remaining = updated.combatants.length;
-  let nextTurn = combat.currentTurn;
-  if (remaining === 0) {
-    nextTurn = 0;
-  } else if (wasActive) {
-    nextTurn = Math.min(index, remaining - 1);
-  } else if (index < nextTurn) {
-    nextTurn -= 1;
+async function returnParticipant(combat: Combat, index: number) {
+  await setParticipantExcluded(combat, index, false);
+}
+
+async function setParticipantExcluded(
+  combat: Combat,
+  index: number,
+  excluded: boolean,
+) {
+  const combatants = combat.combatants.map((entry, entryIndex) =>
+    entryIndex === index ? { ...entry, isExcluded: excluded } : { ...entry },
+  );
+
+  if (excluded && index === combat.currentTurn) {
+    const result = advanceTurn({ ...combat, combatants });
+    await combatStore.update(combat.id, {
+      combatants: result.combatants,
+      currentTurn: result.currentTurn,
+      currentRound: result.currentRound,
+    });
+    return;
   }
-  await combatStore.update(combat.id, { currentTurn: nextTurn });
+
+  await combatStore.update(combat.id, {
+    combatants,
+    currentTurn: combat.currentTurn,
+    currentRound: combat.currentRound,
+  });
 }
 
 function finish(combat: Combat) {
@@ -214,7 +232,10 @@ onMounted(async () => {
             v-for="(combatant, index) in combat.combatants"
             :key="combatant.id"
             class="combat-participant-row"
-            :class="{ 'is-active-turn': index === combat.currentTurn }"
+            :class="{
+              'is-active-turn': index === combat.currentTurn,
+              excluded: combatant.isExcluded,
+            }"
           >
             <QItemSection side>
               <EntityPicture
@@ -245,7 +266,7 @@ onMounted(async () => {
             <QItemSection side class="combat-participant-actions">
               <QBtnGroup flat class="combat-participant-actions-group">
                 <QBtn
-                  v-if="combatant.isPostponed"
+                  v-if="combatant.isPostponed && !combatant.isExcluded"
                   class="activate-participant-button"
                   flat
                   dense
@@ -256,7 +277,9 @@ onMounted(async () => {
                 >
                   <IconBolt :size="18" />
                 </QBtn>
-                <template v-if="index === combat.currentTurn">
+                <template
+                  v-if="index === combat.currentTurn && !combatant.isExcluded"
+                >
                   <QBtn
                     class="postpone-turn-button"
                     flat
@@ -280,6 +303,18 @@ onMounted(async () => {
                   </QBtn>
                 </template>
                 <QBtn
+                  v-if="combatant.isExcluded"
+                  class="return-participant-button"
+                  flat
+                  dense
+                  :title="t('combat.returnParticipant')"
+                  :aria-label="t('combat.returnParticipant')"
+                  @click="returnParticipant(combat, index)"
+                >
+                  <IconRestore :size="18" />
+                </QBtn>
+                <QBtn
+                  v-else
                   class="exclude-participant-button"
                   flat
                   dense
@@ -310,6 +345,14 @@ onMounted(async () => {
 <style scoped>
 .combat-participant-row.is-active-turn {
   background: var(--color-selected-surface);
+}
+
+.combat-participant-row.excluded {
+  opacity: 0.55;
+}
+
+.return-participant-button {
+  color: var(--color-accent);
 }
 
 .combat-participant-initiative {

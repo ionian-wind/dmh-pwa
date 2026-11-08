@@ -144,9 +144,31 @@ describe('active combats sidebar', () => {
     );
 
     await wrapper.findAll('.exclude-participant-button')[0].trigger('click');
-    expect(mocks.combats.removeCombatant).toHaveBeenCalledWith(
+    expect(mocks.combats.update).toHaveBeenCalledWith(
       'combat-1',
-      'c1',
+      expect.objectContaining({
+        combatants: expect.arrayContaining([
+          expect.objectContaining({ id: 'c1', isExcluded: true }),
+        ]),
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it('returns excluded participants to the turn cycle', async () => {
+    mocks.combats.items[0].combatants[0].isExcluded = true;
+    const wrapper = mount(ActiveCombatsPanel);
+    await flushPromises();
+
+    expect(wrapper.findAll('.return-participant-button')).toHaveLength(1);
+    await wrapper.find('.return-participant-button').trigger('click');
+    expect(mocks.combats.update).toHaveBeenCalledWith(
+      'combat-1',
+      expect.objectContaining({
+        combatants: expect.arrayContaining([
+          expect.objectContaining({ id: 'c1', isExcluded: false }),
+        ]),
+      }),
     );
     wrapper.unmount();
   });

@@ -24,6 +24,7 @@ import {
   IconPlayerPause,
   IconSwords,
   IconCircleCheck,
+  IconRestore,
   IconX,
 } from '@tabler/icons-vue';
 import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
@@ -280,18 +281,10 @@ const getEncounterName = (encounterId: string) => {
   return encounter ? encounter.name : t('combat.unknownEncounter');
 };
 
-const getPartyName = (partyId: string) => {
-  const party = partyStore.getById(partyId);
-  return party ? party.name : t('combat.unknownParty');
-};
-
 // Computed properties for BaseEntityView
 const combatTitle = computed(() => {
   if (!combat.value) return '';
-  return t('combat.matchup', {
-    encounter: getEncounterName(combat.value.encounterId),
-    party: getPartyName(combat.value.partyId),
-  });
+  return getEncounterName(combat.value.encounterId);
 });
 
 // Start
@@ -390,29 +383,37 @@ async function activatePostponed(id: string) {
 }
 
 async function excludeParticipant(participant: Combatant, index: number) {
-  if (!combat.value) return;
-  const wasActive = index === activeParticipantIndex.value;
-  const updated = await combatStore.removeCombatant(
-    combat.value.id,
-    participant.id,
-  );
-  if (!updated) return;
+  await setParticipantExcluded(participant, index, true);
+}
 
-  const remaining = updated.combatants.length;
-  let nextTurn = activeParticipantIndex.value;
-  if (remaining === 0) {
-    nextTurn = 0;
-  } else if (wasActive) {
-    nextTurn = Math.min(index, remaining - 1);
-  } else if (index < nextTurn) {
-    nextTurn -= 1;
+async function returnParticipant(participant: Combatant, index: number) {
+  await setParticipantExcluded(participant, index, false);
+}
+
+async function setParticipantExcluded(
+  participant: Combatant,
+  index: number,
+  excluded: boolean,
+) {
+  if (!combat.value) return;
+  const combatants = combat.value.combatants.map((entry, entryIndex) =>
+    entryIndex === index ? { ...entry, isExcluded: excluded } : { ...entry },
+  );
+
+  if (excluded && index === activeParticipantIndex.value) {
+    const result = advanceTurn({ ...combat.value, combatants });
+    const updated = await combatStore.update(combat.value.id, {
+      combatants: result.combatants,
+      currentTurn: result.currentTurn,
+      currentRound: result.currentRound,
+    });
+    combat.value = updated;
+    activeParticipantIndex.value = result.currentTurn;
+    return;
   }
 
-  const withTurn = await combatStore.update(combat.value.id, {
-    currentTurn: nextTurn,
-  });
-  combat.value = withTurn;
-  activeParticipantIndex.value = nextTurn;
+  const updated = await combatStore.update(combat.value.id, { combatants });
+  combat.value = updated;
 }
 
 async function persistCombatants() {
@@ -559,22 +560,22 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
       </QStepper>
 
       <!-- Combat Summary -->
-      <div v-if="combat?.status === 'active'" class="q-mb-md">
-        <h3>{{ t('combat.summary') }}</h3>
-        <div class="row q-gutter-md">
-          <div class="col-12 col-md-6">
-            <label>{{ t('combat.round') }}</label>
-            <span>{{ combat?.currentRound }}</span>
-          </div>
-          <div class="col-12 col-md-6">
-            <label>{{ t('combat.turn') }}</label>
-            <span>{{
-              t('combat.turnProgress', {
-                current: (combat?.currentTurn ?? 0) + 1,
-                total: combat?.combatants?.length ?? 0,
-              })
-            }}</span>
-          </div>
+      <div
+        v-if="combat?.status === 'active'"
+        class="combat-summary row items-center q-gutter-lg q-mb-md"
+      >
+        <div class="combat-counter row items-center q-gutter-xs">
+          <label>{{ t('combat.round') }}</label>
+          <span>{{ combat?.currentRound }}</span>
+        </div>
+        <div class="combat-counter row items-center q-gutter-xs">
+          <label>{{ t('combat.turn') }}</label>
+          <span>{{
+            t('combat.turnProgress', {
+              current: (combat?.currentTurn ?? 0) + 1,
+              total: combat?.combatants?.length ?? 0,
+            })
+          }}</span>
         </div>
       </div>
 
@@ -633,6 +634,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 'participant-row': true,
                 preparing: combat && combat.status === 'preparing',
                 postponed: participant.isPostponed,
+                excluded: participant.isExcluded,
                 acted:
                   combat &&
                   combat.status === 'active' &&
@@ -693,7 +695,11 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 v-if="combat && combat.status === 'active'"
               >
                 <span
-                  v-if="!participant.isPostponed && participant.hasActed"
+                  v-if="
+                    !participant.isPostponed &&
+                    !participant.isExcluded &&
+                    participant.hasActed
+                  "
                   class="participant-badge badge-acted"
                   :aria-label="t('combat.participantStatus.actedThisRound')"
                   :title="t('combat.participantStatus.actedThisRound')"
@@ -702,7 +708,9 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 </span>
                 <span
                   v-else-if="
-                    !participant.isPostponed && activeParticipantIndex !== index
+                    !participant.isPostponed &&
+                    !participant.isExcluded &&
+                    activeParticipantIndex !== index
                   "
                   class="participant-wait"
                 >
@@ -717,7 +725,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               >
                 <QBtnGroup flat class="controls participant-actions-group">
                   <QBtn
-                    v-if="participant.isPostponed"
+                    v-if="participant.isPostponed && !participant.isExcluded"
                     :color="'info'"
                     :size="'lg'"
                     :title="t('combat.activatePostponed')"
@@ -751,6 +759,18 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   </template>
 
                   <QBtn
+                    v-if="participant.isExcluded"
+                    class="return-participant-button"
+                    :size="'lg'"
+                    flat
+                    :title="t('combat.returnParticipant')"
+                    :aria-label="t('combat.returnParticipant')"
+                    @click.stop="returnParticipant(participant, index)"
+                  >
+                    <IconRestore />
+                  </QBtn>
+                  <QBtn
+                    v-else
                     class="exclude-participant-button"
                     :size="'lg'"
                     color="negative"
@@ -880,6 +900,14 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
 }
 
 .participant-name--clickable:hover {
+  color: var(--color-accent);
+}
+
+.participant-row.excluded {
+  opacity: 0.55;
+}
+
+.return-participant-button {
   color: var(--color-accent);
 }
 </style>

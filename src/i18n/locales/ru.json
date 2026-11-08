@@ -419,6 +419,7 @@
     "nextTurn": "Следующий ход",
     "postpone": "Отложить ход",
     "excludeParticipant": "Исключить из очереди хода",
+    "returnParticipant": "Вернуть в очередь хода",
     "activatePostponed": "Активировать участника",
     "notes": "Заметки",
     "noActive": "Для этой схватки не найден активный бой.",
