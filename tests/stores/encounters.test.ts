@@ -36,7 +36,7 @@ describe('encounter store', () => {
     expect(store.filtered).toHaveLength(2);
   });
 
-  it('updates the monster roster', async () => {
+  it('updates the pawn roster', async () => {
     const store = useEncounterStore();
     const created = await store.create({
       name: 'Ambush',

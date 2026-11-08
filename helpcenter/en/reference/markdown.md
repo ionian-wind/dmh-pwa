@@ -13,13 +13,13 @@ Link to other entities in your campaign with `[title](type://id)`:
 - `[Note Title](note://123)` — link to a note
 - `[Module Name](module://123)` — link to a module
 - `[Party Name](party://123)` — link to a party
-- `[Monster Name](monster://123)` — link to a monster
+- `[Pawn Name](pawn://123)` — link to a pawn
 - `[Encounter Name](encounter://123)` — link to an encounter
 
 ## Entity mentions
 
 Use the mention buttons in the editor toolbar to link a note, module, party,
-monster, or encounter. Mentions use the same internal-link syntax:
+pawn, or encounter. Mentions use the same internal-link syntax:
 
 `[Tavern](note://123)` mentions the Tavern note.
 

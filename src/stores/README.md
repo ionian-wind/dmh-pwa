@@ -238,7 +238,7 @@ loadEntities: load,
 - Party association
 - Party filtering
 
-### Monsters Store
+### Pawns Store
 
 - Module filtering (multiple modules)
 - Challenge rating management
@@ -255,7 +255,7 @@ loadEntities: load,
 
 ### Encounters Store
 
-- Monster management
+- Pawn management
 - Turn tracking
 - Module association
 

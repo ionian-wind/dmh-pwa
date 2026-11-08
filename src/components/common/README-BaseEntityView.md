@@ -193,20 +193,20 @@ The component uses CSS custom properties for theming:
 
 ## Examples
 
-### Monster View
+### Pawn View
 
 ```vue
 <BaseEntityView
-  :entity="monster"
-  entity-name="Monster"
-  list-route="/monsters"
+  :entity="pawn"
+  entity-name="Pawn"
+  list-route="/pawns"
   title="Dragon"
   subtitle="Ancient Red Dragon - CR 20"
-  :on-delete="deleteMonster"
-  :on-edit="editMonster"
+  :on-delete="deletePawn"
+  :on-edit="editPawn"
 >
-  <MonsterStats :monster="monster" />
-  <MonsterAbilities :monster="monster" />
+  <PawnStats :pawn="pawn" />
+  <PawnAbilities :pawn="pawn" />
 </BaseEntityView>
 ```
 
@@ -223,6 +223,6 @@ The component uses CSS custom properties for theming:
   :on-edit="editEncounter"
 >
   <EncounterDetails :encounter="encounter" />
-  <MonsterList :monsters="encounter.pawns" />
+  <PawnList :pawns="encounter.pawns" />
 </BaseEntityView>
 ```

@@ -111,7 +111,7 @@ describe('IndexedDB storage', () => {
   it('manages mention links and backlinks', async () => {
     const store = useMentionsStore();
     const from = { kind: 'note', id: 'n1' };
-    const to = { kind: 'monster', id: 'm1' };
+    const to = { kind: 'pawn', id: 'm1' };
 
     await store.load();
     await store.addLink(from, to);
@@ -122,10 +122,10 @@ describe('IndexedDB storage', () => {
     await store.setLinks(from, [
       to,
       { kind: 'party', id: 'p1' },
-      { kind: 'monster', id: 'm1' },
+      { kind: 'pawn', id: 'm1' },
     ]);
     expect(store.getLinks(from)).toEqual([
-      { kind: 'monster', id: 'm1' },
+      { kind: 'pawn', id: 'm1' },
       { kind: 'party', id: 'p1' },
     ]);
 

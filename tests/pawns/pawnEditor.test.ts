@@ -27,7 +27,7 @@ vi.mock('@/maps/locations', () => ({
   useMapLocationStore: () => ({ load: vi.fn().mockResolvedValue(undefined) }),
 }));
 
-import MonsterEditor from '@/monsters/MonsterEditor.vue';
+import PawnEditor from '@/pawns/PawnEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 
 const EntityMarkdownEditorStub = defineComponent({
@@ -49,7 +49,7 @@ const EntitiesLinkingStub = defineComponent({
   },
 });
 
-const monster = {
+const pawn = {
   id: 'm1',
   name: 'Goblin',
   notes: 'Old notes',
@@ -57,9 +57,9 @@ const monster = {
   updatedAt: 1,
 };
 
-function mountEditor(item: typeof monster | null = monster) {
-  return mount(MonsterEditor, {
-    props: { isOpen: true, monster: item },
+function mountEditor(item: typeof pawn | null = pawn) {
+  return mount(PawnEditor, {
+    props: { isOpen: true, pawn: item },
     global: {
       stubs: {
         EntityMarkdownEditor: EntityMarkdownEditorStub,
@@ -69,7 +69,7 @@ function mountEditor(item: typeof monster | null = monster) {
   });
 }
 
-describe('MonsterEditor', () => {
+describe('PawnEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -101,38 +101,24 @@ describe('MonsterEditor', () => {
     const wrapper = mountEditor();
     await flushPromises();
 
-    expect(mocks.getLinkedIds).toHaveBeenCalledWith(
-      'monster',
-      'm1',
-      'encounter',
-    );
-    expect(mocks.getLinkedIds).toHaveBeenCalledWith(
-      'monster',
-      'm1',
-      'location',
-    );
+    expect(mocks.getLinkedIds).toHaveBeenCalledWith('pawn', 'm1', 'encounter');
+    expect(mocks.getLinkedIds).toHaveBeenCalledWith('pawn', 'm1', 'location');
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
     groups[1].vm.$emit('update:modelValue', [{ kind: 'encounter', id: 'e2' }]);
     groups[2].vm.$emit('update:modelValue', [{ kind: 'location', id: 'l2' }]);
     await flushPromises();
 
-    expect(mocks.setLinkedIds).toHaveBeenCalledWith(
-      'monster',
-      'm1',
-      'encounter',
-      ['e2'],
-    );
-    expect(mocks.setLinkedIds).toHaveBeenCalledWith(
-      'monster',
-      'm1',
-      'location',
-      ['l2'],
-    );
+    expect(mocks.setLinkedIds).toHaveBeenCalledWith('pawn', 'm1', 'encounter', [
+      'e2',
+    ]);
+    expect(mocks.setLinkedIds).toHaveBeenCalledWith('pawn', 'm1', 'location', [
+      'l2',
+    ]);
     wrapper.unmount();
   });
 
-  it('does not persist encounter/location links for a new monster', async () => {
+  it('does not persist encounter/location links for a new pawn', async () => {
     const wrapper = mountEditor(null);
     await flushPromises();
 
@@ -141,11 +127,11 @@ describe('MonsterEditor', () => {
     await flushPromises();
     expect(mocks.setLinkedIds).not.toHaveBeenCalled();
 
-    await wrapper.find('.entity-inline-editor input').setValue('New Monster');
+    await wrapper.find('.entity-inline-editor input').setValue('New Pawn');
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      name: 'New Monster',
+      name: 'New Pawn',
     });
     wrapper.unmount();
   });
@@ -154,13 +140,13 @@ describe('MonsterEditor', () => {
     const wrapper = mountEditor();
     await flushPromises();
 
-    expect(wrapper.find('.monster-help-button').exists()).toBe(false);
+    expect(wrapper.find('.pawn-help-button').exists()).toBe(false);
     wrapper
       .findComponent({ name: 'QToggle' })
       .vm.$emit('update:modelValue', false);
     await nextTick();
 
-    const help = wrapper.find('.monster-help-button');
+    const help = wrapper.find('.pawn-help-button');
     expect(help.exists()).toBe(true);
     expect(help.attributes('href')).toContain(
       '/help/en/reference/markdown.html',
@@ -174,7 +160,7 @@ describe('MonsterEditor', () => {
     await flushPromises();
 
     await wrapper.setProps({ isOpen: false });
-    await wrapper.setProps({ isOpen: true, monster: null });
+    await wrapper.setProps({ isOpen: true, pawn: null });
     await nextTick();
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');

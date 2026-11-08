@@ -54,7 +54,7 @@ describe('PartySelector', () => {
       { id: 'c1', name: 'Aria' },
       { id: 'c2', name: 'Borin' },
     ]);
-    seedMockStore('monsters', [
+    seedMockStore('pawns', [
       { id: 'm1', name: 'Goblin' },
       { id: 'm2', name: 'Orc' },
     ]);
@@ -93,8 +93,8 @@ describe('PartySelector', () => {
         status: 'preparing',
         combatants: expect.arrayContaining([
           expect.objectContaining({ type: 'player', referenceId: 'c1' }),
-          expect.objectContaining({ type: 'monster', referenceId: 'm1' }),
-          expect.objectContaining({ type: 'monster', referenceId: 'm2' }),
+          expect.objectContaining({ type: 'pawn', referenceId: 'm1' }),
+          expect.objectContaining({ type: 'pawn', referenceId: 'm2' }),
         ]),
       }),
     );

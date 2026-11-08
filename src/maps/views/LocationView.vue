@@ -118,7 +118,7 @@ const draftDescription = computed({
 const linkKinds: MapEntityKind[] = [
   'note',
   'party',
-  'monster',
+  'pawn',
   'encounter',
   'character',
   'playlist',

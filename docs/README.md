@@ -8,7 +8,7 @@
 
 **Owlbear's Dungeon Master Helper** (`dmh-pwa`) is a local-first Progressive
 Web App for running tabletop RPG sessions. It stores notes, characters,
-parties, monsters, encounters, combats, timers, and a local music jukebox in the
+parties, pawns, encounters, combats, timers, and a local music jukebox in the
 browser. There is no server and no account system: all user data lives in
 IndexedDB, with a small amount of configuration in `localStorage`.
 
@@ -46,8 +46,8 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [features/notes.md](features/notes.md)                                                           | Note list, editor, detail page, tags                                     |
 | [features/characters.md](features/characters.md)                                                 | Player characters                                                        |
 | [features/parties.md](features/parties.md)                                                       | Parties and character membership                                         |
-| [features/monsters.md](features/monsters.md)                                                     | Monsters                                                                 |
-| [features/encounters.md](features/encounters.md)                                                 | Encounter definitions and monster rosters                                |
+| [features/pawns.md](features/pawns.md)                                                           | Pawns                                                                    |
+| [features/encounters.md](features/encounters.md)                                                 | Encounter definitions and pawn rosters                                   |
 | [features/combat.md](features/combat.md)                                                         | Combat lifecycle, initiative, turns                                      |
 | [features/timers.md](features/timers.md)                                                         | Countdown timers and global timer loop                                   |
 | [features/jukebox.md](features/jukebox.md)                                                       | Track import, metadata, playlists, playback                              |

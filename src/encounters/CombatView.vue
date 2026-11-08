@@ -9,7 +9,7 @@ import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '@/stores/characters';
-import { useMonsterStore } from '@/stores/monsters';
+import { usePawnStore } from '@/stores/pawns';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import {
@@ -33,14 +33,14 @@ const route = useRoute();
 const router = useRouter();
 const combatStore = useCombatStore();
 const characterStore = useCharacterStore();
-const monsterStore = useMonsterStore();
+const pawnStore = usePawnStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
 const { t } = useI18n();
 
 onMounted(async () => {
   await characterStore.load();
-  await monsterStore.load();
+  await pawnStore.load();
   await combatStore.load();
   await encounterStore.load();
   await partyStore.load();
@@ -91,11 +91,11 @@ const encounterPawns = computed(() => {
   if (!encounter.value) return [];
   // encounter.value.pawns is Record<UUID, number>
   const pawns: any[] = [];
-  Object.entries(encounter.value.pawns).forEach(([monsterId, count]) => {
-    const monster = monsterStore.getById(monsterId);
-    if (monster) {
+  Object.entries(encounter.value.pawns).forEach(([pawnId, count]) => {
+    const pawn = pawnStore.getById(pawnId);
+    if (pawn) {
       for (let i = 0; i < count; i++) {
-        pawns.push({ ...monster, instance: i + 1 });
+        pawns.push({ ...pawn, instance: i + 1 });
       }
     }
   });
@@ -110,7 +110,7 @@ const allParticipants = computed(() => {
   }));
   const pawnCombatants = encounterPawns.value.map((m) => ({
     id: m.id + (m.instance ? `-${m.instance}` : ''),
-    type: 'monster',
+    type: 'pawn',
     referenceId: m.id,
   }));
   return [...players, ...pawnCombatants];
@@ -135,22 +135,21 @@ function getCombatantDisplayName(combatant: {
   if (combatant.type === 'player' && combatant.referenceId) {
     const char = characterStore.getById(combatant.referenceId);
     return char ? char.name : 'Unknown Player';
-  } else if (combatant.type === 'monster' && combatant.referenceId) {
-    const monster = monsterStore.getById(combatant.referenceId);
-    if (monster) {
-      // If there are multiple monsters of the same type, add a number
+  } else if (combatant.type === 'pawn' && combatant.referenceId) {
+    const pawn = pawnStore.getById(combatant.referenceId);
+    if (pawn) {
+      // If there are multiple pawns of the same type, add a number
       const all =
         combat.value?.combatants.filter(
-          (c) =>
-            c.referenceId === combatant.referenceId && c.type === 'monster',
+          (c) => c.referenceId === combatant.referenceId && c.type === 'pawn',
         ) || [];
       if (all.length > 1) {
         const idx = all.findIndex((c) => c.id === combatant.id);
-        return `${monster.name} #${idx + 1}`;
+        return `${pawn.name} #${idx + 1}`;
       }
-      return monster.name;
+      return pawn.name;
     }
-    return 'Unknown Monster';
+    return 'Unknown Pawn';
   }
   return 'Unknown';
 }
@@ -184,7 +183,7 @@ watch(
       const now = Date.now();
       const combatants = allParticipants.value.map((p) => ({
         id: p.id,
-        type: p.type as 'player' | 'monster',
+        type: p.type as 'player' | 'pawn',
         referenceId: p.referenceId,
         initiative: 0,
         hasActed: false,

@@ -44,7 +44,7 @@ declare module 'virtual:feature-links' {
 declare const __FEATURE_NOTES__: boolean;
 declare const __FEATURE_CHARACTERS__: boolean;
 declare const __FEATURE_PARTIES__: boolean;
-declare const __FEATURE_MONSTERS__: boolean;
+declare const __FEATURE_PAWNS__: boolean;
 declare const __FEATURE_ENCOUNTERS__: boolean;
 declare const __FEATURE_MAPS__: boolean;
 declare const __FEATURE_JUKEBOX__: boolean;

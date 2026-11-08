@@ -5,7 +5,7 @@ import { mount } from '@vue/test-utils';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
-import MonsterCard from '@/monsters/MonsterCard.vue';
+import PawnCard from '@/pawns/PawnCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
@@ -140,19 +140,19 @@ describe('domain cards', () => {
     );
   });
 
-  it('MonsterCard forwards actions and deletes by id', async () => {
-    const monster = { id: 'mon', name: 'Goblin' } as any;
-    const wrapper = mount(MonsterCard, {
-      props: { monster, showActions: true },
+  it('PawnCard forwards actions and deletes by id', async () => {
+    const pawn = { id: 'mon', name: 'Goblin' } as any;
+    const wrapper = mount(PawnCard, {
+      props: { pawn, showActions: true },
     });
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');
 
-    expect(wrapper.emitted('view')?.[0]).toEqual([monster]);
-    expect(wrapper.emitted('edit')?.[0]).toEqual([monster]);
+    expect(wrapper.emitted('view')?.[0]).toEqual([pawn]);
+    expect(wrapper.emitted('edit')?.[0]).toEqual([pawn]);
     expect(wrapper.emitted('delete')?.[0]).toEqual(['mon']);
-    expect(wrapper.emitted('copy')?.[0]).toEqual([monster]);
+    expect(wrapper.emitted('copy')?.[0]).toEqual([pawn]);
   });
 
   it('EncounterCard forwards actions and starts combat', async () => {
@@ -202,7 +202,7 @@ describe('domain cards', () => {
     await nextTick();
     expect(unknown.text()).toContain('0 (0)');
 
-    const noMonsters = mount(EncounterCard, {
+    const noPawns = mount(EncounterCard, {
       props: {
         encounter: {
           id: 'e3',
@@ -212,7 +212,7 @@ describe('domain cards', () => {
       },
     });
     await nextTick();
-    expect(noMonsters.text()).toContain('0 (0)');
+    expect(noPawns.text()).toContain('0 (0)');
   });
 
   it('NumberSpinner clamps input, adjusts buttons and repeats while held', async () => {

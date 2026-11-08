@@ -400,12 +400,12 @@ function mentionIcon(svg: string) {
 const mentionIcons: Record<string, string> = {
   note: iconNote,
   party: iconUsers,
-  monster: iconGhost,
+  pawn: iconGhost,
   encounter: iconSwords,
   location: iconMap,
 };
 
-const MENTIONABLE_ORDER = ['note', 'party', 'monster', 'encounter', 'location'];
+const MENTIONABLE_ORDER = ['note', 'party', 'pawn', 'encounter', 'location'];
 const MENTIONABLE_KINDS = new Set(MENTIONABLE_ORDER);
 
 const mentionKinds = featureLinkKinds

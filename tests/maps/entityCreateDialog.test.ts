@@ -68,7 +68,7 @@ describe('EntityCreateDialog', () => {
       'note',
       'module',
       'party',
-      'monster',
+      'pawn',
       'encounter',
       'character',
       'map',

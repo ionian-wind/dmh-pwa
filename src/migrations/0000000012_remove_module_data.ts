@@ -4,7 +4,7 @@ const ENTITY_STORES = [
   'characters',
   'encounters',
   'jukebox_playlists',
-  'monsters',
+  'pawns',
   'notes',
   'parties',
 ];

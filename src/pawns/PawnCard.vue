@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Monster } from '@/types';
+import { Pawn } from '@/types';
 import BaseCard from '@/components/common/BaseCard.vue';
 
 const props = defineProps<{
-  monster: Monster;
+  pawn: Pawn;
   showActions?: boolean;
 }>();
 
@@ -15,10 +15,10 @@ const emit = defineEmits([
   'copy',
 ]);
 
-const handleView = () => emit('view', props.monster);
-const handleEdit = () => emit('edit', props.monster);
-const handleDelete = () => emit('delete', props.monster.id);
-const handleCopy = () => emit('copy', props.monster);
+const handleView = () => emit('view', props.pawn);
+const handleEdit = () => emit('edit', props.pawn);
+const handleDelete = () => emit('delete', props.pawn.id);
+const handleCopy = () => emit('copy', props.pawn);
 </script>
 
 <template>
@@ -31,7 +31,7 @@ const handleCopy = () => emit('copy', props.monster);
     @edit="handleEdit"
     @delete="handleDelete"
     @copy="handleCopy"
-    :title="monster.name"
-    :drag-entity="{ kind: 'monster', id: monster.id, title: monster.name }"
+    :title="pawn.name"
+    :drag-entity="{ kind: 'pawn', id: pawn.id, title: pawn.name }"
   />
 </template>

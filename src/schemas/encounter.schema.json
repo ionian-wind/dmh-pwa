@@ -23,7 +23,7 @@
         "minimum": 1,
         "maximum": 20
       },
-      "description": "Object mapping monster IDs to their pawn counts in this encounter"
+      "description": "Object mapping pawn IDs to their pawn counts in this encounter"
     },
     "createdAt": {
       "type": "number",

@@ -122,7 +122,7 @@ export { entityScenesPanel };`;
             'notes',
             'characters',
             'parties',
-            'monsters',
+            'pawns',
             'encounters',
             'maps',
           ].includes(feature.id),

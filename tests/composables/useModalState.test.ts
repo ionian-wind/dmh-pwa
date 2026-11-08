@@ -47,11 +47,11 @@ describe('useModalState', () => {
 
   it('tracks mention modals and their entities', () => {
     state.openMentionModal('m1', { id: 'n1' }, 'note');
-    state.openMentionModal('m2', { id: 'm1' }, 'monster');
+    state.openMentionModal('m2', { id: 'm1' }, 'pawn');
 
     expect(state.currentMentionModal.value).toMatchObject({
       modalId: 'm2',
-      kind: 'monster',
+      kind: 'pawn',
       entity: { id: 'm1' },
     });
 
@@ -70,7 +70,7 @@ describe('useModalState', () => {
 
   it('treats reopening the previous entity as a back action', () => {
     state.openMentionModal('m1', { id: 'n1' }, 'note');
-    state.openMentionModal('m2', { id: 'm1' }, 'monster');
+    state.openMentionModal('m2', { id: 'm1' }, 'pawn');
 
     // Requesting the entity two levels down closes the current modal.
     state.openMentionModal('m3', { id: 'n1' }, 'note');

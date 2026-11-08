@@ -33,20 +33,20 @@ export const FEATURES = [
     ],
   },
   {
-    id: 'monsters',
-    envKey: 'VITE_FEATURE_MONSTERS',
+    id: 'pawns',
+    envKey: 'VITE_FEATURE_PAWNS',
     requires: [],
-    integration: '@/features/monsters/integration',
+    integration: '@/features/pawns/integration',
     ownership: [
-      'src/monsters/',
-      'src/stores/monsters.ts',
-      'src/schemas/monster.schema.json',
+      'src/pawns/',
+      'src/stores/pawns.ts',
+      'src/schemas/pawn.schema.json',
     ],
   },
   {
     id: 'encounters',
     envKey: 'VITE_FEATURE_ENCOUNTERS',
-    requires: ['monsters', 'characters', 'parties'],
+    requires: ['pawns', 'characters', 'parties'],
     integration: '@/features/encounters/integration',
     ownership: [
       'src/encounters/',

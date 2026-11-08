@@ -37,7 +37,7 @@ and installs three renderer plugins.
 ### 1. Internal entity links
 
 Syntax: `[label](kind://id)` where `kind` is one of
-`note | party | monster | encounter | location` and `id` matches
+`note | party | pawn | encounter | location` and `id` matches
 `[A-Za-z0-9_-]+`.
 
 For matching links, the renderer:
@@ -179,7 +179,7 @@ Known remaining differences are structural rather than typographic:
   - toggles the corresponding character in the source,
   - emits `update:content` with the new Markdown.
 - Sets up an `IntersectionObserver` but never uses `isVisible`.
-- Loads all stores on mount (notes, parties, monsters, encounters) so
+- Loads all stores on mount (notes, parties, pawns, encounters) so
   mention modals can resolve entities.
 - Cache key ignores `anchorMap` and `enableMentionModal`, which is fine because
   those affect behavior, not HTML.
@@ -227,7 +227,7 @@ exists, otherwise the bound `modelValue`. Raw-mode edits are bound through
 - normalizes any default-link marks with `kind://id` into mention marks after
   parse, so existing mentions render with mention styling in the editor,
 - serializes back to `[text](kind://id)`,
-- provides toolbar/block-menu groups for note/party/monster/encounter/location,
+- provides toolbar/block-menu groups for note/party/pawn/encounter/location,
 - marks the matching toolbar item active when the cursor/selection is inside a
   mention of that kind; clicking the active button removes the mention mark,
 - opens a popup to choose an entity and inserts the mark at the selection.
@@ -272,7 +272,7 @@ returns `{ kind, id }[]`.
 - Links inside code blocks are still matched (regex-based, not AST-based).
 - `kind://` URLs without a label (bare autolinks) are not matched.
 - Only enabled `featureLinkKinds` are mentionable (currently note, party,
-  monster, encounter and location); `character` is not a link kind even
+  pawn, encounter and location); `character` is not a link kind even
   though `CharacterView` reads `kind: 'character'` from the index and nothing
   ever writes it.
 - Hashtags are extracted with a regex, not an AST, so `#tag` inside inline code
@@ -295,7 +295,7 @@ returns `{ kind, id }[]`.
 | `clearAll()`            | wipes the store                                     |
 
 Only `noteStore.create/update/remove` call it. Nothing indexes
-party, monster, encounter, or character content (none of those have content
+party, pawn, encounter, or character content (none of those have content
 fields anyway).
 
 ### Sidebar access (fixed)

@@ -40,33 +40,33 @@ vi.mock('@/stores/parties', () => ({
   }),
 }));
 
-vi.mock('@/stores/monsters', () => ({
-  useMonsterStore: () => ({
-    monsters: [
+vi.mock('@/stores/pawns', () => ({
+  usePawnStore: () => ({
+    pawns: [
       {
-        id: 'monster-1',
-        name: 'Test Monster',
+        id: 'pawn-1',
+        name: 'Test Pawn',
         type: 'Beast',
         description: 'Test description',
       },
       {
-        id: 'monster-2',
-        name: 'Another Monster',
+        id: 'pawn-2',
+        name: 'Another Pawn',
         type: 'Humanoid',
         description: 'Another description',
       },
     ],
     getById: (id: string) =>
       ({
-        'monster-1': {
-          id: 'monster-1',
-          name: 'Test Monster',
+        'pawn-1': {
+          id: 'pawn-1',
+          name: 'Test Pawn',
           type: 'Beast',
           description: 'Test description',
         },
-        'monster-2': {
-          id: 'monster-2',
-          name: 'Another Monster',
+        'pawn-2': {
+          id: 'pawn-2',
+          name: 'Another Pawn',
           type: 'Humanoid',
           description: 'Another description',
         },
@@ -173,14 +173,14 @@ describe('Markdown Parser', () => {
       expect(result).toContain('The');
     });
 
-    it('should parse monster links', () => {
-      const input = 'Fight the [Test Monster](monster://monster-1)';
+    it('should parse pawn links', () => {
+      const input = 'Fight the [Test Pawn](pawn://pawn-1)';
       const result = parseMarkdown(input);
-      const anchor = result.match(/<a [^>]+>Test Monster<\/a>/)[0];
-      expect(anchor).toContain('href="/monsters/monster-1"');
-      expect(anchor).toContain('class="internal-link monster-link"');
-      expect(anchor).toContain('data-kind="monster"');
-      expect(anchor).toContain('data-id="monster-1"');
+      const anchor = result.match(/<a [^>]+>Test Pawn<\/a>/)[0];
+      expect(anchor).toContain('href="/pawns/pawn-1"');
+      expect(anchor).toContain('class="internal-link pawn-link"');
+      expect(anchor).toContain('data-kind="pawn"');
+      expect(anchor).toContain('data-id="pawn-1"');
       expect(result).toContain('Fight the');
     });
 
@@ -245,7 +245,7 @@ describe('Markdown Parser', () => {
   describe('Mixed Content', () => {
     it('should handle mixed markdown and internal links', () => {
       const input =
-        '**Important**: Check [Test Note](note://note-1) for details about the [Test Monster](monster://monster-1).';
+        '**Important**: Check [Test Note](note://note-1) for details about the [Test Pawn](pawn://pawn-1).';
       const result = parseMarkdown(input);
       expect(result).toContain('<strong>Important</strong>');
       const anchor1 = result.match(/<a [^>]+>Test Note<\/a>/)[0];
@@ -253,11 +253,11 @@ describe('Markdown Parser', () => {
       expect(anchor1).toContain('class="internal-link note-link"');
       expect(anchor1).toContain('data-kind="note"');
       expect(anchor1).toContain('data-id="note-1"');
-      const anchor2 = result.match(/<a [^>]+>Test Monster<\/a>/)[0];
-      expect(anchor2).toContain('href="/monsters/monster-1"');
-      expect(anchor2).toContain('class="internal-link monster-link"');
-      expect(anchor2).toContain('data-kind="monster"');
-      expect(anchor2).toContain('data-id="monster-1"');
+      const anchor2 = result.match(/<a [^>]+>Test Pawn<\/a>/)[0];
+      expect(anchor2).toContain('href="/pawns/pawn-1"');
+      expect(anchor2).toContain('class="internal-link pawn-link"');
+      expect(anchor2).toContain('data-kind="pawn"');
+      expect(anchor2).toContain('data-id="pawn-1"');
     });
 
     it('should handle multiple links in one line', () => {
@@ -417,11 +417,11 @@ describe('Markdown Parser', () => {
   describe('Mention Extraction', () => {
     it('should extract mentioned entities from text', () => {
       const input =
-        '[Test Note](note://note-1) and [Alias](monster://monster-2) and [Test Party](party://party-1)';
+        '[Test Note](note://note-1) and [Alias](pawn://pawn-2) and [Test Party](party://party-1)';
       const result = extractMentionedEntities(input);
       expect(result).toEqual([
         { kind: 'note', id: 'note-1' },
-        { kind: 'monster', id: 'monster-2' },
+        { kind: 'pawn', id: 'pawn-2' },
         { kind: 'party', id: 'party-1' },
       ]);
     });
@@ -519,10 +519,10 @@ describe('Markdown Parser', () => {
         type: 'Party',
         target: 'parties',
       });
-      expect(getMentionableEntities('monster')).toMatchObject({
+      expect(getMentionableEntities('pawn')).toMatchObject({
         titleKey: 'name',
-        type: 'Monster',
-        target: 'monsters',
+        type: 'Pawn',
+        target: 'pawns',
       });
       expect(getMentionableEntities('encounter')).toMatchObject({
         titleKey: 'name',

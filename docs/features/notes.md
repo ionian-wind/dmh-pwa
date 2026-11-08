@@ -24,7 +24,7 @@ support internal entity links, and drive the mention index.
 
 ## List page (`NotesView.vue`)
 
-- Loads notes, monsters, and parties on mount.
+- Loads notes, pawns, and parties on mount.
 - Renders `BaseListView` with `NoteCard` and `NoteEditor`.
 - Renders `noteStore.filtered` directly.
 - Card props pass `onView`, `onEdit`, and `onDelete`.
@@ -86,7 +86,7 @@ A note created from the list can carry `typeId` and tags.
 
 ## Detail page (`NoteView.vue`)
 
-- Loads notes, the mention index, parties, monsters, encounters.
+- Loads notes, the mention index, parties, pawns, encounters.
 - Resolves the note from `noteStore.getById(route.params.id)`; redirects to
   `/notes` if missing after load.
 - Publishes `NoteViewSidebar` to the right drawer on mount and clears it on
@@ -164,7 +164,7 @@ Overrides:
 ## Detail tabs
 
 `NoteView` uses the standard **View** and **Linked entities** tabs. The links
-tab shows and edits the note's characters, monsters, parties, encounters and
+tab shows and edits the note's characters, pawns, parties, encounters and
 locations. Location links are stored on the location's `entities` list; the
 other links live in `note.links`.
 The right sidebar shows **Contents**, **Bookmarks**,

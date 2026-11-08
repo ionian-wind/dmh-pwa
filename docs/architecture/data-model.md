@@ -30,7 +30,7 @@
 | `content`  | `string`         | Markdown source; drawings are embedded as `drawing://` blocks |
 | `typeId`   | `string \| null` | References a `NoteType`; UI for setting it is commented out   |
 | `tags`     | `string[]`       | Used for card chips and route-based tag filtering             |
-| `links`    | `NoteLink[]?`    | Links to parties, monsters, encounters and characters         |
+| `links`    | `NoteLink[]?`    | Links to parties, pawns, encounters and characters            |
 | `parentId` | `string?`        | Declared in TS, not persisted by schemas/UI                   |
 | `metadata` | `object?`        | Declared in TS, unused                                        |
 
@@ -41,7 +41,7 @@ Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
 
 ```ts
 {
-  kind: 'party' | 'monster' | 'encounter' | 'character';
+  kind: 'party' | 'pawn' | 'encounter' | 'character';
   id: string;
 }
 ```
@@ -88,7 +88,7 @@ The README advertises stats, equipment, and full character sheets; the actual
 type has only name and notes. Older test suites still assume `level`, `class`,
 `stats`, `hitPoints`, `armorClass`, etc.
 
-### Monster
+### Pawn
 
 | Field   | Type      | Notes     |
 | ------- | --------- | --------- |
@@ -103,7 +103,7 @@ Again, no stat block/CR/HP fields exist.
 | ------------- | ------------------------ | ----------------------------------------- |
 | `name`        | `string`                 | Required                                  |
 | `description` | `string?`                | Rendered with `v-html` in the detail view |
-| `pawns`       | `Record<string, number>` | Monster ID → pawn count (schema: 1..20)   |
+| `pawns`       | `Record<string, number>` | Pawn ID → pawn count (schema: 1..20)      |
 
 ### Combat
 
@@ -123,8 +123,8 @@ Again, no stat block/CR/HP fields exist.
 {
   id: string;                 // unique per participant instance
   name: string;               // REQUIRED by TS, but never populated by creators
-  type: 'player' | 'monster';
-  referenceId?: string;       // character or monster ID
+  type: 'player' | 'pawn';
+  referenceId?: string;       // character or pawn ID
   notes?: string;
   initiative: number;
   hasActed: boolean;
@@ -304,7 +304,7 @@ Map image bytes live in the generic `files` store.
 {
   kind: 'note' |
     'party' |
-    'monster' |
+    'pawn' |
     'encounter' |
     'character' |
     'map' |
@@ -320,12 +320,12 @@ Map image bytes live in the generic `files` store.
 erDiagram
   NOTE_TYPE ||--o{ NOTE : "note.typeId"
   PARTY }o--o{ CHARACTER : "party.characters"
-  ENCOUNTER }o--o{ MONSTER : "encounter.pawns{count}"
+  ENCOUNTER }o--o{ PAWN : "encounter.pawns{count}"
   ENCOUNTER ||--o{ COMBAT : "combat.encounterId"
   PARTY ||--o{ COMBAT : "combat.partyId"
   COMBAT ||--o{ COMBATANT : "embedded"
   COMBATANT }o--o| CHARACTER : "referenceId"
-  COMBATANT }o--o| MONSTER : "referenceId"
+  COMBATANT }o--o| PAWN : "referenceId"
   JUKEBOX_FILE ||--o{ JUKEBOX_TRACK : "track.fileId"
   JUKEBOX_PLAYLIST }o--o{ JUKEBOX_TRACK : "playlist.trackIds"
   NOTE ||--o{ MENTION_LINK : "indexations_mentions"
@@ -346,7 +346,7 @@ There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 - Deleting a character leaves it in `party.characters`; `PartyView` filters via
   `characterStore`, so it disappears from the list but the ID remains and is
   re-saved on the next party update.
-- Deleting a monster leaves its key in `encounter.pawns`; the encounter
+- Deleting a pawn leaves its key in `encounter.pawns`; the encounter
   table simply does not render it, but the count is still exported.
 - Deleting a track removes its file record even if another track references the
   same `fileId`.

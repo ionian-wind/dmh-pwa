@@ -40,8 +40,8 @@ entries.
 | `notes`       | `VITE_FEATURE_NOTES`       | `src/notes/**`, `src/stores/notes.ts`, note schema                          | —                 |
 | `characters`  | `VITE_FEATURE_CHARACTERS`  | `src/characters/**`, `src/stores/characters.ts`, character schema           | —                 |
 | `parties`     | `VITE_FEATURE_PARTIES`     | `src/parties/**`, `src/stores/parties.ts`, party schema                     | `characters`      |
-| `monsters`    | `VITE_FEATURE_MONSTERS`    | `src/monsters/**`, `src/stores/monsters.ts`, monster schema                 | —                 |
-| `encounters`  | `VITE_FEATURE_ENCOUNTERS`  | `src/encounters/**`, encounter/combat stores and schemas                    | `monsters`        |
+| `pawns`       | `VITE_FEATURE_PAWNS`       | `src/pawns/**`, `src/stores/pawns.ts`, pawn schema                          | —                 |
+| `encounters`  | `VITE_FEATURE_ENCOUNTERS`  | `src/encounters/**`, encounter/combat stores and schemas                    | `pawns`           |
 | `maps`        | `VITE_FEATURE_MAPS`        | `src/maps/**`, map/location schemas                                         | —                 |
 | `jukebox`     | `VITE_FEATURE_JUKEBOX`     | `src/jukebox/**`                                                            | —                 |
 | `ambient`     | `VITE_FEATURE_AMBIENT`     | `src/ambient-sound/**`                                                      | —                 |
@@ -180,7 +180,7 @@ In the catalog:
 
 ```text
 parties    requires characters
-encounters requires monsters, characters, parties
+encounters requires pawns, characters, parties
 ```
 
 If a dependent is enabled while its prerequisite is disabled, the build throws
@@ -231,7 +231,7 @@ Gate these shared surfaces:
 - `EntitiesLinking`
 - entity drag linking overlay and relations
 - note entity links
-- EncounterView and CombatView monster/party/character sections
+- EncounterView and CombatView pawn/party/character sections
 - Party editors/views character links
 - Character editors/views party and location links
 - map/location links from other entities
@@ -324,7 +324,7 @@ The script should print the exact failing feature/config and module.
 - [x] `FF-020` Notes integration: routes, nav, home card, link kinds. — done
 - [x] `FF-021` Characters integration: routes, nav, home card, link/drag kinds. — done
 - [x] `FF-022` Parties integration: routes, nav, home card, link/drag kinds. — done
-- [x] `FF-023` Monsters integration: routes, nav, home card, link/drag kinds. — done
+- [x] `FF-023` Pawns integration: routes, nav, home card, link/drag kinds. — done
 - [x] `FF-024` Encounters integration: routes (including combat), nav, home — done
       card, link kinds.
 - [x] `FF-026` Maps integration: routes, nav, home card, link/drag kinds. — done
@@ -366,7 +366,7 @@ The script should print the exact failing feature/config and module.
 - [x] `FF-060` Gate mention kinds and internal-link picking by feature. — done
 - [x] `FF-061` Gate `EntitiesLinking` kinds. — done
 - [x] `FF-062` Gate entity drag targets and relation logic. — done
-- [x] `FF-065` Gate EncounterView/CombatView monster, party and — done
+- [x] `FF-065` Gate EncounterView/CombatView pawn, party and — done
       character sections.
 - [x] `FF-066` Gate character/party cross-links and location links. — done
 - [x] `FF-067` Gate map/location links from notes/other entities. — done

@@ -20,7 +20,7 @@ index.html
             ├─ playerStore.init()          (tracks, playlists, volume, restore)
             ├─ timerStore.init()           (timers + global 1s poll)
             └─ router-view → HomeView
-                 └─ loads notes, characters, parties, monsters,
+                 └─ loads notes, characters, parties, pawns,
                     encounters (5 × getAll)
 ```
 
@@ -50,7 +50,7 @@ index correctly.
 ## 3. Editing a note from its detail page
 
 ```
-NoteView loads (notes, mentions, parties, monsters, encounters)
+NoteView loads (notes, mentions, parties, pawns, encounters)
   └─ resolves note by route id
        ├─ read view: Markdown renders; task checkboxes can emit update:content
        │     └─ handleMarkdownContentChange → noteStore.update(content)
@@ -77,7 +77,7 @@ EncounterView / EncountersView "Run combat"
   └─ PartySelector (encounter, isOpen)
        ├─ choose party → all characters selected
        ├─ toggle characters
-       ├─ monsters expanded by encounter.monsters counts
+       ├─ pawns expanded by encounter.pawns counts
        └─ combatStore.create({preparing, round 0, turn 0, combatants})
             └─ router.push('/combats/:id')
                  └─ CombatView
@@ -115,19 +115,19 @@ Deleting a character leaves the ID in the party. `PartyView` simply doesn't
 render it, but the next party update re-saves the dangling ID. Historical
 combats keep the reference and display "Unknown Player".
 
-## 6. Encounter monster membership
+## 6. Encounter pawn membership
 
 ```
 EncounterView
-  ├─ encounter.monsters = { monsterId: count }
-  ├─ monsterStore.items filtered by keys
-  ├─ link modal → localMonsters → encounterStore.update
+  ├─ encounter.pawns = { pawnId: count }
+  ├─ pawnStore.items filtered by keys
+  ├─ link modal → localPawns → encounterStore.update
   └─ quantity prompt → encounterStore.update
 PartySelector
-  └─ Object.entries(monsters) → monsterStore.getById → N instances
+  └─ Object.entries(pawns) → pawnStore.getById → N instances
 ```
 
-Deleting a monster leaves the key; the encounter table hides it but the count
+Deleting a pawn leaves the key; the encounter table hides it but the count
 remains in storage and export.
 
 ## 7. Mentions and backlinks

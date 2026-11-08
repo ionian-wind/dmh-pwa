@@ -13,7 +13,7 @@ Object stores are created lazily by migrations. Current stores:
 | Store                  | Owner               | Schema-validated          |
 | ---------------------- | ------------------- | ------------------------- |
 | `characters`           | `stores/characters` | `character.schema.json`   |
-| `monsters`             | `stores/monsters`   | `monster.schema.json`     |
+| `pawns`                | `stores/pawns`      | `pawn.schema.json`        |
 | `notes`                | `stores/notes`      | `note.schema.json`        |
 | `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`    |
 | `parties`              | `stores/parties`    | `party.schema.json`       |
@@ -31,7 +31,7 @@ Object stores are created lazily by migrations. Current stores:
 | `migrations`           | migration runner    | no                        |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
-generates IDs. Version 18 renames encounter `monsters` to `pawns`; version 17
+generates IDs. Version 18 renames encounter `pawns` to `pawns`; version 17
 removes encounter notes; version 16 strips escaped spaces before block-anchor
 comments; version 15 removes note content types, converting legacy drawing notes
 into drawing blocks; version 14 adds the `drawings` store; version 13 dropped
@@ -144,7 +144,7 @@ export const useNoteStore = defineStore('notes', () => {
 | ------------------- | ------------ | --------------------------------------------------------------------------------------------- |
 | `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove                      |
 | `useCharacterStore` | `characters` | Name search                                                                                   |
-| `useMonsterStore`   | `monsters`   | Name search                                                                                   |
+| `usePawnStore`      | `pawns`      | Name search                                                                                   |
 | `usePartyStore`     | `parties`    | Name search                                                                                   |
 | `useEncounterStore` | `encounters` | Name search                                                                                   |
 | `useCombatStore`    | `combats`    | Combatant/turn helpers, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
@@ -243,7 +243,7 @@ Current migrations:
 | 3       | `0000000003_timers.ts`         | Adds `timers`                         |
 
 Sorted in `src/migrations/index.ts`. The database version is the maximum of the
-migration versions and `SCHEMA_VERSION` (18, which renames encounter monsters to
+migration versions and `SCHEMA_VERSION` (18, which renames encounter pawns to
 pawns).
 Adding a migration requires adding it to the `migrations`
 array; new stores are also fed into the Dexie schema through
@@ -261,7 +261,7 @@ encounter pawns rename).
 `<store>.json` (pretty-printed array).
 
 `MAIN_STORE_NAMES` lists the campaign stores included in a backup:
-`characters, combats, drawings, encounters, monsters, notes, noteTypes,
+`characters, combats, drawings, encounters, pawns, notes, noteTypes,
 parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
 files, map_image_metadata, indexations_mentions`.
 

@@ -72,7 +72,7 @@ detail page has **View**, **Map**, **Backlinks** and **Linked entities** tabs.
 View uses the shared inline view/edit experience and renders the description as
 Markdown; Map renders the location's image, layers, markers and areas;
 Backlinks lists markers and areas from other locations that point at this
-location; Linked entities shows notes, parties, monsters, encounters,
+location; Linked entities shows notes, parties, pawns, encounters,
 characters and playlists. In edit mode the linked entities are editable, and
 the same location-level edit mode is shared with the Map tab.
 
@@ -125,7 +125,7 @@ interface MapMarker {
 - Placing a marker: choose **Add marker**, then click the map. The marker editor
   opens with the clicked image coordinates.
 - A marker can link to one location and any number of other entities (notes,
-  monsters, encounters, characters). Parties are not available as
+  pawns, encounters, characters). Parties are not available as
   marker links.
 - Icons are optional; new markers start with no icon.
 - Marker icons support both RPG Awesome (`ra-castle-emblem`) and Font Awesome
@@ -166,7 +166,7 @@ interface MapArea {
 - Clicking an area opens the area editor.
 - Each area supports title, description, optional RPG Awesome icon, colour,
   one optional location, and linked entities. Areas can link to notes,
-  monsters, encounters and characters, but not to parties, other areas or
+  pawns, encounters and characters, but not to parties, other areas or
   markers.
 - The area list is shown in the right sidebar **Areas** tab and supports
   editing and deleting directly from the list.
@@ -337,7 +337,7 @@ Map file helpers:
 type MapEntityKind =
   | 'note'
   | 'party'
-  | 'monster'
+  | 'pawn'
   | 'encounter'
   | 'character'
   | 'location'

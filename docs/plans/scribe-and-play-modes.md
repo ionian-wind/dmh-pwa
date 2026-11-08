@@ -10,7 +10,7 @@ This is a committed plan, not an optional proposal.
 data model:
 
 - **Scribe** — preparing for a session: write notes, organize the campaign and
-  locations, build characters, parties, monsters and encounters, configure
+  locations, build characters, parties, pawns and encounters, configure
   ambience and playlists.
 - **Play** — running the session: find and use prepared content quickly, run
   combat and timers, open scenes and maps, capture notes, and search across the
@@ -28,7 +28,7 @@ primary.
 - The app has one navigation and one Home dashboard aimed mainly at
   preparation.
 - All major domains are already implemented: notes, characters,
-  parties, monsters, encounters, combats, maps/locations, timers, jukebox and
+  parties, pawns, encounters, combats, maps/locations, timers, jukebox and
   ambient sound.
 - The command-menu and global-search proposals provide the fast access Play
   needs.
@@ -77,7 +77,7 @@ The current navigation stays essentially unchanged:
 - Notes
 - Characters
 - Parties
-- Monsters
+- Pawns
 - Encounters
 - Notes
 - Maps / Locations
@@ -94,7 +94,7 @@ Play promotes session tools and demotes authoring:
 - **Timers**
 - **Scenes** (ambient/jukebox quick controls)
 - **Notes** (quick capture and recent notes)
-- **Reference** (characters, parties, monsters, locations)
+- **Reference** (characters, parties, pawns, locations)
 - **Manage** (the full Scribe navigation, including editors and settings)
 
 The same routes are reused. Play navigation is a filtered/reordered projection

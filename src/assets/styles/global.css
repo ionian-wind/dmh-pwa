@@ -178,7 +178,7 @@ body.body--dark .internal-link.party-link {
   background: #1b2e21;
 }
 
-body.body--dark .internal-link.monster-link {
+body.body--dark .internal-link.pawn-link {
   --mention-color: #ff9e96;
   background: #34201f;
 }
@@ -524,7 +524,7 @@ body.body--dark .q-btn--outline {
   background: var(--color-success-light);
 }
 
-.internal-link.monster-link {
+.internal-link.pawn-link {
   --mention-color: var(--color-danger-dark);
   background: var(--color-danger-light);
 }

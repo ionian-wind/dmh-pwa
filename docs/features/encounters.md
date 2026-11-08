@@ -3,7 +3,7 @@
 ## Purpose
 
 An encounter is a planned fight: a named set of pawns with quantities, drawn
-from the monster catalog. It is the template from which a combat is created.
+from the pawn catalog. It is the template from which a combat is created.
 
 ## Key files
 
@@ -26,7 +26,7 @@ interface Encounter {
   updatedAt: number;
   name: string;
   description?: string;
-  pawns: Record<string, number>; // monsterId -> pawn count
+  pawns: Record<string, number>; // pawnId -> pawn count
 }
 ```
 
@@ -49,7 +49,7 @@ Schema requires `name`, `pawns`, timestamps; pawn counts are constrained to
 
 ## Card (`EncounterCard.vue`)
 
-- Monster summary as `"<kinds> (<total>)"`.
+- Pawn summary as `"<kinds> (<total>)"`.
 - Run-combat button in the card action slot.
 - Emits `view`, `edit`, `delete`, `run-combat`, `copy`.
 
@@ -80,9 +80,9 @@ Tabs: Information, Pawns, Combats.
 - Information: renders `encounter.description` with `v-html` (sanitized via
   `sanitizeHtmlContent`).
 - Pawns:
-  - Loads all monsters and shows those whose IDs are keys of
+  - Loads all pawns and shows those whose IDs are keys of
     `encounter.pawns`.
-  - Link action opens a modal with a toggle per monster and a quantity input.
+  - Link action opens a modal with a toggle per pawn and a quantity input.
   - Toggling/unlinking persists immediately through `encounterStore.update`.
   - Inline quantity button opens a `prompt()` dialog and persists.
   - Table header uses the missing `common.linked` key.
@@ -110,15 +110,15 @@ See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 
 ## Relationships
 
-- `encounter.pawns` → monster IDs with pawn counts.
+- `encounter.pawns` → pawn IDs with pawn counts.
 - `combat.encounterId` → encounter.
-- Encounter-generated combats snapshot monster instances at creation.
+- Encounter-generated combats snapshot pawn instances at creation.
 
 ## Limitations
 
 - No CR/XP budget or difficulty calculation.
 - No environment, tactics, or loot fields.
 - Pawn quantities are hard-capped at 20 by the schema.
-- Encounter list card has no monster names, only pawn counts.
+- Encounter list card has no pawn names, only pawn counts.
 - Delete does not cascade to combats.
 - Description is rendered as raw HTML.

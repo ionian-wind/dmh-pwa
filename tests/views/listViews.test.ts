@@ -4,14 +4,14 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
 import CharactersView from '@/characters/CharactersView.vue';
-import MonstersView from '@/monsters/MonstersView.vue';
+import PawnsView from '@/pawns/PawnsView.vue';
 import PartiesView from '@/parties/PartiesView.vue';
 import NotesView from '@/notes/NotesView.vue';
 import TimersView from '@/timers/TimersView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
 
 import { useCharacterStore } from '@/stores/characters';
-import { useMonsterStore } from '@/stores/monsters';
+import { usePawnStore } from '@/stores/pawns';
 import { usePartyStore } from '@/stores/parties';
 import { useNoteStore } from '@/stores/notes';
 import { useTimerStore } from '@/stores/timers';
@@ -69,7 +69,7 @@ function makeRouter() {
     routes: [
       { path: '/', component: { render: () => h('div') } },
       { path: '/characters/:id', component: { render: () => h('div') } },
-      { path: '/monsters/:id', component: { render: () => h('div') } },
+      { path: '/pawns/:id', component: { render: () => h('div') } },
       { path: '/parties/:id', component: { render: () => h('div') } },
       { path: '/notes', component: { render: () => h('div') } },
       { path: '/notes/:id', component: { render: () => h('div') } },
@@ -143,27 +143,27 @@ describe('list views', () => {
     wrapper.unmount();
   });
 
-  it('handles monster card actions and submit', async () => {
-    const { wrapper, router } = await mountView(MonstersView, '/');
-    const store = useMonsterStore();
+  it('handles pawn card actions and submit', async () => {
+    const { wrapper, router } = await mountView(PawnsView, '/');
+    const store = usePawnStore();
     vi.spyOn(store, 'create').mockResolvedValue({} as any);
     vi.spyOn(store, 'update').mockResolvedValue({} as any);
     vi.spyOn(store, 'remove').mockResolvedValue(undefined);
 
-    const monster = { id: 'm1', name: 'Goblin' } as any;
-    const card = (list(wrapper).props('cardProps') as any)(monster);
+    const pawn = { id: 'm1', name: 'Goblin' } as any;
+    const card = (list(wrapper).props('cardProps') as any)(pawn);
     card.onView();
     await flushPromises();
-    expect(router.currentRoute.value.path).toBe('/monsters/m1');
+    expect(router.currentRoute.value.path).toBe('/pawns/m1');
 
-    (list(wrapper).props('editorProps') as any)(monster);
+    (list(wrapper).props('editorProps') as any)(pawn);
     await expect(card.onDelete()).resolves.toBe(true);
     vi.mocked(confirm).mockResolvedValue(false);
     await expect(card.onDelete()).resolves.toBe(false);
 
-    list(wrapper).vm.$emit('submit', monster);
+    list(wrapper).vm.$emit('submit', pawn);
     list(wrapper).vm.$emit('submit', { name: 'Orc' });
-    list(wrapper).vm.$emit('copy', monster);
+    list(wrapper).vm.$emit('copy', pawn);
     await flushPromises();
     expect(store.update).toHaveBeenCalled();
     expect(store.create).toHaveBeenCalledTimes(2);

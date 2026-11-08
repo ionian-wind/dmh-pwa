@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { InlineEditState, Monster } from '@/types';
+import type { InlineEditState, Pawn } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
@@ -10,14 +10,14 @@ import { IconAt } from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const props = defineProps<{
-  monster: Monster;
-  editState?: InlineEditState<Monster>;
+  pawn: Pawn;
+  editState?: InlineEditState<Pawn>;
   onSetEditMode?: (value: boolean) => void | Promise<void>;
 }>();
 
 const { t } = useI18n();
 const mentionsStore = useMentionsStore();
-const localEditState = reactive<InlineEditState<Monster>>({
+const localEditState = reactive<InlineEditState<Pawn>>({
   isEditMode: false,
   isVisualMode: true,
   draft: null,
@@ -26,15 +26,15 @@ const activeTab = ref('scenes');
 
 const state = computed(() => props.editState ?? localEditState);
 
-const entityId = computed(() => props.monster?.id || '');
+const entityId = computed(() => props.pawn?.id || '');
 const mentions = computed(() =>
   entityId.value
-    ? mentionsStore.getLinks({ kind: 'monster', id: entityId.value })
+    ? mentionsStore.getLinks({ kind: 'pawn', id: entityId.value })
     : [],
 );
 const mentionedIn = computed(() =>
   entityId.value
-    ? mentionsStore.getBacklinks({ kind: 'monster', id: entityId.value })
+    ? mentionsStore.getBacklinks({ kind: 'pawn', id: entityId.value })
     : [],
 );
 const tabs = computed(() =>
@@ -85,7 +85,7 @@ onMounted(() => mentionsStore.load());
           <div v-show="activeTab === 'scenes'" class="q-pa-md">
             <EntityScenesPanel
               v-if="entityId && EntityScenesPanel"
-              entity-type="monster"
+              entity-type="pawn"
               :entity-id="entityId"
             />
           </div>

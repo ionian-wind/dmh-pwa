@@ -9,7 +9,7 @@ migrations, import/export and backup support.
 ## Scope
 
 - [x] Remove the Modules feature and standalone module code
-- [x] Remove module links from notes, characters, parties, monsters and encounters
+- [x] Remove module links from notes, characters, parties, pawns and encounters
 - [x] Remove module links from playlists, maps, locations and ambient sound scenes
 - [x] Remove module link kinds from drag-and-drop, mentions and entity creation
 - [x] Remove module storage, schemas, migrations and backup support

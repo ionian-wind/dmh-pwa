@@ -45,8 +45,8 @@ const externalRoute = computed(() => {
       return `/notes/${id}`;
     case 'party':
       return `/parties/${id}`;
-    case 'monster':
-      return `/monsters/${id}`;
+    case 'pawn':
+      return `/pawns/${id}`;
     case 'encounter':
       return `/encounters/${id}`;
     case 'character':

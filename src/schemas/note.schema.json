@@ -53,7 +53,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["party", "monster", "encounter", "character"]
+            "enum": ["party", "pawn", "encounter", "character"]
           },
           "id": {
             "type": "string"

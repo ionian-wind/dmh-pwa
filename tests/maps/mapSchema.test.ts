@@ -34,7 +34,7 @@ const validMap = {
       locationId: 'l1',
       layerId: 'base',
       entities: [
-        { kind: 'monster', id: 'mon1' },
+        { kind: 'pawn', id: 'mon1' },
         { kind: 'map', id: 'map2' },
       ],
       icon: 'ra-castle',

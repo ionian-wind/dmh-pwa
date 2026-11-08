@@ -11,7 +11,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
-import MonsterCard from '@/monsters/MonsterCard.vue';
+import PawnCard from '@/pawns/PawnCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import BaseListView from '@/components/common/BaseListView.vue';
@@ -782,9 +782,9 @@ describe('current domain cards', () => {
     expect(wrapper.text()).toContain('Legacy');
   });
 
-  it('renders a monster card with actions', () => {
-    const wrapper = mount(MonsterCard, {
-      props: { monster: { id: 'm1', name: 'Goblin' }, showActions: true },
+  it('renders a pawn card with actions', () => {
+    const wrapper = mount(PawnCard, {
+      props: { pawn: { id: 'm1', name: 'Goblin' }, showActions: true },
     });
     expect(wrapper.text()).toContain('Goblin');
     expect(wrapper.findAll('button').length).toBeGreaterThan(0);

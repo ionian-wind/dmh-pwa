@@ -31,7 +31,7 @@ export const LayoutKey: InjectionKey<LayoutStore> = Symbol('dmh-layout');
 
 /**
  * Resolve refs passed as injected component props. Views often hand their
- * reactive entity to the drawer (`{ monster }`), and the injected component
+ * reactive entity to the drawer (`{ pawn }`), and the injected component
  * expects plain values. Unref runs during render, so the drawer still updates
  * when the source ref changes.
  */

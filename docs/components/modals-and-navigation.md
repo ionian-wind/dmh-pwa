@@ -102,7 +102,7 @@ top (otherwise removes all occurrences). `currentModalId` is the top.
   the modal can open further entity modals.
 - Body content reuses `EntityMainContent`, mirroring the entity view's main
   information tab (note markdown/drawing preview, party/location
-  description, monster/character notes, encounter description) without tabs or
+  description, pawn/character notes, encounter description) without tabs or
   sidebar. Unknown/missing entities show "not found".
 - When the mentioned entity kind has a detail route, an `IconExternalLink`
   header action closes the modal and navigates to that entity view.
@@ -156,7 +156,7 @@ Consumers:
 | Any entity view (`BaseEntityView`) | via view               | —               | `ViewHeader` |
 | `NoteView`                         | `NoteViewSidebar`      | —               | `ViewHeader` |
 | `PartyView`                        | `PartyViewSidebar`     | —               | `ViewHeader` |
-| `MonsterView`                      | `MonsterViewSidebar`   | —               | `ViewHeader` |
+| `PawnView`                         | `PawnViewSidebar`      | —               | `ViewHeader` |
 | `EncounterView`                    | `EncounterViewSidebar` | —               | `ViewHeader` |
 | `CharacterView`                    | `#sidepanel`           | —               | `ViewHeader` |
 | `JukeboxView`                      | `PlaylistList`         | `JukeboxPlayer` | `ViewHeader` |

@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { usePartyStore } from '@/stores/parties';
 import { useCombatStore } from '@/stores/combats';
-import { useMonsterStore } from '@/stores/monsters';
+import { usePawnStore } from '@/stores/pawns';
 import { useCharacterStore } from '@/stores/characters';
 import { generateId } from '@/utils/storage';
 import { Combat, Combatant, Encounter } from '@/types';
@@ -13,7 +13,7 @@ import type { MapEntityRef } from '@/maps/types';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
-const monsterStore = useMonsterStore();
+const pawnStore = usePawnStore();
 const characterStore = useCharacterStore();
 const { t } = useI18n();
 
@@ -68,7 +68,7 @@ function setCharacterLinks(links: MapEntityRef[]) {
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
-    monsterStore.load(),
+    pawnStore.load(),
     characterStore.load(),
     combatStore.load(),
   ]);
@@ -109,7 +109,7 @@ const handleCreateCombat = async () => {
   }
 
   // Get encounter pawns
-  const encounterPawns = monsterStore.items.filter((m) =>
+  const encounterPawns = pawnStore.items.filter((m) =>
     Object.keys(props.encounter!.pawns || {}).includes(m.id),
   );
 
@@ -128,13 +128,13 @@ const handleCreateCombat = async () => {
 
   // Create combatants from pawns with counts
   const pawnCombatants: Combatant[] = [];
-  encounterPawns.forEach((monster) => {
-    const count = props.encounter!.pawns[monster.id] || 1;
+  encounterPawns.forEach((pawn) => {
+    const count = props.encounter!.pawns[pawn.id] || 1;
     for (let i = 0; i < count; i++) {
       pawnCombatants.push({
         id: generateId(),
-        type: 'monster',
-        referenceId: monster.id,
+        type: 'pawn',
+        referenceId: pawn.id,
         notes: '',
         initiative: 0,
         hasActed: false,

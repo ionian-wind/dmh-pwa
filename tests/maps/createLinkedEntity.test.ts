@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const storeMocks = vi.hoisted(() => ({
   note: { create: vi.fn() },
   party: { create: vi.fn() },
-  monster: { create: vi.fn() },
+  pawn: { create: vi.fn() },
   encounter: { create: vi.fn() },
   character: { create: vi.fn() },
   location: { create: vi.fn() },
@@ -11,8 +11,8 @@ const storeMocks = vi.hoisted(() => ({
 
 vi.mock('@/stores/notes', () => ({ useNoteStore: () => storeMocks.note }));
 vi.mock('@/stores/parties', () => ({ usePartyStore: () => storeMocks.party }));
-vi.mock('@/stores/monsters', () => ({
-  useMonsterStore: () => storeMocks.monster,
+vi.mock('@/stores/pawns', () => ({
+  usePawnStore: () => storeMocks.pawn,
 }));
 vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => storeMocks.encounter,
@@ -37,9 +37,9 @@ describe('createLinkedEntity', () => {
     }
     storeMocks.note.create.mockResolvedValue({ id: 'note-1', title: 'Note' });
     storeMocks.party.create.mockResolvedValue({ id: 'party-1', name: 'Party' });
-    storeMocks.monster.create.mockResolvedValue({
-      id: 'monster-1',
-      name: 'Monster',
+    storeMocks.pawn.create.mockResolvedValue({
+      id: 'pawn-1',
+      name: 'Pawn',
     });
     storeMocks.encounter.create.mockResolvedValue({
       id: 'encounter-1',
@@ -78,7 +78,7 @@ describe('createLinkedEntity', () => {
 
   it.each([
     ['party', storeMocks.party, 'Party'],
-    ['monster', storeMocks.monster, 'Monster'],
+    ['pawn', storeMocks.pawn, 'Pawn'],
     ['encounter', storeMocks.encounter, 'Encounter'],
     ['character', storeMocks.character, 'Character'],
   ] as const)('creates a %s from editor data', async (kind, store, label) => {

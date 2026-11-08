@@ -5,7 +5,8 @@ import noteContentType from '@/migrations/0000000008_note_content_type';
 import removeNoteContentType from '@/migrations/0000000015_remove_note_content_type';
 import stripEscapedAnchorSpaces from '@/migrations/0000000016_strip_escaped_block_anchor_spaces';
 import removeEncounterNotes from '@/migrations/0000000017_remove_encounter_notes';
-import renameEncounterPawns from '@/migrations/0000000018_rename_encounter_monsters_to_pawns';
+import renameEncounterPawns from '@/migrations/0000000018_rename_encounter_field_to_pawns';
+import renamePawnStore from '@/migrations/0000000019_rename_pawn_store';
 
 function transactionWith(storeData: Record<string, any[]>) {
   const stores = new Map<string, any>();
@@ -13,6 +14,7 @@ function transactionWith(storeData: Record<string, any[]>) {
     stores.set(name, {
       getAll: vi.fn().mockResolvedValue(rows),
       put: vi.fn().mockResolvedValue(undefined),
+      clear: vi.fn().mockResolvedValue(undefined),
     });
   }
   return {
@@ -226,8 +228,8 @@ describe('map location migrations', () => {
   it('removes the encounter notes field', async () => {
     const { stores, transaction } = transactionWith({
       encounters: [
-        { id: 'e1', name: 'Ambush', monsters: { m1: 2 }, notes: 'Legacy' },
-        { id: 'e2', name: 'Patrol', monsters: {} },
+        { id: 'e1', name: 'Ambush', pawns: { m1: 2 }, notes: 'Legacy' },
+        { id: 'e2', name: 'Patrol', pawns: {} },
       ],
     });
 
@@ -236,10 +238,10 @@ describe('map location migrations', () => {
     const saved = stores
       .get('encounters')
       .put.mock.calls.map((call: any[]) => call[0]);
-    expect(saved).toEqual([{ id: 'e1', name: 'Ambush', monsters: { m1: 2 } }]);
+    expect(saved).toEqual([{ id: 'e1', name: 'Ambush', pawns: { m1: 2 } }]);
   });
 
-  it('renames encounter monsters to pawns', async () => {
+  it('renames the legacy encounter field to pawns', async () => {
     const { stores, transaction } = transactionWith({
       encounters: [
         {
@@ -278,5 +280,73 @@ describe('map location migrations', () => {
         pawns: { m2: 2 },
       },
     ]);
+  });
+
+  it('moves monsters, combatants and references into pawns', async () => {
+    const { stores, transaction } = transactionWith({
+      monsters: [{ id: 'm1', name: 'Goblin' }],
+      pawns: [],
+      combats: [
+        {
+          id: 'c1',
+          combatants: [
+            { id: 'p1', type: 'player' },
+            { id: 'm1', type: 'monster' },
+          ],
+        },
+      ],
+      notes: [
+        {
+          id: 'n1',
+          content: '[Goblin](monster://m1) and [Party](party://p1)',
+          links: [
+            { kind: 'monster', id: 'm1' },
+            { kind: 'party', id: 'p1' },
+          ],
+        },
+      ],
+      map_locations: [
+        {
+          id: 'l1',
+          entities: [{ kind: 'monster', id: 'm1' }],
+          map: {
+            markers: [{ id: 'mk1', entities: [{ kind: 'monster', id: 'm1' }] }],
+            areas: [{ id: 'ar1', entities: [{ kind: 'monster', id: 'm1' }] }],
+          },
+        },
+      ],
+      indexations_mentions: [
+        { id: 'note:n1', links: [{ kind: 'monster', id: 'm1' }] },
+      ],
+    });
+
+    await renamePawnStore.go(transaction);
+
+    expect(stores.get('monsters').clear).toHaveBeenCalled();
+    expect(stores.get('pawns').put.mock.calls[0][0]).toEqual({
+      id: 'm1',
+      name: 'Goblin',
+    });
+    expect(stores.get('combats').put.mock.calls[0][0].combatants).toEqual([
+      { id: 'p1', type: 'player' },
+      { id: 'm1', type: 'pawn' },
+    ]);
+    expect(stores.get('notes').put.mock.calls[0][0]).toMatchObject({
+      content: '[Goblin](pawn://m1) and [Party](party://p1)',
+      links: [
+        { kind: 'pawn', id: 'm1' },
+        { kind: 'party', id: 'p1' },
+      ],
+    });
+    expect(stores.get('map_locations').put.mock.calls[0][0]).toMatchObject({
+      entities: [{ kind: 'pawn', id: 'm1' }],
+      map: {
+        markers: [{ entities: [{ kind: 'pawn', id: 'm1' }] }],
+        areas: [{ entities: [{ kind: 'pawn', id: 'm1' }] }],
+      },
+    });
+    expect(
+      stores.get('indexations_mentions').put.mock.calls[0][0].links,
+    ).toEqual([{ kind: 'pawn', id: 'm1' }]);
   });
 });

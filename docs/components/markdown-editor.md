@@ -87,7 +87,7 @@ value; `NoteEditor` remounts/rebuilds the object when switching notes.
 
 ## `MilkdownView.vue` (read-only)
 
-Used by note, party, monster, character and location detail views. It wraps
+Used by note, party, pawn, character and location detail views. It wraps
 `MilkdownEditor` in `MilkdownProvider` and passes `readonly`.
 
 - The editor is `contenteditable="false"`.

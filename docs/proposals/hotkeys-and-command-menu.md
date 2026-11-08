@@ -351,7 +351,7 @@ Global:
 - Go home
 - Open notes
 - Open parties
-- Open monsters
+- Open pawns
 - Open encounters
 - Open characters
 - Open modules
@@ -364,7 +364,7 @@ Global:
 - Create note
 - Create character
 - Create party
-- Create monster
+- Create pawn
 - Create encounter
 - Create location
 - Toggle jukebox play/pause

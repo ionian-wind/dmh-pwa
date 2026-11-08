@@ -54,7 +54,7 @@ const MIGRATIONS_STORE = 'migrations';
 const MIGRATION_VERSION = Math.max(
   ...sortedMigrations.map(({ version }) => version),
 );
-const SCHEMA_VERSION = 18;
+const SCHEMA_VERSION = 19;
 const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
 // All stores that may exist in the database. The main list is also used by
@@ -65,7 +65,7 @@ export const MAIN_STORE_NAMES = [
   'combats',
   'drawings',
   'encounters',
-  'monsters',
+  'pawns',
   'notes',
   'noteTypes',
   'parties',
@@ -102,7 +102,7 @@ const EXPLICIT_SCHEMA: Record<string, string> = {
   combats: 'id, updatedAt, encounterId, partyId, status',
   drawings: 'id, updatedAt',
   encounters: 'id, updatedAt',
-  monsters: 'id, updatedAt',
+  pawns: 'id, updatedAt',
   notes: 'id, updatedAt, createdAt, typeId, *tags',
   noteTypes: 'id, updatedAt',
   parties: 'id, updatedAt',
@@ -134,7 +134,7 @@ export class DmhDatabase extends Dexie {
   combats!: Table<any, string>;
   drawings!: Table<any, string>;
   encounters!: Table<any, string>;
-  monsters!: Table<any, string>;
+  pawns!: Table<any, string>;
   notes!: Table<any, string>;
   noteTypes!: Table<any, string>;
   parties!: Table<any, string>;
@@ -156,8 +156,9 @@ export class DmhDatabase extends Dexie {
     // Version 14 adds the drawings store; version 13 dropped the removed
     // modules store and its indexes. Version 15 removes note content types,
     // version 16 cleans escaped spaces before block anchors, version 17
-    // removes encounter notes, and version 18 renames encounter monsters to
-    // pawns. Legacy store names/key paths are kept and migrations remain
+    // removes encounter notes, version 18 renames the encounter participant
+    // field to pawns, and version 19 migrates the legacy pawn store and
+    // references. Legacy store names/key paths are kept and migrations remain
     // recorded separately.
     this.version(DB_VERSION).stores(SCHEMA);
     this.on('versionchange', () => this.close());

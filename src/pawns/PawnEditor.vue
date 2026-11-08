@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
-import type { Monster } from '@/types';
+import type { Pawn } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
@@ -18,13 +18,13 @@ import { IconHelp } from '@tabler/icons-vue';
 const { t, locale } = useI18n();
 
 const props = defineProps<{
-  monster: Monster | null;
+  pawn: Pawn | null;
   isOpen: boolean;
   useModalStack?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'submit', monster: Monster): void;
+  (e: 'submit', pawn: Pawn): void;
   (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 const featureStores = useFeatureStores();
 const relations = useEntityLinkRelations();
 
-const blankMonster = (): Monster => ({
+const blankPawn = (): Pawn => ({
   id: '',
   name: '',
   notes: '',
@@ -40,8 +40,8 @@ const blankMonster = (): Monster => ({
   updatedAt: Date.now(),
 });
 
-const editedMonster = ref<Monster>(blankMonster());
-const isEditing = computed(() => !!props.monster?.id);
+const editedPawn = ref<Pawn>(blankPawn());
+const isEditing = computed(() => !!props.pawn?.id);
 const isWYSIWYGMode = ref(true);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
@@ -50,30 +50,28 @@ const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
 const editorTabs = useEntityEditorTabs();
 
 const notes = computed({
-  get: () => editedMonster.value.notes ?? '',
+  get: () => editedPawn.value.notes ?? '',
   set: (value: string) => {
-    editedMonster.value.notes = value;
+    editedPawn.value.notes = value;
   },
 });
 
-const monsterLinks = computed<MapEntityRef[]>(() => {
-  const id = editedMonster.value.id;
+const pawnLinks = computed<MapEntityRef[]>(() => {
+  const id = editedPawn.value.id;
   return [
     ...(id
       ? relations
-          .getLinkedIds('monster', id, 'note')
+          .getLinkedIds('pawn', id, 'note')
           .map((noteId) => ({ kind: 'note' as const, id: noteId }))
       : []),
     ...(id
-      ? relations
-          .getLinkedIds('monster', id, 'encounter')
-          .map((encounterId) => ({
-            kind: 'encounter' as const,
-            id: encounterId,
-          }))
+      ? relations.getLinkedIds('pawn', id, 'encounter').map((encounterId) => ({
+          kind: 'encounter' as const,
+          id: encounterId,
+        }))
       : []),
     ...(id
-      ? relations.getLinkedIds('monster', id, 'location').map((locationId) => ({
+      ? relations.getLinkedIds('pawn', id, 'location').map((locationId) => ({
           kind: 'location' as const,
           id: locationId,
         }))
@@ -81,26 +79,26 @@ const monsterLinks = computed<MapEntityRef[]>(() => {
   ];
 });
 
-async function setMonsterLinks(
+async function setPawnLinks(
   kind: 'note' | 'encounter' | 'location',
   links: MapEntityRef[],
 ) {
-  if (!editedMonster.value.id) return;
+  if (!editedPawn.value.id) return;
   await relations.setLinkedIds(
-    'monster',
-    editedMonster.value.id,
+    'pawn',
+    editedPawn.value.id,
     kind,
     links.filter((link) => link.kind === kind).map((link) => link.id),
   );
 }
 
 watch(
-  () => props.monster,
-  (newMonster) => {
-    if (newMonster) {
-      editedMonster.value = { ...newMonster };
+  () => props.pawn,
+  (newPawn) => {
+    if (newPawn) {
+      editedPawn.value = { ...newPawn };
     } else {
-      editedMonster.value = blankMonster();
+      editedPawn.value = blankPawn();
     }
   },
   { immediate: true, deep: true },
@@ -109,8 +107,8 @@ watch(
 watch(
   () => props.isOpen,
   (open) => {
-    if (open && !props.monster) {
-      editedMonster.value = blankMonster();
+    if (open && !props.pawn) {
+      editedPawn.value = blankPawn();
     } else if (!open) {
       resetForm();
     }
@@ -118,19 +116,19 @@ watch(
 );
 
 const resetForm = () => {
-  editedMonster.value = blankMonster();
+  editedPawn.value = blankPawn();
   isWYSIWYGMode.value = true;
 };
 
-const saveMonster = async () => {
-  if (!editedMonster.value.name) {
+const savePawn = async () => {
+  if (!editedPawn.value.name) {
     await alert(t('common.nameRequired'));
     return;
   }
   if (markdownEditorRef.value?.getMarkdown) {
-    editedMonster.value.notes = markdownEditorRef.value.getMarkdown();
+    editedPawn.value.notes = markdownEditorRef.value.getMarkdown();
   }
-  emit('submit', { ...editedMonster.value });
+  emit('submit', { ...editedPawn.value });
   resetForm();
 };
 
@@ -140,7 +138,7 @@ const closeEditor = () => {
 };
 
 function handleDelete() {
-  if (props.monster) emit('delete', props.monster.id);
+  if (props.pawn) emit('delete', props.pawn.id);
 }
 
 onMounted(async () => {
@@ -152,30 +150,30 @@ onMounted(async () => {
   <BaseModal
     :use-modal-stack="useModalStack"
     :isOpen="isOpen"
-    :title="isEditing ? t('monsters.edit') : t('monsters.create')"
+    :title="isEditing ? t('pawns.edit') : t('pawns.create')"
     :showSubmit="true"
     :showCancel="true"
-    :showDelete="!!monster"
+    :showDelete="!!pawn"
     :showExpand="true"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
     :tabs="editorTabs"
-    modalId="monster-editor-modal"
-    @submit="saveMonster"
+    modalId="pawn-editor-modal"
+    @submit="savePawn"
     @delete="handleDelete"
     @cancel="closeEditor"
   >
     <template #main>
       <EntityInlineEditor
-        v-model:title="editedMonster.name"
-        :title-placeholder="t('monsters.fields.name')"
+        v-model:title="editedPawn.name"
+        :title-placeholder="t('pawns.fields.name')"
       >
         <EntityMarkdownEditor
           ref="markdownEditorRef"
           v-model="notes"
           :is-visual-mode="isWYSIWYGMode"
-          :entity-id="editedMonster.id"
-          entity-type="monster"
+          :entity-id="editedPawn.id"
+          entity-type="pawn"
           :placeholder="t('common.notes')"
         />
       </EntityInlineEditor>
@@ -186,20 +184,20 @@ onMounted(async () => {
         <EntitiesLinking
           v-if="featureStores.has('note')"
           kind="note"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('note', links)"
+          :model-value="pawnLinks"
+          @update:model-value="(links) => setPawnLinks('note', links)"
         />
         <EntitiesLinking
           v-if="featureStores.has('encounter')"
           kind="encounter"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('encounter', links)"
+          :model-value="pawnLinks"
+          @update:model-value="(links) => setPawnLinks('encounter', links)"
         />
         <EntitiesLinking
           v-if="featureStores.has('location')"
           kind="location"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('location', links)"
+          :model-value="pawnLinks"
+          @update:model-value="(links) => setPawnLinks('location', links)"
         />
       </div>
     </template>
@@ -213,7 +211,7 @@ onMounted(async () => {
           v-if="!isWYSIWYGMode && features.help"
           flat
           round
-          class="monster-help-button"
+          class="pawn-help-button"
           :title="t('markdownEditor.formattingHelp')"
           :aria-label="t('markdownEditor.formattingHelp')"
           :href="helpHref('reference/markdown', getHelpLocale(locale))"

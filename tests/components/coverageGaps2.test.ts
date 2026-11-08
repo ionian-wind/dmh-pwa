@@ -25,8 +25,8 @@ const stores = vi.hoisted(() => ({
     items: [{ id: 'p1', name: 'Party one' }],
     load: vi.fn(),
   },
-  monsters: {
-    items: [{ id: 'mo1', name: 'Monster one' }],
+  pawns: {
+    items: [{ id: 'mo1', name: 'Pawn one' }],
     load: vi.fn(),
   },
   encounters: {
@@ -59,8 +59,8 @@ const stores = vi.hoisted(() => ({
 
 vi.mock('@/stores/notes', () => ({ useNoteStore: () => stores.notes }));
 vi.mock('@/stores/parties', () => ({ usePartyStore: () => stores.parties }));
-vi.mock('@/stores/monsters', () => ({
-  useMonsterStore: () => stores.monsters,
+vi.mock('@/stores/pawns', () => ({
+  usePawnStore: () => stores.pawns,
 }));
 vi.mock('@/stores/encounters', () => ({
   useEncounterStore: () => stores.encounters,
@@ -88,7 +88,7 @@ describe('coverage gaps: shared components', () => {
         entities: [
           { kind: 'note', id: 'n1' },
           { kind: 'party', id: 'p1' },
-          { kind: 'monster', id: 'mo1' },
+          { kind: 'pawn', id: 'mo1' },
           { kind: 'encounter', id: 'e1' },
           { kind: 'character', id: 'c1' },
           { kind: 'location', id: 'l1' },

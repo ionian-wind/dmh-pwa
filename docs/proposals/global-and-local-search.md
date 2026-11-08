@@ -100,7 +100,7 @@ metadata the entity sidebars already use:
 - outgoing mentions from the mention index;
 - `moduleIds` and module-document notes;
 - party characters;
-- encounter parties, monsters, characters and locations;
+- encounter parties, pawns, characters and locations;
 - explicit entity refs on locations, markers and linked-entity panels.
 
 Do not recursively expand links in v1. Backlinks and two-hop links are a later
@@ -201,7 +201,7 @@ export type SearchKind =
   | 'module'
   | 'party'
   | 'character'
-  | 'monster'
+  | 'pawn'
   | 'encounter'
   | 'location'
   | 'noteType';
@@ -271,7 +271,7 @@ directly.
 
 ### 5.1 Use cases
 
-- `MentionInsertPopup`: notes, modules, parties, monsters, encounters, maps.
+- `MentionInsertPopup`: notes, modules, parties, pawns, encounters, maps.
 - `EntitiesLinking` and entity-link dialogs: all linkable entities.
 - Future tag/icon pickers.
 - Optional list filtering if a view decides to expose a compact filter again.
@@ -356,15 +356,15 @@ interface SearchDocument {
 
 Field mapping:
 
-| Field       | Source                                                               |
-| ----------- | -------------------------------------------------------------------- |
-| `title`     | note title, entity name, timer title, note-type name                 |
-| `subtitle`  | type/category, party/module context, description prefix              |
-| `body`      | note content, descriptions, character/monster notes, encounter notes |
-| `tags`      | note tags and searchable keywords                                    |
-| `kind`      | entity kind tag                                                      |
-| `moduleIds` | module membership tags                                               |
-| `route`     | resolved router path; not indexed, only stored                       |
+| Field       | Source                                                            |
+| ----------- | ----------------------------------------------------------------- |
+| `title`     | note title, entity name, timer title, note-type name              |
+| `subtitle`  | type/category, party/module context, description prefix           |
+| `body`      | note content, descriptions, character/pawn notes, encounter notes |
+| `tags`      | note tags and searchable keywords                                 |
+| `kind`      | entity kind tag                                                   |
+| `moduleIds` | module membership tags                                            |
+| `route`     | resolved router path; not indexed, only stored                    |
 
 Indexing rules:
 
@@ -601,7 +601,7 @@ src/components/common/MentionInsertPopup.vue   # existing, update filtering
 ## 9. Performance targets
 
 Use a reproducible fixture set (for example 2,000 notes averaging 8 kB, 2,000
-characters/monsters, 500 other entities) and measure on a mid-range phone via
+characters/pawns, 500 other entities) and measure on a mid-range phone via
 Chrome tracing.
 
 | Operation                             | Target                         |

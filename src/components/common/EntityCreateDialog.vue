@@ -48,8 +48,8 @@ const editorProps = computed(() => {
       return { note: null, isOpen: true, useModalStack: false };
     case 'party':
       return { party: null, isOpen: true, useModalStack: false };
-    case 'monster':
-      return { monster: null, isOpen: true, useModalStack: false };
+    case 'pawn':
+      return { pawn: null, isOpen: true, useModalStack: false };
     case 'encounter':
       return { encounter: null, isOpen: true, useModalStack: false };
     case 'character':

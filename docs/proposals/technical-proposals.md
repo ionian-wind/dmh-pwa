@@ -41,7 +41,7 @@ Remaining nice-to-have: a dev-time warning for unknown slots.
 
 **Problem.** Stores write one record at a time; there are no cascades,
 cross-store transactions, or foreign-key checks. Deletes leave dangling IDs
-(module → notes, note → tree/bookmarks, character → party, monster → encounter,
+(module → notes, note → tree/bookmarks, character → party, pawn → encounter,
 encounter → combats, track → file).
 
 **Proposal.**

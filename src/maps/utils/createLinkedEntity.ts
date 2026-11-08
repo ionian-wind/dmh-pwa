@@ -1,6 +1,6 @@
 import { useCharacterStore } from '@/stores/characters';
 import { useEncounterStore } from '@/stores/encounters';
-import { useMonsterStore } from '@/stores/monsters';
+import { usePawnStore } from '@/stores/pawns';
 import { useNoteStore } from '@/stores/notes';
 import { usePartyStore } from '@/stores/parties';
 import { useMapLocationStore } from '@/maps/locations';
@@ -41,11 +41,11 @@ export async function createLinkedEntity(
       );
       return { id: party.id, label: party.name };
     }
-    case 'monster': {
-      const monster = await useMonsterStore().create(
+    case 'pawn': {
+      const pawn = await usePawnStore().create(
         stripEntityMeta(payload as Record<string, unknown>) as any,
       );
-      return { id: monster.id, label: monster.name };
+      return { id: pawn.id, label: pawn.name };
     }
     case 'encounter': {
       const encounter = await useEncounterStore().create(

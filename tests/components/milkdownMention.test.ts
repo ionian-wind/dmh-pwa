@@ -63,7 +63,7 @@ describe('milkdown mention plugin helpers', () => {
     expect(items.map((item) => item.kind)).toEqual([
       'note',
       'party',
-      'monster',
+      'pawn',
       'encounter',
       'location',
     ]);
@@ -81,7 +81,7 @@ describe('milkdown mention plugin helpers', () => {
 
     expect(popup).toHaveBeenCalledWith(
       expect.objectContaining({
-        kind: 'monster',
+        kind: 'pawn',
         mentions: [],
         position: { top: 34, left: 20 },
       }),
@@ -131,21 +131,21 @@ describe('milkdown mention plugin helpers', () => {
     expect(
       schema.parseDOM[0].getAttrs({
         getAttribute: (name: string) =>
-          ({ 'data-kind': 'monster', 'data-id': 'm1', href: 'x', title: 'T' })[
+          ({ 'data-kind': 'pawn', 'data-id': 'm1', href: 'x', title: 'T' })[
             name
           ] ?? null,
       }),
-    ).toEqual({ kind: 'monster', id: 'm1', href: 'x', title: 'T' });
+    ).toEqual({ kind: 'pawn', id: 'm1', href: 'x', title: 'T' });
 
     expect(
-      schema.toDOM({ attrs: { kind: 'monster', id: 'm1', href: null } }),
+      schema.toDOM({ attrs: { kind: 'pawn', id: 'm1', href: null } }),
     ).toEqual([
       'a',
       {
-        href: '/monsters/m1',
-        'data-kind': 'monster',
+        href: '/pawns/m1',
+        'data-kind': 'pawn',
         'data-id': 'm1',
-        class: 'internal-link monster-link',
+        class: 'internal-link pawn-link',
         title: undefined,
       },
       0,
@@ -172,14 +172,14 @@ describe('milkdown mention plugin helpers', () => {
     schema.parseMarkdown.runner(
       state,
       {
-        url: 'monster://m1',
+        url: 'pawn://m1',
         title: 'Goblin',
         children: [],
       },
       markType,
     );
     expect(state.openMark).toHaveBeenCalledWith(markType, {
-      kind: 'monster',
+      kind: 'pawn',
       id: 'm1',
       href: null,
       title: 'Goblin',
@@ -225,7 +225,7 @@ describe('milkdown mention plugin helpers', () => {
   });
 
   it('marks the matching mention kind active under the cursor', () => {
-    const mark = { type: { name: 'mention' }, attrs: { kind: 'monster' } };
+    const mark = { type: { name: 'mention' }, attrs: { kind: 'pawn' } };
     const ctx = {
       get: () => ({
         state: {
@@ -236,7 +236,7 @@ describe('milkdown mention plugin helpers', () => {
       }),
     };
 
-    expect(isMentionActive(ctx, 'monster')).toBe(true);
+    expect(isMentionActive(ctx, 'pawn')).toBe(true);
     expect(isMentionActive(ctx, 'note')).toBe(false);
 
     const { builder, items } = createBuilder();
@@ -266,7 +266,7 @@ describe('milkdown mention plugin helpers', () => {
 
   it('clears a mention mark from the cursor', () => {
     const mentionType = { name: 'mention' };
-    const mark = { type: mentionType, attrs: { kind: 'monster' } };
+    const mark = { type: mentionType, attrs: { kind: 'pawn' } };
     const node = { isText: true, nodeSize: 6, marks: [mark] };
     const parent = {
       forEach: (cb: Function) => cb(node, 0),
@@ -283,7 +283,7 @@ describe('milkdown mention plugin helpers', () => {
     };
     const ctx = { get: () => view };
 
-    expect(clearMentionMark(ctx, 'monster')).toBe(true);
+    expect(clearMentionMark(ctx, 'pawn')).toBe(true);
     expect(tr.removeMark).toHaveBeenCalledWith(0, 6, mentionType);
     expect(view.dispatch).toHaveBeenCalledWith(tr);
   });
@@ -306,7 +306,7 @@ describe('milkdown mention plugin helpers', () => {
       focus: vi.fn(),
     };
 
-    expect(clearMentionMark({ get: () => view }, 'monster')).toBe(false);
+    expect(clearMentionMark({ get: () => view }, 'pawn')).toBe(false);
     expect(view.dispatch).not.toHaveBeenCalled();
   });
 });

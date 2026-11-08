@@ -37,7 +37,7 @@ const description = computed(() =>
       </div>
     </template>
 
-    <template v-else-if="kind === 'monster' || kind === 'character'">
+    <template v-else-if="kind === 'pawn' || kind === 'character'">
       <div class="q-pa-md q-gutter-md">
         <div v-if="entity?.notes" class="q-mb-md">
           <h2>{{ t('notes.title') }}</h2>

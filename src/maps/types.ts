@@ -5,7 +5,7 @@ import type { StoredFile, StoredFileSource } from '@/utils/files/types';
 export type MapEntityKind =
   | 'note'
   | 'party'
-  | 'monster'
+  | 'pawn'
   | 'encounter'
   | 'character'
   | 'map'

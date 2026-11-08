@@ -37,7 +37,7 @@ async function mountView(props: Record<string, any> = {}) {
     routes: [
       { path: '/', component: { render: () => h('div') } },
       { path: '/notes', component: { render: () => h('div') } },
-      { path: '/monsters/:id', component: { render: () => h('div') } },
+      { path: '/pawns/:id', component: { render: () => h('div') } },
     ],
   });
   await router.push('/');
@@ -100,19 +100,19 @@ describe('MilkdownView', () => {
   });
 
   it('opens a mention modal for enabled entity links', async () => {
-    seedMockStore('monsters', [{ id: 'm1', name: 'Goblin' }]);
+    seedMockStore('pawns', [{ id: 'm1', name: 'Goblin' }]);
     const modal = useModalState();
     const { wrapper } = await mountView({ enableMentionModal: true });
     const link = appendElement(
       wrapper,
-      '<a class="internal-link monster-link" data-kind="monster" data-id="m1" href="/monsters/m1">Goblin</a>',
+      '<a class="internal-link pawn-link" data-kind="pawn" data-id="m1" href="/pawns/m1">Goblin</a>',
     );
 
     link.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await nextTick();
 
     expect(modal.currentMentionModal.value).toMatchObject({
-      kind: 'monster',
+      kind: 'pawn',
       entity: { id: 'm1' },
     });
     modal.closeMentionModal(

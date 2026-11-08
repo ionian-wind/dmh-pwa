@@ -3,7 +3,7 @@ import type { Component } from 'vue';
 import type { MapEntityKind } from '@/maps/types';
 
 export type EntityLinkKind =
-  'note' | 'party' | 'monster' | 'encounter' | 'character' | 'location';
+  'note' | 'party' | 'pawn' | 'encounter' | 'character' | 'location';
 
 export interface EntityDragData {
   kind: EntityLinkKind;
@@ -20,12 +20,12 @@ export const ENTITY_LINK_ICONS = featureLinkIcons as Record<
 
 /** Target kinds each entity model can represent a link to. */
 export const ENTITY_LINK_TARGETS: Record<EntityLinkKind, EntityLinkKind[]> = {
-  note: ['party', 'monster', 'encounter', 'character', 'location'],
+  note: ['party', 'pawn', 'encounter', 'character', 'location'],
   party: ['note', 'character', 'location'],
   character: ['note', 'party', 'location'],
-  monster: ['note', 'encounter', 'location'],
-  encounter: ['note', 'monster', 'location'],
-  location: ['note', 'party', 'monster', 'encounter', 'character', 'location'],
+  pawn: ['note', 'encounter', 'location'],
+  encounter: ['note', 'pawn', 'location'],
+  location: ['note', 'party', 'pawn', 'encounter', 'character', 'location'],
 };
 
 export function toMapEntityKind(kind: EntityLinkKind): MapEntityKind {

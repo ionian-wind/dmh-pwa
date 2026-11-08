@@ -47,7 +47,7 @@ and combats (optional fields are schema-compatible).
 
 **Value.** Fast keyboard-first workflow at the table.
 
-**Scope.** `Ctrl/Cmd+K` menu: create note/character/monster/encounter,
+**Scope.** `Ctrl/Cmd+K` menu: create note/character/pawn/encounter,
 navigate, run a timer, search across entities. Global shortcut.
 
 **Implementation.** A Vue 3 command menu backed by a command registry, opened
@@ -190,19 +190,19 @@ saving throws, skills, equipment, spells. Conditions in combat.
 **Implementation.** Extend `PlayerCharacter` (schema-compatible optional
 fields), add a tabbed character view, and use AC/HP in combat.
 
-### C2. Rich monster stat blocks (P1)
+### C2. Rich pawn stat blocks (P1)
 
-**Value.** Monsters are name + notes; encounters cannot show AC/HP/attacks.
+**Value.** Pawns are name + notes; encounters cannot show AC/HP/attacks.
 
 **Scope.** CR, AC, HP, speed, ability scores, attacks, traits, actions,
 resistances, legendary actions, source/book reference.
 
-**Implementation.** Extend `Monster` with optional fields; add an import format
+**Implementation.** Extend `Pawn` with optional fields; add an import format
 (e.g., a JSON stat-block paste) later.
 
 ### C3. Encounter difficulty builder (P1)
 
-**Value.** Encounters list monsters and counts only; no budget or difficulty.
+**Value.** Encounters list pawns and counts only; no budget or difficulty.
 
 **Scope.** Compute XP budget by party level/size, show easy/medium/hard/deadly,
 suggest adjustments, save the computed rating.
@@ -412,7 +412,7 @@ FileSystem-handle reconnect flow.
 **Value.** Users may want to share one module or one campaign, not the whole DB.
 
 **Scope.** Export selected entities with references; import merges. For
-example, export a module with its notes, encounters, monsters, and playlists.
+example, export a module with its notes, encounters, pawns, and playlists.
 
 ### G3. Markdown/HTML/PDF export (P1)
 
@@ -437,7 +437,7 @@ backups, then a provider adapter.
 **Value.** Deletes leave orphans and imports can create broken references.
 
 **Scope.** A Home/settings panel listing orphaned notes, tree nodes, party
-members, encounter monsters, bookmarks, and track files, with one-click cleanup.
+members, encounter pawns, bookmarks, and track files, with one-click cleanup.
 
 ---
 
@@ -489,7 +489,7 @@ preferences, data repair, about/version, and install instructions.
 not.
 
 **Scope.** Add tag/type/module filters to notes, module/level filters to
-monsters/encounters, saved filters, and a global search in the shell.
+pawns/encounters, saved filters, and a global search in the shell.
 
 ---
 

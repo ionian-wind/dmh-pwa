@@ -26,7 +26,7 @@ const store = useAmbientSoundStore();
 
 const linkKinds = [
   'location',
-  'monster',
+  'pawn',
   'character',
   'encounter',
 ] as const satisfies readonly MapEntityKind[];

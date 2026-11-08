@@ -65,7 +65,7 @@ export interface NormalizedSoundPack extends SoundPackManifest {
 }
 
 export type SceneLinkEntityType =
-  'location' | 'monster' | 'encounter' | 'character';
+  'location' | 'pawn' | 'encounter' | 'character';
 
 export interface SceneEntityLink {
   id: string;

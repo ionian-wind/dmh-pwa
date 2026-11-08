@@ -84,7 +84,7 @@ const editorTabs = useEntityEditorTabs();
 const relations = useEntityLinkRelations();
 const noteLinkKinds = [
   'character',
-  'monster',
+  'pawn',
   'party',
   'encounter',
   'location',

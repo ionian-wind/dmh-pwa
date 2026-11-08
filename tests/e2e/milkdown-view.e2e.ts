@@ -16,7 +16,7 @@ test('renders note content with the Milkdown view and toggles tasks', async ({
     '- [ ] Task one',
     '- [x] Task two',
     '',
-    '[Goblin](monster://m1)',
+    '[Goblin](pawn://m1)',
     '',
     '#harbor',
     '',
@@ -30,7 +30,7 @@ test('renders note content with the Milkdown view and toggles tasks', async ({
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
-      const tx = db.transaction(['notes', 'monsters'], 'readwrite');
+      const tx = db.transaction(['notes', 'pawns'], 'readwrite');
       tx.objectStore('notes').put({
         id: noteId,
         title: 'Milkdown view e2e',
@@ -40,7 +40,7 @@ test('renders note content with the Milkdown view and toggles tasks', async ({
         createdAt: now,
         updatedAt: now,
       });
-      tx.objectStore('monsters').put({
+      tx.objectStore('pawns').put({
         id: 'm1',
         name: 'Goblin',
         type: 'Beast',

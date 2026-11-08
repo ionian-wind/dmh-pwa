@@ -4,7 +4,7 @@
 
 Run an encounter against a party: initiative order, rounds, turns, postpone,
 and completion. A combat is a persisted snapshot of selected characters and
-monster instances.
+pawn instances.
 
 ## Key files
 
@@ -65,7 +65,7 @@ Opened from `EncountersView` or `EncounterView`.
 3. Renders each party character with a toggle.
 4. `handleCreateCombat`:
    - Collects selected characters from `characterStore.items`.
-   - Collects encounter monsters and expands each count into separate
+   - Collects encounter pawns and expands each count into separate
      combatants.
    - Creates combatants with `id: generateId()` where `generateId` is a local
      `Math.random().toString(36).substr(2, 9)` — not `nanoid`.
@@ -84,7 +84,7 @@ Notes:
 
 ## Combat runner (`CombatView.vue`)
 
-Loads characters, monsters, combats, encounters, parties.
+Loads characters, pawns, combats, encounters, parties.
 
 ### Initialization
 
@@ -113,8 +113,8 @@ the combat is already populated, so the watcher does not re-run.
     the sorted combatants.
 - "Add participant" modal lists party characters not already in the combat;
   selected characters are appended and persisted via `combatStore.update`.
-- Monster combatants can only be added by creating a new combat; there is no
-  add-monster UI.
+- Pawn combatants can only be added by creating a new combat; there is no
+  add-pawn UI.
 
 ### Active
 
@@ -144,7 +144,7 @@ the combat is already populated, so the watcher does not re-run.
 
 - Participant name resolution:
   - player → `characterStore.getById(referenceId)?.name`
-  - monster → `monsterStore.getById(referenceId)?.name`, with `#n` suffix when
+  - pawn → `pawnStore.getById(referenceId)?.name`, with `#n` suffix when
     multiple combatants share the reference.
 - `activeTab` is a read-only computed derived from `status`; `QTabs` receives
   it with `:model-value` so there is no readonly-computed warning. Content
@@ -186,6 +186,6 @@ The pure transitions live in `src/utils/combatTurn.ts` and are covered by
 - No drag reordering of initiative.
 - No auto-roll initiative.
 - No encounter link or "save back to encounter".
-- No cleanup of combats when encounter/party/character/monster is deleted.
+- No cleanup of combats when encounter/party/character/pawn is deleted.
 - Stale in-memory mutations can be overwritten by a `pinia-shared-state` update
   from another tab.

@@ -12,7 +12,7 @@ describe('static Milkdown renderer', () => {
         '- [x] Done task',
         '- [ ] Open task',
         '',
-        '[Goblin](monster://m1)',
+        '[Goblin](pawn://m1)',
       ].join('\n'),
     );
 
@@ -21,6 +21,6 @@ describe('static Milkdown renderer', () => {
     expect(html).toContain('class="tag-link"');
     expect(html).toContain('data-tag="harbor"');
     expect(html).toContain('task-list-checkbox');
-    expect(html).toContain('internal-link monster-link');
+    expect(html).toContain('internal-link pawn-link');
   });
 });

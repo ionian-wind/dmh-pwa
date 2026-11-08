@@ -15,14 +15,14 @@ describe('note store', () => {
     const store = useNoteStore();
     const created = await store.create({
       title: 'Session',
-      content: 'See [Alice](monster://m1)',
+      content: 'See [Alice](pawn://m1)',
       typeId: null,
       tags: ['session'],
     });
 
     expect(mentionsMock.setLinks).toHaveBeenCalledWith(
       { kind: 'note', id: created.id },
-      [{ kind: 'monster', id: 'm1' }],
+      [{ kind: 'pawn', id: 'm1' }],
     );
 
     await store.update(created.id, {

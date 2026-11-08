@@ -96,7 +96,7 @@ describe('entity drag linking UI', () => {
     );
     expect(cards.map((card) => card.attributes('aria-label'))).toEqual([
       'Parties',
-      'Monsters',
+      'Pawns',
       'Encounters',
       'Characters',
       'Locations',
@@ -141,7 +141,7 @@ describe('entity drag linking UI', () => {
 
   it('cancels the overlay when dropping on its background', async () => {
     const drag = useEntityDragLinking();
-    drag.startDrag({ kind: 'monster', id: 'mo1', title: 'Monster' });
+    drag.startDrag({ kind: 'pawn', id: 'mo1', title: 'Pawn' });
 
     const wrapper = mount(EntityDragLinkingOverlay, {
       global: {

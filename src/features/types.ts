@@ -5,7 +5,7 @@ export type FeatureId =
   | 'notes'
   | 'characters'
   | 'parties'
-  | 'monsters'
+  | 'pawns'
   | 'encounters'
   | 'maps'
   | 'jukebox'

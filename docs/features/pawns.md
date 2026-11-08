@@ -1,25 +1,25 @@
-# Monsters
+# Pawns
 
 ## Purpose
 
-Monster/NPC records used by encounters and combats. Like characters, the
+Pawn/NPC records used by encounters and combats. Like characters, the
 current record is intentionally minimal: name and notes.
 
 ## Key files
 
-| File                                  | Role                           |
-| ------------------------------------- | ------------------------------ |
-| `src/stores/monsters.ts`              | Store + name search            |
-| `src/monsters/MonstersView.vue`       | List page                      |
-| `src/monsters/MonsterCard.vue`        | Card                           |
-| `src/monsters/MonsterEditor.vue`      | Create/edit modal              |
-| `src/monsters/MonsterView.vue`        | Detail page                    |
-| `src/monsters/MonsterViewSidebar.vue` | Mentions + scene links sidebar |
+| File                            | Role                           |
+| ------------------------------- | ------------------------------ |
+| `src/stores/pawns.ts`           | Store + name search            |
+| `src/pawns/PawnsView.vue`       | List page                      |
+| `src/pawns/PawnCard.vue`        | Card                           |
+| `src/pawns/PawnEditor.vue`      | Create/edit modal              |
+| `src/pawns/PawnView.vue`        | Detail page                    |
+| `src/pawns/PawnViewSidebar.vue` | Mentions + scene links sidebar |
 
 ## Data
 
 ```ts
-interface Monster {
+interface Pawn {
   id: string;
   createdAt: number;
   updatedAt: number;
@@ -30,10 +30,10 @@ interface Monster {
 
 Schema requires `id`, `name`, timestamps; optional `notes`.
 
-## List page (`MonstersView.vue`)
+## List page (`PawnsView.vue`)
 
-- Loads monsters on mount.
-- Passes `showActions: true` plus `onView`/`onEdit`/`onDelete` to `MonsterCard`.
+- Loads pawns on mount.
+- Passes `showActions: true` plus `onView`/`onEdit`/`onDelete` to `PawnCard`.
 - Binds `@view`, `@delete`, `@submit`, and `@copy`.
 - Delete uses the app confirm dialog.
 - Copy strips IDs/timestamps and creates a duplicate.
@@ -54,22 +54,22 @@ Schema requires `id`, `name`, timestamps; optional `notes`.
 `showActions` defaults to `undefined`, so all three actions are hidden unless a
 caller explicitly passes it. No caller passes it.
 
-## Editor (`MonsterEditor.vue`)
+## Editor (`PawnEditor.vue`)
 
 - Name (required) and notes using the shared Markdown editor with visual/raw
   toggle and formatting help.
 - Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
 - The linked-entities tab edits encounters and locations through
   `EntitiesLinking`.
-- `watch(props.monster, { deep: true })` copies the record; `watch(isOpen)`
-  resets when closing or when no monster is selected.
-- Emits a full `Monster` object including id/timestamps; the store update
+- `watch(props.pawn, { deep: true })` copies the record; `watch(isOpen)`
+  resets when closing or when no pawn is selected.
+- Emits a full `Pawn` object including id/timestamps; the store update
   ignores/overrides timestamps.
 - Validation only checks the name.
 
-## Detail page (`MonsterView.vue`)
+## Detail page (`PawnView.vue`)
 
-- Loads monsters, encounters and locations.
+- Loads pawns, encounters and locations.
 - Uses the shared inline View/Edit experience:
   - View mode renders `notes` as Markdown inside `EntityContentSurface`.
   - Edit mode uses `EntityInlineEditor` + `EntityMarkdownEditor`; switching
@@ -80,24 +80,24 @@ caller explicitly passes it. No caller passes it.
     **Main editor/Linked entities**.
 - The **Linked entities** tab shows encounters and locations.
   Encounter/location links use the shared relation helpers.
-- Delete asks for confirmation; `BaseEntityTabView` navigates to `/monsters`.
+- Delete asks for confirmation; `BaseEntityTabView` navigates to `/pawns`.
 
 ## Sidebar
 
-`MonsterViewSidebar` displays linked ambient scenes plus outgoing and incoming
+`PawnViewSidebar` displays linked ambient scenes plus outgoing and incoming
 mentions in **Scenes** and **Mentions** tabs, with Mentions last. It hosts the
 shared View/Edit and visual-editor controls; Mentions is hidden while editing,
 leaving the Scenes tab.
 
 ## Relationships
 
-- `encounter.pawns` maps monster IDs to pawn counts.
-- `combat.combatants[].referenceId` → monster IDs.
+- `encounter.pawns` maps pawn IDs to pawn counts.
+- `combat.combatants[].referenceId` → pawn IDs.
 
 ## Limitations
 
 - No stat block, CR, HP, AC, attacks, abilities, or tokens.
-- No duplicate/monster-instance naming (combat display appends `#n` for
+- No duplicate/pawn-instance naming (combat display appends `#n` for
   multiple references).
-- Deleting a monster leaves encounter rosters and historical combatants with
+- Deleting a pawn leaves encounter rosters and historical combatants with
   dangling IDs.

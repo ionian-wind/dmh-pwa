@@ -16,7 +16,8 @@ import migration14 from './0000000014_drawings';
 import migration15 from './0000000015_remove_note_content_type';
 import migration16 from './0000000016_strip_escaped_block_anchor_spaces';
 import migration17 from './0000000017_remove_encounter_notes';
-import migration18 from './0000000018_rename_encounter_monsters_to_pawns';
+import migration18 from './0000000018_rename_encounter_field_to_pawns';
+import migration19 from './0000000019_rename_pawn_store';
 
 export const migrations: Migration[] = [
   initialSchemaMigration,
@@ -36,6 +37,7 @@ export const migrations: Migration[] = [
   migration16,
   migration17,
   migration18,
+  migration19,
 ];
 
 // Sort migrations by version to ensure they run in order

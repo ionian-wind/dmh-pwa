@@ -50,7 +50,7 @@ describe('SceneLinksPanel', () => {
     const selectors = wrapper.findAllComponents(EntitiesLinkingStub);
     expect(selectors.map((selector) => selector.props('kind'))).toEqual([
       'location',
-      'monster',
+      'pawn',
       'character',
       'encounter',
     ]);
@@ -68,14 +68,14 @@ describe('SceneLinksPanel', () => {
 
     wrapper
       .findAllComponents(EntitiesLinkingStub)[1]
-      .vm.$emit('update:modelValue', [{ kind: 'monster', id: 'monster-1' }]);
+      .vm.$emit('update:modelValue', [{ kind: 'pawn', id: 'pawn-1' }]);
 
     expect(storeMock.removeSceneLink).toHaveBeenCalledWith('link-1');
     expect(storeMock.addSceneLink).toHaveBeenCalledWith(
       'pack-1',
       'scene-1',
-      'monster',
-      'monster-1',
+      'pawn',
+      'pawn-1',
     );
     wrapper.unmount();
   });

@@ -36,7 +36,7 @@ async function mountHome() {
       { path: '/', component: { render: () => h('div') } },
       { path: '/notes', component: { render: () => h('div') } },
       { path: '/parties', component: { render: () => h('div') } },
-      { path: '/monsters', component: { render: () => h('div') } },
+      { path: '/pawns', component: { render: () => h('div') } },
       { path: '/encounters', component: { render: () => h('div') } },
       { path: '/characters', component: { render: () => h('div') } },
     ],
@@ -76,7 +76,7 @@ describe('HomeView', () => {
     ]);
     seedMockStore('characters', [{ id: 'c1', name: 'Hero' }]);
     seedMockStore('parties', [{ id: 'p1', name: 'Party' }]);
-    seedMockStore('monsters', [{ id: 'm1', name: 'Monster' }]);
+    seedMockStore('pawns', [{ id: 'm1', name: 'Pawn' }]);
     seedMockStore('encounters', [{ id: 'e1', name: 'Encounter' }]);
 
     const wrapper = await mountHome();

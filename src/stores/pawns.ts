@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Monster } from '@/types';
+import type { Pawn } from '@/types';
 import { useStore } from '@/utils/storage';
-import monsterSchema from '@/schemas/monster.schema.json';
+import pawnSchema from '@/schemas/pawn.schema.json';
 
-export const useMonsterStore = defineStore('monsters', () => {
-  const base = useStore<Monster>({
-    storeName: 'monsters',
-    validationSchema: monsterSchema,
+export const usePawnStore = defineStore('pawns', () => {
+  const base = useStore<Pawn>({
+    storeName: 'pawns',
+    validationSchema: pawnSchema,
   });
   const searchQuery = ref('');
 
@@ -15,9 +15,7 @@ export const useMonsterStore = defineStore('monsters', () => {
     let result = base.items.value;
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      result = result.filter((monster) =>
-        monster.name.toLowerCase().includes(query),
-      );
+      result = result.filter((pawn) => pawn.name.toLowerCase().includes(query));
     }
 
     return result;

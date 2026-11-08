@@ -78,8 +78,8 @@ const kindLabel = computed(() => {
       return t('notes.title');
     case 'party':
       return t('parties.title');
-    case 'monster':
-      return t('monsters.title');
+    case 'pawn':
+      return t('pawns.title');
     case 'encounter':
       return t('encounters.title');
     case 'map':

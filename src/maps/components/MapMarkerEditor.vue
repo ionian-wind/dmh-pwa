@@ -47,12 +47,7 @@ watch(
 );
 
 const editorTabs = useEntityEditorTabs();
-const linkKinds: MapEntityKind[] = [
-  'note',
-  'monster',
-  'encounter',
-  'character',
-];
+const linkKinds: MapEntityKind[] = ['note', 'pawn', 'encounter', 'character'];
 
 const linkedLocation = computed<MapEntityRef[]>(() =>
   draft.value.locationId

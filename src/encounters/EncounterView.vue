@@ -3,10 +3,10 @@ import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
-import { useMonsterStore } from '@/stores/monsters';
+import { usePawnStore } from '@/stores/pawns';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
-import type { Encounter, Monster, Combat } from '@/types';
+import type { Encounter, Pawn, Combat } from '@/types';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
@@ -32,7 +32,7 @@ const router = useRouter();
 const { t } = useI18n();
 const relations = useEntityLinkRelations();
 const encounterStore = useEncounterStore();
-const monsterStore = useMonsterStore();
+const pawnStore = usePawnStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
 
@@ -98,11 +98,11 @@ const handleCancel = () => {
 };
 
 // Computed properties for pawn linking
-const allMonsters = computed(() => monsterStore.filtered);
+const allPawns = computed(() => pawnStore.filtered);
 const encounterPawns = computed(() => {
   if (!encounter.value || !encounter.value.pawns) return [];
-  return allMonsters.value.filter((monster) =>
-    Object.keys(encounter.value!.pawns).includes(monster.id),
+  return allPawns.value.filter((pawn) =>
+    Object.keys(encounter.value!.pawns).includes(pawn.id),
   );
 });
 
@@ -119,9 +119,9 @@ watch(
     }
 
     const linked = Object.keys(newPawns);
-    linkedPawns.value = allMonsters.value.reduce(
-      (acc, monster) => {
-        acc[monster.id] = linked.includes(monster.id);
+    linkedPawns.value = allPawns.value.reduce(
+      (acc, pawn) => {
+        acc[pawn.id] = linked.includes(pawn.id);
         return acc;
       },
       {} as Record<string, boolean>,
@@ -130,9 +130,9 @@ watch(
   { immediate: true },
 );
 
-// Update linked pawns when allMonsters changes
+// Update linked pawns when allPawns changes
 watch(
-  allMonsters,
+  allPawns,
   (newPawns) => {
     if (!encounter.value?.pawns) {
       linkedPawns.value = {};
@@ -141,8 +141,8 @@ watch(
 
     const linked = Object.keys(encounter.value.pawns);
     linkedPawns.value = newPawns.reduce(
-      (acc, monster) => {
-        acc[monster.id] = linked.includes(monster.id);
+      (acc, pawn) => {
+        acc[pawn.id] = linked.includes(pawn.id);
         return acc;
       },
       {} as Record<string, boolean>,
@@ -151,13 +151,13 @@ watch(
   { immediate: true },
 );
 
-const handleTogglePawn = (monster: Monster, isLinked: boolean) => {
+const handleTogglePawn = (pawn: Pawn, isLinked: boolean) => {
   if (!encounter.value) return;
   const pawns = encounter.value.pawns || {};
   if (isLinked) {
-    pawns[monster.id] = 1;
+    pawns[pawn.id] = 1;
   } else {
-    delete pawns[monster.id];
+    delete pawns[pawn.id];
   }
   encounterStore.update(encounter.value.id, { pawns });
   // Force a reactive update by reassigning the encounter
@@ -254,22 +254,22 @@ const tabs = computed(() => [
   },
 ]);
 
-const handleModalTogglePawn = (monsterId: string, isLinked: boolean) => {
+const handleModalTogglePawn = (pawnId: string, isLinked: boolean) => {
   const current = { ...localPawns.value };
   if (isLinked) {
-    if (current[monsterId] === undefined) {
-      current[monsterId] = 1;
+    if (current[pawnId] === undefined) {
+      current[pawnId] = 1;
     }
   } else {
-    delete current[monsterId];
+    delete current[pawnId];
   }
   localPawns.value = current;
 };
 
-const handleModalQuantityChange = (monsterId: string, count: number) => {
-  if (localPawns.value[monsterId] === undefined) return;
+const handleModalQuantityChange = (pawnId: string, count: number) => {
+  if (localPawns.value[pawnId] === undefined) return;
   const newCount = Math.max(1, count || 1);
-  localPawns.value[monsterId] = newCount;
+  localPawns.value[pawnId] = newCount;
 };
 
 const handleSavePawnLinks = async () => {
@@ -280,15 +280,15 @@ const handleSavePawnLinks = async () => {
   showLinkModal.value = false;
 };
 
-const openQuantityModal = async (monster: Monster) => {
+const openQuantityModal = async (pawn: Pawn) => {
   if (!encounter.value) return;
   const value = await prompt(
     t('encounters.pawns.setQuantityFor', {
-      pawnName: monster.name,
+      pawnName: pawn.name,
     }),
     {
       inputType: 'number',
-      modelValue: String(encounter.value.pawns?.[monster.id] || 1),
+      modelValue: String(encounter.value.pawns?.[pawn.id] || 1),
     },
   );
   if (value === null) return;
@@ -296,7 +296,7 @@ const openQuantityModal = async (monster: Monster) => {
 
   if (isNaN(count) || count < 1) return;
   const pawns = { ...encounter.value.pawns };
-  pawns[monster.id] = count;
+  pawns[pawn.id] = count;
   await encounterStore.update(encounter.value.id, { pawns });
 };
 
@@ -305,7 +305,7 @@ const rightDrawer = useRightDrawer();
 onMounted(async () => {
   await Promise.all([
     encounterStore.load(),
-    monsterStore.load(),
+    pawnStore.load(),
     combatStore.load(),
     partyStore.load(),
     relations.loadFor('encounter', 'note'),
@@ -374,27 +374,27 @@ async function handleEditorDelete() {
             <table class="q-table">
               <thead>
                 <tr>
-                  <th>{{ t('monsters.fields.name') }}</th>
+                  <th>{{ t('pawns.fields.name') }}</th>
                   <th>{{ t('common.quantity') }}</th>
                   <th>{{ t('common.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="monster in encounterPawns" :key="monster.id">
+                <tr v-for="pawn in encounterPawns" :key="pawn.id">
                   <td>
-                    <router-link :to="`/monsters/${monster.id}`">
-                      {{ monster.name }}
+                    <router-link :to="`/pawns/${pawn.id}`">
+                      {{ pawn.name }}
                     </router-link>
                   </td>
                   <td>
-                    <QBtn flat @click="openQuantityModal(monster)">
-                      {{ encounter?.pawns[monster.id] }}
+                    <QBtn flat @click="openQuantityModal(pawn)">
+                      {{ encounter?.pawns[pawn.id] }}
                     </QBtn>
                   </td>
                   <td>
                     <button
                       class="unlink-btn"
-                      @click="handleTogglePawn(monster, false)"
+                      @click="handleTogglePawn(pawn, false)"
                     >
                       {{ t('common.unlink') }}
                     </button>
@@ -471,31 +471,31 @@ async function handleEditorDelete() {
       :cancel-label="t('common.cancel')"
       :submit-label="t('common.save')"
     >
-      <div v-if="allMonsters.length === 0" class="empty-state">
+      <div v-if="allPawns.length === 0" class="empty-state">
         <p>{{ t('encounters.pawns.noneAvailable') }}</p>
       </div>
       <div v-else class="pawns-grid">
         <table>
           <thead>
             <tr>
-              <th>{{ t('monsters.fields.name') }}</th>
+              <th>{{ t('pawns.fields.name') }}</th>
               <th>{{ t('common.quantity') }}</th>
               <th>{{ t('common.linked') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="monster in allMonsters" :key="monster.id">
-              <td>{{ monster.name }}</td>
+            <tr v-for="pawn in allPawns" :key="pawn.id">
+              <td>{{ pawn.name }}</td>
               <td>
                 <QInput
-                  v-if="localPawns[monster.id] !== undefined"
+                  v-if="localPawns[pawn.id] !== undefined"
                   type="number"
                   class="count-input"
-                  :model-value="localPawns[monster.id] || 1"
+                  :model-value="localPawns[pawn.id] || 1"
                   @update:model-value="
                     (val) =>
                       handleModalQuantityChange(
-                        monster.id,
+                        pawn.id,
                         parseInt(String(val ?? '')),
                       )
                   "
@@ -506,10 +506,8 @@ async function handleEditorDelete() {
               </td>
               <td>
                 <ToggleSwitch
-                  :model-value="localPawns[monster.id] !== undefined"
-                  @update:model-value="
-                    handleModalTogglePawn(monster.id, $event)
-                  "
+                  :model-value="localPawns[pawn.id] !== undefined"
+                  @update:model-value="handleModalTogglePawn(pawn.id, $event)"
                 />
               </td>
             </tr>

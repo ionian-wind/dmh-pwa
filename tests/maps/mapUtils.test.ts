@@ -372,7 +372,7 @@ describe('map entity references', () => {
       expect.arrayContaining([
         'note',
         'party',
-        'monster',
+        'pawn',
         'encounter',
         'character',
         'location',
@@ -397,14 +397,14 @@ describe('map entity references', () => {
     const refs = [
       { kind: 'note' as const, id: 'n1' },
       { kind: 'note' as const, id: 'n1' },
-      { kind: 'monster' as const, id: 'n1' },
+      { kind: 'pawn' as const, id: 'n1' },
       { kind: 'map' as const, id: 'map1' },
     ];
 
     expect(entityRefKey(refs[0])).toBe('note:n1');
     expect(dedupeEntityRefs(refs)).toEqual([
       { kind: 'note', id: 'n1' },
-      { kind: 'monster', id: 'n1' },
+      { kind: 'pawn', id: 'n1' },
       { kind: 'map', id: 'map1' },
     ]);
   });

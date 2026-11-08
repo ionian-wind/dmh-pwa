@@ -27,8 +27,8 @@ vi.mock('@/stores/parties', async () => ({
 vi.mock('@/stores/characters', async () => ({
   useCharacterStore: () => mocks.stores.character,
 }));
-vi.mock('@/stores/monsters', async () => ({
-  useMonsterStore: () => mocks.stores.monster,
+vi.mock('@/stores/pawns', async () => ({
+  usePawnStore: () => mocks.stores.pawn,
 }));
 vi.mock('@/stores/encounters', async () => ({
   useEncounterStore: () => mocks.stores.encounter,
@@ -42,7 +42,7 @@ import { useEntityLinkRelations } from '@/components/common/entityDragLinking/re
 async function seedStores() {
   await makeStore('note');
   await makeStore('party');
-  await makeStore('monster');
+  await makeStore('pawn');
   await makeStore('encounter');
   await makeStore('character');
   await makeStore('location');
@@ -53,7 +53,7 @@ async function seedStores() {
     { id: 'p2', characters: [] },
   ];
   mocks.stores.character.items.value = [{ id: 'c1' }, { id: 'c2' }];
-  mocks.stores.monster.items.value = [{ id: 'mo1' }, { id: 'mo2' }];
+  mocks.stores.pawn.items.value = [{ id: 'mo1' }, { id: 'mo2' }];
   mocks.stores.encounter.items.value = [
     { id: 'e1', pawns: {} },
     { id: 'e2', pawns: {} },
@@ -96,18 +96,18 @@ describe('entity drag link relations', () => {
     ]);
   });
 
-  it('links notes to parties, monsters, encounters and characters', async () => {
+  it('links notes to parties, pawns, encounters and characters', async () => {
     const relations = useEntityLinkRelations();
     const note = mocks.stores.note.items.value[0];
     note.links = [
       { kind: 'party', id: 'p1' },
-      { kind: 'monster', id: 'mo1' },
+      { kind: 'pawn', id: 'mo1' },
       { kind: 'encounter', id: 'e1' },
       { kind: 'character', id: 'c1' },
     ];
 
     expect(relations.getLinkedIds('note', 'n1', 'party')).toEqual(['p1']);
-    expect(relations.getLinkedIds('note', 'n1', 'monster')).toEqual(['mo1']);
+    expect(relations.getLinkedIds('note', 'n1', 'pawn')).toEqual(['mo1']);
     expect(relations.getLinkedIds('note', 'n1', 'encounter')).toEqual(['e1']);
     expect(relations.getLinkedIds('note', 'n1', 'character')).toEqual(['c1']);
 
@@ -115,24 +115,24 @@ describe('entity drag link relations', () => {
     expect(note.links.filter((link: any) => link.kind === 'party')).toEqual([
       { kind: 'party', id: 'p2' },
     ]);
-    expect(note.links.filter((link: any) => link.kind === 'monster')).toEqual([
-      { kind: 'monster', id: 'mo1' },
+    expect(note.links.filter((link: any) => link.kind === 'pawn')).toEqual([
+      { kind: 'pawn', id: 'mo1' },
     ]);
   });
 
-  it('links parties, monsters, encounters and characters back to notes', async () => {
+  it('links parties, pawns, encounters and characters back to notes', async () => {
     const relations = useEntityLinkRelations();
     const note1 = mocks.stores.note.items.value[0];
     const note2 = mocks.stores.note.items.value[1];
     note1.links = [
       { kind: 'party', id: 'p1' },
-      { kind: 'monster', id: 'mo1' },
+      { kind: 'pawn', id: 'mo1' },
       { kind: 'encounter', id: 'e1' },
       { kind: 'character', id: 'c1' },
     ];
 
     expect(relations.getLinkedIds('party', 'p1', 'note')).toEqual(['n1']);
-    expect(relations.getLinkedIds('monster', 'mo1', 'note')).toEqual(['n1']);
+    expect(relations.getLinkedIds('pawn', 'mo1', 'note')).toEqual(['n1']);
     expect(relations.getLinkedIds('encounter', 'e1', 'note')).toEqual(['n1']);
     expect(relations.getLinkedIds('character', 'c1', 'note')).toEqual(['n1']);
 
@@ -182,22 +182,18 @@ describe('entity drag link relations', () => {
     ]);
   });
 
-  it('links monsters to encounters and locations', async () => {
+  it('links pawns to encounters and locations', async () => {
     const relations = useEntityLinkRelations();
     mocks.stores.encounter.items.value[0].pawns = { mo1: 3 };
     mocks.stores.location.items.value[0].entities = [
-      { kind: 'monster', id: 'mo1' },
+      { kind: 'pawn', id: 'mo1' },
     ];
 
-    expect(relations.getLinkedIds('monster', 'mo1', 'encounter')).toEqual([
-      'e1',
-    ]);
-    expect(relations.getLinkedIds('monster', 'mo1', 'location')).toEqual([
-      'l1',
-    ]);
+    expect(relations.getLinkedIds('pawn', 'mo1', 'encounter')).toEqual(['e1']);
+    expect(relations.getLinkedIds('pawn', 'mo1', 'location')).toEqual(['l1']);
 
-    await relations.setLinkedIds('monster', 'mo1', 'encounter', ['e2']);
-    await relations.setLinkedIds('monster', 'mo1', 'location', []);
+    await relations.setLinkedIds('pawn', 'mo1', 'encounter', ['e2']);
+    await relations.setLinkedIds('pawn', 'mo1', 'location', []);
     expect(mocks.stores.encounter.items.value[0].pawns).toEqual({});
     expect(mocks.stores.encounter.items.value[1].pawns).toEqual({
       mo1: 1,
@@ -205,21 +201,19 @@ describe('entity drag link relations', () => {
     expect(mocks.stores.location.items.value[0].entities).toEqual([]);
   });
 
-  it('links encounters to monsters and locations', async () => {
+  it('links encounters to pawns and locations', async () => {
     const relations = useEntityLinkRelations();
     mocks.stores.encounter.items.value[0].pawns = { mo1: 2 };
     mocks.stores.location.items.value[0].entities = [
       { kind: 'encounter', id: 'e1' },
     ];
 
-    expect(relations.getLinkedIds('encounter', 'e1', 'monster')).toEqual([
-      'mo1',
-    ]);
+    expect(relations.getLinkedIds('encounter', 'e1', 'pawn')).toEqual(['mo1']);
     expect(relations.getLinkedIds('encounter', 'e1', 'location')).toEqual([
       'l1',
     ]);
 
-    await relations.setLinkedIds('encounter', 'e1', 'monster', ['mo2']);
+    await relations.setLinkedIds('encounter', 'e1', 'pawn', ['mo2']);
     await relations.setLinkedIds('encounter', 'e1', 'location', ['l2']);
     expect(mocks.stores.encounter.items.value[0].pawns).toEqual({
       mo2: 1,
@@ -234,7 +228,7 @@ describe('entity drag link relations', () => {
     mocks.stores.location.items.value[0].entities = [
       { kind: 'note', id: 'n1' },
       { kind: 'party', id: 'p1' },
-      { kind: 'monster', id: 'mo1' },
+      { kind: 'pawn', id: 'mo1' },
       { kind: 'encounter', id: 'e1' },
       { kind: 'character', id: 'c1' },
       { kind: 'location', id: 'l2' },
@@ -243,7 +237,7 @@ describe('entity drag link relations', () => {
     for (const kind of [
       'note',
       'party',
-      'monster',
+      'pawn',
       'encounter',
       'character',
       'location',

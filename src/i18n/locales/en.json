@@ -36,7 +36,7 @@
     "home": "Home",
     "notes": "Notes",
     "parties": "Parties",
-    "monsters": "Monsters",
+    "pawns": "Pawns",
     "characters": "Characters",
     "encounters": "Encounters",
     "combats": "Combats",
@@ -55,7 +55,7 @@
     "stats": {
       "notes": "Notes",
       "parties": "Parties",
-      "monsters": "Monsters",
+      "pawns": "Pawns",
       "characters": "Characters",
       "encounters": "Encounters"
     }
@@ -93,11 +93,11 @@
     },
     "linkCharacters": "Link Characters"
   },
-  "monsters": {
-    "title": "Monsters",
-    "create": "Create Monster",
-    "edit": "Edit Monster",
-    "delete": "Delete Monster",
+  "pawns": {
+    "title": "Pawns",
+    "create": "Create Pawn",
+    "edit": "Edit Pawn",
+    "delete": "Delete Pawn",
     "fields": {
       "name": "Name",
       "type": "Type",
@@ -231,7 +231,7 @@
     "confirmDelete": "Are you sure you want to delete {title}?",
     "empty": "No items found",
     "emptyNotes": "No notes yet. Create your first note to get started!",
-    "emptyMonsters": "No monsters yet. Create your first monster to get started!",
+    "emptyPawns": "No pawns yet. Create your first pawn to get started!",
     "emptyParties": "No parties yet. Create your first party to get started!",
     "emptyEncounters": "No encounters yet. Create your first encounter to get started!",
     "emptyCharacters": "No characters yet. Create your first character to get started!",
@@ -339,7 +339,7 @@
     "entityAccusative": {
       "note": "Note",
       "party": "Party",
-      "monster": "Monster",
+      "pawn": "Pawn",
       "encounter": "Encounter",
       "character": "Character",
       "location": "Location"
@@ -379,7 +379,7 @@
   "statCard": {
     "notes": "Notes",
     "parties": "Parties",
-    "monsters": "Monsters",
+    "pawns": "Pawns",
     "characters": "Characters",
     "encounters": "Encounters"
   },
@@ -840,7 +840,7 @@
     "noAmbiencesInScene": "No ambiences in this scene",
     "noOneShotsInScene": "No one-shots in this scene",
     "noSceneLinks": "No linked scenes",
-    "sceneLinksHint": "Link scenes from a location, monster, encounter or character.",
+    "sceneLinksHint": "Link scenes from a location, pawn, encounter or character.",
     "sceneMain": "Main",
     "ambiences": "Ambiences",
     "description": "Description",

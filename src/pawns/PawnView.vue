@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useMonsterStore } from '@/stores/monsters';
-import type { Monster } from '@/types';
+import { usePawnStore } from '@/stores/pawns';
+import type { Pawn } from '@/types';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
@@ -16,7 +16,7 @@ import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
-import MonsterViewSidebar from '@/monsters/MonsterViewSidebar.vue';
+import PawnViewSidebar from '@/pawns/PawnViewSidebar.vue';
 import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
@@ -26,40 +26,38 @@ import { IconHelp } from '@tabler/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
-const monsterStore = useMonsterStore();
+const pawnStore = usePawnStore();
 const featureStores = useFeatureStores();
 const relations = useEntityLinkRelations();
 const { t, locale } = useI18n();
 
-const monster = ref<Monster | null>(null);
+const pawn = ref<Pawn | null>(null);
 const activeTab = ref('main');
 const viewTabs = useEntityViewTabs();
 const editorTabs = useEntityEditorTabs();
-const notFound = computed(() => monsterStore.isLoaded && !monster.value);
+const notFound = computed(() => pawnStore.isLoaded && !pawn.value);
 const validationError = ref<string | null>(null);
 const isDeleting = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
 
-function updateMonsterFromStore() {
-  if (!monsterStore.isLoaded) return;
-  const found = monsterStore.getById(route.params.id as string);
+function updatePawnFromStore() {
+  if (!pawnStore.isLoaded) return;
+  const found = pawnStore.getById(route.params.id as string);
   if (found) {
-    monster.value = found;
+    pawn.value = found;
   } else if (!isDeleting.value) {
-    router.push('/monsters');
+    router.push('/pawns');
   }
 }
 
-watch(
-  [() => monsterStore.items, () => monsterStore.isLoaded],
-  updateMonsterFromStore,
-  { immediate: true },
-);
+watch([() => pawnStore.items, () => pawnStore.isLoaded], updatePawnFromStore, {
+  immediate: true,
+});
 
-const { editState, setEditMode, discardDraft } = useEntityEditMode<Monster>({
-  source: monster,
+const { editState, setEditMode, discardDraft } = useEntityEditMode<Pawn>({
+  source: pawn,
   clone: (source) => ({
     ...source,
   }),
@@ -85,7 +83,7 @@ const tabs = computed(() =>
     : viewTabs.value,
 );
 
-const monsterTitle = computed(() => monster.value?.name || '');
+const pawnTitle = computed(() => pawn.value?.name || '');
 
 const draftName = computed({
   get: () => editState.draft?.name ?? '',
@@ -101,42 +99,42 @@ const draftNotes = computed({
   },
 });
 
-const monsterLinks = computed<MapEntityRef[]>(() => {
-  const id = monster.value?.id;
+const pawnLinks = computed<MapEntityRef[]>(() => {
+  const id = pawn.value?.id;
   if (!id) return [];
   return [
     ...relations
-      .getLinkedIds('monster', id, 'note')
+      .getLinkedIds('pawn', id, 'note')
       .map((noteId) => ({ kind: 'note' as const, id: noteId })),
     ...relations
-      .getLinkedIds('monster', id, 'encounter')
+      .getLinkedIds('pawn', id, 'encounter')
       .map((encounterId) => ({ kind: 'encounter' as const, id: encounterId })),
     ...relations
-      .getLinkedIds('monster', id, 'location')
+      .getLinkedIds('pawn', id, 'location')
       .map((locationId) => ({ kind: 'location' as const, id: locationId })),
   ];
 });
 
-async function setMonsterLinks(
+async function setPawnLinks(
   kind: 'note' | 'encounter' | 'location',
   links: MapEntityRef[],
 ) {
-  if (!monster.value) return;
+  if (!pawn.value) return;
   await relations.setLinkedIds(
-    'monster',
-    monster.value.id,
+    'pawn',
+    pawn.value.id,
     kind,
     links.filter((link) => link.kind === kind).map((link) => link.id),
   );
 }
 
 function handleNotesChange(notes: string) {
-  if (monster.value) {
-    void monsterStore.update(monster.value.id, { notes });
+  if (pawn.value) {
+    void pawnStore.update(pawn.value.id, { notes });
   }
 }
 
-async function prepareDraft(draft: Monster): Promise<boolean> {
+async function prepareDraft(draft: Pawn): Promise<boolean> {
   if (markdownEditorRef.value?.getMarkdown) {
     draft.notes = markdownEditorRef.value.getMarkdown();
   }
@@ -149,10 +147,10 @@ async function prepareDraft(draft: Monster): Promise<boolean> {
   return true;
 }
 
-async function persistDraft(draft: Monster): Promise<boolean> {
-  if (!monster.value) return false;
+async function persistDraft(draft: Pawn): Promise<boolean> {
+  if (!pawn.value) return false;
   try {
-    await monsterStore.update(monster.value.id, {
+    await pawnStore.update(pawn.value.id, {
       name: draft.name,
       notes: draft.notes,
     });
@@ -162,7 +160,7 @@ async function persistDraft(draft: Monster): Promise<boolean> {
       error instanceof Error ? error.message : String(error);
     return false;
   }
-  updateMonsterFromStore();
+  updatePawnFromStore();
   return true;
 }
 
@@ -182,15 +180,13 @@ const headerButtons = computed(() => {
 });
 
 const handleDelete = async () => {
-  if (!monster.value) return false;
-  if (
-    !(await confirm(t('common.confirmDelete', { title: monster.value.name })))
-  ) {
+  if (!pawn.value) return false;
+  if (!(await confirm(t('common.confirmDelete', { title: pawn.value.name })))) {
     return false;
   }
   isDeleting.value = true;
   discardDraft();
-  await monsterStore.remove(monster.value.id);
+  await pawnStore.remove(pawn.value.id);
   return true;
 };
 
@@ -198,13 +194,13 @@ const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
-    monsterStore.load(),
+    pawnStore.load(),
     featureStores.load(['encounter', 'location', 'note']),
   ]);
   rightDrawer.set({
-    component: MonsterViewSidebar,
+    component: PawnViewSidebar,
     props: {
-      monster,
+      pawn,
       editState,
       onSetEditMode: setEditMode,
     },
@@ -218,14 +214,14 @@ onBeforeUnmount(() => {
 
 <template>
   <BaseEntityTabView
-    :entity="monster"
-    entity-name="monsters.title"
-    list-route="/monsters"
+    :entity="pawn"
+    entity-name="pawns.title"
+    list-route="/pawns"
     :on-delete="handleDelete"
     :header-show-edit="false"
     :header-show-delete="editState.isEditMode"
     :is-editing="editState.isEditMode"
-    :title="editState.isEditMode ? '' : monsterTitle"
+    :title="editState.isEditMode ? '' : pawnTitle"
     :not-found="notFound"
     :header-buttons="headerButtons"
     :tabs="tabs"
@@ -236,7 +232,7 @@ onBeforeUnmount(() => {
         <MilkdownView
           :taskCheckboxEnabled="true"
           :enableMentionModal="true"
-          :content="monster?.notes || ''"
+          :content="pawn?.notes || ''"
           @update:content="handleNotesChange"
         />
       </EntityContentSurface>
@@ -244,7 +240,7 @@ onBeforeUnmount(() => {
       <EntityInlineEditor
         v-else
         v-model:title="draftName"
-        :title-placeholder="t('monsters.fields.name')"
+        :title-placeholder="t('pawns.fields.name')"
         :validation-error="validationError"
       >
         <EntityMarkdownEditor
@@ -252,32 +248,32 @@ onBeforeUnmount(() => {
           v-model="draftNotes"
           :is-visual-mode="editState.isVisualMode"
           :entity-id="editState.draft?.id || ''"
-          entity-type="monster"
+          entity-type="pawn"
           :placeholder="t('common.notes')"
         />
       </EntityInlineEditor>
     </template>
 
     <template #links>
-      <EntityViewLinks v-if="!editState.isEditMode" :links="monsterLinks" />
+      <EntityViewLinks v-if="!editState.isEditMode" :links="pawnLinks" />
       <div v-else class="column q-gutter-md">
         <EntitiesLinking
           v-if="featureStores.has('note')"
           kind="note"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('note', links)"
+          :model-value="pawnLinks"
+          @update:model-value="(links) => setPawnLinks('note', links)"
         />
         <EntitiesLinking
           v-if="featureStores.has('encounter')"
           kind="encounter"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('encounter', links)"
+          :model-value="pawnLinks"
+          @update:model-value="(links) => setPawnLinks('encounter', links)"
         />
         <EntitiesLinking
           v-if="featureStores.has('location')"
           kind="location"
-          :model-value="monsterLinks"
-          @update:model-value="(links) => setMonsterLinks('location', links)"
+          :model-value="pawnLinks"
+          @update:model-value="(links) => setPawnLinks('location', links)"
         />
       </div>
     </template>

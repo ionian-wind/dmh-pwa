@@ -158,7 +158,7 @@ and stops playback if that package is currently active.
 Scenes can be linked to local DMH entities:
 
 - **locations** — map locations;
-- **monsters**;
+- **pawns**;
 - **encounters**;
 - **characters**.
 
@@ -515,7 +515,7 @@ export interface SceneDef {
 
 /** Local user data; never stored inside the package manifest. */
 export type SceneLinkEntityType =
-  'location' | 'encounter' | 'character' | 'monster';
+  'location' | 'encounter' | 'character' | 'pawn';
 
 export interface SceneEntityLink {
   id: string;
@@ -707,7 +707,7 @@ closes and the app remains on `/ambient`. The dialog contains:
   Clicking the knob plays the one-shot immediately, independent of music or
   ambience state.
 - **Linked entities tab** — links the open scene to locations,
-  monsters, characters and encounters. It reuses the common `EntitiesLinking`
+  pawns, characters and encounters. It reuses the common `EntitiesLinking`
   lists and updates the same local scene-link records shown by
   `EntityScenesPanel`.
 
@@ -719,7 +719,7 @@ active scene remains available from the scene list (with its Playing badge).
 The same reusable `EntityScenesPanel` appears in the side panel/detail area of:
 
 - locations (`LocationView`);
-- monsters (`MonsterViewSidebar`);
+- pawns (`PawnViewSidebar`);
 - encounters (`EncounterView`);
 - characters (`CharacterView`).
 
@@ -821,13 +821,13 @@ footer.
 | `SceneList`           | Scene rows and opening the player                         | `scenes`, `activeSceneId`                    |
 | `ScenePlayerDialog`   | Expandable scene dialog with Main/Linked entities tabs    | `modelValue`, `packId`, `sceneId`            |
 | `ScenePlayerView`     | Scene main-tab content with music, ambience and one-shots | `packId`, `sceneId`, `showBack`, `activeTab` |
-| `SceneLinksPanel`     | Linked entities tab for locations, monsters, etc.         | `packId`, `sceneId`                          |
+| `SceneLinksPanel`     | Linked entities tab for locations, pawns, etc.            | `packId`, `sceneId`                          |
 | `AmbienceGallery`     | Ambience browsing, variations and layered playback        | `galleryAmbiences`, `activeLayers`           |
 | `AmbienceItem`        | Ambience row with enumerated sample buttons               | `ambience`, `variationId`, active sample     |
 | `VariationSelect`     | Global variation filter above ambience lists              | `options`, `modelValue`                      |
 | `OneShotGallery`      | One-shot knob grid and playing/progress state             | `galleryOneShots`, `groups`                  |
 | `OneShotControl`      | Button-wrapped knob, icon and playback progress           | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel`   | Linked scenes on location/monster/encounter/character     | `links`, `add/remove`, `play`                |
+| `EntityScenesPanel`   | Linked scenes on location/pawn/encounter/character        | `links`, `add/remove`, `play`                |
 | `EntitiesLinking`     | Scene links tab for five entity kinds                     | `kind`, `modelValue`                         |
 | `MoodProgress`        | Mood label with temporary-mood progress indicator         | `label`, `active`                            |
 | `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders        | `modelValue`                                 |
@@ -1471,7 +1471,7 @@ All sources below are free for commercial and non-commercial use. Check individu
 | ------------------------------- | ----------------------------------------------------------------- | -------------------------- |
 | kmontesdev Fantasy SFX          | https://kmontesdev.itch.io/fantasy-ambient-sound-effects-pack-cc0 | 2GB of fantasy sounds, CC0 |
 | OpenGameArt CC0 SFX             | https://opengameart.org/content/cc0-sound-fx                      | 80+ RPG sounds, CC0        |
-| OpenGameArt CC0 Creatures       | https://opengameart.org/content/cc0-creature-sfx                  | 80+ monster sounds, CC0    |
+| OpenGameArt CC0 Creatures       | https://opengameart.org/content/cc0-creature-sfx                  | 80+ pawn sounds, CC0       |
 | OpenGameArt CC0 RPG             | https://opengameart.org/content/cc0-rpg-sfx                       | 80+ RPG effects, CC0       |
 | OpenGameArt Nature Sounds       | https://opengameart.org/content/nature-sounds-cc0                 | Nature ambient sounds, CC0 |
 | OpenGameArt Background Ambience | https://opengameart.org/content/cc0-background-ambience           | Background loops, CC0      |
@@ -1651,7 +1651,7 @@ scenes and per-layer controls feel coherent.
 DMH connects package scenes to local campaign data:
 
 - **locations** — map locations;
-- **monsters**;
+- **pawns**;
 - **encounters**;
 - **characters**.
 

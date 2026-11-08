@@ -39,7 +39,7 @@ const marker: MapMarker = {
   y: 200,
   locationId: 'l1',
   layerId: 'base',
-  entities: [{ kind: 'monster', id: 'mon1' }],
+  entities: [{ kind: 'pawn', id: 'mon1' }],
   icon: 'ra-castle-emblem',
   color: '#cc3333',
 };

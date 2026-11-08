@@ -3,7 +3,7 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import TimerListItem from '@/timers/TimerListItem.vue';
-import MonsterEditor from '@/monsters/MonsterEditor.vue';
+import PawnEditor from '@/pawns/PawnEditor.vue';
 import PlaylistEditor from '@/jukebox/components/PlaylistEditor.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -121,9 +121,9 @@ describe('coverage gaps: small components', () => {
     finished.unmount();
   });
 
-  it('submits and deletes a monster', async () => {
-    const wrapper = mount(MonsterEditor, {
-      props: { isOpen: true, monster: null },
+  it('submits and deletes a pawn', async () => {
+    const wrapper = mount(PawnEditor, {
+      props: { isOpen: true, pawn: null },
       global: {
         stubs: {
           EntitiesLinking: EntitiesLinkingStub,
@@ -141,7 +141,7 @@ describe('coverage gaps: small components', () => {
       notes: 'Sneaky',
     });
 
-    const monster = {
+    const pawn = {
       id: 'm1',
       name: 'Goblin',
       notes: '',
@@ -149,8 +149,8 @@ describe('coverage gaps: small components', () => {
       createdAt: 1,
       updatedAt: 1,
     };
-    const existing = mount(MonsterEditor, {
-      props: { isOpen: true, monster: monster as any },
+    const existing = mount(PawnEditor, {
+      props: { isOpen: true, pawn: pawn as any },
       global: {
         stubs: {
           EntitiesLinking: EntitiesLinkingStub,

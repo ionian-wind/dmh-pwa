@@ -5,20 +5,20 @@ at build time; there is no runtime switching.
 
 ## Flags
 
-| Feature                | Environment variable       | Hard dependencies             |
-| ---------------------- | -------------------------- | ----------------------------- |
-| Notes                  | `VITE_FEATURE_NOTES`       | —                             |
-| Characters             | `VITE_FEATURE_CHARACTERS`  | —                             |
-| Parties                | `VITE_FEATURE_PARTIES`     | characters                    |
-| Monsters               | `VITE_FEATURE_MONSTERS`    | —                             |
-| Encounters + combat    | `VITE_FEATURE_ENCOUNTERS`  | monsters, characters, parties |
-| Maps/locations         | `VITE_FEATURE_MAPS`        | —                             |
-| Jukebox                | `VITE_FEATURE_JUKEBOX`     | —                             |
-| Ambient sound          | `VITE_FEATURE_AMBIENT`     | —                             |
-| Timers                 | `VITE_FEATURE_TIMERS`      | —                             |
-| Calculator             | `VITE_FEATURE_CALCULATOR`  | —                             |
-| Probability calculator | `VITE_FEATURE_PROBABILITY` | —                             |
-| Help center links      | `VITE_FEATURE_HELP`        | —                             |
+| Feature                | Environment variable       | Hard dependencies          |
+| ---------------------- | -------------------------- | -------------------------- |
+| Notes                  | `VITE_FEATURE_NOTES`       | —                          |
+| Characters             | `VITE_FEATURE_CHARACTERS`  | —                          |
+| Parties                | `VITE_FEATURE_PARTIES`     | characters                 |
+| Pawns                  | `VITE_FEATURE_PAWNS`       | —                          |
+| Encounters + combat    | `VITE_FEATURE_ENCOUNTERS`  | pawns, characters, parties |
+| Maps/locations         | `VITE_FEATURE_MAPS`        | —                          |
+| Jukebox                | `VITE_FEATURE_JUKEBOX`     | —                          |
+| Ambient sound          | `VITE_FEATURE_AMBIENT`     | —                          |
+| Timers                 | `VITE_FEATURE_TIMERS`      | —                          |
+| Calculator             | `VITE_FEATURE_CALCULATOR`  | —                          |
+| Probability calculator | `VITE_FEATURE_PROBABILITY` | —                          |
+| Help center links      | `VITE_FEATURE_HELP`        | —                          |
 
 Missing values default to on. Accepted values are `true`/`false` and `1`/`0`.
 Unknown `VITE_FEATURE_*` keys or a dependent enabled without its prerequisite

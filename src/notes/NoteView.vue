@@ -40,7 +40,7 @@ const featureStores = useFeatureStores();
 const relations = useEntityLinkRelations();
 const noteLinkKinds = [
   'character',
-  'monster',
+  'pawn',
   'party',
   'encounter',
   'location',
@@ -212,7 +212,7 @@ function findMissingMentions(draft: Note): string[] {
         exists = !!noteStore.getById(mention.id);
         break;
       case 'party':
-      case 'monster':
+      case 'pawn':
       case 'encounter':
         exists = !!featureStores.get(mention.kind, mention.id);
         break;

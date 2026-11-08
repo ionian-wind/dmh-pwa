@@ -19,7 +19,7 @@ const mentionKindMap = new Map(
 
 // --- Internal Entity Link Plugin for markdown-it ---
 const entityLinkRegex =
-  /^(note|party|monster|encounter|location):\/\/([a-zA-Z0-9_-]+)$/;
+  /^(note|party|pawn|encounter|location):\/\/([a-zA-Z0-9_-]+)$/;
 
 const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
   const defaultRender =
@@ -424,7 +424,7 @@ export interface EntityRef {
 export function extractMentionedEntities(text: string): EntityRef[] {
   // Match [title](type://id)
   const entityLinkExtractRegex =
-    /\[[^\]]*\]\((note|party|monster|encounter|location):\/\/([a-zA-Z0-9_-]+)\)/g;
+    /\[[^\]]*\]\((note|party|pawn|encounter|location):\/\/([a-zA-Z0-9_-]+)\)/g;
   const results: EntityRef[] = [];
   let match;
   while ((match = entityLinkExtractRegex.exec(text)) !== null) {

@@ -43,7 +43,7 @@ and append `— done` plus the commit/date when a task is complete.
 ### In scope
 
 - A reusable read-only Milkdown view component.
-- Detail views: notes, parties, monsters, characters, locations and the
+- Detail views: notes, parties, pawns, characters, locations and the
   mention-modal note preview.
 - Shared plugins for entity mentions, tag decorations and heading anchors.
 - Click routing for entity links, tag links and external links.
@@ -89,7 +89,7 @@ Planned files:
 | `src/components/common/milkdown/plugins/headingAnchor.ts` | New remark + heading schema extension                    |
 | `src/notes/NoteView.vue`                                  | Use `MilkdownView` in read mode                          |
 | `src/parties/PartyView.vue`                               | Use `MilkdownView` in read mode                          |
-| `src/monsters/MonsterView.vue`                            | Use `MilkdownView` in read mode                          |
+| `src/pawns/PawnView.vue`                                  | Use `MilkdownView` in read mode                          |
 | `src/characters/CharacterView.vue`                        | Use `MilkdownView` in read mode                          |
 | `src/maps/views/LocationView.vue`                         | Use `MilkdownView` in read mode                          |
 | `src/components/common/EntityMainContent.vue`             | Use `MilkdownView` for note content                      |
@@ -149,7 +149,7 @@ Planned files:
 
 - [x] `MDV-020` Use `MilkdownView` in `NoteView.vue` — done.
 - [x] `MDV-021` Use `MilkdownView` in `PartyView.vue` — done.
-- [x] `MDV-022` Use `MilkdownView` in `MonsterView.vue` — done.
+- [x] `MDV-022` Use `MilkdownView` in `PawnView.vue` — done.
 - [x] `MDV-023` Use `MilkdownView` in `CharacterView.vue` — done.
 - [x] `MDV-024` Use `MilkdownView` in `LocationView.vue` — done.
 - [x] `MDV-025` Use `MilkdownView` in `EntityMainContent.vue` — done.

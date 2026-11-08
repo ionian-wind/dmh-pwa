@@ -21,7 +21,7 @@ export enum Section {
   TIMERS = 'timers',
   NOTES = 'notes',
   PARTIES = 'parties',
-  MONSTERS = 'monsters',
+  PAWNS = 'pawns',
   CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
   AMBIENT_SOUND = 'ambient-sound',
@@ -29,7 +29,7 @@ export enum Section {
 }
 
 // Core types
-export type NoteLinkKind = 'party' | 'monster' | 'encounter' | 'character';
+export type NoteLinkKind = 'party' | 'pawn' | 'encounter' | 'character';
 
 export interface NoteLink {
   kind: NoteLinkKind;
@@ -90,7 +90,7 @@ export interface Party extends WithMetadata {
   characters: UUID[];
 }
 
-// Common base for PlayerCharacter and Monster
+// Common base for PlayerCharacter and Pawn
 export interface Character extends WithMetadata {
   name: string;
   notes?: string;
@@ -98,10 +98,10 @@ export interface Character extends WithMetadata {
 
 export interface PlayerCharacter extends Character {}
 
-export interface Monster extends Character {}
+export interface Pawn extends Character {}
 
 export interface Combatant extends WithMetadata {
-  type: 'player' | 'monster';
+  type: 'player' | 'pawn';
   referenceId?: UUID;
   notes?: string;
   initiative: number;

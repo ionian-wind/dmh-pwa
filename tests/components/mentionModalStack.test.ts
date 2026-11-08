@@ -53,11 +53,7 @@ describe('MentionModalStack', () => {
       { id: 'p1', name: 'Party', description: 'Party desc' },
       'Party desc',
     ],
-    [
-      'monster',
-      { id: 'mo1', name: 'Goblin', notes: 'Monster notes' },
-      'Monster notes',
-    ],
+    ['pawn', { id: 'mo1', name: 'Goblin', notes: 'Pawn notes' }, 'Pawn notes'],
     [
       'encounter',
       { id: 'e1', name: 'Ambush', description: 'Encounter desc' },

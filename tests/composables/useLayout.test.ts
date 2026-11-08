@@ -53,13 +53,13 @@ describe('layout store', () => {
   });
 
   it('unwraps refs passed to injected components', () => {
-    const monster = ref({ id: 'monster-1' });
-    const props = unwrapProps({ monster, count: 2, label: 'Monster' });
+    const pawn = ref({ id: 'pawn-1' });
+    const props = unwrapProps({ pawn, count: 2, label: 'Pawn' });
 
     expect(props).toEqual({
-      monster: { id: 'monster-1' },
+      pawn: { id: 'pawn-1' },
       count: 2,
-      label: 'Monster',
+      label: 'Pawn',
     });
     expect(unwrapProps()).toBeUndefined();
   });
