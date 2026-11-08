@@ -1,48 +1,62 @@
 <template>
   <div class="sound-pack-sidebar">
-    <div class="sound-pack-sidebar-content">
-      <SidebarItem
-        :title="t('ambientSoundPage.allPackages')"
+    <QList class="q-pa-none q-mb-none">
+      <QItem
+        clickable
+        v-ripple
         class="sound-pack-item"
         :class="{ 'is-selected': store.selectedPackId === null }"
         @click="store.selectPack(null)"
       >
-        <template #left>
+        <QItemSection side>
           <IconFolder :size="18" />
-        </template>
-      </SidebarItem>
+        </QItemSection>
+        <QItemSection>
+          {{ t('ambientSoundPage.allPackages') }}
+        </QItemSection>
+      </QItem>
+    </QList>
 
-      <SidebarItem
-        v-for="pack in store.storedPacks"
-        :key="pack.id"
-        :title="pack.name"
-        class="sound-pack-item"
-        :class="{ 'is-selected': store.selectedPackId === pack.id }"
-        @click="store.selectPack(pack.id)"
-      >
-        <template #left>
-          <component :is="categoryIcon(pack.category)" :size="18" />
-        </template>
-        <template #actions>
-          <QBtn
-            flat
-            dense
-            round
-            size="sm"
-            color="negative"
-            class="sound-pack-delete"
-            :title="t('common.delete')"
-            :aria-label="t('common.delete')"
-            @click.stop="removePack(pack)"
-          >
-            <IconTrash :size="16" />
-          </QBtn>
-        </template>
-      </SidebarItem>
-    </div>
+    <QSeparator />
+
+    <QScrollArea class="sound-pack-sidebar-content col-grow">
+      <QList class="q-pa-none q-mb-none">
+        <QItem
+          v-for="pack in store.storedPacks"
+          :key="pack.id"
+          clickable
+          v-ripple
+          class="sound-pack-item"
+          :class="{ 'is-selected': store.selectedPackId === pack.id }"
+          @click="store.selectPack(pack.id)"
+        >
+          <QItemSection side>
+            <component :is="categoryIcon(pack.category)" :size="18" />
+          </QItemSection>
+          <QItemSection>
+            {{ pack.name }}
+          </QItemSection>
+          <QItemSection side class="sound-pack-actions">
+            <QBtn
+              flat
+              dense
+              size="sm"
+              color="negative"
+              class="sound-pack-delete"
+              :title="t('common.delete')"
+              :aria-label="t('common.delete')"
+              @click.stop="removePack(pack)"
+            >
+              <IconTrash :size="18" />
+            </QBtn>
+          </QItemSection>
+        </QItem>
+      </QList>
+    </QScrollArea>
+
+    <QSeparator />
 
     <div class="sound-pack-sidebar-controls">
-      <QSeparator />
       <QList>
         <QItem clickable v-ripple @click="triggerFileInput">
           <QItemSection>
@@ -73,13 +87,11 @@ import {
   IconBuilding,
   IconEdit,
   IconFolder,
-  IconPlus,
   IconRocket,
   IconTree,
   IconTrash,
   IconUpload,
 } from '@tabler/icons-vue';
-import SidebarItem from '@/components/common/SidebarItem.vue';
 import { confirm } from '@/dialogs';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { NormalizedSoundPack } from '@/ambient-sound/types';
@@ -134,16 +146,11 @@ async function handleFileImport(event: Event) {
 }
 
 .sound-pack-sidebar-content {
-  flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  padding-top: 0.5rem;
 }
 
 .sound-pack-sidebar-controls {
   flex: 0 0 auto;
-  margin-top: auto;
-  background: var(--color-background);
 }
 
 .sound-pack-item {
@@ -152,8 +159,17 @@ async function handleFileImport(event: Event) {
 
 .sound-pack-item.is-selected {
   background: var(--color-primary-light);
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
+  color: var(--color-text);
+}
+
+.sound-pack-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sound-pack-item:hover .sound-pack-actions,
+.sound-pack-item:focus-within .sound-pack-actions {
+  opacity: 1;
 }
 
 .hidden-file-input {
