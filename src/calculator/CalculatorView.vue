@@ -15,6 +15,16 @@ import {
   IconBackspace,
   IconEqual,
   IconCopy,
+  IconNumber0,
+  IconNumber1,
+  IconNumber2,
+  IconNumber3,
+  IconNumber4,
+  IconNumber5,
+  IconNumber6,
+  IconNumber7,
+  IconNumber8,
+  IconNumber9,
 } from '@tabler/icons-vue';
 
 const { t } = useI18n();
@@ -271,7 +281,7 @@ onUnmounted(() => {
       </QToolbar>
       <QCardSection>
         <div class="calculator-view">
-          <QCard flat class="q-pa-xs q-mb-sm bg-secondary">
+          <QCard flat class="calculator-display q-pa-xs q-mb-sm">
             <QCardSection class="calculator-input q-pa-sm">{{
               input || '0'
             }}</QCardSection>
@@ -305,28 +315,48 @@ onUnmounted(() => {
                   ><IconDivide
                 /></QBtn>
 
-                <QBtn flat @click="append('7')">7</QBtn>
-                <QBtn flat @click="append('8')">8</QBtn>
-                <QBtn flat @click="append('9')">9</QBtn>
+                <QBtn flat title="7" aria-label="7" @click="append('7')"
+                  ><IconNumber7
+                /></QBtn>
+                <QBtn flat title="8" aria-label="8" @click="append('8')"
+                  ><IconNumber8
+                /></QBtn>
+                <QBtn flat title="9" aria-label="9" @click="append('9')"
+                  ><IconNumber9
+                /></QBtn>
                 <QBtn flat class="operation" @click="append('×')"
                   ><IconX />
                 </QBtn>
 
-                <QBtn flat @click="append('4')">4</QBtn>
-                <QBtn flat @click="append('5')">5</QBtn>
-                <QBtn flat @click="append('6')">6</QBtn>
+                <QBtn flat title="4" aria-label="4" @click="append('4')"
+                  ><IconNumber4
+                /></QBtn>
+                <QBtn flat title="5" aria-label="5" @click="append('5')"
+                  ><IconNumber5
+                /></QBtn>
+                <QBtn flat title="6" aria-label="6" @click="append('6')"
+                  ><IconNumber6
+                /></QBtn>
                 <QBtn flat class="operation" @click="append('-')"
                   ><IconMinus
                 /></QBtn>
 
-                <QBtn flat @click="append('1')">1</QBtn>
-                <QBtn flat @click="append('2')">2</QBtn>
-                <QBtn flat @click="append('3')">3</QBtn>
+                <QBtn flat title="1" aria-label="1" @click="append('1')"
+                  ><IconNumber1
+                /></QBtn>
+                <QBtn flat title="2" aria-label="2" @click="append('2')"
+                  ><IconNumber2
+                /></QBtn>
+                <QBtn flat title="3" aria-label="3" @click="append('3')"
+                  ><IconNumber3
+                /></QBtn>
                 <QBtn flat class="operation" @click="append('+')"
                   ><IconPlus
                 /></QBtn>
 
-                <QBtn flat @click="append('0')">0</QBtn>
+                <QBtn flat title="0" aria-label="0" @click="append('0')"
+                  ><IconNumber0
+                /></QBtn>
                 <QBtn flat @click="append('.')">.</QBtn>
 
                 <QBtn flat class="control" @click="backspace"
@@ -406,6 +436,11 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.calculator-display {
+  background: var(--color-background-mute);
+  color: var(--color-text);
+}
+
 .calculator-input {
   font-size: 1.3rem;
   word-break: break-all;

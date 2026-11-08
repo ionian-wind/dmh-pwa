@@ -1054,7 +1054,7 @@ watch(isEditMode, (editing) => {
                     </div>
                     <div
                       v-if="infoLocationName"
-                      class="text-caption text-primary text-weight-medium"
+                      class="map-info-location text-caption text-weight-medium"
                     >
                       {{ infoLocationName }}
                     </div>
@@ -1074,7 +1074,7 @@ watch(isEditMode, (editing) => {
                   v-if="infoMarker?.description || infoArea?.description"
                   class="q-pt-none"
                 >
-                  <div class="text-body2 text-grey-7">
+                  <div class="map-info-description text-body2">
                     {{ infoMarker?.description || infoArea?.description }}
                   </div>
                 </QCardSection>
@@ -1099,7 +1099,7 @@ watch(isEditMode, (editing) => {
                     flat
                     dense
                     no-caps
-                    color="primary"
+                    class="map-info-action"
                     :label="t('maps.goToLocation')"
                     @click.stop="goToInfoLocation"
                   />
@@ -1108,7 +1108,7 @@ watch(isEditMode, (editing) => {
                     flat
                     dense
                     no-caps
-                    color="primary"
+                    class="map-info-action"
                     :label="t('common.edit')"
                     @click.stop="editInfoItem"
                   />
@@ -1486,5 +1486,15 @@ watch(isEditMode, (editing) => {
 .map-info-popup {
   min-width: 220px;
   max-width: 320px;
+  color: var(--color-text);
+}
+
+.map-info-location,
+.map-info-action {
+  color: var(--color-accent) !important;
+}
+
+.map-info-description {
+  color: var(--color-text-light);
 }
 </style>
