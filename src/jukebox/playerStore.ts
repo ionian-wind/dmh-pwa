@@ -565,6 +565,20 @@ export const useJukeboxPlayerStore = defineStore(
       return true;
     }
 
+    async function playPlaylist(playlistId: string): Promise<boolean> {
+      const playlist = playlistsStore.getById(playlistId);
+      if (!playlist || playlist.trackIds.length === 0) return false;
+
+      configStore.jukeboxActivePlaylistId = playlistId;
+      const firstPlayable = playlist.trackIds
+        .map((trackId) => tracksStore.getById(trackId))
+        .find((track): track is JukeboxTrack => !!track && !track.disabled);
+      if (!firstPlayable) return false;
+
+      await playTrackFromPlaylist(firstPlayable);
+      return isPlaying.value;
+    }
+
     async function playTrackFromPlaylist(track: JukeboxTrack) {
       if (track.disabled) {
         notifyTrackUnavailable();
@@ -951,6 +965,7 @@ export const useJukeboxPlayerStore = defineStore(
 
       playPrev,
       playTrackFromPlaylist,
+      playPlaylist,
       togglePlay,
       pause,
       playNext,

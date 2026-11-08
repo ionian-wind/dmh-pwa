@@ -135,6 +135,33 @@ describe('jukebox player store', () => {
     expect(player.hasPrevTrack).toBe(false);
   });
 
+  it('plays a playlist from its first playable track', async () => {
+    const player = useJukeboxPlayerStore();
+    const config = useConfigStore();
+    const one = track('one');
+    const two = track('two', { disabled: true });
+    const three = track('three');
+    mocks.tracks.items.value = [one, two, three];
+    mocks.playlists.items.value = [
+      { id: 'p1', trackIds: ['one', 'two', 'three'] },
+    ];
+
+    await expect(player.playPlaylist('p1')).resolves.toBe(true);
+
+    expect(player.currentTrack?.id).toBe('one');
+    expect(player.queuePlaylistId).toBe('p1');
+    expect(config.jukeboxActivePlaylistId).toBe('p1');
+  });
+
+  it('does not start playback without a playable playlist', async () => {
+    const player = useJukeboxPlayerStore();
+    mocks.playlists.items.value = [{ id: 'empty', trackIds: [] }];
+
+    await expect(player.playPlaylist('empty')).resolves.toBe(false);
+    await expect(player.playPlaylist('missing')).resolves.toBe(false);
+    expect(player.isPlaying).toBe(false);
+  });
+
   beforeEach(() => {
     setActivePinia(createPinia());
     mocks.howls.length = 0;

@@ -9,7 +9,7 @@
           v-for="item in mixedItems"
           :key="item.key"
           v-ripple
-          :clickable="item.type === 'scene'"
+          :clickable="item.type === 'scene' || playlistHasTracks(item.playlist)"
           :class="[
             item.type === 'scene' ? 'scene-link-item' : 'playlist-link-item',
             item.type === 'scene'
@@ -23,12 +23,19 @@
                     item.scene.scene.id,
                   ),
                 }
-              : {},
+              : {
+                  'scene-link-item--selected': isPlaylistActive(
+                    item.playlist.id,
+                  ),
+                  'scene-link-item--playing': isPlaylistPlaying(
+                    item.playlist.id,
+                  ),
+                },
           ]"
           @click="
             item.type === 'scene'
               ? toggleScene(item.scene.pack.id, item.scene.scene.id)
-              : undefined
+              : togglePlaylist(item.playlist.id)
           "
         >
           <QItemSection side>
@@ -45,6 +52,13 @@
             <template v-if="item.type === 'scene'">
               <IconPlayerPause
                 v-if="isPlaying(item.scene.pack.id, item.scene.scene.id)"
+                :size="18"
+              />
+              <IconPlayerPlay v-else :size="18" />
+            </template>
+            <template v-else-if="playlistHasTracks(item.playlist)">
+              <IconPlayerPause
+                v-if="isPlaylistPlaying(item.playlist.id)"
                 :size="18"
               />
               <IconPlayerPlay v-else :size="18" />
@@ -166,6 +180,14 @@ type PlaylistStore = {
   ) => Promise<JukeboxPlaylist>;
 };
 
+type PlayerStore = {
+  isPlaying: boolean;
+  queuePlaylistId: string | null;
+  playPlaylist: (playlistId: string) => Promise<boolean>;
+  pause: () => void;
+  togglePlay: () => void | Promise<void>;
+};
+
 const EntityLinkingDialog = defineAsyncComponent(
   () => import('@/components/common/EntityLinkingDialog.vue'),
 );
@@ -186,17 +208,20 @@ const scenePickerOpen = ref(false);
 const playlistPickerOpen = ref(false);
 
 // Keep the jukebox dependency behind the build-time flag so builds without
-// the jukebox never bundle its store into the ambient panel.
+// the jukebox never bundle its stores into the ambient panel.
 const playlistStore = shallowRef<PlaylistStore | null>(null);
-let playlistStoreReady: Promise<PlaylistStore | null> = Promise.resolve(null);
+const playerStore = shallowRef<PlayerStore | null>(null);
+let jukeboxReady: Promise<void> = Promise.resolve();
 
 if (__FEATURE_JUKEBOX__) {
-  playlistStoreReady = import('@/jukebox/stores').then(
-    ({ useJukeboxPlaylistsStore }) => {
-      playlistStore.value = useJukeboxPlaylistsStore() as PlaylistStore;
-      return playlistStore.value;
-    },
-  );
+  jukeboxReady = Promise.all([
+    import('@/jukebox/stores'),
+    import('@/jukebox/playerStore'),
+  ]).then(([{ useJukeboxPlaylistsStore }, { useJukeboxPlayerStore }]) => {
+    playlistStore.value = useJukeboxPlaylistsStore() as PlaylistStore;
+    playerStore.value = useJukeboxPlayerStore() as PlayerStore;
+    return playlistStore.value.load().then(() => undefined);
+  });
 }
 
 const linkedRefs = computed(() =>
@@ -283,6 +308,32 @@ async function toggleScene(packId: string, sceneId: string) {
   await store.playScene(packId, sceneId);
 }
 
+function playlistHasTracks(playlist: JukeboxPlaylist) {
+  return (playlist.trackIds?.length ?? 0) > 0;
+}
+
+function isPlaylistActive(playlistId: string) {
+  return playerStore.value?.queuePlaylistId === playlistId;
+}
+
+function isPlaylistPlaying(playlistId: string) {
+  return isPlaylistActive(playlistId) && !!playerStore.value?.isPlaying;
+}
+
+async function togglePlaylist(playlistId: string) {
+  const player = playerStore.value;
+  const playlist = playlistStore.value?.getById(playlistId);
+  if (!player || !playlist || !playlistHasTracks(playlist)) return;
+
+  if (player.queuePlaylistId === playlistId) {
+    if (player.isPlaying) player.pause();
+    else await player.togglePlay();
+    return;
+  }
+
+  await player.playPlaylist(playlistId);
+}
+
 function addScenes(payload: { refs: Array<{ id: string }> }) {
   const selected = new Set(payload.refs.map((ref) => ref.id));
   for (const { pack, scene } of store.allScenes) {
@@ -344,7 +395,7 @@ onMounted(async () => {
     store.storedPacks.length === 0
       ? store.loadStoredPacks()
       : Promise.resolve(),
-    playlistStoreReady.then((playlistStore) => playlistStore?.load()),
+    jukeboxReady,
   ]);
 });
 </script>

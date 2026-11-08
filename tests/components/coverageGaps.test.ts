@@ -18,6 +18,13 @@ const mocks = vi.hoisted(() => ({
     getById: vi.fn(() => undefined),
     load: vi.fn().mockResolvedValue(undefined),
   },
+  player: {
+    isPlaying: false,
+    queuePlaylistId: null as string | null,
+    playPlaylist: vi.fn(),
+    pause: vi.fn(),
+    togglePlay: vi.fn(),
+  },
   ambient: {
     storedPacks: [] as any[],
     allScenes: [] as any[],
@@ -39,6 +46,10 @@ vi.mock('@/stores/timers', () => ({
 
 vi.mock('@/jukebox/stores', () => ({
   useJukeboxPlaylistsStore: () => mocks.playlists,
+}));
+
+vi.mock('@/jukebox/playerStore', () => ({
+  useJukeboxPlayerStore: () => mocks.player,
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -84,6 +95,8 @@ describe('coverage gaps: small components', () => {
     mocks.timerStore.now = 0;
     mocks.playlists.items.value = [];
     mocks.playlists.getById.mockReturnValue(undefined);
+    mocks.player.isPlaying = false;
+    mocks.player.queuePlaylistId = null;
     mocks.ambient.storedPacks = [];
     mocks.ambient.allScenes = [];
     mocks.ambient.activeSceneKey = null;
@@ -235,6 +248,7 @@ describe('coverage gaps: small components', () => {
       id: 'p1',
       name: 'Mix',
       description: 'Set',
+      trackIds: ['t1'],
       links: [{ kind: 'location', id: 'l1' }],
     };
     mocks.playlists.items.value = [playlist];
@@ -247,9 +261,28 @@ describe('coverage gaps: small components', () => {
     await vi.dynamicImportSettled();
     await flushPromises();
 
-    expect(wrapper.find('.playlist-link-item').text()).toContain('Mix');
+    const row = wrapper.find('.playlist-link-item');
+    expect(row.text()).toContain('Mix');
     expect(wrapper.find('.playlist-add-row').text()).toContain('Add playlist');
+    await row.trigger('click');
+    expect(mocks.player.playPlaylist).toHaveBeenCalledWith('p1');
     wrapper.unmount();
+
+    mocks.player.queuePlaylistId = 'p1';
+    mocks.player.isPlaying = true;
+    const playing = mount(EntityScenesPanel, {
+      props: { entityType: 'location', entityId: 'l1' },
+    });
+    await flushPromises();
+    await vi.dynamicImportSettled();
+    await flushPromises();
+
+    const playingRow = playing.find('.playlist-link-item');
+    expect(playingRow.classes()).toContain('scene-link-item--selected');
+    expect(playingRow.classes()).toContain('scene-link-item--playing');
+    await playingRow.trigger('click');
+    expect(mocks.player.pause).toHaveBeenCalled();
+    playing.unmount();
   });
 
   it('links, plays and removes entity scenes', async () => {
