@@ -3,27 +3,19 @@ import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
-import { usePawnStore } from '@/stores/pawns';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
-import type { Encounter, Pawn, Combat } from '@/types';
+import type { Encounter, Combat } from '@/types';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import type { MapEntityRef } from '@/maps/types';
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
-import {
-  IconAffiliate,
-  IconGhost3,
-  IconInfoCircle,
-  IconSwords,
-} from '@tabler/icons-vue';
+import { IconAffiliate, IconInfoCircle, IconSwords } from '@tabler/icons-vue';
 import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
-import { prompt, confirm } from '@/dialogs';
+import { confirm } from '@/dialogs';
 import { sanitizeHtmlContent } from '@/utils/markdownParser';
 import { useRightDrawer } from '@/composables/useLayout';
 
@@ -32,15 +24,12 @@ const router = useRouter();
 const { t } = useI18n();
 const relations = useEntityLinkRelations();
 const encounterStore = useEncounterStore();
-const pawnStore = usePawnStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
 
 const isEditorOpen = ref(false);
-const showLinkModal = ref(false);
 const showPartySelector = ref(false);
 const activeTab = ref('information');
-const localPawns = ref<Record<string, number>>({});
 
 const encounter = ref<Encounter | null>(null);
 const loading = computed(() => !encounterStore.isLoaded);
@@ -63,12 +52,6 @@ watch(
   updateEncounterFromStore,
   { immediate: true, deep: true },
 );
-
-watch(showLinkModal, (isOpen) => {
-  if (isOpen && encounter.value) {
-    localPawns.value = JSON.parse(JSON.stringify(encounter.value.pawns || {}));
-  }
-});
 
 const handleEdit = () => {
   isEditorOpen.value = true;
@@ -95,73 +78,6 @@ const handleSave = async (
 
 const handleCancel = () => {
   isEditorOpen.value = false;
-};
-
-// Computed properties for pawn linking
-const allPawns = computed(() => pawnStore.filtered);
-const encounterPawns = computed(() => {
-  if (!encounter.value || !encounter.value.pawns) return [];
-  return allPawns.value.filter((pawn) =>
-    Object.keys(encounter.value!.pawns).includes(pawn.id),
-  );
-});
-
-// Reactive linked pawns state
-const linkedPawns = ref<Record<string, boolean>>({});
-
-// Update linked pawns when encounter changes
-watch(
-  () => encounter.value?.pawns,
-  (newPawns) => {
-    if (!newPawns) {
-      linkedPawns.value = {};
-      return;
-    }
-
-    const linked = Object.keys(newPawns);
-    linkedPawns.value = allPawns.value.reduce(
-      (acc, pawn) => {
-        acc[pawn.id] = linked.includes(pawn.id);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  },
-  { immediate: true },
-);
-
-// Update linked pawns when allPawns changes
-watch(
-  allPawns,
-  (newPawns) => {
-    if (!encounter.value?.pawns) {
-      linkedPawns.value = {};
-      return;
-    }
-
-    const linked = Object.keys(encounter.value.pawns);
-    linkedPawns.value = newPawns.reduce(
-      (acc, pawn) => {
-        acc[pawn.id] = linked.includes(pawn.id);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  },
-  { immediate: true },
-);
-
-const handleTogglePawn = (pawn: Pawn, isLinked: boolean) => {
-  if (!encounter.value) return;
-  const pawns = encounter.value.pawns || {};
-  if (isLinked) {
-    pawns[pawn.id] = 1;
-  } else {
-    delete pawns[pawn.id];
-  }
-  encounterStore.update(encounter.value.id, { pawns });
-  // Force a reactive update by reassigning the encounter
-  encounter.value = encounterStore.getById(encounter.value.id);
 };
 
 const handleRunCombat = () => {
@@ -235,12 +151,6 @@ const tabs = computed(() => [
     badge: undefined,
   },
   {
-    id: 'pawns',
-    label: t('encounters.tabs.pawns'),
-    icon: IconGhost3,
-    badge: encounterPawns.value.length,
-  },
-  {
     id: 'combats',
     label: t('encounters.tabs.combats'),
     icon: IconSwords,
@@ -254,58 +164,11 @@ const tabs = computed(() => [
   },
 ]);
 
-const handleModalTogglePawn = (pawnId: string, isLinked: boolean) => {
-  const current = { ...localPawns.value };
-  if (isLinked) {
-    if (current[pawnId] === undefined) {
-      current[pawnId] = 1;
-    }
-  } else {
-    delete current[pawnId];
-  }
-  localPawns.value = current;
-};
-
-const handleModalQuantityChange = (pawnId: string, count: number) => {
-  if (localPawns.value[pawnId] === undefined) return;
-  const newCount = Math.max(1, count || 1);
-  localPawns.value[pawnId] = newCount;
-};
-
-const handleSavePawnLinks = async () => {
-  if (!encounter.value) return;
-  await encounterStore.update(encounter.value.id, {
-    pawns: localPawns.value,
-  });
-  showLinkModal.value = false;
-};
-
-const openQuantityModal = async (pawn: Pawn) => {
-  if (!encounter.value) return;
-  const value = await prompt(
-    t('encounters.pawns.setQuantityFor', {
-      pawnName: pawn.name,
-    }),
-    {
-      inputType: 'number',
-      modelValue: String(encounter.value.pawns?.[pawn.id] || 1),
-    },
-  );
-  if (value === null) return;
-  const count = Number(value);
-
-  if (isNaN(count) || count < 1) return;
-  const pawns = { ...encounter.value.pawns };
-  pawns[pawn.id] = count;
-  await encounterStore.update(encounter.value.id, { pawns });
-};
-
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
     encounterStore.load(),
-    pawnStore.load(),
     combatStore.load(),
     partyStore.load(),
     relations.loadFor('encounter', 'note'),
@@ -356,54 +219,6 @@ async function handleEditorDelete() {
         <section class="details-section">
           <div v-html="safeDescription"></div>
         </section>
-      </template>
-      <template #pawns>
-        <div class="row items-center q-mb-md">
-          <QBtn flat @click="showLinkModal = true" class="q-ml-md">{{
-            t('encounters.pawns.linkAction')
-          }}</QBtn>
-        </div>
-        <div
-          v-if="encounterPawns.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          <p>{{ t('encounters.pawns.none') }}</p>
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div class="col-12">
-            <table class="q-table">
-              <thead>
-                <tr>
-                  <th>{{ t('pawns.fields.name') }}</th>
-                  <th>{{ t('common.quantity') }}</th>
-                  <th>{{ t('common.actions') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="pawn in encounterPawns" :key="pawn.id">
-                  <td>
-                    <router-link :to="`/pawns/${pawn.id}`">
-                      {{ pawn.name }}
-                    </router-link>
-                  </td>
-                  <td>
-                    <QBtn flat @click="openQuantityModal(pawn)">
-                      {{ encounter?.pawns[pawn.id] }}
-                    </QBtn>
-                  </td>
-                  <td>
-                    <button
-                      class="unlink-btn"
-                      @click="handleTogglePawn(pawn, false)"
-                    >
-                      {{ t('common.unlink') }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </template>
       <template #links>
         <EntityViewLinks :links="encounterLinks" />
@@ -459,62 +274,6 @@ async function handleEditorDelete() {
         />
       </template>
     </BaseEntityTabView>
-
-    <BaseModal
-      :is-open="showLinkModal"
-      @cancel="showLinkModal = false"
-      @submit="handleSavePawnLinks"
-      :title="t('encounters.pawns.linkModalTitle')"
-      modal-id="pawn-linking-modal"
-      :show-cancel="true"
-      :show-submit="true"
-      :cancel-label="t('common.cancel')"
-      :submit-label="t('common.save')"
-    >
-      <div v-if="allPawns.length === 0" class="empty-state">
-        <p>{{ t('encounters.pawns.noneAvailable') }}</p>
-      </div>
-      <div v-else class="pawns-grid">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ t('pawns.fields.name') }}</th>
-              <th>{{ t('common.quantity') }}</th>
-              <th>{{ t('common.linked') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="pawn in allPawns" :key="pawn.id">
-              <td>{{ pawn.name }}</td>
-              <td>
-                <QInput
-                  v-if="localPawns[pawn.id] !== undefined"
-                  type="number"
-                  class="count-input"
-                  :model-value="localPawns[pawn.id] || 1"
-                  @update:model-value="
-                    (val) =>
-                      handleModalQuantityChange(
-                        pawn.id,
-                        parseInt(String(val ?? '')),
-                      )
-                  "
-                  min="1"
-                  dense
-                  outlined
-                />
-              </td>
-              <td>
-                <ToggleSwitch
-                  :model-value="localPawns[pawn.id] !== undefined"
-                  @update:model-value="handleModalTogglePawn(pawn.id, $event)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </BaseModal>
 
     <PartySelector
       :is-open="showPartySelector"
@@ -575,46 +334,6 @@ async function handleEditorDelete() {
   color: var(--color-text);
   line-height: 1.6;
   margin: 0;
-}
-
-.pawns-grid {
-  overflow-x: auto;
-}
-
-.pawns-grid table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.pawns-grid th,
-.pawns-grid td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.pawns-grid th {
-  background: var(--color-background);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.pawns-grid td {
-  color: var(--color-text-light);
-}
-
-.unlink-btn {
-  background: var(--color-danger);
-  color: var(--color-text-inverse);
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.unlink-btn:hover {
-  background: var(--color-danger-dark);
 }
 
 .empty-state {
@@ -738,29 +457,6 @@ async function handleEditorDelete() {
 .stat-value {
   color: var(--color-accent);
   font-weight: 600;
-}
-
-.pawn-linking-modal-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 0.5rem;
-  margin-right: -0.5rem;
-}
-
-.pawn-link-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  transition: background-color 0.2s;
-}
-
-.pawn-link-item:hover {
-  background-color: var(--color-background);
 }
 
 .quantity-modal-content {
