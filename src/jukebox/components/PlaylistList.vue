@@ -212,7 +212,7 @@ onMounted(async () => {
           clickable
           class="playlist-all-tracks"
           :active="selectedPlaylistId === null"
-          :active-class="'bg-secondary'"
+          :active-class="'playlist-item--active'"
           :class="{ 'has-active-track': hasActiveAllTracks }"
           v-ripple
           @click="setSelectedPlaylist(null)"
@@ -258,7 +258,7 @@ onMounted(async () => {
           <QItem
             clickable
             :active="selectedPlaylistId === playlist.id"
-            :active-class="'bg-secondary'"
+            :active-class="'playlist-item--active'"
             v-ripple
             @click="setSelectedPlaylist(playlist.id)"
             class="playlist-item"
@@ -366,6 +366,11 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.playlist-item--active {
+  background: var(--color-primary-light) !important;
+  color: var(--color-text) !important;
+}
+
 .playlist-drag-handle {
   cursor: grab;
   color: var(--color-text-lighter);

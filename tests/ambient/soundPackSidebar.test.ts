@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createI18n } from 'vue-i18n';
+
+import ru from '@/i18n/locales/ru.json';
 
 const storeMock = vi.hoisted(() => ({
   storedPacks: [] as any[],
@@ -49,6 +52,22 @@ describe('SoundPackSidebar', () => {
     expect(items[0].text()).toContain('All packages');
     expect(items[1].text()).toContain('Forest');
     expect(items[2].text()).toContain('City');
+    wrapper.unmount();
+  });
+
+  it('localizes the all-packages entry', () => {
+    const i18n = createI18n({
+      legacy: false,
+      locale: 'ru',
+      messages: { ru },
+    });
+    const wrapper = mount(SoundPackSidebar, {
+      global: { plugins: [i18n], stubs: quasarStubs },
+    });
+
+    expect(wrapper.findAll('.sound-pack-item')[0].text()).toContain(
+      'Все пакеты',
+    );
     wrapper.unmount();
   });
 

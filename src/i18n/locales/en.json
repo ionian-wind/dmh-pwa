@@ -794,6 +794,7 @@
     "noIcon": "No icon",
     "off": "Off",
     "noPacks": "No packs available",
+    "allPackages": "All packages",
     "moods": {
       "explore": "Explore",
       "combat": "Combat",

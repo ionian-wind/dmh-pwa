@@ -2,7 +2,7 @@
   <div class="sound-pack-sidebar">
     <div class="sound-pack-sidebar-content">
       <SidebarItem
-        title="All packages"
+        :title="t('ambientSoundPage.allPackages')"
         class="sound-pack-item"
         :class="{ 'is-selected': store.selectedPackId === null }"
         @click="store.selectPack(null)"

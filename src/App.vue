@@ -136,7 +136,7 @@ const {
 } = provideLayout();
 
 const hasPlayerFooter = computed(
-  () => bottomDrawerContent.value?.props?.flushFooter === true,
+  () => bottomDrawerContent.value?.flushFooter === true,
 );
 
 const isSettingsOpen = ref(false);
