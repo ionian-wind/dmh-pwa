@@ -94,7 +94,7 @@ function removeLink(ref: MapEntityRef) {
           v-if="!readonly"
           flat
           round
-          color="primary"
+          class="entity-group-add"
           :title="t('common.add')"
           :aria-label="t('common.add')"
           @click="isModalOpen = true"
@@ -152,6 +152,10 @@ function removeLink(ref: MapEntityRef) {
 </template>
 
 <style scoped>
+.entity-group-add {
+  color: var(--color-accent);
+}
+
 .linked-entity-item {
   border-radius: var(--border-radius-sm);
   transition: background-color 0.15s ease;
