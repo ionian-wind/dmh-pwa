@@ -253,7 +253,12 @@ describe('coverage gaps: small components', () => {
     const linked = mount(EntityScenesPanel, {
       props: { entityType: 'location', entityId: 'l1' },
     });
-    expect(linked.find('.scene-link-item').classes()).toContain('is-active');
+    expect(linked.find('.scene-link-item').classes()).toContain(
+      'scene-link-item--selected',
+    );
+    expect(linked.find('.scene-link-item').classes()).toContain(
+      'scene-link-item--playing',
+    );
     await linked.find('.scene-link-item').trigger('click');
     expect(mocks.ambient.pause).toHaveBeenCalled();
     await linked.find('button[title="Remove link"]').trigger('click');

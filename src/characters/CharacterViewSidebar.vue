@@ -84,6 +84,7 @@ onMounted(() => mentionsStore.load());
   <div class="side-panel-content column full-height">
     <div class="sidebar-tab-content col-grow">
       <TabGroup
+        class="full-height"
         :align="'justify'"
         :title-align="'center'"
         v-model="activeTab"
@@ -92,7 +93,10 @@ onMounted(() => mentionsStore.load());
         icon-only
       >
         <template #default>
-          <div v-show="activeTab === 'scenes'" class="q-pa-md">
+          <div
+            v-show="activeTab === 'scenes'"
+            class="scene-tab-panel column full-height"
+          >
             <EntityScenesPanel
               v-if="entityId && EntityScenesPanel"
               entity-type="character"
