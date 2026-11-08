@@ -15,17 +15,15 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import {
   IconFlag,
   IconGhost3,
-  IconListNumbers,
-  IconUserPlus,
   IconUser,
+  IconUserPlus,
   IconCheck,
   IconBolt,
   IconPlayerPause,
   IconSwords,
-  IconTrophy,
   IconCircleCheck,
-  IconClock,
 } from '@tabler/icons-vue';
+import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
 import { S } from '@/utils/dice-roller/plugins/dice/tokens';
 import { advanceTurn, rewindTurn, type TurnResult } from '@/utils/combatTurn';
 
@@ -50,6 +48,33 @@ const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
 const notFound = computed(() => combatStore.isLoaded && !combat.value);
 const activeTab = computed(() => combat.value?.status ?? null);
+const TABLER_STROKE =
+  'fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
+const tablerIcon = (paths: string[]) =>
+  `${paths.map((path) => `${path}@@${TABLER_STROKE}`).join('&&')}|0 0 24 24`;
+const phaseIcons = {
+  preparing: tablerIcon([
+    'M11 6h9',
+    'M11 12h9',
+    'M12 18h8',
+    'M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4',
+    'M6 10v-6l-2 2',
+  ]),
+  active: tablerIcon([
+    'M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11l5 0',
+    'M5 13l6 6',
+    'M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365',
+    'M10 5.5l-2 -2.5h-5v5l3 2.5',
+  ]),
+  completed: tablerIcon([
+    'M8 21l8 0',
+    'M12 17l0 4',
+    'M7 4l10 0',
+    'M17 4v8a5 5 0 0 1 -10 0v-8',
+    'M3 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+    'M17 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+  ]),
+};
 
 // Add local state for new participant
 const activeParticipantIndex = ref(0);
@@ -443,17 +468,34 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
     <!-- Combat Content -->
     <div v-if="combat" class="q-pa-md q-gutter-md">
       <!-- Phase Tabs and Round/Turn Display -->
-      <QTabs :model-value="activeTab" class="phase-indicator">
-        <QTab class="phase-tab" name="preparing">
-          <IconListNumbers /> {{ t('combat.phases.preparing') }}
-        </QTab>
-        <QTab class="phase-tab" name="active">
-          <IconSwords /> {{ t('combat.phases.active') }}
-        </QTab>
-        <QTab class="phase-tab" name="completed">
-          <IconTrophy /> {{ t('combat.phases.completed') }}
-        </QTab>
-      </QTabs>
+      <QStepper
+        :model-value="activeTab"
+        flat
+        :header-nav="false"
+        class="phase-stepper"
+      >
+        <QStep
+          name="preparing"
+          :title="t('combat.phases.preparing')"
+          :icon="phaseIcons.preparing"
+          :active-icon="phaseIcons.preparing"
+          :done-icon="phaseIcons.preparing"
+        />
+        <QStep
+          name="active"
+          :title="t('combat.phases.active')"
+          :icon="phaseIcons.active"
+          :active-icon="phaseIcons.active"
+          :done-icon="phaseIcons.active"
+        />
+        <QStep
+          name="completed"
+          :title="t('combat.phases.completed')"
+          :icon="phaseIcons.completed"
+          :active-icon="phaseIcons.completed"
+          :done-icon="phaseIcons.completed"
+        />
+      </QStepper>
 
       <!-- Combat Summary -->
       <div v-if="combat?.status === 'active'" class="q-mb-md">
@@ -560,11 +602,12 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 <IconGhost3 v-else />
               </QItemSection>
 
-              <QItemSection class="participant-name">
-                {{ getCombatantDisplayName(participant) }}
-              </QItemSection>
               <QItemSection side class="participant-initiative">
                 {{ participant.initiative }}
+              </QItemSection>
+
+              <QItemSection class="participant-name">
+                {{ getCombatantDisplayName(participant) }}
               </QItemSection>
 
               <QItemSection
@@ -584,11 +627,9 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   v-else-if="
                     !participant.isPostponed && activeParticipantIndex !== index
                   "
+                  class="participant-wait"
                 >
-                  <IconClock
-                    :aria-label="t('combat.participantStatus.wait')"
-                    :title="t('combat.participantStatus.wait')"
-                  />
+                  <CombatWaitIcon :label="t('combat.participantStatus.wait')" />
                 </span>
               </QItemSection>
 
@@ -702,3 +743,36 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
     </BaseModal>
   </BaseEntityView>
 </template>
+
+<style scoped>
+.participant-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+}
+
+.participant-row {
+  min-height: 69px;
+}
+
+.participant-badge,
+.participant-wait {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 52px;
+}
+
+.participant-wait :deep(.combat-wait-icon) {
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.participant-actions :deep(.q-btn) {
+  height: 52px;
+}
+</style>

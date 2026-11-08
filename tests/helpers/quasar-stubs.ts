@@ -321,3 +321,30 @@ for (const name of passthroughNames) {
 }
 
 quasarStubs.QCheckbox = QCheckbox;
+
+const QStepper = defineComponent({
+  name: 'QStepper',
+  props: { modelValue: { type: [String, Number, Object], default: null } },
+  setup(_, { attrs, slots }) {
+    return () =>
+      h('div', { ...attrs, 'data-stub': 'QStepper' }, slots.default?.());
+  },
+});
+
+const QStep = defineComponent({
+  name: 'QStep',
+  props: {
+    name: { type: [String, Number], default: '' },
+    title: { type: String, default: '' },
+  },
+  setup(props, { slots }) {
+    return () =>
+      h('div', { 'data-stub': 'QStep', 'data-name': String(props.name) }, [
+        props.title,
+        slots.default?.(),
+      ]);
+  },
+});
+
+quasarStubs.QStepper = QStepper;
+quasarStubs.QStep = QStep;
