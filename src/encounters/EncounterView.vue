@@ -40,7 +40,7 @@ const isEditorOpen = ref(false);
 const showLinkModal = ref(false);
 const showPartySelector = ref(false);
 const activeTab = ref('information');
-const localMonsters = ref<Record<string, number>>({});
+const localPawns = ref<Record<string, number>>({});
 
 const encounter = ref<Encounter | null>(null);
 const loading = computed(() => !encounterStore.isLoaded);
@@ -66,9 +66,7 @@ watch(
 
 watch(showLinkModal, (isOpen) => {
   if (isOpen && encounter.value) {
-    localMonsters.value = JSON.parse(
-      JSON.stringify(encounter.value.monsters || {}),
-    );
+    localPawns.value = JSON.parse(JSON.stringify(encounter.value.pawns || {}));
   }
 });
 
@@ -99,29 +97,29 @@ const handleCancel = () => {
   isEditorOpen.value = false;
 };
 
-// Computed properties for monster linking
+// Computed properties for pawn linking
 const allMonsters = computed(() => monsterStore.filtered);
-const encounterMonsters = computed(() => {
-  if (!encounter.value || !encounter.value.monsters) return [];
+const encounterPawns = computed(() => {
+  if (!encounter.value || !encounter.value.pawns) return [];
   return allMonsters.value.filter((monster) =>
-    Object.keys(encounter.value!.monsters).includes(monster.id),
+    Object.keys(encounter.value!.pawns).includes(monster.id),
   );
 });
 
-// Reactive linked monsters state
-const linkedMonsters = ref<Record<string, boolean>>({});
+// Reactive linked pawns state
+const linkedPawns = ref<Record<string, boolean>>({});
 
-// Update linked monsters when encounter changes
+// Update linked pawns when encounter changes
 watch(
-  () => encounter.value?.monsters,
-  (newMonsters) => {
-    if (!newMonsters) {
-      linkedMonsters.value = {};
+  () => encounter.value?.pawns,
+  (newPawns) => {
+    if (!newPawns) {
+      linkedPawns.value = {};
       return;
     }
 
-    const linked = Object.keys(newMonsters);
-    linkedMonsters.value = allMonsters.value.reduce(
+    const linked = Object.keys(newPawns);
+    linkedPawns.value = allMonsters.value.reduce(
       (acc, monster) => {
         acc[monster.id] = linked.includes(monster.id);
         return acc;
@@ -132,17 +130,17 @@ watch(
   { immediate: true },
 );
 
-// Update linked monsters when allMonsters changes
+// Update linked pawns when allMonsters changes
 watch(
   allMonsters,
-  (newMonsters) => {
-    if (!encounter.value?.monsters) {
-      linkedMonsters.value = {};
+  (newPawns) => {
+    if (!encounter.value?.pawns) {
+      linkedPawns.value = {};
       return;
     }
 
-    const linked = Object.keys(encounter.value.monsters);
-    linkedMonsters.value = newMonsters.reduce(
+    const linked = Object.keys(encounter.value.pawns);
+    linkedPawns.value = newPawns.reduce(
       (acc, monster) => {
         acc[monster.id] = linked.includes(monster.id);
         return acc;
@@ -153,15 +151,15 @@ watch(
   { immediate: true },
 );
 
-const handleToggleMonster = (monster: Monster, isLinked: boolean) => {
+const handleTogglePawn = (monster: Monster, isLinked: boolean) => {
   if (!encounter.value) return;
-  const monsters = encounter.value.monsters || {};
+  const pawns = encounter.value.pawns || {};
   if (isLinked) {
-    monsters[monster.id] = 1;
+    pawns[monster.id] = 1;
   } else {
-    delete monsters[monster.id];
+    delete pawns[monster.id];
   }
-  encounterStore.update(encounter.value.id, { monsters });
+  encounterStore.update(encounter.value.id, { pawns });
   // Force a reactive update by reassigning the encounter
   encounter.value = encounterStore.getById(encounter.value.id);
 };
@@ -237,10 +235,10 @@ const tabs = computed(() => [
     badge: undefined,
   },
   {
-    id: 'monsters',
-    label: t('encounters.tabs.monsters'),
+    id: 'pawns',
+    label: t('encounters.tabs.pawns'),
     icon: IconGhost3,
-    badge: encounterMonsters.value.length,
+    badge: encounterPawns.value.length,
   },
   {
     id: 'combats',
@@ -256,8 +254,8 @@ const tabs = computed(() => [
   },
 ]);
 
-const handleModalToggleMonster = (monsterId: string, isLinked: boolean) => {
-  const current = { ...localMonsters.value };
+const handleModalTogglePawn = (monsterId: string, isLinked: boolean) => {
+  const current = { ...localPawns.value };
   if (isLinked) {
     if (current[monsterId] === undefined) {
       current[monsterId] = 1;
@@ -265,19 +263,19 @@ const handleModalToggleMonster = (monsterId: string, isLinked: boolean) => {
   } else {
     delete current[monsterId];
   }
-  localMonsters.value = current;
+  localPawns.value = current;
 };
 
 const handleModalQuantityChange = (monsterId: string, count: number) => {
-  if (localMonsters.value[monsterId] === undefined) return;
+  if (localPawns.value[monsterId] === undefined) return;
   const newCount = Math.max(1, count || 1);
-  localMonsters.value[monsterId] = newCount;
+  localPawns.value[monsterId] = newCount;
 };
 
-const handleSaveMonsterLinks = async () => {
+const handleSavePawnLinks = async () => {
   if (!encounter.value) return;
   await encounterStore.update(encounter.value.id, {
-    monsters: localMonsters.value,
+    pawns: localPawns.value,
   });
   showLinkModal.value = false;
 };
@@ -285,21 +283,21 @@ const handleSaveMonsterLinks = async () => {
 const openQuantityModal = async (monster: Monster) => {
   if (!encounter.value) return;
   const value = await prompt(
-    t('encounters.monsters.setQuantityFor', {
-      monsterName: monster.name,
+    t('encounters.pawns.setQuantityFor', {
+      pawnName: monster.name,
     }),
     {
       inputType: 'number',
-      modelValue: String(encounter.value.monsters?.[monster.id] || 1),
+      modelValue: String(encounter.value.pawns?.[monster.id] || 1),
     },
   );
   if (value === null) return;
   const count = Number(value);
 
   if (isNaN(count) || count < 1) return;
-  const monsters = { ...encounter.value.monsters };
-  monsters[monster.id] = count;
-  await encounterStore.update(encounter.value.id, { monsters });
+  const pawns = { ...encounter.value.pawns };
+  pawns[monster.id] = count;
+  await encounterStore.update(encounter.value.id, { pawns });
 };
 
 const rightDrawer = useRightDrawer();
@@ -359,30 +357,30 @@ async function handleEditorDelete() {
           <div v-html="safeDescription"></div>
         </section>
       </template>
-      <template #monsters>
+      <template #pawns>
         <div class="row items-center q-mb-md">
           <QBtn flat @click="showLinkModal = true" class="q-ml-md">{{
-            t('encounters.monsters.linkAction')
+            t('encounters.pawns.linkAction')
           }}</QBtn>
         </div>
         <div
-          v-if="encounterMonsters.length === 0"
+          v-if="encounterPawns.length === 0"
           class="q-pa-md text-grey text-center q-mt-xl"
         >
-          <p>{{ t('encounters.monsters.none') }}</p>
+          <p>{{ t('encounters.pawns.none') }}</p>
         </div>
         <div v-else class="row q-gutter-md">
           <div class="col-12">
             <table class="q-table">
               <thead>
                 <tr>
-                  <th>{{ t('monsters.name') }}</th>
+                  <th>{{ t('monsters.fields.name') }}</th>
                   <th>{{ t('common.quantity') }}</th>
                   <th>{{ t('common.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="monster in encounterMonsters" :key="monster.id">
+                <tr v-for="monster in encounterPawns" :key="monster.id">
                   <td>
                     <router-link :to="`/monsters/${monster.id}`">
                       {{ monster.name }}
@@ -390,13 +388,13 @@ async function handleEditorDelete() {
                   </td>
                   <td>
                     <QBtn flat @click="openQuantityModal(monster)">
-                      {{ encounter?.monsters[monster.id] }}
+                      {{ encounter?.pawns[monster.id] }}
                     </QBtn>
                   </td>
                   <td>
                     <button
                       class="unlink-btn"
-                      @click="handleToggleMonster(monster, false)"
+                      @click="handleTogglePawn(monster, false)"
                     >
                       {{ t('common.unlink') }}
                     </button>
@@ -465,22 +463,22 @@ async function handleEditorDelete() {
     <BaseModal
       :is-open="showLinkModal"
       @cancel="showLinkModal = false"
-      @submit="handleSaveMonsterLinks"
-      :title="t('encounters.monsters.linkModalTitle')"
-      modal-id="monster-linking-modal"
+      @submit="handleSavePawnLinks"
+      :title="t('encounters.pawns.linkModalTitle')"
+      modal-id="pawn-linking-modal"
       :show-cancel="true"
       :show-submit="true"
       :cancel-label="t('common.cancel')"
       :submit-label="t('common.save')"
     >
       <div v-if="allMonsters.length === 0" class="empty-state">
-        <p>{{ t('encounters.monsters.noneAvailable') }}</p>
+        <p>{{ t('encounters.pawns.noneAvailable') }}</p>
       </div>
-      <div v-else class="monsters-grid">
+      <div v-else class="pawns-grid">
         <table>
           <thead>
             <tr>
-              <th>{{ t('monsters.name') }}</th>
+              <th>{{ t('monsters.fields.name') }}</th>
               <th>{{ t('common.quantity') }}</th>
               <th>{{ t('common.linked') }}</th>
             </tr>
@@ -490,10 +488,10 @@ async function handleEditorDelete() {
               <td>{{ monster.name }}</td>
               <td>
                 <QInput
-                  v-if="localMonsters[monster.id] !== undefined"
+                  v-if="localPawns[monster.id] !== undefined"
                   type="number"
                   class="count-input"
-                  :model-value="localMonsters[monster.id] || 1"
+                  :model-value="localPawns[monster.id] || 1"
                   @update:model-value="
                     (val) =>
                       handleModalQuantityChange(
@@ -508,9 +506,9 @@ async function handleEditorDelete() {
               </td>
               <td>
                 <ToggleSwitch
-                  :model-value="localMonsters[monster.id] !== undefined"
+                  :model-value="localPawns[monster.id] !== undefined"
                   @update:model-value="
-                    handleModalToggleMonster(monster.id, $event)
+                    handleModalTogglePawn(monster.id, $event)
                   "
                 />
               </td>
@@ -581,29 +579,29 @@ async function handleEditorDelete() {
   margin: 0;
 }
 
-.monsters-grid {
+.pawns-grid {
   overflow-x: auto;
 }
 
-.monsters-grid table {
+.pawns-grid table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.monsters-grid th,
-.monsters-grid td {
+.pawns-grid th,
+.pawns-grid td {
   padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
 }
 
-.monsters-grid th {
+.pawns-grid th {
   background: var(--color-background);
   font-weight: 600;
   color: var(--color-text);
 }
 
-.monsters-grid td {
+.pawns-grid td {
   color: var(--color-text-light);
 }
 
@@ -744,7 +742,7 @@ async function handleEditorDelete() {
   font-weight: 600;
 }
 
-.monster-linking-modal-list {
+.pawn-linking-modal-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -754,7 +752,7 @@ async function handleEditorDelete() {
   margin-right: -0.5rem;
 }
 
-.monster-link-item {
+.pawn-link-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -763,7 +761,7 @@ async function handleEditorDelete() {
   transition: background-color 0.2s;
 }
 
-.monster-link-item:hover {
+.pawn-link-item:hover {
   background-color: var(--color-background);
 }
 

@@ -112,7 +112,7 @@ export interface Combatant extends WithMetadata {
 export interface Encounter extends WithMetadata {
   name: string;
   description?: string;
-  monsters: Record<UUID, number>;
+  pawns: Record<UUID, number>;
 }
 
 export interface Combat extends WithMetadata {

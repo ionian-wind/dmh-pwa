@@ -52,7 +52,7 @@ describe('editor submit identity', () => {
           id: 'e1',
           name: 'Ambush',
           description: '',
-          monsters: {},
+          pawns: {},
           moduleIds: ['m1'],
           createdAt: 1,
           updatedAt: 1,

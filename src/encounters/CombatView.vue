@@ -87,19 +87,19 @@ const partyCharacters = computed(() => {
     .filter((c): c is NonNullable<typeof c> => !!c);
 });
 
-const encounterMonsters = computed(() => {
+const encounterPawns = computed(() => {
   if (!encounter.value) return [];
-  // encounter.value.monsters is Record<UUID, number>
-  const monsters: any[] = [];
-  Object.entries(encounter.value.monsters).forEach(([monsterId, count]) => {
+  // encounter.value.pawns is Record<UUID, number>
+  const pawns: any[] = [];
+  Object.entries(encounter.value.pawns).forEach(([monsterId, count]) => {
     const monster = monsterStore.getById(monsterId);
     if (monster) {
       for (let i = 0; i < count; i++) {
-        monsters.push({ ...monster, instance: i + 1 });
+        pawns.push({ ...monster, instance: i + 1 });
       }
     }
   });
-  return monsters;
+  return pawns;
 });
 
 const allParticipants = computed(() => {
@@ -108,12 +108,12 @@ const allParticipants = computed(() => {
     type: 'player',
     referenceId: c.id,
   }));
-  const monsters = encounterMonsters.value.map((m) => ({
+  const pawnCombatants = encounterPawns.value.map((m) => ({
     id: m.id + (m.instance ? `-${m.instance}` : ''),
     type: 'monster',
     referenceId: m.id,
   }));
-  return [...players, ...monsters];
+  return [...players, ...pawnCombatants];
 });
 
 const availableCharactersToAdd = computed(() => {

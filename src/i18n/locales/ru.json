@@ -165,20 +165,17 @@
     "delete": "Удалить схватку",
     "namePlaceholder": "Введите название схватки",
     "descriptionPlaceholder": "Введите описание схватки",
-    "notesPlaceholder": "Введите заметки о схватке",
     "runCombat": "Начать бой",
-    "linkMonsters": "Связать монстров",
     "unlink": "Отвязать",
     "count": "Количество",
-    "noMonstersYet": "В этой схватке пока нет монстров",
     "noCombatsYet": "В этой схватке пока нет боёв",
     "fields": {
       "name": "Имя",
       "description": "Описание",
       "difficulty": "Сложность",
       "level": "Уровень",
-      "monsters": "Монстры",
-      "xp": "Опыта"
+      "xp": "Опыта",
+      "pawns": "Пешки"
     },
     "difficulties": {
       "easy": "Лёгкая",
@@ -188,17 +185,8 @@
     },
     "tabs": {
       "information": "Информация",
-      "monsters": "Монстры",
-      "combats": "Бои"
-    },
-    "monsters": {
-      "title": "Монстры",
-      "linkAction": "Привязать монстров",
-      "linkModalTitle": "Привязка монстров к столкновению",
-      "none": "В этой схватке нет монстров",
-      "noneAvailable": "Нет доступных монстров для привязки.",
-      "setQuantity": "Установить количество монстров",
-      "setQuantityFor": "Установить количество для {monsterName}"
+      "combats": "Бои",
+      "pawns": "Пешки"
     },
     "combats": {
       "title": "Бои",
@@ -217,6 +205,17 @@
       "actions": "Действия",
       "view": "Открыть",
       "none": "Боев пока нет"
+    },
+    "linkPawns": "Связать пешки",
+    "noPawnsYet": "В этой схватке пока нет пешек",
+    "pawns": {
+      "title": "Пешки",
+      "linkAction": "Связать пешки",
+      "linkModalTitle": "Привязка пешек к схватке",
+      "none": "В этой схватке нет пешек",
+      "noneAvailable": "Нет доступных пешек для привязки.",
+      "setQuantity": "Установить количество пешек",
+      "setQuantityFor": "Установить количество для {pawnName}"
     }
   },
   "drawing": {
@@ -413,7 +412,7 @@
     }
   },
   "encounterCard": {
-    "monsters": "Монстры:"
+    "pawns": "Пешки:"
   },
   "partyView": {
     "title": "Группа",
@@ -463,10 +462,10 @@
     "party": "Группа:",
     "characters": "Персонажи:",
     "encounter": "Схватка:",
-    "monsters": "Монстры:",
     "selectCharacters": "Выберите персонажей",
     "selectAtLeastOneCharacter": "Выберите хотя бы одного персонажа для начала боя.",
-    "startCombat": "Начать бой"
+    "startCombat": "Начать бой",
+    "pawns": "Пешки:"
   },
   "language": {
     "english": "Английский",

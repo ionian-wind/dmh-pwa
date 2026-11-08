@@ -160,7 +160,7 @@ describe('domain cards', () => {
       id: 'enc',
       name: 'Ambush',
       description: 'Goblins',
-      monsters: { goblin: 2, ogre: 1 },
+      pawns: { goblin: 2, ogre: 1 },
       moduleIds: [],
     } as any;
     const wrapper = mount(EncounterCard, { props: { encounter } });
@@ -178,13 +178,13 @@ describe('domain cards', () => {
     expect(wrapper.text()).toContain('2 (3)');
   });
 
-  it('EncounterCard counts monsters defensively', async () => {
+  it('EncounterCard counts pawns defensively', async () => {
     const known = mount(EncounterCard, {
       props: {
         encounter: {
           id: 'e1',
           name: 'Known',
-          monsters: { goblin: 'many', ogre: 2 },
+          pawns: { goblin: 'many', ogre: 2 },
         },
       },
     });
@@ -207,7 +207,7 @@ describe('domain cards', () => {
         encounter: {
           id: 'e3',
           name: 'Empty',
-          monsters: null,
+          pawns: null,
         },
       },
     });

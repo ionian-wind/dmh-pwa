@@ -91,7 +91,7 @@ leaving the Scenes tab.
 
 ## Relationships
 
-- `encounter.monsters` maps monster IDs to counts.
+- `encounter.pawns` maps monster IDs to pawn counts.
 - `combat.combatants[].referenceId` → monster IDs.
 
 ## Limitations

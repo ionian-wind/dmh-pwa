@@ -26,7 +26,7 @@ type EncounterFormData = Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>;
 const editedEncounter = ref<EncounterFormData>({
   name: '',
   description: '',
-  monsters: {},
+  pawns: {},
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
@@ -64,7 +64,7 @@ watch(
       editedEncounter.value = {
         name: '',
         description: '',
-        monsters: {},
+        pawns: {},
       };
     }
   },
@@ -75,7 +75,7 @@ const resetForm = () => {
   editedEncounter.value = {
     name: '',
     description: '',
-    monsters: {},
+    pawns: {},
   };
 };
 

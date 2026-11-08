@@ -10,19 +10,19 @@ const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
 const { t } = useI18n();
 
-const monstersCount = computed(() => {
-  const monsters = props.encounter.monsters || {};
+const pawnsCount = computed(() => {
+  const pawns = props.encounter.pawns || {};
 
   // Handle different possible data structures
   let kinds = 0;
   let total = 0;
 
-  if (typeof monsters === 'object' && monsters !== null) {
-    const keys = Object.keys(monsters);
+  if (typeof pawns === 'object' && pawns !== null) {
+    const keys = Object.keys(pawns);
     kinds = keys.length;
 
     // Sum up all the values, ensuring they're numbers
-    total = Object.values(monsters).reduce((sum, value) => {
+    total = Object.values(pawns).reduce((sum, value) => {
       const count = typeof value === 'number' ? value : 0;
       return sum + count;
     }, 0);
@@ -67,9 +67,9 @@ function handleCopy() {
     <p v-if="encounter.description" class="description">
       {{ encounter.description }}
     </p>
-    <div class="monsters-summary">
-      <span class="label">{{ t('encounterCard.monsters') }}</span>
-      <span class="value">{{ monstersCount }}</span>
+    <div class="pawns-summary">
+      <span class="label">{{ t('encounterCard.pawns') }}</span>
+      <span class="value">{{ pawnsCount }}</span>
     </div>
     <template #actions>
       <QBtn

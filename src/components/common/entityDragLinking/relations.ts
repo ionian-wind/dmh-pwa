@@ -124,7 +124,7 @@ export function useEntityLinkRelations() {
     if (sourceKind === 'monster') {
       if (targetKind === 'encounter') {
         return items('encounter')
-          .filter((encounter) => Number(encounter.monsters?.[sourceId]) > 0)
+          .filter((encounter) => Number(encounter.pawns?.[sourceId]) > 0)
           .map((encounter) => encounter.id);
       }
       if (targetKind === 'location') {
@@ -137,7 +137,7 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'encounter') {
-      if (targetKind === 'monster') return Object.keys(source?.monsters ?? {});
+      if (targetKind === 'monster') return Object.keys(source?.pawns ?? {});
       if (targetKind === 'location') {
         return items('location')
           .filter((location) =>
@@ -251,13 +251,13 @@ export function useEntityLinkRelations() {
 
     if (sourceKind === 'monster' && targetKind === 'encounter') {
       for (const encounter of items('encounter')) {
-        const linked = Number(encounter.monsters?.[sourceId]) > 0;
+        const linked = Number(encounter.pawns?.[sourceId]) > 0;
         const shouldLink = ids.includes(encounter.id);
         if (linked === shouldLink) continue;
-        const monsters = { ...(encounter.monsters ?? {}) };
-        if (shouldLink) monsters[sourceId] = 1;
-        else delete monsters[sourceId];
-        await stores.encounter.update(encounter.id, { monsters });
+        const pawns = { ...(encounter.pawns ?? {}) };
+        if (shouldLink) pawns[sourceId] = 1;
+        else delete pawns[sourceId];
+        await stores.encounter.update(encounter.id, { pawns });
       }
       return;
     }
@@ -267,15 +267,15 @@ export function useEntityLinkRelations() {
     }
 
     if (sourceKind === 'encounter' && targetKind === 'monster') {
-      const current = { ...(source?.monsters ?? {}) };
-      const monsters: Record<string, number> = {};
+      const current = { ...(source?.pawns ?? {}) };
+      const pawns: Record<string, number> = {};
       for (const [monsterId, count] of Object.entries(current)) {
-        if (ids.includes(monsterId)) monsters[monsterId] = Number(count) || 1;
+        if (ids.includes(monsterId)) pawns[monsterId] = Number(count) || 1;
       }
       for (const monsterId of ids) {
-        if (!(monsterId in monsters)) monsters[monsterId] = 1;
+        if (!(monsterId in pawns)) pawns[monsterId] = 1;
       }
-      await stores.encounter.update(sourceId, { monsters });
+      await stores.encounter.update(sourceId, { pawns });
       return;
     }
     if (sourceKind === 'encounter' && targetKind === 'location') {

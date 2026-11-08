@@ -108,9 +108,9 @@ const handleCreateCombat = async () => {
     return;
   }
 
-  // Get encounter monsters
-  const encounterMonsters = monsterStore.items.filter((m) =>
-    Object.keys(props.encounter!.monsters || {}).includes(m.id),
+  // Get encounter pawns
+  const encounterPawns = monsterStore.items.filter((m) =>
+    Object.keys(props.encounter!.pawns || {}).includes(m.id),
   );
 
   // Create combatants from characters
@@ -126,12 +126,12 @@ const handleCreateCombat = async () => {
     updatedAt: Date.now(),
   }));
 
-  // Create combatants from monsters with counts
-  const monsterCombatants: Combatant[] = [];
-  encounterMonsters.forEach((monster) => {
-    const count = props.encounter!.monsters[monster.id] || 1;
+  // Create combatants from pawns with counts
+  const pawnCombatants: Combatant[] = [];
+  encounterPawns.forEach((monster) => {
+    const count = props.encounter!.pawns[monster.id] || 1;
     for (let i = 0; i < count; i++) {
-      monsterCombatants.push({
+      pawnCombatants.push({
         id: generateId(),
         type: 'monster',
         referenceId: monster.id,
@@ -146,7 +146,7 @@ const handleCreateCombat = async () => {
   });
 
   // Combine all combatants
-  const allCombatants = [...characterCombatants, ...monsterCombatants];
+  const allCombatants = [...characterCombatants, ...pawnCombatants];
 
   // Create the combat
   const newCombat: Omit<Combat, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -190,9 +190,9 @@ const handleCancel = () => {
               {{ encounter?.name }}
             </p>
             <p>
-              <strong>{{ t('partySelector.monsters') }}</strong>
+              <strong>{{ t('partySelector.pawns') }}</strong>
               {{
-                Object.values(encounter?.monsters || {}).reduce(
+                Object.values(encounter?.pawns || {}).reduce(
                   (sum, count) => sum + count,
                   0,
                 )

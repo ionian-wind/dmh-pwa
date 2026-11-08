@@ -2,20 +2,20 @@
 
 ## Purpose
 
-An encounter is a planned fight: a named set of monsters with
-quantities. It is the template from which a combat is created.
+An encounter is a planned fight: a named set of pawns with quantities, drawn
+from the monster catalog. It is the template from which a combat is created.
 
 ## Key files
 
-| File                                      | Role                                             |
-| ----------------------------------------- | ------------------------------------------------ |
-| `src/stores/encounters.ts`                | Store + name search                              |
-| `src/encounters/EncountersView.vue`       | List page                                        |
-| `src/encounters/EncounterCard.vue`        | Card with "run combat" action                    |
-| `src/encounters/EncounterEditor.vue`      | Create/edit modal                                |
-| `src/encounters/EncounterView.vue`        | Detail page (information/monsters/combats/links) |
-| `src/encounters/EncounterViewSidebar.vue` | Scenes/mentions tabs sidebar                     |
-| `src/encounters/PartySelector.vue`        | Party/character selection → combat               |
+| File                                      | Role                                          |
+| ----------------------------------------- | --------------------------------------------- |
+| `src/stores/encounters.ts`                | Store + name search                           |
+| `src/encounters/EncountersView.vue`       | List page                                     |
+| `src/encounters/EncounterCard.vue`        | Card with "run combat" action                 |
+| `src/encounters/EncounterEditor.vue`      | Create/edit modal                             |
+| `src/encounters/EncounterView.vue`        | Detail page (information/pawns/combats/links) |
+| `src/encounters/EncounterViewSidebar.vue` | Scenes/mentions tabs sidebar                  |
+| `src/encounters/PartySelector.vue`        | Party/character selection → combat            |
 
 ## Data
 
@@ -26,12 +26,12 @@ interface Encounter {
   updatedAt: number;
   name: string;
   description?: string;
-  monsters: Record<string, number>; // monsterId -> count
+  pawns: Record<string, number>; // monsterId -> pawn count
 }
 ```
 
-Schema requires `name`, `monsters`, timestamps; monster counts are
-constrained to 1..20. `description` is allowed but not listed in the schema.
+Schema requires `name`, `pawns`, timestamps; pawn counts are constrained to
+1..20. `description` is allowed but not listed in the schema.
 
 ## List page (`EncountersView.vue`)
 
@@ -75,13 +75,13 @@ the emitted object for later use.
 
 ## Detail page (`EncounterView.vue`)
 
-Tabs: Information, Monsters, Combats.
+Tabs: Information, Pawns, Combats.
 
 - Information: renders `encounter.description` with `v-html` (sanitized via
   `sanitizeHtmlContent`).
-- Monsters:
+- Pawns:
   - Loads all monsters and shows those whose IDs are keys of
-    `encounter.monsters`.
+    `encounter.pawns`.
   - Link action opens a modal with a toggle per monster and a quantity input.
   - Toggling/unlinking persists immediately through `encounterStore.update`.
   - Inline quantity button opens a `prompt()` dialog and persists.
@@ -103,14 +103,14 @@ See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 
 - Select a party; all its characters start selected.
 - Toggle characters.
-- Monsters are expanded to one combatant per count.
+- Pawns are expanded to one combatant per count.
 - Creates a combat with `status: 'preparing'`, `currentRound: 0`,
   `currentTurn: 0`, and all combatants at initiative 0.
 - Navigates to the combat page.
 
 ## Relationships
 
-- `encounter.monsters` → monster IDs with counts.
+- `encounter.pawns` → monster IDs with pawn counts.
 - `combat.encounterId` → encounter.
 - Encounter-generated combats snapshot monster instances at creation.
 
@@ -118,7 +118,7 @@ See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 
 - No CR/XP budget or difficulty calculation.
 - No environment, tactics, or loot fields.
-- Monster quantities are hard-capped at 20 by the schema.
-- Encounter list card has no monster names, only counts.
+- Pawn quantities are hard-capped at 20 by the schema.
+- Encounter list card has no monster names, only pawn counts.
 - Delete does not cascade to combats.
 - Description is rendered as raw HTML.

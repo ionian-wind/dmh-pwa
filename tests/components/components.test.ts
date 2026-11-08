@@ -797,7 +797,7 @@ describe('current domain cards', () => {
           id: 'e1',
           name: 'Ambush',
           description: 'Goblins',
-          monsters: { m1: 2, m2: 1 },
+          pawns: { m1: 2, m2: 1 },
         },
       },
     });

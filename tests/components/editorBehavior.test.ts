@@ -195,7 +195,7 @@ describe('editor behavior', () => {
       id: 'e1',
       name: 'Ambush',
       description: 'Goblins',
-      monsters: {},
+      pawns: {},
       createdAt: 1,
       updatedAt: 1,
     };

@@ -5,6 +5,7 @@ import noteContentType from '@/migrations/0000000008_note_content_type';
 import removeNoteContentType from '@/migrations/0000000015_remove_note_content_type';
 import stripEscapedAnchorSpaces from '@/migrations/0000000016_strip_escaped_block_anchor_spaces';
 import removeEncounterNotes from '@/migrations/0000000017_remove_encounter_notes';
+import renameEncounterPawns from '@/migrations/0000000018_rename_encounter_monsters_to_pawns';
 
 function transactionWith(storeData: Record<string, any[]>) {
   const stores = new Map<string, any>();
@@ -236,5 +237,46 @@ describe('map location migrations', () => {
       .get('encounters')
       .put.mock.calls.map((call: any[]) => call[0]);
     expect(saved).toEqual([{ id: 'e1', name: 'Ambush', monsters: { m1: 2 } }]);
+  });
+
+  it('renames encounter monsters to pawns', async () => {
+    const { stores, transaction } = transactionWith({
+      encounters: [
+        {
+          id: 'e1',
+          name: 'Ambush',
+          monsters: { m1: 2 },
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        { id: 'e2', name: 'Patrol', pawns: { m2: 1 } },
+        {
+          id: 'e3',
+          name: 'Mixed',
+          monsters: { m1: 1 },
+          pawns: { m2: 2 },
+        },
+      ],
+    });
+
+    await renameEncounterPawns.go(transaction);
+
+    const saved = stores
+      .get('encounters')
+      .put.mock.calls.map((call: any[]) => call[0]);
+    expect(saved).toEqual([
+      {
+        id: 'e1',
+        name: 'Ambush',
+        pawns: { m1: 2 },
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: 'e3',
+        name: 'Mixed',
+        pawns: { m2: 2 },
+      },
+    ]);
   });
 });

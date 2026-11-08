@@ -164,20 +164,17 @@
     "delete": "Delete Encounter",
     "namePlaceholder": "Enter encounter name",
     "descriptionPlaceholder": "Enter encounter description",
-    "notesPlaceholder": "Enter encounter notes",
     "runCombat": "Run Combat",
-    "linkMonsters": "Link Monsters",
     "unlink": "Unlink",
     "count": "Count",
-    "noMonstersYet": "No monsters in this encounter yet",
     "noCombatsYet": "No combats for this encounter yet",
     "fields": {
       "name": "Name",
       "description": "Description",
       "difficulty": "Difficulty",
       "level": "Level",
-      "monsters": "Monsters",
-      "xp": "XP"
+      "xp": "XP",
+      "pawns": "Pawns"
     },
     "difficulties": {
       "easy": "Easy",
@@ -187,17 +184,8 @@
     },
     "tabs": {
       "information": "Information",
-      "monsters": "Monsters",
-      "combats": "Combats"
-    },
-    "monsters": {
-      "title": "Monsters",
-      "linkAction": "Link Monsters",
-      "linkModalTitle": "Link Monsters to Encounter",
-      "none": "No monsters in this encounter",
-      "noneAvailable": "No monsters available to link.",
-      "setQuantity": "Set Monster Quantity",
-      "setQuantityFor": "Set quantity for {monsterName}"
+      "combats": "Combats",
+      "pawns": "Pawns"
     },
     "combats": {
       "title": "Combats",
@@ -216,6 +204,17 @@
       "actions": "Actions",
       "view": "View",
       "none": "No combats yet"
+    },
+    "linkPawns": "Link Pawns",
+    "noPawnsYet": "No pawns in this encounter yet",
+    "pawns": {
+      "title": "Pawns",
+      "linkAction": "Link Pawns",
+      "linkModalTitle": "Link Pawns to Encounter",
+      "none": "No pawns in this encounter",
+      "noneAvailable": "No pawns available to link.",
+      "setQuantity": "Set Pawn Quantity",
+      "setQuantityFor": "Set quantity for {pawnName}"
     }
   },
   "drawing": {
@@ -412,7 +411,7 @@
     }
   },
   "encounterCard": {
-    "monsters": "Monsters:"
+    "pawns": "Pawns:"
   },
   "partyView": {
     "title": "Party",
@@ -462,10 +461,10 @@
     "party": "Party:",
     "characters": "Characters:",
     "encounter": "Encounter:",
-    "monsters": "Monsters:",
     "selectCharacters": "Select Characters",
     "selectAtLeastOneCharacter": "Select at least one character to start combat.",
-    "startCombat": "Start Combat"
+    "startCombat": "Start Combat",
+    "pawns": "Pawns:"
   },
   "language": {
     "english": "English",

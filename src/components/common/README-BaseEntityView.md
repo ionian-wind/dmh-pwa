@@ -223,6 +223,6 @@ The component uses CSS custom properties for theming:
   :on-edit="editEncounter"
 >
   <EncounterDetails :encounter="encounter" />
-  <MonsterList :monsters="encounter.monsters" />
+  <MonsterList :monsters="encounter.pawns" />
 </BaseEntityView>
 ```

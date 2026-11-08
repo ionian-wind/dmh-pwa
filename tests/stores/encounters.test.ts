@@ -15,12 +15,12 @@ describe('encounter store', () => {
     const store = useEncounterStore();
     await store.create({
       name: 'Ambush',
-      monsters: { m1: 2 },
+      pawns: { m1: 2 },
       moduleIds: ['mod'],
     });
     await store.create({
       name: 'Boss Fight',
-      monsters: { m2: 1 },
+      pawns: { m2: 1 },
       moduleIds: ['mod'],
     });
 
@@ -40,12 +40,12 @@ describe('encounter store', () => {
     const store = useEncounterStore();
     const created = await store.create({
       name: 'Ambush',
-      monsters: { m1: 2 },
+      pawns: { m1: 2 },
       moduleIds: ['mod'],
     });
     const updated = await store.update(created.id, {
-      monsters: { m1: 3, m2: 1 },
+      pawns: { m1: 3, m2: 1 },
     });
-    expect(updated.monsters).toEqual({ m1: 3, m2: 1 });
+    expect(updated.pawns).toEqual({ m1: 3, m2: 1 });
   });
 });

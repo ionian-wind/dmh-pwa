@@ -92,8 +92,8 @@ Loads characters, monsters, combats, encounters, parties.
 encounter  = encounterStore.getById(combat.encounterId)
 party      = partyStore.getById(combat.partyId)
 partyCharacters = party.characters mapped through characterStore
-encounterMonsters = encounter.monsters expanded to instances
-allParticipants = players + monsters (unsaved template)
+encounterPawns = encounter.pawns expanded to instances
+allParticipants = players + pawns (unsaved template)
 ```
 
 A watcher on `combat` fills `combat.combatants` when the combat is

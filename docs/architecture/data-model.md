@@ -103,7 +103,7 @@ Again, no stat block/CR/HP fields exist.
 | ------------- | ------------------------ | ----------------------------------------- |
 | `name`        | `string`                 | Required                                  |
 | `description` | `string?`                | Rendered with `v-html` in the detail view |
-| `monsters`    | `Record<string, number>` | Monster ID → count (schema: 1..20)        |
+| `pawns`       | `Record<string, number>` | Monster ID → pawn count (schema: 1..20)   |
 
 ### Combat
 
@@ -320,7 +320,7 @@ Map image bytes live in the generic `files` store.
 erDiagram
   NOTE_TYPE ||--o{ NOTE : "note.typeId"
   PARTY }o--o{ CHARACTER : "party.characters"
-  ENCOUNTER }o--o{ MONSTER : "encounter.monsters{count}"
+  ENCOUNTER }o--o{ MONSTER : "encounter.pawns{count}"
   ENCOUNTER ||--o{ COMBAT : "combat.encounterId"
   PARTY ||--o{ COMBAT : "combat.partyId"
   COMBAT ||--o{ COMBATANT : "embedded"
@@ -346,7 +346,7 @@ There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 - Deleting a character leaves it in `party.characters`; `PartyView` filters via
   `characterStore`, so it disappears from the list but the ID remains and is
   re-saved on the next party update.
-- Deleting a monster leaves its key in `encounter.monsters`; the encounter
+- Deleting a monster leaves its key in `encounter.pawns`; the encounter
   table simply does not render it, but the count is still exported.
 - Deleting a track removes its file record even if another track references the
   same `fileId`.

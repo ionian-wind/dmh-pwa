@@ -55,8 +55,8 @@ async function seedStores() {
   mocks.stores.character.items.value = [{ id: 'c1' }, { id: 'c2' }];
   mocks.stores.monster.items.value = [{ id: 'mo1' }, { id: 'mo2' }];
   mocks.stores.encounter.items.value = [
-    { id: 'e1', monsters: {} },
-    { id: 'e2', monsters: {} },
+    { id: 'e1', pawns: {} },
+    { id: 'e2', pawns: {} },
   ];
   mocks.stores.location.items.value = [
     { id: 'l1', entities: [] },
@@ -184,7 +184,7 @@ describe('entity drag link relations', () => {
 
   it('links monsters to encounters and locations', async () => {
     const relations = useEntityLinkRelations();
-    mocks.stores.encounter.items.value[0].monsters = { mo1: 3 };
+    mocks.stores.encounter.items.value[0].pawns = { mo1: 3 };
     mocks.stores.location.items.value[0].entities = [
       { kind: 'monster', id: 'mo1' },
     ];
@@ -198,8 +198,8 @@ describe('entity drag link relations', () => {
 
     await relations.setLinkedIds('monster', 'mo1', 'encounter', ['e2']);
     await relations.setLinkedIds('monster', 'mo1', 'location', []);
-    expect(mocks.stores.encounter.items.value[0].monsters).toEqual({});
-    expect(mocks.stores.encounter.items.value[1].monsters).toEqual({
+    expect(mocks.stores.encounter.items.value[0].pawns).toEqual({});
+    expect(mocks.stores.encounter.items.value[1].pawns).toEqual({
       mo1: 1,
     });
     expect(mocks.stores.location.items.value[0].entities).toEqual([]);
@@ -207,7 +207,7 @@ describe('entity drag link relations', () => {
 
   it('links encounters to monsters and locations', async () => {
     const relations = useEntityLinkRelations();
-    mocks.stores.encounter.items.value[0].monsters = { mo1: 2 };
+    mocks.stores.encounter.items.value[0].pawns = { mo1: 2 };
     mocks.stores.location.items.value[0].entities = [
       { kind: 'encounter', id: 'e1' },
     ];
@@ -221,7 +221,7 @@ describe('entity drag link relations', () => {
 
     await relations.setLinkedIds('encounter', 'e1', 'monster', ['mo2']);
     await relations.setLinkedIds('encounter', 'e1', 'location', ['l2']);
-    expect(mocks.stores.encounter.items.value[0].monsters).toEqual({
+    expect(mocks.stores.encounter.items.value[0].pawns).toEqual({
       mo2: 1,
     });
     expect(mocks.stores.location.items.value[1].entities).toEqual([

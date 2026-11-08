@@ -32,7 +32,7 @@ function linkBlock(wrapper: ReturnType<typeof mount>, kind: string) {
 const encounter = {
   id: 'e1',
   name: 'Ambush',
-  monsters: { m1: 2, m2: 1 },
+  pawns: { m1: 2, m2: 1 },
 } as any;
 
 async function mountSelector(overrides: Record<string, any> = {}) {
