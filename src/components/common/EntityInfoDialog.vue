@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import {
   IconAffiliate,
+  IconDots,
   IconEdit,
   IconExternalLink,
   IconEye,
@@ -20,6 +21,7 @@ import {
 } from '@/components/common/entityLinking/entityRefs';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
+import type { Note } from '@/types';
 import { alert } from '@/dialogs';
 
 const EntityViewLinks = defineAsyncComponent(
@@ -28,6 +30,9 @@ const EntityViewLinks = defineAsyncComponent(
 const EntitiesLinking = defineAsyncComponent(
   () => import('@/components/common/EntitiesLinking.vue'),
 );
+const NoteOptions = __FEATURE_NOTES__
+  ? defineAsyncComponent(() => import('@/notes/NoteOptions.vue'))
+  : null;
 
 const LINK_TARGETS: Record<string, MapEntityKind[]> = {
   note: ['party', 'pawn', 'encounter', 'character', 'location'],
@@ -104,6 +109,8 @@ const supportsPicture = computed(
   () => !!entity.value && 'picture' in entity.value,
 );
 const canEdit = computed(() => !!props.entityId && !!entityStore.value?.update);
+const isNote = computed(() => props.entityKind === 'note');
+const noteDraft = computed(() => draft.value as unknown as Note);
 
 const linkKinds = computed<MapEntityKind[]>(() => {
   const kind = props.entityKind as MapEntityKind | undefined;
@@ -193,7 +200,14 @@ async function finishEditing() {
   }
 
   const title = String(draft.value[titleField.value] ?? '').trim();
-  if (!title) {
+  const body = String(draft.value[bodyField.value] ?? '').trim();
+  if (props.entityKind === 'note') {
+    if (!title && !body) {
+      activeTab.value = 'main';
+      await alert(t('editor.titleOrContentRequired'));
+      return;
+    }
+  } else if (!title) {
     activeTab.value = 'main';
     await alert(t('common.nameRequired'));
     return;
@@ -207,6 +221,10 @@ async function finishEditing() {
     [titleField.value]: title,
     [bodyField.value]: draft.value[bodyField.value] ?? '',
   };
+  if (isNote.value) {
+    patch.typeId = draft.value.typeId ?? null;
+    patch.tags = [...(draft.value.tags ?? [])];
+  }
   if (supportsPicture.value) {
     patch.picture = draft.value.picture ?? '';
   }
@@ -229,6 +247,12 @@ function setEditMode(value: boolean) {
     startEditing();
   } else {
     void finishEditing();
+  }
+}
+
+function handleOptionsUpdate(updated: Note) {
+  if (draft.value) {
+    Object.assign(draft.value, updated);
   }
 }
 
@@ -292,6 +316,35 @@ watch(
       >
         <IconExternalLink :size="20" />
       </QBtn>
+    </template>
+
+    <template v-if="isNote && isEditMode" #footer>
+      <div
+        class="note-dialog-footer-actions q-mr-auto row items-center q-gutter-sm"
+      >
+        <QBtn
+          flat
+          round
+          class="note-options-button"
+          title="options"
+          aria-label="options"
+        >
+          <IconDots />
+          <QMenu class="note-options-menu">
+            <QCard class="note-options-card q-pa-md">
+              <component
+                :is="NoteOptions"
+                v-if="NoteOptions"
+                :note="noteDraft"
+                @update:note="handleOptionsUpdate"
+              />
+            </QCard>
+          </QMenu>
+        </QBtn>
+        <QToggle left-label v-model="isVisualMode">
+          {{ t('markdownEditor.visualMode') }}
+        </QToggle>
+      </div>
     </template>
 
     <template v-if="canEdit" #footer-center>

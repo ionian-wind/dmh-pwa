@@ -46,6 +46,7 @@ const BaseModalStub = defineComponent({
     return () =>
       h('div', { class: 'base-modal-stub' }, [
         slots['header-actions']?.(),
+        slots['footer']?.(),
         slots['footer-center']?.(),
         slots.main?.(),
         slots.default?.(),
@@ -177,6 +178,57 @@ describe('EntityInfoDialog', () => {
       expect.objectContaining({
         name: 'Aria the Ranger',
         notes: 'Ranger',
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it('allows saving a note with text but no title', async () => {
+    const wrapper = mountDialog({
+      entityKind: 'note',
+      entityId: 'c1',
+    });
+    await flushPromises();
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    wrapper.findComponent(EntityInlineEditorStub).vm.$emit('update:title', '');
+
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+
+    expect(mocks.update).toHaveBeenCalledWith(
+      'c1',
+      expect.objectContaining({ name: '', notes: 'Ranger' }),
+    );
+    wrapper.unmount();
+  });
+
+  it('shows note options and the visual editor toggle while editing', async () => {
+    const wrapper = mountDialog({
+      entityKind: 'note',
+      entityId: 'c1',
+    });
+    await flushPromises();
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('.note-options-button').exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'QToggle' }).exists()).toBe(true);
+
+    wrapper.findComponent({ name: 'NoteOptions' }).vm.$emit('update:note', {
+      ...entity,
+      typeId: 'type-1',
+      tags: ['forest'],
+    });
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+
+    expect(mocks.update).toHaveBeenCalledWith(
+      'c1',
+      expect.objectContaining({
+        typeId: 'type-1',
+        tags: ['forest'],
       }),
     );
     wrapper.unmount();
