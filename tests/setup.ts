@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { config } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
-import { vi, beforeEach, beforeAll } from 'vitest';
+import { vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { exposeConsole, debug } from '../src/utils/debug';
 import { resetStoreCache } from '../src/utils/storage';
 import en from '../src/i18n/locales/en.json';
@@ -114,6 +114,14 @@ config.global.directives = { ripple: {} };
 
 beforeAll(async () => {
   await exposeConsole();
+});
+
+// Close any Dexie connection opened during the test while the jsdom
+// environment is still alive. Otherwise a pending database open/creation can
+// fire Dexie's storage-mutated event during environment teardown, where
+// `dispatchEvent` is no longer defined.
+afterEach(async () => {
+  await resetStoreCache();
 });
 
 // Reset mocks before each test
