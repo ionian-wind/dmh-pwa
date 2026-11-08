@@ -47,10 +47,16 @@ const ScenesStub = defineComponent({
   setup: () => () => h('div', { class: 'scenes-stub' }),
 });
 
-const PawnViewDialogStub = defineComponent({
-  name: 'PawnViewDialog',
-  props: { isOpen: Boolean, pawn: Object },
-  setup: () => () => h('div', { class: 'pawn-view-dialog-stub' }),
+const EntityInfoDialogStub = defineComponent({
+  name: 'EntityInfoDialog',
+  props: {
+    isOpen: Boolean,
+    title: String,
+    picture: String,
+    notes: String,
+    to: String,
+  },
+  setup: () => () => h('div', { class: 'entity-info-dialog-stub' }),
 });
 
 function mountSidebar(
@@ -78,7 +84,7 @@ function mountSidebar(
       stubs: {
         Mentions: MentionsStub,
         EntityScenesPanel: ScenesStub,
-        PawnViewDialog: PawnViewDialogStub,
+        EntityInfoDialog: EntityInfoDialogStub,
         RouterLink: true,
       },
     },
@@ -145,7 +151,7 @@ describe('EncounterViewSidebar', () => {
         stubs: {
           Mentions: MentionsStub,
           EntityScenesPanel: ScenesStub,
-          PawnViewDialog: PawnViewDialogStub,
+          EntityInfoDialog: EntityInfoDialogStub,
           RouterLink: true,
         },
       },
@@ -166,7 +172,14 @@ describe('EncounterViewSidebar', () => {
   });
 
   it('only exposes pawn actions in edit mode', async () => {
-    mocks.pawns = [{ id: 'pawn-1', name: 'Goblin' }];
+    mocks.pawns = [
+      {
+        id: 'pawn-1',
+        name: 'Goblin',
+        picture: 'picture-1',
+        notes: 'Fierce little creature',
+      },
+    ];
     const encounter: Encounter = {
       id: 'encounter-1',
       name: 'Ambush',
@@ -187,7 +200,7 @@ describe('EncounterViewSidebar', () => {
         stubs: {
           Mentions: MentionsStub,
           EntityScenesPanel: ScenesStub,
-          PawnViewDialog: PawnViewDialogStub,
+          EntityInfoDialog: EntityInfoDialogStub,
           RouterLink: true,
         },
       },
@@ -198,9 +211,13 @@ describe('EncounterViewSidebar', () => {
     expect(view.find('.pawn-row button[title="Unlink"]').exists()).toBe(false);
 
     await view.find('.pawn-row').trigger('click');
-    const dialog = view.findComponent(PawnViewDialogStub);
-    expect(dialog.props('isOpen')).toBe(true);
-    expect(dialog.props('pawn')).toMatchObject({ id: 'pawn-1' });
+    const dialog = view.findComponent(EntityInfoDialogStub);
+    expect(dialog.props()).toMatchObject({
+      isOpen: true,
+      title: 'Goblin',
+      picture: 'picture-1',
+      notes: 'Fierce little creature',
+    });
 
     viewState.isEditMode = true;
     await nextTick();

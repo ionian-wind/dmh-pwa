@@ -9,7 +9,8 @@ import TabGroup from '@/components/common/TabGroup.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
-import PawnViewDialog from '@/pawns/PawnViewDialog.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
+import { entityRoute } from '@/components/common/entityLinking/entityRefs';
 import {
   IconAt,
   IconGhost3,
@@ -43,6 +44,9 @@ const state = computed(() => props.editState ?? localEditState);
 const activeTab = ref('pawns');
 const showLinkModal = ref(false);
 const viewPawn = ref<Pawn | null>(null);
+const viewPawnRoute = computed(() =>
+  viewPawn.value ? entityRoute('pawn', viewPawn.value.id) : undefined,
+);
 const localPawns = ref<Record<string, number>>({});
 
 const entityId = computed(() => props.encounter?.id || '');
@@ -315,9 +319,12 @@ onMounted(async () => {
         </template>
       </EntityLinkingDialog>
 
-      <PawnViewDialog
+      <EntityInfoDialog
         :is-open="!!viewPawn"
-        :pawn="viewPawn"
+        :title="viewPawn?.name ?? ''"
+        :picture="viewPawn?.picture"
+        :notes="viewPawn?.notes ?? ''"
+        :to="viewPawnRoute"
         @cancel="viewPawn = null"
       />
 
