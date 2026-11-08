@@ -171,12 +171,18 @@ describe('BaseListView', () => {
         event: vi.fn(),
       },
     ];
+    const tabs = [
+      { id: 'jukebox', label: 'Jukebox' },
+      { id: 'ambient', label: 'Ambience' },
+    ];
     const { wrapper, layout } = mountList({
       searchQuery: 'first',
       showSearch: true,
       rightDrawerIcon: { name: 'icon' },
       leftHeaderButtons,
       createLoading: true,
+      tabs,
+      activeTab: 'jukebox',
     });
 
     const header = layout.topMenuContent.value;
@@ -184,14 +190,26 @@ describe('BaseListView', () => {
     expect(header?.props?.rightDrawerIcon).toEqual({ name: 'icon' });
     expect(header?.props?.leftButtons).toEqual(leftHeaderButtons);
     expect(header?.props?.createLoading).toBe(true);
+    expect(header?.props?.tabs).toEqual(tabs);
+    expect(header?.props?.modelValue).toBe('jukebox');
 
     header?.props?.['onUpdate:searchQuery']?.('second');
     expect(wrapper.emitted('update:searchQuery')?.[0]).toEqual(['second']);
 
-    await wrapper.setProps({ searchQuery: 'third', createTitle: 'Updated' });
+    header?.props?.onTabClick?.(tabs[1]);
+    expect(wrapper.emitted('tab-click')?.[0]).toEqual([tabs[1]]);
+    header?.props?.['onUpdate:modelValue']?.('ambient');
+    expect(wrapper.emitted('update:activeTab')?.[0]).toEqual(['ambient']);
+
+    await wrapper.setProps({
+      searchQuery: 'third',
+      createTitle: 'Updated',
+      activeTab: 'ambient',
+    });
     await flushPromises();
     expect(layout.topMenuContent.value?.props?.searchQuery).toBe('third');
     expect(layout.topMenuContent.value?.props?.createTitle).toBe('Updated');
+    expect(layout.topMenuContent.value?.props?.modelValue).toBe('ambient');
 
     wrapper.unmount();
     expect(layout.topMenuContent.value).toBeNull();

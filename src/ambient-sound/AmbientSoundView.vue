@@ -55,9 +55,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconMusic, IconUpload } from '@tabler/icons-vue';
+import { useRouter } from 'vue-router';
+import { IconHeadphones, IconMusic, IconUpload } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityTabs from '@/components/common/EntityTabs.vue';
@@ -70,9 +71,31 @@ import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
 import ScenePlayerDialog from '@/ambient-sound/components/ScenePlayerDialog.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 const store = useAmbientSoundStore();
 const layout = useLayout();
 const rightDrawer = useRightDrawer();
+
+const mainTabs = computed(() => [
+  { id: 'jukebox', label: t('app.jukebox'), icon: IconMusic },
+  { id: 'ambient', label: t('navigation.ambientSound'), icon: IconHeadphones },
+]);
+
+const headerProps = reactive<Record<string, any>>({
+  tabs: [] as any[],
+  modelValue: 'ambient',
+  onTabClick: (tab: { id: string }) => {
+    if (tab.id === 'jukebox') void router.push('/jukebox');
+  },
+});
+
+watch(
+  mainTabs,
+  (tabs) => {
+    headerProps.tabs = tabs;
+  },
+  { immediate: true },
+);
 
 const activeTab = ref('scenes');
 const selectedScene = ref<{ packId: string; sceneId: string } | null>(null);
@@ -113,7 +136,7 @@ async function handleFileImport(event: Event) {
 }
 
 onMounted(async () => {
-  layout.setTopMenuContent({ component: ViewHeader });
+  layout.setTopMenuContent({ component: ViewHeader, props: headerProps });
   rightDrawer.set({ component: SoundPackSidebar });
   syncHeaderOffset();
   const header = document.querySelector<HTMLElement>('.q-header');

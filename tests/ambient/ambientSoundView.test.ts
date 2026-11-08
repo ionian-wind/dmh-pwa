@@ -80,6 +80,11 @@ describe('AmbientSoundView', () => {
     const header = layoutMock.setTopMenuContent.mock.calls[0][0];
     expect(header.component).toBe(ViewHeader);
     expect(header.props?.title).toBeUndefined();
+    expect(header.props?.modelValue).toBe('ambient');
+    expect(header.props?.tabs?.map((tab: any) => tab.id)).toEqual([
+      'jukebox',
+      'ambient',
+    ]);
     expect(rightDrawerMock.set).toHaveBeenCalledWith({
       component: SoundPackSidebar,
     });

@@ -42,6 +42,13 @@ const props = defineProps({
   showSearch: { type: Boolean, default: false },
   searchQuery: { type: String, default: '' },
   searchPlaceholder: { type: String, default: 'common.search' },
+  tabs: {
+    type: Array as PropType<
+      Array<{ id: string; label: string; icon?: any; disabled?: boolean }>
+    >,
+    default: () => [],
+  },
+  activeTab: { type: String, default: '' },
   headerButtons: {
     type: Array as PropType<
       Array<{ icon: any; color: string; title: string; event: Function }>
@@ -90,6 +97,8 @@ const emit = defineEmits([
   'drop',
   'dragover',
   'dragleave',
+  'tab-click',
+  'update:activeTab',
 ]);
 
 function handleSortEnd(event?: { oldIndex: number; newIndex: number }) {
@@ -153,6 +162,10 @@ function syncHeaderProps() {
     searchPlaceholder: props.searchPlaceholder,
     buttons: props.headerButtons,
     leftButtons: props.leftHeaderButtons,
+    tabs: props.tabs,
+    modelValue: props.activeTab,
+    onTabClick: (tab: any) => emit('tab-click', tab),
+    'onUpdate:modelValue': (value: string) => emit('update:activeTab', value),
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -169,6 +182,10 @@ onMounted(async () => {
     searchPlaceholder: props.searchPlaceholder,
     buttons: props.headerButtons,
     leftButtons: props.leftHeaderButtons,
+    tabs: props.tabs,
+    modelValue: props.activeTab,
+    onTabClick: (tab: any) => emit('tab-click', tab),
+    'onUpdate:modelValue': (value: string) => emit('update:activeTab', value),
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -189,6 +206,8 @@ watch(
     props.searchPlaceholder,
     props.headerButtons,
     props.leftHeaderButtons,
+    props.tabs,
+    props.activeTab,
   ],
   syncHeaderProps,
 );

@@ -1,5 +1,4 @@
 import type { FeatureIntegration } from '@/features/types';
-import AmbientNavItem from './NavItem.vue';
 import EntityScenesPanel from '@/ambient-sound/components/EntityScenesPanel.vue';
 
 export const ambientFeature: FeatureIntegration = {
@@ -13,16 +12,7 @@ export const ambientFeature: FeatureIntegration = {
     },
     { path: '/ambient/:sceneId', redirect: { name: 'ambient-sound' } },
   ],
-  navigation: [
-    {
-      type: 'component',
-      id: 'ambient',
-      component: AmbientNavItem,
-      kind: 'tool',
-      placement: 'tools',
-      activePathPrefixes: ['/ambient'],
-    },
-  ],
+  navigation: [],
   homeActions: [],
   entityScenesPanel: EntityScenesPanel,
   globalComponents: [],

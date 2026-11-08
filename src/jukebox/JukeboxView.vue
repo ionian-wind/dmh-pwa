@@ -22,11 +22,14 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import { useConfigStore } from '@/utils/configStore';
 import type { JukeboxPlaylist, JukeboxTrack } from '@/jukebox/types';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { debugError } from '@/utils/debug';
 import PlaylistList from './components/PlaylistList.vue';
 import { confirm } from '@/dialogs';
 import {
   IconFolder,
+  IconHeadphones,
+  IconMusic,
   IconPencil,
   IconPlaylist,
   IconTrash,
@@ -45,6 +48,18 @@ const configStore = useConfigStore();
 
 const pictureUrlCacheStore = usePictureUrlCacheStore();
 const { t } = useI18n();
+const router = useRouter();
+
+const headerTabs = computed(() => [
+  { id: 'jukebox', label: t('app.jukebox'), icon: IconMusic },
+  { id: 'ambient', label: t('navigation.ambientSound'), icon: IconHeadphones },
+]);
+
+function handleHeaderTab(tab: { id: string }) {
+  if (tab.id === 'ambient') {
+    void router.push('/ambient');
+  }
+}
 
 if (!configStore) {
   throw new Error(
@@ -544,6 +559,9 @@ onBeforeUnmount(() => {
     </div>
     <BaseListView
       :items="filteredTracks"
+      :tabs="headerTabs"
+      active-tab="jukebox"
+      @tab-click="handleHeaderTab"
       :card-component="TrackCard"
       :empty-message="t('common.emptyTracks')"
       :create-title="t('common.addTracks')"
