@@ -134,7 +134,7 @@ function getCombatantDisplayName(combatant: {
 }) {
   if (combatant.type === 'player' && combatant.referenceId) {
     const char = characterStore.getById(combatant.referenceId);
-    return char ? char.name : 'Unknown Player';
+    return char ? char.name : t('combat.unknownPlayer');
   } else if (combatant.type === 'pawn' && combatant.referenceId) {
     const pawn = pawnStore.getById(combatant.referenceId);
     if (pawn) {
@@ -149,9 +149,9 @@ function getCombatantDisplayName(combatant: {
       }
       return pawn.name;
     }
-    return 'Unknown Pawn';
+    return t('combat.unknownPawn');
   }
-  return 'Unknown';
+  return t('combat.unknown');
 }
 
 function updateCombatFromStore() {
@@ -217,18 +217,21 @@ watch(isAddParticipantModalOpen, (isOpen) => {
 
 const getEncounterName = (encounterId: string) => {
   const encounter = encounterStore.getById(encounterId);
-  return encounter ? encounter.name : 'Unknown Encounter';
+  return encounter ? encounter.name : t('combat.unknownEncounter');
 };
 
 const getPartyName = (partyId: string) => {
   const party = partyStore.getById(partyId);
-  return party ? party.name : 'Unknown Party';
+  return party ? party.name : t('combat.unknownParty');
 };
 
 // Computed properties for BaseEntityView
 const combatTitle = computed(() => {
   if (!combat.value) return '';
-  return `${getEncounterName(combat.value.encounterId)} vs ${getPartyName(combat.value.partyId)}`;
+  return t('combat.matchup', {
+    encounter: getEncounterName(combat.value.encounterId),
+    party: getPartyName(combat.value.partyId),
+  });
 });
 
 // Start
@@ -422,7 +425,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               color: 'warning',
               disabled: combat.combatants.length < 1,
               icon: IconSwords,
-              title: 'Start',
+              title: 'combat.start',
             },
           ]
         : combat && combat.status === 'active'
@@ -431,7 +434,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 event: endCombat,
                 color: 'negative',
                 icon: IconFlag,
-                title: 'End',
+                title: 'combat.end',
               },
             ]
           : []
@@ -442,10 +445,14 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
       <!-- Phase Tabs and Round/Turn Display -->
       <QTabs :model-value="activeTab" class="phase-indicator">
         <QTab class="phase-tab" name="preparing">
-          <IconListNumbers /> Preparation
+          <IconListNumbers /> {{ t('combat.phases.preparing') }}
         </QTab>
-        <QTab class="phase-tab" name="active"> <IconSwords /> Active </QTab>
-        <QTab class="phase-tab" name="completed"> <IconTrophy /> Ended </QTab>
+        <QTab class="phase-tab" name="active">
+          <IconSwords /> {{ t('combat.phases.active') }}
+        </QTab>
+        <QTab class="phase-tab" name="completed">
+          <IconTrophy /> {{ t('combat.phases.completed') }}
+        </QTab>
       </QTabs>
 
       <!-- Combat Summary -->
@@ -458,10 +465,12 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
           </div>
           <div class="col-12 col-md-6">
             <label>{{ t('combat.turn') }}</label>
-            <span
-              >{{ (combat?.currentTurn ?? 0) + 1 }} of
-              {{ combat?.combatants?.length ?? 0 }}</span
-            >
+            <span>{{
+              t('combat.turnProgress', {
+                current: (combat?.currentTurn ?? 0) + 1,
+                total: combat?.combatants?.length ?? 0,
+              })
+            }}</span>
           </div>
         </div>
       </div>
@@ -471,14 +480,24 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
         v-if="combat && combat.status === 'completed'"
         class="q-pa-md text-grey text-center q-mt-xl"
       >
-        <IconFlag /> The encounter has concluded after
-        {{ combat.currentRound }} rounds.
+        <IconFlag />
+        {{
+          t('combat.concluded', {
+            rounds: combat.currentRound,
+          })
+        }}
       </div>
 
       <!-- Participants Section -->
       <div class="participants-section">
         <div class="combat-title row justify-between q-pa-md">
-          <h2>Participants: {{ combat.combatants.length }}</h2>
+          <h2>
+            {{
+              t('combat.participantsCount', {
+                count: combat.combatants.length,
+              })
+            }}
+          </h2>
 
           <Button
             v-if="
@@ -582,6 +601,8 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   <QBtn
                     :color="'info'"
                     :size="'lg'"
+                    :title="t('combat.activatePostponed')"
+                    :aria-label="t('combat.activatePostponed')"
                     @click="activatePostponed(participant.id)"
                   >
                     <IconBolt />
@@ -596,6 +617,8 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   <QBtn
                     :size="'lg'"
                     :color="'warning'"
+                    :title="t('combat.postpone')"
+                    :aria-label="t('combat.postpone')"
                     @click="postponeCurrent"
                     v-if="index !== combat.combatants.length - 1"
                   >
@@ -604,6 +627,8 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   <QBtn
                     :size="'lg'"
                     :color="'positive'"
+                    :title="t('combat.nextTurn')"
+                    :aria-label="t('combat.nextTurn')"
                     @click="nextTurn"
                     :disabled="!currentParticipant"
                   >
