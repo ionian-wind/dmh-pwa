@@ -58,36 +58,34 @@ function removePicture() {
 </script>
 
 <template>
-  <div class="entity-picture-picker column items-start q-gutter-sm">
-    <div class="row items-center q-gutter-md">
-      <EntityPicture :picture="props.modelValue" size="120px" />
-      <div class="column q-gutter-sm">
-        <QBtn
-          class="entity-picture-select"
-          color="primary"
-          outline
-          :loading="isBusy"
-          :disable="isBusy"
-          :title="t('common.selectPicture')"
-          :aria-label="t('common.selectPicture')"
-          @click="choosePicture"
-        >
-          <IconPhoto :size="18" class="q-mr-sm" />
-          {{ t('common.selectPicture') }}
-        </QBtn>
-        <QBtn
-          v-if="props.modelValue"
-          class="entity-picture-remove"
-          color="negative"
-          flat
-          :title="t('common.removePicture')"
-          :aria-label="t('common.removePicture')"
-          @click="removePicture"
-        >
-          <IconTrash :size="18" class="q-mr-sm" />
-          {{ t('common.removePicture') }}
-        </QBtn>
-      </div>
+  <div class="entity-picture-picker column items-center q-gutter-sm">
+    <EntityPicture :picture="props.modelValue" size="240px" />
+    <div class="column items-center q-gutter-sm">
+      <QBtn
+        class="entity-picture-select"
+        color="primary"
+        outline
+        :loading="isBusy"
+        :disable="isBusy"
+        :title="t('common.selectPicture')"
+        :aria-label="t('common.selectPicture')"
+        @click="choosePicture"
+      >
+        <IconPhoto :size="18" class="q-mr-sm" />
+        {{ t('common.selectPicture') }}
+      </QBtn>
+      <QBtn
+        v-if="props.modelValue"
+        class="entity-picture-remove"
+        color="negative"
+        flat
+        :title="t('common.removePicture')"
+        :aria-label="t('common.removePicture')"
+        @click="removePicture"
+      >
+        <IconTrash :size="18" class="q-mr-sm" />
+        {{ t('common.removePicture') }}
+      </QBtn>
     </div>
   </div>
 </template>

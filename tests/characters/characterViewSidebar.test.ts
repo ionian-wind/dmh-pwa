@@ -55,12 +55,12 @@ describe('CharacterViewSidebar', () => {
       '',
       '',
     ]);
-    const scenesTab = wrapper.findAll('.tab-item')[0];
-    expect(scenesTab.attributes('aria-label')).toBe('Scenes');
-    expect(scenesTab.find('.tab-icon').exists()).toBe(true);
-    const pictureTab = wrapper.findAll('.tab-item')[1];
+    const pictureTab = wrapper.findAll('.tab-item')[0];
     expect(pictureTab.attributes('aria-label')).toBe('Picture');
     expect(pictureTab.find('.tab-icon').exists()).toBe(true);
+    const scenesTab = wrapper.findAll('.tab-item')[1];
+    expect(scenesTab.attributes('aria-label')).toBe('Scenes');
+    expect(scenesTab.find('.tab-icon').exists()).toBe(true);
     const mentionsTab = wrapper.findAll('.tab-item')[2];
     expect(mentionsTab.attributes('aria-label')).toBe('Mentions');
     expect(mentionsTab.find('.tab-icon').exists()).toBe(true);

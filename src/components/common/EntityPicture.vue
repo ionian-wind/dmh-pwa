@@ -18,6 +18,11 @@ const style = computed(() => ({
   width: props.size,
   height: props.size,
 }));
+const placeholderSize = computed(() => {
+  const numeric = Number.parseInt(props.size, 10);
+  if (!Number.isFinite(numeric)) return 24;
+  return Math.max(24, Math.min(64, Math.round(numeric * 0.3)));
+});
 </script>
 
 <template>
@@ -28,7 +33,7 @@ const style = computed(() => ({
   >
     <img v-if="url" :src="url" :alt="alt" />
     <div v-else class="entity-picture-placeholder">
-      <IconPhoto :size="24" />
+      <IconPhoto :size="placeholderSize" />
     </div>
   </div>
 </template>

@@ -43,20 +43,20 @@ const mentionedIn = computed(() =>
 const tabs = computed(() =>
   state.value.isEditMode
     ? [
+        { id: 'picture', label: t('common.picture'), icon: IconInfoCircle },
         {
           id: 'scenes',
           label: t('ambientSoundPage.scenesTab'),
           icon: IconHeadphones,
         },
-        { id: 'picture', label: t('common.picture'), icon: IconInfoCircle },
       ]
     : [
+        { id: 'picture', label: t('common.picture'), icon: IconInfoCircle },
         {
           id: 'scenes',
           label: t('ambientSoundPage.scenesTab'),
           icon: IconHeadphones,
         },
-        { id: 'picture', label: t('common.picture'), icon: IconInfoCircle },
         { id: 'mentions', label: t('common.mentions'), icon: IconAt },
       ],
 );
@@ -123,7 +123,7 @@ onMounted(() => mentionsStore.load());
               :entities="mentionedIn"
             />
           </div>
-          <div v-show="activeTab === 'picture'" class="q-pa-md">
+          <div v-show="activeTab === 'picture'" class="q-pa-md picture-tab">
             <EntityPicturePicker
               v-if="state.isEditMode"
               :model-value="state.draft?.picture ?? ''"
@@ -155,5 +155,10 @@ onMounted(() => mentionsStore.load());
 .sidebar-tab-content {
   min-height: 0;
   overflow-y: auto;
+}
+
+.picture-tab {
+  display: flex;
+  justify-content: center;
 }
 </style>
