@@ -80,10 +80,8 @@ const activeParticipantIndex = ref(0);
 const selectedParticipant = ref<Combatant | null>(null);
 
 // Modal state
-const editingParticipant = ref<any>(null);
-const newInitiative = ref(0);
 const isAddParticipantModalOpen = ref(false);
-const participantInitiatives = ref<Record<string, number>>({});
+const participantInitiatives = ref<Record<string, number | string>>({});
 const noLinkedCharacterIds: string[] = [];
 
 // Computed: current participant
@@ -308,7 +306,7 @@ watch(isAddParticipantModalOpen, (isOpen) => {
         acc[character.id] = 0;
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, number | string>,
     );
   }
 });
@@ -460,11 +458,24 @@ async function setParticipantExcluded(
   combat.value = updated;
 }
 
-async function persistCombatants() {
-  if (!combat.value) return;
-  const updated = await combatStore.update(combat.value.id, {
-    combatants: combat.value.combatants,
-  });
+function normalizeInitiative(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function saveParticipantInitiative(
+  participantId: string,
+  value: unknown,
+) {
+  if (!combat.value || combat.value.status !== 'preparing') return;
+
+  const initiative = normalizeInitiative(value);
+  const combatants = combat.value.combatants.map((participant) =>
+    participant.id === participantId
+      ? { ...participant, initiative, updatedAt: Date.now() }
+      : { ...participant },
+  );
+  const updated = await combatStore.update(combat.value.id, { combatants });
   combat.value = updated;
 }
 
@@ -474,32 +485,12 @@ function endCombat() {
   combatStore.endCombat(combat.value.id);
 }
 
-function saveInitiative() {
-  if (
-    !combat.value ||
-    !editingParticipant.value ||
-    combat.value.status !== 'preparing'
-  )
-    return;
-  const combatants = [...combat.value.combatants];
-  const pIndex = combatants.findIndex(
-    (p) => p.id === editingParticipant.value.id,
-  );
-
-  if (pIndex > -1) {
-    combatants[pIndex] = {
-      ...combatants[pIndex],
-      initiative: Number(newInitiative.value),
-      updatedAt: Date.now(),
-    };
-    combatStore.update(combat.value.id, { combatants });
-  }
-
-  editingParticipant.value = null;
-}
-
-function setParticipantInitiative(participantId: string, initiative: number) {
-  participantInitiatives.value[participantId] = Number(initiative) || 0;
+function setParticipantInitiative(
+  participantId: string,
+  initiative: number | string,
+) {
+  participantInitiatives.value[participantId] =
+    initiative === '' ? '' : normalizeInitiative(initiative);
 }
 
 function handleAddParticipants(payload: { refs: Array<{ id: string }> }) {
@@ -510,7 +501,7 @@ function handleAddParticipants(payload: { refs: Array<{ id: string }> }) {
     id: characterId,
     type: 'player' as const,
     referenceId: characterId,
-    initiative: Number(participantInitiatives.value[characterId] ?? 0),
+    initiative: normalizeInitiative(participantInitiatives.value[characterId]),
     hasActed: false,
     isPostponed: false,
     createdAt: now,
@@ -525,7 +516,11 @@ function handleAddParticipants(payload: { refs: Array<{ id: string }> }) {
   isAddParticipantModalOpen.value = false;
 }
 
-const validateInitiative = (val: any) => Number.isInteger(Number(val));
+const validateInitiative = (val: unknown) =>
+  val === '' ||
+  val === null ||
+  val === undefined ||
+  Number.isInteger(Number(val));
 </script>
 
 <template>
@@ -683,7 +678,9 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 v-slot="scope"
                 buttons
                 :validate="validateInitiative"
-                @save="persistCombatants"
+                @save="
+                  (value) => saveParticipantInitiative(participant.id, value)
+                "
               >
                 <QInput
                   v-model="scope.value"
@@ -858,7 +855,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
           dense
           outlined
           @update:model-value="
-            (val) => setParticipantInitiative(item.id, Number(val ?? 0))
+            (val) => setParticipantInitiative(item.id, val ?? '')
           "
           @click.stop
           @mousedown.stop

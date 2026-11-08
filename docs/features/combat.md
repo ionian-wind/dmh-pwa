@@ -118,8 +118,9 @@ the combat is already populated, so the watcher does not re-run.
 - The toolbar has three zones: Add participant on the left, round/turn counters
   in the center (only while active), and Start/End on the right.
 - Participant list is clickable to edit initiative via `QPopupEdit`
-  (`v-model="participant.initiative"`, auto-save). Saving persists the
-  combatants through `combatStore.update`.
+  (`v-model="participant.initiative"`, auto-save). Saving normalizes the
+  submitted value and persists it through `combatStore.update`; a blank input
+  becomes `0`.
 - Start (right side) calls `startCombat()` (local), which:
   - requires at least one combatant,
   - normalizes initiative to numbers,
@@ -129,8 +130,8 @@ the combat is already populated, so the watcher does not re-run.
     the sorted combatants.
 - Add participant (left side, disabled when no eligible characters) opens the
   shared `EntityLinkingDialog` for party characters not already in the combat.
-  Each selected character can get an initiative; new combatants are appended
-  and persisted via `combatStore.update`.
+  Each selected character can get an initiative; blank input becomes `0`, and
+  new combatants are appended and persisted via `combatStore.update`.
 - Pawn combatants can only be added by creating a new combat; there is no
   add-pawn UI.
 
