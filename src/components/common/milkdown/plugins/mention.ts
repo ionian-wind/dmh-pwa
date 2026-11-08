@@ -6,6 +6,7 @@ import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 
 import { debug } from '@/utils/debug';
 import { noteDisplayTitle } from '@/utils/noteTitle';
+import { clearSlashMenuText } from './slashMenu';
 import { featureLinkKinds } from 'virtual:feature-links';
 import iconNote from '@tabler/icons/outline/note.svg?raw';
 import iconUsers from '@tabler/icons/outline/users.svg?raw';
@@ -536,7 +537,10 @@ export const buildMentionMenu = (
     mentionGroup.addItem(kind, {
       label: translate(label),
       icon,
-      onRun: (ctx: any) => insertMentionMark(ctx, kind, label, 'BlockEdit'),
+      onRun: (ctx: any) => {
+        clearSlashMenuText(ctx);
+        insertMentionMark(ctx, kind, label, 'BlockEdit');
+      },
     });
   });
 };

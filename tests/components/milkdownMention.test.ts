@@ -28,8 +28,11 @@ function createContext() {
     coordsAtPos: vi.fn(() => ({ top: 10, left: 20, bottom: 30 })),
     dom: {},
   };
-  const ctx = { get: vi.fn(() => editorView) };
-  return { ctx, editorView, state, tr };
+  const commands = { call: vi.fn() };
+  const ctx = {
+    get: vi.fn(() => ({ ...editorView, call: commands.call })),
+  };
+  return { ctx, editorView, state, tr, commands };
 }
 
 function createBuilder() {
@@ -106,9 +109,10 @@ describe('milkdown mention plugin helpers', () => {
     buildMentionMenu(builder);
     expect(group.addItem).toHaveBeenCalledTimes(5);
 
-    const { ctx, editorView, tr } = createContext();
+    const { ctx, editorView, tr, commands } = createContext();
     items[0].options.onRun(ctx);
 
+    expect(commands.call).toHaveBeenCalled();
     expect(tr.insertText).toHaveBeenCalledWith('Goblin', 0);
     expect(editorView.dispatch).toHaveBeenCalledWith(tr);
   });
