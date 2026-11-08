@@ -36,18 +36,18 @@
     "home": "Home",
     "notes": "Notes",
     "parties": "Parties",
-    "monsters": "Monsters",
+    "pawns": "Pawns",
     "characters": "Characters",
     "encounters": "Encounters",
     "combats": "Combats",
-    "modules": "Modules",
     "configuration": "Configuration",
     "settings": "Settings",
     "timers": "Timers",
     "tools": "Tools",
     "ambientSound": "Ambient Sound",
     "maps": "Maps",
-    "probabilityCalculator": "Probability Calculator"
+    "probabilityCalculator": "Probability Calculator",
+    "help": "Help center"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -55,24 +55,23 @@
     "stats": {
       "notes": "Notes",
       "parties": "Parties",
-      "monsters": "Monsters",
+      "pawns": "Pawns",
       "characters": "Characters",
       "encounters": "Encounters",
-      "modules": "Modules"
+      "locations": "Locations"
     }
   },
   "notes": {
     "title": "Notes",
+    "contents": "Contents",
     "create": "Create Note",
-    "createDrawing": "Create drawing note",
     "edit": "Edit Note",
     "delete": "Delete Note",
     "fields": {
       "title": "Title",
       "content": "Content",
       "type": "Type",
-      "tags": "Tags",
-      "module": "Module"
+      "tags": "Tags"
     },
     "types": {
       "general": "General",
@@ -91,17 +90,15 @@
     "fields": {
       "name": "Name",
       "description": "Description",
-      "characters": "Characters",
-      "modules": "Modules",
-      "notes": "Notes"
+      "characters": "Characters"
     },
     "linkCharacters": "Link Characters"
   },
-  "monsters": {
-    "title": "Monsters",
-    "create": "Create Monster",
-    "edit": "Edit Monster",
-    "delete": "Delete Monster",
+  "pawns": {
+    "title": "Pawns",
+    "create": "Create Pawn",
+    "edit": "Edit Pawn",
+    "delete": "Delete Pawn",
     "fields": {
       "name": "Name",
       "type": "Type",
@@ -112,8 +109,7 @@
       "hitPoints": "Hit Points",
       "speed": "Speed",
       "challengeRating": "Challenge Rating",
-      "xp": "XP",
-      "module": "Module"
+      "xp": "XP"
     },
     "sizes": {
       "tiny": "Tiny",
@@ -151,7 +147,6 @@
       "hitPoints": "Hit Points",
       "armorClass": "Armor Class",
       "speed": "Speed",
-      "module": "Module",
       "party": "Party"
     },
     "stats": {
@@ -170,21 +165,17 @@
     "delete": "Delete Encounter",
     "namePlaceholder": "Enter encounter name",
     "descriptionPlaceholder": "Enter encounter description",
-    "notesPlaceholder": "Enter encounter notes",
     "runCombat": "Run Combat",
-    "linkMonsters": "Link Monsters",
     "unlink": "Unlink",
     "count": "Count",
-    "noMonstersYet": "No monsters in this encounter yet",
     "noCombatsYet": "No combats for this encounter yet",
     "fields": {
       "name": "Name",
       "description": "Description",
       "difficulty": "Difficulty",
       "level": "Level",
-      "monsters": "Monsters",
       "xp": "XP",
-      "module": "Module"
+      "pawns": "Pawns"
     },
     "difficulties": {
       "easy": "Easy",
@@ -194,17 +185,8 @@
     },
     "tabs": {
       "information": "Information",
-      "monsters": "Monsters",
-      "combats": "Combats"
-    },
-    "monsters": {
-      "title": "Monsters",
-      "linkAction": "Link Monsters",
-      "linkModalTitle": "Link Monsters to Encounter",
-      "none": "No monsters in this encounter",
-      "noneAvailable": "No monsters available to link.",
-      "setQuantity": "Set Monster Quantity",
-      "setQuantityFor": "Set quantity for {monsterName}"
+      "combats": "Combats",
+      "pawns": "Pawns"
     },
     "combats": {
       "title": "Combats",
@@ -223,31 +205,40 @@
       "actions": "Actions",
       "view": "View",
       "none": "No combats yet"
+    },
+    "linkPawns": "Link Pawns",
+    "noPawnsYet": "No pawns in this encounter yet",
+    "pawns": {
+      "title": "Pawns",
+      "linkAction": "Link Pawns",
+      "linkModalTitle": "Link Pawns to Encounter",
+      "none": "No pawns in this encounter",
+      "noneAvailable": "No pawns available to link.",
+      "setQuantity": "Set Pawn Quantity",
+      "setQuantityFor": "Set quantity for {pawnName}"
     }
   },
-  "modules": {
-    "title": "Modules",
-    "create": "Create Module",
-    "edit": "Edit Module",
-    "delete": "Delete Module",
-    "namePlaceholder": "Enter module name",
-    "descriptionPlaceholder": "Enter module description",
-    "fields": {
-      "name": "Name",
-      "description": "Description"
-    }
+  "drawing": {
+    "add": "Drawing",
+    "edit": "Edit drawing",
+    "delete": "Delete drawing",
+    "captionPlaceholder": "Drawing caption"
   },
   "common": {
     "mainEditor": "Main editor",
+    "main": "Main",
+    "picture": "Picture",
+    "selectPicture": "Select picture",
+    "removePicture": "Remove picture",
+    "noPicture": "No picture selected",
+    "pictureImportError": "Failed to import the picture",
     "tableOfContents": "Table of Contents",
     "toggleSidebar": "Toggle sidebar",
     "linkedEntities": "Linked entities",
     "confirmDelete": "Are you sure you want to delete {title}?",
     "empty": "No items found",
     "emptyNotes": "No notes yet. Create your first note to get started!",
-    "emptyMonsters": "No monsters yet. Create your first monster to get started!",
-    "emptyModules": "No modules yet. Create your first module to get started!",
-    "noModules": "No Modules",
+    "emptyPawns": "No pawns yet. Create your first pawn to get started!",
     "emptyParties": "No parties yet. Create your first party to get started!",
     "emptyEncounters": "No encounters yet. Create your first encounter to get started!",
     "emptyCharacters": "No characters yet. Create your first character to get started!",
@@ -255,10 +246,6 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Operation completed successfully",
-    "noModule": "Without Module",
-    "unknownModule": "Unknown Module",
-    "anyModule": "Any Module",
-    "currentModule": "Current Module",
     "unknownParty": "Unknown Party",
     "noDescription": "No description provided",
     "linked": "Linked",
@@ -273,10 +260,13 @@
     "edit": "Edit",
     "delete": "Delete",
     "add": "Add",
+    "searchAndLink": "Search and link",
+    "addAndLink": "Add and link",
     "remove": "Remove",
     "save": "Save",
     "cancel": "Cancel",
     "view": "View",
+    "open": "Open",
     "copy": "Copy",
     "expand": "Expand",
     "collapse": "Collapse",
@@ -333,9 +323,13 @@
     "userMenu": "User Menu",
     "bookmarks": "Bookmarks",
     "bookmark": "Bookmark",
+    "removeBookmark": "Remove bookmark",
+    "bookmarkMissing": "Bookmarked heading or paragraph no longer exists.",
+    "removeMissingBookmarks": "Remove missing bookmarks",
     "editBookmark": "Edit bookmark",
     "deleteBookmark": "Delete bookmark",
     "noBookmarks": "No bookmarks yet.",
+    "noTableOfContents": "No headings or paragraphs yet.",
     "untitled": "Untitled",
     "title": "Title",
     "name": "Name",
@@ -343,9 +337,27 @@
     "initiative": "Initiative",
     "quantity": "Quantity",
     "done": "Done",
-    "module": "Module",
-    "moduleRequired": "Module is required",
-    "dropAudioFiles": "Drop audio files here"
+    "dropAudioFiles": "Drop audio files here",
+    "overview": "Overview",
+    "noLinkedEntities": "No linked entities.",
+    "selectAll": "Select all",
+    "cancelSelection": "Cancel selection",
+    "dragToLink": "Drag to link",
+    "linkEntityTo": "Link {type} to:",
+    "entityAccusative": {
+      "note": "Note",
+      "party": "Party",
+      "pawn": "Pawn",
+      "encounter": "Encounter",
+      "character": "Character",
+      "location": "Location"
+    },
+    "openEntity": "Open entity",
+    "viewMode": "View mode",
+    "editMode": "Edit mode",
+    "unsavedChangesTitle": "Unsaved changes",
+    "unsavedChangesMessage": "You have unsaved changes. Save them before leaving?",
+    "doNotSave": "Do not save"
   },
   "validation": {
     "required": "This field is required",
@@ -375,19 +387,43 @@
   "statCard": {
     "notes": "Notes",
     "parties": "Parties",
-    "monsters": "Monsters",
+    "pawns": "Pawns",
     "characters": "Characters",
     "encounters": "Encounters",
-    "modules": "Modules"
+    "locations": "Locations"
   },
   "combat": {
     "encounter": "Encounter",
     "party": "Party",
     "status": "Status",
     "tracker": "Combat Tracker",
+    "activeEncounters": "Active encounters",
+    "finish": "Finish",
+    "noActiveCombats": "No active combats",
     "summary": "Combat Summary",
     "round": "Round:",
     "turn": "Turn:",
+    "turnProgress": "{current} of {total}",
+    "start": "Start",
+    "end": "End",
+    "phases": {
+      "preparing": "Preparation",
+      "active": "Active",
+      "completed": "Ended"
+    },
+    "concluded": "The encounter has concluded after {rounds} rounds.",
+    "participantsCount": "Participants: {count}",
+    "matchup": "{encounter} vs {party}",
+    "unknownPlayer": "Unknown Player",
+    "unknownPawn": "Unknown Pawn",
+    "unknownEncounter": "Unknown Encounter",
+    "unknownParty": "Unknown Party",
+    "unknown": "Unknown",
+    "nextTurn": "Next turn",
+    "postpone": "Postpone turn",
+    "excludeParticipant": "Exclude from turn order",
+    "returnParticipant": "Return to turn order",
+    "activatePostponed": "Activate participant",
     "notes": "Notes",
     "noActive": "No active combat found for this encounter.",
     "currentTurn": "Current Turn: {name}",
@@ -408,8 +444,7 @@
     }
   },
   "encounterCard": {
-    "module": "Module:",
-    "monsters": "Monsters:"
+    "pawns": "Pawns:"
   },
   "partyView": {
     "title": "Party",
@@ -420,28 +455,16 @@
     "linked": "Linked",
     "unlink": "Unlink"
   },
-  "moduleView": {
-    "book": "Book",
-    "bookTree": "Book Tree",
-    "playlists": "Playlists",
-    "noDocument": "No document structure defined for this module.",
-    "noParties": "No parties in this module",
-    "noMonsters": "No monsters in this module",
-    "noEncounters": "No encounters in this module",
-    "noNotes": "No notes in this module",
-    "noPlaylists": "No playlists in this module",
-    "noMaps": "No maps in this module",
-    "noLocations": "No locations in this module"
-  },
   "playlist": {
     "title": "Playlist",
+    "addPlaylist": "Add playlist",
+    "noLinked": "No linked playlists",
     "none": "No playlists found. Please create one first.",
     "createNew": "New playlist",
     "namePlaceholder": "Playlist name",
     "fields": {
       "name": "Name",
-      "description": "Description",
-      "modules": "Modules"
+      "description": "Description"
     }
   },
   "noteTypeSelector": {
@@ -455,19 +478,14 @@
     "add": "Add",
     "cancel": "Cancel"
   },
-  "moduleTreeNode": {
-    "untitled": "(untitled)",
-    "addNote": "Add note..."
-  },
   "editor": {
     "basicInformation": "Basic Information",
     "content": "Content",
     "description": "Description",
     "notes": "Notes",
     "title": "Title",
-    "titleRequired": "Title is required",
+    "titleOrContentRequired": "Enter a title or content.",
     "contentPlaceholder": "Enter content here...",
-    "module": "Module",
     "type": "Type",
     "tags": "Tags"
   },
@@ -478,10 +496,10 @@
     "party": "Party:",
     "characters": "Characters:",
     "encounter": "Encounter:",
-    "monsters": "Monsters:",
     "selectCharacters": "Select Characters",
     "selectAtLeastOneCharacter": "Select at least one character to start combat.",
-    "startCombat": "Start Combat"
+    "startCombat": "Start Combat",
+    "pawns": "Pawns:"
   },
   "language": {
     "english": "English",
@@ -497,8 +515,44 @@
     "smoothTrackChangeHint": "Cross-fade between the outgoing and incoming track.",
     "animatePlayerBackgroundHint": "Show an animated album-colour gradient behind the player.",
     "displayCoverWhilePlayingHint": "Show album artwork in the expanded player.",
-    "useMiniPlayerHint": "Open the mini player dialog. Turn off to open the full jukebox page instead.",
-    "languageHint": "Choose the language used by the application."
+    "useMiniPlayerHint": "Show the music player dialog when opening Jukebox. Turn off to open the full Jukebox page instead.",
+    "languageHint": "Choose the language used by the application.",
+    "expandMenu": "Expand menu",
+    "expandMenuHint": "Expand the sidebar on hover. Turn off to keep icons only, with labels shown as hover hints.",
+    "content": "Content",
+    "clearStorage": "Clear storage",
+    "clearStorageHint": "Delete all saved notes, maps, media, settings and other app data from this browser.",
+    "clearStorageButton": "Clear",
+    "clearStorageConfirm": "This will permanently delete all site storage: app data, settings, caches and service workers. The app will reload from the main page. Continue?",
+    "storage": "Storage",
+    "storageHint": "Images, audio and other files are stored locally in this browser.",
+    "storageUsage": "{used} of {quota} used",
+    "storageUsageUnknown": "Storage usage is not available in this browser.",
+    "storagePersistent": "Persistent storage",
+    "storagePersistentHint": "Ask the browser to keep app data when storage is low.",
+    "storagePersistentGranted": "Granted",
+    "storagePersistentDenied": "Not granted",
+    "storageRequest": "Request",
+    "storageFiles": "{count} files",
+    "storageUnavailable": "{count} unavailable",
+    "storageBreakdown": "Local: {blob} · OPFS: {opfs} · Linked: {handle}",
+    "reconnectFiles": "Reconnect files",
+    "reconnectFilesHint": "Choose the original files to restore access to linked items.",
+    "reconnectedFiles": "{count} files reconnected.",
+    "migrateFiles": "Move large files to OPFS",
+    "migrateFilesHint": "Move existing large local files out of IndexedDB.",
+    "migratedFiles": "{count} files moved.",
+    "backupExternalFiles": "Include linked files in backups",
+    "backupExternalFilesHint": "Copy external File System Access files into the backup. This can make the archive much larger.",
+    "storagePersistentGrantedMessage": "Persistent storage granted.",
+    "storagePersistentDeniedMessage": "The browser did not grant persistent storage. {install} or {settings}.",
+    "storagePersistentInstallLink": "Install the app",
+    "storagePersistentSettingsLink": "enable it in site settings",
+    "uiTheme": "UI theme",
+    "uiThemeHint": "Light, dark or follow the system appearance.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeAuto": "Auto"
   },
   "tags": {
     "title": "Tags"
@@ -506,40 +560,46 @@
   "backup": {
     "backup": "Backup",
     "restore": "Restore",
-    "importModule": "Import Module",
     "backupCompleted": "Backup completed successfully.",
     "backupFailed": "Backup failed: ",
     "restoreCompleted": "Restore completed successfully.",
-    "restoreFailed": "Restore failed: ",
-    "moduleImported": "Module imported successfully.",
-    "moduleImportFailed": "Module import failed: "
+    "restoreFailed": "Restore failed: "
   },
   "markdownEditor": {
     "rawMode": "Raw Markdown",
     "visualMode": "Visual Editor",
     "formattingHelp": "Formatting Help",
-    "help": {
-      "internalLinks": "Internal Links",
-      "linkToOtherEntities": "Link to other entities in your campaign:",
-      "linkToNote": "Link to a note",
-      "linkToModule": "Link to a module",
-      "linkToParty": "Link to a party",
-      "linkToMonster": "Link to a monster",
-      "linkToEncounter": "Link to an encounter",
-      "markdown": "Markdown",
-      "basicFormatting": "Basic markdown formatting:",
-      "boldText": "Bold text",
-      "italicText": "Italic text",
-      "sectionHeading": "Section heading",
-      "bulletList": "Bullet list",
-      "numberedList": "Numbered list",
-      "or": "or",
-      "completedTask": "Completed task",
-      "taskList": "Task list with checkboxes",
-      "taskLists": "Task lists",
-      "taskListsWillRender": "written as - [ ] or - [x] will render as disabled checkboxes."
-    },
-    "placeholder": "Write here... Markdown supported"
+    "placeholder": "Write here... Markdown supported",
+    "crepe": {
+      "text": "Text",
+      "heading": "Heading",
+      "formatting": "Formatting",
+      "list": "List",
+      "advanced": "Advanced",
+      "paragraph": "Paragraph",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "heading4": "Heading 4",
+      "heading5": "Heading 5",
+      "heading6": "Heading 6",
+      "quote": "Quote",
+      "divider": "Divider",
+      "bulletList": "Bullet List",
+      "orderedList": "Ordered List",
+      "taskList": "Task List",
+      "image": "Image",
+      "codeBlock": "Code Block",
+      "table": "Table",
+      "math": "Math",
+      "bold": "Bold",
+      "italic": "Italic",
+      "strikethrough": "Strikethrough",
+      "inlineCode": "Inline Code",
+      "link": "Link",
+      "latex": "LaTeX",
+      "ai": "AI"
+    }
   },
   "mentions": {
     "empty": "No mentions exist.",
@@ -558,7 +618,10 @@
     "addTag": "Add tag",
     "add": "+",
     "remove": "×",
-    "hash": "#"
+    "hash": "#",
+    "selectTag": "Select tag",
+    "createTag": "Create {tag}",
+    "noTags": "No tags yet"
   },
   "timers": {
     "empty": "No timers yet. Create your first timer to get started!",
@@ -594,17 +657,13 @@
     "updateNow": "Update Now",
     "later": "Later",
     "offlineMode": "Offline Mode",
-    "appMode": "App Mode"
-  },
-  "importValidation": {
-    "title": "Import Validation Results",
-    "treeMatches": "Tree structure in module.json matches tree.json",
-    "treeMismatch": "Tree structure in module.json does not match tree.json",
-    "missingNoteIds": "Missing noteIds in notes folder:",
-    "andMore": "...and {count} more",
-    "allNoteIdsPresent": "All noteIds in tree have corresponding note files",
-    "orphanedNoteFiles": "Orphaned note files (not referenced in tree):",
-    "allNoteFilesReferenced": "All note files are referenced in the tree"
+    "appMode": "App Mode",
+    "installTitle": "Install Owlbear's Dungeon Master Helper",
+    "installDescription": "Add this app to your home screen for quick access and offline use.",
+    "installRetry": "You dismissed the install prompt. Would you like to try again?",
+    "install": "Install",
+    "notNow": "Not now",
+    "installHelp": "Installation help"
   },
   "calculator": {
     "calculator": "Calculator",
@@ -736,17 +795,49 @@
     "smoothTrackChange": "Smooth track change",
     "animatePlayerBackground": "Animate player background",
     "displayCoverWhilePlaying": "Display cover while playing",
-    "useMiniPlayer": "Use mini player",
+    "useMiniPlayer": "Show player dialog",
     "playNext": "Play next",
     "playLast": "Play last",
     "allTracks": "All Tracks",
-    "noTrackSelected": "No track selected"
+    "noTrackSelected": "No track selected",
+    "openJukebox": "Open Jukebox",
+    "viewMode": "View mode",
+    "editMode": "Edit mode",
+    "trackNotAvailable": "Track not available",
+    "bulkEditTracks": "Edit selected tracks",
+    "bulkEditPlaylists": "Edit selected playlists",
+    "bulkDeleteConfirm": "Delete {count} selected item(s)?",
+    "addFolder": "Add folder"
   },
   "ambientSoundPage": {
     "title": "Ambient Sound",
     "selectPack": "Select Sound Pack",
+    "masterVolume": "Master volume",
+    "moodVolume": "Mood volume",
+    "ambienceVolume": "Ambience volume",
+    "oneShotVolume": "One-shot volume",
+    "volumeControls": "Volume controls",
+    "sidebarHint": "Open the sound pack sidebar to choose, import, or create a pack.",
+    "deletePackConfirm": "Delete “{name}”?",
+    "variation": "Variation",
+    "addVariation": "Add variation",
+    "addSample": "Add sample",
+    "defaultVariation": "Default",
+    "mode": "Mode",
+    "temporary": "Temporary",
+    "continual": "Continual",
+    "searchIcons": "Search icons",
+    "noIcon": "No icon",
+    "off": "Off",
+    "noPacks": "No packs available",
+    "allPackages": "All packages",
+    "moods": {
+      "explore": "Explore",
+      "combat": "Combat",
+      "victory": "Victory",
+      "rest": "Rest"
+    },
     "importPack": "Import Pack",
-    "createPack": "Create Pack",
     "editPack": "Edit Pack",
     "packInfo": "Pack Information",
     "loading": "Loading sound pack...",
@@ -761,14 +852,43 @@
     "environmental": "Environmental",
     "noLayers": "No ambient layers available",
     "noSfx": "No one-shot effects available",
-    "importHint": "Import a .spk sound pack file to get started",
     "name": "Name",
     "icon": "Icon",
     "volume": "Volume",
     "category": "Category",
     "moodStates": "Mood States",
     "selectFile": "Select file",
-    "selectMusic": "Select music"
+    "selectMusic": "Select music",
+    "downloadPrompt": "Pack saved. Download it as a .spk file?",
+    "newScene": "New scene",
+    "playing": "Playing",
+    "links": "links",
+    "noScenesInPack": "This package has no scenes",
+    "noScenes": "No scenes yet",
+    "newSceneHint": "Create a scene for the selected package.",
+    "importPackHint": "Import a package to populate scenes and the global gallery.",
+    "allCategories": "All categories",
+    "variations": "variations",
+    "scenes": "scenes",
+    "noAmbiences": "No ambiences yet",
+    "noOneShots": "No one-shots yet",
+    "noAmbiencesInScene": "No ambiences in this scene",
+    "noOneShotsInScene": "No one-shots in this scene",
+    "noSceneLinks": "No linked scenes or playlists",
+    "sceneLinksHint": "Link scenes from a location, pawn, encounter or character.",
+    "sceneMain": "Main",
+    "ambiences": "Ambiences",
+    "description": "Description",
+    "package": "Package",
+    "remove": "Remove",
+    "addSceneLink": "Add scene",
+    "removeLink": "Remove link",
+    "noScene": "No scene selected",
+    "scenesTab": "Scenes",
+    "oneShotsTab": "One-shots",
+    "noLinkEntities": "No entities available to link",
+    "ambientMix": "Ambient mix",
+    "mood": "Mood"
   },
   "maps": {
     "title": "Maps",
@@ -795,7 +915,6 @@
     "interactiveMap": "Interactive Map",
     "loadingMap": "Loading interactive map...",
     "locations": "Locations",
-    "mapTab": "Map",
     "location": "Location",
     "addLocation": "Add location",
     "editLocation": "Edit location",
@@ -859,7 +978,12 @@
     "editMode": "Edit mode",
     "showLayer": "Show layer",
     "hideLayer": "Hide layer",
-    "showLabels": "Show labels"
+    "showLabels": "Show labels",
+    "mapTab": "Map",
+    "backlinks": "Backlinks",
+    "noBacklinks": "No markers or areas link back to this location.",
+    "noMapImage": "No map image yet. Edit this location to add one.",
+    "clearMap": "Clear map"
   },
   "probabilityCalculator": {
     "completions": {
@@ -894,93 +1018,6 @@
     "syntax": "Syntax reference",
     "clickToCreateLink": "click to create link",
     "shareLinkLabel": "Share link",
-    "syntaxPage": {
-      "title": "AnyDice Syntax Reference",
-      "subtitle": "Supported syntax for the dice probability calculator",
-      "copySectionLink": "Link to this section",
-      "back": "Back to calculator",
-      "sections": {
-        "basics": "Program basics",
-        "operators": "Numbers, dice and operators",
-        "sequences": "Sequences",
-        "position": "Position and length",
-        "flow": "Loops and conditionals",
-        "functions": "Functions",
-        "library": "Function library",
-        "settings": "Settings",
-        "examples": "Examples"
-      },
-      "table": {
-        "syntax": "Syntax",
-        "meaning": "Meaning",
-        "example": "Example",
-        "function": "Function"
-      },
-      "basics": {
-        "description": "A program is a sequence of statements. Variables are uppercase words and are assigned with a colon. Use output to add a result and named to give it a title.",
-        "bullets": [
-          "Comments use backslashes: \\ this is ignored \\",
-          "Variables can be reassigned and are evaluated in order.",
-          "0 is false; any non-zero number is true.",
-          "Named outputs support [VARIABLE] interpolation, for example named \"ability [P]\"."
-        ]
-      },
-      "operators": {
-        "arithmetic": "Arithmetic. Integer division rounds toward zero.",
-        "exponentiation": "Exponentiation with a non-negative integer exponent.",
-        "comparison": "Comparison. Produces a 0/1 die when applied to dice.",
-        "boolean": "Boolean and, or and not. Zero is false; any other number is true.",
-        "access": "Position access on a sequence, dice collection or number digits.",
-        "length": "Length of a sequence or dice collection; number of digits for a number.",
-        "dice": "Creates a die or a collection of dice.",
-        "range": "Inclusive range inside a sequence literal.",
-        "colon": "Sequence repetition count, and the separator between a variable name and its value."
-      },
-      "dice": {
-        "description": "d6 is one six-sided die, 3d6 is a collection of three dice that are summed, and d% is a d100. Custom dice use a sequence such as d{'{'}1,2,4,4{'}'}. Any expression can provide the faces, for example 2d(1d4). The empty die is written d{'{'}{'}'}."
-      },
-      "sequences": {
-        "description": "Sequences are written with braces. They preserve their written order; use sort when you want the position-order setting applied. Mathematical and boolean operations sum all elements of a sequence.",
-        "positionOrder": "set \"position order\" to \"lowest first\" reverses dice positions and digit positions. It does not reorder sequence literals until sort is used."
-      },
-      "flow": {
-        "note": "Conditions can use comparisons and boolean operators. else if is supported. A die cannot be used directly as an if condition; pass it to a function with a typed parameter when you need to expand it. Loops iterate over series or dice values."
-      },
-      "functions": {
-        "description": "Function names are made of lowercase words and uppercase parameter variables. Invoke a function by putting its name and arguments in square brackets. A function returns as soon as result: is reached; without a result it returns the empty die.",
-        "paramsIntro": "Parameter types control how values are converted. A parameter without a type receives the value unchanged:",
-        "params": [
-          ":n — numbers. A sequence is summed; a die is expanded once per outcome.",
-          ":d — dice. A number becomes a constant die; a sequence is summed and becomes a constant die.",
-          ":s — sequences. A number becomes a one-element sequence; dice are expanded into all possible sorted rolls."
-        ],
-        "recursion": "Functions can recurse. The maximum depth is controlled with set \"maximum function depth\" to N. output and set are not allowed inside a function."
-      },
-      "functionMeanings": {
-        "absolute": "Absolute value.",
-        "contains": "1 if the number occurs in the sequence, otherwise 0.",
-        "count": "Counts occurrences; repeated values are counted repeatedly.",
-        "explode": "Keeps rolling when the maximum value is rolled.",
-        "highest": "Sum of the highest N values. Supports multiple pools with and.",
-        "lowest": "Sum of the lowest N values. Supports multiple pools with and.",
-        "middle": "Sum of the middle N values.",
-        "highestOf": "Higher of two numbers; dice are expanded per outcome.",
-        "lowestOf": "Lower of two numbers; dice are expanded per outcome.",
-        "maximum": "Highest possible value on a die (0 for an empty die).",
-        "minimum": "Lowest possible value on a die (engine extension).",
-        "reverse": "Reverses the sequence order.",
-        "sort": "Sorts using the position order setting."
-      },
-      "settings": {
-        "note": "Settings apply to the statements that follow them. The default position order is highest first."
-      },
-      "exampleTitles": {
-        "dropLowest": "4d6 drop lowest",
-        "blades": "Blades in the Dark",
-        "exploding": "Exploding dice",
-        "casting": "Functions and type casting"
-      }
-    },
     "source": "Source",
     "syntaxHint": "AnyDice syntax · comments use \\ … \\",
     "calculate": "Calculate",
@@ -1056,6 +1093,26 @@
     },
     "zoomIn": "Zoom in chart",
     "zoomOut": "Zoom out chart",
-    "zoomReset": "Reset chart zoom"
+    "zoomReset": "Reset chart zoom",
+    "functionMeanings": {
+      "absolute": "Absolute value.",
+      "contains": "1 if the number occurs in the sequence, otherwise 0.",
+      "count": "Counts occurrences; repeated values are counted repeatedly.",
+      "explode": "Keeps rolling when the maximum value is rolled.",
+      "highest": "Sum of the highest N values. Supports multiple pools with and.",
+      "lowest": "Sum of the lowest N values. Supports multiple pools with and.",
+      "middle": "Sum of the middle N values.",
+      "highestOf": "Higher of two numbers; dice are expanded per outcome.",
+      "lowestOf": "Lower of two numbers; dice are expanded per outcome.",
+      "maximum": "Highest possible value on a die (0 for an empty die).",
+      "minimum": "Lowest possible value on a die (engine extension).",
+      "reverse": "Reverses the sequence order.",
+      "sort": "Sorts using the position order setting."
+    }
+  },
+  "help": {
+    "title": "Help center",
+    "notFound": "Help page not found.",
+    "back": "Back to the help center"
   }
 }

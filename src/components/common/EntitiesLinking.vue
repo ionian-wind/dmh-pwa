@@ -1,0 +1,261 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { IconPlus, IconSearch, IconX } from '@tabler/icons-vue';
+import EntityGroup from '@/components/common/EntityGroup.vue';
+import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
+import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
+import type { MapEntityKind, MapEntityRef } from '@/maps/types';
+import { dedupeEntityRefs } from '@/components/common/entityLinking/entityRefs';
+import { useMapEntityCatalog } from '@/components/common/entityLinking/useMapEntityCatalog';
+
+const props = withDefaults(
+  defineProps<{
+    kind: MapEntityKind;
+    modelValue: MapEntityRef[];
+    multiple?: boolean;
+    label?: string;
+    options?: Array<{ id: string; label: string }>;
+    readonly?: boolean;
+  }>(),
+  { multiple: true, readonly: false },
+);
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: MapEntityRef[]): void;
+}>();
+
+const { t } = useI18n();
+const { groups, getLabel, getEntity } = useMapEntityCatalog();
+const isModalOpen = ref(false);
+const isCreateOpen = ref(false);
+const createdLabels = ref<Record<string, string>>({});
+const selectedInfo = ref<{
+  title: string;
+  picture?: string | null;
+  notes?: string;
+  to?: string;
+  entityKind?: string;
+  entityId?: string;
+} | null>(null);
+
+const group = computed(() =>
+  groups.value.find((entry) => entry.kind === props.kind),
+);
+
+const kindLabel = computed(
+  () => props.label || (group.value ? t(group.value.labelKey) : ''),
+);
+
+const linkedRefs = computed(() =>
+  props.modelValue.filter((ref) => ref.kind === props.kind),
+);
+
+const linkedIds = computed(() => linkedRefs.value.map((ref) => ref.id));
+
+const sourceOptions = computed(() => {
+  const base = props.options ?? group.value?.items ?? [];
+  const existing = new Set(base.map((item) => item.id));
+  const extras = Object.entries(createdLabels.value)
+    .filter(([id]) => !existing.has(id))
+    .map(([id, label]) => ({ id, label }));
+  // Keep linked refs selectable even when they are absent from the catalog,
+  // so they can be shown as checked and unlinked from the dialog.
+  const linkedExtras = linkedRefs.value
+    .filter((ref) => !existing.has(ref.id) && !createdLabels.value[ref.id])
+    .map((ref) => ({ id: ref.id, label: labelFor(ref) }));
+  return [...base, ...extras, ...linkedExtras];
+});
+
+function labelFor(ref: MapEntityRef): string {
+  const createdLabel = createdLabels.value[ref.id];
+  if (createdLabel) return createdLabel;
+  if (props.options) {
+    return props.options.find((item) => item.id === ref.id)?.label ?? ref.id;
+  }
+  return getLabel(ref);
+}
+
+function openInfo(ref: MapEntityRef) {
+  const entity = getEntity(ref);
+  const group = groups.value.find((entry) => entry.kind === ref.kind);
+  const title = group?.titleField ? entity?.[group.titleField] : undefined;
+  const notes =
+    entity?.notes ?? entity?.description ?? entity?.content ?? undefined;
+
+  selectedInfo.value = {
+    title: String(title || labelFor(ref)),
+    picture: typeof entity?.picture === 'string' ? entity.picture : undefined,
+    notes: typeof notes === 'string' ? notes : undefined,
+    to: group?.route?.(ref.id),
+    entityKind: ref.kind,
+    entityId: ref.id,
+  };
+}
+
+function handleAdd(payload: {
+  refs: Array<{ kind: string; id: string }>;
+  labels: Record<string, string>;
+}) {
+  createdLabels.value = { ...createdLabels.value, ...payload.labels };
+  const otherKinds = props.modelValue.filter((ref) => ref.kind !== props.kind);
+  emit(
+    'update:modelValue',
+    dedupeEntityRefs([...otherKinds, ...(payload.refs as MapEntityRef[])]),
+  );
+  isModalOpen.value = false;
+}
+
+function handleCreated(payload: { ref: MapEntityRef; label: string }) {
+  createdLabels.value = {
+    ...createdLabels.value,
+    [payload.ref.id]: payload.label,
+  };
+  const base = props.multiple
+    ? props.modelValue
+    : props.modelValue.filter((ref) => ref.kind !== props.kind);
+  emit('update:modelValue', dedupeEntityRefs([...base, payload.ref]));
+  isCreateOpen.value = false;
+}
+
+function removeLink(ref: MapEntityRef) {
+  emit(
+    'update:modelValue',
+    props.modelValue.filter(
+      (entry) => !(entry.kind === ref.kind && entry.id === ref.id),
+    ),
+  );
+}
+</script>
+
+<template>
+  <div>
+    <EntityGroup :title="kindLabel">
+      <template #actions>
+        <QBtn
+          v-if="!readonly"
+          flat
+          round
+          class="entity-group-search"
+          :title="t('common.searchAndLink')"
+          :aria-label="t('common.searchAndLink')"
+          @click="isModalOpen = true"
+        >
+          <IconSearch :size="18" />
+        </QBtn>
+        <QBtn
+          v-if="!readonly"
+          flat
+          round
+          class="entity-group-add"
+          :title="t('common.addAndLink')"
+          :aria-label="t('common.addAndLink')"
+          @click="isCreateOpen = true"
+        >
+          <IconPlus :size="18" />
+        </QBtn>
+      </template>
+
+      <QVirtualScroll
+        v-if="linkedRefs.length > 0"
+        :items="linkedRefs"
+        type="list"
+        virtual-scroll-item-size="48"
+        class="q-pa-none"
+        style="max-height: 320px"
+      >
+        <template #default="{ item: ref }">
+          <QItem
+            clickable
+            v-ripple
+            tabindex="0"
+            class="linked-entity-item"
+            @click="openInfo(ref)"
+            @keydown.enter="openInfo(ref)"
+            @keydown.space.prevent="openInfo(ref)"
+          >
+            <QItemSection>{{ labelFor(ref) }}</QItemSection>
+            <QItemSection v-if="!readonly" side>
+              <QBtn
+                flat
+                dense
+                round
+                color="negative"
+                class="linked-entity-remove"
+                :title="t('common.remove')"
+                :aria-label="t('common.remove')"
+                @click.stop="removeLink(ref)"
+              >
+                <IconX :size="16" />
+              </QBtn>
+            </QItemSection>
+          </QItem>
+        </template>
+      </QVirtualScroll>
+
+      <div v-else class="text-caption text-grey-7 q-pa-sm">
+        {{ t('maps.noLinkedEntities') }}
+      </div>
+    </EntityGroup>
+
+    <EntityLinkingDialog
+      v-if="!readonly"
+      :is-open="isModalOpen"
+      :kind="kind"
+      :title="kindLabel"
+      :options="sourceOptions"
+      :linked-ids="linkedIds"
+      :multiple="multiple"
+      @add="handleAdd"
+      @cancel="isModalOpen = false"
+    />
+
+    <EntityCreateDialog
+      v-if="!readonly && isCreateOpen"
+      :kind="kind"
+      @created="handleCreated"
+      @cancel="isCreateOpen = false"
+    />
+
+    <EntityInfoDialog
+      :is-open="!!selectedInfo"
+      :title="selectedInfo?.title ?? ''"
+      :picture="selectedInfo?.picture"
+      :notes="selectedInfo?.notes"
+      :to="selectedInfo?.to"
+      :entity-kind="selectedInfo?.entityKind"
+      :entity-id="selectedInfo?.entityId"
+      @cancel="selectedInfo = null"
+    />
+  </div>
+</template>
+
+<style scoped>
+.entity-group-add,
+.entity-group-search {
+  color: var(--color-accent);
+}
+
+.linked-entity-item {
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.linked-entity-item:hover,
+.linked-entity-item:focus-within,
+.linked-entity-item:focus-visible {
+  background: var(--color-background-soft);
+}
+
+.linked-entity-remove {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.linked-entity-item:hover .linked-entity-remove,
+.linked-entity-item:focus-within .linked-entity-remove {
+  opacity: 1;
+}
+</style>

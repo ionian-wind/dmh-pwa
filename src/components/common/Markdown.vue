@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue';
+import './markdown-content.css';
+import {
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  watch,
+  nextTick,
+  shallowRef,
+} from 'vue';
 import { parseMarkdown } from '@/utils/markdownParser';
-import { useNoteStore } from '@/stores/notes';
-import { useModuleStore } from '@/stores/modules';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
+import { hydrateStoredFileUrls } from '@/utils/files/markdownUrls';
+import { hydrateDrawingUrls } from '@/drawings/markdown';
+import { featureLinkKinds } from 'virtual:feature-links';
 import { useModalState } from '@/composables/useModalState';
 import { nanoid } from 'nanoid';
 import { scrollToHeading } from '@/utils/scrollToHeading';
@@ -13,11 +20,9 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
-const noteStore = useNoteStore();
-const moduleStore = useModuleStore();
-const partyStore = usePartyStore();
-const monsterStore = useMonsterStore();
-const encounterStore = useEncounterStore();
+const entityStores = Object.fromEntries(
+  featureLinkKinds.map((option) => [option.kind, option.useStore()]),
+);
 const { openMentionModal, closeMentionModal } = useModalState();
 
 const props = defineProps<{
@@ -62,26 +67,23 @@ const parsed = computed(() => {
 const rootEl = ref<HTMLElement | null>(null);
 
 function getEntity(kind: string, id: string) {
-  switch (kind) {
-    case 'note':
-      return noteStore.getById(id);
-    case 'module':
-      return moduleStore.getById(id);
-    case 'party':
-      return partyStore.getById(id);
-    case 'monster':
-      return monsterStore.getById(id);
-    case 'encounter':
-      return encounterStore.getById(id);
-    default:
-      return null;
-  }
+  return entityStores[kind]?.getById?.(id) ?? null;
 }
 
 function handleInternalLinkClick(e: MouseEvent) {
-  const link = (e.target as HTMLElement).closest(
-    '.internal-link',
-  ) as HTMLAnchorElement | null;
+  const target = e.target as HTMLElement;
+  const tagLink = target.closest('.tag-link') as HTMLAnchorElement | null;
+  if (tagLink) {
+    const href = tagLink.getAttribute('href');
+    if (href) {
+      e.preventDefault();
+      history.pushState(history.state, '', href);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    return;
+  }
+
+  const link = target.closest('.internal-link') as HTMLAnchorElement | null;
   if (!link) return;
 
   const kind = link.getAttribute('data-kind');
@@ -94,7 +96,8 @@ function handleInternalLinkClick(e: MouseEvent) {
     if (anchorMap.has(id)) {
       const anchor =
         rootEl.value && rootEl.value.contains(link)
-          ? (rootEl.value.querySelector(`#${CSS.escape(id)}`) as HTMLElement)
+          ? ((rootEl.value.querySelector(`#${CSS.escape(`${kind}-${id}`)}`) ??
+              rootEl.value.querySelector(`#${CSS.escape(id)}`)) as HTMLElement)
           : null;
       if (anchor) {
         e.preventDefault();
@@ -194,17 +197,15 @@ onMounted(async () => {
     if (props.taskCheckboxEnabled) {
       rootEl.value.addEventListener('change', handleCheckboxChange, true);
     }
+    void hydrateStoredFileUrls(rootEl.value);
+    void hydrateDrawingUrls(rootEl.value);
   }
   window.addEventListener('hashchange', scrollToAnchorIfNeeded);
 
   // Setup intersection observer for lazy loading
   setupIntersectionObserver();
 
-  await noteStore.load();
-  await moduleStore.load();
-  await partyStore.load();
-  await monsterStore.load();
-  await encounterStore.load();
+  await Promise.all(featureLinkKinds.map((option) => option.useStore().load()));
 });
 
 onUnmounted(() => {
@@ -232,11 +233,19 @@ watch(
     }
   },
 );
+
+watch(parsed, async () => {
+  await nextTick();
+  if (rootEl.value) {
+    void hydrateStoredFileUrls(rootEl.value);
+    void hydrateDrawingUrls(rootEl.value);
+  }
+});
 </script>
 
 <template>
   <div class="markdown-content" ref="rootEl">
-    <div v-html="parsed"></div>
+    <div class="markdown-content-body" v-html="parsed"></div>
   </div>
 </template>
 

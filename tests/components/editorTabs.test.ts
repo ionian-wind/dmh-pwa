@@ -5,6 +5,8 @@ import { mount } from '@vue/test-utils';
 import PartyEditor from '@/parties/PartyEditor.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+
 const EntitiesLinkingStub = defineComponent({
   name: 'EntitiesLinking',
   props: { kind: String, modelValue: Array },
@@ -25,7 +27,6 @@ const party = {
   description: 'Adventurers',
   notes: '',
   characters: ['c1'],
-  moduleIds: ['m1'],
   createdAt: 1,
   updatedAt: 1,
 };
@@ -53,11 +54,8 @@ describe('entity editor tabs', () => {
       wrapper
         .findAllComponents(EntitiesLinkingStub)
         .map((block) => block.props('kind')),
-    ).toEqual(['module', 'character']);
+    ).toEqual(['note', 'character']);
 
-    linkingBlock(wrapper, 'module').vm.$emit('update:modelValue', [
-      { kind: 'module', id: 'm2' },
-    ]);
     linkingBlock(wrapper, 'character').vm.$emit('update:modelValue', [
       { kind: 'character', id: 'c2' },
       { kind: 'character', id: 'c3' },
@@ -67,7 +65,6 @@ describe('entity editor tabs', () => {
     wrapper.findComponent(BaseModal).vm.$emit('submit');
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleIds: ['m2'],
       characters: ['c2', 'c3'],
     });
   });

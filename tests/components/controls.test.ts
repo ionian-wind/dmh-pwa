@@ -22,7 +22,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@3d-dice/dice-box', () => ({
-  default: mocks.DiceBox.mockImplementation(() => mocks.diceBox),
+  default: mocks.DiceBox.mockImplementation(function () {
+    return mocks.diceBox;
+  }),
 }));
 
 const QFabStub = defineComponent({

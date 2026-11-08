@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import type { MapLocation } from './types';
 import { useStore } from '@/utils/storage';
-import { useMapStore } from './maps';
+import { deleteMapFile } from './maps';
+import { normalizeLocation } from '@/utils/maps/normalize';
 import locationSchema from './schemas/mapLocation.schema.json';
 
 export const useMapLocationStore = defineStore('map_locations', () => {
@@ -26,8 +27,14 @@ export const useMapLocationStore = defineStore('map_locations', () => {
     return result;
   });
 
+  async function load() {
+    await base.load();
+    base.items.value = base.items.value.map(normalizeLocation);
+  }
+
   return {
     ...base,
+    load,
     filtered,
     setFilter: (query: string) => {
       searchQuery.value = query;
@@ -43,28 +50,35 @@ export const useMapLocationStore = defineStore('map_locations', () => {
 });
 
 export async function detachLocationFromMaps(locationId: string) {
-  const mapStore = useMapStore();
-  if (!mapStore.isLoaded) await mapStore.load();
+  const locationStore = useMapLocationStore();
+  if (!locationStore.isLoaded) await locationStore.load();
 
-  const affectedMaps = mapStore.items.filter(
-    (map) =>
-      map.locationId === locationId ||
-      (map as any).locationIds?.includes?.(locationId),
+  const affectedLocations = locationStore.items.filter(
+    (location) =>
+      location.id !== locationId &&
+      ((location.map?.markers ?? []).some(
+        (marker) => marker.locationId === locationId,
+      ) ||
+        (location.map?.areas ?? []).some(
+          (area) => area.locationId === locationId,
+        )),
   );
 
   await Promise.all(
-    affectedMaps.map((map) =>
-      mapStore.update(map.id, {
-        locationId: null,
-        markers: map.markers.map((marker) => ({
-          ...marker,
-          locationId:
-            marker.locationId === locationId ? null : marker.locationId,
-        })),
-        areas: map.areas.map((area) => ({
-          ...area,
-          locationId: area.locationId === locationId ? null : area.locationId,
-        })),
+    affectedLocations.map((location) =>
+      locationStore.update(location.id, {
+        map: {
+          ...location.map,
+          markers: location.map.markers.map((marker) => ({
+            ...marker,
+            locationId:
+              marker.locationId === locationId ? null : marker.locationId,
+          })),
+          areas: location.map.areas.map((area) => ({
+            ...area,
+            locationId: area.locationId === locationId ? null : area.locationId,
+          })),
+        },
       }),
     ),
   );
@@ -73,6 +87,10 @@ export async function detachLocationFromMaps(locationId: string) {
 export async function deleteMapLocation(locationId: string) {
   const locationStore = useMapLocationStore();
   if (!locationStore.isLoaded) await locationStore.load();
+  const location = locationStore.getById(locationId);
   await detachLocationFromMaps(locationId);
   await locationStore.remove(locationId);
+  if (location?.map?.fileId) {
+    await deleteMapFile(location.map.fileId).catch(() => undefined);
+  }
 }

@@ -3,13 +3,17 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createI18n } from 'vue-i18n';
 
-vi.mock('@/utils/storage', () => ({
-  useMentionsStore: () => ({
-    getLinks: () => [{ kind: 'note', id: 'outgoing' }],
-    getBacklinks: () => [{ kind: 'note', id: 'incoming' }],
-    load: vi.fn(),
-  }),
-}));
+vi.mock('@/utils/storage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/storage')>();
+  return {
+    ...actual,
+    useMentionsStore: () => ({
+      getLinks: () => [{ kind: 'note', id: 'outgoing' }],
+      getBacklinks: () => [{ kind: 'note', id: 'incoming' }],
+      load: vi.fn(),
+    }),
+  };
+});
 
 vi.mock('@/stores/modules', () => ({
   useModuleStore: () => ({
@@ -136,32 +140,6 @@ describe('regression: UI contracts', () => {
     wrapper.unmount();
   });
 
-  it('renders mention lists from a plain entity prop', async () => {
-    const MentionsStub = {
-      name: 'Mentions',
-      props: ['title', 'entities'],
-      template: '<div>{{ title }}:{{ entities.length }}</div>',
-    };
-
-    const wrapper = mount(NoteViewSidebar, {
-      props: { note: { id: 'n1', title: 'Note', tags: [] } as any },
-      global: {
-        plugins: [i18n],
-        stubs: { ...quasarStubs, Mentions: MentionsStub },
-      },
-    });
-    await flushPromises();
-
-    const mentions = wrapper.findAllComponents(MentionsStub);
-    expect(mentions.length).toBe(2);
-    expect(mentions[0].props('entities')).toEqual([
-      { kind: 'note', id: 'outgoing' },
-    ]);
-    expect(mentions[1].props('entities')).toEqual([
-      { kind: 'note', id: 'incoming' },
-    ]);
-  });
-
   it('forwards subtitle and sidepanel from BaseEntityView', async () => {
     const layout = createLayoutStore();
 
@@ -182,7 +160,8 @@ describe('regression: UI contracts', () => {
     });
     await nextTick();
 
-    expect(layout.topMenuContent.value?.props?.subtitle).toBe('Subtitle');
+    expect(layout.topMenuContent.value?.props?.subtitle).toBe('');
+    expect(wrapper.find('.entity-page-subtitle').text()).toBe('Subtitle');
     expect(layout.topMenuContent.value?.props?.showEdit).toBe(true);
     expect(layout.topMenuContent.value?.props?.showDelete).toBe(true);
 

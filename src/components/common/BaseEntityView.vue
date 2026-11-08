@@ -29,6 +29,9 @@ interface Props {
   headerShowEdit?: boolean;
   headerShowDelete?: boolean;
   headerButtons?: any[];
+  leftHeaderButtons?: any[];
+  tabs?: Array<{ id: string; label: string; icon?: any; disabled?: boolean }>;
+  modelValue?: string;
   rightDrawerIcon?: any;
   fill?: boolean;
 }
@@ -45,9 +48,14 @@ const props = withDefaults(
     headerShowEdit: true,
     headerShowDelete: true,
     headerButtons: () => [],
+    leftHeaderButtons: () => [],
+    tabs: () => [],
+    modelValue: '',
     fill: false,
   },
 );
+
+const emit = defineEmits(['update:modelValue', 'tab-click']);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -78,13 +86,20 @@ const SidepanelHost = defineComponent({
 const injectTopMenu = () => {
   const headerProps: Record<string, any> = {
     buttons: props.headerButtons,
+    leftButtons: props.leftHeaderButtons,
     showEdit: props.headerShowEdit,
     onEdit: handleEdit,
     showDelete: props.headerShowDelete,
     onDelete: handleDelete,
-    title: props.title || '',
-    subtitle: props.subtitle || '',
+    // The entity title now lives in the page content, not the app header.
+    title: '',
+    subtitle: '',
   };
+  headerProps.tabs = props.tabs;
+  headerProps.modelValue = props.modelValue;
+  headerProps['onUpdate:modelValue'] = (value: string) =>
+    emit('update:modelValue', value);
+  headerProps.onTabClick = (tab: unknown) => emit('tab-click', tab);
   if (props.rightDrawerIcon)
     headerProps.rightDrawerIcon = props.rightDrawerIcon;
   layout.setTopMenuContent(
@@ -108,6 +123,9 @@ watch(
     props.headerShowEdit,
     props.headerShowDelete,
     props.headerButtons,
+    props.leftHeaderButtons,
+    props.tabs,
+    props.modelValue,
   ],
   () => injectTopMenu(),
   { deep: true },
@@ -132,6 +150,23 @@ onBeforeUnmount(() => {
     <template v-else-if="entity">
       <QPageContainer class="base-entity-layout">
         <QPage class="entity-main-column">
+          <header
+            v-if="props.title || props.subtitle"
+            class="entity-page-header q-px-lg q-pt-md"
+          >
+            <h1
+              v-if="props.title"
+              class="entity-page-title text-h5 text-weight-medium q-ma-none"
+            >
+              {{ props.title }}
+            </h1>
+            <div
+              v-if="props.subtitle"
+              class="entity-page-subtitle text-subtitle1 text-grey-7 q-mt-xs"
+            >
+              {{ props.subtitle }}
+            </div>
+          </header>
           <div v-if="$slots.sub" class="entity-sub q-px-lg q-pt-md">
             <slot name="sub" />
           </div>
@@ -158,12 +193,23 @@ onBeforeUnmount(() => {
 }
 
 .base-entity-container--fill .base-entity-layout,
-.base-entity-container--fill .entity-main-column,
-.base-entity-container--fill .base-entity-view {
+.base-entity-container--fill .entity-main-column {
   height: 100%;
 }
 
 .base-entity-container--fill .entity-main-column {
+  display: flex;
+  flex-direction: column;
   min-height: 0 !important;
+}
+
+.base-entity-container--fill .entity-page-header {
+  flex: 0 0 auto;
+}
+
+.base-entity-container--fill .base-entity-view {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
 }
 </style>

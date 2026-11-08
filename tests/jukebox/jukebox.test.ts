@@ -1,12 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import { h, nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 
 import JukeboxView from '@/jukebox/JukeboxView.vue';
 import AddToPlaylistModal from '@/jukebox/components/AddToPlaylistModal.vue';
 import TrackCard from '@/jukebox/components/TrackCard.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import {
   useJukeboxPlaylistsStore,
   useJukeboxTracksStore,
@@ -14,8 +13,21 @@ import {
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 
 const provides = {};
+
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: {
+    kind: String,
+    modelValue: { type: Array, default: () => [] },
+  },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
+  },
+});
 
 async function seedTrack(title = 'Tavern Theme') {
   const tracks = useJukeboxTracksStore();
@@ -27,7 +39,21 @@ async function seedTrack(title = 'Tavern Theme') {
   return track;
 }
 
+function dispatchPointerDown(element: Element, shiftKey: boolean) {
+  element.dispatchEvent(
+    new MouseEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      shiftKey,
+    }),
+  );
+}
+
 describe('jukebox store integration', () => {
+  beforeEach(() => {
+    useJukeboxBulkSelection().clearSelection();
+  });
+
   it('builds the queue from jukebox store arrays', async () => {
     const tracks = useJukeboxTracksStore();
     await seedTrack('One');
@@ -64,36 +90,59 @@ describe('jukebox store integration', () => {
     expect(player.queue.map((track) => track.title)).toEqual(['One', 'Two']);
   });
 
-  it('creates a playlist from the add-to-playlist dialog and adds the track', async () => {
+  it('adds and removes a track through playlist entity linking', async () => {
     const track = await seedTrack('Tavern Theme');
     const playlists = useJukeboxPlaylistsStore();
+    const playlist = await playlists.create({
+      name: 'Set',
+      trackIds: [],
+    });
 
     const wrapper = mount(AddToPlaylistModal, {
       props: { modelValue: true, track },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+    const linking = wrapper.findComponent(EntitiesLinkingStub);
+    expect(linking.props()).toMatchObject({
+      kind: 'playlist',
+      modelValue: [],
     });
 
-    const input = wrapper.find('#new-playlist-name');
-    expect(input.exists()).toBe(true);
-    await input.setValue('Road trip');
-
-    const createButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Create');
-    expect(createButton).toBeTruthy();
-    await createButton!.trigger('click');
+    linking.vm.$emit('update:modelValue', [
+      { kind: 'playlist', id: playlist.id },
+    ]);
     await flushPromises();
+    await vi.waitFor(() =>
+      expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]),
+    );
 
-    expect(playlists.items.value).toHaveLength(1);
-    expect(playlists.items.value[0]).toMatchObject({
-      name: 'Road trip',
-      trackIds: [track.id],
+    wrapper
+      .findComponent(EntitiesLinkingStub)
+      .vm.$emit('update:modelValue', []);
+    await flushPromises();
+    await vi.waitFor(() =>
+      expect(playlists.getById(playlist.id)?.trackIds).toEqual([]),
+    );
+
+    wrapper.unmount();
+  });
+
+  it('does nothing when linking playlists without a track', async () => {
+    const playlists = useJukeboxPlaylistsStore();
+    const playlist = await playlists.create({
+      name: 'Set',
+      trackIds: [],
+    });
+    const wrapper = mount(AddToPlaylistModal, {
+      props: { modelValue: true, track: null },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
 
-    await nextTick();
-    const toggles = wrapper.findAll('input[type="checkbox"]');
-    expect(toggles).toHaveLength(1);
-    expect((toggles[0].element as HTMLInputElement).checked).toBe(true);
-
+    wrapper
+      .findComponent(EntitiesLinkingStub)
+      .vm.$emit('update:modelValue', [{ kind: 'playlist', id: playlist.id }]);
+    await flushPromises();
+    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
     wrapper.unmount();
   });
 
@@ -176,11 +225,23 @@ describe('jukebox store integration', () => {
   it('marks draggable tracks and emits play on click', async () => {
     const track = await seedTrack('Tavern Theme');
     const wrapper = mount(TrackCard, {
-      props: { track: { ...track, duration: undefined }, draggable: true },
+      props: {
+        track: { ...track, duration: undefined },
+        draggable: true,
+        selectable: true,
+      },
     });
 
     const item = wrapper.find('.track-item');
     expect(item.attributes('data-draggable')).toBe('true');
+    const handle = wrapper.find('.track-drag-handle');
+    expect(handle.exists()).toBe(true);
+    const bulk = wrapper.find('.track-bulk-select input[type="checkbox"]');
+    expect(bulk.exists()).toBe(true);
+    await bulk.setValue(true);
+    expect((bulk.element as HTMLInputElement).checked).toBe(true);
+    await handle.trigger('click');
+    expect(wrapper.emitted('play')).toBeUndefined();
     await item.trigger('click');
     expect(wrapper.emitted('play')?.[0]).toEqual([
       { ...track, duration: undefined },
@@ -193,56 +254,63 @@ describe('jukebox store integration', () => {
     expect(staticCard.find('.track-item').attributes('data-draggable')).toBe(
       undefined,
     );
+    expect(staticCard.find('.track-drag-handle').exists()).toBe(false);
+    expect(staticCard.find('.track-bulk-select').exists()).toBe(false);
     expect(staticCard.text()).toContain('0:42');
     staticCard.unmount();
   });
 
-  it('toggles track membership in an existing playlist', async () => {
-    const track = await seedTrack('Tavern Theme');
-    const playlists = useJukeboxPlaylistsStore();
-    const playlist = await playlists.create({
-      name: 'Set',
-      trackIds: [],
+  it('shows bulk selection without drag handles when selectable', async () => {
+    const track = await seedTrack('All Tracks Song');
+    const wrapper = mount(TrackCard, {
+      props: { track, selectable: true },
     });
 
-    const wrapper = mount(AddToPlaylistModal, {
-      props: { modelValue: true, track },
-    });
-    const toggle = wrapper.findComponent(ToggleSwitch);
-    expect(toggle.props('modelValue')).toBe(false);
-
-    await toggle.vm.$emit('update:modelValue', true);
-    await flushPromises();
-    await vi.waitFor(() =>
-      expect(playlists.getById(playlist.id)?.trackIds).toEqual([track.id]),
-    );
-
-    await wrapper
-      .findComponent(ToggleSwitch)
-      .vm.$emit('update:modelValue', false);
-    await flushPromises();
-    await vi.waitFor(() =>
-      expect(playlists.getById(playlist.id)?.trackIds).toEqual([]),
-    );
-
+    expect(wrapper.find('.track-drag-handle').exists()).toBe(false);
+    expect(
+      wrapper.find('.track-bulk-select input[type="checkbox"]').exists(),
+    ).toBe(true);
     wrapper.unmount();
   });
 
-  it('does nothing when toggling without a track', async () => {
-    const playlists = useJukeboxPlaylistsStore();
-    const playlist = await playlists.create({
-      name: 'Set',
-      trackIds: [],
-    });
-    const wrapper = mount(AddToPlaylistModal, {
-      props: { modelValue: true, track: null },
+  it('shows the generated waveform behind a playing track', async () => {
+    const track = {
+      id: 'waveform-track',
+      fileId: 'f1',
+      title: 'Wave',
+      waveform:
+        '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 1L0 9" stroke="#666"/></svg>',
+    };
+    const player = useJukeboxPlayerStore();
+    player.currentTrack = track as any;
+    player.duration = 200;
+    player.currentTime = 50;
+
+    const wrapper = mount(TrackCard, {
+      props: { track, isPlaying: true },
     });
 
-    await wrapper
-      .findComponent(ToggleSwitch)
-      .vm.$emit('update:modelValue', true);
-    await flushPromises();
-    expect(playlists.getById(playlist.id)?.trackIds).toEqual([]);
+    const waveform = wrapper.find('.track-waveform');
+    expect(waveform.exists()).toBe(true);
+    expect(waveform.classes()).toContain('track-waveform--visible');
+    expect(waveform.findAll('.track-waveform-layer')).toHaveLength(2);
+    expect(waveform.find('.track-waveform--base').html()).toContain('<svg');
+    expect(waveform.find('.track-waveform--base').html()).toContain('M0 1L0 9');
+    expect(
+      waveform.find('.track-waveform--played').attributes('style'),
+    ).toContain('inset(0 75% 0 0)');
+
+    player.currentTime = 150;
+    await nextTick();
+    expect(
+      wrapper.find('.track-waveform--played').attributes('style'),
+    ).toContain('inset(0 25% 0 0)');
+
+    await wrapper.setProps({ isPlaying: false });
+    expect(wrapper.find('.track-waveform').exists()).toBe(true);
+    expect(wrapper.find('.track-waveform').classes()).not.toContain(
+      'track-waveform--visible',
+    );
     wrapper.unmount();
   });
 
@@ -297,5 +365,52 @@ describe('jukebox store integration', () => {
 
     expect(wrapper.text()).toContain('Tavern Theme');
     wrapper.unmount();
+  });
+
+  it('hides remove from the track menu outside edit mode', async () => {
+    const track = await seedTrack('Tavern Theme');
+    const wrapper = mount(TrackCard, {
+      props: { track, showRemove: false },
+    });
+
+    const items = wrapper.findAll('.track-actions-menu [data-stub="QItem"]');
+    expect(items).toHaveLength(3);
+    expect(wrapper.text()).not.toContain('Remove');
+    wrapper.unmount();
+  });
+
+  it('renders disabled tracks with a muted style', async () => {
+    const track = await seedTrack('Gone');
+    const wrapper = mount(TrackCard, {
+      props: { track: { ...track, disabled: true } },
+    });
+
+    expect(wrapper.find('.track-item').classes()).toContain('is-disabled');
+    wrapper.unmount();
+  });
+
+  it('selects a range of tracks with shift-click', async () => {
+    const bulk = useJukeboxBulkSelection();
+    const first = { id: 't1', fileId: 'f1', title: 'One' };
+    const second = { id: 't2', fileId: 'f2', title: 'Two' };
+    const third = { id: 't3', fileId: 'f3', title: 'Three' };
+    bulk.setTrackOrder(['t1', 't2', 't3']);
+
+    const wrappers = [first, second, third].map((track) =>
+      mount(TrackCard, { props: { track, selectable: true } }),
+    );
+    const checkboxes = wrappers.map((wrapper) =>
+      wrapper.find('.track-bulk-select input[type="checkbox"]'),
+    );
+
+    dispatchPointerDown(checkboxes[0].element, false);
+    await checkboxes[0].trigger('click');
+    await checkboxes[0].trigger('change');
+    dispatchPointerDown(checkboxes[2].element, true);
+    await checkboxes[2].trigger('click');
+    await checkboxes[2].trigger('change');
+
+    expect([...bulk.selectedTrackIds.value]).toEqual(['t1', 't2', 't3']);
+    for (const wrapper of wrappers) wrapper.unmount();
   });
 });

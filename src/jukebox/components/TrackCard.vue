@@ -5,21 +5,29 @@ import {
   IconArrowBarToDown,
   IconArrowBarToUp,
   IconDotsVertical,
+  IconGripVertical,
   IconPlaylistAdd,
   IconTrash,
 } from '@tabler/icons-vue';
 
 import type { JukeboxTrack } from '@/jukebox/types';
 
-import { formatTime } from '../utils';
+import { formatTime } from '@/utils/formatTime';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useJukeboxBulkSelection } from '@/jukebox/composables/useJukeboxBulkSelection';
 import TrackInfo from './TrackInfo.vue';
 
-const props = defineProps<{
-  track: JukeboxTrack;
-  isSelected?: boolean;
-  isPlaying?: boolean;
-  draggable?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    track: JukeboxTrack;
+    isSelected?: boolean;
+    isPlaying?: boolean;
+    draggable?: boolean;
+    selectable?: boolean;
+    showRemove?: boolean;
+  }>(),
+  { showRemove: true, selectable: false },
+);
 
 const emit = defineEmits<{
   (e: 'add-to-playlist', track: JukeboxTrack): void;
@@ -30,7 +38,32 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const playerStore = useJukeboxPlayerStore();
 const isMenuOpen = ref(false);
+const { selectedTrackIds, hasSelectedPlaylists, toggleTrack } =
+  useJukeboxBulkSelection();
+const bulkSelected = computed(() => selectedTrackIds.value.has(props.track.id));
+const bulkShiftClick = ref(false);
+const waveformProgress = computed(() => {
+  if (!props.isPlaying || playerStore.currentTrack?.id !== props.track.id) {
+    return 0;
+  }
+  const duration = playerStore.duration || props.track.duration || 0;
+  if (duration <= 0) return 0;
+  return Math.min(1, Math.max(0, playerStore.currentTime / duration));
+});
+const playedWaveformStyle = computed(() => ({
+  clipPath: `inset(0 ${(1 - waveformProgress.value) * 100}% 0 0)`,
+}));
+
+function captureBulkClick(event: MouseEvent) {
+  bulkShiftClick.value = event.shiftKey;
+}
+
+function updateBulkSelection(selected: boolean) {
+  toggleTrack(props.track.id, selected, bulkShiftClick.value);
+  bulkShiftClick.value = false;
+}
 
 const handleAddToPlaylist = () => {
   emit('add-to-playlist', props.track);
@@ -55,13 +88,51 @@ const trackColor = computed(() => props.track.color || 'transparent');
 <template>
   <QItem
     class="track-item"
-    :class="{ 'is-selected': isSelected, 'is-playing': isPlaying }"
+    :class="{
+      'is-selected': isSelected,
+      'is-playing': isPlaying,
+      'is-disabled': track.disabled,
+      'menu-open': isMenuOpen,
+    }"
     :style="{ '--track-item-color': trackColor }"
     clickable
     @click="handlePlay"
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
-    <QItemSection>
+    <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
+      <IconGripVertical :size="18" />
+    </QItemSection>
+    <QItemSection
+      v-if="selectable"
+      side
+      class="track-bulk-select"
+      @pointerdown.capture="captureBulkClick"
+      @click.stop
+    >
+      <QCheckbox
+        :model-value="bulkSelected"
+        :disable="hasSelectedPlaylists"
+        dense
+        @update:model-value="updateBulkSelection"
+      />
+    </QItemSection>
+    <QItemSection class="track-main">
+      <div
+        v-if="track.waveform"
+        class="track-waveform"
+        :class="{ 'track-waveform--visible': isPlaying }"
+        aria-hidden="true"
+      >
+        <div
+          class="track-waveform-layer track-waveform--base"
+          v-html="track.waveform"
+        />
+        <div
+          class="track-waveform-layer track-waveform--played"
+          :style="playedWaveformStyle"
+          v-html="track.waveform"
+        />
+      </div>
       <TrackInfo
         :artwork-size="'60px'"
         :track="track"
@@ -108,7 +179,11 @@ const trackColor = computed(() => props.track.color || 'transparent');
               </QItemSection>
               <QItemSection>{{ t('jukebox.playLast') }}</QItemSection>
             </QItem>
-            <QItem clickable @click.stop="handleRemove">
+            <QItem
+              v-if="showRemove !== false"
+              clickable
+              @click.stop="handleRemove"
+            >
               <QItemSection side>
                 <IconTrash />
               </QItemSection>
@@ -123,6 +198,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
 
 <style scoped>
 .track-item {
+  position: relative;
   display: flex;
   /*align-items: center;*/
   /*padding: 0.75rem;*/
@@ -135,6 +211,66 @@ const trackColor = computed(() => props.track.color || 'transparent');
   /*position: relative;*/
   overflow: hidden;
 }
+.track-main {
+  position: relative;
+}
+
+.track-waveform {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  left: calc(60px + 20px);
+  right: 12px;
+  z-index: 0;
+  color: var(--q-primary);
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: center;
+  transition:
+    transform 260ms ease,
+    opacity 260ms ease;
+}
+
+.track-waveform--visible {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.track-waveform-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.track-main :deep(.track-info-row) {
+  position: relative;
+  z-index: 1;
+}
+
+.track-waveform--base {
+  opacity: 0.08;
+}
+
+.track-waveform--played {
+  opacity: 0.24;
+}
+
+.track-waveform-layer :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.track-waveform-layer :deep(path) {
+  stroke: currentColor;
+}
+
+.track-item :deep(.q-item__section) {
+  position: relative;
+  z-index: 1;
+}
+
 .track-item::before {
   content: '';
   position: absolute;
@@ -146,11 +282,25 @@ const trackColor = computed(() => props.track.color || 'transparent');
   transition: width 0.2s;
 }
 
+.track-item.is-disabled {
+  opacity: 0.55;
+}
+
+.track-drag-handle {
+  cursor: grab;
+  color: var(--color-text-lighter);
+}
+
+.track-drag-handle:active {
+  cursor: grabbing;
+}
+
 .track-actions {
   display: none;
 }
 
-.track-item:hover .track-actions {
+.track-item:hover .track-actions,
+.track-item.menu-open .track-actions {
   display: flex;
 }
 

@@ -3,10 +3,7 @@ import { computed } from 'vue';
 
 import router from '@/router';
 import { MAIN_STORE_NAMES } from '@/utils/storage';
-import {
-  getColor,
-  getPalette,
-} from '@/utils/files/worker/color-from-image';
+import { getColor, getPalette } from '@/utils/files/worker/color-from-image';
 import {
   getGradientContrastColor,
   useAnimatedGradient,
@@ -16,7 +13,6 @@ import {
   validateArray,
 } from '@/utils/schemaValidator';
 import { parseMarkdown } from '@/utils/markdownParser';
-import { remapImportedModule } from '@/utils/moduleImportExport';
 import { advanceTurn, rewindTurn } from '@/utils/combatTurn';
 import type { Combat, Combatant } from '@/types';
 
@@ -41,7 +37,8 @@ describe('regression: known bugs', () => {
         'timers',
         'jukebox_playlists',
         'jukebox_tracks',
-        'jukebox_files',
+        'files',
+        'map_image_metadata',
         'indexations_mentions',
       ]),
     );
@@ -167,32 +164,6 @@ describe('regression: known bugs', () => {
     );
     expect(html).not.toContain('onerror');
     expect(html).not.toContain('<script');
-  });
-
-  it('remaps module and note IDs on import so archives do not overwrite', () => {
-    const input = {
-      module: { id: 'old-module', name: 'Module' },
-      tree: [{ noteId: 'old-note', children: [] }],
-      notes: [
-        {
-          id: 'old-note',
-          title: 'Note',
-          content: 'Body',
-          typeId: null,
-          tags: [],
-          moduleId: 'old-module',
-          hidden: true,
-        },
-      ],
-    };
-
-    const result = remapImportedModule(input as any);
-
-    expect(result.module.id).not.toBe('old-module');
-    expect(result.notes[0].id).not.toBe('old-note');
-    expect(result.notes[0].moduleId).toBe(result.module.id);
-    expect(result.tree[0].noteId).toBe(result.notes[0].id);
-    expect(result.tree[0].children).toEqual([]);
   });
 });
 

@@ -1,26 +1,28 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, nextTick } from 'vue';
-import type { Note, NoteContentType } from '@/types';
-import TagSelector from '../components/common/TagSelector.vue';
-import NoteTypeSelector from './NoteTypeSelector.vue';
+import { ref, watch, computed } from 'vue';
+import type { Note } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import MarkdownEditor from '@/components/common/MarkdownEditor.vue';
-import NoteCanvas from './NoteCanvas.vue';
+import NoteOptions from './NoteOptions.vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import { IconDots, IconHelp } from '@tabler/icons-vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import type { MapEntityRef } from '@/maps/types';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import { ensureBlockAnchors } from '@/utils/noteAnchors';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   note: Note | null;
   isOpen: boolean;
+  useModalStack?: boolean;
   isEditing?: boolean;
   validationError?: string | null;
-  hideModuleSelector?: boolean;
-  contentType?: NoteContentType;
 }>();
 
 const emit = defineEmits<{
@@ -35,11 +37,8 @@ const editedNote = ref<Note>({
   id: '',
   title: '',
   content: '',
-  contentType: props.contentType ?? 'text',
   tags: [],
-  moduleId: null,
   typeId: null,
-  hidden: false,
 });
 
 const lastNoteId = ref<string | null>(null);
@@ -52,14 +51,16 @@ const noteContent = computed({
   },
 });
 
+function handleOptionsUpdate(updated: Note) {
+  Object.assign(editedNote.value, updated);
+}
+
 watch(
   () => props.note,
   (newNote) => {
     if (newNote && newNote.id !== lastNoteId.value) {
       editedNote.value = {
         ...newNote,
-        contentType: newNote.contentType ?? 'text',
-        moduleId: newNote.moduleId ?? null,
         typeId: newNote.typeId ?? null,
       };
       lastNoteId.value = newNote.id;
@@ -70,11 +71,8 @@ watch(
         id: '',
         title: '',
         content: '',
-        contentType: props.contentType ?? 'text',
         tags: [],
-        moduleId: null,
         typeId: null,
-        hidden: false,
       };
       lastNoteId.value = null;
     }
@@ -83,32 +81,49 @@ watch(
 );
 
 const editorTabs = useEntityEditorTabs();
-const tabs = computed(() => (props.hideModuleSelector ? [] : editorTabs.value));
+const relations = useEntityLinkRelations();
+const noteLinkKinds = [
+  'character',
+  'pawn',
+  'party',
+  'encounter',
+  'location',
+] as const;
+const tabs = computed(() => editorTabs.value);
 
-const linkedModule = computed<MapEntityRef[]>(() =>
-  editedNote.value.moduleId
-    ? [{ kind: 'module', id: editedNote.value.moduleId }]
-    : [],
-);
+const noteLinks = computed<MapEntityRef[]>(() => {
+  const id = editedNote.value.id;
+  if (!id) return [];
+  return noteLinkKinds.flatMap((kind) =>
+    relations
+      .getLinkedIds('note', id, kind)
+      .map((linkId) => ({ kind, id: linkId })),
+  );
+});
 
-function setLinkedModule(links: MapEntityRef[]) {
-  editedNote.value.moduleId = links[0]?.id ?? null;
+function setNoteLinks(
+  kind: (typeof noteLinkKinds)[number],
+  links: MapEntityRef[],
+) {
+  if (!editedNote.value.id) return;
+  void relations.setLinkedIds(
+    'note',
+    editedNote.value.id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
 }
 
 const markdownEditorRef = ref<any>(null);
-const canvasRef = ref<InstanceType<typeof NoteCanvas> | null>(null);
 
 const handleSubmit = async () => {
-  if (!editedNote.value.title) {
-    await alert(t('editor.titleRequired'));
-    return;
-  }
-  if (editedNote.value.contentType === 'draw') {
-    editedNote.value.content = canvasRef.value?.getSnapshot() ?? '';
-    editedNote.value.preview =
-      (await canvasRef.value?.getPreview()) || undefined;
-  } else if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
+  if (markdownEditorRef.value && markdownEditorRef.value.getMarkdown) {
     editedNote.value.content = markdownEditorRef.value.getMarkdown();
+  }
+  editedNote.value.content = ensureBlockAnchors(editedNote.value.content ?? '');
+  if (!editedNote.value.title?.trim() && !editedNote.value.content?.trim()) {
+    await alert(t('editor.titleOrContentRequired'));
+    return;
   }
   emit('submit', editedNote.value);
 };
@@ -124,6 +139,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="isOpen"
     :title="isEditing ? t('common.editNote') : t('common.createNote')"
     :showSubmit="true"
@@ -140,82 +156,85 @@ function handleDelete() {
   >
     <template #main>
       <div class="q-pa-md q-gutter-md">
-        <div class="q-mb-md">
-          <QInput
-            v-model="editedNote.title"
-            :label="t('editor.title')"
-            required
-            outlined
-            type="text"
-          />
-        </div>
-        <div class="q-mb-md">
-          <NoteTypeSelector
-            :allow-create="true"
-            v-model="editedNote.typeId"
-            :module-id="editedNote.moduleId"
-          />
-        </div>
-        <div class="q-mb-md">
-          <TagSelector
-            v-model="editedNote.tags"
-            :entity-type="'note'"
-            :current-entity-id="editedNote.id"
-          />
-        </div>
-        <div class="q-mb-md">
-          <div
-            v-if="editedNote.contentType === 'text'"
-            class="row justify-between"
-          >
-            <div class="col">
-              <h5>{{ t('editor.content') }}</h5>
-            </div>
-            <div class="editor-toggle text-right col">
-              <QToggle left-label v-model="isWYSIWYGMode">
-                {{ t('markdownEditor.visualMode') }}
-              </QToggle>
+        <QInput
+          v-model="editedNote.title"
+          :placeholder="t('editor.title')"
+          borderless
+          hide-bottom-space
+          input-style="font-size: 1.5rem; font-weight: 500;"
+          type="text"
+        />
+        <slot
+          name="content"
+          :note="editedNote"
+          :update-content="(value: string) => (noteContent = value)"
+        >
+          <div class="row q-col-gutter-md">
+            <div class="col-12">
+              <MarkdownEditor
+                ref="markdownEditorRef"
+                v-model="noteContent"
+                enableMentions
+                :isWYSIWYGMode="isWYSIWYGMode"
+                :placeholder="t('editor.contentPlaceholder')"
+                :current-entity-id="editedNote.id"
+                current-entity-type="note"
+                :tags="editedNote.tags"
+              />
             </div>
           </div>
-          <h5 v-else>{{ t('editor.content') }}</h5>
-
-          <slot
-            name="content"
-            :note="editedNote"
-            :content-type="editedNote.contentType"
-            :update-content="(value: string) => (noteContent = value)"
-          >
-            <div class="row q-col-gutter-md">
-              <div class="col-12">
-                <NoteCanvas
-                  v-if="editedNote.contentType === 'draw'"
-                  ref="canvasRef"
-                  :model-value="editedNote.content"
-                />
-                <MarkdownEditor
-                  v-else
-                  ref="markdownEditorRef"
-                  v-model="noteContent"
-                  enableMentions
-                  :isWYSIWYGMode="isWYSIWYGMode"
-                  :placeholder="t('editor.contentPlaceholder')"
-                  :current-entity-id="editedNote.id"
-                  current-entity-type="note"
-                />
-              </div>
-            </div>
-          </slot>
-        </div>
+        </slot>
       </div>
     </template>
 
     <template #links>
-      <EntitiesLinking
-        kind="module"
-        :multiple="false"
-        :model-value="linkedModule"
-        @update:model-value="setLinkedModule"
-      />
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-for="kind in noteLinkKinds"
+          :key="kind"
+          :kind="kind"
+          :model-value="noteLinks"
+          @update:model-value="(links) => setNoteLinks(kind, links)"
+        />
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="note-footer-actions q-mr-auto row items-center q-gutter-sm">
+        <QBtn
+          flat
+          round
+          class="note-options-button"
+          title="options"
+          aria-label="options"
+        >
+          <IconDots />
+          <QMenu class="note-options-menu">
+            <QCard class="note-options-card q-pa-md">
+              <NoteOptions
+                :note="editedNote"
+                @update:note="handleOptionsUpdate"
+              />
+            </QCard>
+          </QMenu>
+        </QBtn>
+        <QToggle left-label v-model="isWYSIWYGMode">
+          {{ t('markdownEditor.visualMode') }}
+        </QToggle>
+        <QBtn
+          v-if="!isWYSIWYGMode && features.help"
+          flat
+          round
+          class="note-help-button"
+          :title="t('markdownEditor.formattingHelp')"
+          :aria-label="t('markdownEditor.formattingHelp')"
+          :href="helpHref('reference/markdown', getHelpLocale(locale))"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <IconHelp />
+        </QBtn>
+      </div>
     </template>
 
     <div

@@ -1,32 +1,35 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
-import type { Combat } from '@/types';
+import type { Combat, Combatant } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '@/stores/characters';
-import { useMonsterStore } from '@/stores/monsters';
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import { usePawnStore } from '@/stores/pawns';
+import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
+import EntityPicture from '@/components/common/EntityPicture.vue';
+import { entityRoute } from '@/components/common/entityLinking/entityRefs';
+import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
+import { useRightDrawer } from '@/composables/useLayout';
 import {
   IconFlag,
   IconGhost3,
-  IconListNumbers,
-  IconUserPlus,
   IconUser,
+  IconUserPlus,
   IconCheck,
   IconBolt,
   IconPlayerPause,
   IconSwords,
-  IconTrophy,
   IconCircleCheck,
-  IconClock,
+  IconRestore,
+  IconX,
 } from '@tabler/icons-vue';
+import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
 import { S } from '@/utils/dice-roller/plugins/dice/tokens';
 import { advanceTurn, rewindTurn, type TurnResult } from '@/utils/combatTurn';
 
@@ -34,36 +37,54 @@ const route = useRoute();
 const router = useRouter();
 const combatStore = useCombatStore();
 const characterStore = useCharacterStore();
-const monsterStore = useMonsterStore();
+const pawnStore = usePawnStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
+const rightDrawer = useRightDrawer();
 const { t } = useI18n();
-
-onMounted(async () => {
-  await characterStore.load();
-  await monsterStore.load();
-  await combatStore.load();
-  await encounterStore.load();
-  await partyStore.load();
-  await moduleStore.load();
-});
 
 const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
 const notFound = computed(() => combatStore.isLoaded && !combat.value);
 const activeTab = computed(() => combat.value?.status ?? null);
+const TABLER_STROKE =
+  'fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
+const tablerIcon = (paths: string[]) =>
+  `${paths.map((path) => `${path}@@${TABLER_STROKE}`).join('&&')}|0 0 24 24`;
+const phaseIcons = {
+  preparing: tablerIcon([
+    'M11 6h9',
+    'M11 12h9',
+    'M12 18h8',
+    'M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4',
+    'M6 10v-6l-2 2',
+  ]),
+  active: tablerIcon([
+    'M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11l5 0',
+    'M5 13l6 6',
+    'M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365',
+    'M10 5.5l-2 -2.5h-5v5l3 2.5',
+  ]),
+  completed: tablerIcon([
+    'M8 21l8 0',
+    'M12 17l0 4',
+    'M7 4l10 0',
+    'M17 4v8a5 5 0 0 1 -10 0v-8',
+    'M3 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+    'M17 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+  ]),
+};
 
 // Add local state for new participant
 const activeParticipantIndex = ref(0);
+const selectedParticipant = ref<Combatant | null>(null);
 
 // Modal state
 const editingParticipant = ref<any>(null);
 const newInitiative = ref(0);
 const isAddParticipantModalOpen = ref(false);
-const localParticipants = ref<
-  Record<string, { selected: boolean; initiative: number }>
->({});
+const participantInitiatives = ref<Record<string, number>>({});
+const noLinkedCharacterIds: string[] = [];
 
 // Computed: current participant
 const currentParticipant = computed(() => {
@@ -73,7 +94,8 @@ const currentParticipant = computed(() => {
     !combat.value.combatants.length
   )
     return null;
-  return combat.value.combatants[activeParticipantIndex.value];
+  const participant = combat.value.combatants[activeParticipantIndex.value];
+  return participant && !participant.isExcluded ? participant : null;
 });
 
 const encounter = computed(() =>
@@ -83,6 +105,23 @@ const party = computed(() =>
   combat.value ? partyStore.getById(combat.value.partyId) : null,
 );
 
+onMounted(async () => {
+  await characterStore.load();
+  await pawnStore.load();
+  await combatStore.load();
+  await encounterStore.load();
+  await partyStore.load();
+
+  rightDrawer.set({
+    component: EncounterViewSidebar,
+    props: { encounter, scenesOnly: true },
+  });
+});
+
+onBeforeUnmount(() => {
+  rightDrawer.clear();
+});
+
 const partyCharacters = computed(() => {
   if (!party.value) return [];
   return party.value.characters
@@ -90,19 +129,19 @@ const partyCharacters = computed(() => {
     .filter((c): c is NonNullable<typeof c> => !!c);
 });
 
-const encounterMonsters = computed(() => {
+const encounterPawns = computed(() => {
   if (!encounter.value) return [];
-  // encounter.value.monsters is Record<UUID, number>
-  const monsters: any[] = [];
-  Object.entries(encounter.value.monsters).forEach(([monsterId, count]) => {
-    const monster = monsterStore.getById(monsterId);
-    if (monster) {
+  // encounter.value.pawns is Record<UUID, number>
+  const pawns: any[] = [];
+  Object.entries(encounter.value.pawns).forEach(([pawnId, count]) => {
+    const pawn = pawnStore.getById(pawnId);
+    if (pawn) {
       for (let i = 0; i < count; i++) {
-        monsters.push({ ...monster, instance: i + 1 });
+        pawns.push({ ...pawn, instance: i + 1 });
       }
     }
   });
-  return monsters;
+  return pawns;
 });
 
 const allParticipants = computed(() => {
@@ -111,12 +150,12 @@ const allParticipants = computed(() => {
     type: 'player',
     referenceId: c.id,
   }));
-  const monsters = encounterMonsters.value.map((m) => ({
+  const pawnCombatants = encounterPawns.value.map((m) => ({
     id: m.id + (m.instance ? `-${m.instance}` : ''),
-    type: 'monster',
+    type: 'pawn',
     referenceId: m.id,
   }));
-  return [...players, ...monsters];
+  return [...players, ...pawnCombatants];
 });
 
 const availableCharactersToAdd = computed(() => {
@@ -129,6 +168,13 @@ const availableCharactersToAdd = computed(() => {
   return partyCharacters.value.filter((c) => !combatantCharacterIds.has(c.id));
 });
 
+const availableCharacterOptions = computed(() =>
+  availableCharactersToAdd.value.map((character) => ({
+    id: character.id,
+    label: character.name,
+  })),
+);
+
 // Helper to get display name for a combatant
 function getCombatantDisplayName(combatant: {
   type: string;
@@ -137,26 +183,74 @@ function getCombatantDisplayName(combatant: {
 }) {
   if (combatant.type === 'player' && combatant.referenceId) {
     const char = characterStore.getById(combatant.referenceId);
-    return char ? char.name : 'Unknown Player';
-  } else if (combatant.type === 'monster' && combatant.referenceId) {
-    const monster = monsterStore.getById(combatant.referenceId);
-    if (monster) {
-      // If there are multiple monsters of the same type, add a number
+    return char ? char.name : t('combat.unknownPlayer');
+  } else if (combatant.type === 'pawn' && combatant.referenceId) {
+    const pawn = pawnStore.getById(combatant.referenceId);
+    if (pawn) {
+      // If there are multiple pawns of the same type, add a number
       const all =
         combat.value?.combatants.filter(
-          (c) =>
-            c.referenceId === combatant.referenceId && c.type === 'monster',
+          (c) => c.referenceId === combatant.referenceId && c.type === 'pawn',
         ) || [];
       if (all.length > 1) {
         const idx = all.findIndex((c) => c.id === combatant.id);
-        return `${monster.name} #${idx + 1}`;
+        return `${pawn.name} #${idx + 1}`;
       }
-      return monster.name;
+      return pawn.name;
     }
-    return 'Unknown Monster';
+    return t('combat.unknownPawn');
   }
-  return 'Unknown';
+  return t('combat.unknown');
 }
+
+function participantEntity(combatant: Combatant) {
+  if (!combatant.referenceId) return null;
+  return combatant.type === 'player'
+    ? characterStore.getById(combatant.referenceId)
+    : pawnStore.getById(combatant.referenceId);
+}
+
+function participantPicture(combatant: Combatant) {
+  return participantEntity(combatant)?.picture ?? null;
+}
+
+function openParticipantInfo(combatant: Combatant) {
+  if (!participantEntity(combatant)) return;
+  selectedParticipant.value = combatant;
+}
+
+const selectedParticipantName = computed(() =>
+  selectedParticipant.value
+    ? getCombatantDisplayName(selectedParticipant.value)
+    : '',
+);
+const selectedParticipantPicture = computed(() =>
+  selectedParticipant.value
+    ? participantPicture(selectedParticipant.value)
+    : null,
+);
+const selectedParticipantNotes = computed(() => {
+  const participant = selectedParticipant.value;
+  return participant ? (participantEntity(participant)?.notes ?? '') : '';
+});
+const selectedParticipantRoute = computed(() => {
+  const participant = selectedParticipant.value;
+  if (!participant?.referenceId) return undefined;
+  return entityRoute(
+    participant.type === 'player' ? 'character' : 'pawn',
+    participant.referenceId,
+  );
+});
+const selectedParticipantKind = computed(() =>
+  selectedParticipant.value
+    ? selectedParticipant.value.type === 'player'
+      ? 'character'
+      : 'pawn'
+    : undefined,
+);
+const selectedParticipantEntityId = computed(
+  () => selectedParticipant.value?.referenceId,
+);
 
 function updateCombatFromStore() {
   if (!combatStore.isLoaded) return;
@@ -187,7 +281,7 @@ watch(
       const now = Date.now();
       const combatants = allParticipants.value.map((p) => ({
         id: p.id,
-        type: p.type as 'player' | 'monster',
+        type: p.type as 'player' | 'pawn',
         referenceId: p.referenceId,
         initiative: 0,
         hasActed: false,
@@ -209,30 +303,25 @@ watch(() => combatStore.items, updateCombatFromStore, {
 
 watch(isAddParticipantModalOpen, (isOpen) => {
   if (isOpen) {
-    localParticipants.value = availableCharactersToAdd.value.reduce(
-      (acc, p) => {
-        acc[p.id] = { selected: false, initiative: 0 };
+    participantInitiatives.value = availableCharactersToAdd.value.reduce(
+      (acc, character) => {
+        acc[character.id] = 0;
         return acc;
       },
-      {} as Record<string, { selected: boolean; initiative: number }>,
+      {} as Record<string, number>,
     );
   }
 });
 
 const getEncounterName = (encounterId: string) => {
   const encounter = encounterStore.getById(encounterId);
-  return encounter ? encounter.name : 'Unknown Encounter';
-};
-
-const getPartyName = (partyId: string) => {
-  const party = partyStore.getById(partyId);
-  return party ? party.name : 'Unknown Party';
+  return encounter ? encounter.name : t('combat.unknownEncounter');
 };
 
 // Computed properties for BaseEntityView
 const combatTitle = computed(() => {
   if (!combat.value) return '';
-  return `${getEncounterName(combat.value.encounterId)} vs ${getPartyName(combat.value.partyId)}`;
+  return getEncounterName(combat.value.encounterId);
 });
 
 // Start
@@ -330,6 +419,47 @@ async function activatePostponed(id: string) {
   }
 }
 
+async function excludeParticipant(participant: Combatant, index: number) {
+  await setParticipantExcluded(participant, index, true);
+}
+
+async function returnParticipant(participant: Combatant, index: number) {
+  await setParticipantExcluded(participant, index, false);
+}
+
+async function setParticipantExcluded(
+  participant: Combatant,
+  index: number,
+  excluded: boolean,
+) {
+  if (!combat.value) return;
+  const combatants = combat.value.combatants.map((entry, entryIndex) =>
+    entryIndex === index ? { ...entry, isExcluded: excluded } : { ...entry },
+  );
+
+  if (excluded && index === activeParticipantIndex.value) {
+    const result = advanceTurn({ ...combat.value, combatants });
+    let nextTurn = result.currentTurn;
+    if (result.combatants[nextTurn]?.isExcluded) {
+      const firstAvailable = result.combatants.findIndex(
+        (entry) => !entry.isExcluded,
+      );
+      nextTurn = firstAvailable === -1 ? 0 : firstAvailable;
+    }
+    const updated = await combatStore.update(combat.value.id, {
+      combatants: result.combatants,
+      currentTurn: nextTurn,
+      currentRound: result.currentRound,
+    });
+    combat.value = updated;
+    activeParticipantIndex.value = nextTurn;
+    return;
+  }
+
+  const updated = await combatStore.update(combat.value.id, { combatants });
+  combat.value = updated;
+}
+
 async function persistCombatants() {
   if (!combat.value) return;
   const updated = await combatStore.update(combat.value.id, {
@@ -368,34 +498,24 @@ function saveInitiative() {
   editingParticipant.value = null;
 }
 
-function handleParticipantToggle(participantId: string, isSelected: boolean) {
-  if (localParticipants.value[participantId]) {
-    localParticipants.value[participantId].selected = isSelected;
-  }
+function setParticipantInitiative(participantId: string, initiative: number) {
+  participantInitiatives.value[participantId] = Number(initiative) || 0;
 }
 
-function handleInitiativeChange(participantId: string, initiative: number) {
-  if (localParticipants.value[participantId]) {
-    localParticipants.value[participantId].initiative = Number(initiative);
-  }
-}
-
-function handleAddParticipants() {
+function handleAddParticipants(payload: { refs: Array<{ id: string }> }) {
   if (!combat.value) return;
 
   const now = Date.now();
-  const newCombatants = Object.entries(localParticipants.value)
-    .filter(([, data]) => data.selected)
-    .map(([characterId, data]) => ({
-      id: characterId,
-      type: 'player' as const,
-      referenceId: characterId,
-      initiative: Number(data.initiative),
-      hasActed: false,
-      isPostponed: false,
-      createdAt: now,
-      updatedAt: now,
-    }));
+  const newCombatants = payload.refs.map(({ id: characterId }) => ({
+    id: characterId,
+    type: 'player' as const,
+    referenceId: characterId,
+    initiative: Number(participantInitiatives.value[characterId] ?? 0),
+    hasActed: false,
+    isPostponed: false,
+    createdAt: now,
+    updatedAt: now,
+  }));
 
   if (newCombatants.length > 0) {
     const updatedCombatants = [...combat.value.combatants, ...newCombatants];
@@ -418,84 +538,116 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
     :loading="loading"
     :headerShowEdit="false"
     :headerShowDelete="false"
-    :headerButtons="
-      combat && combat.status === 'preparing'
-        ? [
-            {
-              event: startCombat,
-              color: 'warning',
-              disabled: combat.combatants.length < 1,
-              icon: IconSwords,
-              title: 'Start',
-            },
-          ]
-        : combat && combat.status === 'active'
-          ? [
-              {
-                event: endCombat,
-                color: 'negative',
-                icon: IconFlag,
-                title: 'End',
-              },
-            ]
-          : []
-    "
   >
     <!-- Combat Content -->
     <div v-if="combat" class="q-pa-md q-gutter-md">
       <!-- Phase Tabs and Round/Turn Display -->
-      <QTabs :model-value="activeTab" class="phase-indicator">
-        <QTab class="phase-tab" name="preparing">
-          <IconListNumbers /> Preparation
-        </QTab>
-        <QTab class="phase-tab" name="active"> <IconSwords /> Active </QTab>
-        <QTab class="phase-tab" name="completed"> <IconTrophy /> Ended </QTab>
-      </QTabs>
-
-      <!-- Combat Summary -->
-      <div v-if="combat?.status === 'active'" class="q-mb-md">
-        <h3>{{ t('combat.summary') }}</h3>
-        <div class="row q-gutter-md">
-          <div class="col-12 col-md-6">
-            <label>{{ t('combat.round') }}</label>
-            <span>{{ combat?.currentRound }}</span>
-          </div>
-          <div class="col-12 col-md-6">
-            <label>{{ t('combat.turn') }}</label>
-            <span
-              >{{ (combat?.currentTurn ?? 0) + 1 }} of
-              {{ combat?.combatants?.length ?? 0 }}</span
-            >
-          </div>
-        </div>
-      </div>
+      <QStepper
+        :model-value="activeTab"
+        flat
+        :header-nav="false"
+        class="phase-stepper"
+      >
+        <QStep
+          name="preparing"
+          :title="t('combat.phases.preparing')"
+          :icon="phaseIcons.preparing"
+          :active-icon="phaseIcons.preparing"
+          :done-icon="phaseIcons.preparing"
+        />
+        <QStep
+          name="active"
+          :title="t('combat.phases.active')"
+          :icon="phaseIcons.active"
+          :active-icon="phaseIcons.active"
+          :done-icon="phaseIcons.active"
+        />
+        <QStep
+          name="completed"
+          :title="t('combat.phases.completed')"
+          :icon="phaseIcons.completed"
+          :active-icon="phaseIcons.completed"
+          :done-icon="phaseIcons.completed"
+        />
+      </QStepper>
 
       <!-- Ended State -->
       <div
         v-if="combat && combat.status === 'completed'"
         class="q-pa-md text-grey text-center q-mt-xl"
       >
-        <IconFlag /> The encounter has concluded after
-        {{ combat.currentRound }} rounds.
+        <IconFlag />
+        {{
+          t('combat.concluded', {
+            rounds: combat.currentRound,
+          })
+        }}
       </div>
 
       <!-- Participants Section -->
       <div class="participants-section">
-        <div class="combat-title row justify-between q-pa-md">
-          <h2>Participants: {{ combat.combatants.length }}</h2>
+        <div class="combat-title q-pa-md">
+          <div class="combat-title-left row items-center">
+            <Button
+              v-if="
+                combat &&
+                (combat.status === 'preparing' || combat.status === 'active')
+              "
+              @click="isAddParticipantModalOpen = true"
+              :disabled="availableCharactersToAdd.length === 0"
+              size="large"
+              :title="t('combat.addParticipant')"
+            >
+              <IconUserPlus />
+            </Button>
+          </div>
 
-          <Button
-            v-if="
-              combat &&
-              (combat.status === 'preparing' || combat.status === 'active')
-            "
-            @click="isAddParticipantModalOpen = true"
-            :disabled="availableCharactersToAdd.length === 0"
-            size="large"
-            :title="t('combat.addParticipant')"
-          >
-            <IconUserPlus />
-          </Button>
+          <div class="combat-title-center row items-center justify-center">
+            <div
+              v-if="combat?.status === 'active'"
+              class="combat-summary row items-center q-gutter-md"
+            >
+              <div class="combat-counter row items-center q-gutter-xs">
+                <label>{{ t('combat.round') }}</label>
+                <span>{{ combat?.currentRound }}</span>
+              </div>
+              <div class="combat-counter row items-center q-gutter-xs">
+                <label>{{ t('combat.turn') }}</label>
+                <span>{{
+                  t('combat.turnProgress', {
+                    current: (combat?.currentTurn ?? 0) + 1,
+                    total: combat?.combatants?.length ?? 0,
+                  })
+                }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="combat-title-right row items-center justify-end">
+            <QBtn
+              v-if="combat?.status === 'preparing'"
+              class="combat-start-button"
+              color="warning"
+              size="lg"
+              :title="t('combat.start')"
+              :aria-label="t('combat.start')"
+              :disable="combat.combatants.length < 1"
+              @click="startCombat"
+            >
+              <IconSwords />
+            </QBtn>
+            <QBtn
+              v-else-if="combat?.status === 'active'"
+              class="combat-end-button"
+              color="negative"
+              size="lg"
+              :title="t('combat.end')"
+              :aria-label="t('combat.end')"
+              @click="endCombat"
+            >
+              <IconFlag />
+            </QBtn>
+          </div>
         </div>
 
         <!-- Participant List -->
@@ -508,13 +660,15 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               :active="
                 combat &&
                 combat.status === 'active' &&
-                activeParticipantIndex === index
+                activeParticipantIndex === index &&
+                !participant.isExcluded
               "
               :active-class="'bg-secondary'"
               :class="{
                 'participant-row': true,
                 preparing: combat && combat.status === 'preparing',
                 postponed: participant.isPostponed,
+                excluded: participant.isExcluded,
                 acted:
                   combat &&
                   combat.status === 'active' &&
@@ -541,15 +695,35 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               </QPopupEdit>
 
               <QItemSection avatar class="participant-artwork">
-                <IconUser v-if="participant.type === 'player'" />
-                <IconGhost3 v-else />
+                <EntityPicture
+                  v-if="participantPicture(participant)"
+                  :picture="participantPicture(participant)"
+                  size="32px"
+                  :alt="getCombatantDisplayName(participant)"
+                />
+                <IconUser
+                  v-else-if="participant.type === 'player'"
+                  :size="32"
+                />
+                <IconGhost3 v-else :size="32" />
               </QItemSection>
 
-              <QItemSection class="participant-name">
-                {{ getCombatantDisplayName(participant) }}
-              </QItemSection>
               <QItemSection side class="participant-initiative">
                 {{ participant.initiative }}
+              </QItemSection>
+
+              <QItemSection
+                class="participant-name"
+                :class="{
+                  'participant-name--clickable':
+                    !!participantEntity(participant),
+                }"
+                :title="
+                  participantEntity(participant) ? t('common.view') : undefined
+                "
+                @click.stop="openParticipantInfo(participant)"
+              >
+                {{ getCombatantDisplayName(participant) }}
               </QItemSection>
 
               <QItemSection
@@ -558,7 +732,11 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 v-if="combat && combat.status === 'active'"
               >
                 <span
-                  v-if="!participant.isPostponed && participant.hasActed"
+                  v-if="
+                    !participant.isPostponed &&
+                    !participant.isExcluded &&
+                    participant.hasActed
+                  "
                   class="participant-badge badge-acted"
                   :aria-label="t('combat.participantStatus.actedThisRound')"
                   :title="t('combat.participantStatus.actedThisRound')"
@@ -567,13 +745,13 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 </span>
                 <span
                   v-else-if="
-                    !participant.isPostponed && activeParticipantIndex !== index
+                    !participant.isPostponed &&
+                    !participant.isExcluded &&
+                    activeParticipantIndex !== index
                   "
+                  class="participant-wait"
                 >
-                  <IconClock
-                    :aria-label="t('combat.participantStatus.wait')"
-                    :title="t('combat.participantStatus.wait')"
-                  />
+                  <CombatWaitIcon :label="t('combat.participantStatus.wait')" />
                 </span>
               </QItemSection>
 
@@ -582,36 +760,67 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 v-if="combat && combat.status === 'active'"
                 class="participant-actions"
               >
-                <QBtnGroup v-if="participant.isPostponed" flat class="controls">
+                <QBtnGroup flat class="controls participant-actions-group">
                   <QBtn
+                    v-if="participant.isPostponed && !participant.isExcluded"
                     :color="'info'"
                     :size="'lg'"
+                    :title="t('combat.activatePostponed')"
+                    :aria-label="t('combat.activatePostponed')"
                     @click="activatePostponed(participant.id)"
                   >
                     <IconBolt />
                   </QBtn>
-                </QBtnGroup>
 
-                <QBtnGroup
-                  flat
-                  class="controls"
-                  v-if="activeParticipantIndex === index"
-                >
-                  <QBtn
-                    :size="'lg'"
-                    :color="'warning'"
-                    @click="postponeCurrent"
-                    v-if="index !== combat.combatants.length - 1"
+                  <template
+                    v-if="
+                      activeParticipantIndex === index &&
+                      !participant.isExcluded
+                    "
                   >
-                    <IconPlayerPause />
+                    <QBtn
+                      :size="'lg'"
+                      :color="'warning'"
+                      :title="t('combat.postpone')"
+                      :aria-label="t('combat.postpone')"
+                      @click="postponeCurrent"
+                      v-if="index !== combat.combatants.length - 1"
+                    >
+                      <IconPlayerPause />
+                    </QBtn>
+                    <QBtn
+                      :size="'lg'"
+                      :color="'positive'"
+                      :title="t('combat.nextTurn')"
+                      :aria-label="t('combat.nextTurn')"
+                      @click="nextTurn"
+                      :disabled="!currentParticipant"
+                    >
+                      <IconCheck />
+                    </QBtn>
+                  </template>
+
+                  <QBtn
+                    v-if="participant.isExcluded"
+                    class="return-participant-button"
+                    :size="'lg'"
+                    flat
+                    :title="t('combat.returnParticipant')"
+                    :aria-label="t('combat.returnParticipant')"
+                    @click.stop="returnParticipant(participant, index)"
+                  >
+                    <IconRestore />
                   </QBtn>
                   <QBtn
+                    v-else
+                    class="exclude-participant-button"
                     :size="'lg'"
-                    :color="'positive'"
-                    @click="nextTurn"
-                    :disabled="!currentParticipant"
+                    color="negative"
+                    :title="t('combat.excludeParticipant')"
+                    :aria-label="t('combat.excludeParticipant')"
+                    @click.stop="excludeParticipant(participant, index)"
                   >
-                    <IconCheck />
+                    <IconX />
                   </QBtn>
                 </QBtnGroup>
               </QItemSection>
@@ -629,55 +838,122 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
       <p>{{ t('combat.noActive') }}</p>
     </div>
 
-    <BaseModal
+    <EntityLinkingDialog
       :is-open="isAddParticipantModalOpen"
-      @cancel="isAddParticipantModalOpen = false"
-      @submit="handleAddParticipants"
+      kind="character"
       :title="t('combat.addParticipantTitle')"
-      modal-id="add-participant-modal"
-      :show-submit="true"
-      :show-cancel="true"
-      :submit-label="t('common.add')"
-      :cancel-label="t('common.cancel')"
+      :options="availableCharacterOptions"
+      :linked-ids="noLinkedCharacterIds"
+      :multiple="true"
+      @add="handleAddParticipants"
+      @cancel="isAddParticipantModalOpen = false"
     >
-      <div v-if="availableCharactersToAdd.length === 0" class="empty-state">
-        <p>{{ t('combat.allPartyCharactersAdded') }}</p>
-      </div>
-      <table v-else>
-        <thead>
-          <tr>
-            <th>{{ t('common.name') }}</th>
-            <th>{{ t('common.add') }}</th>
-            <th>{{ t('common.initiative') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in availableCharactersToAdd" :key="p.id">
-            <td>{{ p.name }}</td>
-            <td>
-              <ToggleSwitch
-                :model-value="localParticipants[p.id]?.selected"
-                @update:model-value="
-                  (val) => handleParticipantToggle(p.id, val)
-                "
-              />
-            </td>
-            <td>
-              <QInput
-                v-if="localParticipants[p.id]?.selected"
-                type="number"
-                class="initiative-input"
-                v-model.number="localParticipants[p.id].initiative"
-                @update:model-value="
-                  (val) => handleInitiativeChange(p.id, Number(val ?? 0))
-                "
-                dense
-                outlined
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </BaseModal>
+      <template #item-extra="{ item, selected }">
+        <QInput
+          v-if="selected"
+          type="number"
+          class="initiative-input"
+          :model-value="participantInitiatives[item.id] ?? 0"
+          :aria-label="t('common.initiative')"
+          dense
+          outlined
+          @update:model-value="
+            (val) => setParticipantInitiative(item.id, Number(val ?? 0))
+          "
+          @click.stop
+          @mousedown.stop
+          @keydown.stop
+        />
+      </template>
+    </EntityLinkingDialog>
+
+    <EntityInfoDialog
+      :is-open="!!selectedParticipant"
+      :title="selectedParticipantName"
+      :picture="selectedParticipantPicture"
+      :notes="selectedParticipantNotes"
+      :to="selectedParticipantRoute"
+      :entity-kind="selectedParticipantKind"
+      :entity-id="selectedParticipantEntityId"
+      @cancel="selectedParticipant = null"
+    />
   </BaseEntityView>
 </template>
+
+<style scoped>
+.combat-title {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.combat-title-left {
+  justify-self: start;
+}
+
+.combat-title-center {
+  justify-self: center;
+}
+
+.combat-title-right {
+  justify-self: end;
+}
+
+.participant-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+}
+
+.participant-row {
+  min-height: 69px;
+}
+
+.participant-badge,
+.participant-wait {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 52px;
+}
+
+.participant-wait :deep(.combat-wait-icon) {
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.participant-actions :deep(.q-btn) {
+  height: 52px;
+}
+
+.participant-actions {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.participant-name--clickable {
+  cursor: pointer;
+}
+
+.participant-name--clickable:hover {
+  color: var(--color-accent);
+}
+
+:deep(.entity-page-title) {
+  text-align: center;
+}
+
+.participant-row.excluded {
+  opacity: 0.55;
+}
+
+.return-participant-button {
+  color: var(--color-accent);
+}
+</style>

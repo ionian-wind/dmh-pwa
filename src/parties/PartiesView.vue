@@ -71,9 +71,6 @@ async function handleCopy(party: Party) {
     :create-title="t('parties.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    show-search
-    :search-query="partyStore.searchQuery"
-    @update:search-query="partyStore.setSearchQuery"
     @submit="handleSubmit"
     @delete="handleDelete"
     @copy="handleCopy"

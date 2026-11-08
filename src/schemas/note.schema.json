@@ -6,10 +6,8 @@
     "id",
     "title",
     "content",
-    "contentType",
     "typeId",
     "tags",
-    "moduleId",
     "createdAt",
     "updatedAt"
   ],
@@ -24,16 +22,7 @@
     },
     "content": {
       "type": "string",
-      "description": "Markdown source or a Quickdraw snapshot JSON string"
-    },
-    "contentType": {
-      "type": "string",
-      "enum": ["text", "draw"],
-      "description": "Note content kind"
-    },
-    "preview": {
-      "type": "string",
-      "description": "Small PNG data URL preview for drawing notes"
+      "description": "Markdown source for the note"
     },
     "typeId": {
       "oneOf": [
@@ -55,18 +44,22 @@
       },
       "description": "Array of tags associated with the note"
     },
-    "moduleId": {
-      "oneOf": [
-        {
-          "type": "string",
-          "description": "ID of the module this note belongs to"
-        },
-        {
-          "type": "null",
-          "description": "No module assigned"
+    "links": {
+      "type": "array",
+      "description": "Cross-entity links stored on the note",
+      "items": {
+        "type": "object",
+        "required": ["kind", "id"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["party", "pawn", "encounter", "character"]
+          },
+          "id": {
+            "type": "string"
+          }
         }
-      ],
-      "description": "ID of the module this note belongs to or null if no module assigned"
+      }
     },
     "createdAt": {
       "type": "number",

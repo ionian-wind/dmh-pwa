@@ -35,8 +35,19 @@ export enum JukeboxRepeatMode {
   track = 'track',
 }
 
+export type UiTheme = 'light' | 'dark' | 'auto';
+
+const UI_THEMES: UiTheme[] = ['light', 'dark', 'auto'];
+
+function readUiTheme(): UiTheme {
+  const stored = getValue('uiTheme', 'light');
+  return UI_THEMES.includes(stored) ? stored : 'light';
+}
+
 export type ConfigStore = {
+  uiTheme: Ref<UiTheme>;
   jukeboxLastTrackId: Ref<string | null>;
+  jukeboxLastPlaylistId: Ref<string | null>;
   jukeboxLastTrackProgress: Ref<number>;
   jukeboxLastVolume: Ref<number>;
   jukeboxActivePlaylistId: Ref<string | null>;
@@ -46,7 +57,9 @@ export type ConfigStore = {
   jukeboxAnimatePlayerBackground: Ref<boolean>;
   jukeboxDisplayCoverWhilePlaying: Ref<boolean>;
   jukeboxUseMiniPlayer: Ref<boolean>;
+  expandMenu: Ref<boolean>;
   confirmDelete: Ref<boolean>;
+  backupIncludeExternalFiles: Ref<boolean>;
   savedLanguage: Ref<string>;
 };
 
@@ -54,8 +67,12 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
   'config',
   (): ConfigStore => {
     // Define your state here
+    const uiTheme = ref<UiTheme>(readUiTheme());
     const jukeboxLastTrackId = ref<string | null>(
       getValue('jukeboxLastTrackId', null),
+    );
+    const jukeboxLastPlaylistId = ref<string | null>(
+      getValue('jukeboxLastPlaylistId', null),
     );
     const jukeboxLastTrackProgress = ref<number>(
       getValue('jukeboxLastTrackProgress', 0),
@@ -80,7 +97,11 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     const jukeboxUseMiniPlayer = ref<boolean>(
       getValue('jukeboxUseMiniPlayer', true),
     );
+    const expandMenu = ref<boolean>(getValue('expandMenu', true));
     const confirmDelete = ref<boolean>(getValue('confirmDelete', true));
+    const backupIncludeExternalFiles = ref<boolean>(
+      getValue('backupIncludeExternalFiles', false),
+    );
     const browserLanguage = window?.navigator?.language ?? 'en';
     const savedLanguage = ref<string>(
       getValue(
@@ -90,7 +111,9 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
     );
 
     const config: ConfigStore = {
+      uiTheme,
       jukeboxLastTrackId,
+      jukeboxLastPlaylistId,
       jukeboxLastTrackProgress,
       jukeboxLastVolume,
       jukeboxActivePlaylistId,
@@ -100,7 +123,9 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
       jukeboxAnimatePlayerBackground,
       jukeboxDisplayCoverWhilePlaying,
       jukeboxUseMiniPlayer,
+      expandMenu,
       confirmDelete,
+      backupIncludeExternalFiles,
       savedLanguage,
     };
 

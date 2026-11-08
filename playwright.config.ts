@@ -18,7 +18,7 @@ export default defineConfig({
     serviceWorkers: 'block',
   },
   webServer: {
-    command: `npm run dev -- --port ${PORT} --host 127.0.0.1`,
+    command: `npm run dev:app -- --port ${PORT} --host 127.0.0.1`,
     url: `${baseURL}/dmh-pwa/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

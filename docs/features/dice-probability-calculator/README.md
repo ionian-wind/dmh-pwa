@@ -11,12 +11,10 @@ using integer (`bigint`) weights. A Vue page under
 ## Application integration
 
 - Route: `/probability-calculator` (lazy loaded).
-- Syntax reference: `/probability-calculator/syntax`, linked from the top
-  header and translated into English and Russian. Its title/back action live in
-  the application header; the right drawer contains a hideable TOC whose
-  entries are real `#anchor` links to the section cards. Section headings are
-  anchor links too, so their URLs can be copied. The TOC highlights the section
-  currently in view and updates as the page is scrolled.
+- Syntax reference: a static help-center page (`reference/dice-probability-syntax`)
+  in English and Russian, linked from the calculator header in a new tab. The
+  page uses VitePress headings, tables and code blocks, so section anchors and
+  the outline come from the docs theme.
 - Page title and syntax action are rendered in the application top header via
   `ViewHeader`; there is no in-page title block.
 - Main menu: inside the expandable **Tools** section, using `IconChartLine`.
@@ -28,10 +26,10 @@ using integer (`bigint`) weights. A Vue page under
   Monaco markers for syntax-error ranges. Completion labels/details and
   code-piece source labels follow the current UI language.
 - Syntax errors are structured by the parser (unexpected token/character,
-  expected token types, source range), formatted into human-readable localized
-  text, and shown in the error banner with a clickable `line N, column M` link
-  that moves the editor cursor to the error. Marker hover text uses the same
-  localized message.
+  expected token types, source range). Fault-tolerant parsing collects multiple
+  errors via `DiceSyntaxError.errors`, and Monaco shows a marker for each issue.
+  Messages are localized and the error banner links to the first issue with a
+  clickable `line N, column M` link that moves the editor cursor there.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
 - Results: probability tables, CSV export, exact summary statistics, a roller,

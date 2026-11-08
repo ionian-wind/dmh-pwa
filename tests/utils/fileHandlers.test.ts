@@ -1,198 +1,351 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BlobFileHandler } from '@/utils/files/BlobFileHandler';
-import { FileSystemFileHandler } from '@/utils/files/FileSystemFileHandler';
-import { createFileHandler } from '@/utils/files';
-import { extractTrackMetadata as extractMetadata } from '@/utils/files/FileSystemUtils';
-import type { JukeboxFileSource } from '@/jukebox/types';
-
-vi.mock('@/utils/files/FileSystemUtils', () => ({
-  extractTrackMetadata: vi.fn().mockResolvedValue({ title: 'Mock' }),
-}));
+import {
+  canUseDirectoryPicker,
+  canUseFileSystemAccess,
+  getFileFromSource,
+  getPickedFileFromDataTransferItem,
+  getUrlFromSource,
+  pickDirectory,
+  pickFiles,
+  revokeSourceUrl,
+  verifySourcePermission,
+} from '@/utils/files';
 
 const originalCreateElement = document.createElement.bind(document);
 
 function fakeInput() {
-  const input = {
+  return {
     type: '',
     multiple: false,
     accept: '',
     files: null as FileList | null,
     click: vi.fn(),
     addEventListener: vi.fn(),
-    onchange: null as null | (() => Promise<void>),
+    onchange: null as null | (() => void),
   };
-  return input;
 }
 
-describe('file handlers', () => {
+describe('generic file API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(extractMetadata).mockResolvedValue({ title: 'Mock' });
     delete (window as any).showOpenFilePicker;
+    delete (window as any).showDirectoryPicker;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     delete (window as any).showOpenFilePicker;
+    delete (window as any).showDirectoryPicker;
   });
 
-  describe('BlobFileHandler', () => {
-    it('reports support and resolves selected blob files', async () => {
-      const handler = new BlobFileHandler();
-      expect(handler.isSupported()).toBe(true);
-      await expect(
-        handler.getAsFileSystemHandle({
-          getAsFileSystemHandle: vi.fn().mockResolvedValue(null),
-        } as any),
-      ).resolves.toBeNull();
+  it('picks handles when the File System Access API is available', async () => {
+    const file = new File(['x'], 'song.mp3', { type: 'audio/mpeg' });
+    const handle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(file),
+    } as unknown as FileSystemFileHandle;
+    (window as any).showOpenFilePicker = vi.fn().mockResolvedValue([handle]);
 
-      const input = fakeInput();
-      vi.spyOn(document, 'createElement').mockImplementation((tag) =>
-        tag === 'input' ? (input as any) : originalCreateElement(tag),
-      );
-
-      const promise = handler.pickAudioFiles();
-      const file = new File(['x'], 'song.mp3', { type: 'audio/mp3' });
-      input.files = [file] as unknown as FileList;
-      await input.onchange?.();
-
-      await expect(promise).resolves.toEqual([
-        { file, source: { kind: 'blob', blob: file } },
-      ]);
-      expect(input.click).toHaveBeenCalled();
-      expect(input.accept).toContain('audio/*');
-    });
-
-    it('resolves empty when the picker is cancelled or has no files', async () => {
-      const handler = new BlobFileHandler();
-      const input = fakeInput();
-      vi.spyOn(document, 'createElement').mockImplementation((tag) =>
-        tag === 'input' ? (input as any) : originalCreateElement(tag),
-      );
-
-      const promise = handler.pickAudioFiles();
-      const cancel = input.addEventListener.mock.calls.find(
-        ([name]) => name === 'cancel',
-      )?.[1] as () => void;
-      cancel();
-
-      await expect(promise).resolves.toEqual([]);
-
-      const secondInput = fakeInput();
-      vi.spyOn(document, 'createElement').mockImplementation((tag) =>
-        tag === 'input' ? (secondInput as any) : originalCreateElement(tag),
-      );
-      const secondPromise = handler.pickAudioFiles();
-      secondInput.files = null;
-      await secondInput.onchange?.();
-      await expect(secondPromise).resolves.toEqual([]);
-    });
-
-    it('creates a File from a blob source and rejects handle sources', async () => {
-      const handler = new BlobFileHandler();
-      const blob = new Blob(['audio'], { type: 'audio/mp3' });
-      const file = await handler.getFile({ kind: 'blob', blob });
-
-      expect(file.name).toBe('unnamed');
-      expect(file.type).toBe('audio/mp3');
-
-      await expect(
-        handler.getFile({ kind: 'handle' } as JukeboxFileSource),
-      ).rejects.toThrow('Invalid source type for BlobFileHandler');
-    });
-
-    it('delegates metadata extraction', async () => {
-      const handler = new BlobFileHandler();
-      const file = new File(['x'], 'song.mp3');
-
-      await expect(handler.extractTrackMetadata(file)).resolves.toEqual({
-        title: 'Mock',
-      });
-      expect(extractMetadata).toHaveBeenCalledWith(file);
+    await expect(
+      pickFiles({
+        multiple: true,
+        description: 'Audio Files',
+        accept: { 'audio/*': ['.mp3'] },
+        acceptAttribute: 'audio/*,.mp3',
+      }),
+    ).resolves.toEqual([{ file, source: { kind: 'handle', handle } }]);
+    expect((window as any).showOpenFilePicker).toHaveBeenCalledWith({
+      multiple: true,
+      types: [{ description: 'Audio Files', accept: { 'audio/*': ['.mp3'] } }],
+      excludeAcceptAllOption: true,
     });
   });
 
-  describe('FileSystemFileHandler', () => {
-    it('reports support based on showOpenFilePicker', () => {
-      const handler = new FileSystemFileHandler();
-      expect(handler.isSupported()).toBe(false);
-
-      (window as any).showOpenFilePicker = vi.fn();
-      expect(handler.isSupported()).toBe(true);
+  it('falls back to the input picker when the API is unavailable', async () => {
+    const input = fakeInput();
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'input' ? (input as any) : originalCreateElement(tag),
+    );
+    const promise = pickFiles({
+      multiple: true,
+      acceptAttribute: 'audio/*',
     });
+    const file = new File(['x'], 'song.mp3', { type: 'audio/mpeg' });
+    input.files = [file] as unknown as FileList;
+    input.onchange?.();
 
-    it('picks files from handles and maps their sources', async () => {
-      const file = new File(['x'], 'song.mp3');
-      const handle = {
-        kind: 'file',
-        getFile: vi.fn().mockResolvedValue(file),
-      } as unknown as FileSystemFileHandle;
-      (window as any).showOpenFilePicker = vi.fn().mockResolvedValue([handle]);
-
-      const handler = new FileSystemFileHandler();
-      const result = await handler.pickAudioFiles();
-
-      expect(result).toEqual([
-        { file, source: { kind: 'handle', handle } },
-      ]);
-      expect((window as any).showOpenFilePicker).toHaveBeenCalledWith(
-        expect.objectContaining({ multiple: true }),
-      );
-    });
-
-    it('gets files from handles and rejects blob sources', async () => {
-      const file = new File(['x'], 'song.mp3');
-      const handle = {
-        kind: 'file',
-        getFile: vi.fn().mockResolvedValue(file),
-      } as unknown as FileSystemFileHandle;
-      const handler = new FileSystemFileHandler();
-
-      await expect(
-        handler.getFile({ kind: 'handle', handle }),
-      ).resolves.toBe(file);
-      await expect(
-        handler.getFile({ kind: 'blob', blob: new Blob() }),
-      ).rejects.toThrow('Invalid source type for FileSystemFileHandler');
-    });
-
-    it('returns file handles only from data transfer items', async () => {
-      const handler = new FileSystemFileHandler();
-      const fileHandle = { kind: 'file' };
-      const directoryHandle = { kind: 'directory' };
-
-      await expect(
-        handler.getAsFileSystemHandle({
-          getAsFileSystemHandle: vi.fn().mockResolvedValue(fileHandle),
-        } as any),
-      ).resolves.toBe(fileHandle);
-      await expect(
-        handler.getAsFileSystemHandle({
-          getAsFileSystemHandle: vi.fn().mockResolvedValue(directoryHandle),
-        } as any),
-      ).resolves.toBeNull();
-      await expect(
-        handler.getAsFileSystemHandle({
-          getAsFileSystemHandle: vi.fn().mockResolvedValue(null),
-        } as any),
-      ).resolves.toBeNull();
-    });
-
-    it('delegates metadata extraction', async () => {
-      const handler = new FileSystemFileHandler();
-      const file = new File(['x'], 'song.mp3');
-
-      await expect(handler.extractTrackMetadata(file)).resolves.toEqual({
-        title: 'Mock',
-      });
-    });
+    await expect(promise).resolves.toEqual([
+      { file, source: { kind: 'blob', blob: file } },
+    ]);
+    expect(input.click).toHaveBeenCalled();
+    expect(input.accept).toBe('audio/*');
   });
 
-  it('creates the handler matching the browser capabilities', () => {
-    expect(createFileHandler()).toBeInstanceOf(BlobFileHandler);
+  it('returns empty when the picker is aborted', async () => {
+    (window as any).showOpenFilePicker = vi
+      .fn()
+      .mockRejectedValueOnce({ name: 'AbortError' });
+    await expect(pickFiles()).resolves.toEqual([]);
+  });
 
+  it('falls back to the input picker when the API fails', async () => {
+    (window as any).showOpenFilePicker = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('unsupported'));
+    const input = fakeInput();
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'input' ? (input as any) : originalCreateElement(tag),
+    );
+    const promise = pickFiles();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    input.files = [] as unknown as FileList;
+    input.onchange?.();
+    await expect(promise).resolves.toEqual([]);
+  });
+
+  it('builds the accept attribute and resolves cancelled inputs', async () => {
+    const input = fakeInput();
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'input' ? (input as any) : originalCreateElement(tag),
+    );
+    const promise = pickFiles({ accept: { 'audio/*': ['.mp3'] } });
+    expect(input.accept).toContain('audio/*');
+    expect(input.accept).toContain('.mp3');
+    input.files = null;
+    input.onchange?.();
+    await expect(promise).resolves.toEqual([]);
+  });
+
+  it('resolves empty when focus returns without a selection', async () => {
+    vi.useFakeTimers();
+    const input = fakeInput();
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'input' ? (input as any) : originalCreateElement(tag),
+    );
+    const promise = pickFiles();
+    window.dispatchEvent(new Event('focus'));
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(promise).resolves.toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('reports API support and resolves data-transfer items', async () => {
+    expect(canUseFileSystemAccess()).toBe(false);
     (window as any).showOpenFilePicker = vi.fn();
-    expect(createFileHandler()).toBeInstanceOf(FileSystemFileHandler);
+    expect(canUseFileSystemAccess()).toBe(true);
+
+    const file = new File(['x'], 'song.mp3');
+    const handle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(file),
+    };
+    await expect(
+      getPickedFileFromDataTransferItem({
+        kind: 'file',
+        getAsFileSystemHandle: vi.fn().mockResolvedValue(handle),
+        getAsFile: vi.fn(),
+      } as any),
+    ).resolves.toEqual({ file, source: { kind: 'handle', handle } });
+
+    await expect(
+      getPickedFileFromDataTransferItem({
+        kind: 'file',
+        getAsFileSystemHandle: vi.fn().mockResolvedValue(null),
+        getAsFile: () => file,
+      } as any),
+    ).resolves.toEqual({ file, source: { kind: 'blob', blob: file } });
+
+    await expect(
+      getPickedFileFromDataTransferItem({
+        kind: 'file',
+        getAsFileSystemHandle: vi.fn().mockRejectedValue(new Error('no')),
+        getAsFile: () => null,
+      } as any),
+    ).resolves.toBeNull();
+  });
+
+  it('picks directory files recursively as handles', async () => {
+    const image = new File(['x'], 'map.png', { type: 'image/png' });
+    const untypedImage = new File(['x'], 'photo.png');
+    const text = new File(['x'], 'notes.txt', { type: 'text/plain' });
+    const imageHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(image),
+    };
+    const untypedImageHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(untypedImage),
+    };
+    const textHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(text),
+    };
+    const nestedDirectory = {
+      kind: 'directory',
+      async *values() {
+        yield imageHandle;
+        yield untypedImageHandle;
+      },
+    };
+    const root = {
+      kind: 'directory',
+      async *values() {
+        yield textHandle;
+        yield nestedDirectory;
+      },
+    };
+    (window as any).showDirectoryPicker = vi.fn().mockResolvedValue(root);
+    const onProgress = vi.fn();
+
+    expect(canUseDirectoryPicker()).toBe(true);
+    await expect(
+      pickDirectory({
+        accept: { 'image/*': ['.png'] },
+        recursive: true,
+        onProgress,
+      }),
+    ).resolves.toEqual([
+      { file: image, source: { kind: 'handle', handle: imageHandle } },
+      {
+        file: untypedImage,
+        source: { kind: 'handle', handle: untypedImageHandle },
+      },
+    ]);
+    expect(onProgress).toHaveBeenCalledWith(image, 1, 2);
+    expect(onProgress).toHaveBeenLastCalledWith(untypedImage, 2, 2);
+  });
+
+  it('stops collecting when the directory signal is aborted', async () => {
+    const root = {
+      kind: 'directory',
+      async *values() {
+        yield {
+          kind: 'file',
+          getFile: vi.fn(),
+        };
+      },
+    };
+    (window as any).showDirectoryPicker = vi.fn().mockResolvedValue(root);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(pickDirectory({ signal: controller.signal })).resolves.toEqual(
+      [],
+    );
+  });
+
+  it('matches exact MIME types and skips nested folders without recursion', async () => {
+    const text = new File(['x'], 'note.txt', { type: 'text/plain' });
+    const textHandle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(text),
+    };
+    const nestedFile = new File(['x'], 'nested.png', { type: 'image/png' });
+    const nestedDirectory = {
+      kind: 'directory',
+      async *values() {
+        yield {
+          kind: 'file',
+          getFile: vi.fn().mockResolvedValue(nestedFile),
+        };
+      },
+    };
+    const root = {
+      kind: 'directory',
+      async *values() {
+        yield textHandle;
+        yield nestedDirectory;
+      },
+    };
+    (window as any).showDirectoryPicker = vi.fn().mockResolvedValue(root);
+
+    await expect(
+      pickDirectory({ accept: { 'text/plain': [] } }),
+    ).resolves.toEqual([
+      { file: text, source: { kind: 'handle', handle: textHandle } },
+    ]);
+
+    await expect(pickDirectory()).resolves.toEqual([
+      { file: text, source: { kind: 'handle', handle: textHandle } },
+    ]);
+  });
+
+  it('returns empty when the directory picker is aborted', async () => {
+    (window as any).showDirectoryPicker = vi
+      .fn()
+      .mockRejectedValue({ name: 'AbortError' });
+
+    await expect(pickDirectory()).resolves.toEqual([]);
+  });
+
+  it('falls back to a webkitdirectory input', async () => {
+    const input = { ...fakeInput(), webkitdirectory: false };
+    vi.spyOn(document, 'createElement').mockImplementation((tag) =>
+      tag === 'input' ? (input as any) : originalCreateElement(tag),
+    );
+    const promise = pickDirectory({ acceptAttribute: 'image/*' });
+    const file = new File(['x'], 'map.png', { type: 'image/png' });
+    input.files = [file] as unknown as FileList;
+    input.onchange?.();
+
+    await expect(promise).resolves.toEqual([
+      { file, source: { kind: 'blob', blob: file } },
+    ]);
+    expect(input.webkitdirectory).toBe(true);
+    expect(input.multiple).toBe(true);
+  });
+
+  it('reads sources and checks handle permissions', async () => {
+    const file = new File(['x'], 'song.mp3');
+    const handle = {
+      kind: 'file',
+      getFile: vi.fn().mockResolvedValue(file),
+      queryPermission: vi.fn().mockResolvedValue('granted'),
+    } as any;
+
+    await expect(getFileFromSource({ kind: 'handle', handle })).resolves.toBe(
+      file,
+    );
+    const blob = new Blob(['blob'], { type: 'text/plain' });
+    const reconstructed = await getFileFromSource({ kind: 'blob', blob });
+    expect(reconstructed.name).toBe('unnamed');
+    (URL as any).createObjectURL = vi.fn(() => 'blob:source');
+    (URL as any).revokeObjectURL = vi.fn();
+    await expect(getUrlFromSource({ kind: 'blob', blob })).resolves.toBe(
+      'blob:source',
+    );
+    revokeSourceUrl('blob:source');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:source');
+    await expect(
+      verifySourcePermission({ kind: 'handle', handle }),
+    ).resolves.toBe(true);
+    await expect(
+      verifySourcePermission({ kind: 'blob', blob: new Blob() }),
+    ).resolves.toBe(true);
+
+    const promptHandle = {
+      queryPermission: vi.fn().mockResolvedValue('prompt'),
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+    } as any;
+    await expect(
+      verifySourcePermission({ kind: 'handle', handle: promptHandle }),
+    ).resolves.toBe(true);
+
+    const deniedHandle = {
+      queryPermission: vi.fn().mockResolvedValue('prompt'),
+      requestPermission: vi.fn().mockResolvedValue('denied'),
+    } as any;
+    await expect(
+      verifySourcePermission({ kind: 'handle', handle: deniedHandle }),
+    ).resolves.toBe(false);
+
+    const throwingHandle = {
+      queryPermission: vi.fn().mockResolvedValue('prompt'),
+      requestPermission: vi.fn().mockRejectedValue(new Error('nope')),
+    } as any;
+    await expect(
+      verifySourcePermission({ kind: 'handle', handle: throwingHandle }),
+    ).resolves.toBe(false);
   });
 });

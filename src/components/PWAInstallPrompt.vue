@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { IconDownload, IconX } from '@tabler/icons-vue';
 import { debug, debugError } from '@/utils/debug';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import { features } from 'virtual:feature-flags';
 
 const props = withDefaults(
   defineProps<{
@@ -15,6 +18,7 @@ const props = withDefaults(
 const showInstallPrompt = ref(false);
 const deferredPrompt = ref<any>(null);
 const hasShownNativePrompt = ref(false);
+const { t, locale } = useI18n();
 
 const installApp = async () => {
   if (!deferredPrompt.value) return;
@@ -79,29 +83,38 @@ onUnmounted(() => {
     v-if="props.enabled && showInstallPrompt"
     class="pwa-install-banner-float shadow-1 absolute-bottom"
   >
-    <QBanner :class="'bg-secondary'">
+    <QBanner>
       <template #avatar>
         <QAvatar size="75px" :style="'square'">
           <img src="/dmh-pwa/icon-192.png" alt="Owlbear's DMH" />
         </QAvatar>
       </template>
 
-      <h5>Install Owlbear's Dungeon Master Helper</h5>
+      <h5>{{ t('pwa.installTitle') }}</h5>
       <p v-if="hasShownNativePrompt">
-        You dismissed the install prompt. Would you like to try again?
+        {{ t('pwa.installRetry') }}
       </p>
       <p v-else>
-        Add this app to your home screen for quick access and offline use.
+        {{ t('pwa.installDescription') }}
       </p>
 
       <template #action>
-        <QBtn @click="installApp" color="positive" size="small">
-          <IconDownload />
-          Install
-        </QBtn>
+        <a
+          v-if="features.help"
+          class="pwa-install-help"
+          :href="helpHref('getting-started/install', getHelpLocale(locale))"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ t('pwa.installHelp') }}
+        </a>
         <QBtn @click="dismissPrompt" color="primary" size="small">
           <IconX />
-          Not now
+          {{ t('pwa.notNow') }}
+        </QBtn>
+        <QBtn @click="installApp" color="positive" size="small">
+          <IconDownload />
+          {{ t('pwa.install') }}
         </QBtn>
       </template>
     </QBanner>
@@ -111,9 +124,31 @@ onUnmounted(() => {
 <style scoped>
 .pwa-install-banner-float {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(24px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
+  max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 32px);
   z-index: 2000;
+}
+
+.pwa-install-banner-float :deep(.q-banner) {
+  background: var(--color-background-soft);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+.pwa-install-banner-float :deep(.q-banner__content),
+.pwa-install-banner-float h5,
+.pwa-install-banner-float p {
+  color: inherit;
+}
+
+.pwa-install-help {
+  align-self: center;
+  margin-right: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  text-decoration: underline;
 }
 </style>

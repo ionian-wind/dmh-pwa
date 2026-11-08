@@ -102,10 +102,6 @@ A Pinia config store with manual localStorage persistence:
 - Values listed in
   [architecture/persistence-and-state.md](../architecture/persistence-and-state.md#5-configuration-store).
 
-## `src/utils/moduleImportExport.ts`
-
-See [features/module-import-export.md](../features/module-import-export.md).
-
 ## `src/utils/markdownParser.ts`
 
 See [features/markdown-and-mentions.md](../features/markdown-and-mentions.md).

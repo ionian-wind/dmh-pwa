@@ -4,35 +4,37 @@ Maps provide a campaign map image with reusable locations and interactive marker
 
 ## Concepts
 
-### Map
+### Location map
 
-A `MapEntity` is a persisted record:
+Map data is embedded in each location record; there is no separate persisted map
+entity.
 
 ```ts
-interface MapEntity extends WithMetadata {
-  title: string;
-  description?: string;
+interface LocationMap {
   fileId: string;
-  entities: MapEntityRef[];
-  locationId?: string | null;
   layers: MapLayer[];
   markers: MapMarker[];
   areas: MapArea[];
 }
+
+interface MapLocation extends WithMetadata {
+  name: string;
+  description?: string;
+  entities: MapEntityRef[];
+  map: LocationMap;
+}
 ```
 
-- `fileId` references a `MapFile` in the `map_files` store.
-- `entities` links the map itself to modules and other entities. The map editor
-  exposes module linking alongside location linking.
-- `locationId` optionally links the map to one global `MapLocation` record.
-- `layers` organize markers and areas. The base layer always exists.
-- `markers` are placed at image-pixel coordinates `(x, y)`.
-- `areas` are drawn shapes stored with the map.
+- `map.fileId` references a generic `StoredFile` in the `files` store.
+- `entities` links the location to other entities.
+- `map.layers` organize markers and areas. The base layer always exists.
+- `map.markers` are placed at image-pixel coordinates `(x, y)`.
+- `map.areas` are drawn shapes stored with the location.
+- Markers and areas keep an optional `locationId`, so they can point back to a
+  location. New markers and areas default to the location that owns the map.
 
-Legacy records with `points` are normalized on read: points with `x`/`y` become
-markers, and missing arrays are filled with empty arrays. Legacy embedded
-`locations` are migrated into `map_locations`; a location can be linked to at
-most one map.
+Legacy maps are merged into their linked location (or a new location when no
+location was linked) by migration `0000000009_merge_maps_into_locations`.
 
 ### Map file
 
@@ -51,30 +53,28 @@ interface MapFile extends WithMetadata {
 }
 ```
 
-`MapEditor` uses a regular `<input type="file" accept="image/*">`, so image
-selection works in every browser. Files are stored as `Blob` sources. The
+`MapLocationEditor` uses a regular `<input type="file" accept="image/*">`, so
+image selection works in every browser. Files are stored as `Blob` sources. The
 existing handle helper remains available for Chromium file-picker integrations.
 
 Image metadata (dimensions, MIME type, dominant color, palette) is extracted by
 `maps/worker/image.worker.ts` and stored on the file record.
 
+Blob-backed raster images larger than 1 MB are resized to fit within 8192 px
+and re-encoded as WebP before storage (`utils/images/optimizeImage.ts`). SVG,
+GIF (animation) and File System Access handle sources are left untouched. This
+keeps large battle maps from inflating IndexedDB/OPFS.
+
 ### Locations
 
-```ts
-interface MapLocation extends WithMetadata {
-  name: string;
-  description?: string;
-  entities: MapEntityRef[];
-}
-```
-
-Locations are global entities stored in `map_locations`, independent of any
-single map. Maps link to them through `locationId`, and markers and areas
-reference one through `locationId`.
-
-Each location has its own detail page with tabs for linked notes, modules,
-parties, monsters, encounters, and characters. The right drawer lists the maps
-that link to that location.
+Locations are stored in `map_locations` and own their map data. The location
+detail page has **View**, **Map**, **Backlinks** and **Linked entities** tabs.
+View uses the shared inline view/edit experience and renders the description as
+Markdown; Map renders the location's image, layers, markers and areas;
+Backlinks lists markers and areas from other locations that point at this
+location; Linked entities shows notes, parties, pawns, encounters,
+characters and playlists. In edit mode the linked entities are editable, and
+the same location-level edit mode is shared with the Map tab.
 
 ### Layers
 
@@ -87,18 +87,19 @@ interface MapLayer {
 
 Every map has a permanent base layer (`base`) plus any number of user-defined
 layers. Markers and areas store a `layerId`. Users can add, rename, and delete
-layers; deleting a layer moves its children to the base layer.
+non-base layers; the base layer is fixed. Deleting a layer moves its children to
+the base layer.
 
 Each logical layer is backed by its own OpenLayers vector layer for both area
 geometry and marker points. Layer visibility uses the native
-`layer.setVisible(...)` behavior. Marker icons are rendered as canvas text using
-the RPGAwesome font, with their titles as text labels. A visually hidden list of
-marker buttons preserves keyboard/screen-reader access.
+`layer.setVisible(...)` behavior. Markers use generated SVG pin images rendered
+through the OpenLayers `Icon` style, with their titles as text labels. A visually
+hidden list of marker buttons preserves keyboard/screen-reader access.
 
 Marker and area layers are created only after the base map image finishes
 loading. A spinner is shown over the map while the image loads.
 
-The map page starts in **View mode**. In view mode layer visibility can be
+The map tab starts in **View mode**. In view mode layer visibility can be
 temporarily toggled with the eye buttons, and hidden layers remove their
 markers/areas from the map. **Edit mode** enables the map action menu, item
 editing, drawing, and layer management.
@@ -115,22 +116,26 @@ interface MapMarker {
   locationId?: string | null;
   layerId: string;
   entities: MapEntityRef[];
-  icon: string; // RPG Awesome class, e.g. "ra-castle-emblem"
-  color: string; // CSS color for the marker icon
-  backgroundColor?: string; // optional badge colour, empty for transparent
+  icon: string; // `ra-*` or `fa-solid:*` icon
+  color: string; // marker/icon CSS color
+  backgroundColor?: string; // optional pin fill colour
 }
 ```
 
 - Placing a marker: choose **Add marker**, then click the map. The marker editor
   opens with the clicked image coordinates.
-- A marker can link to one location and any number of other entities, including
-  other maps.
+- A marker can link to one location and any number of other entities (notes,
+  pawns, encounters, characters). Parties are not available as
+  marker links.
 - Icons are optional; new markers start with no icon.
-- Icons come from [RPG Awesome](https://nagoshiashumari.github.io/Rpg-Awesome/).
-  The stored value is the class without the `ra` prefix (`ra-castle-emblem`); rendering
-  uses `class="ra ra-castle-emblem"`.
-- The icon color is stored per marker and rendered inline.
-- Markers can also have an optional background badge colour behind the icon.
+- Marker icons support both RPG Awesome (`ra-castle-emblem`) and Font Awesome
+  Solid (`fa-solid:cloud-rain`) values.
+- `src/maps/mapMarkerSvg.ts` generates a scalable pin SVG at runtime. RPG
+  Awesome glyph paths are generated into `src/maps/rpgIconPaths.ts`; Font
+  Awesome paths come from `@fortawesome/fontawesome-svg-core`.
+- Pin fill and icon colour are configurable per marker. When a marker
+  background colour is set it becomes the pin fill; otherwise the marker colour
+  fills the pin and a contrasting icon colour is used.
   It is transparent by default and can be cleared from the marker editor.
 
 ### Areas
@@ -160,8 +165,9 @@ interface MapArea {
 - Areas render as semi-transparent fills with a stronger stroke on hover.
 - Clicking an area opens the area editor.
 - Each area supports title, description, optional RPG Awesome icon, colour,
-  one optional location, and any number of linked entities. Areas are not
-  linked to other areas or to markers.
+  one optional location, and linked entities. Areas can link to notes,
+  pawns, encounters and characters, but not to parties, other areas or
+  markers.
 - The area list is shown in the right sidebar **Areas** tab and supports
   editing and deleting directly from the list.
 
@@ -188,38 +194,40 @@ interface MapActionDetail {
 }
 ```
 
-`MapView` listens for `map-action` with `onMapAction(map, handler)` and opens
+`LocationMapTab` listens for `map-action` with `onMapAction(map, handler)` and opens
 the existing marker or area editor. The right-click **Add marker here** action
 carries the clicked map coordinate, so the marker editor opens at the
 right-clicked point. Draw actions from the context menu use an
 `ol-contextmenu` submenu for the area shape.
 
-## Maps section
+## Maps page
 
-Module detail pages now expose **Maps** and **Locations** tabs that list the
-maps/locations whose `entities` include the current module.
+The Maps page is served at `/locations` and lists locations, each with its own
+map data and add, view, edit, and delete actions. There is no separate map list
+or map-detail route. The old `/maps` paths are removed.
 
-The Maps section has two top-level tabs:
+Location cards show the location name and description. Deleting a location
+removes its map file and clears marker/area references from other locations.
 
-- **Maps** — card list of map entities.
-- **Locations** — card list of global location entities, with add, view, edit,
-  and delete actions.
+## Map tab
 
-Location cards show their linked map, if any, and provide a button to open it.
-Deleting a location also removes it from its map and clears marker/area
-references.
+The location detail page includes a **Map** tab that renders the location-owned
+map. It contains:
 
-## Map detail layout
-
-The map detail page no longer has top tabs. It contains:
-
-- The map itself.
-- Right sidebar tabs: **Markers** and **Areas**, grouped by layer.
+- The map image with markers, areas, labels and the map action controls.
+- The location right sidebar hosts the map's **Markers** and **Areas** tabs,
+  grouped by layer, plus a **Scenes** tab for ambient scene links. The map tab
+  has no internal sidebar.
   - Layers show their title with visibility controls.
   - Rows use a coloured left edge like jukebox tracks.
   - Areas do not show their shape type in the list.
   - In edit mode rows have edit/delete actions and each layer has
-    rename/delete controls. The base layer cannot be deleted.
+    rename/delete controls. The base layer cannot be edited or deleted.
+- Outside the **Map** tab, the right sidebar displays the location's ambient
+  **Scenes** panel instead of an empty panel.
+  - The `#location-map-sidebar` teleport target stays mounted but hidden
+    outside the map tab, so `LocationMapTab` can always teleport its sidebar
+    after mount without racing the right drawer's render order.
   - Hovering a row highlights the marker or area on the map.
 - **Add layer** is a menu-style row below the tabbed lists, shown only in edit
   mode.
@@ -227,49 +235,60 @@ The map detail page no longer has top tabs. It contains:
   overlays when turned off, keeping marker icons and area fills visible.
 - The **View mode / Edit mode** control is an icon-only button group fixed at the
   bottom of the sidebar.
-- In view mode the map action menu, context menu, header edit/delete actions,
-  row edit/delete actions, and popup edit action are hidden.
+- In view mode the map action menu, context menu, row edit/delete actions, and
+  popup edit action are hidden.
 
 Clicking a marker or area opens an information popup instead of the editor. The
-popup shows the title, description, marker location, and linked entities, with
-an Edit action in edit mode and a Go to location action when linked.
+popup is a Quasar menu anchored at the click position rather than an
+OpenLayers overlay, and its content uses `QCard`, `QCardSection`, `QCardActions`
+and `QBtn`. It shows the title, description, marker location, and linked
+entities, with an Edit action in edit mode and a Go to location action when
+linked.
 
-## Location detail layout
+## Location tabs
 
-A location detail page follows the module detail pattern:
+A location detail page has four header tabs:
 
-- If the location is linked to a map, a **Map** tab is shown with that map card.
-- Top tabs for each linkable entity kind: notes, modules, parties, monsters,
-  encounters, characters, and jukebox playlists.
-- Each tab uses the reusable `EntitiesLinking` component: the entity-type title
-  and add button sit above a linked list with remove actions. Both the linked
-  list and the searchable modal use virtual-scroll lists. The component's
-  `multiple` prop (default `true`) switches between checkbox multi-select and
-  radio single-select.
-- The right drawer has the same **Markers** and **Areas** tabs as the map view.
-  It lists markers and areas linked to this location from all maps, grouped by
-  map title with separators between groups.
-- The header edit action opens the global location editor; delete removes the
-  location everywhere.
+- **View** — location description; in edit mode this becomes **Main editor**
+  with a borderless name field and shared Markdown description editor.
+- **Map** — the map image and editing UI. Hidden when the location has no map
+  image. It shares the location-level View/Edit state with the main tab, so
+  switching tabs keeps the same mode.
+- **Backlinks** — markers and areas from other locations whose `locationId`
+  points at this location, grouped by their owning location. The tab uses
+  `IconMapPinned` and is hidden in edit mode.
+- **Linked entities** — linked entities. In edit mode every
+  supported kind is editable through `EntitiesLinking`.
+
+Outside the Map tab the right sidebar shows the Scenes content with the shared
+View/Edit and visual-editor controls. Header title hides in edit mode; Delete
+appears only in edit mode; formatting help appears in raw Markdown mode. Save
+happens when returning to View and dirty navigation uses the shared unsaved
+guard. The `MapLocationEditor` modal uses the same inline editor components,
+Markdown description, formatting help and View/Edit semantics for list/create
+flows. Deleting a location removes it everywhere.
 
 ## User flows
 
-### Create/edit a map
+### Create/edit a location and its map
 
 1. Open **Maps** in the left navigation.
-2. Create a map or edit an existing one.
-3. Choose a title and a base image.
-4. Optionally link one global location to the map.
-5. Save. The image file is written to `map_files` only when the map is saved.
-   Replacing an image deletes the previous `map_files` record.
+2. Create a location or edit an existing one.
+3. Choose a name/description and optionally select a base image.
+4. On save, the image file is written to the generic `files` store and its
+   image metadata to `map_image_metadata`. Replacing or clearing an image
+   deletes the previous records when unreferenced. **Clear map** resets the
+   image, layers, markers and areas.
+5. Open the location and use the **Map** tab to add markers and areas.
 
 ### Place and edit markers
 
-1. Open a map.
-2. Click the pencil action button and choose **Add marker**, then click the map.
-   Alternatively, right-click the map and choose **Add marker here** to place a
-   marker at the clicked point.
+1. Open a location and switch to the **Map** tab.
+2. Enter edit mode, then click the pencil action button and choose **Add
+   marker**, then click the map. Alternatively, right-click the map and choose
+   **Add marker here** to place a marker at the clicked point.
 3. Fill in title, description, location, linked entities, icon, and color.
+   New markers default to the location that owns the map.
 4. Save. Marker coordinates are stored in the map projection used by the image.
 5. Click an existing marker to edit or delete it.
 
@@ -282,22 +301,24 @@ A location detail page follows the module detail pattern:
    - square: drag a bounding box;
    - freehand: drag a closed path.
 3. Fill in the area title, description, icon, colour, one optional location,
-   and linked entities.
+   and linked entities. New areas default to the owning location.
 4. Save. Click an area or its label to edit it again.
-5. The right sidebar **Areas** tab lists areas for editing and deletion.
+5. The map sidebar **Areas** tab lists areas for editing and deletion.
 
 ### Browse locations
 
-Locations are global entities. Open the **Locations** tab on the Maps page to
-see location cards with add/edit/delete actions and a shortcut to the linked
-map. Select a location card to open its detail page, where you can manage links
-to other entities and see markers/areas from all maps.
+Open **Maps** in the left navigation to see the location list. Select a location
+card to open its detail page, where you can view or edit its map, manage links,
+and inspect backlinks from markers and areas in other locations.
 
 ## Stores and files
 
-- `maps` — `MapEntity` records (`src/maps/maps.ts`).
-- `map_files` — base images and extracted metadata.
-- Migration `0000000004_maps.ts` creates both object stores.
+- `map_locations` — `MapLocation` records including embedded `map` data.
+- `files` — shared generic blobs/handles, deduplicated by file signature.
+- `map_image_metadata` — image metadata keyed by `files.id`.
+- Legacy `maps` records are merged into locations by migration
+  `0000000009_merge_maps_into_locations` and are not read by the app.
+- Legacy `map_files` rows are migrated into the generic store and cleared.
 
 Map file helpers:
 
@@ -315,25 +336,26 @@ Map file helpers:
 ```ts
 type MapEntityKind =
   | 'note'
-  | 'module'
   | 'party'
-  | 'monster'
+  | 'pawn'
   | 'encounter'
   | 'character'
-  | 'map'
   | 'location'
   | 'playlist';
 ```
 
 `EntitiesLinking` loads each entity store, shows one linking block per entity
-type, and deduplicates `kind:id` pairs. `EntityLinkList` resolves display labels
-for read-only lists. Map, marker, area, and location editors use `BaseModal`
-header tabs to separate their own fields from linked entities.
+type, and deduplicates `kind:id` pairs. Its read-only mode hides the add and
+remove actions, and the marker/area popup uses it to list linked entities. Map,
+marker, area, and location editors use `BaseModal` header tabs to separate their
+own fields from linked entities.
 
 ## Icons
 
 `src/maps/icons.ts` exposes `MAP_MARKER_ICONS`, generated from the RPG Awesome
-CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no icon) and `DEFAULT_MARKER_COLOR`.
+CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no icon) and
+`DEFAULT_MARKER_COLOR`. `src/maps/mapMarkerSvg.ts` generates colored marker pins
+from either RPG Awesome paths or Font Awesome core icons.
 
 `src/components/common/IconPicker.vue` provides searchable icon selection plus
 a “No icon” option. It is configurable with an icon array and collection name;

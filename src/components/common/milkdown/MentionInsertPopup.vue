@@ -31,7 +31,9 @@
         @mouseenter="selectedIdx = idx"
       >
         <span class="mention-insert-title">{{
-          mention.title || mention.name
+          props.kind === 'note'
+            ? noteDisplayTitle(mention) || mention.id
+            : mention.title || mention.name
         }}</span>
         <span v-if="mention.id" class="mention-insert-id"
           >({{ mention.id }})</span
@@ -55,6 +57,7 @@ import {
 } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { StyleValue } from 'vue';
+import { noteDisplayTitle } from '@/utils/noteTitle';
 
 const props = defineProps<{
   kind: string;
@@ -73,12 +76,10 @@ const kindLabel = computed(() => {
   switch (props.kind) {
     case 'note':
       return t('notes.title');
-    case 'module':
-      return t('modules.title');
     case 'party':
       return t('parties.title');
-    case 'monster':
-      return t('monsters.title');
+    case 'pawn':
+      return t('pawns.title');
     case 'encounter':
       return t('encounters.title');
     case 'map':
@@ -89,7 +90,7 @@ const kindLabel = computed(() => {
 });
 
 const popupStyle = computed<StyleValue>(() => ({
-  position: 'absolute',
+  position: 'fixed',
   top: `${props.position.top}px`,
   left: `${props.position.left}px`,
   zIndex: 1000,
@@ -100,7 +101,9 @@ const filteredMentions = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return props.mentions;
   return props.mentions.filter((m) => {
-    const label = (m.title || m.name || '').toLowerCase();
+    const label = (
+      props.kind === 'note' ? noteDisplayTitle(m) : m.title || m.name || ''
+    ).toLowerCase();
     const id = (m.id || '').toLowerCase();
     return label.includes(q) || id.includes(q);
   });

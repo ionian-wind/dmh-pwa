@@ -1,9 +1,21 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 import type { PropType } from 'vue';
 import ViewHeader from './ViewHeader.vue';
-import VueDraggable from 'vuedraggable';
+import EmptyState from './EmptyState.vue';
+import SortableList from './SortableList.vue';
 import { useLayout } from '@/composables/useLayout';
+import { useI18n } from 'vue-i18n';
+import { IconPlus } from '@tabler/icons-vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   items: { type: Array as PropType<any[]>, required: true },
@@ -11,6 +23,8 @@ const props = defineProps({
   editorComponent: { type: [Object, Function, String], required: false },
   emptyMessage: { type: String, required: true },
   createTitle: { type: String, required: true },
+  emptyActionTitle: { type: String, default: '' },
+  createLoading: { type: Boolean, default: false },
   cardProps: {
     type: Function as PropType<(item: any) => any>,
     default: (item: any) => ({}),
@@ -22,17 +36,39 @@ const props = defineProps({
   sidePanelVisible: { type: Boolean, default: false },
   viewStyle: { type: String, default: 'masonry' },
   draggable: { type: Boolean, default: false },
+  dragHandle: { type: String, default: undefined },
   hideHeader: { type: Boolean, default: false },
   rightDrawerIcon: { type: [Object, Function], default: undefined },
   showSearch: { type: Boolean, default: false },
   searchQuery: { type: String, default: '' },
   searchPlaceholder: { type: String, default: 'common.search' },
+  tabs: {
+    type: Array as PropType<
+      Array<{ id: string; label: string; icon?: any; disabled?: boolean }>
+    >,
+    default: () => [],
+  },
+  activeTab: { type: String, default: '' },
   headerButtons: {
     type: Array as PropType<
       Array<{ icon: any; color: string; title: string; event: Function }>
     >,
     default: () => [],
   },
+  leftHeaderButtons: {
+    type: Array as PropType<
+      Array<{ icon: any; color: string; title: string; event: Function }>
+    >,
+    default: () => [],
+  },
+});
+
+const emptyState = computed(() => {
+  const text = props.emptyMessage.trim();
+  const split = text.indexOf('. ');
+  return split === -1
+    ? { title: text, hint: '' }
+    : { title: text.slice(0, split), hint: text.slice(split + 2) };
 });
 
 const showEditor = ref(false);
@@ -61,9 +97,12 @@ const emit = defineEmits([
   'drop',
   'dragover',
   'dragleave',
+  'tab-click',
+  'update:activeTab',
 ]);
 
-function handleSortEnd() {
+function handleSortEnd(event?: { oldIndex: number; newIndex: number }) {
+  if (event && event.oldIndex === event.newIndex) return;
   emit('sort', localItems.value);
 }
 
@@ -116,11 +155,17 @@ function syncHeaderProps() {
   Object.assign(headerProps, {
     showCreate: true,
     createTitle: props.createTitle,
+    createLoading: props.createLoading,
     onCreate,
     showSearch: props.showSearch,
     searchQuery: props.searchQuery,
     searchPlaceholder: props.searchPlaceholder,
     buttons: props.headerButtons,
+    leftButtons: props.leftHeaderButtons,
+    tabs: props.tabs,
+    modelValue: props.activeTab,
+    onTabClick: (tab: any) => emit('tab-click', tab),
+    'onUpdate:modelValue': (value: string) => emit('update:activeTab', value),
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -130,11 +175,17 @@ onMounted(async () => {
   headerProps = reactive<Record<string, any>>({
     showCreate: true,
     createTitle: props.createTitle,
+    createLoading: props.createLoading,
     onCreate,
     showSearch: props.showSearch,
     searchQuery: props.searchQuery,
     searchPlaceholder: props.searchPlaceholder,
     buttons: props.headerButtons,
+    leftButtons: props.leftHeaderButtons,
+    tabs: props.tabs,
+    modelValue: props.activeTab,
+    onTabClick: (tab: any) => emit('tab-click', tab),
+    'onUpdate:modelValue': (value: string) => emit('update:activeTab', value),
     'onUpdate:searchQuery': (value: string) =>
       emit('update:searchQuery', value),
   });
@@ -149,9 +200,14 @@ onMounted(async () => {
 watch(
   () => [
     props.createTitle,
+    props.createLoading,
     props.showSearch,
     props.searchQuery,
     props.searchPlaceholder,
+    props.headerButtons,
+    props.leftHeaderButtons,
+    props.tabs,
+    props.activeTab,
   ],
   syncHeaderProps,
 );
@@ -169,21 +225,35 @@ onBeforeUnmount(() => {
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"
   >
-    <div
+    <EmptyState
       v-if="items.length === 0"
-      class="empty-state q-pa-xl text-center text-primary"
+      :title="emptyState.title"
+      :hint="emptyState.hint"
     >
-      {{ emptyMessage }}
-    </div>
+      <QBtn
+        class="empty-state-create q-mt-lg"
+        color="positive"
+        size="lg"
+        :disable="props.createLoading"
+        :loading="props.createLoading"
+        @click="onCreate"
+      >
+        <IconPlus :size="28" />
+        <span class="q-ml-sm">{{
+          props.emptyActionTitle || t('common.create')
+        }}</span>
+      </QBtn>
+    </EmptyState>
 
-    <VueDraggable
+    <SortableList
       v-else-if="draggable"
       :key="'draggable'"
       v-model="localItems"
       item-key="id"
-      @end="handleSortEnd"
+      :handle="dragHandle"
       tag="div"
       class="q-list simple-list"
+      @end="handleSortEnd"
     >
       <template #item="{ element: item }">
         <component
@@ -201,7 +271,7 @@ onBeforeUnmount(() => {
           @copy="$emit('copy', item)"
         />
       </template>
-    </VueDraggable>
+    </SortableList>
     <div v-else>
       <div
         v-if="viewStyle === 'masonry'"
@@ -301,3 +371,11 @@ onBeforeUnmount(() => {
     <slot />
   </div>
 </template>
+
+<style scoped>
+.base-list-container {
+  /* Room for the hovered last-row card action bar, so the page scrollbar
+     length stays stable while cards expand over their neighbours. */
+  padding-bottom: 76px;
+}
+</style>

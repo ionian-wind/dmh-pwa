@@ -11,23 +11,31 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
-import MonsterCard from '@/monsters/MonsterCard.vue';
-import ModuleCard from '@/modules/ModuleCard.vue';
+import PawnCard from '@/pawns/PawnCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
-import ModuleEditor from '@/modules/ModuleEditor.vue';
 import BaseListView from '@/components/common/BaseListView.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import NoteTypeSelector from '@/notes/NoteTypeSelector.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
-import { MAP_MARKER_ICONS } from '@/maps/icons';
+import { MAP_MARKER_ICONS } from '@/utils/maps/icons';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
 
 const QInput = quasarStubs.QInput;
+
+const EntityMarkdownEditorStub = defineComponent({
+  name: 'EntityMarkdownEditor',
+  props: ['modelValue', 'isVisualMode', 'entityId', 'entityType', 'tags'],
+  emits: ['update:modelValue'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => 'Notes' });
+    return () => h('div', { class: 'entity-markdown-editor-stub' });
+  },
+});
 
 describe('current shared components', () => {
   it('BaseCard renders content and emits actions', async () => {
@@ -402,6 +410,59 @@ describe('current shared components', () => {
     player.currentTrack = null;
   });
 
+  it('JukeboxPlayer places artwork on the left in panel layout', () => {
+    const config = useConfigStore();
+    const player = useJukeboxPlayerStore();
+    config.jukeboxDisplayCoverWhilePlaying = true;
+    player.currentTrack = {
+      id: 'track-panel',
+      title: 'Panel track',
+      picture: 'data:image/png;base64,abc',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { layout: 'panel', showArtwork: true },
+    });
+
+    expect(wrapper.find('.jukebox-player-content').classes()).toContain(
+      'is-panel',
+    );
+    expect(wrapper.find('.panel-artwork').exists()).toBe(true);
+    expect(wrapper.find('.track-info-row').classes()).toContain('row');
+    expect(
+      wrapper.find('.panel-artwork.track-artwork-container').exists(),
+    ).toBe(true);
+
+    player.currentTrack = null;
+    wrapper.unmount();
+  });
+
+  it('JukeboxPlayer keeps artwork above the controls in bar layout', () => {
+    const config = useConfigStore();
+    const player = useJukeboxPlayerStore();
+    config.jukeboxDisplayCoverWhilePlaying = true;
+    player.currentTrack = {
+      id: 'track-bar',
+      title: 'Bar track',
+      picture: 'data:image/png;base64,abc',
+    } as any;
+
+    const wrapper = mount(JukeboxPlayer, {
+      props: { layout: 'bar', showArtwork: true },
+    });
+
+    expect(wrapper.find('.jukebox-player-content').classes()).not.toContain(
+      'is-panel',
+    );
+    expect(wrapper.find('.panel-artwork').exists()).toBe(false);
+    expect(
+      wrapper.find('.track-info-row .track-artwork-container').exists(),
+    ).toBe(true);
+
+    player.currentTrack = null;
+    wrapper.unmount();
+  });
+
   it('JukeboxPlayer exposes persisted player settings', async () => {
     const config = useConfigStore();
     const player = useJukeboxPlayerStore();
@@ -697,8 +758,7 @@ describe('current domain cards', () => {
           content: 'Hello **world**',
           tags: ['session'],
           typeId: null,
-          moduleId: null,
-          hidden: false,
+          moduleIds: [],
           createdAt: 0,
           updatedAt: 0,
         },
@@ -713,7 +773,7 @@ describe('current domain cards', () => {
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['session']);
   });
 
-  it('renders a legacy party without moduleIds', () => {
+  it('renders a party without optional fields', () => {
     const wrapper = mount(PartyCard, {
       props: {
         party: { id: 'p1', name: 'Legacy', characters: [] } as any,
@@ -722,31 +782,22 @@ describe('current domain cards', () => {
     expect(wrapper.text()).toContain('Legacy');
   });
 
-  it('renders a monster card with actions', () => {
-    const wrapper = mount(MonsterCard, {
-      props: { monster: { id: 'm1', name: 'Goblin' }, showActions: true },
+  it('renders a pawn card with actions', () => {
+    const wrapper = mount(PawnCard, {
+      props: { pawn: { id: 'm1', name: 'Goblin' }, showActions: true },
     });
     expect(wrapper.text()).toContain('Goblin');
     expect(wrapper.findAll('button').length).toBeGreaterThan(0);
   });
 
-  it('renders module and encounter cards', () => {
-    const module = mount(ModuleCard, {
-      props: {
-        module: { id: 'mod', name: 'Module', description: 'Desc' },
-      },
-    });
-    expect(module.text()).toContain('Module');
-    expect(module.text()).toContain('Desc');
-
+  it('renders an encounter card', () => {
     const encounter = mount(EncounterCard, {
       props: {
         encounter: {
           id: 'e1',
           name: 'Ambush',
           description: 'Goblins',
-          monsters: { m1: 2, m2: 1 },
-          moduleId: 'mod',
+          pawns: { m1: 2, m2: 1 },
         },
       },
     });
@@ -759,11 +810,11 @@ describe('current editors', () => {
   it('CharacterEditor submits a name and notes', async () => {
     const wrapper = mount(CharacterEditor, {
       props: { isOpen: true, character: null },
+      global: { stubs: { EntityMarkdownEditor: EntityMarkdownEditorStub } },
     });
 
     const inputs = wrapper.findAllComponents(QInput);
     inputs[0].vm.$emit('update:modelValue', 'Alice');
-    inputs[1].vm.$emit('update:modelValue', 'Notes');
     await nextTick();
 
     wrapper.findComponent(BaseModal).vm.$emit('submit');
@@ -847,21 +898,5 @@ describe('current editors', () => {
       .vm.$emit('update:modelValue', null);
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['']);
     wrapper.unmount();
-  });
-
-  it('ModuleEditor submits name and description', async () => {
-    const wrapper = mount(ModuleEditor, {
-      props: { isOpen: true, module: null },
-    });
-    const inputs = wrapper.findAllComponents(QInput);
-    inputs[0].vm.$emit('update:modelValue', 'Curse of Strahd');
-    await nextTick();
-
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await nextTick();
-
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      name: 'Curse of Strahd',
-    });
   });
 });

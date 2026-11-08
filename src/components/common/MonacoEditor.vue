@@ -85,6 +85,13 @@ watch(
 );
 
 watch(
+  () => props.theme,
+  (theme) => {
+    monaco.editor.setTheme(theme);
+  },
+);
+
+watch(
   () => props.readonly,
   (readonly) => {
     editor.value?.updateOptions({ readOnly: readonly });

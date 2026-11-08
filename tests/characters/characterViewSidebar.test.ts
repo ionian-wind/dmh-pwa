@@ -1,0 +1,145 @@
+import { describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, nextTick, reactive } from 'vue';
+import { flushPromises, mount } from '@vue/test-utils';
+import type { InlineEditState, PlayerCharacter } from '@/types';
+
+const mocks = vi.hoisted(() => ({
+  load: vi.fn().mockResolvedValue(undefined),
+  getLinks: vi.fn(() => [{ kind: 'note', id: 'n1' }]),
+  getBacklinks: vi.fn(() => [{ kind: 'note', id: 'n2' }]),
+}));
+
+vi.mock('@/utils/storage', () => ({
+  useMentionsStore: () => mocks,
+}));
+
+import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
+
+const MentionsStub = defineComponent({
+  name: 'Mentions',
+  props: { title: String, entities: Array },
+  setup(props) {
+    return () =>
+      h('div', { class: 'mentions-stub', 'data-title': props.title });
+  },
+});
+
+const ScenesStub = defineComponent({
+  name: 'EntityScenesPanel',
+  props: { entityType: String, entityId: String },
+  setup() {
+    return () => h('div', { class: 'scenes-stub' });
+  },
+});
+
+function mountSidebar(character: any) {
+  return mount(CharacterViewSidebar, {
+    props: { character },
+    global: {
+      stubs: {
+        Mentions: MentionsStub,
+        EntityScenesPanel: ScenesStub,
+      },
+    },
+  });
+}
+
+describe('CharacterViewSidebar', () => {
+  it('uses the shared sidebar layout with mentions and scenes', async () => {
+    const wrapper = mountSidebar({ id: 'c1', name: 'Hero' });
+    await flushPromises();
+
+    expect(wrapper.find('.tab-group').exists()).toBe(true);
+    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
+      '',
+      '',
+      '',
+    ]);
+    const pictureTab = wrapper.findAll('.tab-item')[0];
+    expect(pictureTab.attributes('aria-label')).toBe('Picture');
+    expect(pictureTab.find('.tab-icon').exists()).toBe(true);
+    const scenesTab = wrapper.findAll('.tab-item')[1];
+    expect(scenesTab.attributes('aria-label')).toBe('Scenes');
+    expect(scenesTab.find('.tab-icon').exists()).toBe(true);
+    const mentionsTab = wrapper.findAll('.tab-item')[2];
+    expect(mentionsTab.attributes('aria-label')).toBe('Mentions');
+    expect(mentionsTab.find('.tab-icon').exists()).toBe(true);
+    expect(mentionsTab.find('.tab-label').exists()).toBe(false);
+    await mentionsTab.trigger('click');
+    await nextTick();
+    const mentions = wrapper.findAllComponents(MentionsStub);
+    expect(mentions).toHaveLength(2);
+    expect(mentions[0].props('entities')).toEqual([{ kind: 'note', id: 'n1' }]);
+    expect(mentions[1].props('entities')).toEqual([{ kind: 'note', id: 'n2' }]);
+    expect(wrapper.findComponent(ScenesStub).props()).toMatchObject({
+      entityType: 'character',
+      entityId: 'c1',
+    });
+    expect(mocks.getLinks).toHaveBeenCalledWith({
+      kind: 'character',
+      id: 'c1',
+    });
+    expect(mocks.getBacklinks).toHaveBeenCalledWith({
+      kind: 'character',
+      id: 'c1',
+    });
+    expect(mocks.load).toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it('renders empty mentions without scenes when character is missing', async () => {
+    const wrapper = mountSidebar(null);
+
+    await wrapper.findAll('.tab-item')[2].trigger('click');
+    await nextTick();
+    const mentions = wrapper.findAllComponents(MentionsStub);
+    expect(mentions[0].props('entities')).toEqual([]);
+    expect(mentions[1].props('entities')).toEqual([]);
+    expect(wrapper.findComponent(ScenesStub).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('wires the shared view/edit and visual mode controls', async () => {
+    const editState = reactive<InlineEditState<PlayerCharacter>>({
+      isEditMode: false,
+      isVisualMode: true,
+      draft: null,
+    });
+    const onSetEditMode = vi.fn();
+
+    const wrapper = mount(CharacterViewSidebar, {
+      props: {
+        character: { id: 'c1', name: 'Hero' } as PlayerCharacter,
+        editState,
+        onSetEditMode,
+      },
+      global: {
+        stubs: {
+          Mentions: MentionsStub,
+          EntityScenesPanel: ScenesStub,
+        },
+      },
+    });
+
+    expect(wrapper.find('.entity-view-mode').attributes('aria-pressed')).toBe(
+      'true',
+    );
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    expect(onSetEditMode).toHaveBeenCalledWith(true);
+
+    editState.isEditMode = true;
+    await nextTick();
+    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
+      '',
+      '',
+    ]);
+    expect(wrapper.find('.tab-item .tab-icon').exists()).toBe(true);
+    expect(wrapper.findComponent(MentionsStub).exists()).toBe(false);
+    expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    expect(editState.isVisualMode).toBe(false);
+    wrapper.unmount();
+  });
+});

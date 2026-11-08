@@ -25,9 +25,10 @@ Props:
 Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
 `update:isExpanded`.
 
-When `tabs` is provided, `BaseModal` renders the tabs inside the header toolbar,
-centered between the expand/close controls, and renders the matching named slot
-as the dialog body. The text title is hidden while tabs are shown. A tab
+Header slots include `header-actions` on the right and `header-left-actions`
+next to the expand control. When `tabs` is provided, `BaseModal` renders the
+tabs inside the header toolbar, centered between the expand/close controls, and
+renders the matching named slot as the dialog body. The text title is hidden while tabs are shown. A tab
 definition is:
 
 ```ts
@@ -94,11 +95,17 @@ top (otherwise removes all occurrences). `currentModalId` is the top.
 
 `MentionModalStack.vue` is mounted once in `App.vue`:
 
-- Shows the top mention modal when its `modalId` is current.
+- Shows the top mention modal when its `modalId` is current. The entity title is
+  rendered inside the dialog body using the same `entity-page-title` heading
+  markup as entity detail pages.
 - Renders note content as `Markdown` with `enableMentionModal`, so links inside
   the modal can open further entity modals.
-- Module/party show `description`; monster/encounter show `name` +
-  `description`; unknown/missing entities show "not found".
+- Body content reuses `EntityMainContent`, mirroring the entity view's main
+  information tab (note markdown/drawing preview, party/location
+  description, pawn/character notes, encounter description) without tabs or
+  sidebar. Unknown/missing entities show "not found".
+- When the mentioned entity kind has a detail route, an `IconExternalLink`
+  header action closes the modal and navigates to that entity view.
 - `openMentionModal` has a special case: if the newly requested entity equals
   the entity two levels down, it closes the current modal (acts like "back").
 
@@ -109,8 +116,16 @@ Thin wrappers around Quasar `Dialog`:
 ```ts
 alert(message, options?): Promise<void>
 confirm(message, options?): Promise<boolean>
+confirmUnsavedChanges(message?): Promise<'save' | 'discard' | 'cancel'>
 prompt(message, options?): Promise<string | null>
 ```
+
+`confirmUnsavedChanges` (in `src/dialogs/unsavedChanges.ts`) opens
+`UnsavedChangesDialog.vue` through Quasar's custom-component dialog API. It
+offers **Save**, **Do not save**, and **Cancel** and is used by the note detail
+page's navigation guard. The custom component is imported directly instead of
+being re-exported from the `src/dialogs` barrel, so normal confirm/alert users
+do not load it.
 
 All use `persistent: true`. Defaults are English ("OK", "Cancel", "Confirm",
 "Alert", "Prompt") rather than i18n keys.
@@ -141,11 +156,14 @@ Consumers:
 | Any entity view (`BaseEntityView`) | via view               | —               | `ViewHeader` |
 | `NoteView`                         | `NoteViewSidebar`      | —               | `ViewHeader` |
 | `PartyView`                        | `PartyViewSidebar`     | —               | `ViewHeader` |
-| `MonsterView`                      | `MonsterViewSidebar`   | —               | `ViewHeader` |
+| `PawnView`                         | `PawnViewSidebar`      | —               | `ViewHeader` |
 | `EncounterView`                    | `EncounterViewSidebar` | —               | `ViewHeader` |
 | `CharacterView`                    | `#sidepanel`           | —               | `ViewHeader` |
-| `ModuleView`                       | `#sidepanel`           | —               | `ViewHeader` |
 | `JukeboxView`                      | `PlaylistList`         | `JukeboxPlayer` | `ViewHeader` |
+
+Entity detail pages render their title/subtitle in the page content. The
+`ViewHeader` in `#main_header` hosts page tabs, actions and the right-drawer
+toggle.
 
 - The right drawer is owner-scoped: only the view that set the content can
   clear it.
@@ -154,24 +172,50 @@ Consumers:
 
 Because the drawer content is a global singleton, navigating between pages
 relies on each view clearing its content. `BaseEntityView` publishes its
-`sidepanel` slot for views that need one (`CharacterView`, `ModuleView`) and
+`sidepanel` slot for views that need one (`CharacterView`) and
 clears it on unmount.
 
 ## Settings dialog
 
 `SettingsDialog.vue` is a `BaseModal` opened from the left navigation’s
-Settings item. It currently has two sections:
+Settings item. It currently has three sections:
 
 - **Interface**
   - **Language** — the `LanguageSwitcher` (`en` / `ru`), persisted in
     `configStore.savedLanguage`; Quasar’s locale follows the selection.
+  - **UI theme** — `QBtnToggle` with **Light** (default), **Dark** and
+    **Auto**. Persisted in `configStore.uiTheme`; `auto` follows the OS
+    `prefers-color-scheme` setting.
   - **Confirm deletion** — default `true`. When off, `confirm()` resolves
     `true` immediately without opening a confirmation dialog.
+  - **Expand menu** — default `true`. When on, hovering the left menu expands it
+    from icons to labels. When off, the menu stays mini and only shows icons;
+    each item exposes its label as a native `title` tooltip. When Expand menu is
+    off, the Tools item stacks a small chevron under the wrench and still
+    toggles the tools group. Hovering out of an expandable menu keeps the normal
+    side chevron.
 - **Player**
   - Smooth track change.
   - Animate player background.
   - Display cover while playing.
-  - Use mini player (off → the Jukebox menu item opens `/jukebox`).
+  - Show player dialog (off → the Jukebox menu item opens `/jukebox`). This
+    only controls the music player dialog, not future ambient controls.
+- **Content**
+  - **Storage** — reports usage/quota, file counts by source kind, unavailable
+    records and whether the origin has persistent storage. The **Request**
+    button calls `navigator.storage.persist()` and shows whether the browser
+    granted it; a denial links to the help center pages for installing the app
+    and reviewing site settings.
+  - **Reconnect files** — appears when records are unavailable or a handle
+    permission was lost. Picks replacements and relinks them by record ID.
+  - **Move large files to OPFS** — appears when IndexedDB still has Blob-backed
+    records; migrates them to the origin-private file system.
+  - **Include linked files in backups** — opt-in copy of external File System
+    Access files into backup archives.
+  - **Clear storage** — danger button. Always asks for confirmation, even when
+    Confirm deletion is off. Confirming deletes all IndexedDB databases, OPFS
+    files, `localStorage`, `sessionStorage`, cookies, Cache Storage and service
+    worker registrations, then reloads the app at the main page.
 
 The player toggles mirror the persisted options used by the jukebox player.
 The dialog closes through the modal cancel/close path and emits
@@ -179,12 +223,21 @@ The dialog closes through the modal cancel/close path and emits
 
 ## Bottom sheets
 
-`JukeboxDialog.vue` and `CalculatorView.vue` are `QDialog position="bottom"`
+`SoundControlDialog.vue` and `CalculatorView.vue` are `QDialog position="bottom"`
 with `useDragSnap`:
 
 - Drag the toolbar; the card follows the pointer.
 - Dragging up more than 200px leaves it open; otherwise it snaps back.
 - `transitionHide` switches between `fade` and default based on drag offset.
+- `SoundControlDialog` has a docked bottom-panel mode and a floating dialog
+  mode. Dragging it up from the bottom switches to the floating layout; dragging
+  it back near the viewport bottom docks it again. The transition begins as
+  soon as the drag crosses the detach/dock threshold. Detaching happens after a
+  5 px upward drag; docking uses a 10 px snap area measured from the dialog's
+  bottom edge, and only becomes active after the dialog leaves that area.
+  Docking ends the drag gesture. On detach, the floating dialog's header centre
+  is placed under the pointer. In dialog mode the card can be moved freely
+  across the page.
 - Both are opened from the left nav and are mounted for the app lifetime.
 
 ## Toast notifications
@@ -205,10 +258,10 @@ These notifications never auto-dismiss (`timeout: 0`).
 
 ## Navigation chrome summary
 
-- **Header**: injected per route; includes create/edit/delete and custom header
-  buttons.
+- **Header**: injected per route; Delete sits at the far left, while
+  create/edit/custom actions stay on the right.
 - **Left drawer**: primary navigation + jukebox/calculator shortcuts.
-- **Right drawer**: contextual sidebar (mentions, TOC, playlists).
+- **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists).
 - **Footer**: only the jukebox player.
 - **Overlays**: PWA status/install, mention modals, calculator, jukebox dialog.
 

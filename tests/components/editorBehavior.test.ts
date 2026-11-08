@@ -15,29 +15,22 @@ vi.mock('@/dialogs', () => ({
   confirm: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/notes/NoteCanvas.vue', async () => {
-  const { defineComponent, h } = await import('vue');
-  return {
-    default: defineComponent({
-      name: 'NoteCanvas',
-      props: { modelValue: String },
-      setup(_, { expose }) {
-        expose({
-          getSnapshot: () => '{"document":"snapshot"}',
-          getPreview: () => Promise.resolve('data:image/png;base64,preview'),
-        });
-        return () => h('div', { class: 'note-canvas-stub' });
-      },
-    }),
-  };
-});
-
 const MarkdownEditorStub = defineComponent({
   name: 'MarkdownEditor',
   props: { modelValue: String },
   emits: ['update:modelValue'],
   setup(_, { expose }) {
     expose({ getMarkdown: () => '# Latest markdown' });
+    return () => h('div', { class: 'markdown-editor-stub' });
+  },
+});
+
+const EmptyMarkdownEditorStub = defineComponent({
+  name: 'MarkdownEditor',
+  props: { modelValue: String },
+  emits: ['update:modelValue'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => '' });
     return () => h('div', { class: 'markdown-editor-stub' });
   },
 });
@@ -133,33 +126,28 @@ describe('editor behavior', () => {
     expect(alertMock).toHaveBeenCalled();
     expect(wrapper.emitted('submit')).toBeUndefined();
 
-    linkBlock(wrapper, 'module').vm.$emit('update:modelValue', [
-      { kind: 'module', id: 'm1' },
-    ]);
     linkBlock(wrapper, 'character').vm.$emit('update:modelValue', [
       { kind: 'character', id: 'c1' },
     ]);
-    await wrapper.find('#party-name').setValue('Company');
+    await wrapper.find('.entity-inline-editor input').setValue('Company');
     await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'Company',
-      moduleIds: ['m1'],
       characters: ['c1'],
     });
     wrapper.unmount();
   });
 
-  it('normalizes legacy party module objects and supports cancel/delete', async () => {
+  it('supports cancel and delete for an existing party', async () => {
     const party = {
       id: 'p1',
       name: 'Company',
       description: '',
       notes: '',
       characters: [],
-      moduleIds: [{ id: 'legacy' }, '', null],
       createdAt: 1,
       updatedAt: 1,
     } as any;
@@ -171,8 +159,8 @@ describe('editor behavior', () => {
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleIds: ['legacy'],
       id: 'p1',
+      name: 'Company',
     });
 
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
@@ -182,7 +170,7 @@ describe('editor behavior', () => {
     wrapper.unmount();
   });
 
-  it('validates encounter name and module and links a module', async () => {
+  it('validates the encounter name', async () => {
     const wrapper = mount(EncounterEditor, {
       props: { encounter: null, isOpen: true },
       global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
@@ -195,20 +183,20 @@ describe('editor behavior', () => {
     await wrapper.find('#encounter-name').setValue('Ambush');
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     await flushPromises();
-    expect(alertMock).toHaveBeenCalledTimes(2);
-
-    linkBlock(wrapper, 'module').vm.$emit('update:modelValue', [
-      { kind: 'module', id: 'm1' },
-    ]);
-    await nextTick();
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await flushPromises();
-
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'Ambush',
-      moduleId: 'm1',
     });
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('shows notes linking when creating an encounter', () => {
+    const wrapper = mount(EncounterEditor, {
+      props: { encounter: null, isOpen: true },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+
+    expect(linkBlock(wrapper, 'note')).toBeTruthy();
     wrapper.unmount();
   });
 
@@ -217,9 +205,7 @@ describe('editor behavior', () => {
       id: 'e1',
       name: 'Ambush',
       description: 'Goblins',
-      monsters: {},
-      moduleId: 'm1',
-      notes: '',
+      pawns: {},
       createdAt: 1,
       updatedAt: 1,
     };
@@ -234,7 +220,6 @@ describe('editor behavior', () => {
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'Ambush',
-      moduleId: 'm1',
     });
 
     (wrapper.vm as any).openEditor();
@@ -248,16 +233,13 @@ describe('editor behavior', () => {
     wrapper.unmount();
   });
 
-  it('handles note cancel, delete and module linking', async () => {
+  it('handles note cancel and delete', async () => {
     const note = {
       id: 'n1',
       title: 'Note',
       content: '',
-      contentType: 'text',
       typeId: null,
       tags: [],
-      moduleId: null,
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     };
@@ -274,13 +256,10 @@ describe('editor behavior', () => {
     });
 
     expect(wrapper.findComponent(BaseModal).props('tabs')).toHaveLength(2);
-    linkBlock(wrapper, 'module').vm.$emit('update:modelValue', [
-      { kind: 'module', id: 'm2' },
-    ]);
-    await nextTick();
     wrapper.findComponent(BaseModal).vm.$emit('submit');
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      moduleId: 'm2',
+      id: 'n1',
+      title: 'Note',
     });
 
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
@@ -290,32 +269,27 @@ describe('editor behavior', () => {
     wrapper.unmount();
   });
 
-  it('hides note tabs and resets the draft when the note is cleared', async () => {
+  it('resets the draft when the note is cleared', async () => {
     const note = {
       id: 'n1',
       title: 'Note',
       content: '',
-      contentType: 'text',
       typeId: null,
       tags: [],
-      moduleId: 'm1',
-      hidden: false,
       createdAt: 1,
       updatedAt: 1,
     };
     const wrapper = mount(NoteEditor, {
-      props: { note, isOpen: true, hideModuleSelector: true },
+      props: { note, isOpen: true },
       global: {
         stubs: {
-          MarkdownEditor: MarkdownEditorStub,
+          MarkdownEditor: EmptyMarkdownEditorStub,
           EntitiesLinking: EntitiesLinkingStub,
           NoteTypeSelector: true,
           TagSelector: true,
         },
       },
     });
-
-    expect(wrapper.findComponent(BaseModal).props('tabs')).toEqual([]);
 
     await wrapper.setProps({ note: null });
     await nextTick();
@@ -323,42 +297,6 @@ describe('editor behavior', () => {
     await flushPromises();
     expect(alertMock).toHaveBeenCalled();
     expect(wrapper.emitted('submit')).toBeUndefined();
-    wrapper.unmount();
-  });
-
-  it('uses the canvas snapshot for drawing notes with an empty preview', async () => {
-    const wrapper = mount(NoteEditor, {
-      props: {
-        note: {
-          id: 'n2',
-          title: 'Sketch',
-          content: '',
-          contentType: 'draw',
-          typeId: null,
-          tags: [],
-          moduleId: null,
-          hidden: false,
-          createdAt: 1,
-          updatedAt: 1,
-        },
-        isOpen: true,
-      },
-      global: {
-        stubs: {
-          MarkdownEditor: MarkdownEditorStub,
-          EntitiesLinking: EntitiesLinkingStub,
-          NoteTypeSelector: true,
-          TagSelector: true,
-        },
-      },
-    });
-
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
-    await flushPromises();
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      content: '{"document":"snapshot"}',
-      preview: 'data:image/png;base64,preview',
-    });
     wrapper.unmount();
   });
 });

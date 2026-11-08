@@ -3,7 +3,7 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 
 import BaseListView from '@/components/common/BaseListView.vue';
-import VueDraggable from 'vuedraggable';
+import SortableList from '@/components/common/SortableList.vue';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
 const CardStub = defineComponent({
@@ -95,6 +95,20 @@ describe('BaseListView', () => {
     expect(wrapper.emitted('cancel')).toHaveLength(1);
   });
 
+  it('splits empty messages into title and subtitle', () => {
+    const { wrapper } = mountList({
+      items: [],
+      emptyMessage: 'Nothing here. Add your first item to get started!',
+    });
+    expect(wrapper.find('.empty-state .text-subtitle1').text()).toBe(
+      'Nothing here',
+    );
+    expect(wrapper.find('.empty-state .text-caption').text()).toBe(
+      'Add your first item to get started!',
+    );
+    wrapper.unmount();
+  });
+
   it('renders masonry cards and forwards all card events', async () => {
     const { wrapper } = mountList();
     expect(wrapper.findAll('.card-stub')).toHaveLength(2);
@@ -149,23 +163,53 @@ describe('BaseListView', () => {
   });
 
   it('keeps header props in sync and clears them on unmount', async () => {
+    const leftHeaderButtons = [
+      {
+        icon: { name: 'left' },
+        color: 'primary',
+        title: 'left',
+        event: vi.fn(),
+      },
+    ];
+    const tabs = [
+      { id: 'jukebox', label: 'Jukebox' },
+      { id: 'ambient', label: 'Ambience' },
+    ];
     const { wrapper, layout } = mountList({
       searchQuery: 'first',
       showSearch: true,
       rightDrawerIcon: { name: 'icon' },
+      leftHeaderButtons,
+      createLoading: true,
+      tabs,
+      activeTab: 'jukebox',
     });
 
     const header = layout.topMenuContent.value;
     expect(header?.props?.searchQuery).toBe('first');
     expect(header?.props?.rightDrawerIcon).toEqual({ name: 'icon' });
+    expect(header?.props?.leftButtons).toEqual(leftHeaderButtons);
+    expect(header?.props?.createLoading).toBe(true);
+    expect(header?.props?.tabs).toEqual(tabs);
+    expect(header?.props?.modelValue).toBe('jukebox');
 
     header?.props?.['onUpdate:searchQuery']?.('second');
     expect(wrapper.emitted('update:searchQuery')?.[0]).toEqual(['second']);
 
-    await wrapper.setProps({ searchQuery: 'third', createTitle: 'Updated' });
+    header?.props?.onTabClick?.(tabs[1]);
+    expect(wrapper.emitted('tab-click')?.[0]).toEqual([tabs[1]]);
+    header?.props?.['onUpdate:modelValue']?.('ambient');
+    expect(wrapper.emitted('update:activeTab')?.[0]).toEqual(['ambient']);
+
+    await wrapper.setProps({
+      searchQuery: 'third',
+      createTitle: 'Updated',
+      activeTab: 'ambient',
+    });
     await flushPromises();
     expect(layout.topMenuContent.value?.props?.searchQuery).toBe('third');
     expect(layout.topMenuContent.value?.props?.createTitle).toBe('Updated');
+    expect(layout.topMenuContent.value?.props?.modelValue).toBe('ambient');
 
     wrapper.unmount();
     expect(layout.topMenuContent.value).toBeNull();
@@ -196,9 +240,15 @@ describe('BaseListView', () => {
   });
 
   it('forwards card events from the draggable layout and emits sort', async () => {
-    const { wrapper } = mountList({ draggable: true });
+    const { wrapper } = mountList({
+      draggable: true,
+      dragHandle: '.drag-handle',
+    });
     const card = wrapper.find('.card-stub');
     expect(wrapper.findComponent(CardStub).props('draggable')).toBe(true);
+    expect(wrapper.findComponent(SortableList).props('handle')).toBe(
+      '.drag-handle',
+    );
     await card.find('.view').trigger('click');
     await card.find('.edit').trigger('click');
     await card.find('.delete').trigger('click');
@@ -207,15 +257,18 @@ describe('BaseListView', () => {
 
     expect(wrapper.emitted('view')?.[0]).toEqual([{ id: 'a' }]);
 
-    const draggable = wrapper.findComponent(VueDraggable);
+    const draggable = wrapper.findComponent(SortableList);
     expect(draggable.exists()).toBe(true);
     draggable.vm.$emit('update:modelValue', [{ id: 'b' }, { id: 'a' }]);
     await nextTick();
-    draggable.vm.$emit('end');
+    draggable.vm.$emit('end', { oldIndex: 0, newIndex: 1 });
     expect(wrapper.emitted('sort')?.[0]?.[0]).toEqual([
       { id: 'b' },
       { id: 'a' },
     ]);
+
+    draggable.vm.$emit('end', { oldIndex: 1, newIndex: 1 });
+    expect(wrapper.emitted('sort')).toHaveLength(1);
     wrapper.unmount();
   });
 
@@ -232,6 +285,31 @@ describe('BaseListView', () => {
 
     expect(wrapper.emitted('delete')?.[0]).toEqual([null]);
     expect(wrapper.findComponent(EditorStub).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('offers a create button in the empty state', async () => {
+    const { wrapper } = mountList({ items: [] });
+
+    const create = wrapper.find('.empty-state-create');
+    expect(create.exists()).toBe(true);
+    expect(create.text()).toContain('Create');
+    expect(create.find('svg').exists()).toBe(true);
+
+    await create.trigger('click');
+    await nextTick();
+    expect(wrapper.emitted('create')).toHaveLength(1);
+    expect(wrapper.findComponent(EditorStub).props('isOpen')).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('uses a custom empty-state action title', () => {
+    const { wrapper } = mountList({
+      items: [],
+      emptyActionTitle: 'Add',
+    });
+
+    expect(wrapper.find('.empty-state-create').text()).toContain('Add');
     wrapper.unmount();
   });
 });

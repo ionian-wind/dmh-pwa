@@ -15,13 +15,13 @@ describe('encounter store', () => {
     const store = useEncounterStore();
     await store.create({
       name: 'Ambush',
-      monsters: { m1: 2 },
-      moduleId: 'mod',
+      pawns: { m1: 2 },
+      moduleIds: ['mod'],
     });
     await store.create({
       name: 'Boss Fight',
-      monsters: { m2: 1 },
-      moduleId: 'mod',
+      pawns: { m2: 1 },
+      moduleIds: ['mod'],
     });
 
     store.setSearchQuery('boss');
@@ -36,16 +36,16 @@ describe('encounter store', () => {
     expect(store.filtered).toHaveLength(2);
   });
 
-  it('updates the monster roster', async () => {
+  it('updates the pawn roster', async () => {
     const store = useEncounterStore();
     const created = await store.create({
       name: 'Ambush',
-      monsters: { m1: 2 },
-      moduleId: 'mod',
+      pawns: { m1: 2 },
+      moduleIds: ['mod'],
     });
     const updated = await store.update(created.id, {
-      monsters: { m1: 3, m2: 1 },
+      pawns: { m1: 3, m2: 1 },
     });
-    expect(updated.monsters).toEqual({ m1: 3, m2: 1 });
+    expect(updated.pawns).toEqual({ m1: 3, m2: 1 });
   });
 });

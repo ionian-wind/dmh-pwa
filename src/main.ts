@@ -7,20 +7,23 @@ import App from './App.vue';
 import router from './router';
 import i18n from './i18n';
 import { setupAnchorScrollHandler } from './utils/anchorScroll';
-import { useConfigStore } from './utils/configStore';
+import { useUiTheme } from './composables/useUiTheme';
+import { useConfigStore, type UiTheme } from './utils/configStore';
 import { initializeDatabase } from './utils/storage';
+import './utils/files/registerFileReferences';
 import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 import { debug, debugWarn, debugError } from './utils/debug';
 
-import { Quasar, Dialog, Notify } from 'quasar';
+import { Quasar, Dialog, Notify, Dark } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
 import quasarLangEn from 'quasar/lang/en-US';
-import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v6';
+import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v7';
 
 import 'vue3-openlayers/vue3-openlayers.css';
 
 import Vue3OpenLayers from 'vue3-openlayers';
 import 'rpg-awesome/css/rpg-awesome.css';
+import '@quasar/extras/fontawesome-v7/fontawesome-v7.css';
 
 // Import Quasar css
 import 'quasar/src/css/index.sass';
@@ -72,10 +75,27 @@ app.use(VueDnDKitPlugin, {
 } as IPluginOptions);
 
 app.use(Quasar, {
-  plugins: { Notify, Dialog }, // import Quasar plugins and add here
+  plugins: { Notify, Dialog, Dark }, // import Quasar plugins and add here
   lang: quasarLangRu,
   iconSet: quasarIconSet,
 });
+
+// Sync Quasar Dark mode and the document color scheme with the saved theme.
+const applyUiTheme = (theme: UiTheme) => {
+  Dark.set(theme === 'auto' ? 'auto' : theme === 'dark');
+};
+
+watch(() => configStore.uiTheme, applyUiTheme, { immediate: true });
+
+const { isDark } = useUiTheme();
+watch(
+  isDark,
+  (dark) => {
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    document.documentElement.style.backgroundColor = dark ? '#14141d' : '';
+  },
+  { immediate: true },
+);
 
 // Sync i18n/Quasar locale with configStore.savedLanguage
 watch(

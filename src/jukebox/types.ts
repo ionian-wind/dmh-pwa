@@ -4,6 +4,7 @@ import type {
   WithId,
   WithTimestamps,
 } from '@/types';
+import type { MapEntityRef } from '@/maps/types';
 
 export type UUID = GlobalUUID;
 
@@ -12,28 +13,7 @@ export interface JukeboxPlaylist extends WithId, WithTimestamps, WithMetadata {
   description?: string;
   trackIds: UUID[];
   sortOrder?: number;
-  moduleIds?: string[];
-}
-
-export interface JukeboxFileHandle {
-  kind: 'handle';
-  handle: FileSystemFileHandle;
-}
-
-export interface JukeboxFileBlob {
-  kind: 'blob';
-  blob: Blob;
-}
-
-export type JukeboxFileSource = JukeboxFileHandle | JukeboxFileBlob;
-
-export interface JukeboxFile extends WithId, WithTimestamps, WithMetadata {
-  id: UUID;
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  source: JukeboxFileSource;
+  links?: MapEntityRef[];
 }
 
 export interface JukeboxTrack extends WithMetadata {
@@ -54,5 +34,6 @@ export interface JukeboxTrack extends WithMetadata {
   picture?: string | Blob; // base64, object URL, or Blob for artwork
   color?: string; // dominant color from artwork
   palette?: string[]; // color palette from artwork
+  waveform?: string | null; // generated SVG waveform preview
   disabled?: boolean; // track unavailable, skip during playback
 }

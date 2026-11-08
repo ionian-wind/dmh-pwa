@@ -1,5 +1,4 @@
-import type { IDBPTransaction } from 'idb';
-import type { Migration } from '@/types/migration';
+import type { Migration, MigrationTransaction } from '@/types/migration';
 import type { MapEntity, MapLocation } from '../maps/types';
 
 function asLocation(location: MapLocation): MapLocation {
@@ -8,6 +7,7 @@ function asLocation(location: MapLocation): MapLocation {
     name: location.name || '',
     description: location.description || '',
     entities: Array.isArray(location.entities) ? location.entities : [],
+    map: { fileId: '', layers: [], markers: [], areas: [] },
     createdAt: Number(location.createdAt) || Date.now(),
     updatedAt: Number(location.updatedAt) || Date.now(),
   };
@@ -17,12 +17,8 @@ const migration: Migration = {
   version: 5,
   name: 'extract_map_locations',
   affectedStores: ['map_locations', 'maps'],
-  async go(transaction: IDBPTransaction<unknown, string[], 'versionchange'>) {
-    const tx = transaction as unknown as IDBPTransaction<
-      any,
-      string[],
-      'readwrite'
-    >;
+  async go(transaction: MigrationTransaction) {
+    const tx = transaction;
     const mapsStore = tx.objectStore('maps');
     const locationsStore = tx.objectStore('map_locations');
     const maps = (await mapsStore.getAll()) as Array<

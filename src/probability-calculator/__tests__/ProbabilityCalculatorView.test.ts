@@ -331,6 +331,35 @@ describe('ProbabilityCalculatorView', () => {
     wrapper.unmount();
   });
 
+  it('renames and deletes library pieces', async () => {
+    const wrapper = await mountPage();
+    const state = libraryState();
+    state.pieces.push({
+      id: 'piece-1',
+      name: 'Old',
+      code: 'output 1d4',
+      include: false,
+    } as any);
+    state.selectedId = 'piece-1';
+
+    promptMock.mockResolvedValueOnce('');
+    await state.onRename(state.pieces[0]);
+    promptMock.mockResolvedValueOnce('   ');
+    await state.onRename(state.pieces[0]);
+    promptMock.mockResolvedValueOnce('Renamed');
+    await state.onRename(state.pieces[0]);
+    expect(state.pieces[0].name).toBe('Renamed');
+
+    confirmMock.mockResolvedValueOnce(false);
+    await state.onDelete(state.pieces[0]);
+    expect(state.pieces).toHaveLength(1);
+    confirmMock.mockResolvedValueOnce(true);
+    await state.onDelete(state.pieces[0]);
+    expect(state.pieces).toHaveLength(0);
+    expect(state.selectedId).toBeNull();
+    wrapper.unmount();
+  });
+
   it('includes checked library pieces in the calculation namespace', async () => {
     vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
       key === CODE_LIBRARY_STORAGE_KEY
@@ -426,6 +455,52 @@ describe('ProbabilityCalculatorView', () => {
     wrapper.unmount();
   });
 
+  it('handles empty results, invalid source and editor guards', async () => {
+    const wrapper = await mountPage();
+    const vm = wrapper.vm as any;
+
+    vm.result = null;
+    expect(vm.outputs).toEqual([]);
+    expect(vm.chart).toBeNull();
+    expect(vm.exportText).toBe('');
+
+    vm.clearSyntaxMarkers();
+    vm.markSyntaxError({
+      line: 1,
+      column: 1,
+      endLine: 1,
+      endColumn: 2,
+      expected: [],
+      code: 'invalid-syntax',
+      message: 'bad',
+    });
+    vm.focusSyntaxError();
+    vm.syntaxError = null;
+    vm.focusSyntaxError();
+
+    promptMock.mockResolvedValueOnce('');
+    await vm.saveCodePiece();
+    promptMock.mockResolvedValueOnce('   ');
+    await vm.saveCodePiece();
+
+    vm.rollerOutputIndex = -1;
+    vm.rollerAmount = 0;
+    vm.roll();
+    expect(vm.rollerResults).toEqual([]);
+
+    await wrapper.find('textarea.monaco-editor-stub').setValue('???');
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Calculate')!
+      .trigger('click');
+    await settle();
+    expect(vm.error).toBeTruthy();
+
+    confirmMock.mockResolvedValueOnce(true);
+    await expect(routeGuard.handler?.()).resolves.toBeTruthy();
+    wrapper.unmount();
+  });
+
   it('shows calculation errors', async () => {
     const wrapper = await mountPage();
     const editor = wrapper.find('textarea.monaco-editor-stub');
@@ -438,6 +513,34 @@ describe('ProbabilityCalculatorView', () => {
     await settle();
 
     expect(wrapper.text()).toContain('Calculation error');
+    wrapper.unmount();
+  });
+
+  it('marks every reported syntax issue', async () => {
+    const wrapper = await mountPage();
+    const vm = wrapper.vm as any;
+    const base = {
+      endLine: 1,
+      endColumn: 2,
+      expected: [],
+      code: 'invalid-syntax',
+      message: 'bad',
+    };
+
+    vm.markSyntaxError({
+      ...base,
+      line: 1,
+      column: 1,
+      errors: [
+        { ...base, line: 1, column: 1, message: 'first' },
+        { ...base, line: 2, column: 3, message: 'second' },
+      ],
+    });
+
+    const markers = markerState.setModelMarkers.mock.calls.at(-1)?.[2] as any[];
+    expect(markers).toHaveLength(2);
+    expect(markers[0]).toMatchObject({ startLineNumber: 1, startColumn: 1 });
+    expect(markers[1]).toMatchObject({ startLineNumber: 2, startColumn: 3 });
     wrapper.unmount();
   });
 });

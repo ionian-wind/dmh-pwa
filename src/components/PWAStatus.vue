@@ -43,9 +43,17 @@ const handleOffline = () => {
 };
 
 const handleControllerChange = () => {
+  // The first controllerchange is the initial service-worker activation after
+  // installation. Only a later change means an update is available.
+  if (!hadController) {
+    hadController = true;
+    return;
+  }
   hasUpdate.value = true;
   showUpdatePrompt.value = true;
 };
+
+let hadController = false;
 
 onMounted(() => {
   checkPWAStatus();
@@ -56,6 +64,7 @@ onMounted(() => {
 
   // Listen for PWA update events
   if ('serviceWorker' in navigator) {
+    hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener(
       'controllerchange',
       handleControllerChange,
@@ -121,9 +130,9 @@ onUnmounted(() => {
 
 .pwa-update-prompt {
   position: fixed;
-  top: 20px;
-  left: 20px;
-  right: 20px;
+  top: calc(20px + var(--safe-top));
+  left: calc(20px + var(--safe-left));
+  right: calc(20px + var(--safe-right));
   background: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
@@ -175,8 +184,8 @@ onUnmounted(() => {
 
 .pwa-status-indicators {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: calc(20px + var(--safe-top));
+  right: calc(20px + var(--safe-right));
   display: flex;
   flex-direction: column;
   gap: 0.5rem;

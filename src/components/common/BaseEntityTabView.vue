@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import BaseEntityView from './BaseEntityView.vue';
 
 interface Tab {
   id: string;
   label: string;
-  icon?: string;
+  icon?: any;
   disabled?: boolean;
   badge?: string | number;
 }
@@ -17,6 +17,8 @@ interface Props {
   onDelete?: () => Promise<boolean>;
   onEdit?: () => void;
   isEditing?: boolean;
+  headerShowEdit?: boolean;
+  headerShowDelete?: boolean;
   title?: string;
   subtitle?: string;
   loading?: boolean;
@@ -26,6 +28,7 @@ interface Props {
   tabs: Tab[];
   modelValue?: string;
   headerButtons?: any[];
+  leftHeaderButtons?: any[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -36,6 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
   sidePanelVisible: true,
   hideHeader: false,
   headerButtons: () => [],
+  leftHeaderButtons: () => [],
   tabs: () => [],
 });
 
@@ -81,32 +85,27 @@ function handleTabClose(tabId: string) {
 function handleTabAdd() {
   emit('tab-add');
 }
+
+const viewProps = computed(() => {
+  const { modelValue: _modelValue, ...rest } = props;
+  return { ...rest, modelValue: activeTab.value };
+});
 </script>
 
 <template>
   <BaseEntityView
-    v-bind="props"
+    v-bind="viewProps"
     :unwrap-content="true"
+    @update:model-value="handleTabUpdate"
+    @tab-click="handleTabClick"
     @update:sidePanelVisible="$emit('update:sidePanelVisible', $event)"
   >
     <template #default>
-      <div>
-        <QTabs v-if="tabs.length > 0" v-model="activeTab" dense class="q-mb-md">
-          <QTab
-            v-for="tab in tabs"
-            :key="tab.id"
-            :name="tab.id"
-            :label="tab.label"
-            :disable="tab.disabled"
-            @click="() => handleTabClick(tab)"
-          />
-        </QTabs>
-        <QTabPanels v-model="activeTab" animated>
-          <QTabPanel v-for="tab in tabs" :key="tab.id" :name="tab.id">
-            <slot :name="tab.id" />
-          </QTabPanel>
-        </QTabPanels>
-      </div>
+      <QTabPanels v-model="activeTab" animated>
+        <QTabPanel v-for="tab in tabs" :key="tab.id" :name="tab.id">
+          <slot :name="tab.id" />
+        </QTabPanel>
+      </QTabPanels>
     </template>
     <template v-if="$slots.actions" #actions>
       <slot name="actions" />

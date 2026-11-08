@@ -1,264 +1,343 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { useRoute, useRouter } from 'vue-router';
 
-import { Party, PlayerCharacter } from '@/types';
+import type { Party } from '@/types';
 
 import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
-import { useCharacterStore } from '@/stores/characters';
 
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Button from '@/components/form/Button.vue';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import type { MapEntityRef } from '@/maps/types';
 
-import PartyEditor from '@/parties/PartyEditor.vue';
 import PartyViewSidebar from '@/parties/PartyViewSidebar.vue';
-import { confirm } from '@/dialogs';
+import { alert, confirm } from '@/dialogs';
+import { useEntityEditMode } from '@/composables/useEntityEditMode';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useRightDrawer } from '@/composables/useLayout';
+import { IconHelp } from '@tabler/icons-vue';
+import { defineAsyncComponent } from 'vue';
+import type { Combat } from '@/types';
+
+// Starting combat belongs to the encounters feature; keep it out of builds
+// where encounters are disabled.
+const StartCombatDialog = __FEATURE_ENCOUNTERS__
+  ? defineAsyncComponent(() => import('@/encounters/PartySelector.vue'))
+  : null;
 
 const route = useRoute();
 const router = useRouter();
 const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
-const characterStore = useCharacterStore();
-const { t } = useI18n();
+const featureStores = useFeatureStores();
+const relations = useEntityLinkRelations();
+const { t, locale } = useI18n();
 
-const showEditor = ref(false);
-const showLinkModal = ref(false);
-
+const party = ref<Party | null>(null);
+const activeTab = ref('main');
+const viewTabs = useEntityViewTabs();
+const editorTabs = useEntityEditorTabs();
 const isLoaded = computed(() => partyStore.isLoaded);
-const party = computed(() => partyStore.getById(route.params.id as string));
-const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !party.value);
+const validationError = ref<string | null>(null);
+const isDeleting = ref(false);
+const showStartCombat = ref(false);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 
-const modules = computed(() => {
-  return (
-    party.value?.moduleIds
-      ?.map((id) => moduleStore.getById(id))
-      .filter(Boolean) || []
-  );
+function updatePartyFromStore() {
+  if (!partyStore.isLoaded) return;
+  const found = partyStore.getById(route.params.id as string);
+  if (found) {
+    party.value = found;
+  } else if (!isDeleting.value) {
+    router.push('/parties');
+  }
+}
+
+watch(
+  [() => partyStore.items, () => partyStore.isLoaded],
+  updatePartyFromStore,
+  {
+    immediate: true,
+  },
+);
+
+const { editState, setEditMode, discardDraft } = useEntityEditMode<Party>({
+  source: party,
+  clone: (source) => ({
+    ...source,
+    characters: [...(source.characters ?? [])],
+  }),
+  isDirty: (draft, source) =>
+    draft.name !== source.name ||
+    (draft.description ?? '') !== (source.description ?? '') ||
+    !arraysEqual(draft.characters, source.characters),
+  onEnter: () => {
+    validationError.value = null;
+  },
+  onDiscard: () => {
+    validationError.value = null;
+  },
+  prepare: prepareDraft,
+  save: persistDraft,
 });
 
-const allCharacters = computed(() => characterStore.items);
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
+);
+
+const partyTitle = computed(() => party.value?.name || '');
+
 const partyCharacters = computed(() => {
-  const p = party.value;
-  if (!p) return [];
-  return allCharacters.value.filter((c) => p.characters.includes(c.id));
+  const current = party.value;
+  if (!current) return [];
+  return featureStores
+    .items('character')
+    .filter((character) => current.characters.includes(character.id));
 });
 
-const linkedCharacters = computed(() => {
-  const p = party.value;
-  if (!p) return {};
-  return allCharacters.value.reduce(
-    (acc, character) => {
-      acc[character.id] = p.characters.includes(character.id);
-      return acc;
-    },
-    {} as Record<string, boolean>,
+const partySubtitle = computed(() => {
+  if (!party.value) return '';
+  return `${partyCharacters.value.length} characters`;
+});
+
+const partyLinks = computed<MapEntityRef[]>(() => {
+  const source = editState.draft ?? party.value;
+  if (!source?.id) return [];
+  return [
+    ...relations
+      .getLinkedIds('party', source.id, 'note')
+      .map((noteId) => ({ kind: 'note' as const, id: noteId })),
+    ...(source.characters ?? []).map((id) => ({
+      kind: 'character' as const,
+      id,
+    })),
+  ];
+});
+
+const draftName = computed({
+  get: () => editState.draft?.name ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.name = value;
+  },
+});
+
+const draftDescription = computed({
+  get: () => editState.draft?.description ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.description = value;
+  },
+});
+
+function arraysEqual(a: string[] = [], b: string[] = []) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function setLinkedCharacters(links: MapEntityRef[]) {
+  if (editState.draft) {
+    editState.draft.characters = links
+      .filter((link) => link.kind === 'character')
+      .map((link) => link.id);
+  }
+}
+
+function setLinkedNotes(links: MapEntityRef[]) {
+  if (!party.value) return;
+  void relations.setLinkedIds(
+    'party',
+    party.value.id,
+    'note',
+    links.filter((link) => link.kind === 'note').map((link) => link.id),
   );
+}
+
+function handleDescriptionChange(description: string) {
+  if (party.value) {
+    void partyStore.update(party.value.id, { description });
+  }
+}
+
+async function prepareDraft(draft: Party): Promise<boolean> {
+  if (markdownEditorRef.value?.getMarkdown) {
+    draft.description = markdownEditorRef.value.getMarkdown();
+  }
+  if (!draft.name?.trim()) {
+    activeTab.value = 'main';
+    await alert(t('common.nameRequired'));
+    return false;
+  }
+  validationError.value = null;
+  return true;
+}
+
+async function persistDraft(draft: Party): Promise<boolean> {
+  if (!party.value) return false;
+  try {
+    await partyStore.update(party.value.id, {
+      name: draft.name,
+      description: draft.description,
+      characters: draft.characters,
+    });
+  } catch (error) {
+    activeTab.value = 'main';
+    validationError.value =
+      error instanceof Error ? error.message : String(error);
+    return false;
+  }
+  updatePartyFromStore();
+  return true;
+}
+
+const headerButtons = computed(() => {
+  if (!features.help || !editState.isEditMode || editState.isVisualMode)
+    return [];
+  return [
+    {
+      color: 'primary',
+      title: 'markdownEditor.formattingHelp',
+      icon: IconHelp,
+      href: helpHref('reference/markdown', getHelpLocale(locale.value)),
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+  ];
 });
 
 async function handleDeleteParty() {
+  if (!party.value) return false;
   if (
-    party.value &&
-    (await confirm(t('common.confirmDelete', { title: party.value.name })))
+    !(await confirm(t('common.confirmDelete', { title: party.value.name })))
   ) {
-    await partyStore.remove(party.value.id);
-    return true;
+    return false;
   }
-  return false;
+  isDeleting.value = true;
+  discardDraft();
+  await partyStore.remove(party.value.id);
+  return true;
 }
 
-const handleSaveParty = async (
-  updatedParty: Omit<Party, 'id' | 'createdAt' | 'updatedAt'>,
-) => {
-  if (!party.value) return;
-  await partyStore.update(party.value.id, updatedParty);
-  showEditor.value = false;
-};
+async function handleDeleteFromSidebar() {
+  if (await handleDeleteParty()) await router.push('/parties');
+}
 
-const handlePartyCancel = () => {
-  showEditor.value = false;
-};
+function handleStartCombat() {
+  showStartCombat.value = true;
+}
 
-const handleToggleCharacter = (
-  character: PlayerCharacter,
-  isLinked: boolean,
-) => {
-  if (!party.value) return;
-  let updatedCharacters = [...party.value.characters];
-  if (isLinked) {
-    if (!updatedCharacters.includes(character.id)) {
-      updatedCharacters.push(character.id);
-    }
-  } else {
-    updatedCharacters = updatedCharacters.filter((id) => id !== character.id);
-  }
-  partyStore.update(party.value.id, { characters: updatedCharacters });
-};
+function handleCombatCreated(combat: Combat) {
+  showStartCombat.value = false;
+  void router.push(`/combats/${combat.id}`);
+}
 
-// Computed properties for BaseEntityView
-const partyTitle = computed(() => party.value?.name || '');
-const partySubtitle = computed(() => {
-  if (!party.value) return '';
-
-  const parts = [];
-  if (modules.value.length > 0) {
-    parts.push(
-      `Modules: ${modules.value
-        .map((m) => m?.name)
-        .filter(Boolean)
-        .join(', ')}`,
-    );
-  }
-  parts.push(`${partyCharacters.value.length} characters`);
-
-  return parts.join(' • ');
-});
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
     partyStore.load(),
-    characterStore.load(),
-    moduleStore.load(),
+    featureStores.load(['character', 'note']),
   ]);
-  rightDrawer.set({ component: PartyViewSidebar, props: { party } });
+  rightDrawer.set({
+    component: PartyViewSidebar,
+    props: {
+      party,
+      editState,
+      onSetEditMode: setEditMode,
+      onDelete: handleDeleteFromSidebar,
+      onStartCombat: StartCombatDialog ? handleStartCombat : undefined,
+    },
+  });
 });
 
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
-
-async function handleEditorDelete() {
-  if (await handleDeleteParty()) {
-    showEditor.value = false;
-    await router.push('/parties');
-  }
-}
 </script>
 
 <template>
-  <div>
-    <BaseEntityView
-      :entity="party"
-      entity-name="parties.title"
-      list-route="/parties"
-      :on-delete="handleDeleteParty"
-      :on-edit="() => (showEditor = true)"
-      :is-editing="showEditor"
-      :title="partyTitle"
-      :subtitle="partySubtitle"
-      :not-found="notFound"
-      :loading="loading"
-    >
-      <!-- Party Content -->
-      <div v-if="party">
-        <div class="q-pa-md q-gutter-md">
-          <div class="row items-center q-mb-md">
-            <div class="col">
-              <h2>{{ t('partyView.title') }}</h2>
-            </div>
-            <div class="col-auto">
-              <QBtn flat @click="showLinkModal = true" class="q-ml-md">
-                {{ t('parties.linkCharacters') }}
-              </QBtn>
-            </div>
-          </div>
-          <div
-            v-if="partyCharacters.length === 0"
-            class="q-pa-md text-grey text-center q-mt-xl"
-          >
-            <p>{{ t('partyView.noCharacters') }}</p>
-          </div>
-          <div v-else class="row q-gutter-md">
-            <div class="col-12">
-              <table class="q-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('partyView.name') }}</th>
-                    <th>{{ t('partyView.actions') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="character in partyCharacters" :key="character.id">
-                    <td>{{ character.name }}</td>
-                    <td>
-                      <button
-                        class="q-btn q-btn--flat text-negative"
-                        @click="handleToggleCharacter(character, false)"
-                      >
-                        {{ t('partyView.unlink') }}
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Editor Modal -->
-      <template #editor>
-        <PartyEditor
-          :party="party"
-          :isOpen="showEditor"
-          @submit="handleSaveParty"
-          @delete="handleEditorDelete"
-          @cancel="handlePartyCancel"
+  <BaseEntityTabView
+    :entity="party"
+    entity-name="parties.title"
+    list-route="/parties"
+    :on-delete="handleDeleteParty"
+    :header-show-edit="false"
+    :header-show-delete="false"
+    :is-editing="editState.isEditMode"
+    :title="editState.isEditMode ? '' : partyTitle"
+    :subtitle="editState.isEditMode ? '' : partySubtitle"
+    :not-found="notFound"
+    :header-buttons="headerButtons"
+    :tabs="tabs"
+    v-model="activeTab"
+  >
+    <template #main>
+      <EntityContentSurface v-if="!editState.isEditMode">
+        <MilkdownView
+          :taskCheckboxEnabled="true"
+          :enableMentionModal="true"
+          :content="party?.description || ''"
+          @update:content="handleDescriptionChange"
         />
-      </template>
-    </BaseEntityView>
+      </EntityContentSurface>
 
-    <!-- Link Characters Modal -->
-    <BaseModal
-      :is-open="showLinkModal"
-      :title="t('parties.linkCharacters')"
-      :show-cancel="true"
-      :show-submit="false"
-      :cancel-label="t('common.close')"
-      modal-id="link-characters-modal"
-      @cancel="showLinkModal = false"
-    >
-      <div
-        v-if="allCharacters.length === 0"
-        class="q-pa-md text-grey text-center q-mt-xl"
+      <EntityInlineEditor
+        v-else
+        v-model:title="draftName"
+        :title-placeholder="t('parties.fields.name')"
+        :validation-error="validationError"
       >
-        <p>{{ t('partyView.noAvailable') }}</p>
-      </div>
-      <div v-else class="row q-gutter-md">
-        <div class="col-12">
-          <table class="q-table">
-            <thead>
-              <tr>
-                <th>{{ t('partyView.name') }}</th>
-                <th>{{ t('partyView.linked') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="character in allCharacters" :key="character.id">
-                <td>{{ character.name }}</td>
-                <td>
-                  <ToggleSwitch
-                    :model-value="linkedCharacters[character.id]"
-                    @update:modelValue="
-                      (value) => handleToggleCharacter(character, value)
-                    "
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </BaseModal>
-  </div>
-</template>
+        <EntityMarkdownEditor
+          ref="markdownEditorRef"
+          v-model="draftDescription"
+          :is-visual-mode="editState.isVisualMode"
+          :entity-id="editState.draft?.id || ''"
+          entity-type="party"
+          :placeholder="t('parties.fields.description')"
+        />
+      </EntityInlineEditor>
+    </template>
 
-<style scoped>
-/* Removed .content-section, .section-header, .empty-state, .characters-grid. Use Quasar classes. */
-</style>
+    <template #links>
+      <EntityViewLinks v-if="!editState.isEditMode" :links="partyLinks" />
+      <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="partyLinks"
+          @update:model-value="setLinkedNotes"
+        />
+        <EntitiesLinking
+          v-if="featureStores.has('character')"
+          kind="character"
+          :model-value="partyLinks"
+          @update:model-value="setLinkedCharacters"
+        />
+      </div>
+    </template>
+  </BaseEntityTabView>
+
+  <StartCombatDialog
+    v-if="StartCombatDialog"
+    :is-open="showStartCombat"
+    :party="party"
+    @combat-created="handleCombatCreated"
+    @cancel="showStartCombat = false"
+  />
+</template>

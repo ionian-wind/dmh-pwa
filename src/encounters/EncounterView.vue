@@ -3,37 +3,41 @@ import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useEncounterStore } from '@/stores/encounters';
-import { useMonsterStore } from '@/stores/monsters';
-import { useModuleStore } from '@/stores/modules';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
-import type { Encounter, Monster, Combat } from '@/types';
-import EncounterEditor from '@/encounters/EncounterEditor.vue';
+import type { Encounter, Combat } from '@/types';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useEntityEditMode } from '@/composables/useEntityEditMode';
+import type { MapEntityRef } from '@/maps/types';
 import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
-import { IconSwords } from '@tabler/icons-vue';
+import { IconAffiliate, IconInfoCircle, IconSwords } from '@tabler/icons-vue';
 import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
-import { prompt, confirm } from '@/dialogs';
-import { sanitizeHtmlContent } from '@/utils/markdownParser';
+import { alert, confirm } from '@/dialogs';
 import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const relations = useEntityLinkRelations();
 const encounterStore = useEncounterStore();
-const monsterStore = useMonsterStore();
-const moduleStore = useModuleStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
 
-const isEditorOpen = ref(false);
-const showLinkModal = ref(false);
 const showPartySelector = ref(false);
 const activeTab = ref('information');
-const localMonsters = ref<Record<string, number>>({});
+const validationError = ref<string | null>(null);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 
 const encounter = ref<Encounter | null>(null);
 const loading = computed(() => !encounterStore.isLoaded);
@@ -57,18 +61,6 @@ watch(
   { immediate: true, deep: true },
 );
 
-watch(showLinkModal, (isOpen) => {
-  if (isOpen && encounter.value) {
-    localMonsters.value = JSON.parse(
-      JSON.stringify(encounter.value.monsters || {}),
-    );
-  }
-});
-
-const handleEdit = () => {
-  isEditorOpen.value = true;
-};
-
 const handleDelete = async () => {
   if (!encounter.value) return false;
   if (
@@ -76,94 +68,14 @@ const handleDelete = async () => {
   ) {
     return false;
   }
+  discardDraft();
   await encounterStore.remove(encounter.value.id);
   return true;
 };
 
-const handleSave = async (
-  updatedEncounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>,
-) => {
-  if (!encounter.value) return;
-  await encounterStore.update(encounter.value.id, updatedEncounter);
-  isEditorOpen.value = false;
-};
-
-const handleCancel = () => {
-  isEditorOpen.value = false;
-};
-
-const getModuleName = (moduleId: string | null) => {
-  if (!moduleId) return 'No Module';
-  const module = moduleStore.items.find((m) => m.id === moduleId);
-  return module ? module.name : 'Unknown Module';
-};
-
-// Computed properties for monster linking
-const allMonsters = computed(() => monsterStore.filtered);
-const encounterMonsters = computed(() => {
-  if (!encounter.value || !encounter.value.monsters) return [];
-  return allMonsters.value.filter((monster) =>
-    Object.keys(encounter.value!.monsters).includes(monster.id),
-  );
-});
-
-// Reactive linked monsters state
-const linkedMonsters = ref<Record<string, boolean>>({});
-
-// Update linked monsters when encounter changes
-watch(
-  () => encounter.value?.monsters,
-  (newMonsters) => {
-    if (!newMonsters) {
-      linkedMonsters.value = {};
-      return;
-    }
-
-    const linked = Object.keys(newMonsters);
-    linkedMonsters.value = allMonsters.value.reduce(
-      (acc, monster) => {
-        acc[monster.id] = linked.includes(monster.id);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  },
-  { immediate: true },
-);
-
-// Update linked monsters when allMonsters changes
-watch(
-  allMonsters,
-  (newMonsters) => {
-    if (!encounter.value?.monsters) {
-      linkedMonsters.value = {};
-      return;
-    }
-
-    const linked = Object.keys(encounter.value.monsters);
-    linkedMonsters.value = newMonsters.reduce(
-      (acc, monster) => {
-        acc[monster.id] = linked.includes(monster.id);
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  },
-  { immediate: true },
-);
-
-const handleToggleMonster = (monster: Monster, isLinked: boolean) => {
-  if (!encounter.value) return;
-  const monsters = encounter.value.monsters || {};
-  if (isLinked) {
-    monsters[monster.id] = 1;
-  } else {
-    delete monsters[monster.id];
-  }
-  encounterStore.update(encounter.value.id, { monsters });
-  // Force a reactive update by reassigning the encounter
-  encounter.value = encounterStore.getById(encounter.value.id);
-};
+async function handleDeleteFromSidebar() {
+  if (await handleDelete()) await router.push('/encounters');
+}
 
 const handleRunCombat = () => {
   showPartySelector.value = true;
@@ -181,9 +93,6 @@ const handlePartySelectorCancel = () => {
 
 // Computed properties for BaseEntityView
 const encounterTitle = computed(() => encounter.value?.name || '');
-const safeDescription = computed(() =>
-  sanitizeHtmlContent(encounter.value?.description || ''),
-);
 
 // Computed property for combats associated with this encounter
 const encounterCombats = computed(() => {
@@ -220,97 +129,147 @@ const handleViewCombat = (combat: Combat) => {
 };
 
 // Tab configuration
-const tabs = computed(() => [
+const encounterLinks = computed<MapEntityRef[]>(() => {
+  const id = encounter.value?.id;
+  if (!id) return [];
+  return relations
+    .getLinkedIds('encounter', id, 'note')
+    .map((noteId) => ({ kind: 'note' as const, id: noteId }));
+});
+
+async function setEncounterLinks(links: MapEntityRef[]) {
+  if (!encounter.value) return;
+  await relations.setLinkedIds(
+    'encounter',
+    encounter.value.id,
+    'note',
+    links.filter((link) => link.kind === 'note').map((link) => link.id),
+  );
+}
+
+const editorTabs = useEntityEditorTabs();
+
+const draftName = computed({
+  get: () => editState.draft?.name ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.name = value;
+  },
+});
+
+const draftDescription = computed({
+  get: () => editState.draft?.description ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.description = value;
+  },
+});
+
+async function prepareDraft(draft: Encounter): Promise<boolean> {
+  if (markdownEditorRef.value?.getMarkdown) {
+    draft.description = markdownEditorRef.value.getMarkdown();
+  }
+  if (!draft.name?.trim()) {
+    activeTab.value = 'main';
+    await alert(t('common.nameRequired'));
+    return false;
+  }
+  validationError.value = null;
+  return true;
+}
+
+async function persistDraft(draft: Encounter): Promise<boolean> {
+  if (!encounter.value) return false;
+  try {
+    await encounterStore.update(encounter.value.id, {
+      name: draft.name,
+      description: draft.description,
+    });
+  } catch (error) {
+    activeTab.value = 'main';
+    validationError.value =
+      error instanceof Error ? error.message : String(error);
+    return false;
+  }
+  updateEncounterFromStore();
+  return true;
+}
+
+function handleDescriptionChange(description: string) {
+  if (!encounter.value) return;
+  void encounterStore.update(encounter.value.id, { description });
+}
+
+const { editState, setEditMode, discardDraft } = useEntityEditMode<Encounter>({
+  source: encounter,
+  clone: (source) => ({ ...source, pawns: { ...source.pawns } }),
+  isDirty: (draft, source) =>
+    draft.name !== source.name ||
+    (draft.description ?? '') !== (source.description ?? ''),
+  onEnter: () => {
+    validationError.value = null;
+  },
+  onDiscard: () => {
+    validationError.value = null;
+  },
+  prepare: prepareDraft,
+  save: persistDraft,
+});
+
+const viewTabs = computed(() => [
   {
     id: 'information',
     label: t('encounters.tabs.information'),
+    icon: IconInfoCircle,
     badge: undefined,
-  },
-  {
-    id: 'monsters',
-    label: t('encounters.tabs.monsters'),
-    badge: encounterMonsters.value.length,
   },
   {
     id: 'combats',
     label: t('encounters.tabs.combats'),
+    icon: IconSwords,
     badge: encounterCombats.value.length,
+  },
+  {
+    id: 'links',
+    label: t('common.linkedEntities'),
+    icon: IconAffiliate,
+    badge: encounterLinks.value.length || undefined,
   },
 ]);
 
-const handleModalToggleMonster = (monsterId: string, isLinked: boolean) => {
-  const current = { ...localMonsters.value };
-  if (isLinked) {
-    if (current[monsterId] === undefined) {
-      current[monsterId] = 1;
-    }
-  } else {
-    delete current[monsterId];
-  }
-  localMonsters.value = current;
-};
-
-const handleModalQuantityChange = (monsterId: string, count: number) => {
-  if (localMonsters.value[monsterId] === undefined) return;
-  const newCount = Math.max(1, count || 1);
-  localMonsters.value[monsterId] = newCount;
-};
-
-const handleSaveMonsterLinks = async () => {
-  if (!encounter.value) return;
-  await encounterStore.update(encounter.value.id, {
-    monsters: localMonsters.value,
-  });
-  showLinkModal.value = false;
-};
-
-const openQuantityModal = async (monster: Monster) => {
-  if (!encounter.value) return;
-  const value = await prompt(
-    t('encounters.monsters.setQuantityFor', {
-      monsterName: monster.name,
-    }),
-    {
-      inputType: 'number',
-      modelValue: String(encounter.value.monsters?.[monster.id] || 1),
-    },
-  );
-  if (value === null) return;
-  const count = Number(value);
-
-  if (isNaN(count) || count < 1) return;
-  const monsters = { ...encounter.value.monsters };
-  monsters[monster.id] = count;
-  await encounterStore.update(encounter.value.id, { monsters });
-};
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
+);
 
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
   await Promise.all([
     encounterStore.load(),
-    monsterStore.load(),
-    moduleStore.load(),
     combatStore.load(),
     partyStore.load(),
+    relations.loadFor('encounter', 'note'),
   ]);
 
   rightDrawer.set({
     component: EncounterViewSidebar,
-    props: { encounter },
+    props: {
+      encounter,
+      editState,
+      onSetEditMode: setEditMode,
+      onRunCombat: handleRunCombat,
+      onDelete: handleDeleteFromSidebar,
+    },
   });
 });
 
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
-
-async function handleEditorDelete() {
-  if (await handleDelete()) {
-    isEditorOpen.value = false;
-    await router.push('/encounters');
-  }
-}
 </script>
 
 <template>
@@ -320,81 +279,49 @@ async function handleEditorDelete() {
       entity-name="encounters.title"
       list-route="/encounters"
       :on-delete="handleDelete"
-      :on-edit="handleEdit"
-      :is-editing="isEditorOpen"
-      :title="encounterTitle"
+      :header-show-edit="false"
+      :header-show-delete="false"
+      :is-editing="editState.isEditMode"
+      :title="editState.isEditMode ? '' : encounterTitle"
       :not-found="notFound"
       :loading="loading"
       :tabs="tabs"
       v-model="activeTab"
-      :headerButtons="[
-        {
-          color: 'warning',
-          title: 'common.runCombat',
-          event: handleRunCombat,
-          icon: IconSwords,
-        },
-      ]"
     >
-      <template #sub>
-        <div v-if="encounter?.moduleId" class="module-link">
-          <router-link :to="`/modules/${encounter.moduleId}`">
-            {{ getModuleName(encounter.moduleId) }}
-          </router-link>
-        </div>
+      <template #main>
+        <EntityInlineEditor
+          v-model:title="draftName"
+          :title-placeholder="t('encounters.fields.name')"
+          :validation-error="validationError"
+        >
+          <EntityMarkdownEditor
+            ref="markdownEditorRef"
+            v-model="draftDescription"
+            :is-visual-mode="editState.isVisualMode"
+            :entity-id="editState.draft?.id || ''"
+            entity-type="encounter"
+            :placeholder="t('encounters.fields.description')"
+          />
+        </EntityInlineEditor>
       </template>
       <template #information>
-        <section class="details-section">
-          <div v-html="safeDescription"></div>
-        </section>
+        <EntityContentSurface v-if="!editState.isEditMode">
+          <MilkdownView
+            :task-checkbox-enabled="true"
+            :enable-mention-modal="true"
+            :content="encounter?.description || ''"
+            @update:content="handleDescriptionChange"
+          />
+        </EntityContentSurface>
       </template>
-      <template #monsters>
-        <div class="row items-center q-mb-md">
-          <QBtn flat @click="showLinkModal = true" class="q-ml-md">{{
-            t('encounters.monsters.linkAction')
-          }}</QBtn>
-        </div>
-        <div
-          v-if="encounterMonsters.length === 0"
-          class="q-pa-md text-grey text-center q-mt-xl"
-        >
-          <p>{{ t('encounters.monsters.none') }}</p>
-        </div>
-        <div v-else class="row q-gutter-md">
-          <div class="col-12">
-            <table class="q-table">
-              <thead>
-                <tr>
-                  <th>{{ t('monsters.name') }}</th>
-                  <th>{{ t('common.quantity') }}</th>
-                  <th>{{ t('common.actions') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="monster in encounterMonsters" :key="monster.id">
-                  <td>
-                    <router-link :to="`/monsters/${monster.id}`">
-                      {{ monster.name }}
-                    </router-link>
-                  </td>
-                  <td>
-                    <QBtn flat @click="openQuantityModal(monster)">
-                      {{ encounter?.monsters[monster.id] }}
-                    </QBtn>
-                  </td>
-                  <td>
-                    <button
-                      class="unlink-btn"
-                      @click="handleToggleMonster(monster, false)"
-                    >
-                      {{ t('common.unlink') }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <template #links>
+        <EntityViewLinks v-if="!editState.isEditMode" :links="encounterLinks" />
+        <EntitiesLinking
+          v-else
+          kind="note"
+          :model-value="encounterLinks"
+          @update:model-value="setEncounterLinks"
+        />
       </template>
       <template #combats>
         <h2>{{ t('encounters.combats.title') }}</h2>
@@ -437,74 +364,7 @@ async function handleEditorDelete() {
         </div>
         <p v-else>{{ t('encounters.combats.none') }}</p>
       </template>
-      <template #editor>
-        <EncounterEditor
-          :isOpen="isEditorOpen"
-          :encounter="encounter"
-          @submit="handleSave"
-          @delete="handleEditorDelete"
-          @cancel="handleCancel"
-        />
-      </template>
     </BaseEntityTabView>
-
-    <BaseModal
-      :is-open="showLinkModal"
-      @cancel="showLinkModal = false"
-      @submit="handleSaveMonsterLinks"
-      :title="t('encounters.monsters.linkModalTitle')"
-      modal-id="monster-linking-modal"
-      :show-cancel="true"
-      :show-submit="true"
-      :cancel-label="t('common.cancel')"
-      :submit-label="t('common.save')"
-    >
-      <div v-if="allMonsters.length === 0" class="empty-state">
-        <p>{{ t('encounters.monsters.noneAvailable') }}</p>
-      </div>
-      <div v-else class="monsters-grid">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ t('monsters.name') }}</th>
-              <th>{{ t('common.quantity') }}</th>
-              <th>{{ t('common.linked') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="monster in allMonsters" :key="monster.id">
-              <td>{{ monster.name }}</td>
-              <td>
-                <QInput
-                  v-if="localMonsters[monster.id] !== undefined"
-                  type="number"
-                  class="count-input"
-                  :model-value="localMonsters[monster.id] || 1"
-                  @update:model-value="
-                    (val) =>
-                      handleModalQuantityChange(
-                        monster.id,
-                        parseInt(String(val ?? '')),
-                      )
-                  "
-                  min="1"
-                  dense
-                  outlined
-                />
-              </td>
-              <td>
-                <ToggleSwitch
-                  :model-value="localMonsters[monster.id] !== undefined"
-                  @update:model-value="
-                    handleModalToggleMonster(monster.id, $event)
-                  "
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </BaseModal>
 
     <PartySelector
       :is-open="showPartySelector"
@@ -561,51 +421,10 @@ async function handleEditorDelete() {
   gap: 0.5rem;
 }
 
-.description,
-.notes {
+.description {
   color: var(--color-text);
   line-height: 1.6;
   margin: 0;
-}
-
-.monsters-grid {
-  overflow-x: auto;
-}
-
-.monsters-grid table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.monsters-grid th,
-.monsters-grid td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.monsters-grid th {
-  background: var(--color-background);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.monsters-grid td {
-  color: var(--color-text-light);
-}
-
-.unlink-btn {
-  background: var(--color-danger);
-  color: var(--color-text-inverse);
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.unlink-btn:hover {
-  background: var(--color-danger-dark);
 }
 
 .empty-state {
@@ -727,31 +546,8 @@ async function handleEditorDelete() {
 }
 
 .stat-value {
-  color: var(--color-primary);
+  color: var(--color-accent);
   font-weight: 600;
-}
-
-.monster-linking-modal-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 0.5rem;
-  margin-right: -0.5rem;
-}
-
-.monster-link-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  transition: background-color 0.2s;
-}
-
-.monster-link-item:hover {
-  background-color: var(--color-background);
 }
 
 .quantity-modal-content {

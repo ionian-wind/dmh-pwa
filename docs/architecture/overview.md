@@ -12,10 +12,10 @@ point for the rest of the part documentation.
 - **Quasar 2** as the component/layout system (`QLayout`, `QDrawer`, `QPage`,
   `QDialog`, `QInput`, `QSelect`, tables, tabs, notifications). Global Quasar
   plugins registered are `Notify` and `Dialog`.
-- **Pinia 3** setup stores; `pinia-shared-state` is enabled so state can be
-  synchronized between browser tabs via `BroadcastChannel`/`localStorage`
-  (library default behavior).
-- **IndexedDB** via `idb` as the single source of truth.
+- **Pinia 4** setup stores; `pinia-shared-state` synchronizes serializable state
+  between browser tabs. Runtime audio, playback and artwork-cache stores opt out
+  because they hold non-serializable `Map`/`Set`, `Blob` and object-URL state.
+- **IndexedDB** via Dexie as the single source of truth.
 - **markdown-it** for rendering, **Milkdown/Crepe** for WYSIWYG editing.
 - **Howler** for the jukebox; **music-metadata** in a worker for tags/artwork.
 - **Vite** for dev/build; **vite-plugin-pwa** for offline support.
@@ -88,13 +88,13 @@ Cross-cutting modules used from every layer:
 
 `QLayout view="hHh LpR lFr"` defines five regions:
 
-| Region | Implementation | Content source |
-| --- | --- | --- |
-| Header | `QHeader` + `QToolbar` | `layout.topMenuContent` |
-| Left navigation | `QDrawer`, hover-mini | Hard-coded `sections` array |
-| Right drawer | `QDrawer`, persistent | `layout.rightDrawerContent` |
-| Page | `QPageContainer` + `router-view` | Route components |
-| Footer | `QFooter` | `layout.bottomDrawerContent` |
+| Region          | Implementation                   | Content source               |
+| --------------- | -------------------------------- | ---------------------------- |
+| Header          | `QHeader` + `QToolbar`           | `layout.topMenuContent`      |
+| Left navigation | `QDrawer`, hover-mini            | Hard-coded `sections` array  |
+| Right drawer    | `QDrawer`, persistent            | `layout.rightDrawerContent`  |
+| Page            | `QPageContainer` + `router-view` | Route components             |
+| Footer          | `QFooter`                        | `layout.bottomDrawerContent` |
 
 ### Header injection protocol
 
@@ -110,16 +110,17 @@ under `LayoutKey`. Consumers use `useLayout()` / `useRightDrawer()` from
 The right drawer is ownership-aware: a view that did not set the current
 content cannot clear it.
 
-`BaseListView` and `BaseEntityView` publish a `ViewHeader` with
-create/edit/delete/search/buttons. `JukeboxView` publishes `PlaylistList` to the
+`BaseListView` publishes a `ViewHeader` with create/edit/delete/search/buttons.
+`BaseEntityView` publishes only header actions; the entity title and subtitle
+render at the top of the page content. `JukeboxView` publishes `PlaylistList` to the
 right drawer and `JukeboxPlayer` to the footer. `NoteView`, `PartyView`,
-`MonsterView`, and `EncounterView` publish their domain sidebar to the right
+`PawnView`, and `EncounterView` publish their domain sidebar to the right
 drawer and clear it on unmount. `BaseEntityView` publishes a `sidepanel` slot
-for `CharacterView` and `ModuleView`.
+for `CharacterView`.
 
 ### Left navigation
 
-Sections (`Section` enum): Notes, Characters, Parties, Modules, Monsters,
+Sections (`Section` enum): Notes, Characters, Parties, Pawns,
 Encounters, Timers. Jukebox, Calculator, and Settings are secondary actions.
 Settings opens `SettingsDialog` (language selection lives there). The timers
 icon is animated by watching `timerStore.now` and cycling through twelve clock
@@ -132,7 +133,7 @@ routes highlight their list section. Jukebox is active only on `/jukebox`.
 
 - `PWAInstallPrompt` and `PWAStatus` are always mounted.
 - `MentionModalStack` renders the topmost mention modal globally.
-- `CalculatorDialog` and `JukeboxDialog` are draggable bottom sheets opened from
+- `CalculatorDialog` and `SoundControlDialog` are snapable bottom sheets opened from
   the left nav.
 
 ## Routing (`src/router.ts`)
@@ -140,25 +141,23 @@ routes highlight their list section. Jukebox is active only on `/jukebox`.
 `createWebHistory('/dmh-pwa/')` — the app assumes it is hosted under
 `/dmh-pwa`. Core routes:
 
-| Path | Name | Component |
-| --- | --- | --- |
-| `/` | home | HomeView |
-| `/notes` | notes | NotesView |
-| `/notes/:id` | note-detail | NoteView |
-| `/parties` | parties | PartiesView |
-| `/parties/:id` | party-detail | PartyView |
-| `/monsters` | monsters | MonstersView |
-| `/monsters/:id` | monster-detail | MonsterView |
-| `/characters` | characters | CharactersView |
-| `/characters/:id` | character-detail | CharacterView |
-| `/encounters` | encounters | EncountersView |
-| `/encounters/:id` | encounter-detail | EncounterView |
-| `/combats/:id` | combat-detail | CombatView |
-| `/modules` | modules | ModulesView |
-| `/modules/:id` | module-detail | ModuleView |
-| `/jukebox` | jukebox | JukeboxView |
-| `/timers` | timers | TimersView |
-| `/:catchAll(.*)` | — | NotFoundView |
+| Path              | Name             | Component      |
+| ----------------- | ---------------- | -------------- |
+| `/`               | home             | HomeView       |
+| `/notes`          | notes            | NotesView      |
+| `/notes/:id`      | note-detail      | NoteView       |
+| `/parties`        | parties          | PartiesView    |
+| `/parties/:id`    | party-detail     | PartyView      |
+| `/pawns`          | pawns            | PawnsView      |
+| `/pawns/:id`      | pawn-detail      | PawnView       |
+| `/characters`     | characters       | CharactersView |
+| `/characters/:id` | character-detail | CharacterView  |
+| `/encounters`     | encounters       | EncountersView |
+| `/encounters/:id` | encounter-detail | EncounterView  |
+| `/combats/:id`    | combat-detail    | CombatView     |
+| `/jukebox`        | jukebox          | JukeboxView    |
+| `/timers`         | timers           | TimersView     |
+| `/:catchAll(.*)`  | —                | NotFoundView   |
 
 List routes carry `meta.exact: true`; this is metadata only and is not used by
 the router or guards.

@@ -1,0 +1,1501 @@
+<script setup lang="ts">
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import {
+  IconEdit,
+  IconEye,
+  IconEyeOff,
+  IconLiveView,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-vue';
+import type { Item } from 'ol-contextmenu';
+import TabGroup from '@/components/common/TabGroup.vue';
+import { confirm, prompt } from '@/dialogs';
+import 'vue3-openlayers/vue3-openlayers.css';
+import { getMapFile } from '../maps';
+import type {
+  LocationMap,
+  MapEntity,
+  MapEntityKind,
+  MapMarker,
+} from '../types';
+import MapMarkerEditor from '../components/MapMarkerEditor.vue';
+import MapAreaEditor from '../components/MapAreaEditor.vue';
+import MapMarkersPanel from '../components/MapMarkersPanel.vue';
+import MapAreasPanel from '../components/MapAreasPanel.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
+import { useMapLocationStore } from '../locations';
+import {
+  MapActionsControl,
+  type MapActionsControlLabels,
+} from '../plugins/MapActionsControl';
+import {
+  dispatchMapAction,
+  onMapAction,
+  type MapActionEvent,
+} from '../plugins/mapActionEvents';
+import '../plugins/mapPlugins.css';
+import { getMapFileBlob, revokeMapFileUrl } from '../utils/mapFileUtils';
+import { enableFrequentHitDetectionReads } from '../utils/canvasReadback';
+import { contrastTextColor } from '../utils/colors';
+import { normalizeLocationMap } from '@/utils/maps/normalize';
+import {
+  createMarkerDraft,
+  removeMarker,
+  upsertMarker,
+} from '../utils/mapMarkers';
+import {
+  areaCenter,
+  areaFillColor,
+  areaTextColor,
+  createAreaDraft,
+  removeArea,
+  upsertArea,
+} from '../utils/mapAreas';
+import { MAP_BASE_LAYER_ID, createLayer } from '@/utils/maps/mapLayers';
+import {
+  imageToMapPoint,
+  imageToMapPoints,
+  mapToImagePoint,
+  mapToImagePoints,
+} from '../utils/mapCoordinates';
+import { markerIconClass } from '@/utils/maps/icons';
+import { createMapMarkerDataUri } from '../mapMarkerSvg';
+import { createBox } from 'ol/interaction/Draw';
+import Style from 'ol/style/Style';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
+import Circle from 'ol/style/Circle';
+import Icon from 'ol/style/Icon';
+import Text from 'ol/style/Text';
+import type { MapArea, MapAreaShape, MapLayer, MapLocation } from '../types';
+import type { InlineEditState } from '@/types';
+
+const route = useRoute();
+const router = useRouter();
+const locationStore = useMapLocationStore();
+const { t, locale } = useI18n();
+
+const props = defineProps<{
+  location?: MapLocation;
+  editState?: InlineEditState<MapLocation>;
+  onSetEditMode?: (value: boolean) => void | Promise<void>;
+}>();
+
+enableFrequentHitDetectionReads();
+
+function asLocation(value: any): MapLocation | null {
+  if (!value) return null;
+  if (value.map) return value as MapLocation;
+  return {
+    id: value.id,
+    name: value.title || value.name || '',
+    description: value.description || '',
+    entities: Array.isArray(value.entities) ? value.entities : [],
+    map: {
+      fileId: value.fileId || '',
+      layers: value.layers || [],
+      markers: value.markers || [],
+      areas: value.areas || [],
+    },
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+  };
+}
+
+const sourceLocation = computed(
+  () =>
+    props.location ??
+    asLocation(locationStore.getById(String(route.params.id ?? ''))),
+);
+
+function toMapView(location: MapLocation | null): MapEntity | null {
+  if (!location) return null;
+  const data = normalizeLocationMap(location.map);
+  return {
+    id: location.id,
+    title: location.name,
+    description: location.description ?? '',
+    fileId: data.fileId,
+    entities: Array.isArray(location.entities) ? location.entities : [],
+    locationId: null,
+    layers: data.layers,
+    markers: data.markers,
+    areas: data.areas,
+    createdAt: location.createdAt,
+    updatedAt: location.updatedAt,
+  };
+}
+
+const map = ref<MapEntity | null>(null);
+
+watch(
+  sourceLocation,
+  (location) => {
+    map.value = toMapView(location);
+  },
+  { immediate: true, deep: true },
+);
+const mapReady = ref(false);
+const imageLoaded = ref(false);
+const imageLoadFailed = ref(false);
+const isMarkerEditorOpen = ref(false);
+const editingMarker = ref<MapMarker | null>(null);
+const isAddingMarker = ref(false);
+const localEditMode = ref(false);
+const isEditMode = computed({
+  get: () => props.editState?.isEditMode ?? localEditMode.value,
+  set: (value: boolean) => {
+    if (props.onSetEditMode) {
+      void props.onSetEditMode(value);
+      return;
+    }
+    localEditMode.value = value;
+  },
+});
+const showLabels = ref(true);
+const sidePanelTab = ref('markers');
+const hiddenLayerIds = ref<Set<string>>(new Set());
+const olMapRef = ref<any>(null);
+const contextMenuRef = ref<any>(null);
+const drawMode = ref<MapAreaShape | null>(null);
+const hoveredAreaId = ref<string | null>(null);
+const hoveredMarkerId = ref<string | null>(null);
+const isAreaEditorOpen = ref(false);
+const editingArea = ref<MapArea | null>(null);
+type MapInfoSelection =
+  { kind: 'marker'; id: string } | { kind: 'area'; id: string } | null;
+const infoSelection = ref<MapInfoSelection>(null);
+const infoAnchor = ref({ left: 0, top: 0 });
+const mapContainerRef = ref<HTMLElement | null>(null);
+const boxGeometry = createBox();
+const drawShapes: MapAreaShape[] = ['polygon', 'circle', 'square', 'freehand'];
+
+const allLocations = computed(() => locationStore.items);
+
+function isLayerHidden(layerId: string) {
+  return !isEditMode.value && hiddenLayerIds.value.has(layerId);
+}
+
+const layers = computed(() => map.value?.layers ?? []);
+
+const visibleMarkers = computed(() =>
+  (map.value?.markers ?? []).filter((marker) => !isLayerHidden(marker.layerId)),
+);
+
+const visibleAreas = computed(() =>
+  (map.value?.areas ?? []).filter((area) => !isLayerHidden(area.layerId)),
+);
+
+function markersForLayer(layerId: string) {
+  return (map.value?.markers ?? []).filter(
+    (marker) => marker.layerId === layerId,
+  );
+}
+
+function areasForLayer(layerId: string) {
+  return (map.value?.areas ?? []).filter((area) => area.layerId === layerId);
+}
+
+let actionsControl: MapActionsControl | null = null;
+let unbindMapActionListener: (() => void) | null = null;
+let boundMap: any = null;
+
+function actionsControlLabels(): MapActionsControlLabels {
+  return {
+    title: t('maps.mapActions'),
+    addMarker: t('maps.addMarker'),
+    drawArea: t('maps.drawArea'),
+    shapes: {
+      polygon: t('maps.shapes.polygon'),
+      circle: t('maps.shapes.circle'),
+      square: t('maps.shapes.square'),
+      freehand: t('maps.shapes.freehand'),
+    },
+    cancelDrawing: t('maps.cancelDrawing'),
+  };
+}
+
+const contextMenuItems = computed<Item[]>(() => [
+  {
+    text: t('maps.addMarkerHere'),
+    callback: (object, map) => {
+      dispatchMapAction(map, {
+        action: 'add-marker',
+        coordinate: [object.coordinate[0], object.coordinate[1]],
+      });
+    },
+  },
+  '-',
+  {
+    text: t('maps.drawArea'),
+    items: drawShapes.map((shape) => ({
+      text: t(`maps.shapes.${shape}`),
+      callback: (_object, map) => {
+        dispatchMapAction(map, { action: 'draw-area', shape });
+      },
+    })),
+  },
+]);
+
+const sideTabs = computed(() => [
+  { id: 'markers', label: 'maps.markers' },
+  { id: 'areas', label: 'maps.areas' },
+  { id: 'scenes', label: 'ambientSoundPage.scenesTab' },
+]);
+
+const infoMarker = computed(() =>
+  infoSelection.value?.kind === 'marker'
+    ? map.value?.markers.find((marker) => marker.id === infoSelection.value!.id)
+    : null,
+);
+
+const infoArea = computed(() =>
+  infoSelection.value?.kind === 'area'
+    ? map.value?.areas.find((area) => area.id === infoSelection.value!.id)
+    : null,
+);
+
+const infoLocation = computed(() => {
+  const locationId =
+    infoMarker.value?.locationId || infoArea.value?.locationId || null;
+  return locationId ? locationStore.getById(locationId) : null;
+});
+
+const infoLocationName = computed(() => infoLocation.value?.name ?? '');
+
+const infoEntities = computed(
+  () => infoMarker.value?.entities ?? infoArea.value?.entities ?? [],
+);
+
+const infoEntityKinds = computed(
+  () =>
+    [...new Set(infoEntities.value.map((ref) => ref.kind))] as MapEntityKind[],
+);
+
+function goToInfoLocation() {
+  if (!infoLocation.value) return;
+  void router.push(`/locations/${infoLocation.value.id}`);
+}
+
+const drawType = computed(() =>
+  drawMode.value === 'circle' || drawMode.value === 'square'
+    ? 'Circle'
+    : 'Polygon',
+);
+const drawFreehand = computed(() => drawMode.value === 'freehand');
+const drawGeometryFunction = computed(() =>
+  drawMode.value === 'square' ? boxGeometry : undefined,
+);
+
+function markerMapPosition(marker: MapMarker): [number, number] {
+  return imageToMapPoint([marker.x, marker.y], size.value[1]);
+}
+
+function areaMapCenter(area: MapArea): [number, number] {
+  return imageToMapPoint(areaCenter(area), size.value[1]);
+}
+
+function areaPolygonCoordinates(area: MapArea): Array<Array<[number, number]>> {
+  return [imageToMapPoints(area.points, size.value[1])];
+}
+
+function areaCircleMapCenter(area: MapArea): [number, number] {
+  return imageToMapPoint(area.center || [0, 0], size.value[1]);
+}
+
+async function saveMapData(patch: Partial<LocationMap>) {
+  const location = sourceLocation.value;
+  if (!location) return;
+  const current = normalizeLocationMap(location.map);
+  await locationStore.update(location.id, {
+    map: { ...current, ...patch },
+  });
+  if (map.value) {
+    map.value = { ...map.value, ...patch };
+  }
+}
+
+const imageUrl = ref<string | null>(null);
+const size = ref<[number, number]>([0, 0]);
+const center = ref<[number, number]>([0, 0]);
+const extent = ref<[number, number, number, number]>([0, 0, 0, 0]);
+const projection = computed(() => ({
+  code: 'map-image',
+  units: 'pixels',
+  extent: extent.value,
+}));
+
+function releaseImageUrl() {
+  if (imageUrl.value) {
+    revokeMapFileUrl(imageUrl.value);
+    imageUrl.value = null;
+  }
+}
+
+async function loadMapImage() {
+  mapReady.value = false;
+  imageLoaded.value = false;
+  imageLoadFailed.value = false;
+  releaseImageUrl();
+  if (!map.value?.fileId) return;
+
+  const fileRecord = await getMapFile(map.value.fileId);
+  if (!fileRecord) return;
+
+  try {
+    const blob = await getMapFileBlob(fileRecord);
+    imageUrl.value = URL.createObjectURL(blob);
+    const width = fileRecord.imageMetadata?.width || 1024;
+    const height = fileRecord.imageMetadata?.height || 768;
+    size.value = [width, height];
+    center.value = [width / 2, height / 2];
+    extent.value = [0, 0, width, height];
+    await nextTick();
+    mapReady.value = true;
+  } catch {
+    mapReady.value = false;
+    imageLoadFailed.value = true;
+  }
+}
+
+function onImageLoadStart() {
+  imageLoaded.value = false;
+  imageLoadFailed.value = false;
+}
+
+function onImageLoadEnd() {
+  imageLoaded.value = true;
+}
+
+function onImageLoadError() {
+  imageLoaded.value = false;
+  imageLoadFailed.value = true;
+}
+
+watch(
+  () => map.value?.fileId,
+  () => {
+    void loadMapImage();
+  },
+  { immediate: true },
+);
+
+onMounted(async () => {
+  if (!locationStore.isLoaded) await locationStore.load();
+  void document.fonts
+    ?.load('20px RPGAwesome')
+    .then(() => olMapRef.value?.map?.render?.())
+    .catch(() => undefined);
+});
+
+onBeforeUnmount(() => {
+  unbindMapActions();
+  releaseImageUrl();
+});
+
+function startAddMarker() {
+  isAddingMarker.value = true;
+  drawMode.value = null;
+}
+
+function onMapClick(event: { coordinate?: number[]; pixel?: number[] }) {
+  if (drawMode.value) return;
+  closeMapInfo();
+
+  const feature = event.pixel
+    ? olMapRef.value?.map?.forEachFeatureAtPixel?.(
+        event.pixel,
+        (candidate: any) => candidate,
+      )
+    : null;
+  const markerId = feature?.get?.('markerId');
+  if (markerId) {
+    const marker = map.value?.markers.find((entry) => entry.id === markerId);
+    if (marker) showMarkerInfo(marker, event);
+    return;
+  }
+
+  const areaId = feature?.get?.('areaId');
+  if (areaId) {
+    const area = map.value?.areas.find((entry) => entry.id === areaId);
+    if (area) showAreaInfo(area, event);
+    return;
+  }
+
+  if (!isEditMode.value) return;
+  if (!isAddingMarker.value || !event.coordinate) return;
+  const [x, y] = mapToImagePoint(
+    [event.coordinate[0], event.coordinate[1]],
+    size.value[1],
+  );
+  editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y), {
+    locationId: sourceLocation.value?.id ?? null,
+  });
+  isMarkerEditorOpen.value = true;
+  isAddingMarker.value = false;
+}
+
+function startDrawArea(shape: MapAreaShape) {
+  drawMode.value = shape;
+  isAddingMarker.value = false;
+}
+
+function createMarkerAtCoordinate(coordinate: [number, number]) {
+  const [x, y] = mapToImagePoint(coordinate, size.value[1]);
+  editingMarker.value = createMarkerDraft(Math.round(x), Math.round(y), {
+    locationId: sourceLocation.value?.id ?? null,
+  });
+  isMarkerEditorOpen.value = true;
+  isAddingMarker.value = false;
+}
+
+function closeContextMenu() {
+  const exposed = contextMenuRef.value?.control;
+  const control = exposed?.value ?? exposed;
+  control?.closeMenu?.();
+}
+
+function onContextMenuOpen() {
+  actionsControl?.closeMenu();
+}
+
+function handleMapAction(event: MapActionEvent) {
+  if (event.action === 'add-marker') {
+    if (event.coordinate) {
+      createMarkerAtCoordinate(event.coordinate);
+    } else {
+      startAddMarker();
+    }
+  } else if (event.action === 'draw-area' && event.shape) {
+    startDrawArea(event.shape);
+  } else if (event.action === 'cancel-drawing') {
+    cancelDrawing();
+  }
+  closeContextMenu();
+}
+
+function bindMapActions(mapInstance: any) {
+  if (!mapInstance || boundMap === mapInstance) return;
+  unbindMapActions();
+  boundMap = mapInstance;
+  actionsControl = new MapActionsControl(actionsControlLabels());
+  actionsControl.setDrawingActive(Boolean(drawMode.value));
+  actionsControl.setVisible(isEditMode.value);
+  mapInstance.addControl(actionsControl);
+  unbindMapActionListener = onMapAction(mapInstance, handleMapAction);
+}
+
+function unbindMapActions() {
+  unbindMapActionListener?.();
+  unbindMapActionListener = null;
+  if (boundMap && actionsControl) {
+    boundMap.removeControl(actionsControl);
+  }
+  boundMap = null;
+  actionsControl = null;
+}
+
+watch(
+  () => olMapRef.value?.map,
+  (mapInstance) => {
+    if (mapInstance) {
+      bindMapActions(mapInstance);
+    } else {
+      unbindMapActions();
+    }
+  },
+  { immediate: true, flush: 'post' },
+);
+
+watch(locale, () => {
+  actionsControl?.setLabels(actionsControlLabels());
+});
+
+watch(drawMode, (mode) => {
+  actionsControl?.setDrawingActive(Boolean(mode));
+});
+
+function cancelDrawing() {
+  drawMode.value = null;
+}
+
+function onAreaDrawn(event: any) {
+  const shape = drawMode.value;
+  if (!shape) return;
+  const geometry = event.feature.getGeometry();
+  let draft: MapArea;
+
+  if (shape === 'circle') {
+    draft = createAreaDraft(
+      shape,
+      {
+        center: mapToImagePoint(geometry.getCenter(), size.value[1]),
+        radius: geometry.getRadius(),
+      },
+      { locationId: sourceLocation.value?.id ?? null },
+    );
+  } else {
+    const ring = geometry.getCoordinates()[0] as Array<[number, number]>;
+    const points = [...ring];
+    if (
+      points.length > 1 &&
+      points[0][0] === points[points.length - 1][0] &&
+      points[0][1] === points[points.length - 1][1]
+    ) {
+      points.pop();
+    }
+    draft = createAreaDraft(
+      shape,
+      {
+        points: mapToImagePoints(points, size.value[1]),
+      },
+      { locationId: sourceLocation.value?.id ?? null },
+    );
+  }
+
+  editingArea.value = draft;
+  isAreaEditorOpen.value = true;
+  drawMode.value = null;
+}
+
+function editArea(area: MapArea) {
+  editingArea.value = area;
+  isAreaEditorOpen.value = true;
+}
+
+function closeAreaEditor() {
+  isAreaEditorOpen.value = false;
+  editingArea.value = null;
+}
+
+async function persistAreas(areas: MapArea[]) {
+  await saveMapData({ areas });
+}
+
+async function saveArea(area: MapArea) {
+  if (!map.value) return;
+  await persistAreas(upsertArea(map.value.areas, area));
+  closeAreaEditor();
+}
+
+async function deleteArea(areaId: string) {
+  if (!map.value) return;
+  await persistAreas(removeArea(map.value.areas, areaId));
+  closeAreaEditor();
+}
+
+function focusArea(areaId: string) {
+  if (!map.value) return;
+  const area = map.value.areas.find((entry) => entry.id === areaId);
+  if (!area) return;
+  center.value = areaMapCenter(area);
+  hoveredAreaId.value = areaId;
+}
+
+async function deleteAreaFromList(areaId: string) {
+  if (!map.value) return;
+  const area = map.value.areas.find((entry) => entry.id === areaId);
+  if (!area) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: area.title || t('maps.untitledArea'),
+      }),
+    ))
+  ) {
+    return;
+  }
+  await deleteArea(areaId);
+}
+
+function areaStyle(feature: any) {
+  const areaId = feature?.get?.('areaId');
+  const area = map.value?.areas.find((entry) => entry.id === areaId);
+  if (!area) return undefined;
+  const hovered = hoveredAreaId.value === area.id;
+  if (hovered) {
+    return [
+      new Style({
+        stroke: new Stroke({ color: 'rgba(255, 255, 255, 0.95)', width: 7 }),
+      }),
+      new Style({
+        fill: new Fill({ color: areaFillColor(area.color, 0.55) }),
+        stroke: new Stroke({ color: area.color, width: 4 }),
+      }),
+    ];
+  }
+  return new Style({
+    fill: new Fill({ color: areaFillColor(area.color, 0.22) }),
+    stroke: new Stroke({ color: area.color, width: 2 }),
+  });
+}
+
+function markerStyle(feature: any) {
+  const markerId = feature?.get?.('markerId');
+  const marker = map.value?.markers.find((entry) => entry.id === markerId);
+  if (!marker) return undefined;
+
+  const hovered = hoveredMarkerId.value === marker.id;
+  const background = marker.backgroundColor?.trim();
+  const hasBackground = !!background && background !== 'transparent';
+  const fill = hasBackground ? background : marker.color;
+  const iconColor = hasBackground
+    ? marker.color
+    : contrastTextColor(marker.color);
+  const height = hovered ? 46 : 40;
+  const width = Math.round((23 / 32) * height);
+
+  const styles: Style[] = [
+    new Style({
+      image: new Icon({
+        src: createMapMarkerDataUri(marker.icon, {
+          height,
+          fill,
+          stroke: '#fff',
+          iconColor,
+        }),
+        width,
+        height,
+        anchor: [0.5, 1],
+      }),
+    }),
+  ];
+
+  if (showLabels.value) {
+    styles.push(
+      new Style({
+        text: new Text({
+          text: marker.title || t('maps.untitledMarker'),
+          font: `${hovered ? 700 : 600} 12px sans-serif`,
+          fill: new Fill({ color: '#333' }),
+          backgroundFill: new Fill({ color: 'rgba(255, 255, 255, 0.9)' }),
+          padding: [2, 6, 2, 6],
+          textAlign: 'center',
+          textBaseline: 'middle',
+          offsetY: hovered ? 16 : 14,
+        }),
+      }),
+    );
+  }
+
+  return styles;
+}
+
+function mapFeatureStyle(feature: any) {
+  return feature?.get?.('markerId') ? markerStyle(feature) : areaStyle(feature);
+}
+
+function editMarker(marker: MapMarker) {
+  editingMarker.value = marker;
+  isMarkerEditorOpen.value = true;
+}
+
+function selectMarker(markerId: string) {
+  if (!map.value) return;
+  const marker = map.value.markers.find((entry) => entry.id === markerId);
+  if (!marker) return;
+  center.value = imageToMapPoint([marker.x, marker.y], size.value[1]);
+  hoveredMarkerId.value = markerId;
+}
+
+async function deleteMarkerFromList(markerId: string) {
+  if (!map.value) return;
+  const marker = map.value.markers.find((entry) => entry.id === markerId);
+  if (!marker) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: marker.title || t('maps.untitledMarker'),
+      }),
+    ))
+  ) {
+    return;
+  }
+  await deleteMarker(markerId);
+}
+
+function closeMarkerEditor() {
+  isMarkerEditorOpen.value = false;
+  editingMarker.value = null;
+}
+
+async function persistMarkers(markers: MapMarker[]) {
+  await saveMapData({ markers });
+}
+
+async function saveMarker(marker: MapMarker) {
+  if (!map.value) return;
+  await persistMarkers(upsertMarker(map.value.markers, marker));
+  closeMarkerEditor();
+}
+
+async function deleteMarker(markerId: string) {
+  if (!map.value) return;
+  await persistMarkers(removeMarker(map.value.markers, markerId));
+  closeMarkerEditor();
+}
+
+function setInfoAnchor(event?: MouseEvent | { pixel?: number[] }) {
+  if (event && 'pixel' in event && event.pixel) {
+    infoAnchor.value = { left: event.pixel[0], top: event.pixel[1] };
+    return;
+  }
+
+  const rect = mapContainerRef.value?.getBoundingClientRect();
+  if (!rect) return;
+
+  if (event instanceof MouseEvent) {
+    infoAnchor.value = {
+      left: event.clientX - rect.left,
+      top: event.clientY - rect.top,
+    };
+    return;
+  }
+
+  infoAnchor.value = { left: rect.width / 2, top: rect.height / 2 };
+}
+
+function showMarkerInfo(
+  marker: MapMarker,
+  event?: MouseEvent | { pixel?: number[] },
+) {
+  setInfoAnchor(event);
+  infoSelection.value = { kind: 'marker', id: marker.id };
+}
+
+function showAreaInfo(
+  area: MapArea,
+  event?: MouseEvent | { pixel?: number[] },
+) {
+  setInfoAnchor(event);
+  infoSelection.value = { kind: 'area', id: area.id };
+}
+
+function closeMapInfo() {
+  infoSelection.value = null;
+}
+
+function editInfoItem() {
+  if (infoMarker.value) {
+    const marker = infoMarker.value;
+    closeMapInfo();
+    editMarker(marker);
+  } else if (infoArea.value) {
+    const area = infoArea.value;
+    closeMapInfo();
+    editArea(area);
+  }
+}
+
+function hoverMarker(markerId: string | null) {
+  hoveredMarkerId.value = markerId;
+}
+
+function hoverArea(areaId: string | null) {
+  hoveredAreaId.value = areaId;
+}
+
+function refreshAreaHighlight() {
+  void nextTick(() => {
+    const mapInstance = olMapRef.value?.map;
+    const layers = mapInstance?.getLayers?.();
+    layers?.forEach?.((layer: any) => layer.changed?.());
+    if (mapInstance?.renderSync) {
+      mapInstance.renderSync();
+    } else {
+      mapInstance?.render?.();
+    }
+  });
+}
+
+watch([hoveredAreaId, hoveredMarkerId, showLabels], refreshAreaHighlight);
+
+function toggleLayerVisibility(layerId: string) {
+  const next = new Set(hiddenLayerIds.value);
+  if (next.has(layerId)) {
+    next.delete(layerId);
+  } else {
+    next.add(layerId);
+  }
+  hiddenLayerIds.value = next;
+  if (isLayerHidden(layerId)) {
+    const selected = infoMarker.value || infoArea.value;
+    if (selected?.layerId === layerId) closeMapInfo();
+  }
+}
+
+async function persistLayers(updatedLayers: MapLayer[]) {
+  await saveMapData({ layers: updatedLayers });
+}
+
+async function addLayer() {
+  const title = await prompt(t('maps.layerName'), {
+    title: t('maps.addLayer'),
+  });
+  if (!title?.trim()) return;
+  await persistLayers([...layers.value, createLayer(title)]);
+}
+
+async function editLayer(layer: MapLayer) {
+  if (!map.value || layer.id === MAP_BASE_LAYER_ID) return;
+  const title = await prompt(t('maps.layerName'), {
+    title: t('maps.editLayer'),
+    modelValue: layer.title,
+  });
+  if (!title?.trim()) return;
+  await persistLayers(
+    layers.value.map((entry) =>
+      entry.id === layer.id ? { ...entry, title: title.trim() } : entry,
+    ),
+  );
+}
+
+async function deleteLayer(layer: MapLayer) {
+  if (!map.value || layer.id === MAP_BASE_LAYER_ID) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: layer.title,
+      }),
+    ))
+  ) {
+    return;
+  }
+
+  await saveMapData({
+    layers: layers.value.filter((entry) => entry.id !== layer.id),
+    markers: map.value.markers.map((marker) =>
+      marker.layerId === layer.id
+        ? { ...marker, layerId: MAP_BASE_LAYER_ID }
+        : marker,
+    ),
+    areas: map.value.areas.map((area) =>
+      area.layerId === layer.id
+        ? { ...area, layerId: MAP_BASE_LAYER_ID }
+        : area,
+    ),
+  });
+}
+
+watch(isEditMode, (editing) => {
+  actionsControl?.setVisible(editing);
+  if (!editing) {
+    drawMode.value = null;
+    isAddingMarker.value = false;
+    closeMarkerEditor();
+    closeAreaEditor();
+    closeMapInfo();
+  }
+});
+</script>
+
+<template>
+  <div class="map-page-layout map-page-layout--tab">
+    <div class="map-page-body">
+      <div v-if="!map?.fileId" class="q-pa-md text-caption text-grey-7">
+        {{ t('maps.noMapImage') }}
+      </div>
+      <div v-if="mapReady" ref="mapContainerRef" class="map-view-container">
+        <div v-if="isAddingMarker || drawMode" class="map-hint">
+          {{
+            isAddingMarker ? t('maps.clickToPlaceMarker') : t('maps.drawHint')
+          }}
+        </div>
+
+        <ol-map
+          ref="olMapRef"
+          :loadTilesWhileAnimating="true"
+          :loadTilesWhileInteracting="true"
+          style="height: 100%"
+          @click="onMapClick"
+        >
+          <ol-view
+            :center="center"
+            :zoom="2"
+            :min-zoom="1"
+            :max-zoom="6"
+            :projection="projection"
+            :extent="extent"
+          />
+          <ol-zoom-control />
+          <ol-context-menu-control
+            v-if="isEditMode"
+            ref="contextMenuRef"
+            :items="contextMenuItems"
+            :default-items="false"
+            :width="200"
+            @open="onContextMenuOpen"
+          />
+
+          <ol-image-layer id="map-view">
+            <ol-source-image-static
+              :url="imageUrl"
+              :imageSize="size"
+              :imageExtent="extent"
+              :projection="projection"
+              :wrapX="false"
+              :wrapY="false"
+              @imageloadstart="onImageLoadStart"
+              @imageloadend="onImageLoadEnd"
+              @imageloaderror="onImageLoadError"
+            />
+          </ol-image-layer>
+
+          <template v-if="imageLoaded">
+            <ol-vector-layer
+              v-for="(layer, layerIndex) in layers"
+              :key="layer.id"
+              :z-index="layerIndex"
+              :visible="!isLayerHidden(layer.id)"
+              :style="mapFeatureStyle"
+            >
+              <ol-source-vector>
+                <ol-feature
+                  v-for="marker in markersForLayer(layer.id)"
+                  :key="`marker-${marker.id}`"
+                  :properties="{ kind: 'marker', markerId: marker.id }"
+                >
+                  <ol-geom-point :coordinates="markerMapPosition(marker)" />
+                </ol-feature>
+                <ol-feature
+                  v-for="area in areasForLayer(layer.id)"
+                  :key="area.id"
+                  :properties="{ kind: 'area', areaId: area.id }"
+                >
+                  <ol-geom-polygon
+                    v-if="area.shape !== 'circle'"
+                    :coordinates="areaPolygonCoordinates(area)"
+                  />
+                  <ol-geom-circle
+                    v-else
+                    :center="areaCircleMapCenter(area)"
+                    :radius="area.radius"
+                  />
+                </ol-feature>
+              </ol-source-vector>
+            </ol-vector-layer>
+          </template>
+
+          <ol-interaction-draw
+            v-if="drawMode"
+            :type="drawType"
+            :freehand="drawFreehand"
+            :geometry-function="drawGeometryFunction"
+            @drawend="onAreaDrawn"
+          />
+
+          <ol-overlay
+            v-if="imageLoaded && showLabels"
+            v-for="area in visibleAreas"
+            :key="`area-label-${area.id}`"
+            :position="areaMapCenter(area)"
+            positioning="center-center"
+            :stop-event="true"
+          >
+            <button
+              type="button"
+              class="map-area-label"
+              :style="{
+                backgroundColor: areaFillColor(area.color, 0.82),
+                color: areaTextColor(area.color),
+              }"
+              :title="area.title"
+              @click.stop="showAreaInfo(area, $event)"
+            >
+              <i
+                v-if="area.icon"
+                :class="['ra', markerIconClass(area.icon)]"
+                :style="{ color: area.color }"
+                aria-hidden="true"
+              ></i>
+              {{ area.title }}
+            </button>
+          </ol-overlay>
+
+          <div
+            v-if="infoSelection"
+            class="map-info-anchor"
+            :style="{
+              left: `${infoAnchor.left}px`,
+              top: `${infoAnchor.top}px`,
+            }"
+          >
+            <QMenu
+              :model-value="true"
+              anchor="top middle"
+              self="bottom middle"
+              :offset="[0, -10]"
+              @update:model-value="(value) => !value && closeMapInfo()"
+            >
+              <QCard class="map-info-popup" flat>
+                <QCardSection class="row items-start q-py-sm">
+                  <div class="col">
+                    <div
+                      class="map-info-title text-subtitle1 text-weight-medium"
+                    >
+                      {{
+                        infoMarker?.title ||
+                        infoArea?.title ||
+                        t('maps.untitledArea')
+                      }}
+                    </div>
+                    <div
+                      v-if="infoLocationName"
+                      class="map-info-location text-caption text-weight-medium"
+                    >
+                      {{ infoLocationName }}
+                    </div>
+                  </div>
+                  <QBtn
+                    flat
+                    dense
+                    round
+                    :aria-label="t('common.close')"
+                    @click.stop="closeMapInfo"
+                  >
+                    <IconX :size="18" />
+                  </QBtn>
+                </QCardSection>
+
+                <QCardSection
+                  v-if="infoMarker?.description || infoArea?.description"
+                  class="q-pt-none"
+                >
+                  <div class="map-info-description text-body2">
+                    {{ infoMarker?.description || infoArea?.description }}
+                  </div>
+                </QCardSection>
+
+                <QCardSection v-if="infoEntities.length > 0" class="q-pt-none">
+                  <EntitiesLinking
+                    v-for="kind in infoEntityKinds"
+                    :key="kind"
+                    :kind="kind"
+                    :model-value="infoEntities"
+                    readonly
+                  />
+                </QCardSection>
+
+                <QCardActions
+                  v-if="infoLocation || isEditMode"
+                  class="map-info-actions q-pt-none"
+                  align="right"
+                >
+                  <QBtn
+                    v-if="infoLocation"
+                    flat
+                    dense
+                    no-caps
+                    class="map-info-action"
+                    :label="t('maps.goToLocation')"
+                    @click.stop="goToInfoLocation"
+                  />
+                  <QBtn
+                    v-if="isEditMode"
+                    flat
+                    dense
+                    no-caps
+                    class="map-info-action"
+                    :label="t('common.edit')"
+                    @click.stop="editInfoItem"
+                  />
+                </QCardActions>
+              </QCard>
+            </QMenu>
+          </div>
+        </ol-map>
+
+        <div
+          v-if="!imageLoaded && !imageLoadFailed"
+          class="map-loading-overlay absolute-full flex flex-center"
+        >
+          <QSpinner
+            color="primary"
+            size="3em"
+            :aria-label="t('common.loading')"
+          />
+        </div>
+
+        <div v-if="imageLoaded" class="map-accessible-markers">
+          <button
+            v-for="marker in visibleMarkers"
+            :key="`accessible-${marker.id}`"
+            type="button"
+            class="map-marker-accessible"
+            :class="{ 'is-hovered': hoveredMarkerId === marker.id }"
+            @click.stop="showMarkerInfo(marker, $event)"
+          >
+            {{ marker.title || t('maps.untitledMarker') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <Teleport to="#location-map-sidebar">
+      <div class="map-tab-sidepanel">
+        <div class="map-sidepanel">
+          <div class="map-sidepanel-content">
+            <TabGroup
+              v-model="sidePanelTab"
+              :tabs="sideTabs"
+              size="sm"
+              align="justify"
+            >
+              <div v-show="sidePanelTab === 'markers'">
+                <div
+                  v-for="(layer, layerIndex) in layers"
+                  :key="`marker-layer-${layer.id}`"
+                  class="q-mb-sm"
+                >
+                  <div class="row items-center justify-between q-px-sm q-pt-sm">
+                    <span
+                      class="text-caption text-uppercase text-weight-bold text-grey-7"
+                      >{{ layer.title }}</span
+                    >
+                    <span class="row items-center">
+                      <template v-if="!isEditMode">
+                        <QBtn
+                          flat
+                          size="sm"
+                          :title="
+                            isLayerHidden(layer.id)
+                              ? t('maps.showLayer')
+                              : t('maps.hideLayer')
+                          "
+                          @click="toggleLayerVisibility(layer.id)"
+                        >
+                          <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                          <IconEye v-else />
+                        </QBtn>
+                      </template>
+                      <template v-else>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          :title="t('maps.editLayer')"
+                          @click="editLayer(layer)"
+                        >
+                          <IconPencil :size="16" />
+                        </QBtn>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          color="negative"
+                          :title="t('maps.deleteLayer')"
+                          @click="deleteLayer(layer)"
+                        >
+                          <IconTrash :size="16" />
+                        </QBtn>
+                      </template>
+                    </span>
+                  </div>
+                  <MapMarkersPanel
+                    :markers="markersForLayer(layer.id)"
+                    :editable="isEditMode"
+                    hide-empty
+                    @select-marker="selectMarker"
+                    @edit="editMarker"
+                    @delete="deleteMarkerFromList"
+                    @hover="hoverMarker"
+                  />
+                  <QSeparator v-if="layerIndex < layers.length - 1" />
+                </div>
+              </div>
+              <div v-show="sidePanelTab === 'areas'">
+                <div
+                  v-for="(layer, layerIndex) in layers"
+                  :key="`area-layer-${layer.id}`"
+                  class="q-mb-sm"
+                >
+                  <div class="row items-center justify-between q-px-sm q-pt-sm">
+                    <span
+                      class="text-caption text-uppercase text-weight-bold text-grey-7"
+                      >{{ layer.title }}</span
+                    >
+                    <span class="row items-center">
+                      <template v-if="!isEditMode">
+                        <QBtn
+                          flat
+                          size="sm"
+                          :title="
+                            isLayerHidden(layer.id)
+                              ? t('maps.showLayer')
+                              : t('maps.hideLayer')
+                          "
+                          @click="toggleLayerVisibility(layer.id)"
+                        >
+                          <IconEyeOff v-if="isLayerHidden(layer.id)" />
+                          <IconEye v-else />
+                        </QBtn>
+                      </template>
+                      <template v-else>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          :title="t('maps.editLayer')"
+                          @click="editLayer(layer)"
+                        >
+                          <IconPencil :size="16" />
+                        </QBtn>
+                        <QBtn
+                          v-if="layer.id !== MAP_BASE_LAYER_ID"
+                          flat
+                          size="sm"
+                          color="negative"
+                          :title="t('maps.deleteLayer')"
+                          @click="deleteLayer(layer)"
+                        >
+                          <IconTrash :size="16" />
+                        </QBtn>
+                      </template>
+                    </span>
+                  </div>
+                  <MapAreasPanel
+                    :areas="areasForLayer(layer.id)"
+                    :show-title="false"
+                    :editable="isEditMode"
+                    hide-empty
+                    @select-area="focusArea"
+                    @edit="editArea"
+                    @delete="deleteAreaFromList"
+                    @hover="hoverArea"
+                  />
+                  <QSeparator v-if="layerIndex < layers.length - 1" />
+                </div>
+              </div>
+              <div v-show="sidePanelTab === 'scenes'">
+                <EntityScenesPanel
+                  v-if="sourceLocation && EntityScenesPanel"
+                  entity-type="location"
+                  :entity-id="sourceLocation.id"
+                  :editable="isEditMode"
+                />
+              </div>
+            </TabGroup>
+          </div>
+
+          <QSeparator />
+          <div class="map-sidepanel-controls bg-white">
+            <QList>
+              <QItem
+                v-if="isEditMode"
+                class="map-layer-add"
+                clickable
+                v-ripple
+                @click="addLayer"
+              >
+                <QItemSection>
+                  {{ t('maps.addLayer') }}
+                </QItemSection>
+                <QItemSection side>
+                  <IconPlus :size="18" />
+                </QItemSection>
+              </QItem>
+
+              <QItem class="map-label-toggle">
+                <QItemSection>
+                  {{ t('maps.showLabels') }}
+                </QItemSection>
+                <QItemSection side>
+                  <QToggle
+                    :model-value="showLabels"
+                    @update:model-value="showLabels = $event"
+                  />
+                </QItemSection>
+              </QItem>
+
+              <QItem class="map-mode-toggle">
+                <QItemSection>
+                  <QBtnGroup spread class="full-width">
+                    <QBtn
+                      class="map-mode-view"
+                      color="primary"
+                      :outline="isEditMode"
+                      :title="t('maps.viewMode')"
+                      :aria-label="t('maps.viewMode')"
+                      :aria-pressed="!isEditMode"
+                      @click="isEditMode = false"
+                    >
+                      <IconLiveView :size="18" />
+                    </QBtn>
+                    <QBtn
+                      class="map-mode-edit"
+                      color="primary"
+                      :outline="!isEditMode"
+                      :title="t('maps.editMode')"
+                      :aria-label="t('maps.editMode')"
+                      :aria-pressed="isEditMode"
+                      @click="isEditMode = true"
+                    >
+                      <IconEdit :size="18" />
+                    </QBtn>
+                  </QBtnGroup>
+                </QItemSection>
+              </QItem>
+            </QList>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <MapMarkerEditor
+      :marker="editingMarker"
+      :locations="allLocations"
+      :layers="map?.layers || []"
+      :is-open="isMarkerEditorOpen"
+      @save="saveMarker"
+      @delete="deleteMarker"
+      @cancel="closeMarkerEditor"
+    />
+    <MapAreaEditor
+      :area="editingArea"
+      :locations="allLocations"
+      :layers="map?.layers || []"
+      :is-open="isAreaEditorOpen"
+      @save="saveArea"
+      @delete="deleteArea"
+      @cancel="closeAreaEditor"
+    />
+  </div>
+</template>
+
+<style scoped>
+.map-page-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-tab-sidepanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: var(--color-background);
+}
+
+.map-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.map-page-links {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.map-view-container {
+  position: relative;
+  height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  border-radius: var(--border-radius);
+}
+
+.map-loading-overlay {
+  z-index: 40;
+  background: var(--color-background);
+}
+
+.map-sidepanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-sidepanel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.map-sidepanel-controls {
+  flex: 0 0 auto;
+  margin-top: auto;
+  background: var(--color-background);
+}
+
+.map-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 25;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.8rem;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.map-accessible-markers {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.map-area-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  pointer-events: auto;
+}
+
+.is-active {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.map-info-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 1000;
+}
+
+.map-info-popup {
+  min-width: 220px;
+  max-width: 320px;
+  color: var(--color-text);
+}
+
+.map-info-location,
+.map-info-action {
+  color: var(--color-accent) !important;
+}
+
+.map-info-description {
+  color: var(--color-text-light);
+}
+</style>

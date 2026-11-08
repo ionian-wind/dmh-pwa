@@ -12,7 +12,11 @@ const slotStub = (name: string) =>
 const QBtn = defineComponent({
   name: 'QBtn',
   inheritAttrs: false,
-  props: { label: { type: String, default: '' }, disable: Boolean },
+  props: {
+    label: { type: String, default: '' },
+    disable: Boolean,
+    loading: Boolean,
+  },
   emits: ['click'],
   setup(props, { slots, emit, attrs }) {
     return () =>
@@ -21,6 +25,7 @@ const QBtn = defineComponent({
         {
           ...attrs,
           disabled: props.disable,
+          'data-loading': props.loading ? 'true' : undefined,
           onClick: (event: MouseEvent) => emit('click', event),
         },
         slots.default?.() ?? props.label,
@@ -97,6 +102,31 @@ const QToggle = defineComponent({
         props.label,
         slots.default?.(),
       ]);
+  },
+});
+
+const QKnob = defineComponent({
+  name: 'QKnob',
+  inheritAttrs: false,
+  props: {
+    modelValue: { type: Number, default: 0 },
+    disable: Boolean,
+    readonly: Boolean,
+  },
+  emits: ['update:modelValue'],
+  setup(props, { slots, attrs }) {
+    return () =>
+      h(
+        'div',
+        {
+          ...attrs,
+          'data-stub': 'QKnob',
+          'data-progress': props.modelValue,
+          ...(props.disable ? { disabled: '' } : {}),
+          ...(props.readonly ? { 'aria-readonly': 'true' } : {}),
+        },
+        slots.default?.(),
+      );
   },
 });
 
@@ -189,12 +219,15 @@ const passthroughNames = [
   'QTabPanel',
   'QItem',
   'QItemSection',
+  'QItemLabel',
   'QList',
+  'QSlideTransition',
   'QSlider',
   'QExpansionItem',
   'QCheckbox',
   'QRadio',
   'QField',
+  'QEditor',
   'QForm',
   'QBadge',
   'QChip',
@@ -232,8 +265,45 @@ const QCheckbox = defineComponent({
   },
 });
 
+const QBtnToggle = defineComponent({
+  name: 'QBtnToggle',
+  inheritAttrs: false,
+  props: {
+    modelValue: { default: null },
+    options: { type: Array, default: () => [] },
+    disable: Boolean,
+  },
+  emits: ['update:modelValue', 'click'],
+  setup(props, { attrs, emit, slots }) {
+    return () =>
+      h(
+        'div',
+        { ...attrs, 'data-stub': 'QBtnToggle' },
+        (props.options as any[]).map((option) =>
+          h(
+            'button',
+            {
+              ...(option.attrs ?? {}),
+              disabled: props.disable || option.disable,
+              onClick: (event: MouseEvent) => {
+                if (option.value !== props.modelValue) {
+                  emit('update:modelValue', option.value);
+                }
+                emit('click', event);
+              },
+            },
+            option.slot
+              ? slots[option.slot]?.()
+              : (option.label ?? String(option.value ?? '')),
+          ),
+        ),
+      );
+  },
+});
+
 export const quasarStubs: Record<string, any> = {
   QBtn,
+  QBtnToggle,
   QInput,
   QSelect,
   QToggle,
@@ -242,6 +312,7 @@ export const quasarStubs: Record<string, any> = {
   QColor,
   QPopupEdit,
   QPopupProxy,
+  QKnob,
   QVirtualScroll,
 };
 
@@ -250,3 +321,30 @@ for (const name of passthroughNames) {
 }
 
 quasarStubs.QCheckbox = QCheckbox;
+
+const QStepper = defineComponent({
+  name: 'QStepper',
+  props: { modelValue: { type: [String, Number, Object], default: null } },
+  setup(_, { attrs, slots }) {
+    return () =>
+      h('div', { ...attrs, 'data-stub': 'QStepper' }, slots.default?.());
+  },
+});
+
+const QStep = defineComponent({
+  name: 'QStep',
+  props: {
+    name: { type: [String, Number], default: '' },
+    title: { type: String, default: '' },
+  },
+  setup(props, { slots }) {
+    return () =>
+      h('div', { 'data-stub': 'QStep', 'data-name': String(props.name) }, [
+        props.title,
+        slots.default?.(),
+      ]);
+  },
+});
+
+quasarStubs.QStepper = QStepper;
+quasarStubs.QStep = QStep;

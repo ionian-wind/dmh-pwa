@@ -3,10 +3,9 @@ import { ref, computed } from 'vue';
 import type { Note } from '@/types';
 import { useStore } from '@/utils/storage';
 import noteSchema from '@/schemas/note.schema.json';
-import { extractMentionedEntities } from '@/utils/markdownParser';
 import { useMentionsStore } from '@/utils/storage';
-import { useModuleStore } from './modules';
 import { debug } from '../utils/debug';
+import { mergeHashtags } from '@/utils/tags';
 
 export const useNoteStore = defineStore('notes', () => {
   const base = useStore<Note>({
@@ -21,14 +20,13 @@ export const useNoteStore = defineStore('notes', () => {
     debug('noteStore.create called', note);
     const newNote = await base.create({
       ...note,
-      contentType: note.contentType ?? 'text',
+      tags: mergeHashtags(note.tags ?? [], note.content),
     });
     // Indexation
     const from = { kind: 'note', id: newNote.id };
-    const mentioned =
-      newNote.contentType === 'draw'
-        ? []
-        : extractMentionedEntities(newNote.content);
+    const mentioned = (
+      await import('@/utils/markdownParser')
+    ).extractMentionedEntities(newNote.content);
     await indexation.setLinks(from, mentioned);
     return newNote;
   }
@@ -37,19 +35,18 @@ export const useNoteStore = defineStore('notes', () => {
     id: string,
     patch: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt'>>,
   ) {
-    // Prevent 'hidden' from being changed after creation
     const original = base.getById(id);
-    const patchWithoutHidden = { ...patch };
-    if (original && 'hidden' in original) {
-      patchWithoutHidden.hidden = original.hidden;
+    const content = patch.content ?? original?.content ?? '';
+    let tags = patch.tags ?? original?.tags ?? [];
+    if ('content' in patch) {
+      tags = mergeHashtags(tags, content);
     }
-    const updated = await base.update(id, patchWithoutHidden);
+    const updated = await base.update(id, { ...patch, tags });
     // Indexation
     const from = { kind: 'note', id };
-    const mentioned =
-      updated.contentType === 'draw'
-        ? []
-        : extractMentionedEntities(updated.content || '');
+    const mentioned = (
+      await import('@/utils/markdownParser')
+    ).extractMentionedEntities(updated.content || '');
     await indexation.setLinks(from, mentioned);
     return updated;
   }
@@ -59,29 +56,6 @@ export const useNoteStore = defineStore('notes', () => {
     // Indexation
     const from = { kind: 'note', id };
     await indexation.clearLinks(from);
-  }
-
-  /**
-   * Explicitly convert a note between the normal note list and a module's
-   * hidden document tree. `update()` intentionally protects `hidden`; this is
-   * the dedicated conversion path.
-   */
-  async function setHidden(id: string, hidden: boolean) {
-    const note = base.getById(id);
-    if (!note) throw new Error(`Note '${id}' not found`);
-
-    if (hidden && !note.moduleId) {
-      throw new Error('A note must belong to a module before it can be hidden');
-    }
-
-    const modules = useModuleStore();
-    if (hidden && note.moduleId) {
-      await modules.addNoteToTree(note.moduleId, id);
-    } else if (!hidden && note.moduleId) {
-      await modules.removeNoteFromTree(note.moduleId, id);
-    }
-
-    return base.update(id, { hidden } as Partial<Note>);
   }
 
   const filtered = computed(() => {
@@ -97,8 +71,7 @@ export const useNoteStore = defineStore('notes', () => {
       result = result.filter(
         (note) =>
           note.title.toLowerCase().includes(query) ||
-          (note.contentType !== 'draw' &&
-            note.content.toLowerCase().includes(query)) ||
+          note.content.toLowerCase().includes(query) ||
           note.tags.some((tag) => tag.toLowerCase().includes(query)),
       );
     }
@@ -120,7 +93,6 @@ export const useNoteStore = defineStore('notes', () => {
     create,
     update,
     remove,
-    setHidden,
     setFilter: (query: string) => {
       searchQuery.value = query;
     },

@@ -1,11 +1,5 @@
-import {
-  useStore,
-  idbGetItem,
-  idbPutItem,
-  idbDeleteItem,
-  idbGetAllItems,
-} from '@/utils/storage';
-import type { JukeboxPlaylist, JukeboxTrack, JukeboxFile } from './types';
+import { useStore } from '@/utils/storage';
+import type { JukeboxPlaylist, JukeboxTrack } from './types';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
@@ -22,108 +16,91 @@ export const useJukeboxTracksStore = () =>
     validationSchema: undefined,
   });
 
-export const useJukeboxFilesStore = () =>
-  useStore<JukeboxFile>({
-    storeName: 'jukebox_files',
-    validationSchema: undefined,
-  });
-
 export function isFileSystemFileHandle(
   handle: any,
 ): handle is FileSystemFileHandle {
   return handle && handle.kind === 'file';
 }
 
-// File helpers (not Pinia)
-const FILE_STORE = 'jukebox_files';
-
-export async function getJukeboxFile(
-  id: string,
-): Promise<JukeboxFile | undefined> {
-  return idbGetItem<JukeboxFile>(FILE_STORE, id);
-}
-
-export async function getAllJukeboxFiles(): Promise<JukeboxFile[]> {
-  return idbGetAllItems<JukeboxFile>(FILE_STORE);
-}
-
-export async function putJukeboxFile(file: JukeboxFile): Promise<void> {
-  return idbPutItem<JukeboxFile>(FILE_STORE, file);
-}
-
-export async function deleteJukeboxFile(id: string): Promise<void> {
-  return idbDeleteItem(FILE_STORE, id);
-}
-
 // Picture URL Cache Store
 // This store manages object URLs for track artwork to prevent blinking effects
 // caused by constantly recreating URLs on every render. It provides a centralized
 // caching mechanism that can be shared between components.
-export const usePictureUrlCacheStore = defineStore('pictureUrlCache', () => {
-  const createdUrls = ref<string[]>([]);
-  const pictureUrlCache = ref<Map<string, string>>(new Map());
-  const blobKeys = new WeakMap<Blob, string>();
-  let blobCounter = 0;
+export const usePictureUrlCacheStore = defineStore(
+  'pictureUrlCache',
+  () => {
+    const createdUrls = ref<string[]>([]);
+    const pictureUrlCache = ref<Map<string, string>>(new Map());
+    const blobKeys = new WeakMap<Blob, string>();
+    let blobCounter = 0;
 
-  /**
-   * Get a cached URL for a picture (string or Blob)
-   * @param picture - The picture data (string URL or Blob)
-   * @returns The cached URL string
-   */
-  function getPictureUrl(picture: string | Blob | undefined): string {
-    if (!picture) return '';
+    /**
+     * Get a cached URL for a picture (string or Blob)
+     * @param picture - The picture data (string URL or Blob)
+     * @returns The cached URL string
+     */
+    function getPictureUrl(picture: string | Blob | undefined): string {
+      if (!picture) return '';
 
-    if (typeof picture === 'string') {
-      return picture;
+      if (typeof picture === 'string') {
+        return picture;
+      }
+      if (!(picture instanceof Blob)) {
+        return '';
+      }
+
+      // Create a stable identity for this Blob instance. Size+type alone can
+      // collide for different images, which showed the wrong artwork.
+      let blobKey = blobKeys.get(picture);
+      if (!blobKey) {
+        blobKey = `blob-${blobCounter++}`;
+        blobKeys.set(picture, blobKey);
+      }
+
+      // Check if we already have a URL for this blob
+      if (pictureUrlCache.value.has(blobKey)) {
+        return pictureUrlCache.value.get(blobKey)!;
+      }
+
+      // Create new URL and cache it
+      const url = URL.createObjectURL(picture);
+      pictureUrlCache.value.set(blobKey, url);
+      createdUrls.value.push(url);
+      return url;
     }
 
-    // Create a stable identity for this Blob instance. Size+type alone can
-    // collide for different images, which showed the wrong artwork.
-    let blobKey = blobKeys.get(picture);
-    if (!blobKey) {
-      blobKey = `blob-${blobCounter++}`;
-      blobKeys.set(picture, blobKey);
+    /**
+     * Get a CSS style object with background-image for a picture
+     * @param picture - The picture data (string URL or Blob)
+     * @returns CSS style object with backgroundImage property
+     */
+    function getPictureStyle(picture: string | Blob | undefined): {
+      backgroundImage: string;
+    } {
+      const url = getPictureUrl(picture);
+      return { backgroundImage: url ? `url(${url})` : '' };
     }
 
-    // Check if we already have a URL for this blob
-    if (pictureUrlCache.value.has(blobKey)) {
-      return pictureUrlCache.value.get(blobKey)!;
+    /**
+     * Clear all cached URLs and revoke object URLs to free memory
+     */
+    function clearCache() {
+      createdUrls.value.forEach((url: string) => URL.revokeObjectURL(url));
+      createdUrls.value = [];
+      pictureUrlCache.value.clear();
     }
 
-    // Create new URL and cache it
-    const url = URL.createObjectURL(picture);
-    pictureUrlCache.value.set(blobKey, url);
-    createdUrls.value.push(url);
-    return url;
-  }
-
-  /**
-   * Get a CSS style object with background-image for a picture
-   * @param picture - The picture data (string URL or Blob)
-   * @returns CSS style object with backgroundImage property
-   */
-  function getPictureStyle(picture: string | Blob | undefined): {
-    backgroundImage: string;
-  } {
-    const url = getPictureUrl(picture);
-    return { backgroundImage: url ? `url(${url})` : '' };
-  }
-
-  /**
-   * Clear all cached URLs and revoke object URLs to free memory
-   */
-  function clearCache() {
-    createdUrls.value.forEach((url: string) => URL.revokeObjectURL(url));
-    createdUrls.value = [];
-    pictureUrlCache.value.clear();
-  }
-
-  return {
-    getPictureUrl,
-    getPictureStyle,
-    clearCache,
-  };
-});
+    return {
+      getPictureUrl,
+      getPictureStyle,
+      clearCache,
+    };
+  },
+  {
+    // Object URL caches contain Maps and browser-only URLs.
+    share: { enable: false },
+  },
+);
 
 /**
  * Returns true if the given track is the currently active track in the current playlist context.
@@ -140,7 +117,7 @@ export function trackIsActive(
 ): boolean {
   return Boolean(
     currentTrack &&
-      currentTrack.id === track.id &&
-      activePlaylistId === selectedPlaylistId,
+    currentTrack.id === track.id &&
+    activePlaylistId === selectedPlaylistId,
   );
 }

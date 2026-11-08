@@ -1,66 +1,95 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import type { MapEntity, MapFile } from './types';
+import type { MapFile, MapImageMetadata } from './types';
 import {
-  useStore,
-  idbGetItem,
-  idbPutItem,
   idbDeleteItem,
   idbGetAllItems,
+  idbGetItem,
+  idbPutItem,
 } from '@/utils/storage';
-import mapSchema from './schemas/map.schema.json';
+import {
+  deleteFileIfUnreferenced,
+  isFileReferenced,
+} from '@/utils/files/fileReferences';
+import { getStoredFile, putStoredFile } from '@/utils/files/fileStorage';
+import {
+  OPFS_THRESHOLD_BYTES,
+  opfsPathFor,
+  supportsOpfs,
+  writeOpfsFile,
+} from '@/utils/files/opfs';
+import { debugError } from '@/utils/debug';
 
-export const useMapStore = defineStore('maps', () => {
-  const base = useStore<MapEntity>({
-    storeName: 'maps',
-    validationSchema: mapSchema,
-  });
-  const searchQuery = ref('');
+const META_STORE = 'map_image_metadata';
 
-  const filtered = computed(() => {
-    let result = base.items.value;
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      result = result.filter(
-        (map) =>
-          map.title.toLowerCase().includes(query) ||
-          (map.description && map.description.toLowerCase().includes(query)),
-      );
-    }
-    return result;
-  });
+export async function getMapImageMetadata(
+  id: string,
+): Promise<MapImageMetadata | undefined> {
+  return idbGetItem<MapImageMetadata>(META_STORE, id);
+}
 
-  return {
-    ...base,
-    filtered,
-    setFilter: (query: string) => {
-      searchQuery.value = query;
-    },
-    clearFilter: () => {
-      searchQuery.value = '';
-    },
-    setSearchQuery: (query: string) => {
-      searchQuery.value = query;
-    },
-    searchQuery,
-  };
-});
+export async function putMapImageMetadata(
+  metadata: MapImageMetadata,
+): Promise<void> {
+  return idbPutItem<MapImageMetadata>(META_STORE, metadata);
+}
 
-// Direct file handler storage helpers (not Pinia)
-const FILE_STORE = 'map_files';
+export async function deleteMapImageMetadata(id: string): Promise<void> {
+  return idbDeleteItem(META_STORE, id);
+}
 
 export async function getMapFile(id: string): Promise<MapFile | undefined> {
-  return idbGetItem<MapFile>(FILE_STORE, id);
+  const file = await getStoredFile(id);
+  if (!file) return undefined;
+  const metadata = await getMapImageMetadata(id);
+  return {
+    ...file,
+    imageMetadata: metadata?.imageMetadata,
+  };
 }
 
 export async function getAllMapFiles(): Promise<MapFile[]> {
-  return idbGetAllItems<MapFile>(FILE_STORE);
+  const metadata = await idbGetAllItems<MapImageMetadata>(META_STORE);
+  const files: MapFile[] = [];
+  for (const entry of metadata) {
+    const file = await getStoredFile(entry.id);
+    if (file) {
+      files.push({ ...file, imageMetadata: entry.imageMetadata });
+    }
+  }
+  return files;
 }
 
 export async function putMapFile(file: MapFile): Promise<void> {
-  return idbPutItem<MapFile>(FILE_STORE, file);
+  let stored = file;
+
+  if (
+    file.source?.kind === 'blob' &&
+    file.size >= OPFS_THRESHOLD_BYTES &&
+    supportsOpfs()
+  ) {
+    try {
+      const path = opfsPathFor(file.id);
+      await writeOpfsFile(path, file.source.blob);
+      stored = { ...file, source: { kind: 'opfs', path } };
+    } catch (error) {
+      debugError('Failed to promote map file to OPFS:', error);
+    }
+  }
+
+  await putStoredFile(stored);
+  if (stored.imageMetadata) {
+    await putMapImageMetadata({
+      id: stored.id,
+      imageMetadata: stored.imageMetadata,
+      createdAt: stored.createdAt,
+      updatedAt: stored.updatedAt,
+    });
+  }
 }
 
 export async function deleteMapFile(id: string): Promise<void> {
-  return idbDeleteItem(FILE_STORE, id);
+  const stillReferenced = await isFileReferenced(id);
+  if (!stillReferenced) {
+    await deleteMapImageMetadata(id);
+  }
+  await deleteFileIfUnreferenced(id);
 }

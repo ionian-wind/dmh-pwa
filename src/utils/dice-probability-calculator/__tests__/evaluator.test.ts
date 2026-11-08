@@ -227,3 +227,145 @@ describe('dice probability calculator evaluator', () => {
     });
   });
 });
+
+describe('dice probability calculator edge coverage', () => {
+  it('throws on invalid arithmetic', () => {
+    expect(() => calculate('output 1 / 0')).toThrow('Division by zero');
+    expect(() => calculate('output 2 ^ -1')).toThrow(
+      'Exponent must be a non-negative integer',
+    );
+  });
+
+  it('handles zero and negative die faces', () => {
+    expect(one('output d0').outcomes.map((outcome) => outcome.value)).toEqual([
+      0,
+    ]);
+    expect(one('output d-1').outcomes.map((outcome) => outcome.value)).toEqual([
+      -1,
+    ]);
+  });
+
+  it('handles sequence operators', () => {
+    expect(one('output # {1,2,3}').outcomes[0].value).toBe(3);
+    expect(one('output {1,2} = {1,2}').outcomes[0].value).toBe(1);
+    expect(one('output {1,2} < 2').outcomes[0].value).toBe(1);
+    expect(one('output ! 1d6').outcomes).toHaveLength(1);
+    expect(one('output # 1d6').outcomes[0].value).toBe(1);
+    expect(one('output - 1d6').outcomes[0].value).toBe(-6);
+    expect(() => calculate('output 1d6 @ 1')).toThrow(
+      'A die cannot be used as a position selector',
+    );
+  });
+});
+
+describe('dice probability calculator sequences and settings', () => {
+  it.each([
+    'output {1..3}',
+    'output {3..1}',
+    'output {1..2, 4..5}',
+    'output {} @ 1',
+    'output 1d6 + {}',
+    'output {} = {}',
+    'output {} < {}',
+    'output [highest 0 of 2d6]',
+    'output [highest 3 of 2d6]',
+    'output [count 6 in 0d6]',
+    'output [maximum of {}]',
+  ])('supports %s', (script) => {
+    expect(calculate(script).outputs.length).toBeGreaterThan(0);
+  });
+
+  it('rejects invalid settings and position selectors', () => {
+    expect(() => calculate('set "explode depth" to 0\noutput 1')).toThrow(
+      'explode depth',
+    );
+    expect(() =>
+      calculate('set "maximum function depth" to 0\noutput 1'),
+    ).toThrow('maximum function depth');
+    expect(() => calculate('set "unknown" to 1\noutput 1')).toThrow(
+      'Unknown setting',
+    );
+    expect(() => calculate('output 1d6 @ 0')).toThrow(
+      'A die cannot be used as a position selector',
+    );
+  });
+});
+
+describe('dice probability calculator builtins', () => {
+  it.each([
+    'output [highest 1 of 2d6]',
+    'output [lowest 1 of 2d6]',
+    'output [count 6 in 3d6]',
+    'output [maximum of 2d6]',
+    'output [minimum of 2d6]',
+    'output {}',
+    'output {1,2,3} @ 3',
+    'output 1 @ 1d6',
+    'output {1,2} @ {1,2}',
+    'output 1 < 2 & 3 > 2',
+  ])('supports %s', (script) => {
+    expect(calculate(script).outputs.length).toBeGreaterThan(0);
+  });
+
+  it('rejects invalid settings', () => {
+    expect(() =>
+      calculate('set "position order" to "sideways"\noutput 1d6'),
+    ).toThrow('The "position order" setting must be');
+  });
+});
+
+describe('dice probability calculator branch coverage', () => {
+  it.each([
+    'output d%',
+    'output d{1,2,3}',
+    'output d(1d3)',
+    'output 2d{1,2}',
+    'loop I over {1,2} { output I }',
+    'loop I over 1d3 { output I }',
+    'loop I over 2 { output I }',
+    'set "position order" to "lowest first"\noutput 1d6',
+    'set "explode depth" to 2\noutput 1d6',
+    'set "maximum function depth" to 2\noutput 1d6',
+    'output 1 = 1',
+    'output 1 != 2',
+    'output 1d6 = 1d6',
+    'output {1,2} = 1',
+    'output 1 = {1,2}',
+    'output {1,2} > {1,2}',
+    'output !0',
+    'output !{1,2}',
+    'output # 5',
+    'output +5',
+    'output 1d6 + 1d6',
+    'output 1d6 - 1d6',
+    'output 1d6 * 1d6',
+    'output 1d6 / 1d6',
+    'output 1d6 ^ 2',
+    'output 2 ^ 1d6',
+    'output 1 + 1d6',
+    'output 1 - 1d6',
+    'output 1 * 1d6',
+    'output 1 / 1d6',
+    'output 1d6 = 3',
+    'output 3 = 1d6',
+    'output 1d6 < 3',
+    'output 3 < 1d6',
+    'output 1d6 & 1',
+    'output 1 & 1d6',
+    'output 1 @ 1',
+    'output {1,2,3} @ 2',
+  ])('evaluates %s', (script) => {
+    expect(calculate(script).outputs.length).toBeGreaterThan(0);
+  });
+});
+
+describe('dice probability calculator operator coverage', () => {
+  it('evaluates die comparisons, logical operators and powers', () => {
+    expect(one('output 1d6 = 3').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 3 = 1d6').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 1d6 & 1d6').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 1d6 & 0').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 1d6 ^ 2').outcomes[0].value).toBeTypeOf('number');
+    expect(one('output 2 / 1d6').outcomes[0].value).toBeTypeOf('number');
+  });
+});

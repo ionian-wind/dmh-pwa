@@ -4,16 +4,16 @@
 
 Run an encounter against a party: initiative order, rounds, turns, postpone,
 and completion. A combat is a persisted snapshot of selected characters and
-monster instances.
+pawn instances.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/stores/combats.ts` | Combat store and turn helpers |
+| File                               | Role                                    |
+| ---------------------------------- | --------------------------------------- |
+| `src/stores/combats.ts`            | Combat store and turn helpers           |
 | `src/encounters/PartySelector.vue` | Creates a combat from encounter + party |
-| `src/encounters/CombatView.vue` | Combat runner UI |
-| `src/encounters/EncounterView.vue` | Lists combats for an encounter |
+| `src/encounters/CombatView.vue`    | Combat runner UI                        |
+| `src/encounters/EncounterView.vue` | Lists combats for an encounter          |
 
 ## Data
 
@@ -46,11 +46,11 @@ preparing ──start──▶ active ──end──▶ completed
 Store helpers:
 
 ```ts
-startCombat(id)    // preparing -> active, currentRound=1, currentTurn=0
-endCombat(id)      // active -> completed
-resetCombat(id)    // active: round=1, turn=0
-nextTurn(id)       // active: turn+1, round+1 at wrap
-previousTurn(id)   // active: turn-1, round-1 at wrap (min 1)
+startCombat(id); // preparing -> active, currentRound=1, currentTurn=0
+endCombat(id); // active -> completed
+resetCombat(id); // active: round=1, turn=0
+nextTurn(id); // active: turn+1, round+1 at wrap
+previousTurn(id); // active: turn-1, round-1 at wrap (min 1)
 ```
 
 `CombatView` does **not** use `nextTurn`/`previousTurn`; it implements its own
@@ -65,7 +65,7 @@ Opened from `EncountersView` or `EncounterView`.
 3. Renders each party character with a toggle.
 4. `handleCreateCombat`:
    - Collects selected characters from `characterStore.items`.
-   - Collects encounter monsters and expands each count into separate
+   - Collects encounter pawns and expands each count into separate
      combatants.
    - Creates combatants with `id: generateId()` where `generateId` is a local
      `Math.random().toString(36).substr(2, 9)` — not `nanoid`.
@@ -84,7 +84,7 @@ Notes:
 
 ## Combat runner (`CombatView.vue`)
 
-Loads characters, monsters, combats, encounters, parties, modules.
+Loads characters, pawns, combats, encounters, parties.
 
 ### Initialization
 
@@ -92,8 +92,8 @@ Loads characters, monsters, combats, encounters, parties, modules.
 encounter  = encounterStore.getById(combat.encounterId)
 party      = partyStore.getById(combat.partyId)
 partyCharacters = party.characters mapped through characterStore
-encounterMonsters = encounter.monsters expanded to instances
-allParticipants = players + monsters (unsaved template)
+encounterPawns = encounter.pawns expanded to instances
+allParticipants = players + pawns (unsaved template)
 ```
 
 A watcher on `combat` fills `combat.combatants` when the combat is
@@ -113,8 +113,8 @@ the combat is already populated, so the watcher does not re-run.
     the sorted combatants.
 - "Add participant" modal lists party characters not already in the combat;
   selected characters are appended and persisted via `combatStore.update`.
-- Monster combatants can only be added by creating a new combat; there is no
-  add-monster UI.
+- Pawn combatants can only be added by creating a new combat; there is no
+  add-pawn UI.
 
 ### Active
 
@@ -144,7 +144,7 @@ the combat is already populated, so the watcher does not re-run.
 
 - Participant name resolution:
   - player → `characterStore.getById(referenceId)?.name`
-  - monster → `monsterStore.getById(referenceId)?.name`, with `#n` suffix when
+  - pawn → `pawnStore.getById(referenceId)?.name`, with `#n` suffix when
     multiple combatants share the reference.
 - `activeTab` is a read-only computed derived from `status`; `QTabs` receives
   it with `:model-value` so there is no readonly-computed warning. Content
@@ -164,17 +164,17 @@ the combat is already populated, so the watcher does not re-run.
 
 All turn state is now written through `combatStore.update`:
 
-| Change | Persisted? |
-| --- | --- |
-| Combat created | yes |
-| Add participant | yes |
-| Initial combatant fill from encounter/party | yes |
-| Start combat + sorted combatants | yes |
-| Initiative edits while preparing | yes (on popup save) |
-| Next/previous turn | yes |
-| Round rollover | yes |
-| Postpone/activate | yes |
-| End combat | yes (`status` only) |
+| Change                                      | Persisted?          |
+| ------------------------------------------- | ------------------- |
+| Combat created                              | yes                 |
+| Add participant                             | yes                 |
+| Initial combatant fill from encounter/party | yes                 |
+| Start combat + sorted combatants            | yes                 |
+| Initiative edits while preparing            | yes (on popup save) |
+| Next/previous turn                          | yes                 |
+| Round rollover                              | yes                 |
+| Postpone/activate                           | yes                 |
+| End combat                                  | yes (`status` only) |
 
 The pure transitions live in `src/utils/combatTurn.ts` and are covered by
 `tests/regressions/bugs.test.ts`.
@@ -186,6 +186,6 @@ The pure transitions live in `src/utils/combatTurn.ts` and are covered by
 - No drag reordering of initiative.
 - No auto-roll initiative.
 - No encounter link or "save back to encounter".
-- No cleanup of combats when encounter/party/character/monster is deleted.
+- No cleanup of combats when encounter/party/character/pawn is deleted.
 - Stale in-memory mutations can be overwritten by a `pinia-shared-state` update
   from another tab.

@@ -59,4 +59,6 @@ queries
 # Db dumps
 /tools/build/postgres/dumps
 /dev-dist
+/helpcenter/.vitepress/cache
+/helpcenter/.vitepress/dist
 /content

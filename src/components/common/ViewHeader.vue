@@ -8,6 +8,21 @@ import { useLayout } from '@/composables/useLayout';
 const { t } = useI18n();
 
 const props = defineProps({
+  tabs: {
+    type: Array as PropType<
+      {
+        id: string;
+        label: string;
+        icon?: any;
+        disabled?: boolean;
+      }[]
+    >,
+    default: () => [],
+  },
+  modelValue: {
+    type: String,
+    default: '',
+  },
   buttons: {
     type: Array as PropType<
       {
@@ -15,7 +30,32 @@ const props = defineProps({
         color: string;
         title: string;
         disabled?: boolean;
-        event: (
+        href?: string;
+        target?: string;
+        rel?: string;
+        event?: (
+          evt: Event,
+          go?: (opts?: {
+            to?: any;
+            replace?: boolean;
+            returnRouterError?: boolean;
+          }) => Promise<any>,
+        ) => void;
+      }[]
+    >,
+    default: [],
+  },
+  leftButtons: {
+    type: Array as PropType<
+      {
+        icon: any;
+        color: string;
+        title: string;
+        disabled?: boolean;
+        href?: string;
+        target?: string;
+        rel?: string;
+        event?: (
           evt: Event,
           go?: (opts?: {
             to?: any;
@@ -42,6 +82,10 @@ const props = defineProps({
   createTitle: {
     type: String,
     default: 'Create',
+  },
+  createLoading: {
+    type: Boolean,
+    default: false,
   },
   onCreate: {
     type: Function as PropType<
@@ -122,20 +166,46 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['create', 'update:searchQuery']);
+const emit = defineEmits([
+  'create',
+  'update:searchQuery',
+  'update:modelValue',
+  'tab-click',
+]);
 
 const { rightDrawerContent, toggleRightDrawer } = useLayout();
 
 const hasPrimaryActions = computed(
-  () =>
-    props.buttons.length > 0 ||
-    props.showCreate ||
-    props.showEdit ||
-    props.showDelete,
+  () => props.buttons.length > 0 || props.showCreate || props.showEdit,
 );
 </script>
 
 <template>
+  <QBtnGroup v-if="props.showDelete" class="view-header-delete">
+    <QBtn
+      :color="'negative'"
+      @click="props.onDelete"
+      :title="t('common.delete')"
+      :aria-label="t('common.delete')"
+    >
+      <IconTrash />
+    </QBtn>
+  </QBtnGroup>
+
+  <QBtnGroup v-if="props.leftButtons.length" class="view-header-left-actions">
+    <QBtn
+      v-for="(btn, index) in props.leftButtons"
+      :key="index"
+      :color="btn.color"
+      @click="btn.event"
+      :title="t(btn.title)"
+      :aria-label="t(btn.title)"
+      :disable="btn.disabled"
+    >
+      <component :is="btn.icon"></component>
+    </QBtn>
+  </QBtnGroup>
+
   <QToolbarTitle v-if="props.title || props.subtitle">
     <div>{{ props.title }}</div>
     <div v-if="props.subtitle" class="view-header-subtitle">
@@ -143,6 +213,27 @@ const hasPrimaryActions = computed(
     </div>
   </QToolbarTitle>
   <QSpace v-else />
+
+  <QTabs
+    v-if="props.tabs.length"
+    :model-value="props.modelValue"
+    dense
+    align="center"
+    class="view-header-tabs"
+    @update:model-value="(value) => emit('update:modelValue', value)"
+  >
+    <QTab
+      v-for="tab in props.tabs"
+      :key="tab.id"
+      :name="tab.id"
+      :disable="tab.disabled"
+      :title="tab.label"
+      :aria-label="tab.label"
+      @click="emit('tab-click', tab)"
+    >
+      <component :is="tab.icon" v-if="tab.icon" />
+    </QTab>
+  </QTabs>
 
   <QInput
     v-if="props.showSearch"
@@ -162,6 +253,9 @@ const hasPrimaryActions = computed(
       :key="index"
       :color="btn.color"
       @click="btn.event"
+      :href="btn.href"
+      :target="btn.target"
+      :rel="btn.rel"
       :title="t(btn.title)"
       :aria-label="t(btn.title)"
       :disable="btn.disabled"
@@ -175,6 +269,8 @@ const hasPrimaryActions = computed(
       @click="props.onCreate"
       :title="t('common.create')"
       :aria-label="t('common.create')"
+      :disable="props.createLoading"
+      :loading="props.createLoading"
     >
       <IconPlus />
     </QBtn>
@@ -188,16 +284,6 @@ const hasPrimaryActions = computed(
       :aria-label="t('common.edit')"
     >
       <IconPencil />
-    </QBtn>
-
-    <QBtn
-      v-if="props.showDelete"
-      :color="'negative'"
-      @click="props.onDelete"
-      :title="t('common.delete')"
-      :aria-label="t('common.delete')"
-    >
-      <IconTrash />
     </QBtn>
   </QBtnGroup>
 
@@ -219,6 +305,17 @@ const hasPrimaryActions = computed(
 </template>
 
 <style scoped>
+.view-header-delete {
+  margin-right: 0.25rem;
+}
+
+.view-header-tabs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
 .view-header-separator {
   margin: 0 0.25rem;
 }

@@ -1,13 +1,13 @@
 # Mentions Plugin for Milkdown/Crepe
 
-This plugin adds mention functionality to the Milkdown/Crepe editor, allowing users to insert links to other entities (notes, modules, parties, monsters, encounters) in their content.
+This plugin adds mention functionality to the Milkdown/Crepe editor, allowing users to insert links to other entities (notes, modules, parties, pawns, encounters) in their content.
 
 ## Features
 
 ### 1. Toolbar Mentions
 
 - Adds a "Mentions" group to the editor toolbar
-- Provides buttons for each entity type (Note, Module, Party, Monster, Encounter)
+- Provides buttons for each entity type (Note, Module, Party, Pawn, Encounter)
 - Clicking a button inserts a mention at the current cursor position
 
 ### 2. BlockEdit Mentions
@@ -24,7 +24,7 @@ The plugin supports the following entity types:
 - **Note**: `[Note Title](note://id)`
 - **Module**: `[Module Name](module://id)`
 - **Party**: `[Party Name](party://id)`
-- **Monster**: `[Monster Name](monster://id)`
+- **Pawn**: `[Pawn Name](pawn://id)`
 - **Encounter**: `[Encounter Name](encounter://id)`
 
 ## Usage

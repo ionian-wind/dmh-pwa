@@ -17,6 +17,7 @@ exploratory.
 backup/restore. A DM needs "what happened last time and what is next".
 
 **Scope.**
+
 - Recently edited notes/modules (last 24h/7d).
 - Active combat (if any) and running timers with remaining time.
 - Next session date/notes.
@@ -42,15 +43,18 @@ button that stamps created records.
 **Implementation.** New store + schema + migrations; add `sessionId?` to notes
 and combats (optional fields are schema-compatible).
 
-### A3. Quick capture / command palette (P1)
+### A3. Quick capture / command menu (P1)
 
 **Value.** Fast keyboard-first workflow at the table.
 
-**Scope.** `Ctrl/Cmd+K` palette: create note/character/monster/encounter,
+**Scope.** `Ctrl/Cmd+K` menu: create note/character/pawn/encounter,
 navigate, run a timer, search across entities. Global shortcut.
 
-**Implementation.** A modal with a simple fuzzy list over loaded stores; reuse
-`useModalState` and router. This also gives the missing list search a home.
+**Implementation.** A Vue 3 command menu backed by a command registry, opened
+through the hotkey service. Reuse `useModalState` and the router. See
+[hotkeys-and-command-menu.md](hotkeys-and-command-menu.md) for the full design.
+The linked `vue-cmd-menu` library is Vue 2 only and should be treated as UX
+inspiration, not a dependency.
 
 ### A4. Undo for destructive actions (P1)
 
@@ -64,9 +68,52 @@ or a short-lived snapshot.
 duration; restore via `create`/`put`. Pairs with the integrity work in the
 technical proposals.
 
+### A5. Global hotkeys and shortcut customization (P1)
+
+**Value.** A DM can run common actions without leaving the keyboard.
+
+**Scope.** A scoped shortcut layer using `hotkeys-js`: global command menu and
+shortcut help, editor save, list search, jukebox/ambient playback, and a
+Settings recorder with conflict detection and reset.
+
+**Implementation.** Register shortcuts through a single service rather than
+individual key listeners. Inputs, textareas and contenteditable elements are
+ignored by default. Persist overrides in `configStore`.
+See [hotkeys-and-command-menu.md](hotkeys-and-command-menu.md).
+
+### A6. Help center search (P2)
+
+**Value.** The help center is growing; users should not have to browse folders
+to find an answer.
+
+**Scope.** Offline search over localized help titles, descriptions, headings and
+body text, with ranked results and snippets. Search only the active locale,
+with English fallback for untranslated pages.
+
+**Implementation.** VitePress local search already covers the static help site.
+The remaining work is an app-level “Search help” command and optional `?q=`
+handoff. See [help-center-search.md](help-center-search.md).
+
 ---
 
 ## B. Notes and writing
+
+### A7. Scribe and Play modes (P1)
+
+**Value.** The app currently mixes preparation and session-running workflows.
+A DM preparing a campaign needs authoring and organization; a DM running the
+session needs fast access to combat, timers, scenes, search and prepared
+content.
+
+**Scope.** Add a persisted **Scribe / Play** mode switch. Scribe keeps the
+current preparation-oriented navigation and Home; Play prioritizes session
+tools, recent/pinned content and search. Play is a lens, not a separate data
+set or permission level: editing and management remain available.
+
+**Implementation.** Add `appMode` to `configStore`, a mode-aware navigation
+config and a Play dashboard. Reuse existing routes and components; do not
+duplicate `/scribe` and `/play` route trees. Pairs with the command menu and
+global search. See [plans/scribe-and-play-modes.md](../plans/scribe-and-play-modes.md).
 
 ### B1. Restore the note metadata controls (done)
 
@@ -81,6 +128,7 @@ Remaining follow-up: a tag-chip filter bar and autocomplete in `NotesView`.
 notes (NPC, location, quest) with typed fields.
 
 **Scope.**
+
 - Note type picker (restored).
 - A type editor with fields (`text`, `number`, `boolean`, date, select,
   multiselect).
@@ -97,6 +145,7 @@ notes (NPC, location, quest) with typed fields.
 **Value.** Entity links work but are hidden behind raw `kind://id` syntax.
 
 **Scope.**
+
 - `[[` autocomplete in raw mode (Milkdown already has a mention menu).
 - Backlinks panel that actually works (fix the sidebar prop bug).
 - "Unlinked mentions" (plain-text entity names) with a one-click link action.
@@ -141,19 +190,19 @@ saving throws, skills, equipment, spells. Conditions in combat.
 **Implementation.** Extend `PlayerCharacter` (schema-compatible optional
 fields), add a tabbed character view, and use AC/HP in combat.
 
-### C2. Rich monster stat blocks (P1)
+### C2. Rich pawn stat blocks (P1)
 
-**Value.** Monsters are name + notes; encounters cannot show AC/HP/attacks.
+**Value.** Pawns are name + notes; encounters cannot show AC/HP/attacks.
 
 **Scope.** CR, AC, HP, speed, ability scores, attacks, traits, actions,
 resistances, legendary actions, source/book reference.
 
-**Implementation.** Extend `Monster` with optional fields; add an import format
+**Implementation.** Extend `Pawn` with optional fields; add an import format
 (e.g., a JSON stat-block paste) later.
 
 ### C3. Encounter difficulty builder (P1)
 
-**Value.** Encounters list monsters and counts only; no budget or difficulty.
+**Value.** Encounters list pawns and counts only; no budget or difficulty.
 
 **Scope.** Compute XP budget by party level/size, show easy/medium/hard/deadly,
 suggest adjustments, save the computed rating.
@@ -238,6 +287,7 @@ with print CSS for a minimal PDF path.
 modules, and omits assets.
 
 **Scope.**
+
 - Versioned archive + manifest.
 - New IDs on merge; explicit replace mode.
 - Include bookmarks, cover, and optional assets.
@@ -362,7 +412,7 @@ FileSystem-handle reconnect flow.
 **Value.** Users may want to share one module or one campaign, not the whole DB.
 
 **Scope.** Export selected entities with references; import merges. For
-example, export a module with its notes, encounters, monsters, and playlists.
+example, export a module with its notes, encounters, pawns, and playlists.
 
 ### G3. Markdown/HTML/PDF export (P1)
 
@@ -387,7 +437,7 @@ backups, then a provider adapter.
 **Value.** Deletes leave orphans and imports can create broken references.
 
 **Scope.** A Home/settings panel listing orphaned notes, tree nodes, party
-members, encounter monsters, bookmarks, and track files, with one-click cleanup.
+members, encounter pawns, bookmarks, and track files, with one-click cleanup.
 
 ---
 
@@ -410,6 +460,7 @@ compact mode.
 ### H3. Accessibility (P1)
 
 **Scope.**
+
 - Keyboard navigation for the tree, cards, and modals.
 - Focus management in modals (focus trap, return focus).
 - ARIA labels for icon-only buttons.
@@ -438,7 +489,7 @@ preferences, data repair, about/version, and install instructions.
 not.
 
 **Scope.** Add tag/type/module filters to notes, module/level filters to
-monsters/encounters, saved filters, and a global search in the shell.
+pawns/encounters, saved filters, and a global search in the shell.
 
 ---
 
@@ -469,9 +520,9 @@ current whole-array store replacement; treat as a separate architecture.
 
 ## J. Suggested release slices
 
-| Release | Features |
-| --- | --- |
-| **Next (stabilize)** | A1 dashboard, B1 metadata controls, C4 persistence, D1 module nav, E1 jukebox fixes, G1 backup, H1 install, H6 search |
-| **Following** | A3 palette, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity |
-| **Later** | A2 sessions, B3/B4 linking/history, C5/C6 loot/tables, D4/D5 import/versioning, E3–E5 audio, F2/F3 combat timers/dice, G2–G4 export/sync |
-| **Exploratory** | C7 timeline, I1–I3 sharing/collaboration |
+| Release              | Features                                                                                                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next (stabilize)** | A1 dashboard, B1 metadata controls, C4 persistence, D1 module nav, E1 jukebox fixes, G1 backup, H1 install, H6 search                                    |
+| **Following**        | A3 command menu, A5 hotkeys, A7 Scribe/Play modes, B2 templates, C1/C2 stat blocks, C3 difficulty, D2/D3 book UX, E2 library, F1 timers, G5 integrity    |
+| **Later**            | A2 sessions, A6 help search, B3/B4 linking/history, C5/C6 loot/tables, D4/D5 import/versioning, E3–E5 audio, F2/F3 combat timers/dice, G2–G4 export/sync |
+| **Exploratory**      | C7 timeline, I1–I3 sharing/collaboration                                                                                                                 |

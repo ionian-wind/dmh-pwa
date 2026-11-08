@@ -1,0 +1,367 @@
+<template>
+  <div class="entity-scenes-panel column">
+    <div class="scene-list col-grow">
+      <div v-if="!mixedItems.length" class="text-caption text-grey-7 q-pa-md">
+        {{ t('ambientSoundPage.noSceneLinks') }}
+      </div>
+      <QList v-else class="q-pa-none q-mb-none">
+        <SidebarActionItem
+          v-for="item in mixedItems"
+          :key="item.key"
+          :title="item.name"
+          :active="
+            item.type === 'scene'
+              ? isActive(item.scene.pack.id, item.scene.scene.id)
+              : isPlaylistActive(item.playlist.id)
+          "
+          :playing="
+            item.type === 'scene'
+              ? isPlaying(item.scene.pack.id, item.scene.scene.id)
+              : isPlaylistPlaying(item.playlist.id)
+          "
+          :clickable="item.type === 'scene' || playlistHasTracks(item.playlist)"
+          :playable="item.type === 'scene' || playlistHasTracks(item.playlist)"
+          :removable="props.editable"
+          :remove-label="t('ambientSoundPage.removeLink')"
+          :class="
+            item.type === 'scene' ? 'scene-link-item' : 'playlist-link-item'
+          "
+          @activate="
+            item.type === 'scene'
+              ? toggleScene(item.scene.pack.id, item.scene.scene.id)
+              : togglePlaylist(item.playlist.id)
+          "
+          @toggle="
+            item.type === 'scene'
+              ? toggleScene(item.scene.pack.id, item.scene.scene.id)
+              : togglePlaylist(item.playlist.id)
+          "
+          @remove="
+            item.type === 'scene'
+              ? removeLink(item.scene.pack.id, item.scene.scene.id)
+              : removePlaylist(item.playlist.id)
+          "
+        />
+      </QList>
+    </div>
+
+    <QSeparator />
+
+    <QList class="q-pa-none q-mb-none">
+      <QItem
+        v-if="props.scenesEnabled"
+        clickable
+        v-ripple
+        class="scene-add-row"
+        :title="t('ambientSoundPage.addSceneLink')"
+        :aria-label="t('ambientSoundPage.addSceneLink')"
+        @click="scenePickerOpen = true"
+      >
+        <QItemSection side>
+          <IconPlus :size="18" />
+        </QItemSection>
+        <QItemSection>
+          {{ t('ambientSoundPage.addSceneLink') }}
+        </QItemSection>
+      </QItem>
+      <QItem
+        v-if="playlistStore"
+        clickable
+        v-ripple
+        class="playlist-add-row"
+        :title="t('playlist.addPlaylist')"
+        :aria-label="t('playlist.addPlaylist')"
+        @click="playlistPickerOpen = true"
+      >
+        <QItemSection side>
+          <IconPlus :size="18" />
+        </QItemSection>
+        <QItemSection>
+          {{ t('playlist.addPlaylist') }}
+        </QItemSection>
+      </QItem>
+    </QList>
+
+    <EntityLinkingDialog
+      v-if="props.scenesEnabled"
+      :is-open="scenePickerOpen"
+      kind="scene"
+      :title="t('ambientSoundPage.addSceneLink')"
+      :options="sceneOptions"
+      :linked-ids="linkedSceneIds"
+      :multiple="true"
+      :allow-create="false"
+      @add="addScenes"
+      @cancel="scenePickerOpen = false"
+    />
+
+    <EntityLinkingDialog
+      v-if="playlistStore"
+      :is-open="playlistPickerOpen"
+      kind="playlist"
+      :title="t('playlist.addPlaylist')"
+      :options="playlistOptions"
+      :linked-ids="linkedPlaylistIds"
+      :multiple="true"
+      @add="addPlaylists"
+      @cancel="playlistPickerOpen = false"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  ref,
+  shallowRef,
+} from 'vue';
+import { useI18n } from 'vue-i18n';
+import { IconPlus } from '@tabler/icons-vue';
+import SidebarActionItem from '@/components/common/SidebarActionItem.vue';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
+import type { SceneLinkEntityType } from '@/ambient-sound/types';
+import type { JukeboxPlaylist } from '@/jukebox/types';
+import type { MapEntityRef } from '@/maps/types';
+
+type PlaylistStore = {
+  items: { value: JukeboxPlaylist[] };
+  load: () => Promise<void>;
+  getById: (id: string) => JukeboxPlaylist | null;
+  update: (
+    id: string,
+    patch: { links?: MapEntityRef[] },
+  ) => Promise<JukeboxPlaylist>;
+};
+
+type PlayerStore = {
+  isPlaying: boolean;
+  queuePlaylistId: string | null;
+  playPlaylist: (playlistId: string) => Promise<boolean>;
+  pause: () => void;
+  togglePlay: () => void | Promise<void>;
+};
+
+const EntityLinkingDialog = defineAsyncComponent(
+  () => import('@/components/common/EntityLinkingDialog.vue'),
+);
+
+const props = withDefaults(
+  defineProps<{
+    entityType: SceneLinkEntityType | 'party';
+    entityId: string;
+    editable?: boolean;
+    scenesEnabled?: boolean;
+  }>(),
+  { editable: false, scenesEnabled: true },
+);
+
+const { t } = useI18n();
+const store = useAmbientSoundStore();
+const scenePickerOpen = ref(false);
+const playlistPickerOpen = ref(false);
+
+// Keep the jukebox dependency behind the build-time flag so builds without
+// the jukebox never bundle its stores into the ambient panel.
+const playlistStore = shallowRef<PlaylistStore | null>(null);
+const playerStore = shallowRef<PlayerStore | null>(null);
+let jukeboxReady: Promise<void> = Promise.resolve();
+
+if (__FEATURE_JUKEBOX__) {
+  jukeboxReady = Promise.all([
+    import('@/jukebox/stores'),
+    import('@/jukebox/playerStore'),
+  ]).then(([{ useJukeboxPlaylistsStore }, { useJukeboxPlayerStore }]) => {
+    playlistStore.value = useJukeboxPlaylistsStore() as PlaylistStore;
+    playerStore.value = useJukeboxPlayerStore() as PlayerStore;
+    return playlistStore.value.load().then(() => undefined);
+  });
+}
+
+const linkedRefs = computed(() =>
+  store.linksForEntity(props.entityType as SceneLinkEntityType, props.entityId),
+);
+
+const linkedScenes = computed(() =>
+  props.scenesEnabled
+    ? linkedRefs.value
+        .map((ref) =>
+          store.allScenes.find(
+            ({ pack, scene }) =>
+              pack.id === ref.packageId && scene.id === ref.sceneId,
+          ),
+        )
+        .filter((entry): entry is NonNullable<typeof entry> => !!entry)
+    : [],
+);
+
+const sceneOptions = computed(() =>
+  store.allScenes.map(({ pack, scene }) => ({
+    id: `${pack.id}::${scene.id}`,
+    label: `${scene.name} · ${pack.name}`,
+  })),
+);
+const linkedSceneIds = computed(() =>
+  linkedScenes.value.map(({ pack, scene }) => `${pack.id}::${scene.id}`),
+);
+
+const playlistItems = computed(() => playlistStore.value?.items.value ?? []);
+const linkedPlaylistIds = computed(() =>
+  playlistItems.value
+    .filter((playlist) =>
+      (playlist.links ?? []).some(
+        (link) => link.kind === props.entityType && link.id === props.entityId,
+      ),
+    )
+    .map((playlist) => playlist.id),
+);
+const linkedPlaylists = computed(() =>
+  linkedPlaylistIds.value
+    .map((id) => playlistStore.value?.getById(id))
+    .filter((playlist): playlist is JukeboxPlaylist => !!playlist),
+);
+const playlistOptions = computed(() =>
+  playlistItems.value.map((playlist) => ({
+    id: playlist.id,
+    label: playlist.name,
+  })),
+);
+
+const mixedItems = computed(() =>
+  [
+    ...linkedScenes.value.map((scene) => ({
+      type: 'scene' as const,
+      key: `scene:${scene.pack.id}:${scene.scene.id}`,
+      name: scene.scene.name,
+      scene,
+    })),
+    ...linkedPlaylists.value.map((playlist) => ({
+      type: 'playlist' as const,
+      key: `playlist:${playlist.id}`,
+      name: playlist.name,
+      playlist,
+    })),
+  ].sort((a, b) => a.name.localeCompare(b.name)),
+);
+
+function isActive(packId: string, sceneId: string) {
+  return store.activeSceneKey === `${packId}::${sceneId}`;
+}
+
+function isPlaying(packId: string, sceneId: string) {
+  return isActive(packId, sceneId) && store.isPlaying;
+}
+
+async function toggleScene(packId: string, sceneId: string) {
+  if (isPlaying(packId, sceneId)) {
+    store.pause();
+    return;
+  }
+  await store.playScene(packId, sceneId);
+}
+
+function playlistHasTracks(playlist: JukeboxPlaylist) {
+  return (playlist.trackIds?.length ?? 0) > 0;
+}
+
+function isPlaylistActive(playlistId: string) {
+  return playerStore.value?.queuePlaylistId === playlistId;
+}
+
+function isPlaylistPlaying(playlistId: string) {
+  return isPlaylistActive(playlistId) && !!playerStore.value?.isPlaying;
+}
+
+async function togglePlaylist(playlistId: string) {
+  const player = playerStore.value;
+  const playlist = playlistStore.value?.getById(playlistId);
+  if (!player || !playlist || !playlistHasTracks(playlist)) return;
+
+  if (player.queuePlaylistId === playlistId) {
+    if (player.isPlaying) player.pause();
+    else await player.togglePlay();
+    return;
+  }
+
+  await player.playPlaylist(playlistId);
+}
+
+function addScenes(payload: { refs: Array<{ id: string }> }) {
+  const selected = new Set(payload.refs.map((ref) => ref.id));
+  for (const { pack, scene } of store.allScenes) {
+    const key = `${pack.id}::${scene.id}`;
+    const linked = linkedSceneIds.value.includes(key);
+    if (selected.has(key) && !linked) {
+      store.addSceneLink(
+        pack.id,
+        scene.id,
+        props.entityType as SceneLinkEntityType,
+        props.entityId,
+      );
+    } else if (!selected.has(key) && linked) {
+      removeLink(pack.id, scene.id);
+    }
+  }
+  scenePickerOpen.value = false;
+}
+
+function removeLink(packId: string, sceneId: string) {
+  const link = store
+    .linksForScene(packId, sceneId)
+    .find(
+      (entry) =>
+        entry.entityType === props.entityType &&
+        entry.entityId === props.entityId,
+    );
+  if (link) store.removeSceneLink(link.id);
+}
+
+async function addPlaylists(payload: { refs: Array<{ id: string }> }) {
+  const store = playlistStore.value;
+  if (!store) return;
+  const selected = new Set(payload.refs.map((ref) => ref.id));
+  for (const playlist of store.items.value) {
+    const links = (playlist.links ?? []).filter(
+      (link) => !(link.kind === props.entityType && link.id === props.entityId),
+    );
+    if (selected.has(playlist.id)) {
+      links.push({ kind: props.entityType, id: props.entityId });
+    }
+    await store.update(playlist.id, { links });
+  }
+  playlistPickerOpen.value = false;
+}
+
+async function removePlaylist(playlistId: string) {
+  const store = playlistStore.value;
+  const playlist = store?.getById(playlistId);
+  if (!store || !playlist) return;
+  const links = (playlist.links ?? []).filter(
+    (link) => !(link.kind === props.entityType && link.id === props.entityId),
+  );
+  await store.update(playlistId, { links });
+}
+
+onMounted(async () => {
+  await Promise.all([
+    store.storedPacks.length === 0
+      ? store.loadStoredPacks()
+      : Promise.resolve(),
+    jukeboxReady,
+  ]);
+});
+</script>
+
+<style scoped>
+.entity-scenes-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.scene-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+</style>

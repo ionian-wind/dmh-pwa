@@ -15,14 +15,13 @@ import {
   useMentionsStore,
   useStore,
 } from '@/utils/storage';
-import {
-  registerValidationSchema,
-  canValidate,
-} from '@/utils/schemaValidator';
+import { registerValidationSchema, canValidate } from '@/utils/schemaValidator';
+import { readOpfsFile, writeOpfsFile } from '@/utils/files/opfs';
+import { installFakeOpfs } from '../helpers/fakeOpfs';
 import JSZip from 'jszip';
 
 async function deleteDatabase() {
-  resetStoreCache();
+  await resetStoreCache();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase('dmh-db');
     request.onsuccess = () => resolve();
@@ -49,7 +48,7 @@ describe('IndexedDB storage', () => {
     } catch {
       // ignore cleanup failures
     }
-    resetStoreCache();
+    await resetStoreCache();
   });
 
   it('performs item CRUD operations', async () => {
@@ -112,7 +111,7 @@ describe('IndexedDB storage', () => {
   it('manages mention links and backlinks', async () => {
     const store = useMentionsStore();
     const from = { kind: 'note', id: 'n1' };
-    const to = { kind: 'monster', id: 'm1' };
+    const to = { kind: 'pawn', id: 'm1' };
 
     await store.load();
     await store.addLink(from, to);
@@ -123,15 +122,19 @@ describe('IndexedDB storage', () => {
     await store.setLinks(from, [
       to,
       { kind: 'party', id: 'p1' },
-      { kind: 'monster', id: 'm1' },
+      { kind: 'pawn', id: 'm1' },
     ]);
     expect(store.getLinks(from)).toEqual([
-      { kind: 'monster', id: 'm1' },
+      { kind: 'pawn', id: 'm1' },
       { kind: 'party', id: 'p1' },
     ]);
 
+    await store.removeLink({ kind: 'note', id: 'missing' }, to);
     await store.removeLink(from, to);
     expect(store.getLinks(from)).toEqual([{ kind: 'party', id: 'p1' }]);
+    await store.setLinks(from, [to]);
+    await store.removeLink(from, to);
+    expect(store.getLinks(from)).toEqual([]);
 
     await store.clearLinks(from);
     expect(store.getLinks(from)).toEqual([]);
@@ -144,35 +147,197 @@ describe('IndexedDB storage', () => {
     expect(store.loaded).toBe(true);
   });
 
-  it('backs up and restores stores, including jukebox file blobs', async () => {
-    await idbPutItem('notes', {
-      id: 'n1',
-      title: 'Note',
-      createdAt: 1,
-      updatedAt: 1,
-    } as any);
-    const blob = memoryBlob('audio-data');
-    await idbPutItem('jukebox_files', {
-      id: 'f1',
-      name: 'song.mp3',
-      source: { kind: 'blob', blob },
-      createdAt: 1,
-      updatedAt: 1,
-    } as any);
+  it('backs up and restores stores, including generic file blobs', async () => {
+    // jsdom's Blob is not recognised by Node's structuredClone, so keep the
+    // same object through fake-indexeddb for this round-trip test.
+    const originalStructuredClone = globalThis.structuredClone;
+    globalThis.structuredClone = (value: any) => value;
 
-    const backup = await backupAllStores();
-    expect(backup).toBeInstanceOf(Blob);
+    try {
+      await idbPutItem('notes', {
+        id: 'n1',
+        title: 'Note',
+        createdAt: 1,
+        updatedAt: 1,
+      } as any);
+      const blob = memoryBlob('audio-data');
+      await idbPutItem('files', {
+        id: 'f1',
+        name: 'song.mp3',
+        size: blob.size,
+        type: blob.type,
+        lastModified: 1,
+        signature: '["song.mp3",10,1,"audio/mpeg"]',
+        source: { kind: 'blob', blob },
+        createdAt: 1,
+        updatedAt: 1,
+      } as any);
 
-    await clearStore('notes');
-    await clearStore('jukebox_files');
-    await restoreAllStores(backup);
+      const backup = await backupAllStores();
+      expect(backup).toBeInstanceOf(Blob);
 
-    const notes = await idbGetAllItems<any>('notes');
-    expect(notes).toEqual([expect.objectContaining({ id: 'n1', title: 'Note' })]);
+      const zip = await JSZip.loadAsync(backup);
+      expect(zip.file('manifest.json')).toBeTruthy();
+      expect(zip.file('files/f1')).toBeTruthy();
+      const filesJson = JSON.parse(
+        (await zip.file('files.json')!.async('string')) ?? '[]',
+      );
+      expect(filesJson[0].source.kind).toBe('binary');
+      expect(filesJson[0].source.entry).toBe('files/f1');
 
-    const files = await idbGetAllItems<any>('jukebox_files');
-    expect(files[0].source.kind).toBe('blob');
-    expect(files[0].source.blob).toBeDefined();
+      await clearStore('notes');
+      await clearStore('files');
+      await restoreAllStores(backup);
+
+      const notes = await idbGetAllItems<any>('notes');
+      expect(notes).toEqual([
+        expect.objectContaining({ id: 'n1', title: 'Note' }),
+      ]);
+
+      const files = await idbGetAllItems<any>('files');
+      expect(files[0].source.kind).toBe('blob');
+      expect(files[0].source.blob).toBeDefined();
+    } finally {
+      globalThis.structuredClone = originalStructuredClone;
+    }
+  });
+
+  it('includes external handle files when requested', async () => {
+    const originalStructuredClone = globalThis.structuredClone;
+    globalThis.structuredClone = (value: any) => value;
+
+    try {
+      const linkedFile = new File(['linked bytes'], 'linked.mp3', {
+        type: 'audio/mpeg',
+      });
+      const handle = {
+        kind: 'file',
+        name: 'linked.mp3',
+        getFile: vi.fn().mockResolvedValue(linkedFile),
+      };
+      await idbPutItem('files', {
+        id: 'h1',
+        name: 'linked.mp3',
+        size: linkedFile.size,
+        type: linkedFile.type,
+        lastModified: 1,
+        signature: 'linked',
+        source: { kind: 'handle', handle },
+        createdAt: 1,
+        updatedAt: 1,
+      } as any);
+
+      const backup = await backupAllStores({ includeExternalFiles: true });
+      const zip = await JSZip.loadAsync(backup);
+      expect(zip.file('files/h1')).toBeTruthy();
+      const manifest = JSON.parse(
+        (await zip.file('manifest.json')!.async('string')) ?? '{}',
+      );
+      expect(manifest.includesExternalFiles).toBe(true);
+      const files = JSON.parse(
+        (await zip.file('files.json')!.async('string')) ?? '[]',
+      );
+      expect(files[0].source.kind).toBe('binary');
+      expect(files[0].source.external).toBe(true);
+    } finally {
+      globalThis.structuredClone = originalStructuredClone;
+    }
+  });
+
+  it('backs up and restores OPFS file bytes as OPFS sources', async () => {
+    const opfs = installFakeOpfs();
+    try {
+      const blob = memoryBlob('opfs-data');
+      const path = 'files/f2';
+      await writeOpfsFile(path, blob);
+      await idbPutItem('files', {
+        id: 'f2',
+        name: 'opfs.mp3',
+        size: blob.size,
+        type: blob.type,
+        lastModified: 1,
+        signature: '["opfs.mp3",9,1,"audio/mp3"]',
+        source: { kind: 'opfs', path },
+        createdAt: 1,
+        updatedAt: 1,
+      } as any);
+
+      const backup = await backupAllStores();
+      const zip = await JSZip.loadAsync(backup);
+      expect(zip.file('files/f2')).toBeTruthy();
+      expect(
+        JSON.parse((await zip.file('files.json')!.async('string')) ?? '[]')[0]
+          .source.kind,
+      ).toBe('binary');
+
+      await clearStore('files');
+      await restoreAllStores(backup);
+
+      const files = await idbGetAllItems<any>('files');
+      expect(files[0].source.kind).toBe('opfs');
+      const restored = await readOpfsFile(files[0].source.path);
+      expect(await restored.text()).toBe('opfs-data');
+    } finally {
+      opfs.restore();
+    }
+  });
+
+  it('restores legacy file stores into generic files', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'jukebox_files.json',
+      JSON.stringify([
+        {
+          id: 'legacy-audio',
+          name: 'old.mp3',
+          size: 5,
+          type: 'audio/mpeg',
+          lastModified: 1,
+          source: {
+            kind: 'blob-data',
+            type: 'audio/mpeg',
+            data: btoa('audio'),
+          },
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ]),
+    );
+    zip.file(
+      'map_files.json',
+      JSON.stringify([
+        {
+          id: 'legacy-map',
+          name: 'old.png',
+          size: 3,
+          type: 'image/png',
+          lastModified: 2,
+          source: {
+            kind: 'blob-data',
+            type: 'image/png',
+            data: btoa('map'),
+          },
+          imageMetadata: { width: 1, height: 1, aspectRatio: 1 },
+          createdAt: 2,
+          updatedAt: 2,
+        },
+      ]),
+    );
+
+    await restoreAllStores(await zip.generateAsync({ type: 'blob' }));
+
+    const files = await idbGetAllItems<any>('files');
+    expect(files.map((file) => file.id).sort()).toEqual([
+      'legacy-audio',
+      'legacy-map',
+    ]);
+    expect(files.every((file) => file.source.kind === 'blob')).toBe(true);
+    expect(files.every((file) => typeof file.signature === 'string')).toBe(
+      true,
+    );
+    expect(await idbGetAllItems<any>('map_image_metadata')).toEqual([
+      expect.objectContaining({ id: 'legacy-map' }),
+    ]);
   });
 
   it('skips invalid JSON while restoring and clears existing stores', async () => {

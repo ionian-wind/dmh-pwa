@@ -3,11 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupAnchorScrollHandler } from '@/utils/anchorScroll';
 import { scrollToHeading } from '@/utils/scrollToHeading';
 import { cropTitle } from '@/utils/cropTitle';
-import {
-  debug,
-  debugError,
-  debugWarn,
-} from '@/utils/debug';
+import { debug, debugError, debugWarn } from '@/utils/debug';
 import {
   DiceMissingDataError,
   DiceSyntaxError,
@@ -24,6 +20,7 @@ describe('small utility helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -114,10 +111,13 @@ describe('small utility helpers', () => {
     expect(new DiceSyntaxError('x')).toBeInstanceOf(Error);
   });
 
-  it('routes debug output through the console helpers', () => {
+  it('routes debug output through the console helpers in development', () => {
+    vi.stubEnv('MODE', 'development');
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
 
     debug('log', 1);
     debugWarn('warn');
@@ -127,6 +127,28 @@ describe('small utility helpers', () => {
     expect(warn).toHaveBeenCalledWith('warn');
     expect(error).toHaveBeenCalledWith('error');
   });
+
+  it.each(['test', 'production'])(
+    'silences debug output in the %s environment',
+    (mode) => {
+      vi.stubEnv('MODE', mode);
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      const warn = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined);
+      const error = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+
+      debug('log', 1);
+      debugWarn('warn');
+      debugError('error');
+
+      expect(log).not.toHaveBeenCalled();
+      expect(warn).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    },
+  );
 
   it('loads the debug macro arithmetic module', async () => {
     await expect(

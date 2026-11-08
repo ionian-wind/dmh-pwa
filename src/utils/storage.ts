@@ -1,6 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import { nanoid } from 'nanoid';
-import { openDB as idbOpenDB, IDBPDatabase } from 'idb';
+import Dexie, { type Table, type Transaction } from 'dexie';
 import { defineStore } from 'pinia';
 import JSZip from 'jszip';
 
@@ -8,7 +8,18 @@ import * as schemaValidator from './schemaValidator';
 import { WithMetadata } from '@/types';
 import { deepUnwrap } from './deepUnwrap';
 import { sortedMigrations } from '@/migrations';
-import type { Migration } from '@/types/migration';
+import type {
+  Migration,
+  MigrationStore,
+  MigrationTransaction,
+} from '@/types/migration';
+import { buildFileSignature } from './files/signature';
+import {
+  clearOpfsFiles,
+  readOpfsFile,
+  supportsOpfs,
+  writeOpfsFile,
+} from './files/opfs';
 import { debug } from './debug';
 
 export class StorageError extends Error {
@@ -37,49 +48,147 @@ export function hasRequiredFields<T extends object>(
   return fields.every((field) => field in obj);
 }
 
-// --- IndexedDB Helper using idb ---
+// --- Dexie database ---
 const DB_NAME = 'dmh-db';
 const MIGRATIONS_STORE = 'migrations';
-let dbPromise: Promise<IDBPDatabase> | null = null;
+const MIGRATION_VERSION = Math.max(
+  ...sortedMigrations.map(({ version }) => version),
+);
+const SCHEMA_VERSION = 19;
+const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
-async function openAndMigrate(): Promise<IDBPDatabase> {
-  const DB_VERSION = Math.max(
-    ...sortedMigrations.map(({ version }) => version),
-  );
+// All stores that may exist in the database. The main list is also used by
+// backup/restore; legacy stores remain declared so older databases can be
+// opened and their data migrated.
+export const MAIN_STORE_NAMES = [
+  'characters',
+  'combats',
+  'drawings',
+  'encounters',
+  'pawns',
+  'notes',
+  'noteTypes',
+  'parties',
+  'map_locations',
+  'bookmarks',
+  'timers',
+  'jukebox_playlists',
+  'jukebox_tracks',
+  'files',
+  'map_image_metadata',
+  'indexations_mentions',
+];
 
-  const db = await idbOpenDB(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion, newVersion) {
-      const createStore = (storeName: string) => {
-        if (!db.objectStoreNames.contains(storeName)) {
-          db.createObjectStore(storeName, {
-            keyPath: 'id',
-            autoIncrement: false,
-          });
-        }
-      };
+const migrationStoreNames = sortedMigrations.flatMap(
+  (migration) => migration.affectedStores,
+);
+const SCHEMA_STORE_NAMES = Array.from(
+  new Set([
+    MIGRATIONS_STORE,
+    ...MAIN_STORE_NAMES,
+    ...migrationStoreNames,
+    'maps',
+    'map_files',
+    'jukebox_files',
+    'sound_packs',
+  ]),
+);
 
-      createStore(MIGRATIONS_STORE);
+// Explicit indexes for the queries the app performs. Any store added by a
+// migration but not listed here still gets the `id` primary key.
+const EXPLICIT_SCHEMA: Record<string, string> = {
+  migrations: 'id, version',
+  characters: 'id, updatedAt',
+  combats: 'id, updatedAt, encounterId, partyId, status',
+  drawings: 'id, updatedAt',
+  encounters: 'id, updatedAt',
+  pawns: 'id, updatedAt',
+  notes: 'id, updatedAt, createdAt, typeId, *tags',
+  noteTypes: 'id, updatedAt',
+  parties: 'id, updatedAt',
+  map_locations: 'id, updatedAt',
+  bookmarks: 'id, noteId',
+  timers: 'id, updatedAt, status',
+  jukebox_playlists: 'id, updatedAt',
+  jukebox_tracks: 'id, updatedAt',
+  files: 'id, signature, contentHash, updatedAt',
+  map_image_metadata: 'id',
+  indexations_mentions: 'id',
+  maps: 'id',
+  map_files: 'id',
+  jukebox_files: 'id',
+  sound_packs: 'id, addedAt',
+};
 
-      // Use DB_VERSION if newVersion is null.
-      const effectiveNewVersion = newVersion ?? DB_VERSION;
-      for (const migration of sortedMigrations) {
-        if (
-          migration.version > oldVersion &&
-          migration.version <= effectiveNewVersion
-        ) {
-          migration.affectedStores.forEach((storeName) =>
-            createStore(storeName),
-          );
-        }
-      }
-    },
-  });
+const SCHEMA: Record<string, string> = { ...EXPLICIT_SCHEMA };
+for (const storeName of SCHEMA_STORE_NAMES) {
+  if (!(storeName in SCHEMA)) SCHEMA[storeName] = 'id';
+}
 
+export class DmhDatabase extends Dexie {
+  migrations!: Table<
+    { id: string; version: number; name: string; appliedAt: number },
+    string
+  >;
+  characters!: Table<any, string>;
+  combats!: Table<any, string>;
+  drawings!: Table<any, string>;
+  encounters!: Table<any, string>;
+  pawns!: Table<any, string>;
+  notes!: Table<any, string>;
+  noteTypes!: Table<any, string>;
+  parties!: Table<any, string>;
+  map_locations!: Table<any, string>;
+  bookmarks!: Table<any, string>;
+  timers!: Table<any, string>;
+  jukebox_playlists!: Table<any, string>;
+  jukebox_tracks!: Table<any, string>;
+  jukebox_files!: Table<any, string>;
+  files!: Table<any, string>;
+  map_image_metadata!: Table<any, string>;
+  indexations_mentions!: Table<any, string>;
+  sound_packs!: Table<any, string>;
+  maps!: Table<any, string>;
+  map_files!: Table<any, string>;
+
+  constructor() {
+    super(DB_NAME);
+    // Version 14 adds the drawings store; version 13 dropped the removed
+    // modules store and its indexes. Version 15 removes note content types,
+    // version 16 cleans escaped spaces before block anchors, version 17
+    // removes encounter notes, version 18 renames the encounter participant
+    // field to pawns, and version 19 migrates the legacy pawn store and
+    // references. Legacy store names/key paths are kept and migrations remain
+    // recorded separately.
+    this.version(DB_VERSION).stores(SCHEMA);
+    this.on('versionchange', () => this.close());
+  }
+}
+
+let dbPromise: Promise<DmhDatabase> | null = null;
+
+function migrationTransaction(transaction: Transaction): MigrationTransaction {
+  const store = (name: string): MigrationStore => {
+    const table = transaction.table(name);
+    return {
+      getAll: () => table.toArray(),
+      put: (value) => table.put(value),
+      getAllKeys: () => table.toCollection().primaryKeys(),
+      delete: (key) => table.delete(key),
+      clear: () => table.clear(),
+    };
+  };
+  return { objectStore: store };
+}
+
+async function openAndMigrate(): Promise<DmhDatabase> {
+  const db = new DmhDatabase();
+  await db.open();
   await applyPendingMigrations(db);
   return db;
 }
 
-export function openDB(): Promise<IDBPDatabase> {
+export function openDB(): Promise<DmhDatabase> {
   if (!dbPromise) {
     dbPromise = openAndMigrate().catch((error) => {
       dbPromise = null;
@@ -90,16 +199,14 @@ export function openDB(): Promise<IDBPDatabase> {
 }
 
 /**
- * Run migrations that are not recorded in the migrations store. This happens
- * after the version-change transaction has completed, so migration code can
- * use normal read/write transactions instead of the fragile async chain inside
- * the upgrade callback.
+ * Run migrations that are not recorded in the migrations store. Dexie opens
+ * the legacy database at the same version, so existing data is preserved.
  */
 export async function applyPendingMigrations(
-  db: IDBPDatabase,
+  db: DmhDatabase,
   migrations: Migration[] = sortedMigrations,
 ): Promise<void> {
-  const applied = (await db.getAll(MIGRATIONS_STORE)) as Array<{
+  const applied = (await db.table(MIGRATIONS_STORE).toArray()) as Array<{
     version: number;
   }>;
   const appliedVersions = new Set(applied.map((record) => record.version));
@@ -115,29 +222,27 @@ export async function applyPendingMigrations(
     };
 
     const storeNames = Array.from(
-      new Set([
-        MIGRATIONS_STORE,
-        ...migration.affectedStores.filter((storeName) =>
-          db.objectStoreNames.contains(storeName),
-        ),
-      ]),
+      new Set([MIGRATIONS_STORE, ...migration.affectedStores]),
     );
-    const tx = db.transaction(storeNames, 'readwrite');
-    await migration.go(tx as any);
-    await tx.objectStore(MIGRATIONS_STORE).put(info);
-    await tx.done;
+    const tables = storeNames.map((storeName) => db.table(storeName));
+
+    await db.transaction('rw', tables, async (transaction) => {
+      await migration.go(migrationTransaction(transaction));
+      await transaction.table(MIGRATIONS_STORE).put(info);
+    });
+
     appliedVersions.add(migration.version);
     debug('{{{ MIGRATION loaded %o }}}', info);
   }
 }
 
-// --- Per-item CRUD helpers using idb ---
+// --- Per-item CRUD helpers backed by Dexie ---
 export async function idbGetItem<T>(
   storeName: string,
   id: string,
 ): Promise<T | undefined> {
   const db = await openDB();
-  return db.transaction(storeName).objectStore(storeName).get(id);
+  return db.table(storeName).get(id) as Promise<T | undefined>;
 }
 
 export async function idbPutItem<T extends { id: string }>(
@@ -158,7 +263,7 @@ export async function idbPutItem<T extends { id: string }>(
   }
 
   const db = await openDB();
-  await db.transaction(storeName, 'readwrite').objectStore(storeName).put(item);
+  await db.table(storeName).put(item);
 }
 
 export async function idbDeleteItem(
@@ -166,15 +271,47 @@ export async function idbDeleteItem(
   id: string,
 ): Promise<void> {
   const db = await openDB();
-  await db
-    .transaction(storeName, 'readwrite')
-    .objectStore(storeName)
-    .delete(id);
+  await db.table(storeName).delete(id);
 }
 
 export async function idbGetAllItems<T>(storeName: string): Promise<T[]> {
   const db = await openDB();
-  return db.transaction(storeName).objectStore(storeName).getAll();
+  return db.table(storeName).toArray() as Promise<T[]>;
+}
+
+export async function idbFindByIndex<T>(
+  storeName: string,
+  indexName: string,
+  value: string,
+): Promise<T | undefined> {
+  const db = await openDB();
+  return db.table(storeName).where(indexName).equals(value).first() as Promise<
+    T | undefined
+  >;
+}
+
+export async function idbPutItems<T extends { id: string }>(
+  storeName: string,
+  items: T[],
+): Promise<void> {
+  if (items.length === 0) return;
+
+  if (schemaValidator.canValidate(storeName)) {
+    for (const item of items) {
+      const { valid, errors } = await schemaValidator.validateSchema(
+        storeName,
+        item,
+      );
+      if (!valid) {
+        throw new StorageError(
+          `Validation failed for store '${storeName}': ${errors.join('; ')}`,
+        );
+      }
+    }
+  }
+
+  const db = await openDB();
+  await db.table(storeName).bulkPut(items);
 }
 
 export interface StorageOptions {
@@ -205,10 +342,17 @@ export interface BaseStore<T extends WithMetadata> {
 const storeCache: Map<string, BaseStore<any>> = new Map();
 
 /** Test helper: clear the in-memory base-store cache. */
-export function resetStoreCache(): void {
+export async function resetStoreCache(): Promise<void> {
+  const pending = dbPromise;
   storeCache.clear();
   dbPromise = null;
   isInitialized = false;
+  if (!pending) return;
+  try {
+    (await pending).close();
+  } catch {
+    // Ignore a connection that failed to open.
+  }
 }
 
 export function useStore<T extends WithMetadata>(
@@ -414,9 +558,7 @@ export function createIndexationStore(storeName: string) {
 
     async function clearAll() {
       links.value = {};
-      // Remove all records from the object store
-      const all = await idbGetAllItems<{ id: string }>(store);
-      await Promise.all(all.map((rec) => idbDeleteItem(store, rec.id)));
+      await clearStore(store);
     }
 
     function getBacklinks(target: EntityRef): EntityRef[] {
@@ -468,32 +610,17 @@ export async function initializeDatabase(): Promise<void> {
   }
 }
 
-// List of all main store names for backup/restore
-export const MAIN_STORE_NAMES = [
-  'characters',
-  'combats',
-  'encounters',
-  'monsters',
-  'modules',
-  'notes',
-  'noteTypes',
-  'parties',
-  'bookmarks',
-  'timers',
-  'jukebox_playlists',
-  'jukebox_tracks',
-  'jukebox_files',
-  'indexations_mentions',
-];
+const BACKUP_FORMAT = 'dmh.backup';
+const BACKUP_VERSION = 2;
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
+function isBlobLike(value: any): value is Blob {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof value.arrayBuffer === 'function' &&
+    typeof value.slice === 'function' &&
+    typeof value.size === 'number'
+  );
 }
 
 function base64ToBlob(data: string, type: string): Blob {
@@ -508,24 +635,75 @@ function base64ToBlob(data: string, type: string): Blob {
 async function serializeStoreItems(
   storeName: string,
   items: any[],
+  zip: JSZip,
+  options: BackupOptions,
 ): Promise<any[]> {
-  if (storeName !== 'jukebox_files') return items;
+  if (storeName !== 'files') return items;
 
   return Promise.all(
     items.map(async (item) => {
       const source = item?.source;
       if (!source) return item;
-      if (source.kind === 'blob' && source.blob instanceof Blob) {
+
+      if (source.kind === 'blob' && isBlobLike(source.blob)) {
+        const entry = `files/${item.id}`;
+        zip.file(entry, source.blob);
         return {
           ...item,
           source: {
-            kind: 'blob-data',
+            kind: 'binary',
+            entry,
             type: source.blob.type,
-            data: arrayBufferToBase64(await source.blob.arrayBuffer()),
+            size: source.blob.size,
           },
         };
       }
+
+      if (source.kind === 'opfs') {
+        try {
+          const file = await readOpfsFile(source.path);
+          const entry = `files/${item.id}`;
+          zip.file(entry, file);
+          return {
+            ...item,
+            source: {
+              kind: 'binary',
+              entry,
+              type: file.type,
+              size: file.size,
+            },
+          };
+        } catch {
+          return {
+            ...item,
+            source: {
+              kind: 'unavailable',
+              reason: 'OPFS file is missing',
+            },
+          };
+        }
+      }
+
       if (source.kind === 'handle') {
+        if (options.includeExternalFiles) {
+          try {
+            const file = await source.handle.getFile();
+            const entry = `files/${item.id}`;
+            zip.file(entry, file);
+            return {
+              ...item,
+              source: {
+                kind: 'binary',
+                entry,
+                type: file.type,
+                size: file.size,
+                external: true,
+              },
+            };
+          } catch (error) {
+            debug('Could not include external file in backup:', error);
+          }
+        }
         return {
           ...item,
           source: {
@@ -534,13 +712,14 @@ async function serializeStoreItems(
           },
         };
       }
+
       return item;
     }),
   );
 }
 
 function deserializeStoreItems(storeName: string, items: any[]): any[] {
-  if (storeName !== 'jukebox_files') return items;
+  if (storeName !== 'files') return items;
 
   return items.map((item) => {
     const source = item?.source;
@@ -560,14 +739,174 @@ function deserializeStoreItems(storeName: string, items: any[]): any[] {
   });
 }
 
+async function deserializeFileItemsForRestore(
+  zip: JSZip,
+  items: any[],
+): Promise<any[]> {
+  const restored: any[] = [];
+
+  for (const item of items) {
+    const source = item?.source;
+
+    if (source?.kind === 'blob-data') {
+      restored.push(...deserializeStoreItems('files', [item]));
+      continue;
+    }
+
+    if (source?.kind === 'binary' && typeof source.entry === 'string') {
+      const entry = zip.file(source.entry);
+      if (!entry) {
+        restored.push({
+          ...item,
+          source: {
+            kind: 'unavailable',
+            reason: 'Backup file entry is missing',
+          },
+        });
+        continue;
+      }
+
+      const raw = await entry.async('blob');
+      const blob = source.type ? new Blob([raw], { type: source.type }) : raw;
+
+      if (supportsOpfs()) {
+        try {
+          await writeOpfsFile(source.entry, blob);
+          restored.push({
+            ...item,
+            source: { kind: 'opfs', path: source.entry },
+          });
+          continue;
+        } catch (error) {
+          debug('Failed to restore file into OPFS:', error);
+        }
+      }
+
+      restored.push({ ...item, source: { kind: 'blob', blob } });
+      continue;
+    }
+
+    restored.push(item);
+  }
+
+  return restored;
+}
+
+interface LegacyRestoreData {
+  files: any[];
+  metadata: any[];
+}
+
+function hasReadableSource(source: any): boolean {
+  if (!source) return false;
+  if (source.kind === 'blob') return isBlobLike(source.blob);
+  return source.kind === 'handle' || source.kind === 'opfs';
+}
+
+async function readLegacyFileRestore(zip: JSZip): Promise<LegacyRestoreData> {
+  const files: any[] = [];
+  const metadata: any[] = [];
+  const legacyStores = ['jukebox_files', 'map_files'];
+  for (const storeName of legacyStores) {
+    const entry = zip.file(`${storeName}.json`);
+    if (!entry) continue;
+    let records: any[] = [];
+    try {
+      records = deserializeStoreItems(
+        'files',
+        JSON.parse(await entry.async('string')),
+      );
+    } catch {
+      continue;
+    }
+    for (const record of records) {
+      if (!record?.id || !hasReadableSource(record.source)) continue;
+      const identity = {
+        name: record.name || '',
+        size: Number(record.size) || 0,
+        type: record.type || '',
+        lastModified: Number(record.lastModified) || 0,
+      };
+      files.push({
+        ...record,
+        ...identity,
+        signature: buildFileSignature(identity),
+        createdAt: Number(record.createdAt) || Date.now(),
+        updatedAt: Number(record.updatedAt) || Date.now(),
+      });
+      if (record.imageMetadata) {
+        metadata.push({
+          id: record.id,
+          imageMetadata: record.imageMetadata,
+          createdAt: Number(record.createdAt) || Date.now(),
+          updatedAt: Number(record.updatedAt) || Date.now(),
+        });
+      }
+    }
+  }
+  return { files, metadata };
+}
+
+async function validateBackupManifest(zip: JSZip): Promise<void> {
+  const entry = zip.file('manifest.json');
+  if (!entry) return;
+
+  let manifest: any;
+  try {
+    manifest = JSON.parse(await entry.async('string'));
+  } catch {
+    throw new Error('Invalid backup manifest');
+  }
+
+  if (manifest?.format && manifest.format !== BACKUP_FORMAT) {
+    throw new Error('Unsupported backup format');
+  }
+  if (
+    typeof manifest?.version === 'number' &&
+    manifest.version > BACKUP_VERSION
+  ) {
+    throw new Error('Backup was created by a newer app version');
+  }
+}
+
 /**
- * Backup all main stores as a zip file (returns a Blob)
+ * Backup all main stores as a zip file (returns a Blob). Large file bytes are
+ * stored as binary entries instead of base64 JSON payloads.
  */
-export async function backupAllStores(): Promise<Blob> {
+export interface BackupOptions {
+  /** Copy user-linked handles into the archive when permission allows. */
+  includeExternalFiles?: boolean;
+}
+
+export async function backupAllStores(
+  options: BackupOptions = {},
+): Promise<Blob> {
   const zip = new JSZip();
+  zip.file(
+    'manifest.json',
+    JSON.stringify(
+      {
+        format: BACKUP_FORMAT,
+        version: BACKUP_VERSION,
+        createdAt: new Date().toISOString(),
+        appVersion: import.meta.env.VITE_APP_VERSION ?? 'dev',
+        stores: MAIN_STORE_NAMES,
+        fileEncoding: 'binary',
+        includesExternalFiles: !!options.includeExternalFiles,
+      },
+      null,
+      2,
+    ),
+  );
+
   for (const storeName of MAIN_STORE_NAMES) {
     const items = await idbGetAllItems(storeName);
-    const serialized = await serializeStoreItems(storeName, items);
+    const serialized = await serializeStoreItems(
+      storeName,
+      items,
+      zip,
+      options,
+    );
     zip.file(`${storeName}.json`, JSON.stringify(serialized, null, 2));
   }
   return zip.generateAsync({ type: 'blob' });
@@ -579,23 +918,47 @@ export async function backupAllStores(): Promise<Blob> {
  */
 export async function restoreAllStores(zipFile: Blob): Promise<void> {
   const zip = await JSZip.loadAsync(zipFile);
+  await validateBackupManifest(zip);
+
+  const legacy = zip.file('files.json')
+    ? { files: [], metadata: [] }
+    : await readLegacyFileRestore(zip);
+  const hasFiles = !!zip.file('files.json') || legacy.files.length > 0;
+
+  if (hasFiles && supportsOpfs()) {
+    await clearOpfsFiles();
+  }
+
   for (const storeName of MAIN_STORE_NAMES) {
+    let items: any[] | null = null;
     const file = zip.file(`${storeName}.json`);
-    if (!file) continue;
-    const content = await file.async('string');
-    let items: any[] = [];
-    try {
-      items = deserializeStoreItems(storeName, JSON.parse(content));
-    } catch (e) {
-      // skip invalid JSON
-      continue;
+
+    if (file) {
+      const content = await file.async('string');
+      try {
+        const parsed = JSON.parse(content);
+        items =
+          storeName === 'files'
+            ? await deserializeFileItemsForRestore(zip, parsed)
+            : deserializeStoreItems(storeName, parsed);
+      } catch (e) {
+        // skip invalid JSON
+        continue;
+      }
+    } else if (storeName === 'files' && legacy.files.length > 0) {
+      items = legacy.files;
+    } else if (
+      storeName === 'map_image_metadata' &&
+      legacy.metadata.length > 0
+    ) {
+      items = legacy.metadata;
     }
-    // Clear existing store
+
+    if (items === null) continue;
+
+    // Clear existing store, then write the restored records in one batch.
     await clearStore(storeName);
-    // Add items
-    for (const item of items) {
-      await idbPutItem(storeName, item);
-    }
+    await idbPutItems(storeName, items);
   }
 }
 
@@ -604,11 +967,5 @@ export async function restoreAllStores(zipFile: Blob): Promise<void> {
  */
 export async function clearStore(storeName: string): Promise<void> {
   const db = await openDB();
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
-  const keys = await store.getAllKeys();
-  for (const key of keys) {
-    await store.delete(key);
-  }
-  await tx.done;
+  await db.table(storeName).clear();
 }

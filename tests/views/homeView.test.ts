@@ -6,10 +6,6 @@ import { h } from 'vue';
 import HomeView from '@/views/HomeView.vue';
 import { alert } from '@/dialogs';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
-import {
-  importModuleFromZip,
-  parseModuleZip,
-} from '@/utils/moduleImportExport';
 import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
 
 const mocks = vi.hoisted(() => ({
@@ -33,11 +29,6 @@ vi.mock('@/dialogs', () => ({
   prompt: vi.fn(),
 }));
 
-vi.mock('@/utils/moduleImportExport', () => ({
-  parseModuleZip: vi.fn(),
-  importModuleFromZip: vi.fn(),
-}));
-
 async function mountHome() {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -45,10 +36,10 @@ async function mountHome() {
       { path: '/', component: { render: () => h('div') } },
       { path: '/notes', component: { render: () => h('div') } },
       { path: '/parties', component: { render: () => h('div') } },
-      { path: '/monsters', component: { render: () => h('div') } },
+      { path: '/pawns', component: { render: () => h('div') } },
       { path: '/encounters', component: { render: () => h('div') } },
       { path: '/characters', component: { render: () => h('div') } },
-      { path: '/modules', component: { render: () => h('div') } },
+      { path: '/locations', component: { render: () => h('div') } },
     ],
   });
   await router.push('/');
@@ -81,18 +72,29 @@ describe('HomeView', () => {
 
   it('shows stats from all stores', async () => {
     seedMockStore('notes', [
-      { id: 'n1', title: 'Visible', hidden: false },
-      { id: 'n2', title: 'Hidden', hidden: true },
+      { id: 'n1', title: 'Visible' },
+      { id: 'n2', title: 'Second' },
     ]);
     seedMockStore('characters', [{ id: 'c1', name: 'Hero' }]);
     seedMockStore('parties', [{ id: 'p1', name: 'Party' }]);
-    seedMockStore('monsters', [{ id: 'm1', name: 'Monster' }]);
+    seedMockStore('pawns', [{ id: 'm1', name: 'Pawn' }]);
     seedMockStore('encounters', [{ id: 'e1', name: 'Encounter' }]);
-    seedMockStore('modules', [{ id: 'mod1', name: 'Module' }]);
+    seedMockStore('map_locations', [{ id: 'l1', name: 'Location' }]);
 
     const wrapper = await mountHome();
     expect(wrapper.findAll('.stat-card')).toHaveLength(6);
-    expect(wrapper.text()).toContain('1');
+    expect(
+      wrapper.findAll('.stat-card h3').map((title) => title.text()),
+    ).toEqual([
+      'Notes',
+      'Pawns',
+      'Encounters',
+      'Locations',
+      'Characters',
+      'Parties',
+    ]);
+    expect(wrapper.findAll('.stat-icon svg')).toHaveLength(6);
+    expect(wrapper.text()).toContain('2');
     wrapper.unmount();
   });
 
@@ -145,37 +147,6 @@ describe('HomeView', () => {
       target: { files: [new File(['x'], 'bad.zip')], value: '' },
     } as any);
     expect(alert).toHaveBeenCalledWith(expect.stringContaining('corrupt'));
-    wrapper.unmount();
-  });
-
-  it('imports a module zip and reloads module and note stores', async () => {
-    vi.mocked(parseModuleZip).mockResolvedValue({
-      module: { name: 'Imported' },
-      tree: [],
-      notes: [],
-    });
-    vi.mocked(importModuleFromZip).mockResolvedValue({
-      moduleId: 'm1',
-      noteCount: 2,
-    });
-    const wrapper = await mountHome();
-    const input = { files: [new File(['zip'], 'module.zip')], value: 'x' };
-
-    await (wrapper.vm as any).handleModuleImport({ target: input } as any);
-    expect(parseModuleZip).toHaveBeenCalled();
-    expect(importModuleFromZip).toHaveBeenCalled();
-    expect(alert).toHaveBeenCalledWith(expect.stringContaining('2 notes'));
-    expect(input.value).toBe('');
-
-    vi.mocked(parseModuleZip).mockRejectedValueOnce(new Error('bad zip'));
-    await (wrapper.vm as any).handleModuleImport({
-      target: { files: [new File(['x'], 'bad.zip')], value: '' },
-    } as any);
-    expect(alert).toHaveBeenCalledWith(expect.stringContaining('bad zip'));
-
-    await (wrapper.vm as any).handleModuleImport({
-      target: { files: [], value: '' },
-    } as any);
     wrapper.unmount();
   });
 });

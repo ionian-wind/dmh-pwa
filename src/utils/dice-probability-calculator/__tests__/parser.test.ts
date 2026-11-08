@@ -161,6 +161,32 @@ describe('dice probability calculator parser', () => {
     }
   });
 
+  it('reports a range of malformed inputs', () => {
+    for (const script of [
+      '@',
+      '1 @',
+      'output 1 +',
+      'output {1 2}',
+      'output 1\nrrewr',
+      'output )',
+    ]) {
+      expect(() => parse(script)).toThrow(DiceSyntaxError);
+    }
+  });
+
+  it('builds unary, access and ranged sequence expressions', () => {
+    for (const script of [
+      'loop I over {1..2} { output I }',
+      'output -1',
+      'output # {1,2}',
+      'output 1 @ {1,2}',
+      'output {1..2, 3}',
+      'output d{1..3}',
+    ]) {
+      expect(parse(script).statements.length).toBeGreaterThan(0);
+    }
+  });
+
   it('parses function call items in source order', () => {
     const program = parse('output [highest 1 of 2d6]');
     const statement = program.statements[0];
@@ -174,5 +200,19 @@ describe('dice probability calculator parser', () => {
         { kind: 'expression', value: { kind: 'dice' } },
       ],
     });
+  });
+
+  it('collects multiple syntax errors instead of stopping at the first', () => {
+    try {
+      parse('output 1 +\noutput {1 2}\noutput )');
+      throw new Error('Expected parse to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DiceSyntaxError);
+      const syntaxError = error as DiceSyntaxError;
+      expect(syntaxError.errors.length).toBeGreaterThanOrEqual(2);
+      expect(syntaxError.errors[0]).toBeInstanceOf(DiceSyntaxError);
+      expect(syntaxError.errors.some((issue) => issue.line > 1)).toBe(true);
+      expect(syntaxError.message.split('; ').length).toBeGreaterThanOrEqual(2);
+    }
   });
 });

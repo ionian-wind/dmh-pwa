@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, watch, type Ref, computed } from 'vue';
+import { ref, watch, computed, onMounted, type Ref } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useJukeboxPlaylistsStore } from '../stores';
 import type { JukeboxPlaylist } from '../types';
+import type { MapEntityRef } from '@/maps/types';
 import type { UUID } from '@/types';
 import { useI18n } from 'vue-i18n';
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
-import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
-import type { MapEntityRef } from '@/maps/types';
 
 const props = defineProps<{
   modelValue: boolean;
+  useModalStack?: boolean;
   playlist: JukeboxPlaylist | null;
 }>();
 
@@ -18,19 +21,48 @@ const emit = defineEmits(['update:modelValue', 'saved', 'delete']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const { t } = useI18n();
+const editorTabs = useEntityEditorTabs();
+const relations = useEntityLinkRelations();
+const featureStores = useFeatureStores();
+const linkKinds = ['location', 'pawn', 'encounter', 'party'] as const;
+
+type PlaylistLinkKind = (typeof linkKinds)[number];
+
+const playlistLinks = computed<MapEntityRef[]>(() => {
+  const id = props.playlist?.id;
+  if (!id) return [];
+  return linkKinds.flatMap((kind) =>
+    relations
+      .getLinkedIds('playlist', id, kind)
+      .map((linkId) => ({ kind, id: linkId })),
+  );
+});
+
+async function setPlaylistLinks(kind: PlaylistLinkKind, links: MapEntityRef[]) {
+  const id = props.playlist?.id;
+  if (!id) return;
+  await relations.setLinkedIds(
+    'playlist',
+    id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
+
+onMounted(async () => {
+  await featureStores.load([...linkKinds]);
+});
 
 type EditablePlaylist = {
   name: string;
   description?: string;
   trackIds: UUID[];
-  moduleIds?: string[];
 };
 
 const editedPlaylist: Ref<EditablePlaylist> = ref({
   name: '',
   description: '',
   trackIds: [],
-  moduleIds: [],
 });
 
 watch(
@@ -43,7 +75,6 @@ watch(
         name: '',
         description: '',
         trackIds: [],
-        moduleIds: [],
       };
     }
   },
@@ -59,21 +90,10 @@ watch(
         name: '',
         description: '',
         trackIds: [],
-        moduleIds: [],
       };
     }
   },
 );
-
-const editorTabs = useEntityEditorTabs();
-
-const linkedModules = computed<MapEntityRef[]>(() =>
-  (editedPlaylist.value.moduleIds ?? []).map((id) => ({ kind: 'module', id })),
-);
-
-function setLinkedModules(links: MapEntityRef[]) {
-  editedPlaylist.value.moduleIds = links.map((link) => link.id);
-}
 
 async function save() {
   if (props.playlist && props.playlist.id) {
@@ -81,7 +101,6 @@ async function save() {
       name: editedPlaylist.value.name,
       description: editedPlaylist.value.description,
       trackIds: editedPlaylist.value.trackIds,
-      moduleIds: editedPlaylist.value.moduleIds,
     });
     emit('saved', updatedPlaylist);
   } else {
@@ -106,6 +125,7 @@ function handleDelete() {
 
 <template>
   <BaseModal
+    :use-modal-stack="useModalStack"
     :isOpen="modelValue"
     modalId="playlist-editor"
     @update:isOpen="$emit('update:modelValue', $event)"
@@ -153,11 +173,16 @@ function handleDelete() {
     </template>
 
     <template #links>
-      <EntitiesLinking
-        kind="module"
-        :model-value="linkedModules"
-        @update:model-value="setLinkedModules"
-      />
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-for="kind in linkKinds"
+          :key="kind"
+          v-show="featureStores.has(kind)"
+          :kind="kind"
+          :model-value="playlistLinks"
+          @update:model-value="(links) => setPlaylistLinks(kind, links)"
+        />
+      </div>
     </template>
   </BaseModal>
 </template>

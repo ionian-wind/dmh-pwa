@@ -10,16 +10,20 @@ the legacy hand-written `public/manifest.json` and `public/sw.js` were removed.
 
 Configured in `vite.config.js`:
 
-| Field | Value |
-| --- | --- |
-| `name` | Owlbear's Dungeon Master Helper |
-| `short_name` | Owlbear's DMH |
-| `theme_color` / `background_color` | `#1e1e2e` |
-| `display` | `standalone` |
-| `orientation` | `portrait-primary` |
-| `scope` / `start_url` | `/dmh-pwa` |
-| Icons | 72, 96, 128, 144, 152, 192, 384, 512 px |
-| Categories | productivity, games, utilities |
+| Field                              | Value                                           |
+| ---------------------------------- | ----------------------------------------------- |
+| `id`                               | `/dmh-pwa/`                                     |
+| `name`                             | Owlbear's Dungeon Master Helper                 |
+| `short_name`                       | Owlbear's DMH                                   |
+| `theme_color` / `background_color` | `#1e1e2e`                                       |
+| `display`                          | `standalone`                                    |
+| `orientation`                      | `any`                                           |
+| `scope` / `start_url`              | `/dmh-pwa/`                                     |
+| `launch_handler`                   | `{ client_mode: 'focus-existing' }`             |
+| Shortcuts                          | Notes, Timers, Jukebox, Help center             |
+| Screenshots                        | `public/screenshots/app-desktop.png` and mobile |
+| Icons                              | 72, 96, 128, 144, 152, 192, 384, 512 px         |
+| Categories                         | productivity, games, utilities                  |
 
 The manifest link is injected by `vite-plugin-pwa` as
 `/dmh-pwa/manifest.webmanifest`; `index.html` keeps only the Apple/Microsoft
@@ -31,6 +35,7 @@ metadata.
 
 ```js
 registerType: 'autoUpdate',
+injectRegister: 'inline',
 workbox: {
   maximumFileSizeToCacheInBytes: 30_000_000,
   globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
@@ -46,20 +51,27 @@ devOptions: { enabled: true, type: 'module' },
 
 The production build uses the Workbox-generated service worker. The legacy
 hand-written `public/sw.js` and `public/manifest.json` were removed; the PWA
-plugin is the single source of the manifest and worker.
+plugin is the single source of the manifest and worker. Static VitePress help
+pages under `dist/help/` are generated before the app build and are available
+offline.
 
 ## Registration and update flow
 
-`vite-plugin-pwa` injects `registerSW` by default (no explicit import visible
-in `main.ts`). With `autoUpdate`:
+`vite-plugin-pwa` injects an inline registration script into `index.html`
+(`injectRegister: 'inline'`); there is no separate `registerSW.js` file to
+precache. Because inline registration bypasses the plugin’s `autoUpdate`
+defaults, `workbox.skipWaiting` and `workbox.clientsClaim` are set explicitly.
+With `autoUpdate`:
 
-1. A new worker installs and activates.
+1. A new worker installs, activates and claims open clients.
 2. The page controller changes.
 3. `PWAStatus.vue` listens for `navigator.serviceWorker.controllerchange` and
-   shows an "Update available" banner.
+   shows an "Update available" banner. The first change after a fresh install
+   is ignored.
 4. "Update now" calls `window.location.reload()`.
 
 `PWAStatus` also shows:
+
 - an offline badge when `navigator.onLine === false`,
 - a standalone badge when `display-mode: standalone` or
   `navigator.standalone === true`.
@@ -75,12 +87,28 @@ fires `beforeinstallprompt`.
 
 - The event is captured and stored; the browser’s own install UI remains
   available, and the banner’s Install button calls `prompt()`.
-- The banner's Install button calls `prompt()` and records the user's choice.
+- The banner’s Install button calls `prompt()` and records the user’s choice.
 - `appinstalled` hides the banner.
+- The banner is localized and includes an **Installation help** link to the
+  static help center.
 - Listeners are removed on unmount.
 - Browsers that do not fire `beforeinstallprompt` (notably iOS Safari) still
-  need manual install instructions; the standard browser install UI remains
-  available.
+  need manual install instructions; the help center covers this.
+
+## Safe-area handling
+
+`index.html` uses `viewport-fit=cover`. `src/assets/styles/global.css` defines
+`--safe-top/right/bottom/left` from `env(safe-area-inset-*)` and applies them
+to:
+
+- the main header toolbar,
+- left and right drawer content,
+- the footer and bottom player,
+- bottom-positioned sound controls,
+- the PWA update/install banners and status chips.
+
+Verify these on a real notched device or emulator; desktop browser resize does
+not emulate safe-area insets.
 
 ## Offline data behavior
 
@@ -90,6 +118,7 @@ still resolves; Blob-sourced files are stored in IndexedDB and are fully
 offline.
 
 Requests that remain network-dependent:
+
 - Google Fonts / remote assets if any are added later,
 - none from the app itself today.
 
@@ -99,13 +128,38 @@ Requests that remain network-dependent:
 `npm run dev`. This commonly causes stale-cache confusion; use a fresh
 profile or unregister the worker when debugging.
 
+Dev builds only emit the worker itself, so the production precache glob
+matches nothing in `dev-dist/` and Workbox warns about it.
+`devOptions.suppressWarnings: true` makes the dev build precache a tiny
+placeholder file instead, which keeps the dev log clean without changing
+production precaching.
+
+Inline registration also avoids the Workbox warning about a missing precached
+`/registerSW.js`: older builds precached that generated file, while the dev
+server served a different registration script. After updating from an older
+dev worker, reload once so the new worker takes control.
+
+If `dev-dist/` is removed while the dev server is running, Vite can fail with
+`ENOENT: no such file or directory, open '.../dev-dist/sw.js'`. Regenerate it
+by briefly starting Vite (for example `npx vite --port 5174`) or restarting
+the dev server; no data or source files are affected. Avoid deleting
+`dev-dist/` while the dev server is active.
+
+A console message such as `The precached response for /dmh-pwa/ ... was not
+found` usually means the page is still controlled by a worker generated
+before a config change. Reload once; if it persists, unregister the worker in
+DevTools → Application → Service Workers and reload. The dev worker is
+rebuilt on every Vite restart.
+
 ## Known issues
 
 - `registerType: 'autoUpdate'` combined with a manual "update now" prompt can
-  produce a reload loop on some browsers if `controllerchange` fires repeatedly.
+  produce a reload loop on some browsers if `controllerchange` fires
+  repeatedly. `PWAStatus` ignores the first change after install, and with
+  `skipWaiting` + `clientsClaim` a normal update produces one change.
 - PWA scope/start URL assumes deployment at `/dmh-pwa`.
-- `index.html` theme colors (`#1e1e2e`) match the header but the content theme
-  is light; install splash/status bar may feel inconsistent.
+- `index.html` theme colors (`#1e1e2e`) match the header; the content theme now
+  follows the UI theme setting (light by default).
 - `maximumFileSizeToCacheInBytes` of 30 MB is generous; a single large JS chunk
   or asset can slow first install.
 - Browsers without `beforeinstallprompt` need a manual install entry point.

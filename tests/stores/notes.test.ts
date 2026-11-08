@@ -15,16 +15,14 @@ describe('note store', () => {
     const store = useNoteStore();
     const created = await store.create({
       title: 'Session',
-      content: 'See [Alice](monster://m1)',
+      content: 'See [Alice](pawn://m1)',
       typeId: null,
       tags: ['session'],
-      moduleId: null,
-      hidden: false,
     });
 
     expect(mentionsMock.setLinks).toHaveBeenCalledWith(
       { kind: 'note', id: created.id },
-      [{ kind: 'monster', id: 'm1' }],
+      [{ kind: 'pawn', id: 'm1' }],
     );
 
     await store.update(created.id, {
@@ -42,21 +40,6 @@ describe('note store', () => {
     });
   });
 
-  it('never changes hidden after creation', async () => {
-    const store = useNoteStore();
-    const created = await store.create({
-      title: 'Hidden doc',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleId: 'm1',
-      hidden: true,
-    });
-
-    const updated = await store.update(created.id, { hidden: false } as any);
-    expect(updated.hidden).toBe(true);
-  });
-
   it('filters by search and tag and exposes all tags', async () => {
     const store = useNoteStore();
     await store.create({
@@ -64,16 +47,12 @@ describe('note store', () => {
       content: 'Goblin ambush',
       typeId: null,
       tags: ['combat'],
-      moduleId: null,
-      hidden: false,
     });
     await store.create({
       title: 'Roleplay',
       content: 'Tavern scene',
       typeId: null,
       tags: ['social'],
-      moduleId: null,
-      hidden: false,
     });
 
     store.setSearchQuery('goblin');
@@ -85,67 +64,24 @@ describe('note store', () => {
     expect(store.allTags.sort()).toEqual(['combat', 'social']);
   });
 
-  it('converts a document note to a regular note and detaches it from the tree', async () => {
-    const { useModuleStore } = await import('@/stores/modules');
-    const modules = useModuleStore();
-    const notes = useNoteStore();
-    const note = await notes.create({
-      title: 'Chapter',
-      content: 'Body',
+  it('adds hashtags from saved content to the note tag list', async () => {
+    const store = useNoteStore();
+    const created = await store.create({
+      title: 'Travel',
+      content: '# Heading\nVisit #harbor and #forest.',
       typeId: null,
-      tags: [],
-      moduleId: 'm1',
-      hidden: true,
-    });
-    await modules.create({
-      name: 'Book',
-      id: 'm1',
-      noteTree: [{ noteId: note.id, children: [] }],
-    } as any);
-
-    const updated = await notes.setHidden(note.id, false);
-
-    expect(updated.hidden).toBe(false);
-    expect(modules.getById('m1')?.noteTree).toEqual([]);
-  });
-
-  it('converts a regular note with a module into a document note at the tree root', async () => {
-    const { useModuleStore } = await import('@/stores/modules');
-    const modules = useModuleStore();
-    const notes = useNoteStore();
-    const note = await notes.create({
-      title: 'Chapter',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleId: 'm2',
-      hidden: false,
-    });
-    await modules.create({
-      name: 'Book',
-      id: 'm2',
-      noteTree: [],
-    } as any);
-
-    const updated = await notes.setHidden(note.id, true);
-
-    expect(updated.hidden).toBe(true);
-    expect(modules.getById('m2')?.noteTree?.[0]?.noteId).toBe(note.id);
-  });
-
-  it('refuses to hide a note that has no module', async () => {
-    const notes = useNoteStore();
-    const note = await notes.create({
-      title: 'Loose',
-      content: 'Body',
-      typeId: null,
-      tags: [],
-      moduleId: null,
-      hidden: false,
+      tags: ['session'],
     });
 
-    await expect(notes.setHidden(note.id, true)).rejects.toThrow(
-      'module',
-    );
+    expect(created.tags).toEqual(['session', 'harbor', 'forest']);
+
+    const updated = await store.update(created.id, {
+      content: 'Travel to #harbor and #mountains.',
+    });
+    expect(updated.tags).toEqual(['session', 'harbor', 'forest', 'mountains']);
+    expect(store.allTags).toContain('mountains');
+
+    const withoutTags = await store.update(created.id, { tags: ['session'] });
+    expect(withoutTags.tags).toEqual(['session']);
   });
 });

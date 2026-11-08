@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
 import IconPicker from '@/components/common/IconPicker.vue';
-import EntitiesLinking from './EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import type {
   MapEntityKind,
   MapEntityRef,
@@ -12,8 +12,8 @@ import type {
   MapLocation,
   MapMarker,
 } from '../types';
-import { normalizeMarker } from '../utils/normalize';
-import { MAP_MARKER_ICONS } from '../icons';
+import { normalizeMarker } from '@/utils/maps/normalize';
+import { MAP_MARKER_ICONS } from '@/utils/maps/icons';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 
 const props = defineProps<{
@@ -47,15 +47,7 @@ watch(
 );
 
 const editorTabs = useEntityEditorTabs();
-const linkKinds: MapEntityKind[] = [
-  'note',
-  'module',
-  'party',
-  'monster',
-  'encounter',
-  'character',
-  'map',
-];
+const linkKinds: MapEntityKind[] = ['note', 'pawn', 'encounter', 'character'];
 
 const linkedLocation = computed<MapEntityRef[]>(() =>
   draft.value.locationId

@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useEncounterStore } from '@/stores/encounters';
-import { useModuleStore } from '@/stores/modules';
 import type { Encounter, Combat } from '@/types';
 import BaseListView from '@/components/common/BaseListView.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
@@ -13,14 +12,13 @@ import { confirm } from '@/dialogs';
 
 const router = useRouter();
 const encounterStore = useEncounterStore();
-const moduleStore = useModuleStore();
 const { t } = useI18n();
 
 const showPartySelector = ref(false);
 const selectedEncounterForCombat = ref<Encounter | null>(null);
 
 onMounted(async () => {
-  await Promise.all([encounterStore.load(), moduleStore.load()]);
+  await encounterStore.load();
 });
 
 function cardProps(encounter: Encounter) {
@@ -89,9 +87,6 @@ async function handleCopy(encounter: Encounter) {
       :create-title="t('encounters.create')"
       :card-props="cardProps"
       :editor-props="editorProps"
-      show-search
-      :search-query="encounterStore.searchQuery"
-      @update:search-query="encounterStore.setSearchQuery"
       @submit="handleSubmit"
       @delete="handleDelete"
       @run-combat="handleRunCombat"

@@ -19,6 +19,9 @@
         "$ref": "#/definitions/entityRef"
       }
     },
+    "map": {
+      "type": "object"
+    },
     "createdAt": {
       "type": "number"
     },
@@ -37,7 +40,7 @@
             "note",
             "module",
             "party",
-            "monster",
+            "pawn",
             "encounter",
             "character",
             "map",

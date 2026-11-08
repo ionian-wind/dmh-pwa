@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A party is a named group of player characters plus optional module membership.
+A party is a named group of player characters.
 It is the roster used to start a combat.
 
 ## Key files
@@ -25,15 +25,12 @@ interface Party {
   updatedAt: number;
   name: string;
   description?: string;
-  notes?: string;
   characters: string[]; // character IDs
-  moduleIds: string[]; // module IDs
 }
 ```
 
-Schema requires `id`, `name`, `characters`, `moduleIds`, timestamps. The
-editor normalizes `moduleIds` to `string[]` before submit; `PartyCard` guards
-legacy records that lack `characters`/`moduleIds`.
+Schema requires `id`, `name`, `characters`, timestamps. `PartyCard` guards
+legacy records that lack `characters`.
 
 ## List page
 
@@ -44,42 +41,49 @@ legacy records that lack `characters`/`moduleIds`.
 
 ## Card
 
-Shows name, description, character count, and module names. The character
-count uses `(party.characters || []).length`; module lookup assumes
-`moduleIds` exists.
+Shows name, description, and character count. The character
+count uses `(party.characters || []).length`.
 
-## Editor
+## Editor (`PartyEditor.vue`)
 
 - Name (required).
-- Description and notes textareas.
-- The **Linked entities** tab contains separate `EntitiesLinking` blocks for
-  modules and characters.
-- Submit filters empty module IDs.
-
-Character membership can also be managed from the party detail page.
+- Description uses the shared Markdown editor with visual/raw toggle and
+  formatting help. Parties have no notes field.
+- Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
+- The **Linked entities** tab contains an `EntitiesLinking` block for
+  characters.
+- Submit reads the latest Markdown.
 
 ## Detail page (`PartyView.vue`)
 
 - Resolves party from store by route param.
-- Loads characters and modules.
-- `partyCharacters` filters loaded characters by `party.characters`.
-- `handleToggleCharacter` adds/removes a character ID and persists immediately.
-- Link-characters modal lists every character with a toggle; there is no search.
-- Delete uses the app confirm dialog, then `BaseEntityView` navigates back to
+- Loads characters.
+- Uses the shared inline View/Edit experience:
+  - View mode renders `description` as Markdown inside
+    `EntityContentSurface`.
+  - Edit mode uses `EntityInlineEditor` + `EntityMarkdownEditor`; switching
+    back to View saves, and dirty navigation uses the shared unsaved guard.
+  - Header title and subtitle hide in edit mode; Delete appears only in edit
+    mode, and formatting help appears in raw Markdown mode.
+  - Header tabs switch between **View/Linked entities** and
+    **Main editor/Linked entities**.
+- The **Linked entities** tab shows characters. In edit mode it
+  is editable through `EntitiesLinking` and saved with the party.
+- `partySubtitle` shows the character count under the page title in view mode
+  only.
+- Delete uses the app confirm dialog, then `BaseEntityTabView` navigates back to
   `/parties`. It does not delete associated combats.
 - Publishes `PartyViewSidebar` to the right drawer.
-- `partySubtitle` is computed in English ("Modules: … • N characters") and is
-  never displayed anyway because `BaseEntityView` drops `subtitle`.
 
 ## Sidebar
 
-`PartyViewSidebar` computes mentions and backlinks from the plain `party` prop.
-It is published to the right drawer by `PartyView`.
+`PartyViewSidebar` computes outgoing mentions and backlinks from the plain
+`party` prop and hosts the shared View/Edit and visual-editor controls. Mentions
+are hidden in edit mode. It has no Scenes tab and no party download.
 
 ## Relationships
 
 - `party.characters` → characters.
-- `party.moduleIds` → modules (many-to-many).
 - `combat.partyId` → party (a combat snapshots the party's characters at
   creation time; later party changes do not affect existing combats).
 - PartySelector uses the party roster to create player combatants.
@@ -90,4 +94,4 @@ It is published to the right drawer by `PartyView`.
 - No drag ordering of characters.
 - No duplicate-character prevention beyond the `includes` check.
 - Deleting a party does not delete its combats.
-- Legacy parties without `moduleIds`/`characters` are guarded on the card.
+- Legacy parties without `characters` are guarded on the card.

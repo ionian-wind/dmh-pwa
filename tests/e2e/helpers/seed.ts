@@ -27,7 +27,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
   const id = options.id ?? 'e2e-map';
   const title = options.title ?? 'E2E World';
 
-  await page.goto(`${APP_PATH}/maps`);
+  await page.goto(`${APP_PATH}/locations`);
   await waitForAppDatabase(page);
 
   await page.evaluate(
@@ -48,16 +48,27 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
       const fileId = `file-${mapId}`;
       const now = Date.now();
       const transaction = db.transaction(
-        ['maps', 'map_files', 'map_locations', 'notes'],
+        ['maps', 'files', 'map_image_metadata', 'map_locations', 'notes'],
         'readwrite',
       );
-      transaction.objectStore('map_files').put({
+      transaction.objectStore('files').put({
         id: fileId,
         name: 'world.svg',
         size: imageBlob.size,
         type: imageBlob.type,
         lastModified: now,
+        signature: JSON.stringify([
+          'world.svg',
+          imageBlob.size,
+          now,
+          imageBlob.type,
+        ]),
         source: { kind: 'blob', blob: imageBlob },
+        createdAt: now,
+        updatedAt: now,
+      });
+      transaction.objectStore('map_image_metadata').put({
+        id: fileId,
         imageMetadata: {
           width: 200,
           height: 100,
@@ -80,11 +91,8 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         id: 'note-1',
         title: 'E2E Note',
         content: '',
-        contentType: 'text',
         tags: [],
-        moduleId: null,
         typeId: null,
-        hidden: false,
         createdAt: now,
         updatedAt: now,
       });
@@ -92,11 +100,8 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
         id: 'note-2',
         title: 'E2E Other',
         content: '',
-        contentType: 'text',
         tags: [],
-        moduleId: null,
         typeId: null,
-        hidden: false,
         createdAt: now,
         updatedAt: now,
       });
@@ -135,7 +140,7 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
     { mapId: id, mapTitle: title },
   );
 
-  await page.goto(`${APP_PATH}/maps/${id}`);
+  await page.goto(`${APP_PATH}/locations/${id}`);
   await dismissInstallPrompt(page);
   await page.locator('.ol-map-actions-trigger').waitFor({ state: 'attached' });
 }
@@ -143,4 +148,41 @@ export async function seedMap(page: Page, options: SeededMapOptions = {}) {
 export async function enterMapEditMode(page: Page) {
   await page.locator('.map-mode-toggle .map-mode-edit').click();
   await page.locator('.map-layer-add').waitFor();
+}
+
+export async function seedJukeboxTracks(
+  page: Page,
+  titles: string[] = ['First Track', 'Second Track', 'Third Track'],
+) {
+  await page.goto(`${APP_PATH}/jukebox`);
+  await waitForAppDatabase(page);
+
+  await page.evaluate(async (trackTitles) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('dmh-db');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const now = Date.now();
+    const transaction = db.transaction(['jukebox_tracks'], 'readwrite');
+    trackTitles.forEach((title, index) => {
+      transaction.objectStore('jukebox_tracks').put({
+        id: `e2e-track-${index + 1}`,
+        fileId: `e2e-file-${index + 1}`,
+        title,
+        playlistIds: [],
+        createdAt: now + index,
+        updatedAt: now + index,
+      });
+    });
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  }, titles);
+
+  await page.reload();
+  await dismissInstallPrompt(page);
+  await page.locator('.track-item').first().waitFor();
 }

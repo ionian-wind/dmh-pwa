@@ -5,10 +5,9 @@ export const initialSchemaMigration: Migration = {
   name: 'initial_schema',
   affectedStores: [
     'characters',
-    'monsters',
+    'pawns',
     'notes',
     'parties',
-    'modules',
     'encounters',
     'combats',
     'noteTypes',

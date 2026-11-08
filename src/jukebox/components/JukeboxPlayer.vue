@@ -3,11 +3,13 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import TrackInfo from '@/jukebox/components/TrackInfo.vue';
+import VolumeControl from '@/components/common/VolumeControl.vue';
+import AlbumPicture from '@/jukebox/components/AlbumPicture.vue';
 import {
   getGradientContrastColor,
   useAnimatedGradient,
 } from '@/jukebox/useAnimatedGradient';
-import { formatTime } from '@/jukebox/utils';
+import { formatTime } from '@/utils/formatTime';
 
 // Tabler icons
 import {
@@ -19,14 +21,14 @@ import {
   IconRepeat,
   IconRepeatOnce,
   IconSettingsAutomation,
-  IconVolume,
-  IconVolumeOff,
 } from '@tabler/icons-vue';
 import { useConfigStore } from '@/utils/configStore';
 const props = defineProps<{
   animatedBackground?: boolean;
   showArtwork?: boolean;
   modal?: boolean;
+  /** `panel` places the album cover on the left, beside the controls. */
+  layout?: 'bar' | 'panel';
 }>();
 const { t } = useI18n();
 const playerStore = useJukeboxPlayerStore();
@@ -78,49 +80,6 @@ const controlStyle = computed<Record<string, string>>(() => {
   return style;
 });
 
-// Volume popup open state
-const isVolumePopupOpen = ref(false);
-const isVolumeHovered = ref(false);
-const isVolumePopupDragging = ref(false);
-const isSettingsPopupOpen = ref(false);
-
-let closeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-function onVolumePointerDown() {
-  isVolumePopupDragging.value = true;
-  document.addEventListener(
-    'pointerup',
-    () => {
-      isVolumePopupDragging.value = false;
-    },
-    { once: true },
-  );
-}
-
-function onVolumeEnter() {
-  if (closeTimeout) {
-    clearTimeout(closeTimeout);
-    closeTimeout = null;
-  }
-  isVolumePopupOpen.value = true;
-}
-
-function onVolumeLeave() {
-  if (isVolumePopupDragging.value) return;
-  closeTimeout = setTimeout(() => {
-    isVolumePopupOpen.value = false;
-  }, 200);
-}
-
-function handleVolumeWheel(event: WheelEvent) {
-  event.preventDefault();
-  isVolumePopupOpen.value = true;
-  const delta = event.deltaY;
-  let newVolume = playerStore.volume - delta * 0.001;
-  newVolume = Math.max(0, Math.min(1, newVolume));
-  playerStore.setVolume(newVolume);
-}
-
 function setSmoothTrackChange(value: boolean) {
   configStore.jukeboxSmoothTrackChange = value;
 }
@@ -137,9 +96,12 @@ function setUseMiniPlayer(value: boolean) {
   configStore.jukeboxUseMiniPlayer = value;
 }
 
+const isSettingsPopupOpen = ref(false);
+
 const displayArtwork = computed(
   () => props.showArtwork && configStore.jukeboxDisplayCoverWhilePlaying,
 );
+const isPanel = computed(() => props.layout === 'panel');
 
 // Theming logic: update CSS variables for JukeboxPlayer based on track color
 const showRemainingTime = ref(false);
@@ -148,9 +110,6 @@ function toggleTimeDisplay() {
 }
 
 const progress = computed(() => playerStore.currentTime / playerStore.duration);
-const volumePercent = computed(
-  () => `${Math.round(playerStore.volume * 100)}%`,
-);
 
 // Add hover state for progress bar
 const isProgressHovered = ref(false);
@@ -187,212 +146,187 @@ const handleProgressChange = (value: number | null) => {
         :style="gradientStyle"
       />
     </Transition>
-    <TrackInfo
-      :track="playerStore.currentTrack"
-      :show-artwork="displayArtwork"
-    />
-
-    <QToolbar class="q-pa-none q-gutter-x-sm progress-bar">
-      <div class="progress-bar-time time-current" @click="toggleTimeDisplay">
-        <template v-if="!showRemainingTime">
-          {{ formatTime(playerStore.currentTime) }}
-        </template>
-        <template v-else>
-          -{{
-            formatTime((playerStore.duration || 0) - playerStore.currentTime)
-          }}
-        </template>
-      </div>
-      <div
-        class="progress-bar-seek"
-        @mouseenter="isProgressHovered = true"
-        @mouseleave="isProgressHovered = false"
-      >
-        <QSlider
-          :model-value="progress"
-          :min="0"
-          :disable="playerStore.currentTrack === null"
-          :max="1"
-          :step="0.001"
-          :label="false"
-          :markers="false"
-          :track-size="isProgressHovered ? '10px' : '5px'"
-          @update:model-value="
-            (value) => value !== null && handleProgressChange(value)
-          "
+    <div class="jukebox-player-content" :class="{ 'is-panel': isPanel }">
+      <AlbumPicture
+        v-if="isPanel && displayArtwork"
+        :track="playerStore.currentTrack"
+        artwork-size="clamp(112px, 16vw, 176px)"
+        class="panel-artwork"
+      />
+      <div class="player-main">
+        <TrackInfo
+          :track="playerStore.currentTrack"
+          :show-artwork="displayArtwork && !isPanel"
+          :horizontal="isPanel"
         />
-      </div>
-      <div class="progress-bar-time time-duration">
-        {{ formatTime(playerStore.duration) }}
-      </div>
-    </QToolbar>
 
-    <QToolbar class="q-pa-none q-gutter-x-sm player-controls">
-      <QBtnGroup flat class="playback-options">
-        <QBtn
-          flat
-          :class="{ 'is-inactive': !playerStore.shuffle }"
-          :disable="!playerStore.currentTrack"
-          @click="playerStore.toggleShuffle"
-          :title="t('jukebox.shuffle')"
-        >
-          <IconShuffle />
-        </QBtn>
-        <QBtn
-          flat
-          :class="{
-            'is-inactive':
-              playerStore.repeatMode !== 'list' &&
-              playerStore.repeatMode !== 'track',
-          }"
-          :disable="!playerStore.currentTrack"
-          @click="playerStore.cycleRepeatMode"
-          :title="t('jukebox.repeat')"
-        >
-          <IconRepeat v-if="playerStore.repeatMode === 'off'" />
-          <IconRepeat v-else-if="playerStore.repeatMode === 'list'" />
-          <IconRepeatOnce v-else />
-        </QBtn>
-      </QBtnGroup>
-
-      <QBtnGroup flat class="playback-controls">
-        <QBtn
-          flat
-          @click="playerStore.playPrev()"
-          :disabled="!(playerStore.currentTrack && playerStore.hasPrevTrack)"
-          class="prev-track"
-        >
-          <IconPlayerSkipBack />
-        </QBtn>
-        <QBtn
-          flat
-          @click="playerStore.togglePlay()"
-          :disabled="!(playerStore.currentTrack && playerStore.canPlay)"
-          class="play-pause"
-        >
-          <IconPlayerPause v-if="playerStore.isPlaying" />
-          <IconPlayerPlay v-else />
-        </QBtn>
-        <QBtn
-          flat
-          @click="playerStore.playNext()"
-          :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"
-          class="next-track"
-        >
-          <IconPlayerSkipForward />
-        </QBtn>
-      </QBtnGroup>
-
-      <QBtnGroup flat class="volume-control">
-        <QBtn
-          flat
-          @click="playerStore.toggleMute()"
-          @wheel.prevent="handleVolumeWheel"
-          class="volume-button"
-          :title="`${t('jukebox.volume')}: ${volumePercent}`"
-          :aria-label="`${t('jukebox.volume')}: ${volumePercent}`"
-          @mouseenter="onVolumeEnter"
-          @mouseleave="onVolumeLeave"
-        >
-          <IconVolume v-if="playerStore.volume > 0" />
-          <IconVolumeOff v-else />
-          <QPopupProxy
-            v-model="isVolumePopupOpen"
-            anchor="center left"
-            self="center right"
-            :breakpoint="0"
-            no-parent-event
+        <QToolbar class="q-pa-none q-gutter-x-sm progress-bar">
+          <div
+            class="progress-bar-time time-current"
+            @click="toggleTimeDisplay"
           >
-            <div
-              class="volume-popup q-pa-sm"
-              style="width: 200px"
-              @wheel.prevent="handleVolumeWheel"
-              @pointerdown="onVolumePointerDown"
-              @mouseenter="
-                onVolumeEnter();
-                isVolumeHovered = true;
+            <template v-if="!showRemainingTime">
+              {{ formatTime(playerStore.currentTime) }}
+            </template>
+            <template v-else>
+              -{{
+                formatTime(
+                  (playerStore.duration || 0) - playerStore.currentTime,
+                )
+              }}
+            </template>
+          </div>
+          <div
+            class="progress-bar-seek"
+            @mouseenter="isProgressHovered = true"
+            @mouseleave="isProgressHovered = false"
+          >
+            <QSlider
+              :model-value="progress"
+              :min="0"
+              :disable="playerStore.currentTrack === null"
+              :max="1"
+              :step="0.001"
+              :label="false"
+              :markers="false"
+              :track-size="isProgressHovered ? '10px' : '5px'"
+              @update:model-value="
+                (value) => value !== null && handleProgressChange(value)
               "
-              @mouseleave="
-                onVolumeLeave();
-                isVolumeHovered = false;
-              "
+            />
+          </div>
+          <div class="progress-bar-time time-duration">
+            {{ formatTime(playerStore.duration) }}
+          </div>
+        </QToolbar>
+
+        <QToolbar class="q-pa-none q-gutter-x-sm player-controls">
+          <QBtnGroup flat class="playback-options">
+            <QBtn
+              flat
+              :class="{ 'is-inactive': !playerStore.shuffle }"
+              :disable="!playerStore.currentTrack"
+              @click="playerStore.toggleShuffle"
+              :title="t('jukebox.shuffle')"
             >
-              <QSlider
-                :model-value="playerStore.volume"
-                :min="0"
-                :max="1"
-                :step="0.01"
-                :markers="false"
-                :track-size="isVolumeHovered ? '10px' : '5px'"
-                size="md"
-                class="volume-bar"
-                @update:model-value="
-                  (value) => value !== null && playerStore.setVolume(value)
-                "
-              />
-              <span class="volume-popup-value">{{ volumePercent }}</span>
-            </div>
-          </QPopupProxy>
-        </QBtn>
+              <IconShuffle />
+            </QBtn>
+            <QBtn
+              flat
+              :class="{
+                'is-inactive':
+                  playerStore.repeatMode !== 'list' &&
+                  playerStore.repeatMode !== 'track',
+              }"
+              :disable="!playerStore.currentTrack"
+              @click="playerStore.cycleRepeatMode"
+              :title="t('jukebox.repeat')"
+            >
+              <IconRepeat v-if="playerStore.repeatMode === 'off'" />
+              <IconRepeat v-else-if="playerStore.repeatMode === 'list'" />
+              <IconRepeatOnce v-else />
+            </QBtn>
+          </QBtnGroup>
 
-        <QBtn
-          flat
-          class="settings-button"
-          :title="t('jukebox.playerSettings')"
-          :aria-label="t('jukebox.playerSettings')"
-        >
-          <IconSettingsAutomation />
-          <QPopupProxy
-            v-model="isSettingsPopupOpen"
-            anchor="bottom right"
-            self="top right"
-            :breakpoint="0"
-          >
-            <div class="player-settings q-pa-sm">
-              <div class="player-settings-title">
-                {{ t('jukebox.playerSettings') }}
-              </div>
-              <div class="player-settings-row">
-                <span class="player-settings-label">
-                  {{ t('jukebox.smoothTrackChange') }}
-                </span>
-                <QToggle
-                  :model-value="configStore.jukeboxSmoothTrackChange"
-                  @update:model-value="setSmoothTrackChange"
-                />
-              </div>
-              <div class="player-settings-row">
-                <span class="player-settings-label">
-                  {{ t('jukebox.animatePlayerBackground') }}
-                </span>
-                <QToggle
-                  :model-value="configStore.jukeboxAnimatePlayerBackground"
-                  @update:model-value="setAnimatePlayerBackground"
-                />
-              </div>
-              <div class="player-settings-row">
-                <span class="player-settings-label">
-                  {{ t('jukebox.displayCoverWhilePlaying') }}
-                </span>
-                <QToggle
-                  :model-value="configStore.jukeboxDisplayCoverWhilePlaying"
-                  @update:model-value="setDisplayCoverWhilePlaying"
-                />
-              </div>
-              <div class="player-settings-row">
-                <span class="player-settings-label">
-                  {{ t('jukebox.useMiniPlayer') }}
-                </span>
-                <QToggle
-                  :model-value="configStore.jukeboxUseMiniPlayer"
-                  @update:model-value="setUseMiniPlayer"
-                />
-              </div>
-            </div>
-          </QPopupProxy>
-        </QBtn>
-      </QBtnGroup>
-    </QToolbar>
+          <QBtnGroup flat class="playback-controls">
+            <QBtn
+              flat
+              @click="playerStore.playPrev()"
+              :disabled="
+                !(playerStore.currentTrack && playerStore.hasPrevTrack)
+              "
+              class="prev-track"
+            >
+              <IconPlayerSkipBack />
+            </QBtn>
+            <QBtn
+              flat
+              @click="playerStore.togglePlay()"
+              :disabled="!(playerStore.currentTrack && playerStore.canPlay)"
+              class="play-pause"
+            >
+              <IconPlayerPause v-if="playerStore.isPlaying" />
+              <IconPlayerPlay v-else />
+            </QBtn>
+            <QBtn
+              flat
+              @click="playerStore.playNext()"
+              :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"
+              class="next-track"
+            >
+              <IconPlayerSkipForward />
+            </QBtn>
+          </QBtnGroup>
+
+          <QBtnGroup flat class="volume-control">
+            <VolumeControl
+              :model-value="playerStore.volume"
+              :label="t('jukebox.volume')"
+              muteable
+              @update:model-value="playerStore.setVolume"
+              @toggle-mute="playerStore.toggleMute"
+            />
+
+            <QBtn
+              flat
+              class="settings-button"
+              :title="t('jukebox.playerSettings')"
+              :aria-label="t('jukebox.playerSettings')"
+            >
+              <IconSettingsAutomation />
+              <QPopupProxy
+                v-model="isSettingsPopupOpen"
+                anchor="bottom right"
+                self="top right"
+                :breakpoint="0"
+              >
+                <div class="player-settings q-pa-sm">
+                  <div class="player-settings-title">
+                    {{ t('jukebox.playerSettings') }}
+                  </div>
+                  <div class="player-settings-row">
+                    <span class="player-settings-label">
+                      {{ t('jukebox.smoothTrackChange') }}
+                    </span>
+                    <QToggle
+                      :model-value="configStore.jukeboxSmoothTrackChange"
+                      @update:model-value="setSmoothTrackChange"
+                    />
+                  </div>
+                  <div class="player-settings-row">
+                    <span class="player-settings-label">
+                      {{ t('jukebox.animatePlayerBackground') }}
+                    </span>
+                    <QToggle
+                      :model-value="configStore.jukeboxAnimatePlayerBackground"
+                      @update:model-value="setAnimatePlayerBackground"
+                    />
+                  </div>
+                  <div class="player-settings-row">
+                    <span class="player-settings-label">
+                      {{ t('jukebox.displayCoverWhilePlaying') }}
+                    </span>
+                    <QToggle
+                      :model-value="configStore.jukeboxDisplayCoverWhilePlaying"
+                      @update:model-value="setDisplayCoverWhilePlaying"
+                    />
+                  </div>
+                  <div class="player-settings-row">
+                    <span class="player-settings-label">
+                      {{ t('jukebox.useMiniPlayer') }}
+                    </span>
+                    <QToggle
+                      :model-value="configStore.jukeboxUseMiniPlayer"
+                      @update:model-value="setUseMiniPlayer"
+                    />
+                  </div>
+                </div>
+              </QPopupProxy>
+            </QBtn>
+          </QBtnGroup>
+        </QToolbar>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -403,6 +337,34 @@ const handleProgressChange = (value: number | null) => {
 
 .jukebox-player:not(.jukebox-player-modal) {
   padding-top: 1rem;
+}
+
+.jukebox-player-content.is-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.jukebox-player-content.is-panel .player-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.jukebox-player-content.is-panel .track-info-row {
+  text-align: left;
+}
+
+.panel-artwork {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .jukebox-player-content.is-panel {
+    gap: 0.75rem;
+  }
 }
 
 .jukebox-player :deep(.q-slider),
@@ -473,28 +435,6 @@ const handleProgressChange = (value: number | null) => {
   width: 100%;
 }
 
-.volume-bar.q-slider {
-  width: 100%;
-}
-
-/* Fix volume popup scrollbar issue */
-.volume-popup {
-  overflow: hidden;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 52px;
-}
-
-.volume-popup-value {
-  min-width: 38px;
-  text-align: right;
-  font-size: 0.75rem;
-  color: var(--color-text-light);
-  font-variant-numeric: tabular-nums;
-}
-
 .player-settings {
   display: flex;
   flex-direction: column;
@@ -515,18 +455,5 @@ const handleProgressChange = (value: number | null) => {
 
 .player-settings-label {
   white-space: nowrap;
-}
-
-.volume-popup .q-slider {
-  overflow: visible;
-  width: 100%;
-}
-
-.volume-popup .q-slider__track-container {
-  overflow: visible;
-}
-
-.volume-popup .q-slider__thumb {
-  overflow: visible;
 }
 </style>

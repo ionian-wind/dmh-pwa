@@ -1,10 +1,33 @@
 # Build, CI, and Deployment
 
+## Build-time feature flags
+
+Main-menu entities and tools can be removed from a production build with
+`VITE_FEATURE_*` environment variables. Missing values default to `true`;
+`false`/`0` disables a feature. Invalid values and invalid dependency
+combinations fail the build.
+
+```bash
+VITE_FEATURE_JUKEBOX=false VITE_FEATURE_AMBIENT=false npm run build
+```
+
+Copy `.env.template` to `.env` and edit it for a persistent local configuration.
+The same flags are documented in
+[`plans/feature-flags.md`](../plans/feature-flags.md).
+
+Strict verification builds every feature-off configuration and checks the
+bundle module graph:
+
+```bash
+npm run features:verify
+```
+
 ## Local development
 
 ```bash
 npm install        # runs patch-package via postinstall
-npm run dev        # Vite dev server (PWA dev worker enabled)
+npm run dev        # Vite app + VitePress help server (PWA dev worker enabled)
+npm run dev:app    # Vite app only, without the help center proxy
 npm run build      # production build to dist/
 npm run preview    # serve the production build
 npm run test       # vitest run
@@ -12,6 +35,24 @@ npm run types-check # tsc --noEmit (does NOT check .vue files)
 npm run format     # prettier via lint-staged config
 npm run lint       # eslint
 ```
+
+`npm run dev` serves both sites from the app origin:
+
+- app: <http://localhost:5173/dmh-pwa/>
+- help center: <http://localhost:5173/dmh-pwa/help/> (proxied to VitePress)
+
+The VitePress server on port `5174` can also be opened directly. It keeps
+`/dmh-pwa/help/` and redirects every other `/dmh-pwa/*` route to the app on
+port `5173`, so either entry point works. In production both paths are served
+from the same origin.
+
+If the dev server reports `504 (Outdated Optimize Dep)` for a dependency such
+as `howler.js` or `mathjs.js`, stop the dev server, remove
+`node_modules/.vite`, and start it again. This usually happens after Vite
+re-optimizes dependencies while a browser tab is still using the old hash.
+
+The dev watcher ignores `dist/`, `coverage/`, `dev-dist/` and the VitePress cache
+so builds and coverage runs do not trigger app reloads.
 
 Node version is pinned by `.nvmrc` to **22.20.0**; CI uses Node 22. The
 `package.json` README prerequisite of "Node 18+" is outdated.
@@ -37,7 +78,11 @@ with `legacy-peer-deps = true`.
 - `dist/` — hashed JS/CSS, `index.html`, `manifest.webmanifest`, generated
   `sw.js`, `workbox-*.js`, icons and public assets.
 - `index.html` references `/src/main.ts` in dev; Vite rewrites for production.
-- The PWA plugin also emits `registerSW.js` and injects registration.
+- The PWA plugin injects an inline service-worker registration; no separate
+  `registerSW.js` is emitted.
+- `npm run build` first cleans `dist/`, then runs `vitepress build helpcenter`
+  into `dist/help/`, then `vite build` with `emptyOutDir: false`. Help pages
+  and their VitePress assets are included in the Workbox precache.
 
 ### Assets
 
@@ -87,9 +132,14 @@ Steps:
 3. `npm ci`.
 4. `npm run types-check`.
 5. `npm run test:regression`.
-6. `npm run build`.
+6. `npm run build` with `VITE_COMMIT_SHA=${{ github.sha }}`.
 7. `cp dist/index.html dist/404.html` (SPA fallback for GitHub Pages).
 8. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
+
+Vite inlines `VITE_COMMIT_SHA` into the bundle during the build, so no extra
+request is needed at runtime. Locally the value is absent and `CommitBadge`
+falls back to `dev`. The badge is fixed in the page's bottom-left corner,
+non-interactable, and visually semi-transparent.
 
 The full suite runs in CI along with the regression suite. See
 [testing.md](testing.md).

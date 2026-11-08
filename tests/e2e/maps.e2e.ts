@@ -64,7 +64,7 @@ test('keeps marker and area sidebar tabs and shows map item popups', async ({
 test('shows map and location tabs and opens location details', async ({
   page,
 }) => {
-  await page.goto('/dmh-pwa/maps');
+  await page.goto('/dmh-pwa/locations');
 
   await expect(page.getByRole('tab', { name: 'Maps' })).toBeVisible();
   await expect(
@@ -78,7 +78,8 @@ test('shows map and location tabs and opens location details', async ({
 
   await page.locator('.location-card h5').click();
   await expect(page).toHaveURL(/\/locations\/location-1/);
-  await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Map' })).toHaveCount(0);
+  await expect(page.getByTitle('Open linked map')).toBeVisible();
   await expect(page.locator('.location-linked-group-title')).toContainText(
     'E2E World',
   );
@@ -155,7 +156,9 @@ test('links a note from the marker editor links tab', async ({ page }) => {
 
   await dialog.getByRole('tab', { name: 'Linked entities' }).click();
 
-  const noteBlock = dialog.locator('.q-list').filter({ hasText: 'Notes' });
+  const noteBlock = dialog
+    .locator('.entity-group')
+    .filter({ hasText: 'Notes' });
   await noteBlock.getByRole('button', { name: 'Add', exact: true }).click();
   const linkDialog = page.getByRole('dialog').last();
   await linkDialog.getByPlaceholder('Search').fill('E2E Note');

@@ -1,15 +1,89 @@
-export { type IFileHandler, type AudioFileData } from './IFileHandler';
-export { FileSystemFileHandler } from './FileSystemFileHandler';
-export { BlobFileHandler } from './BlobFileHandler';
-
-import { FileSystemFileHandler } from './FileSystemFileHandler';
-import { BlobFileHandler } from './BlobFileHandler';
-
-export function createFileHandler(): FileSystemFileHandler | BlobFileHandler {
-  if ('showOpenFilePicker' in window) {
-    return new FileSystemFileHandler();
-  }
-  return new BlobFileHandler();
-}
-
-export const fileHandler = createFileHandler();
+export type {
+  FileProgress,
+  FileStorageStrategy,
+  StoredFile,
+  StoredFileSource,
+  ImportedFile,
+} from './types';
+export type {
+  PickedFile,
+  PickFilesOptions,
+  DirectoryPickOptions,
+} from './pickFiles';
+export {
+  canUseDirectoryPicker,
+  canUseFileSystemAccess,
+  pickFiles,
+  pickDirectory,
+  getPickedFileFromDataTransferItem,
+} from './pickFiles';
+export {
+  getFileFromSource,
+  getUrlFromSource,
+  revokeSourceUrl,
+  verifySourcePermission,
+} from './access';
+export {
+  FILE_STORE,
+  buildFileSignature,
+  createStoredFile,
+  deleteStoredFile,
+  findStoredFileBySignature,
+  getAllStoredFiles,
+  getStoredFile,
+  getStoredFileBlob,
+  getStoredFileUrl,
+  importFile,
+  importStoredFile,
+  findStoredFileByContentHash,
+  migrateAllBlobFilesToOpfs,
+  migrateStoredFileToOpfs,
+  putStoredFile,
+  relinkStoredFile,
+  revokeStoredFileUrl,
+} from './fileStorage';
+export type { ImportFileOptions } from './fileStorage';
+export type { CopyBlobOptions } from './streams';
+export { copyBlob } from './streams';
+export type { ObjectUrlHandle } from './objectUrls';
+export { createObjectUrlHandle } from './objectUrls';
+export {
+  FILE_MARKDOWN_SCHEME,
+  clearStoredFileUrlCache,
+  fileMarkdownUrl,
+  hydrateStoredFileUrls,
+  parseFileMarkdownUrl,
+  resolveStoredFileUrl,
+  uploadStoredFile,
+} from './markdownUrls';
+export { Sha256, hashBlob, hashText, sha256Hex } from './hash';
+export type { ZipEntries } from './zip';
+export { listZipFiles, openZip, readZipBlob, readZipText } from './zip';
+export {
+  OPFS_THRESHOLD_BYTES,
+  clearOpfsData,
+  clearOpfsFiles,
+  deleteOpfsFile,
+  listOpfsFiles,
+  opfsPathFor,
+  readOpfsFile,
+  supportsOpfs,
+  writeOpfsFile,
+} from './opfs';
+export type { OpfsFileInfo, OpfsWriteOptions } from './opfs';
+export type { SaveBlobResult, SaveFileOptions } from './save';
+export { saveBlob } from './save';
+export type { StorageEstimateInfo } from './persist';
+export {
+  formatBytes,
+  getStorageEstimate,
+  isStoragePersisted,
+  requestPersistentStorage,
+} from './persist';
+export type { FileStorageDiagnostics, UnavailableFile } from './diagnostics';
+export { getFileStorageDiagnostics } from './diagnostics';
+export {
+  deleteFileIfUnreferenced,
+  isFileReferenced,
+  registerFileReferenceProvider,
+} from './fileReferences';

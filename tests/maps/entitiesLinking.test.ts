@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
-import { mount } from '@vue/test-utils';
+import { config, mount } from '@vue/test-utils';
 
 const catalog = vi.hoisted(() => ({
   groups: [
@@ -8,25 +8,56 @@ const catalog = vi.hoisted(() => ({
       kind: 'note',
       labelKey: 'notes.title',
       titleField: 'title',
+      route: (id: string) => `/notes/${id}`,
       items: [
         { id: 'n1', label: 'Alpha note' },
         { id: 'n2', label: 'Beta note' },
       ],
     },
   ],
+  entities: {
+    n1: { id: 'n1', title: 'Alpha note', content: 'Alpha body' },
+  } as Record<string, any>,
 }));
 
-vi.mock('@/maps/composables/useMapEntityCatalog', () => ({
+vi.mock('@/components/common/entityLinking/useMapEntityCatalog', () => ({
   useMapEntityCatalog: () => ({
     groups: { value: catalog.groups },
     getLabel: (ref: { kind: string; id: string }) =>
       catalog.groups
         .find((group) => group.kind === ref.kind)
         ?.items.find((item) => item.id === ref.id)?.label ?? ref.id,
+    getEntity: (ref: { kind: string; id: string }) => catalog.entities[ref.id],
   }),
 }));
 
-import EntitiesLinking from '@/maps/components/EntitiesLinking.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+
+const EntityCreateDialogStub = defineComponent({
+  name: 'EntityCreateDialog',
+  props: { kind: { type: String, required: true } },
+  emits: ['created', 'cancel'],
+  setup() {
+    return () => h('div', { class: 'entity-create-stub' });
+  },
+});
+
+const EntityInfoDialogStub = defineComponent({
+  name: 'EntityInfoDialog',
+  props: {
+    isOpen: Boolean,
+    title: String,
+    picture: [String, null],
+    notes: String,
+    to: String,
+    entityKind: String,
+    entityId: String,
+  },
+  emits: ['cancel'],
+  setup() {
+    return () => h('div', { class: 'entity-info-dialog-stub' });
+  },
+});
 
 const QVirtualScrollStub = defineComponent({
   name: 'QVirtualScroll',
@@ -43,14 +74,60 @@ const QVirtualScrollStub = defineComponent({
   },
 });
 
+beforeEach(() => {
+  config.global.stubs = {
+    ...config.global.stubs,
+    EntityInfoDialog: EntityInfoDialogStub,
+  };
+});
+
 describe('EntitiesLinking', () => {
+  it('opens the entity information dialog when a linked item is clicked', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [{ kind: 'note', id: 'n1' }],
+        readonly: true,
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityInfoDialog: EntityInfoDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('.linked-entity-item').trigger('click');
+    const dialog = wrapper.findComponent(EntityInfoDialogStub);
+    expect(dialog.props()).toMatchObject({
+      isOpen: true,
+      title: 'Alpha note',
+      notes: 'Alpha body',
+      to: '/notes/n1',
+      entityKind: 'note',
+      entityId: 'n1',
+    });
+
+    await dialog.vm.$emit('cancel');
+    await wrapper.vm.$nextTick();
+    expect(dialog.props('isOpen')).toBe(false);
+    wrapper.unmount();
+  });
+
   it('shows the entity type title, linked entities and removes links', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },
-      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
     });
 
     expect(wrapper.text()).toContain('Notes');
+    expect(wrapper.find('.entity-group').exists()).toBe(true);
+    expect(wrapper.find('.entity-group-add').exists()).toBe(true);
     expect(wrapper.text()).toContain('No linked entities.');
 
     await wrapper.setProps({
@@ -61,6 +138,7 @@ describe('EntitiesLinking', () => {
     });
 
     expect(wrapper.text()).toContain('Alpha note');
+    expect(wrapper.findAll('.linked-entity-item')).toHaveLength(1);
     expect(wrapper.findAll('button[aria-label="Remove"]')).toHaveLength(1);
 
     await wrapper.find('button[aria-label="Remove"]').trigger('click');
@@ -77,11 +155,16 @@ describe('EntitiesLinking', () => {
         options: [{ id: 'x1', label: 'External note' }],
         modelValue: [],
       },
-      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
     });
 
     expect(wrapper.text()).toContain('Custom notes');
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
 
     expect(wrapper.text()).toContain('External note');
     expect(wrapper.text()).not.toContain('Alpha note');
@@ -90,17 +173,23 @@ describe('EntitiesLinking', () => {
   it('limits selection to one entity when multiple is false', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [], multiple: false },
-      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
     });
 
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
 
-    const optionRows = wrapper
-      .findAll('[data-stub="QItem"]')
-      .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
+    const optionRows = () =>
+      wrapper
+        .findAll('[data-stub="QItem"]')
+        .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
 
-    await optionRows[0].trigger('click');
-    await optionRows[1].trigger('click');
+    await optionRows()[0].trigger('click');
+    await optionRows()[1].trigger('click');
 
     const addButton = wrapper
       .findAll('button')
@@ -112,13 +201,118 @@ describe('EntitiesLinking', () => {
     ]);
   });
 
+  it('creates a related entity and marks it in the option list', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: { kind: 'note', modelValue: [] },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
+    const createButton = wrapper.find('button[aria-label="Create"]');
+    expect(createButton.exists()).toBe(true);
+    await createButton.trigger('click');
+
+    const createDialog = wrapper.findComponent(EntityCreateDialogStub);
+    expect(createDialog.exists()).toBe(true);
+    expect(createDialog.props('kind')).toBe('note');
+
+    createDialog.vm.$emit('created', {
+      ref: { kind: 'note', id: 'n3' },
+      label: 'Gamma note',
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('Gamma note');
+    expect(wrapper.text()).toContain('Created');
+
+    const addButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add');
+    await addButton!.trigger('click');
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      [{ kind: 'note', id: 'n3' }],
+    ]);
+  });
+
+  it('creates and links an entity directly from the add-and-link action', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [{ kind: 'note', id: 'n1' }],
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('button[aria-label="Add and link"]').trigger('click');
+
+    const createDialog = wrapper.findComponent(EntityCreateDialogStub);
+    expect(createDialog.exists()).toBe(true);
+    expect(createDialog.props('kind')).toBe('note');
+
+    createDialog.vm.$emit('created', {
+      ref: { kind: 'note', id: 'n3' },
+      label: 'Gamma note',
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      [
+        { kind: 'note', id: 'n1' },
+        { kind: 'note', id: 'n3' },
+      ],
+    ]);
+    expect(wrapper.findComponent(EntityCreateDialogStub).exists()).toBe(false);
+  });
+
+  it('hides add and remove actions in readonly mode', () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [{ kind: 'note', id: 'n1' }],
+        readonly: true,
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Alpha note');
+    expect(wrapper.find('button[aria-label="Search and link"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="Add and link"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="Remove"]').exists()).toBe(false);
+    expect(wrapper.findComponent(EntityCreateDialogStub).exists()).toBe(false);
+  });
+
   it('filters the search modal and adds multiple selected entities', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },
-      global: { stubs: { QVirtualScroll: QVirtualScrollStub } },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
     });
 
-    await wrapper.find('button[aria-label="Add"]').trigger('click');
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
     expect(wrapper.findComponent(QVirtualScrollStub).exists()).toBe(true);
 
     const search = wrapper.find('input');
@@ -127,13 +321,14 @@ describe('EntitiesLinking', () => {
     expect(wrapper.text()).not.toContain('Alpha note');
 
     await search.setValue('');
-    const optionRows = wrapper
-      .findAll('[data-stub="QItem"]')
-      .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
-    expect(optionRows).toHaveLength(2);
+    const optionRows = () =>
+      wrapper
+        .findAll('[data-stub="QItem"]')
+        .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
+    expect(optionRows()).toHaveLength(2);
 
-    await optionRows[0].trigger('click');
-    await optionRows[1].trigger('click');
+    await optionRows()[0].trigger('click');
+    await optionRows()[1].trigger('click');
 
     const addButton = wrapper
       .findAll('button')
@@ -146,6 +341,45 @@ describe('EntitiesLinking', () => {
         { kind: 'note', id: 'n1' },
         { kind: 'note', id: 'n2' },
       ],
+    ]);
+  });
+
+  it('shows linked entities in the selector and allows unlinking them', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [
+          { kind: 'note', id: 'n1' },
+          { kind: 'map', id: 'map1' },
+        ],
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityCreateDialog: EntityCreateDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('button[aria-label="Search and link"]').trigger('click');
+
+    const alpha = wrapper
+      .findAll('.entity-option')
+      .find((row) => row.text().includes('Alpha note'));
+    expect(alpha).toBeTruthy();
+    expect(
+      (alpha!.find('input[type="checkbox"]').element as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+
+    await alpha!.trigger('click');
+    const addButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add');
+    await addButton!.trigger('click');
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
+      [{ kind: 'map', id: 'map1' }],
     ]);
   });
 });

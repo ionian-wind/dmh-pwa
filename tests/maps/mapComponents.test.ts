@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils';
 
 import IconPicker from '@/components/common/IconPicker.vue';
 import ColorPicker from '@/components/common/ColorPicker.vue';
-import { MAP_MARKER_ICONS } from '@/maps/icons';
+import { MAP_MARKER_ICONS } from '@/utils/maps/icons';
 import MapMarkerEditor from '@/maps/components/MapMarkerEditor.vue';
 import MapLocationEditor from '@/maps/components/MapLocationEditor.vue';
 import MapMarkersPanel from '@/maps/components/MapMarkersPanel.vue';
@@ -39,7 +39,7 @@ const marker: MapMarker = {
   y: 200,
   locationId: 'l1',
   layerId: 'base',
-  entities: [{ kind: 'monster', id: 'mon1' }],
+  entities: [{ kind: 'pawn', id: 'mon1' }],
   icon: 'ra-castle-emblem',
   color: '#cc3333',
 };
@@ -78,6 +78,16 @@ describe('map icon picker', () => {
     await wrapper.find('.icon-picker-none').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['']);
   });
+});
+
+const EntityMarkdownEditorStub = defineComponent({
+  name: 'EntityMarkdownEditor',
+  props: ['modelValue', 'isVisualMode', 'entityId', 'entityType'],
+  emits: ['update:modelValue'],
+  setup(_, { expose }) {
+    expose({ getMarkdown: () => 'Large city' });
+    return () => h('div', { class: 'entity-markdown-editor-stub' });
+  },
 });
 
 const EntitiesLinkingStub = defineComponent({
@@ -129,8 +139,8 @@ describe('map marker editor', () => {
     linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
       { kind: 'location', id: 'l1' },
     ]);
-    linkingBlock(wrapper, 'map').vm.$emit('update:modelValue', [
-      { kind: 'map', id: 'map2' },
+    linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n1' },
     ]);
     wrapper
       .findComponent(IconPickerStub)
@@ -150,7 +160,7 @@ describe('map marker editor', () => {
       x: 100,
       y: 200,
       locationId: 'l1',
-      entities: [{ kind: 'map', id: 'map2' }],
+      entities: [{ kind: 'note', id: 'n1' }],
       icon: 'ra:ra-sword',
       color: '#00ff00',
       backgroundColor: '#ffffff',
@@ -192,6 +202,9 @@ describe('map markers panel', () => {
 
     expect(wrapper.text()).toContain('Castle');
     expect(wrapper.text()).toContain('Old castle');
+    expect(
+      (wrapper.find('.map-marker-item').element as HTMLElement).style.boxShadow,
+    ).toContain('#cc3333');
 
     await wrapper.find('.map-marker-item').trigger('click');
     expect(wrapper.emitted('select-marker')?.[0]).toEqual(['m1']);
@@ -219,11 +232,15 @@ describe('map location editor', () => {
   it('edits location fields and links then saves', async () => {
     const wrapper = mount(MapLocationEditor, {
       props: { isOpen: true, location },
-      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+      global: {
+        stubs: {
+          EntitiesLinking: EntitiesLinkingStub,
+          EntityMarkdownEditor: EntityMarkdownEditorStub,
+        },
+      },
     });
 
-    await wrapper.find('#location-name').setValue('Capital');
-    await wrapper.find('#location-description').setValue('Large city');
+    await wrapper.find('.entity-inline-editor input').setValue('Capital');
     linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
       { kind: 'note', id: 'n1' },
     ]);
@@ -247,13 +264,43 @@ describe('map location editor', () => {
     });
   });
 
+  it('shows location formatting help only in raw mode', async () => {
+    const wrapper = mount(MapLocationEditor, {
+      props: { isOpen: true, location },
+      global: {
+        stubs: {
+          EntitiesLinking: EntitiesLinkingStub,
+          EntityMarkdownEditor: EntityMarkdownEditorStub,
+        },
+      },
+    });
+
+    expect(wrapper.find('.location-help-button').exists()).toBe(false);
+    wrapper
+      .findComponent({ name: 'QToggle' })
+      .vm.$emit('update:modelValue', false);
+    await nextTick();
+
+    const help = wrapper.find('.location-help-button');
+    expect(help.exists()).toBe(true);
+    expect(help.attributes('href')).toContain(
+      '/help/en/reference/markdown.html',
+    );
+    expect(help.attributes('target')).toBe('_blank');
+  });
+
   it('validates the name, deletes and cancels', async () => {
     const wrapper = mount(MapLocationEditor, {
       props: { isOpen: true, location },
-      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+      global: {
+        stubs: {
+          EntitiesLinking: EntitiesLinkingStub,
+          EntityMarkdownEditor: EntityMarkdownEditorStub,
+        },
+      },
     });
 
-    await wrapper.find('#location-name').setValue('   ');
+    await wrapper.find('.entity-inline-editor input').setValue('   ');
     wrapper.findComponent({ name: 'BaseModal' }).vm.$emit('submit');
     expect(wrapper.emitted('save')).toBeUndefined();
 

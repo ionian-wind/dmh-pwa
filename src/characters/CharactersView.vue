@@ -2,27 +2,20 @@
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
-import { usePartyStore } from '@/stores/parties';
-import { useModuleStore } from '@/stores/modules';
 import BaseListView from '@/components/common/BaseListView.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 
 const characterStore = useCharacterStore();
-const partyStore = usePartyStore();
-const moduleStore = useModuleStore();
 const router = useRouter();
 const { t } = useI18n();
 
 onMounted(async () => {
-  await Promise.all([
-    characterStore.load(),
-    partyStore.load(),
-    moduleStore.load(),
-  ]);
+  await Promise.all([characterStore.load()]);
 });
 
 function cardProps(character: PlayerCharacter) {
@@ -50,17 +43,25 @@ async function handleDelete(character: PlayerCharacter) {
     character.id &&
     (await confirm(t('common.confirmDelete', { title: character.name })))
   ) {
+    const picture = character.picture;
     await characterStore.remove(character.id);
+    if (picture) await deleteFileIfUnreferenced(picture);
     return true;
   }
   return false;
 }
 
-function handleSubmit(character: PlayerCharacter) {
+async function handleSubmit(character: PlayerCharacter) {
+  const previousPicture = character.id
+    ? (characterStore.getById(character.id)?.picture ?? '')
+    : '';
   if (character.id) {
-    characterStore.update(character.id, character);
+    await characterStore.update(character.id, character);
   } else {
-    characterStore.create(character);
+    await characterStore.create(character);
+  }
+  if (previousPicture && previousPicture !== (character.picture ?? '')) {
+    await deleteFileIfUnreferenced(previousPicture);
   }
 }
 
@@ -79,9 +80,6 @@ async function handleCopy(character: PlayerCharacter) {
     :create-title="t('characters.create')"
     :card-props="cardProps"
     :editor-props="editorProps"
-    show-search
-    :search-query="characterStore.searchQuery"
-    @update:search-query="characterStore.setSearchQuery"
     @submit="handleSubmit"
     @delete="handleDelete"
     @copy="handleCopy"

@@ -30,7 +30,12 @@ jobs:
       - name: Test suite
         run: npm test
 
+      - name: Verify feature build matrix
+        run: npm run features:verify
+
       - name: Build app
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
         run: npm run build
 
       - name: Copy index.html to 404.html
@@ -40,4 +45,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist 
+          publish_dir: ./dist

@@ -9,6 +9,7 @@ import {
   watch,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { features } from 'virtual:feature-flags';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { Chart, Grid, Line, Responsive, Tooltip } from 'vue3-charts';
 import {
@@ -30,6 +31,7 @@ import { monaco } from '@/components/common/monaco';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { confirm, prompt } from '@/dialogs';
+import { saveBlob } from '@/utils/files/save';
 import {
   calculate,
   DiceSyntaxError,
@@ -42,6 +44,8 @@ import {
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
 import { formatDiceSyntaxError } from './syntaxErrors';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import { useUiTheme } from '@/composables/useUiTheme';
 import {
   setAnyDiceCompletionCodePieces,
   setAnyDiceCompletionTranslator,
@@ -74,7 +78,9 @@ type DataModeChoice = DataMode | 'transposed' | 'summary';
 
 const STORAGE_KEY = 'dmh-probability-calculator:source';
 const DEFAULT_SOURCE = 'output 3d6';
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { isDark } = useUiTheme();
+const monacoTheme = computed(() => (isDark.value ? 'vs-dark' : 'vs'));
 const router = useRouter();
 setAnyDiceCompletionTranslator((key, named) => t(key, named as any));
 
@@ -241,19 +247,23 @@ function clearSyntaxMarkers() {
 function markSyntaxError(caught: DiceSyntaxError) {
   const model = editorRef.value?.getEditor()?.getModel();
   if (!model) return;
-  monaco.editor.setModelMarkers(model, MARKER_OWNER, [
-    {
-      startLineNumber: caught.line,
-      startColumn: caught.column,
-      endLineNumber: caught.endLine,
-      endColumn: caught.endColumn,
-      message: `${formatDiceSyntaxError(caught, t)} (${t(
+  const issues =
+    caught.errors && caught.errors.length > 0 ? caught.errors : [caught];
+  monaco.editor.setModelMarkers(
+    model,
+    MARKER_OWNER,
+    issues.map((issue) => ({
+      startLineNumber: issue.line,
+      startColumn: issue.column,
+      endLineNumber: issue.endLine,
+      endColumn: issue.endColumn,
+      message: `${formatDiceSyntaxError(issue, t)} (${t(
         'probabilityCalculator.syntaxErrors.location',
-        { line: caught.line, column: caught.column },
+        { line: issue.line, column: issue.column },
       )})`,
       severity: monaco.MarkerSeverity.Error,
-    },
-  ]);
+    })),
+  );
 }
 
 async function runCalculation() {
@@ -380,12 +390,11 @@ async function copyExport() {
 
 function downloadExport() {
   const blob = new Blob([exportText.value], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'anydice-output.csv';
-  anchor.click();
-  URL.revokeObjectURL(url);
+  void saveBlob(blob, {
+    suggestedName: 'anydice-output.csv',
+    mimeType: 'text/csv',
+    description: 'CSV table',
+  });
 }
 
 function zoomChart(delta: number) {
@@ -437,14 +446,21 @@ onMounted(() => {
     props: {
       title: t('probabilityCalculator.title'),
       rightDrawerIcon: IconCodeblock,
-      buttons: [
-        {
-          icon: IconHelpCircle,
-          color: 'primary',
-          title: 'probabilityCalculator.syntax',
-          event: () => router.push('/probability-calculator/syntax'),
-        },
-      ],
+      buttons: features.help
+        ? [
+            {
+              icon: IconHelpCircle,
+              color: 'primary',
+              title: 'probabilityCalculator.syntax',
+              href: helpHref(
+                'reference/dice-probability-syntax',
+                getHelpLocale(locale.value),
+              ),
+              target: '_blank',
+              rel: 'noopener noreferrer',
+            },
+          ]
+        : [],
     },
   });
   rightDrawer.set({
@@ -502,6 +518,7 @@ onBeforeUnmount(() => {
         ref="editorRef"
         v-model="source"
         :language="ANYDICE_LANGUAGE_ID"
+        :theme="monacoTheme"
         height="340px"
         :options="{
           ariaLabel: t('probabilityCalculator.source'),

@@ -1,126 +1,314 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useCharacterStore } from '@/stores/characters';
-import CharacterEditor from '@/characters/CharacterEditor.vue';
-import type { PlayerCharacter } from '@/types';
-import BaseEntityView from '@/components/common/BaseEntityView.vue';
-import Mentions from '@/components/common/Mentions.vue';
-import { useMentionsStore } from '@/utils/storage';
 import { useI18n } from 'vue-i18n';
-import { confirm } from '@/dialogs';
+import { features } from 'virtual:feature-flags';
+import { useCharacterStore } from '@/stores/characters';
+import { useMentionsStore } from '@/utils/storage';
+import type { PlayerCharacter } from '@/types';
+import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
+import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { getHelpLocale, helpHref } from '@/helpcenter/links';
+import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
+import CharacterViewSidebar from '@/characters/CharacterViewSidebar.vue';
+import { IconHelp } from '@tabler/icons-vue';
+import { useEntityViewTabs } from '@/components/common/entityViewTabs';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { alert, confirm } from '@/dialogs';
+import { useEntityEditMode } from '@/composables/useEntityEditMode';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
+import { deleteFileIfUnreferenced } from '@/utils/files';
+import { useRightDrawer } from '@/composables/useLayout';
+import type { MapEntityRef } from '@/maps/types';
 
 const route = useRoute();
 const router = useRouter();
+const { t, locale } = useI18n();
 const characterStore = useCharacterStore();
+const featureStores = useFeatureStores();
 const mentionsStore = useMentionsStore();
-const { t } = useI18n();
-const showEditor = ref(false);
+const relations = useEntityLinkRelations();
 
+const character = ref<PlayerCharacter | null>(null);
+const activeTab = ref('main');
+const viewTabs = useEntityViewTabs();
+const editorTabs = useEntityEditorTabs();
 const isLoaded = computed(() => characterStore.isLoaded);
-const character = computed(() =>
-  characterStore.getById(route.params.id as string),
-);
-const loading = computed(() => !isLoaded.value);
 const notFound = computed(() => isLoaded.value && !character.value);
+const validationError = ref<string | null>(null);
+const isDeleting = ref(false);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 
-function editCharacter() {
-  showEditor.value = true;
-}
-
-async function handleDelete() {
-  if (
-    character.value &&
-    (await confirm(t('common.confirmDelete', { title: character.value.name })))
-  ) {
-    await characterStore.remove(character.value.id);
-    return true;
+function updateCharacterFromStore() {
+  if (!characterStore.isLoaded) {
+    return;
   }
-  return false;
+  const found = characterStore.getById(route.params.id as string);
+  if (found) {
+    character.value = found as PlayerCharacter;
+  } else if (!isDeleting.value) {
+    router.push('/characters');
+  }
 }
 
-function handleSave(updated: PlayerCharacter) {
+watch(
+  [() => characterStore.items, () => characterStore.isLoaded],
+  updateCharacterFromStore,
+  { immediate: true },
+);
+
+const { editState, setEditMode, discardDraft } =
+  useEntityEditMode<PlayerCharacter>({
+    source: character,
+    clone: (source) => ({
+      ...source,
+    }),
+    isDirty: (draft, source) =>
+      draft.name !== source.name ||
+      (draft.notes ?? '') !== (source.notes ?? '') ||
+      (draft.picture ?? '') !== (source.picture ?? ''),
+    onEnter: () => {
+      validationError.value = null;
+    },
+    onDiscard: (draft) => {
+      if (
+        draft?.picture &&
+        draft.picture !== (character.value?.picture ?? '')
+      ) {
+        void deleteFileIfUnreferenced(draft.picture);
+      }
+      validationError.value = null;
+    },
+    prepare: prepareDraft,
+    save: persistDraft,
+  });
+
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
+);
+
+const draftName = computed({
+  get: () => editState.draft?.name ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.name = value;
+  },
+});
+
+const draftNotes = computed({
+  get: () => editState.draft?.notes ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.notes = value;
+  },
+});
+
+const characterLinks = computed<MapEntityRef[]>(() => {
+  const id = character.value?.id;
+  if (!id) return [];
+  return [
+    ...relations
+      .getLinkedIds('character', id, 'note')
+      .map((noteId) => ({ kind: 'note' as const, id: noteId })),
+    ...relations
+      .getLinkedIds('character', id, 'party')
+      .map((partyId) => ({ kind: 'party' as const, id: partyId })),
+    ...relations
+      .getLinkedIds('character', id, 'location')
+      .map((locationId) => ({ kind: 'location' as const, id: locationId })),
+  ];
+});
+
+async function setCharacterLinks(
+  kind: 'note' | 'party' | 'location',
+  links: MapEntityRef[],
+) {
+  if (!character.value) return;
+  await relations.setLinkedIds(
+    'character',
+    character.value.id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
+
+function handleNotesChange(notes: string) {
   if (character.value) {
-    characterStore.update(character.value.id, updated);
-    characterStore.getById(character.value.id);
+    void characterStore.update(character.value.id, { notes });
   }
-  showEditor.value = false;
 }
 
-function closeEditor() {
-  showEditor.value = false;
+async function prepareDraft(draft: PlayerCharacter): Promise<boolean> {
+  if (markdownEditorRef.value?.getMarkdown) {
+    draft.notes = markdownEditorRef.value.getMarkdown();
+  }
+  if (!draft.name?.trim()) {
+    activeTab.value = 'main';
+    await alert(t('characterEditor.nameRequired'));
+    return false;
+  }
+  validationError.value = null;
+  return true;
 }
 
-// Computed properties for BaseEntityView
+async function persistDraft(draft: PlayerCharacter): Promise<boolean> {
+  if (!character.value) return false;
+  const previousPicture = character.value.picture ?? '';
+  try {
+    await characterStore.update(character.value.id, {
+      name: draft.name,
+      notes: draft.notes,
+      picture: draft.picture,
+    });
+  } catch (error) {
+    activeTab.value = 'main';
+    validationError.value =
+      error instanceof Error ? error.message : String(error);
+    return false;
+  }
+  if (previousPicture && previousPicture !== (draft.picture ?? '')) {
+    await deleteFileIfUnreferenced(previousPicture);
+  }
+  updateCharacterFromStore();
+  return true;
+}
+
 const characterTitle = computed(() => character.value?.name || '');
 
-const mentionedEntities = computed(() => {
-  if (!character.value) return [];
-  return mentionsStore.getLinks({ kind: 'character', id: character.value.id });
+const headerButtons = computed(() => {
+  if (!features.help || !editState.isEditMode || editState.isVisualMode)
+    return [];
+  return [
+    {
+      color: 'primary',
+      title: 'markdownEditor.formattingHelp',
+      icon: IconHelp,
+      href: helpHref('reference/markdown', getHelpLocale(locale.value)),
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    },
+  ];
 });
-const mentionedInEntities = computed(() => {
-  if (!character.value) return [];
-  return mentionsStore.getBacklinks({
-    kind: 'character',
-    id: character.value.id,
+
+const handleDelete = async () => {
+  if (!character.value) return false;
+  if (
+    !(await confirm(t('common.confirmDelete', { title: character.value.name })))
+  ) {
+    return false;
+  }
+  isDeleting.value = true;
+  discardDraft();
+  const picture = character.value.picture;
+  await characterStore.remove(character.value.id);
+  if (picture) await deleteFileIfUnreferenced(picture);
+  return true;
+};
+
+async function handleDeleteFromSidebar() {
+  if (await handleDelete()) await router.push('/characters');
+}
+
+const rightDrawer = useRightDrawer();
+
+onMounted(async () => {
+  await Promise.all([
+    characterStore.load(),
+    mentionsStore.load(),
+    featureStores.load(['party', 'location', 'note']),
+  ]);
+
+  rightDrawer.set({
+    component: CharacterViewSidebar,
+    props: {
+      character,
+      editState,
+      onSetEditMode: setEditMode,
+      onDelete: handleDeleteFromSidebar,
+    },
   });
 });
 
-onMounted(async () => {
-  await characterStore.load();
-  await mentionsStore.load();
+onBeforeUnmount(() => {
+  rightDrawer.clear();
 });
-
-async function handleEditorDelete() {
-  if (await handleDelete()) {
-    showEditor.value = false;
-    await router.push('/characters');
-  }
-}
 </script>
 
 <template>
-  <BaseEntityView
+  <BaseEntityTabView
     :entity="character"
-    entity-name="t('characters.title')"
+    entity-name="characters.title"
     list-route="/characters"
     :on-delete="handleDelete"
-    :on-edit="editCharacter"
-    :is-editing="showEditor"
-    :title="characterTitle"
+    :header-show-edit="false"
+    :header-show-delete="false"
+    :is-editing="editState.isEditMode"
+    :title="editState.isEditMode ? '' : characterTitle"
     :not-found="notFound"
-    :loading="loading"
+    :header-buttons="headerButtons"
+    :tabs="tabs"
+    v-model="activeTab"
   >
-    <div v-if="character" class="q-pa-md q-gutter-md">
-      <div v-if="character.notes" class="q-mb-md">
-        <h2>{{ t('notes.title') }}</h2>
-        <div class="q-pa-sm bg-grey-1 rounded-borders">
-          <p>{{ character.notes }}</p>
-        </div>
+    <template #main>
+      <EntityContentSurface v-if="!editState.isEditMode">
+        <MilkdownView
+          :taskCheckboxEnabled="true"
+          :enableMentionModal="true"
+          :content="character?.notes || ''"
+          @update:content="handleNotesChange"
+        />
+      </EntityContentSurface>
+
+      <EntityInlineEditor
+        v-else
+        v-model:title="draftName"
+        :title-placeholder="t('characters.fields.name')"
+        :validation-error="validationError"
+      >
+        <EntityMarkdownEditor
+          ref="markdownEditorRef"
+          v-model="draftNotes"
+          :is-visual-mode="editState.isVisualMode"
+          :entity-id="editState.draft?.id || ''"
+          entity-type="character"
+          :placeholder="t('common.notes')"
+        />
+      </EntityInlineEditor>
+    </template>
+
+    <template #links>
+      <EntityViewLinks v-if="!editState.isEditMode" :links="characterLinks" />
+      <div v-else class="column q-gutter-md">
+        <EntitiesLinking
+          v-if="featureStores.has('note')"
+          kind="note"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('note', links)"
+        />
+        <EntitiesLinking
+          v-if="featureStores.has('party')"
+          kind="party"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('party', links)"
+        />
+        <EntitiesLinking
+          v-if="featureStores.has('location')"
+          kind="location"
+          :model-value="characterLinks"
+          @update:model-value="(links) => setCharacterLinks('location', links)"
+        />
       </div>
-    </div>
-
-    <!-- Editor Modal -->
-    <template #editor>
-      <CharacterEditor
-        :isOpen="showEditor"
-        :character="character"
-        @submit="handleSave"
-        @delete="handleEditorDelete"
-        @cancel="closeEditor"
-      />
     </template>
-
-    <template #sidepanel>
-      <Mentions :title="t('common.mentions')" :entities="mentionedEntities" />
-      <Mentions
-        :title="t('common.mentionedIn')"
-        :entities="mentionedInEntities"
-      />
-    </template>
-  </BaseEntityView>
+  </BaseEntityTabView>
 </template>
-
-<style scoped>
-/* Removed custom layout classes. Use Quasar classes. */
-</style>

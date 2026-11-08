@@ -118,6 +118,20 @@ describe('CalculatorView', () => {
     expect(vm.sourceUnit).toBe('');
   });
 
+  it('uses number icons for digit keys', async () => {
+    const wrapper = await mountCalculator();
+
+    for (const digit of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) {
+      const button = wrapper.find(
+        `.calculator-buttons button[title="${digit}"]`,
+      );
+      expect(button.exists()).toBe(true);
+      expect(button.find('svg').exists()).toBe(true);
+      expect(button.text()).toBe('');
+    }
+    wrapper.unmount();
+  });
+
   it('wires every keypad button', async () => {
     const wrapper = await mountCalculator();
 

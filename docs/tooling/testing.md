@@ -2,7 +2,7 @@
 
 ## Setup
 
-- Runner: **Vitest 3** (`vitest.config.ts`).
+- Runner: **Vitest 5** (`vitest.config.ts`).
 - Environment: `jsdom` (`happy-dom` is installed but unused in the config).
 - Globals enabled (`describe/it/expect` without imports).
 - Setup file: `tests/setup.ts`.
@@ -66,31 +66,31 @@ src/utils/dice-roller/
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 115. Total tests: 859.
+Total test files: 193. Total tests: 1559.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  115 passed (115)
-Tests       859 passed (859)
+Test Files  193 passed (193)
+Tests       1559 passed (1559)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  92.15%
-Branches    87.65%
-Functions    89.24%
-Lines       92.15%
+Statements  95.66%
+Branches    87.09%
+Functions   95.84%
+Lines       97.06%
 ```
 
-Every source module now has tests. The only files below 80% line coverage are the
-large dice-roller AST/plugin files, which have dedicated parser/evaluator suites.
-`vitest.config.ts` enforces global thresholds (92% statements/lines, 87%
-branches, 89% functions) so future changes cannot silently drop coverage.
-Generated output (`dist/`, `dev-dist/`, service workers) and standalone
-scripts are excluded from coverage.
+`vitest.config.ts` enforces 87% statements, functions, branches and lines
+globally, plus 87% statements and lines for **every individual source file**.
+Third-party integration wrappers, generated/copied components, the legacy
+dice-roller engine, thin adapters and the app shell are excluded. The full list
+and the documented unreachable defensive branches are in
+[architecture/legacy-and-unreachable-code.md](../architecture/legacy-and-unreachable-code.md).
 
 The maintained regression suite is also green:
 
@@ -145,15 +145,14 @@ The suite now includes direct tests for:
 - jukebox playback/queue transitions with a mocked Howler,
 - PWA install/update flows and event cleanup,
 - BaseListView/BaseEntityTabView integration, cards, controls and calculators,
-- module import/export, markdown sanitizing/task lists and mention plugin helpers,
+- markdown sanitizing/task lists and mention plugin helpers,
 - map canvas readback patching and the map-layers migration,
 - Monaco environment setup and the probability calculator page, code library,
   syntax page, editor completions, sharing, chart zoom and syntax markers,
 - note Markdown/PNG downloads and the shared `SidebarItem` component,
 - drag-and-drop and ordering paths: `BaseListView` sort events and drop
   handlers, playlist `sortOrder` persistence, jukebox file drops and track
-  reordering, the `Tree` drag handles/drop target wiring, and tree reorder
-  propagation from `ModuleDocumentTree`,
+  reordering,
 - structured Chevrotain error providers, human-readable localized syntax
   messages, and the error banner's line/column link to the editor position,
 - the syntax-page right-drawer TOC, clickable section-heading anchors, scroll
@@ -161,6 +160,9 @@ The suite now includes direct tests for:
 - AnyDice completion definitions from included code pieces, including
   function parameter snippets and source-piece labels,
 - map entity catalog/link blocks including jukebox playlists,
+- ambient sound pack import/export/storage, audio-engine fades/transitions,
+  the ambient store's playback/mood/weather actions, recursive pack/unpack
+  archive helpers and the sound-pack selector,
 - localized completion labels/details for built-in snippets, program
   variables, keywords and code-piece definitions.
 

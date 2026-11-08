@@ -35,6 +35,34 @@ describe('TableOfContents', () => {
     expect(window.location.hash).toBe('#details');
     wrapper.unmount();
   });
+
+  it('renders paragraph items and emits bookmark toggles', async () => {
+    const item = {
+      id: 'paragraph-1',
+      anchorId: 'paragraph-1',
+      level: 0,
+      title: 'A paragraph',
+      kind: 'paragraph' as const,
+    };
+    const wrapper = mount(TableOfContents, {
+      props: {
+        items: [item],
+        showBookmarkAction: true,
+        bookmarkedIds: new Set(['paragraph-1']),
+        bookmarkLabel: 'Bookmark',
+        removeBookmarkLabel: 'Remove bookmark',
+      },
+    });
+
+    expect(wrapper.find('.toc-item--paragraph').exists()).toBe(true);
+    const bookmark = wrapper.find('.toc-bookmark');
+    expect(bookmark.classes()).toContain('active');
+    expect(bookmark.attributes('title')).toBe('Remove bookmark');
+
+    await bookmark.trigger('click');
+    expect(wrapper.emitted('bookmark-toggle')?.[0]).toEqual([item]);
+    wrapper.unmount();
+  });
 });
 
 describe('TableOfContents scroll spy', () => {

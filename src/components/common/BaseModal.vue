@@ -33,6 +33,7 @@ const props = withDefaults(
     isExpanded?: boolean;
     disableSubmit?: boolean;
     useModalStack?: boolean;
+    fillContent?: boolean;
     tabs?: Array<{
       name: string;
       title?: string;
@@ -63,6 +64,7 @@ const hasHeader = computed(
   () =>
     !!props.title ||
     !!slots['header-actions'] ||
+    !!slots['header-left-actions'] ||
     !!props.showExpand ||
     !!props.showClose ||
     !!props.tabs?.length,
@@ -187,6 +189,8 @@ function setExpanded(val: boolean) {
                 <IconArrowsMaximize v-else />
               </QBtn>
 
+              <slot name="header-left-actions" />
+
               <span v-if="!props.tabs?.length">{{ title }}</span>
             </div>
 
@@ -223,10 +227,14 @@ function setExpanded(val: boolean) {
             </div>
           </QToolbar>
         </QCardSection>
-        <QScrollArea class="fit q-pa-sm">
+        <QScrollArea
+          class="fit q-pa-sm"
+          :class="{ 'modal-scroll--fill': props.fillContent }"
+        >
           <form
             @submit.prevent="$emit('submit')"
             class="modal-form q-gutter-y-md"
+            :class="{ 'modal-form--fill': props.fillContent }"
           >
             <template v-if="props.tabs?.length">
               <QTabPanels v-model="currentTab" animated class="q-pa-none">
@@ -247,10 +255,19 @@ function setExpanded(val: boolean) {
           </form>
         </QScrollArea>
         <QCardActions
-          v-if="$slots.footer || $slots.actions || showSubmit || showCancel"
+          v-if="
+            $slots.footer ||
+            $slots['footer-center'] ||
+            $slots.actions ||
+            showSubmit ||
+            showCancel
+          "
           class="modal-actions"
           align="right"
         >
+          <div v-if="$slots['footer-center']" class="modal-footer-center">
+            <slot name="footer-center" />
+          </div>
           <slot name="footer" />
           <slot name="actions" />
           <QBtn
@@ -260,13 +277,7 @@ function setExpanded(val: boolean) {
             :label="deleteLabel || t('common.delete')"
             @click="$emit('delete')"
           />
-          <QBtn
-            flat
-            v-if="showCancel"
-            color="standard"
-            text-color="dark"
-            @click="requestClose"
-          >
+          <QBtn flat v-if="showCancel" color="grey-7" @click="requestClose">
             {{ cancelLabel || t('common.cancel') }}
           </QBtn>
           <QBtn
@@ -288,5 +299,32 @@ function setExpanded(val: boolean) {
 <style scoped>
 .modal-header {
   padding-bottom: 0;
+}
+
+.modal-scroll--fill :deep(.q-scrollarea__content) {
+  height: 100%;
+  min-height: 100%;
+}
+
+.modal-form--fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.modal-form--fill > :deep(*) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.modal-actions {
+  position: relative;
+}
+
+.modal-footer-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>

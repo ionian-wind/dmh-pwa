@@ -15,7 +15,7 @@ async function mountMarkdown(props: Record<string, any>) {
     routes: [
       { path: '/', component: { render: () => h('div') } },
       { path: '/notes/:id', component: { render: () => h('div') } },
-      { path: '/monsters/:id', component: { render: () => h('div') } },
+      { path: '/pawns/:id', component: { render: () => h('div') } },
     ],
   });
   await router.push('/');
@@ -46,7 +46,7 @@ describe('Markdown', () => {
   it('scrolls to an anchor link when the anchor exists', async () => {
     const scrollToAnchor = vi.fn();
     const { wrapper } = await mountMarkdown({
-      content: '[Goblin](monster://m1)',
+      content: '[Goblin](pawn://m1)',
       anchorMap: new Set(['m1']),
       scrollToAnchor,
     });
@@ -61,10 +61,10 @@ describe('Markdown', () => {
   });
 
   it('opens the mention modal for internal links when enabled', async () => {
-    seedMockStore('monsters', [{ id: 'm1', name: 'Goblin' }]);
+    seedMockStore('pawns', [{ id: 'm1', name: 'Goblin' }]);
     const modal = useModalState();
     const { wrapper } = await mountMarkdown({
-      content: '[Goblin](monster://m1)',
+      content: '[Goblin](pawn://m1)',
       enableMentionModal: true,
     });
 
@@ -72,7 +72,7 @@ describe('Markdown', () => {
     await nextTick();
 
     expect(modal.currentMentionModal.value).toMatchObject({
-      kind: 'monster',
+      kind: 'pawn',
       entity: { id: 'm1' },
     });
     modal.closeMentionModal(
@@ -83,11 +83,11 @@ describe('Markdown', () => {
   it('falls back to SPA navigation for regular internal links', async () => {
     const pushState = vi.spyOn(history, 'pushState');
     const { wrapper } = await mountMarkdown({
-      content: '[Goblin](monster://m1)',
+      content: '[Goblin](pawn://m1)',
     });
 
     await wrapper.find('.internal-link').trigger('click');
-    expect(pushState).toHaveBeenCalledWith(history.state, '', '/monsters/m1');
+    expect(pushState).toHaveBeenCalledWith(history.state, '', '/pawns/m1');
   });
 
   it('toggles task checkboxes into new markdown content', async () => {
@@ -111,26 +111,24 @@ describe('Markdown', () => {
 
   it('resolves mentions for every entity kind', async () => {
     seedMockStore('notes', [{ id: 'n1', title: 'Note' }]);
-    seedMockStore('modules', [{ id: 'mod1', name: 'Module' }]);
     seedMockStore('parties', [{ id: 'p1', name: 'Party' }]);
-    seedMockStore('monsters', [{ id: 'mo1', name: 'Monster' }]);
+    seedMockStore('pawns', [{ id: 'mo1', name: 'Pawn' }]);
     seedMockStore('encounters', [{ id: 'e1', name: 'Encounter' }]);
 
     const modal = useModalState();
     const { wrapper } = await mountMarkdown({
       content: [
         '[Note](note://n1)',
-        '[Module](module://mod1)',
         '[Party](party://p1)',
-        '[Monster](monster://mo1)',
+        '[Pawn](pawn://mo1)',
         '[Encounter](encounter://e1)',
       ].join('\n\n'),
       enableMentionModal: true,
     });
 
     const links = wrapper.findAll('.internal-link');
-    expect(links).toHaveLength(5);
-    const expected = ['note', 'module', 'party', 'monster', 'encounter'];
+    expect(links).toHaveLength(4);
+    const expected = ['note', 'party', 'pawn', 'encounter'];
     for (let i = 0; i < links.length; i += 1) {
       await links[i].trigger('click');
       await nextTick();
@@ -181,7 +179,7 @@ describe('Markdown', () => {
       value: scrollIntoView,
     });
     const { wrapper, router } = await mountMarkdown({
-      content: '[Goblin](monster://m1)',
+      content: '[Goblin](pawn://m1)',
       anchorMap: new Set(['m1']),
     });
     const replace = vi.spyOn(router, 'replace');
@@ -204,7 +202,7 @@ describe('Markdown', () => {
     const observe = vi.fn();
     vi.stubGlobal(
       'IntersectionObserver',
-      vi.fn((cb: IntersectionObserverCallback) => {
+      vi.fn(function (cb: IntersectionObserverCallback) {
         callback = cb;
         return { observe, disconnect, unobserve: vi.fn() };
       }),
@@ -258,5 +256,18 @@ describe('Markdown', () => {
     (input.element as HTMLInputElement).checked = true;
     await input.trigger('change');
     expect(wrapper.emitted('update:content')).toBeUndefined();
+  });
+
+  it('navigates to the filtered note list for tag links', async () => {
+    const pushState = vi.spyOn(history, 'pushState');
+    const { wrapper } = await mountMarkdown({ content: 'Travel to #harbor' });
+
+    await wrapper.find('.tag-link').trigger('click');
+
+    expect(pushState).toHaveBeenCalledWith(
+      history.state,
+      '',
+      '/notes?tag=harbor',
+    );
   });
 });

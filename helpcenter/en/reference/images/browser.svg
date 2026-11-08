@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="90" viewBox="0 0 320 90" role="img" aria-labelledby="title">
+  <title id="title">Browser notes</title>
+  <rect width="320" height="90" rx="10" fill="#eef1f5"/>
+  <rect x="20" y="20" width="280" height="50" rx="8" fill="#ffffff" stroke="#c9ced6"/>
+  <circle cx="42" cy="45" r="6" fill="#3d7fe0"/>
+  <rect x="58" y="37" width="180" height="8" rx="4" fill="#dce3ed"/>
+  <rect x="58" y="51" width="120" height="6" rx="3" fill="#edf1f6"/>
+</svg>

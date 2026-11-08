@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import { config } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
-import { vi, beforeEach, beforeAll } from 'vitest';
+import { vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { exposeConsole, debug } from '../src/utils/debug';
 import { resetStoreCache } from '../src/utils/storage';
 import en from '../src/i18n/locales/en.json';
@@ -21,10 +21,20 @@ vi.mock('quasar', () => {
     };
     return api;
   };
+  const useDialogPluginComponent = Object.assign(
+    () => ({
+      dialogRef: { value: null },
+      onDialogHide: vi.fn(),
+      onDialogOK: vi.fn(),
+      onDialogCancel: vi.fn(),
+    }),
+    { emits: ['ok', 'hide'] },
+  );
   return {
     Dialog: { create: vi.fn(chainable) },
     Notify: { create: vi.fn() },
     QVirtualScroll: {},
+    useDialogPluginComponent,
   };
 });
 
@@ -59,12 +69,14 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Mock crypto.randomUUID
-Object.defineProperty(globalThis, 'crypto', {
-  value: {
-    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substr(2, 9),
-  },
-});
+// Keep the real Web Crypto API (nanoid needs getRandomValues) and only
+// override randomUUID for stable test identifiers.
+if (globalThis.crypto) {
+  Object.defineProperty(globalThis.crypto, 'randomUUID', {
+    configurable: true,
+    value: () => 'test-uuid-' + Math.random().toString(36).slice(2, 11),
+  });
+}
 
 // Keep console output for debugging failures while still allowing spies.
 globalThis.console = {
@@ -75,18 +87,18 @@ globalThis.console = {
 };
 
 // Global test utilities
-globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+globalThis.ResizeObserver = class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+} as any;
 
 // Mock IntersectionObserver
-globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+globalThis.IntersectionObserver = class IntersectionObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+} as any;
 
 const i18n = createI18n({
   legacy: false,
@@ -104,6 +116,14 @@ beforeAll(async () => {
   await exposeConsole();
 });
 
+// Close any Dexie connection opened during the test while the jsdom
+// environment is still alive. Otherwise a pending database open/creation can
+// fire Dexie's storage-mutated event during environment teardown, where
+// `dispatchEvent` is no longer defined.
+afterEach(async () => {
+  await resetStoreCache();
+});
+
 // Reset mocks before each test
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -111,7 +131,7 @@ beforeEach(async () => {
   localStorageMock.setItem.mockClear();
   localStorageMock.removeItem.mockClear();
   localStorageMock.clear.mockClear();
-  resetStoreCache();
+  await resetStoreCache();
   await new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase('dmh-db');
     request.onsuccess = () => resolve();

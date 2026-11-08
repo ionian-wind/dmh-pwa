@@ -5,6 +5,7 @@ export type Timestamp = number;
 export type ComponentInjection = {
   component: any;
   props?: Record<string, any>;
+  flushFooter?: boolean;
 } | null;
 
 // Utility types
@@ -20,42 +21,44 @@ export enum Section {
   TIMERS = 'timers',
   NOTES = 'notes',
   PARTIES = 'parties',
-  MONSTERS = 'monsters',
+  PAWNS = 'pawns',
   CHARACTERS = 'characters',
   ENCOUNTERS = 'encounters',
-  MODULES = 'modules',
   AMBIENT_SOUND = 'ambient-sound',
   MAPS = 'maps',
 }
 
 // Core types
-export type NoteContentType = 'text' | 'draw';
+export type NoteLinkKind = 'party' | 'pawn' | 'encounter' | 'character';
+
+export interface NoteLink {
+  kind: NoteLinkKind;
+  id: UUID;
+}
 
 export interface Note extends WithMetadata {
   title: string;
   content: string;
-  contentType: NoteContentType;
-  /** Small PNG data URL preview for drawing notes. */
-  preview?: string;
   typeId: UUID | null;
   tags: string[];
-  moduleId: UUID | null;
+  /** Cross-entity links stored on the note; location links live on the location. */
+  links?: NoteLink[];
   parentId?: UUID;
   metadata?: Record<string, unknown>;
-  hidden: boolean; // If true, note is hidden from general listing (e.g. document tree notes)
 }
 
-export interface ModuleTreeNode {
-  noteId: UUID;
-  children?: ModuleTreeNode[];
+/**
+ * Shared state for an entity detail page's inline view/edit mode. The view
+ * owns the state; the right sidebar receives the same reactive object so its
+ * mode switch, visual-editor toggle and optional options panel stay in sync.
+ */
+export interface InlineEditState<T> {
+  isEditMode: boolean;
+  isVisualMode: boolean;
+  draft: T | null;
 }
 
-export interface Module extends WithMetadata {
-  name: string;
-  description?: string;
-  settings?: Record<string, unknown>;
-  noteTree?: ModuleTreeNode[];
-}
+export type NoteEditState = InlineEditState<Note>;
 
 export interface NoteType extends WithMetadata {
   name: string;
@@ -73,41 +76,47 @@ export interface NoteTypeField {
   defaultValue?: unknown;
 }
 
+export interface Drawing extends WithMetadata {
+  id: UUID;
+  /** Quickdraw JSON snapshot. */
+  snapshot: string;
+  /** PNG data URL used to render the drawing in documents. */
+  preview: string;
+}
+
 export interface Party extends WithMetadata {
   name: string;
   description?: string;
   characters: UUID[];
-  notes?: string;
-  moduleIds: UUID[];
 }
 
-// Common base for PlayerCharacter and Monster
+// Common base for PlayerCharacter and Pawn
 export interface Character extends WithMetadata {
   name: string;
   notes?: string;
+  /** Stored file id for the character/pawn portrait. */
+  picture?: string;
 }
 
 export interface PlayerCharacter extends Character {}
 
-export interface Monster extends Character {
-  moduleIds?: UUID[];
-}
+export interface Pawn extends Character {}
 
 export interface Combatant extends WithMetadata {
-  type: 'player' | 'monster';
+  type: 'player' | 'pawn';
   referenceId?: UUID;
   notes?: string;
   initiative: number;
   hasActed: boolean;
   isPostponed: boolean;
+  /** Excluded combatants stay in the list but are skipped in the turn cycle. */
+  isExcluded?: boolean;
 }
 
 export interface Encounter extends WithMetadata {
   name: string;
   description?: string;
-  monsters: Record<UUID, number>;
-  moduleId: UUID;
-  notes?: string;
+  pawns: Record<UUID, number>;
 }
 
 export interface Combat extends WithMetadata {
@@ -120,10 +129,15 @@ export interface Combat extends WithMetadata {
   notes?: string;
 }
 
+export type BookmarkOwnerKind = 'note';
+
 export interface Bookmark extends WithMetadata {
-  moduleId: UUID;
+  /** Legacy anchor mirror kept for older note bookmarks. */
   noteId: string;
   title: string;
+  ownerKind?: BookmarkOwnerKind;
+  ownerId?: UUID;
+  anchorId?: string;
 }
 
 export interface Timer extends WithMetadata {

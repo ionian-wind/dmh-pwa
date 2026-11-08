@@ -22,6 +22,7 @@ codebase is clean.
 wrapper components silently dropped named slots.
 
 **Implemented.**
+
 1. `src/composables/useLayout.ts` exposes a typed `LayoutStore` with
    `topMenuContent`, `rightDrawerContent`, `bottomDrawerContent`, and
    owner-scoped clearing.
@@ -40,27 +41,30 @@ Remaining nice-to-have: a dev-time warning for unknown slots.
 
 **Problem.** Stores write one record at a time; there are no cascades,
 cross-store transactions, or foreign-key checks. Deletes leave dangling IDs
-(module → notes, note → tree/bookmarks, character → party, monster → encounter,
+(module → notes, note → tree/bookmarks, character → party, pawn → encounter,
 encounter → combats, track → file).
 
 **Proposal.**
 
 Option A — **lightweight integrity service**:
+
 - `src/services/integrity.ts` with `deleteModuleCascade`, `deleteNoteCascade`,
   `deleteCharacterCascade`, etc.
 - Called by UI delete handlers; each uses existing base stores.
 - Add a startup "repair" job that reports dangling IDs (read-only at first).
 
 Option B — **repository layer**:
+
 - Introduce `src/repositories/*` owning a domain aggregate and its stores.
 - Expose `load`, `create`, `update`, `delete`, and transaction-aware methods.
 - Migrate views away from direct Pinia store mutation.
-- Use a single `idb` transaction per aggregate operation.
+- Use a single Dexie transaction per aggregate operation.
 
 Recommendation: start with Option A to stop data loss, then evolve into Option
 B for modules/notes (the largest aggregate).
 
 **Also:**
+
 - Add optional `onDelete` strategies (`cascade`, `detach`, `block`).
 - Add a `deletedAt` soft-delete column for undo.
 - Add an integrity report in HomeView ("N orphaned records").
@@ -73,6 +77,7 @@ and provide an undo window.
 ## 4. Import service (implemented)
 
 `importModuleFromZip` now:
+
 - validates module and notes against JSON Schemas,
 - generates new IDs and rewrites `noteTree`/`moduleId`,
 - writes module, notes, and mention-index records in one transaction,
@@ -81,6 +86,7 @@ and provide an undo window.
 Remaining follow-up: versioned archive manifest and merge/replace modes.
 
 **Proposal.**
+
 1. Define a versioned archive manifest:
    ```json
    { "format": "dmh.module", "version": 1, "module": {...}, "tree": [...],
@@ -111,6 +117,7 @@ sanitizes its description. Tests cover `<script>`/`onerror` stripping.
 Remaining: consider disabling raw HTML entirely for untrusted imports.
 
 **Proposal.**
+
 1. Sanitize the HTML output of `parseMarkdown` with a browser-safe allow-list
    sanitizer (implemented with DOMParser).
    - Allow standard Markdown tags plus the attributes the app adds
@@ -130,20 +137,22 @@ a preview warning.
 
 ## 6. Backup/restore (mostly implemented)
 
-`MAIN_STORE_NAMES` now covers every store, Blob audio is base64-encoded, and
-restore reloads the page. Remaining: versioned manifest, transactional restore,
-and a reconnect flow for FileSystem handles.
+`MAIN_STORE_NAMES` covers every store, file bytes are written as binary ZIP
+entries, restore reloads the page, and the backup includes a versioned
+manifest. Remaining: transactional restore and richer per-file reconnect
+selection. See [generic-file-handling.md](generic-file-handling.md) for the
+implemented OPFS, streaming, hashing and backup design.
 
 **Proposal.**
+
 1. Add `manifest.json` to the backup ZIP:
-   `{ format: 'dmh.backup', version: 1, createdAt, appVersion, stores: [...] }`.
+   `{ format: 'dmh.backup', version: 2, createdAt, appVersion, stores: [...] }`.
 2. Include every object store, including `timers`, `jukebox_*`, and
    `indexations_mentions`.
 3. For jukebox:
-   - export Blob files as binary entries (`files/<id>`),
-   - export handle metadata with a warning that handles are origin/device
-     bound,
-   - provide a "relink" flow after restore.
+   - export Blob and OPFS files as binary entries (`files/<id>`),
+   - optionally copy readable handle files into the archive,
+   - keep unavailable handle metadata and provide a Settings reconnect flow.
 4. Restore inside a single transaction (or a staging DB then swap).
 5. Validate every record; collect errors and continue in a "best effort" mode
    with a report.
@@ -161,6 +170,7 @@ and a reconnect flow for FileSystem handles.
 with the generated Workbox assets. The install prompt was also disabled.
 
 **Proposal.**
+
 1. Delete `public/sw.js` and `public/manifest.json` (done); rely solely on
    `vite-plugin-pwa`.
 2. Remove the manual manifest link from `index.html` (done; the plugin injects
@@ -184,6 +194,7 @@ dice UI and engine are not mounted yet, so their weight is not currently part
 of the rendered experience but should be accounted for before release.
 
 **Proposal.**
+
 1. Convert router imports to `() => import(...)` for heavy routes:
    jukebox, modules, combat, calculator, timers.
 2. Lazy-load editors (`NoteEditor`, `MilkdownEditor`) behind the modal open
@@ -209,6 +220,7 @@ of the rendered experience but should be accounted for before release.
 `isLoading` although docs claim it does.
 
 **Proposal.**
+
 1. Create a typed `createEntityStore<T>` helper that composes the base store
    and optional search fields:
    ```ts
@@ -235,11 +247,15 @@ that registers all plugins once, deterministic RNG, operator-order fixes, and
 `d%` support.
 
 **Proposal.**
+
 1. Introduce `src/utils/rng.ts`:
    ```ts
-   interface Rng { next(): number; int(maxExclusive: number): number }
-   function mulberry32(seed: number): Rng
-   function systemRng(): Rng
+   interface Rng {
+     next(): number;
+     int(maxExclusive: number): number;
+   }
+   function mulberry32(seed: number): Rng;
+   function systemRng(): Rng;
    ```
 2. Pass an RNG through `EvaluationContext` and `rollDice`/`explodeDice`.
 3. Fix `ast.ts` to preserve operator order by walking token positions, not
@@ -261,6 +277,7 @@ duplicate tracks, shared-file deletion, permission requests at startup, color
 bug, and per-component cache clearing.
 
 **Proposal.**
+
 1. Extract a `JukeboxLibraryService` that owns file import, dedupe (hash by
    name+size+lastModified+content hash), metadata extraction, and reference
    counts.
@@ -286,6 +303,7 @@ array and can race with another view or tab. `pinia-shared-state` can overwrite
 in-flight edits.
 
 **Proposal.**
+
 1. Add `loadedAt`/`isLoading` and a `load({ force })` policy with a TTL.
 2. Bootstrap all stores once after database initialization, then use targeted
    refreshes.
@@ -305,6 +323,7 @@ in-flight edits.
 single close path. Remaining: dirty tracking and schema-backed form validation.
 
 **Proposal.**
+
 1. Standardize `BaseModal`:
    - slots: `default`, `header-actions`, `footer`;
    - emits: `submit`, `cancel`, `update:isOpen`;
@@ -327,6 +346,7 @@ mounted, and Quasar follows the app locale. Remaining: translate English-only
 combat/document literals and add a key-parity CI check.
 
 **Proposal.**
+
 1. Add a CI script that:
    - compares key sets between `en.json` and `ru.json`,
    - extracts static `t('...')` keys from `.vue`/`.ts` and reports missing
@@ -351,6 +371,7 @@ suite, and the full suite. Remaining: broaden coverage for jukebox playback,
 file handlers, and Milkdown.
 
 **Proposal.**
+
 1. Add a `mountWithApp` helper installing Pinia, Vue I18n, Quasar, and a
    memory router.
 2. Use `fake-indexeddb` + a per-test database reset; stop mocking stores.
@@ -374,6 +395,7 @@ empty directory. Remaining: remove/verify unused dependencies, delete or
 archive remaining exploratory components, and add `knip`/`depcheck`.
 
 **Proposal.**
+
 1. Remove or explicitly mark experimental code that is not on a roadmap.
 2. Keep WIP areas (dice engine, 3D dice UI) clearly isolated and documented
    rather than deleting them.
@@ -388,14 +410,14 @@ archive remaining exploratory components, and add `knip`/`depcheck`.
 
 ## Suggested execution order
 
-| Phase | Work | Outcome |
-| --- | --- | --- |
-| 0 | Fix C1/C2/C5, real `vue-tsc`, tests smoke | App stops losing data and can gate changes |
-| 1 | Layout contract (H1/H2/H3), delete/navigation consistency | Major UI features actually work |
-| 2 | Import service + backup completeness | Safe data portability |
-| 3 | Store factory + search UI + modal contract | Remove duplication and dead UI |
-| 4 | Jukebox service + dice-engine completion (separate WIP track) | Stabilize jukebox; finish dice feature on its own schedule |
-| 5 | Splitting, i18n, hygiene | Performance and maintainability |
+| Phase | Work                                                          | Outcome                                                    |
+| ----- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| 0     | Fix C1/C2/C5, real `vue-tsc`, tests smoke                     | App stops losing data and can gate changes                 |
+| 1     | Layout contract (H1/H2/H3), delete/navigation consistency     | Major UI features actually work                            |
+| 2     | Import service + backup completeness                          | Safe data portability                                      |
+| 3     | Store factory + search UI + modal contract                    | Remove duplication and dead UI                             |
+| 4     | Jukebox service + dice-engine completion (separate WIP track) | Stabilize jukebox; finish dice feature on its own schedule |
+| 5     | Splitting, i18n, hygiene                                      | Performance and maintainability                            |
 
 Each phase should ship with tests from
 [integration/cross-part-behavior.md](../integration/cross-part-behavior.md).

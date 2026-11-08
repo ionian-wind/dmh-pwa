@@ -93,8 +93,7 @@ interface InvocationCandidate {
 }
 
 type ResolvedItem =
-  | { kind: 'word'; value: string }
-  | { kind: 'expression'; value: Value };
+  { kind: 'word'; value: string } | { kind: 'expression'; value: Value };
 
 export class Evaluator {
   private readonly settings: Settings = { ...DEFAULT_SETTINGS };

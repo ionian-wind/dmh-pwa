@@ -1,11 +1,11 @@
 import type { WithMetadata } from '@/types';
 import type { ImageMetadata } from './utils/imageWorker';
+import type { StoredFile, StoredFileSource } from '@/utils/files/types';
 
 export type MapEntityKind =
   | 'note'
-  | 'module'
   | 'party'
-  | 'monster'
+  | 'pawn'
   | 'encounter'
   | 'character'
   | 'map'
@@ -22,10 +22,18 @@ export interface MapPoint {
   [key: string]: unknown;
 }
 
+export interface LocationMap {
+  fileId: string;
+  layers: MapLayer[];
+  markers: MapMarker[];
+  areas: MapArea[];
+}
+
 export interface MapLocation extends WithMetadata {
   name: string;
   description?: string;
   entities: MapEntityRef[];
+  map: LocationMap;
 }
 
 export interface MapLayer {
@@ -66,27 +74,25 @@ export interface MapArea {
   color: string;
 }
 
-export type MapFileSource =
-  | { kind: 'handle'; handle: FileSystemFileHandle }
-  | { kind: 'blob'; blob: Blob };
+export type MapFileSource = StoredFileSource;
 
-export interface MapFile extends WithMetadata {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  source: MapFileSource;
+export interface MapFile extends StoredFile {
   imageMetadata?: ImageMetadata;
 }
 
+export interface MapImageMetadata extends WithMetadata {
+  id: string;
+  imageMetadata: ImageMetadata;
+}
+
+/** Legacy persisted map shape; merged into `MapLocation.map`. */
 export interface MapEntity extends WithMetadata {
   title: string;
   description?: string;
   fileId: string;
   locationId?: string | null;
   layers: MapLayer[];
-  /** Module and other entity links for the map itself. */
+  /** Entity links for the map itself. */
   entities: MapEntityRef[];
   /** @deprecated Embedded locations from older records; migrated to map_locations. */
   locations?: MapLocation[];
@@ -95,10 +101,3 @@ export interface MapEntity extends WithMetadata {
   /** @deprecated Use markers. Converted by normalizeMapEntity. */
   points?: MapPoint[];
 }
-
-export type MapEntityForm = Omit<
-  MapEntity,
-  'id' | 'createdAt' | 'updatedAt'
-> & {
-  id?: string;
-};

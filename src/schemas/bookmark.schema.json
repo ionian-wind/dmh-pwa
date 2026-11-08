@@ -2,15 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Bookmark",
   "type": "object",
-  "required": ["id", "moduleId", "noteId", "title", "createdAt", "updatedAt"],
+  "required": ["id", "noteId", "title", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
       "description": "Unique identifier for the bookmark"
-    },
-    "moduleId": {
-      "type": "string",
-      "description": "ID of the module this bookmark belongs to"
     },
     "noteId": {
       "type": "string",
@@ -19,6 +15,19 @@
     "title": {
       "type": "string",
       "description": "Title of the heading/bookmark"
+    },
+    "ownerKind": {
+      "type": "string",
+      "enum": ["note"],
+      "description": "Entity kind that owns the bookmark"
+    },
+    "ownerId": {
+      "type": "string",
+      "description": "ID of the owning note"
+    },
+    "anchorId": {
+      "type": "string",
+      "description": "Anchor ID of the bookmarked heading or paragraph"
     },
     "createdAt": {
       "type": "number",

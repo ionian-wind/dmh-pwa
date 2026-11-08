@@ -1,81 +1,27 @@
 import MarkdownIt from 'markdown-it';
-import type MarkdownItType from 'markdown-it';
-import type { PluginSimple } from 'markdown-it';
-import { useModuleStore } from '@/stores/modules';
-import { useNoteStore } from '@/stores/notes';
-import { usePartyStore } from '@/stores/parties';
-import { useMonsterStore } from '@/stores/monsters';
-import { useEncounterStore } from '@/stores/encounters';
-import { useMapStore } from '@/maps/maps';
+import type { Env, MarkdownIt as MarkdownItInstance } from 'markdown-it';
+import { featureLinkKinds } from 'virtual:feature-links';
 
-const mentionKindMap = new Map([
-  [
-    'note',
+type PluginSimple = (md: MarkdownItInstance) => void;
+
+const mentionKindMap = new Map(
+  featureLinkKinds.map((option) => [
+    option.kind,
     {
-      useStore: useNoteStore,
-      titleKey: 'title',
+      useStore: option.useStore,
+      titleKey: option.titleField,
       idKey: 'id',
-      type: 'Note',
-      target: 'notes',
+      type: option.kind.charAt(0).toUpperCase() + option.kind.slice(1),
+      target: option.route('').replace(/^\//, '').replace(/\/$/, ''),
     },
-  ],
-  [
-    'module',
-    {
-      useStore: useModuleStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Module',
-      target: 'modules',
-    },
-  ],
-  [
-    'party',
-    {
-      useStore: usePartyStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Party',
-      target: 'parties',
-    },
-  ],
-  [
-    'monster',
-    {
-      useStore: useMonsterStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Monster',
-      target: 'monsters',
-    },
-  ],
-  [
-    'encounter',
-    {
-      useStore: useEncounterStore,
-      titleKey: 'name',
-      idKey: 'id',
-      type: 'Encounter',
-      target: 'encounters',
-    },
-  ],
-  [
-    'map',
-    {
-      useStore: useMapStore,
-      titleKey: 'title',
-      idKey: 'id',
-      type: 'Map',
-      target: 'maps',
-    },
-  ],
-]);
+  ]),
+);
 
 // --- Internal Entity Link Plugin for markdown-it ---
 const entityLinkRegex =
-  /^(note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)$/;
+  /^(note|party|pawn|encounter|location):\/\/([a-zA-Z0-9_-]+)$/;
 
-const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
+const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
   const defaultRender =
     md.renderer.rules.link_open ||
     function (tokens: any, idx: number, options: any, _env: any, self: any) {
@@ -94,14 +40,17 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
       if (match) {
         const kind = match[1];
         const id = match[2];
-        tokens[idx].attrSet('data-kind', kind);
-        tokens[idx].attrSet('data-id', id);
-        tokens[idx].attrJoin('class', `internal-link ${kind}-link`);
-        // Set SPA route for href
         const data = mentionKindMap.get(kind);
 
         if (data) {
+          tokens[idx].attrSet('data-kind', kind);
+          tokens[idx].attrSet('data-id', id);
+          tokens[idx].attrJoin('class', `internal-link ${kind}-link`);
           tokens[idx].attrSet('href', `/${data.target}/${id}`);
+        } else {
+          tokens[idx].attrSet('href', '');
+          tokens[idx].attrSet('aria-disabled', 'true');
+          tokens[idx].attrJoin('class', 'disabled-internal-link');
         }
       } else if (/^(https?:)?\/\//.test(href)) {
         // External link
@@ -134,7 +83,7 @@ const internalEntityLinkPlugin: PluginSimple = (md: MarkdownItType) => {
 // --- Checkbox (Task List) plugin for markdown-it ---
 const checkboxRegex = /^\s*\[([ xX])\]\s+/;
 
-const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
+const checkboxPlugin: PluginSimple = (md: MarkdownItInstance) => {
   const originalListItemOpen =
     md.renderer.rules.list_item_open ||
     function (tokens: any, idx: number, _options: any, _env: any, self: any) {
@@ -184,7 +133,7 @@ const checkboxPlugin: PluginSimple = (md: MarkdownItType) => {
 // --- Custom Header Plugin for {#KIND-id} headers ---
 const headerIdRegex = /\s*\{#([a-zA-Z]+)-([a-zA-Z0-9_-]+)\}\s*$/;
 
-const customHeaderPlugin: PluginSimple = (md: MarkdownItType) => {
+const customHeaderPlugin: PluginSimple = (md: MarkdownItInstance) => {
   // Patch the renderer for heading_open
   const originalHeadingOpen =
     md.renderer.rules.heading_open ||
@@ -232,6 +181,78 @@ const md = new MarkdownIt({
   linkify: true,
   breaks: false,
 });
+
+const EMBEDDED_IMAGE_PLACEHOLDER =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+const embeddedImageSourcePlugin: PluginSimple = (md: MarkdownItInstance) => {
+  const defaultImageRender =
+    md.renderer.rules.image ||
+    function (tokens: any, idx: number, options: any, _env: any, self: any) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.image = function (
+    tokens: any,
+    idx: number,
+    options: any,
+    env: any,
+    self: any,
+  ) {
+    const token = tokens[idx];
+    const src = token.attrGet('src') || '';
+    if (src.startsWith('drawing://')) {
+      token.attrSet('data-drawing-src', src);
+      token.attrSet('src', EMBEDDED_IMAGE_PLACEHOLDER);
+    } else if (src.startsWith('dmh-file://')) {
+      token.attrSet('data-file-src', src);
+      token.attrSet('src', EMBEDDED_IMAGE_PLACEHOLDER);
+    }
+    return defaultImageRender(tokens, idx, options, env, self);
+  };
+};
+
+md.use(embeddedImageSourcePlugin);
+
+// --- Tag links (`#tag` -> /notes?tag=tag) ---
+const tagLinkPlugin: PluginSimple = (md: MarkdownItInstance) => {
+  md.inline.ruler.before(
+    'emphasis',
+    'tag_link',
+    (state: any, silent: boolean) => {
+      if (state.src.charCodeAt(state.pos) !== 0x23) return false;
+
+      const previous = state.pos > 0 ? state.src[state.pos - 1] : '';
+      if (previous && !/[\s(["'>]/.test(previous)) return false;
+
+      const lineStart = state.src.lastIndexOf('\n', state.pos - 1) + 1;
+      const beforeCursor = state.src.slice(lineStart, state.pos);
+      if (beforeCursor.lastIndexOf('{') > beforeCursor.lastIndexOf('}')) {
+        return false;
+      }
+
+      const match = /^#([\p{L}\p{N}_-]+)/u.exec(state.src.slice(state.pos));
+      if (!match) return false;
+
+      const tag = match[1];
+      if (!silent) {
+        let token = state.push('link_open', 'a', 1);
+        token.attrs = [
+          ['href', `/notes?tag=${encodeURIComponent(tag)}`],
+          ['class', 'tag-link'],
+          ['data-tag', tag],
+        ];
+        token = state.push('text', '', 0);
+        token.content = `#${tag}`;
+        state.push('link_close', 'a', -1);
+      }
+
+      state.pos += match[0].length;
+      return true;
+    },
+  );
+};
+
+md.use(tagLinkPlugin);
 md.use(internalEntityLinkPlugin);
 md.use(checkboxPlugin);
 md.use(customHeaderPlugin);
@@ -293,10 +314,17 @@ const dangerousTags = new Set([
   'button',
 ]);
 
-const globalAttributes = ['class', 'id', 'title', 'data-kind', 'data-id'];
+const globalAttributes = [
+  'class',
+  'id',
+  'title',
+  'data-kind',
+  'data-id',
+  'data-tag',
+];
 const tagAttributes: Record<string, string[]> = {
   a: ['href', 'name', 'target', 'rel'],
-  img: ['src', 'alt', 'width', 'height'],
+  img: ['src', 'alt', 'width', 'height', 'data-drawing-src', 'data-file-src'],
   input: ['type', 'checked', 'disabled'],
   code: ['class'],
   th: ['align'],
@@ -378,7 +406,7 @@ export function sanitizeMarkdownHtml(html: string): string {
   return doc.body.innerHTML;
 }
 
-export function parseMarkdown(text: string, env?: unknown): string {
+export function parseMarkdown(text: string, env?: Env): string {
   return sanitizeMarkdownHtml(md.render(text || '', env));
 }
 
@@ -396,7 +424,7 @@ export interface EntityRef {
 export function extractMentionedEntities(text: string): EntityRef[] {
   // Match [title](type://id)
   const entityLinkExtractRegex =
-    /\[[^\]]*\]\((note|module|party|monster|encounter|map):\/\/([a-zA-Z0-9_-]+)\)/g;
+    /\[[^\]]*\]\((note|party|pawn|encounter|location):\/\/([a-zA-Z0-9_-]+)\)/g;
   const results: EntityRef[] = [];
   let match;
   while ((match = entityLinkExtractRegex.exec(text)) !== null) {

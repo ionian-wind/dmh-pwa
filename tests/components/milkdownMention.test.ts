@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildMentionMenu,
   buildMentionToolbar,
+  clearMentionMark,
   insertMentionCommand,
+  isMentionActive,
   mentionMark,
   registerMentionPopupTrigger,
 } from '@/components/common/milkdown/plugins/mention';
@@ -53,15 +55,17 @@ describe('milkdown mention plugin helpers', () => {
     const { builder, group, items } = createBuilder();
     buildMentionToolbar(builder);
 
-    expect(builder.addGroup).toHaveBeenCalledWith('mentions', 'common.mentions');
-    expect(group.addItem).toHaveBeenCalledTimes(6);
+    expect(builder.addGroup).toHaveBeenCalledWith(
+      'mentions',
+      'common.mentions',
+    );
+    expect(group.addItem).toHaveBeenCalledTimes(5);
     expect(items.map((item) => item.kind)).toEqual([
       'note',
-      'module',
       'party',
-      'monster',
+      'pawn',
       'encounter',
-      'map',
+      'location',
     ]);
     expect(items[0].options.active()).toBe(false);
   });
@@ -73,11 +77,11 @@ describe('milkdown mention plugin helpers', () => {
     buildMentionToolbar(builder);
     const { ctx, editorView, tr } = createContext();
 
-    items[3].options.onRun(ctx);
+    items[2].options.onRun(ctx);
 
     expect(popup).toHaveBeenCalledWith(
       expect.objectContaining({
-        kind: 'monster',
+        kind: 'pawn',
         mentions: [],
         position: { top: 34, left: 20 },
       }),
@@ -100,7 +104,7 @@ describe('milkdown mention plugin helpers', () => {
   it('builds block-edit menu items and falls back without a popup', () => {
     const { builder, group, items } = createBuilder();
     buildMentionMenu(builder);
-    expect(group.addItem).toHaveBeenCalledTimes(6);
+    expect(group.addItem).toHaveBeenCalledTimes(5);
 
     const { ctx, editorView, tr } = createContext();
     items[0].options.onRun(ctx);
@@ -127,21 +131,21 @@ describe('milkdown mention plugin helpers', () => {
     expect(
       schema.parseDOM[0].getAttrs({
         getAttribute: (name: string) =>
-          ({ 'data-kind': 'monster', 'data-id': 'm1', href: 'x', title: 'T' })[
+          ({ 'data-kind': 'pawn', 'data-id': 'm1', href: 'x', title: 'T' })[
             name
           ] ?? null,
       }),
-    ).toEqual({ kind: 'monster', id: 'm1', href: 'x', title: 'T' });
+    ).toEqual({ kind: 'pawn', id: 'm1', href: 'x', title: 'T' });
 
     expect(
-      schema.toDOM({ attrs: { kind: 'monster', id: 'm1', href: null } }),
+      schema.toDOM({ attrs: { kind: 'pawn', id: 'm1', href: null } }),
     ).toEqual([
       'a',
       {
-        href: '/monsters/m1',
-        'data-kind': 'monster',
+        href: '/pawns/m1',
+        'data-kind': 'pawn',
         'data-id': 'm1',
-        class: 'internal-link monster-link',
+        class: 'internal-link pawn-link',
         title: undefined,
       },
       0,
@@ -150,7 +154,7 @@ describe('milkdown mention plugin helpers', () => {
       schema.toDOM({
         attrs: { kind: 'note', id: 'n1', href: 'note://n1', title: 'N' },
       })[1],
-    ).toMatchObject({ href: 'note://n1', title: 'N' });
+    ).toMatchObject({ href: '/notes/n1', title: 'N' });
 
     expect(schema.parseMarkdown.match({ type: 'link', url: 'note://n1' })).toBe(
       true,
@@ -165,15 +169,19 @@ describe('milkdown mention plugin helpers', () => {
       closeMark: vi.fn(),
     };
     const markType = { name: 'mention' };
-    schema.parseMarkdown.runner(state, {
-      url: 'monster://m1',
-      title: 'Goblin',
-      children: [],
-    }, markType);
+    schema.parseMarkdown.runner(
+      state,
+      {
+        url: 'pawn://m1',
+        title: 'Goblin',
+        children: [],
+      },
+      markType,
+    );
     expect(state.openMark).toHaveBeenCalledWith(markType, {
-      kind: 'monster',
+      kind: 'pawn',
       id: 'm1',
-      href: 'monster://m1',
+      href: null,
       title: 'Goblin',
     });
     expect(state.next).toHaveBeenCalled();
@@ -214,5 +222,91 @@ describe('milkdown mention plugin helpers', () => {
 
     expect(command('ignored')({ selection: null }, dispatch)).toBe(false);
     expect(command(42)(selectionState, dispatch)).toBe(true);
+  });
+
+  it('marks the matching mention kind active under the cursor', () => {
+    const mark = { type: { name: 'mention' }, attrs: { kind: 'pawn' } };
+    const ctx = {
+      get: () => ({
+        state: {
+          selection: { empty: true, $from: { marks: () => [mark] } },
+          storedMarks: null,
+          doc: {},
+        },
+      }),
+    };
+
+    expect(isMentionActive(ctx, 'pawn')).toBe(true);
+    expect(isMentionActive(ctx, 'note')).toBe(false);
+
+    const { builder, items } = createBuilder();
+    buildMentionToolbar(builder);
+    expect(items[2].options.active(ctx)).toBe(true);
+    expect(items[0].options.active(ctx)).toBe(false);
+  });
+
+  it('detects mentions inside a text selection', () => {
+    const mark = { type: { name: 'mention' }, attrs: { kind: 'note' } };
+    const ctx = {
+      get: () => ({
+        state: {
+          selection: { empty: false, from: 0, to: 6 },
+          storedMarks: null,
+          doc: {
+            nodesBetween: (_from: number, _to: number, cb: Function) =>
+              cb({ isText: true, marks: [mark] }),
+          },
+        },
+      }),
+    };
+
+    expect(isMentionActive(ctx, 'note')).toBe(true);
+    expect(isMentionActive(ctx, 'party')).toBe(false);
+  });
+
+  it('clears a mention mark from the cursor', () => {
+    const mentionType = { name: 'mention' };
+    const mark = { type: mentionType, attrs: { kind: 'pawn' } };
+    const node = { isText: true, nodeSize: 6, marks: [mark] };
+    const parent = {
+      forEach: (cb: Function) => cb(node, 0),
+    };
+    const tr = { removeMark: vi.fn().mockReturnThis() };
+    const view = {
+      state: {
+        schema: { marks: { mention: mentionType } },
+        selection: { empty: true, from: 2, $from: { start: () => 0, parent } },
+        tr,
+      },
+      dispatch: vi.fn(),
+      focus: vi.fn(),
+    };
+    const ctx = { get: () => view };
+
+    expect(clearMentionMark(ctx, 'pawn')).toBe(true);
+    expect(tr.removeMark).toHaveBeenCalledWith(0, 6, mentionType);
+    expect(view.dispatch).toHaveBeenCalledWith(tr);
+  });
+
+  it('does nothing when the cursor is not inside that mention kind', () => {
+    const mentionType = { name: 'mention' };
+    const node = {
+      isText: true,
+      nodeSize: 6,
+      marks: [{ type: mentionType, attrs: { kind: 'note' } }],
+    };
+    const parent = { forEach: (cb: Function) => cb(node, 0) };
+    const view = {
+      state: {
+        schema: { marks: { mention: mentionType } },
+        selection: { empty: true, from: 2, $from: { start: () => 0, parent } },
+        tr: { removeMark: vi.fn() },
+      },
+      dispatch: vi.fn(),
+      focus: vi.fn(),
+    };
+
+    expect(clearMentionMark({ get: () => view }, 'pawn')).toBe(false);
+    expect(view.dispatch).not.toHaveBeenCalled();
   });
 });

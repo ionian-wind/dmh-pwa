@@ -31,6 +31,8 @@ describe('config store', () => {
     expect(config.jukeboxRepeatMode).toBe(JukeboxRepeatMode.off);
     expect(config.jukeboxDisplayCoverWhilePlaying).toBe(true);
     expect(config.jukeboxUseMiniPlayer).toBe(true);
+    expect(config.expandMenu).toBe(true);
+    expect(config.uiTheme).toBe('light');
     expect(config.savedLanguage).toBe('en');
   });
 
@@ -45,6 +47,19 @@ describe('config store', () => {
     vi.mocked(localStorage.getItem).mockReturnValue(null);
     setActivePinia(createPinia());
     expect(useConfigStore().savedLanguage).toBe('ru');
+  });
+
+  it('reads and validates the saved UI theme', () => {
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+      key === 'dmh-config:uiTheme' ? JSON.stringify('dark') : null,
+    );
+    expect(useConfigStore().uiTheme).toBe('dark');
+
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+      key === 'dmh-config:uiTheme' ? JSON.stringify('sepia') : null,
+    );
+    setActivePinia(createPinia());
+    expect(useConfigStore().uiTheme).toBe('light');
   });
 
   it('falls back to English for non-Russian or missing languages', () => {

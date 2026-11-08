@@ -3,6 +3,7 @@ import {
   provide,
   ref,
   shallowRef,
+  unref,
   type InjectionKey,
   type Ref,
   type ShallowRef,
@@ -27,6 +28,21 @@ export interface LayoutStore {
 }
 
 export const LayoutKey: InjectionKey<LayoutStore> = Symbol('dmh-layout');
+
+/**
+ * Resolve refs passed as injected component props. Views often hand their
+ * reactive entity to the drawer (`{ pawn }`), and the injected component
+ * expects plain values. Unref runs during render, so the drawer still updates
+ * when the source ref changes.
+ */
+export function unwrapProps(
+  props?: Record<string, any>,
+): Record<string, any> | undefined {
+  if (!props) return undefined;
+  return Object.fromEntries(
+    Object.entries(props).map(([key, value]) => [key, unref(value)]),
+  );
+}
 
 export function createLayoutStore(): LayoutStore {
   const topMenuContent = shallowRef<ComponentInjection>(null);

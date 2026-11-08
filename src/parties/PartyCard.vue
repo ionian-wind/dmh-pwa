@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
 import type { Party } from '@/types';
-import { useModuleStore } from '@/stores/modules';
 import BaseCard from '@/components/common/BaseCard.vue';
 
 const props = defineProps<{ party: Party }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'copy']);
-const moduleStore = useModuleStore();
-
-onMounted(async () => {
-  await moduleStore.load();
-});
 
 function handleView() {
   emit('view', props.party);
@@ -24,12 +17,6 @@ function handleDelete() {
 function handleCopy() {
   emit('copy', props.party);
 }
-
-const modules = computed(() =>
-  (props.party.moduleIds ?? [])
-    .map((id) => moduleStore.items.find((m) => m.id === id))
-    .filter(Boolean),
-);
 </script>
 <template>
   <BaseCard
@@ -42,15 +29,13 @@ const modules = computed(() =>
     @delete="handleDelete"
     @copy="handleCopy"
     :title="party.name"
+    :drag-entity="{ kind: 'party', id: party.id, title: party.name }"
   >
     <p v-if="party.description" class="description">{{ party.description }}</p>
     <div class="party-meta">
       <span class="character-count"
         >{{ (party.characters || []).length }} characters</span
       >
-      <span v-if="modules.length > 0" class="modules">
-        {{ modules.map((m) => m!.name).join(', ') }}
-      </span>
     </div>
   </BaseCard>
 </template>
@@ -75,11 +60,7 @@ const modules = computed(() =>
 
 .character-count {
   font-weight: 500;
-  color: var(--color-primary);
-}
-
-.modules {
-  font-style: italic;
+  color: var(--color-accent);
 }
 
 .party-card-actions {

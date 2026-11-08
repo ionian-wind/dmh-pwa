@@ -10,54 +10,67 @@ subsystem in the app: every feature goes through it.
 
 Object stores are created lazily by migrations. Current stores:
 
-| Store                  | Owner               | Schema-validated         |
-| ---------------------- | ------------------- | ------------------------ |
-| `characters`           | `stores/characters` | `character.schema.json`  |
-| `monsters`             | `stores/monsters`   | `monster.schema.json`    |
-| `notes`                | `stores/notes`      | `note.schema.json`       |
-| `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`   |
-| `parties`              | `stores/parties`    | `party.schema.json`      |
-| `modules`              | `stores/modules`    | `module.schema.json`     |
-| `encounters`           | `stores/encounters` | `encounter.schema.json`  |
-| `combats`              | `stores/combats`    | `combat.schema.json`     |
-| `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`   |
-| `timers`               | `stores/timers`     | `timer.schema.json`      |
-| `indexations_mentions` | `useMentionsStore`  | no                       |
-| `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed) |
-| `jukebox_tracks`       | `jukebox/stores`    | no                       |
-| `jukebox_files`        | `jukebox/stores`    | no                       |
-| `migrations`           | migration runner    | no                       |
+| Store                  | Owner               | Schema-validated          |
+| ---------------------- | ------------------- | ------------------------- |
+| `characters`           | `stores/characters` | `character.schema.json`   |
+| `pawns`                | `stores/pawns`      | `pawn.schema.json`        |
+| `notes`                | `stores/notes`      | `note.schema.json`        |
+| `noteTypes`            | `stores/noteTypes`  | `noteType.schema.json`    |
+| `parties`              | `stores/parties`    | `party.schema.json`       |
+| `encounters`           | `stores/encounters` | `encounter.schema.json`   |
+| `combats`              | `stores/combats`    | `combat.schema.json`      |
+| `drawings`             | `drawings` helpers  | `drawing.schema.json`     |
+| `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`    |
+| `timers`               | `stores/timers`     | `timer.schema.json`       |
+| `indexations_mentions` | `useMentionsStore`  | no                        |
+| `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed)  |
+| `jukebox_tracks`       | `jukebox/stores`    | no                        |
+| `files`                | `utils/files`       | no                        |
+| `map_image_metadata`   | `maps/maps`         | no                        |
+| `sound_packs`          | `ambient-sound`     | no (excluded from backup) |
+| `migrations`           | migration runner    | no                        |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
-generates IDs.
+generates IDs. Version 18 renames encounter `pawns` to `pawns`; version 17
+removes encounter notes; version 16 strips escaped spaces before block-anchor
+comments; version 15 removes note content types, converting legacy drawing notes
+into drawing blocks; version 14 adds the `drawings` store; version 13 dropped
+the removed `modules` store and its indexes; version 12 added query indexes
+(`updatedAt`, `typeId`, tags, statuses) and the `sound_packs` store.
+`sound_packs` is not in `MAIN_STORE_NAMES`, so backup/restore leaves ambient
+audio out while campaign data stays portable.
 
 ### Connection helper
 
-`openDB()` computes the schema version as the maximum migration version, then
-passes an `upgrade` callback to `idb.openDB`. During upgrade it:
+`openDB()` returns a singleton `DmhDatabase extends Dexie` for `dmh-db`.
+The database is declared at the maximum migration version, with the same store
+names and `keyPath: 'id'` that the legacy `idb` database used. That lets Dexie
+open existing databases in place instead of requiring an export/import step.
 
-1. Ensures the `migrations` store exists.
-2. Selects migrations with `version > oldVersion && version <= newVersion`.
-3. Creates every store listed in `affectedStores`.
-4. Runs migrations sequentially through a promise chain and records each
-   applied migration (`id`, `version`, `name`, `appliedAt`) in `migrations`.
+On open, `applyPendingMigrations()`:
 
-**Caveat:** the promise chain is not returned from `upgrade`. IndexedDB's
-`versionchange` transaction stays open while requests are pending, but the
-chain is asynchronous and the upgrade callback itself returns immediately. With
-the current no-op migrations this works in practice; a migration that awaits
-non-IDB work or issues requests after an `await` risks a
-`TransactionInactiveError`. A production-grade runner should await a single
-promise passed to `event.waitUntil`-style handling or use `idb`'s transaction
-lifetime rules explicitly.
+1. Reads applied migration records from `migrations`.
+2. Selects migrations whose version is not recorded.
+3. Runs each migration in a Dexie read/write transaction over its
+   `affectedStores` plus `migrations`.
+4. Adapts the Dexie transaction to the small object-store interface used by
+   migration code, then records the applied migration (`id`, `version`, `name`,
+   `appliedAt`).
+
+Migrations run after Dexie's schema is available, so they can use normal
+transactions and `await` safely. Schema-only migrations are no-ops; data
+migrations keep their historical transform logic.
 
 ### Low-level helpers
+
+Dexie-backed helpers keep their historical names so existing call sites and
+docs remain stable:
 
 - `idbGetItem(store, id)`
 - `idbPutItem(store, item)` — validates first if a schema is registered.
 - `idbDeleteItem(store, id)`
 - `idbGetAllItems(store)`
-- `clearStore(store)` — deletes keys then awaits `tx.done`.
+- `clearStore(store)` — clears the Dexie table.
 
 `idbPutItem` throws `StorageError` when Ajv reports errors. No view catches
 these specifically; they surface as rejected promises.
@@ -80,9 +93,8 @@ schema key. Validation happens in `idbPutItem`, i.e. on every `create` and
 
 - `load()` does not validate; malformed legacy data is accepted into memory.
 - Jukebox stores deliberately pass `validationSchema: undefined`.
-- Direct imports (`importModuleFromZip`, `restoreAllStores` uses `idbPutItem`)
-  need special attention: module import writes through a raw transaction and
-  therefore **bypasses validation entirely**.
+- Direct imports (`restoreAllStores` uses `idbPutItem`) need special attention:
+  restore writes through a batch and bypasses per-record validation.
 - Ajv is configured without `strict: false` or formats; date-like strings are
   just strings.
 
@@ -130,15 +142,14 @@ export const useNoteStore = defineStore('notes', () => {
 
 | Store               | ID           | Extra behavior                                                                                |
 | ------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove, `hidden` protection |
+| `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove                      |
 | `useCharacterStore` | `characters` | Name search                                                                                   |
-| `useMonsterStore`   | `monsters`   | Name search                                                                                   |
+| `usePawnStore`      | `pawns`      | Name search                                                                                   |
 | `usePartyStore`     | `parties`    | Name search                                                                                   |
-| `useModuleStore`    | `modules`    | Name search, `getModuleName`                                                                  |
 | `useEncounterStore` | `encounters` | Name search                                                                                   |
 | `useCombatStore`    | `combats`    | Combatant/turn helpers, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
 | `useNoteTypeStore`  | `noteTypes`  | Name search                                                                                   |
-| `useBookmarkStore`  | `bookmarks`  | `findByModuleAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark`                      |
+| `useBookmarkStore`  | `bookmarks`  | `findByNoteAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark`                        |
 | `useTimerStore`     | `timers`     | `init`, `start/stop/reset`, ticking `now` ref, completion notifications                       |
 
 ### Filtering
@@ -180,16 +191,35 @@ persistence** rather than `pinia-plugin-persistedstate`.
 - Keys are prefixed `dmh-config:`.
 - `getValue` JSON-parses; invalid JSON throws during store creation.
 - A `watch` per key writes changes back.
-- Values: `jukeboxLastTrackId`, `jukeboxLastTrackProgress`,
+- Values: `jukeboxLastTrackId`, `jukeboxLastPlaylistId`,
+  `jukeboxLastTrackProgress`,
   `jukeboxLastVolume`, `jukeboxActivePlaylistId`, `jukeboxRepeatMode`,
   `jukeboxShuffle`, `jukeboxSmoothTrackChange`,
   `jukeboxAnimatePlayerBackground`, `jukeboxDisplayCoverWhilePlaying`,
-  `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`.
+  `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`, `uiTheme`.
 - `savedLanguage` defaults to `window.navigator.language`.
+- `uiTheme` defaults to `light` and accepts `light`, `dark` or `auto`.
 
-`pinia-shared-state` is also active, so these stores are synchronized between
-tabs when the browser supports it. There is no conflict resolution beyond
-last-write-wins.
+### UI theme
+
+`uiTheme` is applied by `src/main.ts` through Quasar’s **Dark plugin**:
+
+- `light` → `Dark.set(false)`;
+- `dark` → `Dark.set(true)`;
+- `auto` → `Dark.set('auto')`, which follows `prefers-color-scheme`.
+
+`src/composables/useUiTheme.ts` exposes a reactive `isDark` value for parts
+that need the resolved theme, such as the Monaco editor (`vs` / `vs-dark`).
+Custom surfaces use `body.body--dark` overrides in
+`src/assets/styles/global.css`; Quasar components switch automatically.
+`index.html` reads the saved theme before the app boots to avoid a light flash.
+
+`pinia-shared-state` is also active for serializable stores, so they are
+synchronized between tabs when the browser supports it. There is no conflict
+resolution beyond last-write-wins. The `ambient-sound`, `jukeboxPlayer` and `pictureUrlCache` stores opt out of
+sharing: their runtime state contains `Map`/`Set` values, playback queues,
+artwork `Blob`s and object URLs that cannot be serialized safely. Sharing them
+previously replaced live maps with plain objects and corrupted track artwork.
 
 ## 6. Migrations
 
@@ -212,29 +242,47 @@ Current migrations:
 | 2       | `0000000002_bookmarks.ts`      | Adds `bookmarks`                      |
 | 3       | `0000000003_timers.ts`         | Adds `timers`                         |
 
-Sorted in `src/migrations/index.ts`. The version is the max migration number;
-adding a migration requires adding it to the `migrations` array (the generator
-reminds you, but does not edit the index).
+Sorted in `src/migrations/index.ts`. The database version is the maximum of the
+migration versions and `SCHEMA_VERSION` (18, which renames encounter pawns to
+pawns).
+Adding a migration requires adding it to the `migrations`
+array; new stores are also fed into the Dexie schema through
+`affectedStores`. Indexes require updating `EXPLICIT_SCHEMA`.
 
-Data-shape migrations (renames, defaults) are not implemented anywhere; all
-existing migrations only create stores.
+Migrations 1–4 are schema-only. Migrations 5–9 and 11–18 also transform or
+create data/stores (map locations, layers, note content type, legacy files,
+removing module links and the note `hidden` flag, the drawings store, the
+removal of note content types, block-anchor cleanup, encounter notes, and the
+encounter pawns rename).
 
 ## 7. Backup and restore
 
 `backupAllStores()` zips each store in `MAIN_STORE_NAMES` as
 `<store>.json` (pretty-printed array).
 
-`MAIN_STORE_NAMES` contains every object store:
-`characters, combats, encounters, monsters, modules, notes, noteTypes,
-parties, bookmarks, timers, jukebox_playlists, jukebox_tracks, jukebox_files,
-indexations_mentions`.
+`MAIN_STORE_NAMES` lists the campaign stores included in a backup:
+`characters, combats, drawings, encounters, pawns, notes, noteTypes,
+parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
+files, map_image_metadata, indexations_mentions`.
 
-Backup encoding:
+It deliberately excludes `sound_packs`, so ambient audio packs do not bloat
+campaign backups, and the legacy `maps` / `map_files` / `jukebox_files` stores,
+which are no longer written.
 
+Backup encoding (v2):
+
+- `manifest.json` records the format, version and store list.
 - Normal records are written as JSON.
-- `jukebox_files` Blob sources are base64-encoded as `source.kind: 'blob-data'`.
+- `files.json` holds StoredFile metadata.
+- Blob and OPFS file bytes are written as binary `files/<fileId>` ZIP entries.
 - FileSystem handles cannot be serialized; they are written as
-  `source.kind: 'unavailable'` and may need relinking after restore.
+  `source.kind: 'unavailable'` and may need relinking after restore. With
+  `includeExternalFiles: true`, readable handles are copied into the archive
+  instead.
+- Restoring writes binary entries back to OPFS when available and falls back to
+  IDB Blobs.
+- Restoring an older backup still converts `jukebox_files` / `map_files`
+  entries and legacy `blob-data` sources into the generic file store.
 
 `restoreAllStores(blob)` iterates the same list, clears each store, and writes
 items one by one with validation. Restore is not a single cross-store

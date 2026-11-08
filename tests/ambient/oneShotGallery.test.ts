@@ -1,0 +1,113 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mount } from '@vue/test-utils';
+
+const storeMock = vi.hoisted(() => ({
+  selectedPackId: null as string | null,
+  galleryOneShots: [] as any[],
+  allScenes: [] as any[],
+  isOneShotPlaying: vi.fn(() => false),
+  oneShotPlayCount: vi.fn(() => 0),
+  oneShotProgress: vi.fn(() => 0),
+  playOneShot: vi.fn(),
+}));
+
+vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
+  useAmbientSoundStore: () => storeMock,
+}));
+
+import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
+import { quasarStubs } from '../helpers/quasar-stubs';
+
+const pack = { id: 'pack-1', name: 'Forest' };
+const thunder = {
+  id: 'thunder',
+  name: 'Thunder',
+  icon: '⛈️',
+  category: 'weather',
+  file: 'thunder.mp3',
+  volume: 80,
+};
+const sword = {
+  id: 'sword',
+  name: 'Sword',
+  icon: '⚔️',
+  category: 'combat',
+  file: 'sword.mp3',
+  volume: 70,
+};
+
+describe('OneShotGallery', () => {
+  beforeEach(() => {
+    storeMock.isOneShotPlaying.mockReset();
+    storeMock.isOneShotPlaying.mockReturnValue(false);
+    storeMock.oneShotPlayCount.mockReset();
+    storeMock.oneShotPlayCount.mockReturnValue(0);
+    storeMock.oneShotProgress.mockReset();
+    storeMock.oneShotProgress.mockReturnValue(0);
+    storeMock.playOneShot.mockReset();
+    storeMock.selectedPackId = null;
+    storeMock.galleryOneShots = [
+      { packageId: 'pack-1', pack, oneShot: thunder },
+      { packageId: 'pack-1', pack, oneShot: sword },
+    ];
+    storeMock.allScenes = [
+      {
+        pack,
+        scene: { id: 'scene-1', oneShotIds: ['thunder'] },
+      },
+    ];
+  });
+
+  it('plays a one-shot by clicking its card', async () => {
+    const wrapper = mount(OneShotGallery, {
+      global: { stubs: quasarStubs },
+    });
+
+    const cards = wrapper.findAll('.one-shot-control');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].find('.one-shot-knob').exists()).toBe(true);
+    expect(wrapper.text()).not.toContain('Forest');
+    expect(wrapper.text()).not.toContain('scenes');
+
+    await cards[0].trigger('click');
+    expect(storeMock.playOneShot).toHaveBeenCalledWith('pack-1', 'thunder');
+    wrapper.unmount();
+  });
+
+  it('highlights cards while their one-shot is playing', () => {
+    storeMock.isOneShotPlaying.mockImplementation(
+      (_packId: string, oneShotId: string) => oneShotId === 'thunder',
+    );
+    const wrapper = mount(OneShotGallery, {
+      global: { stubs: quasarStubs },
+    });
+
+    const cards = wrapper.findAll('.one-shot-control');
+    expect(cards[0].classes()).toContain('is-playing');
+    expect(cards[1].classes()).not.toContain('is-playing');
+    wrapper.unmount();
+  });
+
+  it('groups one-shots by category with titles and separators', () => {
+    const wrapper = mount(OneShotGallery, {
+      global: { stubs: quasarStubs },
+    });
+
+    expect(wrapper.find('select').exists()).toBe(false);
+    expect(wrapper.findAll('.entity-group')).toHaveLength(2);
+    expect(wrapper.findAll('[data-stub="QSeparator"]')).toHaveLength(2);
+    expect(wrapper.text()).toContain('weather');
+    expect(wrapper.text()).toContain('combat');
+    wrapper.unmount();
+  });
+
+  it('shows an empty state', () => {
+    storeMock.galleryOneShots = [];
+    storeMock.selectedPackId = 'pack-1';
+    const empty = mount(OneShotGallery, {
+      global: { stubs: quasarStubs },
+    });
+    expect(empty.text()).toContain('No one-shots');
+    empty.unmount();
+  });
+});

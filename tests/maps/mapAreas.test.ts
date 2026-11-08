@@ -11,7 +11,6 @@ import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-
 const area: MapArea = {
   id: 'a1',
   title: 'Forest',
@@ -99,8 +98,8 @@ describe('MapAreaEditor', () => {
     linkingBlock(wrapper, 'location').vm.$emit('update:modelValue', [
       { kind: 'location', id: 'l1' },
     ]);
-    linkingBlock(wrapper, 'map').vm.$emit('update:modelValue', [
-      { kind: 'map', id: 'map2' },
+    linkingBlock(wrapper, 'note').vm.$emit('update:modelValue', [
+      { kind: 'note', id: 'n1' },
     ]);
     wrapper
       .findComponent(IconPickerStub)
@@ -118,7 +117,7 @@ describe('MapAreaEditor', () => {
       shape: 'polygon',
       points: area.points,
       locationId: 'l1',
-      entities: [{ kind: 'map', id: 'map2' }],
+      entities: [{ kind: 'note', id: 'n1' }],
       icon: 'ra:ra-tree',
       color: '#00ff00',
     });
@@ -153,7 +152,6 @@ describe('MapAreaEditor', () => {
 describe('MapAreasPanel', () => {
   it('lists areas, shapes, linked entities and emits selection', async () => {
     resetMockStores();
-    seedMockStore('notes', [{ id: 'n1', title: 'Session note' }]);
 
     const wrapper = mount(MapAreasPanel, {
       props: { areas: [area, area2] },
@@ -162,8 +160,11 @@ describe('MapAreasPanel', () => {
 
     expect(wrapper.text()).toContain('Forest');
     expect(wrapper.text()).toContain('Dark woods');
+    expect(
+      (wrapper.find('.map-area-item').element as HTMLElement).style.boxShadow,
+    ).toContain('#336699');
     expect(wrapper.text()).not.toContain('Polygon');
-    expect(wrapper.text()).toContain('Session note');
+    expect(wrapper.text()).not.toContain('Session note');
     expect(wrapper.text()).toContain('Lake');
 
     await wrapper.find('.map-area-item').trigger('click');

@@ -9,6 +9,8 @@ export interface DiceSyntaxErrorDetails {
   found?: string;
   foundKind?: string;
   expected?: string[];
+  /** All syntax issues in source order, including this error. */
+  errors?: DiceSyntaxError[];
 }
 
 /**
@@ -17,6 +19,9 @@ export interface DiceSyntaxErrorDetails {
  * Coordinates are 1-based, following Monaco/Chevrotain conventions. The raw
  * `message` is kept for diagnostics; user-facing text is produced from the
  * structured details by the probability calculator's formatter.
+ *
+ * `errors` contains every issue found during lexing/parsing. Top-level fields
+ * mirror the first issue so existing single-error consumers keep working.
  */
 export class DiceSyntaxError extends Error {
   readonly line: number;
@@ -27,6 +32,7 @@ export class DiceSyntaxError extends Error {
   readonly found?: string;
   readonly foundKind?: string;
   readonly expected: string[];
+  readonly errors: DiceSyntaxError[];
 
   constructor(
     message: string,
@@ -46,5 +52,7 @@ export class DiceSyntaxError extends Error {
     this.found = details.found;
     this.foundKind = details.foundKind;
     this.expected = details.expected ?? [];
+    this.errors =
+      details.errors && details.errors.length > 0 ? details.errors : [this];
   }
 }

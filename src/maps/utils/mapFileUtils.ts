@@ -2,7 +2,12 @@ import { debug, debugError } from '@/utils/debug';
 import { extractImageMetadata } from './imageWorker';
 import type { ImageMetadata } from './imageWorker';
 import type { MapFile, MapFileSource } from '../types';
-import { generateId } from '@/utils/storage';
+import {
+  buildFileSignature,
+  createStoredFile,
+  findStoredFileBySignature,
+} from '@/utils/files/fileStorage';
+import { readOpfsFile } from '@/utils/files/opfs';
 
 async function loadImageDimensions(blob: Blob): Promise<ImageMetadata> {
   if (typeof createImageBitmap === 'function') {
@@ -45,16 +50,18 @@ async function buildMapFile(
     }
   }
 
-  return {
-    id: generateId(),
-    name: name || file.name,
+  const signature = buildFileSignature({
+    name: file.name,
     size: file.size,
     type: file.type,
     lastModified: file.lastModified,
+  });
+  const existing = await findStoredFileBySignature(signature);
+  return {
+    ...(existing ?? createStoredFile(file, source)),
+    name: name || file.name,
     source,
     imageMetadata,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
   };
 }
 
@@ -72,12 +79,14 @@ export async function createMapFileFromHandle(
 
 export async function getMapFileBlob(mapFile: MapFile): Promise<Blob> {
   if (mapFile.source?.kind === 'blob') return mapFile.source.blob;
+  if (mapFile.source?.kind === 'opfs') {
+    return readOpfsFile(mapFile.source.path);
+  }
   if (mapFile.source?.kind === 'handle') {
     return mapFile.source.handle.getFile();
   }
   const legacyHandle = (mapFile as any).handle as
-    | FileSystemFileHandle
-    | undefined;
+    FileSystemFileHandle | undefined;
   if (legacyHandle) return legacyHandle.getFile();
   throw new Error('Map file has no readable source');
 }

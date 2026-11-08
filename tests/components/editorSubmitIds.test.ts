@@ -4,7 +4,6 @@ import { mount } from '@vue/test-utils';
 
 import BaseModal from '@/components/common/BaseModal.vue';
 import EncounterEditor from '@/encounters/EncounterEditor.vue';
-import ModuleEditor from '@/modules/ModuleEditor.vue';
 import PartyEditor from '@/parties/PartyEditor.vue';
 import TimerEditor from '@/timers/TimerEditor.vue';
 
@@ -53,9 +52,8 @@ describe('editor submit identity', () => {
           id: 'e1',
           name: 'Ambush',
           description: '',
-          monsters: {},
-          moduleId: 'm1',
-          notes: '',
+          pawns: {},
+          moduleIds: ['m1'],
           createdAt: 1,
           updatedAt: 1,
         },
@@ -65,24 +63,6 @@ describe('editor submit identity', () => {
 
     await submit(wrapper);
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({ id: 'e1' });
-  });
-
-  it('keeps the module id when editing', async () => {
-    const wrapper = mount(ModuleEditor, {
-      props: {
-        isOpen: true,
-        module: {
-          id: 'm1',
-          name: 'Curse of Strahd',
-          description: '',
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      },
-    });
-
-    await submit(wrapper);
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({ id: 'm1' });
   });
 
   it('keeps the timer id when editing', async () => {

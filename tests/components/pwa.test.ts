@@ -58,6 +58,19 @@ describe('PWA components', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Install Owlbear');
+    const helpLink = wrapper.find('.pwa-install-help');
+    expect(helpLink.attributes('href')).toContain(
+      '/help/en/getting-started/install.html',
+    );
+    expect(helpLink.attributes('target')).toBe('_blank');
+    expect(
+      [...wrapper.element.querySelectorAll('.pwa-install-help, button')].map(
+        (element) =>
+          element.classList.contains('pwa-install-help')
+            ? 'help'
+            : element.textContent?.trim(),
+      ),
+    ).toEqual(['help', 'Not now', 'Install']);
     const installButton = wrapper
       .findAll('button')
       .find((button) => button.text().includes('Install'));
@@ -126,6 +139,7 @@ describe('PWA components', () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
       value: {
+        controller: {},
         addEventListener: vi.fn((name: string, handler: Function) => {
           (listeners[name] ||= []).push(handler);
         }),
@@ -155,6 +169,30 @@ describe('PWA components', () => {
     await flushPromises();
     expect(wrapper.text()).not.toContain('Update Available');
 
+    wrapper.unmount();
+  });
+
+  it('ignores the first controller activation of a fresh install', async () => {
+    const listeners: Record<string, Function[]> = {};
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        controller: null,
+        addEventListener: vi.fn((name: string, handler: Function) => {
+          (listeners[name] ||= []).push(handler);
+        }),
+        removeEventListener: vi.fn(),
+      },
+    });
+
+    const wrapper = mount(PWAStatus);
+    listeners.controllerchange?.[0]?.(new Event('controllerchange'));
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('Update Available');
+
+    listeners.controllerchange?.[0]?.(new Event('controllerchange'));
+    await flushPromises();
+    expect(wrapper.text()).toContain('Update Available');
     wrapper.unmount();
   });
 

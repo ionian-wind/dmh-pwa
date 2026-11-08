@@ -5,15 +5,13 @@ import { mount } from '@vue/test-utils';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import NoteCard from '@/notes/NoteCard.vue';
-import ModuleCard from '@/modules/ModuleCard.vue';
-import MonsterCard from '@/monsters/MonsterCard.vue';
+import PawnCard from '@/pawns/PawnCard.vue';
 import EncounterCard from '@/encounters/EncounterCard.vue';
-import { IconBrush, IconFileText } from '@tabler/icons-vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
 import { quasarStubs } from '../helpers/quasar-stubs';
-import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
+import { resetMockStores } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
@@ -36,8 +34,16 @@ describe('domain cards', () => {
   });
 
   it('CharacterCard emits all BaseCard actions with the character', async () => {
-    const character = { id: 'c1', name: 'Aria', notes: '' } as any;
+    const character = {
+      id: 'c1',
+      name: 'Aria',
+      notes: 'A brave **hero**',
+      picture: 'file-1',
+    } as any;
     const wrapper = mount(CharacterCard, { props: { character } });
+
+    expect(wrapper.find('.entity-picture').exists()).toBe(true);
+    expect(wrapper.text()).toContain('A brave hero');
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');
@@ -48,21 +54,18 @@ describe('domain cards', () => {
     expect(wrapper.emitted('copy')?.[0]).toEqual([character]);
   });
 
-  it('PartyCard shows description, characters and modules and emits actions', async () => {
-    seedMockStore('modules', [{ id: 'm1', name: 'Campaign' }]);
+  it('PartyCard shows description and characters and emits actions', async () => {
     const party = {
       id: 'p1',
       name: 'Heroes',
       description: 'A brave group',
       characters: ['c1', 'c2'],
-      moduleIds: ['m1', 'missing'],
     } as any;
     const wrapper = mount(PartyCard, { props: { party } });
     await nextTick();
 
     expect(wrapper.text()).toContain('A brave group');
     expect(wrapper.text()).toContain('2 characters');
-    expect(wrapper.text()).toContain('Campaign');
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');
@@ -79,8 +82,7 @@ describe('domain cards', () => {
       content: 'Hello **world**',
       tags: ['session', 'combat'],
       typeId: null,
-      moduleId: null,
-      hidden: false,
+      moduleIds: [],
       createdAt: 0,
       updatedAt: 0,
     } as any;
@@ -97,34 +99,21 @@ describe('domain cards', () => {
     expect(wrapper.emitted('tag-click')?.[0]).toEqual(['combat']);
   });
 
-  it('shows the note content-type icon', () => {
+  it('renders the note title without a title icon', () => {
     const note = {
       id: 'n1',
       title: 'Sketch',
-      content: '',
-      contentType: 'draw',
-      preview: 'data:image/png;base64,preview',
+      content: 'A sketch note',
       tags: [],
       typeId: null,
-      moduleId: null,
-      hidden: false,
       createdAt: 0,
       updatedAt: 0,
     } as any;
 
-    const drawing = mount(NoteCard, { props: { note } });
-    expect(drawing.findComponent(IconBrush).exists()).toBe(true);
-    expect(drawing.findComponent(IconBrush).classes()).toContain('text-grey-7');
-    expect(drawing.find('img').attributes('src')).toBe(
-      'data:image/png;base64,preview',
-    );
-
-    const text = mount(NoteCard, {
-      props: { note: { ...note, contentType: 'text' } },
-    });
-    expect(text.findComponent(IconFileText).exists()).toBe(true);
-    expect(text.findComponent(IconFileText).classes()).toContain('text-grey-7');
-    expect(text.findComponent(IconBrush).exists()).toBe(false);
+    const wrapper = mount(NoteCard, { props: { note } });
+    expect(wrapper.find('h5').text()).toBe('Sketch');
+    expect(wrapper.find('h5').find('svg').exists()).toBe(false);
+    expect(wrapper.find('.note-card-content').exists()).toBe(true);
   });
 
   it('NoteCard expands clamped content', async () => {
@@ -134,8 +123,7 @@ describe('domain cards', () => {
       content: 'Body',
       tags: [],
       typeId: null,
-      moduleId: null,
-      hidden: false,
+      moduleIds: [],
       createdAt: 0,
       updatedAt: 0,
     } as any;
@@ -150,6 +138,7 @@ describe('domain cards', () => {
     await nextTick();
     await nextTick();
 
+    expect(wrapper.find('.note-card-content').classes()).toContain('clamped');
     const expand = wrapper.findComponent(Button);
     expect(expand.exists()).toBe(true);
     await expand.trigger('click');
@@ -159,40 +148,27 @@ describe('domain cards', () => {
     );
   });
 
-  it('ModuleCard forwards every action with the module', async () => {
-    const module = { id: 'mod', name: 'Module', description: 'Desc' } as any;
-    const wrapper = mount(ModuleCard, { props: { module } });
+  it('PawnCard forwards actions and deletes by id', async () => {
+    const pawn = {
+      id: 'mon',
+      name: 'Goblin',
+      notes: 'Small **goblin**',
+      picture: 'file-2',
+    } as any;
+    const wrapper = mount(PawnCard, {
+      props: { pawn, showActions: true },
+    });
+
+    expect(wrapper.find('.entity-picture').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Small goblin');
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');
 
-    expect(wrapper.emitted('view')?.[0]).toEqual([module]);
-    expect(wrapper.emitted('edit')?.[0]).toEqual([module]);
-    expect(wrapper.emitted('delete')?.[0]).toEqual([module]);
-    expect(wrapper.emitted('copy')?.[0]).toEqual([module]);
-  });
-
-  it('ModuleCard omits an empty description', () => {
-    const wrapper = mount(ModuleCard, {
-      props: { module: { id: 'mod', name: 'Module' } as any },
-    });
-    expect(wrapper.find('.description').exists()).toBe(false);
-    wrapper.unmount();
-  });
-
-  it('MonsterCard forwards actions and deletes by id', async () => {
-    const monster = { id: 'mon', name: 'Goblin' } as any;
-    const wrapper = mount(MonsterCard, {
-      props: { monster, showActions: true },
-    });
-
-    const buttons = wrapper.findComponent(BaseCard).findAll('button');
-    for (const button of buttons) await button.trigger('click');
-
-    expect(wrapper.emitted('view')?.[0]).toEqual([monster]);
-    expect(wrapper.emitted('edit')?.[0]).toEqual([monster]);
+    expect(wrapper.emitted('view')?.[0]).toEqual([pawn]);
+    expect(wrapper.emitted('edit')?.[0]).toEqual([pawn]);
     expect(wrapper.emitted('delete')?.[0]).toEqual(['mon']);
-    expect(wrapper.emitted('copy')?.[0]).toEqual([monster]);
+    expect(wrapper.emitted('copy')?.[0]).toEqual([pawn]);
   });
 
   it('EncounterCard forwards actions and starts combat', async () => {
@@ -200,8 +176,8 @@ describe('domain cards', () => {
       id: 'enc',
       name: 'Ambush',
       description: 'Goblins',
-      monsters: { goblin: 2, ogre: 1 },
-      moduleId: null,
+      pawns: { goblin: 2, ogre: 1 },
+      moduleIds: [],
     } as any;
     const wrapper = mount(EncounterCard, { props: { encounter } });
     await nextTick();
@@ -215,25 +191,20 @@ describe('domain cards', () => {
     expect(wrapper.emitted('delete')?.[0]).toEqual([encounter]);
     expect(wrapper.emitted('copy')?.[0]).toEqual([encounter]);
     expect(wrapper.emitted('run-combat')?.[0]).toEqual([encounter]);
-    expect(wrapper.text()).toContain('No Module');
     expect(wrapper.text()).toContain('2 (3)');
   });
 
-  it('EncounterCard resolves modules and counts monsters defensively', async () => {
-    seedMockStore('modules', [{ id: 'mod', name: 'Curse of Strahd' }]);
-
+  it('EncounterCard counts pawns defensively', async () => {
     const known = mount(EncounterCard, {
       props: {
         encounter: {
           id: 'e1',
           name: 'Known',
-          monsters: { goblin: 'many', ogre: 2 },
-          moduleId: 'mod',
+          pawns: { goblin: 'many', ogre: 2 },
         },
       },
     });
     await nextTick();
-    expect(known.text()).toContain('Curse of Strahd');
     expect(known.text()).toContain('2 (2)');
 
     const unknown = mount(EncounterCard, {
@@ -241,27 +212,23 @@ describe('domain cards', () => {
         encounter: {
           id: 'e2',
           name: 'Unknown',
-          moduleId: 'missing',
         },
       },
     });
     await nextTick();
-    expect(unknown.text()).toContain('Unknown Module');
     expect(unknown.text()).toContain('0 (0)');
 
-    const noMonsters = mount(EncounterCard, {
+    const noPawns = mount(EncounterCard, {
       props: {
         encounter: {
           id: 'e3',
           name: 'Empty',
-          monsters: null,
-          moduleId: '',
+          pawns: null,
         },
       },
     });
     await nextTick();
-    expect(noMonsters.text()).toContain('No Module');
-    expect(noMonsters.text()).toContain('0 (0)');
+    expect(noPawns.text()).toContain('0 (0)');
   });
 
   it('NumberSpinner clamps input, adjusts buttons and repeats while held', async () => {
@@ -291,6 +258,11 @@ describe('domain cards', () => {
 
     await buttons[0].trigger('mouseenter');
     await buttons[0].trigger('mouseleave');
+    await buttons[1].trigger('mousedown');
+    vi.advanceTimersByTime(400);
+    await buttons[1].trigger('mouseup');
+    await buttons[1].trigger('mouseenter');
+    await buttons[1].trigger('mouseleave');
     expect(wrapper.find('svg').exists()).toBe(true);
 
     wrapper.unmount();

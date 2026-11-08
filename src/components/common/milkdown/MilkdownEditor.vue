@@ -1,38 +1,113 @@
 <template>
-  <div>
+  <div ref="rootEl">
     <Milkdown />
+    <TagInsertPopup
+      v-if="!props.readonly && tagPopup.show"
+      :tags="tagSuggestions"
+      :query="tagPopup.query"
+      :position="tagPopup.position"
+      :onSelect="insertTag"
+      :onCreate="insertTag"
+      :onClose="closeTagPopup"
+    />
     <MentionInsertPopup
-      v-if="mentionPopup.show"
+      v-if="!props.readonly && mentionPopup.show"
       :kind="mentionPopup.kind"
       :mentions="mentionPopup.mentions"
       :position="mentionPopup.position"
       :onSelect="mentionPopup.onSelect"
       :onClose="closeMentionPopup"
     />
+    <DrawingEditorModal
+      v-if="drawingModal.show"
+      :is-open="drawingModal.show"
+      :drawing="drawingModal.drawing"
+      @submit="handleDrawingSubmit"
+      @cancel="closeDrawingModal"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Crepe, CrepeFeature } from '@milkdown/crepe';
-import { Milkdown, useEditor } from '@milkdown/vue';
 import {
-  mentionFeature,
-  buildMentionToolbar,
-  buildMentionMenu,
-} from './plugins/mention';
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
+import { Crepe } from '@milkdown/crepe';
+import { Milkdown, useEditor } from '@milkdown/vue';
+import { replaceAll } from '@milkdown/kit/utils';
+import { editorViewCtx } from '@milkdown/kit/core';
+import { mentionFeature } from './plugins/mention';
+import { createCrepeFeatureConfig } from './crepeConfig';
+import { headingAnchorFeature } from './plugins/headingAnchor';
+import { tagDecorationFeature } from './plugins/tagDecoration';
+import { collectTocItems, tocFeature } from './plugins/toc';
+import { READONLY_CREPE_FEATURES } from './features';
 import MentionInsertPopup from './MentionInsertPopup.vue';
+import TagInsertPopup from './TagInsertPopup.vue';
+import DrawingEditorModal from '@/drawings/DrawingEditorModal.vue';
 import { registerMentionPopupTrigger } from './plugins/mention';
+import {
+  drawingFeature,
+  insertDrawingNode,
+  registerDrawingModalTrigger,
+  unregisterDrawingModalTrigger,
+} from './plugins/drawing';
+import type { DrawingModalRequest } from './plugins/drawing';
+import type { Drawing } from '@/types';
+import { getDrawing, saveDrawing } from '@/drawings/storage';
 import { getMentionableEntities } from '@/utils/markdownParser';
+import { featureLinkKinds } from 'virtual:feature-links';
+import { extractHashtags } from '@/utils/tags';
+import { hydrateStoredFileUrls } from '@/utils/files/markdownUrls';
+import { registerTagAutocompleteTrigger } from './plugins/tagAutocomplete';
+import { tagAutocompleteFeature } from './plugins/tagAutocomplete';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: string;
   currentEntityType: string;
   currentEntityId: string;
+  tags?: string[];
+  readonly?: boolean;
 }>();
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'ready']);
+const { t } = useI18n();
+const noteStore = featureLinkKinds
+  .find((option) => option.kind === 'note')
+  ?.useStore() as any;
 
-const crepeInstance = ref<Crepe | null>(null);
+const crepeInstance = shallowRef<Crepe | null>(null);
+const rootEl = ref<HTMLElement | null>(null);
+let fileUrlObserver: MutationObserver | null = null;
+
+const recentTags = ref<string[]>([]);
+
+const tagSuggestions = computed(() => {
+  const tags = new Set<string>([
+    ...(noteStore?.allTags ?? []),
+    ...(props.tags ?? []),
+    ...recentTags.value,
+  ]);
+  const trailing = props.modelValue.trimEnd();
+  for (const tag of extractHashtags(props.modelValue)) {
+    if (!trailing.endsWith(`#${tag}`)) tags.add(tag);
+  }
+  return [...tags];
+});
+
+const tagPopup = ref({
+  show: false,
+  query: '',
+  position: { top: 0, left: 0 },
+  from: 0,
+  to: 0,
+  insert: (() => {}) as (tag: string) => void,
+});
 
 const mentionPopup = ref({
   show: false,
@@ -55,6 +130,61 @@ function openMentionPopup({ kind, mentions, position, onSelect }: any) {
 function closeMentionPopup() {
   mentionPopup.value.show = false;
 }
+
+function closeTagPopup() {
+  tagPopup.value.show = false;
+}
+
+function insertTag(tag: string) {
+  if (!tagPopup.value.show) return;
+  if (!recentTags.value.includes(tag)) recentTags.value.push(tag);
+  tagPopup.value.insert(tag);
+  closeTagPopup();
+}
+
+if (!props.readonly) {
+  registerTagAutocompleteTrigger((payload) => {
+    if (!payload) {
+      closeTagPopup();
+      return;
+    }
+    tagPopup.value = {
+      show: true,
+      query: payload.query,
+      position: payload.position,
+      from: payload.from,
+      to: payload.to,
+      insert: payload.insert,
+    };
+  });
+}
+
+onMounted(() => {
+  if (!props.readonly && noteStore && !noteStore.isLoaded) {
+    void noteStore.load();
+  }
+
+  if (rootEl.value) {
+    void hydrateStoredFileUrls(rootEl.value);
+    if (typeof MutationObserver !== 'undefined') {
+      fileUrlObserver = new MutationObserver(() => {
+        if (rootEl.value) void hydrateStoredFileUrls(rootEl.value);
+      });
+      fileUrlObserver.observe(rootEl.value, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+});
+
+onBeforeUnmount(() => {
+  fileUrlObserver?.disconnect();
+  fileUrlObserver = null;
+  if (!props.readonly) {
+    unregisterDrawingModalTrigger(handleDrawingRequest);
+  }
+});
 
 // Helper to get mentionable entities for a kind, excluding the current entity
 function getMentionables(kind: string) {
@@ -81,43 +211,147 @@ function getMentionables(kind: string) {
   );
 }
 
-registerMentionPopupTrigger((opts) => {
-  // Dynamically get mentionable entities for the kind, excluding the current entity
-  const mentions = getMentionables(opts.kind);
-  openMentionPopup({
-    ...opts,
-    mentions,
-    onSelect: (mention: any) => {
-      opts.onSelect(mention);
-      closeMentionPopup();
-    },
+if (!props.readonly) {
+  registerMentionPopupTrigger((opts) => {
+    // Dynamically get mentionable entities for the kind, excluding the current entity
+    const mentions = getMentionables(opts.kind);
+    openMentionPopup({
+      ...opts,
+      mentions,
+      onSelect: (mention: any) => {
+        opts.onSelect(mention);
+        closeMentionPopup();
+      },
+    });
   });
-});
+}
+
+const drawingModal = ref<{
+  show: boolean;
+  drawing: Drawing | null;
+  request: DrawingModalRequest | null;
+}>({ show: false, drawing: null, request: null });
+
+const handleDrawingRequest = async (request: DrawingModalRequest) => {
+  const drawing = request.drawingId
+    ? ((await getDrawing(request.drawingId)) ?? null)
+    : null;
+  drawingModal.value = { show: true, drawing, request };
+};
+
+if (!props.readonly) {
+  registerDrawingModalTrigger(handleDrawingRequest);
+}
+
+function closeDrawingModal() {
+  drawingModal.value = { show: false, drawing: null, request: null };
+}
+
+async function handleDrawingSubmit(payload: {
+  snapshot: string;
+  preview: string;
+}) {
+  const current = drawingModal.value;
+  if (!current.request) return;
+  const saved = await saveDrawing(payload, current.drawing?.id);
+  current.request.onSaved?.(saved);
+  if (!current.drawing) {
+    insertDrawingNode(current.request.ctx, saved.id);
+  }
+  closeDrawingModal();
+}
+
+const lastAppliedValue = ref(props.modelValue);
 
 // @ts-ignore: Type mismatch due to dynamic plugin system
 useEditor((root) => {
-  crepeInstance.value = new Crepe({
+  const crepe = new Crepe({
     root,
     defaultValue: props.modelValue,
-    featureConfigs: {
-      [CrepeFeature.Toolbar]: {
-        buildToolbar: buildMentionToolbar,
-      },
-      [CrepeFeature.BlockEdit]: {
-        buildMenu: buildMentionMenu,
-      },
-    },
-  }).addFeature(mentionFeature);
+    features: props.readonly ? READONLY_CREPE_FEATURES : {},
+    featureConfigs: createCrepeFeatureConfig(t),
+  })
+    .addFeature(mentionFeature)
+    .addFeature(headingAnchorFeature)
+    .addFeature(drawingFeature);
 
-  crepeInstance.value.on((api) => {
+  if (props.readonly) {
+    crepe.addFeature(tagDecorationFeature).addFeature(tocFeature);
+    crepe.setReadonly(true);
+  } else {
+    crepe.addFeature(tagAutocompleteFeature);
+  }
+
+  crepeInstance.value = crepe;
+  crepe.on((api) => {
+    api.mounted(() => emit('ready'));
     api.markdownUpdated((_, markdown) => {
+      if (props.readonly) {
+        lastAppliedValue.value = markdown;
+        return;
+      }
       emit('update:modelValue', markdown);
     });
   });
-  return crepeInstance.value;
+  return crepe;
 });
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (!props.readonly) return;
+    if (value === lastAppliedValue.value) return;
+    const crepe = crepeInstance.value;
+    if (!crepe) return;
+    lastAppliedValue.value = value;
+    crepe.editor.action(replaceAll(value, true));
+    queueMicrotask(() => emit('ready'));
+  },
+);
 
 defineExpose({
   getMarkdown: () => crepeInstance.value?.getMarkdown() ?? '',
+  getToc: () =>
+    crepeInstance.value?.editor.action((ctx) =>
+      collectTocItems(ctx.get(editorViewCtx).state.doc),
+    ) ?? [],
 });
 </script>
+
+<style scoped>
+:global(.milkdown .ProseMirror .tag-link) {
+  color: var(--crepe-color-primary);
+  text-decoration: underline;
+}
+
+/* Uploads go through the application file store; direct link entry is disabled. */
+:global(.milkdown .image-edit .link-input-area) {
+  display: none;
+}
+
+:global(.milkdown .image-edit .link-importer .placeholder .text) {
+  display: none;
+}
+
+:global(
+  .milkdown
+    .milkdown-slash-menu
+    .menu-groups
+    .menu-group
+    li
+    svg.mention-tabler-icon
+),
+:global(.milkdown .milkdown-toolbar .toolbar-item svg.mention-tabler-icon) {
+  color: var(--crepe-color-outline);
+  fill: none;
+  stroke: currentColor;
+}
+
+:global(
+  .milkdown .milkdown-toolbar .toolbar-item.active svg.mention-tabler-icon
+) {
+  color: var(--crepe-color-primary);
+  fill: none;
+  stroke: currentColor;
+}
+</style>

@@ -8,10 +8,11 @@ import NotFoundView from '@/views/NotFoundView.vue';
 import NotesView from '@/notes/NotesView.vue';
 import CharactersView from '@/characters/CharactersView.vue';
 import PartiesView from '@/parties/PartiesView.vue';
-import ModulesView from '@/modules/ModulesView.vue';
-import MonstersView from '@/monsters/MonstersView.vue';
+import PawnsView from '@/pawns/PawnsView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
 import TimersView from '@/timers/TimersView.vue';
+
+vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
 function makeRouter() {
   return createRouter({
@@ -21,8 +22,7 @@ function makeRouter() {
       { path: '/notes', component: { render: () => h('div') } },
       { path: '/characters', component: { render: () => h('div') } },
       { path: '/parties', component: { render: () => h('div') } },
-      { path: '/modules', component: { render: () => h('div') } },
-      { path: '/monsters', component: { render: () => h('div') } },
+      { path: '/pawns', component: { render: () => h('div') } },
       { path: '/encounters', component: { render: () => h('div') } },
       { path: '/timers', component: { render: () => h('div') } },
     ],
@@ -78,8 +78,7 @@ describe('current views', () => {
     ['notes', NotesView, '/notes'],
     ['characters', CharactersView, '/characters'],
     ['parties', PartiesView, '/parties'],
-    ['modules', ModulesView, '/modules'],
-    ['monsters', MonstersView, '/monsters'],
+    ['pawns', PawnsView, '/pawns'],
     ['encounters', EncountersView, '/encounters'],
     ['timers', TimersView, '/timers'],
   ])('smoke renders the %s list view', async (_name, component, path) => {

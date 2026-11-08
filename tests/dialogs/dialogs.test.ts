@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from 'quasar';
+import { mount } from '@vue/test-utils';
 
 import i18n from '@/i18n';
 import { useConfigStore } from '@/utils/configStore';
 import { confirm } from '@/dialogs/confirm';
 import { prompt } from '@/dialogs/prompt';
+import { confirmUnsavedChanges } from '@/dialogs/unsavedChanges';
+import UnsavedChangesDialog from '@/dialogs/UnsavedChangesDialog.vue';
 
 function mockDialog(mode: 'ok' | 'cancel', value?: any) {
   const api: any = {
@@ -40,8 +43,7 @@ describe('dialog helpers', () => {
         ok: expect.objectContaining({ label: 'OK', color: 'primary' }),
         cancel: expect.objectContaining({
           label: 'Cancel',
-          color: 'secondary',
-          textColor: 'dark',
+          color: 'grey-7',
         }),
       }),
     );
@@ -69,8 +71,7 @@ describe('dialog helpers', () => {
         ok: expect.objectContaining({ label: 'ОК', color: 'primary' }),
         cancel: expect.objectContaining({
           label: 'Отмена',
-          color: 'secondary',
-          textColor: 'dark',
+          color: 'grey-7',
         }),
       }),
     );
@@ -95,7 +96,6 @@ describe('dialog helpers', () => {
         cancel: expect.objectContaining({
           label: 'No',
           color: 'warning',
-          textColor: 'dark',
         }),
       }),
     );
@@ -129,6 +129,9 @@ describe('dialog helpers', () => {
       }),
     ).resolves.toBeNull();
 
+    const dialogOptions = vi.mocked(Dialog.create).mock.calls.at(-1)?.[0];
+    expect(dialogOptions).not.toHaveProperty('modelValue');
+
     expect(Dialog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Rename',
@@ -137,9 +140,52 @@ describe('dialog helpers', () => {
         cancel: expect.objectContaining({
           label: 'Discard',
           color: 'secondary',
-          textColor: 'dark',
         }),
       }),
     );
+  });
+
+  it.each([
+    ['save', 'save'],
+    ['discard', 'discard'],
+    ['cancel', 'cancel'],
+  ])('resolves unsaved changes choice %s', async (mode, expected) => {
+    const api: any = {
+      onOk: vi.fn((callback: (choice: string) => void) => {
+        if (mode !== 'cancel') callback(mode);
+        return api;
+      }),
+      onCancel: vi.fn((callback: () => void) => {
+        if (mode === 'cancel') callback();
+        return api;
+      }),
+    };
+    vi.mocked(Dialog.create).mockReturnValue(api);
+
+    await expect(confirmUnsavedChanges('Careful')).resolves.toBe(expected);
+
+    expect(Dialog.create).toHaveBeenCalledWith({
+      component: UnsavedChangesDialog,
+      componentProps: { message: 'Careful' },
+      persistent: true,
+    });
+  });
+
+  it('renders the three unsaved-change actions', async () => {
+    const wrapper = mount(UnsavedChangesDialog, {
+      props: { message: 'Careful' },
+    });
+
+    expect(wrapper.text()).toContain('Unsaved changes');
+    expect(wrapper.text()).toContain('Careful');
+    expect(wrapper.find('.unsaved-save').text()).toBe('Save');
+    expect(wrapper.find('.unsaved-save').attributes('color')).toBe('positive');
+    expect(wrapper.find('.unsaved-discard').text()).toBe('Do not save');
+    expect(wrapper.find('.unsaved-cancel').text()).toBe('Cancel');
+
+    await wrapper.find('.unsaved-save').trigger('click');
+    await wrapper.find('.unsaved-discard').trigger('click');
+    await wrapper.find('.unsaved-cancel').trigger('click');
+    wrapper.unmount();
   });
 });
