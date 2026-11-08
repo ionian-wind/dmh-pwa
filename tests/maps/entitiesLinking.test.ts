@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
-import { mount } from '@vue/test-utils';
+import { config, mount } from '@vue/test-utils';
 
 const catalog = vi.hoisted(() => ({
   groups: [
@@ -8,12 +8,16 @@ const catalog = vi.hoisted(() => ({
       kind: 'note',
       labelKey: 'notes.title',
       titleField: 'title',
+      route: (id: string) => `/notes/${id}`,
       items: [
         { id: 'n1', label: 'Alpha note' },
         { id: 'n2', label: 'Beta note' },
       ],
     },
   ],
+  entities: {
+    n1: { id: 'n1', title: 'Alpha note', content: 'Alpha body' },
+  } as Record<string, any>,
 }));
 
 vi.mock('@/components/common/entityLinking/useMapEntityCatalog', () => ({
@@ -23,6 +27,7 @@ vi.mock('@/components/common/entityLinking/useMapEntityCatalog', () => ({
       catalog.groups
         .find((group) => group.kind === ref.kind)
         ?.items.find((item) => item.id === ref.id)?.label ?? ref.id,
+    getEntity: (ref: { kind: string; id: string }) => catalog.entities[ref.id],
   }),
 }));
 
@@ -34,6 +39,21 @@ const EntityCreateDialogStub = defineComponent({
   emits: ['created', 'cancel'],
   setup() {
     return () => h('div', { class: 'entity-create-stub' });
+  },
+});
+
+const EntityInfoDialogStub = defineComponent({
+  name: 'EntityInfoDialog',
+  props: {
+    isOpen: Boolean,
+    title: String,
+    picture: [String, null],
+    notes: String,
+    to: String,
+  },
+  emits: ['cancel'],
+  setup() {
+    return () => h('div', { class: 'entity-info-dialog-stub' });
   },
 });
 
@@ -52,7 +72,44 @@ const QVirtualScrollStub = defineComponent({
   },
 });
 
+beforeEach(() => {
+  config.global.stubs = {
+    ...config.global.stubs,
+    EntityInfoDialog: EntityInfoDialogStub,
+  };
+});
+
 describe('EntitiesLinking', () => {
+  it('opens the entity information dialog when a linked item is clicked', async () => {
+    const wrapper = mount(EntitiesLinking, {
+      props: {
+        kind: 'note',
+        modelValue: [{ kind: 'note', id: 'n1' }],
+        readonly: true,
+      },
+      global: {
+        stubs: {
+          QVirtualScroll: QVirtualScrollStub,
+          EntityInfoDialog: EntityInfoDialogStub,
+        },
+      },
+    });
+
+    await wrapper.find('.linked-entity-item').trigger('click');
+    const dialog = wrapper.findComponent(EntityInfoDialogStub);
+    expect(dialog.props()).toMatchObject({
+      isOpen: true,
+      title: 'Alpha note',
+      notes: 'Alpha body',
+      to: '/notes/n1',
+    });
+
+    await dialog.vm.$emit('cancel');
+    await wrapper.vm.$nextTick();
+    expect(dialog.props('isOpen')).toBe(false);
+    wrapper.unmount();
+  });
+
   it('shows the entity type title, linked entities and removes links', async () => {
     const wrapper = mount(EntitiesLinking, {
       props: { kind: 'note', modelValue: [] },

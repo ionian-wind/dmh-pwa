@@ -5,6 +5,7 @@ import { IconPlus, IconSearch, IconX } from '@tabler/icons-vue';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
 import type { MapEntityKind, MapEntityRef } from '@/maps/types';
 import { dedupeEntityRefs } from '@/components/common/entityLinking/entityRefs';
 import { useMapEntityCatalog } from '@/components/common/entityLinking/useMapEntityCatalog';
@@ -26,10 +27,16 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { groups, getLabel } = useMapEntityCatalog();
+const { groups, getLabel, getEntity } = useMapEntityCatalog();
 const isModalOpen = ref(false);
 const isCreateOpen = ref(false);
 const createdLabels = ref<Record<string, string>>({});
+const selectedInfo = ref<{
+  title: string;
+  picture?: string | null;
+  notes?: string;
+  to?: string;
+} | null>(null);
 
 const group = computed(() =>
   groups.value.find((entry) => entry.kind === props.kind),
@@ -66,6 +73,21 @@ function labelFor(ref: MapEntityRef): string {
     return props.options.find((item) => item.id === ref.id)?.label ?? ref.id;
   }
   return getLabel(ref);
+}
+
+function openInfo(ref: MapEntityRef) {
+  const entity = getEntity(ref);
+  const group = groups.value.find((entry) => entry.kind === ref.kind);
+  const title = group?.titleField ? entity?.[group.titleField] : undefined;
+  const notes =
+    entity?.notes ?? entity?.description ?? entity?.content ?? undefined;
+
+  selectedInfo.value = {
+    title: String(title || labelFor(ref)),
+    picture: typeof entity?.picture === 'string' ? entity.picture : undefined,
+    notes: typeof notes === 'string' ? notes : undefined,
+    to: group?.route?.(ref.id),
+  };
 }
 
 function handleAdd(payload: {
@@ -140,7 +162,15 @@ function removeLink(ref: MapEntityRef) {
         style="max-height: 320px"
       >
         <template #default="{ item: ref }">
-          <QItem class="linked-entity-item">
+          <QItem
+            clickable
+            v-ripple
+            tabindex="0"
+            class="linked-entity-item"
+            @click="openInfo(ref)"
+            @keydown.enter="openInfo(ref)"
+            @keydown.space.prevent="openInfo(ref)"
+          >
             <QItemSection>{{ labelFor(ref) }}</QItemSection>
             <QItemSection v-if="!readonly" side>
               <QBtn
@@ -151,7 +181,7 @@ function removeLink(ref: MapEntityRef) {
                 class="linked-entity-remove"
                 :title="t('common.remove')"
                 :aria-label="t('common.remove')"
-                @click="removeLink(ref)"
+                @click.stop="removeLink(ref)"
               >
                 <IconX :size="16" />
               </QBtn>
@@ -183,6 +213,15 @@ function removeLink(ref: MapEntityRef) {
       @created="handleCreated"
       @cancel="isCreateOpen = false"
     />
+
+    <EntityInfoDialog
+      :is-open="!!selectedInfo"
+      :title="selectedInfo?.title ?? ''"
+      :picture="selectedInfo?.picture"
+      :notes="selectedInfo?.notes"
+      :to="selectedInfo?.to"
+      @cancel="selectedInfo = null"
+    />
   </div>
 </template>
 
@@ -194,11 +233,13 @@ function removeLink(ref: MapEntityRef) {
 
 .linked-entity-item {
   border-radius: var(--border-radius-sm);
+  cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .linked-entity-item:hover,
-.linked-entity-item:focus-within {
+.linked-entity-item:focus-within,
+.linked-entity-item:focus-visible {
   background: var(--color-background-soft);
 }
 

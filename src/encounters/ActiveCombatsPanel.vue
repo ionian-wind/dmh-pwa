@@ -19,6 +19,7 @@ import { usePawnStore } from '@/stores/pawns';
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
 import EntityPicture from '@/components/common/EntityPicture.vue';
+import { entityRoute } from '@/components/common/entityLinking/entityRefs';
 import { advanceTurn } from '@/utils/combatTurn';
 import { useVisibleActiveCombats } from '@/encounters/useVisibleActiveCombats';
 import type { Combat, Combatant } from '@/types';
@@ -102,6 +103,14 @@ const selectedParticipantPicture = computed(() =>
 const selectedParticipantNotes = computed(() => {
   const participant = selectedParticipant.value;
   return participant ? (participantEntity(participant)?.notes ?? '') : '';
+});
+const selectedParticipantRoute = computed(() => {
+  const participant = selectedParticipant.value;
+  if (!participant?.referenceId) return undefined;
+  return entityRoute(
+    participant.type === 'player' ? 'character' : 'pawn',
+    participant.referenceId,
+  );
 });
 
 async function advance(combat: Combat) {
@@ -338,6 +347,7 @@ onMounted(async () => {
       :title="selectedParticipantTitle"
       :picture="selectedParticipantPicture"
       :notes="selectedParticipantNotes"
+      :to="selectedParticipantRoute"
       @cancel="selectedParticipant = null"
     />
   </div>

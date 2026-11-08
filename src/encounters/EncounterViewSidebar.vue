@@ -27,6 +27,7 @@ const props = defineProps<{
   onSetEditMode?: (value: boolean) => void | Promise<void>;
   onRunCombat?: () => void;
   onDelete?: () => void | Promise<void>;
+  scenesOnly?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -154,6 +155,7 @@ async function openQuantityModal(pawn: Pawn) {
 }
 
 onMounted(async () => {
+  if (props.scenesOnly) return;
   await Promise.all([mentionsStore.load(), pawnStore.load()]);
 });
 </script>
@@ -161,7 +163,18 @@ onMounted(async () => {
 <template>
   <div class="side-panel-content column full-height">
     <div class="sidebar-tab-content col-grow">
+      <div v-if="props.scenesOnly" class="scene-tab-panel column full-height">
+        <EntityScenesPanel
+          v-if="entityId && EntityScenesPanel"
+          entity-type="encounter"
+          :entity-id="entityId"
+        />
+        <div v-else class="text-caption text-grey-7 q-pa-md">
+          {{ t('common.empty') }}
+        </div>
+      </div>
       <TabGroup
+        v-else
         class="full-height"
         :align="'justify'"
         :title-align="'center'"
@@ -273,68 +286,70 @@ onMounted(async () => {
       </TabGroup>
     </div>
 
-    <EntityLinkingDialog
-      :is-open="showLinkModal"
-      kind="pawn"
-      :title="t('encounters.pawns.linkModalTitle')"
-      :options="pawnOptions"
-      :linked-ids="linkedPawnIds"
-      :multiple="true"
-      @add="addPawns"
-      @cancel="showLinkModal = false"
-    >
-      <template #item-extra="{ item, selected }">
-        <QInput
-          v-if="selected"
-          type="number"
-          class="pawn-quantity-input"
-          :model-value="localPawns[item.id] ?? 1"
-          :aria-label="t('common.quantity')"
-          min="1"
-          dense
-          outlined
-          @update:model-value="(val) => setPawnCount(item.id, val)"
-          @click.stop
-          @mousedown.stop
-          @keydown.stop
-        />
-      </template>
-    </EntityLinkingDialog>
+    <template v-if="!props.scenesOnly">
+      <EntityLinkingDialog
+        :is-open="showLinkModal"
+        kind="pawn"
+        :title="t('encounters.pawns.linkModalTitle')"
+        :options="pawnOptions"
+        :linked-ids="linkedPawnIds"
+        :multiple="true"
+        @add="addPawns"
+        @cancel="showLinkModal = false"
+      >
+        <template #item-extra="{ item, selected }">
+          <QInput
+            v-if="selected"
+            type="number"
+            class="pawn-quantity-input"
+            :model-value="localPawns[item.id] ?? 1"
+            :aria-label="t('common.quantity')"
+            min="1"
+            dense
+            outlined
+            @update:model-value="(val) => setPawnCount(item.id, val)"
+            @click.stop
+            @mousedown.stop
+            @keydown.stop
+          />
+        </template>
+      </EntityLinkingDialog>
 
-    <PawnViewDialog
-      :is-open="!!viewPawn"
-      :pawn="viewPawn"
-      @cancel="viewPawn = null"
-    />
+      <PawnViewDialog
+        :is-open="!!viewPawn"
+        :pawn="viewPawn"
+        @cancel="viewPawn = null"
+      />
 
-    <QList
-      v-if="!state.isEditMode && props.onRunCombat"
-      class="encounter-sidebar-actions"
-    >
-      <QItem>
-        <QItemSection>
-          <QBtn
-            class="full-width run-combat-button"
-            color="warning"
-            :title="t('common.runCombat')"
-            :aria-label="t('common.runCombat')"
-            @click="props.onRunCombat?.()"
-          >
-            <IconSwords :size="18" class="q-mr-sm" />
-            {{ t('common.runCombat') }}
-          </QBtn>
-        </QItemSection>
-      </QItem>
-    </QList>
+      <QList
+        v-if="!state.isEditMode && props.onRunCombat"
+        class="encounter-sidebar-actions"
+      >
+        <QItem>
+          <QItemSection>
+            <QBtn
+              class="full-width run-combat-button"
+              color="warning"
+              :title="t('common.runCombat')"
+              :aria-label="t('common.runCombat')"
+              @click="props.onRunCombat?.()"
+            >
+              <IconSwords :size="18" class="q-mr-sm" />
+              {{ t('common.runCombat') }}
+            </QBtn>
+          </QItemSection>
+        </QItem>
+      </QList>
 
-    <QSeparator />
-    <EntityModeControls
-      :is-edit-mode="state.isEditMode"
-      :is-visual-mode="state.isVisualMode"
-      :on-delete="props.onDelete"
-      @update:is-edit-mode="setEditMode"
-      @update:is-visual-mode="setVisualMode"
-    />
+      <QSeparator />
+      <EntityModeControls
+        :is-edit-mode="state.isEditMode"
+        :is-visual-mode="state.isVisualMode"
+        :on-delete="props.onDelete"
+        @update:is-edit-mode="setEditMode"
+        @update:is-visual-mode="setVisualMode"
+      />
+    </template>
   </div>
 </template>
 

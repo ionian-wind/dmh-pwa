@@ -47,5 +47,18 @@ export function useMapEntityCatalog() {
     return group?.items.find((item) => item.id === ref.id)?.label || ref.id;
   }
 
-  return { groups, getLabel };
+  function getEntity(ref: MapEntityRef): any | undefined {
+    const store = stores.get(ref.kind);
+    if (!store) return undefined;
+
+    const byId = store.getById?.(ref.id);
+    if (byId) return byId;
+
+    const storedItems = toValue(store.items as any);
+    return Array.isArray(storedItems)
+      ? storedItems.find((item) => item.id === ref.id)
+      : undefined;
+  }
+
+  return { groups, getLabel, getEntity };
 }

@@ -128,6 +128,43 @@ describe('EncounterViewSidebar', () => {
     wrapper.unmount();
   });
 
+  it('shows only the scenes panel in scenes-only mode', async () => {
+    vi.clearAllMocks();
+    const encounter: Encounter = {
+      id: 'encounter-1',
+      name: 'Ambush',
+      description: '',
+      pawns: {},
+      createdAt: 1,
+      updatedAt: 1,
+    };
+
+    const wrapper = mount(EncounterViewSidebar, {
+      props: { encounter, scenesOnly: true },
+      global: {
+        stubs: {
+          Mentions: MentionsStub,
+          EntityScenesPanel: ScenesStub,
+          PawnViewDialog: PawnViewDialogStub,
+          RouterLink: true,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.findComponent(ScenesStub).exists()).toBe(true);
+    expect(wrapper.findComponent(ScenesStub).props()).toMatchObject({
+      entityType: 'encounter',
+      entityId: 'encounter-1',
+    });
+    expect(wrapper.findAll('.tab-item')).toHaveLength(0);
+    expect(wrapper.find('.run-combat-button').exists()).toBe(false);
+    expect(wrapper.find('.entity-mode-controls').exists()).toBe(false);
+    expect(mocks.loadMentions).not.toHaveBeenCalled();
+    expect(mocks.loadPawns).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
   it('only exposes pawn actions in edit mode', async () => {
     mocks.pawns = [{ id: 'pawn-1', name: 'Goblin' }];
     const encounter: Encounter = {

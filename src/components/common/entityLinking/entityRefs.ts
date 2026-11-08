@@ -10,6 +10,7 @@ export interface MapEntityKindOption {
   titleField: EntityTitleField;
   editor?: () => Promise<any>;
   create?: (payload: any) => Promise<{ id: string; label: string } | null>;
+  route?: (id: string) => string;
   useStore: () => {
     items: any[] | Ref<any[]>;
     isLoaded?: boolean | Ref<boolean>;
@@ -25,6 +26,10 @@ export function getEntityKindOption(
   kind: string,
 ): MapEntityKindOption | undefined {
   return MAP_ENTITY_KIND_OPTIONS.find((option) => option.kind === kind);
+}
+
+export function entityRoute(kind: string, id: string): string | undefined {
+  return getEntityKindOption(kind)?.route?.(id);
 }
 
 export function entityRefKey(ref: MapEntityRef): string {

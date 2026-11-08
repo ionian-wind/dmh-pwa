@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
@@ -10,10 +10,12 @@ import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '@/stores/characters';
 import { usePawnStore } from '@/stores/pawns';
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
 import EntityPicture from '@/components/common/EntityPicture.vue';
+import { entityRoute } from '@/components/common/entityLinking/entityRefs';
+import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
+import { useRightDrawer } from '@/composables/useLayout';
 import {
   IconFlag,
   IconGhost3,
@@ -38,15 +40,8 @@ const characterStore = useCharacterStore();
 const pawnStore = usePawnStore();
 const encounterStore = useEncounterStore();
 const partyStore = usePartyStore();
+const rightDrawer = useRightDrawer();
 const { t } = useI18n();
-
-onMounted(async () => {
-  await characterStore.load();
-  await pawnStore.load();
-  await combatStore.load();
-  await encounterStore.load();
-  await partyStore.load();
-});
 
 const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
@@ -88,9 +83,8 @@ const selectedParticipant = ref<Combatant | null>(null);
 const editingParticipant = ref<any>(null);
 const newInitiative = ref(0);
 const isAddParticipantModalOpen = ref(false);
-const localParticipants = ref<
-  Record<string, { selected: boolean; initiative: number }>
->({});
+const participantInitiatives = ref<Record<string, number>>({});
+const noLinkedCharacterIds: string[] = [];
 
 // Computed: current participant
 const currentParticipant = computed(() => {
@@ -110,6 +104,23 @@ const encounter = computed(() =>
 const party = computed(() =>
   combat.value ? partyStore.getById(combat.value.partyId) : null,
 );
+
+onMounted(async () => {
+  await characterStore.load();
+  await pawnStore.load();
+  await combatStore.load();
+  await encounterStore.load();
+  await partyStore.load();
+
+  rightDrawer.set({
+    component: EncounterViewSidebar,
+    props: { encounter, scenesOnly: true },
+  });
+});
+
+onBeforeUnmount(() => {
+  rightDrawer.clear();
+});
 
 const partyCharacters = computed(() => {
   if (!party.value) return [];
@@ -156,6 +167,13 @@ const availableCharactersToAdd = computed(() => {
   );
   return partyCharacters.value.filter((c) => !combatantCharacterIds.has(c.id));
 });
+
+const availableCharacterOptions = computed(() =>
+  availableCharactersToAdd.value.map((character) => ({
+    id: character.id,
+    label: character.name,
+  })),
+);
 
 // Helper to get display name for a combatant
 function getCombatantDisplayName(combatant: {
@@ -215,6 +233,14 @@ const selectedParticipantNotes = computed(() => {
   const participant = selectedParticipant.value;
   return participant ? (participantEntity(participant)?.notes ?? '') : '';
 });
+const selectedParticipantRoute = computed(() => {
+  const participant = selectedParticipant.value;
+  if (!participant?.referenceId) return undefined;
+  return entityRoute(
+    participant.type === 'player' ? 'character' : 'pawn',
+    participant.referenceId,
+  );
+});
 
 function updateCombatFromStore() {
   if (!combatStore.isLoaded) return;
@@ -267,12 +293,12 @@ watch(() => combatStore.items, updateCombatFromStore, {
 
 watch(isAddParticipantModalOpen, (isOpen) => {
   if (isOpen) {
-    localParticipants.value = availableCharactersToAdd.value.reduce(
-      (acc, p) => {
-        acc[p.id] = { selected: false, initiative: 0 };
+    participantInitiatives.value = availableCharactersToAdd.value.reduce(
+      (acc, character) => {
+        acc[character.id] = 0;
         return acc;
       },
-      {} as Record<string, { selected: boolean; initiative: number }>,
+      {} as Record<string, number>,
     );
   }
 });
@@ -462,34 +488,24 @@ function saveInitiative() {
   editingParticipant.value = null;
 }
 
-function handleParticipantToggle(participantId: string, isSelected: boolean) {
-  if (localParticipants.value[participantId]) {
-    localParticipants.value[participantId].selected = isSelected;
-  }
+function setParticipantInitiative(participantId: string, initiative: number) {
+  participantInitiatives.value[participantId] = Number(initiative) || 0;
 }
 
-function handleInitiativeChange(participantId: string, initiative: number) {
-  if (localParticipants.value[participantId]) {
-    localParticipants.value[participantId].initiative = Number(initiative);
-  }
-}
-
-function handleAddParticipants() {
+function handleAddParticipants(payload: { refs: Array<{ id: string }> }) {
   if (!combat.value) return;
 
   const now = Date.now();
-  const newCombatants = Object.entries(localParticipants.value)
-    .filter(([, data]) => data.selected)
-    .map(([characterId, data]) => ({
-      id: characterId,
-      type: 'player' as const,
-      referenceId: characterId,
-      initiative: Number(data.initiative),
-      hasActed: false,
-      isPostponed: false,
-      createdAt: now,
-      updatedAt: now,
-    }));
+  const newCombatants = payload.refs.map(({ id: characterId }) => ({
+    id: characterId,
+    type: 'player' as const,
+    referenceId: characterId,
+    initiative: Number(participantInitiatives.value[characterId] ?? 0),
+    hasActed: false,
+    isPostponed: false,
+    createdAt: now,
+    updatedAt: now,
+  }));
 
   if (newCombatants.length > 0) {
     const updatedCombatants = [...combat.value.combatants, ...newCombatants];
@@ -804,62 +820,41 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
       <p>{{ t('combat.noActive') }}</p>
     </div>
 
-    <BaseModal
+    <EntityLinkingDialog
       :is-open="isAddParticipantModalOpen"
-      @cancel="isAddParticipantModalOpen = false"
-      @submit="handleAddParticipants"
+      kind="character"
       :title="t('combat.addParticipantTitle')"
-      modal-id="add-participant-modal"
-      :show-submit="true"
-      :show-cancel="true"
-      :submit-label="t('common.add')"
-      :cancel-label="t('common.cancel')"
+      :options="availableCharacterOptions"
+      :linked-ids="noLinkedCharacterIds"
+      :multiple="true"
+      @add="handleAddParticipants"
+      @cancel="isAddParticipantModalOpen = false"
     >
-      <div v-if="availableCharactersToAdd.length === 0" class="empty-state">
-        <p>{{ t('combat.allPartyCharactersAdded') }}</p>
-      </div>
-      <table v-else>
-        <thead>
-          <tr>
-            <th>{{ t('common.name') }}</th>
-            <th>{{ t('common.add') }}</th>
-            <th>{{ t('common.initiative') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in availableCharactersToAdd" :key="p.id">
-            <td>{{ p.name }}</td>
-            <td>
-              <ToggleSwitch
-                :model-value="localParticipants[p.id]?.selected"
-                @update:model-value="
-                  (val) => handleParticipantToggle(p.id, val)
-                "
-              />
-            </td>
-            <td>
-              <QInput
-                v-if="localParticipants[p.id]?.selected"
-                type="number"
-                class="initiative-input"
-                v-model.number="localParticipants[p.id].initiative"
-                @update:model-value="
-                  (val) => handleInitiativeChange(p.id, Number(val ?? 0))
-                "
-                dense
-                outlined
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </BaseModal>
+      <template #item-extra="{ item, selected }">
+        <QInput
+          v-if="selected"
+          type="number"
+          class="initiative-input"
+          :model-value="participantInitiatives[item.id] ?? 0"
+          :aria-label="t('common.initiative')"
+          dense
+          outlined
+          @update:model-value="
+            (val) => setParticipantInitiative(item.id, Number(val ?? 0))
+          "
+          @click.stop
+          @mousedown.stop
+          @keydown.stop
+        />
+      </template>
+    </EntityLinkingDialog>
 
     <EntityInfoDialog
       :is-open="!!selectedParticipant"
       :title="selectedParticipantName"
       :picture="selectedParticipantPicture"
       :notes="selectedParticipantNotes"
+      :to="selectedParticipantRoute"
       @cancel="selectedParticipant = null"
     />
   </BaseEntityView>
