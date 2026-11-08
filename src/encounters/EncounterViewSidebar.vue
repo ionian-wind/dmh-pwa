@@ -15,6 +15,7 @@ import {
   IconGhost3,
   IconHeadphones,
   IconPlus,
+  IconSwords,
   IconX,
 } from '@tabler/icons-vue';
 import { prompt } from '@/dialogs';
@@ -24,6 +25,8 @@ const props = defineProps<{
   encounter: Encounter;
   editState?: InlineEditState<Encounter>;
   onSetEditMode?: (value: boolean) => void | Promise<void>;
+  onRunCombat?: () => void;
+  onDelete?: () => void | Promise<void>;
 }>();
 
 const { t } = useI18n();
@@ -304,10 +307,27 @@ onMounted(async () => {
       @cancel="viewPawn = null"
     />
 
+    <div
+      v-if="!state.isEditMode && props.onRunCombat"
+      class="encounter-sidebar-actions q-pa-sm"
+    >
+      <QBtn
+        class="full-width run-combat-button"
+        color="warning"
+        :title="t('common.runCombat')"
+        :aria-label="t('common.runCombat')"
+        @click="props.onRunCombat?.()"
+      >
+        <IconSwords :size="18" class="q-mr-sm" />
+        {{ t('common.runCombat') }}
+      </QBtn>
+    </div>
+
     <QSeparator />
     <EntityModeControls
       :is-edit-mode="state.isEditMode"
       :is-visual-mode="state.isVisualMode"
+      :on-delete="props.onDelete"
       @update:is-edit-mode="setEditMode"
       @update:is-visual-mode="setVisualMode"
     />
@@ -336,5 +356,9 @@ onMounted(async () => {
 
 .pawn-quantity-input {
   width: 72px;
+}
+
+.encounter-sidebar-actions {
+  flex: 0 0 auto;
 }
 </style>

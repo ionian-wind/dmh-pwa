@@ -19,6 +19,7 @@ const props = defineProps<{
   party: Party;
   editState?: InlineEditState<Party>;
   onSetEditMode?: (value: boolean) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
 }>();
 
 const localEditState = reactive<InlineEditState<Party>>({
@@ -109,6 +110,7 @@ onMounted(() => mentionsStore.load());
     <EntityModeControls
       :is-edit-mode="state.isEditMode"
       :is-visual-mode="state.isVisualMode"
+      :on-delete="props.onDelete"
       @update:is-edit-mode="setEditMode"
       @update:is-visual-mode="setVisualMode"
     />

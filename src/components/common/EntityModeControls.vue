@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconEdit, IconEye } from '@tabler/icons-vue';
+import { IconEdit, IconEye, IconTrash } from '@tabler/icons-vue';
 
 defineProps<{
   isEditMode: boolean;
   isVisualMode: boolean;
+  onDelete?: () => void | Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -17,6 +18,22 @@ const { t } = useI18n();
 
 <template>
   <QList class="entity-mode-controls">
+    <QItem v-if="isEditMode && onDelete" class="entity-delete-action">
+      <QItemSection>
+        <QBtn
+          class="full-width entity-delete-button"
+          color="negative"
+          outline
+          :title="t('common.delete')"
+          :aria-label="t('common.delete')"
+          @click="onDelete?.()"
+        >
+          <IconTrash :size="18" class="q-mr-sm" />
+          {{ t('common.delete') }}
+        </QBtn>
+      </QItemSection>
+    </QItem>
+
     <QItem v-if="isEditMode" class="entity-visual-mode-toggle">
       <QItemSection>
         {{ t('markdownEditor.visualMode') }}

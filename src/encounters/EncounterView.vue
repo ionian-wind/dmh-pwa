@@ -73,6 +73,10 @@ const handleDelete = async () => {
   return true;
 };
 
+async function handleDeleteFromSidebar() {
+  if (await handleDelete()) await router.push('/encounters');
+}
+
 const handleRunCombat = () => {
   showPartySelector.value = true;
 };
@@ -241,19 +245,6 @@ const tabs = computed(() =>
     : viewTabs.value,
 );
 
-const headerButtons = computed(() =>
-  editState.isEditMode
-    ? []
-    : [
-        {
-          color: 'warning',
-          title: 'common.runCombat',
-          event: handleRunCombat,
-          icon: IconSwords,
-        },
-      ],
-);
-
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
@@ -266,7 +257,13 @@ onMounted(async () => {
 
   rightDrawer.set({
     component: EncounterViewSidebar,
-    props: { encounter, editState, onSetEditMode: setEditMode },
+    props: {
+      encounter,
+      editState,
+      onSetEditMode: setEditMode,
+      onRunCombat: handleRunCombat,
+      onDelete: handleDeleteFromSidebar,
+    },
   });
 });
 
@@ -283,14 +280,13 @@ onBeforeUnmount(() => {
       list-route="/encounters"
       :on-delete="handleDelete"
       :header-show-edit="false"
-      :header-show-delete="editState.isEditMode"
+      :header-show-delete="false"
       :is-editing="editState.isEditMode"
       :title="editState.isEditMode ? '' : encounterTitle"
       :not-found="notFound"
       :loading="loading"
       :tabs="tabs"
       v-model="activeTab"
-      :header-buttons="headerButtons"
     >
       <template #main>
         <EntityInlineEditor

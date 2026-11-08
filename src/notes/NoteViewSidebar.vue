@@ -44,6 +44,7 @@ const props = defineProps<{
   note: Note;
   editState?: NoteEditState;
   onSetEditMode?: (value: boolean) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
   tocItems?: TocItem[];
   tocReady?: boolean;
 }>();
@@ -324,6 +325,7 @@ onMounted(() => {
     <EntityModeControls
       :is-edit-mode="state.isEditMode"
       :is-visual-mode="state.isVisualMode"
+      :on-delete="props.onDelete"
       @update:is-edit-mode="setEditMode"
       @update:is-visual-mode="setVisualMode"
     />

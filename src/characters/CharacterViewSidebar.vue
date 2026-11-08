@@ -13,6 +13,7 @@ const props = defineProps<{
   character: PlayerCharacter | null;
   editState?: InlineEditState<PlayerCharacter>;
   onSetEditMode?: (value: boolean) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
 }>();
 
 const { t } = useI18n();
@@ -122,6 +123,7 @@ onMounted(() => mentionsStore.load());
     <EntityModeControls
       :is-edit-mode="state.isEditMode"
       :is-visual-mode="state.isVisualMode"
+      :on-delete="props.onDelete"
       @update:is-edit-mode="setEditMode"
       @update:is-visual-mode="setVisualMode"
     />

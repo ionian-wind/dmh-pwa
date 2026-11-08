@@ -56,6 +56,8 @@ const PawnViewDialogStub = defineComponent({
 function mountSidebar(
   editState: InlineEditState<Encounter>,
   onSetEditMode = vi.fn(),
+  onRunCombat = vi.fn(),
+  onDelete = vi.fn(),
 ) {
   return mount(EncounterViewSidebar, {
     props: {
@@ -69,6 +71,8 @@ function mountSidebar(
       },
       editState,
       onSetEditMode,
+      onRunCombat,
+      onDelete,
     },
     global: {
       stubs: {
@@ -89,10 +93,21 @@ describe('EncounterViewSidebar', () => {
       draft: null,
     });
     const onSetEditMode = vi.fn();
-    const wrapper = mountSidebar(editState, onSetEditMode);
+    const onRunCombat = vi.fn();
+    const onDelete = vi.fn();
+    const wrapper = mountSidebar(
+      editState,
+      onSetEditMode,
+      onRunCombat,
+      onDelete,
+    );
     await flushPromises();
 
     expect(wrapper.find('.entity-mode-controls').exists()).toBe(true);
+    expect(wrapper.find('.run-combat-button').exists()).toBe(true);
+    expect(wrapper.find('.entity-delete-button').exists()).toBe(false);
+    await wrapper.find('.run-combat-button').trigger('click');
+    expect(onRunCombat).toHaveBeenCalledTimes(1);
     expect(wrapper.findAll('.tab-item')).toHaveLength(3);
     expect(wrapper.find('.pawn-add-row').exists()).toBe(false);
 
@@ -102,6 +117,10 @@ describe('EncounterViewSidebar', () => {
     editState.isEditMode = true;
     await nextTick();
 
+    expect(wrapper.find('.run-combat-button').exists()).toBe(false);
+    expect(wrapper.find('.entity-delete-button').exists()).toBe(true);
+    await wrapper.find('.entity-delete-button').trigger('click');
+    expect(onDelete).toHaveBeenCalledTimes(1);
     expect(wrapper.findAll('.tab-item')).toHaveLength(2);
     expect(wrapper.find('.pawn-add-row').exists()).toBe(true);
     expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);

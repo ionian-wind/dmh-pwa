@@ -112,4 +112,29 @@ describe('shared entity view components', () => {
     expect(wrapper.find('.entity-mode-toggle').exists()).toBe(true);
     wrapper.unmount();
   });
+
+  it('shows a delete action above the mode toggle in edit mode', async () => {
+    const onDelete = vi.fn();
+    const wrapper = mount(EntityModeControls, {
+      props: { isEditMode: true, isVisualMode: true, onDelete },
+    });
+
+    const button = wrapper.find('.entity-delete-button');
+    expect(button.exists()).toBe(true);
+    expect(wrapper.html().indexOf('entity-delete-action')).toBeLessThan(
+      wrapper.html().indexOf('entity-mode-toggle'),
+    );
+    await button.trigger('click');
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it('hides the delete action outside edit mode', () => {
+    const wrapper = mount(EntityModeControls, {
+      props: { isEditMode: false, isVisualMode: true, onDelete: vi.fn() },
+    });
+
+    expect(wrapper.find('.entity-delete-button').exists()).toBe(false);
+    wrapper.unmount();
+  });
 });

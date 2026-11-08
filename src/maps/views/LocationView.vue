@@ -231,6 +231,10 @@ async function handleDelete() {
   return true;
 }
 
+async function handleDeleteFromSidebar() {
+  await handleDelete();
+}
+
 function openLocation(locationId: string) {
   void router.push(`/locations/${locationId}`);
 }
@@ -243,7 +247,7 @@ function openLocation(locationId: string) {
     list-route="/locations"
     :on-delete="handleDelete"
     :header-show-edit="false"
-    :header-show-delete="editState.isEditMode"
+    :header-show-delete="false"
     :is-editing="editState.isEditMode"
     :title="editState.isEditMode || activeTab === 'map' ? '' : location?.name"
     :not-found="notFound"
@@ -398,6 +402,7 @@ function openLocation(locationId: string) {
         <EntityModeControls
           :is-edit-mode="editState.isEditMode"
           :is-visual-mode="editState.isVisualMode"
+          :on-delete="handleDeleteFromSidebar"
           @update:is-edit-mode="setEditMode"
           @update:is-visual-mode="(value) => (editState.isVisualMode = value)"
         />

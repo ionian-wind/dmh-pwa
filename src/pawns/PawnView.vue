@@ -190,6 +190,10 @@ const handleDelete = async () => {
   return true;
 };
 
+async function handleDeleteFromSidebar() {
+  if (await handleDelete()) await router.push('/pawns');
+}
+
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
@@ -203,6 +207,7 @@ onMounted(async () => {
       pawn,
       editState,
       onSetEditMode: setEditMode,
+      onDelete: handleDeleteFromSidebar,
     },
   });
 });
@@ -219,7 +224,7 @@ onBeforeUnmount(() => {
     list-route="/pawns"
     :on-delete="handleDelete"
     :header-show-edit="false"
-    :header-show-delete="editState.isEditMode"
+    :header-show-delete="false"
     :is-editing="editState.isEditMode"
     :title="editState.isEditMode ? '' : pawnTitle"
     :not-found="notFound"

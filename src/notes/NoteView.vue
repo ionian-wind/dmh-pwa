@@ -298,6 +298,10 @@ const handleDelete = async () => {
   return true;
 };
 
+async function handleDeleteFromSidebar() {
+  if (await handleDelete()) await router.push('/notes');
+}
+
 // Computed properties for BaseEntityView
 const noteTitle = computed(() => note.value?.title?.trim() || '');
 
@@ -314,6 +318,7 @@ onMounted(async () => {
       note,
       editState,
       onSetEditMode: setEditMode,
+      onDelete: handleDeleteFromSidebar,
       tocItems,
       tocReady,
     },
@@ -332,7 +337,7 @@ onBeforeUnmount(() => {
     list-route="/notes"
     :on-delete="handleDelete"
     :header-show-edit="false"
-    :header-show-delete="editState.isEditMode"
+    :header-show-delete="false"
     :is-editing="editState.isEditMode"
     :title="editState.isEditMode ? '' : noteTitle"
     :not-found="notFound"

@@ -225,6 +225,10 @@ async function handleDeleteParty() {
   return true;
 }
 
+async function handleDeleteFromSidebar() {
+  if (await handleDeleteParty()) await router.push('/parties');
+}
+
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
@@ -238,6 +242,7 @@ onMounted(async () => {
       party,
       editState,
       onSetEditMode: setEditMode,
+      onDelete: handleDeleteFromSidebar,
     },
   });
 });
@@ -254,7 +259,7 @@ onBeforeUnmount(() => {
     list-route="/parties"
     :on-delete="handleDeleteParty"
     :header-show-edit="false"
-    :header-show-delete="editState.isEditMode"
+    :header-show-delete="false"
     :is-editing="editState.isEditMode"
     :title="editState.isEditMode ? '' : partyTitle"
     :subtitle="editState.isEditMode ? '' : partySubtitle"
