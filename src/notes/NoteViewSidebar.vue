@@ -11,12 +11,10 @@ import TabGroup from '@/components/common/TabGroup.vue';
 import TableOfContents from '@/components/common/TableOfContents.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import NoteOptions from '@/notes/NoteOptions.vue';
-import { downloadNote } from '@/notes/downloadNote';
 import {
   IconAlertTriangle,
   IconAt,
   IconBookmarks,
-  IconFileDownload,
   IconHash,
   IconListTree,
   IconPencil,
@@ -113,12 +111,6 @@ function setVisualMode(value: boolean) {
 function handleOptionsUpdate(updated: Note) {
   if (state.value.draft) {
     Object.assign(state.value.draft, updated);
-  }
-}
-
-function handleDownload() {
-  if (props.note) {
-    downloadNote(props.note);
   }
 }
 
@@ -312,16 +304,6 @@ onMounted(() => {
     </div>
 
     <QSeparator />
-    <QList v-if="!state.isEditMode">
-      <QItem class="note-download" clickable v-ripple @click="handleDownload">
-        <QItemSection>{{ t('common.download') }}</QItemSection>
-        <QItemSection side>
-          <IconFileDownload :size="18" />
-        </QItemSection>
-      </QItem>
-    </QList>
-
-    <QSeparator v-if="!state.isEditMode" />
     <EntityModeControls
       :is-edit-mode="state.isEditMode"
       :is-visual-mode="state.isVisualMode"

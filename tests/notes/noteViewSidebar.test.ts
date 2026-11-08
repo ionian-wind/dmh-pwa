@@ -8,10 +8,6 @@ import { resetMockStores } from '../helpers/mock-storage';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
-const downloadNote = vi.hoisted(() => vi.fn());
-
-vi.mock('@/notes/downloadNote', () => ({ downloadNote }));
-
 const RouterLinkStub = {
   props: ['to'],
   template: '<a class="tag-link"><slot /></a>',
@@ -228,58 +224,6 @@ describe('NoteViewSidebar', () => {
 
     await wrapper.find('.entity-edit-mode').trigger('click');
     expect(setEditMode).toHaveBeenCalledWith(true);
-    wrapper.unmount();
-  });
-
-  it('downloads the note from a sidebar row in view mode', async () => {
-    const note = {
-      id: 'n1',
-      title: 'Note',
-      content: 'Content',
-      tags: [],
-    } as Note;
-    const editState = reactive<NoteEditState>({
-      isEditMode: false,
-      isVisualMode: true,
-      draft: null,
-    });
-
-    const wrapper = mount(NoteViewSidebar, {
-      props: { note, editState },
-      global: { stubs: { NoteOptions: true, RouterLink: RouterLinkStub } },
-    });
-
-    const row = wrapper.find('.note-download');
-    expect(row.text()).toContain('Download');
-    expect(row.find('svg').exists()).toBe(true);
-    await row.trigger('click');
-    expect(downloadNote).toHaveBeenCalledWith(note);
-    wrapper.unmount();
-  });
-
-  it('hides download in edit mode', async () => {
-    const note = {
-      id: 'n1',
-      title: 'Sketch',
-      content: '',
-      tags: [],
-    } as Note;
-    const editState = reactive<NoteEditState>({
-      isEditMode: true,
-      isVisualMode: true,
-      draft: { ...note },
-    });
-
-    const wrapper = mount(NoteViewSidebar, {
-      props: { note, editState },
-      global: { stubs: { NoteOptions: true, RouterLink: RouterLinkStub } },
-    });
-
-    expect(wrapper.find('.note-download').exists()).toBe(false);
-    editState.isEditMode = false;
-    await nextTick();
-    await wrapper.find('.note-download').trigger('click');
-    expect(downloadNote).toHaveBeenCalledWith(note);
     wrapper.unmount();
   });
 
