@@ -384,13 +384,15 @@ function openLocation(locationId: string) {
         v-if="activeTab !== 'map' && location"
         class="side-panel-content column full-height"
       >
-        <div class="sidebar-tab-content col-grow q-pa-md">
-          <EntityScenesPanel
-            v-if="EntityScenesPanel"
-            entity-type="location"
-            :entity-id="location.id"
-            :editable="editState.isEditMode"
-          />
+        <div class="sidebar-tab-content col-grow">
+          <div class="scene-tab-panel column full-height">
+            <EntityScenesPanel
+              v-if="EntityScenesPanel"
+              entity-type="location"
+              :entity-id="location.id"
+              :editable="editState.isEditMode"
+            />
+          </div>
         </div>
         <QSeparator />
         <EntityModeControls

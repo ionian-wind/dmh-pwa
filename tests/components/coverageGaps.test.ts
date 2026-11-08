@@ -12,9 +12,11 @@ import { quasarStubs } from '../helpers/quasar-stubs';
 const mocks = vi.hoisted(() => ({
   timerStore: { now: 0 },
   playlists: {
-    items: { value: [] as any[] },
+    items: { value: [] as any[], __v_isRef: true },
     create: vi.fn(),
     update: vi.fn(),
+    getById: vi.fn(() => undefined),
+    load: vi.fn().mockResolvedValue(undefined),
   },
   ambient: {
     storedPacks: [] as any[],
@@ -41,6 +43,15 @@ vi.mock('@/jukebox/stores', () => ({
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
   useAmbientSoundStore: () => mocks.ambient,
+}));
+
+vi.mock('@/composables/useFeatureStores', () => ({
+  useFeatureStores: () => ({
+    load: vi.fn().mockResolvedValue(undefined),
+    has: vi.fn(() => true),
+    get: vi.fn(),
+    items: vi.fn(() => []),
+  }),
 }));
 
 const EntitiesLinkingStub = {
@@ -72,6 +83,7 @@ describe('coverage gaps: small components', () => {
   beforeEach(() => {
     mocks.timerStore.now = 0;
     mocks.playlists.items.value = [];
+    mocks.playlists.getById.mockReturnValue(undefined);
     mocks.ambient.storedPacks = [];
     mocks.ambient.allScenes = [];
     mocks.ambient.activeSceneKey = null;
@@ -175,6 +187,12 @@ describe('coverage gaps: small components', () => {
       global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
     });
     const inputs = wrapper.findAllComponents(quasarStubs.QInput);
+    expect(
+      wrapper
+        .findComponent(BaseModal)
+        .props('tabs')
+        .map((tab: any) => tab.name),
+    ).toEqual(['main', 'links']);
     inputs[0].vm.$emit('update:modelValue', 'Mix');
     inputs[1].vm.$emit('update:modelValue', 'A mix');
     await nextTick();
@@ -212,6 +230,25 @@ describe('coverage gaps: small components', () => {
     existing.unmount();
   });
 
+  it('shows linked playlists in the mixed scene list', () => {
+    const playlist = {
+      id: 'p1',
+      name: 'Mix',
+      description: 'Set',
+      links: [{ kind: 'location', id: 'l1' }],
+    };
+    mocks.playlists.items.value = [playlist];
+    mocks.playlists.getById.mockReturnValue(playlist);
+
+    const wrapper = mount(EntityScenesPanel, {
+      props: { entityType: 'location', entityId: 'l1' },
+    });
+
+    expect(wrapper.find('.playlist-link-item').text()).toContain('Mix');
+    expect(wrapper.find('.playlist-add-row').text()).toContain('Add playlist');
+    wrapper.unmount();
+  });
+
   it('links, plays and removes entity scenes', async () => {
     const pack = { id: 'pack1', name: 'Pack' };
     const scene = { id: 'scene1', name: 'Scene' };
@@ -222,7 +259,7 @@ describe('coverage gaps: small components', () => {
     const wrapper = mount(EntityScenesPanel, {
       props: { entityType: 'location', entityId: 'l1' },
     });
-    expect(wrapper.text()).toContain('No linked scenes');
+    expect(wrapper.text()).toContain('No linked scenes or playlists');
     await wrapper.find('[title="Add scene"]').trigger('click');
     const available = wrapper
       .findAll('[data-stub="QItem"]')

@@ -69,6 +69,22 @@ export function useEntityLinkRelations() {
     if (!stores[sourceKind] || !stores[targetKind]) return [];
     const source = stores[sourceKind].getById(sourceId);
 
+    if (sourceKind === 'playlist') {
+      return ((source?.links ?? []) as MapEntityRef[])
+        .filter((link) => link.kind === targetKind)
+        .map((link) => link.id);
+    }
+
+    if (targetKind === 'playlist') {
+      return items('playlist')
+        .filter((playlist) =>
+          ((playlist.links ?? []) as MapEntityRef[]).some(
+            (link) => link.kind === sourceKind && link.id === sourceId,
+          ),
+        )
+        .map((playlist) => playlist.id);
+    }
+
     if (sourceKind === 'location') {
       return ((source?.entities ?? []) as MapEntityRef[])
         .filter(
@@ -177,6 +193,29 @@ export function useEntityLinkRelations() {
       (id) => !(targetKind === sourceKind && id === sourceId),
     );
     const source = stores[sourceKind].getById(sourceId);
+
+    if (sourceKind === 'playlist') {
+      const links = ((source?.links ?? []) as MapEntityRef[]).filter(
+        (link) => link.kind !== targetKind,
+      );
+      await stores.playlist.update(sourceId, {
+        links: [...links, ...ids.map((id) => ({ kind: targetKind, id }))],
+      });
+      return;
+    }
+
+    if (targetKind === 'playlist') {
+      for (const playlist of items('playlist')) {
+        const links = ((playlist.links ?? []) as MapEntityRef[]).filter(
+          (link) => !(link.kind === sourceKind && link.id === sourceId),
+        );
+        if (ids.includes(playlist.id)) {
+          links.push({ kind: sourceKind, id: sourceId });
+        }
+        await stores.playlist.update(playlist.id, { links });
+      }
+      return;
+    }
 
     if (sourceKind === 'location') {
       const entities = [

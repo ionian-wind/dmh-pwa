@@ -149,7 +149,7 @@ describe('entity drag linking UI', () => {
       },
     });
     await nextTick();
-    expect(wrapper.findAll('.entity-drag-drop-card')).toHaveLength(3);
+    expect(wrapper.findAll('.entity-drag-drop-card')).toHaveLength(4);
 
     await wrapper.find('.entity-drag-overlay').trigger('drop');
     expect(drag.isDragging.value).toBe(false);

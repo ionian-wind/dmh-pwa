@@ -1,41 +1,54 @@
 <template>
   <div class="entity-scenes-panel column">
     <div class="scene-list col-grow">
-      <div v-if="!linkedScenes.length" class="text-caption text-grey-7 q-pa-md">
+      <div v-if="!mixedItems.length" class="text-caption text-grey-7 q-pa-md">
         {{ t('ambientSoundPage.noSceneLinks') }}
       </div>
       <QList v-else class="q-pa-none q-mb-none">
         <QItem
-          v-for="entry in linkedScenes"
-          :key="`${entry.pack.id}:${entry.scene.id}`"
-          clickable
+          v-for="item in mixedItems"
+          :key="item.key"
           v-ripple
-          class="scene-link-item"
-          :class="{
-            'scene-link-item--selected': isActive(
-              entry.pack.id,
-              entry.scene.id,
-            ),
-            'scene-link-item--playing': isPlaying(
-              entry.pack.id,
-              entry.scene.id,
-            ),
-          }"
-          @click="toggleScene(entry.pack.id, entry.scene.id)"
+          :clickable="item.type === 'scene'"
+          :class="[
+            item.type === 'scene' ? 'scene-link-item' : 'playlist-link-item',
+            item.type === 'scene'
+              ? {
+                  'scene-link-item--selected': isActive(
+                    item.scene.pack.id,
+                    item.scene.scene.id,
+                  ),
+                  'scene-link-item--playing': isPlaying(
+                    item.scene.pack.id,
+                    item.scene.scene.id,
+                  ),
+                }
+              : {},
+          ]"
+          @click="
+            item.type === 'scene'
+              ? toggleScene(item.scene.pack.id, item.scene.scene.id)
+              : undefined
+          "
         >
           <QItemSection side>
-            <IconHeadphones :size="18" />
+            <IconHeadphones v-if="item.type === 'scene'" :size="18" />
+            <IconPlaylist v-else :size="18" />
           </QItemSection>
           <QItemSection>
-            <div>{{ entry.scene.name }}</div>
-            <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
+            <div>{{ item.name }}</div>
+            <div v-if="item.subtitle" class="text-caption text-grey-7">
+              {{ item.subtitle }}
+            </div>
           </QItemSection>
           <QItemSection side class="scene-link-actions row items-center">
-            <IconPlayerPause
-              v-if="isPlaying(entry.pack.id, entry.scene.id)"
-              :size="18"
-            />
-            <IconPlayerPlay v-else :size="18" />
+            <template v-if="item.type === 'scene'">
+              <IconPlayerPause
+                v-if="isPlaying(item.scene.pack.id, item.scene.scene.id)"
+                :size="18"
+              />
+              <IconPlayerPlay v-else :size="18" />
+            </template>
             <QBtn
               v-if="props.editable"
               flat
@@ -44,7 +57,11 @@
               color="negative"
               :title="t('ambientSoundPage.removeLink')"
               :aria-label="t('ambientSoundPage.removeLink')"
-              @click.stop="removeLink(entry.pack.id, entry.scene.id)"
+              @click.stop="
+                item.type === 'scene'
+                  ? removeLink(item.scene.pack.id, item.scene.scene.id)
+                  : removePlaylist(item.playlist.id)
+              "
             >
               <IconX :size="16" />
             </QBtn>
@@ -57,6 +74,7 @@
 
     <QList class="q-pa-none q-mb-none">
       <QItem
+        v-if="props.scenesEnabled"
         clickable
         v-ripple
         class="scene-add-row"
@@ -69,6 +87,21 @@
         </QItemSection>
         <QItemSection>
           {{ t('ambientSoundPage.addSceneLink') }}
+        </QItemSection>
+      </QItem>
+      <QItem
+        clickable
+        v-ripple
+        class="playlist-add-row"
+        :title="t('playlist.addPlaylist')"
+        :aria-label="t('playlist.addPlaylist')"
+        @click="playlistPickerOpen = true"
+      >
+        <QItemSection side>
+          <IconPlus :size="18" />
+        </QItemSection>
+        <QItemSection>
+          {{ t('playlist.addPlaylist') }}
         </QItemSection>
       </QItem>
     </QList>
@@ -102,49 +135,74 @@
         {{ t('ambientSoundPage.noScenes') }}
       </div>
     </BaseModal>
+
+    <EntityLinkingDialog
+      :is-open="playlistPickerOpen"
+      kind="playlist"
+      :title="t('playlist.addPlaylist')"
+      :options="playlistOptions"
+      :linked-ids="linkedPlaylistIds"
+      :multiple="true"
+      @add="addPlaylists"
+      @cancel="playlistPickerOpen = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconHeadphones,
+  IconPlaylist,
   IconPlayerPause,
   IconPlayerPlay,
   IconPlus,
   IconX,
 } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
+import type { MapEntityRef } from '@/maps/types';
+
+const EntityLinkingDialog = defineAsyncComponent(
+  () => import('@/components/common/EntityLinkingDialog.vue'),
+);
 
 const props = withDefaults(
   defineProps<{
-    entityType: SceneLinkEntityType;
+    entityType: SceneLinkEntityType | 'party';
     entityId: string;
     editable?: boolean;
+    scenesEnabled?: boolean;
   }>(),
-  { editable: false },
+  { editable: false, scenesEnabled: true },
 );
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
+const playlistsStore = useJukeboxPlaylistsStore();
+const relations = useEntityLinkRelations();
 const pickerOpen = ref(false);
+const playlistPickerOpen = ref(false);
 
 const linkedRefs = computed(() =>
-  store.linksForEntity(props.entityType, props.entityId),
+  store.linksForEntity(props.entityType as SceneLinkEntityType, props.entityId),
 );
 
 const linkedScenes = computed(() =>
-  linkedRefs.value
-    .map((ref) =>
-      store.allScenes.find(
-        ({ pack, scene }) =>
-          pack.id === ref.packageId && scene.id === ref.sceneId,
-      ),
-    )
-    .filter((entry): entry is NonNullable<typeof entry> => !!entry),
+  props.scenesEnabled
+    ? linkedRefs.value
+        .map((ref) =>
+          store.allScenes.find(
+            ({ pack, scene }) =>
+              pack.id === ref.packageId && scene.id === ref.sceneId,
+          ),
+        )
+        .filter((entry): entry is NonNullable<typeof entry> => !!entry)
+    : [],
 );
 
 const availableScenes = computed(() => {
@@ -155,6 +213,40 @@ const availableScenes = computed(() => {
     ({ pack, scene }) => !linked.has(`${pack.id}::${scene.id}`),
   );
 });
+
+const linkedPlaylistIds = computed(() =>
+  relations.getLinkedIds(props.entityType, props.entityId, 'playlist'),
+);
+const linkedPlaylists = computed(() =>
+  linkedPlaylistIds.value
+    .map((id) => playlistsStore.getById(id))
+    .filter((playlist): playlist is NonNullable<typeof playlist> => !!playlist),
+);
+const playlistOptions = computed(() =>
+  playlistsStore.items.value.map((playlist) => ({
+    id: playlist.id,
+    label: playlist.name,
+  })),
+);
+
+const mixedItems = computed(() =>
+  [
+    ...linkedScenes.value.map((scene) => ({
+      type: 'scene' as const,
+      key: `scene:${scene.pack.id}:${scene.scene.id}`,
+      name: scene.scene.name,
+      subtitle: scene.pack.name,
+      scene,
+    })),
+    ...linkedPlaylists.value.map((playlist) => ({
+      type: 'playlist' as const,
+      key: `playlist:${playlist.id}`,
+      name: playlist.name,
+      subtitle: playlist.description ?? '',
+      playlist,
+    })),
+  ].sort((a, b) => a.name.localeCompare(b.name)),
+);
 
 function isActive(packId: string, sceneId: string) {
   return store.activeSceneKey === `${packId}::${sceneId}`;
@@ -173,7 +265,12 @@ async function toggleScene(packId: string, sceneId: string) {
 }
 
 function linkScene(packId: string, sceneId: string) {
-  store.addSceneLink(packId, sceneId, props.entityType, props.entityId);
+  store.addSceneLink(
+    packId,
+    sceneId,
+    props.entityType as SceneLinkEntityType,
+    props.entityId,
+  );
   pickerOpen.value = false;
 }
 
@@ -188,8 +285,32 @@ function removeLink(packId: string, sceneId: string) {
   if (link) store.removeSceneLink(link.id);
 }
 
+async function addPlaylists(payload: { refs: MapEntityRef[] }) {
+  await relations.setLinkedIds(
+    props.entityType,
+    props.entityId,
+    'playlist',
+    payload.refs.map((ref) => ref.id),
+  );
+  playlistPickerOpen.value = false;
+}
+
+async function removePlaylist(playlistId: string) {
+  await relations.setLinkedIds(
+    props.entityType,
+    props.entityId,
+    'playlist',
+    linkedPlaylistIds.value.filter((id) => id !== playlistId),
+  );
+}
+
 onMounted(async () => {
-  if (store.storedPacks.length === 0) await store.loadStoredPacks();
+  await Promise.all([
+    store.storedPacks.length === 0
+      ? store.loadStoredPacks()
+      : Promise.resolve(),
+    playlistsStore.load(),
+  ]);
 });
 </script>
 
@@ -205,7 +326,8 @@ onMounted(async () => {
   overflow-y: auto;
 }
 
-.scene-link-item {
+.scene-link-item,
+.playlist-link-item {
   border-radius: var(--border-radius);
 }
 

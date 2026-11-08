@@ -126,7 +126,60 @@ onMounted(async () => {
         icon-only
       >
         <template #default>
-          <div v-show="activeTab === 'pawns'">
+          <div
+            v-show="activeTab === 'pawns'"
+            class="pawn-tab-panel column full-height"
+          >
+            <div class="pawn-list col-grow">
+              <div
+                v-if="encounterPawns.length === 0"
+                class="text-caption text-grey-7 q-pa-md"
+              >
+                {{ t('encounters.pawns.none') }}
+              </div>
+              <QList v-else class="q-pa-none q-mb-none">
+                <QItem
+                  v-for="pawn in encounterPawns"
+                  :key="pawn.id"
+                  class="pawn-row"
+                >
+                  <QItemSection side>
+                    <IconGhost3 :size="18" />
+                  </QItemSection>
+                  <QItemSection>
+                    <router-link :to="`/pawns/${pawn.id}`" class="pawn-link">
+                      {{ pawn.name }}
+                    </router-link>
+                  </QItemSection>
+                  <QItemSection side class="pawn-row-actions row items-center">
+                    <QBtn
+                      flat
+                      dense
+                      size="sm"
+                      :title="t('common.quantity')"
+                      :aria-label="t('common.quantity')"
+                      @click.stop="openQuantityModal(pawn)"
+                    >
+                      {{ encounter.pawns[pawn.id] }}
+                    </QBtn>
+                    <QBtn
+                      flat
+                      dense
+                      size="sm"
+                      color="negative"
+                      :title="t('common.unlink')"
+                      :aria-label="t('common.unlink')"
+                      @click.stop="togglePawn(pawn, false)"
+                    >
+                      <IconX :size="16" />
+                    </QBtn>
+                  </QItemSection>
+                </QItem>
+              </QList>
+            </div>
+
+            <QSeparator />
+
             <QList class="q-pa-none q-mb-none">
               <QItem
                 clickable
@@ -141,54 +194,6 @@ onMounted(async () => {
                 </QItemSection>
                 <QItemSection>
                   {{ t('encounters.pawns.linkAction') }}
-                </QItemSection>
-              </QItem>
-            </QList>
-
-            <QSeparator />
-
-            <div
-              v-if="encounterPawns.length === 0"
-              class="text-caption text-grey-7 q-pa-md"
-            >
-              {{ t('encounters.pawns.none') }}
-            </div>
-            <QList v-else class="q-pa-none q-mb-none">
-              <QItem
-                v-for="pawn in encounterPawns"
-                :key="pawn.id"
-                class="pawn-row"
-              >
-                <QItemSection side>
-                  <IconGhost3 :size="18" />
-                </QItemSection>
-                <QItemSection>
-                  <router-link :to="`/pawns/${pawn.id}`" class="pawn-link">
-                    {{ pawn.name }}
-                  </router-link>
-                </QItemSection>
-                <QItemSection side class="pawn-row-actions row items-center">
-                  <QBtn
-                    flat
-                    dense
-                    size="sm"
-                    :title="t('common.quantity')"
-                    :aria-label="t('common.quantity')"
-                    @click.stop="openQuantityModal(pawn)"
-                  >
-                    {{ encounter.pawns[pawn.id] }}
-                  </QBtn>
-                  <QBtn
-                    flat
-                    dense
-                    size="sm"
-                    color="negative"
-                    :title="t('common.unlink')"
-                    :aria-label="t('common.unlink')"
-                    @click.stop="togglePawn(pawn, false)"
-                  >
-                    <IconX :size="16" />
-                  </QBtn>
                 </QItemSection>
               </QItem>
             </QList>
@@ -249,6 +254,12 @@ onMounted(async () => {
 
 <style scoped>
 .sidebar-tab-content {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pawn-list {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
 }

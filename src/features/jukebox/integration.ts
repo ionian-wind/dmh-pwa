@@ -42,7 +42,7 @@ export const jukeboxFeature: FeatureIntegration = {
       useStore: useJukeboxPlaylistsStore,
     },
   ],
-  dragKinds: [],
+  dragKinds: ['playlist'],
 };
 
 export const routes = jukeboxFeature.routes;

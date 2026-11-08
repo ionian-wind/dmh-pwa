@@ -4,6 +4,7 @@ import type {
   WithId,
   WithTimestamps,
 } from '@/types';
+import type { MapEntityRef } from '@/maps/types';
 
 export type UUID = GlobalUUID;
 
@@ -12,6 +13,7 @@ export interface JukeboxPlaylist extends WithId, WithTimestamps, WithMetadata {
   description?: string;
   trackIds: UUID[];
   sortOrder?: number;
+  links?: MapEntityRef[];
 }
 
 export interface JukeboxTrack extends WithMetadata {

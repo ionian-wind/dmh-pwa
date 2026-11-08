@@ -424,6 +424,8 @@
   },
   "playlist": {
     "title": "Playlist",
+    "addPlaylist": "Add playlist",
+    "noLinked": "No linked playlists",
     "none": "No playlists found. Please create one first.",
     "createNew": "New playlist",
     "namePlaceholder": "Playlist name",
@@ -839,7 +841,7 @@
     "noOneShots": "No one-shots yet",
     "noAmbiencesInScene": "No ambiences in this scene",
     "noOneShotsInScene": "No one-shots in this scene",
-    "noSceneLinks": "No linked scenes",
+    "noSceneLinks": "No linked scenes or playlists",
     "sceneLinksHint": "Link scenes from a location, pawn, encounter or character.",
     "sceneMain": "Main",
     "ambiences": "Ambiences",

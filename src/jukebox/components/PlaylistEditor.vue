@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, type Ref } from 'vue';
+import { ref, watch, computed, onMounted, type Ref } from 'vue';
 import BaseModal from '@/components/common/BaseModal.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useJukeboxPlaylistsStore } from '../stores';
 import type { JukeboxPlaylist } from '../types';
+import type { MapEntityRef } from '@/maps/types';
 import type { UUID } from '@/types';
 import { useI18n } from 'vue-i18n';
 
@@ -16,6 +21,37 @@ const emit = defineEmits(['update:modelValue', 'saved', 'delete']);
 
 const playlistsStore = useJukeboxPlaylistsStore();
 const { t } = useI18n();
+const editorTabs = useEntityEditorTabs();
+const relations = useEntityLinkRelations();
+const featureStores = useFeatureStores();
+const linkKinds = ['location', 'pawn', 'encounter', 'party'] as const;
+
+type PlaylistLinkKind = (typeof linkKinds)[number];
+
+const playlistLinks = computed<MapEntityRef[]>(() => {
+  const id = props.playlist?.id;
+  if (!id) return [];
+  return linkKinds.flatMap((kind) =>
+    relations
+      .getLinkedIds('playlist', id, kind)
+      .map((linkId) => ({ kind, id: linkId })),
+  );
+});
+
+async function setPlaylistLinks(kind: PlaylistLinkKind, links: MapEntityRef[]) {
+  const id = props.playlist?.id;
+  if (!id) return;
+  await relations.setLinkedIds(
+    'playlist',
+    id,
+    kind,
+    links.filter((link) => link.kind === kind).map((link) => link.id),
+  );
+}
+
+onMounted(async () => {
+  await featureStores.load([...linkKinds]);
+});
 
 type EditablePlaylist = {
   name: string;
@@ -99,6 +135,7 @@ function handleDelete() {
     :showDelete="!!playlist"
     :submitLabel="t('common.save')"
     :cancelLabel="t('common.cancel')"
+    :tabs="editorTabs"
     @submit="save"
     @delete="handleDelete"
     @cancel="$emit('update:modelValue', false)"
@@ -132,6 +169,19 @@ function handleDelete() {
             />
           </div>
         </div>
+      </div>
+    </template>
+
+    <template #links>
+      <div class="column q-gutter-md">
+        <EntitiesLinking
+          v-for="kind in linkKinds"
+          :key="kind"
+          v-show="featureStores.has(kind)"
+          :kind="kind"
+          :model-value="playlistLinks"
+          @update:model-value="(links) => setPlaylistLinks(kind, links)"
+        />
       </div>
     </template>
   </BaseModal>
