@@ -56,6 +56,9 @@ describe('PartySelector', () => {
       { id: 'm1', name: 'Goblin' },
       { id: 'm2', name: 'Orc' },
     ]);
+    seedMockStore('encounters', [
+      { id: 'e1', name: 'Ambush', pawns: { m1: 2, m2: 1 } },
+    ]);
     seedMockStore('combats', []);
   });
 
@@ -114,6 +117,39 @@ describe('PartySelector', () => {
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
     await nextTick();
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('starts combat from a party by selecting an encounter', async () => {
+    const wrapper = await mountSelector({
+      encounter: null,
+      party: { id: 'p1', name: 'Heroes', characters: ['c1', 'c2'] },
+    });
+
+    expect(wrapper.text()).toContain('Heroes');
+    const lists = () => wrapper.findAllComponents(EntityLinkingListStub);
+    expect(lists()[0].props('options')).toEqual([
+      { id: 'e1', label: 'Ambush' },
+    ]);
+    expect(lists()[1].props('modelValue')).toEqual(['c1', 'c2']);
+
+    lists()[0].vm.$emit('update:modelValue', ['e1']);
+    await nextTick();
+
+    const combatStore = useCombatStore();
+    const create = vi.spyOn(combatStore, 'create');
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await flushPromises();
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        encounterId: 'e1',
+        partyId: 'p1',
+        status: 'preparing',
+      }),
+    );
+    expect(create.mock.calls[0][0].combatants).toHaveLength(5);
+    expect(wrapper.emitted('combat-created')).toHaveLength(1);
     wrapper.unmount();
   });
 

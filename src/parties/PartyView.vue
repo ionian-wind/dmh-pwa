@@ -27,6 +27,14 @@ import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useRightDrawer } from '@/composables/useLayout';
 import { IconHelp } from '@tabler/icons-vue';
+import { defineAsyncComponent } from 'vue';
+import type { Combat } from '@/types';
+
+// Starting combat belongs to the encounters feature; keep it out of builds
+// where encounters are disabled.
+const StartCombatDialog = __FEATURE_ENCOUNTERS__
+  ? defineAsyncComponent(() => import('@/encounters/PartySelector.vue'))
+  : null;
 
 const route = useRoute();
 const router = useRouter();
@@ -43,6 +51,7 @@ const isLoaded = computed(() => partyStore.isLoaded);
 const notFound = computed(() => isLoaded.value && !party.value);
 const validationError = ref<string | null>(null);
 const isDeleting = ref(false);
+const showStartCombat = ref(false);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
@@ -229,6 +238,15 @@ async function handleDeleteFromSidebar() {
   if (await handleDeleteParty()) await router.push('/parties');
 }
 
+function handleStartCombat() {
+  showStartCombat.value = true;
+}
+
+function handleCombatCreated(combat: Combat) {
+  showStartCombat.value = false;
+  void router.push(`/combats/${combat.id}`);
+}
+
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
@@ -243,6 +261,7 @@ onMounted(async () => {
       editState,
       onSetEditMode: setEditMode,
       onDelete: handleDeleteFromSidebar,
+      onStartCombat: StartCombatDialog ? handleStartCombat : undefined,
     },
   });
 });
@@ -313,4 +332,12 @@ onBeforeUnmount(() => {
       </div>
     </template>
   </BaseEntityTabView>
+
+  <StartCombatDialog
+    v-if="StartCombatDialog"
+    :is-open="showStartCombat"
+    :party="party"
+    @combat-created="handleCombatCreated"
+    @cancel="showStartCombat = false"
+  />
 </template>

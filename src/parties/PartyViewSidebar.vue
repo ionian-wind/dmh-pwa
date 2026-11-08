@@ -9,7 +9,7 @@ import { useMentionsStore } from '@/utils/storage';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
-import { IconAt, IconHeadphones } from '@tabler/icons-vue';
+import { IconAt, IconHeadphones, IconSwords } from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const mentionsStore = useMentionsStore();
@@ -20,6 +20,7 @@ const props = defineProps<{
   editState?: InlineEditState<Party>;
   onSetEditMode?: (value: boolean) => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
+  onStartCombat?: () => void;
 }>();
 
 const localEditState = reactive<InlineEditState<Party>>({
@@ -106,6 +107,22 @@ onMounted(() => mentionsStore.load());
       </TabGroup>
     </div>
 
+    <div
+      v-if="!state.isEditMode && props.onStartCombat"
+      class="party-sidebar-actions q-pa-sm"
+    >
+      <QBtn
+        class="full-width start-combat-button"
+        color="warning"
+        :title="t('partySelector.startCombat')"
+        :aria-label="t('partySelector.startCombat')"
+        @click="props.onStartCombat?.()"
+      >
+        <IconSwords :size="18" class="q-mr-sm" />
+        {{ t('partySelector.startCombat') }}
+      </QBtn>
+    </div>
+
     <QSeparator />
     <EntityModeControls
       :is-edit-mode="state.isEditMode"
@@ -121,5 +138,9 @@ onMounted(() => mentionsStore.load());
 .sidebar-tab-content {
   min-height: 0;
   overflow-y: auto;
+}
+
+.party-sidebar-actions {
+  flex: 0 0 auto;
 }
 </style>

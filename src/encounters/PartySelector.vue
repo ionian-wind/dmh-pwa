@@ -4,8 +4,9 @@ import { usePartyStore } from '@/stores/parties';
 import { useCombatStore } from '@/stores/combats';
 import { usePawnStore } from '@/stores/pawns';
 import { useCharacterStore } from '@/stores/characters';
+import { useEncounterStore } from '@/stores/encounters';
 import { generateId } from '@/utils/storage';
-import { Combat, Combatant, Encounter } from '@/types';
+import { Combat, Combatant, Encounter, Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
 import EntityLinkingList from '@/components/common/EntityLinkingList.vue';
@@ -14,20 +15,34 @@ const partyStore = usePartyStore();
 const combatStore = useCombatStore();
 const pawnStore = usePawnStore();
 const characterStore = useCharacterStore();
+const encounterStore = useEncounterStore();
 const { t } = useI18n();
 
-const props = defineProps<{
-  isOpen: boolean;
-  encounter: Encounter | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    isOpen: boolean;
+    encounter?: Encounter | null;
+    party?: Party | null;
+  }>(),
+  { encounter: null, party: null },
+);
 
 const emit = defineEmits<{
   (e: 'cancel'): void;
   (e: 'combat-created', combat: Combat): void;
 }>();
 
-const selectedPartyId = ref<string>('');
+const selectedPartyId = ref<string>(props.party?.id ?? '');
+const selectedEncounterId = ref<string>('');
 const selectedCharacters = ref<Record<string, boolean>>({});
+
+const activePartyId = computed(() => props.party?.id ?? selectedPartyId.value);
+const activeParty = computed(
+  () => props.party ?? partyStore.getById(selectedPartyId.value),
+);
+const activeEncounter = computed(
+  () => props.encounter ?? encounterStore.getById(selectedEncounterId.value),
+);
 
 const partyOptions = computed(() =>
   partyStore.filtered.map((party) => ({ id: party.id, label: party.name })),
@@ -37,9 +52,20 @@ const selectedPartyIds = computed(() =>
   selectedPartyId.value ? [selectedPartyId.value] : [],
 );
 
+const encounterOptions = computed(() =>
+  encounterStore.filtered.map((encounter) => ({
+    id: encounter.id,
+    label: encounter.name,
+  })),
+);
+
+const selectedEncounterIds = computed(() =>
+  selectedEncounterId.value ? [selectedEncounterId.value] : [],
+);
+
 const characterOptions = computed(() => {
-  if (!selectedPartyId.value) return [];
-  const party = partyStore.getById(selectedPartyId.value);
+  if (!activePartyId.value) return [];
+  const party = partyStore.getById(activePartyId.value);
   return (party?.characters ?? []).map((id) => ({
     id,
     label: characterStore.getById(id)?.name || id,
@@ -56,6 +82,10 @@ function setPartyIds(ids: string[]) {
   selectedPartyId.value = ids[0] ?? '';
 }
 
+function setEncounterIds(ids: string[]) {
+  selectedEncounterId.value = ids[0] ?? '';
+}
+
 function setCharacterIds(ids: string[]) {
   const next: Record<string, boolean> = {};
   characterOptions.value.forEach((option) => {
@@ -70,32 +100,42 @@ onMounted(async () => {
     pawnStore.load(),
     characterStore.load(),
     combatStore.load(),
+    encounterStore.load(),
   ]);
 });
 
-// Watch for party selection and initialize togglers
-watch(selectedPartyId, (partyId) => {
-  if (!partyId) {
-    selectedCharacters.value = {};
-    return;
-  }
-  const party = partyStore.getById(partyId);
-  if (party) {
-    const toggles: Record<string, boolean> = {};
-    party.characters.forEach((cid) => {
-      toggles[cid] = true;
-    });
-    selectedCharacters.value = toggles;
-  }
-});
+// Initialize character toggles whenever the active party changes.
+watch(
+  activePartyId,
+  (partyId) => {
+    if (!partyId) {
+      selectedCharacters.value = {};
+      return;
+    }
+    const party = partyStore.getById(partyId);
+    if (party) {
+      const toggles: Record<string, boolean> = {};
+      party.characters.forEach((cid) => {
+        toggles[cid] = true;
+      });
+      selectedCharacters.value = toggles;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (!open) return;
+    selectedEncounterId.value = '';
+    selectedPartyId.value = props.party?.id ?? '';
+  },
+);
 
 const handleCreateCombat = async () => {
-  if (!props.encounter || !selectedPartyId.value) {
-    return;
-  }
-
-  const selectedParty = partyStore.getById(selectedPartyId.value);
-  if (!selectedParty) {
+  const encounter = activeEncounter.value;
+  if (!encounter || !activePartyId.value || !activeParty.value) {
     return;
   }
 
@@ -109,7 +149,7 @@ const handleCreateCombat = async () => {
 
   // Get encounter pawns
   const encounterPawns = pawnStore.items.filter((m) =>
-    Object.keys(props.encounter!.pawns || {}).includes(m.id),
+    Object.keys(encounter.pawns || {}).includes(m.id),
   );
 
   // Create combatants from characters
@@ -128,7 +168,7 @@ const handleCreateCombat = async () => {
   // Create combatants from pawns with counts
   const pawnCombatants: Combatant[] = [];
   encounterPawns.forEach((pawn) => {
-    const count = props.encounter!.pawns[pawn.id] || 1;
+    const count = encounter.pawns[pawn.id] || 1;
     for (let i = 0; i < count; i++) {
       pawnCombatants.push({
         id: generateId(),
@@ -149,8 +189,8 @@ const handleCreateCombat = async () => {
 
   // Create the combat
   const newCombat: Omit<Combat, 'id' | 'createdAt' | 'updatedAt'> = {
-    encounterId: props.encounter.id,
-    partyId: selectedPartyId.value,
+    encounterId: encounter.id,
+    partyId: activePartyId.value,
     status: 'preparing',
     currentRound: 0,
     currentTurn: 0,
@@ -163,6 +203,7 @@ const handleCreateCombat = async () => {
 
 const handleCancel = () => {
   selectedPartyId.value = '';
+  selectedEncounterId.value = '';
   emit('cancel');
 };
 </script>
@@ -186,12 +227,12 @@ const handleCancel = () => {
           <div class="encounter-details">
             <p>
               <strong>{{ t('partySelector.encounter') }}</strong>
-              {{ encounter?.name }}
+              {{ activeEncounter?.name }}
             </p>
             <p>
               <strong>{{ t('partySelector.pawns') }}</strong>
               {{
-                Object.values(encounter?.pawns || {}).reduce(
+                Object.values(activeEncounter?.pawns || {}).reduce(
                   (sum, count) => sum + count,
                   0,
                 )
@@ -199,22 +240,33 @@ const handleCancel = () => {
             </p>
           </div>
         </div>
-        <div v-if="selectedPartyId" class="party-info">
+        <div v-if="activeParty" class="party-info">
           <h4>{{ t('partySelector.partyInformation') }}</h4>
           <div class="party-details">
             <p>
               <strong>{{ t('partySelector.party') }}</strong>
-              {{ partyStore.getById(selectedPartyId)?.name }}
+              {{ activeParty.name }}
             </p>
             <p>
               <strong>{{ t('partySelector.characters') }}</strong>
-              {{ characterStore.items.length }}
+              {{ activeParty.characters.length }}
             </p>
           </div>
         </div>
       </div>
 
-      <div class="form-section">
+      <div v-if="party" class="form-section">
+        <h4>{{ t('partySelector.encounter') }}</h4>
+        <EntityLinkingList
+          kind="encounter"
+          :options="encounterOptions"
+          :multiple="false"
+          :model-value="selectedEncounterIds"
+          @update:model-value="setEncounterIds"
+        />
+      </div>
+
+      <div v-else class="form-section">
         <h4>{{ t('partySelector.party') }}</h4>
         <EntityLinkingList
           kind="party"
@@ -225,7 +277,7 @@ const handleCancel = () => {
         />
       </div>
 
-      <div v-if="selectedPartyId">
+      <div v-if="activePartyId">
         <h4>{{ t('partySelector.selectCharacters') }}</h4>
         <div v-if="selectedCharacterIds.length === 0" class="info-text">
           {{ t('partySelector.selectAtLeastOneCharacter') }}
