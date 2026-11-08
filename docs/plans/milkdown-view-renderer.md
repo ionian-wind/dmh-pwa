@@ -1,6 +1,7 @@
 # Milkdown View Renderer — Implementation Plan
 
 **Status:** implemented (phases 1–4); static renderer evaluated and not adopted.
+Last verified against the current tree on 2026-11-09.
 
 **Implementation commits:** `734fe82b` (detail-view renderer), `0446e415`
 (static renderer + performance evaluation).
@@ -169,15 +170,14 @@ Planned files:
 - [x] `MDV-033` Verify task toggling output — done. The emitted source keeps
       `-` bullets, unescaped `#tag` text and `{#kind-id}` markers.
 - [x] `MDV-034` Run types-check, tests and the production build — done.
-      All 1564 tests pass; the known Dexie teardown errors in
-      `locationMapTab` and a few other DB-heavy suites are pre-existing and
-      also occur at the parent commit.
+      All 1615 tests pass across 207 files; the production build and feature
+      verification are green.
 - [x] `MDV-035` Update `docs/features/markdown-and-mentions.md` — done.
 - [x] `MDV-036` Update `docs/components/markdown-editor.md` — done.
 - [x] `MDV-037` Check bundle output and PWA precache size — done. Every feature
       that renders Markdown already imports the editor, so the view adds no
       second Milkdown copy; the cost is one read-only Crepe instance per detail
-      page. Production build: 404 precache entries, ~17.2 MiB; all 15 feature
+      page. Production build: 404 precache entries, ~17.2 MiB; all 14 feature
       configurations pass the strict audit.
 
 ### Phase 4 — full-parity renderer evaluation

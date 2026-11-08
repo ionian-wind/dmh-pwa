@@ -7,8 +7,8 @@ whether note cards should switch from markdown-it
 to a static Milkdown renderer for exact view/edit parity.
 
 **Decision:** keep markdown-it for cards. Detail views continue to
-use one read-only Crepe instance per page. The static Milkdown renderer exists
-and is tested, but is not used by the app.
+use one read-only Crepe instance (`MilkdownView`) per page. The static Milkdown
+renderer exists and is tested, but is not used by the app.
 
 ## Benchmark
 
@@ -33,9 +33,11 @@ Options:
 | `--sample`    | `spread`  | `spread` uses the size range; `typical` uses 5–50 KB    |
 | `--max-chars` | `2000000` | Maximum total characters loaded into the benchmark page |
 
-The script starts a temporary Vite server, injects the selected decoded
-documents into `benchmark.html`, and prints both a table and JSON. The
-benchmark entry is dev-only and is not included in the production build.
+`scripts/perf-markdown.mjs` starts a temporary Vite server on `PERF_PORT`
+(default `4176`), launches Chromium through `playwright-core`, injects the
+selected decoded documents into `benchmark.html`, and prints both a table and
+JSON. The benchmark entry (`src/perf/markdownBenchmark.ts`) is not an input to
+the production build.
 
 Scenarios:
 
@@ -82,9 +84,10 @@ Absolute numbers vary by machine. The relative result is stable:
 
 ## Consequences
 
-- `MilkdownView` remains the detail-view renderer.
+- `MilkdownView` remains the detail-view renderer for note, party, pawn,
+  character, encounter, location, and entity-info content.
 - `NoteCard` keeps `Markdown.vue` / markdown-it.
 - `src/components/common/milkdown/staticRenderer.ts` is available for future
   experiments and is covered by `tests/components/staticRenderer.test.ts`.
-- `markdown-it` stays for exports and as the lightweight fallback.
+- `markdown-it` stays for cards, exports, and as the lightweight fallback.
 - No production route or bundle imports the benchmark entry.

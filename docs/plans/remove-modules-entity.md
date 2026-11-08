@@ -1,6 +1,7 @@
 # Remove the Modules entity
 
-Status: completed
+**Status:** completed (historical record; re-verified against the current tree
+on 2026-11-09).
 
 The Modules entity was removed completely so the concept can be rethought. This
 removes module code, module links on other entities, module data, schemas,
@@ -33,7 +34,7 @@ migrations, import/export and backup support.
 ## Verification
 
 - `npm run types-check` passes.
-- Full suite: 192 files / 1534 tests pass.
+- Full suite at re-verification: 207 files / 1615 tests pass.
 - `npm run build` passes; no module routes, stores or document code remain in
   `dist`.
 - `npm run features:verify`: all 14 build configurations pass.

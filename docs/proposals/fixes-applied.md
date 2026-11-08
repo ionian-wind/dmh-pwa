@@ -1,5 +1,11 @@
 # Fixes Applied
 
+**Status:** historical record (reviewed 2026-11-09). The counts below describe
+that remediation pass, not the current suite (207 files / 1615 tests). The
+Modules entity was removed later, so module-specific fixes and test paths in
+this document are obsolete; see
+[plans/remove-modules-entity.md](../plans/remove-modules-entity.md).
+
 This document records the remediation work performed on the defects that were
 originally tracked in `bugs.md`. The bug file now contains only current status,
 because every tracked item below has been fixed.
@@ -94,19 +100,19 @@ registered plugin pipeline.
 
 ### Low
 
-| ID  | Fix                                                                                                                                   |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| L1  | Covered by M15.                                                                                                                       |
-| L3  | Added missing `common.linked`, `partyView.title`, `noteTypeSelector.iconPlaceholder` and fixed `t('common.')` keys.                   |
-| L4  | `BaseCard` supports `showCopy`; cards expose a copy button.                                                                           |
-| L5  | `PopoverPanel` normalizes numeric offsets to a `[x, y]` tuple.                                                                        |
-| L7  | Added `content/README.md` documenting the reserved directory.                                                                         |
-| L8  | Added historical banners to the stale store docs and updated the testing/build docs.                                                  |
-| L10 | Added a typed `useLayout` store with owner-scoped right-drawer clearing; App, base components, header, and detail views use it.       |
-| L11 | The player watches the active playlist and track signature, so queue rebuilds are automatic; `queue` is exposed for tests/inspection. |
-| L13 | Module copy clears `noteTree` instead of pointing at the original notes.                                                              |
-| L14 | Import preserves archive `createdAt`/`updatedAt` while generating fresh IDs; covered by `tests/utils/moduleImportExport.test.ts`.     |
-| L15 | `buildDocumentChunks` guards against cyclic trees; covered by `tests/utils/documentChunks.test.ts`.                                   |
+| ID  | Fix                                                                                                                                                      |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1  | Covered by M15.                                                                                                                                          |
+| L3  | Added missing `common.linked`, `partyView.title`, `noteTypeSelector.iconPlaceholder` and fixed `t('common.')` keys.                                      |
+| L4  | `BaseCard` supports `showCopy`; cards expose a copy button.                                                                                              |
+| L5  | `PopoverPanel` normalizes numeric offsets to a `[x, y]` tuple.                                                                                           |
+| L7  | Added `content/README.md` documenting the reserved directory.                                                                                            |
+| L8  | Added historical banners to the stale store docs and updated the testing/build docs.                                                                     |
+| L10 | Added a typed `useLayout` store with owner-scoped right-drawer clearing; App, base components, header, and detail views use it.                          |
+| L11 | The player watches the active playlist and track signature, so queue rebuilds are automatic; `queue` is exposed for tests/inspection.                    |
+| L13 | Module copy clears `noteTree` instead of pointing at the original notes.                                                                                 |
+| L14 | Import preserves archive `createdAt`/`updatedAt` while generating fresh IDs; covered by `tests/utils/moduleImportExport.test.ts` (removed with Modules). |
+| L15 | `buildDocumentChunks` guards against cyclic trees; covered by `tests/utils/documentChunks.test.ts` (removed with Modules).                               |
 
 ## Additional fixes in this pass
 
@@ -147,15 +153,17 @@ in [feature-proposals.md](feature-proposals.md).
 ## Files added
 
 - `src/utils/combatTurn.ts` — pure turn/round transitions.
-- `src/utils/documentChunks.ts` — cycle-safe document chunk builder.
+- `src/utils/documentChunks.ts` — cycle-safe document chunk builder (removed
+  later with the Modules entity).
 - `src/composables/useLayout.ts` — typed, owner-scoped layout store.
 - `src/types/dice-box.d.ts` — declaration for the WIP 3D dice package.
 - `tests/regressions/bugs.test.ts`
 - `tests/regressions/ui-contracts.test.ts`
 - `tests/composables/useLayout.test.ts`
 - `tests/utils/migrations.test.ts`
-- `tests/utils/documentChunks.test.ts`
-- `tests/utils/moduleImportExport.test.ts`
+- `tests/utils/documentChunks.test.ts` (removed later with the Modules entity)
+- `tests/utils/moduleImportExport.test.ts` (removed later with the Modules
+  entity)
 - `tests/jukebox/jukebox.test.ts`
 - `tests/helpers/quasar-stubs.ts`
 - `tests/helpers/mock-storage.ts`

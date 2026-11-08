@@ -66,7 +66,7 @@ The evaluator follows AnyDice's function-casting rules:
 - `[highest N of DICE]`, `[lowest N of DICE]`, `[middle N of DICE]`
 - `[highest N of DICE and DICE ...]`, `[lowest N of DICE and DICE ...]`
 - `[highest of A and B]`, `[lowest of A and B]`
-- `[maximum of DIE]`, `[minimum of DIE]`
+- `[maximum of DIE]`, `[minimum of DIE]` (`minimum` is an engine extension)
 - `[reverse SEQUENCE]`, `[sort SEQUENCE]`
 
 ## Architecture

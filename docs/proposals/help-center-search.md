@@ -1,7 +1,8 @@
 # Help Center Search
 
-**Status:** partially available through VitePress local search. This proposal
-covers the remaining app-level and command-menu integration.
+**Status:** partially available (reviewed 2026-11-09). VitePress local search is
+enabled in both locales; the app-level "Search help" command and `?q=` handoff
+are not implemented because the command-menu host is still a proposal.
 
 **Priority:** P2.
 

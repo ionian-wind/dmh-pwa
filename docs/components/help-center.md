@@ -34,6 +34,7 @@ helpcenter/
       browsers.md
       markdown.md
       dice-probability-syntax.md
+      images/browser.svg
   ru/
     index.md
     getting-started/
@@ -56,8 +57,8 @@ Rules:
 - `index.md` is the folder landing page.
 - Images can live next to the page that uses them.
 - Relative Markdown links and image paths are resolved by VitePress.
-- VitePress falls back to the default locale for missing translations when
-  configured accordingly.
+- The root locale is English; each locale tree supplies its own pages and
+  sidebar entries.
 
 ## Branding
 
@@ -147,13 +148,15 @@ in-app help links.
 
 The app links to the static pages in a new tab:
 
-- left menu → `Help center` (`target="_blank"`);
+- left-menu footer → `Help center` (`target="_blank"`,
+  `rel="noopener noreferrer"`);
 - Markdown help buttons in entity editors and detail headers →
   `reference/markdown`;
 - probability calculator syntax action →
   `reference/dice-probability-syntax`;
 - install prompt → `getting-started/install`;
-- Settings persistent-storage denial message → install and site-settings guides
+- Settings persistent-storage denial message → install and
+  `troubleshooting/persistent-storage` guides
   (`target="_blank" rel="noopener noreferrer"`).
 
 `src/helpcenter/links.ts` builds the URL from `import.meta.env.BASE_URL`.

@@ -12,9 +12,9 @@ using integer (`bigint`) weights. A Vue page under
 
 - Route: `/probability-calculator` (lazy loaded).
 - Syntax reference: a static help-center page (`reference/dice-probability-syntax`)
-  in English and Russian, linked from the calculator header in a new tab. The
-  page uses VitePress headings, tables and code blocks, so section anchors and
-  the outline come from the docs theme.
+  in English and Russian, linked from the calculator header in a new tab when
+  the Help feature is enabled. The page uses VitePress headings, tables and code
+  blocks, so section anchors and the outline come from the docs theme.
 - Page title and syntax action are rendered in the application top header via
   `ViewHeader`; there is no in-page title block.
 - Main menu: inside the expandable **Tools** section, using `IconChartLine`.
@@ -40,10 +40,10 @@ using integer (`bigint`) weights. A Vue page under
 - Unsaved editor changes trigger confirmation when leaving the page and a
   browser `beforeunload` warning when closing/reloading the tab.
 - Code library sidebar: a right drawer toggled with `IconCodeblock` from the top
-  header. Items use the same colored-border card layout as map marker/area
-  items in the map sidebar. Save named snippets, include selected snippets in the calculation
-  namespace, rename/delete them, and load them with an unsaved-changes
-  confirmation. Library contents persist in `localStorage`.
+  header. Items are compact `SidebarItem` rows with an include checkbox,
+  rename/delete actions and a selected state. Save named snippets, include
+  selected snippets in the calculation namespace, and load them with an
+  unsaved-changes confirmation. Library contents persist in `localStorage`.
 
 UI coverage is split between `src/probability-calculator/__tests__/`,
 `src/components/common/__tests__/MonacoEditor.test.ts`, and
@@ -95,7 +95,7 @@ Source: <https://anydice.com/docs/>
 | Looping                | ✅     | Loops over sequences and dice, loop variable interpolation and nested loops.                                                                                                                 |
 | Conditional Blocks     | ✅     | `if`, `else if`, `else`, nested blocks and early `result`.                                                                                                                                   |
 | Functions              | ✅     | Word-based names, typed parameters, number/die/sequence casting, local variables, recursion and maximum function depth. `output` and `set` are rejected inside functions, matching the docs. |
-| Function Library       | ✅     | All 12 listed functions, including the 2025 multi-pool `highest`/`lowest` variants.                                                                                                          |
+| Function Library       | ✅     | All 12 listed functions, including the 2025 multi-pool `highest`/`lowest` variants. `minimum` is an engine extension.                                                                        |
 | Changelog              | ✅     | Native `[highest N of SA and SB]` and `[lowest N of SA and SB]` are implemented.                                                                                                             |
 
 ### Function-library matrix
@@ -112,6 +112,7 @@ Source: <https://anydice.com/docs/>
 | `[highest of NUMBER and NUMBER]` | ✅                               |
 | `[lowest of NUMBER and NUMBER]`  | ✅                               |
 | `[maximum of DIE]`               | ✅ (`0` for the empty die)       |
+| `[minimum of DIE]`               | ✅ engine extension              |
 | `[reverse SEQUENCE]`             | ✅                               |
 | `[sort SEQUENCE]`                | ✅ follows position order        |
 
@@ -136,8 +137,9 @@ the earlier specification and implementation:
 
 ## Known gaps and intentional scope
 
-- Output views (`Table`, `Graph`, `Export`, normal/at-least/at-most/transposed)
-  and share links are application UI, not library concerns.
+- Output views (`Table`, `Graph`, `Export`, `Roller`, normal/at-least/at-most,
+  transposed, summary) and share links are application UI, not library
+  concerns.
 - The library returns `outcomes`, `mean` and population `stddev`; it does not
   render them.
 - Function-depth truncation returns the empty die. AnyDice additionally shows a

@@ -21,6 +21,7 @@ Props:
 | `tabs`                                        | —         | Header tab definitions (`{ name, title, icon }`)       |
 | `activeTab`                                   | first tab | Controlled active tab                                  |
 | `useModalStack`                               | `true`    | Set `false` for pickers nested inside another modal    |
+| `fillContent`                                 | `false`   | Make the body fill the remaining card height           |
 
 Emits: `submit`, `cancel`, `delete`, `update:activeTab`, `update:isOpen`,
 `update:isExpanded`.
@@ -76,7 +77,10 @@ Behavior:
   modal has a header.
 - The dialog is read-only-computed for `v-model`; Quasar cannot write it closed,
   but `persistent` prevents user-initiated close anyway.
-- `footer` and `actions` slots render before the standard action buttons;
+- `footer`, `footer-center` and `actions` slots render before the standard
+  action buttons. `footer-center` is absolutely centered in the action bar, so
+  dialogs can keep their primary actions on the right while showing a centered
+  control (for example `EntityInfoDialog`'s View/Edit switch).
   `update:isOpen` is emitted when the shell requests closing.
 
 ### Nested-modal support
@@ -122,13 +126,14 @@ prompt(message, options?): Promise<string | null>
 
 `confirmUnsavedChanges` (in `src/dialogs/unsavedChanges.ts`) opens
 `UnsavedChangesDialog.vue` through Quasar's custom-component dialog API. It
-offers **Save**, **Do not save**, and **Cancel** and is used by the note detail
-page's navigation guard. The custom component is imported directly instead of
-being re-exported from the `src/dialogs` barrel, so normal confirm/alert users
-do not load it.
+offers **Save**, **Do not save**, and **Cancel** and is used by the shared
+`useEntityEditMode` navigation guard on note, character, party, pawn, encounter
+and location detail pages. The custom component is imported directly instead of being re-exported
+from the `src/dialogs` barrel, so normal confirm/alert users do not load it.
 
-All use `persistent: true`. Defaults are English ("OK", "Cancel", "Confirm",
-"Alert", "Prompt") rather than i18n keys.
+All use `persistent: true`. Default labels come from Vue I18n (`common.ok`,
+`common.cancel`, `common.confirm`, `common.alert`, `common.prompt`) and can be
+overridden per call.
 
 Caveats:
 
@@ -150,16 +155,20 @@ useRightDrawer(); // owner-scoped set/clear for the right drawer
 
 Consumers:
 
-| View                               | Right drawer           | Footer          | Header       |
-| ---------------------------------- | ---------------------- | --------------- | ------------ |
-| Any list view (`BaseListView`)     | via view prop          | —               | `ViewHeader` |
-| Any entity view (`BaseEntityView`) | via view               | —               | `ViewHeader` |
-| `NoteView`                         | `NoteViewSidebar`      | —               | `ViewHeader` |
-| `PartyView`                        | `PartyViewSidebar`     | —               | `ViewHeader` |
-| `PawnView`                         | `PawnViewSidebar`      | —               | `ViewHeader` |
-| `EncounterView`                    | `EncounterViewSidebar` | —               | `ViewHeader` |
-| `CharacterView`                    | `#sidepanel`           | —               | `ViewHeader` |
-| `JukeboxView`                      | `PlaylistList`         | `JukeboxPlayer` | `ViewHeader` |
+| View                               | Right drawer                    | Footer               | Header       |
+| ---------------------------------- | ------------------------------- | -------------------- | ------------ |
+| Any list view (`BaseListView`)     | —                               | —                    | `ViewHeader` |
+| Any entity view (`BaseEntityView`) | `#sidepanel` when supplied      | —                    | `ViewHeader` |
+| `NoteView`                         | `NoteViewSidebar`               | —                    | `ViewHeader` |
+| `PartyView`                        | `PartyViewSidebar`              | —                    | `ViewHeader` |
+| `PawnView`                         | `PawnViewSidebar`               | —                    | `ViewHeader` |
+| `EncounterView`                    | `EncounterViewSidebar`          | —                    | `ViewHeader` |
+| `CombatView`                       | `EncounterViewSidebar` (scenes) | —                    | `ViewHeader` |
+| `CharacterView`                    | `CharacterViewSidebar`          | —                    | `ViewHeader` |
+| `LocationView`                     | `#sidepanel` (map sidebar)      | —                    | `ViewHeader` |
+| `AmbientSoundView`                 | `SoundPackSidebar`              | `AmbientPlayerPanel` | `ViewHeader` |
+| `JukeboxView`                      | `PlaylistList`                  | `JukeboxPlayer`      | `ViewHeader` |
+| `ProbabilityCalculatorView`        | `CodeLibraryPanel`              | —                    | `ViewHeader` |
 
 Entity detail pages render their title/subtitle in the page content. The
 `ViewHeader` in `#main_header` hosts page tabs, actions and the right-drawer
@@ -168,12 +177,15 @@ toggle.
 - The right drawer is owner-scoped: only the view that set the content can
   clear it.
 - `NotesView` does not touch another view's drawer.
-- `JukeboxView` clears both on unmount. The others clear the right drawer only.
+- Views that set a footer (`JukeboxView`, `AmbientSoundView`) clear both the
+  right drawer and the bottom drawer on unmount. The others clear the right
+  drawer only.
 
 Because the drawer content is a global singleton, navigating between pages
 relies on each view clearing its content. `BaseEntityView` publishes its
-`sidepanel` slot for views that need one (`CharacterView`) and
-clears it on unmount.
+`sidepanel` slot for views that need one (`LocationView`) and clears it on
+unmount. Detail views that own a dedicated sidebar component set and clear the
+drawer directly.
 
 ## Settings dialog
 
@@ -267,11 +279,8 @@ These notifications never auto-dismiss (`timeout: 0`).
 
 ## Known issues
 
-- Named slots used by views but never forwarded (`sidepanel`, `actions`,
-  `sub`).
-- No `footer` slot in `BaseModal` despite usage.
-- No `update:isOpen` emit despite usage.
 - Modals are all `persistent`, so users cannot escape with the backdrop or Esc.
-- Dialog defaults are not translated.
+- `BaseEntityTabView` declares `tab-close`/`tab-add` events that are not
+  emitted by its current tab bar.
 - The right drawer is a global singleton, but clearing is owner-scoped via
   `useRightDrawer()`.

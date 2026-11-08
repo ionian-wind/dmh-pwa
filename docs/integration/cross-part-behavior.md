@@ -10,32 +10,38 @@ seams are broken.
 index.html
   └─ main.ts
        ├─ initializeDatabase()             (openDB, migrations)
+       ├─ registerFileReferences()
        ├─ createPinia + PiniaSharedState
-       ├─ router (all views eagerly imported)
+       ├─ router (HomeView/NotFound eager; feature routes lazy)
        ├─ useConfigStore()                 (localStorage)
-       ├─ i18n (locale 'ru' → savedLanguage)
+       ├─ i18n (locale 'ru', fallback 'en'; savedLanguage on change)
        ├─ setupAnchorScrollHandler()
-       ├─ VueDnDKit, Quasar (Notify, Dialog)
+       ├─ VueDnDKit, Quasar (Notify, Dialog), Vue3OpenLayers
        └─ App.vue
-            ├─ playerStore.init()          (tracks, playlists, volume, restore)
-            ├─ timerStore.init()           (timers + global 1s poll)
+            ├─ feature navigation (primary/tools/footer, sorted by order)
+            ├─ feature globals  (e.g. JukeboxGlobal → playerStore.init())
+            ├─ timers nav item  (timerStore.init())
             └─ router-view → HomeView
-                 └─ loads notes, characters, parties, pawns,
-                    encounters (5 × getAll)
+                 └─ enabled feature home cards (sorted by order)
+                      └─ Promise.all(card.load())
 ```
 
 Every route view then loads its own stores again. There is no shared
 "load once" bootstrap; `load()` is called per view mount and replaces the whole
 array. In a session that visits several routes, IndexedDB is read repeatedly.
+Home cards are feature-owned definitions with Tabler icon components and an
+`order`; `HomeView` sorts them and `StatCard` renders the icon, count and
+translated label.
 
 ## 2. Creating a note (list flow)
 
 ```
 NotesView "create" button
   └─ BaseListView opens NoteEditor with note=null
-       └─ NoteEditor collects title/content (Milkdown emits Markdown)
+       └─ NoteEditor (Main editor / Linked entities tabs) collects
+          title/content + tags/type (Milkdown emits Markdown)
             └─ submit → NotesView.handleSubmit
-                 └─ noteStore.create({...note, hidden:false})
+                 └─ noteStore.create(note)
                       ├─ base.create → deepUnwrap + id/timestamps
                       ├─ idbPutItem → Ajv note.schema.json → put('notes')
                       ├─ items.push(newNote)
@@ -54,15 +60,18 @@ NoteView loads (notes, mentions, parties, pawns, encounters)
   └─ resolves note by route id
        ├─ read view: Markdown renders; task checkboxes can emit update:content
        │     └─ handleMarkdownContentChange → noteStore.update(content)
-       └─ Edit → NoteEditor (modal)
-             └─ submit → validate every mention against its store
-                  ├─ missing → validationError rendered in modal (save blocked)
+       └─ View/Edit switch → useEntityEditMode draft
+             └─ save → validate every mention against its store
+                  ├─ missing → validationError rendered in the Main tab
+                  │            (save blocked)
                   └─ ok → noteStore.update → base.update → reindex
 ```
 
-The mention validation is the only place the app enforces referential
-integrity, and it only applies to note content on submit. Task-checkbox writes
-bypass it.
+Note detail uses the shared inline edit mode (Main editor/Linked entities tabs)
+rather than a modal editor. The mention validation is the only place the app
+enforces referential integrity, and it only applies to note content on submit.
+Task-checkbox writes bypass it. Character, party, pawn, encounter and location
+detail pages use the same `useEntityEditMode` lifecycle.
 
 Deleting a note removes the note and its outgoing index record, but leaves:
 
@@ -86,6 +95,14 @@ EncounterView / EncountersView "Run combat"
 In `CombatView`:
 
 - encounter and party are resolved by ID;
+- the right drawer is the encounter sidebar with `scenesOnly: true`, so combat
+  exposes the encounter's scene player without the pawn/mention tabs;
+- the toolbar action on the left adds a participant (via `EntityLinkingDialog`
+  with inline initiative inputs); the action on the right starts the combat in
+  preparing or ends it while active; the phase stepper shows
+  preparing/active/completed;
+- clicking a combatant opens the shared `EntityInfoDialog` for the linked
+  character or pawn;
 - an empty `preparing` combat is filled from the encounter/party template and
   persisted;
 - preparing initiative edits are persisted on popup save;
@@ -102,9 +119,10 @@ and initiative order.
 ```
 PartyView
   ├─ party.characters (IDs)
-  ├─ characterStore.items filtered by membership
-  └─ toggle → partyStore.update(characters)
-       └─ PartyCard recomputes count from its own party prop
+  ├─ view Links tab → EntityViewLinks (characters + unrelated note links)
+  └─ edit Links tab → EntitiesLinking character → draft.characters
+       └─ save → partyStore.update(characters)
+            └─ PartyCard recomputes count from its own party prop
 PartySelector
   └─ reads party.characters → characterStore.getById → combatants
 CombatView
@@ -142,16 +160,17 @@ MentionModalStack / Mentions.vue
   └─ getLinks/getBacklinks → render names from stores
 ```
 
-Only notes write the index. The four entity sidebars now read the plain entity
-prop and display outgoing/backlinks correctly. `CharacterView` asks for
-`kind:'character'`, but no writer ever produces character links.
+Only notes write the index. The five entity sidebars (note, character, party,
+pawn, encounter) read the plain entity prop and display outgoing/backlinks.
+`CharacterView` asks for `kind: 'character'`, but no writer ever produces
+character links.
 
 ## 8. Backup / restore
 
 ```
 HomeView Backup
-  └─ backupAllStores()
-       └─ zip: every object store, with Blob audio encoded as base64
+  └─ backupAllStores({ includeExternalFiles: configStore.backupIncludeExternalFiles })
+       └─ zip: every object store, with file metadata/binary entries
 HomeView Restore
   └─ restoreAllStores(zip)
        └─ for each store: clearStore() then idbPutItem() per item
@@ -169,9 +188,12 @@ route enter
   │     └─ layout.setTopMenuContent(ViewHeader)
   ├─ detail views onMounted
   │     └─ rightDrawer.set(sidebar)
-  └─ JukeboxView onMounted
-        ├─ rightDrawer.set(PlaylistList)
-        └─ layout.setBottomDrawerContent(JukeboxPlayer)
+  ├─ JukeboxView onMounted
+  │     ├─ rightDrawer.set(PlaylistList)
+  │     └─ layout.setBottomDrawerContent(JukeboxPlayer)
+  └─ AmbientSoundView onMounted
+        ├─ rightDrawer.set(SoundPackSidebar)
+        └─ layout.setBottomDrawerContent(AmbientPlayerPanel)
 
 route leave
   └─ each view onBeforeUnmount clears what it set (right drawer by owner)
@@ -179,20 +201,22 @@ route leave
 
 Because these are global singleton refs, a view that forgets to clear leaves
 chrome behind. `BaseEntityView` publishes a `sidepanel` slot (used by
-`CharacterView`) and clears it on unmount. Right-drawer
-clearing is owner-scoped, so one view cannot remove another's sidebar. The
-injected header is cleared by both base wrappers.
+`LocationView`) and clears it on unmount. Right-drawer
+clearing is owner-scoped, so one view cannot remove another's sidebar. Combat
+reuses `EncounterViewSidebar` with `scenesOnly: true`. The injected header is
+cleared by both base wrappers.
 
-## 9. Global timers and audio
+## 10. Global timers and audio
 
-- `playerStore` and `timerStore` are instantiated in `App.vue` and live for the
-  app lifetime.
+- `playerStore` is initialized by the jukebox feature global (`JukeboxGlobal`,
+  mounted from `featureGlobals`), and `timerStore` by the timers navigation item
+  (`TimersNavItem`); both live for the app lifetime.
 - Both use module-level/closure state (Howl instance, poll timeout).
 - Navigation does not stop playback or timers.
 - `pinia-shared-state` does not synchronize the Howl instance; a second tab
   has its own player but shares config (last track, volume), which can fight.
 
-## 10. Failure propagation
+## 11. Failure propagation
 
 There is almost no user-facing error handling:
 
@@ -206,14 +230,14 @@ There is almost no user-facing error handling:
 The result is a UI that usually degrades to empty lists or silent no-ops rather
 than explaining what went wrong.
 
-## 11. Seams that need a contract
+## 12. Seams that need a contract
 
-| Seam                     | Current state                                  | Needed contract                           |
-| ------------------------ | ---------------------------------------------- | ----------------------------------------- |
-| View ↔ shell chrome      | String-keyed inject/provide; unforwarded slots | Typed layout store or composable          |
-| View ↔ store             | Ad-hoc loading per mount                       | Central load/cache policy                 |
-| Store ↔ store            | IDs only, no integrity                         | Repository/unit-of-work + cascades        |
-| Import ↔ store           | Raw transaction bypasses validation and state  | Import service that validates + refreshes |
-| Player ↔ playlist        | Manual `actualiseQueue` calls                  | Reactive derived queue                    |
-| Mention index ↔ entities | Only notes indexed                             | Generic indexer per entity type           |
-| Modal ↔ parent           | Unused `footer`/`update:isOpen` slots          | Shared modal contract                     |
+| Seam                     | Current state                                                       | Needed contract                           |
+| ------------------------ | ------------------------------------------------------------------- | ----------------------------------------- |
+| View ↔ shell chrome      | Typed layout store; base wrappers forward slots                     | Explicit lifecycle per route view         |
+| View ↔ store             | Ad-hoc loading per mount                                            | Central load/cache policy                 |
+| Store ↔ store            | IDs only, no integrity                                              | Repository/unit-of-work + cascades        |
+| Import ↔ store           | Raw transaction bypasses validation and state                       | Import service that validates + refreshes |
+| Player ↔ playlist        | Manual `actualiseQueue` calls                                       | Reactive derived queue                    |
+| Mention index ↔ entities | Only notes indexed                                                  | Generic indexer per entity type           |
+| Modal ↔ parent           | Mixed slot/prop contracts; footer and `update:isOpen` now supported | Shared modal contract                     |

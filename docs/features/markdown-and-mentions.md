@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Markdown is the content format for notes. Entity detail
-views now render it with the same Milkdown/Crepe pipeline as the editor; note
-cards keep the lighter markdown-it renderer. A
-separate index tracks which notes mention which entities.
+Markdown is the content format for entity descriptions and notes. Entity detail
+views render it with the same Milkdown/Crepe pipeline as the editor; note cards
+keep the lighter markdown-it renderer. A separate index tracks which notes
+mention which entities.
 
 ## Key files
 
@@ -32,7 +32,8 @@ The module creates one markdown-it instance:
 new MarkdownIt({ html: true, linkify: true, breaks: false });
 ```
 
-and installs three renderer plugins.
+and installs the renderer/inline plugins below, plus an embedded-image source
+plugin that defers `dmh-file://` and `drawing://` URLs to hydration.
 
 ### 1. Internal entity links
 
@@ -85,7 +86,7 @@ Markdown-to-ProseMirror pipeline.
 
 - `MilkdownEditor` receives `readonly`, calls `crepe.setReadonly(true)` and
   disables UI-only features (toolbar, block edit, placeholder, link tooltip,
-  cursor, top bar). Schema-producing features (lists, tables, code, math,
+  cursor, top bar, AI). Schema-producing features (lists, tables, code, math,
   images) stay enabled.
 - Entity mentions use the same mark as the editor. Enabled kinds resolve their
   route from `featureLinkKinds`; disabled or unknown kinds render as
@@ -179,31 +180,36 @@ Known remaining differences are structural rather than typographic:
   - toggles the corresponding character in the source,
   - emits `update:content` with the new Markdown.
 - Sets up an `IntersectionObserver` but never uses `isVisible`.
-- Loads all stores on mount (notes, parties, pawns, encounters) so
-  mention modals can resolve entities.
+- Loads every enabled `featureLinkKinds` store on mount (note, character,
+  party, pawn, encounter, location and playlist in the default build) so mention
+  modals can resolve entities.
 - Cache key ignores `anchorMap` and `enableMentionModal`, which is fine because
   those affect behavior, not HTML.
 
 ### Security note
 
-`html: true` plus `v-html` means raw HTML in note content is executed/rendered
-without sanitization. A malicious `.zip` import (via a path that
-bypasses validation) or pasted HTML can inject scripts or event handlers.
-`sanitize-html` remains a dependency for the offline Markdown build script; the
-runtime uses the browser-safe DOMParser sanitizer described above.
+`html: true` plus `v-html` means raw HTML in note content is rendered. Rendered
+HTML passes through `sanitizeMarkdownHtml()`: a fast path leaves ordinary
+Markdown output untouched, while documents containing risky HTML are parsed and
+filtered with DOMParser (dangerous tags, event handlers and unsafe URL schemes
+are removed). A malicious `.zip` import or pasted HTML still deserves caution
+because this is a custom sanitizer rather than a full HTML policy.
+`sanitize-html` remains installed but is not used by the runtime.
 
 ## Editor (`MarkdownEditor.vue` + Milkdown)
 
 - Props: `modelValue`, `isWYSIWYGMode`, `placeholder`, `rows`, `label`,
-  `enableMentions`, `currentEntityType`, `currentEntityId`.
+  `enableMentions`, `currentEntityType`, `currentEntityId`, `tags`.
 - WYSIWYG: renders `MilkdownEditorWrapper` inside a `QCard`; two instances
   (mentions-enabled vs plain) share one `ref`, so only one is active at a time.
-- Raw mode: flat `QEditor` with no toolbar, plus plain-text paste handling.
+- Raw mode: flat `QEditor` with no toolbar, an HTML intermediary
+  (`rawHtml`), and plain-text paste handling. Edits are converted back to
+  Markdown, preserving block-anchor comments.
 - Exposes `getMarkdown()` for parents (NoteEditor calls it on submit).
 
-`getCurrentMarkdown()` returns the Milkdown wrapper's Markdown when the wrapper
-exists, otherwise the bound `modelValue`. Raw-mode edits are bound through
-`:model-value`/`@update:model-value` and are reflected in `modelValueProxy`.
+`getCurrentMarkdown()` returns the Milkdown wrapper's Markdown when visual mode
+is active, otherwise it converts `rawHtml` back to Markdown and restores block
+anchors from `modelValue`.
 
 ### Milkdown/Crepe integration
 
@@ -257,9 +263,10 @@ Typing `#` in the visual editor opens `TagInsertPopup.vue`:
 
 Known rough edges:
 
-- `insertMentionMark` inserts `href: \`${kind}://\``(no ID); the mark's`id`attribute is set separately, and serialization uses`kind://id`. The
-`href`value is therefore inconsistent but unused by`toMarkdown`.
-- The fallback path when no popup is registered inserts a mark with `id: ''`.
+- The popup path sets a resolved route `href` plus the entity `id`; the
+  no-popup fallback inserts a mark with `id: ''` and `href: null`.
+  Serialization always writes `kind://id`, so the stored `href` is not the
+  source of truth.
 - Nested inline markdown in the entity title is flattened.
 
 ## Mention extraction
@@ -271,10 +278,13 @@ returns `{ kind, id }[]`.
   `kind:id`.
 - Links inside code blocks are still matched (regex-based, not AST-based).
 - `kind://` URLs without a label (bare autolinks) are not matched.
-- Only enabled `featureLinkKinds` are mentionable (currently note, party,
-  pawn, encounter and location); `character` is not a link kind even
-  though `CharacterView` reads `kind: 'character'` from the index and nothing
-  ever writes it.
+- The markdown-it renderer and `extractMentionedEntities()` only match
+  `note`, `party`, `pawn`, `encounter` and `location`. `character` and
+  `playlist` are feature link kinds in the default build, but the extraction
+  regex ignores them; `CharacterView` reads `kind: 'character'` from the index
+  and nothing writes it. Milkdown can render existing `character://` links
+  because its mention parser accepts any enabled kind, but they are not indexed
+  or offered in the mention toolbar.
 - Hashtags are extracted with a regex, not an AST, so `#tag` inside inline code
   is also added to `note.tags`.
 
@@ -294,15 +304,14 @@ returns `{ kind, id }[]`.
 | `getBacklinks(target)`  | scans all keys                                      |
 | `clearAll()`            | wipes the store                                     |
 
-Only `noteStore.create/update/remove` call it. Nothing indexes
-party, pawn, encounter, or character content (none of those have content
-fields anyway).
+Only `noteStore.create/update/remove` call it. Nothing indexes party, pawn,
+encounter or character descriptions/notes.
 
 ### Sidebar access (fixed)
 
-The four entity sidebars now read the plain entity prop (`props.note`,
-`props.party`, etc.). `CharacterView` publishes its sidepanel through
-`BaseEntityView`, so character mentions render too.
+The entity sidebars read the plain entity prop (`props.note`, `props.party`,
+etc.). `CharacterView` publishes its sidepanel through `BaseEntityView`, so
+character mentions render too.
 
 ## Limitations
 
@@ -310,7 +319,9 @@ The four entity sidebars now read the plain entity prop (`props.note`,
   DOMParser sanitizer) but Milkdown renders raw HTML as text. Content that
   relies on raw HTML looks different in detail views.
 - Entity link regex cannot express IDs outside `[A-Za-z0-9_-]`.
-- No character links.
+- Character and playlist links are not extracted or indexed; character links
+  render only inside Milkdown, and playlist links are not rendered by the
+  markdown-it renderer.
 - Mention index not rebuilt on import/restore.
 - Backlinks are an O(n) scan.
 - No wiki-style `[[link]]` syntax; only Markdown links.

@@ -1,10 +1,12 @@
 # Dice Roller Engine
 
 > **Status: work in progress.** The engine is a standalone TypeScript library
-> under `src/utils/dice-roller/`. Connecting it to the application and
-> registering its plugins is planned but intentionally not done yet. The 3D
-> dice UI (`RollButton.vue`) is part of the same WIP track and is not mounted.
-> Nothing in this document should be read as a defect report against the
+> under `src/utils/dice-roller/`. It is not registered or called by the
+> application yet: there is no `src/utils/dice-roller/index.ts` bootstrap and no
+> app component calls `processDiceExpression`. The 3D dice FAB
+> (`src/components/RollButton.vue`) exists and uses `@3d-dice/dice-box` with
+> direct notations, but it is not mounted in the app shell and does not call the
+> engine. Nothing in this document should be read as a defect report against the
 > current release; the "WIP notes" section lists known gaps to address before
 > the feature ships.
 
@@ -16,22 +18,24 @@ and formatting.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `core/index.ts` | Plugin registry and parse/extract/evaluate pipeline |
-| `lib/types.ts` | AST/plugin/result/error types |
-| `lib/utils.ts` | AST traversal, math funcs, dice helpers, validation |
-| `plugins/dice/tokens.ts` | Chevrotain lexer tokens |
-| `plugins/dice/parser.ts` | Chevrotain CST parser |
-| `plugins/dice/ast.ts` | CST → AST visitor (~1,400 lines) |
-| `plugins/dice/dicePlugin.ts` | Dice/modifier evaluation (~800 lines) |
-| `plugins/macros/index.ts` | Macro expansion |
-| `plugins/roll-queries/index.ts` | `?{prompt|default}` handling |
-| `plugins/tables/index.ts` | `Nt[table]` weighted table rolls |
-| `plugins/inline-rolls/index.ts` | `[[expr]]` and index assignment |
-| `plugins/roll-references/index.ts` | `$[[n]]`, `$[roll:name]` |
-| `plugins/formatting/index.ts` | `%NEWLINE%`-style markup |
-| `__tests__/*`, `plugins/*/__tests__/*` | Extensive unit/integration tests |
+| File                                   | Role                                                          |
+| -------------------------------------- | ------------------------------------------------------------- |
+| `core/index.ts`                        | Plugin registry and parse/extract/evaluate pipeline           |
+| `lib/types.ts`                         | AST/plugin/result/error types                                 |
+| `lib/utils.ts`                         | AST traversal, math funcs, dice helpers, validation           |
+| `plugins/dice/tokens.ts`               | Chevrotain lexer tokens                                       |
+| `plugins/dice/parser.ts`               | Chevrotain CST parser                                         |
+| `plugins/dice/ast.ts`                  | CST → AST visitor (~1,400 lines)                              |
+| `plugins/dice/dicePlugin.ts`           | Dice/modifier evaluation (~800 lines)                         |
+| `plugins/macros/index.ts`              | Macro expansion                                               |
+| `plugins/roll-queries/index.ts`        | `?{prompt\|default}` handling                                 |
+| `plugins/tables/index.ts`              | `Nt[table]` weighted table rolls                              |
+| `plugins/inline-rolls/index.ts`        | `[[expr]]` and index assignment                               |
+| `plugins/roll-references/index.ts`     | `$[[n]]`, `$[roll:name]`                                      |
+| `plugins/formatting/index.ts`          | `%NEWLINE%`-style markup                                      |
+| `lib/errors.ts`                        | Dice-roller error classes                                     |
+| `src/components/RollButton.vue`        | Standalone 3D dice FAB (not mounted, not wired to the engine) |
+| `__tests__/*`, `plugins/*/__tests__/*` | Extensive unit/integration tests                              |
 
 ## Pipeline
 
@@ -71,11 +75,14 @@ interface DiceRollerPlugin {
 `plugin.register(core)`.
 
 Important evaluation semantics:
+
 - A plugin's `evaluate` returning a falsy value means "not handled".
-- **Errors thrown by a plugin are swallowed** and the loop continues. A real
-  bug inside the dice plugin is indistinguishable from "this plugin doesn't
-  handle this node"; if no plugin returns a result, the core throws
+- **Generic errors thrown by a plugin are swallowed** and the loop continues. A
+  real bug inside the dice plugin is indistinguishable from "this plugin
+  doesn't handle this node"; if no plugin returns a result, the core throws
   `Unable to parse/evaluate`.
+- Intentional `DiceRollerError`s (syntax, validation, missing data) are
+  remembered and rethrown when no later plugin handles the node.
 - Macro/table/inline-roll plugins call back into `evaluate` recursively.
 
 ## Dice syntax support
@@ -134,10 +141,12 @@ global name inside modules that import it.
 
 ## WIP notes (address before shipping)
 
-1. **UI registration entry point.** `dicePlugin` now exposes `parse`,
-   `evaluate`, and `register`, and the test suite registers the plugin
-   pipeline manually. The application still has no `src/utils/dice-roller/index.ts`
-   that registers all plugins once for the UI.
+1. **UI registration entry point.** `dicePlugin` exposes `parse`, `evaluate`,
+   and `register`, and the test suite registers the plugin pipeline manually.
+   The application still has no `src/utils/dice-roller/index.ts` that registers
+   all plugins once for the UI, and `RollButton.vue` still sends raw notation
+   such as `1d20` to `@3d-dice/dice-box` instead of evaluating it through the
+   engine.
 2. **Operator order is lost.** In `ast.ts`, `additive` concatenates `Plus`
    tokens then `Minus` tokens before walking, and `multiplicative` concatenates
    multiply/divide/modulo groups. Mixed expressions can be re-associated
@@ -180,7 +189,7 @@ The WIP scope includes connecting the engine to the app:
 
 ## Testing
 
-The dice tests are the most complete part of the repository. They document the
-intended syntax and behavior and are expected to become green as the WIP
-registration work lands. See `src/utils/dice-roller/__tests__/` and each
-plugin's `__tests__/`.
+The dice tests are the most complete part of the repository and currently pass.
+They document the intended syntax and behavior; each suite registers the plugin
+pipeline manually because the app has no shared registration entry point yet.
+See `src/utils/dice-roller/__tests__/` and each plugin's `__tests__/`.

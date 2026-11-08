@@ -1,6 +1,8 @@
 # PWA Hardening Plan (Phases 1–3)
 
-**Status:** implemented for Phases 1–3; device/app-store checks remain.
+**Status:** phases 1–2 implemented and verified in browser emulation; most of
+phase 3 is done (reviewed 2026-11-09). Lighthouse/PWABuilder and physical-device
+checks remain; manifest shortcuts are generated only for enabled features.
 
 **Goal:** improve installability, standalone/mobile layout and PWA reliability
 without migrating the app to the `pwa-starter` Lit/Web Awesome stack.
@@ -15,7 +17,8 @@ CDN-hosted Workbox setup.
 
 - [x] Add `id`, normalized `start_url`/`scope`, `orientation: 'any'`,
       `launch_handler.client_mode: 'focus-existing'` and related-app fields.
-- [x] Add app shortcuts for Notes, Timers, Jukebox and the help center.
+- [x] Add app shortcuts for Notes, Timers, Jukebox and the help center
+      (generated from enabled features).
 - [x] Generate desktop/mobile screenshots and add them to the manifest.
 - [x] Localize the install prompt, add a help-center fallback link, and enable
       it after the existing disabled flow is reviewed.

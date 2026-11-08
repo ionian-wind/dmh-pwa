@@ -1,6 +1,7 @@
 # Build-time Feature Flags — Implementation Plan
 
-**Status:** implemented and verified.
+**Status:** implemented and verified (reviewed against the current tree on
+2026-11-09: 14 build configurations pass `npm run features:verify`).
 
 **Mode:** build-time only; strict code exclusion.
 
@@ -355,7 +356,8 @@ The script should print the exact failing feature/config and module.
 
 - [x] `FF-050` Refactor `HomeView` cards, stats and `load()` calls to enabled — done
       features only.
-- [x] `FF-051` Hide module import when modules/notes are disabled. — done
+- [x] `FF-051` Hide module import when modules/notes are disabled. —
+      superseded: the Modules entity was removed later; only the Notes gate remains.
 - [x] `FF-052` Hide jukebox Settings sections when jukebox is disabled. — done
 - [x] `FF-053` Generate manifest shortcuts from enabled Notes/Timers/Jukebox — done
       plus always-on Help.

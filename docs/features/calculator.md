@@ -2,16 +2,20 @@
 
 ## Purpose
 
-A floating calculator and unit converter available from the left navigation.
-It is implemented as a draggable bottom-sheet `QDialog`, not a route.
+A floating calculator and unit converter available from the **Tools** section of
+the left navigation. It is implemented as a draggable bottom-sheet `QDialog`,
+not a route.
 
 ## Key files
 
-| File | Role |
-| --- | --- |
-| `src/calculator/CalculatorView.vue` | Dialog with Calculate and Convert tabs |
-| `src/composables/useDragSnap.ts` | Drag + snap-back behavior |
-| `src/App.vue` | Mounts the dialog and toggles it from the nav |
+| File                                     | Role                                     |
+| ---------------------------------------- | ---------------------------------------- |
+| `src/calculator/CalculatorView.vue`      | Dialog with Calculate and Convert tabs   |
+| `src/composables/useDragSnap.ts`         | Drag + snap-back behavior                |
+| `src/features/calculator/integration.ts` | Registers the nav item and global dialog |
+| `src/features/calculator/NavItem.vue`    | Left-navigation button                   |
+| `src/features/calculator/Global.vue`     | Mounts the dialog for the app lifetime   |
+| `src/features/calculator/state.ts`       | Shared dialog open state                 |
 
 ## Arithmetic tab
 
@@ -25,9 +29,11 @@ It is implemented as a draggable bottom-sheet `QDialog`, not a route.
   - `Enter` or `=`
   - `Backspace`
   - `c` clears
-- `appendBrace()` automatically opens or closes parentheses based on counts.
-- There is no history, memory, exponent, or percent semantics beyond mathjs's
-  `%` (modulo).
+- `appendBrace()` opens a parenthesis after an operator, otherwise it opens or
+  closes based on the open/close counts.
+- The `%` key appends mathjs's `%` (modulo); there is no separate percent
+  operator.
+- There is no history, memory, or exponent button.
 
 ## Unit converter tab
 
@@ -45,6 +51,7 @@ It is implemented as a draggable bottom-sheet `QDialog`, not a route.
   `calculator.unitSymbols.*` translation keys.
 
 Known quirks:
+
 - `convertResult` returns `''` for invalid values, which renders as an empty
   row.
 - The conversion depends on the arithmetic result; there is no dedicated input
@@ -63,8 +70,11 @@ Known quirks:
 
 ## App integration
 
-`App.vue` keeps `isCalculatorPopupOpen` and toggles it from the left nav item.
-The dialog is always mounted, so its key listener exists for the app lifetime.
+The calculator feature integration registers `NavItem.vue` in the Tools group
+and `Global.vue` as a global component. `state.ts` holds the shared
+`calculatorOpen` ref, which the nav item toggles and `Global.vue` binds to the
+dialog. The dialog is always mounted, so its key listener exists for the app
+lifetime.
 
 ## Limitations
 

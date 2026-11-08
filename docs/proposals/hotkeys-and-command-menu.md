@@ -1,6 +1,7 @@
 # Hotkeys and Command Menu
 
-**Status:** proposal — not implemented.
+**Status:** proposal — not implemented (reviewed 2026-11-09; `hotkeys-js` is not
+a dependency and there is no command registry or command-menu component).
 
 **Priority:** P1.
 

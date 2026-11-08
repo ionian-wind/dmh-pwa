@@ -5,15 +5,17 @@ Small, mostly pure helpers used across the app.
 ## `src/utils/debug.ts`
 
 ```ts
-debug(...args); // console.log
-debugWarn(...args); // console.warn
-debugError(...args); // console.error
+debug(...args); // console.log in development only
+debugWarn(...args); // console.warn in development only
+debugError(...args); // console.error in development only
 exposeConsole(); // replaces global console with node:console (tests)
 ```
 
 Every module uses these instead of `console.*`; the remaining direct `console`
-calls are in WIP dice-engine debug branches. There is no log level or
-production stripping.
+calls are in WIP dice-engine debug branches. `debug*` is gated on
+`import.meta.env.MODE === 'development'`, so test and production builds are
+silent. `tests/setup.ts` swaps in Node's `Console` through `exposeConsole()` so
+test output is still visible.
 
 ## `src/utils/deepUnwrap.ts`
 
@@ -45,22 +47,17 @@ Exports Ajv wrappers: `registerValidationSchema`, `canValidate`,
 `validateSchema`, `getValidationErrors`, `validateArray`,
 `getArrayValidationErrors`.
 
-`validateArray` has a bug: `results.every(Boolean)` checks the result objects
-(always truthy), so it returns `true` for any array even if items are invalid.
-The function is not used by the current stores.
+`validateArray` returns `false` for non-arrays and otherwise checks every
+item's `valid` flag; it is not used by the current stores.
 
 ## `src/utils/anchorScroll.ts`
 
 `setupAnchorScrollHandler()`:
 
 - Registers a `popstate` listener that reads `window.location.hash` and scrolls
-  the matching element into view.
+  the matching element into view (`behavior: 'auto'`, block centered).
 - On initial load with a hash, polls every 100ms up to 20 times (2s) for the
-  element, then scrolls smoothly.
-
-Bug: the guard `pathname === window.location.pathname` compares a value with
-itself and is always true. It should compare against a saved/current route
-path.
+  element, then scrolls smoothly, also centered.
 
 ## `src/utils/scrollToHeading.ts`
 
@@ -133,11 +130,14 @@ Global modal stack + mention stack. Described in
 
 ### `useDragSnap.ts`
 
-Pointer-drag helper returning `cardStyle`, `transitionHide`, and handlers.
-Used by the calculator and jukebox bottom sheets. `onPointerMove` runs on
-pointermove events on the card; `onPointerUp` snaps back unless dragged up more
-than 200px. It does not listen for `pointercancel` outside the element, so a
-lost pointer can leave the card offset until the next interaction.
+Pointer-drag helper returning `cardStyle`, `transitionHide`, `isDragging`,
+`pointerX`/`pointerY`, `translateX`/`translateY`, and the handlers
+`onPointerDown`, `onPointerMove`, `onPointerUp`, `onHide`, `endDrag`,
+`resetPosition`, `rebaseDrag`, `setPosition` and `rebaseDragOrigin`. Accepts
+optional `snapBack()` and `onRelease()` callbacks. Used by the calculator and
+jukebox (`SoundControlDialog`) bottom sheets. `onPointerUp` snaps back unless dragged up
+more than 200px. It does not listen for `pointercancel` outside the element, so
+a lost pointer can leave the card offset until the next interaction.
 
 ## Types and forms
 

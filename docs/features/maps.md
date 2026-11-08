@@ -41,29 +41,31 @@ location was linked) by migration `0000000009_merge_maps_into_locations`.
 A `MapFile` stores the base image outside the map record:
 
 ```ts
-interface MapFile extends WithMetadata {
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  source:
-    | { kind: 'blob'; blob: Blob }
-    | { kind: 'handle'; handle: FileSystemFileHandle };
+interface MapFile extends StoredFile {
   imageMetadata?: ImageMetadata;
 }
+
+type StoredFileSource =
+  | { kind: 'blob'; blob: Blob }
+  | { kind: 'handle'; handle: FileSystemFileHandle }
+  | { kind: 'opfs'; path: string };
 ```
 
-`MapLocationEditor` uses a regular `<input type="file" accept="image/*">`, so
-image selection works in every browser. Files are stored as `Blob` sources. The
-existing handle helper remains available for Chromium file-picker integrations.
+`MapLocationEditor` uses the generic `pickFiles` API, so image selection works
+in every browser: Chromium gets File System Access handles, other browsers fall
+back to a temporary file input with `Blob` sources. Large blob-backed map files
+can be promoted to OPFS by `putMapFile`. The `createMapFileFromHandle` helper
+remains available for handle sources.
 
 Image metadata (dimensions, MIME type, dominant color, palette) is extracted by
-`maps/worker/image.worker.ts` and stored on the file record.
+`maps/worker/image.worker.ts` and stored in `map_image_metadata` keyed by the
+file ID.
 
 Blob-backed raster images larger than 1 MB are resized to fit within 8192 px
 and re-encoded as WebP before storage (`utils/images/optimizeImage.ts`). SVG,
 GIF (animation) and File System Access handle sources are left untouched. This
-keeps large battle maps from inflating IndexedDB/OPFS.
+keeps large battle maps from inflating IndexedDB/OPFS. The optimization runs
+only for blob sources; handles are stored by reference.
 
 ### Locations
 
@@ -128,11 +130,11 @@ interface MapMarker {
   pawns, encounters, characters). Parties are not available as
   marker links.
 - Icons are optional; new markers start with no icon.
-- Marker icons support both RPG Awesome (`ra-castle-emblem`) and Font Awesome
-  Solid (`fa-solid:cloud-rain`) values.
-- `src/maps/mapMarkerSvg.ts` generates a scalable pin SVG at runtime. RPG
-  Awesome glyph paths are generated into `src/maps/rpgIconPaths.ts`; Font
-  Awesome paths come from `@fortawesome/fontawesome-svg-core`.
+- The marker/area icon picker exposes RPG Awesome values such as
+  `ra-castle-emblem`. `src/maps/mapMarkerSvg.ts` can also resolve existing
+  Font Awesome Solid values (`fa-solid:cloud-rain`): RPG Awesome glyph paths
+  are generated into `src/maps/rpgIconPaths.ts`, while Font Awesome paths come
+  from `@fortawesome/fontawesome-svg-core`.
 - Pin fill and icon colour are configurable per marker. When a marker
   background colour is set it becomes the pin fill; otherwise the marker colour
   fills the pin and a contrasting icon colour is used.
@@ -289,12 +291,13 @@ flows. Deleting a location removes it everywhere.
    **Add marker here** to place a marker at the clicked point.
 3. Fill in title, description, location, linked entities, icon, and color.
    New markers default to the location that owns the map.
-4. Save. Marker coordinates are stored in the map projection used by the image.
+4. Save. Marker coordinates are stored as top-left image pixels.
 5. Click an existing marker to edit or delete it.
 
 ### Draw and edit areas
 
-1. Choose **Polygon**, **Circle**, **Square**, or **Freehand** in the map toolbar.
+1. Choose **Polygon**, **Circle**, **Square**, or **Freehand** from the map
+   action menu or the map's right-click **Draw area** submenu.
 2. Draw the shape:
    - polygon: click vertices and double-click the last vertex;
    - circle: drag from the centre;
@@ -314,7 +317,8 @@ and inspect backlinks from markers and areas in other locations.
 ## Stores and files
 
 - `map_locations` — `MapLocation` records including embedded `map` data.
-- `files` — shared generic blobs/handles, deduplicated by file signature.
+- `files` — shared generic blob/handle/OPFS sources, deduplicated by file
+  signature.
 - `map_image_metadata` — image metadata keyed by `files.id`.
 - Legacy `maps` records are merged into locations by migration
   `0000000009_merge_maps_into_locations` and are not read by the app.
@@ -324,6 +328,8 @@ Map file helpers:
 
 - `createMapFileFromFile(file)`
 - `createMapFileFromHandle(handle)`
+- `getMapFile(id)` / `getAllMapFiles()`
+- `putMapFile(mapFile)` / `deleteMapFile(id)`
 - `getMapFileBlob(mapFile)`
 - `getMapFileUrl(mapFile)`
 - `updateMapFileMetadata(mapFile)`
@@ -340,9 +346,14 @@ type MapEntityKind =
   | 'pawn'
   | 'encounter'
   | 'character'
+  | 'map'
   | 'location'
   | 'playlist';
 ```
+
+The `map` kind remains in the type/schema for legacy records; current editors
+do not expose it. Location editors expose all feature-backed kinds; marker and
+area editors expose notes, pawns, encounters and characters plus one location.
 
 `EntitiesLinking` loads each entity store, shows one linking block per entity
 type, and deduplicates `kind:id` pairs. Its read-only mode hides the add and
@@ -352,10 +363,10 @@ own fields from linked entities.
 
 ## Icons
 
-`src/maps/icons.ts` exposes `MAP_MARKER_ICONS`, generated from the RPG Awesome
-CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no icon) and
-`DEFAULT_MARKER_COLOR`. `src/maps/mapMarkerSvg.ts` generates colored marker pins
-from either RPG Awesome paths or Font Awesome core icons.
+`src/utils/maps/icons.ts` exposes `MAP_MARKER_ICONS`, generated from the RPG
+Awesome CSS class list, plus `DEFAULT_MARKER_ICON` (empty by default, meaning no
+icon) and `DEFAULT_MARKER_COLOR`. `src/maps/mapMarkerSvg.ts` generates colored
+marker pins from either RPG Awesome paths or Font Awesome core icons.
 
 `src/components/common/IconPicker.vue` provides searchable icon selection plus
 a “No icon” option. It is configurable with an icon array and collection name;
@@ -366,9 +377,12 @@ Colours use the shared `ColorPicker` component, backed by Quasar `QColor`.
 
 ## Coordinate model
 
-The OpenLayers view uses an image projection with `units: 'pixels'` and extent
-`[0, 0, width, height]`. Therefore marker `x`/`y` values are the same as image
-pixels. Overlays are positioned with `:position="[marker.x, marker.y]"`.
+Map records store marker and area coordinates as top-left image pixels. The
+OpenLayers view uses an image projection with `units: 'pixels'` and extent
+`[0, 0, width, height]`, whose origin is bottom-left, so
+`utils/mapCoordinates.ts` flips Y when converting between record coordinates
+and map coordinates. Marker features use `imageToMapPoint([x, y], height)`;
+new markers drawn on the map are converted back with `mapToImagePoint`.
 
 ## Testing
 

@@ -8,7 +8,9 @@ subsystem in the app: every feature goes through it.
 
 **Database:** `dmh-db` (`src/utils/storage.ts`).
 
-Object stores are created lazily by migrations. Current stores:
+Dexie declares the stores at the maximum schema/migration version. `SCHEMA_VERSION`
+is **19**, and `DB_VERSION` is the larger of 19 and the highest migration
+version. Current stores:
 
 | Store                  | Owner               | Schema-validated          |
 | ---------------------- | ------------------- | ------------------------- |
@@ -19,9 +21,10 @@ Object stores are created lazily by migrations. Current stores:
 | `parties`              | `stores/parties`    | `party.schema.json`       |
 | `encounters`           | `stores/encounters` | `encounter.schema.json`   |
 | `combats`              | `stores/combats`    | `combat.schema.json`      |
-| `drawings`             | `drawings` helpers  | `drawing.schema.json`     |
+| `drawings`             | `drawings/storage`  | `drawing.schema.json`     |
 | `bookmarks`            | `stores/bookmarks`  | `bookmark.schema.json`    |
 | `timers`               | `stores/timers`     | `timer.schema.json`       |
+| `map_locations`        | `maps/locations`    | `mapLocation.schema.json` |
 | `indexations_mentions` | `useMentionsStore`  | no                        |
 | `jukebox_playlists`    | `jukebox/stores`    | no (explicitly bypassed)  |
 | `jukebox_tracks`       | `jukebox/stores`    | no                        |
@@ -30,15 +33,18 @@ Object stores are created lazily by migrations. Current stores:
 | `sound_packs`          | `ambient-sound`     | no (excluded from backup) |
 | `migrations`           | migration runner    | no                        |
 
+Legacy stores `maps`, `map_files`, `jukebox_files`, and `monsters` remain
+declared so older databases open and their data can be migrated. They are not in
+`MAIN_STORE_NAMES` and are not written by current code.
+
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
-generates IDs. Version 18 renames encounter `pawns` to `pawns`; version 17
-removes encounter notes; version 16 strips escaped spaces before block-anchor
-comments; version 15 removes note content types, converting legacy drawing notes
-into drawing blocks; version 14 adds the `drawings` store; version 13 dropped
-the removed `modules` store and its indexes; version 12 added query indexes
-(`updatedAt`, `typeId`, tags, statuses) and the `sound_packs` store.
-`sound_packs` is not in `MAIN_STORE_NAMES`, so backup/restore leaves ambient
-audio out while campaign data stays portable.
+generates IDs. The current migration chain ends at version 19, which migrates
+the legacy `monsters` store into `pawns` and rewrites `monster` references in
+combats, notes, locations, markers/areas, and the mention index. Earlier
+versions cover encounter-field renames, block-anchor cleanup, note content-type
+removal, drawings, module removal, generic files, map locations/layers, timers
+and bookmarks. `sound_packs` is not in `MAIN_STORE_NAMES`, so backup/restore
+leaves ambient audio out while campaign data stays portable.
 
 ### Connection helper
 
@@ -68,12 +74,14 @@ docs remain stable:
 
 - `idbGetItem(store, id)`
 - `idbPutItem(store, item)` — validates first if a schema is registered.
+- `idbPutItems(store, items)` — validates every item, then `bulkPut`s.
 - `idbDeleteItem(store, id)`
 - `idbGetAllItems(store)`
+- `idbFindByIndex(store, index, value)`
 - `clearStore(store)` — clears the Dexie table.
 
-`idbPutItem` throws `StorageError` when Ajv reports errors. No view catches
-these specifically; they surface as rejected promises.
+`idbPutItem`/`idbPutItems` throw `StorageError` when Ajv reports errors. No view
+catches these specifically; they surface as rejected promises.
 
 ## 2. Schema validation
 
@@ -88,13 +96,15 @@ getValidationErrors / getArrayValidationErrors
 ```
 
 Stores register their schema by passing it to `useStore`; the store name is the
-schema key. Validation happens in `idbPutItem`, i.e. on every `create` and
-`update`. Consequences:
+schema key. `drawings/storage.ts` registers `drawings` directly through
+`registerValidationSchema`. Validation happens in `idbPutItem`/`idbPutItems`,
+i.e. on every `create`, `update`, and backup restore batch. Consequences:
 
 - `load()` does not validate; malformed legacy data is accepted into memory.
 - Jukebox stores deliberately pass `validationSchema: undefined`.
-- Direct imports (`restoreAllStores` uses `idbPutItem`) need special attention:
-  restore writes through a batch and bypasses per-record validation.
+- `restoreAllStores` uses `idbPutItems`, so restored campaign records are
+  validated before the bulk write. Files, jukebox records, map metadata, and
+  mention records have no registered schema and are not validated.
 - Ajv is configured without `strict: false` or formats; date-like strings are
   just strings.
 
@@ -140,24 +150,25 @@ export const useNoteStore = defineStore('notes', () => {
 });
 ```
 
-| Store               | ID           | Extra behavior                                                                                |
-| ------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| `useNoteStore`      | `notes`      | Search/tag filter, `allTags`, mention index sync on create/update/remove                      |
-| `useCharacterStore` | `characters` | Name search                                                                                   |
-| `usePawnStore`      | `pawns`      | Name search                                                                                   |
-| `usePartyStore`     | `parties`    | Name search                                                                                   |
-| `useEncounterStore` | `encounters` | Name search                                                                                   |
-| `useCombatStore`    | `combats`    | Combatant/turn helpers, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
-| `useNoteTypeStore`  | `noteTypes`  | Name search                                                                                   |
-| `useBookmarkStore`  | `bookmarks`  | `findByNoteAndAnchor`, `isBookmarked`, `addBookmark`, `removeBookmark`                        |
-| `useTimerStore`     | `timers`     | `init`, `start/stop/reset`, ticking `now` ref, completion notifications                       |
+| Store                 | ID              | Extra behavior                                                                                                                                  |
+| --------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useNoteStore`        | `notes`         | Search/tag filter, `allTags`, mention index sync on create/update/remove                                                                        |
+| `useCharacterStore`   | `characters`    | Name search                                                                                                                                     |
+| `usePawnStore`        | `pawns`         | Name search                                                                                                                                     |
+| `usePartyStore`       | `parties`       | Name search                                                                                                                                     |
+| `useEncounterStore`   | `encounters`    | Name search                                                                                                                                     |
+| `useCombatStore`      | `combats`       | Combatant helpers (`updateCombatant`, `removeCombatant`), status changes, `startCombat`, `endCombat`, `resetCombat`, `nextTurn`, `previousTurn` |
+| `useNoteTypeStore`    | `noteTypes`     | Name search                                                                                                                                     |
+| `useBookmarkStore`    | `bookmarks`     | Generic owner helpers (`findByOwnerAndAnchor`, `isAnchorBookmarked`, `add/remove/toggleAnchorBookmark`) plus note aliases                       |
+| `useMapLocationStore` | `map_locations` | Normalizes locations on load, name/description search                                                                                           |
+| `useTimerStore`       | `timers`        | `init`, `start/stop/reset`, ticking `now` ref, completion notifications                                                                         |
 
 ### Filtering
 
-Every list store exposes `filtered`, `setFilter`, `clearFilter`,
-`setSearchQuery`, and `searchQuery`. `BaseListView` forwards search props to
-`ViewHeader`, and the searchable list views bind them to their domain store;
-`NotesView` additionally supports the URL tag filter.
+Every searchable list store exposes `filtered`, `setFilter`, `clearFilter`,
+`setSearchQuery`, and `searchQuery` (the bookmark store does not). `BaseListView`
+forwards search props to `ViewHeader`, and the searchable list views bind them to
+their domain store; `NotesView` additionally supports the URL tag filter.
 
 ### Mention indexing (notes store)
 
@@ -170,12 +181,12 @@ maintained automatically.
 
 The timer store is special:
 
-- `init()` loads timers and starts `checkFinishedTimers()` exactly once per
-  module lifetime (`counter` flag).
+- `init()` loads timers and calls `checkFinishedTimers()` once per module
+  lifetime (`counter` flag).
 - `checkFinishedTimers` updates `nowRef`, walks all timers, marks expired ones
-  `finished`, shows a Quasar `Notify` toast, then schedules itself again after
-  1 second. **It keeps polling even when no timer is running**, and the timeout
-  is never cleared.
+  `finished`, shows a Quasar `Notify` toast, and schedules another check after
+  1 second **only while at least one timer is still running**. `pollTimer` is a
+  module-level singleton and is not explicitly cleared on unmount.
 - `start` sets `startedAt = Date.now()` and `status = 'running'`.
 - `stop` clears `startedAt` and sets `inactive` (elapsed time is discarded).
 - `reset` is an alias for `start`.
@@ -192,12 +203,13 @@ persistence** rather than `pinia-plugin-persistedstate`.
 - `getValue` JSON-parses; invalid JSON throws during store creation.
 - A `watch` per key writes changes back.
 - Values: `jukeboxLastTrackId`, `jukeboxLastPlaylistId`,
-  `jukeboxLastTrackProgress`,
-  `jukeboxLastVolume`, `jukeboxActivePlaylistId`, `jukeboxRepeatMode`,
-  `jukeboxShuffle`, `jukeboxSmoothTrackChange`,
-  `jukeboxAnimatePlayerBackground`, `jukeboxDisplayCoverWhilePlaying`,
-  `jukeboxUseMiniPlayer`, `confirmDelete`, `savedLanguage`, `uiTheme`.
-- `savedLanguage` defaults to `window.navigator.language`.
+  `jukeboxLastTrackProgress`, `jukeboxLastVolume`,
+  `jukeboxActivePlaylistId`, `jukeboxRepeatMode`, `jukeboxShuffle`,
+  `jukeboxSmoothTrackChange`, `jukeboxAnimatePlayerBackground`,
+  `jukeboxDisplayCoverWhilePlaying`, `jukeboxUseMiniPlayer`, `expandMenu`,
+  `confirmDelete`, `backupIncludeExternalFiles`, `savedLanguage`, `uiTheme`.
+- `savedLanguage` defaults to `'ru'` when `navigator.language` starts with
+  `ru`, otherwise `'en'`.
 - `uiTheme` defaults to `light` and accepts `light`, `dark` or `auto`.
 
 ### UI theme
@@ -236,24 +248,32 @@ interface Migration {
 
 Current migrations:
 
-| Version | File                           | Effect                                |
-| ------- | ------------------------------ | ------------------------------------- |
-| 1       | `0000000001_initial_schema.ts` | Declares all core stores (no-op `go`) |
-| 2       | `0000000002_bookmarks.ts`      | Adds `bookmarks`                      |
-| 3       | `0000000003_timers.ts`         | Adds `timers`                         |
+| Version | File                                              | Effect                                                        |
+| ------- | ------------------------------------------------- | ------------------------------------------------------------- |
+| 1       | `0000000001_initial_schema.ts`                    | Declares core stores (no-op `go`)                             |
+| 2       | `0000000002_bookmarks.ts`                         | Adds `bookmarks` (no-op `go`)                                 |
+| 3       | `0000000003_timers.ts`                            | Adds `timers` (no-op `go`)                                    |
+| 4       | `0000000004_maps.ts`                              | Adds legacy `maps` and `map_files` (no-op `go`)               |
+| 5       | `0000000005_map_locations.ts`                     | Extracts embedded locations from maps into `map_locations`    |
+| 6       | `0000000006_map_location_one_to_one.ts`           | Normalizes a map to one `locationId`                          |
+| 7       | `0000000007_map_layers.ts`                        | Adds the base layer and assigns marker/area layers            |
+| 8       | `0000000008_note_content_type.ts`                 | Adds legacy note `contentType`                                |
+| 9       | `0000000009_merge_maps_into_locations.ts`         | Merges legacy maps into `MapLocation.map`                     |
+| 11      | `0000000011_generic_files.ts`                     | Moves jukebox/map files into generic `files` and map metadata |
+| 12      | `0000000012_remove_module_data.ts`                | Removes module IDs, links, bookmarks, and mention entries     |
+| 13      | `0000000013_remove_note_hidden.ts`                | Removes the note `hidden` flag                                |
+| 14      | `0000000014_drawings.ts`                          | Adds `drawings` (no-op `go`)                                  |
+| 15      | `0000000015_remove_note_content_type.ts`          | Converts `draw` notes into drawing records                    |
+| 16      | `0000000016_strip_escaped_block_anchor_spaces.ts` | Cleans escaped spaces before block anchors                    |
+| 17      | `0000000017_remove_encounter_notes.ts`            | Removes encounter `notes`                                     |
+| 18      | `0000000018_rename_encounter_field_to_pawns.ts`   | Renames encounter `monsters` to `pawns`                       |
+| 19      | `0000000019_rename_pawn_store.ts`                 | Moves legacy `monsters` store/refs into `pawns`               |
 
-Sorted in `src/migrations/index.ts`. The database version is the maximum of the
-migration versions and `SCHEMA_VERSION` (18, which renames encounter pawns to
-pawns).
-Adding a migration requires adding it to the `migrations`
-array; new stores are also fed into the Dexie schema through
-`affectedStores`. Indexes require updating `EXPLICIT_SCHEMA`.
-
-Migrations 1–4 are schema-only. Migrations 5–9 and 11–18 also transform or
-create data/stores (map locations, layers, note content type, legacy files,
-removing module links and the note `hidden` flag, the drawings store, the
-removal of note content types, block-anchor cleanup, encounter notes, and the
-encounter pawns rename).
+There is no migration 10. Sorted in `src/migrations/index.ts`. The database
+version is the maximum of the migration versions and `SCHEMA_VERSION` (19).
+Adding a migration requires adding it to the `migrations` array; new stores are
+also fed into the Dexie schema through `affectedStores`. Indexes require
+updating `EXPLICIT_SCHEMA`; migration-added stores default to the `id` index.
 
 ## 7. Backup and restore
 
@@ -266,8 +286,8 @@ parties, map_locations, bookmarks, timers, jukebox_playlists, jukebox_tracks,
 files, map_image_metadata, indexations_mentions`.
 
 It deliberately excludes `sound_packs`, so ambient audio packs do not bloat
-campaign backups, and the legacy `maps` / `map_files` / `jukebox_files` stores,
-which are no longer written.
+campaign backups, and the legacy `maps` / `map_files` / `jukebox_files` /
+`monsters` stores, which are no longer written.
 
 Backup encoding (v2):
 
@@ -285,10 +305,11 @@ Backup encoding (v2):
   entries and legacy `blob-data` sources into the generic file store.
 
 `restoreAllStores(blob)` iterates the same list, clears each store, and writes
-items one by one with validation. Restore is not a single cross-store
-transaction; an invalid item can leave a partially cleared database.
-HomeView reloads the page after a successful restore so every store, timer,
-bookmark, jukebox record, and mention index is refreshed.
+the restored records in one validated `bulkPut` per store. Restore is not a
+single cross-store transaction; an invalid item or mid-way failure can leave a
+partially cleared/restored database. HomeView reloads the page after a
+successful restore so every store, timer, bookmark, jukebox record, and mention
+index is refreshed.
 
 ## 8. State-flow summary
 
@@ -324,7 +345,9 @@ sequenceDiagram
 - `load()` races can overwrite newer in-memory state if two views load the
   same store concurrently (the last `getAll` wins).
 - IndexedDB quota errors are not surfaced to the user.
-- Backup format is not versioned and has no manifest/checksum.
+- Backup archives have a `manifest.json` with format/version and a store list,
+  but no checksum; a truncated or tampered archive is only detected when JSON or
+  file entries fail to parse.
 
 See [proposals/technical-proposals.md](../proposals/technical-proposals.md)
 for a repository/unit-of-work proposal.

@@ -15,8 +15,9 @@ Copy `.env.template` to `.env` and edit it for a persistent local configuration.
 The same flags are documented in
 [`plans/feature-flags.md`](../plans/feature-flags.md).
 
-Strict verification builds every feature-off configuration and checks the
-bundle module graph:
+Strict verification builds the all-on and all-off configurations plus every
+feature-off closure, and checks the bundle module graph and manifest shortcut
+count:
 
 ```bash
 npm run features:verify
@@ -31,8 +32,8 @@ npm run dev:app    # Vite app only, without the help center proxy
 npm run build      # production build to dist/
 npm run preview    # serve the production build
 npm run test       # vitest run
-npm run types-check # tsc --noEmit (does NOT check .vue files)
-npm run format     # prettier via lint-staged config
+npm run types-check # vue-tsc --noEmit (checks .vue scripts and templates)
+npm run format     # prettier via the hook config
 npm run lint       # eslint
 ```
 
@@ -54,7 +55,7 @@ re-optimizes dependencies while a browser tab is still using the old hash.
 The dev watcher ignores `dist/`, `coverage/`, `dev-dist/` and the VitePress cache
 so builds and coverage runs do not trigger app reloads.
 
-Node version is pinned by `.nvmrc` to **22.20.0**; CI uses Node 22. The
+Node version is pinned by `.nvmrc` to **24.18.0**; CI uses Node 24. The
 `package.json` README prerequisite of "Node 18+" is outdated.
 
 Dependencies are exact-pinned (`save-exact = true` in `.npmrc`) and installed
@@ -86,7 +87,8 @@ with `legacy-peer-deps = true`.
 
 ### Assets
 
-- `public/` is copied verbatim (icons, legacy manifest/sw, dice-box assets).
+- `public/` is copied verbatim (icons, browserconfig, manifest screenshots,
+  dice-box assets). The legacy `manifest.json`/`sw.js` are no longer present.
 - `src/assets/styles` includes `global.css` (design tokens/light theme) and
   `quasar-variables.sass` (Quasar palette).
 - Quasar's own CSS is imported in `main.ts`:
@@ -128,13 +130,15 @@ Triggers on pushes/PRs to `main`.
 Steps:
 
 1. Checkout (`actions/checkout@v3`).
-2. Node 22 (`actions/setup-node@v3`).
+2. Node 24 (`actions/setup-node@v3`).
 3. `npm ci`.
 4. `npm run types-check`.
 5. `npm run test:regression`.
-6. `npm run build` with `VITE_COMMIT_SHA=${{ github.sha }}`.
-7. `cp dist/index.html dist/404.html` (SPA fallback for GitHub Pages).
-8. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
+6. `npm test` (full Vitest suite).
+7. `npm run features:verify` (feature-off build matrix and bundle audit).
+8. `npm run build` with `VITE_COMMIT_SHA=${{ github.sha }}`.
+9. `cp dist/index.html dist/404.html` (SPA fallback for GitHub Pages).
+10. Deploy `dist` to `gh-pages` with `peaceiris/actions-gh-pages@v3`.
 
 Vite inlines `VITE_COMMIT_SHA` into the bundle during the build, so no extra
 request is needed at runtime. Locally the value is absent and `CommitBadge`
@@ -146,11 +150,12 @@ The full suite runs in CI along with the regression suite. See
 
 Implications:
 
-- Broken tests and type errors do not block deploys.
+- Type errors, regression failures, the full test suite, the feature-build
+  matrix or the production build all block deploys.
 - `actions/*@v3` and `peaceiris/actions-gh-pages@v3` are older major versions.
 - There is no caching step, so every run reinstalls dependencies.
 - There is no Lighthouse/PWA audit.
-- The build must succeed; if it does, it deploys directly from `main`.
+- If every step passes, the workflow deploys directly from `main`.
 
 ## Hosting assumptions
 
@@ -159,9 +164,8 @@ Implications:
 - Deploying to a domain root requires changing all four places plus icon paths.
 - HTTPS is required for service workers and File System Access.
 - `404.html` copy enables client-side routing fallback.
-- The `manifest` link in `index.html` is `/manifest.json`, while the generated
-  manifest lives at `/dmh-pwa/manifest.webmanifest`; verify which one the
-  production HTML ends up referencing.
+- The PWA plugin injects the generated manifest (`/dmh-pwa/manifest.webmanifest`);
+  `index.html` no longer links a legacy `/manifest.json`.
 
 ## Docker
 
@@ -169,8 +173,6 @@ A `.dockerignore` exists but no `Dockerfile`. No container build is defined.
 
 ## Recommended improvements
 
-- Add a `typecheck` script using `vue-tsc` and run it in CI.
-- Re-enable tests after modernizing them (or run a curated subset).
 - Add dependency caching and pin action versions.
 - Lazy-load heavy routes (jukebox, calculator/Milkdown, dice).
 - Replace the full `mathjs` import with only the required functions.
@@ -179,5 +181,4 @@ A `.dockerignore` exists but no `Dockerfile`. No container build is defined.
   `sanitize-html` if only used by the script). Keep `@3d-dice/*` while the WIP
   dice UI is still planned.
 - Add a bundle analyzer and a size budget.
-- Consolidate PWA assets (single manifest, single worker).
 - Add a `Dockerfile`/static-server config or remove `.dockerignore`.

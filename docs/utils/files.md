@@ -27,6 +27,7 @@ Worker so the UI stays responsive.
 | `fileStorage.ts`             | Generic `files` IndexedDB CRUD, dedupe and OPFS policy |
 | `opfs.ts`                    | OPFS read/write/delete/list/clear and threshold        |
 | `streams.ts`                 | Chunked copy with progress and cancellation            |
+| `objectUrls.ts`              | Single-use object-URL handles                          |
 | `save.ts`                    | Save picker + download fallback                        |
 | `persist.ts`                 | Storage estimate, persistence and byte formatting      |
 | `diagnostics.ts`             | File counts by source kind and unavailable records     |
@@ -46,24 +47,48 @@ Consumers import only the public API from `@/utils/files`; the File System
 Access and blob implementations stay hidden.
 
 ```ts
+canUseFileSystemAccess(): boolean
+canUseDirectoryPicker(): boolean
 pickFiles(options?): Promise<PickedFile[]>
 pickDirectory(options?): Promise<PickedFile[]>
 getPickedFileFromDataTransferItem(item): Promise<PickedFile | null>
 getFileFromSource(source): Promise<File>
 getUrlFromSource(source): Promise<string>
+revokeSourceUrl(url): void
 verifySourcePermission(source, mode?): Promise<boolean>
 
+FILE_STORE
+buildFileSignature(file): string
+createStoredFile(file, source): StoredFile
+getStoredFile(id): Promise<StoredFile | undefined>
+getAllStoredFiles(): Promise<StoredFile[]>
+putStoredFile(file): Promise<void>
+deleteStoredFile(id): Promise<void>
+getStoredFileBlob(file): Promise<Blob>
+getStoredFileUrl(file): Promise<string>
+revokeStoredFileUrl(url): void
+findStoredFileBySignature(signature): Promise<StoredFile | undefined>
+findStoredFileByContentHash(hash): Promise<StoredFile | undefined>
 importFile(file, options?): Promise<{ file: StoredFile; created: boolean }>
 importStoredFile(file, source, options?): Promise<ImportedFile>
 relinkStoredFile(fileId, file, source, options?): Promise<StoredFile | undefined>
 migrateStoredFileToOpfs(file): Promise<StoredFile>
 migrateAllBlobFilesToOpfs(): Promise<number>
 deleteFileIfUnreferenced(fileId): Promise<boolean>
+isFileReferenced(fileId): Promise<boolean>
+registerFileReferenceProvider(provider): () => void
 
 hashBlob(blob, options?): Promise<string>
 hashText(text): Promise<string>
 sha256Hex(data): Promise<string>
-findStoredFileByContentHash(hash): Promise<StoredFile | undefined>
+
+FILE_MARKDOWN_SCHEME
+fileMarkdownUrl(fileId): string
+parseFileMarkdownUrl(url): string | null
+uploadStoredFile(file): Promise<string>
+resolveStoredFileUrl(url): Promise<string>
+hydrateStoredFileUrls(root): Promise<void>
+clearStoredFileUrlCache(): void
 
 openZip(blob): Promise<ZipEntries>
 readZipText(entries, candidates): Promise<string | null>
@@ -74,7 +99,9 @@ copyBlob(blob, sink, options?): Promise<void>
 saveBlob(blob, options): Promise<'saved' | 'downloaded' | 'cancelled'>
 createObjectUrlHandle(blob): { url, revoke }
 
+OPFS_THRESHOLD_BYTES
 supportsOpfs(): boolean
+opfsPathFor(fileId): string
 writeOpfsFile(path, blob, options?): Promise<void>
 readOpfsFile(path): Promise<File>
 deleteOpfsFile(path): Promise<void>
@@ -116,6 +143,16 @@ fallback for browsers that never emit `cancel`.
 
 Handles survive page reloads in Chromium, but the browser may require a new
 permission grant. Tracks that fail permission simply fail to play.
+
+## Markdown file references
+
+Markdown stores `dmh-file://<fileId>` links. `uploadStoredFile()` imports the
+file through the generic file API and returns that URL; `resolveStoredFileUrl()`
+looks up the record and caches a temporary object URL, and
+`hydrateStoredFileUrls()` rewrites `img[src]`, `img[data-file-src]` and
+`a[href]` nodes inside rendered Markdown. `clearStoredFileUrlCache()` revokes
+all cached URLs. Image uploads/copy use the same flow, so note and entity
+content references survive reloads without storing the bytes inline.
 
 ## Duration extraction
 
@@ -237,8 +274,9 @@ same streaming path through `saveBlob()`.
 
 ## Backup implications
 
-Backup/restore includes `files`, `jukebox_tracks`, `jukebox_playlists` and
-`map_image_metadata`.
+Backup/restore includes the `files` store alongside every other main store
+(`jukebox_tracks`, `jukebox_playlists`, `map_image_metadata`, notes, entities,
+timers, bookmarks, drawings and the mention index).
 
 Backup v2 writes:
 
@@ -262,7 +300,7 @@ available and falls back to IDB Blobs. Restoring an older backup still converts
 - No quota warning before a write; the Settings panel reports usage after the
   fact.
 - Worker-per-file and sequential metadata extraction make bulk import slow.
-- Color/palette output is currently wrong.
+- Color/palette sampling does not filter transparent pixels.
 - FileSystem handles cannot be serialized; they are marked unavailable or
   copied only when external files are explicitly included in a backup.
 - Generic file IDs are generated; legacy IDs are preserved by migration.

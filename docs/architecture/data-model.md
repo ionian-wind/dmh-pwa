@@ -13,9 +13,11 @@
 - IDs are generated with `nanoid(10)` (`utils/storage.ts#generateId`). The
   alphabet includes letters, digits, `_`, and `-`.
 - Timestamps are Unix milliseconds from `Date.now()`.
-- All records are plain JSON-serializable objects; `deepUnwrap()` converts Vue
+- Most records are plain JSON-serializable objects; `deepUnwrap()` converts Vue
   proxies/refs before persistence and explicitly preserves `Blob` and
-  `FileSystemFileHandle`.
+  `FileSystemFileHandle`. File-backed records (`files`, jukebox, maps) may
+  therefore contain non-JSON sources and are the reason backup has a binary
+  encoding.
 - Shapes are defined twice: TypeScript interfaces in `src/types/index.ts` and
   JSON Schemas in `src/schemas/*.json`. They are not generated from each other
   and have drifted in places.
@@ -28,14 +30,14 @@
 | ---------- | ---------------- | ------------------------------------------------------------- |
 | `title`    | `string`         | May be empty when the note has content                        |
 | `content`  | `string`         | Markdown source; drawings are embedded as `drawing://` blocks |
-| `typeId`   | `string \| null` | References a `NoteType`; UI for setting it is commented out   |
+| `typeId`   | `string \| null` | References a `NoteType`; edited from `NoteOptions`            |
 | `tags`     | `string[]`       | Used for card chips and route-based tag filtering             |
-| `links`    | `NoteLink[]?`    | Links to parties, pawns, encounters and characters            |
-| `parentId` | `string?`        | Declared in TS, not persisted by schemas/UI                   |
+| `links`    | `NoteLink[]?`    | Parties, pawns, encounters and characters                     |
+| `parentId` | `string?`        | Declared in TS, not written by the current UI                 |
 | `metadata` | `object?`        | Declared in TS, unused                                        |
 
 Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
-`typeId`, `tags`, `createdAt`, `updatedAt`.
+`typeId`, `tags`, `createdAt`, `updatedAt`; `links` is optional.
 
 `NoteLink`:
 
@@ -45,6 +47,10 @@ Schema: `src/schemas/note.schema.json` requires `id`, `title`, `content`,
   id: string;
 }
 ```
+
+Location links are **not** stored in `note.links`; the relationship helper
+writes them to the location's `entities` array instead. See "Link storage"
+below.
 
 ### Drawing
 
@@ -66,36 +72,42 @@ block removes both the node and the `drawings` record.
 | `fields`                       | `NoteTypeField[]?` | Declared but never rendered    |
 
 `NoteTypeField` describes `text | number | boolean | date | select |
-multiselect` fields with optional options/defaults. No code consumes these
-fields. The note editor UI for selecting a type is commented out.
+multiselect` fields with optional options/defaults. No UI consumes these fields;
+`NoteTypeSelector` creates note types with an empty `fields` array. The note type
+itself is selectable from `NoteOptions`.
 
 ### Party
 
-| Field                  | Type       | Notes         |
-| ---------------------- | ---------- | ------------- |
-| `name`                 | `string`   | Required      |
-| `description`, `notes` | `string?`  | Editor fields |
-| `characters`           | `string[]` | Character IDs |
+| Field         | Type       | Notes         |
+| ------------- | ---------- | ------------- |
+| `name`        | `string`   | Required      |
+| `description` | `string?`  | Editor field  |
+| `characters`  | `string[]` | Character IDs |
+
+`description` is not declared in `party.schema.json`; the schema still accepts
+it because additional properties are allowed. There is no `notes` field on
+`Party` in the current TS type.
 
 ### Character (PlayerCharacter)
 
-| Field   | Type      | Notes     |
-| ------- | --------- | --------- |
-| `name`  | `string`  | Required  |
-| `notes` | `string?` | Free text |
+| Field     | Type      | Notes                           |
+| --------- | --------- | ------------------------------- |
+| `name`    | `string`  | Required                        |
+| `notes`   | `string?` | Markdown free text              |
+| `picture` | `string?` | Stored file ID for the portrait |
 
-The README advertises stats, equipment, and full character sheets; the actual
-type has only name and notes. Older test suites still assume `level`, `class`,
-`stats`, `hitPoints`, `armorClass`, etc.
+The current type has no stats, equipment, HP, or class fields. `PlayerCharacter`
+is an alias of the shared `Character` interface.
 
 ### Pawn
 
-| Field   | Type      | Notes     |
-| ------- | --------- | --------- |
-| `name`  | `string`  | Required  |
-| `notes` | `string?` | Free text |
+| Field     | Type      | Notes                           |
+| --------- | --------- | ------------------------------- |
+| `name`    | `string`  | Required                        |
+| `notes`   | `string?` | Markdown free text              |
+| `picture` | `string?` | Stored file ID for the portrait |
 
-Again, no stat block/CR/HP fields exist.
+`Pawn` is another alias of `Character`; no stat block/CR/HP fields exist.
 
 ### Encounter
 
@@ -122,34 +134,37 @@ Again, no stat block/CR/HP fields exist.
 ```ts
 {
   id: string;                 // unique per participant instance
-  name: string;               // REQUIRED by TS, but never populated by creators
   type: 'player' | 'pawn';
   referenceId?: string;       // character or pawn ID
   notes?: string;
   initiative: number;
   hasActed: boolean;
   isPostponed: boolean;
+  isExcluded?: boolean;       // stays listed, skipped in turn handling
   createdAt, updatedAt: number;
 }
 ```
 
-The schema does **not** require `name`, and both `PartySelector` and
-`CombatView` create combatants without it. Display names are resolved from
-`referenceId` at render time, so this mismatch is type-only today but blocks a
-clean type check.
+There is no `name` field. `PartySelector` and `CombatView` create combatants
+without one, and display names are resolved from `referenceId` at render time.
+The JSON schema only requires `id`, `type`, and `initiative` and does not list
+`hasActed`, `isPostponed`, or `isExcluded`, but additional properties are
+accepted on write.
 
 ### Bookmark
 
-| Field       | Type     | Notes                                                         |
-| ----------- | -------- | ------------------------------------------------------------- |
-| `noteId`    | `string` | Legacy anchor mirror; matches `anchorId` for note bookmarks   |
-| `title`     | `string` | Editable label; created as `''` then resolved from note title |
-| `ownerKind` | `string` | Only `note` is supported                                      |
-| `ownerId`   | `string` | Owning note ID                                                |
-| `anchorId`  | `string` | Bookmarked heading/paragraph anchor                           |
+| Field       | Type      | Notes                                                       |
+| ----------- | --------- | ----------------------------------------------------------- |
+| `noteId`    | `string`  | Legacy anchor mirror; matches `anchorId` for note bookmarks |
+| `title`     | `string`  | Label captured from the heading at bookmark time            |
+| `ownerKind` | `'note'?` | Only `note` is supported                                    |
+| `ownerId`   | `string?` | Owning note ID                                              |
+| `anchorId`  | `string?` | Bookmarked heading/paragraph anchor                         |
 
-Uniqueness is enforced only in application code
-(`findByOwnerAndAnchor`), not by an IndexedDB index.
+The TS type marks `ownerKind`, `ownerId`, and `anchorId` optional; the store
+defaults missing values to `note`, `''`, and `noteId` respectively. Uniqueness
+is enforced only in application code (`findByOwnerAndAnchor`), not by an
+IndexedDB index.
 
 ### Timer
 
@@ -173,14 +188,18 @@ Defined in `src/jukebox/types.ts` and intentionally **not** schema-validated
 ```ts
 {
   id, name, size, type, lastModified, signature, createdAt, updatedAt,
+  contentHash?, // optional SHA-256
   source:
     | { kind: 'handle'; handle: FileSystemFileHandle }
     | { kind: 'blob'; blob: Blob }
+    | { kind: 'opfs'; path: string }
 }
 ```
 
 Files are deduplicated by the metadata signature
-`name | size | lastModified | type`. Business records reference `files.id`.
+`name | size | lastModified | type`; `contentHash` is optional. Business records
+reference `files.id`. Large blob-backed files can be promoted to OPFS by the map
+and settings flows.
 
 **JukeboxTrack**
 
@@ -207,9 +226,14 @@ Files are deduplicated by the metadata signature
 ```ts
 {
   id, createdAt, updatedAt,
-  name, description?, trackIds, sortOrder?
+  name, description?, trackIds, sortOrder?,
+  links?: MapEntityRef[]
 }
 ```
+
+`links` is persisted by the shared relation helper when a playlist is linked to
+locations, pawns, encounters, or parties. Playlists are also offered as a link
+target from map locations.
 
 ### Map data in locations
 
@@ -248,7 +272,8 @@ Map image bytes live in the generic `files` store.
 
 ```ts
 {
-  (id, title);
+  id: string;
+  title: string;
 }
 ```
 
@@ -275,7 +300,7 @@ Map image bytes live in the generic `files` store.
   locationId?: string | null,
   layerId: string,
   entities: MapEntityRef[],
-  icon, // RPG Awesome class without the "ra" prefix
+  icon, // RPG Awesome class, e.g. "ra-castle"
   color, // CSS color
   backgroundColor? // optional badge colour, empty for transparent
 }
@@ -328,38 +353,69 @@ erDiagram
   COMBATANT }o--o| PAWN : "referenceId"
   JUKEBOX_FILE ||--o{ JUKEBOX_TRACK : "track.fileId"
   JUKEBOX_PLAYLIST }o--o{ JUKEBOX_TRACK : "playlist.trackIds"
+  NOTE }o--o{ PARTY : "note.links"
+  NOTE }o--o{ PAWN : "note.links"
+  NOTE }o--o{ ENCOUNTER : "note.links"
+  NOTE }o--o{ CHARACTER : "note.links"
+  LOCATION }o--o{ NOTE : "location.entities"
+  LOCATION }o--o{ PLAYLIST : "location.entities / playlist.links"
   NOTE ||--o{ MENTION_LINK : "indexations_mentions"
 ```
+
+### Link storage
+
+Cross-entity links are persisted per owner record rather than in one link table:
+
+| Owner     | Field / store                   | Target kinds                                                |
+| --------- | ------------------------------- | ----------------------------------------------------------- |
+| Note      | `links: NoteLink[]`             | party, pawn, encounter, character                           |
+| Location  | `entities: MapEntityRef[]`      | note, party, pawn, encounter, character, location, playlist |
+| Playlist  | `links: MapEntityRef[]`         | location, pawn, encounter, party                            |
+| Party     | `characters: string[]`          | character                                                   |
+| Encounter | `pawns: Record<string, number>` | pawn with count                                             |
+
+`useEntityLinkRelations()` reads and writes these fields depending on the pair
+of kinds. Note→location links are written to the location's `entities` array;
+location→note links are read from there as well. This means the link is not
+necessarily stored on the entity from which the user opened the link dialog.
 
 ### Mentions index
 
 `indexations_mentions` is a separate object store keyed by `"kind:id"`. Each
 record is `{ id: 'note:abc', links: [{kind, id}, ...] }`. `getBacklinks` scans
-all records. Only note content is indexed (`noteStore.create/update/remove`);
-other entity types are never written to the index, so "mentions" sidebars can
-currently only show note→entity and note→note connections.
+all records. Only note content is indexed (`noteStore.create/update/remove`), and
+the extractor recognizes `note:`, `party:`, `pawn:`, `encounter:`, and
+`location:` links. Other entity types are never written to the index, and
+playlists are not extracted. "Mentions" sidebars therefore combine note mentions
+with note backlinks; they cannot show entity→entity mentions.
 
 ## Referential integrity
 
-There are no foreign keys, cascade rules, or cleanup routines. Consequences:
+There are no foreign keys, cascade rules, or general cleanup routines.
+Consequences:
 
-- Deleting a character leaves it in `party.characters`; `PartyView` filters via
-  `characterStore`, so it disappears from the list but the ID remains and is
-  re-saved on the next party update.
-- Deleting a pawn leaves its key in `encounter.pawns`; the encounter
-  table simply does not render it, but the count is still exported.
-- Deleting a track removes its file record even if another track references the
-  same `fileId`.
+- Deleting a character leaves its ID in `party.characters`, note `links`, and
+  location `entities`; views filter missing entities, but the IDs remain and can
+  be re-saved on the next update.
+- Deleting a pawn leaves its key in `encounter.pawns` and in note/location links;
+  the encounter table simply does not render it.
+- Deleting a track removes it from playlists and then calls
+  `deleteFileIfUnreferenced`. The shared file provider registry checks tracks,
+  map locations, character portraits, and pawn portraits before deleting a
+  `files` record.
+- Deleting a location detaches markers/areas in other locations that point at
+  it and deletes the map file only when no provider references it.
 
 ## Schema/Type drift
 
-| Area                                     | TS              | JSON Schema      | Effect                           |
-| ---------------------------------------- | --------------- | ---------------- | -------------------------------- |
-| `NoteType.description/color/icon/fields` | present         | absent           | same                             |
-| `Party.description/notes`                | present         | absent           | same                             |
-| `Combatant.name`                         | required        | absent           | creators omit it                 |
-| `Timer.title/description`                | optional string | `string \| null` | nulls pass validation but not TS |
-| Bookmarks noteId                         | string          | string           | semantic ambiguity, not drift    |
+| Area                                        | TS                | JSON Schema                  | Effect                                                           |
+| ------------------------------------------- | ----------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `NoteType.description/color/icon/fields`    | present           | absent                       | accepted as additional properties                                |
+| `Party.description`                         | present           | absent                       | accepted as additional properties                                |
+| `Note.parentId`, `Note.metadata`            | present           | absent                       | accepted, but not written by the UI                              |
+| `Combatant.hasActed/isPostponed/isExcluded` | present           | absent                       | accepted as additional properties                                |
+| `Timer.title/description`                   | optional string   | `string \| null`             | nulls pass validation but not TS                                 |
+| `MapEntityRef.kind`                         | excludes `module` | enum still includes `module` | legacy values are accepted by validation, migration removes them |
 
 Because schemas are only applied on **write**, legacy or imported records that
 were written before a schema change are not re-validated on load.

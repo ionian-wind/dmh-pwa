@@ -1,8 +1,7 @@
 # Owlbear's DMH — Project Documentation
 
-> Generated from the source tree at commit `71bb33e`. The goal of this
-> documentation is to describe the code that exists, not an idealized version
-> of it.
+> Generated from the current working tree. The goal of this documentation is to
+> describe the code that exists, not an idealized version of it.
 
 ## What this project is
 
@@ -12,50 +11,54 @@ parties, pawns, encounters, combats, timers, and a local music jukebox in the
 browser. There is no server and no account system: all user data lives in
 IndexedDB, with a small amount of configuration in `localStorage`.
 
-| Concern           | Choice                                                   |
-| ----------------- | -------------------------------------------------------- |
-| UI framework      | Vue 3 (`<script setup>`), TypeScript                     |
-| Component library | Quasar 2 + Tabler icons                                  |
-| State             | Pinia 4 (setup stores) + `pinia-shared-state`            |
-| Storage           | IndexedDB through Dexie, JSON Schema validation with Ajv |
-| Build             | Vite 8, `vite-plugin-pwa` (Workbox)                      |
-| Markdown          | markdown-it for rendering, Milkdown/Crepe for editing    |
-| Audio             | Howler for playback, `music-metadata` in a web worker    |
-| Tests             | Vitest 5 + `@vue/test-utils` + happy-dom/jsdom           |
-| Hosting target    | GitHub Pages under `/dmh-pwa`                            |
+| Concern           | Choice                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| UI framework      | Vue 3 (`<script setup>`), TypeScript                                       |
+| Component library | Quasar 2 + Tabler icons                                                    |
+| State             | Pinia 4 (setup stores) + `pinia-shared-state`                              |
+| Storage           | IndexedDB through Dexie, JSON Schema validation with Ajv                   |
+| Build             | Vite 8, `vite-plugin-pwa` (Workbox)                                        |
+| Markdown          | markdown-it for cards/exports, Milkdown/Crepe for editors and detail views |
+| Audio             | Howler for playback, `music-metadata` in a web worker                      |
+| Tests             | Vitest 5 + `@vue/test-utils`, jsdom (happy-dom installed)                  |
+| Hosting target    | GitHub Pages under `/dmh-pwa`                                              |
 
 ## Documentation map
 
 ### Architecture
 
-| Document                                                                                   | Covers                                                           |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| [architecture/overview.md](architecture/overview.md)                                       | Boot sequence, layers, layout shell, routing, error handling     |
-| [architecture/data-model.md](architecture/data-model.md)                                   | Every entity, fields, relationships, ID/timestamp conventions    |
-| [architecture/persistence-and-state.md](architecture/persistence-and-state.md)             | IndexedDB, base store, Pinia stores, schemas, migrations, backup |
-| [architecture/i18n.md](architecture/i18n.md)                                               | Locale loading, language persistence, key conventions            |
-| [architecture/editor-dialog-pattern.md](architecture/editor-dialog-pattern.md)             | Required editor dialog tabs, field ordering, entity categories   |
-| [architecture/pwa.md](architecture/pwa.md)                                                 | Manifest, service worker, install prompt, update flow            |
-| [architecture/feature-flags.md](architecture/feature-flags.md)                             | Build-time feature flags, ownership and strict verification      |
-| [architecture/legacy-and-unreachable-code.md](architecture/legacy-and-unreachable-code.md) | Coverage exclusions and documented unreachable branches          |
+| Document                                                                                         | Covers                                                           |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| [architecture/overview.md](architecture/overview.md)                                             | Boot sequence, layers, layout shell, routing, error handling     |
+| [architecture/data-model.md](architecture/data-model.md)                                         | Every entity, fields, relationships, ID/timestamp conventions    |
+| [architecture/persistence-and-state.md](architecture/persistence-and-state.md)                   | IndexedDB, base store, Pinia stores, schemas, migrations, backup |
+| [architecture/i18n.md](architecture/i18n.md)                                                     | Locale loading, language persistence, key conventions            |
+| [architecture/editor-dialog-pattern.md](architecture/editor-dialog-pattern.md)                   | Required editor dialog tabs, field ordering, entity categories   |
+| [architecture/pwa.md](architecture/pwa.md)                                                       | Manifest, service worker, install prompt, update flow            |
+| [architecture/feature-flags.md](architecture/feature-flags.md)                                   | Build-time feature flags, ownership and strict verification      |
+| [architecture/markdown-rendering-performance.md](architecture/markdown-rendering-performance.md) | Card/detail Markdown rendering benchmark and decision            |
+| [architecture/legacy-and-unreachable-code.md](architecture/legacy-and-unreachable-code.md)       | Coverage exclusions and documented unreachable branches          |
 
 ### Feature parts
 
-| Document                                                                                         | Covers                                                                   |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| [features/notes.md](features/notes.md)                                                           | Note list, editor, detail page, tags                                     |
-| [features/characters.md](features/characters.md)                                                 | Player characters                                                        |
-| [features/parties.md](features/parties.md)                                                       | Parties and character membership                                         |
-| [features/pawns.md](features/pawns.md)                                                           | Pawns                                                                    |
-| [features/encounters.md](features/encounters.md)                                                 | Encounter definitions and pawn rosters                                   |
-| [features/combat.md](features/combat.md)                                                         | Combat lifecycle, initiative, turns                                      |
-| [features/timers.md](features/timers.md)                                                         | Countdown timers and global timer loop                                   |
-| [features/jukebox.md](features/jukebox.md)                                                       | Track import, metadata, playlists, playback                              |
-| [features/maps.md](features/maps.md)                                                             | Map images, locations, entity bindings, markers and icons                |
-| [features/calculator.md](features/calculator.md)                                                 | Arithmetic and unit converter dialog                                     |
-| [features/dice-roller.md](features/dice-roller.md)                                               | Plugin-based dice parser/evaluator (work in progress, not yet connected) |
-| [features/dice-probability-calculator/README.md](features/dice-probability-calculator/README.md) | AnyDice-compatible probability library, spec, validation matrix          |
-| [features/markdown-and-mentions.md](features/markdown-and-mentions.md)                           | Markdown pipeline, entity links, mention index                           |
+| Document                                                                                           | Covers                                                                      |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [features/notes.md](features/notes.md)                                                             | Note list, editor, detail page, tags                                        |
+| [features/characters.md](features/characters.md)                                                   | Player characters                                                           |
+| [features/parties.md](features/parties.md)                                                         | Parties and character membership                                            |
+| [features/pawns.md](features/pawns.md)                                                             | Pawns                                                                       |
+| [features/encounters.md](features/encounters.md)                                                   | Encounter definitions and pawn rosters                                      |
+| [features/combat.md](features/combat.md)                                                           | Combat lifecycle, initiative, turns                                         |
+| [features/timers.md](features/timers.md)                                                           | Countdown timers and global timer loop                                      |
+| [features/jukebox.md](features/jukebox.md)                                                         | Track import, metadata, playlists, playback                                 |
+| [ambient-sound-configurator.md](ambient-sound-configurator.md)                                     | Ambient sound packs, scenes, layers and playback                            |
+| [features/maps.md](features/maps.md)                                                               | Map images, locations, entity bindings, markers and icons                   |
+| [features/calculator.md](features/calculator.md)                                                   | Arithmetic and unit converter dialog                                        |
+| [features/dice-roller.md](features/dice-roller.md)                                                 | Plugin-based dice parser/evaluator (work in progress, not yet connected)    |
+| [features/dice-probability-calculator/README.md](features/dice-probability-calculator/README.md)   | AnyDice-compatible probability library, specification and validation matrix |
+| [features/dice-probability-calculator/library.md](features/dice-probability-calculator/library.md) | Probability library API and usage                                           |
+| [features/dice-probability-calculator/spec.md](features/dice-probability-calculator/spec.md)       | Probability language specification                                          |
+| [features/markdown-and-mentions.md](features/markdown-and-mentions.md)                             | Markdown pipeline, entity links, mention index                              |
 
 ### Components and utilities
 
@@ -63,7 +66,6 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | -------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [components/common-components.md](components/common-components.md)         | Shared cards, lists, headers, selectors, inputs        |
 | [components/help-center.md](components/help-center.md)                     | Static Markdown help center, locales, images and links |
-| [components/tree.md](components/tree.md)                                   | Recursive drag-and-drop tree used by the book editor   |
 | [components/markdown-editor.md](components/markdown-editor.md)             | Milkdown wrapper and mention insertion popup           |
 | [components/modals-and-navigation.md](components/modals-and-navigation.md) | Modal stack, dialogs, drawer injection, layout regions |
 | [utils/files.md](utils/files.md)                                           | File System Access / Blob handlers and metadata worker |
@@ -74,20 +76,23 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | Document                                                   | Covers                                                |
 | ---------------------------------------------------------- | ----------------------------------------------------- |
 | [tooling/scripts.md](tooling/scripts.md)                   | Markdown converter, migration generator, icon scripts |
-| [tooling/testing.md](tooling/testing.md)                   | Test layout, current results, why tests fail          |
+| [tooling/testing.md](tooling/testing.md)                   | Test layout, results and coverage                     |
 | [tooling/build-and-deploy.md](tooling/build-and-deploy.md) | Vite config, PWA generation, CI/deploy                |
 
 ### Plans
 
-Plans are committed work expected to be implemented. Proposals are optional
-ideas that may never be implemented.
+Plans are committed work expected to be implemented, plus implementation
+records that are now complete. Proposals are optional ideas that may never be
+implemented.
 
-| Document                                                         | Covers                                             |
-| ---------------------------------------------------------------- | -------------------------------------------------- |
-| [plans/README.md](plans/README.md)                               | Plan conventions and current status                |
-| [plans/scribe-and-play-modes.md](plans/scribe-and-play-modes.md) | Scribe preparation and Play session modes          |
-| [plans/feature-flags.md](plans/feature-flags.md)                 | Build-time menu/entity feature flags               |
-| [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)       | Manifest, install UX, safe-area and PWA audit plan |
+| Document                                                           | Covers                                             |
+| ------------------------------------------------------------------ | -------------------------------------------------- |
+| [plans/README.md](plans/README.md)                                 | Plan conventions and current status                |
+| [plans/scribe-and-play-modes.md](plans/scribe-and-play-modes.md)   | Scribe preparation and Play session modes          |
+| [plans/feature-flags.md](plans/feature-flags.md)                   | Build-time menu/entity feature flags               |
+| [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)         | Manifest, install UX, safe-area and PWA audit plan |
+| [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md) | Milkdown detail-view renderer plan and status      |
+| [plans/remove-modules-entity.md](plans/remove-modules-entity.md)   | Completed Modules removal and migration record     |
 
 ### Cross-cutting analysis
 
@@ -131,13 +136,14 @@ src/
   utils/dice-probability-calculator/ AnyDice-compatible probability library
   probability-calculator/          probability calculator page, Monaco + charts
   helpcenter/links.ts              static help-center URL helper
-  components/                      shared UI + Tree + PWA + dialogs
+  features/                        feature catalog integrations (routes, nav, links)
+  components/                      shared UI + PWA + dialogs
   <domain>/                        one folder per feature domain
   i18n/locales/{en,ru}.json        translations
 helpcenter/                        VitePress site: localized Markdown + images
-tests/                             Vitest suites (largely stale)
-scripts/                           offline content/migration tooling
-public/                            icons, legacy manifest, legacy sw.js, dice assets
+tests/                             Vitest suites and Playwright E2E helpers
+scripts/                           feature verification, benchmark and content tooling
+public/                            icons, screenshots, dice-box assets
 docs/                              this documentation
 ```
 
@@ -145,13 +151,13 @@ docs/                              this documentation
 
 Three facts materially affect how the code should be read:
 
-1. **The test suite is current and green.** `npm test` reports
-   **1559 / 1559 passing tests across 193 files** (after replacing obsolete suites
-   that targeted removed APIs). The dedicated regression suite is also green:
-   `npm run test:regression` → **18 / 18 passing**. See
-   [tooling/testing.md](tooling/testing.md).
-2. **The type check uses `vue-tsc`** (`npm run types-check`) and reports
-   **0 errors**. CI runs the type check, regression suite, and build. See
+1. **The test suite is current and green.** At this working tree, `npm test`
+   reports **1615 / 1615 passing tests across 207 files**. The dedicated
+   regression suite is also green: `npm run test:regression` → **18 / 18
+   passing**. See [tooling/testing.md](tooling/testing.md).
+2. **The type check uses `vue-tsc`** (`npm run types-check`) and currently
+   reports **0 errors**. CI runs the type check, regression suite, full test
+   suite, feature build matrix, and production build. See
    [proposals/fixes-applied.md](proposals/fixes-applied.md).
 3. **Some features are intentionally incomplete.** The dice engine and 3D dice
    UI are explicitly work in progress and are not treated as defects. All

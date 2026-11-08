@@ -8,21 +8,28 @@ the public application flow.
 
 | Area                                                                        | Reason                                                                                                                                              |
 | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.ts`, `src/App.vue`, `src/router.ts`                               | Application shell, bootstrap and route table.                                                                                                       |
+| `src/i18n/**`, `src/types/**`, `src/schemas/**`                             | Declarative locale/type/schema data.                                                                                                                |
 | `src/utils/dice-roller/plugins/dice/ast.ts`                                 | Legacy CST-to-AST mapper retained for the old dice-roller engine. Most remaining paths are fallbacks for CST shapes the current parser never emits. |
 | `src/utils/dice-roller/core/index.ts`                                       | Legacy dice-roller core. The probability calculator is the maintained evaluation path.                                                              |
 | `src/components/common/milkdown/**`                                         | Milkdown editor integration wrappers.                                                                                                               |
 | `src/components/common/MarkdownEditor.vue`                                  | Integration wrapper that selects the Markdown/Milkdown editor implementation.                                                                       |
 | `src/components/common/MonacoEditor.vue`, `src/components/common/monaco.ts` | Monaco editor integration and its module loader.                                                                                                    |
-| `src/notes/NoteCanvas.vue`                                                  | Quickdraw drawing-canvas integration.                                                                                                               |
 | `src/notes/NoteViewSidebar.vue`                                             | Thin sidebar adapter around `Mentions`.                                                                                                             |
 | `src/ambient-sound/components/SceneLinksPanel.vue`                          | Thin wrapper around `EntitiesLinking`.                                                                                                              |
 | `src/utils/dice-probability-calculator/tokens.ts`                           | Chevrotain token definitions; branch paths belong to the lexer library.                                                                             |
 | `src/components/common/entityLinking/useMapEntityCatalog.ts`                | Adapter over the entity stores; behavior is covered through its consumers.                                                                          |
 | `src/features/**`, `src/composables/useFeatureStores.ts`                    | Build-time feature wiring; exercised through the production build matrix instead of unit coverage.                                                  |
-| `src/App.vue`, `src/main.ts`, `src/router.ts`                               | Application shell, bootstrap and route table.                                                                                                       |
+
+The exclusion list also names `src/components/Tree/**`,
+`src/notes/NoteCanvas.vue`, `src/probability-calculator/ProbabilitySyntaxView.vue`,
+`src/utils/files/BlobFileHandler.ts`, and `src/modules/ModuleDocumentTree.vue`.
+Those paths no longer exist in the source tree and the patterns match nothing;
+the current drawing canvas lives at `src/drawings/NoteCanvas.vue`.
 
 Generated output (`dist/`, `dev-dist/`, service workers), standalone scripts and
-type declarations are excluded as before.
+type declarations are excluded as before; the config also excludes `tests/`,
+`coverage/`, and configuration files.
 
 ## Documented unreachable branches
 

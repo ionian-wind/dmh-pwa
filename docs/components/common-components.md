@@ -8,9 +8,10 @@ covered in their feature documents.
 
 ### `BaseCard.vue`
 
-Props: `showView`, `showEdit`, `showDelete`, `title`, `dragEntity`.
-Slots: `header`, default, `actions`.
-Emits: `view`, `edit`, `delete`.
+Props: `showView`, `showEdit`, `showDelete`, `showCopy`, `hoverExpand`,
+`title`, `dragEntity`.
+Slots: `media`, `header`, default, `actions`.
+Emits: `view`, `edit`, `delete`, `copy`.
 
 - Header (title or `header` slot) is clickable and emits `view`.
 - Body renders only if the default slot has meaningful content (ignores
@@ -30,7 +31,9 @@ Emits: `view`, `edit`, `delete`.
   bar animate in together. On leave, the height and bar animate out together
   before the floating state ends and the card returns to normal flow.
 - Touch devices keep actions in normal flow and permanently visible.
-- Copy is supported when `showCopy` is set; domain cards enable it.
+- `showCopy` adds the copy action; domain cards enable it.
+- `hoverExpand` can disable the hover growth for cards that manage their own
+  expansion (the note card uses it while expanded).
 - When `dragEntity` (`{ kind, id, title }`) is present, a drag handle appears
   at the right edge of the title on hover. Dragging uses a small offscreen
   `QCard` ghost with the entity icon and title.
@@ -38,18 +41,23 @@ Emits: `view`, `edit`, `delete`.
 ### Domain cards
 
 Thin wrappers that forward events:
-`NoteCard`, `PartyCard`, `PawnCard`, `CharacterCard`,
-`EncounterCard`, `TrackCard` (jukebox, custom layout).
+`NoteCard`, `PartyCard`, `PawnCard`, `CharacterCard`, `EncounterCard`,
+`LocationCard`, `JukeboxPlaylistCard`, and `TrackCard` (jukebox, custom
+layout).
 
 Variations:
 
-- `NoteCard` renders Markdown, clamps at 600px, and has tag chips.
-- `PartyCard` shows descriptions and metadata.
-- `PawnCard` hides all actions unless `showActions` is passed (no caller
-  does).
-- `EncounterCard` adds a run-combat button.
-- `CharacterCard` only shows the title.
-- `TrackCard` is a `QItem` with artwork, duration, add/remove actions.
+- `NoteCard` renders Markdown, clamps at 600px, shows tag chips, and adds
+  download and expand/collapse actions.
+- `PartyCard` shows a three-line-clamped description and a character count.
+- `PawnCard` and `CharacterCard` show a picture and a short plain-text notes
+  preview. `PawnCard` gates every action behind `showActions`; the pawns list
+  passes `true`.
+- `EncounterCard` adds a run-combat action and a pawn-count summary.
+- `LocationCard` shows a description and location drag metadata.
+- `JukeboxPlaylistCard` shows the name, track count and a play action.
+- `TrackCard` is a `QItem` with artwork, duration, playback progress, bulk
+  selection, drag handle, and add/remove menu actions.
 
 ### `SidebarItem.vue`
 
@@ -63,6 +71,14 @@ Slots: `left`, default, `actions`.
 - `actions` holds edit/delete buttons and is only revealed on hover or keyboard
   focus.
 - Omit `color` for no colored side border.
+
+### `SidebarActionItem.vue`
+
+`QItem`-based sidebar row for playable/removable entries. Props: `title`,
+`active`, `playing`, `clickable`, `playable`, `removable`, `actionsVisible`,
+`removeLabel`. Emits `activate`, `toggle` and `remove`; the `leading` and
+`actions` slots add icons or extra buttons. Used by the ambient scene panel and
+the jukebox playlist list.
 
 ### `MonacoEditor.vue`
 
@@ -80,13 +96,15 @@ Emits: `update:modelValue`, `ready`.
 ### `BaseListView.vue`
 
 Props: `items`, `cardComponent`, `editorComponent`, `emptyMessage`,
-`createTitle`, `cardProps(item)`, `editorProps(item)`, `sidePanelVisible`,
-`viewStyle` (`masonry` | `grid` | anything else → list), `draggable`,
-`hideHeader`, `rightDrawerIcon`.
+`emptyActionTitle`, `createTitle`, `createLoading`, `cardProps(item)`,
+`editorProps(item)`, `sidePanelVisible`, `viewStyle` (`masonry` | `grid` |
+anything else → list), `draggable`, `dragHandle`, `hideHeader`,
+`rightDrawerIcon`, `showSearch`, `searchQuery`, `searchPlaceholder`, `tabs`,
+`activeTab`, `headerButtons`, `leftHeaderButtons`.
 
 Emits: `create`, `edit`, `delete`, `submit`, `cancel`, `update:searchQuery`,
 `view`, `tag-click`, `copy`, `update:sidePanelVisible`, `sort`, `drop`,
-`dragover`, `dragleave`.
+`dragover`, `dragleave`, `tab-click`, `update:activeTab`.
 
 Behavior:
 
@@ -95,8 +113,10 @@ Behavior:
 - Internally opens the editor when a card emits `edit`; create resets the
   editing item.
 - Uses the typed `useLayout()` store to publish a `ViewHeader` with create
-  controls. Optional search props/events are still forwarded when supplied, but
-  no list view enables the header search field right now.
+  controls. It also forwards the optional header tabs (`tabs`/`activeTab`),
+  `headerButtons` and `leftHeaderButtons`.
+- Optional search props/events are still forwarded when supplied, but no list
+  view enables the header search field right now.
 - `@view`, `@edit`, `@delete`, `@tag-click`, `@copy` are re-emitted from cards.
 - The `draggable` branch binds the same card listeners as the other layouts,
   so cards remain interactive while sorting.
@@ -106,14 +126,15 @@ Behavior:
   `q-col-gutter-*` so column widths stay centered and do not overflow.
 - `handleDelete` is an empty stub; deletion is delegated upward.
 - The empty state is a normal padded block, not a fixed-position element.
-- Empty lists render a large positive **Create** button below the empty-state
-  text; it runs the same create action as the header button.
+- Empty lists render a large positive create button below the empty-state text;
+  `emptyActionTitle` overrides its label and `createLoading` shows progress. It
+  runs the same create action as the header button.
 
 ### `BaseEntityView.vue`
 
-Props: entity, name, list route, delete/edit callbacks, `title`, `subtitle`,
-`loading`, `notFound`, `hideHeader`, `unwrapContent`, header button flags/array,
-right drawer icon.
+Props: `entity`, `entityName`, `listRoute`, delete/edit callbacks, `title`,
+`subtitle`, `loading`, `notFound`, `hideHeader`, `unwrapContent`, header button
+flags/arrays, `tabs`, `modelValue`, right drawer icon, `fill`.
 
 - Shows loading text, `NotFoundView`, or the page.
 - Renders the entity title and subtitle at the top of the page content, not in
@@ -126,8 +147,9 @@ right drawer icon.
   uses `router.push(listRoute)`.
 - Renders the default slot, `editor`, `actions`, and `sub`; publishes a
   `sidepanel` slot to the right drawer.
-- `unwrapContent` skips the inner content wrapper. Fill layouts keep the title
-  fixed above the scrollable/fill content area.
+- `unwrapContent` skips the inner content wrapper. `fill` switches the layout
+  to a full-height flex column so the title stays fixed above the
+  scrollable/fill content area.
 
 ### `BaseEntityTabView.vue`
 
@@ -136,11 +158,12 @@ Wraps `BaseEntityView` with `QTabs`/`QTabPanels`.
 - Props: same as entity view plus `tabs` and `modelValue`.
 - Maintains an internal `activeTab`, syncs to `modelValue`, and selects the
   first enabled tab if the current one disappears.
-- Emits `update:modelValue`, `tab-click`, `tab-close`, `tab-add`.
+- Emits `update:modelValue` and `tab-click`; `tab-close`/`tab-add` are declared
+  but not currently emitted.
 - Forwards the tab slots plus `actions`, `sub`, `sidepanel`, and `editor` to
   `BaseEntityView`.
-- Passes all props through `v-bind="props"` to `BaseEntityView`, including
-  `tabs`/`modelValue`, which become stray attributes.
+- Passes its props through `v-bind`, but replaces the incoming `modelValue`
+  with the internal `activeTab` and sets `unwrap-content` on the wrapped view.
 
 ## Headers
 
@@ -148,17 +171,20 @@ Wraps `BaseEntityView` with `QTabs`/`QTabPanels`.
 
 Renders:
 
-- a leftmost delete `QBtnGroup`, before page-specific left buttons,
-- title or spacer,
+- a leftmost delete `QBtnGroup`, before page-specific `leftButtons`,
+- a title/subtitle block or spacer,
+- optional centered tabs (`tabs` + `modelValue`, emitting `tab-click`),
 - optional search `QInput`,
 - a primary `QBtnGroup` containing `buttons[]` (icon, color, title key,
-  disabled, event) plus create/edit buttons,
+  disabled, event, optional `href`/`target`/`rel`) plus create/edit buttons,
 - a vertical `QSeparator` when both primary actions and a sidebar exist,
 - a separate `QBtnGroup` with the right-drawer toggle.
 
-Title strings are treated as i18n keys (`t(btn.title)`, `t('common.create')`).
-Search state is controlled via `searchQuery` + `update:searchQuery`, but no
-caller passes these right now; the header search field is therefore hidden.
+Button titles are treated as i18n keys (`t(btn.title)`), and `createLoading`
+disables and spins the create button. Search state is controlled via
+`searchQuery` + `update:searchQuery`, but no caller passes these right now; the
+header search field is therefore hidden. `href`/`target`/`rel` let actions
+open static pages such as the help center.
 
 ### `IconRightDrawer.vue`
 
@@ -189,14 +215,15 @@ grid hides its own scrollbars and only scrolls when the viewport is too small.
 Dropping on a kind opens `EntityLinkingDialog` for that kind; applying the
 dialog writes the relationship to the model fields:
 
-| Source    | Link targets                                      |
-| --------- | ------------------------------------------------- |
-| Note      | Location                                          |
-| Party     | Character, Location                               |
-| Character | Party, Location                                   |
-| Pawn      | Encounter, Location                               |
-| Encounter | Pawn, Location                                    |
-| Location  | Note, Party, Pawn, Encounter, Character, Location |
+| Source    | Link targets                                                |
+| --------- | ----------------------------------------------------------- |
+| Note      | Party, Pawn, Encounter, Character, Location                 |
+| Party     | Note, Character, Location, Playlist                         |
+| Character | Note, Party, Location                                       |
+| Pawn      | Note, Encounter, Location, Playlist                         |
+| Encounter | Note, Pawn, Location, Playlist                              |
+| Location  | Note, Party, Pawn, Encounter, Character, Location, Playlist |
+| Playlist  | Party, Pawn, Encounter, Location                            |
 
 Relations stored on the target side are updated in reverse: for example,
 dropping a Character on Party updates `party.characters`, and dropping a Pawn
@@ -215,8 +242,9 @@ buttons, links, form controls and `[data-no-drag]` targets.
 
 Shared entity-link block. It accepts one entity `kind`, a `modelValue` of
 `{ kind, id }` refs, optional `multiple`, `label`, `options` and `readonly`, and
-emits the full updated ref list. It provides a linked list with remove actions
-and opens `EntityLinkingDialog` for searchable selection. Existing links are included in
+emits the full updated ref list. It provides a virtualised linked list with
+remove actions, and clicking a row opens `EntityInfoDialog` for the linked
+entity. It opens `EntityLinkingDialog` for searchable selection. Existing links are included in
 the dialog pre-selected, so links can be removed by unchecking them there as
 well as from the linked list. In readonly mode the add and remove actions are
 hidden, so it can display links in view-only contexts. Located under
@@ -225,11 +253,27 @@ hidden, so it can display links in view-only contexts. Located under
 ### `EntityLinkingDialog.vue`
 
 Searchable entity picker used by `EntitiesLinking`. It accepts the entity
-`kind`, dialog `title`, available `options`, already `linkedIds` and optional
-`multiple`; linked entities are shown pre-selected. Emits `add` with the full
-selected ref set (so unchecking linked entries removes them) plus labels for
-entities created inline, or `cancel`. The create (+) action opens `EntityCreateDialog`. Located
-under `src/components/common/`.
+`kind`, dialog `title`, available `options`, already `linkedIds`, optional
+`multiple` and `allowCreate`; linked entities are shown pre-selected. Emits
+`add` with the full selected ref set (so unchecking linked entries removes
+them) plus labels for entities created inline, or `cancel`. It renders the
+shared `EntityLinkingList` and can forward an `item-extra` slot (used by combat
+for initiative inputs). The create (+) action opens `EntityCreateDialog`.
+Located under `src/components/common/`.
+
+### `EntityLinkingList.vue`
+
+Searchable multi-select list used inside `EntityLinkingDialog`. Props:
+`options` (`{ id, label }[]`), `modelValue` (selected ids), optional `multiple`,
+`createdIds`, and `kind`. Emits `update:modelValue` and `created`; exposes
+`resetSearch()`. It provides `search-actions` and `item-extra` slots.
+
+### `EntityCreateDialog.vue`
+
+Kind-driven create wrapper. It resolves the feature link kind's editor through
+`getEntityKindOption()` and mounts it with the expected `isOpen`/empty-entity
+props. Emits `created({ ref, label })` or `cancel`; playlist editors are also
+listened to through their `saved` event.
 
 ### `EntityViewLinks.vue`
 
@@ -238,12 +282,46 @@ Read-only view of an entity's main-entity links. It accepts `links` as
 `EntitiesLinking` in `readonly` mode. Add, remove and inline-create actions are
 hidden. Shows a translated empty state when there are no links.
 
-### `entityViewTabs.ts`
+### `EntityInfoDialog.vue`
 
-Returns the standard detail-page tabs: **View** (`IconEye`) and **Linked
-entities** (`IconAffiliate`). View headers render them icon-only with accessible
-titles. Used by note, party and pawn detail pages so their view tabs mirror
-the editor's Main/Links split.
+General entity view dialog shared by linked lists, combat, active-combat and
+encounter sidebars. Props: `isOpen`, `title`, optional `picture`, `notes`, `to`,
+`entityKind`, `entityId`. Emits `cancel`.
+
+- Wraps `BaseModal` with expand and close controls and resolves the entity's
+  feature store from `entityKind`; the title, body and picture fall back to the
+  passed props when the store has no record.
+- Shows **Main** (`IconEye`) and **Linked entities** (`IconAffiliate`) tabs when
+  the kind has link targets, mirroring the standard view/edit split. Kinds
+  without targets render only the content body.
+- A centered View/Edit `QBtnGroup` in the modal footer appears when an
+  `entityId` is present and the store exposes `update`; it toggles inline
+  editing of the title, body and (for entities with a `picture` field) the
+  picture. Notes require title or content; other kinds require a name.
+- In edit mode it renders `EntityInlineEditor`, `EntityPicturePicker` and
+  `EntityMarkdownEditor`; in view mode it renders `MilkdownView` (with mention
+  modals) and `EntityPicture`.
+- The linked tab uses `EntityViewLinks` in view mode and editable
+  `EntitiesLinking` blocks in edit mode. Link changes are written immediately
+  through `useEntityLinkRelations()`.
+- Note editing adds a footer options popup with the async, feature-gated
+  `NoteOptions` component (`__FEATURE_NOTES__`) plus a visual-mode toggle.
+- An external-link header action calls `cancel` and navigates to the entity
+  route when one exists (`to` or `entityRoute()`).
+- Opens outside the modal stack (`useModalStack: false`) so pickers and info
+  dialogs can nest inside editors.
+
+### `entityViewTabs.ts` / `entityEditorTabs.ts`
+
+`useEntityViewTabs()` returns the standard detail-page tabs: **View**
+(`IconEye`) and **Linked entities** (`IconAffiliate`). View headers render them
+icon-only with accessible titles. Used by note, character, party and pawn
+detail pages so their view tabs mirror the editor's Main/Links split.
+
+`useEntityEditorTabs()` returns the matching dialog tabs: **Main editor**
+(`IconForms`) and **Linked entities** (`IconAffiliate`). Used by note,
+character, party, pawn, encounter, map and playlist editors plus the scene
+player dialog.
 
 ### `EntityTabs.vue`
 
@@ -255,7 +333,8 @@ scene player. It accepts `tabs` (`id`, `label`, optional `disabled`) and support
 
 Section wrapper for grouped entity lists. It renders an uppercase group title
 followed by a flexible separator, an optional `actions` slot beside the title,
-and the group content through the default slot. Consecutive groups get vertical
+and the group content through the default slot. Optional `to` renders the title
+as a link and `onTitleClick` handles its click. Consecutive groups get vertical
 spacing. Used by the ambient ambience/one-shot galleries, scene player groups and
 `EntitiesLinking` blocks.
 
@@ -357,16 +436,40 @@ value.
 Custom pointer/touch slider with horizontal/vertical modes. Clamps and steps
 values. Currently exercised by tests only.
 
+### `ColorPicker.vue`
+
+Quasar `QColor` popup trigger. Props: `modelValue`, optional `label`, `id`,
+`clearable`, `clearLabel`; emits `update:modelValue` with a hex string. Used by
+note type and map marker/area editors.
+
+### `IconPicker.vue`
+
+Searchable icon palette for a named collection. Props: `modelValue`, `icons`,
+`collection`, optional `searchPlaceholder` and `noIconLabel`; emits
+`update:modelValue` as `collection:name` (or an empty string for no icon). Used
+by note types and map marker/area editors.
+
 ### Shared entity view/edit components
 
 - `EntityContentSurface.vue` — the note-style padded content surface used by
-  note, character and party detail view modes; accepts an optional background colour.
-- `EntityInlineEditor.vue` — borderless title/name input, content slot and
-  validation-error block used by note, character and party edit modes.
+  detail view modes (`min-height: 100%`, standard padding/radius; no props).
+- `EntityInlineEditor.vue` — borderless title/name input (`title`,
+  `titlePlaceholder`, optional `titleRequired`, `validationError`), content slot
+  and validation-error block used by detail edit modes.
 - `EntityMarkdownEditor.vue` — shared `MarkdownEditor` wrapper with
-  `enableMentions`, entity context/tags and a `getMarkdown()` exposure.
-- `EntityModeControls.vue` — the sidebar visual-editor toggle plus View/Edit
-  switch shared by note, character and party sidebars.
+  `enableMentions`, entity id/type context, optional `tags` and a
+  `getMarkdown()` exposure.
+- `EntityMainContent.vue` — read-only main-tab renderer for `kind` + `entity`.
+  Notes and encounter descriptions use `MilkdownView`; party/location
+  descriptions are plain paragraphs; pawn/character notes render in a titled
+  block. Used by `MentionModalStack`.
+- `EntityPicture.vue` — stored-file picture thumbnail with size/alt/rounded
+  props and a placeholder icon.
+- `EntityPicturePicker.vue` — 240 px picture preview plus select/remove actions;
+  imports the chosen image through the generic file API.
+- `EntityModeControls.vue` — the sidebar visual-editor toggle, optional delete
+  action and View/Edit switch shared by note, character, party, pawn, encounter
+  and location sidebars.
 - `useEntityEditMode` (`src/composables/useEntityEditMode.ts`) — draft
   lifecycle, dirty tracking, save-on-view, delete/discard callbacks,
   route-leave confirmation and the `beforeunload` guard.
@@ -386,7 +489,8 @@ A non-Quasar tab system:
   tabs, vertical mode.
 - Entity sidebars use the note variant: `side-panel-content` →
   `sidebar-tab-content` → `TabGroup`, with each tab panel padded by `q-pa-md`.
-- Used by the note, character, pawn and encounter sidebars.
+- Used by the note, character, party, pawn and encounter sidebars plus the
+  location map tab.
 
 ### `PopoverPanel.vue`
 
@@ -409,6 +513,11 @@ translation keys that do not exist.
 
 ## Other common components
 
+- `StatCard.vue` (`src/components/`) — home stat card. It receives
+  `{ route, icon, key, count }`, renders the `icon` component itself (Tabler
+  icons today), and translates its label with `statCard.<key>`. `HomeView`
+  builds these from the enabled feature home cards sorted by `order`, then
+  renders them as a grid.
 - `EmptyState.vue` — shared centered icon/title/hint block used by ambient sound
   and entity list pages when no items are available. `BaseListView` splits its
   `emptyMessage` at the first sentence into the title and subtitle.
