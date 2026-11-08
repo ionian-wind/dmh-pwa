@@ -185,6 +185,17 @@ function addSelected() {
                 </QBadge>
               </div>
             </QItemSection>
+            <QItemSection
+              v-if="$slots['item-extra']"
+              side
+              class="entity-option-extra"
+            >
+              <slot
+                name="item-extra"
+                :item="option"
+                :selected="selectedIds.includes(option.id)"
+              />
+            </QItemSection>
           </QItem>
         </template>
       </QVirtualScroll>

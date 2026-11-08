@@ -7,8 +7,8 @@ import { usePawnStore } from '@/stores/pawns';
 import { useEncounterStore } from '@/stores/encounters';
 import TabGroup from '@/components/common/TabGroup.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import BaseModal from '@/components/common/BaseModal.vue';
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
+import type { MapEntityRef } from '@/maps/types';
 import { IconAt, IconGhost3, IconPlus, IconX } from '@tabler/icons-vue';
 import { prompt } from '@/dialogs';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
@@ -43,6 +43,10 @@ const tabs = computed(() => [
 ]);
 
 const allPawns = computed(() => pawnStore.filtered);
+const pawnOptions = computed(() =>
+  allPawns.value.map((pawn) => ({ id: pawn.id, label: pawn.name })),
+);
+const linkedPawnIds = computed(() => Object.keys(props.encounter?.pawns ?? {}));
 const encounterPawns = computed(() => {
   const linked = props.encounter?.pawns ?? {};
   return allPawns.value.filter((pawn) => pawn.id in linked);
@@ -53,6 +57,21 @@ watch(showLinkModal, (isOpen) => {
   localPawns.value = JSON.parse(JSON.stringify(props.encounter?.pawns ?? {}));
 });
 
+function setPawnCount(pawnId: string, value: unknown) {
+  const count = Math.max(1, parseInt(String(value ?? ''), 10) || 1);
+  localPawns.value = { ...localPawns.value, [pawnId]: count };
+}
+
+function addPawns(payload: { refs: MapEntityRef[] }) {
+  const pawns: Record<string, number> = {};
+  for (const ref of payload.refs) {
+    pawns[ref.id] =
+      localPawns.value[ref.id] ?? props.encounter.pawns?.[ref.id] ?? 1;
+  }
+  void encounterStore.update(props.encounter.id, { pawns });
+  showLinkModal.value = false;
+}
+
 function togglePawn(pawn: Pawn, linked: boolean) {
   const pawns = { ...(props.encounter?.pawns ?? {}) };
   if (linked) {
@@ -61,28 +80,6 @@ function togglePawn(pawn: Pawn, linked: boolean) {
     delete pawns[pawn.id];
   }
   void encounterStore.update(props.encounter.id, { pawns });
-}
-
-function handleModalTogglePawn(pawnId: string, linked: boolean) {
-  const current = { ...localPawns.value };
-  if (linked) {
-    if (current[pawnId] === undefined) current[pawnId] = 1;
-  } else {
-    delete current[pawnId];
-  }
-  localPawns.value = current;
-}
-
-function handleModalQuantityChange(pawnId: string, count: number) {
-  if (localPawns.value[pawnId] === undefined) return;
-  localPawns.value[pawnId] = Math.max(1, count || 1);
-}
-
-async function savePawnLinks() {
-  await encounterStore.update(props.encounter.id, {
-    pawns: localPawns.value,
-  });
-  showLinkModal.value = false;
 }
 
 async function openQuantityModal(pawn: Pawn) {
@@ -204,56 +201,33 @@ onMounted(async () => {
       </TabGroup>
     </div>
 
-    <BaseModal
+    <EntityLinkingDialog
       :is-open="showLinkModal"
-      @cancel="showLinkModal = false"
-      @submit="savePawnLinks"
+      kind="pawn"
       :title="t('encounters.pawns.linkModalTitle')"
-      modal-id="pawn-linking-modal"
-      :show-cancel="true"
-      :show-submit="true"
-      :cancel-label="t('common.cancel')"
-      :submit-label="t('common.save')"
+      :options="pawnOptions"
+      :linked-ids="linkedPawnIds"
+      :multiple="true"
+      @add="addPawns"
+      @cancel="showLinkModal = false"
     >
-      <div
-        v-if="allPawns.length === 0"
-        class="q-pa-md text-caption text-grey-7"
-      >
-        {{ t('encounters.pawns.noneAvailable') }}
-      </div>
-      <QList v-else class="q-pa-none">
-        <QItem v-for="pawn in allPawns" :key="pawn.id">
-          <QItemSection>
-            {{ pawn.name }}
-          </QItemSection>
-          <QItemSection side>
-            <QInput
-              v-if="localPawns[pawn.id] !== undefined"
-              type="number"
-              class="pawn-quantity-input"
-              :model-value="localPawns[pawn.id] || 1"
-              :aria-label="t('common.quantity')"
-              @update:model-value="
-                (val) =>
-                  handleModalQuantityChange(
-                    pawn.id,
-                    parseInt(String(val ?? '')),
-                  )
-              "
-              min="1"
-              dense
-              outlined
-            />
-          </QItemSection>
-          <QItemSection side>
-            <ToggleSwitch
-              :model-value="localPawns[pawn.id] !== undefined"
-              @update:model-value="handleModalTogglePawn(pawn.id, $event)"
-            />
-          </QItemSection>
-        </QItem>
-      </QList>
-    </BaseModal>
+      <template #item-extra="{ item, selected }">
+        <QInput
+          v-if="selected"
+          type="number"
+          class="pawn-quantity-input"
+          :model-value="localPawns[item.id] ?? 1"
+          :aria-label="t('common.quantity')"
+          min="1"
+          dense
+          outlined
+          @update:model-value="(val) => setPawnCount(item.id, val)"
+          @click.stop
+          @mousedown.stop
+          @keydown.stop
+        />
+      </template>
+    </EntityLinkingDialog>
   </div>
 </template>
 
