@@ -60,7 +60,8 @@ export interface FeatureHomeCard {
   id: string;
   titleKey: string;
   route: string;
-  icon: string;
+  icon: Component;
+  order?: number;
   count: () => number;
   load: () => Promise<void>;
 }

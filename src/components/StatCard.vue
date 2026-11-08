@@ -1,6 +1,8 @@
 <template>
   <router-link :to="item.route" class="stat-card" exact>
-    <div class="stat-icon">{{ item.icon }}</div>
+    <div class="stat-icon">
+      <component :is="item.icon" :size="32" />
+    </div>
     <div class="stat-content">
       <h3>{{ t('statCard.' + item.key) }}</h3>
       <p>{{ item.count }} {{ t('statCard.' + item.key).toLowerCase() }}</p>
@@ -9,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -16,7 +19,7 @@ const { t } = useI18n();
 defineProps<{
   item: {
     route: string;
-    icon: string;
+    icon: Component;
     key: string;
     count: number;
   };

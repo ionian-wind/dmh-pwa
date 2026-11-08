@@ -39,6 +39,7 @@ async function mountHome() {
       { path: '/pawns', component: { render: () => h('div') } },
       { path: '/encounters', component: { render: () => h('div') } },
       { path: '/characters', component: { render: () => h('div') } },
+      { path: '/locations', component: { render: () => h('div') } },
     ],
   });
   await router.push('/');
@@ -78,9 +79,21 @@ describe('HomeView', () => {
     seedMockStore('parties', [{ id: 'p1', name: 'Party' }]);
     seedMockStore('pawns', [{ id: 'm1', name: 'Pawn' }]);
     seedMockStore('encounters', [{ id: 'e1', name: 'Encounter' }]);
+    seedMockStore('map_locations', [{ id: 'l1', name: 'Location' }]);
 
     const wrapper = await mountHome();
-    expect(wrapper.findAll('.stat-card')).toHaveLength(5);
+    expect(wrapper.findAll('.stat-card')).toHaveLength(6);
+    expect(
+      wrapper.findAll('.stat-card h3').map((title) => title.text()),
+    ).toEqual([
+      'Notes',
+      'Pawns',
+      'Encounters',
+      'Locations',
+      'Characters',
+      'Parties',
+    ]);
+    expect(wrapper.findAll('.stat-icon svg')).toHaveLength(6);
     expect(wrapper.text()).toContain('2');
     wrapper.unmount();
   });

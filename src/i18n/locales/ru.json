@@ -58,7 +58,8 @@
       "parties": "Группы",
       "pawns": "Пешки",
       "characters": "Персонажи",
-      "encounters": "Столкновения"
+      "encounters": "Столкновения",
+      "locations": "Локации"
     }
   },
   "notes": {
@@ -388,7 +389,8 @@
     "parties": "Группы",
     "pawns": "Пешки",
     "characters": "Персонажи",
-    "encounters": "Схватки"
+    "encounters": "Схватки",
+    "locations": "Локации"
   },
   "combat": {
     "encounter": "Схватка",

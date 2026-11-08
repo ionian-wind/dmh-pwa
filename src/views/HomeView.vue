@@ -14,14 +14,16 @@ const configStore = useConfigStore();
 const { t } = useI18n();
 
 const statsCards = computed(() =>
-  featureHomeCards.map((card) => ({
-    id: card.id,
-    key: card.id,
-    title: card.titleKey,
-    count: card.count(),
-    icon: card.icon,
-    route: card.route,
-  })),
+  [...featureHomeCards]
+    .sort((a, b) => (a.order ?? 1000) - (b.order ?? 1000))
+    .map((card) => ({
+      id: card.id,
+      key: card.id,
+      title: card.titleKey,
+      count: card.count(),
+      icon: card.icon,
+      route: card.route,
+    })),
 );
 
 onMounted(async () => {

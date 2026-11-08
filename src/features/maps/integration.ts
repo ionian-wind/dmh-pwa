@@ -28,6 +28,15 @@ export const mapsFeature: FeatureIntegration = {
       placement: 'primary',
     },
   ],
+  homeCard: {
+    id: 'locations',
+    titleKey: 'home.stats.locations',
+    route: '/locations',
+    icon: IconMap,
+    order: 40,
+    load: () => useMapLocationStore().load(),
+    count: () => useMapLocationStore().items.length,
+  },
   homeActions: [],
   globalComponents: [],
   linkKinds: [
