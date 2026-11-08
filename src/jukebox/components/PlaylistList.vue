@@ -367,8 +367,9 @@ onMounted(async () => {
 
 <style scoped>
 .playlist-item--active {
-  background: var(--color-primary-light) !important;
+  background: var(--color-selected-surface) !important;
   color: var(--color-text) !important;
+  font-weight: 500;
 }
 
 .playlist-drag-handle {
@@ -381,7 +382,7 @@ onMounted(async () => {
 }
 
 .has-active-track {
-  box-shadow: inset 3px 0 0 var(--q-primary);
+  box-shadow: inset 4px 0 0 var(--color-accent);
 }
 
 .playlist-bulk-panel {

@@ -40,6 +40,7 @@
   --color-background-mute: #f0f0f0;
   --color-background-dark: #1e1e2e;
   --color-card-background: #fff;
+  --color-selected-surface: var(--color-primary-light);
 
   /* Border Colors */
   --color-border: #ddd;
@@ -117,6 +118,7 @@ body.body--dark {
   --color-background-mute: #262637;
   --color-background-dark: #0f0f16;
   --color-card-background: var(--q-dark);
+  --color-selected-surface: #4a4a6e;
 
   --color-border: #35354a;
   --color-border-light: #2a2a3d;

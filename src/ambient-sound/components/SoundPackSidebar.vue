@@ -158,8 +158,9 @@ async function handleFileImport(event: Event) {
 }
 
 .sound-pack-item.is-selected {
-  background: var(--color-primary-light);
+  background: var(--color-selected-surface);
   color: var(--color-text);
+  font-weight: 500;
 }
 
 .sound-pack-actions {
