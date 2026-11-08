@@ -1,55 +1,145 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1e1e2e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Owlbear's DMH">
-  <meta name="description" content="Advanced note manager for D&D sessions with character management, encounter tracking, and campaign organization">
-  <meta name="keywords" content="D&D, Dungeons and Dragons, RPG, notes, character, encounter, campaign">
-  <meta name="author" content="Ionian.Wind">
-  
-  <!-- PWA Manifest is injected by vite-plugin-pwa -->
-  
-  <!-- Apple Touch Icons -->
-  <link rel="apple-touch-icon" href="/dmh-pwa/icon-192.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/dmh-pwa/icon-152.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/dmh-pwa/icon-192.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="/dmh-pwa/icon-152.png">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/dmh-pwa/icon-72.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/dmh-pwa/icon-72.png">
-  <link rel="shortcut icon" href="/dmh-pwa/icon-72.png">
-  <link rel="icon" type="image/x-icon" href="/dmh-pwa/icon-72.png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1e1e2e" />
+    <script>
+      (() => {
+        try {
+          const saved = JSON.parse(
+            localStorage.getItem('dmh-config:uiTheme') || '"light"',
+          );
+          const dark =
+            saved === 'dark' ||
+            (saved === 'auto' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.style.colorScheme = 'dark';
+            document.documentElement.style.backgroundColor = '#14141d';
+          }
+        } catch {
+          // Ignore malformed storage; the app applies the default theme.
+        }
+      })();
+    </script>
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Owlbear's DMH" />
+    <meta
+      name="description"
+      content="Advanced note manager for D&D sessions with character management, encounter tracking, and campaign organization"
+    />
+    <meta
+      name="keywords"
+      content="D&D, Dungeons and Dragons, RPG, notes, character, encounter, campaign"
+    />
+    <meta name="author" content="Ionian.Wind" />
 
-  <!-- Microsoft Tiles -->
-  <meta name="msapplication-TileColor" content="#1e1e2e">
-  <meta name="msapplication-TileImage" content="/dmh-pwa/icon-144.png">
-  <meta name="msapplication-config" content="/dmh-pwa/browserconfig.xml">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://owlbear.su/dmh-pwa/">
-  <meta property="og:title" content="Owlbear's Dungeon Master Helper">
-  <meta property="og:description" content="Advanced note manager for D&D sessions">
-  <meta property="og:image" content="/dmh-pwa/icon-512.png">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://owlbear.su/dmh-pwa/">
-  <meta property="twitter:title" content="Owlbear's Dungeon Master Helper">
-  <meta property="twitter:description" content="Advanced note manager for D&D sessions">
-  <meta property="twitter:image" content="/dmh-pwa/icon-512.png">
-  
-  <title>Owlbear's Dungeon Master Helper</title>
-  <script type="module" crossorigin src="/dmh-pwa/assets/index-DJoxVGHz.js"></script>
-  <link rel="stylesheet" crossorigin href="/dmh-pwa/assets/index-CW9AnRn4.css">
-<link rel="manifest" href="/dmh-pwa/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/dmh-pwa/registerSW.js"></script></head>
-<body>
-<div id="q-app"></div>
-</body>
+    <!-- PWA Manifest is injected by vite-plugin-pwa -->
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/dmh-pwa/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/dmh-pwa/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/dmh-pwa/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/dmh-pwa/icon-152.png" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/dmh-pwa/icon-72.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/dmh-pwa/icon-72.png"
+    />
+    <link rel="shortcut icon" href="/dmh-pwa/icon-72.png" />
+    <link rel="icon" type="image/x-icon" href="/dmh-pwa/icon-72.png" />
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#1e1e2e" />
+    <meta name="msapplication-TileImage" content="/dmh-pwa/icon-144.png" />
+    <meta name="msapplication-config" content="/dmh-pwa/browserconfig.xml" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://owlbear.su/dmh-pwa/" />
+    <meta property="og:title" content="Owlbear's Dungeon Master Helper" />
+    <meta
+      property="og:description"
+      content="Advanced note manager for D&D sessions"
+    />
+    <meta property="og:image" content="/dmh-pwa/icon-512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://owlbear.su/dmh-pwa/" />
+    <meta property="twitter:title" content="Owlbear's Dungeon Master Helper" />
+    <meta
+      property="twitter:description"
+      content="Advanced note manager for D&D sessions"
+    />
+    <meta property="twitter:image" content="/dmh-pwa/icon-512.png" />
+
+    <title>Owlbear's Dungeon Master Helper</title>
+    <script type="module" crossorigin src="/dmh-pwa/assets/index-afBaoLbS.js"></script>
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/rolldown-runtime-BCiCTKAo.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/runtime-core.esm-bundler-DTU_Q0U2.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/nodes-C6vrTppp.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/streams-CV9Tm4Li.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/use-key-composition-CPgUPRVP.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QToolbar-ncTrOPIX.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QToggle-rE255B6V.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/IconX-DIFqgJnL.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/i18n-CRuwoAJE.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/Notify-BVScLGYi.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/storage-E0Nx8oEH.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/timers-DuO0acaz.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/links-LPQspKxQ.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QBtnGroup-CQ7x6tDm.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QTabPanels-C5rcAixw.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QCardActions-xzY_P33u.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/BaseModal-Cp4uclMV.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QSelect-CcaTWZI6.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/dialogs-qWEXRL5o.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/preload-helper-DbbTSF9y.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/playbackCoordinator-g5AkvbPg.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/stores-p0z0yD0e.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/playerStore-CxEaopdU.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/IconPlus-NalVwbLm.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/IconTrash-Bl_cnPDT.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/ViewHeader-DjfR0vBf.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/notes-v6BuJd_n.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/IconVolume-eqnVB3ku.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QSlider-4PKgRM1y.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/ambientSoundStore-FGCyyzSP.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/__vite-browser-external-BwpP9LFt.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/_virtual_feature-feature-links-85QKeJS5.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/dist-ZRJL1fHV.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/EmptyState-BN_UVRcz.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/entityRefs-Ci_NfxY1.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QBadge-C2nm80b7.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/QMarkupTable-C7tPMhuV.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/EntityLinkingList-j213bOsW.js">
+    <link rel="modulepreload" crossorigin href="/dmh-pwa/assets/Draw-vcEdK8Ps.js">
+    <link rel="stylesheet" crossorigin href="/dmh-pwa/assets/BaseModal-D7KHhTuh.css">
+    <link rel="stylesheet" crossorigin href="/dmh-pwa/assets/ViewHeader-CAB1350F.css">
+    <link rel="stylesheet" crossorigin href="/dmh-pwa/assets/_virtual_feature-feature-links-0uxU2HeU.css">
+    <link rel="stylesheet" crossorigin href="/dmh-pwa/assets/EmptyState-DBc4kYA4.css">
+    <link rel="stylesheet" crossorigin href="/dmh-pwa/assets/index-CrFjartf.css">
+  <link rel="manifest" href="/dmh-pwa/manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/dmh-pwa/sw.js', { scope: '/dmh-pwa/' })})}</script></head>
+  <body>
+    <div id="q-app"></div>
+  </body>
 </html>

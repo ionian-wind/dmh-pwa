@@ -1,0 +1,1 @@
+import{C as e,l as t}from"./runtime-core.esm-bundler-DTU_Q0U2.js";import{$ as n,D as r,O as i,tt as a}from"./nodes-C6vrTppp.js";var o=a({name:`QCardActions`,props:{...i,vertical:Boolean},setup(i,{slots:a}){let o=r(i),s=t(()=>`q-card__actions ${o()} q-card__actions--${i.vertical?`vert column`:`horiz row`}`);return()=>e(`div`,{class:s.value},n(a.default))}});export{o as t};

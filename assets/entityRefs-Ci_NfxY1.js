@@ -1,0 +1,1 @@
+import{r as e}from"./_virtual_feature-feature-links-85QKeJS5.js";var t=e;function n(e){return t.find(t=>t.kind===e)}function r(e,t){return n(e)?.route?.(t)}function i(e){return`${e.kind}:${e.id}`}function a(e){let t=new Set;return e.filter(e=>{let n=i(e);return!t.has(n)&&(t.add(n),!0)})}export{n as i,a as n,r,t};

@@ -1,0 +1,1 @@
+function e(e,t=120){if(!e)return``;let n=e.replace(/```[\s\S]*?```/g,` `).replace(/!\[[^\]]*\]\([^)]*\)/g,` `).replace(/\[([^\]]*)\]\([^)]*\)/g,`$1`).replace(/[#>*_`~|]/g,` `).replace(/\s+/g,` `).trim();return n.length<=t?n:`${n.slice(0,t).trimEnd()}…`}export{e as t};
