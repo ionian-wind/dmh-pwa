@@ -10,6 +10,8 @@ import { Combat, Combatant, Encounter, Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
 import EntityLinkingList from '@/components/common/EntityLinkingList.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import type { MapEntityRef } from '@/maps/types';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
@@ -34,7 +36,7 @@ const emit = defineEmits<{
 
 const selectedPartyId = ref<string>(props.party?.id ?? '');
 const selectedEncounterId = ref<string>('');
-const selectedCharacters = ref<Record<string, boolean>>({});
+const selectedCharacters = ref<string[]>([]);
 
 const activePartyId = computed(() => props.party?.id ?? selectedPartyId.value);
 const activeParty = computed(
@@ -63,19 +65,10 @@ const selectedEncounterIds = computed(() =>
   selectedEncounterId.value ? [selectedEncounterId.value] : [],
 );
 
-const characterOptions = computed(() => {
-  if (!activePartyId.value) return [];
-  const party = partyStore.getById(activePartyId.value);
-  return (party?.characters ?? []).map((id) => ({
-    id,
-    label: characterStore.getById(id)?.name || id,
-  }));
-});
+const selectedCharacterIds = computed(() => selectedCharacters.value);
 
-const selectedCharacterIds = computed(() =>
-  Object.entries(selectedCharacters.value)
-    .filter(([, selected]) => selected)
-    .map(([id]) => id),
+const selectedCharacterRefs = computed<MapEntityRef[]>(() =>
+  selectedCharacterIds.value.map((id) => ({ kind: 'character', id })),
 );
 
 function setPartyIds(ids: string[]) {
@@ -87,11 +80,13 @@ function setEncounterIds(ids: string[]) {
 }
 
 function setCharacterIds(ids: string[]) {
-  const next: Record<string, boolean> = {};
-  characterOptions.value.forEach((option) => {
-    next[option.id] = ids.includes(option.id);
-  });
-  selectedCharacters.value = next;
+  selectedCharacters.value = [...new Set(ids)];
+}
+
+function setCharacterRefs(refs: MapEntityRef[]) {
+  setCharacterIds(
+    refs.filter((ref) => ref.kind === 'character').map((ref) => ref.id),
+  );
 }
 
 onMounted(async () => {
@@ -109,16 +104,12 @@ watch(
   activePartyId,
   (partyId) => {
     if (!partyId) {
-      selectedCharacters.value = {};
+      selectedCharacters.value = [];
       return;
     }
     const party = partyStore.getById(partyId);
     if (party) {
-      const toggles: Record<string, boolean> = {};
-      party.characters.forEach((cid) => {
-        toggles[cid] = true;
-      });
-      selectedCharacters.value = toggles;
+      selectedCharacters.value = [...party.characters];
     }
   },
   { immediate: true },
@@ -139,10 +130,10 @@ const handleCreateCombat = async () => {
     return;
   }
 
-  // Get selected party characters
-  const partyCharacters = characterStore.items.filter(
-    (char) => selectedCharacters.value[char.id],
-  );
+  // Get selected characters in selection order
+  const partyCharacters = selectedCharacterIds.value
+    .map((id) => characterStore.getById(id))
+    .filter((char): char is NonNullable<typeof char> => !!char);
   if (partyCharacters.length === 0) {
     return;
   }
@@ -282,10 +273,10 @@ const handleCancel = () => {
         <div v-if="selectedCharacterIds.length === 0" class="info-text">
           {{ t('partySelector.selectAtLeastOneCharacter') }}
         </div>
-        <EntityLinkingList
-          :options="characterOptions"
-          :model-value="selectedCharacterIds"
-          @update:model-value="setCharacterIds"
+        <EntitiesLinking
+          kind="character"
+          :model-value="selectedCharacterRefs"
+          @update:model-value="setCharacterRefs"
         />
       </div>
     </div>

@@ -23,8 +23,25 @@ const EntityLinkingListStub = defineComponent({
   },
 });
 
+const EntitiesLinkingStub = defineComponent({
+  name: 'EntitiesLinking',
+  props: {
+    kind: String,
+    modelValue: { type: Array, default: () => [] },
+    readonly: Boolean,
+  },
+  emits: ['update:modelValue'],
+  setup() {
+    return () => h('div', { class: 'entities-linking-stub' });
+  },
+});
+
 function linkList(wrapper: ReturnType<typeof mount>, index: number) {
   return wrapper.findAllComponents(EntityLinkingListStub)[index];
+}
+
+function characterLinks(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findComponent(EntitiesLinkingStub);
 }
 
 const encounter = {
@@ -36,7 +53,12 @@ const encounter = {
 async function mountSelector(overrides: Record<string, any> = {}) {
   const wrapper = mount(PartySelector, {
     props: { isOpen: true, encounter, ...overrides },
-    global: { stubs: { EntityLinkingList: EntityLinkingListStub } },
+    global: {
+      stubs: {
+        EntityLinkingList: EntityLinkingListStub,
+        EntitiesLinking: EntitiesLinkingStub,
+      },
+    },
   });
   await flushPromises();
   return wrapper;
@@ -73,11 +95,21 @@ describe('PartySelector', () => {
 
     expect(wrapper.text()).toContain('Heroes');
     expect(wrapper.text()).toContain('Ambush');
-    expect(linkList(wrapper, 1).props('options')).toHaveLength(2);
+    expect(characterLinks(wrapper).props()).toMatchObject({
+      kind: 'character',
+      modelValue: [
+        { kind: 'character', id: 'c1' },
+        { kind: 'character', id: 'c2' },
+      ],
+    });
 
-    linkList(wrapper, 1).vm.$emit('update:modelValue', ['c1']);
+    characterLinks(wrapper).vm.$emit('update:modelValue', [
+      { kind: 'character', id: 'c1' },
+    ]);
     await nextTick();
-    expect(linkList(wrapper, 1).props('modelValue')).toEqual(['c1']);
+    expect(characterLinks(wrapper).props('modelValue')).toEqual([
+      { kind: 'character', id: 'c1' },
+    ]);
 
     const combatStore = useCombatStore();
     const create = vi.spyOn(combatStore, 'create');
@@ -106,7 +138,7 @@ describe('PartySelector', () => {
     linkList(wrapper, 0).vm.$emit('update:modelValue', ['p1']);
     await nextTick();
 
-    linkList(wrapper, 1).vm.$emit('update:modelValue', []);
+    characterLinks(wrapper).vm.$emit('update:modelValue', []);
     await nextTick();
     expect(wrapper.text()).toContain('Select at least one character');
 
@@ -131,7 +163,10 @@ describe('PartySelector', () => {
     expect(lists()[0].props('options')).toEqual([
       { id: 'e1', label: 'Ambush' },
     ]);
-    expect(lists()[1].props('modelValue')).toEqual(['c1', 'c2']);
+    expect(characterLinks(wrapper).props('modelValue')).toEqual([
+      { kind: 'character', id: 'c1' },
+      { kind: 'character', id: 'c2' },
+    ]);
 
     lists()[0].vm.$emit('update:modelValue', ['e1']);
     await nextTick();
