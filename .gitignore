@@ -62,3 +62,4 @@ queries
 /helpcenter/.vitepress/cache
 /helpcenter/.vitepress/dist
 /content
+.vitepress
