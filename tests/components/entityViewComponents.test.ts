@@ -121,8 +121,12 @@ describe('shared entity view components', () => {
 
     const button = wrapper.find('.entity-delete-button');
     expect(button.exists()).toBe(true);
-    expect(wrapper.html().indexOf('entity-delete-action')).toBeLessThan(
-      wrapper.html().indexOf('entity-mode-toggle'),
+    const html = wrapper.html();
+    expect(html.indexOf('entity-visual-mode-toggle')).toBeLessThan(
+      html.indexOf('entity-delete-action'),
+    );
+    expect(html.indexOf('entity-delete-action')).toBeLessThan(
+      html.indexOf('entity-mode-toggle'),
     );
     await button.trigger('click');
     expect(onDelete).toHaveBeenCalledTimes(1);
