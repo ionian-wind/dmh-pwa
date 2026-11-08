@@ -5,6 +5,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { toggleSoundControl } from './state';
 
 const { t } = useI18n();
@@ -12,7 +13,11 @@ const router = useRouter();
 const route = useRoute();
 const configStore = useConfigStore();
 const playerStore = useJukeboxPlayerStore();
+const ambientStore = useAmbientSoundStore();
 const isRoute = computed(() => !configStore.jukeboxUseMiniPlayer);
+const isPlaying = computed(
+  () => playerStore.isPlaying || ambientStore.isPlaying,
+);
 const isJukeboxArea = computed(
   () =>
     route.path === '/jukebox' ||
@@ -42,7 +47,7 @@ function openJukebox() {
     @click="openJukebox"
   >
     <QItemSection side>
-      <IconMusic :class="{ 'jukebox-playing': playerStore.isPlaying }" />
+      <IconMusic :class="{ 'jukebox-playing': isPlaying }" />
     </QItemSection>
     <QItemSection>{{ t('app.jukebox') }}</QItemSection>
   </QItem>

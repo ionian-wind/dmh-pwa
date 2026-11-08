@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
 import JukeboxNavItem from '@/features/jukebox/NavItem.vue';
+import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 function makeRouter() {
   return createRouter({
@@ -41,6 +44,32 @@ describe('jukebox navigation item', () => {
     expect(wrapper.find('.jukebox-button').attributes('active')).not.toBe(
       'true',
     );
+    wrapper.unmount();
+  });
+
+  it('animates the icon while jukebox or ambient is playing', async () => {
+    const player = useJukeboxPlayerStore();
+    const ambient = useAmbientSoundStore();
+    player.isPlaying = false;
+    ambient.isPlaying = false;
+
+    const wrapper = await mountAt('/jukebox');
+    const icon = wrapper.find('.jukebox-button svg');
+    expect(icon.classes()).not.toContain('jukebox-playing');
+
+    ambient.isPlaying = true;
+    await nextTick();
+    expect(icon.classes()).toContain('jukebox-playing');
+
+    ambient.isPlaying = false;
+    player.isPlaying = true;
+    await nextTick();
+    expect(icon.classes()).toContain('jukebox-playing');
+
+    player.isPlaying = false;
+    ambient.isPlaying = false;
+    await nextTick();
+    expect(icon.classes()).not.toContain('jukebox-playing');
     wrapper.unmount();
   });
 });
