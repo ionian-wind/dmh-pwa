@@ -25,10 +25,6 @@
       },
       "description": "Object mapping monster IDs to their counts in this encounter"
     },
-    "notes": {
-      "type": "string",
-      "description": "Additional notes about the encounter"
-    },
     "createdAt": {
       "type": "number",
       "description": "Timestamp when the encounter was created"

@@ -4,6 +4,7 @@ import mapLocationOneToOne from '@/migrations/0000000006_map_location_one_to_one
 import noteContentType from '@/migrations/0000000008_note_content_type';
 import removeNoteContentType from '@/migrations/0000000015_remove_note_content_type';
 import stripEscapedAnchorSpaces from '@/migrations/0000000016_strip_escaped_block_anchor_spaces';
+import removeEncounterNotes from '@/migrations/0000000017_remove_encounter_notes';
 
 function transactionWith(storeData: Record<string, any[]>) {
   const stores = new Map<string, any>();
@@ -219,5 +220,21 @@ describe('map location migrations', () => {
           'First <!-- dmh:block=note-block-one -->\n\nSecond <!-- dmh:block=note-block-two -->',
       },
     ]);
+  });
+
+  it('removes the encounter notes field', async () => {
+    const { stores, transaction } = transactionWith({
+      encounters: [
+        { id: 'e1', name: 'Ambush', monsters: { m1: 2 }, notes: 'Legacy' },
+        { id: 'e2', name: 'Patrol', monsters: {} },
+      ],
+    });
+
+    await removeEncounterNotes.go(transaction);
+
+    const saved = stores
+      .get('encounters')
+      .put.mock.calls.map((call: any[]) => call[0]);
+    expect(saved).toEqual([{ id: 'e1', name: 'Ambush', monsters: { m1: 2 } }]);
   });
 });

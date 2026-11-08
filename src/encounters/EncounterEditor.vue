@@ -27,7 +27,6 @@ const editedEncounter = ref<EncounterFormData>({
   name: '',
   description: '',
   monsters: {},
-  notes: '',
 });
 
 const isEditing = computed(() => !!props.encounter?.id);
@@ -66,7 +65,6 @@ watch(
         name: '',
         description: '',
         monsters: {},
-        notes: '',
       };
     }
   },
@@ -78,7 +76,6 @@ const resetForm = () => {
     name: '',
     description: '',
     monsters: {},
-    notes: '',
   };
 };
 
@@ -158,19 +155,6 @@ function handleDelete() {
               outlined
             />
           </div>
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-group">
-          <QInput
-            :label="t('editor.notes')"
-            id="encounter-description"
-            v-model="editedEncounter.notes"
-            type="textarea"
-            :rows="5"
-            autogrow
-            outlined
-          />
         </div>
       </div>
     </template>

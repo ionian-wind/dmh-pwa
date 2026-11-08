@@ -196,7 +196,6 @@ describe('editor behavior', () => {
       name: 'Ambush',
       description: 'Goblins',
       monsters: {},
-      notes: '',
       createdAt: 1,
       updatedAt: 1,
     };

@@ -31,13 +31,13 @@ Object stores are created lazily by migrations. Current stores:
 | `migrations`           | migration runner    | no                        |
 
 All stores use `keyPath: 'id'` with `autoIncrement: false`; the application
-generates IDs. Version 16 strips escaped spaces before block-anchor comments;
-version 15 removes note content types, converting legacy drawing notes into
-drawing blocks; version 14 adds the `drawings` store; version 13 dropped the
-removed `modules` store and its indexes; version 12 added query indexes
-(`updatedAt`, `typeId`, tags, statuses) and the `sound_packs` store.
-`sound_packs` is not in `MAIN_STORE_NAMES`, so backup/restore leaves ambient
-audio out while campaign data stays portable.
+generates IDs. Version 17 removes encounter notes; version 16 strips escaped
+spaces before block-anchor comments; version 15 removes note content types,
+converting legacy drawing notes into drawing blocks; version 14 adds the
+`drawings` store; version 13 dropped the removed `modules` store and its
+indexes; version 12 added query indexes (`updatedAt`, `typeId`, tags, statuses)
+and the `sound_packs` store. `sound_packs` is not in `MAIN_STORE_NAMES`, so
+backup/restore leaves ambient audio out while campaign data stays portable.
 
 ### Connection helper
 
@@ -242,16 +242,15 @@ Current migrations:
 | 3       | `0000000003_timers.ts`         | Adds `timers`                         |
 
 Sorted in `src/migrations/index.ts`. The database version is the maximum of the
-migration versions and `SCHEMA_VERSION` (16, which strips escaped block-anchor
-spaces).
+migration versions and `SCHEMA_VERSION` (17, which removes encounter notes).
 Adding a migration requires adding it to the `migrations`
 array; new stores are also fed into the Dexie schema through
 `affectedStores`. Indexes require updating `EXPLICIT_SCHEMA`.
 
-Migrations 1–4 are schema-only. Migrations 5–9 and 11–15 also transform or
+Migrations 1–4 are schema-only. Migrations 5–9 and 11–17 also transform or
 create data/stores (map locations, layers, note content type, legacy files,
-removing module links and the note `hidden` flag, the drawings store, and the
-removal of note content types).
+removing module links and the note `hidden` flag, the drawings store, the
+removal of note content types, block-anchor cleanup, and encounter notes).
 
 ## 7. Backup and restore
 

@@ -575,8 +575,7 @@ async function handleEditorDelete() {
   gap: 0.5rem;
 }
 
-.description,
-.notes {
+.description {
   color: var(--color-text);
   line-height: 1.6;
   margin: 0;

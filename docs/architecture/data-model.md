@@ -104,7 +104,6 @@ Again, no stat block/CR/HP fields exist.
 | `name`        | `string`                 | Required                                  |
 | `description` | `string?`                | Rendered with `v-html` in the detail view |
 | `monsters`    | `Record<string, number>` | Monster ID → count (schema: 1..20)        |
-| `notes`       | `string?`                | Free text                                 |
 
 ### Combat
 
@@ -354,13 +353,13 @@ There are no foreign keys, cascade rules, or cleanup routines. Consequences:
 
 ## Schema/Type drift
 
-| Area                                         | TS              | JSON Schema      | Effect                           |
-| -------------------------------------------- | --------------- | ---------------- | -------------------------------- |
-| `NoteType.description/color/icon/fields`     | present         | absent           | same                             |
-| `Encounter.notes`, `Party.description/notes` | present         | absent           | same                             |
-| `Combatant.name`                             | required        | absent           | creators omit it                 |
-| `Timer.title/description`                    | optional string | `string \| null` | nulls pass validation but not TS |
-| Bookmarks noteId                             | string          | string           | semantic ambiguity, not drift    |
+| Area                                     | TS              | JSON Schema      | Effect                           |
+| ---------------------------------------- | --------------- | ---------------- | -------------------------------- |
+| `NoteType.description/color/icon/fields` | present         | absent           | same                             |
+| `Party.description/notes`                | present         | absent           | same                             |
+| `Combatant.name`                         | required        | absent           | creators omit it                 |
+| `Timer.title/description`                | optional string | `string \| null` | nulls pass validation but not TS |
+| Bookmarks noteId                         | string          | string           | semantic ambiguity, not drift    |
 
 Because schemas are only applied on **write**, legacy or imported records that
 were written before a schema change are not re-validated on load.

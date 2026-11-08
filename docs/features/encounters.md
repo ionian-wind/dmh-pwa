@@ -27,13 +27,11 @@ interface Encounter {
   name: string;
   description?: string;
   monsters: Record<string, number>; // monsterId -> count
-  notes?: string;
 }
 ```
 
 Schema requires `name`, `monsters`, timestamps; monster counts are
-constrained to 1..20. `description` and `notes` are allowed but not listed in
-the schema.
+constrained to 1..20. `description` is allowed but not listed in the schema.
 
 ## List page (`EncountersView.vue`)
 
@@ -58,7 +56,7 @@ the schema.
 ## Editor
 
 - Name (required).
-- Description and notes.
+- Description.
 - `handleSubmit` emits and then calls `closeEditor`, which resets the form and
   emits `cancel`. Parents also close on submit; double-close is harmless but
   means the reset happens before the parent reads the emitted object (the

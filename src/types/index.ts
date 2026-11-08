@@ -113,7 +113,6 @@ export interface Encounter extends WithMetadata {
   name: string;
   description?: string;
   monsters: Record<UUID, number>;
-  notes?: string;
 }
 
 export interface Combat extends WithMetadata {
