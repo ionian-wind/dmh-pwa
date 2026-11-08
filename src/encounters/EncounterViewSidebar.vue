@@ -8,7 +8,6 @@ import { useEncounterStore } from '@/stores/encounters';
 import TabGroup from '@/components/common/TabGroup.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
-import type { MapEntityRef } from '@/maps/types';
 import {
   IconAt,
   IconGhost3,
@@ -73,7 +72,7 @@ function setPawnCount(pawnId: string, value: unknown) {
   localPawns.value = { ...localPawns.value, [pawnId]: count };
 }
 
-function addPawns(payload: { refs: MapEntityRef[] }) {
+function addPawns(payload: { refs: Array<{ id: string }> }) {
   const pawns: Record<string, number> = {};
   for (const ref of payload.refs) {
     pawns[ref.id] =

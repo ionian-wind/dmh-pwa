@@ -80,7 +80,7 @@
         class="scene-add-row"
         :title="t('ambientSoundPage.addSceneLink')"
         :aria-label="t('ambientSoundPage.addSceneLink')"
-        @click="pickerOpen = true"
+        @click="scenePickerOpen = true"
       >
         <QItemSection side>
           <IconPlus :size="18" />
@@ -107,35 +107,18 @@
       </QItem>
     </QList>
 
-    <BaseModal
-      :is-open="pickerOpen"
-      modal-id="ambient-entity-scene-link-picker"
+    <EntityLinkingDialog
+      v-if="props.scenesEnabled"
+      :is-open="scenePickerOpen"
+      kind="scene"
       :title="t('ambientSoundPage.addSceneLink')"
-      :show-submit="false"
-      :show-cancel="true"
-      :cancel-label="t('common.close')"
-      @cancel="pickerOpen = false"
-      @update:is-open="(value: boolean) => !value && (pickerOpen = false)"
-    >
-      <QList v-if="availableScenes.length" class="q-pa-none">
-        <QItem
-          v-for="entry in availableScenes"
-          :key="`${entry.pack.id}:${entry.scene.id}`"
-          clickable
-          v-ripple
-          @click="linkScene(entry.pack.id, entry.scene.id)"
-        >
-          <QItemSection>
-            <div>{{ entry.scene.name }}</div>
-            <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
-          </QItemSection>
-          <QItemSection side><IconPlus :size="16" /></QItemSection>
-        </QItem>
-      </QList>
-      <div v-else class="text-caption text-grey-7 q-pa-sm">
-        {{ t('ambientSoundPage.noScenes') }}
-      </div>
-    </BaseModal>
+      :options="sceneOptions"
+      :linked-ids="linkedSceneIds"
+      :multiple="true"
+      :allow-create="false"
+      @add="addScenes"
+      @cancel="scenePickerOpen = false"
+    />
 
     <EntityLinkingDialog
       v-if="playlistStore"
@@ -168,7 +151,6 @@ import {
   IconPlus,
   IconX,
 } from '@tabler/icons-vue';
-import BaseModal from '@/components/common/BaseModal.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
 import type { JukeboxPlaylist } from '@/jukebox/types';
@@ -200,7 +182,7 @@ const props = withDefaults(
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const pickerOpen = ref(false);
+const scenePickerOpen = ref(false);
 const playlistPickerOpen = ref(false);
 
 // Keep the jukebox dependency behind the build-time flag so builds without
@@ -234,14 +216,15 @@ const linkedScenes = computed(() =>
     : [],
 );
 
-const availableScenes = computed(() => {
-  const linked = new Set(
-    linkedRefs.value.map((ref) => `${ref.packageId}::${ref.sceneId}`),
-  );
-  return store.allScenes.filter(
-    ({ pack, scene }) => !linked.has(`${pack.id}::${scene.id}`),
-  );
-});
+const sceneOptions = computed(() =>
+  store.allScenes.map(({ pack, scene }) => ({
+    id: `${pack.id}::${scene.id}`,
+    label: `${scene.name} · ${pack.name}`,
+  })),
+);
+const linkedSceneIds = computed(() =>
+  linkedScenes.value.map(({ pack, scene }) => `${pack.id}::${scene.id}`),
+);
 
 const playlistItems = computed(() => playlistStore.value?.items.value ?? []);
 const linkedPlaylistIds = computed(() =>
@@ -300,14 +283,23 @@ async function toggleScene(packId: string, sceneId: string) {
   await store.playScene(packId, sceneId);
 }
 
-function linkScene(packId: string, sceneId: string) {
-  store.addSceneLink(
-    packId,
-    sceneId,
-    props.entityType as SceneLinkEntityType,
-    props.entityId,
-  );
-  pickerOpen.value = false;
+function addScenes(payload: { refs: Array<{ id: string }> }) {
+  const selected = new Set(payload.refs.map((ref) => ref.id));
+  for (const { pack, scene } of store.allScenes) {
+    const key = `${pack.id}::${scene.id}`;
+    const linked = linkedSceneIds.value.includes(key);
+    if (selected.has(key) && !linked) {
+      store.addSceneLink(
+        pack.id,
+        scene.id,
+        props.entityType as SceneLinkEntityType,
+        props.entityId,
+      );
+    } else if (!selected.has(key) && linked) {
+      removeLink(pack.id, scene.id);
+    }
+  }
+  scenePickerOpen.value = false;
 }
 
 function removeLink(packId: string, sceneId: string) {
@@ -321,7 +313,7 @@ function removeLink(packId: string, sceneId: string) {
   if (link) store.removeSceneLink(link.id);
 }
 
-async function addPlaylists(payload: { refs: MapEntityRef[] }) {
+async function addPlaylists(payload: { refs: Array<{ id: string }> }) {
   const store = playlistStore.value;
   if (!store) return;
   const selected = new Set(payload.refs.map((ref) => ref.id));

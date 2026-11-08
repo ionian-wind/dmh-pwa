@@ -4,25 +4,31 @@ import { useI18n } from 'vue-i18n';
 import { IconPlus } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
-import type { MapEntityKind, MapEntityRef } from '@/maps/types';
+import { getEntityKindOption } from '@/components/common/entityLinking/entityRefs';
+import type { MapEntityKind } from '@/maps/types';
 
 const props = withDefaults(
   defineProps<{
     isOpen: boolean;
-    kind: MapEntityKind;
+    kind: string;
     title: string;
     options: Array<{ id: string; label: string }>;
     linkedIds: string[];
     multiple?: boolean;
+    /** Show the create action when the link kind supports it. */
+    allowCreate?: boolean;
   }>(),
-  { multiple: true },
+  { multiple: true, allowCreate: true },
 );
 
 const emit = defineEmits<{
   (e: 'cancel'): void;
   (
     e: 'add',
-    payload: { refs: MapEntityRef[]; labels: Record<string, string> },
+    payload: {
+      refs: Array<{ kind: string; id: string }>;
+      labels: Record<string, string>;
+    },
   ): void;
 }>();
 
@@ -33,6 +39,10 @@ const search = ref('');
 const selectedIds = ref<string[]>([]);
 const createdIds = ref<string[]>([]);
 const createdLabels = ref<Record<string, string>>({});
+const canCreate = computed(
+  () => props.allowCreate && !!getEntityKindOption(props.kind)?.create,
+);
+const createKind = computed(() => props.kind as MapEntityKind);
 
 const availableOptions = computed(() => {
   const existing = new Set(props.options.map((item) => item.id));
@@ -75,7 +85,10 @@ function toggleOption(id: string) {
     : [...selectedIds.value, id];
 }
 
-function handleCreated(payload: { ref: MapEntityRef; label: string }) {
+function handleCreated(payload: {
+  ref: { kind: string; id: string };
+  label: string;
+}) {
   const { ref, label } = payload;
   isCreateOpen.value = false;
   search.value = '';
@@ -134,6 +147,7 @@ function addSelected() {
           class="col"
         />
         <QBtn
+          v-if="canCreate"
           flat
           round
           color="positive"
@@ -207,7 +221,7 @@ function addSelected() {
 
   <EntityCreateDialog
     v-if="isCreateOpen"
-    :kind="kind"
+    :kind="createKind"
     @created="handleCreated"
     @cancel="isCreateOpen = false"
   />

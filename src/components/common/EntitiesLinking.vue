@@ -69,12 +69,15 @@ function labelFor(ref: MapEntityRef): string {
 }
 
 function handleAdd(payload: {
-  refs: MapEntityRef[];
+  refs: Array<{ kind: string; id: string }>;
   labels: Record<string, string>;
 }) {
   createdLabels.value = { ...createdLabels.value, ...payload.labels };
   const otherKinds = props.modelValue.filter((ref) => ref.kind !== props.kind);
-  emit('update:modelValue', dedupeEntityRefs([...otherKinds, ...payload.refs]));
+  emit(
+    'update:modelValue',
+    dedupeEntityRefs([...otherKinds, ...(payload.refs as MapEntityRef[])]),
+  );
   isModalOpen.value = false;
 }
 

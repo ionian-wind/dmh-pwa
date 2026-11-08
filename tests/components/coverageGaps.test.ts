@@ -264,10 +264,15 @@ describe('coverage gaps: small components', () => {
     });
     expect(wrapper.text()).toContain('No linked scenes or playlists');
     await wrapper.find('[title="Add scene"]').trigger('click');
+    await flushPromises();
+    await vi.dynamicImportSettled();
+    await flushPromises();
     const available = wrapper
-      .findAll('[data-stub="QItem"]')
+      .findAll('.entity-option')
       .find((item) => item.text().includes('Scene'))!;
     await available.trigger('click');
+    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await nextTick();
     expect(mocks.ambient.addSceneLink).toHaveBeenCalledWith(
       'pack1',
       'scene1',
