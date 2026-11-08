@@ -50,6 +50,8 @@ const EntityInfoDialogStub = defineComponent({
     picture: [String, null],
     notes: String,
     to: String,
+    entityKind: String,
+    entityId: String,
   },
   emits: ['cancel'],
   setup() {
@@ -102,6 +104,8 @@ describe('EntitiesLinking', () => {
       title: 'Alpha note',
       notes: 'Alpha body',
       to: '/notes/n1',
+      entityKind: 'note',
+      entityId: 'n1',
     });
 
     await dialog.vm.$emit('cancel');

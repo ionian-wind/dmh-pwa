@@ -1,14 +1,32 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  update: vi.fn(),
 }));
 
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   useRouter: () => ({ push: mocks.push }),
+}));
+
+const entity = { id: 'c1', name: 'Aria', notes: 'Ranger' };
+const entityStore = {
+  items: [entity],
+  getById: (id: string) => (id === entity.id ? entity : undefined),
+  load: vi.fn().mockResolvedValue(undefined),
+  update: mocks.update,
+};
+
+vi.mock('@/components/common/entityLinking/entityRefs', () => ({
+  getEntityKindOption: (kind: string) => ({
+    kind,
+    titleField: 'name',
+    useStore: () => entityStore,
+  }),
+  entityRoute: (kind: string, id: string) => `/${kind}s/${id}`,
 }));
 
 import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
@@ -20,12 +38,16 @@ const BaseModalStub = defineComponent({
     title: String,
     showExpand: Boolean,
     isExpanded: Boolean,
+    tabs: Array,
+    activeTab: String,
   },
-  emits: ['cancel', 'update:isExpanded'],
+  emits: ['cancel', 'update:isExpanded', 'update:activeTab'],
   setup(_, { slots }) {
     return () =>
       h('div', { class: 'base-modal-stub' }, [
         slots['header-actions']?.(),
+        slots['footer-center']?.(),
+        slots.main?.(),
         slots.default?.(),
       ]);
   },
@@ -43,6 +65,36 @@ const MilkdownViewStub = defineComponent({
   setup: () => () => h('div', { class: 'milkdown-view-stub' }),
 });
 
+const EntityInlineEditorStub = defineComponent({
+  name: 'EntityInlineEditor',
+  props: { title: String, titlePlaceholder: String },
+  emits: ['update:title'],
+  setup(_, { slots }) {
+    return () =>
+      h('div', { class: 'entity-inline-editor-stub' }, slots.default?.());
+  },
+});
+
+const EntityMarkdownEditorStub = defineComponent({
+  name: 'EntityMarkdownEditor',
+  props: {
+    modelValue: String,
+    isVisualMode: Boolean,
+    entityId: String,
+    entityType: String,
+    placeholder: String,
+  },
+  emits: ['update:modelValue'],
+  setup: () => () => h('div', { class: 'entity-markdown-editor-stub' }),
+});
+
+const EntityPicturePickerStub = defineComponent({
+  name: 'EntityPicturePicker',
+  props: { modelValue: String },
+  emits: ['update:modelValue'],
+  setup: () => () => h('div', { class: 'entity-picture-picker-stub' }),
+});
+
 function mountDialog(props: Record<string, unknown> = {}) {
   return mount(EntityInfoDialog, {
     props: {
@@ -57,12 +109,20 @@ function mountDialog(props: Record<string, unknown> = {}) {
         BaseModal: BaseModalStub,
         EntityPicture: EntityPictureStub,
         MilkdownView: MilkdownViewStub,
+        EntityInlineEditor: EntityInlineEditorStub,
+        EntityMarkdownEditor: EntityMarkdownEditorStub,
+        EntityPicturePicker: EntityPicturePickerStub,
       },
     },
   });
 }
 
 describe('EntityInfoDialog', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.update.mockResolvedValue({ ...entity });
+  });
+
   it('opens the entity page from the header action', async () => {
     const wrapper = mountDialog();
 
@@ -89,6 +149,45 @@ describe('EntityInfoDialog', () => {
     const wrapper = mountDialog({ to: undefined });
 
     expect(wrapper.find('.entity-info-open').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('shows tabs and a centered mode switch for a known entity', async () => {
+    const wrapper = mountDialog({
+      entityKind: 'character',
+      entityId: 'c1',
+    });
+    await flushPromises();
+    const modal = wrapper.findComponent(BaseModalStub);
+
+    expect(modal.props('tabs')).toHaveLength(2);
+    expect(wrapper.find('.entity-dialog-mode-switch').exists()).toBe(true);
+
+    await wrapper.find('.entity-edit-mode').trigger('click');
+    expect(wrapper.findComponent(EntityInlineEditorStub).exists()).toBe(true);
+
+    wrapper
+      .findComponent(EntityInlineEditorStub)
+      .vm.$emit('update:title', 'Aria the Ranger');
+    await wrapper.find('.entity-view-mode').trigger('click');
+    await flushPromises();
+
+    expect(mocks.update).toHaveBeenCalledWith(
+      'c1',
+      expect.objectContaining({
+        name: 'Aria the Ranger',
+        notes: 'Ranger',
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it('omits tabs and editing for entities without a kind', () => {
+    const wrapper = mountDialog();
+    const modal = wrapper.findComponent(BaseModalStub);
+
+    expect(modal.props('tabs')).toBeUndefined();
+    expect(wrapper.find('.entity-dialog-mode-switch').exists()).toBe(false);
     wrapper.unmount();
   });
 });

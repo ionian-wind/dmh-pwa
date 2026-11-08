@@ -241,6 +241,16 @@ const selectedParticipantRoute = computed(() => {
     participant.referenceId,
   );
 });
+const selectedParticipantKind = computed(() =>
+  selectedParticipant.value
+    ? selectedParticipant.value.type === 'player'
+      ? 'character'
+      : 'pawn'
+    : undefined,
+);
+const selectedParticipantEntityId = computed(
+  () => selectedParticipant.value?.referenceId,
+);
 
 function updateCombatFromStore() {
   if (!combatStore.isLoaded) return;
@@ -863,6 +873,8 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
       :picture="selectedParticipantPicture"
       :notes="selectedParticipantNotes"
       :to="selectedParticipantRoute"
+      :entity-kind="selectedParticipantKind"
+      :entity-id="selectedParticipantEntityId"
       @cancel="selectedParticipant = null"
     />
   </BaseEntityView>

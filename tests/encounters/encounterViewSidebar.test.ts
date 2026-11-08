@@ -55,6 +55,8 @@ const EntityInfoDialogStub = defineComponent({
     picture: String,
     notes: String,
     to: String,
+    entityKind: String,
+    entityId: String,
   },
   setup: () => () => h('div', { class: 'entity-info-dialog-stub' }),
 });
@@ -217,6 +219,8 @@ describe('EncounterViewSidebar', () => {
       title: 'Goblin',
       picture: 'picture-1',
       notes: 'Fierce little creature',
+      entityKind: 'pawn',
+      entityId: 'pawn-1',
     });
 
     viewState.isEditMode = true;

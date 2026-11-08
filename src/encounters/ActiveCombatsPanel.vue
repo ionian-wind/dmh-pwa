@@ -112,6 +112,16 @@ const selectedParticipantRoute = computed(() => {
     participant.referenceId,
   );
 });
+const selectedParticipantKind = computed(() =>
+  selectedParticipant.value
+    ? selectedParticipant.value.type === 'player'
+      ? 'character'
+      : 'pawn'
+    : undefined,
+);
+const selectedParticipantEntityId = computed(
+  () => selectedParticipant.value?.referenceId,
+);
 
 async function advance(combat: Combat) {
   const result = advanceTurn(combat);
@@ -348,6 +358,8 @@ onMounted(async () => {
       :picture="selectedParticipantPicture"
       :notes="selectedParticipantNotes"
       :to="selectedParticipantRoute"
+      :entity-kind="selectedParticipantKind"
+      :entity-id="selectedParticipantEntityId"
       @cancel="selectedParticipant = null"
     />
   </div>

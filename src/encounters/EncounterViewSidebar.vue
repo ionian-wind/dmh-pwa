@@ -325,6 +325,8 @@ onMounted(async () => {
         :picture="viewPawn?.picture"
         :notes="viewPawn?.notes ?? ''"
         :to="viewPawnRoute"
+        entity-kind="pawn"
+        :entity-id="viewPawn?.id"
         @cancel="viewPawn = null"
       />
 

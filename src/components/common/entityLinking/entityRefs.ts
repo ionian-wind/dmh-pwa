@@ -16,6 +16,7 @@ export interface MapEntityKindOption {
     isLoaded?: boolean | Ref<boolean>;
     load: () => Promise<unknown>;
     getById?: (id: string) => any;
+    update?: (id: string, patch: Record<string, unknown>) => Promise<unknown>;
   };
 }
 

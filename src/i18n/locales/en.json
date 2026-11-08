@@ -226,6 +226,7 @@
   },
   "common": {
     "mainEditor": "Main editor",
+    "main": "Main",
     "picture": "Picture",
     "selectPicture": "Select picture",
     "removePicture": "Remove picture",

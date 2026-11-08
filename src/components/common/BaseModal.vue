@@ -255,10 +255,19 @@ function setExpanded(val: boolean) {
           </form>
         </QScrollArea>
         <QCardActions
-          v-if="$slots.footer || $slots.actions || showSubmit || showCancel"
+          v-if="
+            $slots.footer ||
+            $slots['footer-center'] ||
+            $slots.actions ||
+            showSubmit ||
+            showCancel
+          "
           class="modal-actions"
           align="right"
         >
+          <div v-if="$slots['footer-center']" class="modal-footer-center">
+            <slot name="footer-center" />
+          </div>
           <slot name="footer" />
           <slot name="actions" />
           <QBtn
@@ -307,5 +316,15 @@ function setExpanded(val: boolean) {
 .modal-form--fill > :deep(*) {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.modal-actions {
+  position: relative;
+}
+
+.modal-footer-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>

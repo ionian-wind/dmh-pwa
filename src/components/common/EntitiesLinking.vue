@@ -36,6 +36,8 @@ const selectedInfo = ref<{
   picture?: string | null;
   notes?: string;
   to?: string;
+  entityKind?: string;
+  entityId?: string;
 } | null>(null);
 
 const group = computed(() =>
@@ -87,6 +89,8 @@ function openInfo(ref: MapEntityRef) {
     picture: typeof entity?.picture === 'string' ? entity.picture : undefined,
     notes: typeof notes === 'string' ? notes : undefined,
     to: group?.route?.(ref.id),
+    entityKind: ref.kind,
+    entityId: ref.id,
   };
 }
 
@@ -220,6 +224,8 @@ function removeLink(ref: MapEntityRef) {
       :picture="selectedInfo?.picture"
       :notes="selectedInfo?.notes"
       :to="selectedInfo?.to"
+      :entity-kind="selectedInfo?.entityKind"
+      :entity-id="selectedInfo?.entityId"
       @cancel="selectedInfo = null"
     />
   </div>

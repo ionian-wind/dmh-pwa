@@ -134,7 +134,15 @@ const EntityLinkingDialogStub = defineComponent({
 
 const EntityInfoDialogStub = defineComponent({
   name: 'EntityInfoDialog',
-  props: ['isOpen', 'title', 'picture', 'notes', 'to'],
+  props: [
+    'isOpen',
+    'title',
+    'picture',
+    'notes',
+    'to',
+    'entityKind',
+    'entityId',
+  ],
   emits: ['cancel'],
   setup() {
     return () => h('div', { class: 'entity-info-dialog-stub' });
