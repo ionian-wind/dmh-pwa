@@ -1,195 +1,243 @@
-# Dice Roller Engine
+# Dice Roller
 
-> **Status: work in progress.** The engine is a standalone TypeScript library
-> under `src/utils/dice-roller/`. It is not registered or called by the
-> application yet: there is no `src/utils/dice-roller/index.ts` bootstrap and no
-> app component calls `processDiceExpression`. The 3D dice FAB
-> (`src/components/RollButton.vue`) exists and uses `@3d-dice/dice-box` with
-> direct notations, but it is not mounted in the app shell and does not call the
-> engine. Nothing in this document should be read as a defect report against the
-> current release; the "WIP notes" section lists known gaps to address before
-> the feature ships.
+> **Status:** experimental. Two implementation branches exist, neither is wired
+> into the running application. This document is the consolidated dice-roller
+> reference: it merges the old feature description, the notation
+> specification, the plugin requirements/proposal, and the differences between
+> `dice-roller-2` and `dice-roller-3`.
 
 ## Purpose
 
-Parse and evaluate a Roll20-like dice notation superset, with a plugin
-architecture for macros, roll queries, tables, inline rolls, roll references,
-and formatting.
+The dice roller is intended to parse and evaluate a Roll20-like dice notation
+superset:
 
-## Key files
+- arithmetic, functions and dice pools;
+- exploding, rerolling, keep/drop and sorting modifiers;
+- grouped and computed rolls, custom dice and Fudge dice;
+- macros, roll queries, tables, inline rolls and roll-history references;
+- formatting markup, structured errors and non-fatal warnings;
+- an injectable RNG for deterministic tests.
 
-| File                                   | Role                                                          |
-| -------------------------------------- | ------------------------------------------------------------- |
-| `core/index.ts`                        | Plugin registry and parse/extract/evaluate pipeline           |
-| `lib/types.ts`                         | AST/plugin/result/error types                                 |
-| `lib/utils.ts`                         | AST traversal, math funcs, dice helpers, validation           |
-| `plugins/dice/tokens.ts`               | Chevrotain lexer tokens                                       |
-| `plugins/dice/parser.ts`               | Chevrotain CST parser                                         |
-| `plugins/dice/ast.ts`                  | CST → AST visitor (~1,400 lines)                              |
-| `plugins/dice/dicePlugin.ts`           | Dice/modifier evaluation (~800 lines)                         |
-| `plugins/macros/index.ts`              | Macro expansion                                               |
-| `plugins/roll-queries/index.ts`        | `?{prompt\|default}` handling                                 |
-| `plugins/tables/index.ts`              | `Nt[table]` weighted table rolls                              |
-| `plugins/inline-rolls/index.ts`        | `[[expr]]` and index assignment                               |
-| `plugins/roll-references/index.ts`     | `$[[n]]`, `$[roll:name]`                                      |
-| `plugins/formatting/index.ts`          | `%NEWLINE%`-style markup                                      |
-| `lib/errors.ts`                        | Dice-roller error classes                                     |
-| `src/components/RollButton.vue`        | Standalone 3D dice FAB (not mounted, not wired to the engine) |
-| `__tests__/*`, `plugins/*/__tests__/*` | Extensive unit/integration tests                              |
+The legacy engine under `src/utils/dice-roller/` has been replaced on the dice
+branches by `src/utils/bag-of-dice/`.
+
+## Implementation status
+
+| Branch          | Engine                                                                        | Status                                              |
+| --------------- | ----------------------------------------------------------------------------- | --------------------------------------------------- |
+| `main`          | Legacy `src/utils/dice-roller/`                                               | Not wired; no shared registration entry point.      |
+| `dice-roller-2` | `src/utils/bag-of-dice/` with Chevrotain lexers/parsers and plugin converters | Feature tests green; not wired into the app.        |
+| `dice-roller-3` | `src/utils/bag-of-dice/` with a custom tokenizer and recursive-descent parser | Experimental; parser/tokenizer tests still failing. |
+
+Both branches share the same notation specification, requirements and proposal.
+The application still does not register the engine or call it from a view.
+`RollButton.vue` is a standalone `@3d-dice/dice-box` FAB and is not mounted in
+the app shell.
+
+## Goals and requirements
+
+- The core provides an extendable parser, evaluator and error handler.
+- Each feature area is a plugin encapsulating syntax extension, parsing,
+  evaluation and extraction.
+- Parsing is a separate step that returns an AST; extraction and evaluation use
+  that AST later.
+- Plugins are evaluated in the order supplied. Arithmetic is the built-in
+  fallback and is always considered last.
+- Evaluation order:
+  1. roll queries (up to the nesting limit);
+  2. inline rolls, deepest first;
+  3. dice, including exploding/dropped/special dice;
+  4. `floor`/`ceil`/`round`/`abs`;
+  5. remaining arithmetic with normal precedence.
+- The RNG may be overridden for tests or reproducible rolls.
+- Invalid syntax, invalid user input and missing data produce typed exceptions.
+- Reaching a dice explosion limit produces a warning, not an exception.
+- Invalid formatting markup produces a syntax exception.
 
 ## Pipeline
 
 ```
-input string
-   │
-parseInput(input)            // first plugin whose parse() succeeds
-   │  └─ assignInlineRollIndices(ast)
-   ▼
-AST
-   │
-extractQueries/Macros/Tables/Rolls/Formatting(ast)  // all plugins, flatMap
-   ▼
-evaluate(ast, context)       // first plugin whose evaluate() returns truthy
-   ▼
-{ total, rolls[], warnings[], details }
+parse(text)
+  -> AST
+extractQueries / extractTables / extractRolls / extractMacros (plugins)
+  -> required input schemas, table names, roll ids, macro names
+evaluate(ast, { queries, tables, rolls, macros, rng })
+  -> { result, warnings }
 ```
 
-`processDiceExpression(input, context)` runs all steps and attaches extraction
-results under `details`.
+The engine may also expose a single `processDiceExpression`-style helper that
+runs the pipeline and returns extraction details, but the current branches keep
+the stages separate.
 
-### Plugin interface
+## Plugin architecture
 
-```ts
-interface DiceRollerPlugin {
-  name: string;
-  register?(core): void;
-  parse?(input): ASTNode;
-  extractQueries?/extractMacros?/extractTables?/extractRolls?/extractFormatting?
-  evaluate?(node, context): any;
-  evaluateMacro?/evaluateRollQuery?/evaluateTable?/evaluateRollReference?
-  evaluateFormatting?
-}
-```
+A plugin owns its token definitions, AST handlers and evaluator. Common
+responsibilities:
 
-`registerPlugin` pushes into a module-level array and optionally calls
-`plugin.register(core)`.
+- extend tokenization/grammar;
+- claim and parse plugin-specific tokens/nodes;
+- evaluate its AST node types;
+- extract data required before evaluation;
+- report domain-specific errors and warnings.
 
-Important evaluation semantics:
+Evaluation stops at the first plugin that handles a node. Arithmetic is the
+fallback for math and unknown-node errors.
 
-- A plugin's `evaluate` returning a falsy value means "not handled".
-- **Generic errors thrown by a plugin are swallowed** and the loop continues. A
-  real bug inside the dice plugin is indistinguishable from "this plugin
-  doesn't handle this node"; if no plugin returns a result, the core throws
-  `Unable to parse/evaluate`.
-- Intentional `DiceRollerError`s (syntax, validation, missing data) are
-  remembered and rethrown when no later plugin handles the node.
-- Macro/table/inline-roll plugins call back into `evaluate` recursively.
+### `dice-roller-2` — Chevrotain implementation
 
-## Dice syntax support
+- Uses Chevrotain lexers and CST parsers.
+- Each plugin supplies `tokens`, an optional parser/top rule, CST-to-AST handler
+  maps, an evaluator and extraction functions.
+- `parse()` merges token vocabularies, delegates to the plugin parser, and
+  converts the resulting CST to an AST.
+- Non-strict parsing returns `null` instead of throwing on syntax/recovery
+  errors.
+- Includes core, arithmetic, dice, roll-query, table and integration tests.
+- This is the more mature branch: its suite passes and is the better base for
+  further work.
 
-Tokens include:
+### `dice-roller-3` — custom tokenizer/parser implementation
 
-- arithmetic: `+ - * / % **`, parentheses
-- numbers (integer/decimal), unary minus
-- `NdX`, `dX`, Fudge `dF`/`dF.x`, custom `Nd[a,b,c]`
-- labels `2d6[fire]`
-- keep/drop: `kh`, `kl`, `dh`, `dl`, `k>`, `k<`
-- rerolls: `r`, `ro`, (partially `ra`)
-- explosions: `!`, `!!`, `!p`, `!r`, `!>n`, `!<n`, `!=n`, `!n`
-- success/failure/critical: `s`, `f`, `>`, `<`, `=`, `cs`, `cf`, `e`
-- sorting `sa`/`sd`, min/max `mi`/`ma`, matching `m`, roll-once `o`
-- functions `floor ceil round abs min max`
-- macros `#name`, inline `[[expr]]`, tables `Nt[name]`, queries `?{...}`,
-  references `$[[n]]` / `$[roll:name]`, formatting `%NEWLINE%`
+- Replaces Chevrotain with a custom sticky-regex tokenizer and a
+  recursive-descent `Parser`.
+- Plugins contribute `TokenDef` records and implement `canParse`/`parse`.
+- Core parser rules cover arithmetic; plugins claim their own tokens/nodes.
+- The branch is an architectural experiment; its parser/tokenizer and
+  integration tests are not yet green.
 
-The specification is documented in the repository root (`dice_notation.md`,
-`dice_notation_proposal.md`).
+## Notation specification
+
+### Arithmetic and functions
+
+Operators: `+`, `-`, `*`, `/`, `%`, `**`, parentheses. Math-only expressions
+such as `5+7*2` are valid. Supported functions: `floor(x)`, `round(x)`,
+`ceil(x)`, `abs(x)`.
+
+Precedence: parentheses, functions, exponentiation, multiplication/division/
+modulus left-to-right, addition/subtraction left-to-right.
+
+### Dice
+
+- `NdX`, `dX`: N dice with X sides; N defaults to 1.
+- `d%`: alias for `d100`.
+- `dF`, `dF.1`, `dF.2`, `dF.3`: Fudge/FATE variants.
+- Computed dice: `(N+Y)dX`, `Nd(X+Y)`, `(1+2)dF`; parenthesised values are
+  rounded.
+- Custom dice: `d[1,2,3,5,8]`.
+- Grouped rolls: `{1d6, 2d8+1, 1d4-1}`.
+- Math on dice: `round(1d6/2)`.
+- Labels: `2d6[fire]`; labels may contain Markdown.
+- Descriptive text after a roll is allowed, e.g. `1d20+5 for initiative`.
+
+### Dice modifiers
+
+- Keep/drop: `khN`, `klN`, `dhN`, `dlN`; custom `k>N`, `k<N`.
+- Rerolls: `rN`, `roN`, `r<3`; `raN` rerolls until success and requires the
+  `allowInfinite` context flag.
+- Explosions:
+  - `!` explode on maximum;
+  - `!p` penetrating;
+  - `!!` compound;
+  - `!N` custom threshold;
+  - `!<N`, `!>N`, `!=N` directional thresholds.
+  - Explosions are capped at 99 rolls and emit a warning at the limit.
+- Dice pools and counting: `=N`, `>N`, `<N`, `e`, `s`, `f`, `cs`, `cf`.
+- Min/max per die: `miN`, `maN`.
+- Matching: `m`.
+- Sorting: `sa`, `sd`.
+- Roll once: `o`.
+- Modifiers can be chained, e.g. `4d6kh3ro1!>5sd`.
+- Nested groups can receive modifiers, e.g. `{2d6kh1, 1d8}kh1`.
+- Advantage/disadvantage use `2d20kh1` / `2d20kl1`.
+
+### Tables
+
+`Nt[table-name]` rolls N times on a weighted table; `t[table]` rolls once.
+Weights may be expressed by repeating entries or by percentages that total 100.
+Table references can be extracted before evaluation.
+
+### Macros and roll queries
+
+- Macros: `#macro-name`; calls may be nested or chained with `;`.
+- Roll queries:
+  - `?{Prompt}` asks for a value;
+  - `?{Prompt|Default}` supplies a default;
+  - `?{Prompt|Option1|Option2}` offers choices;
+  - labelled variants are supported;
+  - query defaults may themselves be inline rolls, e.g. `?{Dmg|[[1d8]]}`;
+  - multiple independent queries may appear in one expression;
+  - nesting is limited; exceeding the limit is a syntax error.
+- Escape `|`, `,` and `}` inside queries/macros with `\`.
+
+### Inline rolls, references and formatting
+
+- Inline rolls: `[[expr]]`, evaluated deepest-first.
+- Roll references: `$[[N]]`, `$[[N]]-1`, `$[roll:id]`.
+- `%NEWLINE%` inserts a line break in output.
+- `//` starts a comment.
+- Invalid markup is a syntax error.
+
+### Errors and limits
+
+- Syntax/validation/missing-data/nesting-limit exceptions are typed.
+- Missing macro, table or roll reference is a missing-data error.
+- Division by zero is reported as an error/null result.
+- Invalid dice such as `2d0`, `0d6`, `2d-6` and `2d6.5` are rejected.
+- Invalid keep/drop counts are rejected.
+- Negative dice such as `-1d6` are rejected.
+- Mismatched braces/brackets and malformed queries are rejected.
+- Explosion limits are warnings; query nesting limits are errors.
 
 ## Evaluation details
 
-### Dice and modifiers
+- Modifiers apply left-to-right.
+- The `e` modifier rerolls successes after other modifiers, up to 99 cycles.
+- Arithmetic combines scalar totals, concatenates roll arrays, and propagates
+  warnings/details.
+- Generic plugin errors must not be silently mistaken for “plugin did not handle
+  this node”; intentional typed errors are rethrown when no later plugin
+  handles the node.
 
-`evaluateDiceNode` handles node types:
-`number`, `unary`, `arithmetic`, `function`, `macro` (delegates to core),
-`table` (throws; should have been expanded), `group`, `custom-dice`,
-`grouped-roll`, `dice`, `fudge-dice`.
+## Key files
 
-Modifiers are applied left-to-right by `applyModifiers`. The `e` (exhaustive)
-modifier is pulled out, the last success-type modifier is remembered, and after
-normal modifiers it repeatedly rerolls only successes (max 99 cycles).
+| File/directory                                | Role                                                |
+| --------------------------------------------- | --------------------------------------------------- |
+| `src/utils/bag-of-dice/`                      | Replacement engine on both dice branches            |
+| `src/utils/bag-of-dice/index.ts`              | Public `BagOfDice` API                              |
+| `src/utils/bag-of-dice/plugins/`              | Arithmetic, dice, roll-query, table plugins         |
+| `src/utils/bag-of-dice/utils/cstAstConverter` | CST/AST conversion used by `dice-roller-2`          |
+| `src/utils/bag-of-dice/core/`                 | Tokenizer/parser/evaluator used by `dice-roller-3`  |
+| `src/components/RollButton.vue`               | Standalone 3D dice FAB; not mounted or engine-wired |
 
-Explosions are delegated to `explodeDice`, capped at `context.maxRolls ?? 99`.
-
-`ra` (reroll until success) requires `context.allowInfinite`; otherwise it
-warns and does nothing.
-
-### Functions
-
-Arguments are evaluated recursively; `mathFunctions` provides the six
-functions.
-
-### Arithmetic
-
-Scalar totals combine normally; `rolls` arrays are concatenated; warnings and
-details propagate.
-
-### Errors
-
-Custom error classes (`SyntaxError`, `ValidationError`, `MissingDataError`,
-base `DiceRollerError`) are defined in `lib/types.ts`. `SyntaxError` shadows the
-global name inside modules that import it.
-
-## WIP notes (address before shipping)
-
-1. **UI registration entry point.** `dicePlugin` exposes `parse`, `evaluate`,
-   and `register`, and the test suite registers the plugin pipeline manually.
-   The application still has no `src/utils/dice-roller/index.ts` that registers
-   all plugins once for the UI, and `RollButton.vue` still sends raw notation
-   such as `1d20` to `@3d-dice/dice-box` instead of evaluating it through the
-   engine.
-2. **Operator order is lost.** In `ast.ts`, `additive` concatenates `Plus`
-   tokens then `Minus` tokens before walking, and `multiplicative` concatenates
-   multiply/divide/modulo groups. Mixed expressions can be re-associated
-   (`5 - 2 + 3`). This should be fixed before relying on arbitrary arithmetic.
-3. **`d%` is not supported.** `%` lexes as modulo; there is no `d%` alias to
-   `d100`.
-4. **Exponential CST indexing.** Chained exponents (`2**3**2`) may associate
-   incorrectly.
-5. **Plugin error surfacing.** Core evaluation now rethrows intentional
-   `DiceRollerError`s (e.g. missing roll references) but still swallows generic
-   plugin errors when another plugin handles the node. Debug logs remain
-   verbose.
-
-Fixed during remediation: custom dice count semantics, Fudge variants,
-roll-reference tokenization, nested inline rolls, grouped-roll evaluation, and
-the plugin API/test drift.
-
-## Planned UI integration
-
-The WIP scope includes connecting the engine to the app:
-
-1. Create `src/utils/dice-roller/index.ts` that imports and registers the dice,
-   macros, tables, inline-roll, roll-query, roll-reference, and formatting
-   plugins exactly once.
-2. Replace or wrap `RollButton.vue` to call `processDiceExpression` and show
-   results, or keep 3D dice and use the engine for the result calculation.
-3. Pass an RNG (see technical proposals) so rolls are reproducible/testable.
-4. Surface `warnings` in the UI.
-5. When `CombatView` starts using the engine, remove its unused `S` token
-   import; it is a leftover from exploratory work, not a shipped bug.
-
-## Performance
-
-- The parser is re-created per `parseDiceExpression` call
-  (`new DiceRollerDiceParser()`), even though Chevrotain parsers are reusable.
-- `cstToAst` is verbose with debug branches and repeated token scans; building
-  the AST for long expressions is heavier than necessary.
-- `getBacklinks`-style linear scans are not relevant here; the engine itself
-  has no caches.
+The legacy `src/utils/dice-roller/` tree documented by earlier revisions has
+been removed on both dice branches.
 
 ## Testing
 
-The dice tests are the most complete part of the repository and currently pass.
-They document the intended syntax and behavior; each suite registers the plugin
-pipeline manually because the app has no shared registration entry point yet.
-See `src/utils/dice-roller/__tests__/` and each plugin's `__tests__/`.
+- `dice-roller-2`: full suite passes; `features:verify` passes.
+- `dice-roller-3`: merge/type-check succeeds, but the experimental
+  tokenizer/parser suite has pre-existing failures. Fix those before using that
+  branch as a base.
+- Deterministic tests inject a fake RNG.
+
+## Integration checklist
+
+Before shipping:
+
+1. Choose one implementation branch and delete the rejected one.
+2. Add a single registration/bootstrap module that loads the chosen plugins
+   once.
+3. Wire the engine to a UI entry point (or wrap `RollButton.vue`) and render
+   results/warnings.
+4. Feed real table, macro and roll-reference data into evaluation.
+5. Add app-level tests for parse → extract → prompt → evaluate.
+6. Keep the notation specification and this document as the canonical feature
+   reference.
+
+## Known gaps
+
+- No app registration or UI integration.
+- `dice-roller-3` parser/tokenizer is incomplete.
+- Formatting, macro and roll-reference plugins are not fully exercised end to
+  end.
+- No final decision on whether to keep 3D dice, the engine, or both.

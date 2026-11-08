@@ -158,10 +158,11 @@ with `sample-ambient-pack/` plus `sample-ambient-pack.spk`; see its
 
 Contains this documentation plus the pre-existing
 `ambient-sound-configurator.md` specification. Root-level Markdown files
-(`dice_notation.md`, `dice_notation_proposal.md`,
-`STORE_STANDARDIZATION_SUMMARY.md`) are design notes; the store summary
-describes a `createBaseStore.ts` that does not exist and an `isLoading` field
-that the current base store does not expose. Treat it as historical.
+(`STORE_STANDARDIZATION_SUMMARY.md`) are historical design notes; the store
+summary describes a `createBaseStore.ts` that does not exist and an `isLoading`
+field that the current base store does not expose. Treat it as historical.
+Dice-roller notation and architecture notes are consolidated in
+[`features/dice-roller.md`](../features/dice-roller.md).
 
 ## `patches/`
 

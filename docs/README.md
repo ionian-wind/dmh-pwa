@@ -54,7 +54,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [ambient-sound-configurator.md](ambient-sound-configurator.md)                                     | Ambient sound packs, scenes, layers and playback                            |
 | [features/maps.md](features/maps.md)                                                               | Map images, locations, entity bindings, markers and icons                   |
 | [features/calculator.md](features/calculator.md)                                                   | Arithmetic and unit converter dialog                                        |
-| [features/dice-roller.md](features/dice-roller.md)                                                 | Plugin-based dice parser/evaluator (work in progress, not yet connected)    |
+| [features/dice-roller.md](features/dice-roller.md)                                                 | Consolidated dice roller feature, notation spec and branch comparison       |
 | [features/dice-probability-calculator/README.md](features/dice-probability-calculator/README.md)   | AnyDice-compatible probability library, specification and validation matrix |
 | [features/dice-probability-calculator/library.md](features/dice-probability-calculator/library.md) | Probability library API and usage                                           |
 | [features/dice-probability-calculator/spec.md](features/dice-probability-calculator/spec.md)       | Probability language specification                                          |
