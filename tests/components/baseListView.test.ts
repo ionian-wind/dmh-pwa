@@ -284,4 +284,14 @@ describe('BaseListView', () => {
     expect(wrapper.findComponent(EditorStub).props('isOpen')).toBe(true);
     wrapper.unmount();
   });
+
+  it('uses a custom empty-state action title', () => {
+    const { wrapper } = mountList({
+      items: [],
+      emptyActionTitle: 'Add',
+    });
+
+    expect(wrapper.find('.empty-state-create').text()).toContain('Add');
+    wrapper.unmount();
+  });
 });

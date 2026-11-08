@@ -547,6 +547,7 @@ onBeforeUnmount(() => {
       :card-component="TrackCard"
       :empty-message="t('common.emptyTracks')"
       :create-title="t('common.addTracks')"
+      :empty-action-title="t('common.add')"
       :create-loading="isAddingTracks"
       :card-props="cardProps"
       :show-search="false"

@@ -23,6 +23,7 @@ const props = defineProps({
   editorComponent: { type: [Object, Function, String], required: false },
   emptyMessage: { type: String, required: true },
   createTitle: { type: String, required: true },
+  emptyActionTitle: { type: String, default: '' },
   createLoading: { type: Boolean, default: false },
   cardProps: {
     type: Function as PropType<(item: any) => any>,
@@ -219,7 +220,9 @@ onBeforeUnmount(() => {
         @click="onCreate"
       >
         <IconPlus :size="28" />
-        <span class="q-ml-sm">{{ t('common.create') }}</span>
+        <span class="q-ml-sm">{{
+          props.emptyActionTitle || t('common.create')
+        }}</span>
       </QBtn>
     </EmptyState>
 
