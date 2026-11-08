@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import {
   IconCheck,
+  IconEye,
   IconFlag,
   IconGhost3,
   IconPlayerPause,
@@ -18,7 +20,15 @@ import { advanceTurn } from '@/utils/combatTurn';
 import { useVisibleActiveCombats } from '@/encounters/useVisibleActiveCombats';
 import type { Combat, Combatant } from '@/types';
 
+const props = withDefaults(
+  defineProps<{
+    onNavigate?: () => void;
+  }>(),
+  { onNavigate: undefined },
+);
+
 const { t } = useI18n();
+const router = useRouter();
 const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
@@ -99,6 +109,11 @@ function finish(combat: Combat) {
   void combatStore.endCombat(combat.id);
 }
 
+function viewCombat(combat: Combat) {
+  props.onNavigate?.();
+  void router.push(`/combats/${combat.id}`);
+}
+
 onMounted(async () => {
   await Promise.all([
     combatStore.isLoaded ? Promise.resolve() : combatStore.load(),
@@ -110,11 +125,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="side-panel-content column full-height">
+  <div class="side-panel-content column full-height q-pa-md">
     <QScrollArea class="col-grow">
       <div
         v-if="!activeCombats.length"
-        class="text-caption text-grey-7 q-pa-md"
+        class="text-caption text-grey-7 q-pa-sm"
       >
         {{ t('combat.noActiveCombats') }}
       </div>
@@ -126,6 +141,17 @@ onMounted(async () => {
         class="combat-group"
       >
         <template #actions>
+          <QBtn
+            class="view-combat-button"
+            flat
+            dense
+            color="primary"
+            :title="t('common.view')"
+            :aria-label="t('common.view')"
+            @click="viewCombat(combat)"
+          >
+            <IconEye :size="18" />
+          </QBtn>
           <QBtn
             class="finish-combat-button"
             flat

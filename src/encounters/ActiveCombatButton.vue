@@ -33,7 +33,7 @@ onMounted(() => {
   </QBtn>
 
   <div v-if="isPanelOpen" class="active-combats-floating">
-    <ActiveCombatsPanel />
+    <ActiveCombatsPanel :on-navigate="() => (isPanelOpen = false)" />
   </div>
 </template>
 

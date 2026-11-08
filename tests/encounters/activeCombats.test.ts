@@ -38,6 +38,7 @@ const combat = {
 
 const mocks = vi.hoisted(() => ({
   route: { name: '', params: {} as Record<string, string> },
+  routerPush: vi.fn(),
   combats: {
     items: [] as any[],
     isLoaded: true,
@@ -72,6 +73,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   useRoute: () => mocks.route,
+  useRouter: () => ({ push: mocks.routerPush }),
 }));
 
 vi.mock('@/stores/combats', () => ({ useCombatStore: () => mocks.combats }));
@@ -116,8 +118,12 @@ describe('active combats sidebar', () => {
     expect(wrapper.text()).toContain('Aria');
     expect(wrapper.text()).toContain('Goblin');
     expect(wrapper.find('.finish-combat-button').exists()).toBe(true);
+    expect(wrapper.find('.view-combat-button').exists()).toBe(true);
     expect(wrapper.findAll('.exclude-participant-button')).toHaveLength(2);
     expect(wrapper.findAll('.postpone-turn-button')).toHaveLength(1);
+
+    await wrapper.find('.view-combat-button').trigger('click');
+    expect(mocks.routerPush).toHaveBeenCalledWith('/combats/combat-1');
 
     await wrapper.find('.postpone-turn-button').trigger('click');
     expect(mocks.combats.update).toHaveBeenCalledWith(
