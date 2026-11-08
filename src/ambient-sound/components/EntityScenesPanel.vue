@@ -5,116 +5,43 @@
         {{ t('ambientSoundPage.noSceneLinks') }}
       </div>
       <QList v-else class="q-pa-none q-mb-none">
-        <QItem
+        <SidebarActionItem
           v-for="item in mixedItems"
           :key="item.key"
-          v-ripple
-          :clickable="item.type === 'scene' || playlistHasTracks(item.playlist)"
-          :class="[
-            item.type === 'scene' ? 'scene-link-item' : 'playlist-link-item',
+          :title="item.name"
+          :active="
             item.type === 'scene'
-              ? {
-                  'scene-link-item--selected': isActive(
-                    item.scene.pack.id,
-                    item.scene.scene.id,
-                  ),
-                  'scene-link-item--playing': isPlaying(
-                    item.scene.pack.id,
-                    item.scene.scene.id,
-                  ),
-                }
-              : {
-                  'scene-link-item--selected': isPlaylistActive(
-                    item.playlist.id,
-                  ),
-                  'scene-link-item--playing': isPlaylistPlaying(
-                    item.playlist.id,
-                  ),
-                },
-          ]"
-          @click="
+              ? isActive(item.scene.pack.id, item.scene.scene.id)
+              : isPlaylistActive(item.playlist.id)
+          "
+          :playing="
+            item.type === 'scene'
+              ? isPlaying(item.scene.pack.id, item.scene.scene.id)
+              : isPlaylistPlaying(item.playlist.id)
+          "
+          :clickable="item.type === 'scene' || playlistHasTracks(item.playlist)"
+          :playable="item.type === 'scene' || playlistHasTracks(item.playlist)"
+          :removable="props.editable"
+          :remove-label="t('ambientSoundPage.removeLink')"
+          :class="
+            item.type === 'scene' ? 'scene-link-item' : 'playlist-link-item'
+          "
+          @activate="
             item.type === 'scene'
               ? toggleScene(item.scene.pack.id, item.scene.scene.id)
               : togglePlaylist(item.playlist.id)
           "
-        >
-          <QItemSection side>
-            <IconHeadphones v-if="item.type === 'scene'" :size="18" />
-            <IconPlaylist v-else :size="18" />
-          </QItemSection>
-          <QItemSection>
-            <div>{{ item.name }}</div>
-          </QItemSection>
-          <QItemSection
-            side
-            class="scene-link-actions row items-center no-wrap"
-          >
-            <QBtn
-              v-if="item.type === 'scene'"
-              class="scene-toggle-button"
-              flat
-              dense
-              size="sm"
-              :title="
-                isPlaying(item.scene.pack.id, item.scene.scene.id)
-                  ? t('common.pause')
-                  : t('common.play')
-              "
-              :aria-label="
-                isPlaying(item.scene.pack.id, item.scene.scene.id)
-                  ? t('common.pause')
-                  : t('common.play')
-              "
-              @click.stop="toggleScene(item.scene.pack.id, item.scene.scene.id)"
-            >
-              <IconPlayerPause
-                v-if="isPlaying(item.scene.pack.id, item.scene.scene.id)"
-                :size="18"
-              />
-              <IconPlayerPlay v-else :size="18" />
-            </QBtn>
-            <QBtn
-              v-else-if="playlistHasTracks(item.playlist)"
-              class="scene-toggle-button"
-              flat
-              dense
-              size="sm"
-              :title="
-                isPlaylistPlaying(item.playlist.id)
-                  ? t('common.pause')
-                  : t('common.play')
-              "
-              :aria-label="
-                isPlaylistPlaying(item.playlist.id)
-                  ? t('common.pause')
-                  : t('common.play')
-              "
-              @click.stop="togglePlaylist(item.playlist.id)"
-            >
-              <IconPlayerPause
-                v-if="isPlaylistPlaying(item.playlist.id)"
-                :size="18"
-              />
-              <IconPlayerPlay v-else :size="18" />
-            </QBtn>
-            <QBtn
-              v-if="props.editable"
-              flat
-              dense
-              size="sm"
-              color="negative"
-              :title="t('ambientSoundPage.removeLink')"
-              :aria-label="t('ambientSoundPage.removeLink')"
-              @click.stop="
-                item.type === 'scene'
-                  ? removeLink(item.scene.pack.id, item.scene.scene.id)
-                  : removePlaylist(item.playlist.id)
-              "
-            >
-              <IconX :size="18" />
-            </QBtn>
-          </QItemSection>
-        </QItem>
+          @toggle="
+            item.type === 'scene'
+              ? toggleScene(item.scene.pack.id, item.scene.scene.id)
+              : togglePlaylist(item.playlist.id)
+          "
+          @remove="
+            item.type === 'scene'
+              ? removeLink(item.scene.pack.id, item.scene.scene.id)
+              : removePlaylist(item.playlist.id)
+          "
+        />
       </QList>
     </div>
 
@@ -191,14 +118,8 @@ import {
   shallowRef,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconHeadphones,
-  IconPlaylist,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconPlus,
-  IconX,
-} from '@tabler/icons-vue';
+import { IconPlus } from '@tabler/icons-vue';
+import SidebarActionItem from '@/components/common/SidebarActionItem.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
 import type { JukeboxPlaylist } from '@/jukebox/types';
@@ -442,22 +363,5 @@ onMounted(async () => {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-}
-
-.scene-link-item--selected {
-  background: var(--color-selected-surface) !important;
-  color: var(--color-text) !important;
-  font-weight: 500;
-}
-
-.scene-link-item--playing {
-  box-shadow: inset 4px 0 0 var(--color-accent);
-}
-
-.scene-link-actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.15rem;
 }
 </style>

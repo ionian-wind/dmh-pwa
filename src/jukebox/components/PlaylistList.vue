@@ -10,6 +10,7 @@ import { useJukeboxImporting } from '@/jukebox/composables/useJukeboxImporting';
 import type { JukeboxPlaylist } from '@/jukebox/types';
 
 import SortableList from '@/components/common/SortableList.vue';
+import SidebarActionItem from '@/components/common/SidebarActionItem.vue';
 
 import {
   IconEdit,
@@ -17,7 +18,6 @@ import {
   IconEye,
   IconPlus,
   IconPencil,
-  IconX,
 } from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
 import { useI18n } from 'vue-i18n';
@@ -255,43 +255,44 @@ onMounted(async () => {
         @end="onPlaylistSortEnd"
       >
         <template #item="{ element: playlist }">
-          <QItem
-            clickable
+          <SidebarActionItem
+            :title="playlist.name"
             :active="selectedPlaylistId === playlist.id"
-            :active-class="'playlist-item--active'"
-            v-ripple
-            @click="setSelectedPlaylist(playlist.id)"
+            :removable="true"
+            :remove-label="t('common.delete')"
+            :actions-visible="isEditMode"
             class="playlist-item"
             :class="{ 'has-active-track': isActivePlaylist(playlist.id) }"
+            @activate="setSelectedPlaylist(playlist.id)"
+            @remove="removePlaylist(playlist.id)"
           >
-            <QItemSection
-              v-if="isEditMode"
-              side
-              class="playlist-drag-handle"
-              @click.stop
-            >
-              <IconGripVertical :size="16" />
-            </QItemSection>
-            <QItemSection
-              v-if="isEditMode"
-              side
-              class="playlist-bulk-select"
-              @pointerdown.capture="
-                capturePlaylistBulkClick(playlist.id, $event)
-              "
-              @click.stop
-            >
-              <QCheckbox
-                :model-value="selectedPlaylistIds.has(playlist.id)"
-                :disable="hasSelectedTracks"
-                dense
-                @update:model-value="updateBulkSelection"
-              />
-            </QItemSection>
-            <QItemSection>
-              {{ playlist.name }}
-            </QItemSection>
-            <QItemSection class="playlist-actions" side>
+            <template #leading>
+              <QItemSection
+                v-if="isEditMode"
+                side
+                class="playlist-drag-handle"
+                @click.stop
+              >
+                <IconGripVertical :size="16" />
+              </QItemSection>
+              <QItemSection
+                v-if="isEditMode"
+                side
+                class="playlist-bulk-select"
+                @pointerdown.capture="
+                  capturePlaylistBulkClick(playlist.id, $event)
+                "
+                @click.stop
+              >
+                <QCheckbox
+                  :model-value="selectedPlaylistIds.has(playlist.id)"
+                  :disable="hasSelectedTracks"
+                  dense
+                  @update:model-value="updateBulkSelection"
+                />
+              </QItemSection>
+            </template>
+            <template #actions>
               <QBtnGroup flat>
                 <QBtn
                   :size="'sm'"
@@ -300,17 +301,9 @@ onMounted(async () => {
                 >
                   <IconPencil :size="18" />
                 </QBtn>
-                <QBtn
-                  :size="'sm'"
-                  flat
-                  color="negative"
-                  @click.stop="removePlaylist(playlist.id)"
-                >
-                  <IconX :size="18" />
-                </QBtn>
               </QBtnGroup>
-            </QItemSection>
-          </QItem>
+            </template>
+          </SidebarActionItem>
         </template>
       </SortableList>
     </QScrollArea>
@@ -411,13 +404,5 @@ onMounted(async () => {
 
 .playlist-bulk-panel .cancel-selection-link {
   margin-left: 16px;
-}
-
-.playlist-actions {
-  display: none;
-}
-
-.playlist-list-container.is-edit-mode .playlist-item .playlist-actions {
-  display: flex;
 }
 </style>

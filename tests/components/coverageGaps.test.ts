@@ -278,8 +278,8 @@ describe('coverage gaps: small components', () => {
     await flushPromises();
 
     const playingRow = playing.find('.playlist-link-item');
-    expect(playingRow.classes()).toContain('scene-link-item--selected');
-    expect(playingRow.classes()).toContain('scene-link-item--playing');
+    expect(playingRow.classes()).toContain('sidebar-action-item--selected');
+    expect(playingRow.classes()).toContain('sidebar-action-item--playing');
     await playingRow.trigger('click');
     expect(mocks.player.pause).toHaveBeenCalled();
     playing.unmount();
@@ -332,10 +332,10 @@ describe('coverage gaps: small components', () => {
       props: { entityType: 'location', entityId: 'l1', editable: true },
     });
     expect(linked.find('.scene-link-item').classes()).toContain(
-      'scene-link-item--selected',
+      'sidebar-action-item--selected',
     );
     expect(linked.find('.scene-link-item').classes()).toContain(
-      'scene-link-item--playing',
+      'sidebar-action-item--playing',
     );
     await linked.find('.scene-link-item').trigger('click');
     expect(mocks.ambient.pause).toHaveBeenCalled();
