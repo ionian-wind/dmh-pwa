@@ -1,18 +1,32 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import type { InlineEditState, Party } from '@/types';
+import type { Character, InlineEditState, Party } from '@/types';
 
 import { useMentionsStore } from '@/utils/storage';
+import { useCharacterStore } from '@/stores/characters';
+import { usePartyStore } from '@/stores/parties';
 
 import Mentions from '@/components/common/Mentions.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
+import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
-import { IconAt, IconHeadphones, IconSwords } from '@tabler/icons-vue';
+import { entityRoute } from '@/components/common/entityLinking/entityRefs';
+import {
+  IconAt,
+  IconHeadphones,
+  IconPlus,
+  IconSwords,
+  IconUsers,
+  IconX,
+} from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const mentionsStore = useMentionsStore();
+const characterStore = useCharacterStore();
+const partyStore = usePartyStore();
 const { t } = useI18n();
 
 const props = defineProps<{
@@ -30,16 +44,55 @@ const localEditState = reactive<InlineEditState<Party>>({
 });
 
 const state = computed(() => props.editState ?? localEditState);
-const activeTab = ref('scenes');
+const activeTab = ref('characters');
+const showLinkModal = ref(false);
+const viewCharacter = ref<Character | null>(null);
+const viewCharacterRoute = computed(() =>
+  viewCharacter.value
+    ? entityRoute('character', viewCharacter.value.id)
+    : undefined,
+);
 
-const tabs = computed(() => [
-  {
-    id: 'scenes',
-    label: t('ambientSoundPage.scenesTab'),
-    icon: IconHeadphones,
+const currentParty = computed(() => state.value.draft ?? props.party);
+const characterIds = computed(() => currentParty.value?.characters ?? []);
+const partyCharacters = computed(() =>
+  characterIds.value
+    .map((id) => characterStore.getById(id))
+    .filter((character): character is Character => !!character),
+);
+const characterOptions = computed(() =>
+  characterStore.filtered.map((character) => ({
+    id: character.id,
+    label: character.name,
+  })),
+);
+
+const tabs = computed(() => {
+  const base = [
+    {
+      id: 'characters',
+      label: t('parties.fields.characters'),
+      icon: IconUsers,
+    },
+    {
+      id: 'scenes',
+      label: t('ambientSoundPage.scenesTab'),
+      icon: IconHeadphones,
+    },
+  ];
+  return state.value.isEditMode
+    ? base
+    : [...base, { id: 'mentions', label: t('common.mentions'), icon: IconAt }];
+});
+
+watch(
+  () => state.value.isEditMode,
+  (isEditing) => {
+    if (isEditing && activeTab.value === 'mentions') {
+      activeTab.value = 'characters';
+    }
   },
-  { id: 'mentions', label: t('common.mentions'), icon: IconAt },
-]);
+);
 
 const mentions = computed(() =>
   props.party
@@ -68,7 +121,30 @@ function setVisualMode(value: boolean) {
   state.value.isVisualMode = value;
 }
 
-onMounted(() => mentionsStore.load());
+function setCharacters(ids: string[]) {
+  const characters = [...new Set(ids)];
+  if (state.value.draft) {
+    state.value.draft.characters = characters;
+    return;
+  }
+  void partyStore.update(props.party.id, { characters });
+}
+
+function addCharacters(payload: { refs: Array<{ id: string }> }) {
+  setCharacters(payload.refs.map((ref) => ref.id));
+  showLinkModal.value = false;
+}
+
+function toggleCharacter(character: Character, linked: boolean) {
+  const ids = characterIds.value;
+  setCharacters(
+    linked ? [...ids, character.id] : ids.filter((id) => id !== character.id),
+  );
+}
+
+onMounted(async () => {
+  await Promise.all([mentionsStore.load(), characterStore.load()]);
+});
 </script>
 
 <template>
@@ -84,6 +160,71 @@ onMounted(() => mentionsStore.load());
         icon-only
       >
         <template #default>
+          <div
+            v-show="activeTab === 'characters'"
+            class="character-tab-panel column full-height"
+          >
+            <div class="character-list col-grow">
+              <div
+                v-if="partyCharacters.length === 0"
+                class="text-caption text-grey-7 q-pa-md"
+              >
+                {{ t('partyView.noCharacters') }}
+              </div>
+              <QList v-else class="q-pa-none q-mb-none">
+                <QItem
+                  v-for="character in partyCharacters"
+                  :key="character.id"
+                  clickable
+                  v-ripple
+                  class="character-row"
+                  @click="viewCharacter = character"
+                >
+                  <QItemSection>
+                    <span class="character-name">{{ character.name }}</span>
+                  </QItemSection>
+                  <QItemSection
+                    v-if="state.isEditMode"
+                    side
+                    class="character-row-actions row items-center"
+                  >
+                    <QBtn
+                      flat
+                      dense
+                      size="sm"
+                      color="negative"
+                      :title="t('partyView.unlink')"
+                      :aria-label="t('partyView.unlink')"
+                      @click.stop="toggleCharacter(character, false)"
+                    >
+                      <IconX :size="16" />
+                    </QBtn>
+                  </QItemSection>
+                </QItem>
+              </QList>
+            </div>
+
+            <QSeparator />
+
+            <QList v-if="state.isEditMode" class="q-pa-none q-mb-none">
+              <QItem
+                clickable
+                v-ripple
+                class="character-add-row"
+                :title="t('parties.linkCharacters')"
+                :aria-label="t('parties.linkCharacters')"
+                @click="showLinkModal = true"
+              >
+                <QItemSection side>
+                  <IconPlus :size="18" />
+                </QItemSection>
+                <QItemSection>
+                  {{ t('parties.linkCharacters') }}
+                </QItemSection>
+              </QItem>
+            </QList>
+          </div>
+
           <div
             v-show="activeTab === 'scenes'"
             class="scene-tab-panel column full-height"
@@ -106,6 +247,28 @@ onMounted(() => mentionsStore.load());
         </template>
       </TabGroup>
     </div>
+
+    <EntityLinkingDialog
+      :is-open="showLinkModal"
+      kind="character"
+      :title="t('parties.linkCharacters')"
+      :options="characterOptions"
+      :linked-ids="characterIds"
+      :multiple="true"
+      @add="addCharacters"
+      @cancel="showLinkModal = false"
+    />
+
+    <EntityInfoDialog
+      :is-open="!!viewCharacter"
+      :title="viewCharacter?.name ?? ''"
+      :picture="viewCharacter?.picture"
+      :notes="viewCharacter?.notes ?? ''"
+      :to="viewCharacterRoute"
+      entity-kind="character"
+      :entity-id="viewCharacter?.id"
+      @cancel="viewCharacter = null"
+    />
 
     <QList
       v-if="!state.isEditMode && props.onStartCombat"
@@ -142,6 +305,20 @@ onMounted(() => mentionsStore.load());
 .sidebar-tab-content {
   min-height: 0;
   overflow-y: auto;
+}
+
+.character-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.character-name {
+  color: var(--color-text);
+}
+
+.character-row-actions {
+  gap: 0.15rem;
 }
 
 .party-sidebar-actions {

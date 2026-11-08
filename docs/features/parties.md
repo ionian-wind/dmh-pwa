@@ -7,14 +7,14 @@ It is the roster used to start a combat.
 
 ## Key files
 
-| File                               | Role                    |
-| ---------------------------------- | ----------------------- |
-| `src/stores/parties.ts`            | Store + name search     |
-| `src/parties/PartiesView.vue`      | List page               |
-| `src/parties/PartyCard.vue`        | Card                    |
-| `src/parties/PartyEditor.vue`      | Create/edit modal       |
-| `src/parties/PartyView.vue`        | Detail page             |
-| `src/parties/PartyViewSidebar.vue` | Scenes/mentions sidebar |
+| File                               | Role                               |
+| ---------------------------------- | ---------------------------------- |
+| `src/stores/parties.ts`            | Store + name search                |
+| `src/parties/PartiesView.vue`      | List page                          |
+| `src/parties/PartyCard.vue`        | Card                               |
+| `src/parties/PartyEditor.vue`      | Create/edit modal                  |
+| `src/parties/PartyView.vue`        | Detail page                        |
+| `src/parties/PartyViewSidebar.vue` | Characters/scenes/mentions sidebar |
 
 ## Data
 
@@ -81,12 +81,18 @@ count uses `(party.characters || []).length`.
 
 ## Sidebar
 
-`PartyViewSidebar` has **Scenes** and **Mentions** tabs and hosts the shared
-View/Edit and visual-editor controls. The Scenes panel has scene linking
-disabled (playlist links only). Mentions stay available in edit mode. In view
-mode it also shows a **Start Combat** button when the encounters feature is
-enabled; that opens `PartySelector` with the party preset. It has no party
-download.
+`PartyViewSidebar` opens on the **Characters** tab. It lists the party's linked
+characters, opens the shared `EntityInfoDialog` when a row is clicked, and hosts
+the shared View/Edit and visual-editor controls.
+
+- In edit mode the character list gains an **Unlink** action and a **Link
+  Characters** row. Linking uses `EntityLinkingDialog` for all characters;
+  selections update the party draft and are saved with the party.
+- **Scenes** has scene linking disabled (playlist links only).
+- **Mentions** is hidden in edit mode and remains available in view mode.
+- In view mode the sidebar also shows a **Start Combat** button when the
+  encounters feature is enabled; that opens `PartySelector` with the party
+  preset. It has no party download.
 
 ## Relationships
 
