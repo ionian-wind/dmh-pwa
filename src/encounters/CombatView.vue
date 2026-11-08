@@ -528,28 +528,6 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
     :loading="loading"
     :headerShowEdit="false"
     :headerShowDelete="false"
-    :headerButtons="
-      combat && combat.status === 'preparing'
-        ? [
-            {
-              event: startCombat,
-              color: 'warning',
-              disabled: combat.combatants.length < 1,
-              icon: IconSwords,
-              title: 'combat.start',
-            },
-          ]
-        : combat && combat.status === 'active'
-          ? [
-              {
-                event: endCombat,
-                color: 'negative',
-                icon: IconFlag,
-                title: 'combat.end',
-              },
-            ]
-          : []
-    "
   >
     <!-- Combat Content -->
     <div v-if="combat" class="q-pa-md q-gutter-md">
@@ -598,37 +576,65 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
 
       <!-- Participants Section -->
       <div class="participants-section">
-        <div class="combat-title row items-center justify-between q-pa-md">
-          <Button
-            v-if="
-              combat &&
-              (combat.status === 'preparing' || combat.status === 'active')
-            "
-            @click="isAddParticipantModalOpen = true"
-            :disabled="availableCharactersToAdd.length === 0"
-            size="large"
-            :title="t('combat.addParticipant')"
-          >
-            <IconUserPlus />
-          </Button>
+        <div class="combat-title q-pa-md">
+          <div class="combat-title-left row items-center">
+            <Button
+              v-if="
+                combat &&
+                (combat.status === 'preparing' || combat.status === 'active')
+              "
+              @click="isAddParticipantModalOpen = true"
+              :disabled="availableCharactersToAdd.length === 0"
+              size="large"
+              :title="t('combat.addParticipant')"
+            >
+              <IconUserPlus />
+            </Button>
+          </div>
 
-          <div
-            v-if="combat?.status === 'active'"
-            class="combat-summary row items-center q-gutter-md"
-          >
-            <div class="combat-counter row items-center q-gutter-xs">
-              <label>{{ t('combat.round') }}</label>
-              <span>{{ combat?.currentRound }}</span>
+          <div class="combat-title-center row items-center justify-center">
+            <div
+              v-if="combat?.status === 'active'"
+              class="combat-summary row items-center q-gutter-md"
+            >
+              <div class="combat-counter row items-center q-gutter-xs">
+                <label>{{ t('combat.round') }}</label>
+                <span>{{ combat?.currentRound }}</span>
+              </div>
+              <div class="combat-counter row items-center q-gutter-xs">
+                <label>{{ t('combat.turn') }}</label>
+                <span>{{
+                  t('combat.turnProgress', {
+                    current: (combat?.currentTurn ?? 0) + 1,
+                    total: combat?.combatants?.length ?? 0,
+                  })
+                }}</span>
+              </div>
             </div>
-            <div class="combat-counter row items-center q-gutter-xs">
-              <label>{{ t('combat.turn') }}</label>
-              <span>{{
-                t('combat.turnProgress', {
-                  current: (combat?.currentTurn ?? 0) + 1,
-                  total: combat?.combatants?.length ?? 0,
-                })
-              }}</span>
-            </div>
+          </div>
+
+          <div class="combat-title-right row items-center justify-end">
+            <QBtn
+              v-if="combat?.status === 'preparing'"
+              class="combat-start-button"
+              color="warning"
+              :title="t('combat.start')"
+              :aria-label="t('combat.start')"
+              :disable="combat.combatants.length < 1"
+              @click="startCombat"
+            >
+              <IconSwords />
+            </QBtn>
+            <QBtn
+              v-else-if="combat?.status === 'active'"
+              class="combat-end-button"
+              color="negative"
+              :title="t('combat.end')"
+              :aria-label="t('combat.end')"
+              @click="endCombat"
+            >
+              <IconFlag />
+            </QBtn>
           </div>
         </div>
 
@@ -861,6 +867,25 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
 </template>
 
 <style scoped>
+.combat-title {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.combat-title-left {
+  justify-self: start;
+}
+
+.combat-title-center {
+  justify-self: center;
+}
+
+.combat-title-right {
+  justify-self: end;
+}
+
 .participant-status {
   display: flex;
   align-items: center;

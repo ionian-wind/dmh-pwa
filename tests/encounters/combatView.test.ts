@@ -214,6 +214,23 @@ describe('CombatView', () => {
     wrapper.unmount();
   });
 
+  it('keeps the start combat control in the participant toolbar', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const start = wrapper.find('.combat-start-button');
+    expect(start.exists()).toBe(true);
+    expect(wrapper.find('.combat-end-button').exists()).toBe(false);
+
+    await start.trigger('click');
+
+    expect(mocks.combats.update).toHaveBeenCalledWith(
+      'combat-1',
+      expect.objectContaining({ status: 'active', currentTurn: 0 }),
+    );
+    wrapper.unmount();
+  });
+
   it('clears the sidebar when the combat view unmounts', async () => {
     const wrapper = mountView();
     await flushPromises();
