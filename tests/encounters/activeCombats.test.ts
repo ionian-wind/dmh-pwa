@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, reactive } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 
 const combat = {
@@ -38,7 +39,6 @@ const combat = {
 
 const mocks = vi.hoisted(() => ({
   route: { name: '', params: {} as Record<string, string> },
-  routerPush: vi.fn(),
   combats: {
     items: [] as any[],
     isLoaded: true,
@@ -73,7 +73,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   useRoute: () => mocks.route,
-  useRouter: () => ({ push: mocks.routerPush }),
 }));
 
 vi.mock('@/stores/combats', () => ({ useCombatStore: () => mocks.combats }));
@@ -93,7 +92,7 @@ describe('active combats sidebar', () => {
     vi.clearAllMocks();
     mocks.route.name = '';
     mocks.route.params = {};
-    mocks.combats.items = [structuredClone(combat)];
+    mocks.combats.items = reactive([structuredClone(combat)]);
     mocks.combats.update.mockImplementation(
       async (_id: string, patch: Record<string, unknown>) => ({
         ...mocks.combats.items[0],
@@ -121,9 +120,6 @@ describe('active combats sidebar', () => {
     expect(wrapper.find('.view-combat-button').exists()).toBe(true);
     expect(wrapper.findAll('.exclude-participant-button')).toHaveLength(2);
     expect(wrapper.findAll('.postpone-turn-button')).toHaveLength(1);
-
-    await wrapper.find('.view-combat-button').trigger('click');
-    expect(mocks.routerPush).toHaveBeenCalledWith('/combats/combat-1');
 
     await wrapper.find('.postpone-turn-button').trigger('click');
     expect(mocks.combats.update).toHaveBeenCalledWith(
@@ -168,6 +164,33 @@ describe('active combats sidebar', () => {
     expect(panel.text()).toContain('No active combats');
     button.unmount();
     panel.unmount();
+  });
+
+  it('shows an activate action for postponed participants', async () => {
+    mocks.combats.items[0].combatants[1].isPostponed = true;
+    const wrapper = mount(ActiveCombatsPanel);
+    await flushPromises();
+
+    const activate = wrapper.find('.activate-participant-button');
+    expect(activate.exists()).toBe(true);
+    await activate.trigger('click');
+    expect(mocks.combats.update).toHaveBeenCalledWith(
+      'combat-1',
+      expect.objectContaining({ currentTurn: 1 }),
+    );
+    wrapper.unmount();
+  });
+
+  it('hides the panel when there are no active combats left', async () => {
+    const wrapper = mount(ActiveCombatButton);
+    await flushPromises();
+    await wrapper.find('.active-combats-button').trigger('click');
+    expect(wrapper.find('.active-combats-floating').exists()).toBe(true);
+
+    mocks.combats.items.splice(0);
+    await nextTick();
+    expect(wrapper.find('.active-combats-floating').exists()).toBe(false);
+    wrapper.unmount();
   });
 
   it('toggles the floating combat panel from the header button', async () => {

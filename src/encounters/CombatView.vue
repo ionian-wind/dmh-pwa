@@ -665,8 +665,9 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 v-if="combat && combat.status === 'active'"
                 class="participant-actions"
               >
-                <QBtnGroup v-if="participant.isPostponed" flat class="controls">
+                <QBtnGroup flat class="controls participant-actions-group">
                   <QBtn
+                    v-if="participant.isPostponed"
                     :color="'info'"
                     :size="'lg'"
                     :title="t('combat.activatePostponed')"
@@ -675,37 +676,32 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   >
                     <IconBolt />
                   </QBtn>
-                </QBtnGroup>
 
-                <QBtnGroup
-                  flat
-                  class="controls"
-                  v-if="activeParticipantIndex === index"
-                >
-                  <QBtn
-                    :size="'lg'"
-                    :color="'warning'"
-                    :title="t('combat.postpone')"
-                    :aria-label="t('combat.postpone')"
-                    @click="postponeCurrent"
-                    v-if="index !== combat.combatants.length - 1"
-                  >
-                    <IconPlayerPause />
-                  </QBtn>
-                  <QBtn
-                    :size="'lg'"
-                    :color="'positive'"
-                    :title="t('combat.nextTurn')"
-                    :aria-label="t('combat.nextTurn')"
-                    @click="nextTurn"
-                    :disabled="!currentParticipant"
-                  >
-                    <IconCheck />
-                  </QBtn>
-                </QBtnGroup>
+                  <template v-if="activeParticipantIndex === index">
+                    <QBtn
+                      :size="'lg'"
+                      :color="'warning'"
+                      :title="t('combat.postpone')"
+                      :aria-label="t('combat.postpone')"
+                      @click="postponeCurrent"
+                      v-if="index !== combat.combatants.length - 1"
+                    >
+                      <IconPlayerPause />
+                    </QBtn>
+                    <QBtn
+                      :size="'lg'"
+                      :color="'positive'"
+                      :title="t('combat.nextTurn')"
+                      :aria-label="t('combat.nextTurn')"
+                      @click="nextTurn"
+                      :disabled="!currentParticipant"
+                    >
+                      <IconCheck />
+                    </QBtn>
+                  </template>
 
-                <QBtnGroup flat class="controls participant-exclude">
                   <QBtn
+                    class="exclude-participant-button"
                     :size="'lg'"
                     color="negative"
                     :title="t('combat.excludeParticipant')"

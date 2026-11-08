@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconSwords } from '@tabler/icons-vue';
 import { useCombatStore } from '@/stores/combats';
@@ -14,6 +14,13 @@ const isPanelOpen = ref(false);
 function togglePanel() {
   isPanelOpen.value = !isPanelOpen.value;
 }
+
+watch(
+  () => visibleActiveCombats.value.length,
+  (count) => {
+    if (count === 0) isPanelOpen.value = false;
+  },
+);
 
 onMounted(() => {
   if (!combatStore.isLoaded) void combatStore.load();
