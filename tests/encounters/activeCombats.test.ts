@@ -118,6 +118,13 @@ describe('active combats sidebar', () => {
     expect(wrapper.text()).toContain('Goblin');
     expect(wrapper.find('.finish-combat-button').exists()).toBe(true);
     expect(wrapper.findAll('.exclude-participant-button')).toHaveLength(2);
+    expect(wrapper.findAll('.postpone-turn-button')).toHaveLength(1);
+
+    await wrapper.find('.postpone-turn-button').trigger('click');
+    expect(mocks.combats.update).toHaveBeenCalledWith(
+      'combat-1',
+      expect.objectContaining({ currentTurn: 1 }),
+    );
 
     await wrapper.find('.finish-combat-button').trigger('click');
     expect(mocks.combats.endCombat).toHaveBeenCalledWith('combat-1');

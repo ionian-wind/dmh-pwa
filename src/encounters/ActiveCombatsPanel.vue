@@ -3,8 +3,9 @@ import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconCheck,
+  IconFlag,
   IconGhost3,
-  IconSwords,
+  IconPlayerPause,
   IconUser,
   IconX,
 } from '@tabler/icons-vue';
@@ -12,13 +13,10 @@ import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
 import { usePawnStore } from '@/stores/pawns';
+import EntityGroup from '@/components/common/EntityGroup.vue';
 import { advanceTurn } from '@/utils/combatTurn';
 import { useVisibleActiveCombats } from '@/encounters/useVisibleActiveCombats';
 import type { Combat, Combatant } from '@/types';
-
-const props = defineProps<{
-  onClose?: () => void;
-}>();
 
 const { t } = useI18n();
 const combatStore = useCombatStore();
@@ -64,6 +62,22 @@ async function advance(combat: Combat) {
   });
 }
 
+async function postpone(combat: Combat) {
+  const current = combat.combatants[combat.currentTurn];
+  if (!current) return;
+  const combatants = combat.combatants.map((combatant, index) =>
+    index === combat.currentTurn
+      ? { ...combatant, isPostponed: true }
+      : { ...combatant },
+  );
+  const result = advanceTurn({ ...combat, combatants });
+  await combatStore.update(combat.id, {
+    combatants: result.combatants,
+    currentTurn: result.currentTurn,
+    currentRound: result.currentRound,
+  });
+}
+
 async function exclude(combat: Combat, combatant: Combatant, index: number) {
   const wasActive = index === combat.currentTurn;
   const updated = await combatStore.removeCombatant(combat.id, combatant.id);
@@ -97,25 +111,6 @@ onMounted(async () => {
 
 <template>
   <div class="side-panel-content column full-height">
-    <div class="row items-center justify-between q-pa-md">
-      <div class="row items-center q-gutter-sm">
-        <IconSwords :size="20" class="text-warning" />
-        <span class="text-subtitle1">{{ t('combat.activeEncounters') }}</span>
-      </div>
-      <QBtn
-        flat
-        round
-        dense
-        :title="t('common.close')"
-        :aria-label="t('common.close')"
-        @click="props.onClose?.()"
-      >
-        <IconX :size="18" />
-      </QBtn>
-    </div>
-
-    <QSeparator />
-
     <QScrollArea class="col-grow">
       <div
         v-if="!activeCombats.length"
@@ -124,79 +119,87 @@ onMounted(async () => {
         {{ t('combat.noActiveCombats') }}
       </div>
 
-      <QList v-for="combat in activeCombats" :key="combat.id" class="q-pa-none">
-        <QItem class="combat-group-title">
-          <QItemSection>
-            <div class="text-subtitle2">{{ encounterName(combat) }}</div>
-          </QItemSection>
-          <QItemSection side>
-            <QBtn
-              class="finish-combat-button"
-              color="positive"
-              size="sm"
-              :title="t('combat.finish')"
-              :aria-label="t('combat.finish')"
-              @click="finish(combat)"
-            >
-              {{ t('combat.finish') }}
-            </QBtn>
-          </QItemSection>
-        </QItem>
+      <EntityGroup
+        v-for="combat in activeCombats"
+        :key="combat.id"
+        :title="encounterName(combat)"
+        class="combat-group"
+      >
+        <template #actions>
+          <QBtn
+            class="finish-combat-button"
+            flat
+            dense
+            color="negative"
+            :title="t('combat.finish')"
+            :aria-label="t('combat.finish')"
+            @click="finish(combat)"
+          >
+            <IconFlag :size="18" />
+          </QBtn>
+        </template>
 
-        <QItem
-          v-for="(combatant, index) in combat.combatants"
-          :key="combatant.id"
-          class="combat-participant-row"
-          :class="{ 'is-active-turn': index === combat.currentTurn }"
-        >
-          <QItemSection side>
-            <IconUser v-if="combatant.type === 'player'" :size="18" />
-            <IconGhost3 v-else :size="18" />
-          </QItemSection>
-          <QItemSection side class="combat-participant-initiative">
-            {{ combatant.initiative }}
-          </QItemSection>
-          <QItemSection class="combat-participant-name">
-            {{ combatantName(combat, combatant) }}
-          </QItemSection>
-          <QItemSection side class="combat-participant-actions">
-            <QBtn
-              v-if="index === combat.currentTurn"
-              flat
-              dense
-              color="positive"
-              :title="t('combat.nextTurn')"
-              :aria-label="t('combat.nextTurn')"
-              @click="advance(combat)"
-            >
-              <IconCheck :size="18" />
-            </QBtn>
-            <QBtn
-              class="exclude-participant-button"
-              flat
-              dense
-              color="negative"
-              :title="t('combat.excludeParticipant')"
-              :aria-label="t('combat.excludeParticipant')"
-              @click="exclude(combat, combatant, index)"
-            >
-              <IconX :size="18" />
-            </QBtn>
-          </QItemSection>
-        </QItem>
-
-        <QSeparator />
-      </QList>
+        <QList class="q-pa-none">
+          <QItem
+            v-for="(combatant, index) in combat.combatants"
+            :key="combatant.id"
+            class="combat-participant-row"
+            :class="{ 'is-active-turn': index === combat.currentTurn }"
+          >
+            <QItemSection side>
+              <IconUser v-if="combatant.type === 'player'" :size="18" />
+              <IconGhost3 v-else :size="18" />
+            </QItemSection>
+            <QItemSection side class="combat-participant-initiative">
+              {{ combatant.initiative }}
+            </QItemSection>
+            <QItemSection class="combat-participant-name">
+              {{ combatantName(combat, combatant) }}
+            </QItemSection>
+            <QItemSection side class="combat-participant-actions">
+              <template v-if="index === combat.currentTurn">
+                <QBtn
+                  class="postpone-turn-button"
+                  flat
+                  dense
+                  color="warning"
+                  :title="t('combat.postpone')"
+                  :aria-label="t('combat.postpone')"
+                  @click="postpone(combat)"
+                >
+                  <IconPlayerPause :size="18" />
+                </QBtn>
+                <QBtn
+                  flat
+                  dense
+                  color="positive"
+                  :title="t('combat.nextTurn')"
+                  :aria-label="t('combat.nextTurn')"
+                  @click="advance(combat)"
+                >
+                  <IconCheck :size="18" />
+                </QBtn>
+              </template>
+              <QBtn
+                class="exclude-participant-button"
+                flat
+                dense
+                color="negative"
+                :title="t('combat.excludeParticipant')"
+                :aria-label="t('combat.excludeParticipant')"
+                @click="exclude(combat, combatant, index)"
+              >
+                <IconX :size="18" />
+              </QBtn>
+            </QItemSection>
+          </QItem>
+        </QList>
+      </EntityGroup>
     </QScrollArea>
   </div>
 </template>
 
 <style scoped>
-.combat-group-title {
-  background: var(--color-background-soft);
-  font-weight: 500;
-}
-
 .combat-participant-row.is-active-turn {
   background: var(--color-selected-surface);
 }

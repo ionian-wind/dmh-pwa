@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconSwords } from '@tabler/icons-vue';
 import { useCombatStore } from '@/stores/combats';
@@ -12,12 +12,21 @@ const combatStore = useCombatStore();
 const layout = useLayout();
 const rightDrawer = useRightDrawer();
 const { visibleActiveCombats } = useVisibleActiveCombats();
+const isPanelOpen = computed(
+  () => layout.rightDrawerContent.value?.component === ActiveCombatsPanel,
+);
 
-function openPanel() {
-  rightDrawer.set({
-    component: ActiveCombatsPanel,
-    props: { onClose: rightDrawer.clear },
-  });
+function togglePanel() {
+  if (isPanelOpen.value) {
+    if (!layout.rightDrawerOpen.value) {
+      layout.rightDrawerOpen.value = true;
+      return;
+    }
+    rightDrawer.clear();
+    return;
+  }
+
+  rightDrawer.set({ component: ActiveCombatsPanel });
   layout.rightDrawerOpen.value = true;
 }
 
@@ -29,14 +38,12 @@ onMounted(() => {
 <template>
   <QBtn
     v-if="visibleActiveCombats.length"
-    flat
-    dense
     color="warning"
     class="active-combats-button"
     :title="t('combat.activeEncounters')"
     :aria-label="t('combat.activeEncounters')"
-    @click="openPanel"
+    @click="togglePanel"
   >
-    <IconSwords :size="22" />
+    <IconSwords />
   </QBtn>
 </template>
