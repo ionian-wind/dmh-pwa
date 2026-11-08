@@ -814,4 +814,10 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
 .participant-actions :deep(.q-btn) {
   height: 52px;
 }
+
+.participant-actions {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+}
 </style>
