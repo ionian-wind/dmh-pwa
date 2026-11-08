@@ -307,21 +307,25 @@ onMounted(async () => {
       @cancel="viewPawn = null"
     />
 
-    <div
+    <QList
       v-if="!state.isEditMode && props.onRunCombat"
-      class="encounter-sidebar-actions q-pa-sm"
+      class="encounter-sidebar-actions"
     >
-      <QBtn
-        class="full-width run-combat-button"
-        color="warning"
-        :title="t('common.runCombat')"
-        :aria-label="t('common.runCombat')"
-        @click="props.onRunCombat?.()"
-      >
-        <IconSwords :size="18" class="q-mr-sm" />
-        {{ t('common.runCombat') }}
-      </QBtn>
-    </div>
+      <QItem>
+        <QItemSection>
+          <QBtn
+            class="full-width run-combat-button"
+            color="warning"
+            :title="t('common.runCombat')"
+            :aria-label="t('common.runCombat')"
+            @click="props.onRunCombat?.()"
+          >
+            <IconSwords :size="18" class="q-mr-sm" />
+            {{ t('common.runCombat') }}
+          </QBtn>
+        </QItemSection>
+      </QItem>
+    </QList>
 
     <QSeparator />
     <EntityModeControls

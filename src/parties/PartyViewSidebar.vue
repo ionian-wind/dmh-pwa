@@ -107,21 +107,25 @@ onMounted(() => mentionsStore.load());
       </TabGroup>
     </div>
 
-    <div
+    <QList
       v-if="!state.isEditMode && props.onStartCombat"
-      class="party-sidebar-actions q-pa-sm"
+      class="party-sidebar-actions"
     >
-      <QBtn
-        class="full-width start-combat-button"
-        color="warning"
-        :title="t('partySelector.startCombat')"
-        :aria-label="t('partySelector.startCombat')"
-        @click="props.onStartCombat?.()"
-      >
-        <IconSwords :size="18" class="q-mr-sm" />
-        {{ t('partySelector.startCombat') }}
-      </QBtn>
-    </div>
+      <QItem>
+        <QItemSection>
+          <QBtn
+            class="full-width start-combat-button"
+            color="warning"
+            :title="t('partySelector.startCombat')"
+            :aria-label="t('partySelector.startCombat')"
+            @click="props.onStartCombat?.()"
+          >
+            <IconSwords :size="18" class="q-mr-sm" />
+            {{ t('partySelector.startCombat') }}
+          </QBtn>
+        </QItemSection>
+      </QItem>
+    </QList>
 
     <QSeparator />
     <EntityModeControls
