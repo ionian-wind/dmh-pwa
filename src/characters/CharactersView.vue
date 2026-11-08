@@ -8,6 +8,7 @@ import CharacterEditor from '@/characters/CharacterEditor.vue';
 import type { PlayerCharacter } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 
 const characterStore = useCharacterStore();
 const router = useRouter();
@@ -42,17 +43,25 @@ async function handleDelete(character: PlayerCharacter) {
     character.id &&
     (await confirm(t('common.confirmDelete', { title: character.name })))
   ) {
+    const picture = character.picture;
     await characterStore.remove(character.id);
+    if (picture) await deleteFileIfUnreferenced(picture);
     return true;
   }
   return false;
 }
 
-function handleSubmit(character: PlayerCharacter) {
+async function handleSubmit(character: PlayerCharacter) {
+  const previousPicture = character.id
+    ? (characterStore.getById(character.id)?.picture ?? '')
+    : '';
   if (character.id) {
-    characterStore.update(character.id, character);
+    await characterStore.update(character.id, character);
   } else {
-    characterStore.create(character);
+    await characterStore.create(character);
+  }
+  if (previousPicture && previousPicture !== (character.picture ?? '')) {
+    await deleteFileIfUnreferenced(previousPicture);
   }
 }
 

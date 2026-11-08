@@ -22,6 +22,7 @@ import { alert, confirm } from '@/dialogs';
 import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import { useFeatureStores } from '@/composables/useFeatureStores';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 import { useRightDrawer } from '@/composables/useLayout';
 import type { MapEntityRef } from '@/maps/types';
 
@@ -71,11 +72,18 @@ const { editState, setEditMode, discardDraft } =
     }),
     isDirty: (draft, source) =>
       draft.name !== source.name ||
-      (draft.notes ?? '') !== (source.notes ?? ''),
+      (draft.notes ?? '') !== (source.notes ?? '') ||
+      (draft.picture ?? '') !== (source.picture ?? ''),
     onEnter: () => {
       validationError.value = null;
     },
-    onDiscard: () => {
+    onDiscard: (draft) => {
+      if (
+        draft?.picture &&
+        draft.picture !== (character.value?.picture ?? '')
+      ) {
+        void deleteFileIfUnreferenced(draft.picture);
+      }
       validationError.value = null;
     },
     prepare: prepareDraft,
@@ -156,16 +164,21 @@ async function prepareDraft(draft: PlayerCharacter): Promise<boolean> {
 
 async function persistDraft(draft: PlayerCharacter): Promise<boolean> {
   if (!character.value) return false;
+  const previousPicture = character.value.picture ?? '';
   try {
     await characterStore.update(character.value.id, {
       name: draft.name,
       notes: draft.notes,
+      picture: draft.picture,
     });
   } catch (error) {
     activeTab.value = 'main';
     validationError.value =
       error instanceof Error ? error.message : String(error);
     return false;
+  }
+  if (previousPicture && previousPicture !== (draft.picture ?? '')) {
+    await deleteFileIfUnreferenced(previousPicture);
   }
   updateCharacterFromStore();
   return true;
@@ -197,7 +210,9 @@ const handleDelete = async () => {
   }
   isDeleting.value = true;
   discardDraft();
+  const picture = character.value.picture;
   await characterStore.remove(character.value.id);
+  if (picture) await deleteFileIfUnreferenced(picture);
   return true;
 };
 

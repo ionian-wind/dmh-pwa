@@ -53,11 +53,15 @@ describe('CharacterViewSidebar', () => {
     expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
       '',
       '',
+      '',
     ]);
     const scenesTab = wrapper.findAll('.tab-item')[0];
     expect(scenesTab.attributes('aria-label')).toBe('Scenes');
     expect(scenesTab.find('.tab-icon').exists()).toBe(true);
-    const mentionsTab = wrapper.findAll('.tab-item')[1];
+    const pictureTab = wrapper.findAll('.tab-item')[1];
+    expect(pictureTab.attributes('aria-label')).toBe('Picture');
+    expect(pictureTab.find('.tab-icon').exists()).toBe(true);
+    const mentionsTab = wrapper.findAll('.tab-item')[2];
     expect(mentionsTab.attributes('aria-label')).toBe('Mentions');
     expect(mentionsTab.find('.tab-icon').exists()).toBe(true);
     expect(mentionsTab.find('.tab-label').exists()).toBe(false);
@@ -86,7 +90,7 @@ describe('CharacterViewSidebar', () => {
   it('renders empty mentions without scenes when character is missing', async () => {
     const wrapper = mountSidebar(null);
 
-    await wrapper.findAll('.tab-item')[1].trigger('click');
+    await wrapper.findAll('.tab-item')[2].trigger('click');
     await nextTick();
     const mentions = wrapper.findAllComponents(MentionsStub);
     expect(mentions[0].props('entities')).toEqual([]);
@@ -125,7 +129,10 @@ describe('CharacterViewSidebar', () => {
 
     editState.isEditMode = true;
     await nextTick();
-    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual(['']);
+    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
+      '',
+      '',
+    ]);
     expect(wrapper.find('.tab-item .tab-icon').exists()).toBe(true);
     expect(wrapper.findComponent(MentionsStub).exists()).toBe(false);
     expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);

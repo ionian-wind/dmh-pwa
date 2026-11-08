@@ -8,6 +8,7 @@ import PawnEditor from '@/pawns/PawnEditor.vue';
 import type { Pawn } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 
 const router = useRouter();
 const pawnStore = usePawnStore();
@@ -35,17 +36,25 @@ async function handleDelete(pawn: Pawn) {
     pawn.id &&
     (await confirm(t('common.confirmDelete', { title: pawn.name })))
   ) {
+    const picture = pawn.picture;
     await pawnStore.remove(pawn.id);
+    if (picture) await deleteFileIfUnreferenced(picture);
     return true;
   }
   return false;
 }
 
 async function handleSubmit(pawn: Pawn) {
+  const previousPicture = pawn.id
+    ? (pawnStore.getById(pawn.id)?.picture ?? '')
+    : '';
   if (pawn.id) {
     await pawnStore.update(pawn.id, pawn);
   } else {
     await pawnStore.create(pawn);
+  }
+  if (previousPicture && previousPicture !== (pawn.picture ?? '')) {
+    await deleteFileIfUnreferenced(previousPicture);
   }
 }
 

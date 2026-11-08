@@ -5,8 +5,10 @@ import type { InlineEditState, Pawn } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
+import EntityPicture from '@/components/common/EntityPicture.vue';
+import EntityPicturePicker from '@/components/common/EntityPicturePicker.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import { IconAt, IconHeadphones } from '@tabler/icons-vue';
+import { IconAt, IconHeadphones, IconInfoCircle } from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const props = defineProps<{
@@ -46,6 +48,7 @@ const tabs = computed(() =>
           label: t('ambientSoundPage.scenesTab'),
           icon: IconHeadphones,
         },
+        { id: 'picture', label: t('common.picture'), icon: IconInfoCircle },
       ]
     : [
         {
@@ -53,6 +56,7 @@ const tabs = computed(() =>
           label: t('ambientSoundPage.scenesTab'),
           icon: IconHeadphones,
         },
+        { id: 'picture', label: t('common.picture'), icon: IconInfoCircle },
         { id: 'mentions', label: t('common.mentions'), icon: IconAt },
       ],
 );
@@ -76,6 +80,10 @@ function setEditMode(value: boolean) {
 
 function setVisualMode(value: boolean) {
   state.value.isVisualMode = value;
+}
+
+function setPicture(value: string) {
+  if (state.value.draft) state.value.draft.picture = value;
 }
 
 onMounted(() => mentionsStore.load());
@@ -113,6 +121,19 @@ onMounted(() => mentionsStore.load());
             <Mentions
               :title="t('common.mentionedIn')"
               :entities="mentionedIn"
+            />
+          </div>
+          <div v-show="activeTab === 'picture'" class="q-pa-md">
+            <EntityPicturePicker
+              v-if="state.isEditMode"
+              :model-value="state.draft?.picture ?? ''"
+              @update:model-value="setPicture"
+            />
+            <EntityPicture
+              v-else
+              :picture="props.pawn?.picture"
+              size="240px"
+              :alt="props.pawn?.name"
             />
           </div>
         </template>

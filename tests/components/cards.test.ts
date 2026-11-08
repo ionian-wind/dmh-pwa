@@ -34,8 +34,16 @@ describe('domain cards', () => {
   });
 
   it('CharacterCard emits all BaseCard actions with the character', async () => {
-    const character = { id: 'c1', name: 'Aria', notes: '' } as any;
+    const character = {
+      id: 'c1',
+      name: 'Aria',
+      notes: 'A brave **hero**',
+      picture: 'file-1',
+    } as any;
     const wrapper = mount(CharacterCard, { props: { character } });
+
+    expect(wrapper.find('.entity-picture').exists()).toBe(true);
+    expect(wrapper.text()).toContain('A brave hero');
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');
@@ -141,10 +149,18 @@ describe('domain cards', () => {
   });
 
   it('PawnCard forwards actions and deletes by id', async () => {
-    const pawn = { id: 'mon', name: 'Goblin' } as any;
+    const pawn = {
+      id: 'mon',
+      name: 'Goblin',
+      notes: 'Small **goblin**',
+      picture: 'file-2',
+    } as any;
     const wrapper = mount(PawnCard, {
       props: { pawn, showActions: true },
     });
+
+    expect(wrapper.find('.entity-picture').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Small goblin');
 
     const buttons = wrapper.findComponent(BaseCard).findAll('button');
     for (const button of buttons) await button.trigger('click');

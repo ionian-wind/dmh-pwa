@@ -245,11 +245,14 @@ const hasContent = computed(() => {
       }"
     >
       <QCardSection
-        v-if="$slots.header || title"
+        v-if="$slots.media || $slots.header || title"
         class="base-card-header row items-center no-wrap"
         @click="$emit('view')"
         style="cursor: pointer"
       >
+        <div v-if="$slots.media" class="base-card-media">
+          <slot name="media" />
+        </div>
         <div class="col">
           <h5 v-if="title">{{ title }}</h5>
           <slot name="header" />
@@ -370,6 +373,12 @@ const hasContent = computed(() => {
 <style scoped>
 .base-card-shell {
   position: relative;
+}
+
+.base-card-media {
+  display: flex;
+  flex: 0 0 auto;
+  margin-right: 12px;
 }
 
 .base-card-shell.is-floating > .base-card {

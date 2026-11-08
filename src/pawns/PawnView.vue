@@ -22,6 +22,7 @@ import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import { useFeatureStores } from '@/composables/useFeatureStores';
 import { useRightDrawer } from '@/composables/useLayout';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 import { IconHelp } from '@tabler/icons-vue';
 
 const route = useRoute();
@@ -62,11 +63,16 @@ const { editState, setEditMode, discardDraft } = useEntityEditMode<Pawn>({
     ...source,
   }),
   isDirty: (draft, source) =>
-    draft.name !== source.name || (draft.notes ?? '') !== (source.notes ?? ''),
+    draft.name !== source.name ||
+    (draft.notes ?? '') !== (source.notes ?? '') ||
+    (draft.picture ?? '') !== (source.picture ?? ''),
   onEnter: () => {
     validationError.value = null;
   },
-  onDiscard: () => {
+  onDiscard: (draft) => {
+    if (draft?.picture && draft.picture !== (pawn.value?.picture ?? '')) {
+      void deleteFileIfUnreferenced(draft.picture);
+    }
     validationError.value = null;
   },
   prepare: prepareDraft,
@@ -149,16 +155,21 @@ async function prepareDraft(draft: Pawn): Promise<boolean> {
 
 async function persistDraft(draft: Pawn): Promise<boolean> {
   if (!pawn.value) return false;
+  const previousPicture = pawn.value.picture ?? '';
   try {
     await pawnStore.update(pawn.value.id, {
       name: draft.name,
       notes: draft.notes,
+      picture: draft.picture,
     });
   } catch (error) {
     activeTab.value = 'main';
     validationError.value =
       error instanceof Error ? error.message : String(error);
     return false;
+  }
+  if (previousPicture && previousPicture !== (draft.picture ?? '')) {
+    await deleteFileIfUnreferenced(previousPicture);
   }
   updatePawnFromStore();
   return true;
@@ -186,7 +197,9 @@ const handleDelete = async () => {
   }
   isDeleting.value = true;
   discardDraft();
+  const picture = pawn.value.picture;
   await pawnStore.remove(pawn.value.id);
+  if (picture) await deleteFileIfUnreferenced(picture);
   return true;
 };
 

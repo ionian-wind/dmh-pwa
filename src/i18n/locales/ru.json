@@ -226,6 +226,11 @@
   },
   "common": {
     "mainEditor": "Основной редактор",
+    "picture": "Изображение",
+    "selectPicture": "Выбрать изображение",
+    "removePicture": "Удалить изображение",
+    "noPicture": "Изображение не выбрано",
+    "pictureImportError": "Не удалось импортировать изображение",
     "tableOfContents": "Оглавление",
     "toggleSidebar": "Переключить боковую панель",
     "linkedEntities": "Связанные сущности",

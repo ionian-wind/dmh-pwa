@@ -13,6 +13,9 @@
     "notes": {
       "type": "string"
     },
+    "picture": {
+      "type": "string"
+    },
     "createdAt": {
       "type": "number"
     },

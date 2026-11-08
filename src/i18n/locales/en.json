@@ -225,6 +225,11 @@
   },
   "common": {
     "mainEditor": "Main editor",
+    "picture": "Picture",
+    "selectPicture": "Select picture",
+    "removePicture": "Remove picture",
+    "noPicture": "No picture selected",
+    "pictureImportError": "Failed to import the picture",
     "tableOfContents": "Table of Contents",
     "toggleSidebar": "Toggle sidebar",
     "linkedEntities": "Linked entities",

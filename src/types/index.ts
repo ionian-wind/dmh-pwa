@@ -94,6 +94,8 @@ export interface Party extends WithMetadata {
 export interface Character extends WithMetadata {
   name: string;
   notes?: string;
+  /** Stored file id for the character/pawn portrait. */
+  picture?: string;
 }
 
 export interface PlayerCharacter extends Character {}

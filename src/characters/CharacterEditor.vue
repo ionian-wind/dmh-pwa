@@ -4,7 +4,9 @@ import type { PlayerCharacter, UUID } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import EntityPicturePicker from '@/components/common/EntityPicturePicker.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
@@ -53,6 +55,13 @@ const isWYSIWYGMode = ref(true);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
+const originalPictureId = ref(props.character?.picture ?? '');
+const characterPicture = computed({
+  get: () => editedCharacter.value.picture ?? '',
+  set: (value: string) => {
+    editedCharacter.value.picture = value;
+  },
+});
 
 const tabs = useEntityEditorTabs();
 
@@ -105,6 +114,7 @@ watch(
   () => props.character,
   (newChar) => {
     editedCharacter.value = newChar ? { ...newChar } : blankCharacter();
+    originalPictureId.value = newChar?.picture ?? '';
   },
 );
 
@@ -120,6 +130,13 @@ function resetForm() {
   isWYSIWYGMode.value = true;
 }
 
+function discardPicture() {
+  const picture = editedCharacter.value.picture;
+  if (picture && picture !== originalPictureId.value) {
+    void deleteFileIfUnreferenced(picture);
+  }
+}
+
 async function handleSubmit() {
   if (!editedCharacter.value.name) {
     await alert(t('characterEditor.nameRequired'));
@@ -133,12 +150,19 @@ async function handleSubmit() {
 }
 
 function handleCancel() {
+  discardPicture();
   resetForm();
   emit('cancel');
 }
 
 function handleDelete() {
-  if (props.character) emit('delete', props.character.id);
+  if (props.character) {
+    const picture = editedCharacter.value.picture;
+    if (picture && picture !== originalPictureId.value) {
+      void deleteFileIfUnreferenced(picture);
+    }
+    emit('delete', props.character.id);
+  }
 }
 </script>
 
@@ -164,6 +188,7 @@ function handleDelete() {
         v-model:title="editedCharacter.name"
         :title-placeholder="t('characters.fields.name')"
       >
+        <EntityPicturePicker v-model="characterPicture" />
         <EntityMarkdownEditor
           ref="markdownEditorRef"
           v-model="characterNotes"

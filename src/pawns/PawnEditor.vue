@@ -6,7 +6,9 @@ import type { Pawn } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import EntityPicturePicker from '@/components/common/EntityPicturePicker.vue';
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import { deleteFileIfUnreferenced } from '@/utils/files';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
@@ -46,6 +48,13 @@ const isWYSIWYGMode = ref(true);
 const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
   null,
 );
+const originalPictureId = ref(props.pawn?.picture ?? '');
+const picture = computed({
+  get: () => editedPawn.value.picture ?? '',
+  set: (value: string) => {
+    editedPawn.value.picture = value;
+  },
+});
 
 const editorTabs = useEntityEditorTabs();
 
@@ -100,6 +109,7 @@ watch(
     } else {
       editedPawn.value = blankPawn();
     }
+    originalPictureId.value = newPawn?.picture ?? '';
   },
   { immediate: true, deep: true },
 );
@@ -133,12 +143,22 @@ const savePawn = async () => {
 };
 
 const closeEditor = () => {
+  const currentPicture = editedPawn.value.picture;
+  if (currentPicture && currentPicture !== originalPictureId.value) {
+    void deleteFileIfUnreferenced(currentPicture);
+  }
   resetForm();
   emit('cancel');
 };
 
 function handleDelete() {
-  if (props.pawn) emit('delete', props.pawn.id);
+  if (props.pawn) {
+    const currentPicture = editedPawn.value.picture;
+    if (currentPicture && currentPicture !== originalPictureId.value) {
+      void deleteFileIfUnreferenced(currentPicture);
+    }
+    emit('delete', props.pawn.id);
+  }
 }
 
 onMounted(async () => {
@@ -168,6 +188,7 @@ onMounted(async () => {
         v-model:title="editedPawn.name"
         :title-placeholder="t('pawns.fields.name')"
       >
+        <EntityPicturePicker v-model="picture" />
         <EntityMarkdownEditor
           ref="markdownEditorRef"
           v-model="notes"
