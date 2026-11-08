@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { IconPencil, IconTrash } from '@tabler/icons-vue';
-import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { MapMarker } from '../types';
 import { markerIconClass } from '@/utils/maps/icons';
 
@@ -36,34 +35,46 @@ const { t } = useI18n();
       {{ t('maps.noMarkers') }}
     </div>
 
-    <SidebarItem
+    <QItem
       v-for="marker in markers"
       :key="marker.id"
-      :color="marker.color"
-      :title="marker.title || t('maps.untitledMarker')"
+      clickable
+      v-ripple
       class="map-marker-item"
+      :style="
+        marker.color
+          ? { boxShadow: `inset 4px 0 0 ${marker.color}` }
+          : undefined
+      "
       @click="emit('select-marker', marker.id)"
       @keydown.enter="emit('select-marker', marker.id)"
       @mouseenter="emit('hover', marker.id)"
       @mouseleave="emit('hover', null)"
     >
-      <template #left>
+      <QItemSection v-if="marker.icon" side>
         <i
-          v-if="marker.icon"
           :class="['ra', markerIconClass(marker.icon)]"
           :style="{ color: marker.color }"
           aria-hidden="true"
         ></i>
-      </template>
+      </QItemSection>
 
-      <div v-if="marker.description" class="text-caption text-grey-7">
-        {{ marker.description }}
-      </div>
-      <template v-if="editable" #actions>
+      <QItemSection>
+        <div class="map-item-title ellipsis">
+          {{ marker.title || t('maps.untitledMarker') }}
+        </div>
+        <div
+          v-if="marker.description"
+          class="text-caption text-grey-7 ellipsis"
+        >
+          {{ marker.description }}
+        </div>
+      </QItemSection>
+
+      <QItemSection v-if="editable" side class="map-item-actions">
         <QBtn
           flat
           dense
-          round
           size="sm"
           color="positive"
           class="map-marker-action"
@@ -71,12 +82,11 @@ const { t } = useI18n();
           :aria-label="t('common.edit')"
           @click.stop="emit('edit', marker)"
         >
-          <IconPencil :size="16" />
+          <IconPencil :size="18" />
         </QBtn>
         <QBtn
           flat
           dense
-          round
           size="sm"
           color="negative"
           class="map-marker-action map-marker-action-danger"
@@ -84,9 +94,25 @@ const { t } = useI18n();
           :aria-label="t('common.delete')"
           @click.stop="emit('delete', marker.id)"
         >
-          <IconTrash :size="16" />
+          <IconTrash :size="18" />
         </QBtn>
-      </template>
-    </SidebarItem>
+      </QItemSection>
+    </QItem>
   </QList>
 </template>
+
+<style scoped>
+.map-item-title {
+  font-weight: 500;
+}
+
+.map-item-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.map-marker-item:hover .map-item-actions,
+.map-marker-item:focus-within .map-item-actions {
+  opacity: 1;
+}
+</style>

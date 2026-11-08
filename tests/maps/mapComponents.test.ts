@@ -202,6 +202,9 @@ describe('map markers panel', () => {
 
     expect(wrapper.text()).toContain('Castle');
     expect(wrapper.text()).toContain('Old castle');
+    expect(
+      (wrapper.find('.map-marker-item').element as HTMLElement).style.boxShadow,
+    ).toContain('#cc3333');
 
     await wrapper.find('.map-marker-item').trigger('click');
     expect(wrapper.emitted('select-marker')?.[0]).toEqual(['m1']);

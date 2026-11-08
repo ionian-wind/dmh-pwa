@@ -160,6 +160,9 @@ describe('MapAreasPanel', () => {
 
     expect(wrapper.text()).toContain('Forest');
     expect(wrapper.text()).toContain('Dark woods');
+    expect(
+      (wrapper.find('.map-area-item').element as HTMLElement).style.boxShadow,
+    ).toContain('#336699');
     expect(wrapper.text()).not.toContain('Polygon');
     expect(wrapper.text()).not.toContain('Session note');
     expect(wrapper.text()).toContain('Lake');
