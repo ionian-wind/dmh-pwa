@@ -72,9 +72,10 @@ Opened from `EncountersView`, `EncounterView`, or the party detail sidebar.
 1. If no party is preset, lists parties from `partyStore.filtered`; if a party
    is preset (opened from a party page), lists encounters instead.
 2. On party selection, marks every character in the party as selected.
-3. Character selection uses the shared `EntitiesLinking` UI for the
-   `character` kind. Users can search and link any character, create a new one,
-   or unlink the prefilled party members.
+3. Character selection uses `EntityLinkingList` for the `character` kind, so the
+   list has a search field and a create button. All party characters are shown
+   and checked by default; newly created characters are added to the list and
+   selected.
 4. `handleCreateCombat`:
    - Requires an active encounter, an active party and at least one selected
      character (early return; the modal also shows an info message).

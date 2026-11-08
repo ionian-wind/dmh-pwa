@@ -10,8 +10,6 @@ import { Combat, Combatant, Encounter, Party } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
 import EntityLinkingList from '@/components/common/EntityLinkingList.vue';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import type { MapEntityRef } from '@/maps/types';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
@@ -66,10 +64,23 @@ const selectedEncounterIds = computed(() =>
 );
 
 const selectedCharacterIds = computed(() => selectedCharacters.value);
-
-const selectedCharacterRefs = computed<MapEntityRef[]>(() =>
-  selectedCharacterIds.value.map((id) => ({ kind: 'character', id })),
-);
+const createdCharacterOptions = ref<Array<{ id: string; label: string }>>([]);
+const characterOptions = computed(() => {
+  const party = activePartyId.value
+    ? partyStore.getById(activePartyId.value)
+    : null;
+  const partyOptions = (party?.characters ?? []).map((id) => ({
+    id,
+    label: characterStore.getById(id)?.name || id,
+  }));
+  const existing = new Set(partyOptions.map((option) => option.id));
+  return [
+    ...partyOptions,
+    ...createdCharacterOptions.value.filter(
+      (option) => !existing.has(option.id),
+    ),
+  ];
+});
 
 function setPartyIds(ids: string[]) {
   selectedPartyId.value = ids[0] ?? '';
@@ -83,10 +94,18 @@ function setCharacterIds(ids: string[]) {
   selectedCharacters.value = [...new Set(ids)];
 }
 
-function setCharacterRefs(refs: MapEntityRef[]) {
-  setCharacterIds(
-    refs.filter((ref) => ref.kind === 'character').map((ref) => ref.id),
-  );
+function handleCharacterCreated(payload: {
+  ref: { kind: string; id: string };
+  label: string;
+}) {
+  if (payload.ref.kind !== 'character') return;
+  createdCharacterOptions.value = [
+    ...createdCharacterOptions.value,
+    { id: payload.ref.id, label: payload.label },
+  ];
+  if (!selectedCharacterIds.value.includes(payload.ref.id)) {
+    setCharacterIds([...selectedCharacterIds.value, payload.ref.id]);
+  }
 }
 
 onMounted(async () => {
@@ -101,16 +120,10 @@ onMounted(async () => {
 
 // Initialize character toggles whenever the active party changes.
 watch(
-  activePartyId,
-  (partyId) => {
-    if (!partyId) {
-      selectedCharacters.value = [];
-      return;
-    }
-    const party = partyStore.getById(partyId);
-    if (party) {
-      selectedCharacters.value = [...party.characters];
-    }
+  activeParty,
+  (party) => {
+    createdCharacterOptions.value = [];
+    selectedCharacters.value = party ? [...party.characters] : [];
   },
   { immediate: true },
 );
@@ -121,6 +134,12 @@ watch(
     if (!open) return;
     selectedEncounterId.value = '';
     selectedPartyId.value = props.party?.id ?? '';
+    const party =
+      props.party ??
+      (selectedPartyId.value
+        ? partyStore.getById(selectedPartyId.value)
+        : null);
+    selectedCharacters.value = party ? [...party.characters] : [];
   },
 );
 
@@ -273,10 +292,12 @@ const handleCancel = () => {
         <div v-if="selectedCharacterIds.length === 0" class="info-text">
           {{ t('partySelector.selectAtLeastOneCharacter') }}
         </div>
-        <EntitiesLinking
+        <EntityLinkingList
           kind="character"
-          :model-value="selectedCharacterRefs"
-          @update:model-value="setCharacterRefs"
+          :options="characterOptions"
+          :model-value="selectedCharacterIds"
+          @update:model-value="setCharacterIds"
+          @created="handleCharacterCreated"
         />
       </div>
     </div>

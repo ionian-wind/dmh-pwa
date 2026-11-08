@@ -16,32 +16,16 @@ const EntityLinkingListStub = defineComponent({
     options: Array,
     multiple: Boolean,
     createdIds: Array,
+    kind: String,
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'created'],
   setup() {
     return () => h('div', { class: 'entity-linking-list-stub' });
   },
 });
 
-const EntitiesLinkingStub = defineComponent({
-  name: 'EntitiesLinking',
-  props: {
-    kind: String,
-    modelValue: { type: Array, default: () => [] },
-    readonly: Boolean,
-  },
-  emits: ['update:modelValue'],
-  setup() {
-    return () => h('div', { class: 'entities-linking-stub' });
-  },
-});
-
 function linkList(wrapper: ReturnType<typeof mount>, index: number) {
   return wrapper.findAllComponents(EntityLinkingListStub)[index];
-}
-
-function characterLinks(wrapper: ReturnType<typeof mount>) {
-  return wrapper.findComponent(EntitiesLinkingStub);
 }
 
 const encounter = {
@@ -56,7 +40,6 @@ async function mountSelector(overrides: Record<string, any> = {}) {
     global: {
       stubs: {
         EntityLinkingList: EntityLinkingListStub,
-        EntitiesLinking: EntitiesLinkingStub,
       },
     },
   });
@@ -95,21 +78,18 @@ describe('PartySelector', () => {
 
     expect(wrapper.text()).toContain('Heroes');
     expect(wrapper.text()).toContain('Ambush');
-    expect(characterLinks(wrapper).props()).toMatchObject({
+    expect(linkList(wrapper, 1).props()).toMatchObject({
       kind: 'character',
-      modelValue: [
-        { kind: 'character', id: 'c1' },
-        { kind: 'character', id: 'c2' },
+      options: [
+        { id: 'c1', label: 'Aria' },
+        { id: 'c2', label: 'Borin' },
       ],
+      modelValue: ['c1', 'c2'],
     });
 
-    characterLinks(wrapper).vm.$emit('update:modelValue', [
-      { kind: 'character', id: 'c1' },
-    ]);
+    linkList(wrapper, 1).vm.$emit('update:modelValue', ['c1']);
     await nextTick();
-    expect(characterLinks(wrapper).props('modelValue')).toEqual([
-      { kind: 'character', id: 'c1' },
-    ]);
+    expect(linkList(wrapper, 1).props('modelValue')).toEqual(['c1']);
 
     const combatStore = useCombatStore();
     const create = vi.spyOn(combatStore, 'create');
@@ -133,12 +113,35 @@ describe('PartySelector', () => {
     wrapper.unmount();
   });
 
+  it('adds a newly created character to the selector and selection', async () => {
+    const wrapper = await mountSelector();
+    linkList(wrapper, 0).vm.$emit('update:modelValue', ['p1']);
+    await nextTick();
+
+    linkList(wrapper, 1).vm.$emit('created', {
+      ref: { kind: 'character', id: 'c3' },
+      label: 'Cara',
+    });
+    await nextTick();
+
+    expect(linkList(wrapper, 1).props('options')).toContainEqual({
+      id: 'c3',
+      label: 'Cara',
+    });
+    expect(linkList(wrapper, 1).props('modelValue')).toEqual([
+      'c1',
+      'c2',
+      'c3',
+    ]);
+    wrapper.unmount();
+  });
+
   it('shows a hint when all characters are unlinked and cancels', async () => {
     const wrapper = await mountSelector();
     linkList(wrapper, 0).vm.$emit('update:modelValue', ['p1']);
     await nextTick();
 
-    characterLinks(wrapper).vm.$emit('update:modelValue', []);
+    linkList(wrapper, 1).vm.$emit('update:modelValue', []);
     await nextTick();
     expect(wrapper.text()).toContain('Select at least one character');
 
@@ -163,10 +166,10 @@ describe('PartySelector', () => {
     expect(lists()[0].props('options')).toEqual([
       { id: 'e1', label: 'Ambush' },
     ]);
-    expect(characterLinks(wrapper).props('modelValue')).toEqual([
-      { kind: 'character', id: 'c1' },
-      { kind: 'character', id: 'c2' },
-    ]);
+    expect(linkList(wrapper, 1).props()).toMatchObject({
+      kind: 'character',
+      modelValue: ['c1', 'c2'],
+    });
 
     lists()[0].vm.$emit('update:modelValue', ['e1']);
     await nextTick();
