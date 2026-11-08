@@ -45,21 +45,58 @@
           <QItemSection>
             <div>{{ item.name }}</div>
           </QItemSection>
-          <QItemSection side class="scene-link-actions row items-center">
-            <template v-if="item.type === 'scene'">
+          <QItemSection
+            side
+            class="scene-link-actions row items-center no-wrap"
+          >
+            <QBtn
+              v-if="item.type === 'scene'"
+              class="scene-toggle-button"
+              flat
+              dense
+              size="sm"
+              :title="
+                isPlaying(item.scene.pack.id, item.scene.scene.id)
+                  ? t('common.pause')
+                  : t('common.play')
+              "
+              :aria-label="
+                isPlaying(item.scene.pack.id, item.scene.scene.id)
+                  ? t('common.pause')
+                  : t('common.play')
+              "
+              @click.stop="toggleScene(item.scene.pack.id, item.scene.scene.id)"
+            >
               <IconPlayerPause
                 v-if="isPlaying(item.scene.pack.id, item.scene.scene.id)"
                 :size="18"
               />
               <IconPlayerPlay v-else :size="18" />
-            </template>
-            <template v-else-if="playlistHasTracks(item.playlist)">
+            </QBtn>
+            <QBtn
+              v-else-if="playlistHasTracks(item.playlist)"
+              class="scene-toggle-button"
+              flat
+              dense
+              size="sm"
+              :title="
+                isPlaylistPlaying(item.playlist.id)
+                  ? t('common.pause')
+                  : t('common.play')
+              "
+              :aria-label="
+                isPlaylistPlaying(item.playlist.id)
+                  ? t('common.pause')
+                  : t('common.play')
+              "
+              @click.stop="togglePlaylist(item.playlist.id)"
+            >
               <IconPlayerPause
                 v-if="isPlaylistPlaying(item.playlist.id)"
                 :size="18"
               />
               <IconPlayerPlay v-else :size="18" />
-            </template>
+            </QBtn>
             <QBtn
               v-if="props.editable"
               flat
@@ -74,7 +111,7 @@
                   : removePlaylist(item.playlist.id)
               "
             >
-              <IconX :size="16" />
+              <IconX :size="18" />
             </QBtn>
           </QItemSection>
         </QItem>
