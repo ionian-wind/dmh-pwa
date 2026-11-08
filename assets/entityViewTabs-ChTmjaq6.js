@@ -1,0 +1,1 @@
+import{l as e}from"./runtime-core.esm-bundler-DTU_Q0U2.js";import{f as t}from"./nodes-C6vrTppp.js";import{f as n,l as r}from"./EntityInfoDialog-DpF4Q97x.js";function i(){let{t:i}=t();return e(()=>[{id:`main`,label:i(`common.view`),icon:r},{id:`links`,label:i(`common.linkedEntities`),icon:n}])}export{i as t};
