@@ -100,7 +100,8 @@ const currentParticipant = computed(() => {
     !combat.value.combatants.length
   )
     return null;
-  return combat.value.combatants[activeParticipantIndex.value];
+  const participant = combat.value.combatants[activeParticipantIndex.value];
+  return participant && !participant.isExcluded ? participant : null;
 });
 
 const encounter = computed(() =>
@@ -402,13 +403,20 @@ async function setParticipantExcluded(
 
   if (excluded && index === activeParticipantIndex.value) {
     const result = advanceTurn({ ...combat.value, combatants });
+    let nextTurn = result.currentTurn;
+    if (result.combatants[nextTurn]?.isExcluded) {
+      const firstAvailable = result.combatants.findIndex(
+        (entry) => !entry.isExcluded,
+      );
+      nextTurn = firstAvailable === -1 ? 0 : firstAvailable;
+    }
     const updated = await combatStore.update(combat.value.id, {
       combatants: result.combatants,
-      currentTurn: result.currentTurn,
+      currentTurn: nextTurn,
       currentRound: result.currentRound,
     });
     combat.value = updated;
-    activeParticipantIndex.value = result.currentTurn;
+    activeParticipantIndex.value = nextTurn;
     return;
   }
 
@@ -559,26 +567,6 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
         />
       </QStepper>
 
-      <!-- Combat Summary -->
-      <div
-        v-if="combat?.status === 'active'"
-        class="combat-summary row items-center q-gutter-lg q-mb-md"
-      >
-        <div class="combat-counter row items-center q-gutter-xs">
-          <label>{{ t('combat.round') }}</label>
-          <span>{{ combat?.currentRound }}</span>
-        </div>
-        <div class="combat-counter row items-center q-gutter-xs">
-          <label>{{ t('combat.turn') }}</label>
-          <span>{{
-            t('combat.turnProgress', {
-              current: (combat?.currentTurn ?? 0) + 1,
-              total: combat?.combatants?.length ?? 0,
-            })
-          }}</span>
-        </div>
-      </div>
-
       <!-- Ended State -->
       <div
         v-if="combat && combat.status === 'completed'"
@@ -594,15 +582,7 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
 
       <!-- Participants Section -->
       <div class="participants-section">
-        <div class="combat-title row justify-between q-pa-md">
-          <h2>
-            {{
-              t('combat.participantsCount', {
-                count: combat.combatants.length,
-              })
-            }}
-          </h2>
-
+        <div class="combat-title row items-center justify-between q-pa-md">
           <Button
             v-if="
               combat &&
@@ -615,6 +595,25 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
           >
             <IconUserPlus />
           </Button>
+
+          <div
+            v-if="combat?.status === 'active'"
+            class="combat-summary row items-center q-gutter-md"
+          >
+            <div class="combat-counter row items-center q-gutter-xs">
+              <label>{{ t('combat.round') }}</label>
+              <span>{{ combat?.currentRound }}</span>
+            </div>
+            <div class="combat-counter row items-center q-gutter-xs">
+              <label>{{ t('combat.turn') }}</label>
+              <span>{{
+                t('combat.turnProgress', {
+                  current: (combat?.currentTurn ?? 0) + 1,
+                  total: combat?.combatants?.length ?? 0,
+                })
+              }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Participant List -->
@@ -627,7 +626,8 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               :active="
                 combat &&
                 combat.status === 'active' &&
-                activeParticipantIndex === index
+                activeParticipantIndex === index &&
+                !participant.isExcluded
               "
               :active-class="'bg-secondary'"
               :class="{
@@ -735,7 +735,12 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                     <IconBolt />
                   </QBtn>
 
-                  <template v-if="activeParticipantIndex === index">
+                  <template
+                    v-if="
+                      activeParticipantIndex === index &&
+                      !participant.isExcluded
+                    "
+                  >
                     <QBtn
                       :size="'lg'"
                       :color="'warning'"
@@ -901,6 +906,10 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
 
 .participant-name--clickable:hover {
   color: var(--color-accent);
+}
+
+:deep(.entity-page-title) {
+  text-align: center;
 }
 
 .participant-row.excluded {

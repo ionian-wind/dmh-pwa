@@ -233,7 +233,8 @@ onMounted(async () => {
             :key="combatant.id"
             class="combat-participant-row"
             :class="{
-              'is-active-turn': index === combat.currentTurn,
+              'is-active-turn':
+                index === combat.currentTurn && !combatant.isExcluded,
               excluded: combatant.isExcluded,
             }"
           >
