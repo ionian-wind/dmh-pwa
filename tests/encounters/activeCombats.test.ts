@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
 const combat = {
   id: 'combat-1',
@@ -154,10 +153,7 @@ describe('active combats sidebar', () => {
     mocks.route.name = 'combat-detail';
     mocks.route.params = { id: 'combat-1' };
 
-    const layout = createLayoutStore();
-    const button = mount(ActiveCombatButton, {
-      global: { provide: { [LayoutKey]: layout } },
-    });
+    const button = mount(ActiveCombatButton);
     await flushPromises();
     expect(button.find('.active-combats-button').exists()).toBe(false);
 
@@ -168,19 +164,21 @@ describe('active combats sidebar', () => {
     panel.unmount();
   });
 
-  it('opens the combat panel from the header button', async () => {
-    const layout = createLayoutStore();
-    const wrapper = mount(ActiveCombatButton, {
-      global: { provide: { [LayoutKey]: layout } },
-    });
+  it('toggles the floating combat panel from the header button', async () => {
+    const wrapper = mount(ActiveCombatButton);
     await flushPromises();
 
     const button = wrapper.find('.active-combats-button');
     expect(button.exists()).toBe(true);
-    await button.trigger('click');
+    expect(wrapper.find('.active-combats-floating').exists()).toBe(false);
 
-    expect(layout.rightDrawerContent.value?.component).toBe(ActiveCombatsPanel);
-    expect(layout.rightDrawerOpen.value).toBe(true);
+    await button.trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.active-combats-floating').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Ambush');
+
+    await button.trigger('click');
+    expect(wrapper.find('.active-combats-floating').exists()).toBe(false);
 
     mocks.combats.items = [];
     wrapper.unmount();

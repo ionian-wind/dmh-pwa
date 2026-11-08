@@ -1,33 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconSwords } from '@tabler/icons-vue';
 import { useCombatStore } from '@/stores/combats';
-import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useVisibleActiveCombats } from '@/encounters/useVisibleActiveCombats';
 import ActiveCombatsPanel from '@/encounters/ActiveCombatsPanel.vue';
 
 const { t } = useI18n();
 const combatStore = useCombatStore();
-const layout = useLayout();
-const rightDrawer = useRightDrawer();
 const { visibleActiveCombats } = useVisibleActiveCombats();
-const isPanelOpen = computed(
-  () => layout.rightDrawerContent.value?.component === ActiveCombatsPanel,
-);
+const isPanelOpen = ref(false);
 
 function togglePanel() {
-  if (isPanelOpen.value) {
-    if (!layout.rightDrawerOpen.value) {
-      layout.rightDrawerOpen.value = true;
-      return;
-    }
-    rightDrawer.clear();
-    return;
-  }
-
-  rightDrawer.set({ component: ActiveCombatsPanel });
-  layout.rightDrawerOpen.value = true;
+  isPanelOpen.value = !isPanelOpen.value;
 }
 
 onMounted(() => {
@@ -46,4 +31,31 @@ onMounted(() => {
   >
     <IconSwords />
   </QBtn>
+
+  <div v-if="isPanelOpen" class="active-combats-floating">
+    <ActiveCombatsPanel />
+  </div>
 </template>
+
+<style scoped>
+.active-combats-floating {
+  position: fixed;
+  top: 59px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2500;
+  display: flex;
+  width: min(350px, calc(100vw - 24px));
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.active-combats-floating > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+</style>

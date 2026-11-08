@@ -192,7 +192,6 @@ onMounted(async () => {
   if (props.rightDrawerIcon) {
     headerProps.rightDrawerIcon = props.rightDrawerIcon;
   }
-  layout.clearRightDrawer();
   layout.setTopMenuContent(
     props.hideHeader ? null : { component: ViewHeader, props: headerProps },
   );
