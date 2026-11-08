@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 
 import TimerListItem from '@/timers/TimerListItem.vue';
 import PawnEditor from '@/pawns/PawnEditor.vue';
@@ -230,7 +230,7 @@ describe('coverage gaps: small components', () => {
     existing.unmount();
   });
 
-  it('shows linked playlists in the mixed scene list', () => {
+  it('shows linked playlists in the mixed scene list', async () => {
     const playlist = {
       id: 'p1',
       name: 'Mix',
@@ -243,6 +243,9 @@ describe('coverage gaps: small components', () => {
     const wrapper = mount(EntityScenesPanel, {
       props: { entityType: 'location', entityId: 'l1' },
     });
+    await flushPromises();
+    await vi.dynamicImportSettled();
+    await flushPromises();
 
     expect(wrapper.find('.playlist-link-item').text()).toContain('Mix');
     expect(wrapper.find('.playlist-add-row').text()).toContain('Add playlist');

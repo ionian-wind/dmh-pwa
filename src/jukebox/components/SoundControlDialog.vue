@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import {
   computed,
+  defineAsyncComponent,
   nextTick,
   onMounted,
   onUnmounted,
   ref,
+  shallowRef,
   watch,
   type ComponentPublicInstance,
 } from 'vue';
@@ -18,9 +20,7 @@ import {
 import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
-import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { useConfigStore } from '@/utils/configStore';
-import AmbientPlayerPanel from '@/ambient-sound/components/AmbientPlayerPanel.vue';
 import {
   getGradientContrastColor,
   useAnimatedGradient,
@@ -47,13 +47,27 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
-const ambientStore = useAmbientSoundStore();
 const configStore = useConfigStore();
+
+type AmbientState = {
+  isPlaying: boolean;
+  activeScene: unknown;
+};
+
+// Keep ambient code out of builds where the ambient feature is disabled.
+const ambientEnabled = __FEATURE_AMBIENT__;
+const ambientStore = shallowRef<AmbientState | null>(null);
+const AmbientPlayerPanel = ambientEnabled
+  ? defineAsyncComponent(
+      () => import('@/ambient-sound/components/AmbientPlayerPanel.vue'),
+    )
+  : null;
 
 const PLAYER_TAB_KEY = 'dmh-player-dialog-tab';
 type PlayerTab = 'jukebox' | 'ambient';
 
 function readLastPlayerTab(): PlayerTab {
+  if (!ambientEnabled) return 'jukebox';
   try {
     return localStorage.getItem(PLAYER_TAB_KEY) === 'ambient'
       ? 'ambient'
@@ -83,23 +97,33 @@ watch(
 );
 
 watch(
-  () => ambientStore.isPlaying,
+  () => ambientStore.value?.isPlaying ?? false,
   (playing) => {
     if (playing) rememberPlayerTab('ambient');
   },
 );
 
 function resolveInitialTab(): PlayerTab {
-  if (ambientStore.isPlaying && !playerStore.isPlaying) return 'ambient';
-  if (playerStore.isPlaying && !ambientStore.isPlaying) return 'jukebox';
-  if (lastPlayedTab.value === 'ambient' && ambientStore.activeScene) {
+  const ambient = ambientStore.value;
+  if (ambient?.isPlaying && !playerStore.isPlaying) return 'ambient';
+  if (playerStore.isPlaying && !ambient?.isPlaying) return 'jukebox';
+  if (lastPlayedTab.value === 'ambient' && ambient?.activeScene) {
     return 'ambient';
   }
   if (lastPlayedTab.value === 'jukebox' && playerStore.currentTrack) {
     return 'jukebox';
   }
-  if (ambientStore.activeScene) return 'ambient';
+  if (ambient?.activeScene) return 'ambient';
   return 'jukebox';
+}
+
+if (ambientEnabled) {
+  void import('@/ambient-sound/stores/ambientSoundStore').then(
+    ({ useAmbientSoundStore }) => {
+      ambientStore.value = useAmbientSoundStore();
+      if (props.modelValue) activeTab.value = resolveInitialTab();
+    },
+  );
 }
 
 const palette = computed<string[] | undefined>(() => {
@@ -422,6 +446,7 @@ function navigateToPage() {
               <IconMusic />
             </QTab>
             <QTab
+              v-if="ambientEnabled"
               name="ambient"
               :title="t('navigation.ambientSound')"
               :aria-label="t('navigation.ambientSound')"
@@ -446,7 +471,7 @@ function navigateToPage() {
             :layout="displayMode === 'panel' ? 'panel' : 'bar'"
             :show-artwork="true"
           />
-          <AmbientPlayerPanel v-else />
+          <AmbientPlayerPanel v-else-if="AmbientPlayerPanel" />
         </div>
       </QCard>
     </div>

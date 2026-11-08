@@ -90,6 +90,7 @@
         </QItemSection>
       </QItem>
       <QItem
+        v-if="playlistStore"
         clickable
         v-ripple
         class="playlist-add-row"
@@ -137,6 +138,7 @@
     </BaseModal>
 
     <EntityLinkingDialog
+      v-if="playlistStore"
       :is-open="playlistPickerOpen"
       kind="playlist"
       :title="t('playlist.addPlaylist')"
@@ -150,7 +152,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  ref,
+  shallowRef,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconHeadphones,
@@ -161,10 +169,20 @@ import {
   IconX,
 } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
+import type { JukeboxPlaylist } from '@/jukebox/types';
 import type { MapEntityRef } from '@/maps/types';
+
+type PlaylistStore = {
+  items: { value: JukeboxPlaylist[] };
+  load: () => Promise<void>;
+  getById: (id: string) => JukeboxPlaylist | null;
+  update: (
+    id: string,
+    patch: { links?: MapEntityRef[] },
+  ) => Promise<JukeboxPlaylist>;
+};
 
 const EntityLinkingDialog = defineAsyncComponent(
   () => import('@/components/common/EntityLinkingDialog.vue'),
@@ -182,9 +200,22 @@ const props = withDefaults(
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();
-const playlistsStore = useJukeboxPlaylistsStore();
 const pickerOpen = ref(false);
 const playlistPickerOpen = ref(false);
+
+// Keep the jukebox dependency behind the build-time flag so builds without
+// the jukebox never bundle its store into the ambient panel.
+const playlistStore = shallowRef<PlaylistStore | null>(null);
+let playlistStoreReady: Promise<PlaylistStore | null> = Promise.resolve(null);
+
+if (__FEATURE_JUKEBOX__) {
+  playlistStoreReady = import('@/jukebox/stores').then(
+    ({ useJukeboxPlaylistsStore }) => {
+      playlistStore.value = useJukeboxPlaylistsStore() as PlaylistStore;
+      return playlistStore.value;
+    },
+  );
+}
 
 const linkedRefs = computed(() =>
   store.linksForEntity(props.entityType as SceneLinkEntityType, props.entityId),
@@ -212,8 +243,9 @@ const availableScenes = computed(() => {
   );
 });
 
+const playlistItems = computed(() => playlistStore.value?.items.value ?? []);
 const linkedPlaylistIds = computed(() =>
-  playlistsStore.items.value
+  playlistItems.value
     .filter((playlist) =>
       (playlist.links ?? []).some(
         (link) => link.kind === props.entityType && link.id === props.entityId,
@@ -223,11 +255,11 @@ const linkedPlaylistIds = computed(() =>
 );
 const linkedPlaylists = computed(() =>
   linkedPlaylistIds.value
-    .map((id) => playlistsStore.getById(id))
-    .filter((playlist): playlist is NonNullable<typeof playlist> => !!playlist),
+    .map((id) => playlistStore.value?.getById(id))
+    .filter((playlist): playlist is JukeboxPlaylist => !!playlist),
 );
 const playlistOptions = computed(() =>
-  playlistsStore.items.value.map((playlist) => ({
+  playlistItems.value.map((playlist) => ({
     id: playlist.id,
     label: playlist.name,
   })),
@@ -290,26 +322,29 @@ function removeLink(packId: string, sceneId: string) {
 }
 
 async function addPlaylists(payload: { refs: MapEntityRef[] }) {
+  const store = playlistStore.value;
+  if (!store) return;
   const selected = new Set(payload.refs.map((ref) => ref.id));
-  for (const playlist of playlistsStore.items.value) {
+  for (const playlist of store.items.value) {
     const links = (playlist.links ?? []).filter(
       (link) => !(link.kind === props.entityType && link.id === props.entityId),
     );
     if (selected.has(playlist.id)) {
       links.push({ kind: props.entityType, id: props.entityId });
     }
-    await playlistsStore.update(playlist.id, { links });
+    await store.update(playlist.id, { links });
   }
   playlistPickerOpen.value = false;
 }
 
 async function removePlaylist(playlistId: string) {
-  const playlist = playlistsStore.getById(playlistId);
-  if (!playlist) return;
+  const store = playlistStore.value;
+  const playlist = store?.getById(playlistId);
+  if (!store || !playlist) return;
   const links = (playlist.links ?? []).filter(
     (link) => !(link.kind === props.entityType && link.id === props.entityId),
   );
-  await playlistsStore.update(playlistId, { links });
+  await store.update(playlistId, { links });
 }
 
 onMounted(async () => {
@@ -317,7 +352,7 @@ onMounted(async () => {
     store.storedPacks.length === 0
       ? store.loadStoredPacks()
       : Promise.resolve(),
-    playlistsStore.load(),
+    playlistStoreReady.then((playlistStore) => playlistStore?.load()),
   ]);
 });
 </script>

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 
 import JukeboxNavItem from '@/features/jukebox/NavItem.vue';
@@ -26,7 +26,11 @@ async function mountAt(path: string) {
   const router = makeRouter();
   await router.push(path);
   await router.isReady();
-  return mount(JukeboxNavItem, { global: { plugins: [router] } });
+  const wrapper = mount(JukeboxNavItem, { global: { plugins: [router] } });
+  await flushPromises();
+  await vi.dynamicImportSettled();
+  await flushPromises();
+  return wrapper;
 }
 
 describe('jukebox navigation item', () => {

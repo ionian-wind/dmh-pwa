@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 
-import { localizeQuickdraw } from '@/notes/quickdrawLocale';
+import { localizeQuickdraw } from '@/drawings/quickdrawLocale';
 
 function flushMutations() {
   return new Promise((resolve) => setTimeout(resolve, 0));

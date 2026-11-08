@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '@/components/common/BaseModal.vue';
-import NoteCanvas from '@/notes/NoteCanvas.vue';
+import NoteCanvas from './NoteCanvas.vue';
 import type { Drawing } from '@/types';
 
 const props = defineProps<{

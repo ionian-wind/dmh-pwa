@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
 import { IconMusic } from '@tabler/icons-vue';
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
-import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { toggleSoundControl } from './state';
 
 const { t } = useI18n();
@@ -13,10 +12,19 @@ const router = useRouter();
 const route = useRoute();
 const configStore = useConfigStore();
 const playerStore = useJukeboxPlayerStore();
-const ambientStore = useAmbientSoundStore();
+const ambientStore = shallowRef<{ isPlaying: boolean } | null>(null);
+
+if (__FEATURE_AMBIENT__) {
+  void import('@/ambient-sound/stores/ambientSoundStore').then(
+    ({ useAmbientSoundStore }) => {
+      ambientStore.value = useAmbientSoundStore();
+    },
+  );
+}
+
 const isRoute = computed(() => !configStore.jukeboxUseMiniPlayer);
 const isPlaying = computed(
-  () => playerStore.isPlaying || ambientStore.isPlaying,
+  () => playerStore.isPlaying || (ambientStore.value?.isPlaying ?? false),
 );
 const isJukeboxArea = computed(
   () =>

@@ -124,6 +124,9 @@ async function mountDialog() {
       stubs: { JukeboxPlayer: true, ScenePlayerView: true },
     },
   });
+  await flushPromises();
+  await vi.dynamicImportSettled();
+  await flushPromises();
   return { wrapper, router };
 }
 
@@ -186,6 +189,9 @@ describe('SoundControlDialog', () => {
       .findComponent(quasarStubs.QTabs)
       .vm.$emit('update:modelValue', 'ambient');
     await nextTick();
+    await flushPromises();
+    await vi.dynamicImportSettled();
+    await flushPromises();
 
     const scene = wrapper.findComponent({ name: 'ScenePlayerView' });
     expect(scene.exists()).toBe(true);
@@ -235,6 +241,8 @@ describe('SoundControlDialog', () => {
       .findComponent(quasarStubs.QTabs)
       .vm.$emit('update:modelValue', 'ambient');
     await nextTick();
+    await flushPromises();
+    await vi.dynamicImportSettled();
     await vi.waitFor(
       () =>
         expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false),
