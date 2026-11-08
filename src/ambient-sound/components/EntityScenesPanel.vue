@@ -161,7 +161,6 @@ import {
   IconX,
 } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
-import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import { useJukeboxPlaylistsStore } from '@/jukebox/stores';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
@@ -184,7 +183,6 @@ const props = withDefaults(
 const { t } = useI18n();
 const store = useAmbientSoundStore();
 const playlistsStore = useJukeboxPlaylistsStore();
-const relations = useEntityLinkRelations();
 const pickerOpen = ref(false);
 const playlistPickerOpen = ref(false);
 
@@ -215,7 +213,13 @@ const availableScenes = computed(() => {
 });
 
 const linkedPlaylistIds = computed(() =>
-  relations.getLinkedIds(props.entityType, props.entityId, 'playlist'),
+  playlistsStore.items.value
+    .filter((playlist) =>
+      (playlist.links ?? []).some(
+        (link) => link.kind === props.entityType && link.id === props.entityId,
+      ),
+    )
+    .map((playlist) => playlist.id),
 );
 const linkedPlaylists = computed(() =>
   linkedPlaylistIds.value
@@ -286,22 +290,26 @@ function removeLink(packId: string, sceneId: string) {
 }
 
 async function addPlaylists(payload: { refs: MapEntityRef[] }) {
-  await relations.setLinkedIds(
-    props.entityType,
-    props.entityId,
-    'playlist',
-    payload.refs.map((ref) => ref.id),
-  );
+  const selected = new Set(payload.refs.map((ref) => ref.id));
+  for (const playlist of playlistsStore.items.value) {
+    const links = (playlist.links ?? []).filter(
+      (link) => !(link.kind === props.entityType && link.id === props.entityId),
+    );
+    if (selected.has(playlist.id)) {
+      links.push({ kind: props.entityType, id: props.entityId });
+    }
+    await playlistsStore.update(playlist.id, { links });
+  }
   playlistPickerOpen.value = false;
 }
 
 async function removePlaylist(playlistId: string) {
-  await relations.setLinkedIds(
-    props.entityType,
-    props.entityId,
-    'playlist',
-    linkedPlaylistIds.value.filter((id) => id !== playlistId),
+  const playlist = playlistsStore.getById(playlistId);
+  if (!playlist) return;
+  const links = (playlist.links ?? []).filter(
+    (link) => !(link.kind === props.entityType && link.id === props.entityId),
   );
+  await playlistsStore.update(playlistId, { links });
 }
 
 onMounted(async () => {
