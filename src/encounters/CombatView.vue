@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { usePartyStore } from '@/stores/parties';
-import type { Combat } from '@/types';
+import type { Combat, Combatant } from '@/types';
 import BaseEntityView from '@/components/common/BaseEntityView.vue';
 import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
@@ -22,6 +22,7 @@ import {
   IconPlayerPause,
   IconSwords,
   IconCircleCheck,
+  IconX,
 } from '@tabler/icons-vue';
 import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
 import { S } from '@/utils/dice-roller/plugins/dice/tokens';
@@ -354,6 +355,32 @@ async function activatePostponed(id: string) {
   }
 }
 
+async function excludeParticipant(participant: Combatant, index: number) {
+  if (!combat.value) return;
+  const wasActive = index === activeParticipantIndex.value;
+  const updated = await combatStore.removeCombatant(
+    combat.value.id,
+    participant.id,
+  );
+  if (!updated) return;
+
+  const remaining = updated.combatants.length;
+  let nextTurn = activeParticipantIndex.value;
+  if (remaining === 0) {
+    nextTurn = 0;
+  } else if (wasActive) {
+    nextTurn = Math.min(index, remaining - 1);
+  } else if (index < nextTurn) {
+    nextTurn -= 1;
+  }
+
+  const withTurn = await combatStore.update(combat.value.id, {
+    currentTurn: nextTurn,
+  });
+  combat.value = withTurn;
+  activeParticipantIndex.value = nextTurn;
+}
+
 async function persistCombatants() {
   if (!combat.value) return;
   const updated = await combatStore.update(combat.value.id, {
@@ -674,6 +701,18 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                     :disabled="!currentParticipant"
                   >
                     <IconCheck />
+                  </QBtn>
+                </QBtnGroup>
+
+                <QBtnGroup flat class="controls participant-exclude">
+                  <QBtn
+                    :size="'lg'"
+                    color="negative"
+                    :title="t('combat.excludeParticipant')"
+                    :aria-label="t('combat.excludeParticipant')"
+                    @click.stop="excludeParticipant(participant, index)"
+                  >
+                    <IconX />
                   </QBtn>
                 </QBtnGroup>
               </QItemSection>
