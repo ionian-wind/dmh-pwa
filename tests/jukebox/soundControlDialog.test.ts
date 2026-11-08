@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import SoundControlDialog from '@/jukebox/components/SoundControlDialog.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { quasarStubs } from '../helpers/quasar-stubs';
 
 function makeRouter() {
@@ -14,6 +15,7 @@ function makeRouter() {
     routes: [
       { path: '/', component: { render: () => null } },
       { path: '/jukebox', component: { render: () => null } },
+      { path: '/ambient', component: { render: () => null } },
     ],
   });
 }
@@ -119,7 +121,7 @@ async function mountDialog() {
     props: { modelValue: true },
     global: {
       plugins: [router],
-      stubs: { JukeboxPlayer: true },
+      stubs: { JukeboxPlayer: true, ScenePlayerView: true },
     },
   });
   return { wrapper, router };
@@ -160,6 +162,46 @@ describe('SoundControlDialog', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
     expect(push).toHaveBeenCalledWith('/jukebox');
     wrapper.unmount();
+  });
+
+  it('shows ambient base controls on the ambient player tab', async () => {
+    const ambient = useAmbientSoundStore();
+    ambient.storedPacks = [
+      {
+        id: 'pack-1',
+        name: 'Pack',
+        scenes: [{ id: 'scene-1', name: 'Tavern Evening' }],
+        ambiences: [],
+        oneShots: [],
+      },
+    ] as any;
+    ambient.activeSceneKey = 'pack-1::scene-1';
+
+    const { wrapper, router } = await mountDialog();
+    wrapper
+      .findComponent(quasarStubs.QTabs)
+      .vm.$emit('update:modelValue', 'ambient');
+    await nextTick();
+
+    const scene = wrapper.findComponent({ name: 'ScenePlayerView' });
+    expect(scene.exists()).toBe(true);
+    expect(scene.props()).toMatchObject({
+      packId: 'pack-1',
+      sceneId: 'scene-1',
+      showBack: false,
+      compact: true,
+    });
+    expect(wrapper.findComponent({ name: 'JukeboxPlayer' }).exists()).toBe(
+      false,
+    );
+
+    const push = vi.spyOn(router, 'push');
+    await wrapper.findAll('button')[0].trigger('click');
+    expect(push).toHaveBeenCalledWith('/ambient');
+
+    wrapper.unmount();
+    ambient.storedPacks = [];
+    ambient.activeSceneKey = null;
   });
 
   it('builds gradient controls from the current track palette', async () => {

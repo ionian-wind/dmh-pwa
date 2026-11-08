@@ -9,11 +9,19 @@ import {
   type ComponentPublicInstance,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconExternalLink, IconX } from '@tabler/icons-vue';
+import {
+  IconExternalLink,
+  IconHeadphones,
+  IconMusic,
+  IconX,
+} from '@tabler/icons-vue';
 import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
+import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import {
   getGradientContrastColor,
   useAnimatedGradient,
@@ -40,7 +48,9 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
+const ambientStore = useAmbientSoundStore();
 const configStore = useConfigStore();
+const activeTab = ref('jukebox');
 
 const palette = computed<string[] | undefined>(() => {
   const track = playerStore.currentTrack;
@@ -280,9 +290,9 @@ const frameStyle = computed((): Record<string, string> => {
   };
 });
 
-function navigateToJukebox() {
+function navigateToPage() {
   emit('update:modelValue', false);
-  router.push('/jukebox');
+  void router.push(activeTab.value === 'ambient' ? '/ambient' : '/jukebox');
 }
 </script>
 
@@ -337,11 +347,33 @@ function navigateToJukebox() {
               clickable
               :title="t('jukebox.openJukebox')"
               :aria-label="t('jukebox.openJukebox')"
-              @click="navigateToJukebox"
+              @click="navigateToPage"
             >
               <IconExternalLink />
             </QBtn>
           </div>
+          <QTabs
+            v-model="activeTab"
+            dense
+            align="center"
+            class="sound-control-tabs"
+            @pointerdown.stop
+          >
+            <QTab
+              name="jukebox"
+              :title="t('app.jukebox')"
+              :aria-label="t('app.jukebox')"
+            >
+              <IconMusic />
+            </QTab>
+            <QTab
+              name="ambient"
+              :title="t('navigation.ambientSound')"
+              :aria-label="t('navigation.ambientSound')"
+            >
+              <IconHeadphones />
+            </QTab>
+          </QTabs>
           <QBtn
             flat
             clickable
@@ -354,9 +386,22 @@ function navigateToJukebox() {
         </QToolbar>
         <div class="sound-control-body">
           <JukeboxPlayer
+            v-if="activeTab === 'jukebox'"
             :modal="true"
             :layout="displayMode === 'panel' ? 'panel' : 'bar'"
             :show-artwork="true"
+          />
+          <ScenePlayerView
+            v-else-if="ambientStore.activeScene"
+            :pack-id="ambientStore.activeScene.pack.id"
+            :scene-id="ambientStore.activeScene.scene.id"
+            :show-back="false"
+            compact
+          />
+          <EmptyState
+            v-else
+            :icon="IconMusic"
+            :title="t('ambientSoundPage.noScene')"
           />
         </div>
       </QCard>
@@ -403,6 +448,23 @@ function navigateToJukebox() {
 
 .sound-control-card.is-dialog {
   box-shadow: var(--shadow-lg);
+}
+
+.sound-control-tabs {
+  color: inherit;
+}
+
+.sound-control-tabs :deep(.q-tab) {
+  color: inherit;
+  opacity: 0.6;
+}
+
+.sound-control-tabs :deep(.q-tab--active) {
+  opacity: 1;
+}
+
+.sound-control-tabs :deep(.q-tab__indicator) {
+  background: currentColor;
 }
 
 .drag-handle {

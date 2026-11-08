@@ -73,66 +73,68 @@
 
       <AmbientControls class="q-mb-md" :disabled="!sceneControlsEnabled" />
 
-      <EntityTabs v-model="activeTab" :tabs="tabs" class="q-mb-md" />
+      <template v-if="!props.compact">
+        <EntityTabs v-model="activeTab" :tabs="tabs" class="q-mb-md" />
 
-      <div v-if="activeTab === 'ambiences'">
-        <VariationSelect
-          v-if="variationOptions.length"
-          :model-value="selectedVariationId"
-          :options="variationOptions"
-          class="q-mb-md"
-          @update:model-value="onVariationChange"
-        />
-        <EntityGroup
-          v-for="group in ambienceGroups"
-          :key="group.category"
-          :title="group.category"
-        >
-          <div class="column q-gutter-xs">
-            <AmbienceItem
-              v-for="row in group.rows"
-              :key="row.ambience.id"
-              :ambience="row.ambience"
-              :variation-id="selectedVariationId"
-              :active-variation-id="row.activeVariationId"
-              :active-sample-index="row.activeSampleIndex"
-              :disabled="!sceneControlsEnabled"
-              @select-sample="
-                (variationId, sampleIndex) =>
-                  selectSample(row, variationId, sampleIndex)
-              "
-            />
-          </div>
-        </EntityGroup>
-        <EmptyState
-          v-if="ambienceGroups.length === 0"
-          :icon="IconWaveSine"
-          :title="t('ambientSoundPage.noAmbiencesInScene')"
-        />
-      </div>
+        <div v-if="activeTab === 'ambiences'">
+          <VariationSelect
+            v-if="variationOptions.length"
+            :model-value="selectedVariationId"
+            :options="variationOptions"
+            class="q-mb-md"
+            @update:model-value="onVariationChange"
+          />
+          <EntityGroup
+            v-for="group in ambienceGroups"
+            :key="group.category"
+            :title="group.category"
+          >
+            <div class="column q-gutter-xs">
+              <AmbienceItem
+                v-for="row in group.rows"
+                :key="row.ambience.id"
+                :ambience="row.ambience"
+                :variation-id="selectedVariationId"
+                :active-variation-id="row.activeVariationId"
+                :active-sample-index="row.activeSampleIndex"
+                :disabled="!sceneControlsEnabled"
+                @select-sample="
+                  (variationId, sampleIndex) =>
+                    selectSample(row, variationId, sampleIndex)
+                "
+              />
+            </div>
+          </EntityGroup>
+          <EmptyState
+            v-if="ambienceGroups.length === 0"
+            :icon="IconWaveSine"
+            :title="t('ambientSoundPage.noAmbiencesInScene')"
+          />
+        </div>
 
-      <div v-else>
-        <EntityGroup
-          v-for="group in oneShotGroups"
-          :key="group.category"
-          :title="group.category"
-        >
-          <div class="one-shot-grid">
-            <OneShotControl
-              v-for="oneShot in group.items"
-              :key="oneShot.id"
-              :pack-id="entry.pack.id"
-              :one-shot="oneShot"
-              :knob-size="68"
-            />
-          </div>
-        </EntityGroup>
-        <EmptyState
-          v-if="oneShotGroups.length === 0"
-          :icon="IconBell"
-          :title="t('ambientSoundPage.noOneShotsInScene')"
-        />
-      </div>
+        <div v-else>
+          <EntityGroup
+            v-for="group in oneShotGroups"
+            :key="group.category"
+            :title="group.category"
+          >
+            <div class="one-shot-grid">
+              <OneShotControl
+                v-for="oneShot in group.items"
+                :key="oneShot.id"
+                :pack-id="entry.pack.id"
+                :one-shot="oneShot"
+                :knob-size="68"
+              />
+            </div>
+          </EntityGroup>
+          <EmptyState
+            v-if="oneShotGroups.length === 0"
+            :icon="IconBell"
+            :title="t('ambientSoundPage.noOneShotsInScene')"
+          />
+        </div>
+      </template>
     </div>
     <EmptyState
       v-else
@@ -177,8 +179,10 @@ const props = withDefaults(
     packId: string;
     sceneId: string;
     showBack?: boolean;
+    /** Hide the inner gallery tabs and show only scene-level controls. */
+    compact?: boolean;
   }>(),
-  { showBack: true },
+  { showBack: true, compact: false },
 );
 
 const emit = defineEmits<{
