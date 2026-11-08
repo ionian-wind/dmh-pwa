@@ -9,7 +9,13 @@ import TabGroup from '@/components/common/TabGroup.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import type { MapEntityRef } from '@/maps/types';
-import { IconAt, IconGhost3, IconPlus, IconX } from '@tabler/icons-vue';
+import {
+  IconAt,
+  IconGhost3,
+  IconHeadphones,
+  IconPlus,
+  IconX,
+} from '@tabler/icons-vue';
 import { prompt } from '@/dialogs';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
@@ -38,7 +44,11 @@ const mentionedIn = computed(() =>
 );
 const tabs = computed(() => [
   { id: 'pawns', label: t('encounters.tabs.pawns'), icon: IconGhost3 },
-  { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+  {
+    id: 'scenes',
+    label: t('ambientSoundPage.scenesTab'),
+    icon: IconHeadphones,
+  },
   { id: 'mentions', label: t('common.mentions'), icon: IconAt },
 ]);
 

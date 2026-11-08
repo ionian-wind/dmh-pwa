@@ -1,47 +1,55 @@
 <template>
-  <div class="entity-scenes-panel q-pa-sm">
-    <div class="row items-center justify-between q-mb-sm">
-      <div class="text-subtitle2 text-weight-medium">
-        {{ t('ambientSoundPage.scenes') }}
-      </div>
-      <QBtn
-        flat
-        dense
-        round
-        color="primary"
+  <div class="entity-scenes-panel">
+    <QList class="q-pa-none q-mb-none">
+      <QItem
+        clickable
+        v-ripple
+        class="scene-add-row"
         :title="t('ambientSoundPage.addSceneLink')"
         :aria-label="t('ambientSoundPage.addSceneLink')"
         @click="pickerOpen = true"
       >
-        <IconPlus :size="18" />
-      </QBtn>
-    </div>
+        <QItemSection side>
+          <IconPlus :size="18" />
+        </QItemSection>
+        <QItemSection>
+          {{ t('ambientSoundPage.addSceneLink') }}
+        </QItemSection>
+      </QItem>
+    </QList>
 
-    <div v-if="linkedScenes.length" class="column q-gutter-xs">
+    <QSeparator />
+
+    <div v-if="!linkedScenes.length" class="text-caption text-grey-7 q-pa-md">
+      {{ t('ambientSoundPage.noSceneLinks') }}
+    </div>
+    <QList v-else class="q-pa-none q-mb-none">
       <QItem
         v-for="entry in linkedScenes"
         :key="`${entry.pack.id}:${entry.scene.id}`"
         clickable
+        v-ripple
         class="scene-link-item"
         :class="{ 'is-active': isActive(entry.pack.id, entry.scene.id) }"
         @click="toggleScene(entry.pack.id, entry.scene.id)"
       >
+        <QItemSection side>
+          <IconHeadphones :size="18" />
+        </QItemSection>
         <QItemSection>
           <div>{{ entry.scene.name }}</div>
           <div class="text-caption text-grey-7">{{ entry.pack.name }}</div>
         </QItemSection>
-        <QItemSection side>
+        <QItemSection side class="scene-link-actions row items-center">
           <IconPlayerPause
             v-if="isPlaying(entry.pack.id, entry.scene.id)"
             :size="18"
           />
           <IconPlayerPlay v-else :size="18" />
-        </QItemSection>
-        <QItemSection side>
           <QBtn
             flat
             dense
-            round
+            size="sm"
             color="negative"
             :title="t('ambientSoundPage.removeLink')"
             :aria-label="t('ambientSoundPage.removeLink')"
@@ -51,11 +59,7 @@
           </QBtn>
         </QItemSection>
       </QItem>
-    </div>
-
-    <div v-else class="text-caption text-grey-7 q-pa-sm">
-      {{ t('ambientSoundPage.noSceneLinks') }}
-    </div>
+    </QList>
 
     <BaseModal
       :is-open="pickerOpen"
@@ -67,11 +71,12 @@
       @cancel="pickerOpen = false"
       @update:is-open="(value: boolean) => !value && (pickerOpen = false)"
     >
-      <div v-if="availableScenes.length" class="column q-gutter-xs">
+      <QList v-if="availableScenes.length" class="q-pa-none">
         <QItem
           v-for="entry in availableScenes"
           :key="`${entry.pack.id}:${entry.scene.id}`"
           clickable
+          v-ripple
           @click="linkScene(entry.pack.id, entry.scene.id)"
         >
           <QItemSection>
@@ -80,7 +85,7 @@
           </QItemSection>
           <QItemSection side><IconPlus :size="16" /></QItemSection>
         </QItem>
-      </div>
+      </QList>
       <div v-else class="text-caption text-grey-7 q-pa-sm">
         {{ t('ambientSoundPage.noScenes') }}
       </div>
@@ -92,6 +97,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  IconHeadphones,
   IconPlayerPause,
   IconPlayerPlay,
   IconPlus,
@@ -181,6 +187,11 @@ onMounted(async () => {
 }
 
 .scene-link-item.is-active {
-  background: var(--color-background-soft);
+  background: var(--color-selected-surface);
+  color: var(--color-text);
+}
+
+.scene-link-actions {
+  gap: 0.15rem;
 }
 </style>

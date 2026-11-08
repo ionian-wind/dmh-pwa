@@ -223,7 +223,7 @@ describe('coverage gaps: small components', () => {
       props: { entityType: 'location', entityId: 'l1' },
     });
     expect(wrapper.text()).toContain('No linked scenes');
-    await wrapper.find('button[title="Link a scene"]').trigger('click');
+    await wrapper.find('[title="Link a scene"]').trigger('click');
     const available = wrapper
       .findAll('[data-stub="QItem"]')
       .find((item) => item.text().includes('Scene'))!;

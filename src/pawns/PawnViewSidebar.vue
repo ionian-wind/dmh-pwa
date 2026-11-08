@@ -6,7 +6,7 @@ import { useMentionsStore } from '@/utils/storage';
 import TabGroup from '@/components/common/TabGroup.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
-import { IconAt } from '@tabler/icons-vue';
+import { IconAt, IconHeadphones } from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const props = defineProps<{
@@ -39,9 +39,19 @@ const mentionedIn = computed(() =>
 );
 const tabs = computed(() =>
   state.value.isEditMode
-    ? [{ id: 'scenes', label: t('ambientSoundPage.scenesTab') }]
+    ? [
+        {
+          id: 'scenes',
+          label: t('ambientSoundPage.scenesTab'),
+          icon: IconHeadphones,
+        },
+      ]
     : [
-        { id: 'scenes', label: t('ambientSoundPage.scenesTab') },
+        {
+          id: 'scenes',
+          label: t('ambientSoundPage.scenesTab'),
+          icon: IconHeadphones,
+        },
         { id: 'mentions', label: t('common.mentions'), icon: IconAt },
       ],
 );

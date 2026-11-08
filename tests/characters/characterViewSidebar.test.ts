@@ -51,9 +51,12 @@ describe('CharacterViewSidebar', () => {
 
     expect(wrapper.find('.tab-group').exists()).toBe(true);
     expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
-      'Scenes',
+      '',
       '',
     ]);
+    const scenesTab = wrapper.findAll('.tab-item')[0];
+    expect(scenesTab.attributes('aria-label')).toBe('Scenes');
+    expect(scenesTab.find('.tab-icon').exists()).toBe(true);
     const mentionsTab = wrapper.findAll('.tab-item')[1];
     expect(mentionsTab.attributes('aria-label')).toBe('Mentions');
     expect(mentionsTab.find('.tab-icon').exists()).toBe(true);
@@ -122,9 +125,8 @@ describe('CharacterViewSidebar', () => {
 
     editState.isEditMode = true;
     await nextTick();
-    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual([
-      'Scenes',
-    ]);
+    expect(wrapper.findAll('.tab-item').map((tab) => tab.text())).toEqual(['']);
+    expect(wrapper.find('.tab-item .tab-icon').exists()).toBe(true);
     expect(wrapper.findComponent(MentionsStub).exists()).toBe(false);
     expect(wrapper.find('.entity-visual-mode-toggle').exists()).toBe(true);
     wrapper
