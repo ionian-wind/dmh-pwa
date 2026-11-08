@@ -122,12 +122,13 @@ describe('EntitiesLinking', () => {
 
     await wrapper.find('button[aria-label="Search and link"]').trigger('click');
 
-    const optionRows = wrapper
-      .findAll('[data-stub="QItem"]')
-      .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
+    const optionRows = () =>
+      wrapper
+        .findAll('[data-stub="QItem"]')
+        .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
 
-    await optionRows[0].trigger('click');
-    await optionRows[1].trigger('click');
+    await optionRows()[0].trigger('click');
+    await optionRows()[1].trigger('click');
 
     const addButton = wrapper
       .findAll('button')
@@ -259,13 +260,14 @@ describe('EntitiesLinking', () => {
     expect(wrapper.text()).not.toContain('Alpha note');
 
     await search.setValue('');
-    const optionRows = wrapper
-      .findAll('[data-stub="QItem"]')
-      .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
-    expect(optionRows).toHaveLength(2);
+    const optionRows = () =>
+      wrapper
+        .findAll('[data-stub="QItem"]')
+        .filter((row) => ['Alpha note', 'Beta note'].includes(row.text()));
+    expect(optionRows()).toHaveLength(2);
 
-    await optionRows[0].trigger('click');
-    await optionRows[1].trigger('click');
+    await optionRows()[0].trigger('click');
+    await optionRows()[1].trigger('click');
 
     const addButton = wrapper
       .findAll('button')

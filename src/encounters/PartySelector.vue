@@ -8,8 +8,7 @@ import { generateId } from '@/utils/storage';
 import { Combat, Combatant, Encounter } from '@/types';
 import BaseModal from '@/components/common/BaseModal.vue';
 import { useI18n } from 'vue-i18n';
-import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
-import type { MapEntityRef } from '@/maps/types';
+import EntityLinkingList from '@/components/common/EntityLinkingList.vue';
 
 const partyStore = usePartyStore();
 const combatStore = useCombatStore();
@@ -34,8 +33,8 @@ const partyOptions = computed(() =>
   partyStore.filtered.map((party) => ({ id: party.id, label: party.name })),
 );
 
-const selectedPartyLinks = computed<MapEntityRef[]>(() =>
-  selectedPartyId.value ? [{ kind: 'party', id: selectedPartyId.value }] : [],
+const selectedPartyIds = computed(() =>
+  selectedPartyId.value ? [selectedPartyId.value] : [],
 );
 
 const characterOptions = computed(() => {
@@ -47,20 +46,20 @@ const characterOptions = computed(() => {
   }));
 });
 
-const selectedCharacterLinks = computed<MapEntityRef[]>(() =>
+const selectedCharacterIds = computed(() =>
   Object.entries(selectedCharacters.value)
     .filter(([, selected]) => selected)
-    .map(([id]) => ({ kind: 'character', id })),
+    .map(([id]) => id),
 );
 
-function setPartyLinks(links: MapEntityRef[]) {
-  selectedPartyId.value = links[0]?.id ?? '';
+function setPartyIds(ids: string[]) {
+  selectedPartyId.value = ids[0] ?? '';
 }
 
-function setCharacterLinks(links: MapEntityRef[]) {
+function setCharacterIds(ids: string[]) {
   const next: Record<string, boolean> = {};
   characterOptions.value.forEach((option) => {
-    next[option.id] = links.some((link) => link.id === option.id);
+    next[option.id] = ids.includes(option.id);
   });
   selectedCharacters.value = next;
 }
@@ -216,27 +215,25 @@ const handleCancel = () => {
       </div>
 
       <div class="form-section">
-        <EntitiesLinking
+        <h4>{{ t('partySelector.party') }}</h4>
+        <EntityLinkingList
           kind="party"
-          :multiple="false"
-          :label="t('partySelector.party')"
           :options="partyOptions"
-          :model-value="selectedPartyLinks"
-          @update:model-value="setPartyLinks"
+          :multiple="false"
+          :model-value="selectedPartyIds"
+          @update:model-value="setPartyIds"
         />
       </div>
 
       <div v-if="selectedPartyId">
         <h4>{{ t('partySelector.selectCharacters') }}</h4>
-        <div v-if="selectedCharacterLinks.length === 0" class="info-text">
+        <div v-if="selectedCharacterIds.length === 0" class="info-text">
           {{ t('partySelector.selectAtLeastOneCharacter') }}
         </div>
-        <EntitiesLinking
-          kind="character"
-          :label="t('partySelector.characters')"
+        <EntityLinkingList
           :options="characterOptions"
-          :model-value="selectedCharacterLinks"
-          @update:model-value="setCharacterLinks"
+          :model-value="selectedCharacterIds"
+          @update:model-value="setCharacterIds"
         />
       </div>
     </div>
@@ -250,6 +247,12 @@ const handleCancel = () => {
 
 .form-section {
   margin-bottom: 1.5rem;
+}
+
+.form-section h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text);
+  font-size: 1rem;
 }
 
 .form-section label {
