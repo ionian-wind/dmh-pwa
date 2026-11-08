@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import {
   IconBolt,
   IconCheck,
@@ -30,6 +31,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+const router = useRouter();
 const combatStore = useCombatStore();
 const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
@@ -178,6 +180,11 @@ function finish(combat: Combat) {
   void combatStore.endCombat(combat.id);
 }
 
+function openCombat(combat: Combat) {
+  props.onNavigate?.();
+  void router.push(`/combats/${combat.id}`);
+}
+
 onMounted(async () => {
   await Promise.all([
     combatStore.isLoaded ? Promise.resolve() : combatStore.load(),
@@ -202,18 +209,11 @@ onMounted(async () => {
         v-for="combat in activeCombats"
         :key="combat.id"
         :title="encounterName(combat)"
+        :to="`/combats/${combat.id}`"
+        :on-title-click="() => openCombat(combat)"
         class="combat-group"
       >
         <template #actions>
-          <QBtn
-            class="view-combat-button"
-            flat
-            dense
-            color="primary"
-            :to="`/combats/${combat.id}`"
-            :label="t('common.view')"
-            @click="props.onNavigate?.()"
-          />
           <QBtn
             class="finish-combat-button"
             flat
@@ -245,8 +245,8 @@ onMounted(async () => {
                 size="28px"
                 :alt="combatantName(combat, combatant)"
               />
-              <IconUser v-else-if="combatant.type === 'player'" :size="18" />
-              <IconGhost3 v-else :size="18" />
+              <IconUser v-else-if="combatant.type === 'player'" :size="28" />
+              <IconGhost3 v-else :size="28" />
             </QItemSection>
             <QItemSection side class="combat-participant-initiative">
               {{ combatant.initiative }}
@@ -344,6 +344,10 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.combat-participant-row {
+  color: var(--color-text);
+}
+
 .combat-participant-row.is-active-turn {
   background: var(--color-selected-surface);
 }

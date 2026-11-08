@@ -667,8 +667,11 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                   size="32px"
                   :alt="getCombatantDisplayName(participant)"
                 />
-                <IconUser v-else-if="participant.type === 'player'" />
-                <IconGhost3 v-else />
+                <IconUser
+                  v-else-if="participant.type === 'player'"
+                  :size="32"
+                />
+                <IconGhost3 v-else :size="32" />
               </QItemSection>
 
               <QItemSection side class="participant-initiative">

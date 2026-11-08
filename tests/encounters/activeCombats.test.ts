@@ -39,6 +39,7 @@ const combat = {
 
 const mocks = vi.hoisted(() => ({
   route: { name: '', params: {} as Record<string, string> },
+  routerPush: vi.fn(),
   combats: {
     items: [] as any[],
     isLoaded: true,
@@ -73,6 +74,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   useRoute: () => mocks.route,
+  useRouter: () => ({ push: mocks.routerPush }),
 }));
 
 vi.mock('@/stores/combats', () => ({ useCombatStore: () => mocks.combats }));
@@ -110,16 +112,23 @@ describe('active combats sidebar', () => {
   });
 
   it('shows combat groups with participant actions', async () => {
-    const wrapper = mount(ActiveCombatsPanel);
+    const onNavigate = vi.fn();
+    const wrapper = mount(ActiveCombatsPanel, {
+      props: { onNavigate },
+    });
     await flushPromises();
 
     expect(wrapper.text()).toContain('Ambush');
     expect(wrapper.text()).toContain('Aria');
     expect(wrapper.text()).toContain('Goblin');
     expect(wrapper.find('.finish-combat-button').exists()).toBe(true);
-    expect(wrapper.find('.view-combat-button').exists()).toBe(true);
+    expect(wrapper.find('.view-combat-button').exists()).toBe(false);
     expect(wrapper.findAll('.exclude-participant-button')).toHaveLength(2);
     expect(wrapper.findAll('.postpone-turn-button')).toHaveLength(1);
+
+    await wrapper.find('.entity-group-title-link').trigger('click');
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+    expect(mocks.routerPush).toHaveBeenCalledWith('/combats/combat-1');
 
     await wrapper.find('.postpone-turn-button').trigger('click');
     expect(mocks.combats.update).toHaveBeenCalledWith(
