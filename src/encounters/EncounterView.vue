@@ -6,17 +6,22 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useCombatStore } from '@/stores/combats';
 import { usePartyStore } from '@/stores/parties';
 import type { Encounter, Combat } from '@/types';
-import EncounterEditor from '@/encounters/EncounterEditor.vue';
 import BaseEntityTabView from '@/components/common/BaseEntityTabView.vue';
 import EntityViewLinks from '@/components/common/EntityViewLinks.vue';
+import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
+import EntityContentSurface from '@/components/common/EntityContentSurface.vue';
+import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
+import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
+import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
+import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
+import { useEntityEditMode } from '@/composables/useEntityEditMode';
 import type { MapEntityRef } from '@/maps/types';
 import Button from '@/components/form/Button.vue';
 import PartySelector from '@/encounters/PartySelector.vue';
 import { IconAffiliate, IconInfoCircle, IconSwords } from '@tabler/icons-vue';
 import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
-import { confirm } from '@/dialogs';
-import { sanitizeHtmlContent } from '@/utils/markdownParser';
+import { alert, confirm } from '@/dialogs';
 import { useRightDrawer } from '@/composables/useLayout';
 
 const route = useRoute();
@@ -27,9 +32,12 @@ const encounterStore = useEncounterStore();
 const combatStore = useCombatStore();
 const partyStore = usePartyStore();
 
-const isEditorOpen = ref(false);
 const showPartySelector = ref(false);
 const activeTab = ref('information');
+const validationError = ref<string | null>(null);
+const markdownEditorRef = ref<InstanceType<typeof EntityMarkdownEditor> | null>(
+  null,
+);
 
 const encounter = ref<Encounter | null>(null);
 const loading = computed(() => !encounterStore.isLoaded);
@@ -53,10 +61,6 @@ watch(
   { immediate: true, deep: true },
 );
 
-const handleEdit = () => {
-  isEditorOpen.value = true;
-};
-
 const handleDelete = async () => {
   if (!encounter.value) return false;
   if (
@@ -64,20 +68,9 @@ const handleDelete = async () => {
   ) {
     return false;
   }
+  discardDraft();
   await encounterStore.remove(encounter.value.id);
   return true;
-};
-
-const handleSave = async (
-  updatedEncounter: Omit<Encounter, 'id' | 'createdAt' | 'updatedAt'>,
-) => {
-  if (!encounter.value) return;
-  await encounterStore.update(encounter.value.id, updatedEncounter);
-  isEditorOpen.value = false;
-};
-
-const handleCancel = () => {
-  isEditorOpen.value = false;
 };
 
 const handleRunCombat = () => {
@@ -96,9 +89,6 @@ const handlePartySelectorCancel = () => {
 
 // Computed properties for BaseEntityView
 const encounterTitle = computed(() => encounter.value?.name || '');
-const safeDescription = computed(() =>
-  sanitizeHtmlContent(encounter.value?.description || ''),
-);
 
 // Computed property for combats associated with this encounter
 const encounterCombats = computed(() => {
@@ -143,7 +133,84 @@ const encounterLinks = computed<MapEntityRef[]>(() => {
     .map((noteId) => ({ kind: 'note' as const, id: noteId }));
 });
 
-const tabs = computed(() => [
+async function setEncounterLinks(links: MapEntityRef[]) {
+  if (!encounter.value) return;
+  await relations.setLinkedIds(
+    'encounter',
+    encounter.value.id,
+    'note',
+    links.filter((link) => link.kind === 'note').map((link) => link.id),
+  );
+}
+
+const editorTabs = useEntityEditorTabs();
+
+const draftName = computed({
+  get: () => editState.draft?.name ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.name = value;
+  },
+});
+
+const draftDescription = computed({
+  get: () => editState.draft?.description ?? '',
+  set: (value: string) => {
+    if (editState.draft) editState.draft.description = value;
+  },
+});
+
+async function prepareDraft(draft: Encounter): Promise<boolean> {
+  if (markdownEditorRef.value?.getMarkdown) {
+    draft.description = markdownEditorRef.value.getMarkdown();
+  }
+  if (!draft.name?.trim()) {
+    activeTab.value = 'main';
+    await alert(t('common.nameRequired'));
+    return false;
+  }
+  validationError.value = null;
+  return true;
+}
+
+async function persistDraft(draft: Encounter): Promise<boolean> {
+  if (!encounter.value) return false;
+  try {
+    await encounterStore.update(encounter.value.id, {
+      name: draft.name,
+      description: draft.description,
+    });
+  } catch (error) {
+    activeTab.value = 'main';
+    validationError.value =
+      error instanceof Error ? error.message : String(error);
+    return false;
+  }
+  updateEncounterFromStore();
+  return true;
+}
+
+function handleDescriptionChange(description: string) {
+  if (!encounter.value) return;
+  void encounterStore.update(encounter.value.id, { description });
+}
+
+const { editState, setEditMode, discardDraft } = useEntityEditMode<Encounter>({
+  source: encounter,
+  clone: (source) => ({ ...source, pawns: { ...source.pawns } }),
+  isDirty: (draft, source) =>
+    draft.name !== source.name ||
+    (draft.description ?? '') !== (source.description ?? ''),
+  onEnter: () => {
+    validationError.value = null;
+  },
+  onDiscard: () => {
+    validationError.value = null;
+  },
+  prepare: prepareDraft,
+  save: persistDraft,
+});
+
+const viewTabs = computed(() => [
   {
     id: 'information',
     label: t('encounters.tabs.information'),
@@ -164,6 +231,29 @@ const tabs = computed(() => [
   },
 ]);
 
+const tabs = computed(() =>
+  editState.isEditMode
+    ? editorTabs.value.map((tab) => ({
+        id: tab.name,
+        label: tab.title,
+        icon: tab.icon,
+      }))
+    : viewTabs.value,
+);
+
+const headerButtons = computed(() =>
+  editState.isEditMode
+    ? []
+    : [
+        {
+          color: 'warning',
+          title: 'common.runCombat',
+          event: handleRunCombat,
+          icon: IconSwords,
+        },
+      ],
+);
+
 const rightDrawer = useRightDrawer();
 
 onMounted(async () => {
@@ -176,20 +266,13 @@ onMounted(async () => {
 
   rightDrawer.set({
     component: EncounterViewSidebar,
-    props: { encounter, editable: isEditorOpen },
+    props: { encounter, editState, onSetEditMode: setEditMode },
   });
 });
 
 onBeforeUnmount(() => {
   rightDrawer.clear();
 });
-
-async function handleEditorDelete() {
-  if (await handleDelete()) {
-    isEditorOpen.value = false;
-    await router.push('/encounters');
-  }
-}
 </script>
 
 <template>
@@ -199,29 +282,50 @@ async function handleEditorDelete() {
       entity-name="encounters.title"
       list-route="/encounters"
       :on-delete="handleDelete"
-      :on-edit="handleEdit"
-      :is-editing="isEditorOpen"
-      :title="encounterTitle"
+      :header-show-edit="false"
+      :header-show-delete="editState.isEditMode"
+      :is-editing="editState.isEditMode"
+      :title="editState.isEditMode ? '' : encounterTitle"
       :not-found="notFound"
       :loading="loading"
       :tabs="tabs"
       v-model="activeTab"
-      :headerButtons="[
-        {
-          color: 'warning',
-          title: 'common.runCombat',
-          event: handleRunCombat,
-          icon: IconSwords,
-        },
-      ]"
+      :header-buttons="headerButtons"
     >
+      <template #main>
+        <EntityInlineEditor
+          v-model:title="draftName"
+          :title-placeholder="t('encounters.fields.name')"
+          :validation-error="validationError"
+        >
+          <EntityMarkdownEditor
+            ref="markdownEditorRef"
+            v-model="draftDescription"
+            :is-visual-mode="editState.isVisualMode"
+            :entity-id="editState.draft?.id || ''"
+            entity-type="encounter"
+            :placeholder="t('encounters.fields.description')"
+          />
+        </EntityInlineEditor>
+      </template>
       <template #information>
-        <section class="details-section">
-          <div v-html="safeDescription"></div>
-        </section>
+        <EntityContentSurface v-if="!editState.isEditMode">
+          <MilkdownView
+            :task-checkbox-enabled="true"
+            :enable-mention-modal="true"
+            :content="encounter?.description || ''"
+            @update:content="handleDescriptionChange"
+          />
+        </EntityContentSurface>
       </template>
       <template #links>
-        <EntityViewLinks :links="encounterLinks" />
+        <EntityViewLinks v-if="!editState.isEditMode" :links="encounterLinks" />
+        <EntitiesLinking
+          v-else
+          kind="note"
+          :model-value="encounterLinks"
+          @update:model-value="setEncounterLinks"
+        />
       </template>
       <template #combats>
         <h2>{{ t('encounters.combats.title') }}</h2>
@@ -263,15 +367,6 @@ async function handleEditorDelete() {
           </table>
         </div>
         <p v-else>{{ t('encounters.combats.none') }}</p>
-      </template>
-      <template #editor>
-        <EncounterEditor
-          :isOpen="isEditorOpen"
-          :encounter="encounter"
-          @submit="handleSave"
-          @delete="handleEditorDelete"
-          @cancel="handleCancel"
-        />
       </template>
     </BaseEntityTabView>
 

@@ -1,20 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MilkdownView from '@/components/common/milkdown/MilkdownView.vue';
-import { sanitizeHtmlContent } from '@/utils/markdownParser';
 
-const props = defineProps<{
+defineProps<{
   kind: string;
   entity: any;
 }>();
 
 const { t } = useI18n();
-const description = computed(() =>
-  props.kind === 'encounter'
-    ? sanitizeHtmlContent(props.entity?.description || '')
-    : '',
-);
 </script>
 
 <template>
@@ -49,9 +42,13 @@ const description = computed(() =>
     </template>
 
     <template v-else-if="kind === 'encounter'">
-      <section class="details-section">
-        <div v-html="description"></div>
-      </section>
+      <div class="q-pa-md">
+        <MilkdownView
+          :task-checkbox-enabled="true"
+          :enable-mention-modal="true"
+          :content="entity?.description || ''"
+        />
+      </div>
     </template>
 
     <template v-else-if="kind === 'location'">

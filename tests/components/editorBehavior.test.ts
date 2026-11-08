@@ -190,6 +190,16 @@ describe('editor behavior', () => {
     wrapper.unmount();
   });
 
+  it('shows notes linking when creating an encounter', () => {
+    const wrapper = mount(EncounterEditor, {
+      props: { encounter: null, isOpen: true },
+      global: { stubs: { EntitiesLinking: EntitiesLinkingStub } },
+    });
+
+    expect(linkBlock(wrapper, 'note')).toBeTruthy();
+    wrapper.unmount();
+  });
+
   it('opens encounters through the exposed editor API and deletes', async () => {
     const encounter = {
       id: 'e1',

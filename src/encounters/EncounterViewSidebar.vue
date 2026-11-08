@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { Encounter, Pawn } from '@/types';
+import type { Encounter, InlineEditState, Pawn } from '@/types';
 import { useMentionsStore } from '@/utils/storage';
 import { usePawnStore } from '@/stores/pawns';
 import { useEncounterStore } from '@/stores/encounters';
 import TabGroup from '@/components/common/TabGroup.vue';
+import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import Mentions from '@/components/common/Mentions.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
+import PawnViewDialog from '@/pawns/PawnViewDialog.vue';
 import {
   IconAt,
   IconGhost3,
@@ -20,15 +22,23 @@ import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-p
 
 const props = defineProps<{
   encounter: Encounter;
-  editable?: boolean;
+  editState?: InlineEditState<Encounter>;
+  onSetEditMode?: (value: boolean) => void | Promise<void>;
 }>();
 
 const { t } = useI18n();
 const mentionsStore = useMentionsStore();
 const pawnStore = usePawnStore();
 const encounterStore = useEncounterStore();
+const localEditState = reactive<InlineEditState<Encounter>>({
+  isEditMode: false,
+  isVisualMode: true,
+  draft: null,
+});
+const state = computed(() => props.editState ?? localEditState);
 const activeTab = ref('pawns');
 const showLinkModal = ref(false);
+const viewPawn = ref<Pawn | null>(null);
 const localPawns = ref<Record<string, number>>({});
 
 const entityId = computed(() => props.encounter?.id || '');
@@ -42,15 +52,48 @@ const mentionedIn = computed(() =>
     ? mentionsStore.getBacklinks({ kind: 'encounter', id: entityId.value })
     : [],
 );
-const tabs = computed(() => [
-  { id: 'pawns', label: t('encounters.tabs.pawns'), icon: IconGhost3 },
-  {
-    id: 'scenes',
-    label: t('ambientSoundPage.scenesTab'),
-    icon: IconHeadphones,
+const tabs = computed(() => {
+  if (state.value.isEditMode) {
+    return [
+      { id: 'pawns', label: t('encounters.tabs.pawns'), icon: IconGhost3 },
+      {
+        id: 'scenes',
+        label: t('ambientSoundPage.scenesTab'),
+        icon: IconHeadphones,
+      },
+    ];
+  }
+  return [
+    { id: 'pawns', label: t('encounters.tabs.pawns'), icon: IconGhost3 },
+    {
+      id: 'scenes',
+      label: t('ambientSoundPage.scenesTab'),
+      icon: IconHeadphones,
+    },
+    { id: 'mentions', label: t('common.mentions'), icon: IconAt },
+  ];
+});
+
+watch(
+  () => state.value.isEditMode,
+  (isEditing) => {
+    if (isEditing && activeTab.value === 'mentions') {
+      activeTab.value = 'pawns';
+    }
   },
-  { id: 'mentions', label: t('common.mentions'), icon: IconAt },
-]);
+);
+
+function setEditMode(value: boolean) {
+  if (props.onSetEditMode) {
+    void props.onSetEditMode(value);
+    return;
+  }
+  state.value.isEditMode = value;
+}
+
+function setVisualMode(value: boolean) {
+  state.value.isVisualMode = value;
+}
 
 const allPawns = computed(() => pawnStore.filtered);
 const pawnOptions = computed(() =>
@@ -140,18 +183,17 @@ onMounted(async () => {
                 <QItem
                   v-for="pawn in encounterPawns"
                   :key="pawn.id"
+                  clickable
+                  v-ripple
                   class="pawn-row"
+                  @click="viewPawn = pawn"
                 >
-                  <QItemSection side>
-                    <IconGhost3 :size="18" />
-                  </QItemSection>
                   <QItemSection>
-                    <router-link :to="`/pawns/${pawn.id}`" class="pawn-link">
-                      {{ pawn.name }}
-                    </router-link>
+                    <span class="pawn-name">{{ pawn.name }}</span>
                   </QItemSection>
                   <QItemSection side class="pawn-row-actions row items-center">
                     <QBtn
+                      v-if="state.isEditMode"
                       flat
                       dense
                       size="sm"
@@ -161,7 +203,11 @@ onMounted(async () => {
                     >
                       {{ encounter.pawns[pawn.id] }}
                     </QBtn>
+                    <span v-else class="text-caption text-grey-7">
+                      {{ encounter.pawns[pawn.id] }}
+                    </span>
                     <QBtn
+                      v-if="state.isEditMode"
                       flat
                       dense
                       size="sm"
@@ -179,7 +225,7 @@ onMounted(async () => {
 
             <QSeparator />
 
-            <QList class="q-pa-none q-mb-none">
+            <QList v-if="state.isEditMode" class="q-pa-none q-mb-none">
               <QItem
                 clickable
                 v-ripple
@@ -206,11 +252,14 @@ onMounted(async () => {
               v-if="entityId && EntityScenesPanel"
               entity-type="encounter"
               :entity-id="entityId"
-              :editable="props.editable"
+              :editable="state.isEditMode"
             />
           </div>
 
-          <div v-show="activeTab === 'mentions'" class="q-pa-md">
+          <div
+            v-if="!state.isEditMode && activeTab === 'mentions'"
+            class="q-pa-md"
+          >
             <Mentions :title="t('common.mentions')" :entities="mentions" />
             <Mentions
               :title="t('common.mentionedIn')"
@@ -248,6 +297,20 @@ onMounted(async () => {
         />
       </template>
     </EntityLinkingDialog>
+
+    <PawnViewDialog
+      :is-open="!!viewPawn"
+      :pawn="viewPawn"
+      @cancel="viewPawn = null"
+    />
+
+    <QSeparator />
+    <EntityModeControls
+      :is-edit-mode="state.isEditMode"
+      :is-visual-mode="state.isVisualMode"
+      @update:is-edit-mode="setEditMode"
+      @update:is-visual-mode="setVisualMode"
+    />
   </div>
 </template>
 
@@ -263,13 +326,8 @@ onMounted(async () => {
   overflow-y: auto;
 }
 
-.pawn-link {
+.pawn-name {
   color: var(--color-text);
-  text-decoration: none;
-}
-
-.pawn-link:hover {
-  color: var(--color-accent);
 }
 
 .pawn-row-actions {
