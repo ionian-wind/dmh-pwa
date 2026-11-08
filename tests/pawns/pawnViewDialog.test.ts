@@ -1,8 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import PawnViewDialog from '@/pawns/PawnViewDialog.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import type { Pawn } from '@/types';
+
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+}));
+
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
+  useRouter: () => ({ push: mocks.push }),
+}));
 
 const MilkdownViewStub = {
   name: 'MilkdownView',
@@ -47,6 +56,20 @@ describe('PawnViewDialog', () => {
     wrapper.findComponent(BaseModal).vm.$emit('cancel');
 
     expect(wrapper.emitted('cancel')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('supports expanding and opening the pawn page', async () => {
+    const wrapper = mountDialog();
+    const modal = wrapper.findComponent(BaseModal);
+
+    expect(modal.props('showExpand')).toBe(true);
+    expect(wrapper.find('.pawn-view-open').exists()).toBe(true);
+
+    await wrapper.find('.pawn-view-open').trigger('click');
+
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
+    expect(mocks.push).toHaveBeenCalledWith('/pawns/pawn-1');
     wrapper.unmount();
   });
 });
