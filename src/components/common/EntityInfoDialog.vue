@@ -47,7 +47,6 @@ function openEntity() {
       <QBtn
         class="entity-info-open"
         flat
-        round
         :title="t('common.open')"
         :aria-label="t('common.open')"
         @click="openEntity"

@@ -49,7 +49,6 @@ function openPawn() {
       <QBtn
         class="pawn-view-open"
         flat
-        round
         :title="t('common.open')"
         :aria-label="t('common.open')"
         @click="openPawn"
