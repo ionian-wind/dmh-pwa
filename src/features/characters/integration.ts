@@ -29,6 +29,7 @@ export const charactersFeature: FeatureIntegration = {
       icon: IconUser,
       kind: 'entity',
       placement: 'primary',
+      order: 10,
     },
   ],
   homeCard: {

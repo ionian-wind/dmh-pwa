@@ -30,15 +30,15 @@ const route = useRoute();
 const leftMenuMinimized = ref(false);
 const toolsExpanded = ref(false);
 
-const primaryNavigation = computed(() =>
-  featureNavigation.filter((item) => item.placement === 'primary'),
-);
-const toolsNavigation = computed(() =>
-  featureNavigation.filter((item) => item.placement === 'tools'),
-);
-const footerNavigation = computed(() =>
-  featureNavigation.filter((item) => item.placement === 'footer'),
-);
+function navigationFor(placement: FeatureNavEntry['placement']) {
+  return featureNavigation
+    .filter((item) => item.placement === placement)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+const primaryNavigation = computed(() => navigationFor('primary'));
+const toolsNavigation = computed(() => navigationFor('tools'));
+const footerNavigation = computed(() => navigationFor('footer'));
 const hasTools = computed(() => toolsNavigation.value.length > 0);
 
 function isNavActive(item: FeatureNavEntry): boolean {

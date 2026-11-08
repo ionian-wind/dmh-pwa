@@ -29,6 +29,7 @@ export const partiesFeature: FeatureIntegration = {
       icon: IconUsers,
       kind: 'entity',
       placement: 'primary',
+      order: 10,
     },
   ],
   homeCard: {

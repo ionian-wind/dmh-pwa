@@ -380,6 +380,37 @@ describe('settings dialog', () => {
     wrapper.unmount();
   });
 
+  it('places characters and parties below locations in the primary menu', async () => {
+    const config = useConfigStore();
+    config.savedLanguage = 'en';
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { render: () => h('div') } }],
+    });
+    await router.push('/');
+    await router.isReady();
+
+    const wrapper = mount(App, { global: { plugins: [router] } });
+    await flushPromises();
+    (wrapper.vm as any).$i18n.locale = 'en';
+    await nextTick();
+
+    const titles = wrapper
+      .findAll('.left-sidebar [data-stub="QItem"]')
+      .map((item) => item.attributes('title'))
+      .filter((title): title is string => !!title);
+
+    expect(titles.slice(0, 6)).toEqual([
+      'Notes',
+      'Pawns',
+      'Encounters',
+      'Maps',
+      'Characters',
+      'Parties',
+    ]);
+    wrapper.unmount();
+  });
+
   it('keeps the menu mini when expand menu is disabled', async () => {
     const config = useConfigStore();
     config.expandMenu = true;
