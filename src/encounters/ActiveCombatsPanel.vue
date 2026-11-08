@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconBolt,
@@ -15,6 +15,8 @@ import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
 import { usePawnStore } from '@/stores/pawns';
 import EntityGroup from '@/components/common/EntityGroup.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
+import EntityPicture from '@/components/common/EntityPicture.vue';
 import { advanceTurn } from '@/utils/combatTurn';
 import { useVisibleActiveCombats } from '@/encounters/useVisibleActiveCombats';
 import type { Combat, Combatant } from '@/types';
@@ -32,6 +34,7 @@ const encounterStore = useEncounterStore();
 const characterStore = useCharacterStore();
 const pawnStore = usePawnStore();
 const { visibleActiveCombats: activeCombats } = useVisibleActiveCombats();
+const selectedParticipant = ref<Combatant | null>(null);
 
 function encounterName(combat: Combat) {
   return (
@@ -60,6 +63,43 @@ function combatantName(combat: Combat, combatant: Combatant) {
   }
   return t('combat.unknown');
 }
+
+function participantEntity(combatant: Combatant) {
+  if (!combatant.referenceId) return null;
+  return combatant.type === 'player'
+    ? characterStore.getById(combatant.referenceId)
+    : pawnStore.getById(combatant.referenceId);
+}
+
+function participantPicture(combatant: Combatant) {
+  return participantEntity(combatant)?.picture ?? null;
+}
+
+function openParticipantInfo(combatant: Combatant) {
+  if (!participantEntity(combatant)) return;
+  selectedParticipant.value = combatant;
+}
+
+const selectedParticipantTitle = computed(() => {
+  const participant = selectedParticipant.value;
+  if (!participant) return '';
+  const combat = activeCombats.value.find((entry) =>
+    entry.combatants.some((combatant) => combatant.id === participant.id),
+  );
+  return combat
+    ? combatantName(combat, participant)
+    : (participant.referenceId ?? '');
+});
+
+const selectedParticipantPicture = computed(() =>
+  selectedParticipant.value
+    ? participantPicture(selectedParticipant.value)
+    : null,
+);
+const selectedParticipantNotes = computed(() => {
+  const participant = selectedParticipant.value;
+  return participant ? (participantEntity(participant)?.notes ?? '') : '';
+});
 
 async function advance(combat: Combat) {
   const result = advanceTurn(combat);
@@ -177,13 +217,29 @@ onMounted(async () => {
             :class="{ 'is-active-turn': index === combat.currentTurn }"
           >
             <QItemSection side>
-              <IconUser v-if="combatant.type === 'player'" :size="18" />
+              <EntityPicture
+                v-if="participantPicture(combatant)"
+                :picture="participantPicture(combatant)"
+                size="28px"
+                :alt="combatantName(combat, combatant)"
+              />
+              <IconUser v-else-if="combatant.type === 'player'" :size="18" />
               <IconGhost3 v-else :size="18" />
             </QItemSection>
             <QItemSection side class="combat-participant-initiative">
               {{ combatant.initiative }}
             </QItemSection>
-            <QItemSection class="combat-participant-name">
+            <QItemSection
+              class="combat-participant-name"
+              :class="{
+                'combat-participant-name--clickable':
+                  !!participantEntity(combatant),
+              }"
+              :title="
+                participantEntity(combatant) ? t('common.view') : undefined
+              "
+              @click.stop="openParticipantInfo(combatant)"
+            >
               {{ combatantName(combat, combatant) }}
             </QItemSection>
             <QItemSection side class="combat-participant-actions">
@@ -240,6 +296,14 @@ onMounted(async () => {
         </QList>
       </EntityGroup>
     </QScrollArea>
+
+    <EntityInfoDialog
+      :is-open="!!selectedParticipant"
+      :title="selectedParticipantTitle"
+      :picture="selectedParticipantPicture"
+      :notes="selectedParticipantNotes"
+      @cancel="selectedParticipant = null"
+    />
   </div>
 </template>
 
@@ -257,6 +321,14 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.combat-participant-name--clickable {
+  cursor: pointer;
+}
+
+.combat-participant-name--clickable:hover {
+  color: var(--color-accent);
 }
 
 .combat-participant-actions {

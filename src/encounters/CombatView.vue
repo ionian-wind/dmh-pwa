@@ -12,6 +12,8 @@ import { useCharacterStore } from '@/stores/characters';
 import { usePawnStore } from '@/stores/pawns';
 import BaseModal from '@/components/common/BaseModal.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
+import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
+import EntityPicture from '@/components/common/EntityPicture.vue';
 import {
   IconFlag,
   IconGhost3,
@@ -79,6 +81,7 @@ const phaseIcons = {
 
 // Add local state for new participant
 const activeParticipantIndex = ref(0);
+const selectedParticipant = ref<Combatant | null>(null);
 
 // Modal state
 const editingParticipant = ref<any>(null);
@@ -179,6 +182,37 @@ function getCombatantDisplayName(combatant: {
   }
   return t('combat.unknown');
 }
+
+function participantEntity(combatant: Combatant) {
+  if (!combatant.referenceId) return null;
+  return combatant.type === 'player'
+    ? characterStore.getById(combatant.referenceId)
+    : pawnStore.getById(combatant.referenceId);
+}
+
+function participantPicture(combatant: Combatant) {
+  return participantEntity(combatant)?.picture ?? null;
+}
+
+function openParticipantInfo(combatant: Combatant) {
+  if (!participantEntity(combatant)) return;
+  selectedParticipant.value = combatant;
+}
+
+const selectedParticipantName = computed(() =>
+  selectedParticipant.value
+    ? getCombatantDisplayName(selectedParticipant.value)
+    : '',
+);
+const selectedParticipantPicture = computed(() =>
+  selectedParticipant.value
+    ? participantPicture(selectedParticipant.value)
+    : null,
+);
+const selectedParticipantNotes = computed(() => {
+  const participant = selectedParticipant.value;
+  return participant ? (participantEntity(participant)?.notes ?? '') : '';
+});
 
 function updateCombatFromStore() {
   if (!combatStore.isLoaded) return;
@@ -625,7 +659,13 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
               </QPopupEdit>
 
               <QItemSection avatar class="participant-artwork">
-                <IconUser v-if="participant.type === 'player'" />
+                <EntityPicture
+                  v-if="participantPicture(participant)"
+                  :picture="participantPicture(participant)"
+                  size="32px"
+                  :alt="getCombatantDisplayName(participant)"
+                />
+                <IconUser v-else-if="participant.type === 'player'" />
                 <IconGhost3 v-else />
               </QItemSection>
 
@@ -633,7 +673,17 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
                 {{ participant.initiative }}
               </QItemSection>
 
-              <QItemSection class="participant-name">
+              <QItemSection
+                class="participant-name"
+                :class="{
+                  'participant-name--clickable':
+                    !!participantEntity(participant),
+                }"
+                :title="
+                  participantEntity(participant) ? t('common.view') : undefined
+                "
+                @click.stop="openParticipantInfo(participant)"
+              >
                 {{ getCombatantDisplayName(participant) }}
               </QItemSection>
 
@@ -776,6 +826,14 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
         </tbody>
       </table>
     </BaseModal>
+
+    <EntityInfoDialog
+      :is-open="!!selectedParticipant"
+      :title="selectedParticipantName"
+      :picture="selectedParticipantPicture"
+      :notes="selectedParticipantNotes"
+      @cancel="selectedParticipant = null"
+    />
   </BaseEntityView>
 </template>
 
@@ -815,5 +873,13 @@ const validateInitiative = (val: any) => Number.isInteger(Number(val));
   flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
+}
+
+.participant-name--clickable {
+  cursor: pointer;
+}
+
+.participant-name--clickable:hover {
+  color: var(--color-accent);
 }
 </style>
