@@ -223,7 +223,7 @@ describe('coverage gaps: small components', () => {
       props: { entityType: 'location', entityId: 'l1' },
     });
     expect(wrapper.text()).toContain('No linked scenes');
-    await wrapper.find('[title="Link a scene"]').trigger('click');
+    await wrapper.find('[title="Add scene"]').trigger('click');
     const available = wrapper
       .findAll('[data-stub="QItem"]')
       .find((item) => item.text().includes('Scene'))!;
@@ -251,7 +251,7 @@ describe('coverage gaps: small components', () => {
     mocks.ambient.activeSceneKey = 'pack1::scene1';
     mocks.ambient.isPlaying = true;
     const linked = mount(EntityScenesPanel, {
-      props: { entityType: 'location', entityId: 'l1' },
+      props: { entityType: 'location', entityId: 'l1', editable: true },
     });
     expect(linked.find('.scene-link-item').classes()).toContain(
       'scene-link-item--selected',
@@ -264,5 +264,11 @@ describe('coverage gaps: small components', () => {
     await linked.find('button[title="Remove link"]').trigger('click');
     expect(mocks.ambient.removeSceneLink).toHaveBeenCalledWith('link1');
     linked.unmount();
+
+    const readonly = mount(EntityScenesPanel, {
+      props: { entityType: 'location', entityId: 'l1' },
+    });
+    expect(readonly.find('button[title="Remove link"]').exists()).toBe(false);
+    readonly.unmount();
   });
 });

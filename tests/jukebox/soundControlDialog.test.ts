@@ -132,6 +132,10 @@ describe('SoundControlDialog', () => {
     const player = useJukeboxPlayerStore();
     player.isPlaying = false;
     player.currentTrack = null;
+    const ambient = useAmbientSoundStore();
+    ambient.isPlaying = false;
+    ambient.activeSceneKey = null;
+    localStorage.removeItem('dmh-player-dialog-tab');
     const config = useConfigStore();
     config.jukeboxAnimatePlayerBackground = true;
   });
@@ -202,6 +206,43 @@ describe('SoundControlDialog', () => {
     wrapper.unmount();
     ambient.storedPacks = [];
     ambient.activeSceneKey = null;
+  });
+
+  it('opens on the tab with currently playing content', async () => {
+    const ambient = useAmbientSoundStore();
+    ambient.isPlaying = true;
+
+    const { wrapper } = await mountDialog();
+    expect(wrapper.text()).toContain('No scene selected');
+
+    ambient.isPlaying = false;
+    wrapper.unmount();
+  });
+
+  it('drops the track background on the ambient tab', async () => {
+    const player = useJukeboxPlayerStore();
+    player.currentTrack = {
+      id: 't1',
+      title: 'Track',
+      palette: ['#101020', '#202040'],
+    } as any;
+    player.isPlaying = true;
+
+    const { wrapper } = await mountDialog();
+    expect(wrapper.find('.animated-gradient-layer').exists()).toBe(true);
+
+    wrapper
+      .findComponent(quasarStubs.QTabs)
+      .vm.$emit('update:modelValue', 'ambient');
+    await nextTick();
+    await vi.waitFor(
+      () =>
+        expect(wrapper.find('.animated-gradient-layer').exists()).toBe(false),
+      { timeout: 2000 },
+    );
+
+    player.isPlaying = false;
+    wrapper.unmount();
   });
 
   it('builds gradient controls from the current track palette', async () => {

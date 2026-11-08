@@ -389,6 +389,7 @@ function openLocation(locationId: string) {
             v-if="EntityScenesPanel"
             entity-type="location"
             :entity-id="location.id"
+            :editable="editState.isEditMode"
           />
         </div>
         <QSeparator />

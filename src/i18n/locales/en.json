@@ -846,7 +846,7 @@
     "description": "Description",
     "package": "Package",
     "remove": "Remove",
-    "addSceneLink": "Link a scene",
+    "addSceneLink": "Add scene",
     "removeLink": "Remove link",
     "noScene": "No scene selected",
     "scenesTab": "Scenes",

@@ -1284,6 +1284,7 @@ watch(isEditMode, (editing) => {
                   v-if="sourceLocation && EntityScenesPanel"
                   entity-type="location"
                   :entity-id="sourceLocation.id"
+                  :editable="isEditMode"
                 />
               </div>
             </TabGroup>

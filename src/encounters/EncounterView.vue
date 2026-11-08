@@ -176,7 +176,7 @@ onMounted(async () => {
 
   rightDrawer.set({
     component: EncounterViewSidebar,
-    props: { encounter },
+    props: { encounter, editable: isEditorOpen },
   });
 });
 

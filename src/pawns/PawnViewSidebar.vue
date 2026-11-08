@@ -101,6 +101,7 @@ onMounted(() => mentionsStore.load());
               v-if="entityId && EntityScenesPanel"
               entity-type="pawn"
               :entity-id="entityId"
+              :editable="state.isEditMode"
             />
           </div>
           <div

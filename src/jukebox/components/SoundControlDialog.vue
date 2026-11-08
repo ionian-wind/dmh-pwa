@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
+import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import { useConfigStore } from '@/utils/configStore';
 import AmbientPlayerPanel from '@/ambient-sound/components/AmbientPlayerPanel.vue';
 import {
@@ -46,8 +47,60 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
+const ambientStore = useAmbientSoundStore();
 const configStore = useConfigStore();
-const activeTab = ref('jukebox');
+
+const PLAYER_TAB_KEY = 'dmh-player-dialog-tab';
+type PlayerTab = 'jukebox' | 'ambient';
+
+function readLastPlayerTab(): PlayerTab {
+  try {
+    return localStorage.getItem(PLAYER_TAB_KEY) === 'ambient'
+      ? 'ambient'
+      : 'jukebox';
+  } catch {
+    return 'jukebox';
+  }
+}
+
+function rememberPlayerTab(tab: PlayerTab) {
+  lastPlayedTab.value = tab;
+  try {
+    localStorage.setItem(PLAYER_TAB_KEY, tab);
+  } catch {
+    // Storage may be unavailable.
+  }
+}
+
+const lastPlayedTab = ref<PlayerTab>(readLastPlayerTab());
+const activeTab = ref<PlayerTab>(lastPlayedTab.value);
+
+watch(
+  () => playerStore.isPlaying,
+  (playing) => {
+    if (playing) rememberPlayerTab('jukebox');
+  },
+);
+
+watch(
+  () => ambientStore.isPlaying,
+  (playing) => {
+    if (playing) rememberPlayerTab('ambient');
+  },
+);
+
+function resolveInitialTab(): PlayerTab {
+  if (ambientStore.isPlaying && !playerStore.isPlaying) return 'ambient';
+  if (playerStore.isPlaying && !ambientStore.isPlaying) return 'jukebox';
+  if (lastPlayedTab.value === 'ambient' && ambientStore.activeScene) {
+    return 'ambient';
+  }
+  if (lastPlayedTab.value === 'jukebox' && playerStore.currentTrack) {
+    return 'jukebox';
+  }
+  if (ambientStore.activeScene) return 'ambient';
+  return 'jukebox';
+}
 
 const palette = computed<string[] | undefined>(() => {
   const track = playerStore.currentTrack;
@@ -57,7 +110,10 @@ const palette = computed<string[] | undefined>(() => {
 });
 
 const hasGradientBg = computed(
-  () => configStore.jukeboxAnimatePlayerBackground && !!palette.value?.length,
+  () =>
+    activeTab.value === 'jukebox' &&
+    configStore.jukeboxAnimatePlayerBackground &&
+    !!palette.value?.length,
 );
 
 const isAnimatedBg = computed(
@@ -256,11 +312,13 @@ watch(
   () => props.modelValue,
   (open) => {
     if (open) {
+      activeTab.value = resolveInitialTab();
       displayMode.value = 'panel';
       canDock.value = false;
       resetPosition();
     }
   },
+  { immediate: true },
 );
 
 const frameStyle = computed((): Record<string, string> => {

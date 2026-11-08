@@ -21,6 +21,7 @@ import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-p
 
 const props = defineProps<{
   encounter: Encounter;
+  editable?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -201,6 +202,7 @@ onMounted(async () => {
               v-if="entityId && EntityScenesPanel"
               entity-type="encounter"
               :entity-id="entityId"
+              :editable="props.editable"
             />
           </div>
 

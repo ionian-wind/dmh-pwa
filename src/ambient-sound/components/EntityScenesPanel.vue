@@ -37,6 +37,7 @@
             />
             <IconPlayerPlay v-else :size="18" />
             <QBtn
+              v-if="props.editable"
               flat
               dense
               size="sm"
@@ -118,10 +119,14 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';
 
-const props = defineProps<{
-  entityType: SceneLinkEntityType;
-  entityId: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    entityType: SceneLinkEntityType;
+    entityId: string;
+    editable?: boolean;
+  }>(),
+  { editable: false },
+);
 
 const { t } = useI18n();
 const store = useAmbientSoundStore();

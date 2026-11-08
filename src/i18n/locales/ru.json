@@ -847,7 +847,7 @@
     "description": "Описание",
     "package": "Пакет",
     "remove": "Удалить",
-    "addSceneLink": "Связать сцену",
+    "addSceneLink": "Добавить сцену",
     "removeLink": "Удалить связь",
     "noScene": "Сцена не выбрана",
     "scenesTab": "Сцены",
