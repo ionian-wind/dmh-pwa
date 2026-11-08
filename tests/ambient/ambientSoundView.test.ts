@@ -13,11 +13,20 @@ const storeMock = vi.hoisted(() => ({
 
 const layoutMock = vi.hoisted(() => ({
   setTopMenuContent: vi.fn(),
+  setBottomDrawerContent: vi.fn(),
 }));
 
 const rightDrawerMock = vi.hoisted(() => ({
   set: vi.fn(),
   clear: vi.fn(),
+}));
+
+const routerMock = vi.hoisted(() => ({
+  push: vi.fn(),
+}));
+
+vi.mock('vue-router', () => ({
+  useRouter: () => routerMock,
 }));
 
 vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
@@ -26,6 +35,7 @@ vi.mock('@/ambient-sound/stores/ambientSoundStore', () => ({
 vi.mock('@/composables/useLayout', () => ({
   useLayout: () => ({
     setTopMenuContent: layoutMock.setTopMenuContent,
+    setBottomDrawerContent: layoutMock.setBottomDrawerContent,
   }),
   useRightDrawer: () => rightDrawerMock,
 }));
@@ -33,6 +43,7 @@ vi.mock('@/composables/useLayout', () => ({
 import AmbientSoundView from '@/ambient-sound/AmbientSoundView.vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
+import AmbientPlayerPanel from '@/ambient-sound/components/AmbientPlayerPanel.vue';
 import { EntityTabsStub } from '../helpers/entityTabsStub';
 
 const ScenePlayerDialogStub = defineComponent({
@@ -66,8 +77,10 @@ describe('AmbientSoundView', () => {
       storeMock.stopPreview,
       storeMock.importPack,
       layoutMock.setTopMenuContent,
+      layoutMock.setBottomDrawerContent,
       rightDrawerMock.set,
       rightDrawerMock.clear,
+      routerMock.push,
     ]) {
       fn.mockClear();
     }
@@ -85,8 +98,15 @@ describe('AmbientSoundView', () => {
       'jukebox',
       'ambient',
     ]);
+    header.props?.onTabClick?.({ id: 'jukebox' });
+    expect(routerMock.push).toHaveBeenCalledWith('/jukebox');
     expect(rightDrawerMock.set).toHaveBeenCalledWith({
       component: SoundPackSidebar,
+    });
+    expect(layoutMock.setBottomDrawerContent).toHaveBeenCalledWith({
+      component: AmbientPlayerPanel,
+      props: { padded: true },
+      flushFooter: true,
     });
     expect(wrapper.text()).toContain('Scenes');
     expect(wrapper.text()).toContain('Ambiences');
@@ -95,6 +115,7 @@ describe('AmbientSoundView', () => {
 
     wrapper.unmount();
     expect(layoutMock.setTopMenuContent).toHaveBeenLastCalledWith(null);
+    expect(layoutMock.setBottomDrawerContent).toHaveBeenLastCalledWith(null);
     expect(rightDrawerMock.clear).toHaveBeenCalled();
     expect(storeMock.stopPreview).toHaveBeenCalled();
   });

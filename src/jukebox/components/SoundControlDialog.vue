@@ -19,9 +19,7 @@ import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { useConfigStore } from '@/utils/configStore';
-import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
-import ScenePlayerView from '@/ambient-sound/components/ScenePlayerView.vue';
-import EmptyState from '@/components/common/EmptyState.vue';
+import AmbientPlayerPanel from '@/ambient-sound/components/AmbientPlayerPanel.vue';
 import {
   getGradientContrastColor,
   useAnimatedGradient,
@@ -48,7 +46,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
-const ambientStore = useAmbientSoundStore();
 const configStore = useConfigStore();
 const activeTab = ref('jukebox');
 
@@ -391,18 +388,7 @@ function navigateToPage() {
             :layout="displayMode === 'panel' ? 'panel' : 'bar'"
             :show-artwork="true"
           />
-          <ScenePlayerView
-            v-else-if="ambientStore.activeScene"
-            :pack-id="ambientStore.activeScene.pack.id"
-            :scene-id="ambientStore.activeScene.scene.id"
-            :show-back="false"
-            compact
-          />
-          <EmptyState
-            v-else
-            :icon="IconMusic"
-            :title="t('ambientSoundPage.noScene')"
-          />
+          <AmbientPlayerPanel v-else />
         </div>
       </QCard>
     </div>

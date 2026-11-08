@@ -65,6 +65,7 @@ import EntityTabs from '@/components/common/EntityTabs.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
+import AmbientPlayerPanel from '@/ambient-sound/components/AmbientPlayerPanel.vue';
 import SceneList from '@/ambient-sound/components/SceneList.vue';
 import AmbienceGallery from '@/ambient-sound/components/AmbienceGallery.vue';
 import OneShotGallery from '@/ambient-sound/components/OneShotGallery.vue';
@@ -138,6 +139,11 @@ async function handleFileImport(event: Event) {
 onMounted(async () => {
   layout.setTopMenuContent({ component: ViewHeader, props: headerProps });
   rightDrawer.set({ component: SoundPackSidebar });
+  layout.setBottomDrawerContent({
+    component: AmbientPlayerPanel,
+    props: { padded: true },
+    flushFooter: true,
+  });
   syncHeaderOffset();
   const header = document.querySelector<HTMLElement>('.q-header');
   if (header && typeof ResizeObserver !== 'undefined') {
@@ -151,6 +157,7 @@ onUnmounted(() => {
   headerResizeObserver?.disconnect();
   headerResizeObserver = null;
   layout.setTopMenuContent(null);
+  layout.setBottomDrawerContent(null);
   rightDrawer.clear();
   store.stopPreview();
 });

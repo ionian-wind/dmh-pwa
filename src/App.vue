@@ -401,7 +401,7 @@ const isSettingsOpen = ref(false);
 
 .footer-flush {
   padding: 0 !important;
-  background: var(--color-background-soft) !important;
+  background: var(--color-player-panel) !important;
   border-top: none !important;
   color: var(--color-text) !important;
   box-shadow: none !important;

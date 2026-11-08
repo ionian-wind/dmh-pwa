@@ -41,6 +41,7 @@
   --color-background-dark: #1e1e2e;
   --color-card-background: #fff;
   --color-selected-surface: var(--color-primary-light);
+  --color-player-panel: var(--color-background-soft);
 
   /* Border Colors */
   --color-border: #ddd;
@@ -120,6 +121,7 @@ body.body--dark {
   --color-background-dark: #0f0f16;
   --color-card-background: var(--q-dark);
   --color-selected-surface: #4a4a6e;
+  --color-player-panel: #2d2d44;
 
   --color-border: #35354a;
   --color-border-light: #2a2a3d;
