@@ -9,10 +9,13 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
 - Ambient page route is `/ambient`. Legacy `/ambient/<scene-id>` links redirect
   to the main page.
 - The main ambient page has sticky tabs and the package sidebar. Selecting a
-  scene opens the scene player in a dialog over the main page; the dialog title
-  is the scene name.
-- Playback controls live in the scene dialog; there is no ambient player in the
-  app footer.
+  scene opens the scene player in a dialog over the main page. The scene name is
+  shown inside the Main tab; there is no separate dialog title.
+- The ambient page mounts a compact `AmbientPlayerPanel` in the bottom drawer.
+  It renders the active scene's controls, or a “No scene selected” empty state
+  when nothing is active.
+- The global sound-control dialog has Jukebox and Ambient tabs and embeds the
+  same scene panel on its Ambient tab.
 - Packages are script-built and read-only in the app: import or remove only.
 - Scene rows have no icon, play button or link-count metadata; clicking a row
   opens the scene view.
@@ -34,9 +37,10 @@ This document describes the Ambient Sound Configurator feature for DMH PWA, insp
   buttons that show playback progress alongside the label.
 - Mood music and ambience samples fade in when starting from silence, and fade
   out when stopping, so transitions from no audio blend with active layers.
-- Opening a scene never starts playback. When nothing is playing, mood and
-  ambience controls can start their own audio. While paused, those controls are
-  disabled and only the footer play button resumes playback.
+- Opening a scene dialog never starts playback. When nothing is playing, mood
+  and ambience controls can start their own audio. While paused, those controls
+  are disabled and only the scene player's play/pause control (in the dialog,
+  footer panel, or sound-control panel) resumes playback.
 - Jukebox and ambient playback are mutually exclusive: starting one pauses the
   other; pausing/stopping never auto-resumes the other. One-shots are exempt.
 - Intensity has five snapped levels: 0/25/50/75/100.
@@ -99,6 +103,8 @@ volume is scaled by the one-shot bus and the scene master volume. They can be
 triggered while ambient audio is paused, while no scene is active, while music
 is disabled, while all ambience layers are muted, or while the ambient master
 volume is zero. The one-shot bus is independent of the mood and ambience buses.
+The optional manifest `cooldown` field is retained but not currently enforced by
+the gallery or scene player.
 
 ### 2.4 Scene
 
@@ -167,8 +173,8 @@ Links are local user associations, not package content. They are not stored in
 to several entities, and one entity can show several linked scenes.
 
 Links reference the scene by `packageId + sceneId`. They survive package reloads
-as long as those IDs remain stable. Removing a package removes its scene links;
-deleting a linked entity removes the corresponding links.
+as long as those IDs remain stable. Removing a package removes its scene links.
+Deleting a linked entity does not currently remove orphaned scene-link records.
 
 Links are shortcuts, not automatic playback rules: opening an entity shows its
 linked scenes, and selecting one starts that scene. Automatic scene switching is
@@ -181,11 +187,12 @@ a separate opt-in feature.
 ```
 src/
 ├── ambient-sound/
-│   ├── AmbientSoundView.vue          # Ambient main page and tabs
+│   ├── AmbientSoundView.vue          # Ambient main page, tabs and footer panel
 │   ├── components/
 │   │   ├── SceneList.vue             # Package-owned scenes
 │   │   ├── ScenePlayerDialog.vue     # Scene dialog and main/link tabs
-│   │   ├── ScenePlayerView.vue       # Scene player content
+│   │   ├── ScenePlayerView.vue       # Scene player content (full or compact)
+│   │   ├── AmbientPlayerPanel.vue    # Compact active-scene footer/global panel
 │   │   ├── SceneLinksPanel.vue       # Scene linking tab content
 │   │   ├── AmbienceGallery.vue       # Global ambience browser
 │   │   ├── AmbienceItem.vue          # Ambience row and enumerated samples
@@ -196,7 +203,7 @@ src/
 │   │   ├── AmbientControls.vue       # Scene intensity slider
 │   │   ├── AmbientVolumeDialog.vue   # Master/mood/ambience/one-shot volumes
 │   │   ├── AmbientIcon.vue           # Icon-picker / FA / RA icon renderer
-│   │   ├── EntityScenesPanel.vue     # Linked scenes on entity views
+│   │   ├── EntityScenesPanel.vue     # Linked scenes/playlists on entity views
 │   │   └── SoundPackSidebar.vue      # Package list and import/remove
 │   ├── stores/
 │   │   └── ambientSoundStore.ts      # Scenes, gallery and playback state
@@ -401,15 +408,15 @@ to the package root. The folder is normally `ambiences/`.
 
 **One-shot entry**
 
-| Field      | Required | Notes                                                          |
-| ---------- | -------- | -------------------------------------------------------------- |
-| `id`       | yes      | Stable ID, unique inside the package.                          |
-| `name`     | yes      | Display name.                                                  |
-| `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.               |
-| `samples`  | yes      | One or more audio paths; one is picked randomly for each play. |
-| `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.         |
-| `volume`   | yes      | 0–100. Scaled by the scene master volume.                      |
-| `cooldown` | no       | Optional cooldown in seconds.                                  |
+| Field      | Required | Notes                                                            |
+| ---------- | -------- | ---------------------------------------------------------------- |
+| `id`       | yes      | Stable ID, unique inside the package.                            |
+| `name`     | yes      | Display name.                                                    |
+| `icon`     | yes      | Icon-picker value such as `fa-solid:cloud-bolt`.                 |
+| `samples`  | yes      | One or more audio paths; one is picked randomly for each play.   |
+| `category` | yes      | `combat`, `exploration`, `environmental` or `weather`.           |
+| `volume`   | yes      | 0–100. Scaled by the scene master volume.                        |
+| `cooldown` | no       | Optional cooldown in seconds; currently stored but not enforced. |
 
 **Scene**
 
@@ -443,7 +450,7 @@ package-wide music folder.
 ```typescript
 // src/ambient-sound/types.ts
 
-export interface SoundPackageManifest {
+export interface SoundPackManifest {
   version: string;
   id: string;
   name: string;
@@ -451,19 +458,28 @@ export interface SoundPackageManifest {
   author?: string;
   icon?: string;
   category: 'fantasy' | 'scifi' | 'horror' | 'modern' | 'custom';
-  ambiences: AmbienceDef[];
-  oneShots: OneShotDef[];
-  scenes: SceneDef[];
+  defaultIntensity?: number;
+  /** New package model. Legacy `layers` is normalized into this. */
+  ambiences?: LayerDef[];
+  scenes?: SceneDef[];
+  layers?: LayerDef[];
+  oneShots?: OneShotDef[];
+  /** Legacy music model, normalized into scenes. */
+  moodStates?: MoodStateDef[];
+  /** Legacy weather entries, normalized into ambience categories. */
+  weatherSystems?: WeatherDef[];
 }
 
-export interface AmbienceVariation {
+export interface LayerVariation {
   id: string;
   name: string;
   /** Sample paths relative to the package root. */
   samples: string[];
 }
 
-export interface AmbienceDef {
+export type AmbienceDef = LayerDef;
+
+export interface LayerDef {
   id: string;
   name: string;
   /** Icon-picker format, e.g. `fa-solid:cloud-rain`. */
@@ -472,7 +488,11 @@ export interface AmbienceDef {
   defaultVolume: number;
   loop: boolean;
   fadeTime?: number;
-  variations: AmbienceVariation[];
+  /** Legacy single-file layer. */
+  file?: string;
+  /** Legacy flat sample list. */
+  samples?: string[];
+  variations?: LayerVariation[];
 }
 
 export interface OneShotDef {
@@ -487,18 +507,46 @@ export interface OneShotDef {
   cooldown?: number;
 }
 
+export type MoodState = 'explore' | 'combat' | 'victory' | 'rest';
+
+export interface MoodStateDef {
+  state: MoodState;
+  name: string;
+  icon: string;
+  mode?: MoodMode;
+  musicFile?: string;
+  musicFiles?: string[];
+  transitionsTo?: MoodState[];
+}
+
+export interface WeatherDef {
+  id: string;
+  name: string;
+  icon: string;
+  file: string;
+  affectsLayers: string[];
+}
+
 export interface SceneAmbience {
   ambienceId: string;
   variationId: string;
   volume: number;
 }
 
+export type MoodMode = 'temporary' | 'continual';
+
 export interface SceneMusicPreset {
   id: string;
   name: string;
   files: string[];
   /** `continual` (default) or `temporary` (returns to the previous played preset or Off). */
-  mode?: 'continual' | 'temporary';
+  mode?: MoodMode;
+}
+
+/** Legacy scene music shape, normalized into `musicPresets`. */
+export interface SceneMusic {
+  files: string[];
+  loop: boolean;
 }
 
 export interface SceneDef {
@@ -511,6 +559,17 @@ export interface SceneDef {
   oneShotIds: string[];
   /** Music presets owned by this scene; each has one or more variants. */
   musicPresets: SceneMusicPreset[];
+  /** Legacy shape, normalized into `musicPresets`. */
+  music?: SceneMusic;
+}
+
+export interface NormalizedSoundPack extends SoundPackManifest {
+  ambiences: LayerDef[];
+  layers: LayerDef[];
+  oneShots: OneShotDef[];
+  scenes: SceneDef[];
+  /** Set by local storage, never exported inside the package manifest. */
+  origin?: 'imported' | 'created';
 }
 
 /** Local user data; never stored inside the package manifest. */
@@ -560,8 +619,12 @@ The ambient-sound section is a first-class app page with a package sidebar:
 - The package sidebar is the right drawer. The main page owns the left content.
 - The Scenes / Ambiences / One-shots tabs use the shared dense `EntityTabs` bar
   and stay sticky below the app header while the list scrolls.
-- The ambient page has no bottom player panel. Scene playback controls
-  (intensity, play/pause, volume) live in the scene view under the mood block.
+- The ambient page mounts `AmbientPlayerPanel` in the bottom drawer. With an
+  active scene it renders a compact `ScenePlayerView` (scene name, play/pause,
+  volume, mood and intensity); without one it shows the no-scene empty state.
+  The scene dialog uses the same view with its inner tabs, and the sound-control
+  Ambient tab uses the compact mode, so playback controls are available in all
+  three places.
 - “All packages” is the default filter. Selecting a package filters the active
   tab to that package; selecting it again clears the filter.
 - Package rows show a category icon and the package name. Each row has a
@@ -660,11 +723,11 @@ Package content is imported, not authored in the app.
 ### 4.6 Scene player view
 
 Opening a scene row opens the scene player in a dialog over the ambient main
-page. The dialog title is the scene name; package names are not repeated. The
-package sidebar remains behind the modal. Playback starts only from an explicit
-action. Closing the dialog returns to the scene/gallery tabs without stopping
-playback. If the scene's package is removed while the dialog is open, the dialog
-closes and the app remains on `/ambient`. The dialog contains:
+page. The scene name is shown inside the Main tab; package names are not
+repeated. The package sidebar remains behind the modal. Playback starts only
+from an explicit action. Closing the dialog returns to the scene/gallery tabs
+without stopping playback. If the scene's package is removed while the dialog is
+open, the dialog closes and the app remains on `/ambient`. The dialog contains:
 
 - **Dialog layout** — the dialog follows the notes-dialog pattern with two
   top-level tabs, Main (`IconEar`) and Linked entities, plus a fullscreen expand
@@ -714,32 +777,38 @@ closes and the app remains on `/ambient`. The dialog contains:
 Closing the scene dialog returns to the list without stopping playback; the
 active scene remains available from the scene list (with its Playing badge).
 
-### 4.7 Entity views: linked scenes
+### 4.7 Entity views: linked scenes and playlists
 
 The same reusable `EntityScenesPanel` appears in the side panel/detail area of:
 
 - locations (`LocationView`);
 - pawns (`PawnViewSidebar`);
 - encounters (`EncounterView`);
-- characters (`CharacterView`).
+- characters (`CharacterView`);
+- parties (`PartyViewSidebar`), where scene links are disabled and only linked
+  jukebox playlists are shown.
 
 Panel contents:
 
-- header “Scenes” with an add action;
-- list of linked scenes: name, package, active state;
-- play/pause action for each linked scene;
-- remove-link action;
-- empty state: “No scenes linked”;
-- current scene highlighted.
+- a combined list of linked scenes and linked playlists, sorted by name
+  (playlists appear when the jukebox feature is enabled);
+- each row shows its name, a play/pause action, an active/playing state and a
+  remove-link action;
+- two add rows: **Add scene link** and **Add playlist**;
+- empty state when neither kind is linked;
+- current scene/playlist highlighted.
 
-The scene picker lists unlinked scenes from all packages. Selecting a scene adds
-the link; it does not start playback. Deleting the entity or its package removes
-the affected links.
+The scene picker lists scenes from all packages. Selecting a scene adds the
+link; it does not start playback. Linked playlists are stored on the playlist
+(`playlist.links`) rather than in the ambient scene-link table. Removing a
+package removes its scene links; deleting a linked entity does not currently
+clean up scene-link records automatically.
 
 ### 4.8 Scene playback controls
 
-Playback controls are part of the scene view and are not rendered in the app
-footer.
+Playback controls are part of the reusable scene view. The full dialog shows
+them with the scene name and inner tabs; the ambient footer panel and the
+sound-control Ambient tab render the same controls in compact mode.
 
 - Play/pause and the volume button (`IconVolume`) sit at the far right of the
   scene title line.
@@ -776,14 +845,15 @@ footer.
 
 - Right package sidebar persistent.
 - Scenes use a single-column list; one-shots use an auto-fill knob grid.
-- Scene player view spans the full page-content width.
+- The scene player dialog is modal; the bottom ambient panel spans the
+  page-content width.
 - Tabs stay sticky below the app header; the lists scroll independently.
 
 **Tablet (600–1023 px)**
 
 - Package sidebar becomes an overlay drawer.
 - Scene cards/rows remain list-first; gallery uses 2 columns.
-- Scene player view uses the full page width and scrolls with the page.
+- The scene player dialog remains a modal and scrolls its content.
 
 **Mobile (<600 px)**
 
@@ -799,9 +869,10 @@ footer.
 - Package import uses the page loading state; invalid packages are rejected by
   the import routine.
 - Package delete: confirmation names the package.
-- Active scene: visible “Playing” badge and pulsing headphones icon in the app
-  menu.
-- Paused: play icon is shown and the footer play button resumes playback.
+- Active scene: visible “Playing” badge. The app-menu Jukebox music icon pulses
+  while either jukebox or ambient audio is playing.
+- Paused: play icon is shown and the scene player's play/pause control resumes
+  playback from the dialog, footer panel or sound-control panel.
 - Empty states cover: no packages, no scenes, no gallery entries, no linked
   entities, no music.
 - All icon buttons have `title`/`aria-label`; sliders have accessible labels and
@@ -814,24 +885,25 @@ footer.
 
 ### 4.11 Component and state mapping
 
-| UI component          | Responsibility                                            | Main state/actions                           |
-| --------------------- | --------------------------------------------------------- | -------------------------------------------- |
-| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content         | `currentPackage`, `activeTab`, `activeScene` |
-| `SoundPackSidebar`    | Package list, import/delete, filter                       | `packages`, `selectedPackageId`              |
-| `SceneList`           | Scene rows and opening the player                         | `scenes`, `activeSceneId`                    |
-| `ScenePlayerDialog`   | Expandable scene dialog with Main/Linked entities tabs    | `modelValue`, `packId`, `sceneId`            |
-| `ScenePlayerView`     | Scene main-tab content with music, ambience and one-shots | `packId`, `sceneId`, `showBack`, `activeTab` |
-| `SceneLinksPanel`     | Linked entities tab for locations, pawns, etc.            | `packId`, `sceneId`                          |
-| `AmbienceGallery`     | Ambience browsing, variations and layered playback        | `galleryAmbiences`, `activeLayers`           |
-| `AmbienceItem`        | Ambience row with enumerated sample buttons               | `ambience`, `variationId`, active sample     |
-| `VariationSelect`     | Global variation filter above ambience lists              | `options`, `modelValue`                      |
-| `OneShotGallery`      | One-shot knob grid and playing/progress state             | `galleryOneShots`, `groups`                  |
-| `OneShotControl`      | Button-wrapped knob, icon and playback progress           | `packId`, `oneShot`, `progress`              |
-| `EntityScenesPanel`   | Linked scenes on location/pawn/encounter/character        | `links`, `add/remove`, `play`                |
-| `EntitiesLinking`     | Scene links tab for five entity kinds                     | `kind`, `modelValue`                         |
-| `MoodProgress`        | Mood label with temporary-mood progress indicator         | `label`, `active`                            |
-| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders        | `modelValue`                                 |
-| `AmbientControls`     | Scene intensity slider                                    | `intensity`                                  |
+| UI component          | Responsibility                                              | Main state/actions                                      |
+| --------------------- | ----------------------------------------------------------- | ------------------------------------------------------- |
+| `AmbientSoundView`    | Page layout, sticky tabs, package filter, content           | `currentPackage`, `activeTab`, `activeScene`            |
+| `SoundPackSidebar`    | Package list, import/delete, filter                         | `packages`, `selectedPackageId`                         |
+| `SceneList`           | Scene rows and opening the player                           | `scenes`, `activeSceneId`                               |
+| `ScenePlayerDialog`   | Expandable scene dialog with Main/Linked entities tabs      | `modelValue`, `packId`, `sceneId`                       |
+| `ScenePlayerView`     | Scene content with music, ambience, one-shots; compact mode | `packId`, `sceneId`, `showBack`, `compact`, `activeTab` |
+| `AmbientPlayerPanel`  | Compact active-scene panel for footer/global dialog         | `padded`, active scene from the store                   |
+| `SceneLinksPanel`     | Linked entities tab for locations, pawns, etc.              | `packId`, `sceneId`                                     |
+| `AmbienceGallery`     | Ambience browsing, variations and layered playback          | `galleryAmbiences`, `activeLayers`                      |
+| `AmbienceItem`        | Ambience row with enumerated sample buttons                 | `ambience`, `variationId`, active sample                |
+| `VariationSelect`     | Global variation filter above ambience lists                | `options`, `modelValue`                                 |
+| `OneShotGallery`      | One-shot knob grid and playing/progress state               | `galleryOneShots`, `groups`                             |
+| `OneShotControl`      | Button-wrapped knob, icon and playback progress             | `packId`, `oneShot`, `progress`                         |
+| `EntityScenesPanel`   | Linked scenes and playlists on entity views                 | `entityType`, `entityId`, `editable`, `scenesEnabled`   |
+| `EntitiesLinking`     | Scene links tab for five entity kinds                       | `kind`, `modelValue`                                    |
+| `MoodProgress`        | Mood label with temporary-mood progress indicator           | `label`, `active`                                       |
+| `AmbientVolumeDialog` | Master, mood, ambience and one-shot volume sliders          | `modelValue`                                            |
+| `AmbientControls`     | Scene intensity slider                                      | `intensity`                                             |
 
 The implementation should keep scene content (package-owned) separate from
 local links and playback state. UI components read from the store selectors and
@@ -1457,8 +1529,9 @@ Add route to router:
   **Import Package** is the only pinned bottom `QItem` control.
 - Master and active-layer volume sliders respond to the mouse wheel, matching
   the jukebox player volume control.
-- While ambient playback is active, the main-menu headphones icon smoothly
-  pulses with a larger/smaller bounce animation.
+- While ambient playback is active, the app-menu Jukebox music icon smoothly
+  pulses with a larger/smaller bounce animation (the nav item reflects either
+  audio source).
 - Integrate with existing file handling for custom audio upload
 
 ## 13. Free Sound Sources

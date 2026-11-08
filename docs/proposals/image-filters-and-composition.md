@@ -1,7 +1,7 @@
 # Image Filters and Composition
 
-**Status:** proposal — not implemented; builds on
-[image-quick-tools.md](image-quick-tools.md).
+**Status:** proposal — not implemented (reviewed 2026-11-09); builds on the
+also-unimplemented [image-quick-tools.md](image-quick-tools.md).
 
 **Goal:** two related capabilities:
 

@@ -1,267 +1,297 @@
-# D&D Session Notes Manager PWA
+# Owlbear's Dungeon Master Helper (DMH PWA)
 
-A Progressive Web App (PWA) for managing Dungeons & Dragons session notes, characters, encounters, and campaign information.
+A local-first Progressive Web App for running tabletop RPG sessions. It manages
+campaign notes, characters, parties, pawns, encounters, combats, maps, timers,
+music, ambient sound and dice probabilities in a single browser app.
 
-## 🚀 Features
+There is no server and no account system. Campaign data lives in IndexedDB; UI
+preferences and a few player settings live in `localStorage`.
 
-### Core Features
+## Features
 
-- **Character Management**: Create and manage player characters with stats, equipment, and notes
-- **Encounter Tracking**: Plan and run encounters with pawns and NPCs
-- **Session Notes**: Take detailed notes during your D&D sessions
-- **Campaign Organization**: Organize your campaign with modules and parties
-- **Offline Support**: Works offline with cached data
-- **Cross-Platform**: Works on desktop, tablet, and mobile devices
+- **Notes** — Markdown notes with visual/raw editors, tags, entity mentions,
+  internal links, drawing blocks, downloads and a detail sidebar.
+- **Characters, parties and pawns** — reusable campaign entities with linked
+  records and dialog-based editors.
+- **Encounters and combat** — build encounters from pawns, start a combat with a
+  party, then track initiative, rounds, turns, postpone and completion.
+- **Maps and locations** — location records with OpenLayers maps, image layers,
+  markers, drawn areas and links to other entities.
+- **Jukebox** — local audio import, playlists, queue, shuffle/repeat and a
+  persistent player.
+- **Ambient sound** — importable `.spk` packs with ambience layers, one-shots
+  and scene/mood music, plus a global sound-control panel.
+- **Timers** — countdown timers with a global tick and completion notifications.
+- **Calculator** — a draggable arithmetic and unit-converter dialog.
+- **Dice probability calculator** — an AnyDice-compatible language with a Monaco
+  editor, tables, charts, statistics, CSV export, share links and reusable code
+  snippets.
+- **Backup and restore** — export all main stores to a ZIP archive and restore
+  them later, optionally including external file handles.
+- **Help center** — static English and Russian guides built with VitePress.
+- **Localization and themes** — English/Russian UI and light/dark/auto themes.
+- **Build-time feature flags** — remove whole features from a production build.
 
-### PWA Features
+Entity editors and detail pages use a shared dialog/tab pattern: main fields and
+options live in the first tab, while cross-entity links live in a second tab.
+See [docs/architecture/editor-dialog-pattern.md](docs/architecture/editor-dialog-pattern.md).
 
-- ✅ **Installable**: Add to home screen on mobile and desktop
-- ✅ **Offline First**: Works without internet connection
-- ✅ **Fast Loading**: Optimized caching and performance
-- ✅ **Native Feel**: App-like experience with standalone mode
-- ✅ **Auto Updates**: Automatic updates when new versions are available
-- ✅ **Push Notifications**: Ready for future notification features
-- ✅ **Responsive Design**: Optimized for all screen sizes
+## Tech stack
 
-## 📱 Installation
+| Concern        | Choice                                                       |
+| -------------- | ------------------------------------------------------------ |
+| UI             | Vue 3 (`<script setup>`), TypeScript, Quasar 2, Tabler icons |
+| State          | Pinia 4 with `pinia-shared-state`                            |
+| Storage        | IndexedDB via Dexie, JSON Schema validation with Ajv         |
+| Build          | Vite 8, `vite-plugin-pwa` (Workbox)                          |
+| Markdown       | markdown-it for rendering, Milkdown/Crepe for editing        |
+| Maps           | OpenLayers via `vue3-openlayers`, Terra Draw                 |
+| Audio          | Howler, `music-metadata` in a worker                         |
+| Help center    | VitePress                                                    |
+| Tests          | Vitest 5, `@vue/test-utils`, jsdom; Playwright for E2E       |
+| Hosting target | GitHub Pages under `/dmh-pwa`                                |
 
-### Mobile Devices
+## Requirements
 
-#### Android (Chrome)
+- Node.js **24.18.0** (pinned in `.nvmrc`; CI uses Node 24)
+- npm
 
-1. Open the app in Chrome
-2. Tap the menu (⋮) in the top right
-3. Select "Add to Home screen"
-4. Tap "Add"
+Dependencies are exact-pinned (`.npmrc` sets `save-exact=true` and
+`legacy-peer-deps=true`). `npm install` runs `patch-package` through
+`postinstall`.
 
-#### iOS (Safari)
-
-1. Open the app in Safari
-2. Tap the share button (□↑)
-3. Select "Add to Home Screen"
-4. Tap "Add"
-
-### Desktop
-
-#### Chrome/Edge
-
-1. Open the app in Chrome or Edge
-2. Click the install icon (⊕) in the address bar
-3. Click "Install"
-
-#### Firefox
-
-1. Open the app in Firefox
-2. Click the menu (☰) in the top right
-3. Select "Install App"
-
-## 🛠️ Development
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Setup
+## Quick start
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd dmh-pwa
-
 # Install dependencies
 npm install
 
-# Start development server
+# Run the app and the help center together
 npm run dev
 
-# Build for production
+# Run only the app (help links will not resolve)
+npm run dev:app
+
+# Build for production (help center first, then the app)
 npm run build
 
-# Preview production build
+# Preview the production build
 npm run preview
 ```
 
-### PWA Development
+`npm run dev` starts:
 
-The app uses Vite with the `vite-plugin-pwa` for PWA functionality:
+- app: <http://localhost:5173/dmh-pwa/>
+- help center: <http://localhost:5173/dmh-pwa/help/> (proxied to VitePress)
 
-- **Service Worker**: Automatic generation and registration
-- **Manifest**: Web app manifest with icons and metadata
-- **Caching**: Intelligent caching strategies for offline support
-- **Updates**: Automatic service worker updates
+The VitePress server on port `5174` can also be opened directly; it redirects
+app routes back to port `5173`. In production both are served from the same
+origin.
 
-### PWA Components
-
-- `PWAInstallPrompt.vue`: Shows install prompt when available
-- `PWAStatus.vue`: Displays PWA status and update notifications
-- `FloatActionButton.vue`: Floating action button with PWA-aware hiding
-
-## 📋 PWA Checklist
-
-### ✅ Core PWA Features
-
-- [x] Web App Manifest
-- [x] Service Worker
-- [x] HTTPS (required for PWA)
-- [x] Responsive Design
-- [x] Offline Functionality
-- [x] Install Prompt
-- [x] App Icons (multiple sizes)
-- [x] Splash Screen Support
-- [x] Theme Colors
-
-### ✅ Advanced PWA Features
-
-- [x] Background Sync (ready for implementation)
-- [x] Push Notifications (ready for implementation)
-- [x] App Shortcuts
-- [x] Update Notifications
-- [x] Offline Status Indicators
-- [x] Standalone Mode Detection
-
-## 🎨 Design System
-
-The app uses a consistent design system with:
-
-- **Color Scheme**: Dark theme optimized for gaming sessions
-- **Typography**: Readable fonts for long reading sessions
-- **Icons**: Custom D&D-themed icons
-- **Layout**: Responsive grid system
-- **Components**: Reusable Vue components
-
-## 🔧 Configuration
-
-### PWA Configuration
-
-The PWA is configured in `vite.config.js` with:
-
-- **Manifest**: Complete web app manifest
-- **Service Worker**: Workbox-based service worker
-- **Caching**: Intelligent caching strategies
-- **Icons**: Multiple icon sizes for all platforms
-
-### Environment Variables
+## Development commands
 
 ```bash
-# Development
-VITE_APP_TITLE=D&D Notes Manager (Dev)
+npm run dev                     # app + help center
+npm run dev:app                 # Vite app only
+npm run help:dev                # VitePress help center only
+npm run help:build              # build static help pages into dist/help
 
-# Production
-VITE_APP_TITLE=D&D Notes Manager
+npm run types-check             # vue-tsc --noEmit (scripts + templates)
+npm run format                  # Prettier over the hook glob
+npm run lint                    # ESLint
+npm run lint:fix                # ESLint with --fix
+
+npm test                        # full Vitest suite
+npm run test:watch              # Vitest watch mode
+npm run test:ui                 # Vitest UI
+npm run test:coverage           # V8 coverage (thresholds in vitest.config.ts)
+npm run test:regression         # tests/regressions only
+npm run test:probability-calculator
+
+npm run test:e2e:install        # install Chromium/Firefox once
+npm run test:e2e                # Playwright, Chromium + Firefox
+npm run test:e2e:chromium
+npm run test:e2e:firefox
+
+npm run features:verify         # build every feature-off configuration
+npm run pack:sound -- <dir>     # build an ambient .spk pack
+npm run unpack:sound -- <file>  # unpack an ambient .spk pack
+npm run migration:generate <name>
 ```
 
-## 📊 Performance
+### Test status
 
-### Lighthouse Scores
+The current working tree passes:
 
-- **Performance**: 95+
-- **Accessibility**: 95+
-- **Best Practices**: 95+
-- **SEO**: 95+
-- **PWA**: 100
+```text
+Test Files  207 passed (207)
+Tests       1615 passed (1615)
+```
 
-### Caching Strategy
+The type check (`npm run types-check`) is expected to report no errors. Coverage
+is collected with `npm run test:coverage`; the repository documents its current
+coverage gates and exclusions in
+[docs/tooling/testing.md](docs/tooling/testing.md).
 
-- **Static Assets**: Cache First (long-term)
-- **Images**: Cache First (30 days)
-- **API Data**: Network First (5 minutes)
-- **App Shell**: Cache First (immediate)
+## Build-time feature flags
 
-## 🚀 Deployment
+Main-menu entities and tools can be excluded from a build with `VITE_FEATURE_*`
+environment variables. Missing values default to on; `true`/`1` enable a feature
+and `false`/`0` disable it. Unknown flags and invalid dependency combinations
+abort the build. Flags are resolved at build time only — there is no runtime
+switch.
 
-### Build for Production
+| Feature                | Variable                   | Requires                   |
+| ---------------------- | -------------------------- | -------------------------- |
+| Notes                  | `VITE_FEATURE_NOTES`       | —                          |
+| Characters             | `VITE_FEATURE_CHARACTERS`  | —                          |
+| Parties                | `VITE_FEATURE_PARTIES`     | characters                 |
+| Pawns                  | `VITE_FEATURE_PAWNS`       | —                          |
+| Encounters and combat  | `VITE_FEATURE_ENCOUNTERS`  | pawns, characters, parties |
+| Maps and locations     | `VITE_FEATURE_MAPS`        | —                          |
+| Jukebox                | `VITE_FEATURE_JUKEBOX`     | —                          |
+| Ambient sound          | `VITE_FEATURE_AMBIENT`     | —                          |
+| Timers                 | `VITE_FEATURE_TIMERS`      | —                          |
+| Calculator             | `VITE_FEATURE_CALCULATOR`  | —                          |
+| Probability calculator | `VITE_FEATURE_PROBABILITY` | —                          |
+| Help center links      | `VITE_FEATURE_HELP`        | —                          |
+
+Copy `.env.template` to `.env` for a persistent local configuration, or pass
+flags for one build:
 
 ```bash
-npm run build
+VITE_FEATURE_JUKEBOX=false VITE_FEATURE_AMBIENT=false npm run build
 ```
 
-The build generates:
+`npm run features:verify` builds the all-on, all-off and per-feature-off
+configurations, checks the bundle module graph and verifies the PWA manifest
+shortcuts. See
+[docs/architecture/feature-flags.md](docs/architecture/feature-flags.md).
 
-- `dist/` - Production files
-- `dist/sw.js` - Service worker
-- `dist/manifest.webmanifest` - Web app manifest
-- `dist/assets/` - Optimized assets
+## PWA and offline behavior
 
-### Hosting Requirements
+`vite.config.js` configures `vite-plugin-pwa` with:
 
-- **HTTPS**: Required for PWA functionality
-- **Service Worker**: Must be served from root
-- **Manifest**: Must be accessible at `/manifest.json`
+- an installable manifest named **Owlbear's Dungeon Master Helper**, scoped to
+  `/dmh-pwa/`;
+- app shortcuts for Notes, Timers, Jukebox and the Help center;
+- Workbox precaching for app assets and the generated help pages;
+- automatic service-worker updates (`autoUpdate` with `skipWaiting` and
+  `clientsClaim`);
+- runtime caching for images and remote static resources.
 
-## 📱 Platform Support
+All campaign data is in IndexedDB and is available offline. Audio and other
+user-selected files are offline only when their Blob/OPFS storage or file-handle
+permission is still available.
 
-### Mobile
+A development service worker runs during `npm run dev`, so stale-cache issues
+are possible while debugging. Push notifications and background sync are not
+implemented.
 
-- ✅ Android (Chrome, Firefox, Samsung Internet)
-- ✅ iOS (Safari, Chrome)
-- ✅ Windows Mobile (Edge)
+For install instructions, see
+[helpcenter/en/getting-started/install.md](helpcenter/en/getting-started/install.md).
+For implementation details, see [docs/architecture/pwa.md](docs/architecture/pwa.md).
 
-### Desktop
+## Help center
 
-- ✅ Windows (Chrome, Edge, Firefox)
-- ✅ macOS (Chrome, Safari, Firefox)
-- ✅ Linux (Chrome, Firefox)
+The help center is a separate VitePress site under `helpcenter/`:
 
-### Features by Platform
+- `helpcenter/index.md` — language chooser.
+- `helpcenter/en/` and `helpcenter/ru/` — localized guides.
+- `helpcenter/.vitepress/config.mts` — locales, sidebars, local search and the
+  **Open app** navigation item.
 
-| Platform | Install | Offline | Notifications | Background Sync |
-| -------- | ------- | ------- | ------------- | --------------- |
-| Android  | ✅      | ✅      | ✅            | ✅              |
-| iOS      | ✅      | ✅      | ⚠️            | ❌              |
-| Desktop  | ✅      | ✅      | ✅            | ✅              |
+The app links to the static pages through `src/helpcenter/links.ts`. The
+left-menu **Help center** item opens the localized landing page in a new tab.
+`npm run build` builds the help center into `dist/help/` before the app build so
+the pages are included in the PWA precache.
 
-## 🔮 Future Features
+## Project structure
 
-### Planned PWA Enhancements
+```text
+src/
+  main.ts, App.vue, router.ts     app bootstrap, shell and routes
+  features/                       per-feature routes, navigation, links and globals
+  notes/ characters/ parties/     feature domains
+  pawns/ encounters/ maps/
+  jukebox/ ambient-sound/ timers/
+  calculator/ probability-calculator/
+  stores/                         Pinia domain stores
+  migrations/                     IndexedDB schema migrations
+  schemas/                        JSON schemas used for write validation
+  utils/storage.ts                Dexie setup, base store, backup/restore
+  utils/files/                    File System Access, OPFS, Blob and audio workers
+  utils/dice-probability-calculator/
+  components/                     shared UI, dialogs, PWA components
+  i18n/locales/{en,ru}.json       translations
+  helpcenter/links.ts             static help URL helper
+helpcenter/                       VitePress help center (English and Russian)
+tests/                            Vitest suites and Playwright E2E tests
+scripts/                          build, feature verification, content tooling
+public/                           icons, screenshots and copied static assets
+docs/                             architecture, feature, component and tooling docs
+content/                          local, git-ignored content workspace
+```
 
-- [ ] Push Notifications for session reminders
-- [ ] Background Sync for offline data
-- [ ] Share API integration
-- [ ] File System Access API
-- [ ] Web Share Target API
-- [ ] Badge API for notifications
+## Data and backups
 
-### App Features
+- Main records are stored in the `dmh-db` IndexedDB database through Dexie.
+- UI settings, theme, language and player preferences are stored in
+  `localStorage` under `dmh-config:*` keys.
+- `backupAllStores()` produces a ZIP with one JSON file per main store plus
+  binary file entries and a `manifest.json`.
+- `restoreAllStores()` validates the manifest format/version, clears the
+  affected stores and restores the archive. The app reloads after a restore.
+- Module content is no longer a persisted entity; ambient content is imported as
+  `.spk` packs at runtime.
 
-- [ ] Dice rolling with haptic feedback
-- [ ] Voice notes for sessions
-- [ ] Collaborative editing
-- [ ] Cloud sync
-- [ ] Campaign templates
-- [ ] Advanced character sheets
+## Deployment
 
-## 📄 License
+`npm run build` writes the deployable site to `dist/`, including the generated
+manifest, service worker, workbox runtime files and `dist/help/`.
 
-MIT License - see LICENSE file for details.
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs on pushes and pull
+requests to `main`:
 
-## 🤝 Contributing
+1. `npm ci`
+2. `npm run types-check`
+3. `npm run test:regression`
+4. `npm test`
+5. `npm run features:verify`
+6. `npm run build` with `VITE_COMMIT_SHA`
+7. `cp dist/index.html dist/404.html`
+8. deploy `dist/` to GitHub Pages
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test PWA functionality
-5. Submit a pull request
+The site assumes deployment at `/dmh-pwa/`: Vite `base`, the router base, the
+manifest scope/start URL and the help-center base all use that prefix. A domain
+root deployment requires changing those together plus icon paths. HTTPS is
+required for service workers and File System Access.
 
-### PWA Testing Checklist
+See [docs/tooling/build-and-deploy.md](docs/tooling/build-and-deploy.md) for
+details.
 
-- [ ] Install prompt appears
-- [ ] App installs correctly
-- [ ] Offline functionality works
-- [ ] Updates are detected
-- [ ] Service worker registers
-- [ ] Manifest is valid
-- [ ] Icons display correctly
+## Known limitations
 
-## 📞 Support
+- The standalone dice-roller engine and the 3D dice button are work in progress
+  and are not mounted in the app shell.
+- Feature flags are build-time only; they do not change the database schema, and
+  data for disabled features is preserved.
+- There is no server, account system, cloud sync or collaborative editing.
+- Deployment paths assume GitHub Pages project hosting under `/dmh-pwa`.
 
-For PWA-specific issues or questions:
+## Documentation
 
-- Check the browser's developer tools
-- Verify HTTPS is enabled
-- Test on multiple devices
-- Check Lighthouse PWA audit
+Start with [docs/README.md](docs/README.md), which maps the full documentation
+set. Useful entry points:
 
----
+- [Architecture overview](docs/architecture/overview.md)
+- [Persistence and state](docs/architecture/persistence-and-state.md)
+- [Feature flags](docs/architecture/feature-flags.md)
+- [PWA and offline behavior](docs/architecture/pwa.md)
+- [Testing](docs/tooling/testing.md)
+- [Build and deployment](docs/tooling/build-and-deploy.md)
+- [Help center implementation](docs/components/help-center.md)
 
-**Happy Gaming! 🎲📚**
+## License
+
+MIT — see [LICENSE](LICENSE).

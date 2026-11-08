@@ -9,12 +9,16 @@ For optional, exploratory ideas that may never be implemented, use
 
 ## Current plans
 
-| Plan                                                | Status                          |
-| --------------------------------------------------- | ------------------------------- |
-| [Scribe and Play modes](scribe-and-play-modes.md)   | planned — not implemented       |
-| [Milkdown view renderer](milkdown-view-renderer.md) | implemented; phase 4 evaluated  |
-| [PWA hardening](pwa-hardening-plan.md)              | implemented; device checks left |
-| [Build-time feature flags](feature-flags.md)        | implemented; verification green |
+Last reviewed against the code and test suite on **2026-11-09** (207 test files /
+1615 tests passing).
+
+| Plan                                                  | Status                                                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [Scribe and Play modes](scribe-and-play-modes.md)     | planned — not implemented (P1)                                                                      |
+| [Milkdown view renderer](milkdown-view-renderer.md)   | implemented (phases 1–4); static renderer evaluated and not adopted                                 |
+| [PWA hardening](pwa-hardening-plan.md)                | phases 1–2 done in emulation, most of phase 3 done; device and Lighthouse/PWABuilder checks pending |
+| [Build-time feature flags](feature-flags.md)          | implemented; verification green (14 build configurations)                                           |
+| [Remove the Modules entity](remove-modules-entity.md) | completed (historical; Modules removed, related proposals obsolete)                                 |
 
 ## Conventions
 

@@ -1,8 +1,14 @@
 # Technical Proposals
 
+**Status (2026-11-09):** mixed; every section now has its own status label.
+Implemented: type checking, typed layout, sanitization, backup (mostly), PWA
+consolidation, modal contract, testing, and import (later made obsolete by the
+Modules removal). Pending/partial: integrity layer, code splitting, store
+factory, state loading, audio service, and hygiene. The dice engine remains WIP.
+
 This document proposes engineering changes, ordered by impact and risk. Each
 proposal states the problem, the desired end state, a migration path, and the
-main risks. None of these are implemented in the current tree.
+main risks.
 
 ---
 
@@ -37,18 +43,19 @@ Remaining nice-to-have: a dev-time warning for unknown slots.
 
 ---
 
-## 3. Repository / unit-of-work layer with referential integrity
+## 3. Repository / unit-of-work layer with referential integrity — pending
 
 **Problem.** Stores write one record at a time; there are no cascades,
 cross-store transactions, or foreign-key checks. Deletes leave dangling IDs
-(module → notes, note → tree/bookmarks, character → party, pawn → encounter,
-encounter → combats, track → file).
+(note → bookmarks, character → party, pawn → encounter, encounter → combats,
+track → file). The former module → notes aggregate is gone with the Modules
+removal.
 
 **Proposal.**
 
 Option A — **lightweight integrity service**:
 
-- `src/services/integrity.ts` with `deleteModuleCascade`, `deleteNoteCascade`,
+- `src/services/integrity.ts` with `deleteNoteCascade`,
   `deleteCharacterCascade`, etc.
 - Called by UI delete handlers; each uses existing base stores.
 - Add a startup "repair" job that reports dangling IDs (read-only at first).
@@ -61,7 +68,7 @@ Option B — **repository layer**:
 - Use a single Dexie transaction per aggregate operation.
 
 Recommendation: start with Option A to stop data loss, then evolve into Option
-B for modules/notes (the largest aggregate).
+B for the largest remaining aggregates (notes, encounters).
 
 **Also:**
 
@@ -74,18 +81,22 @@ and provide an undo window.
 
 ---
 
-## 4. Import service (implemented)
+## 4. Import service (implemented; now obsolete) — historical
 
-`importModuleFromZip` now:
+> The Modules entity and its ZIP import/export were removed. This section is
+> kept only as a record of the implemented design.
+
+`importModuleFromZip` (now removed) did:
 
 - validates module and notes against JSON Schemas,
 - generates new IDs and rewrites `noteTree`/`moduleId`,
 - writes module, notes, and mention-index records in one transaction,
 - preserves archive timestamps (falling back to import time).
 
-Remaining follow-up: versioned archive manifest and merge/replace modes.
+The remaining follow-up (versioned archive manifest and merge/replace modes) is
+closed as obsolete with the Modules removal.
 
-**Proposal.**
+**Original proposal.**
 
 1. Define a versioned archive manifest:
    ```json
@@ -164,12 +175,17 @@ implemented OPFS, streaming, hashing and backup design.
 
 ---
 
-## 7. Consolidate the PWA layer
+## 7. Consolidate the PWA layer (implemented)
 
-**Problem.** The legacy `public/sw.js` and `public/manifest.json` conflicted
-with the generated Workbox assets. The install prompt was also disabled.
+**Status.** The legacy files are gone, the generated manifest/service worker is
+used, install/update handling is in place, and the PWA hardening plan covers the
+remaining device checks.
 
-**Proposal.**
+**Problem (historical).** The legacy `public/sw.js` and `public/manifest.json`
+conflicted with the generated Workbox assets. The install prompt was also
+disabled.
+
+**Original proposal.**
 
 1. Delete `public/sw.js` and `public/manifest.json` (done); rely solely on
    `vite-plugin-pwa`.
@@ -186,21 +202,24 @@ with the generated Workbox assets. The install prompt was also disabled.
 
 ---
 
-## 8. Route-level code splitting and bundle reduction
+## 8. Route-level code splitting and bundle reduction — partially implemented
 
-**Problem.** All views are statically imported; Milkdown, Quasar, Howler,
-JSZip, music-metadata, mathjs, and Chevrotain are in the main graph. The WIP
-dice UI and engine are not mounted yet, so their weight is not currently part
-of the rendered experience but should be accounted for before release.
+**Status.** Feature route modules already use dynamic `import()`. The remaining
+items below are still pending.
+
+**Problem.** Heavy libraries (Milkdown, Quasar, Howler, JSZip, music-metadata,
+mathjs, Chevrotain) still sit in the main graph. The WIP dice UI and engine are
+not mounted yet, so their weight is not currently part of the rendered
+experience but should be accounted for before release.
 
 **Proposal.**
 
-1. Convert router imports to `() => import(...)` for heavy routes:
-   jukebox, modules, combat, calculator, timers.
+1. Convert any remaining static heavy route imports to `() => import(...)`
+   (feature routes are already lazy).
 2. Lazy-load editors (`NoteEditor`, `MilkdownEditor`) behind the modal open
    state.
 3. Import only needed mathjs functions (`evaluate`, `unit`) instead of
-   `create(all)`.
+   `create(all)`; `CalculatorView` still uses `create(all)`.
 4. Remove or relocate unused dependencies (`rpg-awesome`,
    `text-cursor-helper`, `@vueuse/core`, `sharp` if script-only). Keep
    `@3d-dice/*` while the WIP dice UI is still planned; remove it only if that
@@ -213,7 +232,7 @@ of the rendered experience but should be accounted for before release.
 
 ---
 
-## 9. Replace hand-rolled stores' duplication with a typed factory
+## 9. Replace hand-rolled stores' duplication with a typed factory — pending
 
 **Problem.** Nine domain stores repeat the same `searchQuery`/`filtered`/
 `setFilter` boilerplate; several methods are unused. The base store has no
@@ -270,7 +289,7 @@ that registers all plugins once, deterministic RNG, operator-order fixes, and
 
 ---
 
-## 11. Audio library architecture
+## 11. Audio library architecture — partially implemented
 
 **Problem.** Blob vs handle sources, no quota management, no reconnect flow,
 duplicate tracks, shared-file deletion, permission requests at startup, color
@@ -296,7 +315,7 @@ bug, and per-component cache clearing.
 
 ---
 
-## 12. State loading and shared-state policy
+## 12. State loading and shared-state policy — pending
 
 **Problem.** Every view calls `load()` on mount; `load()` replaces the entire
 array and can race with another view or tab. `pinia-shared-state` can overwrite
@@ -365,10 +384,10 @@ combat/document literals and add a key-parity CI check.
 
 ## 15. Testing strategy (implemented)
 
-The suite now runs **536 / 536 passing across 72 files** with shared
+The suite now runs **1615 / 1615 passing across 207 files** with shared
 Pinia/i18n/Quasar setup and `fake-indexeddb`; CI runs type check, the regression
-suite, and the full suite. Remaining: broaden coverage for jukebox playback,
-file handlers, and Milkdown.
+suite, the feature build matrix, and the full suite. The jukebox, file-handler,
+and Milkdown coverage noted here has since been added.
 
 **Proposal.**
 
@@ -379,8 +398,8 @@ file handlers, and Milkdown.
 4. Split `tests/` (app) from `src/utils/dice-roller/__tests__` (library).
 5. Add contract tests for the flows listed in
    [integration/cross-part-behavior.md](../integration/cross-part-behavior.md):
-   note create/edit/index, module export/import round trip, combat persistence,
-   backup/restore.
+   note create/edit/index, combat persistence, backup/restore (the module
+   export/import round trip was removed with Modules).
 6. Re-enable `npm test` in CI once green; keep a `test:smoke` suite as a gate
    in the meantime.
 
@@ -391,8 +410,9 @@ file handlers, and Milkdown.
 ## 16. Code hygiene and repository structure (partially done)
 
 Stale store docs carry historical banners; `content/README.md` documents the
-empty directory. Remaining: remove/verify unused dependencies, delete or
-archive remaining exploratory components, and add `knip`/`depcheck`.
+empty directory; the Modules removal deleted a large exploratory area.
+Remaining: remove/verify unused dependencies, delete or archive remaining
+exploratory components, and add `knip`/`depcheck`.
 
 **Proposal.**
 
@@ -409,6 +429,9 @@ archive remaining exploratory components, and add `knip`/`depcheck`.
 ---
 
 ## Suggested execution order
+
+This is the original sequence; use the per-section status labels above for the
+current state.
 
 | Phase | Work                                                          | Outcome                                                    |
 | ----- | ------------------------------------------------------------- | ---------------------------------------------------------- |

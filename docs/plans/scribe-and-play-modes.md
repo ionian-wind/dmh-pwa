@@ -1,6 +1,7 @@
 # Scribe and Play Modes
 
-**Status:** plan — not implemented; scheduled for implementation.
+**Status:** planned — not implemented (reviewed against the current tree on
+2026-11-09; no `appMode`, mode toggle, or Play dashboard exists yet).
 
 This is a committed plan, not an optional proposal.
 
@@ -30,8 +31,11 @@ primary.
 - All major domains are already implemented: notes, characters,
   parties, pawns, encounters, combats, maps/locations, timers, jukebox and
   ambient sound.
-- The command-menu and global-search proposals provide the fast access Play
-  needs.
+- The command-menu and global-search proposals would provide the fast access
+  Play needs; both are still unimplemented.
+- The current Home and navigation already come from feature integrations
+  (`virtual:feature-home-cards` / `virtual:feature-navigation`), and detail
+  views share `EntityInfoDialog`; those are the pieces a Play lens should reuse.
 - There is no persisted notion of what the user is doing (preparing vs running).
 
 ## 2. Product principles
@@ -79,7 +83,6 @@ The current navigation stays essentially unchanged:
 - Parties
 - Pawns
 - Encounters
-- Notes
 - Maps / Locations
 - Tools (Jukebox, Ambient, Dice calculator, Timers)
 - Settings, Help

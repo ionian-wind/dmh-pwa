@@ -32,13 +32,15 @@ Props:
 | `placeholder`, `rows`, `label`, `className` | UI                                                   |
 | `enableMentions`                            | Enables mention toolbar/menu                         |
 | `currentEntityType`, `currentEntityId`      | Excludes the edited entity from its own mention list |
+| `tags`                                      | Recent/selected tags offered by tag autocomplete     |
 
 Emits `update:modelValue`, exposes `getMarkdown()`.
 
 - Visual mode: `MilkdownEditorWrapper` inside a borderless `QCard`.
 - Raw mode: a Quasar `QEditor` with an empty toolbar. Markdown text is
-  converted to/from QEditor HTML with `markdownRaw.ts`. The formatting-help
-  button in the note editor footer links to
+  converted to/from QEditor HTML with `markdownRaw.ts`, preserving persistent
+  block anchors. The formatting-help button in the note editor footer (raw
+  mode only) and in the entity editor/detail headers links to
   `helpcenter/<locale>/reference/markdown.md` (built as a static help page) in
   a new tab; it documents markdown, internal links, entity mentions and hashtag
   tags.
@@ -63,8 +65,9 @@ A 22-line wrapper that provides `MilkdownProvider` and forwards `modelValue`,
   - `.addFeature(mentionFeature)`,
   - `.addFeature(headingAnchorFeature)` for `{#kind-id}` heading anchors and
     persistent `<!-- dmh:block=… -->` heading/paragraph anchors,
-  - `.addFeature(tagDecorationFeature)` in read-only mode, or
-    `.addFeature(tagAutocompleteFeature)` in edit mode.
+  - `.addFeature(drawingFeature)` for inline drawing nodes,
+  - `.addFeature(tagDecorationFeature)` + `.addFeature(tocFeature)` in
+    read-only mode, or `.addFeature(tagAutocompleteFeature)` in edit mode.
 - `crepeConfig.ts` maps Crepe toolbar/menu/placeholder labels and mention
   entries through the app's Vue I18n instance. Toolbar heading options and the
   built-in heading/formatting group labels are localized too.
@@ -72,7 +75,8 @@ A 22-line wrapper that provides `MilkdownProvider` and forwards `modelValue`,
   in edit mode. In read-only mode it only records the applied Markdown so the
   external-value watcher can ignore its own echo.
 - Exposes `getMarkdown()` and, in read-only mode, `getToc()`.
-- Shows `MentionInsertPopup` and the tag popup only in edit mode.
+- Shows `MentionInsertPopup` and the tag popup only in edit mode, and
+  `DrawingEditorModal` when an inline drawing is created or opened.
 - `getMentionables(kind)` resolves the store via
   `getMentionableEntities(kind)`, handles both unwrapped arrays and refs, and
   excludes the current entity.
@@ -87,8 +91,13 @@ value; `NoteEditor` remounts/rebuilds the object when switching notes.
 
 ## `MilkdownView.vue` (read-only)
 
-Used by note, party, pawn, character and location detail views. It wraps
-`MilkdownEditor` in `MilkdownProvider` and passes `readonly`.
+Used by note, party, pawn, character, encounter and location detail views and
+by `EntityInfoDialog`. It wraps `MilkdownEditor` in `MilkdownProvider` and
+passes `readonly`.
+
+Props: `content`, optional `anchorMap`, `enableMentionModal`,
+`taskCheckboxEnabled`, `scrollToAnchor`, `bookmarkedIds`. Emits
+`update:content`, `toc-update` and `bookmark-toggle`.
 
 - The editor is `contenteditable="false"`.
 - Capture-phase link handling supports:
@@ -102,8 +111,10 @@ Used by note, party, pawn, character and location detail views. It wraps
 - Task labels toggle the matching Markdown source line and emit
   `update:content`. The source-line patch preserves bullet style, tag escaping
   and heading anchor markers instead of re-serializing the whole document.
-- Loads the feature entity stores on mount so mention modals can resolve
-  entities.
+- Resolves mention targets through the feature link-kind stores; it creates the
+  store handles during setup rather than loading them.
+- Heading anchors can emit a table of contents (`toc-update`), and
+  `bookmarkedIds` drives the inline bookmark widgets (`bookmark-toggle`).
 - Uses `.milkdown-view :deep(.milkdown .ProseMirror) { padding: 0 }` so the
   existing content surfaces control spacing.
 
@@ -181,7 +192,10 @@ keystroke, `modelValue` is usually already current. Detail views use
 mention modals, task line toggling and heading-anchor extraction.
 `tests/e2e/milkdown-view.e2e.ts` covers read-only rendering, switching to edit
 and back, and persisting a task toggle.
-`tests/components/staticRenderer.test.ts` covers the singleton static renderer.
+`tests/components/staticRenderer.test.ts` covers the singleton static renderer;
+`headingAnchor`, `tocPlugin`, `tagAutocomplete`, `tagInsertPopup`,
+`markdownEditorRaw` and `crepeConfig` tests cover the editor plugins and raw
+mode.
 
 Performance is measured with `npm run perf:markdown` against
 `markdown-dataset`; results and the adoption decision are documented in

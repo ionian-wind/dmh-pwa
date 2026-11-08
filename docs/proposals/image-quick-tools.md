@@ -1,6 +1,8 @@
 # Image Quick Tools
 
-**Status:** proposal — not implemented.
+**Status:** proposal — not implemented (reviewed 2026-11-09). The shared file
+layer and map-image optimizer (`src/utils/images/optimizeImage.ts`) exist, but
+there is no `/tools/images` page or crop/resize/convert UI.
 
 **Goal:** a fast, local utility for the common image jobs a DM actually needs:
 crop, rotate, resize, convert, compress and batch-process images. It is **not**

@@ -3,38 +3,42 @@
 ## Purpose
 
 A local music player for session ambience. Users add audio files, create
-playlists, and play music through a global howler-based player that
-survives navigation. Files are referenced either through the File System Access
-API (`FileSystemFileHandle`) or stored as Blobs in IndexedDB.
+playlists, and play music through a global howler-based player that survives
+navigation. Audio bytes live in the generic file layer as File System Access
+handles, IndexedDB Blobs, or OPFS files.
 
 ## Key files
 
-| File                                            | Role                                                   |
-| ----------------------------------------------- | ------------------------------------------------------ |
-| `src/jukebox/types.ts`                          | `JukeboxFile`, `JukeboxTrack`, `JukeboxPlaylist`       |
-| `src/jukebox/stores.ts`                         | Three stores + file helpers + picture URL cache        |
-| `src/jukebox/playerStore.ts`                    | Playback engine, queue, shuffle/repeat, media session  |
-| `src/jukebox/JukeboxView.vue`                   | Library/playlist page                                  |
-| `src/jukebox/components/JukeboxPlayer.vue`      | Player controls                                        |
-| `src/jukebox/components/SoundControlDialog.vue` | Snapable global sound-control panel (music player now) |
-| `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                        |
-| `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit                                   |
-| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist link editing                             |
-| `src/jukebox/components/TrackCard.vue`          | Track row                                              |
-| `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                   |
-| `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                 |
-| `src/jukebox/components/AddToPlaylistModal.vue` | Playlist membership via entity linking                 |
-| `src/jukebox/useAnimatedGradient.ts`            | Palette-based background                               |
-| `src/jukebox/utils.ts`                          | `formatTime`                                           |
-| `src/jukebox/utils/waveform.ts`                 | Web Audio waveform SVG generation                      |
-| `src/utils/files/*`                             | File access + metadata extraction                      |
+| File                                            | Role                                                  |
+| ----------------------------------------------- | ----------------------------------------------------- |
+| `src/jukebox/types.ts`                          | `JukeboxTrack`, `JukeboxPlaylist`                     |
+| `src/jukebox/stores.ts`                         | Track/playlist stores + picture URL cache             |
+| `src/jukebox/playerStore.ts`                    | Playback engine, queue, shuffle/repeat, media session |
+| `src/jukebox/JukeboxView.vue`                   | Library/playlist page                                 |
+| `src/jukebox/composables/*`                     | Shared edit-mode, importing and bulk-selection state  |
+| `src/jukebox/components/JukeboxPlayer.vue`      | Player controls                                       |
+| `src/jukebox/components/SoundControlDialog.vue` | Snapable global panel with Jukebox/Ambient tabs       |
+| `src/jukebox/components/PlaylistList.vue`       | Right-drawer playlist navigator                       |
+| `src/jukebox/components/PlaylistEditor.vue`     | Playlist create/edit + linked entities                |
+| `src/jukebox/components/BulkLinkingModal.vue`   | Bulk playlist link editing                            |
+| `src/jukebox/components/TrackCard.vue`          | Track row                                             |
+| `src/jukebox/components/TrackInfo.vue`          | Title/artist/artwork                                  |
+| `src/jukebox/components/AlbumPicture.vue`       | Artwork with URL cache                                |
+| `src/jukebox/components/AddToPlaylistModal.vue` | Playlist membership via entity linking                |
+| `src/jukebox/useAnimatedGradient.ts`            | Palette-based background                              |
+| `src/jukebox/utils/waveform.ts`                 | Web Audio waveform SVG generation                     |
+| `src/utils/formatTime.ts`                       | Shared time formatter (also used by timers)           |
+| `src/utils/files/*`                             | File access + metadata extraction                     |
 
 ## Data model
 
 See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities).
 
-- `JukeboxFile` stores the file `source` and basic stat fields. The `id` is
-  deterministic: `${file.name}-${file.lastModified}-${file.size}`.
+- Audio files are generic `StoredFile` records in the `files` store. A record
+  has a generated `id`, a metadata `signature`, and a `source` that is a
+  `FileSystemFileHandle`, a `Blob`, or an OPFS path. File imports deduplicate by
+  signature (`name`, `size`, `type`, `lastModified`); the jukebox does not
+  request content hashing.
 - `JukeboxTrack` stores extracted metadata and references `fileId`. Album art
   is stored as a `Blob` (`picture`) plus derived `color`/`palette`.
 - `JukeboxTrack.waveform` holds a generated inline SVG waveform string, or
@@ -44,8 +48,8 @@ See [architecture/data-model.md](../architecture/data-model.md#jukebox-entities)
   starts after the album artwork/icon and keeps left and right padding inside
   the track text column. Play/pause animates the waveform between zero height
   and its full row height.
-- `JukeboxPlaylist` stores `trackIds` in display order; `sortOrder` orders
-  playlists.
+- `JukeboxPlaylist` stores `trackIds` in display order, `sortOrder` for playlist
+  order, and `links` for linked locations/parties/pawns/encounters.
 - `JukeboxTrack.playlistIds` is declared but never maintained; membership is
   read from playlists.
 
@@ -54,14 +58,17 @@ None of these stores use schema validation, because `FileSystemFileHandle` and
 
 ## Importing tracks
 
-Two entry points:
+Three entry points:
 
-1. **File picker** (`pickFiles` from the generic file API):
+1. **Add Tracks** (`pickFiles` from the generic file API):
    - Chromium with `showOpenFilePicker`: returns handles (persistent
      references; permission may be requested later).
    - Other browsers, or if the API fails: falls back to a temporary
      `<input type=file>` and stores Blobs.
-2. **Drag and drop** on the document:
+2. **Add folder** (`pickDirectory`, recursive): uses the directory picker in
+   Chromium and a `webkitdirectory` input elsewhere; handles are kept when
+   available.
+3. **Drag and drop** on the document:
    - `onDragEnter/Over/Leave` track drag state and show a full-page drop zone.
    - `onDrop` uses `getPickedFileFromDataTransferItem()`, which prefers
      `getAsFileSystemHandle()` and falls back to `getAsFile()`.
@@ -69,29 +76,30 @@ Two entry points:
 
 `processFiles`:
 
-1. Computes the deterministic file ID.
-2. Reads any existing file record (to preserve `createdAt`).
-3. Writes the file record.
-4. Extracts metadata through `extractTrackMetadata`:
+1. Calls `importStoredFile(file, source)`, which reuses an existing `files`
+   record with the same signature or writes a new one. Large blobs may be
+   promoted to OPFS by the generic storage layer.
+2. Reuses an existing track with the same `fileId` when one exists.
+3. Extracts metadata through `extractTrackMetadata`:
    - duration via an `<audio>` element,
    - tags/artwork via a dedicated worker (`music-metadata`, `OffscreenCanvas`),
    - dominant color and up to four palette colors via a bundled color extractor
      (`amount: 4`, `sample: 10`, `group: 30`, hex output). Fewer than four
      colors are returned only when the artwork has fewer distinct grouped
      colors.
-5. Generates a waveform via `createWaveformSvg(file)`:
+4. Generates a waveform via `createWaveformSvg(file)`:
    - decodes the file with `AudioContext.decodeAudioData`,
    - downsamples the first channel into peak bars and normalizes them against
      the loudest bar so quiet recordings still fill the waveform height,
    - emits a compact single-path inline SVG.
    - Returns `null` when Web Audio is unavailable or decoding fails, so the
      import still succeeds without a waveform.
-6. Creates a track.
-7. If a playlist is selected, appends the new track ID.
-8. Calls `playerStore.actualiseQueue()`.
+5. Creates a track when the file was not already imported.
+6. If a playlist is selected, appends new track IDs in order.
+7. Calls `playerStore.actualiseQueue()`.
 
-There is no deduplication of tracks: re-adding the same file creates another
-track that shares the same `fileId`.
+Re-adding the same file reuses both the stored file and its existing track; it
+does not create a duplicate track.
 
 While an import is running (picker open, files processing, or dropped files
 being handled), the main Add Tracks button is disabled and shows a loading
@@ -114,13 +122,14 @@ playback playlist context are stored in `configStore` (localStorage).
 `prepareAudioFile(track, seekTo)`:
 
 1. Loads the file record.
-2. For handles, calls `queryPermission` **and** `requestPermission` (both are
-   always awaited; the request may fail without a user gesture).
-3. Gets the `File`, creates an object URL, determines format from MIME type or
-   extension.
+2. Verifies read permission for handle sources (`queryPermission`, then
+   `requestPermission` when needed). Blob and OPFS sources need no permission.
+3. Gets the `File` from the handle/blob/OPFS source, creates an object URL, and
+   determines format from MIME type or extension.
 4. Destroys the previous Howl and creates a new one with `html5: true`.
 5. Event handlers update `isPlaying`, `duration`, progress (via
-   `requestAnimationFrame`), seek state, and load errors.
+   `requestAnimationFrame`), seek state, and load errors. `onplay` pauses
+   ambient playback through the playback coordinator.
 6. Sets `currentTrack`.
 
 If the file record is missing, permission is denied, the file is not found, or
@@ -201,7 +210,8 @@ queue when nothing is playing.
 ### Media Session
 
 Registers play/pause/prev/next handlers and updates `MediaMetadata` with title,
-artist, and artwork (string or Blob via the shared picture cache). Album is
+artist, and artwork. String pictures are used directly; Blob pictures are
+converted to cached object URLs by the shared picture cache. Album is
 hard-coded to "Owlbear's DMH".
 
 ### Restore last track
@@ -263,14 +273,17 @@ selection` clears the current selection. The panel reserves its own layout
 - A per-row icon-only actions menu (`IconDotsVertical`) contains Add to
   Playlist, Play next, Play last, and Remove.
 - Play next/last reorder the live queue without interrupting the current track.
-- Remove deletes the track, removes it from every playlist, deletes the file
-  record, and updates the local list.
+- Remove asks for confirmation, then deletes the track, removes it from every
+  playlist, deletes the file record when unreferenced, and updates the local
+  list.
 - Selecting a playlist only changes the browsed track list. While a track is
   current, playback controls stay bound to that track's playlist; the queue
   switches when another track is started.
+- Add Tracks opens the file picker; the header folder button imports a whole
+  folder recursively.
 
 The page also registers document-level drag listeners and removes them on
-unmount. The `filesStore` is loaded but unused.
+unmount.
 
 ## Playlists
 
@@ -287,9 +300,10 @@ unmount. The `filesStore` is loaded but unused.
   affect this indicator.
 - Playlist sort order is persisted as `sortOrder`; sorting is available only
   in edit mode.
-- Edit opens `PlaylistEditor` (name, description).
+- Edit opens `PlaylistEditor`: Main tab for name/description plus a Linked
+  entities tab for locations, parties, pawns and encounters.
 - `AddToPlaylistModal` uses the shared `EntitiesLinking` layout with
-  `kind="playlist"`. Linked playlists show as remoable chips; the add dialog
+  `kind="playlist"`. Linked playlists show as removable rows; the add dialog
   provides playlist search and creation. Linked playlists are pre-selected in
   the dialog, so they can also be unlinked there. Adding or creating a playlist
   links the current track immediately, and removing a linked playlist unlinks
@@ -316,10 +330,12 @@ unmount. The `filesStore` is loaded but unused.
     in the sound-control panel. The footer player stays compact and does not
     render artwork. When shown in the panel, the artwork sits to the left of the
     track details, progress bar and transport controls.
-  - **Show player dialog** (on by default): the app-menu Jukebox item opens
-    the snapable sound-control panel containing the music player. When off, the
-    item navigates to `/jukebox` instead. This setting only governs the music
-    player dialog; future ambient controls are not affected by it.
+  - **Show player dialog** (on by default, stored as
+    `jukeboxUseMiniPlayer`): the app-menu Jukebox item opens the snapable
+    sound-control panel. When off, the item navigates to `/jukebox` instead.
+    The panel has Jukebox and Ambient tabs in builds where the ambient feature
+    is enabled; it opens on whichever source is currently playing.
+  - The same four player options are also available in the app Settings dialog.
 - Album-colour background: when enabled with `animatedBackground`, a
   `.animated-gradient-surface` pseudo-element uses `--custom-gradient` (from
   `track.palette` or `track.color`, both derived from the album cover). The
@@ -329,10 +345,11 @@ unmount. The `filesStore` is loaded but unused.
 - The bottom-drawer player is one gradient surface. In the sound-control panel
   the `QCard` itself owns the surface, so the header toolbar and player content
   share a single background; the embedded player is rendered without its own
-  gradient. The panel is a snapable dialog with two modes. When docked it is a
-  bottom panel whose width and horizontal position follow the page-content area,
-  excluding the left menu and right sidebar; the album cover sits to the left
-  of the progress and transport controls. Dragging the panel away from the
+  gradient. The gradient is only shown on the Jukebox tab and is removed when
+  the Ambient tab is selected. The panel is a snapable dialog with two modes.
+  When docked it is a bottom panel whose width and horizontal position follow
+  the page-content area, excluding the left menu and right sidebar; the album
+  cover sits to the left of the progress and transport controls. Dragging the panel away from the
   bottom switches it to a floating dialog with the larger album cover centred
   above the track details. Dragging the floating dialog back near the bottom
   docks it again, while anywhere else it can be moved freely across the page.
@@ -350,8 +367,9 @@ unmount. The `filesStore` is loaded but unused.
   worst-case contrast (dark or white). Sliders, time labels, buttons, and the
   track title therefore stay readable over the gradient, whether static or
   animating.
-- The jukebox footer has no extra padding, so the player fills it, but keeps the
-  grey player-panel background and an external drop shadow above its top edge.
+- The jukebox footer removes the layout's extra padding so the player fills it,
+  keeps the grey player-panel background, and adds a gradient shadow above its
+  top edge. The non-modal player itself keeps a 1rem top inset.
 - The gradient renders in an absolutely positioned, clipped layer (`.animated-gradient-layer`)
   so its oversized animated pseudo-element cannot create scrollbars on the
   scrollable dialog card.
@@ -377,8 +395,9 @@ zero.
 
 ### Duplicate files and shared deletion (fixed)
 
-Re-adding the same file reuses its track; deleting a track only deletes the
-file record when no other track references it.
+File imports deduplicate by signature, and re-adding the same file reuses its
+track. Deleting a track only deletes the file record when no other track (or
+other registered feature) references it.
 
 ### Permission prompts at startup (fixed)
 
@@ -399,14 +418,13 @@ progress as intended.
 
 - File System Access handles only work in Chromium.
 - Firefox/Safari fall back to Blob storage, which copies audio files into
-  IndexedDB and consumes quota.
+  IndexedDB (or OPFS where supported) and consumes quota.
 - iOS background audio behavior is not explicitly handled.
 
 ### Misc
 
 - `JukeboxTrack.playlistIds` is dead data.
-- `formatTime` lives in jukebox utils but is reused by timers.
-- Media Session artwork only works with string pictures (Web URLs); Blob
-  pictures are ignored.
+- `formatTime` lives in the shared `utils/formatTime.ts` and is reused by
+  timers.
 - `album` metadata is hard-coded in Media Session.
 - No search, sort (artist/album), or filter in the library.

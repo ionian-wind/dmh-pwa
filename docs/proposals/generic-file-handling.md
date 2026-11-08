@@ -1,12 +1,13 @@
 # Generic File Handling and Large-File Storage
 
 **Status:** implemented, including the optional streaming ZIP reader, content
-hashing, lazy migration, reconnect flow and external-file backups. Remaining
-polish: a streaming ZIP writer for backups, a per-file reconnect picker, and a
-bulk rehash action.
+hashing, lazy migration, reconnect flow and external-file backups (reviewed
+2026-11-09). Remaining polish: a streaming ZIP writer for backups, a per-file
+reconnect picker, and a bulk rehash action.
 
 **Scope:** every binary the app owns: jukebox audio, ambient sound packs,
-location map images, note attachments, module archives, and backups.
+location map images, note images/attachments, and backups. Module archives were
+in scope when this was written but were removed with the Modules entity.
 
 **Related documents:**
 
@@ -78,8 +79,9 @@ Implemented in the current tree:
   IDB blobs.
 - Jukebox playback now revokes its object URL when the track changes or stops.
 - The Jukebox header has an "Add folder" action using `pickDirectory()`.
-- `zip.ts` uses `unzipit`'s Blob reader for module and sound-pack imports, so
-  the archive is read through slices instead of one full ArrayBuffer.
+- `zip.ts` uses `unzipit`'s Blob reader for sound-pack imports, so the archive
+  is read through slices instead of one full ArrayBuffer. Module imports were
+  removed later.
 - `hash.ts` provides a streaming SHA-256 for large files and a Web Crypto fast
   path for small files; `importFile(..., { contentHash: true })` can deduplicate
   by content.
@@ -369,8 +371,8 @@ export async function copyBlob(
 
 ### 6.3 Archive imports
 
-`importSoundPack()` and `parseModuleZip()` read archives through
-`src/utils/files/zip.ts`, which wraps `unzipit`'s Blob reader:
+`importSoundPack()` reads archives through `src/utils/files/zip.ts`, which wraps
+`unzipit`'s Blob reader (the module archive reader was removed later):
 
 ```ts
 const entries = await openZip(spkFile);
@@ -511,7 +513,6 @@ Callers to migrate:
 
 - backup download (`HomeView.downloadBlob`)
 - note Markdown/PNG download (`notes/downloadNote.ts`)
-- module export (`ModuleView`)
 - sound-pack export (`packManager.exportSoundPackAsFile`)
 - probability-calculator CSV (`ProbabilityCalculatorView.downloadExport`)
 - future image exports
@@ -754,7 +755,8 @@ in the tree.
 
 ### Phase 3 — streaming and batch (completed)
 
-- Add streaming ZIP import for large `.spk`/module archives.
+- Add streaming ZIP import for large `.spk` archives (module archives were
+  removed later).
 - Add folder import.
 - Add optional content hashing.
 - Add orphan cleanup UI.

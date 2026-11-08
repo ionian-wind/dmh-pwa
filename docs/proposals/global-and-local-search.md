@@ -1,6 +1,10 @@
 # Global and Local Search
 
-**Status:** proposal — not implemented.
+**Status:** proposal — not implemented (reviewed 2026-11-09). Stores expose
+`searchQuery`/`filtered` and lists can opt into a plain search field, but no
+fuzzy suggestion layer or global index exists. The Modules entity was removed
+after this proposal was written; module-specific design points below are
+obsolete.
 
 **Priority:** P2.
 
@@ -47,7 +51,7 @@ campaign content. All scopes search offline.
 - A global search index over notes and entities:
   - titles/names;
   - descriptions, notes and note bodies;
-  - tags and module membership;
+  - tags and entity-link membership;
   - links to the matching route.
 - Offline operation, with the index built locally from IndexedDB data.
 - Ranking, result snippets and keyboard navigation.
@@ -98,7 +102,7 @@ Direct links for `linked` are one hop only in v1. Resolve them with the same
 metadata the entity sidebars already use:
 
 - outgoing mentions from the mention index;
-- `moduleIds` and module-document notes;
+- explicit entity links and linked-entity panels;
 - party characters;
 - encounter parties, pawns, characters and locations;
 - explicit entity refs on locations, markers and linked-entity panels.
@@ -198,7 +202,6 @@ Two adapters keep the libraries replaceable:
 // src/search/types.ts
 export type SearchKind =
   | 'note'
-  | 'module'
   | 'party'
   | 'character'
   | 'pawn'
@@ -271,7 +274,7 @@ directly.
 
 ### 5.1 Use cases
 
-- `MentionInsertPopup`: notes, modules, parties, pawns, encounters, maps.
+- `MentionInsertPopup`: notes, parties, pawns, encounters, maps.
 - `EntitiesLinking` and entity-link dialogs: all linkable entities.
 - Future tag/icon pickers.
 - Optional list filtering if a view decides to expose a compact filter again.
@@ -347,35 +350,30 @@ interface SearchDocument {
   subtitle: string;
   body: string;
   tags: string[];
-  moduleIds: string[];
   route: string;
   updatedAt: number;
-  hidden?: boolean;
 }
 ```
 
 Field mapping:
 
-| Field       | Source                                                            |
-| ----------- | ----------------------------------------------------------------- |
-| `title`     | note title, entity name, timer title, note-type name              |
-| `subtitle`  | type/category, party/module context, description prefix           |
-| `body`      | note content, descriptions, character/pawn notes, encounter notes |
-| `tags`      | note tags and searchable keywords                                 |
-| `kind`      | entity kind tag                                                   |
-| `moduleIds` | module membership tags                                            |
-| `route`     | resolved router path; not indexed, only stored                    |
+| Field      | Source                                                            |
+| ---------- | ----------------------------------------------------------------- |
+| `title`    | note title, entity name, timer title, note-type name              |
+| `subtitle` | type/category, party context, description prefix                  |
+| `body`     | note content, descriptions, character/pawn notes, encounter notes |
+| `tags`     | note tags and searchable keywords                                 |
+| `kind`     | entity kind tag                                                   |
+| `route`    | resolved router path; not indexed, only stored                    |
 
 Indexing rules:
 
 - Strip Markdown syntax, URLs, image data URLs, mention IDs and code-only
   noise before indexing bodies; keep human-readable text.
 - Drawing blocks contribute their captions and surrounding Markdown; no OCR.
-- Hidden module-document notes are included and labelled as document pages, so
-  campaign text remains discoverable.
 - Truncate extremely large bodies for indexing (for example 50,000 characters
   per entity) and mark the limitation; the full record stays in IndexedDB.
-- Keep tags as a FlexSearch `tag` field for filtering by kind/module/tag.
+- Keep tags as a FlexSearch `tag` field for filtering by kind/tag.
 - Store only display fields in the index (`store: [...]`) and resolve the live
   entity from the store by `kind`/`entityId` for actions.
 
@@ -402,7 +400,7 @@ const index = new Document<SearchDocument>({
       { field: 'body', resolution: 3 },
       { field: 'tags', resolution: 7 },
     ],
-    tag: ['kind', 'moduleIds'],
+    tag: ['kind'],
     store: [
       'kind',
       'entityId',
@@ -442,7 +440,7 @@ Notes:
   on delete call `index.remove`.
 - Rebuild from scratch after:
   - backup restore;
-  - module import;
+  - bulk import;
   - database migration;
   - locale-independent schema changes that alter indexed fields.
 - Expose `reindexAll()` and call it from the import/restore paths.
@@ -471,15 +469,15 @@ Query flow:
    already reading stays first.
 7. Apply boosts:
 
-| Signal                       | Boost                                |
-| ---------------------------- | ------------------------------------ |
-| Exact title                  | largest                              |
-| Title prefix                 | high                                 |
-| Tag match                    | high                                 |
-| Subtitle match               | medium                               |
-| Body match                   | base                                 |
-| Updated within 30 days       | small recency boost                  |
-| Current module/party context | small contextual boost, if available |
+| Signal                          | Boost                                |
+| ------------------------------- | ------------------------------------ |
+| Exact title                     | largest                              |
+| Title prefix                    | high                                 |
+| Tag match                       | high                                 |
+| Subtitle match                  | medium                               |
+| Body match                      | base                                 |
+| Updated within 30 days          | small recency boost                  |
+| Current party/encounter context | small contextual boost, if available |
 
 8. Sort by combined score, then `updatedAt`, then title.
 9. Limit to 5 per entity kind in the default view; “Show all” expands the
@@ -554,9 +552,9 @@ Optional later phase:
 - In `entity` scope, show which field matched (title, body, tags, notes) and
   avoid kind sections because there is only one document.
 - In `linked` scope, show the current entity first and label linked results by
-  relation where known (module, mention, party member, encounter participant).
+  relation where known (mention, party member, encounter participant).
 - Opening a note result can deep-link to the note; heading anchors are optional.
-- Provide filters later (`kind`, module) using tags; do not add a filter bar in
+- Provide filters later (`kind`) using tags; do not add a filter bar in
   the first version.
 
 ### 7.2 Local suggestions
@@ -653,7 +651,7 @@ Mitigations if targets fail:
 - search a Russian note body and find it;
 - search an entity name and confirm the correct detail route;
 - on a note detail page, `entity` scope returns only that note;
-- `linked` scope returns the note plus its module/mentioned entities;
+- `linked` scope returns the note plus its mentioned entities;
 - `global` finds an unrelated note that is excluded from `entity`/`linked`;
 - switching scopes keeps the current query;
 - create/update/delete an entity and confirm the next query reflects it;
@@ -694,7 +692,7 @@ Do not merge the search implementation without a before/after measurement.
 ### Phase 4 — optional persistence and filters
 
 - Evaluate IndexedDB index persistence and startup import.
-- Add kind/module/tag filters only if usage justifies them.
+- Add kind/tag filters only if usage justifies them.
 - Evaluate `@m31coding/fuzzy-search` against Fuse with real fixtures.
 - Add help-search results to the same overlay if the command-menu proposal
   adopts it.
@@ -717,7 +715,6 @@ Do not merge the search implementation without a before/after measurement.
 
 Open questions:
 
-- Should hidden module-document notes appear in global search by default?
 - Should global search include actions/commands in the same ranked list, or
   keep commands in a separate section?
 - Should `linked` include backlinks as well as outgoing links, or stay one hop?

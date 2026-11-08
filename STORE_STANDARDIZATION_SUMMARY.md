@@ -1,10 +1,37 @@
 # DMH PWA Store Standardization Summary
 
-> **Historical document.** The current base store lives in
-> `src/utils/storage.ts` (`useStore`), not `src/stores/createBaseStore.ts`, and
-> the store API is documented in `docs/architecture/persistence-and-state.md`
-> and `docs/stores` references. Use those instead of this file for day-to-day
-> work; the text below is retained for history.
+> **Historical document — not a description of the current code.**
+>
+> This file records a past store-standardization effort. Do not use it as
+> current documentation. The current base store is `useStore` in
+> `src/utils/storage.ts`, not `src/stores/createBaseStore.ts`. Its actual API is
+> `items`, `isLoaded`, `error`, `sortedItems`, `getById`, `create`, `update`,
+> `remove`, `load`, `current`, `setCurrentId` and `clearCurrent`; it does not
+> expose an `isLoading` field. The current state/persistence documentation is
+> [docs/architecture/persistence-and-state.md](docs/architecture/persistence-and-state.md).
+>
+> The text below is retained for history. Statements such as "all stores",
+> "fully completed" and "remaining tasks" describe the state of that past
+> effort, not the current tree.
+
+## Corrections to the historical text
+
+- `src/stores/createBaseStore.ts` is not present in the current tree. The base
+  store is `useStore()` in `src/utils/storage.ts`.
+- The `StandardizedStore<T>` interface described below is not part of the
+  current code; current stores build on `BaseStore<T>` from
+  `src/utils/storage.ts`.
+- `isLoading` is not exposed by the current base store. It exposes `isLoaded`.
+- The Modules store (`src/stores/modules.ts`), module views and module editors
+  no longer exist; the Modules entity was removed.
+- The view/component paths in “3. View and Component Refactoring” are stale.
+  Current views live in their domain folders, for example
+  `src/notes/NotesView.vue` and `src/characters/CharactersView.vue`, not in
+  `src/views`. Listed components such as `CombatTracker.vue`,
+  `GlobalMenu.vue`, `ModuleSelector.vue` and `ModuleMultipleSelector.vue` no
+  longer exist.
+- The test follow-up work is obsolete: the current suite is green at 207 test
+  files / 1615 tests. See [docs/tooling/testing.md](docs/tooling/testing.md).
 
 ## Overview
 
@@ -14,10 +41,13 @@ This document summarizes the comprehensive refactoring of the DMH PWA project's 
 
 ### 1. Base Store Pattern Implementation
 
-- **Created**: `src/stores/createBaseStore.ts` - Centralized base store with standardized CRUD operations
+- **Historical proposal**: a centralized base store at
+  `src/stores/createBaseStore.ts` (that path is not present in the current tree;
+  the current base store is `useStore` in `src/utils/storage.ts`)
 - **Features**:
   - Async CRUD operations (create, update, remove, getById)
-  - Loading states (isLoading, isLoaded, error)
+  - Loading states (the historical text mentions `isLoading`; the current base
+    store exposes `isLoaded` and `error`)
   - Automatic storage integration
   - Schema validation
   - Sorting and filtering capabilities
@@ -25,12 +55,17 @@ This document summarizes the comprehensive refactoring of the DMH PWA project's 
 
 ### 2. Store Standardization
 
-All stores have been refactored to use the new base store pattern:
+The stores below were part of that effort. Some files and responsibilities have
+changed since; use `src/stores/` and
+[docs/architecture/persistence-and-state.md](docs/architecture/persistence-and-state.md)
+for the current list.
 
 #### ✅ **Notes Store** (`src/stores/notes.ts`)
 
 - Standardized API: `load()`, `create()`, `update()`, `remove()`, `getById()`
-- State properties: `items`, `filtered`, `currentId`, `current`, `isLoading`, `error`, `isLoaded`
+- State properties in this effort: `items`, `filtered`, `currentId`, `current`,
+  `isLoading`, `error`, `isLoaded` (the current base store does not expose
+  `isLoading`)
 - Legacy aliases removed
 - Search functionality integrated
 
@@ -44,7 +79,7 @@ All stores have been refactored to use the new base store pattern:
 
 - Standardized API implemented
 - Search functionality with name/type/description filtering
-- Module filtering support
+- Module filtering support (obsolete; the Modules entity was removed)
 - Legacy aliases removed
 
 #### ✅ **Parties Store** (`src/stores/parties.ts`)
@@ -54,11 +89,10 @@ All stores have been refactored to use the new base store pattern:
 - Search functionality added
 - Legacy aliases removed
 
-#### ✅ **Modules Store** (`src/stores/modules.ts`)
+#### **Modules Store** (historical; removed)
 
-- Standardized API implemented
-- Module filtering system maintained
-- Legacy aliases removed
+- `src/stores/modules.ts` no longer exists. The Modules entity was removed from
+  the current app, so this entry describes code that is not in the tree.
 
 #### ✅ **Encounters Store** (`src/stores/encounters.ts`)
 
@@ -316,9 +350,12 @@ Several stores now include built-in search functionality:
 - Proper TypeScript type inference throughout
 - Eliminated type mismatches and implicit any types
 
-## Final Status
+## Final Status (historical claim)
 
-### ✅ **FULLY COMPLETED**
+> The status below is the original author's claim at the time. It is not a
+> current status report; see the corrections at the top of this file.
+
+### ✅ **Claimed fully completed at the time**
 
 - ✅ All stores refactored to use standardized API
 - ✅ All views updated to use new method names

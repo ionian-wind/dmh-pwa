@@ -11,6 +11,17 @@
   declarations and configs.
 - Alias `@` → `src`.
 
+Commands:
+
+```bash
+npm test                       # full Vitest run
+npm run test:watch             # watch mode
+npm run test:ui                # Vitest UI
+npm run test:coverage          # V8 coverage
+npm run test:regression        # tests/regressions only
+npm run test:probability-calculator
+```
+
 ## End-to-end tests
 
 - Runner: **Playwright** (`playwright.config.ts`).
@@ -33,8 +44,9 @@ npm run test:e2e:firefox   # firefox only
 
 The map E2E suite covers the custom `ol/control/Control` action menu, marker
 placement from a map click, the `ol-contextmenu` right-click menu, its draw
-submenu, and the event-based bridge into the existing marker editor. A theme
-check also verifies that secondary buttons keep sufficient text contrast.
+submenu, and the event-based bridge into the existing marker editor. The theme
+suite verifies secondary-button text contrast, and separate suites cover notes,
+jukebox playback, read-only Milkdown views and the probability calculator.
 
 `tests/setup.ts`:
 
@@ -55,38 +67,58 @@ test itself.
 
 ```
 tests/
-  components/   # cards, editors, selectors, PWA, RollButton
-  composables/  # useModalState
+  ambient/      # ambient sound pages, packs, player, scenes
+  characters/   # character editor and view sidebar
+  components/   # cards, dialogs, editors, selectors, PWA, settings
+  composables/  # layout, modal state, drag snap, entity edit mode
+  dialogs/      # promise dialog wrappers
+  drawings/     # note drawing storage and Markdown helpers
   e2e/          # Playwright browser tests (chromium + firefox)
+  encounters/   # combat view, active combats, encounter sidebar
+  features/     # feature flags and feature navigation
+  helpcenter/   # static help URL generation
+  helpers/      # Quasar stubs, fake OPFS, in-memory stores
+  jukebox/      # player, playlists, bulk selection, UI
+  maps/         # map/location editors, catalog, actions, files
+  notes/        # note editor/options/view sidebar/download
+  parties/      # party editor
+  pawns/        # pawn editor branches
+  regressions/  # bug-focused suite
+  scripts/      # sound-pack archive helpers
   stores/       # one per domain store
-  utils/        # formatTime, markdownParser, schemaValidator, storage
-  views/        # list/detail/combat pages
+  utils/        # files, markdown, migrations, storage, dice helpers
+  views/        # home/list smoke tests
 src/utils/dice-roller/
   __tests__/             # core + integration + per-plugin copies
   plugins/*/__tests__/   # plugin unit tests
 ```
 
-Total test files: 193. Total tests: 1559.
+Total test files: 207. Total tests: 1615.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  193 passed (193)
-Tests       1559 passed (1559)
+Test Files  207 passed (207)
+Tests       1615 passed (1615)
 ```
 
 Coverage (V8, `npm run test:coverage`):
 
 ```
-Statements  95.66%
-Branches    87.09%
-Functions   95.84%
-Lines       97.06%
+Statements  92.77%
+Branches    82.96%
+Functions   92.48%
+Lines       94.47%
 ```
 
-`vitest.config.ts` enforces 87% statements, functions, branches and lines
+`vitest.config.ts` sets 87% statements, functions, branches and lines
 globally, plus 87% statements and lines for **every individual source file**.
+The current run fails those gates: branches are below 87%, and several files
+fall under the per-file threshold (for example `EntityInfoDialog.vue`,
+`CombatView.vue`, `EncounterViewSidebar.vue`, `DrawingEditorModal.vue`,
+`NoteCanvas.vue`, `useStoredFileUrl.ts` and two migrations), so
+`npm run test:coverage` exits non-zero even though all tests pass.
 Third-party integration wrappers, generated/copied components, the legacy
 dice-roller engine, thin adapters and the app shell are excluded. The full list
 and the documented unreachable defensive branches are in
@@ -97,7 +129,7 @@ The maintained regression suite is also green:
 ```
 npm run test:regression
 Test Files  2 passed (2)
-Tests       18 passed (18)
+Tests       21 passed (21)
 ```
 
 The obsolete suites that mocked removed store APIs and old data shapes were
@@ -145,6 +177,9 @@ The suite now includes direct tests for:
 - jukebox playback/queue transitions with a mocked Howler,
 - PWA install/update flows and event cleanup,
 - BaseListView/BaseEntityTabView integration, cards, controls and calculators,
+- the shared `EntityInfoDialog` main/linked tabs, inline editing, note options
+  and picture picker; home-card ordering and `StatCard`; combat's scenes-only
+  sidebar and participant info dialogs,
 - markdown sanitizing/task lists and mention plugin helpers,
 - map canvas readback patching and the map-layers migration,
 - Monaco environment setup and the probability calculator page, code library,

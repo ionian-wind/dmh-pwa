@@ -7,15 +7,15 @@ from the pawn catalog. It is the template from which a combat is created.
 
 ## Key files
 
-| File                                      | Role                                          |
-| ----------------------------------------- | --------------------------------------------- |
-| `src/stores/encounters.ts`                | Store + name search                           |
-| `src/encounters/EncountersView.vue`       | List page                                     |
-| `src/encounters/EncounterCard.vue`        | Card with "run combat" action                 |
-| `src/encounters/EncounterEditor.vue`      | Create/edit modal                             |
-| `src/encounters/EncounterView.vue`        | Detail page (information/pawns/combats/links) |
-| `src/encounters/EncounterViewSidebar.vue` | Scenes/mentions tabs sidebar                  |
-| `src/encounters/PartySelector.vue`        | Party/character selection → combat            |
+| File                                      | Role                                    |
+| ----------------------------------------- | --------------------------------------- |
+| `src/stores/encounters.ts`                | Store + name search                     |
+| `src/encounters/EncountersView.vue`       | List page                               |
+| `src/encounters/EncounterCard.vue`        | Card with "run combat" action           |
+| `src/encounters/EncounterEditor.vue`      | Create/edit modal                       |
+| `src/encounters/EncounterView.vue`        | Detail page (information/combats/links) |
+| `src/encounters/EncounterViewSidebar.vue` | Pawns/scenes/mentions sidebar           |
+| `src/encounters/PartySelector.vue`        | Party/character selection → combat      |
 
 ## Data
 
@@ -38,12 +38,13 @@ Schema requires `name`, `pawns`, timestamps; pawn counts are constrained to
 - Loads encounters.
 - `BaseListView` with `EncounterCard`/`EncounterEditor`.
 - Create/edit/delete/copy.
-- Delete confirmation uses `t('common.', ...)` — a missing key.
+- Delete confirmation uses `common.confirmDelete` with the encounter name.
 - `handleRunCombat` opens `PartySelector`; when a combat is created it routes
   to `/combats/:id`.
-- `@run-combat` is also declared on `BaseListView`, but `BaseListView` never
-  emits it. The real wiring is the `onRunCombat` function passed inside
-  `cardProps`, which arrives at the card as an event listener.
+- The run-combat action is wired through the `onRunCombat` function passed
+  inside `cardProps`, which arrives at the card as an event listener.
+  `BaseListView` also receives `@run-combat`, but it does not declare or emit
+  that event.
 - `BaseCard` renders a copy button when `showCopy` is set; the encounter card
   enables it and `EncountersView` handles `copy`.
 
@@ -56,57 +57,68 @@ Schema requires `name`, `pawns`, timestamps; pawn counts are constrained to
 ## Editor
 
 - Name (required).
-- Description.
-- `handleSubmit` emits and then calls `closeEditor`, which resets the form and
-  emits `cancel`. Parents also close on submit; double-close is harmless but
-  means the reset happens before the parent reads the emitted object (the
-  emitted object is a reference to `editedEncounter.value` — see caveat below).
-
-### Object-reference caveat
-
-`emit('submit', editedEncounter.value)` passes the live ref object. The
-parent's handler (`handleSubmit` in EncountersView) calls
-`encounterStore.create(encounter)` synchronously enough that the subsequent
-reset has not yet changed the object... but because Vue emits are synchronous,
-`create` receives the object, deep-unwraps it, and returns. `resetForm()`
-then replaces `editedEncounter.value` with a **new** object, so the old data
-is already captured. This works today but is fragile if a parent ever stores
-the emitted object for later use.
+- Description uses the shared Markdown editor with visual/raw toggle and
+  formatting help.
+- Tabs use the shared editor tabs: **Main editor** and **Linked entities**.
+- The linked-entities tab edits note links.
+- `handleSubmit` reads the latest Markdown, emits a new encounter object with
+  id/timestamps, then resets the form and emits `cancel`. Parents also close on
+  submit; double-close is harmless because the emitted object is a copy.
 
 ## Detail page (`EncounterView.vue`)
 
-Tabs: Information, Pawns, Combats.
+Tabs: Information, Combats, Linked entities.
 
-- Information: renders `encounter.description` with `v-html` (sanitized via
-  `sanitizeHtmlContent`).
-- Pawns:
-  - Loads all pawns and shows those whose IDs are keys of
-    `encounter.pawns`.
-  - Link action opens a modal with a toggle per pawn and a quantity input.
-  - Toggling/unlinking persists immediately through `encounterStore.update`.
-  - Inline quantity button opens a `prompt()` dialog and persists.
-  - Table header uses the missing `common.linked` key.
+- Information: renders `encounter.description` with `MilkdownView` (Markdown,
+  mentions and task checkboxes).
 - Combats: lists combats for this encounter with party name, created date,
-  status badge, and a view link.
-- Header has a Run Combat button that opens `PartySelector`.
+  status badge, and a view link. The tab shows the combat count as a badge.
+- Linked entities: shows linked notes; in edit mode they are editable through
+  `EntitiesLinking`.
+- Header has no Run Combat button. The sidebar shows it in view mode.
 - Publishes `EncounterViewSidebar` to the right drawer.
+
+## Sidebar (`EncounterViewSidebar.vue`)
+
+- View mode tabs: **Pawns**, **Scenes**, **Mentions**. Edit mode tabs:
+  **Pawns**, **Scenes**; Mentions is hidden.
+- Pawns:
+  - Lists the encounter's linked pawns with their quantities.
+  - Clicking a pawn opens the shared `EntityInfoDialog` with portrait, notes,
+    expand and open actions.
+  - In edit mode, the quantity button opens a numeric `prompt()` and persists
+    through `encounterStore.update`.
+  - In edit mode, the link action opens `EntityLinkingDialog` over all pawns,
+    with a quantity input per selected pawn; `addPawns` persists the selection.
+  - Unlinking persists immediately.
+- Scenes: embeds the encounter scenes panel; editable in edit mode.
+- Mentions: outgoing/backlink mentions, hidden in edit mode.
+- A **Run Combat** button opens `PartySelector` in view mode.
+- The shared View/Edit and visual-editor controls sit at the bottom; Delete is
+  available in edit mode.
+
+The combat page reuses this sidebar with `scenesOnly`, so the combat sidebar
+shows only encounter scenes and no pawn/mention/mode controls.
 
 ## Delete behavior
 
 `handleDelete` asks for confirmation, removes the encounter, and returns
-`true` so `BaseEntityView` navigates to `/encounters`. It does not delete
+`true` so `BaseEntityTabView` navigates to `/encounters`. It does not delete
 associated combats, which then have a dangling `encounterId`.
 
 ## PartySelector
 
 See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 
-- Select a party; all its characters start selected.
-- Toggle characters.
+- Can be opened from the encounter list/detail with an encounter preset, or
+  from a party detail page with a party preset.
+- Select a party (or an encounter when a party is preset).
+- All party characters start selected; toggle characters.
 - Pawns are expanded to one combatant per count.
 - Creates a combat with `status: 'preparing'`, `currentRound: 0`,
   `currentTurn: 0`, and all combatants at initiative 0.
-- Navigates to the combat page.
+- Emits `combat-created`; the parent closes the selector and navigates to the
+  combat page.
 
 ## Relationships
 
@@ -121,4 +133,4 @@ See [features/combat.md](combat.md#partyselector) for the full flow. In brief:
 - Pawn quantities are hard-capped at 20 by the schema.
 - Encounter list card has no pawn names, only pawn counts.
 - Delete does not cascade to combats.
-- Description is rendered as raw HTML.
+- Description is edited and rendered as Markdown.

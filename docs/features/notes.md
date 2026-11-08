@@ -13,7 +13,7 @@ support internal entity links, and drive the mention index.
 | `src/notes/NotesView.vue`                  | List page                                       |
 | `src/notes/NoteCard.vue`                   | Card with rendered Markdown and expand/collapse |
 | `src/notes/NoteEditor.vue`                 | Create/edit modal                               |
-| `src/notes/NoteOptions.vue`                | Type, tags and background options               |
+| `src/notes/NoteOptions.vue`                | Note type and tag options                       |
 | `src/drawings/DrawingEditorModal.vue`      | Quickdraw modal used by drawing blocks          |
 | `src/notes/NoteCanvas.vue`                 | Quickdraw canvas wrapper used by the modal      |
 | `src/notes/NoteView.vue`                   | Detail page with inline view/edit mode          |
@@ -24,7 +24,7 @@ support internal entity links, and drive the mention index.
 
 ## List page (`NotesView.vue`)
 
-- Loads notes, pawns, and parties on mount.
+- Loads notes on mount.
 - Renders `BaseListView` with `NoteCard` and `NoteEditor`.
 - Renders `noteStore.filtered` directly.
 - Card props pass `onView`, `onEdit`, and `onDelete`.
@@ -46,10 +46,10 @@ support internal entity links, and drive the mention index.
   `session-notes-note-1.md`; Russian titles are transliterated.
 - Emits `view`, `edit`, `delete`, `copy` through `BaseCard`.
 
-In view mode the note detail right sidebar shows a pressable **Download** row
-with a download icon above the View/Edit switch. It downloads the note as
-`.md`. The row is hidden while editing. The edit-mode header instead shows
-delete and, when the visual editor is off, a Markdown formatting-help action.
+The note detail right sidebar does not show a download action; downloads remain
+available from note cards. The page header exposes no entity edit/delete
+actions. Delete is part of the sidebar's edit-mode controls, and a Markdown
+formatting-help action appears in the header when the visual editor is off.
 
 The 600px clamp is hard-coded and does not account for viewport size.
 
@@ -86,15 +86,15 @@ A note created from the list can carry `typeId` and tags.
 
 ## Detail page (`NoteView.vue`)
 
-- Loads notes, the mention index, parties, pawns, encounters.
+- Loads notes, the mention index, and bookmarks.
 - Resolves the note from `noteStore.getById(route.params.id)`; redirects to
   `/notes` if missing after load.
 - Publishes `NoteViewSidebar` to the right drawer on mount and clears it on
   unmount. The same reactive `NoteEditState` is shared with the sidebar, so its
   View/Edit switch, visual-editor toggle and options panel stay in sync.
 - View mode renders the note with `MilkdownView` and `taskCheckboxEnabled`. The
-  header has no entity actions besides the sidebar toggle; the right sidebar
-  shows the Download row, and the Edit and Delete buttons are hidden.
+  header has no entity actions besides the sidebar toggle; the right sidebar has
+  no download row, and Edit/Delete live in its mode controls.
 - `handleMarkdownContentChange` writes every checkbox toggle back to the store
   immediately, so task-list state is persisted live.
 
@@ -106,11 +106,12 @@ Switching the sidebar to **Edit** starts a local draft and changes the page:
   input plus `EntityMarkdownEditor`. The tab icon and label switch to the
   editor tabs.
 - The linked-entities tab becomes editable `EntitiesLinking`.
-- The header hides Download and shows Delete. When the visual editor is off it
-  also shows the Markdown formatting-help action. The duplicate page title is
-  hidden in edit mode, leaving only the editor's title input.
-- The sidebar hides the Tags/Mentions tabs and shows the shared `NoteOptions`
-  panel instead.
+- The header shows the Markdown formatting-help action when the visual editor is
+  off. Delete is available from the sidebar's mode controls rather than the
+  header. The duplicate page title is hidden in edit mode, leaving only the
+  editor's title input.
+- The sidebar replaces its tab group with the shared `NoteOptions` panel
+  instead of showing Contents, Bookmarks, Tags or Mentions.
 - A **Visual Editor** switch sits above the View/Edit switch, styled like the
   map sidebar's **Show Labels** row.
 
@@ -170,6 +171,15 @@ other links live in `note.links`.
 The right sidebar shows **Contents**, **Bookmarks**,
 **Tags** and **Mentions** tabs in that order, followed by a full-width local
 View/Edit mode switch.
+
+## Shared info dialog
+
+Notes opened from an `EntitiesLinking` list use the shared `EntityInfoDialog`.
+It provides entity kinds, **Main** and **Linked entities** tabs, a centered
+View/Edit switch, inline title/body editing (plus a picture when the entity
+supports one), and links editing. For notes, edit mode also shows the
+note-options popup (note type and tags) and a Visual Editor toggle. Validation
+accepts a note with a title or with body text.
 
 ## Contents and bookmarks
 
@@ -256,3 +266,4 @@ saved from the UI has:
   flows; the detail page's read view can lag behind store updates only until
   the watcher fires.
 - The card clamp is fixed at 600px.
+- Downloading is only available from note cards, not from the detail page.

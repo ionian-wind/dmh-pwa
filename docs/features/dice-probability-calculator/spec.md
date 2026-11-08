@@ -7,10 +7,10 @@ A comprehensive, language-agnostic blueprint for building a dice probability cal
 The maintained implementation lives in
 `src/utils/dice-probability-calculator/`. Parts 1–4 (distribution mechanics,
 language, types and built-in functions) and the parser/evaluator are
-implemented. Output views and any UI remain intentionally out of scope; exact
-memoization/FFT optimisation from Part 6 is not implemented yet. See
-[README.md](README.md) for the validation matrix and [library.md](library.md)
-for the current API and limitations.
+implemented. The application UI and output views live separately in
+`src/probability-calculator/`; exact memoization/FFT optimisation from Part 6 is
+not implemented yet. See [README.md](README.md) for the validation matrix and
+[library.md](library.md) for the current API and limitations.
 
 ## Table of Contents
 
@@ -74,6 +74,7 @@ Exploding dice introduce **potentially infinite outcomes**. AnyDice handles this
 3. For each trigger value, remove its weight from the _stopping_ condition and allocate it to a _continuation_ condition.
 4. **Important Distinction:** <code>[explode 2d6]</code> treats the collection as a single die and only explodes on the total maximum (12), whereas <code>2d[explode d6]</code> makes each die explode independently.
 5. **Implementation via Matrix/Iteration:**
+
 <pre><code>Result = Empty Distribution
 For depth in 1..MaxDepth:
     BaseRoll = SingleDieResult
@@ -82,7 +83,8 @@ For depth in 1..MaxDepth:
     Result.Add(Contribution, ProbabilityFactor)
 // Remaining "infinite" tail probability is discarded.
 </code></pre>
-6. **Depth Limit:** The default explode depth is equal to `maximum function depth - 2`. With default function depth of 10, explode depth defaults to 8. Can be changed with <code>set "explode depth" to X</code>. Note that the highest number listed in the output will actually never be rolled; it represents "any possible result above this value."
+
+6. **Depth Limit:** The implementation defaults to an explode depth of 8. Changing <code>maximum function depth</code> does not recompute it; use <code>set "explode depth" to X</code> to change it directly. Note that the highest number listed in the output will actually never be rolled; it represents "any possible result above this value."
 
 ### 1.4. Dependent Operations (Highest/Lowest of Pool)
 
@@ -196,7 +198,7 @@ The language has three primary data types:
 2. **Die:** A probability distribution over integer outcomes.
 3. **Sequence:** An ordered collection of numbers.
 
-**Crucially, a Sequence is always sorted in descending order by default (highest to lowest).** This can be changed using <code>set "position order" to "lowest first"</code>.
+**Sequences preserve their written order.** The <code>position order</code> setting (default `highest first`) controls positional access, digit access, and <code>sort</code>; it does not reorder sequence literals.
 
 #### 2.4.1. Type Conversions and Operator Overloading
 
@@ -250,13 +252,13 @@ The language has three primary data types:
 
 ### 2.8. Built-in Directives
 
-| Directive                                   | Purpose                                                                                                                   |
-| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------ |
-| <code>output EXPRESSION named "NAME"</code> | Commands the engine to calculate and display a probability distribution.                                                  |
-| <code>set "VALUE" to X</code>               | Configures engine limits. Common values are:                                                                              |
-|                                             | <code>"maximum function depth"</code> (recursion limit, default 10)                                                       |
-|                                             | <code>"explode depth"</code> (explosion limit, default is <code>maximum function depth - 2</code>, which is 8 by default) |
-|                                             | <code>"position order"</code> (<code>"highest first"</code> or <code>"lowest first"</code>)                               |
+| Directive                                   | Purpose                                                                                          |
+| :------------------------------------------ | :----------------------------------------------------------------------------------------------- |
+| <code>output EXPRESSION named "NAME"</code> | Commands the engine to calculate and display a probability distribution.                         |
+| <code>set "VALUE" to X</code>               | Configures engine limits. Common values are:                                                     |
+|                                             | <code>"maximum function depth"</code> (recursion limit, default 10)                              |
+|                                             | <code>"explode depth"</code> (explosion limit, default 8; independent of maximum function depth) |
+|                                             | <code>"position order"</code> (<code>"highest first"</code> or <code>"lowest first"</code>)      |
 
 ### 2.9. Output Views
 
@@ -312,11 +314,12 @@ A sequence is an **ordered collection of numbers**.
 - <code>{}</code>: The empty sequence
 
 **Operations and Complexity:**
-| Operation | Internal Action | Complexity |
-| :--- | :--- | :--- |
+
+| Operation            | Internal Action                                                                                | Complexity        |
+| :------------------- | :--------------------------------------------------------------------------------------------- | :---------------- |
 | <code>SEQ + N</code> | Mathematical operations sum all sequence values, so this behaves as <code>SUM(SEQ) + N</code>. | <code>O(n)</code> |
-| <code>N @ SEQ</code> | Direct index access <code>SEQ[N-1]</code> (1-indexed). | <code>O(1)</code> |
-| <code>#SEQ</code> | Return length of vector. | <code>O(1)</code> |
+| <code>N @ SEQ</code> | Direct index access <code>SEQ[N-1]</code> (1-indexed).                                         | <code>O(1)</code> |
+| <code>#SEQ</code>    | Return length of vector.                                                                       | <code>O(1)</code> |
 
 ### 3.3. The Die Type (Probability Distribution)
 
@@ -515,7 +518,7 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
 - **Syntax:** <code>[explode DIE]</code>
 - **Behavior:** Keeps rolling the die as long as its maximum possible value is rolled. The final result is the sum of all rolled values.
 - **Important:** A dice collection is treated as a single die. <code>[explode 2d6]</code> only explodes when a total of 12 is rolled. Use <code>2d[explode d6]</code> for independent explosions.
-- **Depth Limit:** Controlled by <code>set "explode depth" to X</code> (default is <code>maximum function depth - 2</code>).
+- **Depth Limit:** Controlled by <code>set "explode depth" to X</code> (default 8).
 - **Variant Explosions:** Custom explosion conditions can be implemented by checking the rolled value and recursively calling the explode function with a custom die. For example, exploding on values greater than 3: <code>function: explode N:n { if N > 3 { result: N + [explode d6] } result: N }</code>
 
 #### 4.2.12. <code>reverse SEQUENCE</code>
@@ -700,8 +703,9 @@ A Die is represented by a **Probability Mass Function (PMF)** mapping integer ou
      control flow.
 3. **Phase 3: Built-in Library** — implemented, including the full official
    function library and multi-pool variants.
-4. **Phase 4: Frontend and Integration** — out of scope for the library.
-   - Any UI or API layer belongs to the application.
+4. **Phase 4: Frontend and Integration** — implemented outside the library.
+   - The application UI lives in `src/probability-calculator/`; the library
+     remains UI-agnostic.
 5. **Phase 5: Optimization and Polish** — partially complete.
    - Exact tests and official-doc/article regressions are in place.
    - FFT convolution, caching and output-view helpers remain future work.
