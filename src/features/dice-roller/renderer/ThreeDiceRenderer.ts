@@ -25,7 +25,7 @@ import { hasSimulationTimedOut } from './timing';
 import { computeTossRelease, trimTossSamples, type TossSample } from './toss';
 
 const DICE_SCALE = 1.7;
-const MAX_EXPLOSIONS = 8;
+const MAX_EXPLOSIONS = 20;
 
 interface RenderedDie {
   id: string;
@@ -38,6 +38,7 @@ interface RenderedDie {
   kind: VisualDiePart['kind'];
   state: 'physics' | 'done' | 'dragging';
   result?: number;
+  exploded?: boolean;
   pulse?: { start: number; duration: number };
   explode?: DiceVisual['explode'];
   isExtra?: boolean;
@@ -193,7 +194,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
     if (!this.assets || !this.materials || !this.renderer) return;
     this.settledNotified = false;
     this.wakeSettledDice();
-    const max = this.options?.maxDice ?? 40;
+    for (const die of this.dice.values()) die.exploded = false;
+    const max = this.options?.maxDice ?? 80;
     for (const visual of dice) {
       const parts = visualDiceForSides(visual.sides, visual.kind);
       const base = this.spawnPlan();
@@ -341,6 +343,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
   endDrag(): void {
     if (!this.dragState) return;
     this.wakeSettledDice();
+    for (const die of this.dice.values()) die.exploded = false;
     const parts = this.dragState.parts;
     const release = computeTossRelease(
       this.dragState.samples,
@@ -664,16 +667,19 @@ export class ThreeDiceRenderer implements DiceRenderer {
       const root = result.rootId ?? result.id;
       const count = this.explosions.get(root) ?? 0;
       if (count >= MAX_EXPLOSIONS) continue;
-      for (const die of this.dice.values()) {
-        if (die.visualId === result.id) {
-          die.pulse = { start: performance.now(), duration: 190 };
-        }
-      }
-      const parent = [...this.dice.values()].find(
+      const parentDice = [...this.dice.values()].filter(
         (die) => die.visualId === result.id,
       );
+      // A physical die may explode only once per throw; its extra die can
+      // chain if that extra also rolls the maximum.
+      if (parentDice.length === 0 || parentDice.some((die) => die.exploded)) {
+        continue;
+      }
+      for (const die of parentDice) {
+        die.pulse = { start: performance.now(), duration: 190 };
+      }
       const position =
-        parent?.mesh.position.clone() ?? new THREE.Vector3(0, 0.4, 0);
+        parentDice[0].mesh.position.clone() ?? new THREE.Vector3(0, 0.4, 0);
       const extra: DiceVisual = {
         id: `${root}:x${count + 1}`,
         sides: result.sides,
@@ -687,14 +693,17 @@ export class ThreeDiceRenderer implements DiceRenderer {
       };
       const parts = visualDiceForSides(extra.sides, extra.kind);
       for (let index = 0; index < parts.length; index += 1) {
-        if ((this.options?.maxDice ?? 40) <= this.dice.size) break;
+        if ((this.options?.maxDice ?? 80) <= this.dice.size) break;
         this.addDie(
           extra,
           parts[index],
           this.explosionSpawn(position, parts.length, index),
         );
       }
+      for (const die of parentDice) die.exploded = true;
       this.explosions.set(root, count + 1);
+      // Each explosion wave gets its own simulation window.
+      this.animationStarted = performance.now();
       spawned = true;
     }
     return spawned;
