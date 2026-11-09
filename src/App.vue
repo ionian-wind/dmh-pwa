@@ -46,6 +46,7 @@ function navigationFor(placement: FeatureNavEntry['placement']) {
 
 const primaryNavigation = computed(() => navigationFor('primary'));
 const footerNavigation = computed(() => navigationFor('footer'));
+const primarySeparatorAfter = new Set(['characters', 'maps']);
 
 function isNavActive(item: FeatureNavEntry): boolean {
   const currentPath = router.currentRoute.value.path;
@@ -195,7 +196,10 @@ const isSettingsOpen = ref(false);
                 <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
               <QSeparator
-                v-if="index < primaryNavigation.length - 1"
+                v-if="
+                  index < primaryNavigation.length - 1 &&
+                  primarySeparatorAfter.has(item.id)
+                "
                 class="menu-item-separator"
               />
             </template>

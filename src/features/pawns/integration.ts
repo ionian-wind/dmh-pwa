@@ -29,6 +29,7 @@ export const pawnsFeature: FeatureIntegration = {
       icon: IconGhost3,
       kind: 'entity',
       placement: 'primary',
+      order: 30,
     },
   ],
   homeCard: {

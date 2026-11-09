@@ -400,11 +400,11 @@ describe('settings dialog', () => {
         .filter((title): title is string => !!title);
 
     expect(getTitles()).toEqual([
+      'Characters',
       'Notes',
       'Pawns',
       'Encounters',
       'Maps',
-      'Characters',
       'Timers',
       'Calculator',
       'Probability Calculator',
@@ -418,7 +418,30 @@ describe('settings dialog', () => {
     expect(getTitles()).not.toContain('Tools');
     expect(
       wrapper.findAll('.left-sidebar [data-stub="QSeparator"]'),
-    ).toHaveLength(7);
+    ).toHaveLength(2);
+
+    const sequence = wrapper
+      .findAll(
+        '.left-sidebar [data-stub="QItem"], .left-sidebar [data-stub="QSeparator"]',
+      )
+      .slice(0, 10)
+      .map((entry) =>
+        entry.attributes('data-stub') === 'QSeparator'
+          ? '|'
+          : entry.attributes('title'),
+      );
+    expect(sequence).toEqual([
+      'Characters',
+      '|',
+      'Notes',
+      'Pawns',
+      'Encounters',
+      'Maps',
+      '|',
+      'Timers',
+      'Calculator',
+      'Probability Calculator',
+    ]);
     wrapper.unmount();
   });
 

@@ -18,7 +18,7 @@ export const timersFeature: FeatureIntegration = {
       component: TimersNavItem,
       kind: 'tool',
       placement: 'primary',
-      order: 20,
+      order: 60,
       activePathPrefixes: ['/timers'],
     },
   ],

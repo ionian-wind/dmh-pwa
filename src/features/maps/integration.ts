@@ -26,6 +26,7 @@ export const mapsFeature: FeatureIntegration = {
       icon: IconMap,
       kind: 'entity',
       placement: 'primary',
+      order: 50,
     },
   ],
   homeCard: {

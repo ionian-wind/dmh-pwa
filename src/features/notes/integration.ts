@@ -30,6 +30,7 @@ export const notesFeature: FeatureIntegration = {
       icon: IconNote,
       kind: 'entity',
       placement: 'primary',
+      order: 20,
     },
   ],
   homeCard: {

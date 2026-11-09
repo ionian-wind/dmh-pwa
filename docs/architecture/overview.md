@@ -151,8 +151,8 @@ hard-coded array. Each feature integration contributes entries with a
 placements remain available for future collapsible groups) and an optional
 `order`.
 
-- **Primary**: Notes, Pawns, Encounters, Maps, Characters, Timers, Calculator,
-  Probability calculator. Items are separated by dividers.
+- **Primary**: Characters, a divider, Notes/Pawns/Encounters/Maps, another
+  divider, then Timers/Calculator/Probability calculator.
 - **Footer**: Jukebox, Help, then the always-present Settings item.
   Settings opens `SettingsDialog` (language, theme, backup and storage options).
 

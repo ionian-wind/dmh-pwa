@@ -21,7 +21,7 @@ export const probabilityFeature: FeatureIntegration = {
       icon: IconChartLine,
       kind: 'tool',
       placement: 'primary',
-      order: 40,
+      order: 80,
     },
   ],
   homeActions: [],

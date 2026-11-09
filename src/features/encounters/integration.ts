@@ -35,6 +35,7 @@ export const encountersFeature: FeatureIntegration = {
       icon: IconSwords,
       kind: 'entity',
       placement: 'primary',
+      order: 40,
     },
   ],
   homeCard: {

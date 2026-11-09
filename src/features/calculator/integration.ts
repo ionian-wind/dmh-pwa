@@ -12,7 +12,7 @@ export const calculatorFeature: FeatureIntegration = {
       component: CalculatorNavItem,
       kind: 'tool',
       placement: 'primary',
-      order: 30,
+      order: 70,
     },
   ],
   homeActions: [],
