@@ -266,6 +266,9 @@ describe('renderer factory', () => {
     renderer.add([{ id: 'a', sides: 6, value: 1 }]);
     renderer.resize(100, 100);
     expect(renderer.pick(10, 10)).toBeNull();
+    expect(renderer.beginDrag(10, 10)).toBe(false);
+    renderer.dragTo(10, 10);
+    renderer.endDrag();
     expect(renderer.getResults()).toEqual([]);
     renderer.clear();
     renderer.dispose();

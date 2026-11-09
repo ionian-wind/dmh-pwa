@@ -838,6 +838,9 @@ interface DiceRenderer {
   clear(): void;
   getResults(): DiceResult[];
   pick(clientX: number, clientY: number): DiceResult | null;
+  beginDrag(clientX: number, clientY: number): boolean;
+  dragTo(clientX: number, clientY: number): void;
+  endDrag(): void;
   resize(width: number, height: number): void;
   dispose(): void;
 }
@@ -846,7 +849,10 @@ interface DiceRenderer {
 Visuals only need `{ id, sides }`; values are optional hints for reduced motion.
 After the dice sleep, `getResults()` returns the values read from the visible
 faces, and `pick()` raycasts the settled meshes so the UI can show a
-cursor-following `dN: value` hint. The renderer never mutates a `bag-of-dice` result and never imports the
+cursor-following `dN: value` hint. Settled dice can be dragged: the die is
+lifted, follows the pointer, and is dropped back into physics. Results are
+recomputed from the new landed faces. All parts of a d100 (tens and units) move
+together and count as one combined result. The renderer never mutates a `bag-of-dice` result and never imports the
 engine. The animation loop stops when every die is settled; resize redraws and
 never clears the scene. The camera looks straight down from the zenith and all
 dice rest on the same `y=0` scene floor.

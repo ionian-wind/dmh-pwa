@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => {
     replace: vi.fn(),
     clear: vi.fn(),
     pick: vi.fn(() => null),
+    beginDrag: vi.fn(() => false),
+    dragTo: vi.fn(),
+    endDrag: vi.fn(),
     resize: vi.fn(),
     dispose: vi.fn(),
   };
@@ -20,6 +23,9 @@ const mocks = vi.hoisted(() => {
     replace: vi.fn(),
     clear: vi.fn(),
     pick: vi.fn(() => null),
+    beginDrag: vi.fn(() => false),
+    dragTo: vi.fn(),
+    endDrag: vi.fn(),
     resize: vi.fn(),
     dispose: vi.fn(),
   };
@@ -104,6 +110,9 @@ describe('DiceRollerPanel with the Three renderer', () => {
     mocks.three.replace.mockReset();
     mocks.three.clear.mockReset();
     mocks.three.pick.mockReset().mockReturnValue(null);
+    mocks.three.beginDrag.mockReset().mockReturnValue(false);
+    mocks.three.dragTo.mockReset();
+    mocks.three.endDrag.mockReset();
     mocks.three.resize.mockReset();
     mocks.three.dispose.mockReset();
     mocks.diceBox.init.mockReset().mockResolvedValue(undefined);
@@ -148,6 +157,35 @@ describe('DiceRollerPanel with the Three renderer', () => {
 
     wrapper.unmount();
     expect(mocks.three.dispose).toHaveBeenCalled();
+  });
+
+  it('drags a settled die and lets physics recalculate on drop', async () => {
+    mocks.three.beginDrag.mockReturnValue(true);
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    window.dispatchEvent(
+      new MouseEvent('pointerdown', {
+        bubbles: true,
+        button: 0,
+        clientX: 200,
+        clientY: 150,
+      }),
+    );
+    expect(mocks.three.beginDrag).toHaveBeenCalledWith(200, 150);
+
+    window.dispatchEvent(
+      new MouseEvent('pointermove', {
+        bubbles: true,
+        clientX: 260,
+        clientY: 190,
+      }),
+    );
+    expect(mocks.three.dragTo).toHaveBeenCalledWith(260, 190);
+
+    window.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    expect(mocks.three.endDrag).toHaveBeenCalled();
+    wrapper.unmount();
   });
 
   it('shows the settled result when hovering a die', async () => {

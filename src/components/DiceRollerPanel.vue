@@ -51,6 +51,7 @@ const anchorStyle = ref({ left: '0px', top: '0px' });
 let renderer: DiceRenderer | null = null;
 let resizeObserver: ResizeObserver | undefined;
 let dragged = false;
+let dieDrag = false;
 let visualCounter = 0;
 let drag: {
   startX: number;
@@ -132,7 +133,7 @@ function stopDragging() {
 }
 
 function onHoverMove(event: PointerEvent) {
-  if (drag || !renderer) {
+  if (drag || dieDrag || !renderer) {
     hover.value = null;
     return;
   }
@@ -144,6 +145,42 @@ function onHoverMove(event: PointerEvent) {
 
 function clearHover() {
   hover.value = null;
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      '.dice-roller-anchor, .dice-roller-menu, button, a, input, textarea, select, [role="button"], .q-item',
+    ),
+  );
+}
+
+function onDieDragMove(event: PointerEvent) {
+  if (!dieDrag) return;
+  hover.value = null;
+  renderer?.dragTo(event.clientX, event.clientY);
+}
+
+function onDieDragEnd() {
+  if (!dieDrag) return;
+  dieDrag = false;
+  renderer?.endDrag();
+  window.removeEventListener('pointermove', onDieDragMove);
+  window.removeEventListener('pointercancel', onDieDragEnd);
+}
+
+function onSurfacePointerDown(event: PointerEvent) {
+  if (event.button !== 0 || dieDrag || !renderer) return;
+  if (isInteractiveTarget(event.target)) return;
+  if (!renderer.beginDrag(event.clientX, event.clientY)) return;
+  dieDrag = true;
+  hover.value = null;
+  event.preventDefault();
+  event.stopPropagation();
+  window.addEventListener('pointermove', onDieDragMove);
+  window.addEventListener('pointerup', onDieDragEnd, { once: true });
+  window.addEventListener('pointercancel', onDieDragEnd, { once: true });
 }
 
 function makeVisual(die: (typeof dice)[number]): DiceVisual {
@@ -245,6 +282,7 @@ onMounted(async () => {
   sizeSurface();
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('pointermove', onHoverMove);
+  window.addEventListener('pointerdown', onSurfacePointerDown, true);
   window.addEventListener('pointerleave', clearHover);
   const mainMenu = document.getElementById('main_menu');
   if (mainMenu && typeof ResizeObserver !== 'undefined') {
@@ -266,7 +304,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onWindowResize);
   window.removeEventListener('pointermove', onHoverMove);
+  window.removeEventListener('pointerdown', onSurfacePointerDown, true);
   window.removeEventListener('pointerleave', clearHover);
+  onDieDragEnd();
   resizeObserver?.disconnect();
   stopDragging();
   renderer?.dispose();

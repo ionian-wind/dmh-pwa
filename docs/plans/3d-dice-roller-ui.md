@@ -188,6 +188,15 @@ assets without Babylon.
 
 **Gate:** the 3D feature has no engine dependency and reports landed faces.
 
+### Drag and drop
+
+- [x] **3DDR-511** Pick a settled die with the pointer to start dragging.
+- [x] **3DDR-512** Lift, move and drop the die; let physics settle it again.
+- [x] **3DDR-513** Move all d100 parts as one group and keep their result combined.
+- [x] **3DDR-514** Recompute results after the drop and refresh the hover hint.
+
+**Gate:** dragging either d100 part moves the pair and updates one combined result.
+
 ## Phase 6 — Migration and cleanup
 
 - [x] **3DDR-601** Switch the panel to the Three/Rapier renderer.
@@ -245,7 +254,10 @@ assets without Babylon.
   Every die is placed on the same `y=0` floor by its world bounding box.
 - Results are read from the settled meshes: highest face normal for normal dice,
   lowest for d4. Hovering a settled die raycasts the meshes and shows a
-  `dN: value` hint. d100 combines the tens (`d100` asset) and units (`d10` asset)
+  `dN: value` hint.
+- Dragging lifts a settled die, follows the pointer and drops it back into
+  physics. The result is recomputed after it settles. d100 tens/units move
+  together and report one combined value. d100 combines the tens (`d100` asset) and units (`d10` asset)
   faces, with `100 = 00 + 0`.
 - The render loop stops when every die is settled. Resize updates the renderer,
   camera and draws one frame without clearing the scene.

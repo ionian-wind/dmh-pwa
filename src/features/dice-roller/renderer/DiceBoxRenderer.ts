@@ -71,6 +71,14 @@ export class DiceBoxRenderer implements DiceRenderer {
     return null;
   }
 
+  beginDrag(): boolean {
+    return false;
+  }
+
+  dragTo(): void {}
+
+  endDrag(): void {}
+
   resize(): void {
     // DiceBox stops rendering after dice settle; resizing would clear the
     // settled scene. The Three renderer owns real resize handling.
@@ -95,6 +103,11 @@ export class NoopDiceRenderer implements DiceRenderer {
   pick(): DiceResult | null {
     return null;
   }
+  beginDrag(): boolean {
+    return false;
+  }
+  dragTo(): void {}
+  endDrag(): void {}
   resize(): void {}
   dispose(): void {}
 }

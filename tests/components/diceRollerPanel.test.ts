@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => {
     roll: vi.fn(),
     clear: vi.fn(),
     pick: vi.fn(() => null),
+    beginDrag: vi.fn(() => false),
+    dragTo: vi.fn(),
+    endDrag: vi.fn(),
   };
   return {
     diceBox,
@@ -68,6 +71,9 @@ describe('DiceRollerPanel', () => {
     mocks.diceBox.roll.mockClear();
     mocks.diceBox.clear.mockClear();
     mocks.diceBox.pick.mockClear();
+    mocks.diceBox.beginDrag.mockClear();
+    mocks.diceBox.dragTo.mockClear();
+    mocks.diceBox.endDrag.mockClear();
     mocks.DiceBox.mockClear();
   });
 

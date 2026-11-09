@@ -53,6 +53,11 @@ export interface DiceRenderer {
   getResults(): DiceResult[];
   /** Result of the die under the given viewport coordinates, if settled. */
   pick(clientX: number, clientY: number): DiceResult | null;
+  /** Start dragging the die under the pointer. Returns false when none. */
+  beginDrag(clientX: number, clientY: number): boolean;
+  dragTo(clientX: number, clientY: number): void;
+  /** Drop dragged dice and let physics settle them again. */
+  endDrag(): void;
   resize(width: number, height: number): void;
   dispose(): void;
 }

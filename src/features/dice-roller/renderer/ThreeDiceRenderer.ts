@@ -32,8 +32,20 @@ interface RenderedDie {
   sides: number;
   part: VisualDiePart['part'];
   kind: VisualDiePart['kind'];
-  state: 'physics' | 'done';
+  state: 'physics' | 'done' | 'dragging';
   result?: number;
+}
+
+interface DragPart {
+  die: RenderedDie;
+  startX: number;
+  startZ: number;
+  lift: number;
+}
+
+interface DragState {
+  start: THREE.Vector3;
+  parts: DragPart[];
 }
 
 function scaledPoints(points: Float32Array, scale: number): Float32Array {
@@ -68,6 +80,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
   private physics = new RapierDiceWorld();
   private dice = new Map<string, RenderedDie>();
   private options: DiceRendererOptions | null = null;
+  private dragState: DragState | null = null;
   private frame: number | null = null;
   private lastFrame = 0;
   private animationStarted = 0;
@@ -181,6 +194,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
   }
 
   clear(): void {
+    this.dragState = null;
     if (this.frame !== null && typeof cancelAnimationFrame === 'function') {
       cancelAnimationFrame(this.frame);
     }
@@ -222,25 +236,90 @@ export class ThreeDiceRenderer implements DiceRenderer {
   }
 
   pick(clientX: number, clientY: number): DiceResult | null {
-    if (!this.renderer) return null;
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return null;
-    const ndc = new THREE.Vector2(
-      ((clientX - rect.left) / rect.width) * 2 - 1,
-      -((clientY - rect.top) / rect.height) * 2 + 1,
-    );
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(ndc, this.camera);
-    const meshes = [...this.dice.values()]
-      .filter((die) => die.result !== undefined)
-      .map((die) => die.mesh);
-    const hit = raycaster.intersectObjects(meshes, false)[0]?.object;
-    if (!hit) return null;
-    const die = [...this.dice.values()].find((entry) => entry.mesh === hit);
+    const die = this.pickDie(clientX, clientY);
     if (!die || die.result === undefined) return null;
     return (
       this.getResults().find((result) => result.id === die.visualId) ?? null
     );
+  }
+
+  beginDrag(clientX: number, clientY: number): boolean {
+    if (this.dragState) return false;
+    const primary = this.pickDie(clientX, clientY);
+    if (!primary) return false;
+    const start = this.pointerOnDragPlane(clientX, clientY);
+    if (!start) return false;
+
+    const parts: DragPart[] = [];
+    for (const die of this.dice.values()) {
+      if (die.visualId !== primary.visualId) continue;
+      this.physics.remove(die.id);
+      die.state = 'dragging';
+      die.result = undefined;
+      parts.push({
+        die,
+        startX: die.mesh.position.x,
+        startZ: die.mesh.position.z,
+        lift: parts.length * 0.14,
+      });
+    }
+    this.dragState = { start, parts };
+    this.dragTo(clientX, clientY);
+    return parts.length > 0;
+  }
+
+  dragTo(clientX: number, clientY: number): void {
+    if (!this.dragState) return;
+    const point = this.pointerOnDragPlane(clientX, clientY);
+    if (!point) return;
+    const dx = point.x - this.dragState.start.x;
+    const dz = point.z - this.dragState.start.z;
+    for (const part of this.dragState.parts) {
+      part.die.mesh.position.set(
+        Math.min(Math.max(part.startX + dx, -3.2), 3.2),
+        0.9 + part.lift,
+        Math.min(Math.max(part.startZ + dz, -2.3), 2.3),
+      );
+    }
+    this.renderFrame();
+  }
+
+  endDrag(): void {
+    if (!this.dragState) return;
+    const parts = this.dragState.parts;
+    this.dragState = null;
+    for (const part of parts) {
+      const die = part.die;
+      const body = this.physics.add(
+        die.id,
+        scaledPoints(die.asset.colliderPoints, DICE_SCALE),
+        {
+          x: die.mesh.position.x,
+          y: die.mesh.position.y,
+          z: die.mesh.position.z,
+          rotation: {
+            x: die.mesh.quaternion.x,
+            y: die.mesh.quaternion.y,
+            z: die.mesh.quaternion.z,
+            w: die.mesh.quaternion.w,
+          },
+          torque: {
+            x: randomBetween(-0.05, 0.05),
+            y: randomBetween(-0.05, 0.05),
+            z: randomBetween(-0.05, 0.05),
+          },
+        },
+        0.1,
+      );
+      die.state = body ? 'physics' : 'done';
+      if (!body) {
+        this.restOnFloor(die.mesh);
+        die.result = this.readFaceValue(die);
+      }
+    }
+    // A drop is a new simulation; do not inherit an old timeout.
+    this.animationStarted = performance.now();
+    this.startAnimation();
   }
 
   resize(width: number, height: number): void {
@@ -464,6 +543,41 @@ export class ThreeDiceRenderer implements DiceRenderer {
       this.frame = requestAnimationFrame(this.tick);
     }
   };
+
+  private pointerRay(clientX: number, clientY: number): THREE.Raycaster | null {
+    if (!this.renderer) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, this.camera);
+    return raycaster;
+  }
+
+  private pickDie(clientX: number, clientY: number): RenderedDie | null {
+    const raycaster = this.pointerRay(clientX, clientY);
+    if (!raycaster) return null;
+    const meshes = [...this.dice.values()]
+      .filter((die) => die.result !== undefined && die.state === 'done')
+      .map((die) => die.mesh);
+    const hit = raycaster.intersectObjects(meshes, false)[0]?.object;
+    if (!hit) return null;
+    return [...this.dice.values()].find((entry) => entry.mesh === hit) ?? null;
+  }
+
+  private pointerOnDragPlane(
+    clientX: number,
+    clientY: number,
+  ): THREE.Vector3 | null {
+    const raycaster = this.pointerRay(clientX, clientY);
+    if (!raycaster) return null;
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9);
+    const point = new THREE.Vector3();
+    return raycaster.ray.intersectPlane(plane, point) ? point : null;
+  }
 
   private finishDie(die: RenderedDie): void {
     die.state = 'done';
