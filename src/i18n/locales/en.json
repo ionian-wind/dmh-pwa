@@ -1146,6 +1146,15 @@
     "division": "Division",
     "layers": "Layers",
     "toggleVisibility": "Toggle visibility",
-    "toggleLock": "Toggle lock"
+    "toggleLock": "Toggle lock",
+    "circle": "Circle",
+    "polygon": "Polygon",
+    "draw": "Draw",
+    "erase": "Erase",
+    "applyToLocation": "Apply to location",
+    "location": "Location",
+    "apply": "Apply",
+    "applied": "Map applied to the location background",
+    "applyFailed": "Could not apply the map"
   }
 }

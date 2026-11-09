@@ -3,6 +3,7 @@ import { computed, ref, shallowRef } from 'vue';
 import { generateId } from '@/utils/storage';
 import type {
   DungeonLayer,
+  DungeonShape,
   StudioMap,
   StudioProject,
   StudioTool,
@@ -143,7 +144,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
                 ...layer.shapes,
                 {
                   id: generateId(),
-                  operation: 'add',
+                  operation:
+                    toolSettings.value.mode === 'erase' ? 'subtract' : 'add',
                   shape: {
                     kind: 'rectangle',
                     x: rect.x,
@@ -161,6 +163,42 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
       ),
     };
     commit(next);
+  }
+
+  function addShape(shape: DungeonShape): void {
+    const current = map.value;
+    const layer = activeLayer.value;
+    if (!current || !layer) return;
+    commit({
+      ...current,
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id
+          ? { ...layer, shapes: [...layer.shapes, shape] }
+          : entry,
+      ),
+    });
+  }
+
+  function addCircle(circle: { cx: number; cy: number; radius: number }): void {
+    addShape({
+      id: generateId(),
+      operation: toolSettings.value.mode === 'erase' ? 'subtract' : 'add',
+      shape: {
+        kind: 'circle',
+        ...circle,
+        rough: 0,
+        smooth: false,
+      },
+    });
+  }
+
+  function addPolygon(points: Array<[number, number]>): void {
+    if (points.length < 3) return;
+    addShape({
+      id: generateId(),
+      operation: toolSettings.value.mode === 'erase' ? 'subtract' : 'add',
+      shape: { kind: 'polygon', points, rough: 0, smooth: false },
+    });
   }
 
   function undo(): void {
@@ -246,6 +284,9 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     setMap,
     commit,
     addRectangle,
+    addShape,
+    addCircle,
+    addPolygon,
     undo,
     redo,
     setActiveLayer,

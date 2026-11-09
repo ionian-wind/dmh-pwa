@@ -2,9 +2,14 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { Notify } from 'quasar';
 import CanvasHost from '@/map-studio/components/CanvasHost.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
+import {
+  applyStudioImageToLocation,
+  listStudioLocationOptions,
+} from '@/map-studio/integration/location';
 import type { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
 
 const { t } = useI18n();
@@ -13,6 +18,11 @@ const router = useRouter();
 const store = useMapStudioStore();
 const renderer = ref<PixiStudioRenderer | null>(null);
 const creating = ref(false);
+const hasMaps = __FEATURE_MAPS__;
+const applyOpen = ref(false);
+const applying = ref(false);
+const locationOptions = ref<Array<{ id: string; name: string }>>([]);
+const targetLocationId = ref<string | null>(null);
 useMapStudioAutosave(store);
 
 const map = computed(() => store.map);
@@ -23,6 +33,16 @@ const toolbar = computed(() => [
     id: 'rectangle' as const,
     icon: 'tabler-square',
     label: t('mapStudio.rectangle'),
+  },
+  {
+    id: 'circle' as const,
+    icon: 'tabler-circle',
+    label: t('mapStudio.circle'),
+  },
+  {
+    id: 'polygon' as const,
+    icon: 'tabler-polygon',
+    label: t('mapStudio.polygon'),
   },
 ]);
 const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
@@ -65,6 +85,33 @@ async function exportMap(): Promise<void> {
   if (!renderer.value || !map.value) return;
   const blob = await renderer.value.exportImage(70);
   download(blob, `${map.value.name || 'map'}.png`);
+}
+
+async function openApplyDialog(): Promise<void> {
+  locationOptions.value = await listStudioLocationOptions();
+  targetLocationId.value = locationOptions.value[0]?.id ?? null;
+  applyOpen.value = true;
+}
+
+async function applyToLocation(): Promise<void> {
+  if (!renderer.value || !map.value || !targetLocationId.value) return;
+  applying.value = true;
+  try {
+    const blob = await renderer.value.exportImage(70);
+    const applied = await applyStudioImageToLocation(
+      targetLocationId.value,
+      blob,
+      `${map.value.name || 'map'}.png`,
+    );
+    if (applied) {
+      Notify.create({ type: 'positive', message: t('mapStudio.applied') });
+      applyOpen.value = false;
+    } else {
+      Notify.create({ type: 'negative', message: t('mapStudio.applyFailed') });
+    }
+  } finally {
+    applying.value = false;
+  }
 }
 </script>
 
@@ -126,6 +173,14 @@ async function exportMap(): Promise<void> {
           @click="store.save()"
         />
         <QBtn
+          v-if="hasMaps"
+          flat
+          no-caps
+          icon="tabler-map-pin"
+          :label="t('mapStudio.applyToLocation')"
+          @click="openApplyDialog"
+        />
+        <QBtn
           color="primary"
           no-caps
           icon="tabler-download"
@@ -169,6 +224,25 @@ async function exportMap(): Promise<void> {
           dense
           :label="t('mapStudio.snap')"
         />
+        <QBtn
+          flat
+          dense
+          no-caps
+          :icon="
+            store.toolSettings.mode === 'erase'
+              ? 'tabler-eraser'
+              : 'tabler-pencil'
+          "
+          :label="
+            store.toolSettings.mode === 'erase'
+              ? t('mapStudio.erase')
+              : t('mapStudio.draw')
+          "
+          @click="
+            store.toolSettings.mode =
+              store.toolSettings.mode === 'erase' ? 'draw' : 'erase'
+          "
+        />
         <QSelect
           v-model="store.toolSettings.division"
           dense
@@ -187,6 +261,8 @@ async function exportMap(): Promise<void> {
           :tool="store.tool"
           :settings="store.toolSettings"
           @rectangle="addRectangle"
+          @circle="store.addCircle"
+          @polygon="store.addPolygon"
           @ready="renderer = $event"
         />
 
@@ -233,6 +309,39 @@ async function exportMap(): Promise<void> {
         </aside>
       </div>
     </template>
+
+    <QDialog v-model="applyOpen" persistent>
+      <QCard class="q-pa-md" style="min-width: 360px">
+        <div class="text-subtitle1 q-mb-md">
+          {{ t('mapStudio.applyToLocation') }}
+        </div>
+        <QSelect
+          v-model="targetLocationId"
+          outlined
+          dense
+          emit-value
+          map-options
+          :options="locationOptions"
+          :label="t('mapStudio.location')"
+        />
+        <div class="row justify-end q-gutter-sm q-mt-md">
+          <QBtn
+            flat
+            no-caps
+            :label="t('common.cancel')"
+            @click="applyOpen = false"
+          />
+          <QBtn
+            color="primary"
+            no-caps
+            :loading="applying"
+            :disable="!targetLocationId"
+            :label="t('mapStudio.apply')"
+            @click="applyToLocation"
+          />
+        </div>
+      </QCard>
+    </QDialog>
   </div>
 </template>
 

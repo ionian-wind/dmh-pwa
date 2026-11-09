@@ -216,3 +216,65 @@ describe('map studio normalization edge cases', () => {
     expect(project.settings.exportDefaults.filename).toBe(4);
   });
 });
+
+describe('map studio normalization defaults', () => {
+  it('normalizes every grid variant and numeric fallback', () => {
+    for (const type of ['hex', 'dot', 'none'] as const) {
+      const map = normalizeMap({
+        grid: {
+          type,
+          color: '#fff',
+          width: 2,
+          radius: 3,
+          cellDiameter: 2,
+          offsetX: 1,
+          offsetY: -1,
+        },
+      });
+      expect(map.grid.type).toBe(type);
+      expect(map.grid.radius).toBe(3);
+      expect(map.grid.cellDiameter).toBe(2);
+    }
+    const fallback = normalizeMap({ grid: { cellDiameter: 0 } });
+    expect(fallback.grid.cellDiameter).toBe(0.01);
+  });
+
+  it('normalizes circle and polygon shapes', () => {
+    const map = normalizeMap({
+      layers: [
+        {
+          type: 'dungeon',
+          shapes: [
+            { shape: { kind: 'circle', cx: 1, cy: 2, radius: 3 } },
+            {
+              shape: {
+                kind: 'polygon',
+                points: [
+                  [0, 0],
+                  [1, 0],
+                  [1, 1],
+                ],
+                rough: 3,
+                smooth: true,
+              },
+            },
+            { shape: { kind: 'circle', radius: 0 } },
+            { shape: { kind: 'polygon', points: [[0, 0]] } },
+          ],
+        },
+      ],
+    });
+    const dungeon = map.layers.find((layer) => layer.type === 'dungeon');
+    const shapes = dungeon && 'shapes' in dungeon ? dungeon.shapes : [];
+    expect(shapes).toHaveLength(2);
+    expect(shapes[1]).toMatchObject({
+      shape: { kind: 'polygon', rough: 3, smooth: true },
+    });
+  });
+
+  it('normalizes partial project settings without defaults', () => {
+    const project = normalizeProject({ settings: undefined });
+    expect(project.settings.exportDefaults.format).toBe('png');
+    expect(project.settings.theme).toBeUndefined();
+  });
+});

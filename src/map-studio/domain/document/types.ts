@@ -144,7 +144,27 @@ export interface RectangleShape extends DungeonShapeBase {
   };
 }
 
-export type DungeonShape = RectangleShape;
+export interface CircleShape extends DungeonShapeBase {
+  shape: {
+    kind: 'circle';
+    cx: number;
+    cy: number;
+    radius: number;
+    rough: Roughness;
+    smooth: boolean;
+  };
+}
+
+export interface PolygonShape extends DungeonShapeBase {
+  shape: {
+    kind: 'polygon';
+    points: Point[];
+    rough: Roughness;
+    smooth: boolean;
+  };
+}
+
+export type DungeonShape = RectangleShape | CircleShape | PolygonShape;
 
 export interface ObjectBase {
   id: string;
@@ -168,7 +188,7 @@ export interface ToolSettings {
   cornerRadius: number;
 }
 
-export type StudioTool = 'pan' | 'rectangle';
+export type StudioTool = 'pan' | 'rectangle' | 'circle' | 'polygon';
 
 export interface StudioSelection {
   layerIds: string[];

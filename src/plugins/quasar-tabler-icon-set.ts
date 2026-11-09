@@ -138,6 +138,9 @@ import svgSquare from '@tabler/icons/outline/square.svg?raw';
 import svgPhotoPlus from '@tabler/icons/outline/photo-plus.svg?raw';
 import svgUndo from '@tabler/icons/outline/arrow-back-up.svg?raw';
 import svgRedo from '@tabler/icons/outline/arrow-forward-up.svg?raw';
+import svgPolygon from '@tabler/icons/outline/polygon.svg?raw';
+import svgMapPin from '@tabler/icons/outline/map-pin.svg?raw';
+import svgEraser from '@tabler/icons/outline/eraser.svg?raw';
 
 const TABLER_STYLE =
   'fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
@@ -295,6 +298,9 @@ const icons: Record<string, string> = {
   'photo-plus': svgPath(svgPhotoPlus),
   undo: svgPath(svgUndo),
   redo: svgPath(svgRedo),
+  polygon: svgPath(svgPolygon),
+  'map-pin': svgPath(svgMapPin),
+  eraser: svgPath(svgEraser),
 };
 
 const quasarTablerIconSet = {

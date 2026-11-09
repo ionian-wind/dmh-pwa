@@ -45,20 +45,65 @@ function normalizeGrid(value: unknown): GridSettings {
   });
 }
 
+function normalizePoint(value: unknown): [number, number] | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const x = Number(value[0]);
+  const y = Number(value[1]);
+  return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null;
+}
+
 function normalizeShape(value: unknown): DungeonShape | null {
   if (!value || typeof value !== 'object') return null;
   const shape = value as Partial<DungeonShape> & Record<string, any>;
-  if (shape.shape?.kind !== 'rectangle') return null;
-  const rect = shape.shape;
+  const data = (shape.shape ?? {}) as Record<string, any>;
+  const kind = data.kind;
+  const base = {
+    id: typeof shape.id === 'string' && shape.id ? shape.id : generateId(),
+    operation:
+      shape.operation === 'subtract' ? ('subtract' as const) : ('add' as const),
+    ...(Number.isFinite(Number(shape.seed))
+      ? { seed: number(shape.seed, 0) }
+      : {}),
+  };
+  if (kind === 'circle') {
+    const radius = number(data.radius, 0);
+    if (radius <= 0) return null;
+    return {
+      ...base,
+      shape: {
+        kind: 'circle',
+        cx: number(data.cx, 0),
+        cy: number(data.cy, 0),
+        radius,
+        rough: ([0, 1, 2, 3] as const).includes(data.rough) ? data.rough : 0,
+        smooth: data.smooth === true,
+      },
+    };
+  }
+  if (kind === 'polygon') {
+    const points = Array.isArray(data.points)
+      ? data.points
+          .map(normalizePoint)
+          .filter((point): point is [number, number] => point !== null)
+      : [];
+    if (points.length < 3) return null;
+    return {
+      ...base,
+      shape: {
+        kind: 'polygon',
+        points,
+        rough: ([0, 1, 2, 3] as const).includes(data.rough) ? data.rough : 0,
+        smooth: data.smooth === true,
+      },
+    };
+  }
+  if (kind !== 'rectangle') return null;
+  const rect = data;
   const width = number(rect.width, 0);
   const height = number(rect.height, 0);
   if (width <= 0 || height <= 0) return null;
   return {
-    id: typeof shape.id === 'string' && shape.id ? shape.id : generateId(),
-    operation: shape.operation === 'subtract' ? 'subtract' : 'add',
-    ...(Number.isFinite(Number(shape.seed))
-      ? { seed: number(shape.seed, 0) }
-      : {}),
+    ...base,
     shape: {
       kind: 'rectangle',
       x: number(rect.x, 0),

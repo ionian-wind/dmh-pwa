@@ -1,4 +1,5 @@
 import { Application, Container, Graphics, Rectangle } from 'pixi.js';
+import { compileDungeonLayer } from '@/map-studio/domain/geometry/compile';
 import type {
   DungeonLayer,
   Point,
@@ -12,12 +13,10 @@ export interface StudioViewport {
   zoom: number;
 }
 
-export interface RectanglePreview {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type StudioPreview =
+  | { kind: 'rectangle'; x: number; y: number; width: number; height: number }
+  | { kind: 'circle'; cx: number; cy: number; radius: number }
+  | { kind: 'polygon'; points: Point[] };
 
 export class PixiStudioRenderer {
   private app: Application | null = null;
@@ -26,7 +25,7 @@ export class PixiStudioRenderer {
   private content = new Container();
   private backgroundLayer = new Graphics();
   private gridLayer = new Graphics();
-  private dungeonLayer = new Graphics();
+  private dungeonContainer = new Container();
   private previewLayer = new Graphics();
   private map: StudioMap | null = null;
   private width = 1;
@@ -54,7 +53,7 @@ export class PixiStudioRenderer {
     this.world.addChild(
       this.backgroundLayer,
       this.gridLayer,
-      this.dungeonLayer,
+      this.dungeonContainer,
       this.previewLayer,
     );
     this.content.addChild(this.world);
@@ -112,21 +111,35 @@ export class PixiStudioRenderer {
     ];
   }
 
-  setPreview(preview: RectanglePreview | null): void {
+  setPreview(preview: StudioPreview | null): void {
     this.previewLayer.clear();
     if (!preview) {
       this.render();
       return;
     }
-    this.previewLayer
-      .rect(
-        preview.x * BASE_PIXELS_PER_CELL,
-        preview.y * BASE_PIXELS_PER_CELL,
-        preview.width * BASE_PIXELS_PER_CELL,
-        preview.height * BASE_PIXELS_PER_CELL,
-      )
-      .fill({ color: '#4a90d9', alpha: 0.2 })
-      .stroke({ color: '#2d6fb3', width: 2 });
+    const ppc = BASE_PIXELS_PER_CELL;
+    if (preview.kind === 'rectangle') {
+      this.previewLayer
+        .rect(
+          preview.x * ppc,
+          preview.y * ppc,
+          preview.width * ppc,
+          preview.height * ppc,
+        )
+        .fill({ color: '#4a90d9', alpha: 0.2 })
+        .stroke({ color: '#2d6fb3', width: 2 });
+    } else if (preview.kind === 'circle') {
+      this.previewLayer
+        .circle(preview.cx * ppc, preview.cy * ppc, preview.radius * ppc)
+        .fill({ color: '#4a90d9', alpha: 0.2 })
+        .stroke({ color: '#2d6fb3', width: 2 });
+    } else if (preview.points.length > 0) {
+      const points = preview.points.flatMap(([x, y]) => [x * ppc, y * ppc]);
+      this.previewLayer
+        .poly(points)
+        .fill({ color: '#4a90d9', alpha: 0.2 })
+        .stroke({ color: '#2d6fb3', width: 2 });
+    }
     this.render();
   }
 
@@ -199,7 +212,9 @@ export class PixiStudioRenderer {
       void step;
     }
 
-    this.dungeonLayer.clear();
+    for (const child of this.dungeonContainer.removeChildren()) {
+      child.destroy();
+    }
     for (const layer of map.layers) {
       if (layer.type !== 'dungeon' || !layer.visible) continue;
       this.drawDungeonLayer(layer);
@@ -209,22 +224,23 @@ export class PixiStudioRenderer {
 
   private drawDungeonLayer(layer: DungeonLayer): void {
     const ppc = BASE_PIXELS_PER_CELL;
-    this.dungeonLayer.alpha = layer.opacity;
+    const graphics = new Graphics();
+    graphics.alpha = layer.opacity;
+    const compiled = compileDungeonLayer(layer);
+
     if (layer.style.floor.visible) {
-      for (const shape of layer.shapes) {
-        if (shape.operation !== 'add') continue;
-        const rect = shape.shape;
-        this.dungeonLayer
-          .rect(rect.x * ppc, rect.y * ppc, rect.width * ppc, rect.height * ppc)
-          .fill(layer.style.floor.color);
+      for (const polygon of compiled.polygons) {
+        const outer = polygon[0];
+        if (!outer || outer.length < 3) continue;
+        graphics.poly(outer.flat()).fill(layer.style.floor.color);
       }
     }
+
     if (layer.style.walls.visible) {
-      for (const shape of layer.shapes) {
-        if (shape.operation !== 'add') continue;
-        const rect = shape.shape;
-        this.dungeonLayer
-          .rect(rect.x * ppc, rect.y * ppc, rect.width * ppc, rect.height * ppc)
+      for (const segment of compiled.wallSegments) {
+        graphics
+          .moveTo(segment.a[0] * ppc, segment.a[1] * ppc)
+          .lineTo(segment.b[0] * ppc, segment.b[1] * ppc)
           .stroke({
             color: layer.style.walls.color,
             width: Math.max(1, layer.style.walls.width * ppc),
@@ -232,5 +248,6 @@ export class PixiStudioRenderer {
           });
       }
     }
+    this.dungeonContainer.addChild(graphics);
   }
 }

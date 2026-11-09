@@ -118,3 +118,27 @@ describe('map studio store workflows', () => {
     expect(store.map).toBeNull();
   });
 });
+
+describe('map studio shape helpers', () => {
+  it('adds circles and polygons in draw and erase modes', () => {
+    const store = useMapStudioStore();
+    const project = createProject();
+    const map = createMap(project.id);
+    store.setMap(map);
+
+    store.addCircle({ cx: 2, cy: 2, radius: 1 });
+    store.addPolygon([
+      [0, 0],
+      [2, 0],
+      [2, 2],
+    ]);
+    store.addPolygon([[0, 0]]);
+    expect(
+      (store.activeLayer?.shapes ?? []).map((shape) => shape.shape.kind),
+    ).toEqual(['circle', 'polygon']);
+
+    store.toolSettings.mode = 'erase';
+    store.addCircle({ cx: 4, cy: 4, radius: 1 });
+    expect(store.activeLayer?.shapes.at(-1)?.operation).toBe('subtract');
+  });
+});

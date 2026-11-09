@@ -19,11 +19,14 @@ const emit = defineEmits<{
     event: 'rectangle',
     rect: { x: number; y: number; width: number; height: number },
   ): void;
+  (event: 'circle', circle: { cx: number; cy: number; radius: number }): void;
+  (event: 'polygon', points: Array<[number, number]>): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
 const host = ref<HTMLDivElement | null>(null);
 const renderer = ref<PixiStudioRenderer | null>(null);
+const polygonPoints = ref<Point[]>([]);
 let drag:
   | {
       kind: 'pan';
@@ -32,6 +35,7 @@ let drag:
       viewport: { x: number; y: number; zoom: number };
     }
   | { kind: 'rectangle'; start: Point }
+  | { kind: 'circle'; center: Point }
   | null = null;
 let resizeObserver: ResizeObserver | undefined;
 
@@ -64,7 +68,24 @@ function onPointerDown(event: PointerEvent): void {
     };
     return;
   }
-  if (event.button !== 0 || props.tool !== 'rectangle') return;
+  if (event.button !== 0) return;
+  if (props.tool === 'polygon') {
+    const point = renderer.value.screenToWorld(sx, sy);
+    polygonPoints.value = [
+      ...polygonPoints.value,
+      [snap(point[0]), snap(point[1])],
+    ];
+    renderer.value.setPreview({
+      kind: 'polygon',
+      points: polygonPoints.value,
+    });
+    return;
+  }
+  if (props.tool === 'circle') {
+    drag = { kind: 'circle', center: renderer.value.screenToWorld(sx, sy) };
+    return;
+  }
+  if (props.tool !== 'rectangle') return;
   drag = {
     kind: 'rectangle',
     start: renderer.value.screenToWorld(sx, sy),
@@ -83,11 +104,24 @@ function onPointerMove(event: PointerEvent): void {
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
+  if (drag.kind === 'circle') {
+    renderer.value.setPreview({
+      kind: 'circle',
+      cx: drag.center[0],
+      cy: drag.center[1],
+      radius: Math.hypot(
+        current[0] - drag.center[0],
+        current[1] - drag.center[1],
+      ),
+    });
+    return;
+  }
   const x1 = snap(Math.min(drag.start[0], current[0]));
   const y1 = snap(Math.min(drag.start[1], current[1]));
   const x2 = snap(Math.max(drag.start[0], current[0]));
   const y2 = snap(Math.max(drag.start[1], current[1]));
   renderer.value.setPreview({
+    kind: 'rectangle',
     x: x1,
     y: y1,
     width: x2 - x1,
@@ -95,9 +129,37 @@ function onPointerMove(event: PointerEvent): void {
   });
 }
 
+function onPointerMovePolygon(event: PointerEvent): void {
+  if (!renderer.value || props.tool !== 'polygon' || drag) return;
+  if (polygonPoints.value.length === 0) return;
+  const [sx, sy] = localPoint(event);
+  const current = renderer.value.screenToWorld(sx, sy);
+  renderer.value.setPreview({
+    kind: 'polygon',
+    points: [...polygonPoints.value, [snap(current[0]), snap(current[1])]],
+  });
+}
+
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
+  if (drag.kind === 'circle') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const radius = Math.hypot(
+      current[0] - drag.center[0],
+      current[1] - drag.center[1],
+    );
+    renderer.value.setPreview(null);
+    if (radius >= 1 / 8) {
+      emit('circle', {
+        cx: drag.center[0],
+        cy: drag.center[1],
+        radius,
+      });
+    }
+    drag = null;
+    return;
+  }
   if (drag.kind === 'rectangle') {
     const current = renderer.value.screenToWorld(sx, sy);
     const x1 = snap(Math.min(drag.start[0], current[0]));
@@ -115,6 +177,33 @@ function onPointerUp(event: PointerEvent): void {
     }
   }
   drag = null;
+}
+
+function finishPolygon(): void {
+  if (!renderer.value) return;
+  const points = polygonPoints.value;
+  polygonPoints.value = [];
+  renderer.value.setPreview(null);
+  if (points.length >= 3) emit('polygon', points);
+}
+
+function onDoubleClick(): void {
+  if (props.tool === 'polygon') finishPolygon();
+}
+
+function cancelGesture(): void {
+  drag = null;
+  polygonPoints.value = [];
+  renderer.value?.setPreview(null);
+}
+
+watch(
+  () => props.tool,
+  () => cancelGesture(),
+);
+
+function onKeyDown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') cancelGesture();
 }
 
 function onWheel(event: WheelEvent): void {
@@ -153,6 +242,7 @@ onMounted(async () => {
   });
   resizeObserver.observe(host.value);
   host.value.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onKeyDown);
 });
 
 watch(
@@ -163,6 +253,7 @@ watch(
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   host.value?.removeEventListener('wheel', onWheel);
+  window.removeEventListener('keydown', onKeyDown);
   renderer.value?.destroy();
   renderer.value = null;
 });
@@ -173,9 +264,13 @@ onBeforeUnmount(() => {
     ref="host"
     class="studio-canvas"
     @pointerdown="onPointerDown"
-    @pointermove="onPointerMove"
+    @pointermove="
+      onPointerMove($event);
+      onPointerMovePolygon($event);
+    "
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
+    @dblclick="onDoubleClick"
     @contextmenu="onContextMenu"
   />
 </template>

@@ -92,3 +92,14 @@ describe('map studio repository extras', () => {
     await deleteProject(project.id);
   });
 });
+
+describe('map studio repository missing records', () => {
+  it('returns null/undefined for unknown ids', async () => {
+    const { getMap, getMapThumbnail, getLatestSnapshot, getProject } =
+      await import('@/map-studio/persistence/repository');
+    expect(await getProject('missing')).toBeNull();
+    expect(await getMap('missing')).toBeNull();
+    expect(await getMapThumbnail('missing')).toBeUndefined();
+    expect(await getLatestSnapshot('missing')).toBeNull();
+  });
+});

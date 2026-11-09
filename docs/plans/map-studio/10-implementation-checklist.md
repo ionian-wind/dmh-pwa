@@ -3,7 +3,7 @@
 This is the working checklist for the Map Studio. Tasks are marked as they are
 implemented. The design documents are the source of truth for behavior.
 
-Status: **in progress — M0 foundation and rectangle slice working**
+Status: **in progress — M0 foundation + shared-wall geometry and core shape tools (circle/polygon) working**
 
 ## M0 — Foundation and vertical slice
 
@@ -33,7 +33,7 @@ Status: **in progress — M0 foundation and rectangle slice working**
 - [x] Add toolbar (pan, rectangle) and tool settings (snap/division)
 - [x] Add layers panel with active layer, visibility and lock
 - [x] Add editor route and library route
-- [ ] Add save/export PNG and apply-to-location bridge
+- [x] Add save/export PNG and apply-to-location bridge
 
 ### Verification
 
@@ -45,14 +45,14 @@ Status: **in progress — M0 foundation and rectangle slice working**
 
 ## M1 — Core drawing
 
-- [ ] Geometry pipeline: union/difference, shared walls, boundary extraction
+- [x] Geometry pipeline: union/difference, shared walls, boundary extraction
 - [ ] Rectangle tool: erase, rough, corner radius
-- [ ] Circle / regular polygon tool
+- [x] Circle / regular polygon tool
 - [ ] Path tool (click/freehand, radius, smooth)
-- [ ] Polygon tool
+- [x] Polygon tool
 - [ ] Wall tool (dash/smooth)
-- [ ] Draw/erase mode, snap/division, angle constraints
-- [ ] Undo/redo for every drawing mutation
+- [x] Draw/erase mode, snap/division, angle constraints
+- [x] Undo/redo for every drawing mutation
 - [ ] Classic dungeon preset + basic layer settings
 - [ ] Keyboard shortcuts for drawing tools
 
