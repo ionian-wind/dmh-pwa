@@ -1,16 +1,10 @@
 import type { FeatureIntegration } from '@/features/types';
 import TimersNavItem from './NavItem.vue';
+import TimersGlobal from './Global.vue';
 
 export const timersFeature: FeatureIntegration = {
   id: 'timers',
-  routes: [
-    {
-      path: '/timers',
-      name: 'timers',
-      component: () => import('@/timers/TimersView.vue'),
-      meta: { exact: true },
-    },
-  ],
+  routes: [],
   navigation: [
     {
       type: 'component',
@@ -19,11 +13,10 @@ export const timersFeature: FeatureIntegration = {
       kind: 'tool',
       placement: 'primary',
       order: 60,
-      activePathPrefixes: ['/timers'],
     },
   ],
   homeActions: [],
-  globalComponents: [],
+  globalComponents: [TimersGlobal],
   linkKinds: [],
   dragKinds: [],
 };

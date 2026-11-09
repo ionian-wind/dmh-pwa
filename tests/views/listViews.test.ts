@@ -7,14 +7,12 @@ import CharactersView from '@/characters/CharactersView.vue';
 import PawnsView from '@/pawns/PawnsView.vue';
 import PartiesView from '@/parties/PartiesView.vue';
 import NotesView from '@/notes/NotesView.vue';
-import TimersView from '@/timers/TimersView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
 
 import { useCharacterStore } from '@/stores/characters';
 import { usePawnStore } from '@/stores/pawns';
 import { usePartyStore } from '@/stores/parties';
 import { useNoteStore } from '@/stores/notes';
-import { useTimerStore } from '@/stores/timers';
 import { useEncounterStore } from '@/stores/encounters';
 import { confirm } from '@/dialogs';
 import { deleteFileIfUnreferenced } from '@/utils/files';
@@ -339,42 +337,6 @@ describe('list views', () => {
     await router.replace('/notes?tag=social');
     await flushPromises();
     expect(setTagFilter).toHaveBeenCalledWith('social');
-    wrapper.unmount();
-  });
-
-  it('handles timer actions and lifecycle callbacks', async () => {
-    const { wrapper } = await mountView(TimersView, '/');
-    const store = useTimerStore();
-    vi.spyOn(store, 'create').mockResolvedValue({} as any);
-    vi.spyOn(store, 'update').mockResolvedValue({} as any);
-    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
-    vi.spyOn(store, 'start').mockResolvedValue(undefined);
-    vi.spyOn(store, 'stop').mockResolvedValue(undefined);
-    vi.spyOn(store, 'reset').mockResolvedValue(undefined);
-
-    const timer = { id: 't1', title: 'Round', duration: 60 } as any;
-    const card = (list(wrapper).props('cardProps') as any)(timer);
-    card.onEdit();
-    card.onStart();
-    card.onStop();
-    card.onReset();
-    expect(store.start).toHaveBeenCalledWith('t1');
-    expect(store.stop).toHaveBeenCalledWith('t1');
-    expect(store.reset).toHaveBeenCalledWith('t1');
-
-    (list(wrapper).props('editorProps') as any)(timer);
-    await expect(card.onDelete()).resolves.toBe(true);
-    vi.mocked(confirm).mockResolvedValue(false);
-    await expect(card.onDelete()).resolves.toBe(false);
-
-    list(wrapper).vm.$emit('submit', timer);
-    list(wrapper).vm.$emit('submit', { title: 'New timer' });
-    await flushPromises();
-    expect(store.update).toHaveBeenCalled();
-    expect(store.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'inactive', startedAt: null }),
-    );
-    expect(store.remove).toHaveBeenCalledWith('t1');
     wrapper.unmount();
   });
 

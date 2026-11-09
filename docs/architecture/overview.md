@@ -164,8 +164,8 @@ Jukebox opens `/jukebox` or the sound-control sheet depending on
 Active state for route entries uses `activePathPrefixes` when provided,
 otherwise the entry is active when `currentPath.startsWith(item.path)`. Detail
 routes therefore highlight their list section. Component entries manage their
-own active state: Jukebox highlights `/jukebox` and `/ambient`, Timers highlights
-`/timers`, and Help is an external anchor. The timers icon cycles through twelve
+own active state: Jukebox highlights `/jukebox` and `/ambient`, Timers tracks
+whether its floating panel is open, and Help is an external anchor. The timers icon cycles through twelve
 clock icons while `timerStore.running` is true. The `Section` enum in
 `src/types/index.ts` remains as a legacy domain list and is not used to build
 navigation.
@@ -205,11 +205,10 @@ catch-all. Feature routes are generated from the enabled integrations:
 | `/ambient`                | ambient-sound          | AmbientSoundView          | ambient     |
 | `/ambient/:sceneId`       | —                      | redirect `ambient-sound`  | ambient     |
 | `/jukebox`                | jukebox                | JukeboxView               | jukebox     |
-| `/timers`                 | timers                 | TimersView                | timers      |
 | `/probability-calculator` | probability-calculator | ProbabilityCalculatorView | probability |
 | `/:catchAll(.*)`          | —                      | NotFoundView              | shell       |
 
-Calculator and Help contribute navigation or globals but no routes. Disabled
+Calculator, Timers, and Help contribute navigation or globals but no routes. Disabled
 features contribute no routes, so their URLs fall through to `NotFoundView`.
 
 List routes carry `meta.exact: true`; this is metadata only and is not used by

@@ -56,6 +56,7 @@ vi.mock('@/jukebox/playerStore', () => ({
 vi.mock('@/stores/timers', () => ({
   useTimerStore: () => ({
     init: vi.fn().mockResolvedValue(undefined),
+    timers: [],
     now: 0,
     running: false,
   }),

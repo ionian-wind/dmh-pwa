@@ -16,6 +16,7 @@ import {
   IconClockHour12,
 } from '@tabler/icons-vue';
 import { useTimerStore } from '@/stores/timers';
+import { timersOpen, toggleTimers } from './state';
 
 const { t } = useI18n();
 const timerStore = useTimerStore();
@@ -59,11 +60,11 @@ onBeforeUnmount(() => stop());
   <QItem
     clickable
     v-ripple
-    to="/timers"
-    :active="$route.path.startsWith('/timers')"
+    :active="timersOpen"
     active-class="bg-secondary"
     :title="t('navigation.timers')"
     :aria-label="t('navigation.timers')"
+    @click="toggleTimers"
   >
     <QItemSection side>
       <component :is="timerIcon" :key="animationFrame" />

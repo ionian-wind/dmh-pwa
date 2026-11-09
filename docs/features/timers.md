@@ -11,10 +11,12 @@ raise a Quasar notification when they finish.
 | File                              | Role                                       |
 | --------------------------------- | ------------------------------------------ |
 | `src/stores/timers.ts`            | Timer store, start/stop/reset, global tick |
-| `src/timers/TimersView.vue`       | List page                                  |
+| `src/timers/TimersPanel.vue`      | Floating timer panel and list              |
 | `src/timers/TimerEditor.vue`      | Create/edit modal with H:M:S spinners      |
 | `src/timers/TimerListItem.vue`    | Row with controls and countdown            |
-| `src/features/timers/NavItem.vue` | Starts the store and animates the nav icon |
+| `src/features/timers/NavItem.vue` | Toggles the panel, starts the store        |
+| `src/features/timers/Global.vue`  | Mounts the panel at app level              |
+| `src/features/timers/state.ts`    | Shared panel open state                    |
 
 ## Data
 
@@ -89,14 +91,13 @@ Consequences:
 - The tick continues after the tab is hidden (browsers throttle timers, so a
   long-hidden tab may finish late).
 
-## List page (`TimersView.vue`)
+## Panel (`TimersPanel.vue`)
 
-- Loads timers.
-- `BaseListView` with `TimerListItem` and `TimerEditor`, using
-  `view-style="simple-list"` and `:show-search="false"`.
-- `cardProps` pass `onStart/onStop/onReset/onEdit/onDelete` as event listeners.
-- `@start`, `@stop`, `@reset` are bound on `BaseListView`, but it neither
-  declares nor emits them; the real wiring is the card props.
+- Opened from the Timers navigation item, like the calculator and dice roller.
+- Uses the shared `DraggablePanel` shell; there is no `/timers` page.
+- Loads timers and shows `TimerListItem` rows with start/stop/reset, edit, and
+  delete controls, plus a **Create Timer** footer action.
+- The editor is the existing `TimerEditor` modal.
 - Delete confirmation uses the timer title, or `timers.noTitle` when untitled.
 - Create forces `status: 'inactive'`, `startedAt: null`.
 
@@ -123,10 +124,12 @@ Consequences:
 
 ## Nav integration
 
-`src/features/timers/NavItem.vue` calls `timerStore.init()` on mount and watches
-`timerStore.now`; while `timerStore.running` is true it cycles the timers
-navigation icon through twelve clock icons (`hours` array). Because the poll
-updates `now` once per second, the icon advances one frame per second.
+`src/features/timers/NavItem.vue` toggles `timersOpen` from `state.ts` and
+mounts `TimerEditor` through the app-level `Global.vue` overlay. It calls
+`timerStore.init()` on mount and watches `timerStore.now`; while
+`timerStore.running` is true it cycles the timers navigation icon through twelve
+clock icons (`hours` array). Because the poll updates `now` once per second, the
+icon advances one frame per second.
 
 ## Limitations
 
