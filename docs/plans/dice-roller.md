@@ -500,11 +500,50 @@ been removed on both dice branches.
 
 ## Testing
 
-- `dice-roller-2`: full suite passes; `features:verify` passes.
-- `dice-roller-3`: merge/type-check succeeds, but the experimental
-  tokenizer/parser suite has pre-existing failures. Fix those before using that
-  branch as a base.
+- `dice-roller-2`: full suite passes; `features:verify` passes. The dice engine
+  has unit tests per plugin, but no cross-plugin integration suite and no app
+  integration.
+- `dice-roller-3`: merge/type-check succeeds. It adds cross-plugin integration
+  tests, but those tests (and parts of the parser/tokenizer suite) are currently
+  failing, so it is not a usable base yet.
 - Deterministic tests inject a fake RNG.
+- Only arithmetic, dice, roll-query and table plugins exist in
+  `src/utils/bag-of-dice/`; macro, inline-roll, roll-reference and formatting
+  plugins are absent rather than merely untested.
+
+## Coverage status
+
+This is the key distinction that the earlier “not fully exercised” wording
+blurred:
+
+| Area                             | Engine status                                              | Test status                                                       |
+| -------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| Arithmetic                       | implemented                                                | unit tests pass on both branches                                  |
+| Dice + modifiers                 | implemented                                                | unit tests pass on `dice-roller-2`; parts fail on `dice-roller-3` |
+| Roll queries                     | implemented                                                | unit tests pass; integration only on `dice-roller-3` and failing  |
+| Roll tables                      | implemented                                                | unit tests pass; integration only on `dice-roller-3` and failing  |
+| Multi-plugin composition         | implemented API, not integration-tested on `dice-roller-2` | `dice-roller-3` has integration tests but they fail               |
+| Macros                           | missing in `bag-of-dice`                                   | old-engine tests only; not applicable to the replacement engine   |
+| Inline rolls                     | missing in `bag-of-dice`                                   | needs chat-engine parser plus roll-index tests                    |
+| Roll references                  | missing in `bag-of-dice`                                   | needs chat-engine parser plus reference tests                     |
+| Formatting / HTML entities       | missing in `bag-of-dice`                                   | belongs to the chat/formatting pass                               |
+| Roll templates                   | out of dice-engine scope                                   | chat-engine proposal; no implementation                           |
+| Chat commands/buttons/visibility | out of dice-engine scope                                   | chat-engine proposal; no implementation                           |
+| App integration                  | missing                                                    | no UI calls the engine                                            |
+
+## Known gaps
+
+- No app registration or UI integration.
+- The pass coordinator and split parsers do not exist yet.
+- `dice-roller-3` parser/tokenizer and integration tests are incomplete.
+- `dice-roller-2` has no cross-plugin integration tests, so query + table + dice
+  composition is not verified end to end.
+- Macro expansion, inline-roll parsing/indexing, roll-reference resolution and
+  formatting do not exist in `bag-of-dice` yet.
+- Roll templates, chat commands, buttons and visibility are separate chat-engine
+  work.
+- No custom-roll-parsing extension point.
+- No final decision on whether to keep 3D dice, the engine, or both.
 
 ## Integration checklist
 
@@ -546,14 +585,3 @@ Roll20 documentation used for this plan:
 - [Button](https://wiki.roll20.net/Button)
 - [Link Token](https://wiki.roll20.net/Link_Token)
 - [Complete Guide to Macros & Rolls](https://wiki.roll20.net/Complete_Guide_to_Macros_%26_Rolls)
-
-## Known gaps
-
-- No app registration or UI integration.
-- The pass coordinator and split parsers do not exist yet.
-- `dice-roller-3` parser/tokenizer is incomplete.
-- Formatting, macro, table, query, template and roll-reference plugins are not
-  fully exercised end to end.
-- No custom-roll-parsing extension point.
-- No chat engine; see the separate proposal.
-- No final decision on whether to keep 3D dice, the engine, or both.
