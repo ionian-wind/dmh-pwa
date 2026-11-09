@@ -503,3 +503,22 @@ describe('map studio object rotation', () => {
     store.rotateSelectedObject(1);
   });
 });
+
+describe('map studio shape selection', () => {
+  it('selects one shape or object at a time', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addRectangle({ x: 0, y: 0, width: 2, height: 2 });
+    const shape = store.activeLayer!.shapes[0];
+    store.selectShape(shape.id);
+    expect(store.selectedShape?.id).toBe(shape.id);
+    store.addText('A', [1, 1]);
+    const object = store.imagesLayer!.objects[0];
+    store.selectObject(object.id);
+    expect(store.selectedShapeId).toBeNull();
+    store.selectShape(shape.id);
+    expect(store.selectedObjectId).toBeNull();
+    store.selectShape(null);
+    expect(store.selectedShape).toBeNull();
+  });
+});

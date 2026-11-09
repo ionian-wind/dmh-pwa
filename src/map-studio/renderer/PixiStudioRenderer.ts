@@ -6,11 +6,15 @@ import {
   Sprite,
   Texture,
 } from 'pixi.js';
-import { compileDungeonLayer } from '@/map-studio/domain/geometry/compile';
+import {
+  compileDungeonLayer,
+  shapeToPolygon,
+} from '@/map-studio/domain/geometry/compile';
 import type { Bounds } from '@/map-studio/domain/objects';
 import type {
   DungeonLayer,
   Point,
+  DungeonShape,
   StudioMap,
   StudioObject,
 } from '@/map-studio/domain/document/types';
@@ -38,6 +42,7 @@ export class PixiStudioRenderer {
   private dungeonContainer = new Container();
   private objectsContainer = new Container();
   private selectionLayer = new Graphics();
+  private shapeSelectionLayer = new Graphics();
   private previewLayer = new Graphics();
   private map: StudioMap | null = null;
   private imageTextures = new Map<string, Texture>();
@@ -69,6 +74,7 @@ export class PixiStudioRenderer {
       this.gridLayer,
       this.dungeonContainer,
       this.objectsContainer,
+      this.shapeSelectionLayer,
       this.selectionLayer,
       this.previewLayer,
     );
@@ -125,6 +131,32 @@ export class PixiStudioRenderer {
       (screenX - this.viewport.x) / this.viewport.zoom / BASE_PIXELS_PER_CELL,
       (screenY - this.viewport.y) / this.viewport.zoom / BASE_PIXELS_PER_CELL,
     ];
+  }
+
+  setShapeSelection(shape: DungeonShape | null): void {
+    this.shapeSelectionLayer.clear();
+    if (shape) {
+      const ppc = BASE_PIXELS_PER_CELL;
+      if (shape.shape.kind === 'wall') {
+        const [first, ...rest] = shape.shape.points;
+        if (first) {
+          this.shapeSelectionLayer.moveTo(first[0] * ppc, first[1] * ppc);
+          for (const [x, y] of rest) {
+            this.shapeSelectionLayer.lineTo(x * ppc, y * ppc);
+          }
+          this.shapeSelectionLayer.stroke({ color: '#2d6fb3', width: 4 });
+        }
+      } else {
+        const polygon = shapeToPolygon(shape);
+        if (polygon?.[0]) {
+          this.shapeSelectionLayer
+            .poly(polygon[0].flat())
+            .fill({ color: '#4a90d9', alpha: 0.18 })
+            .stroke({ color: '#2d6fb3', width: 3 });
+        }
+      }
+    }
+    this.render();
   }
 
   setSelection(bounds: Bounds | null): void {

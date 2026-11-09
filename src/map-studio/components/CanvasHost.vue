@@ -2,9 +2,14 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
 import { hitTestObject, objectBounds } from '@/map-studio/domain/objects';
+import {
+  pointInPolygon,
+  shapeToPolygon,
+} from '@/map-studio/domain/geometry/compile';
 import type {
   Point,
   StudioMap,
+  DungeonShape,
   StudioTool,
   ToolSettings,
 } from '@/map-studio/domain/document/types';
@@ -14,6 +19,7 @@ const props = defineProps<{
   tool: StudioTool;
   settings: ToolSettings;
   selectedObjectId?: string | null;
+  selectedShape?: DungeonShape | null;
 }>();
 
 const emit = defineEmits<{
@@ -29,6 +35,7 @@ const emit = defineEmits<{
   (event: 'door', points: [number, number][]): void;
   (event: 'stairs', points: [number, number][]): void;
   (event: 'select', id: string | null): void;
+  (event: 'selectShape', id: string | null): void;
   (event: 'moveObject', delta: { dx: number; dy: number }): void;
   (event: 'beginObjectDrag'): void;
   (event: 'moveObjectLive', delta: { dx: number; dy: number }): void;
@@ -181,6 +188,21 @@ function onPointerDown(event: PointerEvent): void {
       point,
     );
     emit('select', object?.id ?? null);
+    if (!object) {
+      let shapeId: string | null = null;
+      for (const layer of [...props.map.layers].reverse()) {
+        if (layer.type !== 'dungeon' || !layer.visible) continue;
+        for (const shape of [...layer.shapes].reverse()) {
+          const polygon = shapeToPolygon(shape);
+          if (polygon?.[0] && pointInPolygon(point, polygon[0])) {
+            shapeId = shape.id;
+            break;
+          }
+        }
+        if (shapeId) break;
+      }
+      emit('selectShape', shapeId);
+    }
     if (object) {
       drag = { kind: 'object', id: object.id, start: point, last: point };
       emit('beginObjectDrag');
@@ -499,6 +521,7 @@ watch(
 );
 
 function updateSelection(): void {
+  renderer.value?.setShapeSelection(props.selectedShape ?? null);
   const object = props.map.layers
     .filter((layer) => layer.type === 'images')
     .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
@@ -507,6 +530,7 @@ function updateSelection(): void {
 }
 
 watch(() => props.selectedObjectId, updateSelection);
+watch(() => props.selectedShape, updateSelection);
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();

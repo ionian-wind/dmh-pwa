@@ -298,3 +298,19 @@ describe('map studio preset lookup', () => {
     expect(getDungeonPreset('missing')).toBeNull();
   });
 });
+
+describe('map studio shape hit testing', () => {
+  it('detects points inside and outside polygons', async () => {
+    const { pointInPolygon } =
+      await import('@/map-studio/domain/geometry/compile');
+    const square: [number, number][] = [
+      [0, 0],
+      [2, 0],
+      [2, 2],
+      [0, 2],
+      [0, 0],
+    ];
+    expect(pointInPolygon([1, 1], square)).toBe(true);
+    expect(pointInPolygon([3, 3], square)).toBe(false);
+  });
+});

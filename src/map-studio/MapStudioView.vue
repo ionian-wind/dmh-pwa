@@ -23,6 +23,13 @@ if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__mapStudioStore = store;
 }
 const renderer = ref<PixiStudioRenderer | null>(null);
+function onRendererReady(instance: PixiStudioRenderer): void {
+  renderer.value = instance;
+  if (import.meta.env.DEV) {
+    (window as unknown as Record<string, unknown>).__mapStudioRenderer =
+      instance;
+  }
+}
 const creating = ref(false);
 const hasMaps = __FEATURE_MAPS__;
 const applyOpen = ref(false);
@@ -589,6 +596,7 @@ async function applyToLocation(): Promise<void> {
           :tool="store.tool"
           :settings="store.toolSettings"
           :selected-object-id="store.selectedObjectId"
+          :selected-shape="store.selectedShape"
           @rectangle="addRectangle"
           @circle="store.addCircle"
           @polygon="store.addPolygon"
@@ -598,6 +606,7 @@ async function applyToLocation(): Promise<void> {
           @door="([a, b]) => store.addDoor(a, b)"
           @stairs="store.addStairs"
           @select="store.selectObject"
+          @selectShape="store.selectShape"
           @beginObjectDrag="store.beginObjectDrag"
           @moveObjectLive="store.moveSelectedObjectLive($event.dx, $event.dy)"
           @endObjectDrag="store.endObjectDrag"
@@ -605,7 +614,7 @@ async function applyToLocation(): Promise<void> {
           @image="addImage"
           @resizeObject="resizeSelected"
           @rotateObject="rotateSelected"
-          @ready="renderer = $event"
+          @ready="onRendererReady"
         />
 
         <aside class="studio-presets">

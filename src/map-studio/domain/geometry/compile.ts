@@ -251,3 +251,18 @@ export function boundsOfGeometry(geometry: MultiPolygon): {
   }
   return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
 }
+
+export function pointInPolygon(point: Point, polygon: Pair[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    if (
+      yi > point[1] !== yj > point[1] &&
+      point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi || 1e-9) + xi
+    ) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}

@@ -47,6 +47,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const maps = shallowRef<StudioMap[]>([]);
   const activeLayerId = ref<string | null>(null);
   const selectedObjectId = ref<string | null>(null);
+  const selectedShapeId = ref<string | null>(null);
   const tool = ref<StudioTool>('rectangle');
   const toolSettings = ref<ToolSettings>({
     snap: true,
@@ -88,6 +89,17 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
         (object) => object.id === selectedObjectId.value,
       ) ?? null,
   );
+
+  const selectedShape = computed(() => {
+    const id = selectedShapeId.value;
+    if (!id) return null;
+    for (const layer of map.value?.layers ?? []) {
+      if (layer.type !== 'dungeon') continue;
+      const shape = layer.shapes.find((entry) => entry.id === id);
+      if (shape) return shape;
+    }
+    return null;
+  });
 
   const canUndo = computed(() => undoStack.value.length > 0);
   const canRedo = computed(() => redoStack.value.length > 0);
@@ -480,6 +492,12 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
 
   function selectObject(id: string | null): void {
     selectedObjectId.value = id;
+    if (id) selectedShapeId.value = null;
+  }
+
+  function selectShape(id: string | null): void {
+    selectedShapeId.value = id;
+    if (id) selectedObjectId.value = null;
   }
 
   function beginObjectDrag(): void {
@@ -746,6 +764,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     imagesLayer,
     selectedObjectId,
     selectedObject,
+    selectedShapeId,
+    selectedShape,
     tool,
     toolSettings,
     dirty,
@@ -769,6 +789,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addDoor,
     addStairs,
     selectObject,
+    selectShape,
     moveSelectedObject,
     beginObjectDrag,
     moveSelectedObjectLive,
