@@ -846,6 +846,11 @@ assets by reporting a fallback. The animation loop stops when every die has
 settled; resize redraws and never clears the scene. The camera looks straight
 down from the zenith and all dice rest on the same `y=0` scene floor.
 
+Face detection mirrors dice-box: the value face is the one a centre ray would
+hit (upward normally, downward for d4). Outward normals are derived from the
+collider face centroid rather than the smooth authored vertex normals, and the
+render geometry keeps its authored winding after the Babylon Z mirror.
+
 ## Non-functional requirements
 
 ### Performance budgets

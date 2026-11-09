@@ -8,7 +8,6 @@ import {
   colliderPoints,
   computeFaceNormals,
   convertPositions,
-  flipWinding,
   loadDiceAssets,
   mergeSceneFiles,
   type BabylonSceneFile,
@@ -64,9 +63,8 @@ describe('dice value mapping', () => {
 });
 
 describe('Babylon asset conversion', () => {
-  it('mirrors Z and flips triangle winding', () => {
+  it('mirrors Z and preserves the authored triangle winding', () => {
     expect(convertPositions([1, 2, 3])).toEqual(new Float32Array([1, 2, -3]));
-    expect(flipWinding([0, 1, 2, 3, 4, 5])).toEqual([0, 2, 1, 3, 5, 4]);
   });
 
   it('builds geometry with converted attributes', () => {
@@ -76,6 +74,7 @@ describe('Babylon asset conversion', () => {
       mesh.positions.length / 3,
     );
     expect(geometry.getIndex()?.count).toBe(mesh.indices.length);
+    expect(geometry.getIndex()?.getX(1)).toBe(mesh.indices[1]);
     expect(geometry.getAttribute('position').getZ(0)).toBeCloseTo(
       -mesh.positions[2],
       6,
@@ -94,6 +93,18 @@ describe('Babylon asset conversion', () => {
       [normal.x, normal.y, normal.z].map((axis) => Math.abs(axis) > 0.85),
     );
     expect(axes.every((axis) => axis.filter(Boolean).length === 1)).toBe(true);
+    // Opposite faces must point in opposite directions, not the same way.
+    expect(normals.get(1)!.dot(normals.get(6)!)).toBeCloseTo(-1, 3);
+    expect(normals.get(2)!.dot(normals.get(5)!)).toBeCloseTo(-1, 3);
+    expect(normals.get(3)!.dot(normals.get(4)!)).toBeCloseTo(-1, 3);
+  });
+
+  it('derives opposite outward normals for d20 faces', () => {
+    const mesh = merged.meshes.find((entry) => entry.name === 'd20_collider')!;
+    const normals = computeFaceNormals(mesh, base.colliderFaceMap.d20);
+    expect(normals.size).toBe(20);
+    expect(normals.get(1)!.dot(normals.get(20)!)).toBeCloseTo(-1, 3);
+    expect(normals.get(2)!.dot(normals.get(19)!)).toBeCloseTo(-1, 3);
   });
 
   it('builds every supported die from the shipped assets', () => {
@@ -158,6 +169,17 @@ describe('face orientation', () => {
     );
     expect(quaternion.length()).toBeCloseTo(1, 5);
     expect(() => targetQuaternion(new Map(), 2)).toThrow('no face normal');
+  });
+
+  it('aligns d4 value faces down like dice-box', () => {
+    const normals = new Map([[4, new THREE.Vector3(0, 1, 0)]]);
+    const up = targetQuaternion(normals, 4);
+    const down = targetQuaternion(normals, 4, 0, true);
+    expect(new THREE.Vector3(0, 1, 0).applyQuaternion(up).y).toBeCloseTo(1, 5);
+    expect(new THREE.Vector3(0, 1, 0).applyQuaternion(down).y).toBeCloseTo(
+      -1,
+      5,
+    );
   });
 
   it('produces deterministic cosmetic spins', () => {

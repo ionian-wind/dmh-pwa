@@ -224,9 +224,15 @@ assets without Babylon.
 - `src/features/dice-roller/renderer/` contains the adapter contract, DiceBox
   fallback, asset converter, face math, Rapier world, theme materials and the
   Three renderer.
-- Babylon assets are converted by mirroring Z and reversing triangle winding.
-  Collider face maps are keyed by triangle index; normals are averaged per face
-  value.
+- Babylon assets are converted by mirroring Z while preserving the authored
+  triangle winding. Reversing winding made the camera see through the near
+  faces and display the opposite number.
+- Collider face maps are keyed by triangle index; normals are averaged per face
+  value and oriented outward from the face centroid (the authored vertex
+  normals are smooth and cannot be used to choose a side).
+- Like dice-box, the reported value is the face hit by a centre ray: upward for
+  normal dice, downward for d4 (`d4FaceDown`), so d4 value faces rest on the
+  table.
 - The shipped diffuse atlases are number/pip overlays, not full die textures.
   The material shader blends atlas pixels over a solid die colour so the body
   stays opaque.

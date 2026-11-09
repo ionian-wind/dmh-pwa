@@ -109,7 +109,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
     // Key light enters from the scene's left-top corner (world -X/-Z under the
     // zenith camera) and points at the centre of the floor.
     const key = new THREE.DirectionalLight(0xffffff, 2.4);
-    key.position.set(-6, 9, -6);
+    key.position.set(-2.8, 14, -2.8);
     key.target.position.set(0, 0, 0);
     this.scene.add(key.target);
     key.castShadow = true;
@@ -234,6 +234,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
       asset.faceNormals,
       part.faceValue,
       cosmeticSpin(`${part.id}:target`, part.faceValue),
+      part.kind === 'd4',
     );
 
     mesh.position.set(x, spawnHeight, z);
@@ -348,7 +349,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
         }
       }
       const timedOut = hasSimulationTimedOut(this.animationStarted, time);
-      if (timedOut || !this.physics.active) {
+      const hadTimeToLand = time - this.animationStarted > 450;
+      if (timedOut || (hadTimeToLand && this.physics.settleReady)) {
         for (const die of this.dice.values()) {
           if (die.state === 'physics') this.beginSettle(die, time);
         }
@@ -392,9 +394,11 @@ export class ThreeDiceRenderer implements DiceRenderer {
     } else {
       die.mesh.quaternion.copy(die.target);
     }
-    // Work out the resting height for the target orientation.
+    // Work out the resting height for the target orientation, with a tiny
+    // lift so the correction reads as a final nudge rather than a floor flip.
     die.mesh.position.y = die.settleFromY ?? die.mesh.position.y;
     this.restOnFloor(die.mesh, 0, eased);
+    die.mesh.position.y += Math.sin(progress * Math.PI) * 0.035;
     if (progress >= 1) this.finishDie(die);
   }
 

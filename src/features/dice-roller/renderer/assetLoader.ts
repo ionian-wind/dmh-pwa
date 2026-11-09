@@ -81,15 +81,6 @@ export function convertTangents(tangents: readonly number[]): Float32Array {
   return result;
 }
 
-/** Mirroring Z reverses triangle winding; restore counter-clockwise order. */
-export function flipWinding(indices: readonly number[]): number[] {
-  const result: number[] = [];
-  for (let index = 0; index + 2 < indices.length; index += 3) {
-    result.push(indices[index], indices[index + 2], indices[index + 1]);
-  }
-  return result;
-}
-
 export function buildGeometry(mesh: BabylonMeshData): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
@@ -116,7 +107,7 @@ export function buildGeometry(mesh: BabylonMeshData): THREE.BufferGeometry {
       new THREE.BufferAttribute(convertTangents(mesh.tangents), 4),
     );
   }
-  geometry.setIndex(flipWinding(mesh.indices));
+  geometry.setIndex(mesh.indices);
   geometry.computeBoundingSphere();
   geometry.computeBoundingBox();
   return geometry;
@@ -136,10 +127,7 @@ export function computeFaceNormals(
   faceMap: Record<string, number>,
 ): Map<number, THREE.Vector3> {
   const positions = convertPositions(collider.positions);
-  const indices = flipWinding(collider.indices);
-  const normals = collider.normals
-    ? convertNormals(collider.normals)
-    : undefined;
+  const indices = collider.indices;
   const sums = new Map<number, THREE.Vector3>();
 
   for (let triangle = 0; triangle * 3 + 2 < indices.length; triangle += 1) {
@@ -168,14 +156,11 @@ export function computeFaceNormals(
       .cross(new THREE.Vector3().subVectors(c, a));
     if (normal.lengthSq() === 0) continue;
     normal.normalize();
-    if (normals) {
-      const provided = new THREE.Vector3(
-        normals[ia],
-        normals[ia + 1],
-        normals[ia + 2],
-      );
-      if (normal.dot(provided) < 0) normal.negate();
-    }
+    // The collider shares smooth vertex normals, so sign-flipping against them
+    // makes opposite faces point the same way. Orient from the face centroid
+    // instead: outward is the side facing away from the die centre.
+    const centroid = new THREE.Vector3().add(a).add(b).add(c).divideScalar(3);
+    if (normal.dot(centroid) < 0) normal.negate();
     const current = sums.get(faceValue) ?? new THREE.Vector3();
     current.add(normal);
     sums.set(faceValue, current);

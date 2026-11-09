@@ -12,6 +12,9 @@ export interface VisualDiePart {
   part: 'whole' | 'tens' | 'units';
 }
 
+/** d4 results are read from the face touching the table, like dice-box. */
+export const FACE_DOWN_DICE = new Set<DieKind>(['d4']);
+
 export function dieKindForSides(sides: number): DieKind {
   const rounded = Math.round(sides);
   if (

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 const UP = new THREE.Vector3(0, 1, 0);
+const DOWN = new THREE.Vector3(0, -1, 0);
 
 /**
  * Rotate a local outward face normal onto world up. `spin` rotates the die
@@ -10,11 +11,12 @@ const UP = new THREE.Vector3(0, 1, 0);
 export function faceUpQuaternion(
   normal: THREE.Vector3,
   spin = 0,
+  faceDown = false,
 ): THREE.Quaternion {
   if (normal.lengthSq() === 0) return new THREE.Quaternion();
   const quaternion = new THREE.Quaternion().setFromUnitVectors(
     normal.clone().normalize(),
-    UP,
+    faceDown ? DOWN : UP,
   );
   if (spin !== 0) {
     quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(UP, spin));
@@ -33,12 +35,13 @@ export function targetQuaternion(
   faceNormals: Map<number, THREE.Vector3>,
   faceValue: number,
   spin = 0,
+  faceDown = false,
 ): THREE.Quaternion {
   const normal = faceNormal(faceNormals, faceValue);
   if (!normal) {
     throw new Error(`no face normal for value ${faceValue}`);
   }
-  return faceUpQuaternion(normal, spin);
+  return faceUpQuaternion(normal, spin, faceDown);
 }
 
 /** Deterministic cosmetic spin in `[0, 2π)` derived from an id/value. */
