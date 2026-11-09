@@ -1,4 +1,9 @@
 import RAPIER from '@dimforge/rapier3d-compat';
+import { PLAY_BOUNDS } from './DiceRenderer';
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
 
 export interface DiceSpawn {
   x: number;
@@ -126,6 +131,20 @@ export class RapierDiceWorld {
     if (!this.world) return;
     this.world.timestep = Math.min(Math.max(deltaSeconds, 1 / 240), 1 / 30);
     this.world.step(this.eventQueue ?? undefined);
+    // Safety net: if a body tunnels or is nudged outside, snap it back.
+    for (const { body } of this.bodies.values()) {
+      const position = body.translation();
+      const x = clamp(position.x, -PLAY_BOUNDS.x + 0.05, PLAY_BOUNDS.x - 0.05);
+      const z = clamp(position.z, -PLAY_BOUNDS.z + 0.05, PLAY_BOUNDS.z - 0.05);
+      if (x === position.x && z === position.z) continue;
+      body.setTranslation({ x, y: position.y, z }, true);
+      const velocity = body.linvel();
+      body.setLinvel(
+        { x: velocity.x * 0.3, y: velocity.y, z: velocity.z * 0.3 },
+        true,
+      );
+    }
+
     this.eventQueue?.drainCollisionEvents((first, second, started) => {
       if (!started) return;
       const bodyA = this.colliderBodies.get(first);

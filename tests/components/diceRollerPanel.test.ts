@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     roll: vi.fn(),
     clear: vi.fn(),
     pick: vi.fn(() => null),
+    debugScene: vi.fn(() => []),
     beginDrag: vi.fn(() => false),
     dragTo: vi.fn(),
     endDrag: vi.fn(),

@@ -16,6 +16,7 @@ import type {
   DieKind,
   ExplodeMode,
 } from '@/features/dice-roller/renderer/DiceRenderer';
+import { PLAY_BOUNDS } from '@/features/dice-roller/renderer/DiceRenderer';
 import {
   createDieRollEvent,
   createPoolRollEvent,
@@ -343,6 +344,12 @@ async function startRenderer(candidate: DiceRenderer): Promise<void> {
       });
       emit('roll', poolEvent);
       dispatchRollEvent(poolEvent);
+
+      if (import.meta.env.DEV) {
+        console.debug('[dice-roller] scene order', candidate.debugScene(), {
+          bounds: PLAY_BOUNDS,
+        });
+      }
     },
   });
 }

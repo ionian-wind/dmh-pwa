@@ -11,6 +11,9 @@ export type DieKind =
 
 export type ExplodeMode = '!' | '!!' | '!p';
 
+/** Shared tray bounds used by physics, camera fitting and debug output. */
+export const PLAY_BOUNDS = { x: 3.6, z: 2.6, height: 5 } as const;
+
 export interface DiceVisual {
   /** Stable id used for scene/physics bookkeeping. */
   id: string;
@@ -47,6 +50,21 @@ export interface DiceResult {
   rootId?: string;
 }
 
+export interface DiceSceneEntry {
+  order: number;
+  sceneOrder: number;
+  id: string;
+  visualId: string;
+  rootId: string;
+  sides: number;
+  kind: string;
+  state: string;
+  result?: number;
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number; w: number };
+  scale: number;
+}
+
 export interface DiceRendererOptions {
   /** Public asset root, for example `/dmh-pwa/assets/dice-box/`. */
   assetPath: string;
@@ -70,6 +88,8 @@ export interface DiceRenderer {
   clear(): void;
   /** Results of the last settled throw, read from the visible top faces. */
   getResults(): DiceResult[];
+  /** Dev-only ordered scene dump for debugging visibility/render order. */
+  debugScene(): DiceSceneEntry[];
   /** Result of the die under the given viewport coordinates, if settled. */
   pick(clientX: number, clientY: number): DiceResult | null;
   /** Start dragging the die under the pointer. Returns false when none. */

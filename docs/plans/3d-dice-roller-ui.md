@@ -216,6 +216,8 @@ assets without Babylon.
 - [x] **3DDR-519** Give explosion extras independent random throw trajectories.
 - [x] **3DDR-520** Toss dragged dice using tracked cursor velocity; zero
       velocity drops without spin.
+- [x] **3DDR-521** Contain dice inside tall bounce borders with a clamp fallback
+      and a dev scene-order/bounds dump.
 
 **Gate:** the grid builds a pool, explosion extras settle separately, and every
 roll emits one individual plus one pool event.
@@ -287,8 +289,12 @@ roll emits one individual plus one pool event.
   an outward/upward physics velocity. Each physical die explodes at most once
   per throw; its extra can chain if that extra also rolls the maximum, up to the
   per-pool cap.
-- Boundary walls have high restitution; every collision damps linear velocity by
-  5% and angular velocity by 10% (on top of Rapier friction/damping).
+- Boundary walls have high restitution and are 5 units tall so dice cannot fly
+  over the tray; a position clamp catches tunneling. Every collision damps
+  linear velocity by 5% and angular velocity by 10% (on top of Rapier
+  friction/damping).
+- In development, settled scenes log dice order and tray bounds via
+  `debugScene()` for visibility/debugging.
 - New throws wake settled dice. Dice can knock each other onto new faces; after
   the collision cycle every visible face is re-read and the pool/events update.
 - The tray cannot import `bag-of-dice`; `src/utils/roll-events.ts` defines the

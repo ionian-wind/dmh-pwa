@@ -3,8 +3,10 @@ import type {
   DiceRenderer,
   DiceRendererOptions,
   DiceResult,
+  DiceSceneEntry,
   DiceVisual,
 } from './DiceRenderer';
+import { PLAY_BOUNDS } from './DiceRenderer';
 import {
   loadDiceAssets,
   type DiceAsset,
@@ -146,10 +148,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
     // Zenith view. `up` must point along -Z when looking straight down,
     // otherwise `lookAt` has no stable roll reference.
     this.camera.up.set(0, 0, -1);
-    this.camera.position.set(0, 8.5, 0);
-    this.camera.lookAt(0, 0, 0);
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+    this.fitCamera(width, height);
 
     const ambient = new THREE.HemisphereLight(0xffffff, 0x777777, 1.6);
     this.scene.add(ambient);
@@ -230,6 +229,32 @@ export class ThreeDiceRenderer implements DiceRenderer {
     this.dice.clear();
     this.physics.clear();
     this.renderFrame();
+  }
+
+  debugScene(): DiceSceneEntry[] {
+    return [...this.dice.values()].map((die, index) => ({
+      order: index,
+      sceneOrder: this.scene.children.indexOf(die.mesh),
+      id: die.id,
+      visualId: die.visualId,
+      rootId: die.rootId,
+      sides: die.sides,
+      kind: die.kind,
+      state: die.state,
+      ...(die.result !== undefined ? { result: die.result } : {}),
+      position: {
+        x: die.mesh.position.x,
+        y: die.mesh.position.y,
+        z: die.mesh.position.z,
+      },
+      rotation: {
+        x: die.mesh.quaternion.x,
+        y: die.mesh.quaternion.y,
+        z: die.mesh.quaternion.z,
+        w: die.mesh.quaternion.w,
+      },
+      scale: die.mesh.scale.x,
+    }));
   }
 
   getResults(): DiceResult[] {
@@ -397,9 +422,10 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
   resize(width: number, height: number): void {
     if (!this.renderer) return;
-    this.renderer.setSize(Math.max(1, width), Math.max(1, height), false);
-    this.camera.aspect = Math.max(1, width) / Math.max(1, height);
-    this.camera.updateProjectionMatrix();
+    const safeWidth = Math.max(1, width);
+    const safeHeight = Math.max(1, height);
+    this.renderer.setSize(safeWidth, safeHeight, false);
+    this.fitCamera(safeWidth, safeHeight);
     // Resizing must redraw, never clear the scene.
     this.renderFrame();
   }
@@ -810,6 +836,25 @@ export class ThreeDiceRenderer implements DiceRenderer {
     mesh.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(mesh);
     mesh.position.y = -box.min.y + lift;
+  }
+
+  /**
+   * Zoom out enough that the whole tray, including airborne dice, stays in
+   * view for the current aspect ratio.
+   */
+  private fitCamera(width: number, height: number): void {
+    const aspect = Math.max(0.2, width / Math.max(1, height));
+    const halfV = Math.tan((this.camera.fov * Math.PI) / 360);
+    const maxDiceHeight = 2.6;
+    const zBound = PLAY_BOUNDS.z + 0.5;
+    const xBound = PLAY_BOUNDS.x + 0.45;
+    const heightForZ = zBound / halfV + maxDiceHeight;
+    const heightForX = xBound / (halfV * aspect) + maxDiceHeight;
+    const distance = Math.max(heightForZ, heightForX) * 1.06;
+    this.camera.position.set(0, distance, 0);
+    this.camera.aspect = aspect;
+    this.camera.updateProjectionMatrix();
+    this.camera.lookAt(0, 0, 0);
   }
 
   private renderFrame(): void {

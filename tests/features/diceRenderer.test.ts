@@ -277,6 +277,7 @@ describe('renderer factory', () => {
     renderer.dragTo(10, 10);
     renderer.endDrag();
     expect(renderer.getResults()).toEqual([]);
+    expect(renderer.debugScene()).toEqual([]);
     renderer.clear();
     renderer.dispose();
     renderer.dispose();

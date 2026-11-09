@@ -67,6 +67,10 @@ export class DiceBoxRenderer implements DiceRenderer {
     return [];
   }
 
+  debugScene(): [] {
+    return [];
+  }
+
   pick(): DiceResult | null {
     return null;
   }
@@ -98,6 +102,9 @@ export class NoopDiceRenderer implements DiceRenderer {
   replace(): void {}
   clear(): void {}
   getResults(): DiceResult[] {
+    return [];
+  }
+  debugScene(): [] {
     return [];
   }
   pick(): DiceResult | null {
