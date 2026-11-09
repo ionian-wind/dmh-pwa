@@ -1,7 +1,7 @@
 # Macro Library & Editor
 
 > **Status: proposal — not implemented.** A first-class local macro library and
-> Monaco-based editor for roll expressions, macros, abilities and roll queries.
+> Lightweight code editor for roll expressions, macros, abilities and roll queries.
 
 ## Purpose
 
@@ -9,13 +9,13 @@ Roll macros are code-like expressions. A text input is not enough: users need
 search, organization, syntax highlighting, completions, diagnostics and a safe
 way to test a macro before using it.
 
-The editor should use the existing Monaco integration and the roll engine's
+The editor should use the existing `LightCodeEditor` integration and the roll engine's
 parser/AST. It must not maintain a separate grammar.
 
 ## Goals
 
 - Store and organize reusable macros locally.
-- Edit macros with Monaco: syntax highlighting, bracket matching, diagnostics,
+- Edit macros in the shared code editor: syntax highlighting, bracket matching, diagnostics,
   completions and hover help.
 - Complete dice modifiers, roll-query syntax, macro calls, ability calls and
   attribute calls.
@@ -43,8 +43,8 @@ parser/AST. It must not maintain a separate grammar.
 ## Architecture
 
 ```
-MacroEditor (Monaco)
-  -> Monaco language service
+MacroEditor (LightCodeEditor)
+  -> Editora language service
        -> roll-engine tokenizer/highlighting
        -> roll-engine parser diagnostics
        -> completion provider (repositories + static syntax)
@@ -57,7 +57,7 @@ MacroEditor (Monaco)
 ```
 
 The roll engine remains the source of truth for grammar. The editor supplies
-Monaco tokenization/highlighting from the same token definitions and diagnostics
+Editora tokenization/highlighting from the same token definitions and diagnostics
 from the same parser.
 
 ## Macro model
@@ -142,7 +142,7 @@ session, and degrade gracefully when a repository is unavailable.
 ## Phases
 
 1. Macro storage model and library list/search.
-2. Monaco language registration + highlighting.
+2. Editora language registration + highlighting.
 3. Parser diagnostics and hover docs.
 4. Static completions/snippets.
 5. Async repository completions.

@@ -102,7 +102,7 @@ implemented.
 | [integration/cross-part-behavior.md](integration/cross-part-behavior.md)                 | How parts call each other; end-to-end flows          |
 | [proposals/technical-proposals.md](proposals/technical-proposals.md)                     | Engineering improvements and refactors               |
 | [proposals/roll20-style-chat-engine.md](proposals/roll20-style-chat-engine.md)           | Local chat commands, rendering and delivery proposal |
-| [proposals/macro-library-editor.md](proposals/macro-library-editor.md)                   | Monaco macro library/editor proposal                 |
+| [proposals/macro-library-editor.md](proposals/macro-library-editor.md)                   | Code-editor macro library/editor proposal            |
 | [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index        |
 | [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass         |
 | [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture  |
@@ -136,7 +136,7 @@ src/
   utils/markdownParser.ts          markdown-it renderer + entity link parsing
   utils/files/                     File System Access / OPFS / Blob + audio worker
   utils/dice-probability-calculator/ AnyDice-compatible probability library
-  probability-calculator/          probability calculator page, Monaco + charts
+  probability-calculator/          probability calculator page, code editor + charts
   helpcenter/links.ts              static help-center URL helper
   features/                        feature catalog integrations (routes, nav, links)
   components/                      shared UI + PWA + dialogs

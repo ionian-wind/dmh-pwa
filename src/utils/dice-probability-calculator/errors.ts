@@ -16,7 +16,7 @@ export interface DiceSyntaxErrorDetails {
 /**
  * A syntax error with a source range suitable for editor markers.
  *
- * Coordinates are 1-based, following Monaco/Chevrotain conventions. The raw
+ * Coordinates are 1-based, following editor/Chevrotain conventions. The raw
  * `message` is kept for diagnostics; user-facing text is produced from the
  * structured details by the probability calculator's formatter.
  *

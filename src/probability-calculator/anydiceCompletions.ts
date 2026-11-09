@@ -1,4 +1,8 @@
-import { monaco } from '@/components/common/monaco';
+import type {
+  CompletionContext,
+  CompletionItem,
+  CompletionProvider,
+} from '@editora/light-code-editor';
 
 interface CompletionSnippet {
   label: string;
@@ -295,151 +299,131 @@ const keywords = [
 
 let registered = false;
 
-export function createAnyDiceCompletionProvider(): monaco.languages.CompletionItemProvider {
-  return {
-    triggerCharacters: ['[', '{', '"'],
-    provideCompletionItems(model, position) {
-      const word = model.getWordUntilPosition(position);
-      const line = model.getLineContent(position.lineNumber);
-      const beforeWord = line.slice(0, Math.max(0, word.startColumn - 1));
-      const afterCursor = line.slice(position.column - 1);
-      const inCall = beforeWord.lastIndexOf('[') > beforeWord.lastIndexOf(']');
-      const closeCall = inCall && !afterCursor.startsWith(']');
-
-      const range = {
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-        startColumn: word.startColumn,
-        endColumn: word.endColumn,
-      };
-
-      const suggestions: monaco.languages.CompletionItem[] = [];
-
-      for (const fn of functionSnippets) {
-        suggestions.push({
-          label: fn.labelKey ? tr(fn.labelKey, fn.label) : fn.label,
-          filterText: fn.label,
-          kind: monaco.languages.CompletionItemKind.Function,
-          detail: fn.detailKey ? tr(fn.detailKey, fn.detail) : fn.detail,
-          documentation: fn.detailKey
-            ? tr(fn.detailKey, fn.detail)
-            : fn.documentation,
-          insertText: inCall
-            ? `${fn.body}${closeCall ? ']' : ''}`
-            : `[${fn.body}]`,
-          insertTextRules:
-            monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          range,
-          sortText: `1-${fn.label}`,
-        });
-      }
-
-      if (!inCall) {
-        for (const statement of statementSnippets) {
-          suggestions.push({
-            label: statement.labelKey
-              ? tr(statement.labelKey, statement.label)
-              : statement.label,
-            filterText: statement.label,
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            detail: statement.detailKey
-              ? tr(statement.detailKey, statement.detail)
-              : statement.detail,
-            documentation: statement.detailKey
-              ? tr(statement.detailKey, statement.detail)
-              : statement.documentation,
-            insertText: statement.body,
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-            sortText: `2-${statement.label}`,
-          });
-        }
-
-        for (const keyword of keywords) {
-          suggestions.push({
-            label: keyword,
-            kind: monaco.languages.CompletionItemKind.Keyword,
-            detail: tr('probabilityCalculator.completions.keyword', 'Keyword'),
-            insertText: keyword,
-            range,
-            sortText: `3-${keyword}`,
-          });
-        }
-      }
-
-      const variables = new Set(
-        model.getValue().match(/\b[A-Z_][A-Z0-9_]*\b/g) ?? [],
-      );
-      for (const variable of variables) {
-        if (variable === word.word) continue;
-        suggestions.push({
-          label: variable,
-          kind: monaco.languages.CompletionItemKind.Variable,
-          detail: tr(
-            'probabilityCalculator.completions.variableFromProgram',
-            'Variable from this program',
-          ),
-          insertText: variable,
-          range,
-          sortText: `4-${variable}`,
-        });
-      }
-
-      const existingLabels = new Set(
-        suggestions.map(
-          (suggestion) => `${suggestion.kind}:${suggestion.label}`,
-        ),
-      );
-      for (const definition of codePieceDefinitions().values()) {
-        const kind =
-          definition.kind === 'function'
-            ? monaco.languages.CompletionItemKind.Function
-            : monaco.languages.CompletionItemKind.Variable;
-        const key = `${kind}:${definition.label}`;
-        if (existingLabels.has(key) || definition.label === word.word) continue;
-        existingLabels.add(key);
-
-        const isFunction = definition.kind === 'function';
-        suggestions.push({
-          label: definition.label,
-          kind,
-          detail: tr(
-            'probabilityCalculator.completions.fromCodePiece',
-            `From code piece: ${definition.source}`,
-            { name: definition.source },
-          ),
-          documentation: tr(
-            'probabilityCalculator.completions.definedInCodePiece',
-            `Defined in code piece “${definition.source}”.`,
-            { name: definition.source },
-          ),
-          insertText: isFunction
-            ? inCall
-              ? `${definition.insertText}${closeCall ? ']' : ''}`
-              : `[${definition.insertText}]`
-            : definition.insertText,
-          insertTextRules: isFunction
-            ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
-            : undefined,
-          range,
-          sortText: isFunction
-            ? `0-${definition.label}`
-            : `3.5-${definition.label}`,
-        });
-      }
-
-      return { suggestions };
-    },
-  };
+function plainInsertText(text: string): string {
+  return text.replace(/\$\{\d+:([^}]*)\}/g, '$1');
 }
 
-/** Register AnyDice autocomplete exactly once. */
-export function registerAnyDiceCompletions(): void {
-  if (registered) return;
-  monaco.languages.registerCompletionItemProvider(
-    'anydice',
-    createAnyDiceCompletionProvider(),
+/** Build AnyDice completion items from the editor's completion context. */
+export function getAnyDiceCompletionItems(
+  context: CompletionContext,
+): CompletionItem[] {
+  const text = context.text;
+  const line = context.lineText;
+  const word = context.prefix;
+  const beforeWord = line.slice(0, context.wordRange.start.column);
+  const afterCursor = line.slice(context.wordRange.end.column);
+  const inCall = beforeWord.lastIndexOf('[') > beforeWord.lastIndexOf(']');
+  const closeCall = inCall && !afterCursor.startsWith(']');
+  const range = context.wordRange;
+
+  const suggestions: CompletionItem[] = [];
+
+  for (const fn of functionSnippets) {
+    suggestions.push({
+      label: fn.labelKey ? tr(fn.labelKey, fn.label) : fn.label,
+      filterText: fn.label,
+      kind: 'function',
+      detail: fn.detailKey ? tr(fn.detailKey, fn.detail) : fn.detail,
+      description: fn.detailKey
+        ? tr(fn.detailKey, fn.detail)
+        : fn.documentation,
+      insertText: plainInsertText(
+        inCall ? `${fn.body}${closeCall ? ']' : ''}` : `[${fn.body}]`,
+      ),
+      replaceRange: range,
+      sortText: `1-${fn.label}`,
+    });
+  }
+
+  if (!inCall) {
+    for (const statement of statementSnippets) {
+      suggestions.push({
+        label: statement.labelKey
+          ? tr(statement.labelKey, statement.label)
+          : statement.label,
+        filterText: statement.label,
+        kind: 'snippet',
+        detail: statement.detailKey
+          ? tr(statement.detailKey, statement.detail)
+          : statement.detail,
+        description: statement.detailKey
+          ? tr(statement.detailKey, statement.detail)
+          : statement.documentation,
+        insertText: plainInsertText(statement.body),
+        replaceRange: range,
+        sortText: `2-${statement.label}`,
+      });
+    }
+
+    for (const keyword of keywords) {
+      suggestions.push({
+        label: keyword,
+        kind: 'keyword',
+        detail: tr('probabilityCalculator.completions.keyword', 'Keyword'),
+        insertText: keyword,
+        replaceRange: range,
+        sortText: `3-${keyword}`,
+      });
+    }
+  }
+
+  const variables = new Set(text.match(/\b[A-Z_][A-Z0-9_]*\b/g) ?? []);
+  for (const variable of variables) {
+    if (variable === word) continue;
+    suggestions.push({
+      label: variable,
+      kind: 'variable',
+      detail: tr(
+        'probabilityCalculator.completions.variableFromProgram',
+        'Variable from this program',
+      ),
+      insertText: variable,
+      replaceRange: range,
+      sortText: `4-${variable}`,
+    });
+  }
+
+  const existingLabels = new Set(
+    suggestions.map((suggestion) => `${suggestion.kind}:${suggestion.label}`),
   );
-  registered = true;
+  for (const definition of codePieceDefinitions().values()) {
+    const kind = definition.kind;
+    const key = `${kind}:${definition.label}`;
+    if (existingLabels.has(key) || definition.label === word) continue;
+    existingLabels.add(key);
+
+    const isFunction = definition.kind === 'function';
+    suggestions.push({
+      label: definition.label,
+      kind,
+      detail: tr(
+        'probabilityCalculator.completions.fromCodePiece',
+        `From code piece: ${definition.source}`,
+        { name: definition.source },
+      ),
+      description: tr(
+        'probabilityCalculator.completions.definedInCodePiece',
+        `Defined in code piece “${definition.source}”.`,
+        { name: definition.source },
+      ),
+      insertText: plainInsertText(
+        isFunction
+          ? inCall
+            ? `${definition.insertText}${closeCall ? ']' : ''}`
+            : `[${definition.insertText}]`
+          : definition.insertText,
+      ),
+      replaceRange: range,
+      sortText: isFunction
+        ? `0-${definition.label}`
+        : `3.5-${definition.label}`,
+    });
+  }
+
+  return suggestions;
+}
+
+/** Editora completion provider for AnyDice. */
+export function createAnyDiceCompletionProvider(): CompletionProvider {
+  return (context) => getAnyDiceCompletionItems(context);
 }

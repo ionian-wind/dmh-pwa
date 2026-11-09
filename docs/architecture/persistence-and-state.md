@@ -221,7 +221,7 @@ persistence** rather than `pinia-plugin-persistedstate`.
 - `auto` → `Dark.set('auto')`, which follows `prefers-color-scheme`.
 
 `src/composables/useUiTheme.ts` exposes a reactive `isDark` value for parts
-that need the resolved theme, such as the Monaco editor (`vs` / `vs-dark`).
+that need the resolved theme, such as the code editor (`light` / `dark`).
 Custom surfaces use `body.body--dark` overrides in
 `src/assets/styles/global.css`; Quasar components switch automatically.
 `index.html` reads the saved theme before the app boots to avoid a light flash.

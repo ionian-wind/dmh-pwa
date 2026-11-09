@@ -1,112 +1,72 @@
-import { monaco } from '@/components/common/monaco';
-import { registerAnyDiceCompletions } from './anydiceCompletions';
-
 export const ANYDICE_LANGUAGE_ID = 'anydice';
 
-const anydiceLanguage: monaco.languages.IMonarchLanguage = {
-  defaultToken: '',
-  tokenPostfix: '.anydice',
-  ignoreCase: false,
-  keywords: [
-    'output',
-    'named',
-    'function',
-    'if',
-    'else',
-    'loop',
-    'over',
-    'result',
-    'set',
-    'to',
-  ],
-  operators: [
-    '+',
-    '-',
-    '*',
-    '/',
-    '^',
-    '=',
-    '!=',
-    '<',
-    '>',
-    '<=',
-    '>=',
-    '&',
-    '|',
-    '!',
-    '@',
-    '#',
-    '..',
-  ],
-  symbols: /[=!<>+\-*/^@#&|:,.]+/,
-  tokenizer: {
-    root: [
-      [/\\[\s\S]*?\\/, 'comment'],
-      [/\s+/, 'white'],
-      [/"(?:[^"\\]|\\.)*"/, 'string'],
-      [/\d+/, 'number'],
-      [/[A-Z_][A-Z0-9_]*/, 'variable'],
-      [
-        /[a-z]+/,
-        {
-          cases: {
-            '@keywords': 'keyword',
-            '@default': 'identifier',
-          },
-        },
-      ],
-      [/[{}()[\]]/, '@brackets'],
-      [/@symbols/, { cases: { '@operators': 'operator', '@default': '' } }],
-      [/[,;]/, 'delimiter'],
-    ],
-  },
-};
+const KEYWORDS = new Set([
+  'output',
+  'named',
+  'function',
+  'if',
+  'else',
+  'loop',
+  'over',
+  'result',
+  'set',
+  'to',
+]);
 
-const anydiceConfiguration: monaco.languages.LanguageConfiguration = {
-  comments: {
-    blockComment: ['\\', '\\'],
-  },
-  brackets: [
-    ['{', '}'],
-    ['[', ']'],
-    ['(', ')'],
-  ],
-  autoClosingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"' },
-  ],
-  surroundingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"' },
-  ],
-};
+const TOKEN_PATTERN =
+  /(\\[\s\S]*?\\)|("(?:[^"\\]|\\.)*")|(\d+)|([A-Z_][A-Z0-9_]*)|([a-z]+)|([=!<>+\-*/^@#&|:,.]+)/g;
 
-let registered = false;
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
-/** Register the AnyDice language and its syntax highlighter once. */
-export function registerAnyDiceLanguage(): void {
-  if (registered) return;
+export type AnyDiceSyntaxColors = Record<string, string>;
 
-  if (
-    !monaco.languages
-      .getLanguages()
-      .some(({ id }) => id === ANYDICE_LANGUAGE_ID)
-  ) {
-    monaco.languages.register({ id: ANYDICE_LANGUAGE_ID });
-    monaco.languages.setLanguageConfiguration(
-      ANYDICE_LANGUAGE_ID,
-      anydiceConfiguration,
-    );
-    monaco.languages.setMonarchTokensProvider(
-      ANYDICE_LANGUAGE_ID,
-      anydiceLanguage,
-    );
+/** Highlight AnyDice source into HTML using the editor's theme colours. */
+export function highlightAnydice(
+  source: string,
+  colors: AnyDiceSyntaxColors,
+): string {
+  const fallback = colors.text ?? 'inherit';
+  let output = '';
+  let cursor = 0;
+
+  for (const match of source.matchAll(TOKEN_PATTERN)) {
+    const index = match.index ?? 0;
+    output += escapeHtml(source.slice(cursor, index));
+    const token = match[0];
+    let color = fallback;
+
+    if (match[1]) color = colors.comment ?? fallback;
+    else if (match[2]) color = colors.string ?? fallback;
+    else if (match[3]) color = colors.number ?? fallback;
+    else if (match[4]) color = colors.variable ?? fallback;
+    else if (match[5]) {
+      color = KEYWORDS.has(token) ? (colors.keyword ?? fallback) : fallback;
+    } else if (match[6]) {
+      color = colors.keyword ?? fallback;
+    }
+
+    output += `<span style="color: ${color};">${escapeHtml(token)}</span>`;
+    cursor = index + token.length;
   }
 
-  registerAnyDiceCompletions();
-  registered = true;
+  output += escapeHtml(source.slice(cursor));
+  return output;
+}
+
+export interface AnyDiceSyntaxMode {
+  name: string;
+  highlight: (source: string, colors: Record<string, string>) => string;
+}
+
+/** Create the syntax mode registered with Editora's highlighting extension. */
+export function createAnyDiceHighlightMode(): AnyDiceSyntaxMode {
+  return {
+    name: 'AnyDice',
+    highlight: highlightAnydice,
+  };
 }

@@ -19,15 +19,15 @@ using integer (`bigint`) weights. A Vue page under
   `ViewHeader`; there is no in-page title block.
 - Main menu: inside the expandable **Tools** section, using `IconChartLine`.
   Timers and Calculator are grouped there as well.
-- Source editor: reusable `MonacoEditor.vue` wrapper with a custom AnyDice
+- Source editor: reusable `LightCodeEditor.vue` wrapper (`@editora/light-code-editor`) with a custom AnyDice
   Monarch syntax highlighter, autocomplete for keywords, snippets, built-in
   functions and variables, definitions from code pieces included in the current
   namespace (variables and functions, labelled with the source piece name), and
-  Monaco markers for syntax-error ranges. Completion labels/details and
+  diagnostics for syntax-error ranges. Completion labels/details and
   code-piece source labels follow the current UI language.
 - Syntax errors are structured by the parser (unexpected token/character,
   expected token types, source range). Fault-tolerant parsing collects multiple
-  errors via `DiceSyntaxError.errors`, and Monaco shows a marker for each issue.
+  errors via `DiceSyntaxError.errors`, and the editor shows a marker for each issue.
   Messages are localized and the error banner links to the first issue with a
   clickable `line N, column M` link that moves the editor cursor there.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
@@ -47,7 +47,7 @@ using integer (`bigint`) weights. A Vue page under
   unsaved-changes confirmation. Library contents persist in `localStorage`.
 
 UI coverage is split between `src/probability-calculator/__tests__/`,
-`src/components/common/__tests__/MonacoEditor.test.ts`, and
+`src/components/common/__tests__/LightCodeEditor.test.ts`, and
 `tests/e2e/probability-calculator.e2e.ts`.
 
 ## Public API

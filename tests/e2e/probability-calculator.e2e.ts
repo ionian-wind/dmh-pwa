@@ -8,7 +8,9 @@ test('probability calculator renders results and chart', async ({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message));
 
   await page.goto('/dmh-pwa/probability-calculator');
-  await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-lce-editor-container="true"]')).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(
     page.getByText('Dice Probability Calculator').first(),
   ).toBeVisible();
@@ -41,7 +43,9 @@ test('opens the probability calculator from the main menu', async ({
   await page.getByText('Tools', { exact: true }).click();
   await page.getByText('Probability Calculator', { exact: true }).click();
   await expect(page).toHaveURL(/\/dmh-pwa\/probability-calculator$/);
-  await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-lce-editor-container="true"]')).toBeVisible({
+    timeout: 30_000,
+  });
 });
 
 test('links to the static syntax reference', async ({ page }) => {
@@ -57,7 +61,9 @@ test('links to the static syntax reference', async ({ page }) => {
 
 test('creates a share link with the source in the hash', async ({ page }) => {
   await page.goto('/dmh-pwa/probability-calculator');
-  await expect(page.locator('.monaco-editor')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-lce-editor-container="true"]')).toBeVisible({
+    timeout: 30_000,
+  });
 
   await page.getByRole('button', { name: 'click to create link' }).click();
   const linkInput = page.getByLabel('Share link');
@@ -87,14 +93,18 @@ function: double N:n if above B:n {
     );
   });
   await page.goto('/dmh-pwa/probability-calculator');
-  await page.locator('.monaco-editor').waitFor({ timeout: 30_000 });
+  await page
+    .locator('[data-lce-editor-container="true"]')
+    .waitFor({ timeout: 30_000 });
 
-  const editor = page.locator('.monaco-editor');
+  const editor = page.locator(
+    '[data-lce-editor-container="true"] [contenteditable="true"]',
+  );
   await editor.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.type('[dou');
 
-  const suggestions = page.locator('.suggest-widget');
+  const suggestions = page.locator('.lce-completion-popup');
   await expect(suggestions).toBeVisible({ timeout: 10_000 });
   await expect(suggestions).toContainText('double N if above B');
   await expect(suggestions).toContainText('From code piece: Combat library');
@@ -122,14 +132,18 @@ test('localizes composer suggestions in Russian', async ({ page }) => {
     );
   });
   await page.goto('/dmh-pwa/probability-calculator');
-  await page.locator('.monaco-editor').waitFor({ timeout: 30_000 });
+  await page
+    .locator('[data-lce-editor-container="true"]')
+    .waitFor({ timeout: 30_000 });
 
-  const editor = page.locator('.monaco-editor');
+  const editor = page.locator(
+    '[data-lce-editor-container="true"] [contenteditable="true"]',
+  );
   await editor.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.type('DAM');
 
-  const suggestions = page.locator('.suggest-widget');
+  const suggestions = page.locator('.lce-completion-popup');
   await expect(suggestions).toBeVisible({ timeout: 10_000 });
   await expect(suggestions).toContainText(
     'Из фрагмента кода: Боевая библиотека',
@@ -141,13 +155,17 @@ test('highlights syntax errors and clears them before the next calculation', asy
   page,
 }) => {
   await page.goto('/dmh-pwa/probability-calculator');
-  await page.locator('.monaco-editor').waitFor({ timeout: 30_000 });
-  const editor = page.locator('.monaco-editor');
+  await page
+    .locator('[data-lce-editor-container="true"]')
+    .waitFor({ timeout: 30_000 });
+  const editor = page.locator(
+    '[data-lce-editor-container="true"] [contenteditable="true"]',
+  );
   await editor.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.type('output 1 +');
   await page.getByRole('button', { name: 'Calculate' }).click();
-  await expect(page.locator('.squiggly-error').first()).toBeVisible({
+  await expect(page.locator('.lce-decoration-gutter').first()).toBeVisible({
     timeout: 10_000,
   });
 
@@ -155,5 +173,5 @@ test('highlights syntax errors and clears them before the next calculation', asy
   await page.keyboard.press('Control+A');
   await page.keyboard.type('output 1d4');
   await page.getByRole('button', { name: 'Calculate' }).click();
-  await expect(page.locator('.squiggly-error')).toHaveCount(0);
+  await expect(page.locator('.lce-decoration-gutter')).toHaveCount(0);
 });

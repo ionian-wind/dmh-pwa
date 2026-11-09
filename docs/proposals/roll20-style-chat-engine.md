@@ -215,7 +215,7 @@ CSS.
 ## Macro library/editor
 
 A macro library and editor is proposed separately in
-[macro-library-editor.md](macro-library-editor.md). It uses Monaco for syntax
+[macro-library-editor.md](macro-library-editor.md). It uses the shared `@editora/light-code-editor` integration for syntax
 highlighting/completions and the roll engine's parser/AST for diagnostics. It is
 not part of the chat message pipeline.
 

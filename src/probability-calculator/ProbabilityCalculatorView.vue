@@ -26,8 +26,8 @@ import {
   IconDeviceFloppy,
   IconCodeblock,
 } from '@tabler/icons-vue';
-import MonacoEditor from '@/components/common/MonacoEditor.vue';
-import { monaco } from '@/components/common/monaco';
+import LightCodeEditor from '@/components/common/LightCodeEditor.vue';
+import type { EditorDiagnostic } from '@editora/light-code-editor';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import { useLayout, useRightDrawer } from '@/composables/useLayout';
 import { confirm, prompt } from '@/dialogs';
@@ -39,7 +39,7 @@ import {
   type OutputResult,
 } from '@/utils/dice-probability-calculator';
 import {
-  registerAnyDiceLanguage,
+  createAnyDiceHighlightMode,
   ANYDICE_LANGUAGE_ID,
 } from './anydiceLanguage';
 import { buildShareUrl, sourceFromHash } from './shareLink';
@@ -47,6 +47,7 @@ import { formatDiceSyntaxError } from './syntaxErrors';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { useUiTheme } from '@/composables/useUiTheme';
 import {
+  createAnyDiceCompletionProvider,
   setAnyDiceCompletionCodePieces,
   setAnyDiceCompletionTranslator,
 } from './anydiceCompletions';
@@ -71,7 +72,11 @@ import {
   type DataMode,
 } from './resultUtils';
 
-registerAnyDiceLanguage();
+const anydiceSyntaxMode = {
+  id: ANYDICE_LANGUAGE_ID,
+  mode: createAnyDiceHighlightMode(),
+};
+const anydiceCompletionProvider = createAnyDiceCompletionProvider();
 
 type ViewMode = 'table' | 'graph' | 'export' | 'roller';
 type DataModeChoice = DataMode | 'transposed' | 'summary';
@@ -80,7 +85,7 @@ const STORAGE_KEY = 'dmh-probability-calculator:source';
 const DEFAULT_SOURCE = 'output 3d6';
 const { t, locale } = useI18n();
 const { isDark } = useUiTheme();
-const monacoTheme = computed(() => (isDark.value ? 'vs-dark' : 'vs'));
+const editorTheme = computed(() => (isDark.value ? 'dark' : 'light'));
 const router = useRouter();
 setAnyDiceCompletionTranslator((key, named) => t(key, named as any));
 
@@ -103,7 +108,7 @@ const libraryState = reactive<CodeLibraryPanelState>({
   onRename: () => undefined,
   onDelete: () => undefined,
 });
-const editorRef = ref<InstanceType<typeof MonacoEditor> | null>(null);
+const editorRef = ref<InstanceType<typeof LightCodeEditor> | null>(null);
 const MARKER_OWNER = 'probability-calculator';
 const result = ref<CalculationResult | null>(null);
 const error = ref<string | null>(null);
@@ -240,30 +245,34 @@ function outcomesFor(output: OutputResult) {
 }
 
 function clearSyntaxMarkers() {
-  const model = editorRef.value?.getEditor()?.getModel();
-  if (model) monaco.editor.setModelMarkers(model, MARKER_OWNER, []);
+  editorRef.value?.clearDiagnostics();
 }
 
 function markSyntaxError(caught: DiceSyntaxError) {
-  const model = editorRef.value?.getEditor()?.getModel();
-  if (!model) return;
   const issues =
     caught.errors && caught.errors.length > 0 ? caught.errors : [caught];
-  monaco.editor.setModelMarkers(
-    model,
-    MARKER_OWNER,
-    issues.map((issue) => ({
-      startLineNumber: issue.line,
-      startColumn: issue.column,
-      endLineNumber: issue.endLine,
-      endColumn: issue.endColumn,
+  const diagnostics: EditorDiagnostic[] = issues.map((issue) => {
+    const line = Math.max(0, issue.line - 1);
+    const column = Math.max(0, issue.column - 1);
+    const endLine = Math.max(line, issue.endLine - 1);
+    const endColumn = Math.max(
+      endLine === line ? column + 1 : 0,
+      issue.endColumn - 1,
+    );
+    return {
+      severity: 'error',
+      source: MARKER_OWNER,
       message: `${formatDiceSyntaxError(issue, t)} (${t(
         'probabilityCalculator.syntaxErrors.location',
         { line: issue.line, column: issue.column },
       )})`,
-      severity: monaco.MarkerSeverity.Error,
-    })),
-  );
+      range: {
+        start: { line, column },
+        end: { line: endLine, column: endColumn },
+      },
+    };
+  });
+  editorRef.value?.setDiagnostics(diagnostics);
 }
 
 async function runCalculation() {
@@ -297,8 +306,12 @@ function focusSyntaxError() {
   if (!caught) return;
   const editor = editorRef.value?.getEditor();
   if (!editor) return;
-  editor.revealLineInCenter(caught.line);
-  editor.setPosition({ lineNumber: caught.line, column: caught.column });
+  const position = {
+    line: Math.max(0, caught.line - 1),
+    column: Math.max(0, caught.column - 1),
+  };
+  editor.getView().scrollToPosition(position);
+  editor.setCursor(position);
   editor.focus();
 }
 
@@ -514,16 +527,15 @@ onBeforeUnmount(() => {
           {{ t('probabilityCalculator.syntaxHint') }}
         </div>
       </div>
-      <MonacoEditor
+      <LightCodeEditor
         ref="editorRef"
         v-model="source"
         :language="ANYDICE_LANGUAGE_ID"
-        :theme="monacoTheme"
+        :syntax-mode="anydiceSyntaxMode"
+        :completion-providers="[anydiceCompletionProvider]"
+        :theme="editorTheme"
         height="340px"
-        :options="{
-          ariaLabel: t('probabilityCalculator.source'),
-          scrollbar: { verticalScrollbarSize: 10 },
-        }"
+        :aria-label="t('probabilityCalculator.source')"
       />
       <div class="row items-center justify-between q-gutter-md q-mt-sm">
         <div class="row items-center q-gutter-sm">

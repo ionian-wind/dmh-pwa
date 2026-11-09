@@ -1,60 +1,43 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-const languages = vi.hoisted(() => {
-  let provider: any;
-  return {
-    get provider() {
-      return provider;
-    },
-    registerCompletionItemProvider: vi.fn((_language: string, value: any) => {
-      provider = value;
-      return { dispose: vi.fn() };
-    }),
-    CompletionItemKind: {
-      Function: 3,
-      Snippet: 15,
-      Keyword: 18,
-      Variable: 6,
-    },
-    CompletionItemInsertTextRule: { InsertAsSnippet: 4 },
-  };
-});
-
-vi.mock('@/components/common/monaco', () => ({
-  monaco: { languages },
-}));
+import { afterEach, describe, expect, it } from 'vitest';
+import type {
+  CompletionContext,
+  CompletionItem,
+} from '@editora/light-code-editor';
 
 import {
   createAnyDiceCompletionProvider,
   extractCodePieceDefinitions,
-  registerAnyDiceCompletions,
   setAnyDiceCompletionCodePieces,
   setAnyDiceCompletionTranslator,
 } from '../anydiceCompletions';
 import ru from '@/i18n/locales/ru.json';
 
-function modelFor(text: string) {
+function contextFor(text: string, offset: number): CompletionContext {
+  const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1;
+  const nextLine = text.indexOf('\n', offset);
+  const lineEnd = nextLine === -1 ? text.length : nextLine;
+  const beforeWord = text.slice(lineStart, offset);
+  const match = beforeWord.match(/[a-z]+$/);
+  const prefix = match?.[0] ?? '';
+  const column = offset - lineStart;
   return {
-    getLineContent: vi.fn(() => text),
-    getValue: vi.fn(() => text),
-    getWordUntilPosition: vi.fn(
-      ({ lineNumber, column }: { lineNumber: number; column: number }) => {
-        const before = text.slice(0, column - 1);
-        const match = before.match(/[a-z]+$/);
-        return {
-          word: match?.[0] ?? '',
-          startColumn: column - (match?.[0].length ?? 0),
-          endColumn: column,
-          startLineNumber: lineNumber,
-          endLineNumber: lineNumber,
-        };
-      },
-    ),
+    editor: {} as never,
+    text,
+    lineText: text.slice(lineStart, lineEnd),
+    prefix,
+    cursor: { position: { line: 0, column } },
+    wordRange: {
+      start: { line: 0, column: column - prefix.length },
+      end: { line: 0, column },
+    },
+    explicit: false,
+    triggerKind: 'input',
   };
 }
 
-function position(column: number) {
-  return { lineNumber: 1, column };
+function completions(text: string, offset = text.length): CompletionItem[] {
+  const provider = createAnyDiceCompletionProvider();
+  return provider(contextFor(text, offset)) as CompletionItem[];
 }
 
 function ruTranslate(key: string, named?: Record<string, unknown>): string {
@@ -114,120 +97,78 @@ describe('AnyDice completions', () => {
       libraryPiece,
       { name: 'Ignored', include: false, code: 'HIDDEN: 1' },
     ]);
-    const provider = createAnyDiceCompletionProvider();
-    const result = provider.provideCompletionItems(
-      modelFor('out') as any,
-      position(4) as any,
-      {} as any,
-      {} as any,
-    ) as { suggestions: any[] };
+    const items = completions('out');
 
-    const damage = result.suggestions.find(
-      (suggestion) => suggestion.label === 'DAMAGE',
-    );
+    const damage = items.find((suggestion) => suggestion.label === 'DAMAGE');
     expect(damage).toMatchObject({
-      kind: 6,
+      kind: 'variable',
       detail: 'From code piece: Combat library',
-      documentation: 'Defined in code piece “Combat library”.',
+      description: 'Defined in code piece “Combat library”.',
     });
 
-    const double = result.suggestions.find(
+    const double = items.find(
       (suggestion) => suggestion.label === 'double N if above B',
     );
     expect(double).toMatchObject({
-      kind: 3,
-      insertText: '[double ${1:N} if above ${2:B}]',
-      insertTextRules: 4,
+      kind: 'function',
+      insertText: '[double N if above B]',
     });
-    expect(
-      result.suggestions.map((suggestion) => suggestion.label),
-    ).not.toContain('HIDDEN');
+    expect(items.map((suggestion) => suggestion.label)).not.toContain('HIDDEN');
   });
 
   it('inserts connected code-piece functions inside call brackets', () => {
     setAnyDiceCompletionCodePieces([libraryPiece]);
-    const provider = createAnyDiceCompletionProvider();
-    const result = provider.provideCompletionItems(
-      modelFor('[dou') as any,
-      position(5) as any,
-      {} as any,
-      {} as any,
-    ) as { suggestions: any[] };
-    const double = result.suggestions.find(
+    const items = completions('[dou');
+    const double = items.find(
       (suggestion) => suggestion.label === 'double N if above B',
     );
-    expect(double.insertText).toBe('double ${1:N} if above ${2:B}]');
+    expect(double?.insertText).toBe('double N if above B]');
   });
 
   it('offers snippets, functions, keywords and variables', () => {
-    const provider = createAnyDiceCompletionProvider();
-    const model = modelFor('X: 1\noutput X');
-    const result = provider.provideCompletionItems(
-      model as any,
-      position(9) as any,
-      {} as any,
-      {} as any,
-    ) as { suggestions: any[] };
-
-    expect(result.suggestions).toEqual(
+    const items = completions('X: 1\noutput ');
+    expect(items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ label: 'output', kind: 18 }),
-        expect.objectContaining({ label: 'function', kind: 15 }),
-        expect.objectContaining({ label: 'highest N of DICE', kind: 3 }),
-        expect.objectContaining({ label: 'X', kind: 6 }),
+        expect.objectContaining({ label: 'output', kind: 'keyword' }),
+        expect.objectContaining({ label: 'function', kind: 'snippet' }),
+        expect.objectContaining({
+          label: 'highest N of DICE',
+          kind: 'function',
+        }),
+        expect.objectContaining({ label: 'X', kind: 'variable' }),
       ]),
     );
   });
 
   it('inserts function snippets inside call brackets', () => {
-    const provider = createAnyDiceCompletionProvider();
-    const result = provider.provideCompletionItems(
-      modelFor('[hig') as any,
-      position(5) as any,
-      {} as any,
-      {} as any,
-    ) as { suggestions: any[] };
-    const highest = result.suggestions.find(
+    const items = completions('[hig');
+    const highest = items.find(
       (suggestion) => suggestion.label === 'highest N of DICE',
     );
-    expect(highest.insertText).toContain('highest ${1:1} of ${2:4d6}');
-    expect(highest.insertText.startsWith('[')).toBe(false);
-    expect(highest.insertText.endsWith(']')).toBe(true);
+    expect(highest?.insertText).toBe('highest 1 of 4d6]');
   });
 
   it('does not duplicate an auto-closed closing bracket', () => {
-    const provider = createAnyDiceCompletionProvider();
-    const result = provider.provideCompletionItems(
-      modelFor('[hig]') as any,
-      position(5) as any,
-      {} as any,
-      {} as any,
-    ) as { suggestions: any[] };
-    const highest = result.suggestions.find(
+    const items = completions('[hig]', 4);
+    const highest = items.find(
       (suggestion) => suggestion.label === 'highest N of DICE',
     );
-    expect(highest.insertText.endsWith(']')).toBe(false);
+    expect(highest?.insertText?.endsWith(']')).toBe(false);
   });
 
   it('localizes system, pre-defined and code-piece suggestions', () => {
     setAnyDiceCompletionTranslator(ruTranslate);
     setAnyDiceCompletionCodePieces([libraryPiece]);
-    const provider = createAnyDiceCompletionProvider();
-    const result = provider.provideCompletionItems(
-      modelFor('X: 1\nout') as any,
-      position(8) as any,
-      {} as any,
-      {} as any,
-    ) as { suggestions: any[] };
+    const items = completions('X: 1\nout');
 
-    const highest = result.suggestions.find(
+    const highest = items.find(
       (suggestion) => suggestion.label === 'highest N of DICE',
     );
-    expect(highest.detail).toBe(
+    expect(highest?.detail).toBe(
       'Сумма N наибольших значений. Поддерживает несколько наборов через and.',
     );
 
-    const dicePool = result.suggestions.find(
+    const dicePool = items.find(
       (suggestion) => suggestion.label === 'набор кубиков',
     );
     expect(dicePool).toMatchObject({
@@ -235,34 +176,27 @@ describe('AnyDice completions', () => {
       detail: 'Создать набор кубиков',
     });
 
-    const outputSnippet = result.suggestions.find(
-      (suggestion) => suggestion.label === 'output' && suggestion.kind === 15,
+    const outputSnippet = items.find(
+      (suggestion) =>
+        suggestion.label === 'output' && suggestion.kind === 'snippet',
     );
-    expect(outputSnippet.detail).toBe('Добавить вывод');
+    expect(outputSnippet?.detail).toBe('Добавить вывод');
 
-    const keyword = result.suggestions.find(
-      (suggestion) => suggestion.label === 'output' && suggestion.kind === 18,
+    const keyword = items.find(
+      (suggestion) =>
+        suggestion.label === 'output' && suggestion.kind === 'keyword',
     );
-    expect(keyword.detail).toBe('Ключевое слово');
+    expect(keyword?.detail).toBe('Ключевое слово');
 
-    const programVariable = result.suggestions.find(
+    const programVariable = items.find(
       (suggestion) => suggestion.label === 'X',
     );
-    expect(programVariable.detail).toBe('Переменная из этой программы');
+    expect(programVariable?.detail).toBe('Переменная из этой программы');
 
-    const damage = result.suggestions.find(
-      (suggestion) => suggestion.label === 'DAMAGE',
-    );
+    const damage = items.find((suggestion) => suggestion.label === 'DAMAGE');
     expect(damage).toMatchObject({
       detail: 'Из фрагмента кода: Combat library',
-      documentation: 'Определено во фрагменте кода «Combat library».',
+      description: 'Определено во фрагменте кода «Combat library».',
     });
-  });
-
-  it('registers the completion provider once', () => {
-    registerAnyDiceCompletions();
-    registerAnyDiceCompletions();
-    expect(languages.registerCompletionItemProvider).toHaveBeenCalledTimes(1);
-    expect(languages.provider).toBeDefined();
   });
 });

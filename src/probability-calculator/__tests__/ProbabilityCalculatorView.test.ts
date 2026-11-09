@@ -10,11 +10,11 @@ const layoutMock = vi.hoisted(() => ({
   clearRightDrawer: vi.fn(),
 }));
 const routeGuard = vi.hoisted(() => ({ handler: null as null | (() => any) }));
-const markerState = vi.hoisted(() => ({
-  model: { id: 'model' },
-  setModelMarkers: vi.fn(),
-  revealLineInCenter: vi.fn(),
-  setPosition: vi.fn(),
+const editorState = vi.hoisted(() => ({
+  setDiagnostics: vi.fn(),
+  clearDiagnostics: vi.fn(),
+  scrollToPosition: vi.fn(),
+  setCursor: vi.fn(),
   focus: vi.fn(),
 }));
 
@@ -25,12 +25,6 @@ vi.mock('@/composables/useLayout', () => ({
     set: layoutMock.setRightDrawer,
     clear: layoutMock.clearRightDrawer,
   }),
-}));
-vi.mock('@/components/common/monaco', () => ({
-  monaco: {
-    editor: { setModelMarkers: markerState.setModelMarkers },
-    MarkerSeverity: { Error: 8 },
-  },
 }));
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -73,25 +67,26 @@ vi.mock('vue3-charts', async () => {
   };
 });
 
-vi.mock('@/components/common/MonacoEditor.vue', async () => {
+vi.mock('@/components/common/LightCodeEditor.vue', async () => {
   const { defineComponent, h } = await import('vue');
   return {
     default: defineComponent({
-      name: 'MonacoEditor',
+      name: 'LightCodeEditor',
       props: { modelValue: { type: String, default: '' } },
       emits: ['update:modelValue'],
       setup(props, { emit, expose }) {
         expose({
           getEditor: () => ({
-            getModel: () => markerState.model,
-            revealLineInCenter: markerState.revealLineInCenter,
-            setPosition: markerState.setPosition,
-            focus: markerState.focus,
+            getView: () => ({ scrollToPosition: editorState.scrollToPosition }),
+            setCursor: editorState.setCursor,
+            focus: editorState.focus,
           }),
+          setDiagnostics: editorState.setDiagnostics,
+          clearDiagnostics: editorState.clearDiagnostics,
         });
         return () =>
           h('textarea', {
-            class: 'monaco-editor-stub',
+            class: 'light-code-editor-stub',
             value: props.modelValue,
             onInput: (event: Event) =>
               emit(
@@ -106,7 +101,10 @@ vi.mock('@/components/common/MonacoEditor.vue', async () => {
 
 vi.mock('../anydiceLanguage', () => ({
   ANYDICE_LANGUAGE_ID: 'anydice',
-  registerAnyDiceLanguage: vi.fn(),
+  createAnyDiceHighlightMode: () => ({
+    name: 'AnyDice',
+    highlight: (source: string) => source,
+  }),
 }));
 
 import ProbabilityCalculatorView from '../ProbabilityCalculatorView.vue';
@@ -255,7 +253,9 @@ describe('ProbabilityCalculatorView', () => {
     expect(window.location.hash).toContain('#code=');
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(link);
 
-    await wrapper.find('textarea.monaco-editor-stub').setValue('output 1d8');
+    await wrapper
+      .find('textarea.light-code-editor-stub')
+      .setValue('output 1d8');
     await settle();
 
     expect((input().element as HTMLInputElement).value).toBe('');
@@ -269,7 +269,7 @@ describe('ProbabilityCalculatorView', () => {
 
     expect(
       (
-        wrapper.find('textarea.monaco-editor-stub')
+        wrapper.find('textarea.light-code-editor-stub')
           .element as HTMLTextAreaElement
       ).value,
     ).toBe('output 1d4');
@@ -315,7 +315,7 @@ describe('ProbabilityCalculatorView', () => {
     );
     const wrapper = await mountPage();
     const state = libraryState();
-    const editor = wrapper.find('textarea.monaco-editor-stub');
+    const editor = wrapper.find('textarea.light-code-editor-stub');
 
     await editor.setValue('output 1d8');
     confirmMock.mockResolvedValueOnce(false);
@@ -369,7 +369,7 @@ describe('ProbabilityCalculatorView', () => {
         : null,
     );
     const wrapper = await mountPage();
-    await wrapper.find('textarea.monaco-editor-stub').setValue('output A');
+    await wrapper.find('textarea.light-code-editor-stub').setValue('output A');
     await wrapper
       .findAll('button')
       .find((button) => button.text() === 'Calculate')!
@@ -384,7 +384,7 @@ describe('ProbabilityCalculatorView', () => {
   it('confirms when leaving with unsaved editor changes', async () => {
     const listenerSpy = vi.spyOn(window, 'addEventListener');
     const wrapper = await mountPage();
-    const editor = wrapper.find('textarea.monaco-editor-stub');
+    const editor = wrapper.find('textarea.light-code-editor-stub');
     const beforeUnload = listenerSpy.mock.calls.find(
       ([eventName]) => String(eventName) === 'beforeunload',
     )?.[1] as (event: { preventDefault: () => void }) => void;
@@ -409,13 +409,9 @@ describe('ProbabilityCalculatorView', () => {
 
   it('clears and highlights syntax errors in the editor', async () => {
     const wrapper = await mountPage();
-    const editor = wrapper.find('textarea.monaco-editor-stub');
+    const editor = wrapper.find('textarea.light-code-editor-stub');
 
-    expect(markerState.setModelMarkers).toHaveBeenCalledWith(
-      markerState.model,
-      'probability-calculator',
-      [],
-    );
+    expect(editorState.clearDiagnostics).toHaveBeenCalled();
 
     await editor.setValue('output 1 +');
     await wrapper
@@ -424,13 +420,16 @@ describe('ProbabilityCalculatorView', () => {
       .trigger('click');
     await settle();
 
-    const markerCall = markerState.setModelMarkers.mock.calls.at(-1)!;
-    expect(markerCall[0]).toBe(markerState.model);
-    expect(markerCall[1]).toBe('probability-calculator');
-    expect(markerCall[2]).toEqual([
+    const diagnostics = editorState.setDiagnostics.mock.calls.at(
+      -1,
+    )?.[0] as any[];
+    expect(diagnostics).toEqual([
       expect.objectContaining({
-        startLineNumber: 1,
-        severity: 8,
+        severity: 'error',
+        range: {
+          start: { line: 0, column: 10 },
+          end: expect.objectContaining({ line: 0 }),
+        },
         message: expect.stringContaining('Unexpected end of input'),
       }),
     ]);
@@ -438,12 +437,15 @@ describe('ProbabilityCalculatorView', () => {
     expect(wrapper.text()).toContain('line 1, column 11');
 
     await wrapper.find('.syntax-error-location').trigger('click');
-    expect(markerState.revealLineInCenter).toHaveBeenCalledWith(1);
-    expect(markerState.setPosition).toHaveBeenCalledWith({
-      lineNumber: 1,
-      column: 11,
+    expect(editorState.scrollToPosition).toHaveBeenCalledWith({
+      line: 0,
+      column: 10,
     });
-    expect(markerState.focus).toHaveBeenCalled();
+    expect(editorState.setCursor).toHaveBeenCalledWith({
+      line: 0,
+      column: 10,
+    });
+    expect(editorState.focus).toHaveBeenCalled();
 
     await editor.setValue('output 1d4');
     await wrapper
@@ -451,7 +453,9 @@ describe('ProbabilityCalculatorView', () => {
       .find((button) => button.text() === 'Calculate')!
       .trigger('click');
     await settle();
-    expect(markerState.setModelMarkers.mock.calls.at(-1)?.[2]).toEqual([]);
+    expect(
+      editorState.clearDiagnostics.mock.calls.length,
+    ).toBeGreaterThanOrEqual(2);
     wrapper.unmount();
   });
 
@@ -488,7 +492,7 @@ describe('ProbabilityCalculatorView', () => {
     vm.roll();
     expect(vm.rollerResults).toEqual([]);
 
-    await wrapper.find('textarea.monaco-editor-stub').setValue('???');
+    await wrapper.find('textarea.light-code-editor-stub').setValue('???');
     await wrapper
       .findAll('button')
       .find((button) => button.text() === 'Calculate')!
@@ -503,7 +507,7 @@ describe('ProbabilityCalculatorView', () => {
 
   it('shows calculation errors', async () => {
     const wrapper = await mountPage();
-    const editor = wrapper.find('textarea.monaco-editor-stub');
+    const editor = wrapper.find('textarea.light-code-editor-stub');
     await editor.setValue('output 1 +');
 
     await wrapper
@@ -537,10 +541,16 @@ describe('ProbabilityCalculatorView', () => {
       ],
     });
 
-    const markers = markerState.setModelMarkers.mock.calls.at(-1)?.[2] as any[];
-    expect(markers).toHaveLength(2);
-    expect(markers[0]).toMatchObject({ startLineNumber: 1, startColumn: 1 });
-    expect(markers[1]).toMatchObject({ startLineNumber: 2, startColumn: 3 });
+    const diagnostics = editorState.setDiagnostics.mock.calls.at(
+      -1,
+    )?.[0] as any[];
+    expect(diagnostics).toHaveLength(2);
+    expect(diagnostics[0]).toMatchObject({
+      range: { start: { line: 0, column: 0 } },
+    });
+    expect(diagnostics[1]).toMatchObject({
+      range: { start: { line: 1, column: 2 } },
+    });
     wrapper.unmount();
   });
 });

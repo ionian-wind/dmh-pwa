@@ -13,7 +13,7 @@ if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
 
 /**
  * Effective light/dark state for components that need to know the resolved
- * theme (for example the Monaco editor), including the "auto" mode.
+ * theme (for example the code editor), including the "auto" mode.
  */
 export function useUiTheme() {
   const configStore = useConfigStore();

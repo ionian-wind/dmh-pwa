@@ -80,9 +80,9 @@ Slots: `left`, default, `actions`.
 `actions` slots add icons or extra buttons. Used by the ambient scene panel and
 the jukebox playlist list.
 
-### `MonacoEditor.vue`
+### `LightCodeEditor.vue`
 
-Thin Monaco wrapper used by the probability calculator.
+Thin `@editora/light-code-editor` wrapper used by the probability calculator. It supports custom syntax modes, completions and diagnostics.
 
 Props: `modelValue`, `language`, `theme`, `readonly`, `height`, `options`.
 Emits: `update:modelValue`, `ready`.

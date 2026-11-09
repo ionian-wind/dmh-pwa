@@ -103,23 +103,23 @@ src/utils/rng.ts
                 # shared RNG, replay and weighted-sampling library
 ```
 
-Total test files: 223. Total tests: 1845.
+Total test files: 222. Total tests: 1847.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  223 passed (223)
-Tests       1845 passed (1845)
+Test Files  222 passed (222)
+Tests       1847 passed (1847)
 ```
 
 Coverage (V8, `npm run test:coverage`, exit code 0):
 
 ```
-Statements  94.24%
-Branches    87.13%
-Functions   92.82%
-Lines       95.52%
+Statements  94.26%
+Branches    87.09%
+Functions   92.85%
+Lines       95.54%
 ```
 
 `vitest.config.ts` enforces 87% statements, functions, branches and lines
@@ -190,7 +190,7 @@ The suite now includes direct tests for:
   sidebar and participant info dialogs,
 - markdown sanitizing/task lists and mention plugin helpers,
 - map canvas readback patching and the map-layers migration,
-- Monaco environment setup and the probability calculator page, code library,
+- the Editora code editor, probability calculator page, code library,
   syntax page, editor completions, sharing, chart zoom and syntax markers,
 - note Markdown/PNG downloads and the shared `SidebarItem` component,
 - drag-and-drop and ordering paths: `BaseListView` sort events and drop
