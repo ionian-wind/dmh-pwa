@@ -20,6 +20,7 @@ const props = defineProps<{
   settings: ToolSettings;
   selectedObjectId?: string | null;
   selectedShape?: DungeonShape | null;
+  selectedObjectIds?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   (event: 'stairs', points: [number, number][]): void;
   (event: 'select', id: string | null): void;
   (event: 'selectShape', id: string | null): void;
+  (event: 'selectMany', ids: string[]): void;
   (event: 'moveObject', delta: { dx: number; dy: number }): void;
   (event: 'beginObjectDrag'): void;
   (event: 'moveObjectLive', delta: { dx: number; dy: number }): void;
@@ -63,6 +65,7 @@ let drag:
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
   | { kind: 'object'; id: string; start: Point; last: Point }
+  | { kind: 'marquee'; start: Point }
   | {
       kind: 'resize';
       start: Point;
@@ -187,6 +190,12 @@ function onPointerDown(event: PointerEvent): void {
         .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
       point,
     );
+    const selectedIds = props.selectedObjectIds ?? [];
+    if (object && selectedIds.includes(object.id)) {
+      drag = { kind: 'object', id: object.id, start: point, last: point };
+      emit('beginObjectDrag');
+      return;
+    }
     emit('select', object?.id ?? null);
     if (!object) {
       let shapeId: string | null = null;
@@ -202,6 +211,7 @@ function onPointerDown(event: PointerEvent): void {
         if (shapeId) break;
       }
       emit('selectShape', shapeId);
+      if (!shapeId) drag = { kind: 'marquee', start: point };
     }
     if (object) {
       drag = { kind: 'object', id: object.id, start: point, last: point };
@@ -311,6 +321,19 @@ function onPointerMove(event: PointerEvent): void {
     emit('rotateObject', drag.rotation + angle - drag.startAngle);
     return;
   }
+  if (drag.kind === 'marquee') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const x1 = Math.min(drag.start[0], current[0]);
+    const y1 = Math.min(drag.start[1], current[1]);
+    renderer.value.setPreview({
+      kind: 'rectangle',
+      x: x1,
+      y: y1,
+      width: Math.abs(current[0] - drag.start[0]),
+      height: Math.abs(current[1] - drag.start[1]),
+    });
+    return;
+  }
   if (drag.kind === 'object') {
     const current = renderer.value.screenToWorld(sx, sy);
     emit('moveObjectLive', {
@@ -380,6 +403,28 @@ function onPointerMovePolygon(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
+  if (drag.kind === 'marquee') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const x1 = Math.min(drag.start[0], current[0]);
+    const y1 = Math.min(drag.start[1], current[1]);
+    const x2 = Math.max(drag.start[0], current[0]);
+    const y2 = Math.max(drag.start[1], current[1]);
+    const ids = props.map.layers
+      .filter((layer) => layer.type === 'images' && layer.visible)
+      .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
+      .filter((object) => {
+        if (!object.visible) return false;
+        const b = objectBounds(object);
+        return (
+          b.x >= x1 && b.y >= y1 && b.x + b.width <= x2 && b.y + b.height <= y2
+        );
+      })
+      .map((object) => object.id);
+    renderer.value.setPreview(null);
+    emit('selectMany', ids);
+    drag = null;
+    return;
+  }
   if (
     drag.kind === 'object' ||
     drag.kind === 'resize' ||

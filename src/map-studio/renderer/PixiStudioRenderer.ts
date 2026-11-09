@@ -312,14 +312,15 @@ export class PixiStudioRenderer {
     for (const child of this.dungeonContainer.removeChildren()) {
       child.destroy();
     }
-    for (const layer of map.layers) {
+    const orderedLayers = [...map.layers].sort((a, b) => a.order - b.order);
+    for (const layer of orderedLayers) {
       if (layer.type !== 'dungeon' || !layer.visible) continue;
       this.drawDungeonLayer(layer);
     }
     for (const child of this.objectsContainer.removeChildren()) {
       child.destroy({ children: true });
     }
-    for (const layer of map.layers) {
+    for (const layer of orderedLayers) {
       if (layer.type !== 'images' || !layer.visible) continue;
       for (const object of [...layer.objects].sort(
         (a, b) => a.order - b.order,

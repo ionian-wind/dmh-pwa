@@ -51,6 +51,19 @@ useStudioHotkeys({
 
 const map = computed(() => store.map);
 const layers = computed(() => map.value?.layers ?? []);
+const orderedLayers = computed(() => {
+  const all = layers.value;
+  const build = (parentId: string | null): typeof all => {
+    const children = all
+      .filter((layer) => layer.parentId === parentId)
+      .sort((a, b) => a.order - b.order);
+    return children.flatMap((layer) => [
+      layer,
+      ...(layer.type === 'folder' ? build(layer.id) : []),
+    ]);
+  };
+  return build(null);
+});
 const activeLayer = computed(() => store.activeLayer);
 const selectedObject = computed(() => store.selectedObject);
 const draggedLayerId = ref<string | null>(null);
@@ -596,6 +609,7 @@ async function applyToLocation(): Promise<void> {
           :tool="store.tool"
           :settings="store.toolSettings"
           :selected-object-id="store.selectedObjectId"
+          :selected-object-ids="store.selectedObjectIds"
           :selected-shape="store.selectedShape"
           @rectangle="addRectangle"
           @circle="store.addCircle"
@@ -606,6 +620,7 @@ async function applyToLocation(): Promise<void> {
           @door="([a, b]) => store.addDoor(a, b)"
           @stairs="store.addStairs"
           @select="store.selectObject"
+          @selectMany="store.selectObjects"
           @selectShape="store.selectShape"
           @beginObjectDrag="store.beginObjectDrag"
           @moveObjectLive="store.moveSelectedObjectLive($event.dx, $event.dy)"
@@ -692,7 +707,9 @@ async function applyToLocation(): Promise<void> {
             </span>
           </div>
           <div
-            v-for="layer in layers.filter((entry) => !isLayerHidden(entry))"
+            v-for="layer in orderedLayers.filter(
+              (entry) => !isLayerHidden(entry),
+            )"
             :key="layer.id"
             class="studio-layer-row"
             :class="{

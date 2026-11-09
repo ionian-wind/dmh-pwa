@@ -522,3 +522,21 @@ describe('map studio shape selection', () => {
     expect(store.selectedShape).toBeNull();
   });
 });
+
+describe('map studio multi-object drag', () => {
+  it('selects multiple objects and moves them together', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    const ids = store.imagesLayer!.objects.map((object) => object.id);
+    store.selectObjects(ids);
+    expect(store.selectedObjects).toHaveLength(2);
+    store.beginObjectDrag();
+    store.moveSelectedObjectLive(1, 1);
+    store.endObjectDrag();
+    const moved = store.imagesLayer!.objects;
+    expect(moved[0].transform.x).toBe(2);
+    expect(moved[1].transform.x).toBe(4);
+  });
+});

@@ -48,6 +48,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const activeLayerId = ref<string | null>(null);
   const selectedObjectId = ref<string | null>(null);
   const selectedShapeId = ref<string | null>(null);
+  const selectedObjectIds = ref<string[]>([]);
   const tool = ref<StudioTool>('rectangle');
   const toolSettings = ref<ToolSettings>({
     snap: true,
@@ -82,6 +83,11 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     () =>
       (map.value?.layers.find((layer) => layer.type === 'images') as
         ImagesLayer | undefined) ?? null,
+  );
+  const selectedObjects = computed(() =>
+    (imagesLayer.value?.objects ?? []).filter((object) =>
+      selectedObjectIds.value.includes(object.id),
+    ),
   );
   const selectedObject = computed(
     () =>
@@ -492,7 +498,14 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
 
   function selectObject(id: string | null): void {
     selectedObjectId.value = id;
+    selectedObjectIds.value = id ? [id] : [];
     if (id) selectedShapeId.value = null;
+  }
+
+  function selectObjects(ids: string[]): void {
+    selectedObjectIds.value = [...new Set(ids)];
+    selectedObjectId.value = selectedObjectIds.value.at(-1) ?? null;
+    if (selectedObjectIds.value.length) selectedShapeId.value = null;
   }
 
   function selectShape(id: string | null): void {
@@ -507,8 +520,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   function moveSelectedObjectLive(dx: number, dy: number): void {
     const current = map.value;
     const layer = imagesLayer.value;
-    const id = selectedObjectId.value;
-    if (!current || !layer || !id) return;
+    const ids = new Set(selectedObjectIds.value);
+    if (!current || !layer || ids.size === 0) return;
     map.value = {
       ...current,
       updatedAt: Date.now(),
@@ -517,7 +530,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
           ? {
               ...layer,
               objects: layer.objects.map((object) =>
-                object.id === id ? moveObject(object, dx, dy) : object,
+                ids.has(object.id) ? moveObject(object, dx, dy) : object,
               ),
             }
           : entry,
@@ -764,6 +777,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     imagesLayer,
     selectedObjectId,
     selectedObject,
+    selectedObjectIds,
+    selectedObjects,
     selectedShapeId,
     selectedShape,
     tool,
@@ -789,6 +804,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addDoor,
     addStairs,
     selectObject,
+    selectObjects,
     selectShape,
     moveSelectedObject,
     beginObjectDrag,
