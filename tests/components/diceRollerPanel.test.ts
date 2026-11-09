@@ -71,6 +71,7 @@ describe('DiceRollerPanel', () => {
       expect.objectContaining({
         container: '#dice-roller-surface',
         assetPath: '/dmh-pwa/assets/dice-box/',
+        offscreen: false,
       }),
     );
     expect(mocks.diceBox.init).toHaveBeenCalled();
@@ -182,6 +183,7 @@ describe('DiceRollerPanel', () => {
 
     expect(surface.style.width).toBe('1000px');
     expect(surface.style.height).toBe('700px');
+    expect(mocks.diceBox.clear).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 });

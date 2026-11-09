@@ -167,6 +167,9 @@ onMounted(async () => {
     assetPath: '/dmh-pwa/assets/dice-box/',
     theme: 'default-extras',
     preloadThemes: ['default-extras'],
+    // On-screen rendering preserves the existing dice scene through resizes.
+    // The offscreen worker path recreates its surface and can leave it blank.
+    offscreen: false,
   });
   await diceBox.init();
   ready.value = true;
