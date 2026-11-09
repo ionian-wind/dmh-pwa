@@ -11,7 +11,11 @@ export function enableFrequentHitDetectionReads() {
   const prototype = HTMLCanvasElement.prototype;
   if (typeof prototype.getContext !== 'function') return;
 
-  const original = prototype.getContext;
+  const original = prototype.getContext as (
+    this: HTMLCanvasElement,
+    contextId: string,
+    options?: CanvasRenderingContext2DSettings,
+  ) => RenderingContext | null;
   prototype.getContext = function (
     this: HTMLCanvasElement,
     contextId: string,

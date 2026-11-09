@@ -1120,6 +1120,7 @@
     "title": "Dice Roller",
     "clear": "Clear",
     "close": "Close dice roller",
-    "reroll": "Reroll"
+    "reroll": "Reroll",
+    "rollError": "Could not roll dice. Try again."
   }
 }

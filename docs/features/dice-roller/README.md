@@ -804,24 +804,46 @@ Engine returns data; presentation is separate:
 - 2D dice breakdown;
 - optional 3D dice animation.
 
-3D dice use the existing `@3d-dice/dice-box` dependency. The adapter receives a
-`RollResult`/`RollSegment[]` and animates the recorded values; it never chooses
-results, consumes RNG or changes the total. If 3D rendering fails or is disabled
-(reduced motion, low-power device, unsupported WebGL), fall back to the text/2D
-breakdown. Text must remain accessible and must show the same values.
+3D dice use the first-party Three.js + Rapier renderer under
+`src/features/dice-roller/renderer/`. The renderer receives authoritative
+`{ sides, value }` records from `bag-of-dice`; physics only provides cosmetic
+tumbling, and settled dice snap to the face matching the engine value. The
+shipped dice-box mesh/texture assets are reused.
+
+`@3d-dice/dice-box` remains as a fallback only when WebGL is unavailable. It
+cannot force engine values, so the Three renderer is preferred. If 3D rendering
+fails or is disabled (reduced motion, unsupported WebGL), fall back to the
+text/2D breakdown. Text must remain accessible and must show the same values.
+
+Renderer modules:
+
+| Module              | Responsibility                                         |
+| ------------------- | ------------------------------------------------------ |
+| `DiceRenderer`      | Adapter contract and visual record types               |
+| `ThreeDiceRenderer` | Scene, camera, lights, meshes, settle loop and resize  |
+| `RapierDiceWorld`   | Rapier world, bodies, fixed step and cleanup           |
+| `assetLoader`       | Babylon JSON → Three geometry and collider face data   |
+| `themeLoader`       | Atlas textures and the opaque die-atlas material       |
+| `faceOrientation`   | Face normal → target quaternion and deterministic spin |
+| `diceValues`        | d100 split, value validation and visual parts          |
+| `DiceBoxRenderer`   | Temporary no-WebGL fallback adapter                    |
 
 Adapter contract:
 
 ```ts
-interface RollVisualizer {
-  canRender(result: RollResult): boolean;
-  render(result: RollResult, host: VisualizerHost): Promise<void>;
+interface DiceRenderer {
+  init(container: HTMLElement, options: DiceRendererOptions): Promise<void>;
+  add(dice: readonly DiceVisual[]): void;
+  replace(dice: readonly DiceVisual[]): void;
+  clear(): void;
+  resize(width: number, height: number): void;
   dispose(): void;
 }
 ```
 
 Visualizer adapters must not mutate the result and must tolerate missing 3D
-assets by reporting a fallback.
+assets by reporting a fallback. The animation loop stops when every die has
+settled; resize redraws and never clears the scene.
 
 ## Non-functional requirements
 

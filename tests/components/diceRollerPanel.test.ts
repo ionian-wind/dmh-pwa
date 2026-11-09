@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 
@@ -55,6 +55,12 @@ function button(label: string): HTMLElement {
 }
 
 describe('DiceRollerPanel', () => {
+  beforeAll(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      null as never,
+    );
+  });
+
   beforeEach(() => {
     mocks.diceBox.init.mockClear();
     mocks.diceBox.add.mockClear();
@@ -77,8 +83,11 @@ describe('DiceRollerPanel', () => {
     expect(mocks.diceBox.init).toHaveBeenCalled();
 
     button('d6').click();
+    await flushPromises();
     button('d6').click();
+    await flushPromises();
     button('d100').click();
+    await flushPromises();
 
     expect(mocks.diceBox.add).toHaveBeenNthCalledWith(1, '1d6');
     expect(mocks.diceBox.add).toHaveBeenNthCalledWith(2, '1d6');
@@ -93,10 +102,14 @@ describe('DiceRollerPanel', () => {
     await flushPromises();
 
     button('d6').click();
+    await flushPromises();
     button('d6').click();
+    await flushPromises();
     button('d100').click();
+    await flushPromises();
     mocks.diceBox.add.mockClear();
     button('Reroll').click();
+    await flushPromises();
 
     expect(mocks.diceBox.clear).toHaveBeenCalled();
     expect(mocks.diceBox.add.mock.calls).toEqual([['1d6'], ['1d6'], ['2d10']]);
@@ -105,6 +118,7 @@ describe('DiceRollerPanel', () => {
     button('Clear').click();
     expect(mocks.diceBox.clear).toHaveBeenCalledTimes(2);
     button('Reroll').click();
+    await flushPromises();
     expect(mocks.diceBox.add).not.toHaveBeenCalled();
 
     document.querySelector<HTMLElement>('.dice-roller-header button')!.click();
@@ -152,10 +166,23 @@ describe('DiceRollerPanel', () => {
 
     expect(Number.parseFloat(anchor.style.left)).toBe(beforeLeft + 50);
     expect(Number.parseFloat(anchor.style.top)).toBe(beforeTop - 50);
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 300,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 200,
+    });
+    window.dispatchEvent(new Event('resize'));
+    await nextTick();
+    expect(Number.parseFloat(anchor.style.left)).toBeLessThanOrEqual(300);
+    expect(Number.parseFloat(anchor.style.top)).toBeLessThanOrEqual(200);
     wrapper.unmount();
   });
 
-  it('does not resize or clear the dice canvas on window resize', async () => {
+  it('resizes without clearing settled dice', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 800,
@@ -181,10 +208,8 @@ describe('DiceRollerPanel', () => {
     });
     window.dispatchEvent(new Event('resize'));
 
-    // DiceBox stops rendering after dice settle; resizing its canvas would
-    // clear the settled dice without restarting the render loop.
-    expect(surface.style.width).toBe('800px');
-    expect(surface.style.height).toBe('600px');
+    expect(surface.style.width).toBe('1000px');
+    expect(surface.style.height).toBe('700px');
     expect(mocks.diceBox.clear).not.toHaveBeenCalled();
     expect(mocks.diceBox.add).not.toHaveBeenCalled();
     wrapper.unmount();

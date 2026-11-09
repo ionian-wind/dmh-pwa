@@ -8,8 +8,19 @@ import {
   watch,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import DiceBox from '@3d-dice/dice-box';
 import { IconX } from '@tabler/icons-vue';
+import {
+  createEmptyRepositories,
+  createRollEngine,
+  type RollResult,
+} from '@/utils/bag-of-dice';
+import type {
+  DiceRenderer,
+  DiceVisual,
+} from '@/features/dice-roller/renderer/DiceRenderer';
+import { DiceBoxRenderer } from '@/features/dice-roller/renderer/DiceBoxRenderer';
+import { ThreeDiceRenderer } from '@/features/dice-roller/renderer/ThreeDiceRenderer';
+import { supportsWebGL } from '@/features/dice-roller/renderer/factory';
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
@@ -18,15 +29,18 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const dice = [
-  { label: 'd2', notation: '1d2' },
-  { label: 'd4', notation: '1d4' },
-  { label: 'd6', notation: '1d6' },
-  { label: 'd8', notation: '1d8' },
-  { label: 'd10', notation: '1d10' },
-  { label: 'd12', notation: '1d12' },
-  { label: 'd20', notation: '1d20' },
-  { label: 'd100', notation: '2d10' },
+  { label: 'd2', notation: '1d2', sides: 2 },
+  { label: 'd4', notation: '1d4', sides: 4 },
+  { label: 'd6', notation: '1d6', sides: 6 },
+  { label: 'd8', notation: '1d8', sides: 8 },
+  { label: 'd10', notation: '1d10', sides: 10 },
+  { label: 'd12', notation: '1d12', sides: 12 },
+  { label: 'd20', notation: '1d20', sides: 20 },
+  { label: 'd100', notation: '1d100', sides: 100 },
 ];
+
+const ENGINE = createRollEngine();
+const EMPTY_REPOSITORIES = createEmptyRepositories();
 
 const open = computed({
   get: () => props.modelValue,
@@ -37,11 +51,13 @@ const surface = ref<HTMLDivElement | null>(null);
 const anchor = ref<HTMLDivElement | null>(null);
 const menu = ref<{ updatePosition?: () => void } | null>(null);
 const ready = ref(false);
+const rollError = ref(false);
 const pool = ref<Record<string, number>>({});
 const anchorStyle = ref({ left: '0px', top: '0px' });
-let diceBox: any;
+let renderer: DiceRenderer | null = null;
 let resizeObserver: ResizeObserver | undefined;
 let dragged = false;
+let visualCounter = 0;
 let drag: {
   startX: number;
   startY: number;
@@ -63,12 +79,6 @@ function placeBesideMenu() {
   void nextTick(() => menu.value?.updatePosition?.());
 }
 
-/**
- * DiceBox stops its Babylon render loop once every die is asleep. Resizing the
- * canvas after that clears the drawing buffer without starting a new frame, so
- * the settled dice vanish. Keep the render surface at its original pixel size
- * and only move the menu anchor on viewport changes.
- */
 function sizeSurface() {
   if (!surface.value) return;
   surface.value.style.width = `${window.innerWidth}px`;
@@ -76,6 +86,8 @@ function sizeSurface() {
 }
 
 function onWindowResize() {
+  sizeSurface();
+  renderer?.resize(window.innerWidth, window.innerHeight);
   if (!dragged) {
     placeBesideMenu();
   } else {
@@ -124,26 +136,105 @@ function stopDragging() {
   window.removeEventListener('pointermove', onPointerMove);
 }
 
-function addDie(die: { label: string; notation: string }) {
-  if (!ready.value || !diceBox) return;
-  pool.value[die.label] = (pool.value[die.label] ?? 0) + 1;
-  diceBox.add(die.notation);
+function valueFrom(result: RollResult): number {
+  return result.total;
 }
 
-function rollPool() {
-  if (!ready.value || !diceBox) return;
-  diceBox.clear();
+async function rollOne(die: (typeof dice)[number]): Promise<DiceVisual | null> {
+  try {
+    const outcome = await ENGINE.roll(`1d${die.sides}`, {
+      repositories: EMPTY_REPOSITORIES,
+    });
+    if (outcome.status !== 'complete') {
+      rollError.value = true;
+      return null;
+    }
+    visualCounter += 1;
+    return {
+      id: `die-${visualCounter}`,
+      sides: die.sides,
+      value: valueFrom(outcome.result),
+      notation: die.notation,
+      label: die.label,
+    };
+  } catch {
+    rollError.value = true;
+    return null;
+  }
+}
+
+async function addDie(die: (typeof dice)[number]) {
+  if (!ready.value || !renderer) return;
+  pool.value[die.label] = (pool.value[die.label] ?? 0) + 1;
+  const visual = await rollOne(die);
+  if (!visual) return;
+  try {
+    renderer.add([visual]);
+    rollError.value = false;
+  } catch {
+    // Keep the pool so the next reroll can recover.
+    rollError.value = true;
+  }
+}
+
+async function poolVisuals(): Promise<DiceVisual[]> {
+  const visuals: DiceVisual[] = [];
   for (const die of dice) {
     const count = pool.value[die.label] ?? 0;
     for (let index = 0; index < count; index += 1) {
-      diceBox.add(die.notation);
+      const visual = await rollOne(die);
+      if (visual) visuals.push(visual);
     }
+  }
+  return visuals;
+}
+
+async function rollPool() {
+  if (!ready.value || !renderer) return;
+  const visuals = await poolVisuals();
+  try {
+    renderer.replace(visuals);
+    rollError.value = false;
+  } catch {
+    rollError.value = true;
   }
 }
 
 function clearDice() {
   pool.value = {};
-  diceBox?.clear();
+  rollError.value = false;
+  renderer?.clear();
+}
+
+async function createRenderer(): Promise<DiceRenderer> {
+  if (supportsWebGL()) {
+    const { ThreeDiceRenderer } =
+      await import('@/features/dice-roller/renderer/ThreeDiceRenderer');
+    const primary = new ThreeDiceRenderer();
+    try {
+      await startRenderer(primary);
+      return primary;
+    } catch {
+      primary.dispose();
+    }
+  }
+
+  const { DiceBoxRenderer } =
+    await import('@/features/dice-roller/renderer/DiceBoxRenderer');
+  const fallback = new DiceBoxRenderer();
+  await startRenderer(fallback);
+  return fallback;
+}
+
+async function startRenderer(candidate: DiceRenderer): Promise<void> {
+  if (!surface.value) throw new Error('dice surface missing');
+  await candidate.init(surface.value, {
+    assetPath: '/dmh-pwa/assets/dice-box/',
+    theme: 'default-extras',
+    reducedMotion:
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  });
 }
 
 watch(
@@ -170,25 +261,21 @@ onMounted(async () => {
     resizeObserver.observe(mainMenu);
   }
 
-  diceBox = new DiceBox({
-    container: '#dice-roller-surface',
-    assetPath: '/dmh-pwa/assets/dice-box/',
-    theme: 'default-extras',
-    preloadThemes: ['default-extras'],
-    // On-screen rendering preserves the existing dice scene through resizes.
-    // The offscreen worker path recreates its surface and can leave it blank.
-    offscreen: false,
-  });
-  await diceBox.init();
-  ready.value = true;
+  try {
+    renderer = await createRenderer();
+    ready.value = true;
+  } catch {
+    rollError.value = true;
+    ready.value = false;
+  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onWindowResize);
   resizeObserver?.disconnect();
   stopDragging();
-  diceBox?.clear();
-  diceBox = null;
+  renderer?.dispose();
+  renderer = null;
 });
 </script>
 
@@ -247,6 +334,10 @@ onBeforeUnmount(() => {
           </QItem>
 
           <QSeparator />
+
+          <QItem v-if="rollError" class="dice-roller-error">
+            <QItemSection>{{ t('diceRoller.rollError') }}</QItemSection>
+          </QItem>
 
           <QItem
             clickable
