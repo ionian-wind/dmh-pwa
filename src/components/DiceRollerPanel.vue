@@ -540,14 +540,15 @@ onBeforeUnmount(() => {
 }
 
 .dice-roller-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
+  width: 100%;
   padding-top: 8px;
 }
 
 .dice-roller-footer-button {
+  width: 100%;
   border: 1px solid #c7c7c7;
   border-radius: 2px;
   min-height: 28px;
