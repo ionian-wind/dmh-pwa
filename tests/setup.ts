@@ -5,6 +5,7 @@ import { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { config } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
+import { ref } from 'vue';
 import { vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { exposeConsole, debug } from '../src/utils/debug';
 import { resetStoreCache } from '../src/utils/storage';
@@ -25,7 +26,7 @@ vi.mock('quasar', () => {
   };
   const useDialogPluginComponent = Object.assign(
     () => ({
-      dialogRef: { value: null },
+      dialogRef: ref(null),
       onDialogHide: vi.fn(),
       onDialogOK: vi.fn(),
       onDialogCancel: vi.fn(),
