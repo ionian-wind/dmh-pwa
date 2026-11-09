@@ -395,49 +395,40 @@ describe('settings dialog', () => {
     (wrapper.vm as any).$i18n.locale = 'en';
     await nextTick();
 
-    const titles = wrapper
-      .findAll('.left-sidebar [data-stub="QItem"]')
-      .map((item) => item.attributes('title'))
-      .filter((title): title is string => !!title);
+    const getTitles = () =>
+      wrapper
+        .findAll('.left-sidebar [data-stub="QItem"]')
+        .map((item) => item.attributes('title'))
+        .filter((title): title is string => !!title);
+    const findItem = (title: string) =>
+      wrapper
+        .findAll('.left-sidebar [data-stub="QItem"]')
+        .find((item) => item.attributes('title') === title);
 
-    expect(titles.slice(0, 3)).toEqual([
+    expect(getTitles().slice(0, 3)).toEqual([
       'Game Sessions',
-      'Characters',
       'Scribe',
+      'Tools',
     ]);
-    expect(titles.slice(3, 7)).toEqual([
-      'Notes',
-      'Pawns',
-      'Encounters',
-      'Maps',
-    ]);
-    expect(titles.indexOf('Tools')).toBeGreaterThan(titles.indexOf('Scribe'));
-    expect(titles).not.toContain('Parties');
+    expect(getTitles()).not.toContain('Characters');
+    expect(getTitles()).not.toContain('Notes');
+    expect(getTitles()).not.toContain('Parties');
+    expect(
+      wrapper.findAll('.left-sidebar [data-stub="QSeparator"]'),
+    ).toHaveLength(2);
 
-    const gameSessions = wrapper
-      .findAll('.left-sidebar [data-stub="QItem"]')
-      .find((item) => item.attributes('title') === 'Game Sessions')!;
-    const characters = wrapper
-      .findAll('.left-sidebar [data-stub="QItem"]')
-      .find((item) => item.attributes('title') === 'Characters')!;
-    const sessionsBody = characters.element.parentElement as HTMLElement;
-    expect(sessionsBody.style.display).toBe('none');
-    await gameSessions.trigger('click');
+    await findItem('Game Sessions')!.trigger('click');
     await nextTick();
-    expect(sessionsBody.style.display).toBe('');
+    expect(getTitles()).toContain('Characters');
+    expect(getTitles()).not.toContain('Parties');
     expect(config.navigationGroupsExpanded.gameSessions).toBe(true);
 
-    const scribe = wrapper
-      .findAll('.left-sidebar [data-stub="QItem"]')
-      .find((item) => item.attributes('title') === 'Scribe')!;
-    const notes = wrapper
-      .findAll('.left-sidebar [data-stub="QItem"]')
-      .find((item) => item.attributes('title') === 'Notes')!;
-    const groupBody = notes.element.parentElement as HTMLElement;
-    expect(groupBody.style.display).toBe('none');
-    await scribe.trigger('click');
+    await findItem('Scribe')!.trigger('click');
     await nextTick();
-    expect(groupBody.style.display).toBe('');
+    expect(getTitles()).toContain('Notes');
+    expect(getTitles()).toContain('Pawns');
+    expect(getTitles()).toContain('Encounters');
+    expect(getTitles()).toContain('Maps');
     expect(config.navigationGroupsExpanded.scribe).toBe(true);
     wrapper.unmount();
   });
@@ -464,13 +455,21 @@ describe('settings dialog', () => {
     const findItem = (title: string) =>
       wrapper
         .findAll('.left-sidebar [data-stub="QItem"]')
-        .find((item) => item.attributes('title') === title)!;
+        .find((item) => item.attributes('title') === title);
+    const titles = () =>
+      wrapper
+        .findAll('.left-sidebar [data-stub="QItem"]')
+        .map((item) => item.attributes('title'))
+        .filter((title): title is string => !!title);
 
-    const sessionsBody = findItem('Characters').element
-      .parentElement as HTMLElement;
-    const scribeBody = findItem('Notes').element.parentElement as HTMLElement;
-    expect(sessionsBody.style.display).toBe('');
-    expect(scribeBody.style.display).toBe('none');
+    // Game Sessions was saved expanded, Scribe was saved collapsed.
+    expect(findItem('Characters')).toBeTruthy();
+    expect(findItem('Notes')).toBeUndefined();
+    expect(titles()).not.toContain('Notes');
+
+    await findItem('Scribe')!.trigger('click');
+    await nextTick();
+    expect(findItem('Notes')).toBeTruthy();
     wrapper.unmount();
   });
 

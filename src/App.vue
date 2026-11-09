@@ -261,7 +261,7 @@ const isSettingsOpen = ref(false);
                 <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
             </template>
-            <template v-for="group in navGroups" :key="group.id">
+            <template v-for="(group, groupIndex) in navGroups" :key="group.id">
               <QItem
                 clickable
                 v-ripple
@@ -297,7 +297,7 @@ const isSettingsOpen = ref(false);
                 </QItemSection>
               </QItem>
               <QSlideTransition>
-                <div v-show="isGroupExpanded(group.id)">
+                <div v-if="isGroupExpanded(group.id)">
                   <template v-for="item in group.items" :key="item.id">
                     <component
                       :is="item.component"
@@ -321,6 +321,10 @@ const isSettingsOpen = ref(false);
                   </template>
                 </div>
               </QSlideTransition>
+              <QSeparator
+                v-if="groupIndex < navGroups.length - 1"
+                class="menu-group-separator"
+              />
             </template>
           </QList>
         </div>
@@ -523,5 +527,9 @@ const isSettingsOpen = ref(false);
 
 .tools-caret--mini {
   margin-top: -1px;
+}
+
+.menu-group-separator {
+  margin: 4px 0;
 }
 </style>
