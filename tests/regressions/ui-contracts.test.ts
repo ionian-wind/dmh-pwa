@@ -30,6 +30,7 @@ import BaseModal from '@/components/common/BaseModal.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import PartyCard from '@/parties/PartyCard.vue';
 import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
+import { mountWithLocalI18n } from '../helpers/mount';
 
 const i18n = createI18n({
   legacy: false,
@@ -143,7 +144,7 @@ describe('regression: UI contracts', () => {
   it('forwards subtitle and sidepanel from BaseEntityView', async () => {
     const layout = createLayoutStore();
 
-    const wrapper = mount(BaseEntityView, {
+    const wrapper = mountWithLocalI18n(BaseEntityView, {
       props: {
         entity: { id: '1' },
         entityName: 'thing',
@@ -211,7 +212,7 @@ describe('regression: UI contracts', () => {
   });
 
   it('renders a footer slot and emits update:isOpen from BaseModal', async () => {
-    const wrapper = mount(BaseModal, {
+    const wrapper = mountWithLocalI18n(BaseModal, {
       props: {
         isOpen: true,
         modalId: 'regression-modal',
@@ -245,7 +246,7 @@ describe('regression: UI contracts', () => {
 
   it('renders a legacy party without moduleIds', () => {
     expect(() =>
-      mount(PartyCard, {
+      mountWithLocalI18n(PartyCard, {
         props: {
           party: {
             id: 'p1',

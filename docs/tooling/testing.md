@@ -172,6 +172,8 @@ registered plugin pipeline.
   emit model updates.
 - `tests/helpers/mock-storage.ts` provides an in-memory base store for store
   unit tests.
+- `tests/helpers/mount.ts` mounts with a local i18n instance without also
+  installing the global test i18n, avoiding duplicate-plugin warnings.
 - `tests/regressions/` holds the bug-focused suite added during remediation.
 
 ## Coverage focus

@@ -23,6 +23,7 @@ vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }));
 
 import SoundPackSidebar from '@/ambient-sound/components/SoundPackSidebar.vue';
 import { quasarStubs } from '../helpers/quasar-stubs';
+import { mountWithLocalI18n } from '../helpers/mount';
 
 const packs = [
   { id: 'pack-1', name: 'Forest', category: 'fantasy' },
@@ -61,7 +62,7 @@ describe('SoundPackSidebar', () => {
       locale: 'ru',
       messages: { ru },
     });
-    const wrapper = mount(SoundPackSidebar, {
+    const wrapper = mountWithLocalI18n(SoundPackSidebar, {
       global: { plugins: [i18n], stubs: quasarStubs },
     });
 
