@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconX } from '@tabler/icons-vue';
+
 import type {
   DiceRenderer,
   DiceResult,
@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
             @pointerdown.stop
             @click.stop="open = false"
           >
-            <IconX :size="16" />
+            <QIcon name="tabler-x" size="16px" />
           </QBtn>
         </div>
       </template>

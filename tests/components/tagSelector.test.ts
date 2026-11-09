@@ -133,7 +133,7 @@ describe('TagSelector suggestions', () => {
       props: { modelValue: ['one', 'two'] },
     });
 
-    await wrapper.findAll('svg')[0].trigger('click');
+    await wrapper.findAll('[data-stub="QIcon"]')[0].trigger('click');
 
     expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual(['two']);
     wrapper.unmount();

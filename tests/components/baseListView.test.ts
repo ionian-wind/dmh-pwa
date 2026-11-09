@@ -318,7 +318,7 @@ describe('BaseListView', () => {
     const create = wrapper.find('.empty-state-create');
     expect(create.exists()).toBe(true);
     expect(create.text()).toContain('Create');
-    expect(create.find('svg').exists()).toBe(true);
+    expect(create.find('[data-stub="QIcon"]').exists()).toBe(true);
 
     await create.trigger('click');
     await nextTick();

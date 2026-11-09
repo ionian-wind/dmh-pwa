@@ -2,16 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import {
-  IconBolt,
-  IconCheck,
-  IconFlag,
-  IconGhost3,
-  IconPlayerPause,
-  IconRestore,
-  IconUser,
-  IconX,
-} from '@tabler/icons-vue';
+
 import { useCombatStore } from '@/stores/combats';
 import { useEncounterStore } from '@/stores/encounters';
 import { useCharacterStore } from '@/stores/characters';
@@ -242,7 +233,7 @@ onMounted(async () => {
             :aria-label="t('combat.finish')"
             @click="finish(combat)"
           >
-            <IconFlag :size="18" />
+            <QIcon name="tabler-flag" size="18px" />
           </QBtn>
         </template>
 
@@ -264,8 +255,12 @@ onMounted(async () => {
                 size="28px"
                 :alt="combatantName(combat, combatant)"
               />
-              <IconUser v-else-if="combatant.type === 'player'" :size="28" />
-              <IconGhost3 v-else :size="28" />
+              <QIcon
+                name="tabler-user"
+                v-else-if="combatant.type === 'player'"
+                size="28px"
+              />
+              <QIcon name="tabler-ghost-3" v-else size="28px" />
             </QItemSection>
             <QItemSection side class="combat-participant-initiative">
               {{ combatant.initiative }}
@@ -295,7 +290,7 @@ onMounted(async () => {
                   :aria-label="t('combat.activatePostponed')"
                   @click="activate(combat, index)"
                 >
-                  <IconBolt :size="18" />
+                  <QIcon name="tabler-bolt" size="18px" />
                 </QBtn>
                 <template
                   v-if="index === combat.currentTurn && !combatant.isExcluded"
@@ -309,7 +304,7 @@ onMounted(async () => {
                     :aria-label="t('combat.postpone')"
                     @click="postpone(combat)"
                   >
-                    <IconPlayerPause :size="18" />
+                    <QIcon name="tabler-player-pause" size="18px" />
                   </QBtn>
                   <QBtn
                     flat
@@ -319,7 +314,7 @@ onMounted(async () => {
                     :aria-label="t('combat.nextTurn')"
                     @click="advance(combat)"
                   >
-                    <IconCheck :size="18" />
+                    <QIcon name="tabler-check" size="18px" />
                   </QBtn>
                 </template>
                 <QBtn
@@ -331,7 +326,7 @@ onMounted(async () => {
                   :aria-label="t('combat.returnParticipant')"
                   @click="returnParticipant(combat, index)"
                 >
-                  <IconRestore :size="18" />
+                  <QIcon name="tabler-restore" size="18px" />
                 </QBtn>
                 <QBtn
                   v-else
@@ -343,7 +338,7 @@ onMounted(async () => {
                   :aria-label="t('combat.excludeParticipant')"
                   @click="exclude(combat, combatant, index)"
                 >
-                  <IconX :size="18" />
+                  <QIcon name="tabler-x" size="18px" />
                 </QBtn>
               </QBtnGroup>
             </QItemSection>

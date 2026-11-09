@@ -7,7 +7,6 @@ import PartyEditor from '@/parties/PartyEditor.vue';
 import SidebarActionItem from '@/components/common/SidebarActionItem.vue';
 import { confirm } from '@/dialogs';
 import type { Party } from '@/types';
-import { IconPencil, IconPlus } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 const partyStore = usePartyStore();
@@ -102,7 +101,7 @@ onMounted(async () => {
               :aria-label="t('common.edit')"
               @click.stop="openEdit(party)"
             >
-              <IconPencil :size="18" />
+              <QIcon name="tabler-pencil" size="18px" />
             </QBtn>
           </template>
         </SidebarActionItem>
@@ -114,7 +113,7 @@ onMounted(async () => {
       <QItem clickable v-ripple @click="openCreate">
         <QItemSection>{{ t('parties.createNew') }}</QItemSection>
         <QItemSection side>
-          <IconPlus :size="18" />
+          <QIcon name="tabler-plus" size="18px" />
         </QItemSection>
       </QItem>
     </QList>

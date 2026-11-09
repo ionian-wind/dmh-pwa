@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconMoonStars, IconSun, IconSunMoon } from '@tabler/icons-vue';
+
 import BaseModal from '@/components/common/BaseModal.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { useConfigStore } from '@/utils/configStore';
@@ -240,13 +240,13 @@ async function clearStorage() {
               toggle-color="primary"
             >
               <template #light>
-                <IconSun :size="20" />
+                <QIcon name="tabler-sun" size="20px" />
               </template>
               <template #dark>
-                <IconMoonStars :size="20" />
+                <QIcon name="tabler-moon-stars" size="20px" />
               </template>
               <template #auto>
-                <IconSunMoon :size="20" />
+                <QIcon name="tabler-sun-moon" size="20px" />
               </template>
             </QBtnToggle>
           </QItemSection>

@@ -122,7 +122,7 @@ describe('settings dialog', () => {
     const buttons = toggle.findAll('button');
     expect(buttons).toHaveLength(3);
     for (const button of buttons) {
-      expect(button.find('svg').exists()).toBe(true);
+      expect(button.find('[data-stub="QIcon"]').exists()).toBe(true);
     }
     expect(buttons[0].attributes('aria-label')).toBe('Light');
     expect(buttons[1].attributes('aria-label')).toBe('Dark');

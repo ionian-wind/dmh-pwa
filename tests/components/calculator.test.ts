@@ -128,7 +128,7 @@ describe('CalculatorView', () => {
         `.calculator-buttons button[title="${digit}"]`,
       );
       expect(button.exists()).toBe(true);
-      expect(button.find('svg').exists()).toBe(true);
+      expect(button.find('[data-stub="QIcon"]').exists()).toBe(true);
       expect(button.text()).toBe('');
     }
     wrapper.unmount();

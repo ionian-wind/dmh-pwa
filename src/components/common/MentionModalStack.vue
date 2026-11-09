@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
-import { IconExternalLink } from '@tabler/icons-vue';
+
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityMainContent from '@/components/common/EntityMainContent.vue';
 import { useModalState } from '@/composables/useModalState';
@@ -88,7 +88,7 @@ function openExternalEntity() {
         :aria-label="t('common.openEntity')"
         @click="openExternalEntity"
       >
-        <IconExternalLink />
+        <QIcon name="tabler-external-link" />
       </QBtn>
     </template>
 

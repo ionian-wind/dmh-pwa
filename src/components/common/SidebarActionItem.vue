@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconPlayerPause, IconPlayerPlay, IconX } from '@tabler/icons-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -63,8 +62,8 @@ const { t } = useI18n();
         :aria-label="props.playing ? t('common.pause') : t('common.play')"
         @click.stop="emit('toggle')"
       >
-        <IconPlayerPause v-if="props.playing" :size="18" />
-        <IconPlayerPlay v-else :size="18" />
+        <QIcon name="tabler-player-pause" v-if="props.playing" size="18px" />
+        <QIcon name="tabler-player-play" v-else size="18px" />
       </QBtn>
       <slot name="actions" />
       <QBtn
@@ -78,7 +77,7 @@ const { t } = useI18n();
         :aria-label="props.removeLabel || t('common.remove')"
         @click.stop="emit('remove')"
       >
-        <IconX :size="18" />
+        <QIcon name="tabler-x" size="18px" />
       </QBtn>
     </QItemSection>
   </QItem>

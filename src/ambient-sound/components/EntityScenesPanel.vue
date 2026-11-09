@@ -58,7 +58,7 @@
         @click="scenePickerOpen = true"
       >
         <QItemSection side>
-          <IconPlus :size="18" />
+          <QIcon name="tabler-plus" size="18px" />
         </QItemSection>
         <QItemSection>
           {{ t('ambientSoundPage.addSceneLink') }}
@@ -74,7 +74,7 @@
         @click="playlistPickerOpen = true"
       >
         <QItemSection side>
-          <IconPlus :size="18" />
+          <QIcon name="tabler-plus" size="18px" />
         </QItemSection>
         <QItemSection>
           {{ t('playlist.addPlaylist') }}
@@ -118,7 +118,7 @@ import {
   shallowRef,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconPlus } from '@tabler/icons-vue';
+
 import SidebarActionItem from '@/components/common/SidebarActionItem.vue';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 import type { SceneLinkEntityType } from '@/ambient-sound/types';

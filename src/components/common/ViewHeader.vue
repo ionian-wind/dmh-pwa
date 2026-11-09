@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { IconPlus, IconPencil, IconTrash } from '@tabler/icons-vue';
 import { useI18n } from 'vue-i18n';
 import { computed, type PropType } from 'vue';
 import IconRightDrawer from '@/components/common/IconRightDrawer.vue';
@@ -188,7 +187,7 @@ const hasPrimaryActions = computed(
       :title="t('common.delete')"
       :aria-label="t('common.delete')"
     >
-      <IconTrash />
+      <QIcon name="tabler-trash" />
     </QBtn>
   </QBtnGroup>
 
@@ -272,7 +271,7 @@ const hasPrimaryActions = computed(
       :disable="props.createLoading"
       :loading="props.createLoading"
     >
-      <IconPlus />
+      <QIcon name="tabler-plus" />
     </QBtn>
 
     <QBtn
@@ -283,7 +282,7 @@ const hasPrimaryActions = computed(
       :title="t('common.edit')"
       :aria-label="t('common.edit')"
     >
-      <IconPencil />
+      <QIcon name="tabler-pencil" />
     </QBtn>
   </QBtnGroup>
 

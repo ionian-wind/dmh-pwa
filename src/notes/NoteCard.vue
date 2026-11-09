@@ -5,11 +5,7 @@ import Button from '@/components/form/Button.vue';
 import { ref, onMounted, nextTick, watch } from 'vue';
 import Markdown from '@/components/common/Markdown.vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconFileDownload,
-} from '@tabler/icons-vue';
+
 import { debug } from '@/utils/debug';
 import { downloadNote } from '@/notes/downloadNote';
 import { noteDisplayTitle } from '@/utils/noteTitle';
@@ -109,7 +105,7 @@ function handleDownload() {
         :aria-label="t('common.download')"
         @click.stop="handleDownload"
       >
-        <IconFileDownload />
+        <QIcon name="tabler-file-download" />
       </QBtn>
       <Button
         v-if="clamped"
@@ -118,8 +114,8 @@ function handleDownload() {
         @click="toggleExpand"
         :title="expanded ? t('common.collapse') : t('common.expand')"
       >
-        <IconChevronUp v-if="expanded" />
-        <IconChevronDown v-else />
+        <QIcon name="tabler-chevron-up" v-if="expanded" />
+        <QIcon name="tabler-chevron-down" v-else />
       </Button>
     </template>
   </BaseCard>

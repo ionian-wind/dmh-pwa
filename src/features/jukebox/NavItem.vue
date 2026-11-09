@@ -2,7 +2,7 @@
 import { computed, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
-import { IconMusic } from '@tabler/icons-vue';
+
 import { useConfigStore } from '@/utils/configStore';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
 import { toggleSoundControl } from './state';
@@ -55,7 +55,7 @@ function openJukebox() {
     @click="openJukebox"
   >
     <QItemSection side>
-      <IconMusic :class="{ 'jukebox-playing': isPlaying }" />
+      <QIcon name="tabler-music" :class="{ 'jukebox-playing': isPlaying }" />
     </QItemSection>
     <QItemSection>{{ t('app.jukebox') }}</QItemSection>
   </QItem>

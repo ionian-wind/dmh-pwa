@@ -7,7 +7,7 @@ import NoteOptions from './NoteOptions.vue';
 import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
-import { IconDots, IconHelp } from '@tabler/icons-vue';
+
 import EntitiesLinking from '@/components/common/EntitiesLinking.vue';
 import { useEntityEditorTabs } from '@/components/common/entityEditorTabs';
 import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
@@ -208,7 +208,7 @@ function handleDelete() {
           title="options"
           aria-label="options"
         >
-          <IconDots />
+          <QIcon name="tabler-dots" />
           <QMenu class="note-options-menu">
             <QCard class="note-options-card q-pa-md">
               <NoteOptions
@@ -232,7 +232,7 @@ function handleDelete() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <IconHelp />
+          <QIcon name="tabler-help" />
         </QBtn>
       </div>
     </template>

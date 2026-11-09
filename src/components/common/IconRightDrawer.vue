@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  IconLayoutSidebarRight,
-  IconLayoutSidebarRightFilled,
-} from '@tabler/icons-vue';
+import { IconLayoutSidebarRightFilled } from '@tabler/icons-vue';
 import { useLayout } from '@/composables/useLayout';
 
 const { rightDrawerOpen } = useLayout();
@@ -10,5 +7,5 @@ const { rightDrawerOpen } = useLayout();
 
 <template>
   <IconLayoutSidebarRightFilled v-if="rightDrawerOpen" />
-  <IconLayoutSidebarRight v-else />
+  <QIcon name="tabler-layout-sidebar-right" v-else />
 </template>

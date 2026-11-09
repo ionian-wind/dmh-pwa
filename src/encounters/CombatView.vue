@@ -16,19 +16,7 @@ import EntityPicture from '@/components/common/EntityPicture.vue';
 import { entityRoute } from '@/components/common/entityLinking/entityRefs';
 import EncounterViewSidebar from '@/encounters/EncounterViewSidebar.vue';
 import { useRightDrawer } from '@/composables/useLayout';
-import {
-  IconFlag,
-  IconGhost3,
-  IconUser,
-  IconUserPlus,
-  IconCheck,
-  IconBolt,
-  IconPlayerPause,
-  IconSwords,
-  IconCircleCheck,
-  IconRestore,
-  IconX,
-} from '@tabler/icons-vue';
+
 import AnimatedHourglass from '@/components/common/AnimatedHourglass.vue';
 import { advanceTurn, rewindTurn, type TurnResult } from '@/utils/combatTurn';
 
@@ -548,7 +536,7 @@ const validateInitiative = (val: unknown) =>
         v-if="combat && combat.status === 'completed'"
         class="q-pa-md text-grey text-center q-mt-xl"
       >
-        <IconFlag />
+        <QIcon name="tabler-flag" />
         {{
           t('combat.concluded', {
             rounds: combat.currentRound,
@@ -570,7 +558,7 @@ const validateInitiative = (val: unknown) =>
               size="large"
               :title="t('combat.addParticipant')"
             >
-              <IconUserPlus />
+              <QIcon name="tabler-user-plus" />
             </Button>
           </div>
 
@@ -606,7 +594,7 @@ const validateInitiative = (val: unknown) =>
               :disable="combat.combatants.length < 1"
               @click="startCombat"
             >
-              <IconSwords />
+              <QIcon name="tabler-swords" />
             </QBtn>
             <QBtn
               v-else-if="combat?.status === 'active'"
@@ -617,7 +605,7 @@ const validateInitiative = (val: unknown) =>
               :aria-label="t('combat.end')"
               @click="endCombat"
             >
-              <IconFlag />
+              <QIcon name="tabler-flag" />
             </QBtn>
           </div>
         </div>
@@ -675,11 +663,12 @@ const validateInitiative = (val: unknown) =>
                   size="32px"
                   :alt="getCombatantDisplayName(participant)"
                 />
-                <IconUser
+                <QIcon
+                  name="tabler-user"
                   v-else-if="participant.type === 'player'"
-                  :size="32"
+                  size="32px"
                 />
-                <IconGhost3 v-else :size="32" />
+                <QIcon name="tabler-ghost-3" v-else size="32px" />
               </QItemSection>
 
               <QItemSection side class="participant-initiative">
@@ -715,7 +704,7 @@ const validateInitiative = (val: unknown) =>
                   :aria-label="t('combat.participantStatus.actedThisRound')"
                   :title="t('combat.participantStatus.actedThisRound')"
                 >
-                  <IconCircleCheck />
+                  <QIcon name="tabler-circle-check" />
                 </span>
                 <span
                   v-else-if="
@@ -745,7 +734,7 @@ const validateInitiative = (val: unknown) =>
                     :aria-label="t('combat.activatePostponed')"
                     @click="activatePostponed(participant.id)"
                   >
-                    <IconBolt />
+                    <QIcon name="tabler-bolt" />
                   </QBtn>
 
                   <template
@@ -762,7 +751,7 @@ const validateInitiative = (val: unknown) =>
                       @click="postponeCurrent"
                       v-if="index !== combat.combatants.length - 1"
                     >
-                      <IconPlayerPause />
+                      <QIcon name="tabler-player-pause" />
                     </QBtn>
                     <QBtn
                       :size="'lg'"
@@ -772,7 +761,7 @@ const validateInitiative = (val: unknown) =>
                       @click="nextTurn"
                       :disabled="!currentParticipant"
                     >
-                      <IconCheck />
+                      <QIcon name="tabler-check" />
                     </QBtn>
                   </template>
 
@@ -785,7 +774,7 @@ const validateInitiative = (val: unknown) =>
                     :aria-label="t('combat.returnParticipant')"
                     @click.stop="returnParticipant(participant, index)"
                   >
-                    <IconRestore />
+                    <QIcon name="tabler-restore" />
                   </QBtn>
                   <QBtn
                     v-else
@@ -796,7 +785,7 @@ const validateInitiative = (val: unknown) =>
                     :aria-label="t('combat.excludeParticipant')"
                     @click.stop="excludeParticipant(participant, index)"
                   >
-                    <IconX />
+                    <QIcon name="tabler-x" />
                   </QBtn>
                 </QBtnGroup>
               </QItemSection>

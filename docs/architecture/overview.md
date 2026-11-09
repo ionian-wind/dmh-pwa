@@ -185,7 +185,9 @@ Quasar uses a custom Tabler icon set from
 `src/plugins/quasar-tabler-icon-set.ts`. It maps Quasar's built-in icon slots to
 raw Tabler SVG paths and exposes `tabler-<name>` through `iconMapFn`, so Quasar
 icon props (including `QExpansionItem`'s `expand-icon`) can use names such as
-`tabler-plus`.
+`tabler-plus`. Components generally render icons through `QIcon`; direct Tabler
+component imports remain only where a specific SVG variant is required, such as
+filled icons, icon pickers, or icons passed to custom components.
 
 ## Routing (`src/router.ts`)
 

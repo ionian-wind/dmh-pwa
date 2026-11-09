@@ -2,7 +2,6 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import FloatActionButton from './common/FloatActionButton.vue';
-import { IconDice5, IconX } from '@tabler/icons-vue';
 
 import DiceBox from '@3d-dice/dice-box';
 // import { AdvancedRoller } from '@3d-dice/dice-ui'
@@ -92,8 +91,8 @@ onUnmounted(() => diceBox.clear());
         @click="toggleFabs"
         :title="t('app.roll')"
       >
-        <IconX v-if="showFabs" />
-        <IconDice5 v-else />
+        <QIcon name="tabler-x" v-if="showFabs" />
+        <QIcon name="tabler-dice-5" v-else />
       </FloatActionButton>
       <FloatActionButton
         v-for="(fab, i) in fabButtons"

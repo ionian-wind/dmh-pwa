@@ -4,7 +4,6 @@ import BaseCard from '@/components/common/BaseCard.vue';
 import { computed } from 'vue';
 import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
-import { IconSwords } from '@tabler/icons-vue';
 
 const props = defineProps<{ encounter: Encounter }>();
 const emit = defineEmits(['view', 'edit', 'delete', 'run-combat', 'copy']);
@@ -78,7 +77,7 @@ function handleCopy() {
         @click="handleRunCombat"
         :title="t('common.runCombat')"
       >
-        <IconSwords />
+        <QIcon name="tabler-swords" />
       </QBtn>
     </template>
   </BaseCard>

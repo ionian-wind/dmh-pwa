@@ -32,7 +32,7 @@
         size="lg"
         @click="triggerFileInput"
       >
-        <IconUpload :size="28" />
+        <QIcon name="tabler-upload" size="28px" />
         <span class="q-ml-sm">{{ t('common.import') }}</span>
       </QBtn>
     </EmptyState>
@@ -58,7 +58,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { IconHeadphones, IconMusic, IconUpload } from '@tabler/icons-vue';
+import { IconHeadphones, IconMusic } from '@tabler/icons-vue';
 import ViewHeader from '@/components/common/ViewHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import EntityTabs from '@/components/common/EntityTabs.vue';

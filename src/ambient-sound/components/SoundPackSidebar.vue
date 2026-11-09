@@ -9,7 +9,7 @@
         @click="store.selectPack(null)"
       >
         <QItemSection side>
-          <IconFolder :size="18" />
+          <QIcon name="tabler-folder" size="18px" />
         </QItemSection>
         <QItemSection>
           {{ t('ambientSoundPage.allPackages') }}
@@ -47,7 +47,7 @@
               :aria-label="t('common.delete')"
               @click.stop="removePack(pack)"
             >
-              <IconTrash :size="18" />
+              <QIcon name="tabler-trash" size="18px" />
             </QBtn>
           </QItemSection>
         </QItem>
@@ -63,7 +63,7 @@
             {{ t('ambientSoundPage.importPack') }}
           </QItemSection>
           <QItemSection side>
-            <IconUpload :size="18" />
+            <QIcon name="tabler-upload" size="18px" />
           </QItemSection>
         </QItem>
       </QList>
@@ -89,8 +89,6 @@ import {
   IconFolder,
   IconRocket,
   IconTree,
-  IconTrash,
-  IconUpload,
 } from '@tabler/icons-vue';
 import { confirm } from '@/dialogs';
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';

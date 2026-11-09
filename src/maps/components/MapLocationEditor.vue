@@ -25,7 +25,7 @@ import {
   normalizeLocation,
   normalizeLocationMap,
 } from '@/utils/maps/normalize';
-import { IconHelp } from '@tabler/icons-vue';
+
 import type { StoredFileSource } from '@/utils/files/types';
 import { pickFiles } from '@/utils/files';
 import { optimizeImageFile } from '@/utils/images/optimizeImage';
@@ -309,7 +309,7 @@ function remove() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <IconHelp />
+          <QIcon name="tabler-help" />
         </QBtn>
       </div>
     </template>

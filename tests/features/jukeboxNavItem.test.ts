@@ -58,7 +58,7 @@ describe('jukebox navigation item', () => {
     ambient.isPlaying = false;
 
     const wrapper = await mountAt('/jukebox');
-    const icon = wrapper.find('.jukebox-button svg');
+    const icon = wrapper.find('.jukebox-button [data-stub="QIcon"]');
     expect(icon.classes()).not.toContain('jukebox-playing');
 
     ambient.isPlaying = true;

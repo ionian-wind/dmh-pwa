@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconX } from '@tabler/icons-vue';
+
 import DraggablePanel from '@/components/common/DraggablePanel.vue';
 import TimerEditor from '@/timers/TimerEditor.vue';
 import TimerListItem from '@/timers/TimerListItem.vue';
@@ -89,7 +89,7 @@ onMounted(async () => {
           @pointerdown.stop
           @click.stop="open = false"
         >
-          <IconX :size="16" />
+          <QIcon name="tabler-x" size="16px" />
         </QBtn>
       </div>
     </template>

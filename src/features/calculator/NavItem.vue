@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconCalculator } from '@tabler/icons-vue';
+
 import { toggleCalculator } from './state';
 
 const { t } = useI18n();
@@ -15,7 +15,7 @@ const { t } = useI18n();
     :aria-label="t('app.calculator')"
     @click="toggleCalculator"
   >
-    <QItemSection side><IconCalculator /></QItemSection>
+    <QItemSection side><QIcon name="tabler-calculator" /></QItemSection>
     <QItemSection>{{ t('app.calculator') }}</QItemSection>
   </QItem>
 </template>

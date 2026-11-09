@@ -14,14 +14,7 @@ import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { entityRoute } from '@/components/common/entityLinking/entityRefs';
-import {
-  IconAt,
-  IconHeadphones,
-  IconPlus,
-  IconSwords,
-  IconUsers,
-  IconX,
-} from '@tabler/icons-vue';
+import { IconAt, IconHeadphones, IconUsers } from '@tabler/icons-vue';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
 const mentionsStore = useMentionsStore();
@@ -197,7 +190,7 @@ onMounted(async () => {
                       :aria-label="t('partyView.unlink')"
                       @click.stop="toggleCharacter(character, false)"
                     >
-                      <IconX :size="16" />
+                      <QIcon name="tabler-x" size="16px" />
                     </QBtn>
                   </QItemSection>
                 </QItem>
@@ -216,7 +209,7 @@ onMounted(async () => {
                 @click="showLinkModal = true"
               >
                 <QItemSection side>
-                  <IconPlus :size="18" />
+                  <QIcon name="tabler-plus" size="18px" />
                 </QItemSection>
                 <QItemSection>
                   {{ t('parties.linkCharacters') }}
@@ -283,7 +276,7 @@ onMounted(async () => {
             :aria-label="t('partySelector.startCombat')"
             @click="props.onStartCombat?.()"
           >
-            <IconSwords :size="18" class="q-mr-sm" />
+            <QIcon name="tabler-swords" size="18px" class="q-mr-sm" />
             {{ t('partySelector.startCombat') }}
           </QBtn>
         </QItemSection>

@@ -19,13 +19,6 @@ import { featureNavigation } from 'virtual:feature-navigation';
 import { featureGlobals } from 'virtual:feature-globals';
 import type { FeatureNavEntry } from '@/features/types';
 
-import {
-  IconMaximize,
-  IconMaximizeOff,
-  IconMenu2,
-  IconSettings,
-} from '@tabler/icons-vue';
-
 const configStore = useConfigStore();
 const { t } = useI18n();
 const router = useRouter();
@@ -149,7 +142,7 @@ const isSettingsOpen = ref(false);
             @click="toggleLeftDrawer"
             class="menu-toggle q-mr-sm"
           >
-            <IconMenu2 />
+            <QIcon name="tabler-menu-2" />
           </QBtn>
 
           <QSeparator vertical v-if="topMenuContent" class="q-mr-sm" />
@@ -235,7 +228,7 @@ const isSettingsOpen = ref(false);
               v-ripple
               @click="isSettingsOpen = true"
             >
-              <QItemSection side><IconSettings /></QItemSection>
+              <QItemSection side><QIcon name="tabler-settings" /></QItemSection>
               <QItemSection>{{ t('navigation.settings') }}</QItemSection>
             </QItem>
           </QList>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconX } from '@tabler/icons-vue';
+
 import { useNoteStore } from '@/stores/notes';
 
 const props = defineProps<{
@@ -179,7 +179,7 @@ function selectCurrent() {
     <div v-if="modelValue.length > 0" class="row q-gutter-xs">
       <QChip dense v-for="(tag, index) in modelValue" :key="index">
         {{ tag }}
-        <IconX @click="removeTag(index)" />
+        <QIcon name="tabler-x" @click="removeTag(index)" />
       </QChip>
     </div>
   </div>

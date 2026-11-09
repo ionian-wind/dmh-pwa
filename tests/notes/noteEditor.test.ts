@@ -188,7 +188,7 @@ describe('NoteEditor', () => {
     expect(options.exists()).toBe(true);
     expect(options.attributes('title')).toBe('options');
     expect(options.attributes('aria-label')).toBe('options');
-    expect(options.find('svg').exists()).toBe(true);
+    expect(options.find('[data-stub="QIcon"]').exists()).toBe(true);
     expect(options.findComponent({ name: 'NoteTypeSelector' }).exists()).toBe(
       true,
     );
@@ -207,7 +207,7 @@ describe('NoteEditor', () => {
 
     const help = wrapper.find('.note-help-button');
     expect(help.exists()).toBe(true);
-    expect(help.find('svg').exists()).toBe(true);
+    expect(help.find('[data-stub="QIcon"]').exists()).toBe(true);
 
     expect(help.attributes('href')).toContain(
       '/help/en/reference/markdown.html',

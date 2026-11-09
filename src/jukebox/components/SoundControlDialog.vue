@@ -11,12 +11,7 @@ import {
   type ComponentPublicInstance,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconExternalLink,
-  IconHeadphones,
-  IconMusic,
-  IconX,
-} from '@tabler/icons-vue';
+
 import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
@@ -433,7 +428,7 @@ function navigateToPage() {
               :aria-label="t('jukebox.openJukebox')"
               @click="navigateToPage"
             >
-              <IconExternalLink />
+              <QIcon name="tabler-external-link" />
             </QBtn>
           </div>
           <QTabs
@@ -448,7 +443,7 @@ function navigateToPage() {
               :title="t('app.jukebox')"
               :aria-label="t('app.jukebox')"
             >
-              <IconMusic />
+              <QIcon name="tabler-music" />
             </QTab>
             <QTab
               v-if="ambientEnabled"
@@ -456,7 +451,7 @@ function navigateToPage() {
               :title="t('navigation.ambientSound')"
               :aria-label="t('navigation.ambientSound')"
             >
-              <IconHeadphones />
+              <QIcon name="tabler-headphones" />
             </QTab>
           </QTabs>
           <QBtn
@@ -466,7 +461,7 @@ function navigateToPage() {
             :aria-label="t('common.close')"
             @click="model = false"
           >
-            <IconX />
+            <QIcon name="tabler-x" />
           </QBtn>
         </QToolbar>
         <div class="sound-control-body">

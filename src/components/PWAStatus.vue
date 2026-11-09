@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconGift,
-  IconDownload,
-  IconX,
-  IconSignal3g,
-  IconDeviceMobile,
-} from '@tabler/icons-vue';
 
 const { t } = useI18n();
 const isOnline = ref(navigator.onLine);
@@ -90,7 +83,7 @@ onUnmounted(() => {
     <div v-if="showUpdatePrompt" class="pwa-update-prompt">
       <div class="pwa-update-content">
         <div class="pwa-update-icon">
-          <IconGift />
+          <QIcon name="tabler-gift" />
         </div>
         <div class="pwa-update-text">
           <h3>{{ t('pwa.updateAvailable') }}</h3>
@@ -98,11 +91,11 @@ onUnmounted(() => {
         </div>
         <div class="pwa-update-actions">
           <QBtn flat @click="updateApp" :color="'positive'">
-            <IconDownload />
+            <QIcon name="tabler-download" />
             <span>{{ t('pwa.updateNow') }}</span>
           </QBtn>
           <QBtn flat @click="dismissUpdate">
-            <IconX />
+            <QIcon name="tabler-x" />
             <span>{{ t('pwa.later') }}</span>
           </QBtn>
         </div>
@@ -112,11 +105,11 @@ onUnmounted(() => {
     <!-- Status Indicators -->
     <div class="pwa-status-indicators">
       <div v-if="!isOnline" class="pwa-status-item offline">
-        <IconSignal3g class="pwa-status-icon" />
+        <QIcon name="tabler-signal-3g" class="pwa-status-icon" />
         <span class="pwa-status-text">{{ t('pwa.offlineMode') }}</span>
       </div>
       <div v-if="isStandalone" class="pwa-status-item standalone">
-        <IconDeviceMobile class="pwa-status-icon" />
+        <QIcon name="tabler-device-mobile" class="pwa-status-icon" />
         <span class="pwa-status-text">{{ t('pwa.appMode') }}</span>
       </div>
     </div>

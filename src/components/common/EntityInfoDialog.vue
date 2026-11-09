@@ -2,13 +2,7 @@
 import { computed, defineAsyncComponent, ref, toValue, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import {
-  IconAffiliate,
-  IconDots,
-  IconEdit,
-  IconExternalLink,
-  IconEye,
-} from '@tabler/icons-vue';
+import { IconAffiliate, IconEye } from '@tabler/icons-vue';
 import BaseModal from '@/components/common/BaseModal.vue';
 import EntityInlineEditor from '@/components/common/EntityInlineEditor.vue';
 import EntityMarkdownEditor from '@/components/common/EntityMarkdownEditor.vue';
@@ -314,7 +308,7 @@ watch(
         :aria-label="t('common.open')"
         @click="openEntity"
       >
-        <IconExternalLink :size="20" />
+        <QIcon name="tabler-external-link" size="20px" />
       </QBtn>
     </template>
 
@@ -329,7 +323,7 @@ watch(
           title="options"
           aria-label="options"
         >
-          <IconDots />
+          <QIcon name="tabler-dots" />
           <QMenu class="note-options-menu">
             <QCard class="note-options-card q-pa-md">
               <component
@@ -359,7 +353,7 @@ watch(
           :aria-pressed="!isEditMode"
           @click="setEditMode(false)"
         >
-          <IconEye :size="18" />
+          <QIcon name="tabler-eye" size="18px" />
         </QBtn>
         <QBtn
           class="entity-edit-mode"
@@ -371,7 +365,7 @@ watch(
           :aria-pressed="isEditMode"
           @click="setEditMode(true)"
         >
-          <IconEdit :size="18" />
+          <QIcon name="tabler-edit" size="18px" />
         </QBtn>
       </QBtnGroup>
     </template>

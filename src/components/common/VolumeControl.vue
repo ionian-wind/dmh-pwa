@@ -9,8 +9,8 @@
     @mouseenter="onVolumeEnter"
     @mouseleave="onVolumeLeave"
   >
-    <IconVolume v-if="modelValue > 0" />
-    <IconVolumeOff v-else />
+    <QIcon name="tabler-volume" v-if="modelValue > 0" />
+    <QIcon name="tabler-volume-off" v-else />
     <QPopupProxy
       v-model="isVolumePopupOpen"
       anchor="center left"
@@ -56,7 +56,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { IconVolume, IconVolumeOff } from '@tabler/icons-vue';
 
 const props = withDefaults(
   defineProps<{

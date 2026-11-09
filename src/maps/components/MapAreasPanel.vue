@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconPencil, IconTrash } from '@tabler/icons-vue';
+
 import type { MapArea } from '../types';
 import { markerIconClass } from '@/utils/maps/icons';
 
@@ -83,7 +83,7 @@ const { t } = useI18n();
           :aria-label="t('common.edit')"
           @click.stop="emit('edit', area)"
         >
-          <IconPencil :size="18" />
+          <QIcon name="tabler-pencil" size="18px" />
         </QBtn>
         <QBtn
           flat
@@ -95,7 +95,7 @@ const { t } = useI18n();
           :aria-label="t('common.delete')"
           @click.stop="emit('delete', area.id)"
         >
-          <IconTrash :size="18" />
+          <QIcon name="tabler-trash" size="18px" />
         </QBtn>
       </QItemSection>
     </QItem>

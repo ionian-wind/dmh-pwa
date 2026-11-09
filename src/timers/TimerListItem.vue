@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconPlayerPlay,
-  IconX,
-  IconRefresh,
-  IconPencil,
-  IconTrash,
-} from '@tabler/icons-vue';
+
 import type { Timer } from '@/types';
 import { useTimerStore } from '@/stores/timers';
 import { formatTime } from '@/utils/formatTime';
@@ -52,7 +46,7 @@ watch(
         @click="$emit('start')"
         :title="t('timers.start')"
       >
-        <IconPlayerPlay />
+        <QIcon name="tabler-player-play" />
       </QBtn>
       <QBtn
         flat
@@ -60,7 +54,7 @@ watch(
         @click="$emit('stop')"
         :title="t('timers.stop')"
       >
-        <IconX />
+        <QIcon name="tabler-x" />
       </QBtn>
       <QBtn
         flat
@@ -68,7 +62,7 @@ watch(
         @click="$emit('reset')"
         :title="t('timers.reset')"
       >
-        <IconRefresh />
+        <QIcon name="tabler-refresh" />
       </QBtn>
     </QItemSection>
     <QItemSection>
@@ -92,7 +86,7 @@ watch(
           :title="t('timers.edit')"
           @click="$emit('edit')"
         >
-          <IconPencil />
+          <QIcon name="tabler-pencil" />
         </QBtn>
         <QBtn
           flat
@@ -100,7 +94,7 @@ watch(
           :title="t('timers.delete')"
           @click="$emit('delete')"
         >
-          <IconTrash />
+          <QIcon name="tabler-trash" />
         </QBtn>
       </QBtnGroup>
     </QItemSection>
