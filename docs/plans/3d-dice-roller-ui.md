@@ -214,6 +214,8 @@ assets without Babylon.
 - [x] **3DDR-518** Emit per-die and combined-pool `DiceRollEvent` records with
       `schemaVersion`, `total`, `breakdown`, `process`, `warnings` and dice.
 - [x] **3DDR-519** Give explosion extras independent random throw trajectories.
+- [x] **3DDR-520** Toss dragged dice using tracked cursor velocity; zero
+      velocity drops without spin.
 
 **Gate:** the grid builds a pool, explosion extras settle separately, and every
 roll emits one individual plus one pool event.
@@ -276,9 +278,11 @@ roll emits one individual plus one pool event.
 - Results are read from the settled meshes: highest face normal for normal dice,
   lowest for d4. Hovering a settled die raycasts the meshes and shows a
   `dN: value` hint.
-- Dragging lifts a settled die, follows the pointer and drops it back into
-  physics with no added spin. The result is recomputed after it settles. d100
-  tens/units move together and report one combined value.
+- Dragging lifts a settled die and follows the pointer. Release velocity is
+  sampled from the last cursor movement and becomes the toss direction/force;
+  a stationary cursor is a clean drop. Toss speed also scales the spin. Results
+  are recomputed after settling. d100 tens/units move together and report one
+  combined value.
 - Explosion extras are thrown from independent random perimeter positions with
   their own way/force, so they do not stack or get stuck on the parent.
 - The tray cannot import `bag-of-dice`; `src/utils/roll-events.ts` defines the

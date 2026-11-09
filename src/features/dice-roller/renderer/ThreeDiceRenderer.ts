@@ -22,6 +22,7 @@ import { cosmeticSpin, targetQuaternion } from './faceOrientation';
 import { RapierDiceWorld } from './RapierDiceWorld';
 import { loadDiceMaterials, type DiceMaterialSet } from './themeLoader';
 import { hasSimulationTimedOut } from './timing';
+import { computeTossRelease, trimTossSamples, type TossSample } from './toss';
 
 const DICE_SCALE = 1.7;
 const MAX_EXPLOSIONS = 8;
@@ -54,6 +55,7 @@ interface DragPart {
 interface DragState {
   start: THREE.Vector3;
   parts: DragPart[];
+  samples: TossSample[];
 }
 
 function scaledPoints(points: Float32Array, scale: number): Float32Array {
@@ -299,7 +301,11 @@ export class ThreeDiceRenderer implements DiceRenderer {
         lift: parts.length * 0.14,
       });
     }
-    this.dragState = { start, parts };
+    this.dragState = {
+      start,
+      parts,
+      samples: [{ point: { x: start.x, z: start.z }, time: performance.now() }],
+    };
     this.dragTo(clientX, clientY);
     return parts.length > 0;
   }
@@ -308,6 +314,12 @@ export class ThreeDiceRenderer implements DiceRenderer {
     if (!this.dragState) return;
     const point = this.pointerOnDragPlane(clientX, clientY);
     if (!point) return;
+    const now = performance.now();
+    this.dragState.samples.push({
+      point: { x: point.x, z: point.z },
+      time: now,
+    });
+    trimTossSamples(this.dragState.samples, now);
     const dx = point.x - this.dragState.start.x;
     const dz = point.z - this.dragState.start.z;
     for (const part of this.dragState.parts) {
@@ -323,10 +335,13 @@ export class ThreeDiceRenderer implements DiceRenderer {
   endDrag(): void {
     if (!this.dragState) return;
     const parts = this.dragState.parts;
+    const release = computeTossRelease(
+      this.dragState.samples,
+      performance.now(),
+    );
     this.dragState = null;
     for (const part of parts) {
       const die = part.die;
-      // A drop is just a drop: no spin or extra impulse.
       const body = this.physics.add(
         die.id,
         scaledPoints(die.asset.colliderPoints, DICE_SCALE),
@@ -340,6 +355,21 @@ export class ThreeDiceRenderer implements DiceRenderer {
             z: die.mesh.quaternion.z,
             w: die.mesh.quaternion.w,
           },
+          // Release velocity comes from the cursor; zero velocity is a drop.
+          ...(release.speed > 0
+            ? {
+                linearVelocity: {
+                  x: release.vx,
+                  y: 0,
+                  z: release.vz,
+                },
+                torque: {
+                  x: randomBetween(-release.spin, release.spin),
+                  y: randomBetween(-release.spin, release.spin),
+                  z: randomBetween(-release.spin, release.spin),
+                },
+              }
+            : {}),
         },
         0.1,
       );

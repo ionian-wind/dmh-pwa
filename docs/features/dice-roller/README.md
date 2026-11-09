@@ -850,9 +850,11 @@ Visuals only need `{ id, sides }`; values are optional hints for reduced motion.
 After the dice sleep, `getResults()` returns the values read from the visible
 faces, and `pick()` raycasts the settled meshes so the UI can show a
 cursor-following `dN: value` hint. Settled dice can be dragged: the die is
-lifted, follows the pointer, and is dropped back into physics. Results are
-recomputed from the new landed faces. All parts of a d100 (tens and units) move
-together and count as one combined result. The renderer never mutates a `bag-of-dice` result and never imports the
+lifted, follows the pointer, and released with the cursor's tracked velocity
+and direction, which become the toss force/way and scale the spin. Releasing
+without moving drops it straight down. Results are recomputed from the new
+landed faces. All parts of a d100 (tens and units) move together and count as
+one combined result. The renderer never mutates a `bag-of-dice` result and never imports the
 engine. The animation loop stops when every die is settled; resize redraws and
 never clears the scene. The camera looks straight down from the zenith and all
 dice rest on the same `y=0` scene floor.

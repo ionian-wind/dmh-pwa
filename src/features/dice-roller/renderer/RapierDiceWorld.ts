@@ -6,6 +6,7 @@ export interface DiceSpawn {
   z: number;
   rotation?: { x: number; y: number; z: number; w: number };
   impulse?: { x: number; y: number; z: number };
+  linearVelocity?: { x: number; y: number; z: number };
   torque?: { x: number; y: number; z: number };
 }
 
@@ -90,6 +91,9 @@ export class RapierDiceWorld {
     this.world.createCollider(collider, body);
 
     if (spawn.impulse) body.applyImpulse(spawn.impulse, true);
+    if (spawn.linearVelocity) {
+      body.setLinvel(spawn.linearVelocity, true);
+    }
     if (spawn.torque) body.applyTorqueImpulse(spawn.torque, true);
 
     const handle: DiceBody = { id, body };
