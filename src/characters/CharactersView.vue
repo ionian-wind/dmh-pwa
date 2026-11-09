@@ -1,21 +1,43 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
+import { usePartyStore } from '@/stores/parties';
+import { useSelectedParty } from '@/parties/useSelectedParty';
+import { useRightDrawer } from '@/composables/useLayout';
 import BaseListView from '@/components/common/BaseListView.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
+import PartyList from '@/parties/PartyList.vue';
 import type { PlayerCharacter } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 import { deleteFileIfUnreferenced } from '@/utils/files';
+import { IconUsers } from '@tabler/icons-vue';
 
 const characterStore = useCharacterStore();
+const partyStore = usePartyStore();
 const router = useRouter();
+const rightDrawer = useRightDrawer();
+const { selectedParty, selectedCharacterIds, clearSelection } =
+  useSelectedParty();
 const { t } = useI18n();
 
+const visibleCharacters = computed(() => {
+  if (!selectedParty.value) return characterStore.filtered;
+  return characterStore.filtered.filter((character) =>
+    selectedCharacterIds.value.has(character.id),
+  );
+});
+
 onMounted(async () => {
-  await Promise.all([characterStore.load()]);
+  await Promise.all([characterStore.load(), partyStore.load()]);
+  rightDrawer.set({ component: PartyList });
+});
+
+onBeforeUnmount(() => {
+  rightDrawer.clear();
+  clearSelection();
 });
 
 function cardProps(character: PlayerCharacter) {
@@ -73,11 +95,12 @@ async function handleCopy(character: PlayerCharacter) {
 
 <template>
   <BaseListView
-    :items="characterStore.filtered"
+    :items="visibleCharacters"
     :card-component="CharacterCard"
     :editor-component="CharacterEditor"
     :empty-message="t('common.emptyCharacters')"
     :create-title="t('characters.create')"
+    :right-drawer-icon="IconUsers"
     :card-props="cardProps"
     :editor-props="editorProps"
     @submit="handleSubmit"

@@ -274,7 +274,8 @@ These notifications never auto-dismiss (`timeout: 0`).
   create/edit/custom actions stay on the right.
 - **Left drawer**: collapsible Game Sessions, Scribe, and Tools groups, plus the
   jukebox/dice shortcuts.
-- **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists).
+- **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists,
+  character parties).
 - **Footer**: only the jukebox player.
 - **Overlays**: PWA status/install, mention modals, calculator, jukebox dialog.
 

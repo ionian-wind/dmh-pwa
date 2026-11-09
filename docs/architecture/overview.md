@@ -151,7 +151,8 @@ hard-coded array. Each feature integration contributes entries with a
 optional `order`.
 
 - **Primary**: currently empty; entity navigation is grouped.
-- **Game Sessions**: Characters, Parties. The Game Sessions item expands and
+- **Game Sessions**: Characters. Parties are managed from the Characters
+  sidebar, similar to jukebox playlists. The Game Sessions item expands and
   collapses the group; it auto-expands when one of its routes is active.
 - **Scribe**: Notes, Pawns, Encounters, Maps. The Scribe item expands and
   collapses the group; it auto-expands when one of its routes is active.

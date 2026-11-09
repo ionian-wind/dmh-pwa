@@ -400,19 +400,19 @@ describe('settings dialog', () => {
       .map((item) => item.attributes('title'))
       .filter((title): title is string => !!title);
 
-    expect(titles.slice(0, 4)).toEqual([
+    expect(titles.slice(0, 3)).toEqual([
       'Game Sessions',
       'Characters',
-      'Parties',
       'Scribe',
     ]);
-    expect(titles.slice(4, 8)).toEqual([
+    expect(titles.slice(3, 7)).toEqual([
       'Notes',
       'Pawns',
       'Encounters',
       'Maps',
     ]);
     expect(titles.indexOf('Tools')).toBeGreaterThan(titles.indexOf('Scribe'));
+    expect(titles).not.toContain('Parties');
 
     const gameSessions = wrapper
       .findAll('.left-sidebar [data-stub="QItem"]')

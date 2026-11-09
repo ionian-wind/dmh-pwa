@@ -87,6 +87,7 @@
   "parties": {
     "title": "Parties",
     "create": "Create Party",
+    "createNew": "New party",
     "edit": "Edit Party",
     "delete": "Delete Party",
     "namePlaceholder": "Enter party name",
@@ -136,6 +137,7 @@
   },
   "characters": {
     "title": "Characters",
+    "all": "All characters",
     "create": "Create Character",
     "edit": "Edit Character",
     "delete": "Delete Character",

@@ -11,6 +11,7 @@ import PartiesView from '@/parties/PartiesView.vue';
 import PawnsView from '@/pawns/PawnsView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
 import TimersView from '@/timers/TimersView.vue';
+import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
@@ -34,7 +35,10 @@ async function mountView(component: any, path = '/') {
   await router.push(path);
   await router.isReady();
   const wrapper = mount(component, {
-    global: { plugins: [router] },
+    global: {
+      plugins: [router],
+      provide: { [LayoutKey]: createLayoutStore() },
+    },
   });
   await flushPromises();
   return wrapper;

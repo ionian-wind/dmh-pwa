@@ -20,18 +20,7 @@ export const partiesFeature: FeatureIntegration = {
       component: () => import('@/parties/PartyView.vue'),
     },
   ],
-  navigation: [
-    {
-      type: 'route',
-      id: 'parties',
-      labelKey: 'navigation.parties',
-      path: '/parties',
-      icon: IconUsers,
-      kind: 'entity',
-      placement: 'gameSessions',
-      order: 10,
-    },
-  ],
+  navigation: [],
   homeCard: {
     id: 'parties',
     titleKey: 'home.stats.parties',
