@@ -261,9 +261,15 @@ export class PixiStudioRenderer {
         if (!object.visible) continue;
         if (object.type === 'text') {
           const sprite = this.createTextSprite(object, ppc);
+          sprite.scale.set(
+            (object.transform.flipX ? -1 : 1) / 2,
+            (object.transform.flipY ? -1 : 1) / 2,
+          );
           sprite.position.set(
-            object.transform.x * ppc,
-            object.transform.y * ppc,
+            object.transform.x * ppc +
+              (object.transform.flipX ? sprite.width : 0),
+            object.transform.y * ppc +
+              (object.transform.flipY ? sprite.height : 0),
           );
           sprite.alpha = object.opacity;
           this.objectsContainer.addChild(sprite);

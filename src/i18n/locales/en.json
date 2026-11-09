@@ -1192,6 +1192,8 @@
     "fontSize": "Font size",
     "variant": "Variant",
     "steps": "Steps",
-    "rotation": "Rotation"
+    "rotation": "Rotation",
+    "flipHorizontal": "Flip horizontal",
+    "flipVertical": "Flip vertical"
   }
 }

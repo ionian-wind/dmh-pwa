@@ -344,3 +344,37 @@ describe('map studio object editing', () => {
     expect(store.imagesLayer?.objects).toHaveLength(3);
   });
 });
+
+describe('map studio object flipping', () => {
+  it('flips text transforms and door/stairs points', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    const text = store.imagesLayer!.objects[0];
+    store.flipObject(text.id, 'x');
+    expect(store.selectedObjectId).toBeNull();
+    const flippedText = store.imagesLayer!.objects[0];
+    expect(flippedText.type === 'text' && flippedText.transform.flipX).toBe(
+      true,
+    );
+
+    store.addDoor([0, 0], [2, 0]);
+    const door = store.imagesLayer!.objects[1];
+    store.flipObject(door.id, 'x');
+    const flippedDoor = store.imagesLayer!.objects[1];
+    expect(flippedDoor.type === 'door' && flippedDoor.a).toEqual([2, 0]);
+
+    store.addStairs([
+      [0, 0],
+      [2, 0],
+      [2, 2],
+    ]);
+    const stairs = store.imagesLayer!.objects[2];
+    store.flipObject(stairs.id, 'y');
+    const flippedStairs = store.imagesLayer!.objects[2];
+    expect(flippedStairs.type === 'stairs' && flippedStairs.points[0]).toEqual([
+      0, 2,
+    ]);
+    store.flipObject('missing', 'x');
+  });
+});

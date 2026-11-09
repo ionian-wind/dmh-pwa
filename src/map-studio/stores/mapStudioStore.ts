@@ -479,6 +479,39 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     setObjects(next.map((object, order) => ({ ...object, order: order + 1 })));
   }
 
+  function flipObject(id: string, axis: 'x' | 'y'): void {
+    const objects = imagesLayer.value?.objects ?? [];
+    const object = objects.find((entry) => entry.id === id);
+    if (!object) return;
+    if (object.type === 'text') {
+      updateObject(id, {
+        transform: {
+          ...object.transform,
+          flipX:
+            axis === 'x' ? !object.transform.flipX : object.transform.flipX,
+          flipY:
+            axis === 'y' ? !object.transform.flipY : object.transform.flipY,
+        },
+      });
+      return;
+    }
+    const points =
+      object.type === 'door' ? [object.a, object.b] : object.points;
+    const xs = points.map(([x]) => x);
+    const ys = points.map(([, y]) => y);
+    const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const mirror = ([x, y]: [number, number]): [number, number] => [
+      axis === 'x' ? centerX * 2 - x : x,
+      axis === 'y' ? centerY * 2 - y : y,
+    ];
+    if (object.type === 'door') {
+      updateObject(id, { a: mirror(object.a), b: mirror(object.b) });
+    } else {
+      updateObject(id, { points: object.points.map(mirror) });
+    }
+  }
+
   function removeSelectedObject(): void {
     const id = selectedObjectId.value;
     if (!id) return;
@@ -588,6 +621,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     updateObject,
     duplicateObject,
     reorderObject,
+    flipObject,
     applyPreset,
     addDungeonLayer,
     renameLayer,

@@ -603,6 +603,33 @@ async function applyToLocation(): Promise<void> {
               />
             </label>
             <label v-if="selectedObject.type === 'text'" class="studio-field">
+              <span>X / Y</span>
+              <input
+                class="studio-number"
+                type="number"
+                step="0.1"
+                :value="selectedObject.transform.x"
+                @input="
+                  updateSelectedTransform(
+                    'x',
+                    Number(($event.target as HTMLInputElement).value),
+                  )
+                "
+              />
+              <input
+                class="studio-number"
+                type="number"
+                step="0.1"
+                :value="selectedObject.transform.y"
+                @input="
+                  updateSelectedTransform(
+                    'y',
+                    Number(($event.target as HTMLInputElement).value),
+                  )
+                "
+              />
+            </label>
+            <label v-if="selectedObject.type === 'text'" class="studio-field">
               <span>{{ t('mapStudio.fontSize') }}</span>
               <input
                 class="studio-number"
