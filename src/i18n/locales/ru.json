@@ -1185,6 +1185,14 @@
     "text": "Текст",
     "door": "Дверь",
     "stairs": "Лестница",
-    "textPrompt": "Текст подписи"
+    "textPrompt": "Текст подписи",
+    "objectSettings": "Настройки объекта",
+    "duplicate": "Дублировать",
+    "bringForward": "Выше",
+    "sendBackward": "Ниже",
+    "fontSize": "Размер шрифта",
+    "variant": "Вариант",
+    "steps": "Ступени",
+    "rotation": "Поворот"
   }
 }

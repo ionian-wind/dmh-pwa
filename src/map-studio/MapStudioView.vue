@@ -38,6 +38,7 @@ useStudioHotkeys({
 const map = computed(() => store.map);
 const layers = computed(() => map.value?.layers ?? []);
 const activeLayer = computed(() => store.activeLayer);
+const selectedObject = computed(() => store.selectedObject);
 const presets = DUNGEON_PRESETS;
 const toolbar = computed(() => [
   { id: 'pan' as const, icon: 'tabler-hand-stop', label: t('mapStudio.pan') },
@@ -176,6 +177,27 @@ function toggleLayerGrid(): void {
       visible: !activeLayer.value.style.grid.visible,
     },
   });
+}
+
+function updateSelected(patch: Record<string, unknown>): void {
+  if (selectedObject.value) store.updateObject(selectedObject.value.id, patch);
+}
+
+function updateSelectedTransform(key: string, value: number): void {
+  const object = selectedObject.value;
+  if (!object || object.type === 'door' || object.type === 'stairs') return;
+  store.updateObject(object.id, {
+    transform: { ...object.transform, [key]: value },
+  });
+}
+
+async function editText(id: string): Promise<void> {
+  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  if (!object || object.type !== 'text') return;
+  const text = await prompt(t('mapStudio.textPrompt'), {
+    modelValue: object.text,
+  });
+  if (text !== null) store.updateObject(id, { text });
 }
 
 async function addText(point: [number, number]): Promise<void> {
@@ -410,6 +432,7 @@ async function applyToLocation(): Promise<void> {
           @stairs="store.addStairs"
           @select="store.selectObject"
           @moveObject="store.moveSelectedObject($event.dx, $event.dy)"
+          @editText="editText"
           @ready="renderer = $event"
         />
 
@@ -526,7 +549,147 @@ async function applyToLocation(): Promise<void> {
             />
           </div>
 
-          <template v-if="activeLayer">
+          <template v-if="selectedObject">
+            <QSeparator class="q-my-sm" />
+            <div class="row items-center justify-between q-mb-xs">
+              <span class="text-caption text-weight-medium">{{
+                t('mapStudio.objectSettings')
+              }}</span>
+              <span class="row q-gutter-xs">
+                <QBtn
+                  flat
+                  dense
+                  round
+                  icon="tabler-copy"
+                  :title="t('mapStudio.duplicate')"
+                  @click="store.duplicateObject(selectedObject.id)"
+                />
+                <QBtn
+                  flat
+                  dense
+                  round
+                  icon="tabler-arrow-up"
+                  :title="t('mapStudio.bringForward')"
+                  @click="store.reorderObject(selectedObject.id, 1)"
+                />
+                <QBtn
+                  flat
+                  dense
+                  round
+                  icon="tabler-arrow-down"
+                  :title="t('mapStudio.sendBackward')"
+                  @click="store.reorderObject(selectedObject.id, -1)"
+                />
+                <QBtn
+                  flat
+                  dense
+                  round
+                  icon="tabler-trash"
+                  :title="t('common.delete')"
+                  @click="store.removeSelectedObject()"
+                />
+              </span>
+            </div>
+            <label v-if="selectedObject.type === 'text'" class="studio-field">
+              <span>{{ t('mapStudio.text') }}</span>
+              <input
+                class="studio-text-input"
+                :value="selectedObject.text"
+                @change="
+                  updateSelected({
+                    text: ($event.target as HTMLInputElement).value,
+                  })
+                "
+              />
+            </label>
+            <label v-if="selectedObject.type === 'text'" class="studio-field">
+              <span>{{ t('mapStudio.fontSize') }}</span>
+              <input
+                class="studio-number"
+                type="number"
+                min="0.05"
+                step="0.01"
+                :value="selectedObject.fontSize"
+                @input="
+                  updateSelected({
+                    fontSize: Number(($event.target as HTMLInputElement).value),
+                  })
+                "
+              />
+              <input
+                type="color"
+                :value="selectedObject.color"
+                @input="
+                  updateSelected({
+                    color: ($event.target as HTMLInputElement).value,
+                  })
+                "
+              />
+            </label>
+            <label v-if="selectedObject.type === 'door'" class="studio-field">
+              <span>{{ t('mapStudio.variant') }}</span>
+              <select
+                :value="selectedObject.variant"
+                @change="
+                  updateSelected({
+                    variant: Number(($event.target as HTMLSelectElement).value),
+                  })
+                "
+              >
+                <option :value="0">1</option>
+                <option :value="1">2</option>
+              </select>
+            </label>
+            <label v-if="selectedObject.type === 'stairs'" class="studio-field">
+              <span>{{ t('mapStudio.steps') }}</span>
+              <input
+                class="studio-number"
+                type="number"
+                min="1"
+                step="1"
+                :value="selectedObject.stepsPerCell"
+                @input="
+                  updateSelected({
+                    stepsPerCell: Number(
+                      ($event.target as HTMLInputElement).value,
+                    ),
+                  })
+                "
+              />
+            </label>
+            <label class="studio-field">
+              <span>{{ t('mapStudio.opacity') }}</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                :value="selectedObject.opacity"
+                @input="
+                  updateSelected({
+                    opacity: Number(($event.target as HTMLInputElement).value),
+                  })
+                "
+              />
+            </label>
+            <label v-if="selectedObject.type === 'text'" class="studio-field">
+              <span>{{ t('mapStudio.rotation') }}</span>
+              <input
+                class="studio-number"
+                type="number"
+                step="0.1"
+                :value="selectedObject.transform.rotation"
+                @input="
+                  updateSelectedTransform(
+                    'rotation',
+                    Number(($event.target as HTMLInputElement).value),
+                  )
+                "
+              />
+            </label>
+          </template>
+
+          <template v-else-if="activeLayer">
             <QSeparator class="q-my-sm" />
             <div class="row items-center justify-between q-mb-xs">
               <span class="text-caption text-weight-medium">{{
@@ -776,5 +939,8 @@ async function applyToLocation(): Promise<void> {
 }
 .studio-number {
   width: 52px;
+}
+.studio-text-input {
+  width: 120px;
 }
 </style>

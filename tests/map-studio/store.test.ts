@@ -309,3 +309,38 @@ describe('map studio object guards', () => {
     expect(store.imagesLayer).toBeNull();
   });
 });
+
+describe('map studio object editing', () => {
+  it('updates, duplicates and reorders objects', () => {
+    const store = useMapStudioStore();
+    const map = createMap(createProject().id);
+    store.setMap(map);
+    store.addText('A', [0, 0]);
+    store.addText('B', [1, 1]);
+    const first = store.imagesLayer!.objects[0];
+    const second = store.imagesLayer!.objects[1];
+
+    store.updateObject(first.id, { opacity: 0.5 });
+    expect(store.imagesLayer?.objects[0].opacity).toBe(0.5);
+
+    store.selectObject(first.id);
+    store.duplicateObject(first.id);
+    expect(store.imagesLayer?.objects).toHaveLength(3);
+    expect(
+      store.imagesLayer?.objects.some(
+        (object) => object.id === store.selectedObjectId,
+      ),
+    ).toBe(true);
+
+    store.reorderObject(second.id, 1);
+    const ordered = [...store.imagesLayer!.objects].sort(
+      (a, b) => a.order - b.order,
+    );
+    expect(ordered.at(-1)?.id).toBe(second.id);
+
+    store.updateObject('missing', { opacity: 0.1 });
+    store.duplicateObject('missing');
+    store.reorderObject(second.id, 10);
+    expect(store.imagesLayer?.objects).toHaveLength(3);
+  });
+});

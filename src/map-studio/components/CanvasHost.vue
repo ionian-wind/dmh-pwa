@@ -30,6 +30,7 @@ const emit = defineEmits<{
   (event: 'stairs', points: [number, number][]): void;
   (event: 'select', id: string | null): void;
   (event: 'moveObject', delta: { dx: number; dy: number }): void;
+  (event: 'editText', id: string): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
@@ -61,7 +62,9 @@ function snap(value: number): number {
   return Math.round(value * division) / division;
 }
 
-function localPoint(event: PointerEvent | WheelEvent): [number, number] {
+function localPoint(
+  event: PointerEvent | WheelEvent | MouseEvent,
+): [number, number] {
   const rect = host.value?.getBoundingClientRect();
   return [event.clientX - (rect?.left ?? 0), event.clientY - (rect?.top ?? 0)];
 }
@@ -273,8 +276,22 @@ function finishPolygon(): void {
   else if (points.length >= 3) emit('polygon', points);
 }
 
-function onDoubleClick(): void {
-  if (['polygon', 'path', 'wall'].includes(props.tool)) finishPolygon();
+function onDoubleClick(event: MouseEvent): void {
+  if (['polygon', 'path', 'wall'].includes(props.tool)) {
+    finishPolygon();
+    return;
+  }
+  if (props.tool === 'object' && renderer.value) {
+    const [sx, sy] = localPoint(event);
+    const point = renderer.value.screenToWorld(sx, sy);
+    const object = hitTestObject(
+      props.map.layers
+        .filter((layer) => layer.type === 'images' && layer.visible)
+        .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
+      point,
+    );
+    if (object?.type === 'text') emit('editText', object.id);
+  }
 }
 
 function cancelGesture(): void {

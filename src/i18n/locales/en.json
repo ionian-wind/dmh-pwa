@@ -1184,6 +1184,14 @@
     "text": "Text",
     "door": "Door",
     "stairs": "Stairs",
-    "textPrompt": "Label text"
+    "textPrompt": "Label text",
+    "objectSettings": "Object settings",
+    "duplicate": "Duplicate",
+    "bringForward": "Bring forward",
+    "sendBackward": "Send backward",
+    "fontSize": "Font size",
+    "variant": "Variant",
+    "steps": "Steps",
+    "rotation": "Rotation"
   }
 }

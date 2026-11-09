@@ -6,6 +6,7 @@ import type {
   DungeonShape,
   DungeonLayerStyle,
   ImagesLayer,
+  StudioObject,
   StudioMap,
   StudioProject,
   StudioTool,
@@ -434,6 +435,50 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     );
   }
 
+  function updateObject(id: string, patch: Partial<StudioObject>): void {
+    const objects = imagesLayer.value?.objects ?? [];
+    setObjects(
+      objects.map((object) =>
+        object.id === id ? ({ ...object, ...patch } as StudioObject) : object,
+      ),
+    );
+  }
+
+  function duplicateObject(id: string): void {
+    const objects = imagesLayer.value?.objects ?? [];
+    const source = objects.find((object) => object.id === id);
+    if (!source) return;
+    const copy = JSON.parse(JSON.stringify(source)) as StudioObject;
+    const order = nextObjectOrder();
+    if (copy.type === 'text') {
+      copy.transform.x += 0.5;
+      copy.transform.y += 0.5;
+    } else if (copy.type === 'door') {
+      copy.a = [copy.a[0] + 0.5, copy.a[1] + 0.5];
+      copy.b = [copy.b[0] + 0.5, copy.b[1] + 0.5];
+      copy.transform.x += 0.5;
+      copy.transform.y += 0.5;
+    } else {
+      copy.points = copy.points.map(([x, y]) => [x + 0.5, y + 0.5]);
+      copy.transform.x += 0.5;
+      copy.transform.y += 0.5;
+    }
+    setObjects([...objects, { ...copy, id: generateId(), order }]);
+    selectedObjectId.value = copy.id;
+  }
+
+  function reorderObject(id: string, direction: -1 | 1): void {
+    const objects = [...(imagesLayer.value?.objects ?? [])].sort(
+      (a, b) => a.order - b.order,
+    );
+    const index = objects.findIndex((object) => object.id === id);
+    const target = index + direction;
+    if (index === -1 || target < 0 || target >= objects.length) return;
+    const next = [...objects];
+    [next[index], next[target]] = [next[target], next[index]];
+    setObjects(next.map((object, order) => ({ ...object, order: order + 1 })));
+  }
+
   function removeSelectedObject(): void {
     const id = selectedObjectId.value;
     if (!id) return;
@@ -540,6 +585,9 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     selectObject,
     moveSelectedObject,
     removeSelectedObject,
+    updateObject,
+    duplicateObject,
+    reorderObject,
     applyPreset,
     addDungeonLayer,
     renameLayer,
