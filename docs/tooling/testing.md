@@ -103,23 +103,23 @@ src/utils/rng.ts
                 # shared RNG, replay and weighted-sampling library
 ```
 
-Total test files: 222. Total tests: 1847.
+Total test files: 223. Total tests: 1850.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  222 passed (222)
-Tests       1847 passed (1847)
+Test Files  223 passed (223)
+Tests       1850 passed (1850)
 ```
 
 Coverage (V8, `npm run test:coverage`, exit code 0):
 
 ```
-Statements  94.26%
-Branches    87.09%
-Functions   92.85%
-Lines       95.54%
+Statements  94.21%
+Branches    87.02%
+Functions   92.83%
+Lines       95.51%
 ```
 
 `vitest.config.ts` enforces 87% statements, functions, branches and lines

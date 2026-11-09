@@ -14,6 +14,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
 import PWAStatus from '@/components/PWAStatus.vue';
 import CommitBadge from '@/components/CommitBadge.vue';
 import SettingsDialog from '@/components/SettingsDialog.vue';
+import DiceRollerPanel from '@/components/DiceRollerPanel.vue';
 import { provideLayout, unwrapProps } from '@/composables/useLayout';
 import { useConfigStore } from './utils/configStore';
 import { featureNavigation } from 'virtual:feature-navigation';
@@ -42,6 +43,7 @@ const ActiveCombatButton = __FEATURE_ENCOUNTERS__
 
 const leftMenuMinimized = ref(false);
 const toolsExpanded = ref(false);
+const diceRollerOpen = ref(false);
 
 function navigationFor(placement: FeatureNavEntry['placement']) {
   return featureNavigation
@@ -273,9 +275,13 @@ const isSettingsOpen = ref(false);
           <QList>
             <QItem
               data-test="dice-roller-nav"
-              :active="false"
+              clickable
+              v-ripple
+              :active="diceRollerOpen"
+              active-class="bg-secondary"
               :title="t('navigation.diceRoller')"
               :aria-label="t('navigation.diceRoller')"
+              @click="diceRollerOpen = !diceRollerOpen"
             >
               <QItemSection side><IconIcosahedron /></QItemSection>
               <QItemSection>{{ t('navigation.diceRoller') }}</QItemSection>
@@ -360,6 +366,7 @@ const isSettingsOpen = ref(false);
         :key="index"
       />
       <SettingsDialog v-model="isSettingsOpen" />
+      <DiceRollerPanel v-if="diceRollerOpen" @close="diceRollerOpen = false" />
     </div>
   </div>
 </template>

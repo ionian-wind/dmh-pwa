@@ -1115,5 +1115,10 @@
     "title": "Help center",
     "notFound": "Help page not found.",
     "back": "Back to the help center"
+  },
+  "diceRoller": {
+    "title": "Dice Roller",
+    "clear": "Clear",
+    "close": "Close dice roller"
   }
 }
