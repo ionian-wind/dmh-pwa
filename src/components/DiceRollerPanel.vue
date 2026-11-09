@@ -383,6 +383,9 @@ onMounted(async () => {
 
   try {
     renderer = await createRenderer();
+    if (import.meta.env.DEV) {
+      (window as unknown as Record<string, unknown>).__diceRenderer = renderer;
+    }
     ready.value = true;
   } catch {
     rollError.value = true;
@@ -438,6 +441,13 @@ onBeforeUnmount(() => {
             </QBtn>
           </div>
 
+          <div class="dice-roller-summary">
+            <span class="dice-roller-sum">Σ {{ total ?? '—' }}</span>
+            <span class="dice-roller-count">
+              {{ pool.reduce((count, entry) => count + entry.count, 0) }} dice
+            </span>
+          </div>
+
           <div class="dice-roller-modes" role="group">
             <QBtn
               v-for="option in explodeModes"
@@ -488,15 +498,6 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="dice-roller-footer">
-            <span class="dice-roller-total">
-              <template v-if="total !== null">Σ {{ total }}</template>
-              <template v-else
-                >{{
-                  pool.reduce((count, entry) => count + entry.count, 0)
-                }}
-                dice</template
-              >
-            </span>
             <QBtn
               flat
               dense
@@ -628,17 +629,27 @@ onBeforeUnmount(() => {
   background: #d9f2fd;
 }
 
+.dice-roller-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 0 6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dice-roller-count {
+  color: #555;
+  font-weight: 600;
+}
+
 .dice-roller-footer {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
   padding-top: 8px;
-}
-
-.dice-roller-total {
-  flex: 1;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
 }
 
 .dice-roller-footer-button {
