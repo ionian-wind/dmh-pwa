@@ -685,16 +685,13 @@ export class ThreeDiceRenderer implements DiceRenderer {
         ...(result.label ? { label: result.label } : {}),
         ...(result.notation ? { notation: result.notation } : {}),
       };
-      // Explosions are independent throws, not stacked on the parent die.
-      const base = this.spawnPlan();
-      base.force = randomBetween(0.12, 0.2);
       const parts = visualDiceForSides(extra.sides, extra.kind);
       for (let index = 0; index < parts.length; index += 1) {
         if ((this.options?.maxDice ?? 40) <= this.dice.size) break;
         this.addDie(
           extra,
           parts[index],
-          this.offsetSpawn(base, parts.length, index),
+          this.explosionSpawn(position, parts.length, index),
         );
       }
       this.explosions.set(root, count + 1);

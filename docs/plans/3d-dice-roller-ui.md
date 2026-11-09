@@ -284,8 +284,8 @@ roll emits one individual plus one pool event.
   are recomputed after settling. d100 tens/units move together and report one
   combined value.
 - Explosion extras launch from the parent die with an animated scale pulse and
-  an outward/upward physics velocity, so they behave like real ejected dice
-  rather than teleporting in.
+  an outward/upward physics velocity. The chain is recursive: an extra that
+  rolls its maximum pulses and ejects another die, up to the per-pool cap.
 - Boundary walls have high restitution; every collision damps linear velocity by
   5% and angular velocity by 10% (on top of Rapier friction/damping).
 - New throws wake settled dice. Dice can knock each other onto new faces; after
