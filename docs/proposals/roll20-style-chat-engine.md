@@ -2,7 +2,7 @@
 
 > **Status: proposal — not implemented.** The chat engine sits around the roll
 > engine. Roll syntax and evaluation are specified in
-> [plans/dice-roller.md](../plans/dice-roller.md); this document covers commands,
+> [features/dice-roller/README.md](../features/dice-roller/README.md); this document covers commands,
 > UI, rendering, delivery and chat-specific behavior.
 
 ## Why a separate document

@@ -4,8 +4,9 @@
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
-> Design reference: [dice-roller.md](dice-roller.md). Chat, macros UI and message
-> delivery are out of scope for this tracker.
+> Design reference: [../features/dice-roller/README.md](../features/dice-roller/README.md).
+> 3D renderer UI plan: [3d-dice-roller-ui.md](3d-dice-roller-ui.md). Chat,
+> macros UI and message delivery are out of scope for this tracker.
 
 ## How to use this tracker
 
@@ -281,7 +282,7 @@ original/final state.
 - [x] **DR-1205** Verify no chat/UI dependency leaks into the engine.
 - [x] **DR-1206** Verify no custom hand-written parser/tokenizer exists.
 - [x] **DR-1207** Verify all public contracts have tests and documentation.
-- [x] **DR-1208** Complete the definition of done in [dice-roller.md](dice-roller.md).
+- [x] **DR-1208** Complete the definition of done in [../features/dice-roller/README.md](../features/dice-roller/README.md).
 - [x] **DR-1209** Tag the first stable engine schema version.
 - [x] **DR-1210** Hand off extraction/roll APIs to the chat implementation track.
 

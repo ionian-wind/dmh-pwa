@@ -13,6 +13,7 @@ at build time; there is no runtime switching.
 | Pawns                  | `VITE_FEATURE_PAWNS`       | —                          |
 | Encounters + combat    | `VITE_FEATURE_ENCOUNTERS`  | pawns, characters, parties |
 | Maps/locations         | `VITE_FEATURE_MAPS`        | —                          |
+| Dice roller            | `VITE_FEATURE_DICE_ROLLER` | —                          |
 | Jukebox                | `VITE_FEATURE_JUKEBOX`     | —                          |
 | Ambient sound          | `VITE_FEATURE_AMBIENT`     | —                          |
 | Timers                 | `VITE_FEATURE_TIMERS`      | —                          |
@@ -34,6 +35,7 @@ ownership groups are:
 | Feature                | Ownership prefixes                                                                               |
 | ---------------------- | ------------------------------------------------------------------------------------------------ |
 | Notes                  | `src/notes/`, `src/stores/notes.ts`, `src/schemas/note.schema.json`                              |
+| Dice roller            | `src/features/dice-roller/`, `src/components/DiceRollerPanel.vue`                                |
 | Characters             | `src/characters/`, `src/stores/characters.ts`, `src/schemas/character.schema.json`               |
 | Parties                | `src/parties/`, `src/stores/parties.ts`, `src/schemas/party.schema.json`                         |
 | Pawns                  | `src/pawns/`, `src/stores/pawns.ts`, `src/schemas/pawn.schema.json`                              |

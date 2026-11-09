@@ -9,8 +9,8 @@ For optional, exploratory ideas that may never be implemented, use
 
 ## Current plans
 
-Last reviewed against the code and test suite on **2026-11-09** (207 test files /
-1615 tests passing).
+Last reviewed against the code and test suite on **2026-11-09** (223 test files /
+1852 tests passing).
 
 | Plan                                                        | Status                                                                                              |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -19,8 +19,16 @@ Last reviewed against the code and test suite on **2026-11-09** (207 test files 
 | [PWA hardening](pwa-hardening-plan.md)                      | phases 1–2 done in emulation, most of phase 3 done; device and Lighthouse/PWABuilder checks pending |
 | [Build-time feature flags](feature-flags.md)                | implemented; verification green (14 build configurations)                                           |
 | [Remove the Modules entity](remove-modules-entity.md)       | completed (historical; Modules removed, related proposals obsolete)                                 |
-| [Dice roller](dice-roller.md)                               | implemented core — extensible parser/evaluator; extensions tracked                                  |
 | [Dice roller implementation](dice-roller-implementation.md) | in progress — core complete; pending roll-once, metadata matrix and CI benchmarks                   |
+| [3D dice roller UI](3d-dice-roller-ui.md)                   | planned — Three.js + Rapier renderer wired to bag-of-dice                                           |
+
+## Moved to feature docs
+
+Implemented plans that no longer need tracking boundaries move to
+[`../features/`](../features/):
+
+- [Dice roller engine](../features/dice-roller/README.md) — parser/evaluator
+  design and contracts.
 
 ## Conventions
 

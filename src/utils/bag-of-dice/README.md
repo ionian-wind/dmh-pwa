@@ -1,7 +1,7 @@
 # Bag of Dice
 
 Greenfield dice notation parser/evaluator for the roll engine described in
-[docs/plans/dice-roller.md](../../../docs/plans/dice-roller.md).
+[docs/features/dice-roller/README.md](../../../docs/features/dice-roller/README.md).
 
 The engine is framework-free. It does not import Vue, Pinia, chat state or any
 UI module. External data enters only through async repositories.

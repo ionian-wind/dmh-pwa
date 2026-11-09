@@ -131,7 +131,7 @@ See [utils/files.md](files.md).
 
 ## `src/utils/bag-of-dice/*`
 
-See [plans/dice-roller.md](../plans/dice-roller.md) and the
+See [features/dice-roller/README.md](../features/dice-roller/README.md) and the
 [bag-of-dice README](../../src/utils/bag-of-dice/README.md). The engine uses the
 shared `src/utils/rng.ts` library.
 
