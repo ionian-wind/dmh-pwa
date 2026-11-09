@@ -78,7 +78,7 @@ export class RapierDiceWorld {
       .setTranslation(spawn.x, spawn.y, spawn.z)
       .setCcdEnabled(true)
       .setLinearDamping(0.35)
-      .setAngularDamping(0.45);
+      .setAngularDamping(0.6);
     if (spawn.rotation) {
       descriptor.setRotation(spawn.rotation);
     }

@@ -265,6 +265,8 @@ describe('renderer factory', () => {
     const renderer = new ThreeDiceRenderer();
     renderer.add([{ id: 'a', sides: 6, value: 1 }]);
     renderer.resize(100, 100);
+    expect(renderer.pick(10, 10)).toBeNull();
+    expect(renderer.getResults()).toEqual([]);
     renderer.clear();
     renderer.dispose();
     renderer.dispose();

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => {
     add: vi.fn(),
     roll: vi.fn(),
     clear: vi.fn(),
+    pick: vi.fn(() => null),
   };
   return {
     diceBox,
@@ -66,6 +67,7 @@ describe('DiceRollerPanel', () => {
     mocks.diceBox.add.mockClear();
     mocks.diceBox.roll.mockClear();
     mocks.diceBox.clear.mockClear();
+    mocks.diceBox.pick.mockClear();
     mocks.DiceBox.mockClear();
   });
 

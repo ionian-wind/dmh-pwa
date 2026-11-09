@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { IconX } from '@tabler/icons-vue';
 import type {
   DiceRenderer,
+  DiceResult,
   DiceVisual,
 } from '@/features/dice-roller/renderer/DiceRenderer';
 import { DiceBoxRenderer } from '@/features/dice-roller/renderer/DiceBoxRenderer';
@@ -45,6 +46,7 @@ const menu = ref<{ updatePosition?: () => void } | null>(null);
 const ready = ref(false);
 const rollError = ref(false);
 const pool = ref<Record<string, number>>({});
+const hover = ref<{ result: DiceResult; x: number; y: number } | null>(null);
 const anchorStyle = ref({ left: '0px', top: '0px' });
 let renderer: DiceRenderer | null = null;
 let resizeObserver: ResizeObserver | undefined;
@@ -95,6 +97,7 @@ function onWindowResize() {
 
 function onPointerDown(event: PointerEvent) {
   if (event.button !== 0) return;
+  hover.value = null;
   drag = {
     startX: event.clientX,
     startY: event.clientY,
@@ -126,6 +129,21 @@ function onPointerMove(event: PointerEvent) {
 function stopDragging() {
   drag = null;
   window.removeEventListener('pointermove', onPointerMove);
+}
+
+function onHoverMove(event: PointerEvent) {
+  if (drag || !renderer) {
+    hover.value = null;
+    return;
+  }
+  const result = renderer.pick(event.clientX, event.clientY);
+  hover.value = result
+    ? { result, x: event.clientX + 14, y: event.clientY + 14 }
+    : null;
+}
+
+function clearHover() {
+  hover.value = null;
 }
 
 function makeVisual(die: (typeof dice)[number]): DiceVisual {
@@ -164,6 +182,7 @@ function poolVisuals(): DiceVisual[] {
 function rollPool() {
   if (!ready.value || !renderer) return;
   try {
+    hover.value = null;
     renderer.replace(poolVisuals());
     rollError.value = false;
   } catch {
@@ -174,6 +193,7 @@ function rollPool() {
 function clearDice() {
   pool.value = {};
   rollError.value = false;
+  hover.value = null;
   renderer?.clear();
 }
 
@@ -224,6 +244,8 @@ onMounted(async () => {
   placeBesideMenu();
   sizeSurface();
   window.addEventListener('resize', onWindowResize);
+  window.addEventListener('pointermove', onHoverMove);
+  window.addEventListener('pointerleave', clearHover);
   const mainMenu = document.getElementById('main_menu');
   if (mainMenu && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
@@ -243,6 +265,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onWindowResize);
+  window.removeEventListener('pointermove', onHoverMove);
+  window.removeEventListener('pointerleave', clearHover);
   resizeObserver?.disconnect();
   stopDragging();
   renderer?.dispose();
@@ -329,6 +353,13 @@ onBeforeUnmount(() => {
         </QList>
       </QMenu>
     </div>
+    <div
+      v-if="hover"
+      class="dice-roller-tooltip"
+      :style="{ left: `${hover.x}px`, top: `${hover.y}px` }"
+    >
+      d{{ hover.result.sides }}: {{ hover.result.value }}
+    </div>
   </Teleport>
 </template>
 
@@ -370,5 +401,19 @@ onBeforeUnmount(() => {
 
 .dice-roller-label {
   font-weight: 600;
+}
+
+.dice-roller-tooltip {
+  position: fixed;
+  z-index: 1001;
+  pointer-events: none;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(24, 24, 24, 0.92);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 </style>

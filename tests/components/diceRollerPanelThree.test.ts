@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     add: vi.fn(),
     replace: vi.fn(),
     clear: vi.fn(),
+    pick: vi.fn(() => null),
     resize: vi.fn(),
     dispose: vi.fn(),
   };
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => {
     add: vi.fn(),
     replace: vi.fn(),
     clear: vi.fn(),
+    pick: vi.fn(() => null),
     resize: vi.fn(),
     dispose: vi.fn(),
   };
@@ -101,6 +103,7 @@ describe('DiceRollerPanel with the Three renderer', () => {
     mocks.three.add.mockReset();
     mocks.three.replace.mockReset();
     mocks.three.clear.mockReset();
+    mocks.three.pick.mockReset().mockReturnValue(null);
     mocks.three.resize.mockReset();
     mocks.three.dispose.mockReset();
     mocks.diceBox.init.mockReset().mockResolvedValue(undefined);
@@ -145,6 +148,36 @@ describe('DiceRollerPanel with the Three renderer', () => {
 
     wrapper.unmount();
     expect(mocks.three.dispose).toHaveBeenCalled();
+  });
+
+  it('shows the settled result when hovering a die', async () => {
+    mocks.three.pick.mockReturnValue({ id: 'die-1', sides: 20, value: 14 });
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    window.dispatchEvent(
+      new MouseEvent('pointermove', {
+        bubbles: true,
+        clientX: 200,
+        clientY: 150,
+      }),
+    );
+    await nextTick();
+    expect(
+      document.querySelector('.dice-roller-tooltip')?.textContent,
+    ).toContain('d20: 14');
+
+    mocks.three.pick.mockReturnValue(null);
+    window.dispatchEvent(
+      new MouseEvent('pointermove', {
+        bubbles: true,
+        clientX: 210,
+        clientY: 160,
+      }),
+    );
+    await nextTick();
+    expect(document.querySelector('.dice-roller-tooltip')).toBeNull();
+    wrapper.unmount();
   });
 
   it('falls back to DiceBox when the Three renderer cannot start', async () => {

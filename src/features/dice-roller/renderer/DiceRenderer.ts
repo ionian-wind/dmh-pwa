@@ -51,6 +51,8 @@ export interface DiceRenderer {
   clear(): void;
   /** Results of the last settled throw, read from the visible top faces. */
   getResults(): DiceResult[];
+  /** Result of the die under the given viewport coordinates, if settled. */
+  pick(clientX: number, clientY: number): DiceResult | null;
   resize(width: number, height: number): void;
   dispose(): void;
 }

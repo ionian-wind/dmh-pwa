@@ -48,6 +48,14 @@ function randomBetween(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+interface SpawnPlan {
+  x: number;
+  z: number;
+  y: number;
+  throwAngle: number;
+  speed: number;
+}
+
 export class ThreeDiceRenderer implements DiceRenderer {
   readonly kind = 'three' as const;
 
@@ -153,9 +161,15 @@ export class ThreeDiceRenderer implements DiceRenderer {
     if (!this.assets || !this.materials || !this.renderer) return;
     const max = this.options?.maxDice ?? 40;
     for (const visual of dice) {
-      for (const part of visualDiceForSides(visual.sides)) {
+      const parts = visualDiceForSides(visual.sides);
+      const base = this.spawnPlan();
+      for (let index = 0; index < parts.length; index += 1) {
         if (this.dice.size >= max) return;
-        this.addDie(visual, part);
+        this.addDie(
+          visual,
+          parts[index],
+          this.offsetSpawn(base, parts.length, index),
+        );
       }
     }
     this.startAnimation();
@@ -207,6 +221,28 @@ export class ThreeDiceRenderer implements DiceRenderer {
     }));
   }
 
+  pick(clientX: number, clientY: number): DiceResult | null {
+    if (!this.renderer) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, this.camera);
+    const meshes = [...this.dice.values()]
+      .filter((die) => die.result !== undefined)
+      .map((die) => die.mesh);
+    const hit = raycaster.intersectObjects(meshes, false)[0]?.object;
+    if (!hit) return null;
+    const die = [...this.dice.values()].find((entry) => entry.mesh === hit);
+    if (!die || die.result === undefined) return null;
+    return (
+      this.getResults().find((result) => result.id === die.visualId) ?? null
+    );
+  }
+
   resize(width: number, height: number): void {
     if (!this.renderer) return;
     this.renderer.setSize(Math.max(1, width), Math.max(1, height), false);
@@ -241,7 +277,41 @@ export class ThreeDiceRenderer implements DiceRenderer {
     this.container = null;
   }
 
-  private addDie(visual: DiceVisual, part: VisualDiePart): void {
+  private spawnPlan(): SpawnPlan {
+    const angle = Math.random() * Math.PI * 2;
+    return {
+      x: Math.cos(angle) * randomBetween(1.2, 3),
+      z: Math.sin(angle) * randomBetween(0.9, 2.2),
+      // Flatter, lower throw with a bit more force toward the tray centre.
+      y: randomBetween(1, 2),
+      throwAngle: angle + Math.PI + (Math.random() - 0.5) * (Math.PI / 3),
+      speed: randomBetween(0.1, 0.2),
+    };
+  }
+
+  /** Keep multi-part visuals (d100) dropping from essentially the same spot. */
+  private offsetSpawn(
+    base: SpawnPlan,
+    count: number,
+    index: number,
+  ): SpawnPlan {
+    if (count <= 1) return base;
+    const offset = index === 0 ? -0.22 : 0.22;
+    const perpendicular = base.throwAngle + Math.PI / 2;
+    return {
+      x: base.x + Math.cos(perpendicular) * offset,
+      z: base.z + Math.sin(perpendicular) * offset,
+      y: base.y + index * 0.12,
+      throwAngle: base.throwAngle + (index - 0.5) * 0.15,
+      speed: base.speed,
+    };
+  }
+
+  private addDie(
+    visual: DiceVisual,
+    part: VisualDiePart,
+    spawn: SpawnPlan,
+  ): void {
     if (!this.assets || !this.materials) return;
     const asset = this.assets.assets.get(part.kind);
     if (!asset) return;
@@ -253,9 +323,9 @@ export class ThreeDiceRenderer implements DiceRenderer {
     mesh.receiveShadow = true;
 
     const id = `${visual.id}:${part.id}`;
-    const x = Math.cos(Math.random() * Math.PI * 2) * randomBetween(1.2, 3);
-    const z = Math.sin(Math.random() * Math.PI * 2) * randomBetween(0.9, 2.2);
-    const spawnHeight = randomBetween(1.8, 3.4);
+    const x = spawn.x;
+    const z = spawn.z;
+    const spawnHeight = spawn.y;
 
     mesh.position.set(x, spawnHeight, z);
     this.scene.add(mesh);
@@ -298,8 +368,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
         Math.random() * Math.PI * 2,
       ),
     );
-    const throwAngle = Math.random() * Math.PI * 2;
-    const throwSpeed = randomBetween(0.04, 0.14);
+    const throwAngle = spawn.throwAngle;
+    const throwSpeed = spawn.speed;
     const body = this.physics.add(
       id,
       scaledPoints(asset.colliderPoints, DICE_SCALE),
@@ -315,13 +385,13 @@ export class ThreeDiceRenderer implements DiceRenderer {
         },
         impulse: {
           x: Math.cos(throwAngle) * throwSpeed,
-          y: randomBetween(0, 0.04),
+          y: randomBetween(-0.01, 0.015),
           z: Math.sin(throwAngle) * throwSpeed,
         },
         torque: {
-          x: randomBetween(-0.12, 0.12),
-          y: randomBetween(-0.12, 0.12),
-          z: randomBetween(-0.12, 0.12),
+          x: randomBetween(-0.035, 0.035),
+          y: randomBetween(-0.035, 0.035),
+          z: randomBetween(-0.035, 0.035),
         },
       },
       0.1,

@@ -238,12 +238,14 @@ assets without Babylon.
 - Dice enter from different perimeter sides and heights, then are thrown inward
   with varied angles. A key light enters from the scene's left-top corner and
   targets the floor centre, with a soft fill from the opposite side.
-- Dice are rendered at 1.7× asset scale with random throw positions, spins and
-  impulses, invisible boundary walls and a 6s simulation cap. Physics runs
+- Dice are rendered at 1.7× asset scale with low, inward throws, gentle initial
+  spin, invisible boundary walls and a 6s simulation cap. d100 tens/units share
+  a nearby drop point. Physics runs
   naturally until every body sleeps; no rotation or value correction is applied.
   Every die is placed on the same `y=0` floor by its world bounding box.
 - Results are read from the settled meshes: highest face normal for normal dice,
-  lowest for d4. d100 combines the tens (`d100` asset) and units (`d10` asset)
+  lowest for d4. Hovering a settled die raycasts the meshes and shows a
+  `dN: value` hint. d100 combines the tens (`d100` asset) and units (`d10` asset)
   faces, with `100 = 00 + 0`.
 - The render loop stops when every die is settled. Resize updates the renderer,
   camera and draws one frame without clearing the scene.
