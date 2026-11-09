@@ -68,7 +68,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [components/markdown-editor.md](components/markdown-editor.md)             | Milkdown wrapper and mention insertion popup           |
 | [components/modals-and-navigation.md](components/modals-and-navigation.md) | Modal stack, dialogs, drawer injection, layout regions |
 | [utils/files.md](utils/files.md)                                           | File System Access / Blob handlers and metadata worker |
-| [utils/helpers.md](utils/helpers.md)                                       | IDs, debug, unwrapping, scrolling, titles, random      |
+| [utils/helpers.md](utils/helpers.md)                                       | IDs, debug, unwrapping, scrolling, titles, RNG/random  |
 
 ### Tooling
 

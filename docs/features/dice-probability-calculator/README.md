@@ -32,8 +32,9 @@ using integer (`bigint`) weights. A Vue page under
   clickable `line N, column M` link that moves the editor cursor there.
 - Controls: Calculate, Table, Graph, Export, Roller, Normal, At Least, At Most,
   Transposed and Summary.
-- Results: probability tables, CSV export, exact summary statistics, a roller,
-  and graphs rendered with `vue3-charts`, including zoom in/out/reset controls.
+- Results: probability tables, CSV export, exact summary statistics, a roller
+  backed by the shared RNG library, and graphs rendered with `vue3-charts`,
+  including zoom in/out/reset controls.
 - Share links encode the source in the URL hash (`#code=<base64>`); opening a
   link restores the program. Editing the source clears the generated link.
 - The source program is persisted in `localStorage`.
@@ -52,7 +53,13 @@ UI coverage is split between `src/probability-calculator/__tests__/`,
 ## Public API
 
 ```ts
-import { calculate, parse } from '@/utils/dice-probability-calculator';
+import {
+  calculate,
+  parse,
+  sampleDie,
+  sampleOutcomes,
+} from '@/utils/dice-probability-calculator';
+import { cryptoRng, sequenceRng } from '@/utils/rng';
 
 const result = calculate(`
   function: highest of S:s { result: 1@S }
@@ -66,6 +73,11 @@ result.outputs[0].outcomes; // [{ value, weight, probability }, ...]
 ```
 
 `parse(script)` returns the typed AST when only parsing is needed.
+
+`sampleDie(die, rng)` and `sampleOutcomes(outcomes, amount, rng)` draw actual
+values from an exact distribution using the shared RNG library. The roller UI
+calls `rollOutput(output, amount, rng)`; tests inject `sequenceRng()` for
+deterministic samples.
 
 ## Documentation set
 
