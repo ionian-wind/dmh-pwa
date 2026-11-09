@@ -300,25 +300,47 @@ not part of the chat message pipeline.
 - Sanitizer and visibility-leak tests.
 - End-to-end raw message -> engine extraction -> UI prompt -> rendered message.
 
-## Deferred gaps
+## Remaining gaps
 
-### 1. Chat identity and permission model
+### P0 — chat contracts
 
-- **Status:** deferred until transport/identity design.
-- **Open:** single-user vs multi-user, GM role, player identity, whisper targets,
-  blind rolls and retention.
-- **First-phase rule:** store visibility metadata, but do not implement real
-  GM/whisper/blind behavior until the identity model is settled. Unsupported
-  modes must fail explicitly, not leak content.
+- **Chat identity and permissions — deferred.** Decide single-user vs.
+  multi-user, GM role, player identity, whisper targets, blind rolls and
+  retention. First phase may store visibility metadata but must not implement
+  real GM/whisper/blind behavior; unsupported modes must fail explicitly.
+- **Token/attribute model — deferred.** Define selected/target tokens, bars,
+  default tokens, linked characters, abilities/attributes storage and repeating
+  sections. First phase may use a local repository adapter but must return a
+  clear unsupported/missing-data error for token calls.
+- Freeze the chat message store schema, roll snapshot reference shape and
+  retention/size policy.
+- Define the query-prompt contract: how engine `RollQueryRequest[]` maps to
+  fields, validation, cancel/retry and answer collection.
+- Define the ability/attribute selector contract and missing-data recovery UX.
+- Define the chat-command dispatch adapter and how command errors map to
+  messages.
 
-### 2. Token and attribute model
+### P1 — chat features
 
-- **Status:** deferred until the token/tabletop model is defined.
-- **Open:** selected/target tokens, bars, default tokens, linked characters,
-  attributes/abilities storage and repeating sections.
-- **First-phase rule:** use a local character/attribute repository adapter, but
-  do not assume a canvas/token system exists. Token calls return a clear
-  unsupported/missing-data error until the model is defined.
+- Define roll-template field/conditional/helper rendering and template
+  registration/import.
+- Define safe chat-button/chat-menu dispatch, recursion limits and payload
+  validation.
+- Specify command semantics and localization for `/w`, `/gmroll`,
+  `/talktomyself`, `/desc`, `/as`, `/emas` and `/fx`.
+- Map `&{tracker}` metadata to the combat tracker.
+- Specify chat history/search/export/re-render and retention behavior.
+- Define macro quick access/autocomplete and import behavior.
+- Decide the composer/query-prompt UI: modal vs inline vs in-composer.
+- Define the visibility selector and GM/self/blind UI behavior.
+
+### P2 — quality and delivery
+
+- Define the chat sanitization threat model and allow-list.
+- Define accessibility, reduced-motion and keyboard flows.
+- Set chat history/performance targets and large-message limits.
+- Add end-to-end tests and per-phase acceptance criteria.
+- Decide whether/when multi-user transport is implemented.
 
 ## Open questions
 

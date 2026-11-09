@@ -451,14 +451,53 @@ delivery. The engine never reads chat state directly.
 - Process-metadata completeness tests.
 - Visualization tests: display data matches records without re-rolling.
 
-## Risks and open decisions
+## Remaining gaps
+
+### P0 — parser/evaluator contracts
+
+- Finalize `extract()` / `roll()` lifecycle: async expansion, query-answer
+  injection, retries/cancellation and pass failure behavior.
+- Freeze concrete AST/plugin interfaces, token-composition rules and pass-record
+  schemas.
+- Define async repository semantics: selected/target context, ability/attribute
+  lookup, repeating rows, caching, cycle detection and missing-data behavior.
+- Define macro-source precedence and conflict rules (local, pack, import,
+  override).
+- Define query-answer identity and merging for repeated/nested prompts.
+- Freeze `RollResult` process metadata and the render-segment contract before UI
+  work begins.
+- Establish one error taxonomy with plugin/pass names, source spans and limits.
+- Define the RNG/replay contract (seed shape, crypto vs test RNG, snapshots).
+
+### P1 — syntax and evaluation
+
+- Build the modifier interaction matrix and golden tests for
+  reroll/explode/keep/drop/success/matching chains.
+- Resolve grammar edge cases: computed/custom dice, grouped-roll validation,
+  separator handling, token collisions and recovery.
+- Define optional table-plugin recursion, missing-table behavior and nested
+  inline entries.
+- Define macro/ability/attribute cycle and output-size limits, plus query HTML
+  entity handling for nested layers.
+- Specify integration tests between expansion, query, inline, dice and math
+  passes.
+- Define the 3D dice adapter contract and fallback, including deterministic
+  display of recorded values.
+
+### P2 — quality and delivery
+
+- Set parser/evaluator performance targets and benchmark large macros/groups.
+- Add golden test corpus and per-phase acceptance criteria.
+- Decide snapshot/export shape for roll results and process metadata.
+- Define localization of engine errors and warnings.
+- Define accessibility requirements for roll metadata/visualizations.
+
+## Open decisions
 
 - Chevrotain grammar composition and token collisions.
-- Freezing the process-metadata/result schema before UI work.
-- Async expansion failure/cycle policy.
-- Roll-query UI is deferred; engine must not assume a specific prompt UX.
-- Optional table/custom/computed grammar may need lookahead.
+- Whether optional table/custom/computed syntax needs lookahead.
 - 3D dice library/fallback/mobile performance remain presentation decisions.
+- How much of the process metadata is persisted vs. recomputed on reload.
 
 ## Definition of done
 
