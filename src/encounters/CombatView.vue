@@ -30,7 +30,6 @@ import {
   IconX,
 } from '@tabler/icons-vue';
 import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
-import { S } from '@/utils/dice-roller/plugins/dice/tokens';
 import { advanceTurn, rewindTurn, type TurnResult } from '@/utils/combatTurn';
 
 const route = useRoute();
