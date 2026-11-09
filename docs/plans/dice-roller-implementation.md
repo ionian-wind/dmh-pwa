@@ -1,6 +1,6 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 1833 passing tests; three
+> **Status: in progress.** Core engine implemented with 1845 passing tests; three
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
@@ -289,7 +289,7 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 1833 passing tests across
+Implemented under `src/utils/bag-of-dice` with 1845 passing tests across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 
@@ -371,6 +371,8 @@ per worker instead of once per test file.
       `dice-roller-parser` implementation.
 - [x] **DR-330** Add coverage-gap tests for plugin registration, RNG helpers,
       snapshots, text rendering and visualizer fallbacks.
+- [x] **DR-331** Extract the shared RNG/weighted-sampling library and use it in
+      both the dice roller and the probability calculator.
 - [ ] **DR-327** Add comma-separated reroll/explode modifier clause support and
       golden tests.
 - [x] **DR-328** Implement `mtN`/`mtN>X` argument and threshold semantics; the

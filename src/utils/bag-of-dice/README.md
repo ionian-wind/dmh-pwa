@@ -41,7 +41,9 @@ if (outcome.status === 'complete') {
 - `error` with typed `RollError[]`.
 
 Pass a deterministic `Rng` for tests and replay. Production defaults to a
-crypto-backed RNG; the engine never falls back to `Math.random`.
+crypto-backed RNG; the engine never falls back to `Math.random`. The RNG and
+weighted-sampling helpers live in `@/utils/rng` and are shared with the dice
+probability calculator.
 
 ## Module map
 
@@ -50,7 +52,7 @@ crypto-backed RNG; the engine never falls back to `Math.random`.
 | `engine/contracts.ts`       | Public AST, result, process, repository and plugin types     |
 | `engine/errors.ts`          | Typed errors/warnings and `RollFailure`                      |
 | `engine/limits.ts`          | Documented defaults and `resolveLimits()`                    |
-| `engine/rng.ts`             | Crypto/sequence RNGs, validation and replay state            |
+| `engine/rng.ts`             | Re-export of the shared `@/utils/rng` library                |
 | `engine/lexer.ts`           | Chevrotain tokens, vocabulary composition, collisions        |
 | `engine/parser.ts`          | Chevrotain grammar, recovery, typed AST                      |
 | `engine/plugin-registry.ts` | Plugin/token/CST-rule registration and evaluation dispatch   |

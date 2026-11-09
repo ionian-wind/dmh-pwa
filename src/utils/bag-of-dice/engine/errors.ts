@@ -1,3 +1,4 @@
+import { RngError } from '../../rng';
 import type {
   AstSpan,
   RollError,
@@ -83,6 +84,13 @@ export function toRollError(
 ): RollError {
   if (error instanceof RollFailure) {
     return error.errors[0];
+  }
+  if (error instanceof RngError) {
+    return rollError('RNG_FAILURE', error.message, {
+      ...fallback,
+      plugin: fallback.plugin ?? 'rng',
+      cause: error,
+    });
   }
   return rollError(
     'INTERNAL',

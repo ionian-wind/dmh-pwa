@@ -6,7 +6,13 @@ import {
   RollFailure,
   toRollErrors,
 } from '../engine/errors';
-import { cryptoRng, nextRandom, rollDie, sequenceRng } from '../engine/rng';
+import {
+  cryptoRng,
+  nextRandom,
+  RngError,
+  rollDie,
+  sequenceRng,
+} from '../engine/rng';
 import {
   defineFixtures,
   fixtureByName,
@@ -88,8 +94,8 @@ describe('deterministic RNG', () => {
   });
 
   it('validates draws outside [0,1)', () => {
-    expect(() => nextRandom(sequenceRng([1]))).toThrow(RollFailure);
-    expect(() => nextRandom(sequenceRng([Number.NaN]))).toThrow(RollFailure);
+    expect(() => nextRandom(sequenceRng([1]))).toThrow(RngError);
+    expect(() => nextRandom(sequenceRng([Number.NaN]))).toThrow(RngError);
     const bad = { next: () => -0.1 };
     expect(() => nextRandom(bad)).toThrow(/outside/);
   });

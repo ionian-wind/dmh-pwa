@@ -25,6 +25,30 @@ for (const output of result.outputs) {
 
 `parse(script)` is also exported when only the AST is needed.
 
+## Sampling with the shared RNG
+
+The calculator itself is exact and does not roll dice. When an actual sample is
+needed, use the shared RNG library:
+
+```ts
+import {
+  calculate,
+  sampleDie,
+  sampleOutcomes,
+} from '@/utils/dice-probability-calculator';
+import { cryptoRng, sequenceRng } from '@/utils/rng';
+
+const result = calculate('output 2d6');
+const outcomes = result.outputs[0].outcomes;
+
+sampleOutcomes(outcomes, 5, cryptoRng());
+sampleOutcomes(outcomes, 5, sequenceRng([0.1, 0.5, 0.9]));
+```
+
+`sampleDie(die, rng)` samples a `Die`; `sampleOutcomes(outcomes, amount, rng)`
+samples an output distribution with replacement. The roller UI uses the same
+`rollOutput(output, amount, rng)` helper.
+
 ## Supported language
 
 - Backslash comments: `\ comment \`
@@ -78,6 +102,7 @@ The evaluator follows AnyDice's function-casting rules:
 | `errors.ts`              | `DiceSyntaxError` with source range/details     |
 | `syntaxErrorProvider.ts` | Chevrotain parser/lexer error providers         |
 | `toAst.ts`               | CST to AST conversion                           |
+| `sampling.ts`            | Sampling from distributions via the shared RNG  |
 | `ast.ts`                 | AST and statement types                         |
 | `seq.ts`                 | Ordered numeric sequences                       |
 | `die.ts`                 | Weighted PMFs, convolution and order statistics |

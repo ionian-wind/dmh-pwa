@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculate } from '@/utils/dice-probability-calculator';
+import { sequenceRng } from '@/utils/rng';
 import {
   buildChartData,
   buildExportText,
@@ -95,6 +96,12 @@ describe('probability calculator result utilities', () => {
     const values = rollOutput(output, 20);
     expect(values).toHaveLength(20);
     expect(values.every((value) => value >= 1 && value <= 4)).toBe(true);
+  });
+
+  it('uses an injected deterministic RNG', () => {
+    expect(rollOutput(output, 4, sequenceRng([0.1, 0.3, 0.75, 0.99]))).toEqual([
+      1, 2, 3, 4,
+    ]);
   });
 
   it('rolls nothing for an empty die', () => {

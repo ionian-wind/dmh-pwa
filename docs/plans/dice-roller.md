@@ -390,7 +390,8 @@ interface Rng {
 ```
 
 Production uses a crypto-backed uniform RNG; tests inject deterministic
-sequences. If the RNG exposes snapshots, `RollResult.replay` records
+sequences. The RNG and weighted-sampling helpers live in `src/utils/rng` and are
+shared with the dice probability calculator. If the RNG exposes snapshots, `RollResult.replay` records
 `rngStateBefore` and `rngStateAfter`. Otherwise replay is seed/context-based and
 the caller is responsible for retention.
 
@@ -867,18 +868,18 @@ instead of failing the chat.
 
 ## Planned module layout
 
-| Module              | Responsibility                                         |
-| ------------------- | ------------------------------------------------------ |
-| `engine/contracts`  | AST, result, process metadata, context, errors         |
-| `engine/lexer`      | Chevrotain token helpers and vocabularies              |
-| `engine/parser`     | Parser classes and CST-to-AST conversion               |
-| `engine/expansions` | Macro/ability/attribute scanning and async resolution  |
-| `engine/queries`    | Query extraction, validation and substitution          |
-| `engine/inline`     | Inline rolls, labels, index registry and references    |
-| `engine/evaluator`  | Plugin dispatch and evaluation                         |
-| `engine/plugins`    | Arithmetic, dice, optional tables/custom/computed dice |
-| `engine/rng`        | RNG interface and deterministic helpers                |
-| `engine/visualize`  | Visualization adapter contracts                        |
+| Module              | Responsibility                                           |
+| ------------------- | -------------------------------------------------------- |
+| `engine/contracts`  | AST, result, process metadata, context, errors           |
+| `engine/lexer`      | Chevrotain token helpers and vocabularies                |
+| `engine/parser`     | Parser classes and CST-to-AST conversion                 |
+| `engine/expansions` | Macro/ability/attribute scanning and async resolution    |
+| `engine/queries`    | Query extraction, validation and substitution            |
+| `engine/inline`     | Inline rolls, labels, index registry and references      |
+| `engine/evaluator`  | Plugin dispatch and evaluation                           |
+| `engine/plugins`    | Arithmetic, dice, optional tables/custom/computed dice   |
+| `engine/rng`        | Re-export of the shared `utils/rng` RNG/sampling library |
+| `engine/visualize`  | Visualization adapter contracts                          |
 
 ## Integration contract
 

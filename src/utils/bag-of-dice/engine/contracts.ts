@@ -7,6 +7,9 @@
  */
 
 import type { CstNode, CstParser, TokenType } from 'chevrotain';
+import type { Rng } from '../../rng';
+
+export type { Rng } from '../../rng';
 
 /* ------------------------------------------------------------------------- */
 /* Source spans and AST                                                       */
@@ -107,13 +110,6 @@ export type CoreAstNode =
 /* ------------------------------------------------------------------------- */
 /* RNG                                                                        */
 /* ------------------------------------------------------------------------- */
-
-export interface Rng {
-  /** Must return a finite number in `[0, 1)`. */
-  next(): number;
-  snapshot?(): unknown;
-  restore?(state: unknown): void;
-}
 
 /* ------------------------------------------------------------------------- */
 /* Repositories                                                               */

@@ -8,6 +8,7 @@ import type { CalculationResult, Outcome, OutputResult } from './types';
 
 export { DiceSyntaxError } from './errors';
 export { Die, Seq, Evaluator };
+export { sampleDie, sampleOutcomes } from './sampling';
 export type {
   CallItem,
   Expression,
