@@ -215,7 +215,6 @@ function applyModifiers(
   phase(['r', 'ro', 'mi', 'ma']);
   phase(['!', '!p', '!!']);
   phase(['kh', 'kl', 'dh', 'dl', 'k', 'd']);
-  phase(['m', 'mt']);
 
   for (const modifier of modifiers) {
     if (!['compare', 's', 'f', 'cs', 'cf'].includes(modifier.name)) continue;
@@ -253,23 +252,18 @@ function applyModifiers(
   }
 
   for (const modifier of modifiers) {
+    if (modifier.name !== 'm' && modifier.name !== 'mt') continue;
+    const count = applyMatch(records, modifier);
+    segments.push(modifierSegment(modifier, count));
     if (modifier.name === 'mt') {
-      const frequency = highestFrequency(records);
-      replacement = frequency;
-      success = frequency;
-      segments.push(modifierSegment(modifier, frequency));
-    } else if (modifier.name === 'm') {
-      segments.push(modifierSegment(modifier, highestFrequency(records)));
+      replacement = count;
+      success = count;
     }
   }
 
   for (const modifier of modifiers) {
     if (!['s', 'sa', 'sd'].includes(modifier.name)) continue;
-    const direction = modifier.name === 'sd' ? -1 : 1;
-    records.sort((left, right) => {
-      if (left.value === right.value) return 0;
-      return (left.value - right.value) * direction;
-    });
+    sortRecords(records, modifier);
     segments.push(modifierSegment(modifier, undefined));
   }
 
@@ -532,57 +526,104 @@ function evaluateGrouped(
   const group: DiceGroupResult = {
     id,
     kind: 'group',
-    dice: [],
+    dice: records,
     total: totals.reduce((sum, value) => sum + value, 0),
-    rawTotal: totals.reduce((sum, value) => sum + value, 0),
+    rawTotal: records.reduce((sum, die) => sum + die.value, 0),
     modifiers: node.modifiers.map((modifier) => modifier.text),
     modifierOrder: node.modifiers.map((modifier) => modifier.name),
     ...(node.label ? { labels: [node.label] } : {}),
   };
 
-  let total = group.rawTotal ?? 0;
+  let total = numberValue(results[0]?.value ?? 0);
+  if (node.rolls.length > 1) {
+    total = totals.reduce((sum, value) => sum + value, 0);
+  }
   let success: number | undefined;
+  let failure: number | undefined;
+  let critical: number | undefined;
+  let replacement: number | undefined;
+
+  const single = node.rolls.length === 1;
   for (const modifier of node.modifiers) {
     if (['kh', 'kl', 'dh', 'dl', 'k', 'd'].includes(modifier.name)) {
-      const amount = Math.max(1, Math.floor(modifier.argument ?? 1));
-      const ordered = [...totals].sort((left, right) => left - right);
-      const keepHighest = modifier.name === 'kh' || modifier.name === 'k';
-      const keepLowest = modifier.name === 'kl';
-      const dropHighest = modifier.name === 'dh';
-      const dropLowest = modifier.name === 'dl' || modifier.name === 'd';
-      let selected: number[];
-      if (keepHighest) selected = ordered.slice(-amount);
-      else if (keepLowest) selected = ordered.slice(0, amount);
-      else if (dropHighest)
-        selected = ordered.slice(0, Math.max(0, ordered.length - amount));
-      else if (dropLowest) selected = ordered.slice(amount);
-      else selected = ordered;
-      total = selected.reduce((sum, value) => sum + value, 0);
-      segments.push({
-        kind: 'modifier',
-        text: modifier.text,
-        modifier: modifier.name,
-      });
-    } else if (
-      ['compare', 's', 'f', 'cs', 'cf', 'mt'].includes(modifier.name)
-    ) {
-      const compare = modifier.compare ?? { op: '=', value: 1 };
-      const matches = totals.filter((value) =>
-        compareNumber(value, compare),
-      ).length;
-      success = matches;
-      total = matches;
-      segments.push({
-        kind: 'modifier',
-        text: modifier.text,
-        modifier: modifier.name,
-        result: matches,
-      });
+      if (single) {
+        keepDrop(records, modifier);
+        segments.push(modifierSegment(modifier, undefined));
+      } else {
+        const amount = Math.max(1, Math.floor(modifier.argument ?? 1));
+        const ordered = [...totals].sort((left, right) => left - right);
+        const keepHighest = modifier.name === 'kh' || modifier.name === 'k';
+        const keepLowest = modifier.name === 'kl';
+        const dropHighest = modifier.name === 'dh';
+        const dropLowest = modifier.name === 'dl' || modifier.name === 'd';
+        let selected: number[];
+        if (keepHighest) selected = ordered.slice(-amount);
+        else if (keepLowest) selected = ordered.slice(0, amount);
+        else if (dropHighest)
+          selected = ordered.slice(0, Math.max(0, ordered.length - amount));
+        else if (dropLowest) selected = ordered.slice(amount);
+        else selected = ordered;
+        replacement = selected.reduce((sum, value) => sum + value, 0);
+        segments.push({
+          kind: 'modifier',
+          text: modifier.text,
+          modifier: modifier.name,
+        });
+      }
+      continue;
     }
+
+    if (['s', 'sa', 'sd'].includes(modifier.name)) {
+      if (single) {
+        sortRecords(records, modifier);
+        segments.push(modifierSegment(modifier, undefined));
+      }
+      continue;
+    }
+
+    if (modifier.name === 'm' || modifier.name === 'mt') {
+      if (single) {
+        const count = applyMatch(records, modifier);
+        segments.push(modifierSegment(modifier, count));
+        if (modifier.name === 'mt') {
+          replacement = count;
+          success = count;
+        }
+      }
+      continue;
+    }
+
+    if (['compare', 's', 'f', 'cs', 'cf'].includes(modifier.name)) {
+      const compare = modifier.compare ?? { op: '=', value: 1 };
+      const matches = single
+        ? records.filter((die) => !die.dropped && compareDie(die, compare))
+            .length
+        : totals.filter((value) => compareNumber(value, compare)).length;
+      if (modifier.name === 'compare' || modifier.name === 's') {
+        success = matches;
+        replacement = matches;
+      } else if (modifier.name === 'f') {
+        failure = matches;
+        replacement = (success ?? 0) - matches;
+      } else {
+        critical = matches;
+      }
+      segments.push(modifierSegment(modifier, matches));
+    }
+  }
+
+  if (single && replacement === undefined) {
+    total = records
+      .filter((die) => !die.dropped)
+      .reduce((sum, die) => sum + die.value, 0);
+  } else if (replacement !== undefined) {
+    total = replacement;
   }
 
   group.total = total;
   if (success !== undefined) group.success = success;
+  if (failure !== undefined) group.failure = failure;
+  if (critical !== undefined) group.critical = critical;
 
   return {
     value: total,
@@ -592,9 +633,7 @@ function evaluateGrouped(
       ...segments,
       {
         kind: 'dice',
-        text: `{${results
-          .map((result) => String(numberValue(result.value)))
-          .join(', ')}}`,
+        text: `{${totals.join(', ')}}`,
         groupIds: [id, ...subGroups.map((sub) => sub.id)],
         result: total,
       },
@@ -674,11 +713,12 @@ function compareNumber(value: number, compare: ComparePoint): boolean {
     case '!=':
       return value !== compare.value;
     case '>':
-      return value > compare.value;
+      // Roll20/reference compatibility: target numbers are inclusive.
+      return value >= compare.value;
     case '>=':
       return value >= compare.value;
     case '<':
-      return value < compare.value;
+      return value <= compare.value;
     case '<=':
       return value <= compare.value;
     default:
@@ -690,6 +730,25 @@ function compareValue(value: number, compare: ComparePoint): boolean {
   return compareNumber(value, compare);
 }
 
+function applyMatch(records: DieRecord[], modifier: ModifierNode): number {
+  const minimum = Math.max(2, Math.floor(modifier.argument ?? 2));
+  const counts = new Map<number, number>();
+  for (const die of records) {
+    if (die.dropped) continue;
+    counts.set(die.value, (counts.get(die.value) ?? 0) + 1);
+  }
+  const matches = new Set<number>();
+  for (const [value, count] of counts) {
+    if (count < minimum) continue;
+    if (modifier.compare && !compareNumber(value, modifier.compare)) continue;
+    matches.add(value);
+  }
+  for (const die of records) {
+    if (!die.dropped && matches.has(die.value)) die.matched = true;
+  }
+  return matches.size;
+}
+
 function highestFrequency(records: DieRecord[]): number {
   const counts = new Map<number, number>();
   for (const die of records) {
@@ -697,6 +756,14 @@ function highestFrequency(records: DieRecord[]): number {
     counts.set(die.value, (counts.get(die.value) ?? 0) + 1);
   }
   return Math.max(0, ...counts.values());
+}
+
+function sortRecords(records: DieRecord[], modifier: ModifierNode): void {
+  const direction = modifier.name === 'sd' ? -1 : 1;
+  records.sort((left, right) => {
+    if (left.value === right.value) return 0;
+    return (left.value - right.value) * direction;
+  });
 }
 
 function modifierSegment(

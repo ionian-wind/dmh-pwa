@@ -207,6 +207,7 @@ async function finishRoll(settings: FinishSettings): Promise<RollResult> {
   const parsed = parseExpression(settings.inlineText, {
     plugins: settings.plugins,
     maxRecovery: settings.limits.maxParserRecovery,
+    allowTrailingText: settings.options.allowTrailingText ?? true,
   });
   if (parsed.errors.length > 0 || !parsed.ast) {
     throw new RollFailure(
@@ -245,6 +246,8 @@ async function finishRoll(settings: FinishSettings): Promise<RollResult> {
     output: parsed.ast.type,
     warnings: [],
   });
+  const trailingSegments: RollResult['breakdown']['segments'] =
+    parsed.trailingText ? [{ kind: 'text', text: parsed.trailingText }] : [];
   settings.passes.push({
     name: 'evaluate',
     input: settings.inlineText,
@@ -276,7 +279,11 @@ async function finishRoll(settings: FinishSettings): Promise<RollResult> {
     schemaVersion: 1,
     total: evaluation.total,
     breakdown: {
-      segments: [...inlineSegments, ...(evaluation.result.segments ?? [])],
+      segments: [
+        ...inlineSegments,
+        ...(evaluation.result.segments ?? []),
+        ...trailingSegments,
+      ],
       groups: [...inlineGroups, ...(evaluation.result.groups ?? [])],
       rawTotal: evaluation.rawTotal,
       finalTotal: evaluation.total,
@@ -316,6 +323,7 @@ function evaluateTextSync(
   const parsed = parseExpression(source, {
     plugins: settings.plugins,
     maxRecovery: settings.limits.maxParserRecovery,
+    allowTrailingText: false,
   });
   if (parsed.errors.length > 0 || !parsed.ast) {
     throw new RollFailure(
@@ -452,6 +460,7 @@ async function loadTable(
       const parsed = parseExpression(entry.inlineRoll, {
         plugins,
         maxRecovery: limits.maxParserRecovery,
+        allowTrailingText: false,
       });
       if (parsed.ast) {
         await preloadTables(

@@ -67,6 +67,7 @@ export const At = createToken({ name: 'At', pattern: /@/ });
 export const Hash = createToken({ name: 'Hash', pattern: /#/ });
 export const Dollar = createToken({ name: 'Dollar', pattern: /\$/ });
 export const Ampersand = createToken({ name: 'Ampersand', pattern: /&/ });
+export const Backslash = createToken({ name: 'Backslash', pattern: /\\/ });
 export const Semicolon = createToken({ name: 'Semicolon', pattern: /;/ });
 
 /**
@@ -127,6 +128,7 @@ const CORE_PREFIX: TokenType[] = [
   Hash,
   Dollar,
   Ampersand,
+  Backslash,
   Semicolon,
   DiceSeparator,
   TableKeyword,

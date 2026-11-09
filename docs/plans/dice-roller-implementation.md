@@ -1,6 +1,6 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 106 passing tests; three
+> **Status: in progress.** Core engine implemented with 173 passing tests (172 pass + 1 upstream expected failure); three
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
@@ -289,7 +289,7 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 106 passing tests across
+Implemented under `src/utils/bag-of-dice` with 173 passing tests (172 pass + 1 upstream expected failure) across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 
@@ -301,6 +301,28 @@ rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
   expression kind; add a fixture-driven completeness matrix.
 - **DR-1101** — performance is regression-tested with a broad budget test, but
   there is no CI benchmark job with parse/evaluate/pipeline thresholds.
+
+### Reference compatibility suite
+
+`__tests__/reference-compat.test.ts` ports the value, fixed-RNG and sort-ordering
+tests from `ttg-club/dice-roller-parser` (MIT). Russian-language operator tests
+and the Discord renderer tests are intentionally skipped: syntax localization and
+chat/Discord formatting are outside the engine's scope.
+
+Compatibility behavior adopted from that corpus:
+
+- target-number compares are inclusive (`>` behaves as `>=`, `<` as `<=`);
+- `mt` counts matching groups, with `mtN` minimum and optional compare;
+- a single-member grouped roll applies group modifiers to the individual dice,
+  while multi-member groups apply them to sub-roll totals;
+- trailing message text after the expression is accepted as a text segment;
+- labels may follow ordinary expression terms, not only dice;
+- `!N` is shorthand for explode-on-equals-N;
+- `dN` directly after a dice pool is parsed as drop-lowest.
+
+One upstream fixed-RNG case (`{3d6>4 + 3d4>3, 2d8>7}`) is kept as an expected
+failure because the upstream project's own suite currently fails it with `4`
+instead of `5`.
 
 ### Decisions and deviations
 
@@ -338,10 +360,9 @@ rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
       grouped rolls.
 - [ ] **DR-327** Add comma-separated reroll/explode modifier clause support and
       golden tests.
-- [ ] **DR-328** Implement `mtN`/`mtN>X` argument and threshold semantics; the
-      parser records them but evaluation currently reports the highest match
-      frequency only.
-- [ ] **DR-346** Expand golden tests for Fudge variants, computed rounding and
+- [x] **DR-328** Implement `mtN`/`mtN>X` argument and threshold semantics; the
+      parser records them and evaluation now counts matching groups.
+- [x] **DR-346** Expand golden tests for Fudge variants, computed rounding and
       custom-face validation.
 - [ ] **DR-513** Add query-answer merging tests for identical child prompts
       under different parents.

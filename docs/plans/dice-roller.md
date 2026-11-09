@@ -614,6 +614,9 @@ Concrete modifier phases:
 | F     | sort (`s`, `sa`, `sd`)                                         | display order only                                      |
 | G     | aggregate                                                      | sum/display total, emit records                         |
 
+Target-number comparisons are inclusive for Roll20/reference-corpus
+compatibility: `>` behaves as `>=` and `<` as `<=`.
+
 Modifiers are applied in written order within each phase. Sorting is always
 last regardless of where it appears. `e` (exhaustive successes) runs after
 phase E and rerolls only successes, up to the explosion cap. Explosion and
@@ -943,6 +946,8 @@ delivery. The engine never reads chat state directly.
 - Grouped rolls validate sub-roll kind compatibility: every member must contain
   at least one dice, table or nested-group node. Pure-math members fail with
   `VALIDATION_INVALID_MODIFIER`.
+- A single-member grouped roll applies group modifiers to the individual dice
+  inside it; multi-member groups apply keep/drop/success to sub-roll totals.
 - Table plugin follows the defined weight/cycle/missing rules.
 - Arithmetic/functions obey the documented precedence.
 
@@ -999,7 +1004,7 @@ implementation tracker). Deltas discovered while building it:
 - plugin grammar registration is reserved, not active;
 - exhaustive-success (`e`) behavior is a capped follow-up loop and needs more
   compatibility golden cases;
-- `mtN`/`mtN>X` arguments are parsed but not yet reflected in matching totals;
+- `mtN`/`mtN>X` now counts matching groups;
 - extra typed codes (`MATH_*`, `PARSE_EMPTY`, `PARSE_RECOVERY_LIMIT`,
   `QUERY_DEPTH`, `TABLE_DEPTH`, `LIMIT_TIME`, `CANCELLED`) were added to the
   taxonomy.

@@ -22,6 +22,8 @@ export interface AstNode {
   type: string;
   plugin: string;
   span: AstSpan;
+  /** Optional expression-level label (`5[Fire]`). */
+  label?: string;
 }
 
 export interface NumberLiteralNode extends AstNode {
@@ -218,6 +220,7 @@ export interface DieRecord {
   compounded?: boolean;
   penetrating?: boolean;
   rerolled?: boolean;
+  matched?: boolean;
   label?: string;
   /** Zero-based position within the originating pool. */
   index?: number;
@@ -419,6 +422,8 @@ export interface EngineOptions {
   maxParserRecovery?: number;
   signal?: AbortSignal;
   collectWarnings?: boolean;
+  /** Accept trailing message text after the roll expression. Defaults to true. */
+  allowTrailingText?: boolean;
 }
 
 export interface RollContext extends EngineOptions {

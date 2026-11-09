@@ -72,12 +72,16 @@ export interface ParseResult {
   errors: RollError[];
   tokens: IToken[];
   snapshot: TokenSnapshot[];
+  /** Trailing message text accepted after the expression. */
+  trailingText?: string;
 }
 
 export interface ParseOptions {
   plugins?: readonly DicePlugin[];
   maxRecovery?: number;
   vocabulary?: TokenVocabulary;
+  /** Accept trailing message text after the expression. Defaults to true. */
+  allowTrailingText?: boolean;
 }
 
 function spanOf(first: IToken, last: IToken): AstSpan {
@@ -269,18 +273,15 @@ class CoreParser extends EmbeddedActionsParser {
         ALT: () => {
           const base = this.SUBRULE(this.baseExpression);
           const suffix = this.SUBRULE(this.optionalSuffix);
+          const label = this.OPTION3(() => this.SUBRULE(this.label));
           if (this.RECORDING_PHASE) return base;
           const parsed = suffix as Suffix | undefined;
-          if (!parsed) return base;
-          if (parsed.kind === 'dice') {
-            return this.buildDiceNode(
-              base,
-              parsed.separator,
-              parsed.tail,
-              start,
-            );
-          }
-          return this.buildTableNode(base, parsed.table, start);
+          const result = !parsed
+            ? base
+            : parsed.kind === 'dice'
+              ? this.buildDiceNode(base, parsed.separator, parsed.tail, start)
+              : this.buildTableNode(base, parsed.table, start);
+          return label === undefined ? result : { ...result, label };
         },
       },
     ]);
@@ -594,7 +595,10 @@ class CoreParser extends EmbeddedActionsParser {
   private modifiers = this.RULE('modifiers', (): ModifierNode[] => {
     const modifiers: ModifierNode[] = [];
     this.MANY({
-      GATE: () => this.isModifierStart(this.LA(1)),
+      GATE: () =>
+        this.isModifierStart(this.LA(1)) ||
+        (this.LA(1).tokenType === this.token('DiceSeparator') &&
+          this.LA(2).tokenType === this.token('NumberLiteral')),
       DEF: () => {
         modifiers.push(this.SUBRULE(this.modifierClause));
       },
@@ -607,6 +611,12 @@ class CoreParser extends EmbeddedActionsParser {
       {
         GATE: () => this.LA(1).tokenType === this.token('Bang'),
         ALT: () => this.SUBRULE(this.bangModifier),
+      },
+      {
+        GATE: () =>
+          this.LA(1).tokenType === this.token('DiceSeparator') &&
+          this.LA(2).tokenType === this.token('NumberLiteral'),
+        ALT: () => this.SUBRULE(this.dropShorthand),
       },
       {
         GATE: () => this.LA(1).tokenType === this.token('Identifier'),
@@ -629,7 +639,7 @@ class CoreParser extends EmbeddedActionsParser {
         ['p', 'P'].includes(this.LA(1).image),
       DEF: () => this.CONSUME(this.token('Identifier')),
     });
-    const compare = this.OPTION(() => this.SUBRULE(this.comparePoint));
+    const compare = this.OPTION(() => this.SUBRULE(this.bangTarget));
     const name = second ? '!!' : penetrate ? '!p' : '!';
     return this.node<ModifierNode>(
       {
@@ -637,6 +647,21 @@ class CoreParser extends EmbeddedActionsParser {
         text: name + (compare ? compareText(compare) : ''),
         name,
         ...(compare ? { compare } : {}),
+      },
+      start,
+    );
+  });
+
+  private dropShorthand = this.RULE('dropShorthand', (): ModifierNode => {
+    const start = this.LA(1);
+    this.CONSUME(this.token('DiceSeparator'));
+    const value = this.CONSUME(this.token('NumberLiteral'));
+    return this.node<ModifierNode>(
+      {
+        type: 'Modifier',
+        text: `d${value.image}`,
+        name: 'd',
+        argument: Number(value.image),
       },
       start,
     );
@@ -685,6 +710,22 @@ class CoreParser extends EmbeddedActionsParser {
       start,
     );
   });
+
+  private bangTarget = this.RULE('bangTarget', (): ComparePoint =>
+    this.OR([
+      {
+        GATE: () => this.isCompareStart(this.LA(1)),
+        ALT: () => this.SUBRULE(this.comparePoint),
+      },
+      {
+        GATE: () => this.LA(1).tokenType === this.token('NumberLiteral'),
+        ALT: () => {
+          const value = this.CONSUME(this.token('NumberLiteral'));
+          return { op: '=' as const, value: Number(value.image) };
+        },
+      },
+    ]),
+  );
 
   private comparePoint = this.RULE('comparePoint', (): ComparePoint => {
     const op = this.SUBRULE(this.compareOp);
@@ -822,9 +863,13 @@ export function parseExpression(
   try {
     ast = parser.expression();
   } catch (error) {
-    const errors = parser.errors.map((exception) =>
-      recognitionToError(exception, source),
-    );
+    const errors = parser.errors
+      .filter(
+        (exception) =>
+          options.allowTrailingText === false ||
+          exception.name !== 'NotAllInputParsedException',
+      )
+      .map((exception) => recognitionToError(exception, source));
     if (errors.length === 0) {
       errors.push(
         rollError(
@@ -841,28 +886,38 @@ export function parseExpression(
     };
   }
 
-  const errors = parser.errors.map((exception) =>
-    recognitionToError(exception, source),
-  );
+  const errors = parser.errors
+    .filter(
+      (exception) =>
+        options.allowTrailingText === false ||
+        exception.name !== 'NotAllInputParsedException',
+    )
+    .map((exception) => recognitionToError(exception, source));
 
   const trailing = parser.peek();
+  let trailingText: string | undefined;
   if (trailing.tokenType !== EOF) {
-    errors.push(
-      rollError(
-        'PARSE_UNEXPECTED_TOKEN',
-        `unexpected token "${trailing.image}"`,
-        {
-          pass: 'parse',
-          plugin: 'parser',
-          span: spanOf(trailing, trailing),
-          params: { token: trailing.image },
-        },
-      ),
-    );
+    if (options.allowTrailingText === false) {
+      errors.push(
+        rollError(
+          'PARSE_UNEXPECTED_TOKEN',
+          `unexpected token "${trailing.image}"`,
+          {
+            pass: 'parse',
+            plugin: 'parser',
+            span: spanOf(trailing, trailing),
+            params: { token: trailing.image },
+          },
+        ),
+      );
+    } else {
+      trailingText = source.slice(trailing.startOffset).trim();
+    }
   }
 
   return {
     ...(ast ? { ast } : {}),
+    ...(trailingText ? { trailingText } : {}),
     errors: boundErrors(errors, options.maxRecovery),
     tokens: lexed.tokens,
     snapshot: snapshotTokens(lexed.tokens),

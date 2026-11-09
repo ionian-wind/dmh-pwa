@@ -111,6 +111,10 @@ npx vitest run src/utils/bag-of-dice
 npx vue-tsc --noEmit -p tsconfig.json
 ```
 
+`__tests__/reference-compat.test.ts` ports the value/fixed-RNG/sort tests from
+`ttg-club/dice-roller-parser`. Russian operators and Discord rendering are
+intentionally out of scope and not ported.
+
 ## Known limitations / follow-ups
 
 These are tracked in
@@ -123,8 +127,12 @@ These are tracked in
   `dF.1 = {0,1}`, `dF.3 = {-1,0}`.
 - `e` exhaustive successes is implemented as a capped follow-up loop and should
   receive more golden cases.
-- `mtN`/`mtN>X` arguments are parsed but evaluation currently reports the
-  highest match frequency only.
+- Target-number compares follow the reference corpus and are inclusive:
+  `>` behaves as `>=` and `<` as `<=`.
+- Single-member grouped rolls apply group modifiers to individual dice;
+  multi-member groups apply them to sub-roll totals.
 - Table references inside inline rolls are not preloaded yet; tables used by the
   main expression are.
 - Grouped rolls must contain dice; pure-math group members are rejected.
+- Trailing message text after the expression is accepted by default and stored
+  as a text segment. Set `allowTrailingText: false` to reject it.

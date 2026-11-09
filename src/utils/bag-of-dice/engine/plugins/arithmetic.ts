@@ -13,20 +13,44 @@ import { fail } from '../errors';
 
 const MATH_FUNCTIONS = new Set(['floor', 'ceil', 'round', 'abs']);
 
+function labelSegment(node: AstNode): RollSegment[] {
+  return node.label ? [{ kind: 'label', text: node.label }] : [];
+}
+
 export function createArithmeticPlugin(): DicePlugin {
   return {
     name: 'arithmetic',
     tokens: [],
     evaluate(node: AstNode, context: EvalContext): EvalResult | null {
       switch (node.type) {
-        case 'NumberLiteral':
-          return numeric((node as NumberLiteralNode).value, node.type);
-        case 'UnaryOp':
-          return unary(node as UnaryOpNode, context);
-        case 'BinaryOp':
-          return binary(node as BinaryOpNode, context);
-        case 'FunctionCall':
-          return fn(node as FunctionCallNode, context);
+        case 'NumberLiteral': {
+          const result = numeric((node as NumberLiteralNode).value, node.type);
+          return {
+            ...result,
+            segments: [...result.segments, ...labelSegment(node)],
+          };
+        }
+        case 'UnaryOp': {
+          const result = unary(node as UnaryOpNode, context);
+          return {
+            ...result,
+            segments: [...result.segments, ...labelSegment(node)],
+          };
+        }
+        case 'BinaryOp': {
+          const result = binary(node as BinaryOpNode, context);
+          return {
+            ...result,
+            segments: [...result.segments, ...labelSegment(node)],
+          };
+        }
+        case 'FunctionCall': {
+          const result = fn(node as FunctionCallNode, context);
+          return {
+            ...result,
+            segments: [...result.segments, ...labelSegment(node)],
+          };
+        }
         default:
           return null;
       }
