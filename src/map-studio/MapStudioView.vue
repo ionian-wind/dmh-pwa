@@ -192,6 +192,22 @@ function updateSelected(patch: Record<string, unknown>): void {
   if (selectedObject.value) store.updateObject(selectedObject.value.id, patch);
 }
 
+function resizeSelected(size: { width: number; height: number }): void {
+  const object = selectedObject.value;
+  if (!object || (object.type !== 'text' && object.type !== 'image')) return;
+  store.patchSelectedObjectLive({
+    transform: { ...object.transform, ...size },
+  });
+}
+
+function rotateSelected(rotation: number): void {
+  const object = selectedObject.value;
+  if (!object || (object.type !== 'text' && object.type !== 'image')) return;
+  store.patchSelectedObjectLive({
+    transform: { ...object.transform, rotation },
+  });
+}
+
 function updateSelectedTransform(key: string, value: number): void {
   const object = selectedObject.value;
   if (!object || object.type === 'door' || object.type === 'stairs') return;
@@ -538,6 +554,8 @@ async function applyToLocation(): Promise<void> {
           @moveObject="store.moveSelectedObject($event.dx, $event.dy)"
           @editText="editText"
           @image="addImage"
+          @resizeObject="resizeSelected"
+          @rotateObject="rotateSelected"
           @ready="renderer = $event"
         />
 

@@ -133,14 +133,29 @@ export class PixiStudioRenderer {
       return;
     }
     const ppc = BASE_PIXELS_PER_CELL;
+    const x = bounds.x * ppc;
+    const y = bounds.y * ppc;
+    const w = bounds.width * ppc;
+    const h = bounds.height * ppc;
     this.selectionLayer
-      .rect(
-        bounds.x * ppc,
-        bounds.y * ppc,
-        bounds.width * ppc,
-        bounds.height * ppc,
-      )
+      .rect(x, y, w, h)
       .stroke({ color: '#2d6fb3', width: 2, alpha: 1 });
+    const handle = Math.max(6, 8 / this.viewport.zoom);
+    for (const [hx, hy] of [
+      [x, y],
+      [x + w, y],
+      [x, y + h],
+      [x + w, y + h],
+    ]) {
+      this.selectionLayer
+        .rect(hx - handle / 2, hy - handle / 2, handle, handle)
+        .fill('#ffffff')
+        .stroke({ color: '#2d6fb3', width: 2 });
+    }
+    this.selectionLayer
+      .circle(x + w / 2, y - handle * 2, handle * 0.7)
+      .fill('#ffffff')
+      .stroke({ color: '#2d6fb3', width: 2 });
     this.render();
   }
 

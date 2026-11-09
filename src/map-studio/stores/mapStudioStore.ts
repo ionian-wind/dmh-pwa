@@ -464,6 +464,30 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     dirty.value = true;
   }
 
+  function patchSelectedObjectLive(patch: Record<string, any>): void {
+    const current = map.value;
+    const layer = imagesLayer.value;
+    const id = selectedObjectId.value;
+    if (!current || !layer || !id) return;
+    map.value = {
+      ...current,
+      updatedAt: Date.now(),
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id
+          ? {
+              ...layer,
+              objects: layer.objects.map((object) =>
+                object.id === id
+                  ? ({ ...object, ...patch } as StudioObject)
+                  : object,
+              ),
+            }
+          : entry,
+      ),
+    };
+    dirty.value = true;
+  }
+
   function endObjectDrag(): void {
     if (objectDragSnapshot && map.value && dirty.value) {
       undoStack.value = [
@@ -671,6 +695,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     moveSelectedObject,
     beginObjectDrag,
     moveSelectedObjectLive,
+    patchSelectedObjectLive,
     endObjectDrag,
     removeSelectedObject,
     updateObject,

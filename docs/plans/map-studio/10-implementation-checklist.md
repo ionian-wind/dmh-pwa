@@ -60,7 +60,7 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 
 - [ ] Layer create/rename/reorder/delete/folders
 - [ ] Full layer settings (floor/walls/grid/background)
-- [x] Object tool: selection and drag (resize/rotate pending)
+- [x] Object tool: selection, live drag, resize/rotate handles for text/images (doors/stairs pending)
 - [ ] Grouping, z-order, flip, duplicate, context menu
 - [ ] Images panel, upload, drag/drop, favorites
 - [x] Text tool: click + prompt placement (inline editing pending)

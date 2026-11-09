@@ -398,3 +398,18 @@ describe('map studio image objects and live drag', () => {
     expect(undone.type === 'image' && undone.transform.x).toBe(1);
   });
 });
+
+describe('map studio live object patching', () => {
+  it('patches selected object fields without history and ignores missing selection', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    const text = store.imagesLayer!.objects[0];
+    store.selectObject(text.id);
+    store.patchSelectedObjectLive({ opacity: 0.4 });
+    expect(store.imagesLayer?.objects[0].opacity).toBe(0.4);
+    store.selectObject(null);
+    store.patchSelectedObjectLive({ opacity: 0.1 });
+    expect(store.imagesLayer?.objects[0].opacity).toBe(0.4);
+  });
+});

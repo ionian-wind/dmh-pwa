@@ -35,6 +35,8 @@ const emit = defineEmits<{
   (event: 'endObjectDrag'): void;
   (event: 'editText', id: string): void;
   (event: 'image', point: [number, number]): void;
+  (event: 'resizeObject', size: { width: number; height: number }): void;
+  (event: 'rotateObject', rotation: number): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
@@ -51,6 +53,13 @@ let drag:
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
   | { kind: 'object'; id: string; start: Point; last: Point }
+  | { kind: 'resize'; start: Point; last: Point; width: number; height: number }
+  | {
+      kind: 'rotate';
+      center: Point;
+      startAngle: number;
+      rotation: number;
+    }
   | null = null;
 const doorPoints = ref<Point[]>([]);
 const stairPoints = ref<Point[]>([]);
@@ -90,6 +99,48 @@ function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return;
   if (props.tool === 'object') {
     const point = renderer.value.screenToWorld(sx, sy);
+    const selected = props.map.layers
+      .filter((layer) => layer.type === 'images')
+      .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
+      .find((object) => object.id === props.selectedObjectId);
+    if (selected && (selected.type === 'text' || selected.type === 'image')) {
+      const bounds = objectBounds(selected);
+      const vp = renderer.value.getViewport();
+      const toScreen = (x: number, y: number): [number, number] => [
+        x * 70 * vp.zoom + vp.x,
+        y * 70 * vp.zoom + vp.y,
+      ];
+      const [bx, by] = toScreen(
+        bounds.x + bounds.width,
+        bounds.y + bounds.height,
+      );
+      if (Math.hypot(sx - bx, sy - by) < 14) {
+        drag = {
+          kind: 'resize',
+          start: point,
+          last: point,
+          width: selected.transform.width,
+          height: selected.transform.height,
+        };
+        emit('beginObjectDrag');
+        return;
+      }
+      const [rx, ry] = toScreen(bounds.x + bounds.width / 2, bounds.y - 0.25);
+      if (Math.hypot(sx - rx, sy - ry) < 16) {
+        const center: Point = [
+          bounds.x + bounds.width / 2,
+          bounds.y + bounds.height / 2,
+        ];
+        drag = {
+          kind: 'rotate',
+          center,
+          startAngle: Math.atan2(point[1] - center[1], point[0] - center[0]),
+          rotation: selected.transform.rotation,
+        };
+        emit('beginObjectDrag');
+        return;
+      }
+    }
     const object = hitTestObject(
       props.map.layers
         .filter((layer) => layer.type === 'images' && layer.visible)
@@ -166,6 +217,24 @@ function onPointerMove(event: PointerEvent): void {
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
+  if (drag.kind === 'resize') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    emit('resizeObject', {
+      width: Math.max(0.2, drag.width + current[0] - drag.last[0]),
+      height: Math.max(0.2, drag.height + current[1] - drag.last[1]),
+    });
+    drag.last = current;
+    return;
+  }
+  if (drag.kind === 'rotate') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const angle = Math.atan2(
+      current[1] - drag.center[1],
+      current[0] - drag.center[0],
+    );
+    emit('rotateObject', drag.rotation + angle - drag.startAngle);
+    return;
+  }
   if (drag.kind === 'object') {
     const current = renderer.value.screenToWorld(sx, sy);
     emit('moveObjectLive', {
@@ -235,7 +304,11 @@ function onPointerMovePolygon(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
-  if (drag.kind === 'object') {
+  if (
+    drag.kind === 'object' ||
+    drag.kind === 'resize' ||
+    drag.kind === 'rotate'
+  ) {
     emit('endObjectDrag');
     drag = null;
     return;
