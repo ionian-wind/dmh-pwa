@@ -1161,6 +1161,25 @@
     "wall": "Стена",
     "rough": "Грубость",
     "radius": "Радиус",
-    "cornerRadius": "Угол"
+    "cornerRadius": "Угол",
+    "presets": {
+      "title": "Пресеты",
+      "apply": "Применить пресет",
+      "classic": "Классика",
+      "minimal": "Минимал",
+      "blueprint": "Чертёж",
+      "cave": "Пещера"
+    },
+    "addLayer": "Добавить слой",
+    "moveUp": "Поднять слой",
+    "moveDown": "Опустить слой",
+    "layerSettings": "Настройки слоя",
+    "rename": "Переименовать слой",
+    "deleteLayer": "Удалить слой",
+    "layerName": "Название слоя",
+    "opacity": "Прозрачность",
+    "floor": "Пол",
+    "walls": "Стены",
+    "showLayerGrid": "Сетка слоя"
   }
 }

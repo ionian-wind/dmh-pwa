@@ -1160,6 +1160,25 @@
     "wall": "Wall",
     "rough": "Rough",
     "radius": "Radius",
-    "cornerRadius": "Corner"
+    "cornerRadius": "Corner",
+    "presets": {
+      "title": "Presets",
+      "apply": "Apply preset",
+      "classic": "Classic",
+      "minimal": "Minimal",
+      "blueprint": "Blueprint",
+      "cave": "Cave"
+    },
+    "addLayer": "Add layer",
+    "moveUp": "Move layer up",
+    "moveDown": "Move layer down",
+    "layerSettings": "Layer settings",
+    "rename": "Rename layer",
+    "deleteLayer": "Delete layer",
+    "layerName": "Layer name",
+    "opacity": "Opacity",
+    "floor": "Floor",
+    "walls": "Walls",
+    "showLayerGrid": "Show layer grid"
   }
 }

@@ -4,11 +4,14 @@ import { generateId } from '@/utils/storage';
 import type {
   DungeonLayer,
   DungeonShape,
+  DungeonLayerStyle,
   StudioMap,
   StudioProject,
   StudioTool,
   ToolSettings,
 } from '@/map-studio/domain/document/types';
+import { createDungeonLayer } from '@/map-studio/domain/document/factories';
+import { getDungeonPreset } from '@/map-studio/domain/presets';
 import {
   listMaps,
   listProjects,
@@ -243,6 +246,118 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function applyPreset(layerId: string, presetId: string): void {
+    const current = map.value;
+    const preset = getDungeonPreset(presetId);
+    if (!current || !preset) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId && layer.type === 'dungeon'
+          ? { ...layer, style: structuredClone(preset.style) }
+          : layer,
+      ),
+    });
+  }
+
+  function addDungeonLayer(presetId: string): void {
+    const current = map.value;
+    if (!current) return;
+    const preset = getDungeonPreset(presetId);
+    const maxOrder = Math.max(
+      -1,
+      ...current.layers.map((layer) => layer.order),
+    );
+    const layer = createDungeonLayer({
+      name: preset?.nameKey
+        ? `Dungeon ${current.layers.filter((entry) => entry.type === 'dungeon').length + 1}`
+        : 'Dungeon',
+      order: maxOrder + 1,
+      ...(preset ? { style: structuredClone(preset.style) } : {}),
+    });
+    activeLayerId.value = layer.id;
+    commit({ ...current, layers: [...current.layers, layer] });
+  }
+
+  function renameLayer(layerId: string, name: string): void {
+    const current = map.value;
+    if (!current) return;
+    const next = name.trim();
+    if (!next) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId ? { ...layer, name: next } : layer,
+      ),
+    });
+  }
+
+  function removeLayer(layerId: string): void {
+    const current = map.value;
+    if (!current) return;
+    const layer = current.layers.find((entry) => entry.id === layerId);
+    if (!layer || layer.type === 'background' || layer.type === 'images')
+      return;
+    const dungeons = current.layers.filter((entry) => entry.type === 'dungeon');
+    if (dungeons.length <= 1) return;
+    commit({
+      ...current,
+      layers: current.layers.filter((entry) => entry.id !== layerId),
+    });
+    if (activeLayerId.value === layerId) {
+      activeLayerId.value =
+        current.layers.find(
+          (entry) => entry.type === 'dungeon' && entry.id !== layerId,
+        )?.id ?? null;
+    }
+  }
+
+  function moveLayer(layerId: string, direction: -1 | 1): void {
+    const current = map.value;
+    if (!current) return;
+    const ordered = [...current.layers].sort((a, b) => a.order - b.order);
+    const index = ordered.findIndex((layer) => layer.id === layerId);
+    const target = index + direction;
+    if (index === -1 || target < 0 || target >= ordered.length) return;
+    const a = ordered[index];
+    const b = ordered[target];
+    if (a.type === 'background' || b.type === 'background') return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) => {
+        if (layer.id === a.id) return { ...layer, order: b.order };
+        if (layer.id === b.id) return { ...layer, order: a.order };
+        return layer;
+      }),
+    });
+  }
+
+  function setLayerStyle(layerId: string, style: DungeonLayerStyle): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId && layer.type === 'dungeon'
+          ? { ...layer, style }
+          : layer,
+      ),
+    });
+  }
+
+  function setLayerOpacity(layerId: string, opacity: number): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId
+          ? { ...layer, opacity: Math.min(1, Math.max(0, opacity)) }
+          : layer,
+      ),
+    });
+  }
+
   function undo(): void {
     const previous = undoStack.value.at(-1);
     if (!previous || !map.value) return;
@@ -331,6 +446,13 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addPolygon,
     addPath,
     addWall,
+    applyPreset,
+    addDungeonLayer,
+    renameLayer,
+    removeLayer,
+    moveLayer,
+    setLayerStyle,
+    setLayerOpacity,
     undo,
     redo,
     setActiveLayer,

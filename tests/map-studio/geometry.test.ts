@@ -289,3 +289,12 @@ describe('map studio path, wall and roughness', () => {
     expect(first?.[0]?.length).toBeGreaterThan(4);
   });
 });
+
+describe('map studio preset lookup', () => {
+  it('returns presets by id and null for unknown ids', async () => {
+    const { DUNGEON_PRESETS, getDungeonPreset } =
+      await import('@/map-studio/domain/presets');
+    expect(getDungeonPreset(DUNGEON_PRESETS[0].id)).toBe(DUNGEON_PRESETS[0]);
+    expect(getDungeonPreset('missing')).toBeNull();
+  });
+});

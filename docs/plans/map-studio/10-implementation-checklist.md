@@ -53,8 +53,8 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 - [x] Wall tool (points; dash/smooth still pending)
 - [x] Draw/erase mode, snap/division, corner radius and rough levels
 - [x] Undo/redo for every drawing mutation
-- [ ] Classic dungeon preset + basic layer settings
-- [ ] Keyboard shortcuts for drawing tools
+- [x] Classic dungeon preset + basic layer settings
+- [x] Keyboard shortcuts for drawing tools
 
 ## M2 — Editor surface
 

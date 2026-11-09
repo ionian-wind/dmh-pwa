@@ -3,9 +3,12 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Notify } from 'quasar';
+import { DUNGEON_PRESETS } from '@/map-studio/domain/presets';
 import CanvasHost from '@/map-studio/components/CanvasHost.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
+import { confirm, prompt } from '@/dialogs';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
+import { useStudioHotkeys } from '@/map-studio/composables/useStudioHotkeys';
 import {
   applyStudioImageToLocation,
   listStudioLocationOptions,
@@ -24,9 +27,17 @@ const applying = ref(false);
 const locationOptions = ref<Array<{ id: string; name: string }>>([]);
 const targetLocationId = ref<string | null>(null);
 useMapStudioAutosave(store);
+useStudioHotkeys({
+  save: () => void store.save(),
+  undo: () => store.undo(),
+  redo: () => store.redo(),
+  setTool: (tool) => store.setTool(tool),
+});
 
 const map = computed(() => store.map);
 const layers = computed(() => map.value?.layers ?? []);
+const activeLayer = computed(() => store.activeLayer);
+const presets = DUNGEON_PRESETS;
 const toolbar = computed(() => [
   { id: 'pan' as const, icon: 'tabler-hand-stop', label: t('mapStudio.pan') },
   {
@@ -84,6 +95,66 @@ function addRectangle(rect: {
   height: number;
 }): void {
   store.addRectangle(rect);
+}
+
+async function renameLayer(): Promise<void> {
+  if (!activeLayer.value) return;
+  const name = await prompt(t('mapStudio.layerName'), {
+    modelValue: activeLayer.value.name,
+  });
+  if (name) store.renameLayer(activeLayer.value.id, name);
+}
+
+async function deleteLayer(): Promise<void> {
+  if (!activeLayer.value) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', { title: activeLayer.value.name }),
+    ))
+  )
+    return;
+  store.removeLayer(activeLayer.value.id);
+}
+
+function setFloorColor(event: Event): void {
+  if (!activeLayer.value) return;
+  const color = (event.target as HTMLInputElement).value;
+  store.setLayerStyle(activeLayer.value.id, {
+    ...activeLayer.value.style,
+    floor: { ...activeLayer.value.style.floor, color },
+  });
+}
+
+function setWallColor(event: Event): void {
+  if (!activeLayer.value) return;
+  const color = (event.target as HTMLInputElement).value;
+  store.setLayerStyle(activeLayer.value.id, {
+    ...activeLayer.value.style,
+    walls: { ...activeLayer.value.style.walls, color },
+  });
+}
+
+function setWallWidth(event: Event): void {
+  if (!activeLayer.value) return;
+  const width = Math.max(
+    0.01,
+    Number((event.target as HTMLInputElement).value),
+  );
+  store.setLayerStyle(activeLayer.value.id, {
+    ...activeLayer.value.style,
+    walls: { ...activeLayer.value.style.walls, width },
+  });
+}
+
+function toggleLayerGrid(): void {
+  if (!activeLayer.value) return;
+  store.setLayerStyle(activeLayer.value.id, {
+    ...activeLayer.value.style,
+    grid: {
+      ...activeLayer.value.style.grid,
+      visible: !activeLayer.value.style.grid.visible,
+    },
+  });
 }
 
 function download(blob: Blob, filename: string): void {
@@ -310,8 +381,80 @@ async function applyToLocation(): Promise<void> {
           @ready="renderer = $event"
         />
 
+        <aside class="studio-presets">
+          <div class="studio-layers-title">
+            {{ t('mapStudio.presets.title') }}
+          </div>
+          <div
+            v-for="preset in presets"
+            :key="preset.id"
+            class="studio-preset-row"
+          >
+            <span
+              class="studio-preset-swatch"
+              :style="{
+                background: preset.style.floor.color,
+                borderColor: preset.style.walls.color,
+              }"
+            />
+            <span class="studio-layer-name">{{ t(preset.nameKey) }}</span>
+            <QBtn
+              flat
+              dense
+              round
+              icon="tabler-check"
+              :disable="!activeLayer"
+              :title="t('mapStudio.presets.apply')"
+              @click="
+                activeLayer && store.applyPreset(activeLayer.id, preset.id)
+              "
+            />
+            <QBtn
+              flat
+              dense
+              round
+              icon="tabler-plus"
+              :title="t('mapStudio.addLayer')"
+              @click="store.addDungeonLayer(preset.id)"
+            />
+          </div>
+        </aside>
+
         <aside class="studio-layers">
-          <div class="studio-layers-title">{{ t('mapStudio.layers') }}</div>
+          <div class="studio-layers-title row items-center justify-between">
+            <span>{{ t('mapStudio.layers') }}</span>
+            <span class="row q-gutter-xs">
+              <QBtn
+                flat
+                dense
+                round
+                icon="tabler-plus"
+                :title="t('mapStudio.addLayer')"
+                @click="store.addDungeonLayer('classic-hatching')"
+              />
+              <QBtn
+                flat
+                dense
+                round
+                icon="tabler-arrow-up"
+                :title="t('mapStudio.moveUp')"
+                @click="
+                  store.activeLayerId &&
+                  store.moveLayer(store.activeLayerId, -1)
+                "
+              />
+              <QBtn
+                flat
+                dense
+                round
+                icon="tabler-arrow-down"
+                :title="t('mapStudio.moveDown')"
+                @click="
+                  store.activeLayerId && store.moveLayer(store.activeLayerId, 1)
+                "
+              />
+            </span>
+          </div>
           <div
             v-for="layer in layers"
             :key="layer.id"
@@ -350,6 +493,81 @@ async function applyToLocation(): Promise<void> {
               @click.stop="store.toggleLayerLock(layer.id)"
             />
           </div>
+
+          <template v-if="activeLayer">
+            <QSeparator class="q-my-sm" />
+            <div class="row items-center justify-between q-mb-xs">
+              <span class="text-caption text-weight-medium">{{
+                t('mapStudio.layerSettings')
+              }}</span>
+              <span class="row q-gutter-xs">
+                <QBtn
+                  flat
+                  dense
+                  round
+                  icon="tabler-pencil"
+                  :title="t('mapStudio.rename')"
+                  @click="renameLayer"
+                />
+                <QBtn
+                  flat
+                  dense
+                  round
+                  icon="tabler-trash"
+                  :title="t('mapStudio.deleteLayer')"
+                  @click="deleteLayer"
+                />
+              </span>
+            </div>
+            <label class="studio-field">
+              <span>{{ t('mapStudio.opacity') }}</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                :value="activeLayer.opacity"
+                @input="
+                  store.setLayerOpacity(
+                    activeLayer.id,
+                    Number(($event.target as HTMLInputElement).value),
+                  )
+                "
+              />
+            </label>
+            <label class="studio-field">
+              <span>{{ t('mapStudio.floor') }}</span>
+              <input
+                type="color"
+                :value="activeLayer.style.floor.color"
+                @input="setFloorColor"
+              />
+            </label>
+            <label class="studio-field">
+              <span>{{ t('mapStudio.walls') }}</span>
+              <input
+                type="color"
+                :value="activeLayer.style.walls.color"
+                @input="setWallColor"
+              />
+              <input
+                class="studio-number"
+                type="number"
+                min="0.01"
+                step="0.01"
+                :value="activeLayer.style.walls.width"
+                @input="setWallWidth"
+              />
+            </label>
+            <label class="studio-field studio-field--check">
+              <input
+                type="checkbox"
+                :checked="activeLayer.style.grid.visible"
+                @change="toggleLayerGrid"
+              />
+              <span>{{ t('mapStudio.showLayerGrid') }}</span>
+            </label>
+          </template>
         </aside>
       </div>
     </template>
@@ -478,5 +696,53 @@ async function applyToLocation(): Promise<void> {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.studio-presets {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  width: 214px;
+  padding: 8px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 12%);
+}
+.studio-preset-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+.studio-preset-swatch {
+  width: 20px;
+  height: 20px;
+  border: 2px solid;
+  border-radius: 4px;
+}
+.studio-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+.studio-field input[type='color'] {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+}
+.studio-field input[type='range'] {
+  width: 96px;
+}
+.studio-field--check {
+  justify-content: flex-start;
+}
+.studio-number {
+  width: 52px;
 }
 </style>

@@ -164,3 +164,89 @@ describe('map studio path and wall helpers', () => {
     expect(shapes[1].shape).toMatchObject({ width: 0.2 });
   });
 });
+
+describe('map studio presets and layer actions', () => {
+  it('applies presets, adds, renames, moves and removes layers', () => {
+    const store = useMapStudioStore();
+    const map = createMap(createProject().id);
+    store.setMap(map);
+    const dungeon = store.activeLayer!;
+
+    store.applyPreset(dungeon.id, 'blueprint');
+    expect(store.activeLayer?.style.floor.color).toBe('#0b3a5b');
+
+    store.addDungeonLayer('minimal');
+    expect(
+      store.map?.layers.filter((layer) => layer.type === 'dungeon'),
+    ).toHaveLength(2);
+    const added = store.activeLayer!;
+    expect(added.id).not.toBe(dungeon.id);
+
+    store.renameLayer(added.id, 'Upper level');
+    expect(store.activeLayer?.name).toBe('Upper level');
+
+    store.setLayerOpacity(added.id, 0.5);
+    expect(store.activeLayer?.opacity).toBe(0.5);
+
+    const beforeOrder = store.activeLayer?.order;
+    store.moveLayer(added.id, -1);
+    expect(store.activeLayer?.order).not.toBe(beforeOrder);
+
+    store.removeLayer(added.id);
+    expect(store.map?.layers.some((layer) => layer.id === added.id)).toBe(
+      false,
+    );
+    expect(
+      store.map?.layers.filter((layer) => layer.type === 'dungeon'),
+    ).toHaveLength(1);
+  });
+
+  it('does not remove the last dungeon layer or background', () => {
+    const store = useMapStudioStore();
+    const map = createMap(createProject().id);
+    store.setMap(map);
+    const dungeon = store.activeLayer!;
+    const background = map.layers.find((layer) => layer.type === 'background')!;
+    store.removeLayer(dungeon.id);
+    expect(store.map?.layers.some((layer) => layer.id === dungeon.id)).toBe(
+      true,
+    );
+    store.removeLayer(background.id);
+    expect(store.map?.layers.some((layer) => layer.id === background.id)).toBe(
+      true,
+    );
+  });
+});
+
+describe('map studio layer no-ops', () => {
+  it('ignores layer actions without a map or valid target', () => {
+    const store = useMapStudioStore();
+    store.applyPreset('missing', 'classic');
+    store.addDungeonLayer('classic');
+    store.renameLayer('missing', 'x');
+    store.removeLayer('missing');
+    store.moveLayer('missing', 1);
+    store.setLayerStyle('missing', {
+      floor: { visible: true, color: '#fff' },
+      walls: {
+        visible: true,
+        color: '#000',
+        width: 0.1,
+        blocksLight: true,
+        dash: false,
+      },
+      grid: { visible: true, color: '#000', width: 1 },
+    });
+    store.setLayerOpacity('missing', 0.5);
+    expect(store.map).toBeNull();
+
+    const map = createMap(createProject().id);
+    store.setMap(map);
+    const dungeon = store.activeLayer!;
+    store.applyPreset(dungeon.id, 'missing');
+    store.renameLayer(dungeon.id, '   ');
+    store.moveLayer(dungeon.id, -10);
+    store.setLayerStyle('missing', dungeon.style);
+    expect(store.activeLayer?.name).toBe(dungeon.name);
+  });
+});
