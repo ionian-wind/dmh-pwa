@@ -53,6 +53,28 @@ describe('RapierDiceWorld', () => {
     world.dispose();
   });
 
+  it('can steer rotation and velocity during the airborne alignment', async () => {
+    const world = new RapierDiceWorld();
+    await world.init();
+    const points = new Float32Array([
+      -0.1, -0.1, -0.1, 0.1, -0.1, -0.1, 0, 0.1, 0,
+    ]);
+    world.add('a', points, { x: 0, y: 2, z: 0 });
+    world.setTransform(
+      'a',
+      { x: 1, y: 2.5, z: -1 },
+      { x: 0, y: 0, z: 0, w: 1 },
+    );
+    world.setAngularVelocity('a', 1, 2, 3);
+    world.setLinearVelocity('a', 0, -1, 0);
+    const transform = world.transform('a')!;
+    expect(transform.position.x).toBeCloseTo(1, 3);
+    expect(transform.position.y).toBeCloseTo(2.5, 3);
+    expect(transform.rotation.w).toBeCloseTo(1, 3);
+    expect(world.linearVelocity('a')?.y).toBeCloseTo(-1, 1);
+    world.dispose();
+  });
+
   it('handles a 30-die pool and clears it', async () => {
     const world = new RapierDiceWorld();
     await world.init();

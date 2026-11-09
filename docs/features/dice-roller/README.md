@@ -842,9 +842,10 @@ interface DiceRenderer {
 ```
 
 Visualizer adapters must not mutate the result and must tolerate missing 3D
-assets by reporting a fallback. The animation loop waits until every die has
-stopped bouncing, corrects orientation/floor position, then stops; resize
-redraws and never clears the scene. The camera looks straight
+assets by reporting a fallback. Dice are steered to their value faces while
+airborne; the animation loop then waits until every die has stopped bouncing,
+applies any final floor/position correction, and stops. Resize redraws and never
+clears the scene. The camera looks straight
 down from the zenith and all dice rest on the same `y=0` scene floor.
 
 Face detection mirrors dice-box: the value face is the one a centre ray would

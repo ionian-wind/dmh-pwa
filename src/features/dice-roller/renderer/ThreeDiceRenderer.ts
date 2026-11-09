@@ -10,7 +10,11 @@ import {
   type DiceAssetSet,
 } from './assetLoader';
 import { visualDiceFor, type VisualDiePart } from './diceValues';
-import { cosmeticSpin, targetQuaternion } from './faceOrientation';
+import {
+  cosmeticSpin,
+  stepQuaternion,
+  targetQuaternion,
+} from './faceOrientation';
 import { RapierDiceWorld } from './RapierDiceWorld';
 import { loadDiceMaterials, type DiceMaterialSet } from './themeLoader';
 import { hasSimulationTimedOut, SETTLE_MS } from './timing';
@@ -23,6 +27,7 @@ interface RenderedDie {
   asset: DiceAsset;
   value: number;
   faceValue: number;
+  spawnedAt: number;
   target: THREE.Quaternion;
   state: 'physics' | 'settling' | 'done';
   settleFrom?: THREE.Quaternion;
@@ -249,6 +254,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
         asset,
         value: part.value,
         faceValue: part.faceValue,
+        spawnedAt: performance.now(),
         target,
         state: 'done',
       });
@@ -296,6 +302,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
       asset,
       value: part.value,
       faceValue: part.faceValue,
+      spawnedAt: performance.now(),
       target,
       state: body ? 'physics' : 'settling',
       settleFrom: mesh.quaternion.clone(),
@@ -348,9 +355,11 @@ export class ThreeDiceRenderer implements DiceRenderer {
           );
         }
       }
+      for (const die of this.dice.values()) {
+        if (die.state === 'physics') this.alignDie(die, time, delta);
+      }
       const timedOut = hasSimulationTimedOut(this.animationStarted, time);
-      const hadTimeToLand = time - this.animationStarted > 450;
-      if (timedOut || (hadTimeToLand && this.physics.settleReady)) {
+      if (timedOut || this.physics.settleReady) {
         for (const die of this.dice.values()) {
           if (die.state === 'physics') this.beginSettle(die, time);
         }
@@ -369,6 +378,33 @@ export class ThreeDiceRenderer implements DiceRenderer {
       this.frame = requestAnimationFrame(this.tick);
     }
   };
+
+  /**
+   * After a short free tumble, steer the body toward its target face while it
+   * is still airborne. The collider rotates with the mesh, so the die lands on
+   * the authoritative face instead of flipping after it has stopped.
+   */
+  private alignDie(die: RenderedDie, time: number, delta: number): void {
+    // Start early and finish before touchdown. Never lift the body: raising it
+    // after it has landed makes settled dice appear to float.
+    if (time - die.spawnedAt < 180) return;
+    const transform = this.physics.transform(die.id);
+    if (!transform) return;
+    const current = new THREE.Quaternion(
+      transform.rotation.x,
+      transform.rotation.y,
+      transform.rotation.z,
+      transform.rotation.w,
+    );
+    const next = stepQuaternion(current, die.target, delta, 18);
+    this.physics.setTransform(die.id, transform.position, {
+      x: next.x,
+      y: next.y,
+      z: next.z,
+      w: next.w,
+    });
+    this.physics.setAngularVelocity(die.id, 0, 0, 0);
+  }
 
   private beginSettle(die: RenderedDie, time: number): void {
     const transform = this.physics.transform(die.id);

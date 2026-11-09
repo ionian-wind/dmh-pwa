@@ -130,6 +130,32 @@ export class RapierDiceWorld {
     return !this.active;
   }
 
+  setTransform(
+    id: string,
+    position: { x: number; y: number; z: number },
+    rotation: { x: number; y: number; z: number; w: number },
+  ): void {
+    const body = this.bodies.get(id)?.body;
+    if (!body) return;
+    body.setTranslation(position, true);
+    body.setRotation(rotation, true);
+  }
+
+  setAngularVelocity(id: string, x: number, y: number, z: number): void {
+    this.bodies.get(id)?.body.setAngvel({ x, y, z }, true);
+  }
+
+  setLinearVelocity(id: string, x: number, y: number, z: number): void {
+    this.bodies.get(id)?.body.setLinvel({ x, y, z }, true);
+  }
+
+  linearVelocity(id: string): { x: number; y: number; z: number } | undefined {
+    const velocity = this.bodies.get(id)?.body.linvel();
+    return velocity
+      ? { x: velocity.x, y: velocity.y, z: velocity.z }
+      : undefined;
+  }
+
   transform(id: string): DiceTransform | undefined {
     const body = this.bodies.get(id)?.body;
     if (!body) return undefined;

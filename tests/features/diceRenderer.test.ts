@@ -21,6 +21,7 @@ import {
 import {
   cosmeticSpin,
   faceUpQuaternion,
+  stepQuaternion,
   targetQuaternion,
 } from '@/features/dice-roller/renderer/faceOrientation';
 import { DiceBoxRenderer } from '@/features/dice-roller/renderer/DiceBoxRenderer';
@@ -180,6 +181,20 @@ describe('face orientation', () => {
       -1,
       5,
     );
+  });
+
+  it('converges toward the target without overshooting', () => {
+    const current = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(0.8, 1.1, -0.4),
+    );
+    const target = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(-0.3, 2.0, 0.5),
+    );
+    let quaternion = current;
+    for (let index = 0; index < 40; index += 1) {
+      quaternion = stepQuaternion(quaternion, target, 1 / 60);
+    }
+    expect(quaternion.angleTo(target)).toBeLessThan(0.01);
   });
 
   it('produces deterministic cosmetic spins', () => {

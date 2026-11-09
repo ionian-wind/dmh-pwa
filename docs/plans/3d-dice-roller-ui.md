@@ -242,11 +242,11 @@ assets without Babylon.
   with varied angles. A key light enters from the scene's left-top corner and
   targets the floor centre, with a soft fill from the opposite side.
 - Dice are rendered at 1.7× asset scale, with cosmetic impulses, invisible
-  boundary walls and a 6s simulation cap. The renderer waits until every body
-  has stopped bouncing and Rapier has slept it, then corrects orientation and
-  floor position. Every die is placed on the same `y=0` floor by its world
-  bounding box, so physically different die sizes still share one ground plane.
-  Faces snap to the engine value after physics settles.
+  boundary walls and a 6s simulation cap. After a short free tumble, each body
+  is steered to its target face while still airborne; the body is never lifted,
+  so settled dice do not float. The renderer still waits for every body to sleep before the final
+  floor/position check. Every die is placed on the same `y=0` floor by its world
+  bounding box, so physically different die sizes share one ground plane.
 - `bag-of-dice` rolls every die; d100 is split into tens (`d100` asset) and
   units (`d10` asset), with `100 = 00 + 0`.
 - The render loop stops when every die is settled. Resize updates the renderer,
