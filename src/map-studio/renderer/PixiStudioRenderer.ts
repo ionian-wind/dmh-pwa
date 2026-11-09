@@ -11,6 +11,10 @@ import {
   shapeToPolygon,
 } from '@/map-studio/domain/geometry/compile';
 import type { Bounds } from '@/map-studio/domain/objects';
+import {
+  contentBounds,
+  visibleWorldRect,
+} from '@/map-studio/domain/canvasView';
 import type {
   DungeonLayer,
   Point,
@@ -96,7 +100,49 @@ export class PixiStudioRenderer {
     this.viewport = viewport;
     this.world.position.set(viewport.x, viewport.y);
     this.world.scale.set(viewport.zoom);
+    this.drawBackgroundAndGrid();
     this.render();
+  }
+
+  private drawBackgroundAndGrid(
+    rect: {
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
+    } = visibleWorldRect(this.viewport, this.width, this.height),
+    zoom = this.viewport.zoom,
+  ): void {
+    const map = this.map;
+    if (!map) return;
+    const ppc = BASE_PIXELS_PER_CELL;
+    this.backgroundLayer.clear();
+    this.backgroundLayer
+      .rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)
+      .fill({
+        color: map.background.style.color,
+        alpha: map.background.style.opacity,
+      });
+    this.gridLayer.clear();
+    if (!map.settings.showGrid || map.grid.type !== 'square') return;
+    const step = ppc;
+    const gridSize = step * zoom;
+    if (gridSize < 4) return;
+    const left = Math.floor(rect.left / step) * step;
+    const top = Math.floor(rect.top / step) * step;
+    const width = Math.max(1, map.grid.width / Math.max(0.05, zoom));
+    for (let x = left; x <= rect.right; x += step) {
+      this.gridLayer
+        .moveTo(x, rect.top)
+        .lineTo(x, rect.bottom)
+        .stroke({ color: map.grid.color, width, alpha: 0.7 });
+    }
+    for (let y = top; y <= rect.bottom; y += step) {
+      this.gridLayer
+        .moveTo(rect.left, y)
+        .lineTo(rect.right, y)
+        .stroke({ color: map.grid.color, width, alpha: 0.7 });
+    }
   }
 
   getViewport(): StudioViewport {
@@ -107,13 +153,26 @@ export class PixiStudioRenderer {
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
     this.app?.renderer.resize(this.width, this.height);
+    this.drawBackgroundAndGrid();
     this.render();
   }
 
   fit(): void {
     if (!this.map) return;
-    const mapWidth = this.map.width * BASE_PIXELS_PER_CELL;
-    const mapHeight = this.map.height * BASE_PIXELS_PER_CELL;
+    const ppc = BASE_PIXELS_PER_CELL;
+    const content = contentBounds(this.map);
+    const left = Math.min(0, content.x * ppc);
+    const top = Math.min(0, content.y * ppc);
+    const right = Math.max(
+      this.map.width * ppc,
+      (content.x + content.width) * ppc,
+    );
+    const bottom = Math.max(
+      this.map.height * ppc,
+      (content.y + content.height) * ppc,
+    );
+    const mapWidth = Math.max(1, right - left);
+    const mapHeight = Math.max(1, bottom - top);
     const padding = 48;
     const zoom = Math.min(
       (this.width - padding * 2) / mapWidth,
@@ -121,8 +180,8 @@ export class PixiStudioRenderer {
     );
     this.setViewport({
       zoom: Math.max(0.05, zoom),
-      x: (this.width - mapWidth * zoom) / 2,
-      y: (this.height - mapHeight * zoom) / 2,
+      x: (this.width - mapWidth * zoom) / 2 - left * zoom,
+      y: (this.height - mapHeight * zoom) / 2 - top * zoom,
     });
   }
 
@@ -243,18 +302,50 @@ export class PixiStudioRenderer {
       throw new Error('Renderer is not ready');
     }
     const resolution = pixelsPerCell / BASE_PIXELS_PER_CELL;
+    const content = contentBounds(this.map);
     const frame = new Rectangle(
-      0,
-      0,
-      this.map.width * BASE_PIXELS_PER_CELL,
-      this.map.height * BASE_PIXELS_PER_CELL,
+      content.x * BASE_PIXELS_PER_CELL,
+      content.y * BASE_PIXELS_PER_CELL,
+      content.width * BASE_PIXELS_PER_CELL,
+      content.height * BASE_PIXELS_PER_CELL,
     );
-    const canvas = this.app.renderer.extract.canvas({
-      target: this.content,
-      frame,
-      resolution,
-      antialias: true,
-    });
+    const previousViewport = this.viewport;
+    const selectionVisible = this.selectionLayer.visible;
+    const shapeSelectionVisible = this.shapeSelectionLayer.visible;
+    const previewVisible = this.previewLayer.visible;
+    this.world.position.set(0, 0);
+    this.world.scale.set(1);
+    this.selectionLayer.visible = false;
+    this.shapeSelectionLayer.visible = false;
+    this.previewLayer.visible = false;
+    this.drawBackgroundAndGrid(
+      {
+        left: frame.x,
+        top: frame.y,
+        right: frame.x + frame.width,
+        bottom: frame.y + frame.height,
+      },
+      1,
+    );
+    this.render();
+    let canvas;
+    try {
+      canvas = this.app.renderer.extract.canvas({
+        target: this.content,
+        frame,
+        resolution,
+        antialias: true,
+      });
+    } finally {
+      this.selectionLayer.visible = selectionVisible;
+      this.shapeSelectionLayer.visible = shapeSelectionVisible;
+      this.previewLayer.visible = previewVisible;
+      this.viewport = previousViewport;
+      this.world.position.set(previousViewport.x, previousViewport.y);
+      this.world.scale.set(previousViewport.zoom);
+      this.drawBackgroundAndGrid();
+      this.render();
+    }
     return new Promise<Blob>((resolve, reject) => {
       canvas.toBlob?.((blob: Blob | null) => {
         if (blob) resolve(blob);
@@ -281,33 +372,8 @@ export class PixiStudioRenderer {
     const map = this.map;
     if (!map) return;
     const ppc = BASE_PIXELS_PER_CELL;
-    const mapWidth = map.width * ppc;
-    const mapHeight = map.height * ppc;
 
-    this.backgroundLayer.clear();
-    this.backgroundLayer.rect(0, 0, mapWidth, mapHeight).fill({
-      color: map.background.style.color,
-      alpha: map.background.style.opacity,
-    });
-
-    this.gridLayer.clear();
-    if (map.settings.showGrid && map.grid.type === 'square') {
-      const step = Math.max(1, map.grid.cellDiameter) * ppc;
-      const color = map.grid.color;
-      for (let x = 0; x <= map.width; x += 1) {
-        this.gridLayer
-          .moveTo(x * ppc, 0)
-          .lineTo(x * ppc, mapHeight)
-          .stroke({ color, width: map.grid.width, alpha: 0.7 });
-      }
-      for (let y = 0; y <= map.height; y += 1) {
-        this.gridLayer
-          .moveTo(0, y * ppc)
-          .lineTo(mapWidth, y * ppc)
-          .stroke({ color, width: map.grid.width, alpha: 0.7 });
-      }
-      void step;
-    }
+    this.drawBackgroundAndGrid();
 
     for (const child of this.dungeonContainer.removeChildren()) {
       child.destroy();

@@ -3,7 +3,7 @@
 This is the working checklist for the Map Studio. Tasks are marked as they are
 implemented. The design documents are the source of truth for behavior.
 
-Status: **in progress — M0 foundation + shared-wall geometry and core shape tools (circle/polygon) working**
+Status: **in progress — editor surface, object interactions, shape selection, multi-select and infinite canvas working**
 
 ## M0 — Foundation and vertical slice
 
@@ -58,16 +58,16 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 
 ## M2 — Editor surface
 
-- [ ] Layer create/rename/reorder/delete/folders
-- [ ] Full layer settings (floor/walls/grid/background)
-- [x] Object tool: selection, live drag, resize/rotate handles for text/images (doors/stairs pending)
-- [ ] Grouping, z-order, flip, duplicate, context menu
+- [x] Layer create/rename/reorder/delete/folders
+- [x] Full layer settings (floor/walls/grid/background)
+- [x] Object tool: selection, live drag, resize/rotate handles for text/images, rotation for doors/stairs, shape selection, marquee and multi-object drag
+- [ ] Grouping, z-order, flip, duplicate, context menu (z-order/flip/duplicate done)
 - [ ] Images panel, upload, drag/drop, favorites
 - [x] Text tool: click + prompt placement (inline editing pending)
 - [x] Door tool: two-point placement (variants pending)
 - [x] Stairs tool: three-point placement (style editing pending)
-- [ ] Geometry select tool, copy/cut/paste, clipboard
-- [ ] Local library, autosave, recovery, multiple maps
+- [ ] Geometry select tool, copy/cut/paste, clipboard (shape selection done)
+- [x] Local library, autosave, multiple maps (crash recovery pending)
 - [ ] `.ds` import/export baseline
 
 ## M3 — Styling
@@ -91,6 +91,7 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 - [ ] Seeded generation and reproducibility
 - [ ] Watabou and donjon imports
 - [x] PDF export (UVTT pending)
+- [x] Infinite canvas: viewport-driven background/grid, unlimited pan/zoom, content-bounds export and fit
 - [ ] Multi-map projects and project bundles
 
 ## M6 — Touch, accessibility, polish
@@ -107,3 +108,5 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 | ---------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-11-10 | Plan moved into repo | Design docs complete                                                                                                                                                                    |
 | 2026-11-10 | M0 foundation        | Feature flag/routes, document model, Dexie repository, store/history/autosave, Pixi host/camera, grid/background, basic rectangle drawing, layers panel, PNG export, desktop smoke test |
+| 2026-11-10 | M2 interactions      | Live object drag/resize/rotate, all-object rotation, shape selection, layer sorting/folders, marquee and multi-object drag                                                              |
+| 2026-11-10 | Infinite canvas      | Background/grid follow the viewport, drawing and hit-testing work outside the starting frame, export and fit use content bounds (2020 tests / 243 files; coverage branches 87.02%)      |
