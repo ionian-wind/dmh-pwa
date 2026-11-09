@@ -44,6 +44,7 @@ describe('feature catalog', () => {
     const defines = featureDefines(flags);
     expect(defines.__FEATURE_NOTES__).toBe('true');
     expect(defines.__FEATURE_JUKEBOX__).toBe('true');
+    expect(defines.__FEATURE_DICE_ROLLER__).toBe('true');
     flags.jukebox = false;
     expect(featureDefines(flags).__FEATURE_JUKEBOX__).toBe('false');
   });
@@ -70,6 +71,14 @@ describe('feature virtual modules', () => {
     expect(code).not.toContain('@/features/notes/integration');
     expect(code).not.toContain('@/features/probability/integration');
     expect(code).toContain('@/features/characters/integration');
+  });
+
+  it('omits the dice roller integration when disabled', () => {
+    const flags = resolveFeatureFlags({ VITE_FEATURE_DICE_ROLLER: 'false' });
+    const plugin = createFeaturePlugin(flags);
+    const id = plugin.resolveId('virtual:feature-navigation');
+    const code = plugin.load(id);
+    expect(code).not.toContain('@/features/dice-roller/integration');
   });
 
   it('only exposes enabled link kinds', () => {

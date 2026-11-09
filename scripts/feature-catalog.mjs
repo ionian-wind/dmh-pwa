@@ -64,6 +64,16 @@ export const FEATURES = [
     ownership: ['src/maps/'],
   },
   {
+    id: 'diceRoller',
+    envKey: 'VITE_FEATURE_DICE_ROLLER',
+    requires: [],
+    integration: '@/features/dice-roller/integration',
+    ownership: [
+      'src/features/dice-roller/',
+      'src/components/DiceRollerPanel.vue',
+    ],
+  },
+  {
     id: 'jukebox',
     envKey: 'VITE_FEATURE_JUKEBOX',
     requires: [],
@@ -168,7 +178,9 @@ export function enabledFeatureIds(flags) {
 export function featureDefines(flags) {
   return Object.fromEntries(
     FEATURES.map((feature) => [
-      `__FEATURE_${feature.id.toUpperCase()}__`,
+      `__FEATURE_${feature.id
+        .replace(/([a-z])([A-Z])/g, '$1_$2')
+        .toUpperCase()}__`,
       JSON.stringify(!!flags[feature.id]),
     ]),
   );

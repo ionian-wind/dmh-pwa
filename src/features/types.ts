@@ -9,6 +9,7 @@ export type FeatureId =
   | 'encounters'
   | 'maps'
   | 'jukebox'
+  | 'diceRoller'
   | 'ambient'
   | 'timers'
   | 'calculator'
