@@ -4,6 +4,8 @@
 > extensible parser/evaluator for dice and roll syntax. Chat commands, chat UI,
 > message delivery and visibility are covered by
 > [proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md).
+>
+> Step-by-step task tracking: [dice-roller-implementation.md](dice-roller-implementation.md).
 
 ## Purpose
 

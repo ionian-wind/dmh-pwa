@@ -84,15 +84,16 @@ Plans are committed work expected to be implemented, plus implementation
 records that are now complete. Proposals are optional ideas that may never be
 implemented.
 
-| Document                                                           | Covers                                             |
-| ------------------------------------------------------------------ | -------------------------------------------------- |
-| [plans/README.md](plans/README.md)                                 | Plan conventions and current status                |
-| [plans/scribe-and-play-modes.md](plans/scribe-and-play-modes.md)   | Scribe preparation and Play session modes          |
-| [plans/feature-flags.md](plans/feature-flags.md)                   | Build-time menu/entity feature flags               |
-| [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)         | Manifest, install UX, safe-area and PWA audit plan |
-| [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md) | Milkdown detail-view renderer plan and status      |
-| [plans/remove-modules-entity.md](plans/remove-modules-entity.md)   | Completed Modules removal and migration record     |
-| [plans/dice-roller.md](plans/dice-roller.md)                       | Extensible dice parser/evaluator plan              |
+| Document                                                                   | Covers                                             |
+| -------------------------------------------------------------------------- | -------------------------------------------------- |
+| [plans/README.md](plans/README.md)                                         | Plan conventions and current status                |
+| [plans/scribe-and-play-modes.md](plans/scribe-and-play-modes.md)           | Scribe preparation and Play session modes          |
+| [plans/feature-flags.md](plans/feature-flags.md)                           | Build-time menu/entity feature flags               |
+| [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)                 | Manifest, install UX, safe-area and PWA audit plan |
+| [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md)         | Milkdown detail-view renderer plan and status      |
+| [plans/remove-modules-entity.md](plans/remove-modules-entity.md)           | Completed Modules removal and migration record     |
+| [plans/dice-roller.md](plans/dice-roller.md)                               | Extensible dice parser/evaluator plan              |
+| [plans/dice-roller-implementation.md](plans/dice-roller-implementation.md) | Checkbox task tracker for the dice engine          |
 
 ### Cross-cutting analysis
 
