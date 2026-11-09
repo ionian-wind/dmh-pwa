@@ -430,3 +430,18 @@ describe('map studio folders', () => {
     expect(folders[1].type === 'folder' && folders[1].expanded).toBe(true);
   });
 });
+
+describe('map studio folder factory', () => {
+  it('creates folder defaults and overrides', async () => {
+    const { createFolderLayer } =
+      await import('@/map-studio/domain/document/factories');
+    expect(createFolderLayer()).toMatchObject({
+      type: 'folder',
+      expanded: true,
+    });
+    expect(createFolderLayer({ expanded: false, name: 'X' })).toMatchObject({
+      expanded: false,
+      name: 'X',
+    });
+  });
+});

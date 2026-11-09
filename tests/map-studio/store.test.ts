@@ -432,3 +432,40 @@ describe('map studio folders', () => {
     ).toBeNull();
   });
 });
+
+describe('map studio folder hierarchy', () => {
+  it('toggles folders and supports nested parents', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addFolder('Outer');
+    const outer = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    store.addFolder('Inner');
+    const inner = store.map!.layers.filter(
+      (layer) => layer.type === 'folder',
+    )[1];
+    store.setLayerParent(inner.id, outer.id);
+    expect(
+      store.map!.layers.find((layer) => layer.id === inner.id)?.parentId,
+    ).toBe(outer.id);
+    store.toggleFolder(outer.id);
+    expect(
+      store.map!.layers.find((layer) => layer.id === outer.id),
+    ).toMatchObject({ expanded: false });
+    store.toggleFolder('missing');
+    store.setLayerParent('missing', outer.id);
+  });
+});
+
+describe('map studio folder guards', () => {
+  it('ignores folder toggles on non-folders and without a map', () => {
+    const store = useMapStudioStore();
+    store.addFolder('X');
+    store.toggleFolder('missing');
+    store.setMap(createMap(createProject().id));
+    const dungeon = store.activeLayer!;
+    store.toggleFolder(dungeon.id);
+    expect(
+      store.map!.layers.find((layer) => layer.id === dungeon.id)?.type,
+    ).toBe('dungeon');
+  });
+});

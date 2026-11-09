@@ -321,6 +321,19 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function toggleFolder(layerId: string): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId && layer.type === 'folder'
+          ? { ...layer, expanded: !layer.expanded }
+          : layer,
+      ),
+    });
+  }
+
   function setLayerParent(layerId: string, parentId: string | null): void {
     const current = map.value;
     if (!current) return;
@@ -735,6 +748,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     applyPreset,
     addDungeonLayer,
     addFolder,
+    toggleFolder,
     setLayerParent,
     renameLayer,
     removeLayer,

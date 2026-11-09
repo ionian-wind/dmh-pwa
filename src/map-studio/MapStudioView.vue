@@ -43,6 +43,7 @@ const map = computed(() => store.map);
 const layers = computed(() => map.value?.layers ?? []);
 const activeLayer = computed(() => store.activeLayer);
 const selectedObject = computed(() => store.selectedObject);
+const draggedLayerId = ref<string | null>(null);
 const presets = DUNGEON_PRESETS;
 const toolbar = computed(() => [
   { id: 'pan' as const, icon: 'tabler-hand-stop', label: t('mapStudio.pan') },
@@ -186,6 +187,48 @@ function toggleLayerGrid(): void {
       visible: !activeLayer.value.style.grid.visible,
     },
   });
+}
+
+function layerDepth(layer: (typeof layers.value)[number]): number {
+  let depth = 0;
+  let parentId = layer.parentId;
+  const seen = new Set<string>();
+  while (parentId && depth < 10 && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = layers.value.find((entry) => entry.id === parentId);
+    if (!parent) break;
+    depth += 1;
+    parentId = parent.parentId;
+  }
+  return depth;
+}
+
+function isLayerHidden(layer: (typeof layers.value)[number]): boolean {
+  let parentId = layer.parentId;
+  const seen = new Set<string>();
+  while (parentId && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = layers.value.find((entry) => entry.id === parentId);
+    if (!parent) return false;
+    if (parent.type === 'folder' && !parent.expanded) return true;
+    parentId = parent.parentId;
+  }
+  return false;
+}
+
+function onLayerDragStart(layerId: string): void {
+  draggedLayerId.value = layerId;
+}
+
+function onLayerDrop(folderId: string | null): void {
+  if (draggedLayerId.value && draggedLayerId.value !== folderId) {
+    store.setLayerParent(draggedLayerId.value, folderId);
+  }
+  draggedLayerId.value = null;
+}
+
+function toggleFolder(id: string): void {
+  store.toggleFolder(id);
 }
 
 function updateSelected(patch: Record<string, unknown>): void {
@@ -634,15 +677,33 @@ async function applyToLocation(): Promise<void> {
             </span>
           </div>
           <div
-            v-for="layer in layers"
+            v-for="layer in layers.filter((entry) => !isLayerHidden(entry))"
             :key="layer.id"
             class="studio-layer-row"
             :class="{
               'studio-layer-row--active':
                 store.activeLayerId === layer.id && layer.type === 'dungeon',
             }"
+            :style="{ paddingLeft: `${6 + layerDepth(layer) * 12}px` }"
+            draggable="true"
+            @dragstart="onLayerDragStart(layer.id)"
+            @dragover.prevent
+            @drop="
+              onLayerDrop(layer.type === 'folder' ? layer.id : layer.parentId)
+            "
             @click="layer.type === 'dungeon' && store.setActiveLayer(layer.id)"
           >
+            <QBtn
+              v-if="layer.type === 'folder'"
+              flat
+              dense
+              round
+              :icon="
+                layer.expanded ? 'tabler-chevron-down' : 'tabler-chevron-right'
+              "
+              :aria-label="t('mapStudio.toggleFolder')"
+              @click.stop="toggleFolder(layer.id)"
+            />
             <QIcon
               :name="
                 layer.type === 'background'
@@ -1139,5 +1200,14 @@ async function applyToLocation(): Promise<void> {
 }
 .studio-layer-indent {
   width: 10px;
+}
+.studio-root-drop {
+  margin-top: 4px;
+  padding: 4px;
+  font-size: 11px;
+  color: var(--color-text-lighter);
+  text-align: center;
+  border: 1px dashed var(--color-border-light);
+  border-radius: 6px;
 }
 </style>
