@@ -98,7 +98,13 @@ export interface ImagesLayer extends LayerBase {
   objects: StudioObject[];
 }
 
-export type StudioLayer = DungeonLayer | BackgroundLayer | ImagesLayer;
+export interface FolderLayer extends LayerBase {
+  type: 'folder';
+  expanded: boolean;
+}
+
+export type StudioLayer =
+  DungeonLayer | BackgroundLayer | ImagesLayer | FolderLayer;
 
 export interface DungeonLayerStyle {
   floor: {

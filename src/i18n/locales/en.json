@@ -1196,6 +1196,9 @@
     "flipHorizontal": "Flip horizontal",
     "flipVertical": "Flip vertical",
     "image": "Image",
-    "addImage": "Add image"
+    "addImage": "Add image",
+    "addFolder": "Add folder",
+    "folder": "Folder",
+    "noFolder": "No folder"
   }
 }

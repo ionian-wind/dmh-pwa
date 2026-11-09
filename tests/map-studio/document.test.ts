@@ -415,3 +415,18 @@ describe('map studio image normalization', () => {
     expect(images && 'objects' in images ? images.objects : []).toHaveLength(1);
   });
 });
+
+describe('map studio folders', () => {
+  it('normalizes folder layers', () => {
+    const map = normalizeMap({
+      layers: [
+        { type: 'folder', name: 'Level', expanded: false, order: 2 },
+        { type: 'folder', name: 'Open', order: 3 },
+      ],
+    });
+    const folders = map.layers.filter((layer) => layer.type === 'folder');
+    expect(folders).toHaveLength(2);
+    expect(folders[0].type === 'folder' && folders[0].expanded).toBe(false);
+    expect(folders[1].type === 'folder' && folders[1].expanded).toBe(true);
+  });
+});

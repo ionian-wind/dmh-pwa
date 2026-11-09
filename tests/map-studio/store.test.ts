@@ -413,3 +413,22 @@ describe('map studio live object patching', () => {
     expect(store.imagesLayer?.objects[0].opacity).toBe(0.4);
   });
 });
+
+describe('map studio folders', () => {
+  it('adds folders and reassigns layer parents', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addFolder('Level 1');
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    expect(folder.name).toBe('Level 1');
+    const dungeon = store.activeLayer!;
+    store.setLayerParent(dungeon.id, folder.id);
+    expect(
+      store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,
+    ).toBe(folder.id);
+    store.setLayerParent(dungeon.id, null);
+    expect(
+      store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,
+    ).toBeNull();
+  });
+});

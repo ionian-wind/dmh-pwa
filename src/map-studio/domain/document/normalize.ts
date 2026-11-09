@@ -14,6 +14,7 @@ import {
   createDungeonLayer,
   createGridSettings,
   createImagesLayer,
+  createFolderLayer,
   createMap,
   createProject,
   DEFAULT_EXPORT_SETTINGS,
@@ -269,6 +270,14 @@ function normalizeLayer(value: unknown, order: number): StudioLayer | null {
         opacity: clamp(number(layer.style?.opacity, 1), 0, 1),
         isometric: layer.style?.isometric === true,
       },
+    };
+  }
+  if (layer.type === 'folder') {
+    return {
+      ...createFolderLayer(),
+      ...base,
+      type: 'folder',
+      expanded: layer.expanded !== false,
     };
   }
   if (layer.type === 'images') {

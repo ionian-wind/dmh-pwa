@@ -649,10 +649,13 @@ async function applyToLocation(): Promise<void> {
                   ? 'tabler-photo'
                   : layer.type === 'images'
                     ? 'tabler-photo-plus'
-                    : 'tabler-square'
+                    : layer.type === 'folder'
+                      ? 'tabler-folder'
+                      : 'tabler-square'
               "
               size="18px"
             />
+            <span v-if="layer.parentId" class="studio-layer-indent" />
             <span class="studio-layer-name">{{ layer.name }}</span>
             <QBtn
               flat
@@ -671,6 +674,36 @@ async function applyToLocation(): Promise<void> {
               @click.stop="store.toggleLayerLock(layer.id)"
             />
           </div>
+
+          <template
+            v-if="
+              activeLayer && layers.some((layer) => layer.type === 'folder')
+            "
+          >
+            <label class="studio-field">
+              <span>{{ t('mapStudio.folder') }}</span>
+              <select
+                :value="activeLayer.parentId ?? ''"
+                @change="
+                  store.setLayerParent(
+                    activeLayer.id,
+                    ($event.target as HTMLSelectElement).value || null,
+                  )
+                "
+              >
+                <option value="">{{ t('mapStudio.noFolder') }}</option>
+                <option
+                  v-for="folder in layers.filter(
+                    (layer) => layer.type === 'folder',
+                  )"
+                  :key="folder.id"
+                  :value="folder.id"
+                >
+                  {{ folder.name }}
+                </option>
+              </select>
+            </label>
+          </template>
 
           <template v-if="selectedObject">
             <QSeparator class="q-my-sm" />
@@ -1103,5 +1136,8 @@ async function applyToLocation(): Promise<void> {
 }
 .hidden-input {
   display: none;
+}
+.studio-layer-indent {
+  width: 10px;
 }
 </style>

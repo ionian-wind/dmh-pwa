@@ -12,7 +12,10 @@ import type {
   StudioTool,
   ToolSettings,
 } from '@/map-studio/domain/document/types';
-import { createDungeonLayer } from '@/map-studio/domain/document/factories';
+import {
+  createDungeonLayer,
+  createFolderLayer,
+} from '@/map-studio/domain/document/factories';
 import { getDungeonPreset } from '@/map-studio/domain/presets';
 import {
   createDoorObject,
@@ -300,6 +303,33 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
     activeLayerId.value = layer.id;
     commit({ ...current, layers: [...current.layers, layer] });
+  }
+
+  function addFolder(name = 'Folder'): void {
+    const current = map.value;
+    if (!current) return;
+    const maxOrder = Math.max(
+      -1,
+      ...current.layers.map((layer) => layer.order),
+    );
+    commit({
+      ...current,
+      layers: [
+        ...current.layers,
+        createFolderLayer({ name, order: maxOrder + 1 }),
+      ],
+    });
+  }
+
+  function setLayerParent(layerId: string, parentId: string | null): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId ? { ...layer, parentId } : layer,
+      ),
+    });
   }
 
   function renameLayer(layerId: string, name: string): void {
@@ -704,6 +734,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     flipObject,
     applyPreset,
     addDungeonLayer,
+    addFolder,
+    setLayerParent,
     renameLayer,
     removeLayer,
     moveLayer,

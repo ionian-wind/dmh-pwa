@@ -7,6 +7,7 @@ import {
   type ExportSettings,
   type GridSettings,
   type ImagesLayer,
+  type FolderLayer,
   type StudioMap,
   type StudioProject,
 } from './types';
@@ -107,6 +108,24 @@ export function createImagesLayer(
     parentId: null,
     order: 2,
     objects: [],
+    ...overrides,
+  };
+}
+
+export function createFolderLayer(
+  overrides: Partial<FolderLayer> = {},
+): FolderLayer {
+  return {
+    id: generateId(),
+    type: 'folder',
+    name: 'Folder',
+    visible: true,
+    locked: false,
+    opacity: 1,
+    blendMode: 'normal',
+    parentId: null,
+    order: 3,
+    expanded: true,
     ...overrides,
   };
 }
