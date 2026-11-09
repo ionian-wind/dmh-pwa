@@ -9,8 +9,8 @@ For optional, exploratory ideas that may never be implemented, use
 
 ## Current plans
 
-Last reviewed against the code and test suite on **2026-11-09** (231 test files /
-1940 tests passing).
+Last reviewed against the code and test suite on **2026-11-10** (236 test files /
+1957 tests passing).
 
 | Plan                                                        | Status                                                                                              |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -21,6 +21,7 @@ Last reviewed against the code and test suite on **2026-11-09** (231 test files 
 | [Remove the Modules entity](remove-modules-entity.md)       | completed (historical; Modules removed, related proposals obsolete)                                 |
 | [Dice roller implementation](dice-roller-implementation.md) | engine complete — renderer/UI tracked separately                                                    |
 | [3D dice roller UI](3d-dice-roller-ui.md)                   | implemented — natural-physics Three.js + Rapier tray (engine-independent)                           |
+| [Map Studio](map-studio/README.md)                          | planned — PixiJS Dungeon Scrawl–style drawing studio; not implemented                               |
 
 ## Moved to feature docs
 
