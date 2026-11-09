@@ -26,6 +26,7 @@ import {
   useAnimatedGradient,
 } from '@/jukebox/useAnimatedGradient';
 import { useDragSnap } from '@/composables/useDragSnap';
+import { useFloatingLayer } from '@/composables/useFloatingLayer';
 
 const props = withDefaults(
   defineProps<{
@@ -45,6 +46,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { zIndex, bringToFront } = useFloatingLayer();
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();
@@ -380,6 +382,7 @@ function navigateToPage() {
     seamless
     position="bottom"
     v-model="model"
+    :style="{ zIndex }"
     :transition-hide="transitionHide"
     class="sound-control-dialog"
     @hide="handleHide"
@@ -400,6 +403,8 @@ function navigateToPage() {
           'with-animated-bg': isAnimatedBg,
         }"
         :style="[cardStyle, controlStyle]"
+        @pointerdown="bringToFront"
+        @focusin="bringToFront"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
         @pointercancel="onPointerUp"

@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { evaluate, create, all } from 'mathjs';
 import { useDragSnap } from '@/composables/useDragSnap';
+import { useFloatingLayer } from '@/composables/useFloatingLayer';
 import {
   IconTransform,
   IconCalculator,
@@ -28,6 +29,7 @@ import {
 } from '@tabler/icons-vue';
 
 const { t } = useI18n();
+const { zIndex, bringToFront } = useFloatingLayer();
 const math = create(all);
 
 const props = defineProps<{
@@ -255,11 +257,14 @@ onUnmounted(() => {
     position="bottom"
     class="q-pa-sm"
     v-model="model"
+    :style="{ zIndex }"
     :transition-hide="transitionHide"
     @hide="onHide"
   >
     <QCard
       :style="[cardStyle, { minWidth: '350px', minHeight: '410px' }]"
+      @pointerdown="bringToFront"
+      @focusin="bringToFront"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"

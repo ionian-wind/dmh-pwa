@@ -24,6 +24,7 @@ import {
   type DiceRollEvent,
   type RollEventDie,
 } from '@/utils/roll-events';
+import { useFloatingLayer } from '@/composables/useFloatingLayer';
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
@@ -31,6 +32,7 @@ const emit = defineEmits<{
   (event: 'roll', value: DiceRollEvent): void;
 }>();
 const { t } = useI18n();
+const { zIndex, bringToFront } = useFloatingLayer();
 
 interface DiceRow {
   label: string;
@@ -423,10 +425,15 @@ onBeforeUnmount(() => {
         :offset="[0, 0]"
         :persistent="true"
         :auto-close="false"
+        :style="{ zIndex }"
         no-parent-event
         class="dice-roller-menu"
       >
-        <div class="dice-roller-sheet">
+        <div
+          class="dice-roller-sheet"
+          @pointerdown="bringToFront"
+          @focusin="bringToFront"
+        >
           <div class="dice-roller-header" @pointerdown="onPointerDown">
             <span>{{ t('diceRoller.title') }}</span>
             <QBtn
