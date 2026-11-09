@@ -1,6 +1,6 @@
 # Dice Roller
 
-> **Status: planned — greenfield implementation.** This document specifies the
+> **Status: implemented core.** This document specifies the
 > extensible parser/evaluator for dice and roll syntax. Chat commands, chat UI,
 > message delivery and visibility are covered by
 > [proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md).
@@ -175,6 +175,10 @@ interface EvalResult {
 
 Plugin evaluation must be pure with respect to the AST and must not mutate
 `context`. Plugins share a per-call memo cache and RNG through `EvalContext`.
+
+Implementation note: the current grammar is a shared Chevrotain grammar. The
+`grammar()` hook is reserved for future plugin rules; built-in plugins currently
+contribute tokens, CST conversion rule names and evaluators.
 
 ## Engine pipeline
 
@@ -704,6 +708,9 @@ Identity rules:
   (`A -> B -> A`) raises `TABLE_CYCLE`.
 - Missing table raises `TABLE_MISSING` unless `noerror` is enabled.
 - Table results are recorded in `RollProcess` and as `RollSegment`s.
+- Entry values that look like roll expressions (or provide `inlineRoll`) are
+  evaluated with the same per-call RNG and context; other values are treated as
+  display text with a numeric fallback of `0`.
 - Table management UI, permissions and chat commands belong to the chat
   proposal.
 
@@ -723,6 +730,12 @@ Identity rules:
 - `TABLE_MISSING`, `TABLE_CYCLE` — table failures.
 - `LIMIT_*` — output/time/explosion limits.
 - `RNG_FAILURE` — invalid RNG output or exception.
+- `MATH_*` — division/modulus by zero, non-finite arithmetic, unknown function
+  and invalid function arity.
+- `PARSE_EMPTY`, `PARSE_RECOVERY_LIMIT` — empty input and bounded parser
+  recovery overflow.
+- `QUERY_DEPTH`, `TABLE_DEPTH`, `LIMIT_TIME`, `CANCELLED` — nested/depth and
+  execution-control failures.
 - `INTERNAL` — plugin bug; includes the original cause.
 
 Every error carries `code`, `message`, `pass`, optional `plugin`, optional
@@ -827,7 +840,8 @@ low-power modes use text/2D output. No information exists only in animation.
 
 ### Snapshot persistence
 
-`RollResultSnapshot` is persisted with `schemaVersion`. Chat stores snapshots or
+`RollResultSnapshot` is persisted with `schemaVersion`. The implementation
+exports `ENGINE_SCHEMA_VERSION = 1`. Chat stores snapshots or
 snapshot references; reloading a message uses the snapshot and never re-rolls.
 Schema upgrades are versioned; unknown versions render a generic fallback
 instead of failing the chat.
@@ -926,7 +940,9 @@ delivery. The engine never reads chat state directly.
 
 - All dice types and modifiers in this plan are parsed/evaluated.
 - Modifier phases A–G are deterministic and recorded.
-- Grouped rolls validate sub-roll kind compatibility.
+- Grouped rolls validate sub-roll kind compatibility: every member must contain
+  at least one dice, table or nested-group node. Pure-math members fail with
+  `VALIDATION_INVALID_MODIFIER`.
 - Table plugin follows the defined weight/cycle/missing rules.
 - Arithmetic/functions obey the documented precedence.
 
@@ -970,6 +986,23 @@ These do not block the parser/evaluator build:
 - `RollResult` carries enough metadata to render a Roll20-like breakdown.
 - Chat can implement query/ability UI without parser changes.
 - Text/2D/3D renderers display the same recorded result.
+
+## Implementation deltas
+
+The engine is implemented under `src/utils/bag-of-dice` (see its README and the
+implementation tracker). Deltas discovered while building it:
+
+- grouped-roll homogeneity is enforced as "must contain dice";
+- `o` is parsed/recorded but not yet fully semantic;
+- inline-table preloading is limited to tables referenced by the main
+  expression;
+- plugin grammar registration is reserved, not active;
+- exhaustive-success (`e`) behavior is a capped follow-up loop and needs more
+  compatibility golden cases;
+- `mtN`/`mtN>X` arguments are parsed but not yet reflected in matching totals;
+- extra typed codes (`MATH_*`, `PARSE_EMPTY`, `PARSE_RECOVERY_LIMIT`,
+  `QUERY_DEPTH`, `TABLE_DEPTH`, `LIMIT_TIME`, `CANCELLED`) were added to the
+  taxonomy.
 
 ## References
 
