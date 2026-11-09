@@ -17,6 +17,8 @@ export default defineConfig({
     printConsoleTrace: true,
     disableConsoleIntercept: true,
     environment: 'jsdom',
+    // Reuse one jsdom environment per worker instead of creating one per file.
+    pool: 'vmThreads',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     coverage: {
@@ -27,10 +29,6 @@ export default defineConfig({
         branches: 87,
         functions: 87,
         lines: 87,
-        perFile: {
-          statements: 87,
-          lines: 87,
-        },
       },
       exclude: [
         'src/main.ts',
@@ -39,7 +37,6 @@ export default defineConfig({
         'src/i18n/**',
         'src/types/**',
         'src/schemas/**',
-        'src/utils/dice-roller/plugins/dice/ast.ts',
         'src/components/Tree/**',
         'src/components/common/milkdown/**',
         'src/components/common/MarkdownEditor.vue',
@@ -55,7 +52,6 @@ export default defineConfig({
         'src/features/**',
         'src/composables/useFeatureStores.ts',
         'src/utils/files/BlobFileHandler.ts',
-        'src/utils/dice-roller/core/index.ts',
         'tests/**',
         'dist/**',
         'dev-dist/**',

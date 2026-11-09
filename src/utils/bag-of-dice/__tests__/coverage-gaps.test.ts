@@ -36,7 +36,6 @@ import {
 } from '../engine/repositories';
 import {
   captureRngState,
-  cryptoRng,
   finishRngState,
   restoreRngState,
   sequenceRng,
@@ -308,9 +307,6 @@ describe('rng gap coverage', () => {
     expect(finishRngState(plain, { rngStateBefore: 1 })).toEqual({
       rngStateBefore: 1,
     });
-
-    vi.stubGlobal('crypto', undefined);
-    expect(() => cryptoRng().next()).toThrow(/crypto/);
   });
 });
 

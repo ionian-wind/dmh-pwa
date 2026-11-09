@@ -5,6 +5,7 @@ import BaseListView from '@/components/common/BaseListView.vue';
 import StatCard from '@/components/StatCard.vue';
 import { backupAllStores, restoreAllStores } from '@/utils/storage';
 import { saveBlob } from '@/utils/files';
+import { reloadPage } from '@/utils/reloadPage';
 import { useConfigStore } from '@/utils/configStore';
 import { alert } from '@/dialogs';
 import { featureHomeCards } from 'virtual:feature-home-cards';
@@ -64,7 +65,7 @@ async function handleRestore(event: Event) {
     await alert(t('backup.restoreCompleted'));
     // Reloading the page is the simplest way to refresh every store,
     // including timers, bookmarks, jukebox data, and the mention index.
-    window.location.reload();
+    reloadPage();
   } catch (e) {
     await alert(
       t('backup.restoreFailed') + (e instanceof Error ? e.message : e),

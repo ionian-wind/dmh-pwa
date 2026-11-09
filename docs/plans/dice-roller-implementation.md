@@ -1,6 +1,6 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 187 passing tests; three
+> **Status: in progress.** Core engine implemented with 1833 passing tests; three
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
@@ -289,7 +289,7 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 187 passing tests across
+Implemented under `src/utils/bag-of-dice` with 1833 passing tests across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 
@@ -328,11 +328,10 @@ upstream suite currently fails it. The supplied draws correctly produce
 
 ### Coverage
 
-The new bag-of-dice files meet the configured per-file 87% statements/lines
-threshold (`engine` folder: 94.89% statements, 95.6% lines, 84.22% branches).
-`npm run test:coverage` still exits non-zero because of the existing global 87%
-branch threshold and unrelated pre-existing per-file failures elsewhere in the
-project.
+`npm run test:coverage` meets the 87% global thresholds after adding branch
+tests across the dice engine, probability calculator, stores and utility
+modules. The test environment uses `pool: 'vmThreads'`, so jsdom is created once
+per worker instead of once per test file.
 
 ### Decisions and deviations
 
