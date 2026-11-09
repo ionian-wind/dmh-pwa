@@ -372,6 +372,15 @@ const isSettingsOpen = ref(false);
 </template>
 
 <style scoped>
+:global(.right-sidebar) {
+  z-index: 800;
+}
+
+:global(#main_menu),
+:global(#main_header) {
+  z-index: 2000;
+}
+
 @keyframes jukebox-sway {
   0%,
   100% {

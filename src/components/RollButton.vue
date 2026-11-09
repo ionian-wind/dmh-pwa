@@ -115,7 +115,7 @@ onUnmounted(() => diceBox.clear());
   position: fixed;
   bottom: 10px;
   right: 10px;
-  z-index: 1000;
+  z-index: 1200;
 }
 .fab-children-container {
   position: relative;
@@ -123,7 +123,7 @@ onUnmounted(() => diceBox.clear());
   height: 180px;
 }
 .roll-fab-main {
-  z-index: 1001;
+  z-index: 1201;
 }
 .roll-fab-child {
   pointer-events: auto;

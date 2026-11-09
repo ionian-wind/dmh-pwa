@@ -4,6 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 const mocks = vi.hoisted(() => {
   const diceBox = {
     init: vi.fn().mockResolvedValue(undefined),
+    add: vi.fn(),
     roll: vi.fn(),
     clear: vi.fn(),
   };
@@ -34,12 +35,16 @@ function mountPanel() {
 function button(label: string): HTMLButtonElement {
   return Array.from(
     document.querySelectorAll<HTMLButtonElement>('.dice-roller-button'),
-  ).find((element) => element.textContent?.trim() === label)!;
+  ).find((element) => {
+    const first = element.querySelector('span')?.textContent?.trim();
+    return first === label || element.textContent?.trim() === label;
+  })!;
 }
 
 describe('DiceRollerPanel', () => {
   beforeEach(() => {
     mocks.diceBox.init.mockClear();
+    mocks.diceBox.add.mockClear();
     mocks.diceBox.roll.mockClear();
     mocks.diceBox.clear.mockClear();
     mocks.DiceBox.mockClear();
@@ -58,10 +63,13 @@ describe('DiceRollerPanel', () => {
     expect(mocks.diceBox.init).toHaveBeenCalled();
 
     button('d6').click();
+    button('d6').click();
     button('d100').click();
 
-    expect(mocks.diceBox.roll).toHaveBeenNthCalledWith(1, '1d6');
-    expect(mocks.diceBox.roll).toHaveBeenNthCalledWith(2, '2d10');
+    expect(mocks.diceBox.add).toHaveBeenNthCalledWith(1, '1d6');
+    expect(mocks.diceBox.add).toHaveBeenNthCalledWith(2, '1d6');
+    expect(mocks.diceBox.add).toHaveBeenNthCalledWith(3, '2d10');
+    expect(mocks.diceBox.roll).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
@@ -70,8 +78,20 @@ describe('DiceRollerPanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    button('Clear').click();
+    button('d6').click();
+    button('d6').click();
+    button('d100').click();
+    mocks.diceBox.add.mockClear();
+    button('Reroll').click();
+
     expect(mocks.diceBox.clear).toHaveBeenCalled();
+    expect(mocks.diceBox.add.mock.calls).toEqual([['1d6'], ['1d6'], ['2d10']]);
+
+    mocks.diceBox.add.mockClear();
+    button('Clear').click();
+    expect(mocks.diceBox.clear).toHaveBeenCalledTimes(2);
+    button('Reroll').click();
+    expect(mocks.diceBox.add).not.toHaveBeenCalled();
 
     document.querySelector<HTMLButtonElement>('.dice-roller-close')!.click();
     expect(wrapper.emitted('close')).toHaveLength(1);

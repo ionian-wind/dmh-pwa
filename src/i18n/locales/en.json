@@ -1119,6 +1119,7 @@
   "diceRoller": {
     "title": "Dice Roller",
     "clear": "Clear",
-    "close": "Close dice roller"
+    "close": "Close dice roller",
+    "reroll": "Reroll"
   }
 }

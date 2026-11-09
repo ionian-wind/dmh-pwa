@@ -117,7 +117,7 @@ Coverage (V8, `npm run test:coverage`, exit code 0):
 
 ```
 Statements  94.21%
-Branches    87.02%
+Branches    87.01%
 Functions   92.83%
 Lines       95.51%
 ```

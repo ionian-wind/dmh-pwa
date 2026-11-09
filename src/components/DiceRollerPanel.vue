@@ -22,6 +22,7 @@ const surface = ref<HTMLDivElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
 const ready = ref(false);
 const position = ref({ x: 0, y: 0 });
+const pool = ref<Record<string, number>>({});
 let diceBox: any;
 let drag: { offsetX: number; offsetY: number } | null = null;
 
@@ -38,8 +39,8 @@ function clampPosition(x: number, y: number) {
 function placePanel() {
   if (!panel.value) return;
   position.value = clampPosition(
-    window.innerWidth - panel.value.offsetWidth - 24,
-    Math.max(24, window.innerHeight / 2 - panel.value.offsetHeight / 2),
+    24,
+    window.innerHeight - panel.value.offsetHeight - 24,
   );
 }
 
@@ -67,17 +68,32 @@ function stopDragging() {
 }
 
 function resizeSurface() {
-  if (!surface.value) return;
-  surface.value.style.width = `${window.innerWidth}px`;
-  surface.value.style.height = `${window.innerHeight}px`;
+  if (surface.value) {
+    surface.value.style.width = `${window.innerWidth}px`;
+    surface.value.style.height = `${window.innerHeight}px`;
+  }
+  position.value = clampPosition(position.value.x, position.value.y);
 }
 
-function roll(notation: string) {
+function addDie(die: { label: string; notation: string }) {
   if (!ready.value || !diceBox) return;
-  diceBox.roll(notation);
+  pool.value[die.label] = (pool.value[die.label] ?? 0) + 1;
+  diceBox.add(die.notation);
+}
+
+function rollPool() {
+  if (!ready.value || !diceBox) return;
+  diceBox.clear();
+  for (const die of dice) {
+    const count = pool.value[die.label] ?? 0;
+    for (let index = 0; index < count; index += 1) {
+      diceBox.add(die.notation);
+    }
+  }
 }
 
 function clearDice() {
+  pool.value = {};
   diceBox?.clear();
 }
 
@@ -144,9 +160,12 @@ const panelStyle = computed(() => ({
           class="dice-roller-button"
           :disabled="!ready"
           :aria-label="die.label"
-          @click="roll(die.notation)"
+          @click="addDie(die)"
         >
-          {{ die.label }}
+          <span>{{ die.label }}</span>
+          <span v-if="pool[die.label]" class="dice-roller-count">
+            ×{{ pool[die.label] }}
+          </span>
         </button>
       </div>
 
@@ -159,6 +178,14 @@ const panelStyle = computed(() => ({
         @click="clearDice"
       >
         {{ t('diceRoller.clear') }}
+      </button>
+      <button
+        type="button"
+        class="dice-roller-button"
+        :disabled="!ready"
+        @click="rollPool"
+      >
+        {{ t('diceRoller.reroll') }}
       </button>
     </section>
   </Teleport>
@@ -181,7 +208,7 @@ const panelStyle = computed(() => ({
 
 .dice-roller-panel {
   position: fixed;
-  z-index: 1300;
+  z-index: 1100;
   width: 132px;
   padding: 8px;
   border: 1px solid var(--color-border, #555);
@@ -232,6 +259,10 @@ const panelStyle = computed(() => ({
 }
 
 .dice-roller-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   min-height: 30px;
   padding: 4px 10px;
@@ -261,5 +292,10 @@ const panelStyle = computed(() => ({
 
 .dice-roller-clear {
   margin-top: 2px;
+}
+
+.dice-roller-count {
+  font-size: 11px;
+  opacity: 0.7;
 }
 </style>
