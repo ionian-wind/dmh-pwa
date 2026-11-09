@@ -187,6 +187,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
   add(dice: readonly DiceVisual[]): void {
     if (!this.assets || !this.materials || !this.renderer) return;
     this.settledNotified = false;
+    this.wakeSettledDice();
     const max = this.options?.maxDice ?? 40;
     for (const visual of dice) {
       const parts = visualDiceForSides(visual.sides, visual.kind);
@@ -334,6 +335,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
   endDrag(): void {
     if (!this.dragState) return;
+    this.wakeSettledDice();
     const parts = this.dragState.parts;
     const release = computeTossRelease(
       this.dragState.samples,
@@ -641,6 +643,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
   private processExplosions(): boolean {
     let spawned = false;
     const results = this.getResults();
+    if (results.length === 0) return false;
     for (const result of results) {
       if (!result.explode) continue;
       const max = maxFaceFor(result.sides, result.kind);
@@ -678,9 +681,26 @@ export class ThreeDiceRenderer implements DiceRenderer {
     return spawned;
   }
 
+  /**
+   * New throws can knock settled dice, so they must participate in the next
+   * simulation and have their faces re-read afterwards.
+   */
+  private wakeSettledDice(): void {
+    for (const die of this.dice.values()) {
+      if (die.state !== 'done') continue;
+      die.state = 'physics';
+      die.result = undefined;
+    }
+  }
+
   private notifySettled(): void {
     if (this.settledNotified) return;
     this.settledNotified = true;
+    // A collision may have changed a previously settled die without changing
+    // its bookkeeping state; reread every visible face.
+    for (const die of this.dice.values()) {
+      if (die.state === 'done') die.result = this.readFaceValue(die);
+    }
     this.options?.onSettled?.(this.getResults());
   }
 

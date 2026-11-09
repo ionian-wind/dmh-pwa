@@ -285,6 +285,10 @@ roll emits one individual plus one pool event.
   combined value.
 - Explosion extras are thrown from independent random perimeter positions with
   their own way/force, so they do not stack or get stuck on the parent.
+- Boundary walls have high restitution; every collision damps linear velocity by
+  5% and angular velocity by 10% (on top of Rapier friction/damping).
+- New throws wake settled dice. Dice can knock each other onto new faces; after
+  the collision cycle every visible face is re-read and the pool/events update.
 - The tray cannot import `bag-of-dice`; `src/utils/roll-events.ts` defines the
   shared history format instead. d100 combines the tens (`d100` asset) and units (`d10` asset)
   faces, with `100 = 00 + 0`.

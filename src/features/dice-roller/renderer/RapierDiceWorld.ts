@@ -18,12 +18,15 @@ export interface DiceTransform {
 export interface DiceBody {
   id: string;
   body: RAPIER.RigidBody;
+  colliders: number[];
 }
 
 /** Thin lifecycle wrapper around a Rapier world. All motion is cosmetic. */
 export class RapierDiceWorld {
   private world: RAPIER.World | null = null;
   private bodies = new Map<string, DiceBody>();
+  private colliderBodies = new Map<number, RAPIER.RigidBody>();
+  private eventQueue: RAPIER.EventQueue | null = null;
   private initPromise: Promise<void> | null = null;
 
   async init(gravityY = -9.81): Promise<void> {
@@ -31,13 +34,14 @@ export class RapierDiceWorld {
     if (!this.initPromise) {
       this.initPromise = RAPIER.init().then(() => {
         this.world = new RAPIER.World({ x: 0, y: gravityY, z: 0 });
+        this.eventQueue = new RAPIER.EventQueue(true);
         const floorBody = this.world.createRigidBody(
           RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.05, 0),
         );
         this.world.createCollider(
           RAPIER.ColliderDesc.cuboid(30, 0.05, 30)
-            .setFriction(0.9)
-            .setRestitution(0.05),
+            .setFriction(0.7)
+            .setRestitution(0.3),
           floorBody,
         );
         // Invisible walls keep cosmetic tumbling inside the camera frame.
@@ -47,8 +51,8 @@ export class RapierDiceWorld {
           );
           this.world!.createCollider(
             RAPIER.ColliderDesc.cuboid(halfX, 0.55, halfZ)
-              .setFriction(0.4)
-              .setRestitution(0.1),
+              .setFriction(0.35)
+              .setRestitution(0.55),
             body,
           );
         };
@@ -87,8 +91,13 @@ export class RapierDiceWorld {
 
     const hull = RAPIER.ColliderDesc.convexHull(points);
     const collider = hull ?? RAPIER.ColliderDesc.ball(0.13);
-    collider.setFriction(0.75).setRestitution(0.08).setMass(mass);
-    this.world.createCollider(collider, body);
+    collider
+      .setFriction(0.7)
+      .setRestitution(0.25)
+      .setMass(mass)
+      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
+    const created = this.world.createCollider(collider, body);
+    this.colliderBodies.set(created.handle, body);
 
     if (spawn.impulse) body.applyImpulse(spawn.impulse, true);
     if (spawn.linearVelocity) {
@@ -96,7 +105,7 @@ export class RapierDiceWorld {
     }
     if (spawn.torque) body.applyTorqueImpulse(spawn.torque, true);
 
-    const handle: DiceBody = { id, body };
+    const handle: DiceBody = { id, body, colliders: [created.handle] };
     this.bodies.set(id, handle);
     return handle;
   }
@@ -104,6 +113,7 @@ export class RapierDiceWorld {
   remove(id: string): void {
     const entry = this.bodies.get(id);
     if (!entry) return;
+    for (const handle of entry.colliders) this.colliderBodies.delete(handle);
     this.world?.removeRigidBody(entry.body);
     this.bodies.delete(id);
   }
@@ -115,7 +125,30 @@ export class RapierDiceWorld {
   step(deltaSeconds: number): void {
     if (!this.world) return;
     this.world.timestep = Math.min(Math.max(deltaSeconds, 1 / 240), 1 / 30);
-    this.world.step();
+    this.world.step(this.eventQueue ?? undefined);
+    this.eventQueue?.drainCollisionEvents((first, second, started) => {
+      if (!started) return;
+      const bodyA = this.colliderBodies.get(first);
+      const bodyB = this.colliderBodies.get(second);
+      for (const body of [bodyA, bodyB]) {
+        if (!body) continue;
+        // Every impact loses a little energy: linear a bit, spin a bit more.
+        const velocity = body.linvel();
+        body.setLinvel(
+          {
+            x: velocity.x * 0.95,
+            y: velocity.y * 0.95,
+            z: velocity.z * 0.95,
+          },
+          true,
+        );
+        const spin = body.angvel();
+        body.setAngvel(
+          { x: spin.x * 0.9, y: spin.y * 0.9, z: spin.z * 0.9 },
+          true,
+        );
+      }
+    });
   }
 
   /** True while at least one body is still moving. */
@@ -154,6 +187,8 @@ export class RapierDiceWorld {
     this.clear();
     this.world?.free();
     this.world = null;
+    this.eventQueue = null;
+    this.colliderBodies.clear();
     this.initPromise = null;
   }
 }

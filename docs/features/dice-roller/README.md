@@ -855,7 +855,9 @@ and direction, which become the toss force/way and scale the spin. Releasing
 without moving drops it straight down. Results are recomputed from the new
 landed faces. All parts of a d100 (tens and units) move together and count as
 one combined result. The renderer never mutates a `bag-of-dice` result and never imports the
-engine. The animation loop stops when every die is settled; resize redraws and
+engine. Boundary walls are bouncy, and every collision damps linear velocity by
+about 5% and angular velocity by about 10% so dice lose energy as they collide.
+The animation loop stops when every die is settled; resize redraws and
 never clears the scene. The camera looks straight down from the zenith and all
 dice rest on the same `y=0` scene floor.
 

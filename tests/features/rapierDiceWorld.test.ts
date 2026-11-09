@@ -53,6 +53,29 @@ describe('RapierDiceWorld', () => {
     world.dispose();
   });
 
+  it('bounces fast dice off the boundary walls and loses energy', async () => {
+    const world = new RapierDiceWorld();
+    await world.init();
+    const points = new Float32Array([
+      -0.12, -0.12, -0.12, 0.12, -0.12, -0.12, 0, 0.12, 0,
+    ]);
+    world.add('a', points, {
+      x: 2.5,
+      y: 0.4,
+      z: 0,
+      linearVelocity: { x: 8, y: 0, z: 0 },
+    });
+    let maxX = -Infinity;
+    for (let index = 0; index < 180; index += 1) {
+      world.step(1 / 60);
+      maxX = Math.max(maxX, world.transform('a')!.position.x);
+    }
+    const finalX = world.transform('a')!.position.x;
+    expect(maxX).toBeLessThan(3.9);
+    expect(finalX).toBeLessThan(3.9);
+    world.dispose();
+  });
+
   it('handles a 30-die pool and clears it', async () => {
     const world = new RapierDiceWorld();
     await world.init();
