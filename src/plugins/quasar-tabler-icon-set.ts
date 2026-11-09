@@ -53,6 +53,8 @@ import clipboardCheck from '@tabler/icons/outline/clipboard-check.svg?raw';
 import arrowBarToLeft from '@tabler/icons/outline/arrow-bar-to-left.svg?raw';
 import arrowBarToRight from '@tabler/icons/outline/arrow-bar-to-right.svg?raw';
 import plus from '@tabler/icons/outline/plus.svg?raw';
+import swords from '@tabler/icons/outline/swords.svg?raw';
+import trophy from '@tabler/icons/outline/trophy.svg?raw';
 
 const TABLER_STYLE =
   'fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
@@ -125,6 +127,8 @@ const icons: Record<string, string> = {
   'arrow-bar-to-left': svgPath(arrowBarToLeft),
   'arrow-bar-to-right': svgPath(arrowBarToRight),
   plus: svgPath(plus),
+  swords: svgPath(swords),
+  trophy: svgPath(trophy),
 };
 
 const quasarTablerIconSet = {

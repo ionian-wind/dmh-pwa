@@ -46,32 +46,10 @@ const combat = ref<Combat | null>(null);
 const loading = computed(() => !combatStore.isLoaded);
 const notFound = computed(() => combatStore.isLoaded && !combat.value);
 const activeTab = computed(() => combat.value?.status ?? null);
-const TABLER_STROKE =
-  'fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
-const tablerIcon = (paths: string[]) =>
-  `${paths.map((path) => `${path}@@${TABLER_STROKE}`).join('&&')}|0 0 24 24`;
 const phaseIcons = {
-  preparing: tablerIcon([
-    'M11 6h9',
-    'M11 12h9',
-    'M12 18h8',
-    'M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4',
-    'M6 10v-6l-2 2',
-  ]),
-  active: tablerIcon([
-    'M21 3v5l-11 9l-4 4l-3 -3l4 -4l9 -11l5 0',
-    'M5 13l6 6',
-    'M14.32 17.32l3.68 3.68l3 -3l-3.365 -3.365',
-    'M10 5.5l-2 -2.5h-5v5l3 2.5',
-  ]),
-  completed: tablerIcon([
-    'M8 21l8 0',
-    'M12 17l0 4',
-    'M7 4l10 0',
-    'M17 4v8a5 5 0 0 1 -10 0v-8',
-    'M3 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
-    'M17 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
-  ]),
+  preparing: 'tabler-list-numbers',
+  active: 'tabler-swords',
+  completed: 'tabler-trophy',
 };
 
 // Add local state for new participant

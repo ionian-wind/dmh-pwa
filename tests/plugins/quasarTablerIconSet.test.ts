@@ -16,6 +16,8 @@ describe('quasar tabler icon set', () => {
       icon: expect.stringContaining('|0 0 24 24'),
     });
     expect(tablerIconMapFn('tabler-pencil')).toBeTruthy();
+    expect(tablerIconMapFn('tabler-swords')).toBeTruthy();
+    expect(tablerIconMapFn('tabler-trophy')).toBeTruthy();
     expect(tablerIconMapFn('material-icons')).toBeUndefined();
     expect(tablerIconMapFn('tabler-missing')).toBeUndefined();
   });
