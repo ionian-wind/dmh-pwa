@@ -287,7 +287,7 @@ const handleCancel = () => {
         />
       </div>
 
-      <div v-if="activePartyId">
+      <div v-if="activePartyId" class="form-section">
         <h4>{{ t('partySelector.selectCharacters') }}</h4>
         <div v-if="selectedCharacterIds.length === 0" class="info-text">
           {{ t('partySelector.selectAtLeastOneCharacter') }}
