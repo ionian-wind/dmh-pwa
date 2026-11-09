@@ -10,10 +10,16 @@ export function createSnapshot(
   result: RollResult,
   createdAt = Date.now(),
 ): RollResultSnapshot {
-  const { snapshot: _ignored, ...rest } = result;
+  const { snapshot: _ignored, replay, ...rest } = result;
   void _ignored;
+  const cloned = tryClone(rest);
+  if (!cloned.ok) {
+    throw new Error('roll result cannot be serialized');
+  }
+  const safeReplay = replay ? sanitizeReplay(replay) : undefined;
   return {
-    ...clone(rest),
+    ...cloned.value,
+    ...(safeReplay ? { replay: safeReplay } : {}),
     createdAt,
   };
 }
@@ -52,9 +58,13 @@ export function parseSnapshot(value: string | unknown): SnapshotParseResult {
   ) {
     return { ok: false, reason: 'incompatible' };
   }
+  const cloned = tryClone(record);
+  if (!cloned.ok) {
+    return { ok: false, reason: 'incompatible' };
+  }
   return {
     ok: true,
-    snapshot: clone(record) as unknown as RollResultSnapshot,
+    snapshot: cloned.value as unknown as RollResultSnapshot,
   };
 }
 
@@ -63,13 +73,36 @@ export function renderSnapshotFallback(): string {
   return 'This roll was created by a newer version and cannot be displayed.';
 }
 
-function clone<T>(value: T): T {
+/**
+ * Drop replay fields that cannot be persisted as JSON, keeping the serializable
+ * ones (for example a seed next to a non-serializable RNG snapshot).
+ */
+function sanitizeReplay(
+  replay: NonNullable<RollResult['replay']>,
+): NonNullable<RollResult['replay']> | undefined {
+  try {
+    const serialized = JSON.stringify(replay);
+    if (serialized === undefined) return undefined;
+    const parsed = JSON.parse(serialized) as Record<string, unknown>;
+    return Object.keys(parsed).length > 0
+      ? (parsed as NonNullable<RollResult['replay']>)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function tryClone<T>(value: T): { ok: true; value: T } | { ok: false } {
   if (typeof structuredClone === 'function') {
     try {
-      return structuredClone(value);
+      return { ok: true, value: structuredClone(value) };
     } catch {
       /* fall through to JSON for non-cloneable replay states */
     }
   }
-  return JSON.parse(JSON.stringify(value)) as T;
+  try {
+    return { ok: true, value: JSON.parse(JSON.stringify(value)) as T };
+  } catch {
+    return { ok: false };
+  }
 }

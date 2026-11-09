@@ -12,6 +12,8 @@ export interface Rng {
   next(): number;
   snapshot?(): unknown;
   restore?(state: unknown): void;
+  /** Optional stable seed recorded in replay metadata. */
+  seed?: string;
 }
 
 export interface SequenceRng extends Rng {
@@ -212,13 +214,17 @@ export function sampleWeighted<T>(
 export interface RollReplayState {
   rngStateBefore?: unknown;
   rngStateAfter?: unknown;
+  seed?: string;
 }
 
 /** Capture the before-state when the RNG exposes snapshots. */
 export function captureRngState(rng: Rng): RollReplayState {
-  return typeof rng.snapshot === 'function'
-    ? { rngStateBefore: rng.snapshot() }
-    : {};
+  const state: RollReplayState =
+    typeof rng.snapshot === 'function'
+      ? { rngStateBefore: rng.snapshot() }
+      : {};
+  if (rng.seed !== undefined) state.seed = rng.seed;
+  return state;
 }
 
 /** Capture the after-state when the RNG exposes snapshots. */

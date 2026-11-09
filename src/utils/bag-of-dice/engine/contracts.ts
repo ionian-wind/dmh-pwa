@@ -6,7 +6,7 @@
  * world enters through repositories, options and the RNG.
  */
 
-import type { CstNode, CstParser, TokenType } from 'chevrotain';
+import type { CstNode, TokenType } from 'chevrotain';
 import type { Rng } from '../../rng';
 
 export type { Rng } from '../../rng';
@@ -486,8 +486,6 @@ export interface EvalResult {
 export interface DicePlugin {
   name: string;
   tokens: TokenType[];
-  /** Register Chevrotain rules on the pass parser. */
-  grammar?(parser: CstParser, tokens: TokenMap): void;
   /** Convert plugin CST node names to typed AST nodes. */
   cstToAst?: Record<
     string,

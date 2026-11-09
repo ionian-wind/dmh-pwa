@@ -61,7 +61,6 @@ const MODIFIER_NAMES = new Set([
   'sa',
   'sd',
   'e',
-  'o',
   'cs',
   'cf',
   'f',
@@ -603,6 +602,18 @@ class CoreParser extends EmbeddedActionsParser {
         modifiers.push(this.SUBRULE(this.modifierClause));
       },
     });
+    // Multiple reroll/explode clauses may be comma separated.
+    this.MANY2({
+      GATE: () =>
+        this.LA(1).tokenType === this.token('Comma') &&
+        (this.isModifierStart(this.LA(2)) ||
+          (this.LA(2).tokenType === this.token('DiceSeparator') &&
+            this.LA(3).tokenType === this.token('NumberLiteral'))),
+      DEF: () => {
+        this.CONSUME(this.token('Comma'));
+        modifiers.push(this.SUBRULE2(this.modifierClause));
+      },
+    });
     return modifiers;
   });
 
@@ -833,12 +844,39 @@ export function tokenSpan(first: IToken, last: IToken = first): AstSpan {
   return spanOf(first, last);
 }
 
+const defaultVocabulary = buildTokenVocabulary();
+const pluginVocabularyCache = new WeakMap<
+  readonly DicePlugin[],
+  TokenVocabulary
+>();
+const parserCache = new WeakMap<TokenVocabulary, CoreParser>();
+
+function resolveVocabulary(options: ParseOptions): TokenVocabulary {
+  if (options.vocabulary) return options.vocabulary;
+  const plugins = options.plugins;
+  if (!plugins || plugins.length === 0) return defaultVocabulary;
+  let vocabulary = pluginVocabularyCache.get(plugins);
+  if (!vocabulary) {
+    vocabulary = buildTokenVocabulary(plugins);
+    pluginVocabularyCache.set(plugins, vocabulary);
+  }
+  return vocabulary;
+}
+
+function resolveParser(vocabulary: TokenVocabulary): CoreParser {
+  let parser = parserCache.get(vocabulary);
+  if (!parser) {
+    parser = new CoreParser(vocabulary.allTokens, vocabulary.tokenMap);
+    parserCache.set(vocabulary, parser);
+  }
+  return parser;
+}
+
 export function parseExpression(
   source: string,
   options: ParseOptions = {},
 ): ParseResult {
-  const vocabulary =
-    options.vocabulary ?? buildTokenVocabulary(options.plugins ?? []);
+  const vocabulary = resolveVocabulary(options);
   const lexed = tokenize(source, vocabulary);
 
   if (lexed.errors.length > 0) {
@@ -857,7 +895,7 @@ export function parseExpression(
     };
   }
 
-  const parser = new CoreParser(vocabulary.allTokens, vocabulary.tokenMap);
+  const parser = resolveParser(vocabulary);
   parser.input = lexed.tokens;
   let ast: AstNode | undefined;
   try {

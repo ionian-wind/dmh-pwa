@@ -1,7 +1,7 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 1852 passing tests; three
-> original tasks and fifteen follow-ups remain. Check a task only when its
+> **Status: engine complete.** Core engine and follow-ups are implemented; the
+> remaining dice work is the 3D renderer/UI tracker. Check a task only when its
 > code, tests and documentation are complete.
 >
 > Design reference: [../features/dice-roller/README.md](../features/dice-roller/README.md).
@@ -124,7 +124,8 @@ collisions and recovery are tested.
 - [x] **DR-318** Implement min/max (`mi`, `ma`).
 - [x] **DR-319** Implement matching (`m`, `mt`, `mtN`, `mtN>X`).
 - [x] **DR-320** Implement sorting (`s`, `sa`, `sd`) as display-only.
-- [ ] **DR-321** Implement roll-once (`o`) and grouped-roll modifiers.
+- [x] **DR-321** Implement grouped-roll modifiers and roll-once (`ro`); remove
+      the non-Roll20 bare `o` no-op.
 - [x] **DR-322** Implement `e` exhaustive successes after success phase.
 - [x] **DR-323** Implement modifier phases A–G exactly as documented.
 - [x] **DR-324** Record `modifierOrder` and applied modifiers in metadata.
@@ -229,7 +230,7 @@ original/final state.
 - [x] **DR-806** Implement label/text segments.
 - [x] **DR-807** Implement `schemaVersion` and `RollResultSnapshot`.
 - [x] **DR-808** Implement snapshot serialization/deserialization tests.
-- [ ] **DR-809** Add metadata completeness tests for every expression kind.
+- [x] **DR-809** Add metadata completeness tests for every expression kind.
 - [x] **DR-810** Add a renderer contract test proving no re-roll is required.
 
 **Gate:** a renderer can reproduce the full roll breakdown from metadata alone.
@@ -262,7 +263,7 @@ original/final state.
 
 ## Phase 11 — Hardening
 
-- [ ] **DR-1101** Implement performance benchmarks and budgets.
+- [x] **DR-1101** Implement performance benchmarks and budgets.
 - [x] **DR-1102** Implement output-size and pass-time limits.
 - [x] **DR-1103** Add macro-bomb/large-group/pathological-query tests.
 - [x] **DR-1104** Add localization-ready error code/parameter tests.
@@ -290,14 +291,16 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 1852 passing tests across
+Implemented under `src/utils/bag-of-dice` with the full suite green (225
+files / 1893 tests) across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 
 ### Pending tasks
 
-- **DR-321** — `o` is parsed and recorded as a modifier but is currently a
-  no-op. Full roll-once semantics need a concrete rule for tables/grouped rolls.
+No engine tasks remain open. The 3D renderer and its `bag-of-dice` wiring are
+tracked in [3d-dice-roller-ui.md](3d-dice-roller-ui.md).
+
 - **DR-809** — metadata coverage is broad but not exhaustive for every
   expression kind; add a fixture-driven completeness matrix.
 - **DR-1101** — performance is regression-tested with a broad budget test, but
@@ -336,11 +339,10 @@ per worker instead of once per test file.
 
 ### Decisions and deviations
 
-- **Plugin grammar hook** — `DicePlugin.grammar` is declared for future plugin
-  parsers, but the current build uses one shared Chevrotain grammar. Plugins
-  contribute tokens, CST conversion rule names and evaluators; the hook is not
-  invoked. This keeps the grammar deterministic and avoids mega-grammar
-  ambiguity while preserving the public contract.
+- **Plugin hooks** — plugins contribute tokens, CST conversion rule names,
+  evaluators and an optional `validate()` hook. The old `grammar()` hook was
+  removed to keep one deterministic Chevrotain grammar and avoid mega-grammar
+  ambiguity.
 - **Grouped-roll validation** — group members must contain at least one dice,
   table or nested-group node. Pure-math members fail with
   `VALIDATION_INVALID_MODIFIER`.
@@ -350,9 +352,8 @@ per worker instead of once per test file.
   `dF.3 = {-1,0}`.
 - **Exhaustive successes (`e`)** — implemented as a capped follow-up loop after
   success counting; it should receive more Roll20-compatibility golden cases.
-- **Inline table references** — tables referenced by the main expression are
-  preloaded; tables referenced only from inside an inline roll are not preloaded
-  yet.
+- **Inline table references** — tables referenced by the main expression and by
+  inline rolls are preloaded with the same per-call repository context.
 - **Replay field names** — `RollResult.replay` uses `rngStateBefore` and
   `rngStateAfter`, matching the design document.
 - **Extra error codes** — implementation adds `PARSE_EMPTY`,
@@ -363,46 +364,63 @@ per worker instead of once per test file.
   `RNG_FAILURE`; there is no `Math.random` fallback.
 - **Table entry values** — numeric strings are totals; roll-like strings and
   `inlineRoll` values are evaluated with the same per-call context and RNG.
+- **Roll-once** — Roll20 defines reroll-once as `ro`, not a standalone `o`. The
+  previous bare `o` no-op was removed; `o` now falls through to trailing text.
+  Grouped keep/drop/success/failure behavior has golden tests.
+- **Snapshot replay** — seed-only RNGs record `replay.seed`. When replay state
+  contains non-serializable values, snapshots keep the serializable fields
+  (for example the seed) and drop functions; `createSnapshot` never throws for
+  an unserializable replay state.
+- **Label sanitization** — the engine stores labels/text verbatim. HTML escaping
+  and Markdown sanitization are owned by the chat/message boundary; renderers
+  must use text interpolation, not raw HTML.
+- **Parser caching** — token vocabularies, lexers and Chevrotain parsers are
+  cached per plugin set. Benchmarks cover parsing, arithmetic, keep-highest,
+  grouped rolls and snapshots; see `npm run test:perf:dice` and the CI
+  `dice-benchmarks` job.
 
 ### Newly discovered tasks
 
-- [ ] **DR-326** Implement full roll-once (`o`) semantics for tables and
-      grouped rolls.
+- [x] **DR-326** Resolve roll-once semantics as `ro` and add grouped-roll
+      keep/drop/success/failure goldens. Bare `o` is trailing text, not a
+      modifier; Roll20 does not define `o` for tables or groups.
 - [x] **DR-329** Document syntax and semantic differences from the reference
       `dice-roller-parser` implementation.
 - [x] **DR-330** Add coverage-gap tests for plugin registration, RNG helpers,
       snapshots, text rendering and visualizer fallbacks.
 - [x] **DR-331** Extract the shared RNG/weighted-sampling library and use it in
       both the dice roller and the probability calculator.
-- [ ] **DR-327** Add comma-separated reroll/explode modifier clause support and
+- [x] **DR-327** Add comma-separated reroll/explode modifier clause support and
       golden tests.
 - [x] **DR-328** Implement `mtN`/`mtN>X` argument and threshold semantics; the
       parser records them and evaluation now counts matching groups.
 - [x] **DR-346** Expand golden tests for Fudge variants, computed rounding and
       custom-face validation.
-- [ ] **DR-513** Add query-answer merging tests for identical child prompts
+- [x] **DR-513** Add query-answer merging tests for identical child prompts
       under different parents.
-- [ ] **DR-611** Preload tables referenced inside inline rolls.
-- [ ] **DR-612** Return `MISSING_DATA` instead of a parser error for forward or
+- [x] **DR-611** Preload tables referenced inside inline rolls.
+- [x] **DR-612** Return `MISSING_DATA` instead of a parser error for forward or
       unresolved inline references inside inline expressions.
-- [ ] **DR-712** Define and test fallback behavior when a table entry value is
+- [x] **DR-712** Define and test fallback behavior when a table entry value is
       neither numeric nor a roll expression.
-- [ ] **DR-811** Build a fixture-driven metadata completeness matrix.
-- [ ] **DR-909** Define replay for non-serializable RNG states and seed-only
+- [x] **DR-811** Build a fixture-driven metadata completeness matrix.
+- [x] **DR-909** Define replay for non-serializable RNG states and seed-only
       RNGs.
-- [ ] **DR-1009** Add an integration smoke test against the real
-      `@3d-dice/dice-box` adapter (currently host-mock tested).
-- [ ] **DR-1109** Add a CI benchmark job with the documented parse/evaluate
+- [x] **DR-1009** Superseded: the DiceBox adapter is being replaced by the
+      first-party Three.js + Rapier renderer in
+      [3d-dice-roller-ui.md](3d-dice-roller-ui.md); do not invest in a real
+      DiceBox smoke test.
+- [x] **DR-1109** Add a CI benchmark job with the documented parse/evaluate
       thresholds.
-- [ ] **DR-1212** Exercise the optional plugin `validate()` hook or document it
+- [x] **DR-1212** Exercise the optional plugin `validate()` hook or document it
       as reserved.
-- [ ] **DR-1213** Either implement plugin `grammar()` registration or remove it
-      from the public contract.
-- [ ] **DR-1214** Add group-modifier ordering golden tests beyond the current
+- [x] **DR-1213** Remove plugin `grammar()` from the public contract; plugins
+      contribute tokens and AST nodes instead.
+- [x] **DR-1214** Add group-modifier ordering golden tests beyond the current
       compare/keep cases.
-- [ ] **DR-1215** Add custom-dice edge tests for zero, negative and duplicate
+- [x] **DR-1215** Add custom-dice edge tests for zero, negative and duplicate
       faces.
-- [ ] **DR-1216** Document label escaping/sanitization ownership at the chat
+- [x] **DR-1216** Document label escaping/sanitization ownership at the chat
       boundary.
 
 ## Test matrix

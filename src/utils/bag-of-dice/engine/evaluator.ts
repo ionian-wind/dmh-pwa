@@ -11,7 +11,11 @@ import type {
 import { RollFailure, toRollErrors } from './errors';
 import { resolveLimits } from './limits';
 import { parseExpression } from './parser';
-import { createPluginRegistry, type PluginRegistry } from './plugin-registry';
+import {
+  createPluginRegistry,
+  validateAst,
+  type PluginRegistry,
+} from './plugin-registry';
 import { numberValue } from './plugins/arithmetic';
 
 export interface EvaluationSettings {
@@ -45,6 +49,10 @@ export function evaluateAst(
   settings: EvaluationSettings,
 ): EvaluationOutput {
   const registry = createPluginRegistry(settings.plugins);
+  const validationErrors = validateAst(ast, registry);
+  if (validationErrors.length > 0) {
+    throw new RollFailure(validationErrors);
+  }
   const limits = settings.limits ?? resolveLimits(settings.options);
   let group = 0;
 

@@ -139,12 +139,13 @@ export function createRollEngine(config: EngineConfig = {}): RollEngine {
         limits,
         ...(options.signal ? { signal: options.signal } : {}),
         evaluate: async (source) => {
-          const evaluated = evaluateTextSync(source, {
+          const evaluated = await evaluateText(source, {
             options,
             limits,
             rng,
             plugins,
             groupIdPrefix: `i${inlineIndex}-`,
+            warnings,
           });
           inlineIndex += 1;
           return {
@@ -303,14 +304,15 @@ async function finishRoll(settings: FinishSettings): Promise<RollResult> {
     },
     warnings: settings.warnings,
     ...(replay.rngStateBefore !== undefined ||
-    replay.rngStateAfter !== undefined
+    replay.rngStateAfter !== undefined ||
+    replay.seed !== undefined
       ? { replay }
       : {}),
   };
 }
 
 /** Parse and evaluate a nested expression synchronously, sharing the RNG. */
-function evaluateTextSync(
+async function evaluateText(
   source: string,
   settings: {
     options: EngineOptions;
@@ -318,8 +320,9 @@ function evaluateTextSync(
     rng: Rng;
     plugins: DicePlugin[];
     groupIdPrefix?: string;
+    warnings: RollWarning[];
   },
-): import('./contracts').EvalResult {
+): Promise<import('./contracts').EvalResult> {
   const parsed = parseExpression(source, {
     plugins: settings.plugins,
     maxRecovery: settings.limits.maxParserRecovery,
@@ -331,11 +334,25 @@ function evaluateTextSync(
         rollError('PARSE_EMPTY', 'empty inline roll', { pass: 'inline' }),
     );
   }
+
+  const tableCache = new Map<string, unknown>();
+  await preloadTables(
+    parsed.ast,
+    settings.options.repositories?.tables,
+    tableCache,
+    settings.limits,
+    settings.plugins,
+    0,
+    [],
+  );
+
   const output = evaluateAst(parsed.ast, {
     rng: settings.rng,
     options: settings.options,
     plugins: settings.plugins,
     limits: settings.limits,
+    cache: tableCache,
+    warnings: settings.warnings,
     ...(settings.groupIdPrefix
       ? { groupIdPrefix: settings.groupIdPrefix }
       : {}),

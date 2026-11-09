@@ -20,6 +20,7 @@
     "test:ui": "vitest --ui --printConsoleTrace=true --silent=false",
     "test:coverage": "vitest run --printConsoleTrace=true --silent=false --coverage",
     "test:probability-calculator": "vitest run src/utils/dice-probability-calculator",
+    "test:perf:dice": "vitest run tests/performance/dice-engine.performance.test.ts --printConsoleTrace=true --silent=false",
     "test:e2e": "playwright test",
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:firefox": "playwright test --project=firefox",

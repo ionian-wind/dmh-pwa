@@ -63,6 +63,16 @@ export async function processInlineRolls(
     if (!span) break;
     const source = text.slice(span.start + 2, span.end - 2);
     const resolvedSource = replaceReferences(source, records, false);
+    if (/\$\[\[\d+/.test(resolvedSource)) {
+      fail(
+        'MISSING_DATA',
+        'inline roll references must point to an earlier inline roll',
+        {
+          pass: 'inline',
+          span: { start: span.start + 2, end: span.end - 2 },
+        },
+      );
+    }
     const evaluated = await settings.evaluate(resolvedSource);
     checkAbort(settings.signal);
     const computed = Array.isArray(evaluated.value)

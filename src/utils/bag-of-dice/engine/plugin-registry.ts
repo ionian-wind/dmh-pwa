@@ -3,6 +3,7 @@ import type {
   DicePlugin,
   EvalContext,
   EvalResult,
+  RollError,
   TokenMap,
 } from './contracts';
 import { rollError } from './errors';
@@ -27,6 +28,7 @@ export interface PluginRegistry {
     options?: Omit<ParseOptions, 'plugins' | 'vocabulary'>,
   ): ParseResult;
   evaluate(node: AstNode, context: EvalContext): EvalResult;
+  validate(node: AstNode): RollError[];
 }
 
 /**
@@ -83,7 +85,43 @@ export function createPluginRegistry(
       }
       throw new Error(`no plugin handled AST node "${node.type}"`);
     },
+    validate(node) {
+      const preferred = plugins.find((plugin) => plugin.name === node.plugin);
+      const ordered = preferred
+        ? [preferred, ...plugins.filter((plugin) => plugin !== preferred)]
+        : plugins;
+      const errors: RollError[] = [];
+      for (const plugin of ordered) {
+        if (!plugin.validate) continue;
+        errors.push(...plugin.validate(node));
+      }
+      return errors;
+    },
   };
+}
+
+/** Recursively validate an AST with every plugin that opts in. */
+export function validateAst(
+  ast: AstNode,
+  registry: PluginRegistry,
+): RollError[] {
+  const errors: RollError[] = [];
+  const visit = (node: AstNode): void => {
+    errors.push(...registry.validate(node));
+    const record = node as unknown as Record<string, unknown>;
+    for (const key of ['left', 'right', 'operand', 'count', 'sides']) {
+      const child = record[key];
+      if (child && typeof child === 'object') visit(child as AstNode);
+    }
+    for (const key of ['args', 'rolls', 'modifiers']) {
+      const children = record[key];
+      if (Array.isArray(children)) {
+        for (const child of children) visit(child as AstNode);
+      }
+    }
+  };
+  visit(ast);
+  return errors;
 }
 
 /** Validate a plugin standalone; useful in registration tests. */

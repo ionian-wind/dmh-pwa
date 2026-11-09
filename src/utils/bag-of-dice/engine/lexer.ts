@@ -216,9 +216,13 @@ export function tokenize(
   source: string,
   vocabulary: TokenVocabulary,
 ): LexResult {
-  const lexer = new Lexer(vocabulary.allTokens, {
-    positionTracking: 'full',
-  });
+  let lexer = lexerCache.get(vocabulary);
+  if (!lexer) {
+    lexer = new Lexer(vocabulary.allTokens, {
+      positionTracking: 'full',
+    });
+    lexerCache.set(vocabulary, lexer);
+  }
   const result = lexer.tokenize(source);
   return {
     tokens: result.tokens,
@@ -230,6 +234,8 @@ export function tokenize(
     })),
   };
 }
+
+const lexerCache = new WeakMap<TokenVocabulary, Lexer>();
 
 export interface TokenSnapshot {
   name: string;

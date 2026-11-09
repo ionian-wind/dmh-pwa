@@ -700,6 +700,12 @@ Identity rules:
 - Keep raw/computed/rendered values for every index.
 - `%NEWLINE%` and final Markdown-lite rendering belong to the chat renderer;
   the engine records the corresponding segments/labels.
+- The engine does not escape labels. Labels, table text and trailing text are
+  stored verbatim in `RollResult` and snapshots. The chat/message boundary owns
+  HTML escaping and Markdown sanitization; renderers must insert text with
+  `textContent`/Vue interpolation, never `innerHTML`. This keeps the engine
+  renderer-agnostic and makes every consumer responsible for its own output
+  context (chat HTML, plain text, 3D tooltips).
 
 ### Optional table plugin
 
@@ -996,16 +1002,37 @@ These do not block the parser/evaluator build:
 - Chat can implement query/ability UI without parser changes.
 - Text/2D/3D renderers display the same recorded result.
 
+## Performance budgets
+
+`npm run test:perf:dice` (also a CI job) guards parse/evaluate/snapshot
+regressions. Budgets are intentionally loose (roughly 10–20× local runtime) so
+shared CI machines do not flap; they catch algorithmic regressions, not small
+timing noise.
+
+| Benchmark            | Iterations | Budget  |
+| -------------------- | ---------- | ------- |
+| Parse mixed syntax   | 1,000      | 1,000ms |
+| Arithmetic rolls     | 2,000      | 1,500ms |
+| `4d6kh3` rolls       | 1,000      | 750ms   |
+| Grouped success roll | 1,000      | 1,000ms |
+| Snapshot creation    | 500        | 250ms   |
+
+The lexer, token vocabulary and Chevrotain parser are cached per plugin set, so
+repeated rolls do not rebuild the grammar. A budget failure means a change made
+parsing or evaluation materially slower.
+
 ## Implementation deltas
 
 The engine is implemented under `src/utils/bag-of-dice` (see its README and the
 implementation tracker). Deltas discovered while building it:
 
 - grouped-roll homogeneity is enforced as "must contain dice";
-- `o` is parsed/recorded but not yet fully semantic;
-- inline-table preloading is limited to tables referenced by the main
-  expression;
-- plugin grammar registration is reserved, not active;
+- bare `o` is not a Roll20 modifier and is no longer parsed as one; reroll-once
+  uses `ro`, and a trailing `o` is stored as trailing text;
+- tables referenced from inside inline rolls are preloaded with the per-call
+  repository context;
+- plugin grammar registration was removed from the public contract; plugins
+  contribute tokens and AST nodes instead;
 - exhaustive-success (`e`) behavior is a capped follow-up loop and needs more
   compatibility golden cases;
 - `mtN`/`mtN>X` now counts matching groups;
@@ -1026,7 +1053,8 @@ Summary:
 - Keep/drop sizes and reroll/explode/success targets accept integer/compare
   forms here, while the reference accepts full roll expressions.
 - `s>N` means success counting here; in the reference `s` is sort-only.
-- `o` roll-once is parsed but currently a no-op.
+- `o` is not a modifier; use `ro` for reroll-once. A bare `o` is treated as
+  trailing text.
 - Target-number compares (`>`, `<`) are inclusive for reference compatibility.
 - Single-member grouped rolls apply modifiers to individual dice; multi-member
   groups apply them to sub-roll totals.
