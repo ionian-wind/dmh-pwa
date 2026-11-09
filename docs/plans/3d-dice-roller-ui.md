@@ -224,7 +224,8 @@ assets without Babylon.
       grouped.
 
 **Gate:** the grid builds a pool, explosion extras settle separately, and every
-roll emits one individual plus one pool event.
+roll emits one individual plus one pool event. Reroll reapplies the currently
+selected explosion state to every pooled batch.
 
 ## Phase 6 — Migration and cleanup
 

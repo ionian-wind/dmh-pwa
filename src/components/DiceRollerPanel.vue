@@ -179,7 +179,10 @@ function reroll() {
   try {
     renderer.clear();
     for (const entry of pool.value) {
-      renderer.add(makeVisuals(entry.row, entry.count, entry.mode));
+      // Reroll uses the current explosion state, not the state from when the
+      // batch was originally added.
+      entry.mode = mode.value;
+      renderer.add(makeVisuals(entry.row, entry.count, mode.value));
     }
     rollError.value = false;
   } catch {

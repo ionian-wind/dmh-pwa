@@ -870,7 +870,7 @@ panel raises it without closing the others.
 
 The tray UI is a Roll20-style grid: each row is a die type, the row label rolls
 one die, and the 2–5 columns add that many dice to the pool. Reroll replays the
-whole pool, Clear removes it, and `!`, `!!`, `!p` select explosion modes. FUDGE
+whole pool using the currently selected explosion mode, Clear removes it, and `!`, `!!`, `!p` select explosion modes. FUDGE
 uses the shipped `fate` asset and values `-1/0/1`. Explosion extras are separate
 random throws.
 

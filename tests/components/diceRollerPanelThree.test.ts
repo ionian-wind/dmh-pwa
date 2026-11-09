@@ -295,6 +295,37 @@ describe('DiceRollerPanel with the Three renderer', () => {
     wrapper.unmount();
   });
 
+  it('rerolls with the currently selected explosion mode', async () => {
+    const wrapper = mountPanel();
+    await flushPromises();
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
+    );
+
+    const modeButton =
+      document.querySelector<HTMLElement>('.dice-roller-mode')!;
+    modeButton.click();
+    await nextTick();
+    cell('d6', 2).click();
+    await nextTick();
+    expect(mocks.three.add.mock.calls[0][0][0]).toMatchObject({
+      explode: '!',
+    });
+
+    modeButton.click();
+    await nextTick();
+    mocks.three.add.mockClear();
+    document
+      .querySelectorAll<HTMLElement>('.dice-roller-footer-button')[0]
+      .click();
+    await nextTick();
+    expect(mocks.three.clear).toHaveBeenCalled();
+    expect(mocks.three.add).toHaveBeenCalledTimes(1);
+    expect(mocks.three.add.mock.calls[0][0][0].explode).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it('falls back to DiceBox when the Three renderer cannot start', async () => {
     mocks.three.init.mockRejectedValue(new Error('no webgl'));
     const wrapper = mountPanel();
