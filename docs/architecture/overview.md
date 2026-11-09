@@ -174,10 +174,18 @@ navigation.
 
 - `PWAInstallPrompt`, `PWAStatus`, and `CommitBadge` are always mounted.
 - `SettingsDialog` is always mounted and opened from the footer nav.
-- Feature globals (`CalculatorGlobal`, `JukeboxGlobal`) mount the calculator and
-  sound-control bottom sheets.
+- Feature globals (`CalculatorGlobal`, `JukeboxGlobal`, `TimersGlobal`) mount the
+  calculator, sound-control bottom sheet, and timer panel.
 - `FeatureLinking` mounts `MentionModalStack` and the drag-linking overlay when
   at least one linking feature is enabled.
+
+### Icons
+
+Quasar uses a custom Tabler icon set from
+`src/plugins/quasar-tabler-icon-set.ts`. It maps Quasar's built-in icon slots to
+raw Tabler SVG paths and exposes `tabler-<name>` through `iconMapFn`, so Quasar
+icon props (including `QExpansionItem`'s `expand-icon`) can use names such as
+`tabler-plus`.
 
 ## Routing (`src/router.ts`)
 

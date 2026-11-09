@@ -29,7 +29,7 @@ const DraggablePanelStub = defineComponent({
 
 const QExpansionItemStub = defineComponent({
   name: 'QExpansionItem',
-  props: { modelValue: Boolean },
+  props: { modelValue: Boolean, expandIcon: String },
   emits: ['update:modelValue'],
   setup(props, { slots, emit }) {
     return () =>
@@ -38,6 +38,7 @@ const QExpansionItemStub = defineComponent({
         {
           'data-stub': 'QExpansionItem',
           'data-expanded': String(props.modelValue),
+          'data-expand-icon': props.expandIcon,
         },
         [
           h(
@@ -112,6 +113,7 @@ describe('TimersPanel', () => {
 
     expect(wrapper.findAllComponents(TimerListItemStub)).toHaveLength(1);
     expect(expansion(wrapper).props('modelValue')).toBe(false);
+    expect(expansion(wrapper).props('expandIcon')).toBe('tabler-plus');
     expect(wrapper.findComponent(TimerEditorStub).props('timer')).toBeNull();
 
     await wrapper.find('.expansion-header').trigger('click');
@@ -155,6 +157,7 @@ describe('TimersPanel', () => {
     item.vm.$emit('edit');
     await flushPromises();
     expect(expansion(wrapper).props('modelValue')).toBe(true);
+    expect(expansion(wrapper).props('expandIcon')).toBe('tabler-pencil');
     expect(wrapper.findComponent(TimerEditorStub).props('timer')).toMatchObject(
       {
         id: 't1',

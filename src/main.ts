@@ -17,7 +17,9 @@ import { debug, debugWarn, debugError } from './utils/debug';
 import { Quasar, Dialog, Notify, Dark } from 'quasar';
 import quasarLangRu from 'quasar/lang/ru';
 import quasarLangEn from 'quasar/lang/en-US';
-import quasarIconSet from 'quasar/icon-set/svg-fontawesome-v7';
+import quasarIconSet, {
+  tablerIconMapFn,
+} from '@/plugins/quasar-tabler-icon-set';
 
 import 'vue3-openlayers/vue3-openlayers.css';
 
@@ -78,6 +80,8 @@ app.use(Quasar, {
   plugins: { Notify, Dialog, Dark }, // import Quasar plugins and add here
   lang: quasarLangRu,
   iconSet: quasarIconSet,
+  // Quasar reads the icon map from its runtime config object.
+  config: { iconMapFn: tablerIconMapFn } as any,
 });
 
 // Sync Quasar Dark mode and the document color scheme with the saved theme.

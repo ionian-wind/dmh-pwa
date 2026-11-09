@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconPencil, IconPlus, IconX } from '@tabler/icons-vue';
+import { IconX } from '@tabler/icons-vue';
 import DraggablePanel from '@/components/common/DraggablePanel.vue';
 import TimerEditor from '@/timers/TimerEditor.vue';
 import TimerListItem from '@/timers/TimerListItem.vue';
@@ -27,8 +27,6 @@ const open = computed({
 const formLabel = computed(() =>
   timerToEdit.value ? t('timers.edit') : t('timers.create'),
 );
-
-const formIcon = computed(() => (timerToEdit.value ? IconPencil : IconPlus));
 
 function openEdit(timer: Timer): void {
   timerToEdit.value = timer;
@@ -114,12 +112,13 @@ onMounted(async () => {
       </QList>
 
       <QSeparator />
-      <QExpansionItem v-model="formExpanded" class="timers-form-expansion">
+      <QExpansionItem
+        v-model="formExpanded"
+        class="timers-form-expansion"
+        :expand-icon="timerToEdit ? 'tabler-pencil' : 'tabler-plus'"
+      >
         <template #header>
           <QItemSection>{{ formLabel }}</QItemSection>
-          <QItemSection side>
-            <component :is="formIcon" :size="18" />
-          </QItemSection>
         </template>
         <div class="timers-form-body">
           <TimerEditor
