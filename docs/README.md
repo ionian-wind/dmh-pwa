@@ -96,20 +96,21 @@ implemented.
 
 ### Cross-cutting analysis
 
-| Document                                                                                 | Covers                                              |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| [integration/cross-part-behavior.md](integration/cross-part-behavior.md)                 | How parts call each other; end-to-end flows         |
-| [proposals/technical-proposals.md](proposals/technical-proposals.md)                     | Engineering improvements and refactors              |
-| [proposals/roll20-style-chat-engine.md](proposals/roll20-style-chat-engine.md)           | Local chat/macro/template engine proposal           |
-| [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index       |
-| [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass        |
-| [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture |
-| [proposals/hotkeys-and-command-menu.md](proposals/hotkeys-and-command-menu.md)           | Global hotkeys and the command menu                 |
-| [proposals/help-center-search.md](proposals/help-center-search.md)                       | Offline search across localized help pages          |
-| [proposals/global-and-local-search.md](proposals/global-and-local-search.md)             | Local fuzzy suggestions and global entity search    |
-| [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage   |
-| [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                |
-| [proposals/image-filters-and-composition.md](proposals/image-filters-and-composition.md) | Filter stacks, layers and image composition         |
+| Document                                                                                 | Covers                                               |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [integration/cross-part-behavior.md](integration/cross-part-behavior.md)                 | How parts call each other; end-to-end flows          |
+| [proposals/technical-proposals.md](proposals/technical-proposals.md)                     | Engineering improvements and refactors               |
+| [proposals/roll20-style-chat-engine.md](proposals/roll20-style-chat-engine.md)           | Local chat commands, rendering and delivery proposal |
+| [proposals/macro-library-editor.md](proposals/macro-library-editor.md)                   | Monaco macro library/editor proposal                 |
+| [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index        |
+| [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass         |
+| [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture  |
+| [proposals/hotkeys-and-command-menu.md](proposals/hotkeys-and-command-menu.md)           | Global hotkeys and the command menu                  |
+| [proposals/help-center-search.md](proposals/help-center-search.md)                       | Offline search across localized help pages           |
+| [proposals/global-and-local-search.md](proposals/global-and-local-search.md)             | Local fuzzy suggestions and global entity search     |
+| [proposals/generic-file-handling.md](proposals/generic-file-handling.md)                 | OPFS, streaming, backups and generic file storage    |
+| [proposals/image-quick-tools.md](proposals/image-quick-tools.md)                         | Crop/resize/convert/compress utility                 |
+| [proposals/image-filters-and-composition.md](proposals/image-filters-and-composition.md) | Filter stacks, layers and image composition          |
 
 ## Conventions used in this documentation
 

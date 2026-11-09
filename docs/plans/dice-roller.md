@@ -1,99 +1,153 @@
 # Dice Roller
 
-> **Status: planned — greenfield implementation.** This document specifies an
-> extensible dice-notation parser and evaluator built from scratch. Chat,
-> macros, roll queries, inline rolls, templates and delivery are covered by
+> **Status: planned — greenfield implementation.** This document specifies the
+> extensible parser/evaluator for dice and roll syntax. Chat commands, chat UI,
+> message delivery and visibility are covered by
 > [proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md).
 
 ## Purpose
 
-Build a reusable dice engine that:
+Build a reusable roll engine that:
 
-- parses dice notation into a typed AST;
-- evaluates dice, modifiers, groups and math through plugins;
-- returns structured roll records rather than presentation text;
-- supports deterministic RNG and typed errors/warnings;
-- can be embedded in a chat engine, combat tracker, macro runner or sheet tool.
+- parses dice notation and roll syntax into a typed AST/IR;
+- expands macros, abilities and attributes through async repositories;
+- extracts roll queries and accepts answers from a UI or caller;
+- evaluates inline rolls, labels, tables, dice, modifiers and math;
+- returns a `RollResult` containing both the final result and metadata that
+  describes the full roll process for rendering;
+- supports deterministic RNG and typed errors/warnings.
 
-The engine is one pass in a larger system. It receives an already-expanded dice
-expression and does not own macros, attributes, roll queries, inline rolls, roll
-templates, chat commands or visibility.
+The engine owns syntax and evaluation. Chat owns commands, prompts/UI, message
+rendering, recipients and visibility.
 
-## Boundary with the chat engine
+## Scope split
 
-| Concern                                                       | Owner              |
-| ------------------------------------------------------------- | ------------------ |
-| Dice notation, modifiers, groups, arithmetic, roll evaluation | dice engine        |
-| Chat commands, macros, abilities, attributes                  | chat engine        |
-| Roll queries and inline-roll expansion                        | chat engine        |
-| Roll templates, buttons, chat delivery and visibility         | chat engine        |
-| Visualization of roll records                                 | presentation layer |
+| Concern                                                    | Owner                      |
+| ---------------------------------------------------------- | -------------------------- |
+| Dice notation, modifiers, groups, arithmetic               | roll engine                |
+| Macro, ability and attribute syntax + expansion            | roll engine                |
+| Roll-query syntax, extraction, validation and substitution | roll engine                |
+| Inline rolls, labels, roll references and table syntax     | roll engine                |
+| Roll result metadata / process trace                       | roll engine                |
+| Chat commands (`/r`, `/w`, `/em`, `/gmroll`, ...)          | chat proposal              |
+| Roll-query and ability-call UI                             | chat proposal — next steps |
+| Roll templates, chat buttons/menus, message rendering      | chat proposal              |
+| Chat delivery, history, visibility and permissions         | chat proposal              |
 
-The chat engine calls the dice engine after its expansion/query/inline passes.
-The dice engine returns roll records; it never renders or sends chat messages.
+UI for resolving roll queries and choosing ability/attribute targets is
+explicitly deferred. The engine returns request objects and accepts answers; it
+does not render prompts.
 
 ## Design principles
 
 - **Extensible parser/evaluator.** Syntax families are plugins with their own
-  grammar contribution, AST nodes, extraction and evaluation.
-- **Typed AST first.** Parse to a typed AST; evaluate the AST, never the CST or
-  the raw string directly.
-- **Separate grammar per plugin.** Compose token vocabularies per grammar; do
-  not create one mega-grammar.
-- **Results are data.** A roll is a structured record; text/2D/3D rendering is
-  downstream.
-- **Deterministic under an injected RNG.** Tests and replays must reproduce
-  exact dice values.
-- **Explicit errors.** Parse, validation, missing-data and limit failures are
-  typed and carry source spans.
-- **No arbitrary code execution.** Plugins are declarative and bounded.
+  grammar, AST nodes, extraction and evaluation.
+- **Typed AST/IR first.** Evaluate structured nodes, never the CST or raw text.
+- **Separate grammar per plugin/pass.** Compose Chevrotain vocabularies per
+  grammar; no mega-grammar.
+- **Async external data.** Macros, abilities and attributes are resolved through
+  injected async repositories.
+- **Results are data + process.** `RollResult` must contain the total and enough
+  metadata to reproduce/render the roll, including drops, rerolls, explosions,
+  labels and arithmetic steps.
+- **Deterministic under an injected RNG.**
+- **Explicit errors and limits.**
 
 ## Parser technology
 
-Use the existing **Chevrotain 13.2.0** dependency for grammar-based parsing:
+Use the existing **Chevrotain 13.2.0** dependency:
 
-- each plugin owns its token definitions and parser rules;
-- create one `Lexer` and parser class per grammar/pass, not one global parser;
-- convert Chevrotain CSTs into explicit typed AST nodes;
-- use token categories, recovery and error reporting, then wrap failures in
-  typed engine errors with source spans;
-- text preprocessing that is not grammar-based (trimming, injection of external
-  dice values) stays outside Chevrotain.
+- each plugin owns token definitions and parser rules;
+- one lexer/parser class per grammar/pass;
+- convert CSTs to explicit typed AST nodes;
+- wrap Chevrotain recovery/errors with pass/plugin name and source spans;
+- non-grammar scanning (attribute/macro expansion boundaries, HTML entity
+  decoding) stays outside Chevrotain.
 
-No hand-written tokenizer/parser stack is planned.
+Prior art to evaluate before finalizing grammar coverage:
+
+- [`ttg-club/dice-roller-parser`](https://github.com/ttg-club/dice-roller-parser)
+  — existing JavaScript Roll20-style parser/evaluator. Use it as a coverage
+  reference and source of edge cases; it likely does not implement the full
+  syntax or pass order, so it is not automatically the implementation.
 
 ## Engine pipeline
 
 ```
-dice expression text
-  -> lexer            Chevrotain tokens for this grammar
-  -> parser           Chevrotain rules
-  -> CST -> AST       explicit typed node conversion
-  -> extraction       optional plugins expose metadata (tables, labels, ...)
-  -> evaluation       plugin evaluators produce roll records
-  -> RollResult       total, groups, records, warnings
+roll expression text
+  -> expansion pass         macros, abilities, attributes (async repositories)
+  -> query extraction       ?{...} -> RollQueryRequest[]
+  -> caller provides answers
+  -> inline-roll pass       [[...]], labels, stable roll indexes
+  -> dice parser/evaluator  Chevrotain AST + plugin evaluation
+  -> math/arithmetic pass
+  -> RollResult             total + roll process metadata
 ```
 
-The engine may expose:
+A convenience `roll()` call can run the full pipeline when supplied with query
+answers and external data. Extraction should also be available separately so a
+UI can ask the user first:
 
 ```ts
-parse(input: string): DiceAst;
-evaluate(ast: DiceAst, context: DiceContext): RollResult;
-roll(input: string, context: DiceContext): RollResult;
-extract(ast: DiceAst): Record<string, unknown[]>;
+const extraction = engine.extract(input);
+const answers = await ui.ask(extraction.queries);
+const result = await engine.roll(input, {
+  repositories,
+  queryAnswers: answers,
+  rng,
+});
 ```
+
+## Async repositories
+
+External data is injected, not hard-coded. The macro source is a configurable
+async repository:
+
+```ts
+interface MacroRepository {
+  get(name: string): Promise<MacroDefinition | undefined>;
+}
+
+interface AbilityRepository {
+  get(
+    character: string,
+    ability: string,
+  ): Promise<AbilityDefinition | undefined>;
+}
+
+interface AttributeRepository {
+  get(
+    character: string | 'selected' | 'target',
+    attribute: string,
+    options?: { max?: boolean; rowIndex?: number; rowId?: string },
+  ): Promise<AttributeValue | undefined>;
+}
+
+interface TableRepository {
+  get(name: string): Promise<TableDefinition | undefined>;
+}
+```
+
+`RollEngineOptions` should accept these repositories plus an optional
+`macroSource`/`abilitySource`/`attributeSource` override for tests, packs or
+remote providers. Reads are async so implementations can use IndexedDB, file
+packs, a network API or an in-memory test double without changing the parser.
 
 ## Core contracts
 
-### DiceContext
+### RollContext
 
 ```ts
-interface DiceContext {
+interface RollContext {
   rng: () => number;
-  maxExplosionRolls?: number;
-  tables?: Record<string, TableDefinition>;
+  macros: MacroRepository;
+  abilities: AbilityRepository;
+  attributes: AttributeRepository;
+  tables?: TableRepository;
+  queryAnswers?: Record<string, string>;
   allowInfinite?: boolean;
-  metadata?: Record<string, unknown>;
+  maxExpansionDepth?: number;
+  maxExplosionRolls?: number;
 }
 ```
 
@@ -102,16 +156,77 @@ interface DiceContext {
 ```ts
 interface RollResult {
   total: number;
-  groups: DiceGroupResult[];
-  records: DieRecord[];
+  breakdown: RollBreakdown;
+  process: RollProcess;
   warnings: RollWarning[];
-  details?: Record<string, unknown>;
+  errors?: RollError[];
 }
 ```
 
-### DieRecord
+### RollProcess metadata
+
+The result must describe the complete roll, not just the final number:
+
+- raw input and fully expanded expression;
+- ordered pass records;
+- macro/ability/attribute expansions with source and resolved value;
+- query requests and answers;
+- inline-roll records with stable indexes and raw/computed values;
+- dice groups and every die's original/final value;
+- kept/dropped/rerolled/exploded/compounded/penetrating flags;
+- applied modifiers and order;
+- success/failure/critical counts;
+- arithmetic/function evaluation trace;
+- labels and display segments;
+- table selections;
+- warnings/errors with source spans.
+
+Suggested shapes:
 
 ```ts
+interface RollBreakdown {
+  segments: RollSegment[];
+  groups: DiceGroupResult[];
+  rawTotal: number;
+  finalTotal: number;
+}
+
+type RollSegment =
+  | { kind: 'dice'; text: string; groupIds: string[]; result?: number }
+  | { kind: 'modifier'; text: string; modifier?: string; result?: number }
+  | { kind: 'math'; text: string; result?: number }
+  | { kind: 'label'; text: string }
+  | { kind: 'text'; text: string };
+
+interface PassRecord {
+  name: string;
+  input: string;
+  output: string;
+  warnings: RollWarning[];
+}
+
+interface ExpansionRecord {
+  kind: 'macro' | 'ability' | 'attribute';
+  source: string;
+  name: string;
+  value: string;
+  depth: number;
+}
+
+interface QueryAnswerRecord {
+  prompt: string;
+  answer: string;
+  sourceSpan: { start: number; end: number };
+}
+
+interface InlineRollRecord {
+  index: number;
+  source: string;
+  rawResult: number | number[];
+  computedResult?: number;
+  warnings: RollWarning[];
+}
+
 interface DieRecord {
   groupId: string;
   sides: number | null;
@@ -125,252 +240,243 @@ interface DieRecord {
   rerolled?: boolean;
   label?: string;
 }
-```
 
-### DiceGroupResult
-
-```ts
 interface DiceGroupResult {
   id: string;
   kind: 'dice' | 'fudge' | 'custom' | 'group';
   dice: DieRecord[];
   total: number;
-  modifiers: AppliedModifier[];
+  modifiers: string[];
   labels?: string[];
+}
+
+interface ArithmeticTrace {
+  expression: string;
+  result: number;
+  nodeType: string;
+  children?: ArithmeticTrace[];
+}
+
+interface RollProcess {
+  raw: string;
+  expanded: string;
+  passes: PassRecord[];
+  expansions: ExpansionRecord[];
+  queries: QueryAnswerRecord[];
+  inlineRolls: InlineRollRecord[];
+  arithmetic: ArithmeticTrace[];
 }
 ```
 
-Contracts are provisional but must be fixed before visualization adapters or
-chat integration are built.
+`RollSegment[]` is the primary UI contract: it describes the visible roll
+breakdown (dice, modifiers, math, labels, text) and references the detailed
+group/die records for tooltips and animations. 3D dice and chat cards both read
+this metadata; neither recomputes the roll.
 
-## Plugin architecture
-
-A plugin owns one syntax family. It declares:
-
-- token definitions;
-- parser rules;
-- CST-to-AST conversion;
-- AST node types;
-- extraction behavior;
-- evaluation behavior;
-- validation and typed errors.
-
-The core composes plugins in a fixed order. A plugin must explicitly report
-`not-handled`; generic errors must not be used as fallback control flow.
-
-Planned plugins:
-
-| Plugin        | Responsibility                                             |
-| ------------- | ---------------------------------------------------------- |
-| arithmetic    | numbers, unary signs, math functions and precedence        |
-| dice          | dice types, compare points, modifiers and groups           |
-| tables        | optional `Nt[table]` parsing/evaluation with external data |
-| custom-dice   | optional custom-die syntax and validation                  |
-| computed-dice | optional computed count/sides expressions                  |
-| labeling      | optional dice labels and display metadata                  |
-
-Chat-oriented plugins are not part of this engine. See the chat proposal.
-
-## Notation specification
+## Syntax and evaluation
 
 ### Arithmetic and functions
 
-Operators: `+`, `-`, `*`, `/`, `%`, `**`, parentheses. Math-only expressions
-such as `5+7*2` are valid. Supported functions: `floor(x)`, `round(x)`,
-`ceil(x)`, `abs(x)`.
+Operators: `+`, `-`, `*`, `/`, `%`, `**`, parentheses. Math-only expressions are
+valid. Functions: `floor(x)`, `round(x)`, `ceil(x)`, `abs(x)`.
 
 Precedence: parentheses, functions, exponentiation, multiplication/division/
 modulus left-to-right, addition/subtraction left-to-right.
 
 ### Dice
 
-- `NdX`, `dX`: N dice with X sides; N defaults to 1.
-- `d%`: alias for `d100`.
-- `dF`, `dF.1`, `dF.2`, `dF.3`: Fudge/FATE variants.
-- Computed dice: `(N+Y)dX`, `Nd(X+Y)`, `(1+2)dF`; parenthesised values are
-  rounded.
+- `NdX`, `dX`; `d%` = `d100`.
+- `dF`, `dF.1`, `dF.2`, `dF.3` Fudge variants.
+- Computed dice: `(N+Y)dX`, `Nd(X+Y)`, `(1+2)dF`; parenthesised values round.
 - Custom dice: `d[1,2,3,5,8]`.
 - Grouped rolls: `{1d6, 2d8+1, 1d4-1}`.
-- Math on dice: `round(1d6/2)`.
 - Labels: `2d6[fire]`.
-- Descriptive text after a roll is not part of the engine; it is chat output.
+- Math on dice: `round(1d6/2)`.
 
 ### Compare points
 
-A compare point is an optional operator plus target number:
-
-- `3` → equal to 3;
-- `>3` → greater than or equal to 3;
-- `<3` → less than or equal to 3.
-
-Successes, failures, explosions, rerolls and matching use this convention.
-Modifiers state whether they apply to basic (`B`) and/or Fudge (`F`) dice.
+Optional operator plus target: `3` = equal, `>3` = at or above, `<3` = at or
+below. Successes, failures, explosions, rerolls and matching use this convention.
 
 ### Dice modifiers
 
-- Successes: `CP`; e.g. `3d6>3`, `10d6<4`.
-- Failures: `fCP`; only valid with a success check, e.g. `3d6>3f1`.
-- Keep/drop: `khN`, `klN`, `dhN`, `dlN`; shorthand `kN` / `dN`.
-- Rerolls: `rCP` rerolls until outside the compare point; `roCP` rerolls once;
-  `r` with no CP rerolls 1s. Multiple clauses are allowed.
-- Explosions:
-  - `!` explode on maximum;
-  - `!CP` custom threshold;
-  - `!p` penetrating (each extra die gets −1);
-  - `!!` compounding (extra rolls merge into the same die);
-  - `!<N`, `!>N`, `!=N` directional thresholds.
-  - Cap additional rolls (default 99) and emit a warning.
-- Dice pools: `=N`, `>N`, `<N`, `e`, `s`, `f`, `cs`, `cf`.
-- Min/max per die: `miN`, `maN`.
-- Matching: `m` shows matches; `mt` counts matching groups; `mtN` requires N
-  matching dice; `mtN>X` requires N matches at or above X.
-- Sorting: `s`/`sa` ascending (default), `sd` descending.
-- Roll once: `o`.
-- Chained modifiers, e.g. `4d6kh3ro1!>5sd`.
-- Nested groups, e.g. `{2d6kh1, 1d8}kh1`.
-- Advantage/disadvantage use `2d20kh1` / `2d20kl1`.
-
-Modifier application order:
-
-1. exploding, compounding, penetrating and rerolls while dice are rolling;
-2. keep/drop, success/failure counting and sorting after dice settle.
+- Successes `CP`, failures `fCP` (only with a success check).
+- Keep/drop `khN`, `klN`, `dhN`, `dlN`; shortcuts `kN`/`dN`.
+- Rerolls `rCP` until outside compare point; `roCP` once; `r` = reroll 1s.
+- Explosions `!`, `!CP`, `!p`, `!!`, `!<N`, `!>N`, `!=N`; cap and warn.
+- Pools/counting `=N`, `>N`, `<N`, `e`, `s`, `f`, `cs`, `cf`.
+- Matching `m`, `mt`, `mtN`, `mtN>X`.
+- Min/max `miN`, `maN`; sorting `s`/`sa`/`sd`; roll once `o`.
+- Chained modifiers and nested group modifiers.
+- Two-phase order: roll-time (explode/reroll) then settled modifiers
+  (keep/drop/success/failure/sort).
 
 ### Grouped rolls
 
-- `{...}` groups sub-rolls. With commas each sub-expression is totaled before
-  group modifiers; without commas modifiers apply across individual dice.
-- All sub-rolls must be the same kind: sum rolls, success rolls or compatible
-  nested groups.
-- Group modifiers include keep/drop, successes and failures.
-- `{5d6!!}>8` means compound each die, then count successes against 8.
+- Commas total each sub-expression before group modifiers; without commas,
+  modifiers apply across individual dice.
+- Sub-rolls must be the same kind (sum, success or compatible nested groups).
+- `{5d6!!}>8` means compound each die, then count successes.
+
+### Macros, abilities and attributes
+
+- Macros: `#macro-name`; nested/chained calls allowed.
+- Abilities: `%{character|ability}`.
+- Attributes: `@{character|attribute}`, `@{selected|...}`, `@{target|...}`,
+  token bars and optional `max`.
+- Repeating sections: `repeating_section_$N_field` or RowID.
+- Names are case-insensitive.
+- Expansion is async through repositories and repeated up to a limit (default 99) until stable.
+- Undefined calls are missing-data errors unless the caller requests
+  `noerror` semantics.
+- Expansion records become part of `RollResult.process`.
+
+The chat UI for choosing selected/target tokens or abilities is next-step work;
+the engine only requests/resolves them through the repositories.
+
+### Roll queries
+
+- `?{Prompt}`, `?{Prompt|Default}`, `?{Prompt|Option1|Option2}`.
+- `?{Prompt|Label 1,value1|Label 2,value2}` separates label/value.
+- Query defaults may contain inline rolls.
+- Same prompt asked once per message.
+- Nested queries require HTML-entity escaping; 99-level limit.
+- Extraction returns `RollQueryRequest[]`; answers are validated and substituted.
+- UI prompts are deferred to the chat proposal.
+
+### Inline rolls, labels and references
+
+- Inline rolls `[[expr]]`, innermost first, stable `$[[n]]` indexes.
+- Labels `[[3d6[fire]]]`; labels may contain attribute calls/Markdown-lite.
+- Roll references `$[[n]]`, `$[[n.computed]]`; missing index is missing-data.
+- Keep raw/computed/rendered values for every index.
+- `%NEWLINE%` and final Markdown-lite rendering belong to the chat renderer;
+  the engine records the corresponding segments/labels.
 
 ### Optional table plugin
 
-`Nt[table]` may be implemented as an optional plugin for systems that need it.
-The engine accepts table data through `DiceContext.tables`; table management,
-commands, permissions and UI belong to the chat proposal. Table entries may
-contain dice expressions, which the engine can evaluate recursively with a
-bounded depth.
+`Nt[table]`/`t[table]` may be parsed/evaluated with `TableRepository`. Table
+management UI, permissions and chat commands belong to the chat proposal.
 
 ## Errors and limits
 
-- Explicit parse errors for unknown tokens, malformed dice, invalid modifiers
-  and mismatched groups.
-- Validation errors for invalid counts, sides, keep/drop amounts and modifier
-  arguments.
-- Missing-data errors for optional plugins when required external data is
-  absent.
-- Explosion/reroll limits are warnings, not errors.
-- Bounded recursion for nested groups and optional table entries.
-- Every error carries a pass/plugin name and source span.
+- Parse errors: unknown tokens, malformed dice, invalid modifiers, mismatched
+  groups.
+- Validation errors: invalid counts/sides/keep/drop/modifier arguments.
+- Missing-data errors: unresolved macro/ability/attribute/table/reference.
+- Limits: expansion depth, query depth, inline nesting, explosion count,
+  table recursion, output size and pass time.
+- Explosion/reroll caps are warnings.
+- Errors carry plugin/pass and source span.
 
 ## RNG and determinism
 
-- `DiceContext.rng` is required for evaluation; a default cryptographic RNG can
-  be supplied by callers that want one.
-- The same input + same RNG sequence + same context must produce the same
-  `RollResult`.
-- Roll records retain original and final values so 2D/3D visualizations can
-  animate without re-rolling.
-- Replay IDs or seeds are a caller concern, not an engine side effect.
+- `RollContext.rng` is required for evaluation.
+- Same input + RNG sequence + repositories + query answers = same result.
+- Roll records retain original/final values for animation without re-rolling.
+- Replay IDs/seeds are caller concerns.
 
 ## Visualization
 
-The engine is visualization-neutral. A `RollResult` can be rendered as:
+Engine returns data; presentation is separate:
 
-- text/chat card (required baseline);
-- a 2D dice breakdown;
+- text/chat card baseline;
+- 2D dice breakdown;
 - optional 3D dice animation.
 
-Rules:
-
-- 3D dice display supplied values; they never decide the result or consume RNG.
-- Text output must remain available with 3D dice enabled.
-- Reduced motion, accessibility and low-power devices must be supported.
-- Visualization adapters must not mutate roll records.
+3D dice display supplied values, never choose results or consume RNG. Text must
+remain available; reduced motion and accessibility are required.
 
 ## Implementation phases
 
-1. **Core contracts** — AST, result, records, context, errors and warnings.
-2. **Chevrotain core** — lexer/parser setup, CST-to-AST conversion and plugin
-   composition.
-3. **Arithmetic plugin** — numbers, functions, precedence and unary signs.
-4. **Dice plugin** — dice types, compare points, modifiers and groups.
-5. **Optional plugins** — tables, custom dice, computed dice, labels.
-6. **Visualization adapters** — text/2D baseline, optional 3D.
-7. **Test matrix** — parser, AST, modifier interactions, RNG and visualization.
-
-The chat engine is a separate implementation track.
+1. **Core contracts** — AST, process metadata, result, context, repositories.
+2. **Chevrotain core** — lexer/parser helpers, CST-to-AST, plugin composition.
+3. **Arithmetic + dice** — all dice types, compare points, modifiers, groups.
+4. **Expansion** — macros, abilities, attributes with async repositories.
+5. **Queries and inline rolls** — extraction, answers, labels, indexes,
+   references.
+6. **Optional table plugin** — table references and evaluation.
+7. **Process metadata** — complete trace for UI rendering.
+8. **Visualization adapters** — text/2D baseline, optional 3D.
+9. **Test matrix** — parser, AST, modifier chains, expansion, queries, inline,
+   RNG and metadata.
+10. **UI next steps** — query prompts and ability selectors belong to chat.
 
 ## Planned module layout
 
-Names are provisional; the boundaries matter more than paths.
-
-| Module             | Responsibility                                      |
-| ------------------ | --------------------------------------------------- |
-| `engine/contracts` | AST, records, results, context, errors              |
-| `engine/lexer`     | Chevrotain token definitions and vocabulary helpers |
-| `engine/parser`    | Parser classes and CST-to-AST conversion            |
-| `engine/evaluator` | AST traversal and plugin dispatch                   |
-| `engine/plugins`   | Arithmetic, dice and optional plugins               |
-| `engine/rng`       | RNG interface and deterministic helpers             |
-| `engine/visualize` | Visualization adapter contracts                     |
+| Module              | Responsibility                                         |
+| ------------------- | ------------------------------------------------------ |
+| `engine/contracts`  | AST, result, process metadata, context, errors         |
+| `engine/lexer`      | Chevrotain token helpers and vocabularies              |
+| `engine/parser`     | Parser classes and CST-to-AST conversion               |
+| `engine/expansions` | Macro/ability/attribute scanning and async resolution  |
+| `engine/queries`    | Query extraction, validation and substitution          |
+| `engine/inline`     | Inline rolls, labels, index registry and references    |
+| `engine/evaluator`  | Plugin dispatch and evaluation                         |
+| `engine/plugins`    | Arithmetic, dice, optional tables/custom/computed dice |
+| `engine/rng`        | RNG interface and deterministic helpers                |
+| `engine/visualize`  | Visualization adapter contracts                        |
 
 ## Integration contract
 
-The chat engine calls:
+Chat calls extraction, prompts the user, then calls evaluation:
 
 ```ts
-const result = diceEngine.roll(expandedDiceExpression, {
+const extraction = engine.extract(message);
+const answers = await chatUi.resolveQueries(extraction.queries);
+const result = await engine.roll(message, {
   rng,
+  macros,
+  abilities,
+  attributes,
   tables,
-  allowInfinite: false,
+  queryAnswers: answers,
 });
+chatUi.render(result);
 ```
 
-It must provide already-expanded text:
-
-- macros, abilities and attributes resolved;
-- roll queries answered;
-- inline rolls replaced with values or explicit references resolved;
-- labels/templates left to the chat renderer.
-
-The dice engine must not inspect chat message state, recipients, macro names or
-templates. It returns source spans and warnings so the chat engine can map errors
-back to the original message.
+Expansion/query answering and selected/target token resolution are async.
+Chat owns commands, prompts, ability selectors, templates, message rendering and
+delivery. The engine never reads chat state directly.
 
 ## Testing plan
 
-- Parser tests per plugin using Chevrotain directly.
-- Recovery/error-span tests for malformed input.
+- Chevrotain parser/recovery/source-span tests per syntax family.
 - CST-to-AST tests for every node type.
-- Evaluation tests per modifier and modifier chain.
-- Golden tests for grouped rolls, computed/custom/Fudge dice.
+- Modifier/group golden tests, including interaction chains.
+- Async repository tests: macros, abilities, attributes, missing data, cycles.
+- Query extraction/validation/substitution tests.
+- Inline index/reference tests.
 - RNG determinism tests.
-- Optional table-plugin tests.
-- Visualization tests asserting display data matches roll records without
-  re-rolling.
+- Process-metadata completeness tests.
+- Visualization tests: display data matches records without re-rolling.
 
 ## Risks and open decisions
 
-- Chevrotain grammar composition: keep one grammar per plugin and prevent token
-  collisions.
-- Modifier interaction matrix needs explicit golden cases before implementation.
-- The result schema must be stable before visualization and chat integration.
-- Custom-dice/computed-dice grammar may require parser lookahead; validate early.
-- 3D dice library/fallback/mobile performance remain open presentation decisions.
-- Table-plugin recursion depth and external-data failure policy need review.
+- Chevrotain grammar composition and token collisions.
+- Freezing the process-metadata/result schema before UI work.
+- Async expansion failure/cycle policy.
+- Roll-query UI is deferred; engine must not assume a specific prompt UX.
+- Optional table/custom/computed grammar may need lookahead.
+- 3D dice library/fallback/mobile performance remain presentation decisions.
 
 ## Definition of done
 
-- Dice expressions parse through Chevrotain into a typed AST.
-- Every modifier and group has deterministic tests and matching roll records.
-- A malformed expression produces a typed error with source span.
-- The same input and RNG sequence produce the same `RollResult`.
-- A `RollResult` renders as text/2D and optionally 3D without changing values.
-- The chat engine can call the dice engine using only expanded text and context.
+- Dice, macros, abilities, attributes, queries, inline rolls and labels parse and
+  evaluate through one engine.
+- External data is provided only via async repositories.
+- A fixed RNG reproduces the same total and process metadata.
+- `RollResult` carries enough metadata to render a Roll20-like breakdown.
+- Chat can implement query/ability UI without parser changes.
+- Text/2D/3D renderers display the same recorded result.
 
 ## References
 
 - [Dice Reference](https://wiki.roll20.net/Dice_Reference)
+- [Order of Operations](https://wiki.roll20.net/Order_of_Operations)
+- [Inline Rolls](https://wiki.roll20.net/Inline_Rolls)
+- [Roll Query](https://wiki.roll20.net/Roll_Query)
 - [Roll Table](https://wiki.roll20.net/Roll_Table)
+- [Reusing Rolls](https://wiki.roll20.net/Reusing_Rolls)
+- [`ttg-club/dice-roller-parser`](https://github.com/ttg-club/dice-roller-parser)
+- [Macro library & editor proposal](../proposals/macro-library-editor.md)
