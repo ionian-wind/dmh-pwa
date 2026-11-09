@@ -406,6 +406,7 @@ describe('settings dialog', () => {
       'Pawns',
       'Encounters',
       'Maps',
+      'Map Studio',
       'Timers',
       'Calculator',
       'Probability Calculator',
@@ -425,7 +426,7 @@ describe('settings dialog', () => {
       .findAll(
         '.left-sidebar [data-stub="QItem"], .left-sidebar [data-stub="QSeparator"]',
       )
-      .slice(0, 10)
+      .slice(0, 11)
       .map((entry) =>
         entry.attributes('data-stub') === 'QSeparator'
           ? '|'
@@ -439,6 +440,7 @@ describe('settings dialog', () => {
       'Encounters',
       'Maps',
       '|',
+      'Map Studio',
       'Timers',
       'Calculator',
       'Probability Calculator',

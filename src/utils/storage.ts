@@ -54,7 +54,7 @@ const MIGRATIONS_STORE = 'migrations';
 const MIGRATION_VERSION = Math.max(
   ...sortedMigrations.map(({ version }) => version),
 );
-const SCHEMA_VERSION = 19;
+const SCHEMA_VERSION = 21;
 const DB_VERSION = Math.max(SCHEMA_VERSION, MIGRATION_VERSION);
 
 // All stores that may exist in the database. The main list is also used by
@@ -77,6 +77,10 @@ export const MAIN_STORE_NAMES = [
   'files',
   'map_image_metadata',
   'indexations_mentions',
+  'map_studio_projects',
+  'map_studio_maps',
+  'map_studio_snapshots',
+  'map_studio_settings',
 ];
 
 const migrationStoreNames = sortedMigrations.flatMap(
@@ -114,6 +118,10 @@ const EXPLICIT_SCHEMA: Record<string, string> = {
   files: 'id, signature, contentHash, updatedAt',
   map_image_metadata: 'id',
   indexations_mentions: 'id',
+  map_studio_projects: 'id, updatedAt',
+  map_studio_maps: 'id, projectId, updatedAt',
+  map_studio_snapshots: 'id, mapId, createdAt',
+  map_studio_settings: 'id',
   maps: 'id',
   map_files: 'id',
   jukebox_files: 'id',
@@ -150,6 +158,10 @@ export class DmhDatabase extends Dexie {
   sound_packs!: Table<any, string>;
   maps!: Table<any, string>;
   map_files!: Table<any, string>;
+  map_studio_projects!: Table<any, string>;
+  map_studio_maps!: Table<any, string>;
+  map_studio_snapshots!: Table<any, string>;
+  map_studio_settings!: Table<any, string>;
 
   constructor() {
     super(DB_NAME);

@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  type ComputedRef,
+  type Ref,
+} from 'vue';
 import { useRouter } from 'vue-router';
 import { useCharacterStore } from '@/stores/characters';
-import { usePartyStore } from '@/stores/parties';
-import { useSelectedParty } from '@/parties/useSelectedParty';
 import { useRightDrawer } from '@/composables/useLayout';
 import BaseListView from '@/components/common/BaseListView.vue';
 import CharacterCard from '@/characters/CharacterCard.vue';
 import CharacterEditor from '@/characters/CharacterEditor.vue';
-import PartyList from '@/parties/PartyList.vue';
 import type { PlayerCharacter } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
@@ -17,29 +21,45 @@ import { useEntityLinkRelations } from '@/components/common/entityDragLinking/re
 import { IconUsers } from '@tabler/icons-vue';
 
 const characterStore = useCharacterStore();
-const partyStore = usePartyStore();
 const router = useRouter();
 const rightDrawer = useRightDrawer();
 const relations = useEntityLinkRelations();
-const { selectedPartyId, selectedParty, selectedCharacterIds, clearSelection } =
-  useSelectedParty();
 const { t } = useI18n();
 
+interface PartySelection {
+  selectedPartyId: Ref<string | null>;
+  selectedCharacterIds: ComputedRef<Set<string>>;
+  clearSelection: () => void;
+}
+
+const partySelection = shallowRef<PartySelection | null>(null);
+
 const visibleCharacters = computed(() => {
-  if (!selectedParty.value) return characterStore.filtered;
+  const selection = partySelection.value;
+  if (!selection?.selectedPartyId.value) return characterStore.filtered;
   return characterStore.filtered.filter((character) =>
-    selectedCharacterIds.value.has(character.id),
+    selection.selectedCharacterIds.value.has(character.id),
   );
 });
 
 onMounted(async () => {
-  await Promise.all([characterStore.load(), partyStore.load()]);
+  await characterStore.load();
+  if (!__FEATURE_PARTIES__) return;
+  const [{ usePartyStore }, { useSelectedParty }, { default: PartyList }] =
+    await Promise.all([
+      import('@/stores/parties'),
+      import('@/parties/useSelectedParty'),
+      import('@/parties/PartyList.vue'),
+    ]);
+  const partyStore = usePartyStore();
+  await partyStore.load();
+  partySelection.value = useSelectedParty();
   rightDrawer.set({ component: PartyList });
 });
 
 onBeforeUnmount(() => {
   rightDrawer.clear();
-  clearSelection();
+  partySelection.value?.clearSelection();
 });
 
 function cardProps(character: PlayerCharacter) {
@@ -57,7 +77,9 @@ function editorProps(character: PlayerCharacter | null) {
     isOpen: true,
     // Seed a new character's linking tab with the party currently filtering
     // the list. The editor keeps this in its draft until the record exists.
-    partyId: character ? undefined : (selectedPartyId.value ?? undefined),
+    partyId: character
+      ? undefined
+      : (partySelection.value?.selectedPartyId.value ?? undefined),
   };
 }
 

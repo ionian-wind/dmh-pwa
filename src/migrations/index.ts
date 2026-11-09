@@ -19,6 +19,7 @@ import migration17 from './0000000017_remove_encounter_notes';
 import migration18 from './0000000018_rename_encounter_field_to_pawns';
 import migration19 from './0000000019_rename_pawn_store';
 import migration20 from './0000000020_remove_timer_description';
+import migration21 from './0000000021_map_studio';
 
 export const migrations: Migration[] = [
   initialSchemaMigration,
@@ -40,6 +41,7 @@ export const migrations: Migration[] = [
   migration18,
   migration19,
   migration20,
+  migration21,
 ];
 
 // Sort migrations by version to ensure they run in order

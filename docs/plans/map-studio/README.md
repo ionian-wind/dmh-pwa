@@ -14,6 +14,7 @@ The feature is large enough that it is split into focused documents:
 8. [07-persistence-library-export.md](07-persistence-library-export.md) — local library, autosave, `.ds`, PNG/PDF/UVTT, importers, location baking.
 9. [08-random-dungeon.md](08-random-dungeon.md) — procedural dungeon generator and external generator imports.
 10. [09-testing-rollout.md](09-testing-rollout.md) — test strategy, performance budgets, milestones, task breakdown, risks.
+11. [10-implementation-checklist.md](10-implementation-checklist.md) — live markable implementation checklist.
 
 ## Plan status
 

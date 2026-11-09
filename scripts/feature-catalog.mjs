@@ -64,6 +64,13 @@ export const FEATURES = [
     ownership: ['src/maps/'],
   },
   {
+    id: 'mapStudio',
+    envKey: 'VITE_FEATURE_MAP_STUDIO',
+    requires: [],
+    integration: '@/features/map-studio/integration',
+    ownership: ['src/map-studio/'],
+  },
+  {
     id: 'diceRoller',
     envKey: 'VITE_FEATURE_DICE_ROLLER',
     requires: [],

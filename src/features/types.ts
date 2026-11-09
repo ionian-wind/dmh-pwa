@@ -8,6 +8,7 @@ export type FeatureId =
   | 'pawns'
   | 'encounters'
   | 'maps'
+  | 'mapStudio'
   | 'jukebox'
   | 'diceRoller'
   | 'ambient'

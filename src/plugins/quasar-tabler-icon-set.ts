@@ -130,6 +130,14 @@ import svgVolumeOff from '@tabler/icons/outline/volume-off.svg?raw';
 import svgZoomIn from '@tabler/icons/outline/zoom-in.svg?raw';
 import svgZoomOut from '@tabler/icons/outline/zoom-out.svg?raw';
 import svgZoomReset from '@tabler/icons/outline/zoom-reset.svg?raw';
+import svgMap2 from '@tabler/icons/outline/map-2.svg?raw';
+import svgLock from '@tabler/icons/outline/lock.svg?raw';
+import svgLockOpen from '@tabler/icons/outline/lock-open.svg?raw';
+import svgHandStop from '@tabler/icons/outline/hand-stop.svg?raw';
+import svgSquare from '@tabler/icons/outline/square.svg?raw';
+import svgPhotoPlus from '@tabler/icons/outline/photo-plus.svg?raw';
+import svgUndo from '@tabler/icons/outline/arrow-back-up.svg?raw';
+import svgRedo from '@tabler/icons/outline/arrow-forward-up.svg?raw';
 
 const TABLER_STYLE =
   'fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round';
@@ -279,6 +287,14 @@ const icons: Record<string, string> = {
   'zoom-in': svgPath(svgZoomIn),
   'zoom-out': svgPath(svgZoomOut),
   'zoom-reset': svgPath(svgZoomReset),
+  'map-2': svgPath(svgMap2),
+  lock: svgPath(svgLock),
+  'lock-open': svgPath(svgLockOpen),
+  'hand-stop': svgPath(svgHandStop),
+  square: svgPath(svgSquare),
+  'photo-plus': svgPath(svgPhotoPlus),
+  undo: svgPath(svgUndo),
+  redo: svgPath(svgRedo),
 };
 
 const quasarTablerIconSet = {

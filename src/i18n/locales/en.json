@@ -50,7 +50,8 @@
     "maps": "Maps",
     "probabilityCalculator": "Probability Calculator",
     "diceRoller": "Dice Roller",
-    "help": "Help center"
+    "help": "Help center",
+    "mapStudio": "Map Studio"
   },
   "home": {
     "title": "Welcome to Owlbear's Dungeon Master Helper",
@@ -1122,5 +1123,29 @@
       "compounding": "Compounding: maximum rolls add extra dice to the total",
       "penetrating": "Penetrating: extra dice subtract 1 from each additional roll"
     }
+  },
+  "mapStudio": {
+    "title": "Map Studio",
+    "libraryTitle": "Map Studio",
+    "librarySubtitle": "Create and edit dungeon maps locally.",
+    "newMap": "New map",
+    "emptyTitle": "No maps yet",
+    "emptyHint": "Create a map to start drawing.",
+    "backToLibrary": "Back to library",
+    "saving": "Saving…",
+    "unsaved": "Unsaved",
+    "saved": "Saved",
+    "undo": "Undo",
+    "redo": "Redo",
+    "save": "Save",
+    "export": "Export",
+    "notFound": "Map not found.",
+    "pan": "Pan",
+    "rectangle": "Rectangle",
+    "snap": "Snap",
+    "division": "Division",
+    "layers": "Layers",
+    "toggleVisibility": "Toggle visibility",
+    "toggleLock": "Toggle lock"
   }
 }
