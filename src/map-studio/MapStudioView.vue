@@ -238,7 +238,12 @@ function updateSelected(patch: Record<string, unknown>): void {
   if (selectedObject.value) store.updateObject(selectedObject.value.id, patch);
 }
 
-function resizeSelected(size: { width: number; height: number }): void {
+function resizeSelected(size: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): void {
   const object = selectedObject.value;
   if (!object || (object.type !== 'text' && object.type !== 'image')) return;
   store.patchSelectedObjectLive({

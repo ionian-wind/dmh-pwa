@@ -35,7 +35,10 @@ const emit = defineEmits<{
   (event: 'endObjectDrag'): void;
   (event: 'editText', id: string): void;
   (event: 'image', point: [number, number]): void;
-  (event: 'resizeObject', size: { width: number; height: number }): void;
+  (
+    event: 'resizeObject',
+    size: { x: number; y: number; width: number; height: number },
+  ): void;
   (event: 'rotateObject', rotation: number): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
@@ -53,7 +56,13 @@ let drag:
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
   | { kind: 'object'; id: string; start: Point; last: Point }
-  | { kind: 'resize'; start: Point; last: Point; width: number; height: number }
+  | {
+      kind: 'resize';
+      start: Point;
+      last: Point;
+      corner: 'nw' | 'ne' | 'sw' | 'se';
+      bounds: { x: number; y: number; width: number; height: number };
+    }
   | {
       kind: 'rotate';
       center: Point;
@@ -110,23 +119,45 @@ function onPointerDown(event: PointerEvent): void {
         x * 70 * vp.zoom + vp.x,
         y * 70 * vp.zoom + vp.y,
       ];
-      const [bx, by] = toScreen(
-        bounds.x + bounds.width,
-        bounds.y + bounds.height,
-      );
-      if (Math.hypot(sx - bx, sy - by) < 14) {
-        drag = {
-          kind: 'resize',
-          start: point,
-          last: point,
-          width: selected.transform.width,
-          height: selected.transform.height,
-        };
-        emit('beginObjectDrag');
-        return;
+      const corners: Array<{
+        corner: 'nw' | 'ne' | 'sw' | 'se';
+        x: number;
+        y: number;
+      }> = [
+        { corner: 'nw', x: bounds.x, y: bounds.y },
+        { corner: 'ne', x: bounds.x + bounds.width, y: bounds.y },
+        { corner: 'sw', x: bounds.x, y: bounds.y + bounds.height },
+        {
+          corner: 'se',
+          x: bounds.x + bounds.width,
+          y: bounds.y + bounds.height,
+        },
+      ];
+      for (const corner of corners) {
+        const [hx, hy] = toScreen(corner.x, corner.y);
+        if (Math.hypot(sx - hx, sy - hy) < 16) {
+          drag = {
+            kind: 'resize',
+            start: point,
+            last: point,
+            corner: corner.corner,
+            bounds: {
+              x: bounds.x,
+              y: bounds.y,
+              width: bounds.width,
+              height: bounds.height,
+            },
+          };
+          emit('beginObjectDrag');
+          return;
+        }
       }
-      const [rx, ry] = toScreen(bounds.x + bounds.width / 2, bounds.y - 0.25);
-      if (Math.hypot(sx - rx, sy - ry) < 16) {
+      const handleWorld = Math.max(6, 8 / vp.zoom);
+      const [rx, ry] = toScreen(
+        bounds.x + bounds.width / 2,
+        bounds.y - (handleWorld * 2) / 70,
+      );
+      if (Math.hypot(sx - rx, sy - ry) < 20) {
         const center: Point = [
           bounds.x + bounds.width / 2,
           bounds.y + bounds.height / 2,
@@ -223,11 +254,28 @@ function onPointerMove(event: PointerEvent): void {
   const current = renderer.value.screenToWorld(sx, sy);
   if (drag.kind === 'resize') {
     const current = renderer.value.screenToWorld(sx, sy);
-    emit('resizeObject', {
-      width: Math.max(0.2, drag.width + current[0] - drag.last[0]),
-      height: Math.max(0.2, drag.height + current[1] - drag.last[1]),
-    });
-    drag.last = current;
+    const dx = current[0] - drag.start[0];
+    const dy = current[1] - drag.start[1];
+    const b = drag.bounds;
+    let x = b.x;
+    let y = b.y;
+    let width = b.width;
+    let height = b.height;
+    if (drag.corner.includes('e')) width = b.width + dx;
+    if (drag.corner.includes('s')) height = b.height + dy;
+    if (drag.corner.includes('w')) {
+      width = b.width - dx;
+      x = b.x + dx;
+    }
+    if (drag.corner.includes('n')) {
+      height = b.height - dy;
+      y = b.y + dy;
+    }
+    width = Math.max(0.2, width);
+    height = Math.max(0.2, height);
+    if (width === 0.2) x = Math.min(x, b.x + b.width - 0.2);
+    if (height === 0.2) y = Math.min(y, b.y + b.height - 0.2);
+    emit('resizeObject', { x, y, width, height });
     return;
   }
   if (drag.kind === 'rotate') {
