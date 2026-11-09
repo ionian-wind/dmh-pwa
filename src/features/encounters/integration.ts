@@ -34,7 +34,7 @@ export const encountersFeature: FeatureIntegration = {
       path: '/encounters',
       icon: IconSwords,
       kind: 'entity',
-      placement: 'scribe',
+      placement: 'primary',
     },
   ],
   homeCard: {

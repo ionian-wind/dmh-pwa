@@ -380,9 +380,7 @@ describe('settings dialog', () => {
     wrapper.unmount();
   });
 
-  it('groups entities under Game Sessions and Scribe', async () => {
-    const config = useConfigStore();
-    config.savedLanguage = 'en';
+  it('renders flat primary navigation items with separators', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [{ path: '/', component: { render: () => h('div') } }],
@@ -400,76 +398,27 @@ describe('settings dialog', () => {
         .findAll('.left-sidebar [data-stub="QItem"]')
         .map((item) => item.attributes('title'))
         .filter((title): title is string => !!title);
-    const findItem = (title: string) =>
-      wrapper
-        .findAll('.left-sidebar [data-stub="QItem"]')
-        .find((item) => item.attributes('title') === title);
 
-    expect(getTitles().slice(0, 3)).toEqual([
-      'Game Sessions',
-      'Scribe',
-      'Tools',
+    expect(getTitles()).toEqual([
+      'Notes',
+      'Pawns',
+      'Encounters',
+      'Maps',
+      'Characters',
+      'Timers',
+      'Calculator',
+      'Probability Calculator',
+      'Dice Roller',
+      'Jukebox',
+      'Help center',
+      'Settings',
     ]);
-    expect(getTitles()).not.toContain('Characters');
-    expect(getTitles()).not.toContain('Notes');
-    expect(getTitles()).not.toContain('Parties');
+    expect(getTitles()).not.toContain('Game Sessions');
+    expect(getTitles()).not.toContain('Scribe');
+    expect(getTitles()).not.toContain('Tools');
     expect(
       wrapper.findAll('.left-sidebar [data-stub="QSeparator"]'),
-    ).toHaveLength(2);
-
-    await findItem('Game Sessions')!.trigger('click');
-    await nextTick();
-    expect(getTitles()).toContain('Characters');
-    expect(getTitles()).not.toContain('Parties');
-    expect(config.navigationGroupsExpanded.gameSessions).toBe(true);
-
-    await findItem('Scribe')!.trigger('click');
-    await nextTick();
-    expect(getTitles()).toContain('Notes');
-    expect(getTitles()).toContain('Pawns');
-    expect(getTitles()).toContain('Encounters');
-    expect(getTitles()).toContain('Maps');
-    expect(config.navigationGroupsExpanded.scribe).toBe(true);
-    wrapper.unmount();
-  });
-
-  it('restores saved navigation group collapse state', async () => {
-    const config = useConfigStore();
-    config.savedLanguage = 'en';
-    config.navigationGroupsExpanded = {
-      gameSessions: true,
-      scribe: false,
-    };
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: '/', component: { render: () => h('div') } }],
-    });
-    await router.push('/');
-    await router.isReady();
-
-    const wrapper = mount(App, { global: { plugins: [router] } });
-    await flushPromises();
-    (wrapper.vm as any).$i18n.locale = 'en';
-    await nextTick();
-
-    const findItem = (title: string) =>
-      wrapper
-        .findAll('.left-sidebar [data-stub="QItem"]')
-        .find((item) => item.attributes('title') === title);
-    const titles = () =>
-      wrapper
-        .findAll('.left-sidebar [data-stub="QItem"]')
-        .map((item) => item.attributes('title'))
-        .filter((title): title is string => !!title);
-
-    // Game Sessions was saved expanded, Scribe was saved collapsed.
-    expect(findItem('Characters')).toBeTruthy();
-    expect(findItem('Notes')).toBeUndefined();
-    expect(titles()).not.toContain('Notes');
-
-    await findItem('Scribe')!.trigger('click');
-    await nextTick();
-    expect(findItem('Notes')).toBeTruthy();
+    ).toHaveLength(7);
     wrapper.unmount();
   });
 
@@ -492,25 +441,18 @@ describe('settings dialog', () => {
     expect(
       wrapper.find('[data-test="open-settings"]').attributes('title'),
     ).toBeTruthy();
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(false);
-    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     await drawer.trigger('mouseenter');
     await nextTick();
     expect(drawer.attributes('mini')).not.toBe('true');
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(false);
-    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     config.expandMenu = false;
     await nextTick();
     expect(drawer.attributes('mini')).toBe('true');
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
-    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     await drawer.trigger('mouseenter');
     await nextTick();
     expect(drawer.attributes('mini')).toBe('true');
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
     wrapper.unmount();
   });
 

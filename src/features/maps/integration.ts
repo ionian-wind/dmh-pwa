@@ -25,7 +25,7 @@ export const mapsFeature: FeatureIntegration = {
       path: '/locations',
       icon: IconMap,
       kind: 'entity',
-      placement: 'scribe',
+      placement: 'primary',
     },
   ],
   homeCard: {

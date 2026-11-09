@@ -147,23 +147,17 @@ detail views use `useRightDrawer()` directly.
 
 Navigation is generated from `virtual:feature-navigation`, not from a
 hard-coded array. Each feature integration contributes entries with a
-`placement` (`primary`, `gameSessions`, `scribe`, `tools`, or `footer`) and an
-optional `order`.
+`placement` (`primary`, `footer`; the `gameSessions`, `scribe`, and `tools`
+placements remain available for future collapsible groups) and an optional
+`order`.
 
-- **Primary**: currently empty; entity navigation is grouped.
-- **Game Sessions**: Characters. Parties are managed from the Characters
-  sidebar, similar to jukebox playlists. The Game Sessions item expands and
-  collapses the group; it auto-expands when one of its routes is active.
-- **Scribe**: Notes, Pawns, Encounters, Maps. The Scribe item expands and
-  collapses the group; it auto-expands when one of its routes is active.
-- **Tools**: Timers, Calculator, Probability calculator. The Tools item expands
-  and collapses the group; it auto-expands when a tool route is active.
+- **Primary**: Notes, Pawns, Encounters, Maps, Characters, Timers, Calculator,
+  Probability calculator. Items are separated by dividers.
 - **Footer**: Jukebox, Help, then the always-present Settings item.
   Settings opens `SettingsDialog` (language, theme, backup and storage options).
 
-Group collapse state is stored in config under `navigationGroupsExpanded`, so
-Game Sessions, Scribe, and Tools reopen the way the user left them. Groups with
-no saved state auto-expand when one of their routes is active.
+The collapsible group support and `navigationGroupsExpanded` config remain in
+place for future use, but no feature currently uses a group placement.
 Jukebox opens `/jukebox` or the sound-control sheet depending on
 `configStore.jukeboxUseMiniPlayer`.
 

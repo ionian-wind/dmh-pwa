@@ -272,7 +272,7 @@ These notifications never auto-dismiss (`timeout: 0`).
 
 - **Header**: injected per route; Delete sits at the far left, while
   create/edit/custom actions stay on the right.
-- **Left drawer**: collapsible Game Sessions, Scribe, and Tools groups, plus the
+- **Left drawer**: flat primary navigation with item separators, plus the
   jukebox/dice shortcuts.
 - **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists,
   character parties).

@@ -5,8 +5,6 @@ import {
   onMounted,
   onUnmounted,
   ref,
-  watch,
-  type Component,
 } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -25,10 +23,6 @@ import {
   IconMaximize,
   IconMaximizeOff,
   IconMenu2,
-  IconTool,
-  IconScript,
-  IconMasksTheater,
-  IconChevronDown,
   IconSettings,
 } from '@tabler/icons-vue';
 
@@ -53,36 +47,6 @@ function navigationFor(placement: FeatureNavEntry['placement']) {
 const primaryNavigation = computed(() => navigationFor('primary'));
 const footerNavigation = computed(() => navigationFor('footer'));
 
-interface NavGroup {
-  id: string;
-  labelKey: string;
-  icon: Component;
-  items: FeatureNavEntry[];
-}
-
-const navGroups = computed<NavGroup[]>(() =>
-  [
-    {
-      id: 'gameSessions',
-      labelKey: 'navigation.gameSessions',
-      icon: IconMasksTheater,
-      items: navigationFor('gameSessions'),
-    },
-    {
-      id: 'scribe',
-      labelKey: 'navigation.scribe',
-      icon: IconScript,
-      items: navigationFor('scribe'),
-    },
-    {
-      id: 'tools',
-      labelKey: 'navigation.tools',
-      icon: IconTool,
-      items: navigationFor('tools'),
-    },
-  ].filter((group) => group.items.length > 0),
-);
-
 function isNavActive(item: FeatureNavEntry): boolean {
   const currentPath = router.currentRoute.value.path;
   if (item.activePathPrefixes) {
@@ -92,40 +56,6 @@ function isNavActive(item: FeatureNavEntry): boolean {
   }
   return item.type === 'route' && currentPath.startsWith(item.path);
 }
-
-function isGroupActive(group: NavGroup): boolean {
-  return group.items.some((item) => isNavActive(item));
-}
-
-function isGroupExpanded(id: string): boolean {
-  return configStore.navigationGroupsExpanded[id] === true;
-}
-
-function setGroupExpanded(id: string, expanded: boolean): void {
-  configStore.navigationGroupsExpanded = {
-    ...configStore.navigationGroupsExpanded,
-    [id]: expanded,
-  };
-}
-
-function toggleGroup(id: string): void {
-  setGroupExpanded(id, !isGroupExpanded(id));
-}
-
-watch(
-  () => router.currentRoute.value.path,
-  () => {
-    for (const group of navGroups.value) {
-      if (!isGroupActive(group)) continue;
-      // Respect a saved collapse choice; only auto-open groups the user has
-      // never toggled so deep links are not hidden on first visit.
-      if (configStore.navigationGroupsExpanded[group.id] === undefined) {
-        setGroupExpanded(group.id, true);
-      }
-    }
-  },
-  { immediate: true },
-);
 
 const isFullscreen = ref(false);
 
@@ -246,9 +176,13 @@ const isSettingsOpen = ref(false);
       >
         <div>
           <QList>
-            <template v-for="item in primaryNavigation" :key="item.id">
+            <template v-for="(item, index) in primaryNavigation" :key="item.id">
+              <component
+                :is="item.component"
+                v-if="item.type === 'component'"
+              />
               <QItem
-                v-if="item.type === 'route'"
+                v-else
                 clickable
                 v-ripple
                 :active="isNavActive(item)"
@@ -260,70 +194,9 @@ const isSettingsOpen = ref(false);
                 <QItemSection side><component :is="item.icon" /></QItemSection>
                 <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
-            </template>
-            <template v-for="(group, groupIndex) in navGroups" :key="group.id">
-              <QItem
-                clickable
-                v-ripple
-                :active="isGroupActive(group)"
-                :active-class="'bg-secondary'"
-                :title="t(group.labelKey)"
-                :aria-label="t(group.labelKey)"
-                @click="toggleGroup(group.id)"
-              >
-                <QItemSection side>
-                  <div
-                    class="tools-icon-stack"
-                    :class="{ 'tools-icon-stack--mini': menuLockedMini }"
-                  >
-                    <component :is="group.icon" />
-                    <IconChevronDown
-                      v-if="menuLockedMini"
-                      :size="14"
-                      class="tools-caret tools-caret--mini"
-                      :class="{
-                        'tools-caret--open': isGroupExpanded(group.id),
-                      }"
-                    />
-                  </div>
-                </QItemSection>
-                <QItemSection>{{ t(group.labelKey) }}</QItemSection>
-                <QItemSection v-if="!menuLockedMini" side>
-                  <IconChevronDown
-                    :size="18"
-                    class="tools-caret"
-                    :class="{ 'tools-caret--open': isGroupExpanded(group.id) }"
-                  />
-                </QItemSection>
-              </QItem>
-              <QSlideTransition>
-                <div v-if="isGroupExpanded(group.id)">
-                  <template v-for="item in group.items" :key="item.id">
-                    <component
-                      :is="item.component"
-                      v-if="item.type === 'component'"
-                    />
-                    <QItem
-                      v-else
-                      clickable
-                      v-ripple
-                      :active="isNavActive(item)"
-                      active-class="bg-secondary"
-                      :to="item.path"
-                      :title="t(item.labelKey)"
-                      :aria-label="t(item.labelKey)"
-                    >
-                      <QItemSection side>
-                        <component :is="item.icon" />
-                      </QItemSection>
-                      <QItemSection>{{ t(item.labelKey) }}</QItemSection>
-                    </QItem>
-                  </template>
-                </div>
-              </QSlideTransition>
               <QSeparator
-                v-if="groupIndex < navGroups.length - 1"
-                class="menu-group-separator"
+                v-if="index < primaryNavigation.length - 1"
+                class="menu-item-separator"
               />
             </template>
           </QList>
@@ -505,31 +378,8 @@ const isSettingsOpen = ref(false);
     rgba(15, 23, 42, 0)
   );
 }
-.tools-caret {
-  transition: transform 0.2s ease;
-}
 
-.tools-caret--open {
-  transform: rotate(180deg);
-}
-
-.tools-icon-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.tools-icon-stack--mini {
-  gap: 0;
-}
-
-.tools-caret--mini {
-  margin-top: -1px;
-}
-
-.menu-group-separator {
-  margin: 4px 0;
+.menu-item-separator {
+  margin: 2px 0;
 }
 </style>
