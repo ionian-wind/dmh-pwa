@@ -1,43 +1,20 @@
 # Dice Roller
 
-> **Status:** experimental. Two implementation branches exist, neither is wired
-> into the running application. This document is the consolidated dice-roller
-> reference: it merges the old feature description, the notation
-> specification, the plugin requirements/proposal, and the differences between
-> `dice-roller-2` and `dice-roller-3`.
->
-> **Critical architecture change:** the current one-shot parse/evaluate model is
-> not enough for Roll20 compatibility. The plan now requires a multi-pass
-> coordinator with a separate parser for each syntax family; see
-> [Roll20 order of operations](#roll20-order-of-operations).
+> **Status: planned — greenfield implementation.** This document specifies the
+> dice engine we intend to build from scratch. It does not describe existing
+> code or an implementation baseline.
 
 ## Purpose
 
-The dice roller is intended to parse and evaluate a Roll20-like dice notation
-superset:
+The dice roller is a parser/evaluator for a Roll20-like dice notation superset:
 
 - arithmetic, functions and dice pools;
-- exploding, rerolling, keep/drop and sorting modifiers;
+- exploding, rerolling, keep/drop, matching and sorting modifiers;
 - grouped and computed rolls, custom dice and Fudge dice;
 - macros, roll queries, tables, inline rolls and roll-history references;
-- formatting markup, structured errors and non-fatal warnings;
-- an injectable RNG for deterministic tests.
-
-The legacy engine under `src/utils/dice-roller/` has been replaced on the dice
-branches by `src/utils/bag-of-dice/`.
-
-## Implementation status
-
-| Branch          | Engine                                                                        | Status                                              |
-| --------------- | ----------------------------------------------------------------------------- | --------------------------------------------------- |
-| `main`          | Legacy `src/utils/dice-roller/`                                               | Not wired; no shared registration entry point.      |
-| `dice-roller-2` | `src/utils/bag-of-dice/` with Chevrotain lexers/parsers and plugin converters | Feature tests green; not wired into the app.        |
-| `dice-roller-3` | `src/utils/bag-of-dice/` with a custom tokenizer and recursive-descent parser | Experimental; parser/tokenizer tests still failing. |
-
-Both branches share the same notation specification, requirements and proposal.
-The application still does not register the engine or call it from a view.
-`RollButton.vue` is a standalone `@3d-dice/dice-box` FAB and is not mounted in
-the app shell.
+- structured errors, warnings and deterministic RNG;
+- a visualization-neutral roll result that can be rendered as text, a chat card
+  or 3D dice.
 
 The full Roll20 feature is split into two documents:
 
@@ -46,7 +23,24 @@ The full Roll20 feature is split into two documents:
 | Dice notation, parsing and evaluation                                        | this plan                                                                         |
 | Chat commands, macros, attributes, roll templates, buttons and chat delivery | [proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md) |
 
-The dice plan is a prerequisite for the chat engine, not a replacement for it.
+The dice engine is a prerequisite for the chat engine, not a replacement for it.
+
+## Design principles
+
+- **Multi-pass, not one-shot.** Roll20 compatibility requires ordered expansion,
+  query, inline-roll, dice and math passes. A single parse/evaluate call cannot
+  reproduce that order.
+- **Separate parsers per syntax family.** Chat commands, macros, attributes,
+  queries, inline rolls, dice, arithmetic, tables, templates and formatting each
+  get their own parser and pass.
+- **Results are data, not presentation.** The engine returns structured roll
+  records; visualization is selected independently.
+- **Everything is deterministic under an injected RNG.** Tests and replays must
+  be reproducible.
+- **No arbitrary code execution.** Extensions are declarative plugins with
+  explicit limits.
+- **Start from the specification, not from a legacy engine.** Implement the
+  passes and data contracts below directly.
 
 ## Goals and requirements
 
@@ -199,39 +193,36 @@ At minimum preserve:
 
 ## Plugin architecture
 
-A plugin owns its token definitions, AST handlers and evaluator. Common
-responsibilities:
+A plugin owns one syntax family. It should declare:
 
-- extend tokenization/grammar;
-- claim and parse plugin-specific tokens/nodes;
-- evaluate its AST node types;
-- extract data required before evaluation;
-- report domain-specific errors and warnings.
+- token definitions/grammar contributions for its own pass;
+- AST node types and parse functions;
+- evaluation/expansion behavior for its nodes;
+- extraction functions (queries, tables, references, buttons);
+- validation rules and typed errors/warnings.
 
-Evaluation stops at the first plugin that handles a node. Arithmetic is the
-fallback for math and unknown-node errors.
+Plugins are composed by the pass coordinator; they do not parse each other's
+syntax. A plugin must return `not-handled` explicitly rather than throwing a
+generic error that could be mistaken for a syntax failure.
 
-### `dice-roller-2` — Chevrotain implementation
+The planned plugin set:
 
-- Uses Chevrotain lexers and CST parsers.
-- Each plugin supplies `tokens`, an optional parser/top rule, CST-to-AST handler
-  maps, an evaluator and extraction functions.
-- `parse()` merges token vocabularies, delegates to the plugin parser, and
-  converts the resulting CST to an AST.
-- Non-strict parsing returns `null` instead of throwing on syntax/recovery
-  errors.
-- Includes core, arithmetic, dice, roll-query, table and integration tests.
-- This is the more mature branch: its suite passes and is the better base for
-  further work.
+| Plugin             | Responsibility                                       |
+| ------------------ | ---------------------------------------------------- |
+| arithmetic         | numbers, unary signs, math functions and precedence  |
+| dice               | dice types, compare points, modifiers, groups        |
+| roll-queries       | `?{...}` extraction, validation and substitution     |
+| tables             | `Nt[table]`, weighted entries, nested inline results |
+| macros/abilities   | `#macro`, `%{character\|ability}` expansion          |
+| attributes         | `@{...}`, tokens, bars, repeating sections           |
+| inline-rolls       | `[[...]]`, nesting and stable indexes                |
+| roll-references    | `$[[n]]` and `$[[n.computed]]` resolution            |
+| templates          | `&{template:...}` parsing/rendering metadata         |
+| buttons/chat-menus | clickable chat actions and nested command dispatch   |
+| formatting         | Markdown-lite, HTML entities and output sanitisation |
 
-### `dice-roller-3` — custom tokenizer/parser implementation
-
-- Replaces Chevrotain with a custom sticky-regex tokenizer and a
-  recursive-descent `Parser`.
-- Plugins contribute `TokenDef` records and implement `canParse`/`parse`.
-- Core parser rules cover arithmetic; plugins claim their own tokens/nodes.
-- The branch is an architectural experiment; its parser/tokenizer and
-  integration tests are not yet green.
+No plugin may silently swallow another plugin's errors. Each pass reports its
+own failures and warnings.
 
 ## Notation specification
 
@@ -459,110 +450,119 @@ scripts or UI tricks. The DMH proposal should define explicit visibility modes
 - Chat delivery applies recipient/permission rules after rendering; hidden/GM
   rolls must be filtered server/side before display.
 
-## Missing implementation work
+## Implementation phases
 
-The current branches implement the dice core and some extraction, but not the
-full Roll20-compatible engine. Add these in order:
+Build the engine from scratch in this order:
 
-1. **Pass coordinator** with separate expansion, query, inline, dice, math,
-   template and delivery parsers.
-2. **Ability/macro/attribute expansion** with a 99-level loop and provenance.
-3. **Query extraction/prompting** including dropdown labels, same-prompt reuse
-   and HTML-entity stacking.
-4. **Inline-roll index table** with raw/computed values and cross-reference
-   resolution.
-5. **Full modifier semantics**: compare points, failures, matching (`m`/`mt`),
-   roll-once, reroll-once, two-phase modifier ordering.
-6. **Grouped roll validation** for mixed sub-roll types and group modifiers.
-7. **Roll tables** with weighted entries and entry-level inline rolls.
-8. **Roll templates** with structured fields and leading-space validation.
-9. **Chat commands/visibility** and `&{tracker}`, `&{noerror}` options.
-10. **Chat-button/chat-menu** syntax and ability/roll invocation.
-11. **Custom roll parsing** as an optional post-evaluation extension point.
-12. **Final HTML decode and sanitisation** with a strict allow-list.
+1. **Core contracts** — pass context, AST/IR, roll records, typed errors and
+   warnings.
+2. **Pass coordinator** — ordered expansion/query/inline/dice/math/template/
+   delivery passes with per-pass limits.
+3. **Arithmetic + dice parser** — numbers, functions, precedence, dice types,
+   compare points, modifiers, groups.
+4. **Query, inline and table passes** — extraction, prompting, stable roll
+   indexes and weighted tables.
+5. **Roll references and templates** — `$[[n]]` resolution and structured
+   template output.
+6. **Macro/ability/attribute expansion** — the 99-level expansion loop.
+7. **Chat command and visibility layer** — commands, recipients and hidden/GM
+   modes, per the separate proposal.
+8. **Formatting/sanitisation** — Markdown-lite, HTML entities and final output.
+9. **Visualization adapters** — text/chat card first, optional 2D/3D dice.
+10. **End-to-end tests** — raw message through expansion, prompting, rolls,
+    math, template and delivery.
 
 The chat/macro/template/button layer is specified separately in
 [proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md).
 
-## Key files
+## Planned module layout
 
-| File/directory                                | Role                                                |
-| --------------------------------------------- | --------------------------------------------------- |
-| `src/utils/bag-of-dice/`                      | Replacement engine on both dice branches            |
-| `src/utils/bag-of-dice/index.ts`              | Public `BagOfDice` API                              |
-| `src/utils/bag-of-dice/plugins/`              | Arithmetic, dice, roll-query, table plugins         |
-| `src/utils/bag-of-dice/utils/cstAstConverter` | CST/AST conversion used by `dice-roller-2`          |
-| `src/utils/bag-of-dice/core/`                 | Tokenizer/parser/evaluator used by `dice-roller-3`  |
-| `src/components/RollButton.vue`               | Standalone 3D dice FAB; not mounted or engine-wired |
+Names are provisional; the boundaries matter more than the paths.
 
-The legacy `src/utils/dice-roller/` tree documented by earlier revisions has
-been removed on both dice branches.
+| Module              | Responsibility                                         |
+| ------------------- | ------------------------------------------------------ |
+| `engine/pass`       | Pass coordinator, budget checks and pass ordering      |
+| `engine/dice`       | Dice notation tokenizer/parser/evaluator               |
+| `engine/arithmetic` | Math functions and precedence                          |
+| `engine/queries`    | Roll-query extraction, validation and substitution     |
+| `engine/inline`     | Inline-roll parsing, nesting and roll-index registry   |
+| `engine/tables`     | Table parsing and weighted selection                   |
+| `engine/references` | Roll reference resolution                              |
+| `engine/macros`     | Macro/ability/attribute expansion                      |
+| `engine/templates`  | Roll-template parsing and structured fields            |
+| `engine/formatting` | Markdown-lite, HTML entities and sanitisation          |
+| `engine/visualize`  | Visualization adapter contracts and built-in renderers |
 
-## Testing
+## Roll visualization
 
-- `dice-roller-2`: full suite passes; `features:verify` passes. The dice engine
-  has unit tests per plugin, but no cross-plugin integration suite and no app
-  integration.
-- `dice-roller-3`: merge/type-check succeeds. It adds cross-plugin integration
-  tests, but those tests (and parts of the parser/tokenizer suite) are currently
-  failing, so it is not a usable base yet.
-- Deterministic tests inject a fake RNG.
-- Only arithmetic, dice, roll-query and table plugins exist in
-  `src/utils/bag-of-dice/`; macro, inline-roll, roll-reference and formatting
-  plugins are absent rather than merely untested.
+The engine must be visualization-neutral. A roll is data first:
 
-## Coverage status
+```ts
+interface RollResult {
+  total: number;
+  groups: DiceGroupResult[];
+  warnings: RollWarning[];
+}
+```
 
-This is the key distinction that the earlier “not fully exercised” wording
-blurred:
+`DiceGroupResult` records each die value, which dice were kept/dropped/exploded/
+rerolled, modifiers applied, and display labels.
 
-| Area                             | Engine status                                              | Test status                                                       |
-| -------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| Arithmetic                       | implemented                                                | unit tests pass on both branches                                  |
-| Dice + modifiers                 | implemented                                                | unit tests pass on `dice-roller-2`; parts fail on `dice-roller-3` |
-| Roll queries                     | implemented                                                | unit tests pass; integration only on `dice-roller-3` and failing  |
-| Roll tables                      | implemented                                                | unit tests pass; integration only on `dice-roller-3` and failing  |
-| Multi-plugin composition         | implemented API, not integration-tested on `dice-roller-2` | `dice-roller-3` has integration tests but they fail               |
-| Macros                           | missing in `bag-of-dice`                                   | old-engine tests only; not applicable to the replacement engine   |
-| Inline rolls                     | missing in `bag-of-dice`                                   | needs chat-engine parser plus roll-index tests                    |
-| Roll references                  | missing in `bag-of-dice`                                   | needs chat-engine parser plus reference tests                     |
-| Formatting / HTML entities       | missing in `bag-of-dice`                                   | belongs to the chat/formatting pass                               |
-| Roll templates                   | out of dice-engine scope                                   | chat-engine proposal; no implementation                           |
-| Chat commands/buttons/visibility | out of dice-engine scope                                   | chat-engine proposal; no implementation                           |
-| App integration                  | missing                                                    | no UI calls the engine                                            |
+Visualization adapters consume that result:
 
-## Known gaps
+- **Text/chat card** — required baseline, accessible and always available.
+- **2D dice list** — shows individual dice and totals.
+- **3D dice** — one optional visualization: an animated physics layer that
+  displays the values supplied by the engine.
+- **No animation / reduced motion** — must still show the full result and
+  breakdown.
 
-- No app registration or UI integration.
-- The pass coordinator and split parsers do not exist yet.
-- `dice-roller-3` parser/tokenizer and integration tests are incomplete.
-- `dice-roller-2` has no cross-plugin integration tests, so query + table + dice
-  composition is not verified end to end.
-- Macro expansion, inline-roll parsing/indexing, roll-reference resolution and
-  formatting do not exist in `bag-of-dice` yet.
-- Roll templates, chat commands, buttons and visibility are separate chat-engine
-  work.
-- No custom-roll-parsing extension point.
-- No final decision on whether to keep 3D dice, the engine, or both.
+Rules:
 
-## Integration checklist
+- 3D dice never decide the result. They visualize roll records or an animation
+  plan generated from them.
+- An animation must not re-roll or consume extra RNG.
+- Text output must remain available even when 3D dice are enabled.
+- Rendering must support accessibility, reduced motion and low-power devices.
 
-Before shipping:
+## Testing plan
 
-1. Choose one implementation branch and delete the rejected one.
-2. Introduce the pass coordinator and split parsers described above; do not add
-   more syntax to a single monolithic parser.
-3. Add a single registration/bootstrap module that loads the chosen dice plugin
-   set once.
-4. Wire the engine to a UI entry point (or wrap `RollButton.vue`) and render
-   results/warnings.
-5. Implement the chat-engine proposal's message/macro/query/template layers.
-6. Feed real tables, macros, abilities, attributes and roll references into
-   evaluation.
-7. Add app-level tests for expansion, prompting, inline rolls, dice, math,
-   templates and visibility.
-8. Keep the notation specification and this document as the canonical feature
-   reference.
+- Golden tests for the full 12-pass order of operations.
+- Parser unit tests per syntax family, not one monolithic parser suite.
+- Cross-plugin integration tests: dice + arithmetic + queries + tables +
+  inline rolls + templates.
+- Expansion-cycle, depth-limit and output-size tests.
+- RNG determinism and replay tests.
+- Visualization tests that assert display data matches the engine's roll records
+  and never changes the result.
+- End-to-end tests from raw chat message to structured rendered message.
+
+## Risks and open decisions
+
+- Parser technology choice is open; evaluate maintainability, error recovery and
+  performance before committing.
+- The expansion/query/pass coordinator is the highest-complexity part and should
+  be designed before individual parsers.
+- Compatibility quirks (HTML entity stacking, leading-space template rules,
+  roll-index restrictions) need explicit tests.
+- 3D dice are optional; decide whether the app ships them by default, as an
+  opt-in, or not at all.
+- Define a stable JSON shape for roll results before adding visualization
+  adapters.
+- Decide export/import format for macros, tables, templates and roll records.
+- No custom-roll-parsing extension point yet; design it as a safe, declarative
+  post-evaluation hook.
+
+## Definition of done
+
+- All passes and parsers exist behind a single documented entry point.
+- A complex Roll20-style macro produces the same structured result on repeated
+  runs with a fixed RNG.
+- Every roll record can be rendered as text and optionally as 3D dice without
+  changing the result.
+- Failure messages identify the pass, source span and cause.
+- The chat proposal's first phase can call the engine without duplicating dice
+  parsing.
 
 ## References
 

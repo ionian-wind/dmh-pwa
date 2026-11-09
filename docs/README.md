@@ -92,7 +92,7 @@ implemented.
 | [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)         | Manifest, install UX, safe-area and PWA audit plan |
 | [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md) | Milkdown detail-view renderer plan and status      |
 | [plans/remove-modules-entity.md](plans/remove-modules-entity.md)   | Completed Modules removal and migration record     |
-| [plans/dice-roller.md](plans/dice-roller.md)                       | Dice roller notation, architecture and branch plan |
+| [plans/dice-roller.md](plans/dice-roller.md)                       | Greenfield multi-pass dice engine plan             |
 
 ### Cross-cutting analysis
 
@@ -133,7 +133,6 @@ src/
   utils/storage.ts                 IndexedDB + base store + backup
   utils/markdownParser.ts          markdown-it renderer + entity link parsing
   utils/files/                     File System Access / OPFS / Blob + audio worker
-  utils/dice-roller/               dice engine (work in progress)
   utils/dice-probability-calculator/ AnyDice-compatible probability library
   probability-calculator/          probability calculator page, Monaco + charts
   helpcenter/links.ts              static help-center URL helper
@@ -160,7 +159,7 @@ Three facts materially affect how the code should be read:
    reports **0 errors**. CI runs the type check, regression suite, full test
    suite, feature build matrix, and production build. See
    [proposals/fixes-applied.md](proposals/fixes-applied.md).
-3. **Some features are intentionally incomplete.** The dice engine and 3D dice
-   UI are explicitly work in progress and are not treated as defects. All
-   previously tracked UI/data defects have been fixed; see
-   [proposals/fixes-applied.md](proposals/fixes-applied.md).
+3. **The dice roller is planned from scratch.** The dice plan is a greenfield
+   design; 3D dice are one optional visualization for roll results, not a
+   requirement of the engine. All previously tracked UI/data defects have been
+   fixed; see [proposals/fixes-applied.md](proposals/fixes-applied.md).
