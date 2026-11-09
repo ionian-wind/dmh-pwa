@@ -67,7 +67,7 @@ crypto-backed RNG; the engine never falls back to `Math.random`.
 ## Supported syntax
 
 - Arithmetic: `+ - * / % **`, parentheses, unary signs,
-  `floor/ceil/round/abs`.
+  `floor/ceil/round/abs` and variadic `min`/`max`.
 - Dice: `NdX`, `dX`, `d%`, `dF`, `dF.1`–`dF.3`, computed `(N)dX` / `Nd(X)`,
   custom `d[a,b,c]`, labels `2d6[fire]`.
 - Compare points and modifiers: `>N`, `<N`, `=N`, `!=N`, `s`, `f`, `cs`, `cf`,

@@ -1,25 +1,54 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  parseDiceAst,
-  evaluateDiceNode,
-  dicePlugin,
-} from '@/utils/dice-roller/plugins/dice/dicePlugin';
-import {
-  traverseAST,
-  findNodesByType,
-  mathFunctions,
-  validateInteger,
-  validatePositiveInteger,
-  validateRange,
-  countSuccesses,
-  keepHighest,
-  keepLowest,
-  dropHighest,
-  dropLowest,
-} from '@/utils/dice-roller/lib/utils';
-import type { ASTNode } from '@/utils/dice-roller/lib/types';
+  createArithmeticPlugin,
+  createDicePlugin,
+  createEmptyRepositories,
+  createRollEngine,
+  createStaticRepositories,
+  evaluateAst,
+  parseExpression,
+  sequenceRng,
+  type EngineOptions,
+  type RollResult,
+  type TableRepository,
+} from '@/utils/bag-of-dice';
 
-describe('dice plugin coverage', () => {
+const engine = createRollEngine();
+
+const tables: TableRepository = {
+  async get(name) {
+    return name === 'loot'
+      ? {
+          name,
+          entries: [{ weight: 1, value: 'gold' }],
+        }
+      : undefined;
+  },
+};
+
+async function roll(
+  expression: string,
+  options: Partial<EngineOptions> = {},
+  draws: number[] = [0.5],
+): Promise<RollResult> {
+  const outcome = await engine.roll(expression, {
+    repositories: {
+      ...createEmptyRepositories(),
+      ...(options.repositories ?? {}),
+      tables,
+    },
+    rng: sequenceRng(draws),
+    ...options,
+  });
+  if (outcome.status !== 'complete') {
+    throw new Error(
+      `expected complete for "${expression}", got ${outcome.status}`,
+    );
+  }
+  return outcome.result;
+}
+
+describe('dice engine coverage', () => {
   it.each([
     '1',
     'd6',
@@ -61,77 +90,51 @@ describe('dice plugin coverage', () => {
     'max(1,2)',
     '1t[loot]',
     '1d6[fire]kh3',
-  ])('parses and evaluates %s', (expression) => {
-    const ast = parseDiceAst(expression);
-    expect(ast).toBeTruthy();
-    expect(() => evaluateDiceNode(ast, {})).not.toThrow();
+  ])('parses and evaluates %s', async (expression) => {
+    const result = await roll(expression);
+    expect(Number.isFinite(result.total)).toBe(true);
   });
 
-  it('parses inline rolls and macros without evaluating them here', () => {
-    expect(parseDiceAst('[[1d6]]')).toBeTruthy();
-    expect(parseDiceAst('#attack')).toBeTruthy();
+  it('parses inline rolls and expands macros', async () => {
+    const inline = await roll('[[1d6]]');
+    expect(inline.process.inlineRolls).toHaveLength(1);
+
+    const repositories = createStaticRepositories({
+      macros: { attack: '1d6' },
+    });
+    const macro = await roll('#attack', { repositories });
+    expect(macro.process.expansions[0]).toMatchObject({
+      kind: 'macro',
+      name: 'attack',
+    });
   });
 
-  it('handles invalid dice expressions', () => {
-    expect(() => parseDiceAst('')).toThrow();
-    expect(() => evaluateDiceNode(parseDiceAst('d[]'), {})).toThrow();
-    expect(() => parseDiceAst('@str')).toThrow();
-    expect(dicePlugin.name).toBe('dice');
+  it('reports invalid dice and syntax', async () => {
+    expect(parseExpression('').errors.length).toBeGreaterThan(0);
+    expect(parseExpression('@str').errors.length).toBeGreaterThan(0);
+
+    const custom = parseExpression('d[]');
+    expect(custom.errors).toEqual([]);
+    expect(() =>
+      evaluateAst(custom.ast!, {
+        rng: sequenceRng([0.5]),
+        options: { repositories: createEmptyRepositories() },
+        plugins: [createArithmeticPlugin(), createDicePlugin()],
+      }),
+    ).toThrow();
+    expect(createDicePlugin().name).toBe('dice');
   });
 
-  it('finds nested AST nodes and uses math helpers', () => {
-    const ast: ASTNode = {
-      type: 'arithmetic',
-      op: '+',
-      left: { type: 'dice', count: 1, sides: 6, modifiers: [] },
-      right: {
-        type: 'grouped-roll',
-        expressions: [{ type: 'number', value: 2 }],
-      },
-    };
-    const seen: ASTNode[] = [];
-    traverseAST(ast, (node) => seen.push(node));
-    expect(seen.length).toBeGreaterThan(3);
-    expect(findNodesByType(ast, 'dice')).toHaveLength(1);
-    expect(mathFunctions.floor(1.9)).toBe(1);
-    expect(mathFunctions.ceil(1.1)).toBe(2);
-    expect(mathFunctions.round(1.5)).toBe(2);
-    expect(mathFunctions.abs(-2)).toBe(2);
-    expect(mathFunctions.min(3, 1, 2)).toBe(1);
-    expect(mathFunctions.max(3, 1, 2)).toBe(3);
+  it('exposes dice metadata for keep/drop and traces', async () => {
+    const result = await roll('2d6kh1', {}, [0.1, 0.9]);
+    const dice = result.breakdown.groups[0].dice;
+    expect(dice.filter((die) => die.kept)).toHaveLength(1);
+    expect(dice.filter((die) => die.dropped)).toHaveLength(1);
+    expect(result.process.arithmetic.length).toBeGreaterThan(0);
   });
 
-  it('validates values and applies array modifiers', () => {
-    expect(validateInteger('4', 'count')).toBe(4);
-    expect(() => validateInteger('x', 'count')).toThrow(
-      'count must be a valid integer',
-    );
-    expect(validatePositiveInteger('4', 'count')).toBe(4);
-    expect(() => validatePositiveInteger('0', 'count')).toThrow(
-      'count must be a positive integer',
-    );
-    expect(validateRange(4, 1, 6, 'value')).toBe(4);
-    expect(() => validateRange(9, 1, 6, 'value')).toThrow(
-      'value must be between 1 and 6',
-    );
-    expect(countSuccesses([1, 3, 5], 3, '>')).toBe(1);
-    expect(countSuccesses([1, 3, 5], 3, '<')).toBe(1);
-    expect(countSuccesses([1, 3, 5], 3, '>=')).toBe(2);
-    expect(countSuccesses([1, 3, 5], 3, '<=')).toBe(2);
-    expect(countSuccesses([1, 3, 5], 3, '=')).toBe(1);
-    expect(countSuccesses([1, 3, 5], 3, '!=')).toBe(2);
-    expect(keepHighest([1, 5, 3], 2)).toEqual([5, 3]);
-    expect(keepLowest([1, 5, 3], 2)).toEqual([1, 3]);
-    expect(dropHighest([1, 5, 3], 1)).toEqual([3, 1]);
-    expect(dropLowest([1, 5, 3], 1)).toEqual([3, 5]);
-  });
-
-  it('evaluates deterministic modifier results', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5);
-    expect(evaluateDiceNode(parseDiceAst('2d6kh1'), {}).rolls).toHaveLength(1);
-    expect(evaluateDiceNode(parseDiceAst('2d6kl1'), {}).rolls).toHaveLength(1);
-    expect(evaluateDiceNode(parseDiceAst('2d6dh1'), {}).rolls).toHaveLength(1);
-    expect(evaluateDiceNode(parseDiceAst('2d6dl1'), {}).rolls).toHaveLength(1);
-    vi.restoreAllMocks();
+  it('supports min/max arithmetic functions', async () => {
+    expect((await roll('min(3, 1, 2)')).total).toBe(1);
+    expect((await roll('max(3, 1, 2)')).total).toBe(3);
   });
 });

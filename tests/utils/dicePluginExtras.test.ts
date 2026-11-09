@@ -1,161 +1,167 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  parseTableAst,
-  extractTables,
-  evaluateTableNode,
-  tablesPlugin,
-} from '@/utils/dice-roller/plugins/tables';
-import {
-  extractMacros,
-  evaluateMacroNode,
-  macrosPlugin,
-} from '@/utils/dice-roller/plugins/macros';
-import { registerPlugin } from '@/utils/dice-roller/core';
-import { dicePlugin } from '@/utils/dice-roller/plugins/dice/dicePlugin';
+  createDicePlugin,
+  createEmptyRepositories,
+  createPluginRegistry,
+  createRollEngine,
+  createStaticRepositories,
+  sequenceRng,
+  type EngineOptions,
+  type EngineOutcome,
+  type RollResult,
+  type TableDefinition,
+  type TableRepository,
+} from '@/utils/bag-of-dice';
 
-describe('tables plugin coverage', () => {
-  it('parses and extracts table nodes', () => {
-    expect(parseTableAst('2t[loot]')).toEqual({
-      type: 'table',
-      name: 'loot',
-      count: 2,
-    });
-    expect(() => parseTableAst('invalid')).toThrow('Invalid table roll syntax');
-    expect(
-      extractTables({
-        type: 'group',
-        children: [
-          { type: 'table', name: 'loot', count: 2 },
-          { type: 'nested', child: { type: 'table', name: 'gear' } },
-        ],
-      } as any),
-    ).toEqual([
-      { name: 'loot', count: 2 },
-      { name: 'gear', count: 1 },
-    ]);
-    expect(
-      tablesPlugin.extractTables?.({ type: 'table', name: 'x' } as any),
-    ).toEqual(['x']);
-    expect(
-      tablesPlugin.extractTables?.({ type: 'table-roll', table: 'y' } as any),
-    ).toEqual(['y']);
-    expect(
-      tablesPlugin.extractTables?.({
-        type: 'group',
-        child: { type: 'table', name: 'z' },
-      } as any),
-    ).toEqual(['z']);
+const engine = createRollEngine();
+
+function tableRepository(
+  tables: Record<string, TableDefinition>,
+): TableRepository {
+  return {
+    async get(name) {
+      return tables[name];
+    },
+  };
+}
+
+async function outcome(
+  expression: string,
+  options: Partial<EngineOptions> = {},
+  draws: number[] = [0.5],
+): Promise<EngineOutcome> {
+  return engine.roll(expression, {
+    repositories: createEmptyRepositories(),
+    rng: sequenceRng(draws),
+    ...options,
+  });
+}
+
+async function roll(
+  expression: string,
+  options: Partial<EngineOptions> = {},
+  draws: number[] = [0.5],
+): Promise<RollResult> {
+  const result = await outcome(expression, options, draws);
+  if (result.status !== 'complete') {
+    throw new Error(
+      `expected complete for "${expression}", got ${result.status}`,
+    );
+  }
+  return result.result;
+}
+
+describe('table engine coverage', () => {
+  const loot: TableDefinition = {
+    name: 'loot',
+    entries: [
+      { weight: 2, value: 'gold' },
+      { weight: 1, value: 'gem' },
+    ],
+  };
+
+  it('selects classic and weighted table entries', async () => {
+    const repositories = {
+      tables: tableRepository({ loot }),
+    };
+    const weighted = await roll('2t[loot]', { repositories }, [0.1, 0.9]);
+    expect(weighted.process.tables).toHaveLength(2);
+    expect(weighted.process.tables[0].value).toBe('gold');
+
+    const numeric = await roll(
+      't[numbers]',
+      {
+        repositories: {
+          tables: tableRepository({
+            numbers: {
+              name: 'numbers',
+              entries: [{ weight: 1, value: '7' }],
+            },
+          }),
+        },
+      },
+      [0.5],
+    );
+    expect(numeric.total).toBe(7);
   });
 
-  it('evaluates weighted and classic tables', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    expect(
-      evaluateTableNode(
-        { type: 'table', name: 'loot', count: 2 } as any,
-        {
-          tableMap: { loot: ['gold', 'gem'] },
-        } as any,
-      ),
-    ).toMatchObject({ rolls: ['gold', 'gold'] });
-    expect(
-      evaluateTableNode(
-        { type: 'table', name: 'loot', count: 1 } as any,
-        {
-          tableMap: {
-            loot: [
-              { value: 'gold', weight: 2 },
-              { value: 'gem', weight: 1 },
-            ],
-          },
-        } as any,
-      ),
-    ).toMatchObject({ rolls: ['gold'] });
-    expect(() => evaluateTableNode({ type: 'dice' } as any, {})).toThrow(
-      'Expected table node',
-    );
-    expect(() =>
-      evaluateTableNode(
-        { type: 'table', name: 'missing', count: 1 } as any,
-        {},
-      ),
-    ).toThrow("Table 'missing' not found or empty");
-    expect(() =>
-      evaluateTableNode(
-        { type: 'table', name: 'empty', count: 1 } as any,
-        {
-          tableMap: { empty: [{}] },
-        } as any,
-      ),
-    ).toThrow("Table 'empty' has no valid entries");
-    expect(() =>
-      evaluateTableNode(
-        { type: 'table', name: 'loot', count: 0 } as any,
-        {
-          tableMap: { loot: ['gold'] },
-        } as any,
-      ),
-    ).toThrow("Invalid roll count for table 'loot': 0");
-    vi.restoreAllMocks();
+  it('reports missing, empty and invalid table rolls', async () => {
+    const missing = await outcome('t[missing]');
+    expect(missing.status).toBe('error');
+    if (missing.status === 'error') {
+      expect(missing.errors[0].code).toBe('TABLE_MISSING');
+    }
+
+    const empty = await outcome('t[empty]', {
+      repositories: {
+        tables: tableRepository({
+          empty: { name: 'empty', entries: [] },
+        }),
+      },
+    });
+    expect(empty.status).toBe('error');
+    if (empty.status === 'error') {
+      expect(empty.errors[0].code).toBe('TABLE_MISSING');
+    }
+
+    const invalidCount = await outcome('0t[loot]', {
+      repositories: { tables: tableRepository({ loot }) },
+    });
+    expect(invalidCount.status).toBe('error');
+    if (invalidCount.status === 'error') {
+      expect(invalidCount.errors[0].code).toBe('VALIDATION_INVALID_MODIFIER');
+    }
+  });
+
+  it('validates table syntax', async () => {
+    const invalid = await outcome('invalid');
+    expect(invalid.status).toBe('error');
   });
 });
 
-describe('macros plugin coverage', () => {
-  it('extracts macro nodes and plugin variants', () => {
-    expect(
-      extractMacros({
-        type: 'group',
-        children: [
-          { type: 'macro', name: 'attack' },
-          { type: 'nested', child: { type: 'macro', name: 'damage' } },
-        ],
-      } as any),
-    ).toEqual([{ name: 'attack' }, { name: 'damage' }]);
-    expect(
-      macrosPlugin.extractMacros?.({ type: 'macro', name: 'x' } as any),
-    ).toEqual(['x']);
-    expect(
-      macrosPlugin.extractMacros?.({ type: 'macro-call', macro: 'y' } as any),
-    ).toEqual(['y']);
-    expect(
-      macrosPlugin.extractMacros?.({
-        type: 'group',
-        child: { type: 'macro', name: 'z' },
-      } as any),
-    ).toEqual(['z']);
+describe('macro engine coverage', () => {
+  it('expands nested macros and records provenance', async () => {
+    const repositories = createStaticRepositories({
+      macros: {
+        outer: '#inner',
+        inner: '1+4',
+      },
+    });
+    const result = await roll('#outer', { repositories });
+    expect(result.total).toBe(5);
+    expect(result.process.expansions.map((record) => record.name)).toEqual([
+      'inner',
+      'outer',
+    ]);
   });
 
-  it('evaluates macros and guards recursion and missing macros', () => {
-    expect(() =>
-      evaluateMacroNode({ type: 'number', value: 1 } as any, {}),
-    ).toThrow('Expected macro node');
-    expect(() =>
-      evaluateMacroNode(
-        { type: 'macro', name: 'x' } as any,
-        {
-          nestingLevel: 2,
-          maxNesting: 2,
-        } as any,
-      ),
-    ).toThrow('Macro recursion limit exceeded (2 levels)');
-    expect(() =>
-      evaluateMacroNode(
-        { type: 'macro', name: 'missing' } as any,
-        {
-          macroMap: {},
-        } as any,
-      ),
-    ).toThrow("Macro 'missing' not found");
-    registerPlugin(dicePlugin);
-    expect(
-      evaluateMacroNode(
-        { type: 'macro', name: 'attack' } as any,
-        {
-          macroMap: { attack: { type: 'number', value: 5 } },
-        } as any,
-      ),
-    ).toMatchObject({
-      total: 5,
-      details: { macro: 'attack', nestingLevel: 1 },
+  it('guards missing macros and recursion', async () => {
+    const missing = await outcome('#missing');
+    expect(missing.status).toBe('error');
+    if (missing.status === 'error') {
+      expect(missing.errors[0].code).toBe('MISSING_DATA');
+    }
+
+    const cyclic = await outcome('#a', {
+      repositories: createStaticRepositories({
+        macros: { a: '#b', b: '#a' },
+      }),
     });
+    expect(cyclic.status).toBe('error');
+    if (cyclic.status === 'error') {
+      expect(cyclic.errors[0].code).toBe('EXPANSION_CYCLE');
+    }
+  });
+});
+
+describe('plugin registry coverage', () => {
+  it('rejects duplicate plugin names', () => {
+    expect(() =>
+      createPluginRegistry([createDicePlugin(), createDicePlugin()]),
+    ).toThrow(/duplicate plugin name/);
+  });
+
+  it('provides a stable dice plugin name', () => {
+    expect(createDicePlugin().name).toBe('dice');
   });
 });

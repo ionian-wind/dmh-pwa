@@ -11,7 +11,7 @@ import type {
 } from '../contracts';
 import { fail } from '../errors';
 
-const MATH_FUNCTIONS = new Set(['floor', 'ceil', 'round', 'abs']);
+const MATH_FUNCTIONS = new Set(['floor', 'ceil', 'round', 'abs', 'min', 'max']);
 
 function labelSegment(node: AstNode): RollSegment[] {
   return node.label ? [{ kind: 'label', text: node.label }] : [];
@@ -190,6 +190,43 @@ function fn(node: FunctionCallNode, context: EvalContext): EvalResult {
       span: node.span,
       params: { function: node.name },
     });
+  }
+  const variadic = name === 'min' || name === 'max';
+  if (variadic) {
+    if (node.args.length === 0) {
+      fail('MATH_INVALID_ARITY', `function "${name}" needs an argument`, {
+        pass: 'evaluate',
+        plugin: 'arithmetic',
+        span: node.span,
+        params: { function: name, arity: 0 },
+      });
+    }
+    const args = node.args.map((arg) => context.evaluate(arg));
+    const values = args.map((arg) => numberValue(arg.value));
+    const result = name === 'min' ? Math.min(...values) : Math.max(...values);
+    return {
+      value: result,
+      records: args.flatMap((arg) => arg.records),
+      segments: [
+        ...args.flatMap((arg) => arg.segments),
+        { kind: 'math', text: formatNumber(result), result },
+      ],
+      arithmetic: [
+        ...args.flatMap((arg) => arg.arithmetic ?? []),
+        {
+          expression: `${name}(${values.map(formatNumber).join(', ')})`,
+          result,
+          nodeType: node.type,
+        },
+      ],
+      warnings: args.flatMap((arg) => arg.warnings ?? []),
+      ...(args.some((arg) => arg.groups)
+        ? { groups: args.flatMap((arg) => arg.groups ?? []) }
+        : {}),
+      ...(args.some((arg) => arg.tables)
+        ? { tables: args.flatMap((arg) => arg.tables ?? []) }
+        : {}),
+    };
   }
   if (node.args.length !== 1) {
     fail(

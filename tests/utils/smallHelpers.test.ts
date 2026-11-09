@@ -4,12 +4,7 @@ import { setupAnchorScrollHandler } from '@/utils/anchorScroll';
 import { scrollToHeading } from '@/utils/scrollToHeading';
 import { cropTitle } from '@/utils/cropTitle';
 import { debug, debugError, debugWarn } from '@/utils/debug';
-import {
-  DiceMissingDataError,
-  DiceSyntaxError,
-  DiceValidationError,
-  DiceWarning,
-} from '@/utils/dice-roller/lib/errors';
+import { rollError, rollWarning, RollFailure } from '@/utils/bag-of-dice';
 
 describe('small utility helpers', () => {
   beforeEach(() => {
@@ -99,16 +94,14 @@ describe('small utility helpers', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('exposes dice error and warning types', () => {
-    expect(new DiceSyntaxError('syntax').name).toBe('DiceSyntaxError');
-    expect(new DiceValidationError('validation').name).toBe(
-      'DiceValidationError',
-    );
-    expect(new DiceMissingDataError('missing').name).toBe(
-      'DiceMissingDataError',
-    );
-    expect(new DiceWarning('careful').message).toBe('careful');
-    expect(new DiceSyntaxError('x')).toBeInstanceOf(Error);
+  it('exposes dice engine error and warning types', () => {
+    const error = rollError('VALIDATION_INVALID_DICE', 'validation', {
+      pass: 'evaluate',
+      plugin: 'dice',
+    });
+    expect(error.code).toBe('VALIDATION_INVALID_DICE');
+    expect(new RollFailure(error).errors[0]).toBe(error);
+    expect(rollWarning('MISSING_DATA', 'careful').message).toBe('careful');
   });
 
   it('routes debug output through the console helpers in development', () => {
@@ -150,9 +143,7 @@ describe('small utility helpers', () => {
     },
   );
 
-  it('loads the debug macro arithmetic module', async () => {
-    await expect(
-      import('@/utils/dice-roller/plugins/macros/debug-macro-arithmetic'),
-    ).resolves.toBeTruthy();
+  it('loads the bag-of-dice public module', async () => {
+    await expect(import('@/utils/bag-of-dice')).resolves.toBeTruthy();
   });
 });

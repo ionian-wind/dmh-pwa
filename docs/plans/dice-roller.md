@@ -569,7 +569,8 @@ this metadata; neither recomputes the roll.
 ### Arithmetic and functions
 
 Operators: `+`, `-`, `*`, `/`, `%`, `**`, parentheses. Math-only expressions are
-valid. Functions: `floor(x)`, `round(x)`, `ceil(x)`, `abs(x)`.
+valid. Functions: `floor(x)`, `round(x)`, `ceil(x)`, `abs(x)`, and variadic
+`min(...)`, `max(...)`.
 
 Precedence: parentheses, functions, exponentiation, multiplication/division/
 modulus left-to-right, addition/subtraction left-to-right.

@@ -1,205 +1,151 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  evaluateDiceNode,
-  parseDiceAst,
-} from '@/utils/dice-roller/plugins/dice/dicePlugin';
+  createEmptyRepositories,
+  createRollEngine,
+  createStaticRepositories,
+  sequenceRng,
+  type EngineOptions,
+  type EngineOutcome,
+  type RollResult,
+} from '@/utils/bag-of-dice';
 
-const dice = (modifiers: any[] = []) => ({
-  type: 'dice' as const,
-  count: 2,
-  sides: 6,
-  modifiers,
-});
+const engine = createRollEngine();
 
-describe('dice plugin branch coverage', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+async function outcome(
+  expression: string,
+  options: Partial<EngineOptions> = {},
+  draws: number[] = [0.5],
+): Promise<EngineOutcome> {
+  return engine.roll(expression, {
+    repositories: createEmptyRepositories(),
+    rng: sequenceRng(draws),
+    ...options,
   });
+}
 
-  it('applies reroll modifier operators', () => {
-    for (const operator of ['>', '<', '>=', '<=', '=', '!=']) {
-      const result = evaluateDiceNode(
-        dice([{ type: 'r', value: '2', operator }]),
-        {},
-      );
-      expect(result.rolls).toHaveLength(2);
-    }
-    const capped = evaluateDiceNode(
-      dice([{ type: 'r', value: '4', operator: '=' }]),
-      {},
+async function roll(
+  expression: string,
+  options: Partial<EngineOptions> = {},
+  draws: number[] = [0.5],
+): Promise<RollResult> {
+  const result = await outcome(expression, options, draws);
+  if (result.status !== 'complete') {
+    throw new Error(
+      `expected complete for "${expression}", got ${result.status}`,
     );
-    expect(capped.warnings?.[0]).toContain('Reroll limit reached');
-  });
+  }
+  return result.result;
+}
 
-  it('applies reroll-once and reroll-until modifiers', () => {
+describe('dice engine branches', () => {
+  it('applies reroll comparison operators', async () => {
     for (const operator of ['>', '<', '>=', '<=', '=', '!=']) {
-      const result = evaluateDiceNode(
-        dice([{ type: 'ro', value: '2', operator }]),
-        {},
-      );
-      expect(result.rolls).toHaveLength(2);
+      const result = await roll(`2d6r${operator}2`, {}, [0.1, 0.9, 0.3]);
+      expect(result.breakdown.groups[0].dice).toHaveLength(2);
     }
-    expect(
-      evaluateDiceNode(dice([{ type: 'ra', value: '1' }]), {
-        allowInfinite: false,
-      }).warnings,
-    ).toContain('Infinite reroll disabled for safety');
-    expect(
-      evaluateDiceNode(dice([{ type: 'ra', value: '1' }]), {
-        allowInfinite: true,
-      }).rolls,
-    ).toHaveLength(2);
   });
 
-  it('applies recursive explosions with targets and limits', () => {
-    const result = evaluateDiceNode(
-      dice([
-        {
-          type: 'explode',
-          value: 'recursive',
-          target: 3,
-          operator: '>',
-          limit: 2,
-        },
-        { type: 'lt', value: '5' },
-      ]),
-      {},
-    );
-    expect(result.rolls?.length).toBeGreaterThanOrEqual(2);
+  it('warns and stops at the reroll limit', async () => {
+    const result = await roll('2d6r1', { maxExplosionRolls: 1 }, [0, 0, 0]);
     expect(
-      evaluateDiceNode(dice([{ type: 'explode', value: 'recursive' }]), {})
-        .rolls?.length,
-    ).toBeGreaterThanOrEqual(2);
-    expect(
-      evaluateDiceNode(
-        dice([
-          { type: 'explode', value: 'recursive', target: 2, operator: '<' },
-        ]),
-        {},
-      ).rolls?.length,
-    ).toBeGreaterThanOrEqual(2);
+      result.warnings.some((warning) => warning.code === 'LIMIT_EXPLOSION'),
+    ).toBe(true);
   });
 
-  it('applies success, failure, critical and matching modifiers', () => {
-    for (const modifier of [
-      { type: 's', value: '3', operator: '>=' },
-      { type: 'f', value: '3', operator: '<' },
-      { type: 'cs', value: '6', operator: '=' },
-      { type: 'cf', value: '1', operator: '=' },
-      { type: 'eq', target: 3 },
-      { type: 'gt', target: 3 },
-      { type: 'lt', target: 3 },
-      { type: 'success', value: '3' },
-      { type: 'm' },
-      { type: 'o' },
+  it('applies reroll-once modifiers', async () => {
+    const result = await roll('2d6ro1', {}, [0, 0.5, 0.9]);
+    expect(result.breakdown.groups[0].dice).toHaveLength(2);
+    expect(result.breakdown.groups[0].dice[0].rerolled).toBe(true);
+  });
+
+  it('applies explosion and penetration variants', async () => {
+    for (const expression of [
+      '2d6!',
+      '2d6!>3',
+      '2d6!<2',
+      '2d6!3',
+      '2d6!!',
+      '2d6!p',
     ]) {
-      const result = evaluateDiceNode(dice([modifier]), {});
-      expect(result.total).toBeTypeOf('number');
+      const result = await roll(expression, {}, [0.9, 0.5, 0.1, 0.9]);
+      expect(result.breakdown.groups[0].dice.length).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it('handles exhaustive modifier warnings', () => {
-    expect(evaluateDiceNode(dice([{ type: 'e' }]), {}).warnings).toContain(
-      'Exhaustive (e) operator requires a preceding success/eq/gt/lt/cs/cf modifier',
+  it('applies success, failure, critical and matching modifiers', async () => {
+    const expressions = [
+      '4d6s>3',
+      '4d6f<3',
+      '4d6cs=6',
+      '4d6cf=1',
+      '4d6mt',
+      '4d6m',
+      '2d6o',
+    ];
+    for (const expression of expressions) {
+      const result = await roll(expression, {}, [0.9, 0.1, 0.5, 0.3]);
+      expect(typeof result.total).toBe('number');
+    }
+  });
+
+  it('handles exhaustive successes with and without a target', async () => {
+    const withTarget = await roll('2d6e>3', {}, [0.9, 0.9, 0.9, 0.1]);
+    expect(withTarget.breakdown.groups[0].success).toBeGreaterThanOrEqual(2);
+
+    const withoutTarget = await roll('2d6e', { maxExplosionRolls: 1 }, [0, 0]);
+    expect(
+      withoutTarget.warnings.some(
+        (warning) => warning.code === 'LIMIT_EXPLOSION',
+      ),
+    ).toBe(true);
+  });
+
+  it('handles unary, arithmetic, group and error nodes', async () => {
+    expect((await roll('+2')).total).toBe(2);
+
+    const division = await outcome('2/0');
+    expect(division.status).toBe('error');
+    if (division.status === 'error') {
+      expect(division.errors[0].code).toBe('MATH_DIVIDE_BY_ZERO');
+    }
+    const modulo = await outcome('2%0');
+    expect(modulo.status).toBe('error');
+
+    const group = await roll('{1d6,2d6}', {}, [0.5, 0.5, 0.5]);
+    expect(group.total).toBe(12);
+
+    const unknown = await outcome('nope(1)');
+    expect(unknown.status).toBe('error');
+    if (unknown.status === 'error') {
+      expect(unknown.errors[0].code).toBe('MATH_UNKNOWN_FUNCTION');
+    }
+
+    const table = await outcome('t[loot]');
+    expect(table.status).toBe('error');
+    if (table.status === 'error') {
+      expect(table.errors[0].code).toBe('TABLE_MISSING');
+    }
+  });
+
+  it('rejects invalid custom and fudge dice counts', async () => {
+    for (const expression of ['0d[1]', '0dF']) {
+      const result = await outcome(expression);
+      expect(result.status, expression).toBe('error');
+      if (result.status === 'error') {
+        expect(result.errors[0].code).toBe('VALIDATION_INVALID_DICE');
+      }
+    }
+  });
+
+  it('delegates macros and inline rolls', async () => {
+    const macro = await roll(
+      '#attack',
+      { repositories: createStaticRepositories({ macros: { attack: '1d6' } }) },
+      [0.5],
     );
-    expect(
-      evaluateDiceNode(dice([{ type: 's' }, { type: 'e' }]), {}).warnings,
-    ).toContain('Exhaustive operator missing target');
-  });
+    expect(macro.process.expansions).toHaveLength(1);
 
-  it('handles unary, arithmetic, group and unknown nodes', () => {
-    expect(
-      evaluateDiceNode(
-        {
-          type: 'unary',
-          op: '+',
-          operand: { type: 'number', value: 2 },
-        } as any,
-        {},
-      ).total,
-    ).toBe(2);
-    expect(
-      evaluateDiceNode(
-        {
-          type: 'arithmetic',
-          op: '?',
-          left: { type: 'number', value: 2 },
-          right: { type: 'number', value: 3 },
-        } as any,
-        {},
-      ).total,
-    ).toBe(0);
-    expect(() =>
-      evaluateDiceNode(
-        {
-          type: 'arithmetic',
-          op: '/',
-          left: { type: 'number', value: 2 },
-          right: { type: 'number', value: 0 },
-        } as any,
-        {},
-      ),
-    ).toThrow('Division by zero');
-    expect(() =>
-      evaluateDiceNode(
-        {
-          type: 'arithmetic',
-          op: '%',
-          left: { type: 'number', value: 2 },
-          right: { type: 'number', value: 0 },
-        } as any,
-        {},
-      ),
-    ).toThrow('Modulo by zero');
-    expect(
-      evaluateDiceNode(
-        {
-          type: 'group',
-          expressions: [
-            { type: 'number', value: 1 },
-            { type: 'number', value: 2 },
-          ],
-        } as any,
-        {},
-      ).total,
-    ).toBe(3);
-    expect(() =>
-      evaluateDiceNode({ type: 'function', name: 'nope', args: [] } as any, {}),
-    ).toThrow('Unknown function: nope');
-    expect(() =>
-      evaluateDiceNode({ type: 'table', name: 'loot' } as any, {}),
-    ).toThrow("Table 'loot' not found or not expanded");
-    expect(
-      evaluateDiceNode({ type: 'crit-mod', mod: 2 } as any, {}).warnings,
-    ).toContain('Crit-mod node should be handled by parent');
-    expect(evaluateDiceNode({ type: 'unknown' } as any, {}).total).toBe(0);
-  });
-
-  it('rejects invalid custom and fudge dice', () => {
-    expect(() =>
-      evaluateDiceNode(
-        { type: 'custom-dice', count: 0, sides: [1], modifiers: [] } as any,
-        {},
-      ),
-    ).toThrow('Dice count must be positive');
-    expect(() =>
-      evaluateDiceNode(
-        {
-          type: 'fudge-dice',
-          count: 0,
-          variant: 'basic',
-          modifiers: [],
-        } as any,
-        {},
-      ),
-    ).toThrow('Dice count must be positive');
-  });
-
-  it('covers macro and inline node delegation', () => {
-    expect(() =>
-      evaluateDiceNode({ type: 'macro', name: 'attack' } as any, {}),
-    ).toThrow();
-    expect(parseDiceAst('[[1d6]]')).toBeTruthy();
+    const inline = await roll('[[1d6]]', {}, [0.5]);
+    expect(inline.process.inlineRolls).toHaveLength(1);
   });
 });

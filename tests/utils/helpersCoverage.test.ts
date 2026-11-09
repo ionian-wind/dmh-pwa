@@ -4,17 +4,14 @@ import { alert } from '@/dialogs/alert';
 import { Seq } from '@/utils/dice-probability-calculator/seq';
 import { rng, getRandomInt } from '@/utils/random';
 import {
+  createEmptyRepositories,
+  createRollEngine,
   rollDie,
-  rollDice,
-  explodeDice,
-  debugLog,
-} from '@/utils/dice-roller/lib/utils';
-import {
-  DiceRollerError,
-  SyntaxError,
-  ValidationError,
-  MissingDataError,
-} from '@/utils/dice-roller/lib/types';
+  rollError,
+  rollWarning,
+  RollFailure,
+  sequenceRng,
+} from '@/utils/bag-of-dice';
 import {
   extractImageMetadata,
   extractImageMetadataFromUrl,
@@ -77,43 +74,55 @@ describe('helper coverage', () => {
     ]);
   });
 
-  it('rolls and explodes dice for every operator', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5);
-    expect(rollDie(6)).toBe(4);
-    expect(rollDice(2, 6)).toEqual([4, 4]);
+  it('rolls and explodes dice for every comparison operator', async () => {
+    const engine = createRollEngine();
+    const repositories = createEmptyRepositories();
+    expect(rollDie(sequenceRng([0.5]), 6)).toBe(4);
 
-    for (const operator of ['>', '<', '>=', '<=', '=', '!='] as const) {
-      const result = explodeDice([3], 6, 2, 2, operator);
-      expect(result.rolls.length).toBeGreaterThanOrEqual(1);
+    const pool = await engine.roll('2d6', {
+      repositories,
+      rng: sequenceRng([0.5, 0.5]),
+    });
+    expect(pool.status).toBe('complete');
+    if (pool.status === 'complete') {
+      expect(
+        pool.result.breakdown.groups[0].dice.map((die) => die.value),
+      ).toEqual([4, 4]);
     }
-    const fallback = explodeDice([1], 6, 2, 1, 'invalid' as unknown as '=');
-    expect(fallback.rolls.length).toBeGreaterThanOrEqual(1);
 
-    const capped = explodeDice([6], 6, 2, 1, '>');
-    expect(capped.warnings).toContain(
-      'Maximum roll count (99) reached during explosion',
-    );
-    debugLog('test', 'message');
+    for (const operator of ['>', '<', '>=', '<=', '=', '!=']) {
+      const result = await engine.roll(`1d6!${operator}3`, {
+        repositories,
+        rng: sequenceRng([0.9, 0.9, 0.9]),
+      });
+      expect(result.status).toBe('complete');
+    }
+
+    const capped = await engine.roll('1d6!', {
+      repositories,
+      rng: sequenceRng([0.9, 0.9, 0.9]),
+      maxExplosionRolls: 1,
+    });
+    expect(capped.status).toBe('complete');
+    if (capped.status === 'complete') {
+      expect(
+        capped.result.warnings.some(
+          (warning) => warning.code === 'LIMIT_EXPLOSION',
+        ),
+      ).toBe(true);
+    }
   });
 
-  it('constructs dice roller errors', () => {
-    expect(new DiceRollerError('base', 'CODE')).toMatchObject({
+  it('constructs dice engine errors', () => {
+    const error = rollError('PARSE_UNKNOWN_TOKEN', 'base', { pass: 'parse' });
+    expect(error).toMatchObject({
+      code: 'PARSE_UNKNOWN_TOKEN',
       message: 'base',
-      code: 'CODE',
-      name: 'DiceRollerError',
+      pass: 'parse',
     });
-    expect(new SyntaxError('bad syntax')).toMatchObject({
-      code: 'SYNTAX_ERROR',
-      name: 'SyntaxError',
-    });
-    expect(new ValidationError('bad value')).toMatchObject({
-      code: 'VALIDATION_ERROR',
-      name: 'ValidationError',
-    });
-    expect(new MissingDataError('missing')).toMatchObject({
-      code: 'MISSING_DATA_ERROR',
-      name: 'MissingDataError',
-    });
+    const failure = new RollFailure(error);
+    expect(failure.errors[0].code).toBe('PARSE_UNKNOWN_TOKEN');
+    expect(rollWarning('MISSING_DATA', 'careful').message).toBe('careful');
   });
 
   it('extracts image metadata through workers', async () => {
