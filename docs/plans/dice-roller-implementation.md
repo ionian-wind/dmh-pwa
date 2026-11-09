@@ -1,6 +1,6 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 173 passing tests (172 pass + 1 upstream expected failure); three
+> **Status: in progress.** Core engine implemented with 173 passing tests; three
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
@@ -289,7 +289,7 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 173 passing tests (172 pass + 1 upstream expected failure) across
+Implemented under `src/utils/bag-of-dice` with 173 passing tests across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 
@@ -320,9 +320,11 @@ Compatibility behavior adopted from that corpus:
 - `!N` is shorthand for explode-on-equals-N;
 - `dN` directly after a dice pool is parsed as drop-lowest.
 
-One upstream fixed-RNG case (`{3d6>4 + 3d4>3, 2d8>7}`) is kept as an expected
-failure because the upstream project's own suite currently fails it with `4`
-instead of `5`.
+Investigation of the one initially failing upstream case: commit `6db9c7a`
+introduced `{3d6>4 + 3d4>3, 2d8>7}` with expected value `4`. A later mass
+formatting/modernization commit changed only the expectation to `5`; the
+upstream suite currently fails it. The supplied draws correctly produce
+`2 + 1 + 1 = 4`, so the port keeps `4` and the full reference suite passes.
 
 ### Decisions and deviations
 
@@ -358,6 +360,8 @@ instead of `5`.
 
 - [ ] **DR-326** Implement full roll-once (`o`) semantics for tables and
       grouped rolls.
+- [x] **DR-329** Document syntax and semantic differences from the reference
+      `dice-roller-parser` implementation.
 - [ ] **DR-327** Add comma-separated reroll/explode modifier clause support and
       golden tests.
 - [x] **DR-328** Implement `mtN`/`mtN>X` argument and threshold semantics; the

@@ -104,7 +104,10 @@ const testFixedRolls: Array<[string, number, number[]]> = [
   ['3d6>3f1', 2, [0.84, 0.17, 0.5]],
   ['4d6<2f>4', -1, [0.84, 0.17, 0.5, 0.34]],
   ['4d6', 15, [0.84, 0.17, 0.5, 0.34]],
-  ['{3d6>4 + 3d4>3, 2d8>7}', 5, [0.84, 0.17, 0.5, 0.76, 0, 0.49, 0.5, 0.86]],
+  // Upstream originally expected 4 (commit 6db9c7a); a later formatting commit
+  // changed it to 5 without a semantic change. 4 is correct for the supplied
+  // draws: 2 + 1 + 1.
+  ['{3d6>4 + 3d4>3, 2d8>7}', 4, [0.84, 0.17, 0.5, 0.76, 0, 0.49, 0.5, 0.86]],
   ['{2d6!}>5', 3, [0.17, 0.84, 0.84, 0.67]],
 ];
 
@@ -122,14 +125,9 @@ describe('reference roller values', () => {
   }
 });
 
-// Upstream also fails this case (its own suite reports 4 vs the expected 5).
-// Keep it as an expected failure so the port documents the discrepancy.
-const UPSTREAM_BROKEN = '{3d6>4 + 3d4>3, 2d8>7}';
-
 describe('reference fixed-RNG rolls', () => {
   for (const [expression, expected, draws] of testFixedRolls) {
-    const run = expression === UPSTREAM_BROKEN ? it.fails : it;
-    run(`${expression} (${draws.join(',')})`, async () => {
+    it(`${expression} (${draws.join(',')})`, async () => {
       expect(await rollValue(expression, draws)).toBe(expected);
     });
   }

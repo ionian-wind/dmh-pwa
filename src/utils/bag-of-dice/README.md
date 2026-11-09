@@ -80,6 +80,43 @@ crypto-backed RNG; the engine never falls back to `Math.random`.
 - Inline rolls `[[expr]]` and references `$[[n]]` / `$[[n.computed]]`.
 - Tables `t[name]`, `2t[name]`.
 
+## Syntax compatibility with `dice-roller-parser`
+
+The reference project's roller tests are ported in
+`__tests__/reference-compat.test.ts` (Russian syntax and Discord rendering are
+intentionally not ported).
+
+| Feature                | `ttg-club/dice-roller-parser`      | This engine                                                        |
+| ---------------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| Dice separator         | `d`, Russian `к`                   | `d`/`D` only                                                       |
+| Fate dice              | `dF`, `df`, Russian `кС`           | `dF`, `df`, plus `dF.1`/`dF.2`/`dF.3`                              |
+| Russian operators      | yes                                | no — syntax localization is out of scope                           |
+| Custom dice            | no                                 | `d[a,b,c]`                                                         |
+| `d%`                   | yes                                | yes                                                                |
+| Computed dice          | yes                                | yes                                                                |
+| Keep/drop size         | full roll expression               | integer literal                                                    |
+| Reroll/explode target  | full roll expression               | number or compare point (`>N`, `<N`, `=N`, `!=N`)                  |
+| Success/failure        | `>`, `<`, `=`, `f`                 | same, plus `s`, `cs`, `cf`                                         |
+| Sort                   | `s`, `sa`, `sd`                    | same; `s>N` is success counting                                    |
+| Match                  | `m`, `mt`, `mtN`, optional target  | same semantics                                                     |
+| Explode forms          | `!`, `!!`, `!p`, optional target   | same; `!N` means `!=N`                                             |
+| Grouped-roll modifiers | single member flattens to dice     | same                                                               |
+| Labels                 | after roll/bracket expressions     | after dice, groups and ordinary terms                              |
+| Trailing text          | captured as the expression label   | stored as a text segment (disable with `allowTrailingText: false`) |
+| Inline rolls           | `[[expr]]`, usable as a dice count | same, plus `$[[n]]` references                                     |
+| Roll queries           | no                                 | `?{...}` extraction/answer pass                                    |
+| Macros/abilities/attrs | no                                 | `#macro`, `%{...}`, `@{...}` expansion pass                        |
+| Tables                 | no                                 | `Nt[table]` plugin                                                 |
+| Roll-once `o`          | no                                 | parsed but currently a no-op                                       |
+| Errors                 | boolean flags / thrown errors      | typed `RollError` codes and outcome statuses                       |
+| RNG                    | callback                           | `Rng` interface with snapshot/replay                               |
+| Chat renderer          | Discord markdown renderer          | text/2D/3D visualizer contracts (Discord out of scope)             |
+
+Semantics aligned with the reference corpus: inclusive target numbers, `mt`
+matching-group counts, single-member group flattening, trailing text, `!N` and
+`dN` drop shorthand. Differences are intentional where this engine adds roll
+queries, macros, APIs and typed metadata.
+
 ## Metadata
 
 `RollResult` carries the final total plus:

@@ -1009,6 +1009,25 @@ implementation tracker). Deltas discovered while building it:
   `QUERY_DEPTH`, `TABLE_DEPTH`, `LIMIT_TIME`, `CANCELLED`) were added to the
   taxonomy.
 
+## Syntax differences from `dice-roller-parser`
+
+The ported compatibility suite is documented in
+[`src/utils/bag-of-dice/README.md`](../../src/utils/bag-of-dice/README.md).
+Summary:
+
+- The reference supports Russian operators and a Discord renderer; this engine
+  intentionally does not.
+- This engine adds roll queries, macro/ability/attribute expansion, tables,
+  custom dice, Fudge variants and inline references.
+- Keep/drop sizes and reroll/explode/success targets accept integer/compare
+  forms here, while the reference accepts full roll expressions.
+- `s>N` means success counting here; in the reference `s` is sort-only.
+- `o` roll-once is parsed but currently a no-op.
+- Target-number compares (`>`, `<`) are inclusive for reference compatibility.
+- Single-member grouped rolls apply modifiers to individual dice; multi-member
+  groups apply them to sub-roll totals.
+- Trailing text is stored as a text segment rather than an expression label.
+
 ## References
 
 - [Dice Reference](https://wiki.roll20.net/Dice_Reference)
