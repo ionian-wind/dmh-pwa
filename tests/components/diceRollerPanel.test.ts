@@ -155,7 +155,7 @@ describe('DiceRollerPanel', () => {
     wrapper.unmount();
   });
 
-  it('keeps the rendering surface in viewport pixels on resize', async () => {
+  it('does not resize or clear the dice canvas on window resize', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 800,
@@ -181,9 +181,12 @@ describe('DiceRollerPanel', () => {
     });
     window.dispatchEvent(new Event('resize'));
 
-    expect(surface.style.width).toBe('1000px');
-    expect(surface.style.height).toBe('700px');
+    // DiceBox stops rendering after dice settle; resizing its canvas would
+    // clear the settled dice without restarting the render loop.
+    expect(surface.style.width).toBe('800px');
+    expect(surface.style.height).toBe('600px');
     expect(mocks.diceBox.clear).not.toHaveBeenCalled();
+    expect(mocks.diceBox.add).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 });

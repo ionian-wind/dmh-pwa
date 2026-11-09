@@ -63,11 +63,19 @@ function placeBesideMenu() {
   void nextTick(() => menu.value?.updatePosition?.());
 }
 
-function resizeSurface() {
-  if (surface.value) {
-    surface.value.style.width = `${window.innerWidth}px`;
-    surface.value.style.height = `${window.innerHeight}px`;
-  }
+/**
+ * DiceBox stops its Babylon render loop once every die is asleep. Resizing the
+ * canvas after that clears the drawing buffer without starting a new frame, so
+ * the settled dice vanish. Keep the render surface at its original pixel size
+ * and only move the menu anchor on viewport changes.
+ */
+function sizeSurface() {
+  if (!surface.value) return;
+  surface.value.style.width = `${window.innerWidth}px`;
+  surface.value.style.height = `${window.innerHeight}px`;
+}
+
+function onWindowResize() {
   if (!dragged) {
     placeBesideMenu();
   } else {
@@ -152,8 +160,8 @@ watch(
 
 onMounted(async () => {
   placeBesideMenu();
-  resizeSurface();
-  window.addEventListener('resize', resizeSurface);
+  sizeSurface();
+  window.addEventListener('resize', onWindowResize);
   const mainMenu = document.getElementById('main_menu');
   if (mainMenu && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
@@ -173,11 +181,10 @@ onMounted(async () => {
   });
   await diceBox.init();
   ready.value = true;
-  resizeSurface();
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', resizeSurface);
+  window.removeEventListener('resize', onWindowResize);
   resizeObserver?.disconnect();
   stopDragging();
   diceBox?.clear();
