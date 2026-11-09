@@ -38,6 +38,7 @@ interface RenderedDie {
   kind: VisualDiePart['kind'];
   state: 'physics' | 'done' | 'dragging';
   result?: number;
+  pulse?: { start: number; duration: number };
   explode?: DiceVisual['explode'];
   isExtra?: boolean;
   penalty?: number;
@@ -78,6 +79,10 @@ interface SpawnPlan {
   way: number;
   /** Horizontal impulse strength. */
   force: number;
+  /** Optional explicit release velocity (explosions). */
+  velocity?: { x: number; y: number; z: number };
+  /** Optional explicit angular impulse magnitude (explosions). */
+  angular?: number;
 }
 
 export class ThreeDiceRenderer implements DiceRenderer {
@@ -518,7 +523,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
       ),
     );
     // Spin scales with throw force so harder tosses tumble a little faster.
-    const spin = spawn.force * randomBetween(0.3, 0.55);
+    const spin = spawn.angular ?? spawn.force * randomBetween(0.3, 0.55);
     const body = this.physics.add(
       id,
       scaledPoints(asset.colliderPoints, DICE_SCALE),
@@ -532,11 +537,15 @@ export class ThreeDiceRenderer implements DiceRenderer {
           z: mesh.quaternion.z,
           w: mesh.quaternion.w,
         },
-        impulse: {
-          x: Math.cos(spawn.way) * spawn.force,
-          y: randomBetween(-0.01, 0.015),
-          z: Math.sin(spawn.way) * spawn.force,
-        },
+        ...(spawn.velocity
+          ? { linearVelocity: spawn.velocity }
+          : {
+              impulse: {
+                x: Math.cos(spawn.way) * spawn.force,
+                y: randomBetween(-0.01, 0.015),
+                z: Math.sin(spawn.way) * spawn.force,
+              },
+            }),
         torque: {
           x: randomBetween(-spin, spin),
           y: randomBetween(-spin, spin),
@@ -613,6 +622,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
       }
     }
 
+    this.animatePulses(time);
     this.renderFrame();
     if (physicsActive) {
       this.frame = requestAnimationFrame(this.tick);
@@ -621,6 +631,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
   private finishDie(die: RenderedDie): void {
     die.state = 'done';
+    die.pulse = undefined;
+    die.mesh.scale.setScalar(DICE_SCALE);
     this.restOnFloor(die.mesh);
     die.result = this.readFaceValue(die);
   }
@@ -652,6 +664,16 @@ export class ThreeDiceRenderer implements DiceRenderer {
       const root = result.rootId ?? result.id;
       const count = this.explosions.get(root) ?? 0;
       if (count >= MAX_EXPLOSIONS) continue;
+      for (const die of this.dice.values()) {
+        if (die.visualId === result.id) {
+          die.pulse = { start: performance.now(), duration: 190 };
+        }
+      }
+      const parent = [...this.dice.values()].find(
+        (die) => die.visualId === result.id,
+      );
+      const position =
+        parent?.mesh.position.clone() ?? new THREE.Vector3(0, 0.4, 0);
       const extra: DiceVisual = {
         id: `${root}:x${count + 1}`,
         sides: result.sides,
@@ -690,6 +712,44 @@ export class ThreeDiceRenderer implements DiceRenderer {
       if (die.state !== 'done') continue;
       die.state = 'physics';
       die.result = undefined;
+    }
+  }
+
+  /** Launch an extra die out of the parent with a real physics velocity. */
+  private explosionSpawn(
+    parent: THREE.Vector3,
+    count: number,
+    index: number,
+  ): SpawnPlan {
+    const baseAngle = Math.random() * Math.PI * 2;
+    const angle = baseAngle + (index - (count - 1) / 2) * 0.4;
+    const speed = randomBetween(1.4, 2.6);
+    return {
+      x: parent.x + Math.cos(angle) * 0.18,
+      z: parent.z + Math.sin(angle) * 0.18,
+      y: Math.max(0.4, parent.y + 0.22),
+      way: angle,
+      force: speed,
+      velocity: {
+        x: Math.cos(angle) * speed,
+        y: randomBetween(1, 1.8),
+        z: Math.sin(angle) * speed,
+      },
+      angular: randomBetween(0.08, 0.18),
+    };
+  }
+
+  private animatePulses(time: number): void {
+    for (const die of this.dice.values()) {
+      if (!die.pulse) continue;
+      const progress = (time - die.pulse.start) / die.pulse.duration;
+      if (progress >= 1) {
+        die.pulse = undefined;
+        die.mesh.scale.setScalar(DICE_SCALE);
+      } else {
+        const scale = DICE_SCALE * (1 + 0.22 * Math.sin(progress * Math.PI));
+        die.mesh.scale.setScalar(scale);
+      }
     }
   }
 
