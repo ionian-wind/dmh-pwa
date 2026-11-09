@@ -1,6 +1,7 @@
 import { generateId } from '@/utils/storage';
 import type {
   DoorObject,
+  ImageObject,
   Point,
   StairsObject,
   StudioObject,
@@ -80,6 +81,21 @@ export function createDoorObject(
   };
 }
 
+export function createImageObject(
+  src: string,
+  point: Point,
+  width: number,
+  height: number,
+  order: number,
+): ImageObject {
+  return {
+    ...base(order),
+    type: 'image',
+    src,
+    transform: createTransform(point[0], point[1], width, height),
+  };
+}
+
 export function createStairsObject(
   points: Point[],
   order: number,
@@ -113,6 +129,14 @@ export function objectBounds(object: StudioObject): Bounds {
       y: object.transform.y,
       width,
       height: Math.max(object.fontSize * 1.4, object.transform.height),
+    };
+  }
+  if (object.type === 'image') {
+    return {
+      x: object.transform.x,
+      y: object.transform.y,
+      width: object.transform.width,
+      height: object.transform.height,
     };
   }
   if (object.type === 'door') {
@@ -169,7 +193,7 @@ export function moveObject(
   dx: number,
   dy: number,
 ): StudioObject {
-  if (object.type === 'text') {
+  if (object.type === 'text' || object.type === 'image') {
     return {
       ...object,
       transform: {

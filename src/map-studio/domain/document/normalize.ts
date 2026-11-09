@@ -184,6 +184,11 @@ function normalizeObject(value: unknown): StudioObject | null {
     flipX: object.transform?.flipX === true,
     flipY: object.transform?.flipY === true,
   };
+  if (type === 'image') {
+    const src = typeof object.src === 'string' ? object.src : '';
+    if (!src) return null;
+    return { ...base, type: 'image', src, transform };
+  }
   if (type === 'text') {
     const text = typeof object.text === 'string' ? object.text : '';
     if (!text) return null;

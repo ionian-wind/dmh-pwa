@@ -30,7 +30,11 @@ const emit = defineEmits<{
   (event: 'stairs', points: [number, number][]): void;
   (event: 'select', id: string | null): void;
   (event: 'moveObject', delta: { dx: number; dy: number }): void;
+  (event: 'beginObjectDrag'): void;
+  (event: 'moveObjectLive', delta: { dx: number; dy: number }): void;
+  (event: 'endObjectDrag'): void;
   (event: 'editText', id: string): void;
+  (event: 'image', point: [number, number]): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
@@ -46,7 +50,7 @@ let drag:
     }
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
-  | { kind: 'object'; id: string; start: Point }
+  | { kind: 'object'; id: string; start: Point; last: Point }
   | null = null;
 const doorPoints = ref<Point[]>([]);
 const stairPoints = ref<Point[]>([]);
@@ -94,13 +98,16 @@ function onPointerDown(event: PointerEvent): void {
     );
     emit('select', object?.id ?? null);
     if (object) {
-      drag = { kind: 'object', id: object.id, start: point };
+      drag = { kind: 'object', id: object.id, start: point, last: point };
+      emit('beginObjectDrag');
     }
     return;
   }
-  if (props.tool === 'text') {
+  if (props.tool === 'text' || props.tool === 'image') {
     const point = renderer.value.screenToWorld(sx, sy);
-    emit('text', [snap(point[0]), snap(point[1])]);
+    const target: [number, number] = [snap(point[0]), snap(point[1])];
+    if (props.tool === 'text') emit('text', target);
+    else emit('image', target);
     return;
   }
   if (props.tool === 'door' || props.tool === 'stairs') {
@@ -159,7 +166,15 @@ function onPointerMove(event: PointerEvent): void {
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
-  if (drag.kind === 'object') return;
+  if (drag.kind === 'object') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    emit('moveObjectLive', {
+      dx: current[0] - drag.last[0],
+      dy: current[1] - drag.last[1],
+    });
+    drag.last = current;
+    return;
+  }
   if (props.tool === 'door' && doorPoints.value.length === 1) {
     const current = renderer.value.screenToWorld(sx, sy);
     renderer.value.setPreview({
@@ -221,10 +236,7 @@ function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
   if (drag.kind === 'object') {
-    const current = renderer.value.screenToWorld(sx, sy);
-    const dx = snap(current[0]) - snap(drag.start[0]);
-    const dy = snap(current[1]) - snap(drag.start[1]);
-    if (dx !== 0 || dy !== 0) emit('moveObject', { dx, dy });
+    emit('endObjectDrag');
     drag = null;
     return;
   }

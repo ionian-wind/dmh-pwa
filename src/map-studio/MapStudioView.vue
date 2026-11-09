@@ -26,6 +26,10 @@ const applyOpen = ref(false);
 const applying = ref(false);
 const locationOptions = ref<Array<{ id: string; name: string }>>([]);
 const targetLocationId = ref<string | null>(null);
+const imageInput = ref<HTMLInputElement | null>(null);
+const pendingImage = ref<{ src: string; width: number; height: number } | null>(
+  null,
+);
 useMapStudioAutosave(store);
 useStudioHotkeys({
   save: () => void store.save(),
@@ -86,6 +90,11 @@ const toolbar = computed(() => [
     id: 'stairs' as const,
     icon: 'tabler-stairs',
     label: t('mapStudio.stairs'),
+  },
+  {
+    id: 'image' as const,
+    icon: 'tabler-photo',
+    label: t('mapStudio.image'),
   },
 ]);
 const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
@@ -198,6 +207,48 @@ async function editText(id: string): Promise<void> {
     modelValue: object.text,
   });
   if (text !== null) store.updateObject(id, { text });
+}
+
+function chooseImage(): void {
+  imageInput.value?.click();
+}
+
+function onImageSelected(event: Event): void {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const src = String(reader.result);
+    const image = new Image();
+    image.onload = () => {
+      const max = 4;
+      const scale = Math.min(max / image.width, max / image.height, 0.08);
+      pendingImage.value = {
+        src,
+        width: image.width * scale,
+        height: image.height * scale,
+      };
+      store.setTool('image');
+    };
+    image.src = src;
+  };
+  reader.readAsDataURL(file);
+  (event.target as HTMLInputElement).value = '';
+}
+
+function addImage(point: [number, number]): void {
+  if (!pendingImage.value) {
+    chooseImage();
+    return;
+  }
+  store.addImage(
+    pendingImage.value.src,
+    point,
+    pendingImage.value.width,
+    pendingImage.value.height,
+  );
+  pendingImage.value = null;
+  store.setTool('object');
 }
 
 async function addText(point: [number, number]): Promise<void> {
@@ -385,6 +436,14 @@ async function applyToLocation(): Promise<void> {
     <template v-else>
       <div class="studio-toolbar">
         <QBtn
+          flat
+          dense
+          class="studio-tool"
+          icon="tabler-photo-plus"
+          :title="t('mapStudio.addImage')"
+          @click="chooseImage"
+        />
+        <QBtn
           v-for="entry in toolbar"
           :key="entry.id"
           flat
@@ -478,6 +537,7 @@ async function applyToLocation(): Promise<void> {
           @select="store.selectObject"
           @moveObject="store.moveSelectedObject($event.dx, $event.dy)"
           @editText="editText"
+          @image="addImage"
           @ready="renderer = $event"
         />
 
@@ -839,6 +899,14 @@ async function applyToLocation(): Promise<void> {
       </div>
     </template>
 
+    <input
+      ref="imageInput"
+      type="file"
+      accept="image/*"
+      class="hidden-input"
+      @change="onImageSelected"
+    />
+
     <QDialog v-model="applyOpen" persistent>
       <QCard class="q-pa-md" style="min-width: 360px">
         <div class="text-subtitle1 q-mb-md">
@@ -1014,5 +1082,8 @@ async function applyToLocation(): Promise<void> {
 }
 .studio-text-input {
   width: 120px;
+}
+.hidden-input {
+  display: none;
 }
 </style>

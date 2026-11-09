@@ -39,6 +39,8 @@ export class PixiStudioRenderer {
   private selectionLayer = new Graphics();
   private previewLayer = new Graphics();
   private map: StudioMap | null = null;
+  private imageTextures = new Map<string, Texture>();
+  private loadingImages = new Set<string>();
   private width = 1;
   private height = 1;
   private viewport: StudioViewport = { x: 0, y: 0, zoom: 1 };
@@ -208,6 +210,8 @@ export class PixiStudioRenderer {
 
   destroy(): void {
     this.app?.ticker.stop();
+    for (const texture of this.imageTextures.values()) texture.destroy(true);
+    this.imageTextures.clear();
     this.app?.destroy(true, { children: true });
     this.app = null;
     this.host = null;
@@ -276,6 +280,29 @@ export class PixiStudioRenderer {
           );
           sprite.alpha = object.opacity;
           this.objectsContainer.addChild(sprite);
+        } else if (object.type === 'image') {
+          const texture = this.imageTextures.get(object.src);
+          if (texture) {
+            const sprite = new Sprite(texture);
+            sprite.width = object.transform.width * ppc;
+            sprite.height = object.transform.height * ppc;
+            sprite.position.set(
+              object.transform.x * ppc,
+              object.transform.y * ppc,
+            );
+            sprite.alpha = object.opacity;
+            this.objectsContainer.addChild(sprite);
+          } else if (!this.loadingImages.has(object.src)) {
+            this.loadingImages.add(object.src);
+            const image = new Image();
+            image.onload = () => {
+              this.imageTextures.set(object.src, Texture.from(image));
+              this.loadingImages.delete(object.src);
+              this.draw();
+            };
+            image.onerror = () => this.loadingImages.delete(object.src);
+            image.src = object.src;
+          }
         } else if (object.type === 'door') {
           const graphics = new Graphics();
           graphics

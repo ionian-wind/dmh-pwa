@@ -1194,6 +1194,8 @@
     "steps": "Steps",
     "rotation": "Rotation",
     "flipHorizontal": "Flip horizontal",
-    "flipVertical": "Flip vertical"
+    "flipVertical": "Flip vertical",
+    "image": "Image",
+    "addImage": "Add image"
   }
 }

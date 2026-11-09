@@ -238,7 +238,13 @@ export interface StairsObject extends ObjectBase {
   transform: Transform;
 }
 
-export type StudioObject = TextObject | DoorObject | StairsObject;
+export interface ImageObject extends ObjectBase {
+  type: 'image';
+  src: string;
+  transform: Transform;
+}
+
+export type StudioObject = TextObject | DoorObject | StairsObject | ImageObject;
 
 export interface ToolSettings {
   snap: boolean;
@@ -260,7 +266,8 @@ export type StudioTool =
   | 'circle'
   | 'polygon'
   | 'path'
-  | 'wall';
+  | 'wall'
+  | 'image';
 
 export interface StudioSelection {
   layerIds: string[];

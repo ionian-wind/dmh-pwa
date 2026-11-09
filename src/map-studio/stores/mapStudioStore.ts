@@ -18,6 +18,7 @@ import {
   createDoorObject,
   createStairsObject,
   createTextObject,
+  createImageObject,
   moveObject,
 } from '@/map-studio/domain/objects';
 import {
@@ -57,6 +58,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const dirty = ref(false);
   const autosave = ref<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const loading = ref(false);
+  let objectDragSnapshot: StudioMap | null = null;
 
   const activeLayer = computed<DungeonLayer | null>(() => {
     const current = map.value;
@@ -404,6 +406,18 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     ]);
   }
 
+  function addImage(
+    src: string,
+    point: [number, number],
+    width: number,
+    height: number,
+  ): void {
+    setObjects([
+      ...(imagesLayer.value?.objects ?? []),
+      createImageObject(src, point, width, height, nextObjectOrder()),
+    ]);
+  }
+
   function addDoor(a: [number, number], b: [number, number]): void {
     if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.1) return;
     setObjects([
@@ -422,6 +436,43 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
 
   function selectObject(id: string | null): void {
     selectedObjectId.value = id;
+  }
+
+  function beginObjectDrag(): void {
+    objectDragSnapshot = map.value ? cloneMap(map.value) : null;
+  }
+
+  function moveSelectedObjectLive(dx: number, dy: number): void {
+    const current = map.value;
+    const layer = imagesLayer.value;
+    const id = selectedObjectId.value;
+    if (!current || !layer || !id) return;
+    map.value = {
+      ...current,
+      updatedAt: Date.now(),
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id
+          ? {
+              ...layer,
+              objects: layer.objects.map((object) =>
+                object.id === id ? moveObject(object, dx, dy) : object,
+              ),
+            }
+          : entry,
+      ),
+    };
+    dirty.value = true;
+  }
+
+  function endObjectDrag(): void {
+    if (objectDragSnapshot && map.value && dirty.value) {
+      undoStack.value = [
+        ...undoStack.value.slice(-(MAX_HISTORY - 1)),
+        objectDragSnapshot,
+      ];
+      redoStack.value = [];
+    }
+    objectDragSnapshot = null;
   }
 
   function moveSelectedObject(dx: number, dy: number): void {
@@ -450,7 +501,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     if (!source) return;
     const copy = JSON.parse(JSON.stringify(source)) as StudioObject;
     const order = nextObjectOrder();
-    if (copy.type === 'text') {
+    if (copy.type === 'text' || copy.type === 'image') {
       copy.transform.x += 0.5;
       copy.transform.y += 0.5;
     } else if (copy.type === 'door') {
@@ -483,7 +534,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     const objects = imagesLayer.value?.objects ?? [];
     const object = objects.find((entry) => entry.id === id);
     if (!object) return;
-    if (object.type === 'text') {
+    if (object.type === 'text' || object.type === 'image') {
       updateObject(id, {
         transform: {
           ...object.transform,
@@ -613,10 +664,14 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addPath,
     addWall,
     addText,
+    addImage,
     addDoor,
     addStairs,
     selectObject,
     moveSelectedObject,
+    beginObjectDrag,
+    moveSelectedObjectLive,
+    endObjectDrag,
     removeSelectedObject,
     updateObject,
     duplicateObject,

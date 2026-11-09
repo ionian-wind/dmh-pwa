@@ -393,3 +393,25 @@ describe('map studio object variants', () => {
     expect(objects[2]).toMatchObject({ type: 'stairs', stepsPerCell: 5 });
   });
 });
+
+describe('map studio image normalization', () => {
+  it('keeps valid image objects and drops empty sources', () => {
+    const map = normalizeMap({
+      layers: [
+        {
+          type: 'images',
+          objects: [
+            {
+              type: 'image',
+              src: 'data:image/png;base64,abc',
+              transform: { x: 1, y: 1, width: 2, height: 2 },
+            },
+            { type: 'image', src: '' },
+          ],
+        },
+      ],
+    });
+    const images = map.layers.find((layer) => layer.type === 'images');
+    expect(images && 'objects' in images ? images.objects : []).toHaveLength(1);
+  });
+});

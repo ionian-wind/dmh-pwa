@@ -378,3 +378,23 @@ describe('map studio object flipping', () => {
     store.flipObject('missing', 'x');
   });
 });
+
+describe('map studio image objects and live drag', () => {
+  it('adds images and moves the selected object with one history entry', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addImage('data:image/png;base64,abc', [1, 1], 2, 2);
+    const image = store.imagesLayer!.objects[0];
+    expect(image.type).toBe('image');
+    store.selectObject(image.id);
+    store.beginObjectDrag();
+    store.moveSelectedObjectLive(1, 1);
+    const live = store.imagesLayer!.objects[0];
+    expect(live.type === 'image' && live.transform.x).toBe(2);
+    store.endObjectDrag();
+    expect(store.canUndo).toBe(true);
+    store.undo();
+    const undone = store.imagesLayer!.objects[0];
+    expect(undone.type === 'image' && undone.transform.x).toBe(1);
+  });
+});
