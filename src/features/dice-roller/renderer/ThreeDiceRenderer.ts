@@ -96,23 +96,30 @@ export class ThreeDiceRenderer implements DiceRenderer {
     );
     this.renderer = renderer;
 
-    this.camera.position.set(0, 5.4, 7.4);
-    this.camera.lookAt(0, 0.3, 0);
+    // Zenith view. `up` must point along -Z when looking straight down,
+    // otherwise `lookAt` has no stable roll reference.
+    this.camera.up.set(0, 0, -1);
+    this.camera.position.set(0, 8.5, 0);
+    this.camera.lookAt(0, 0, 0);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
 
-    const ambient = new THREE.HemisphereLight(0xffffff, 0x777777, 2.2);
+    const ambient = new THREE.HemisphereLight(0xffffff, 0x777777, 1.6);
     this.scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xffffff, 2.1);
-    key.position.set(3, 9, 4);
+    // Key light enters from the scene's left-top corner (world -X/-Z under the
+    // zenith camera) and points at the centre of the floor.
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    key.position.set(-6, 9, -6);
+    key.target.position.set(0, 0, 0);
+    this.scene.add(key.target);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.near = 0.5;
     key.shadow.camera.far = 30;
     this.scene.add(key);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.7);
-    rim.position.set(-4, 5, -3);
-    this.scene.add(rim);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+    fill.position.set(5, 4, 4);
+    this.scene.add(fill);
 
     const shadow = new THREE.Mesh(
       new THREE.PlaneGeometry(40, 40),
@@ -212,11 +219,17 @@ export class ThreeDiceRenderer implements DiceRenderer {
     mesh.receiveShadow = true;
 
     const index = this.dice.size;
-    const angle = index * 2.399963;
-    const radius = Math.min(0.55 + 0.22 * Math.sqrt(index), 2.8);
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * Math.min(radius, 1.8);
-    const spawnHeight = 2.4 + (index % 6) * 0.22;
+    // Enter from a different side/height each time and throw inward, with a
+    // little angular deviation so paths cross naturally.
+    const angle = index * 2.399963 + deterministicUnit(part.id, 0) * 0.7;
+    const radiusX = 2.2 + deterministicUnit(part.id, 10) * 0.9;
+    const radiusZ = 1.55 + deterministicUnit(part.id, 11) * 0.65;
+    const x = Math.cos(angle) * radiusX;
+    const z = Math.sin(angle) * radiusZ;
+    const spawnHeight = 1.7 + deterministicUnit(part.id, 12) * 1.6;
+    const throwAngle =
+      angle + Math.PI + (deterministicUnit(part.id, 13) - 0.5) * (Math.PI / 3);
+    const throwSpeed = 0.09 + deterministicUnit(part.id, 14) * 0.08;
     const target = targetQuaternion(
       asset.faceNormals,
       part.faceValue,
@@ -263,9 +276,9 @@ export class ThreeDiceRenderer implements DiceRenderer {
           w: mesh.quaternion.w,
         },
         impulse: {
-          x: (deterministicUnit(part.id, 4) - 0.5) * 0.045,
-          y: deterministicUnit(part.id, 5) * 0.015,
-          z: (deterministicUnit(part.id, 6) - 0.5) * 0.045,
+          x: Math.cos(throwAngle) * throwSpeed,
+          y: 0.012 + deterministicUnit(part.id, 5) * 0.03,
+          z: Math.sin(throwAngle) * throwSpeed,
         },
         torque: {
           x: (deterministicUnit(part.id, 7) - 0.5) * 0.08,

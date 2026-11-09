@@ -843,7 +843,8 @@ interface DiceRenderer {
 
 Visualizer adapters must not mutate the result and must tolerate missing 3D
 assets by reporting a fallback. The animation loop stops when every die has
-settled; resize redraws and never clears the scene.
+settled; resize redraws and never clears the scene. The camera looks straight
+down from the zenith and all dice rest on the same `y=0` scene floor.
 
 ## Non-functional requirements
 
