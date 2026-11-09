@@ -75,3 +75,23 @@ describe('map studio hotkey guards', () => {
     wrapper.unmount();
   });
 });
+
+describe('map studio hotkey deletion', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('deletes the selection with Delete or Backspace', () => {
+    const deleteSelection = vi.fn();
+    const HarnessDelete = defineComponent({
+      setup() {
+        useStudioHotkeys({ ...actions, deleteSelection });
+        return () => null;
+      },
+    });
+    const wrapper = mount(HarnessDelete);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+    expect(deleteSelection).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+    expect(deleteSelection).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+});

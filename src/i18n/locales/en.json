@@ -1179,6 +1179,11 @@
     "opacity": "Opacity",
     "floor": "Floor",
     "walls": "Walls",
-    "showLayerGrid": "Show layer grid"
+    "showLayerGrid": "Show layer grid",
+    "object": "Object",
+    "text": "Text",
+    "door": "Door",
+    "stairs": "Stairs",
+    "textPrompt": "Label text"
   }
 }

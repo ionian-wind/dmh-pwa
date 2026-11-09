@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
+import { hitTestObject, objectBounds } from '@/map-studio/domain/objects';
 import type {
   Point,
   StudioMap,
@@ -12,6 +13,7 @@ const props = defineProps<{
   map: StudioMap;
   tool: StudioTool;
   settings: ToolSettings;
+  selectedObjectId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -23,6 +25,11 @@ const emit = defineEmits<{
   (event: 'polygon', points: Array<[number, number]>): void;
   (event: 'path', points: Array<[number, number]>): void;
   (event: 'wall', points: Array<[number, number]>): void;
+  (event: 'text', point: [number, number]): void;
+  (event: 'door', points: [number, number][]): void;
+  (event: 'stairs', points: [number, number][]): void;
+  (event: 'select', id: string | null): void;
+  (event: 'moveObject', delta: { dx: number; dy: number }): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
@@ -38,7 +45,10 @@ let drag:
     }
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
+  | { kind: 'object'; id: string; start: Point }
   | null = null;
+const doorPoints = ref<Point[]>([]);
+const stairPoints = ref<Point[]>([]);
 let resizeObserver: ResizeObserver | undefined;
 
 function clamp(value: number, min: number, max: number): number {
@@ -71,6 +81,46 @@ function onPointerDown(event: PointerEvent): void {
     return;
   }
   if (event.button !== 0) return;
+  if (props.tool === 'object') {
+    const point = renderer.value.screenToWorld(sx, sy);
+    const object = hitTestObject(
+      props.map.layers
+        .filter((layer) => layer.type === 'images' && layer.visible)
+        .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
+      point,
+    );
+    emit('select', object?.id ?? null);
+    if (object) {
+      drag = { kind: 'object', id: object.id, start: point };
+    }
+    return;
+  }
+  if (props.tool === 'text') {
+    const point = renderer.value.screenToWorld(sx, sy);
+    emit('text', [snap(point[0]), snap(point[1])]);
+    return;
+  }
+  if (props.tool === 'door' || props.tool === 'stairs') {
+    const point = renderer.value.screenToWorld(sx, sy);
+    const target = props.tool === 'door' ? doorPoints : stairPoints;
+    target.value = [...target.value, [snap(point[0]), snap(point[1])]];
+    if (props.tool === 'door' && target.value.length === 2) {
+      emit(
+        'door',
+        target.value.map(([x, y]) => [x, y]),
+      );
+      target.value = [];
+      renderer.value.setPreview(null);
+    } else if (props.tool === 'stairs' && target.value.length === 3) {
+      emit(
+        'stairs',
+        target.value.map(([x, y]) => [x, y]),
+      );
+      target.value = [];
+      renderer.value.setPreview(null);
+    }
+    return;
+  }
   if (['polygon', 'path', 'wall'].includes(props.tool)) {
     const point = renderer.value.screenToWorld(sx, sy);
     polygonPoints.value = [
@@ -106,6 +156,23 @@ function onPointerMove(event: PointerEvent): void {
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
+  if (drag.kind === 'object') return;
+  if (props.tool === 'door' && doorPoints.value.length === 1) {
+    const current = renderer.value.screenToWorld(sx, sy);
+    renderer.value.setPreview({
+      kind: 'polygon',
+      points: [doorPoints.value[0], [snap(current[0]), snap(current[1])]],
+    });
+    return;
+  }
+  if (props.tool === 'stairs' && stairPoints.value.length > 0) {
+    const current = renderer.value.screenToWorld(sx, sy);
+    renderer.value.setPreview({
+      kind: 'polygon',
+      points: [...stairPoints.value, [snap(current[0]), snap(current[1])]],
+    });
+    return;
+  }
   if (drag.kind === 'circle') {
     renderer.value.setPreview({
       kind: 'circle',
@@ -150,6 +217,14 @@ function onPointerMovePolygon(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
+  if (drag.kind === 'object') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const dx = snap(current[0]) - snap(drag.start[0]);
+    const dy = snap(current[1]) - snap(drag.start[1]);
+    if (dx !== 0 || dy !== 0) emit('moveObject', { dx, dy });
+    drag = null;
+    return;
+  }
   if (drag.kind === 'circle') {
     const current = renderer.value.screenToWorld(sx, sy);
     const radius = Math.hypot(
@@ -205,6 +280,8 @@ function onDoubleClick(): void {
 function cancelGesture(): void {
   drag = null;
   polygonPoints.value = [];
+  doorPoints.value = [];
+  stairPoints.value = [];
   renderer.value?.setPreview(null);
 }
 
@@ -245,6 +322,7 @@ onMounted(async () => {
   await instance.init(host.value);
   instance.setMap(props.map);
   instance.fit();
+  updateSelection();
   renderer.value = instance;
   emit('ready', instance);
   resizeObserver = new ResizeObserver(() => {
@@ -258,8 +336,21 @@ onMounted(async () => {
 
 watch(
   () => props.map,
-  (map) => renderer.value?.setMap(map),
+  (map) => {
+    renderer.value?.setMap(map);
+    updateSelection();
+  },
 );
+
+function updateSelection(): void {
+  const object = props.map.layers
+    .filter((layer) => layer.type === 'images')
+    .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
+    .find((entry) => entry.id === props.selectedObjectId);
+  renderer.value?.setSelection(object ? objectBounds(object) : null);
+}
+
+watch(() => props.selectedObjectId, updateSelection);
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();

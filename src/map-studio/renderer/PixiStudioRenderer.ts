@@ -1,9 +1,18 @@
-import { Application, Container, Graphics, Rectangle } from 'pixi.js';
+import {
+  Application,
+  Container,
+  Graphics,
+  Rectangle,
+  Sprite,
+  Texture,
+} from 'pixi.js';
 import { compileDungeonLayer } from '@/map-studio/domain/geometry/compile';
+import type { Bounds } from '@/map-studio/domain/objects';
 import type {
   DungeonLayer,
   Point,
   StudioMap,
+  StudioObject,
 } from '@/map-studio/domain/document/types';
 import { BASE_PIXELS_PER_CELL } from '@/map-studio/domain/document/types';
 
@@ -26,6 +35,8 @@ export class PixiStudioRenderer {
   private backgroundLayer = new Graphics();
   private gridLayer = new Graphics();
   private dungeonContainer = new Container();
+  private objectsContainer = new Container();
+  private selectionLayer = new Graphics();
   private previewLayer = new Graphics();
   private map: StudioMap | null = null;
   private width = 1;
@@ -54,6 +65,8 @@ export class PixiStudioRenderer {
       this.backgroundLayer,
       this.gridLayer,
       this.dungeonContainer,
+      this.objectsContainer,
+      this.selectionLayer,
       this.previewLayer,
     );
     this.content.addChild(this.world);
@@ -109,6 +122,24 @@ export class PixiStudioRenderer {
       (screenX - this.viewport.x) / this.viewport.zoom / BASE_PIXELS_PER_CELL,
       (screenY - this.viewport.y) / this.viewport.zoom / BASE_PIXELS_PER_CELL,
     ];
+  }
+
+  setSelection(bounds: Bounds | null): void {
+    this.selectionLayer.clear();
+    if (!bounds) {
+      this.render();
+      return;
+    }
+    const ppc = BASE_PIXELS_PER_CELL;
+    this.selectionLayer
+      .rect(
+        bounds.x * ppc,
+        bounds.y * ppc,
+        bounds.width * ppc,
+        bounds.height * ppc,
+      )
+      .stroke({ color: '#2d6fb3', width: 2, alpha: 1 });
+    this.render();
   }
 
   setPreview(preview: StudioPreview | null): void {
@@ -219,7 +250,75 @@ export class PixiStudioRenderer {
       if (layer.type !== 'dungeon' || !layer.visible) continue;
       this.drawDungeonLayer(layer);
     }
+    for (const child of this.objectsContainer.removeChildren()) {
+      child.destroy({ children: true });
+    }
+    for (const layer of map.layers) {
+      if (layer.type !== 'images' || !layer.visible) continue;
+      for (const object of [...layer.objects].sort(
+        (a, b) => a.order - b.order,
+      )) {
+        if (!object.visible) continue;
+        if (object.type === 'text') {
+          const sprite = this.createTextSprite(object, ppc);
+          sprite.position.set(
+            object.transform.x * ppc,
+            object.transform.y * ppc,
+          );
+          sprite.alpha = object.opacity;
+          this.objectsContainer.addChild(sprite);
+        } else if (object.type === 'door') {
+          const graphics = new Graphics();
+          graphics
+            .moveTo(object.a[0] * ppc, object.a[1] * ppc)
+            .lineTo(object.b[0] * ppc, object.b[1] * ppc)
+            .stroke({ color: object.stroke, width: 6 });
+          this.objectsContainer.addChild(graphics);
+        } else if (object.type === 'stairs') {
+          const graphics = new Graphics();
+          const [a, b, c] = object.points;
+          const steps = Math.max(2, object.stepsPerCell);
+          for (let index = 0; index <= steps; index += 1) {
+            const t = index / steps;
+            const x1 = a[0] + (b[0] - a[0]) * t;
+            const y1 = a[1] + (b[1] - a[1]) * t;
+            const x2 = x1 + (c[0] - b[0]) * t;
+            const y2 = y1 + (c[1] - b[1]) * t;
+            graphics
+              .moveTo(x1 * ppc, y1 * ppc)
+              .lineTo(x2 * ppc, y2 * ppc)
+              .stroke({ color: object.stroke, width: 2 });
+          }
+          this.objectsContainer.addChild(graphics);
+        }
+      }
+    }
     this.render();
+  }
+
+  private createTextSprite(
+    object: Extract<StudioObject, { type: 'text' }>,
+    ppc: number,
+  ): Sprite {
+    const fontSize = Math.max(8, object.fontSize * ppc);
+    const resolution = 2;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return new Sprite(Texture.WHITE);
+    context.font = `${fontSize * resolution}px ${object.fontFamily}`;
+    const metrics = context.measureText(object.text);
+    const width = Math.max(1, Math.ceil(metrics.width) + 4 * resolution);
+    const height = Math.ceil(fontSize * 1.4 * resolution);
+    canvas.width = width;
+    canvas.height = height;
+    context.scale(resolution, resolution);
+    context.font = `${fontSize}px ${object.fontFamily}`;
+    context.fillStyle = object.color;
+    context.textBaseline = 'top';
+    context.fillText(object.text, 0, 0);
+    const sprite = new Sprite(Texture.from(canvas));
+    sprite.scale.set(1 / resolution);
+    return sprite;
   }
 
   private drawDungeonLayer(layer: DungeonLayer): void {

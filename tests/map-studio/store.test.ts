@@ -250,3 +250,62 @@ describe('map studio layer no-ops', () => {
     expect(store.activeLayer?.name).toBe(dungeon.name);
   });
 });
+
+describe('map studio object actions', () => {
+  it('adds, moves, selects and removes objects', () => {
+    const store = useMapStudioStore();
+    const map = createMap(createProject().id);
+    store.setMap(map);
+    store.addText('Hall', [1, 1]);
+    store.addDoor([0, 0], [1, 0]);
+    store.addStairs([
+      [0, 0],
+      [1, 0],
+      [1, 1],
+    ]);
+    expect(store.imagesLayer?.objects).toHaveLength(3);
+    const text = store.imagesLayer?.objects.find(
+      (object) => object.type === 'text',
+    )!;
+    store.selectObject(text.id);
+    expect(store.selectedObjectId).toBe(text.id);
+    store.moveSelectedObject(1, 1);
+    expect(
+      store.selectedObject && store.selectedObject.type === 'text'
+        ? store.selectedObject.transform.x
+        : 0,
+    ).toBe(2);
+    store.removeSelectedObject();
+    expect(store.imagesLayer?.objects).toHaveLength(2);
+    expect(store.selectedObjectId).toBeNull();
+    store.addText('   ', [0, 0]);
+    store.addDoor([0, 0], [0, 0]);
+    store.addStairs([[0, 0]]);
+    expect(store.imagesLayer?.objects).toHaveLength(2);
+  });
+});
+
+describe('map studio object guards', () => {
+  it('ignores object actions without a map, images layer or selection', () => {
+    const store = useMapStudioStore();
+    store.addText('x', [0, 0]);
+    store.addDoor([0, 0], [1, 0]);
+    store.addStairs([
+      [0, 0],
+      [1, 0],
+      [1, 1],
+    ]);
+    store.selectObject(null);
+    store.moveSelectedObject(1, 1);
+    store.removeSelectedObject();
+    expect(store.map).toBeNull();
+
+    const map = createMap(createProject().id);
+    store.setMap({
+      ...map,
+      layers: map.layers.filter((layer) => layer.type !== 'images'),
+    });
+    store.addText('x', [0, 0]);
+    expect(store.imagesLayer).toBeNull();
+  });
+});

@@ -5,6 +5,7 @@ import type {
   DungeonLayer,
   DungeonShape,
   DungeonLayerStyle,
+  ImagesLayer,
   StudioMap,
   StudioProject,
   StudioTool,
@@ -12,6 +13,12 @@ import type {
 } from '@/map-studio/domain/document/types';
 import { createDungeonLayer } from '@/map-studio/domain/document/factories';
 import { getDungeonPreset } from '@/map-studio/domain/presets';
+import {
+  createDoorObject,
+  createStairsObject,
+  createTextObject,
+  moveObject,
+} from '@/map-studio/domain/objects';
 import {
   listMaps,
   listProjects,
@@ -33,6 +40,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const map = shallowRef<StudioMap | null>(null);
   const maps = shallowRef<StudioMap[]>([]);
   const activeLayerId = ref<string | null>(null);
+  const selectedObjectId = ref<string | null>(null);
   const tool = ref<StudioTool>('rectangle');
   const toolSettings = ref<ToolSettings>({
     snap: true,
@@ -61,6 +69,18 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
         DungeonLayer | undefined) ?? null
     );
   });
+
+  const imagesLayer = computed<ImagesLayer | null>(
+    () =>
+      (map.value?.layers.find((layer) => layer.type === 'images') as
+        ImagesLayer | undefined) ?? null,
+  );
+  const selectedObject = computed(
+    () =>
+      imagesLayer.value?.objects.find(
+        (object) => object.id === selectedObjectId.value,
+      ) ?? null,
+  );
 
   const canUndo = computed(() => undoStack.value.length > 0);
   const canRedo = computed(() => redoStack.value.length > 0);
@@ -358,6 +378,71 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function setObjects(objects: ImagesLayer['objects']): void {
+    const current = map.value;
+    const layer = imagesLayer.value;
+    if (!current || !layer) return;
+    commit({
+      ...current,
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id ? { ...layer, objects } : entry,
+      ),
+    });
+  }
+
+  function nextObjectOrder(): number {
+    return (imagesLayer.value?.objects.length ?? 0) + 1;
+  }
+
+  function addText(text: string, point: [number, number]): void {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setObjects([
+      ...(imagesLayer.value?.objects ?? []),
+      createTextObject(trimmed, point, nextObjectOrder()),
+    ]);
+  }
+
+  function addDoor(a: [number, number], b: [number, number]): void {
+    if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.1) return;
+    setObjects([
+      ...(imagesLayer.value?.objects ?? []),
+      createDoorObject(a, b, nextObjectOrder()),
+    ]);
+  }
+
+  function addStairs(points: Array<[number, number]>): void {
+    if (points.length < 3) return;
+    setObjects([
+      ...(imagesLayer.value?.objects ?? []),
+      createStairsObject(points, nextObjectOrder()),
+    ]);
+  }
+
+  function selectObject(id: string | null): void {
+    selectedObjectId.value = id;
+  }
+
+  function moveSelectedObject(dx: number, dy: number): void {
+    const id = selectedObjectId.value;
+    if (!id) return;
+    const objects = imagesLayer.value?.objects ?? [];
+    setObjects(
+      objects.map((object) =>
+        object.id === id ? moveObject(object, dx, dy) : object,
+      ),
+    );
+  }
+
+  function removeSelectedObject(): void {
+    const id = selectedObjectId.value;
+    if (!id) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).filter((object) => object.id !== id),
+    );
+    selectedObjectId.value = null;
+  }
+
   function undo(): void {
     const previous = undoStack.value.at(-1);
     if (!previous || !map.value) return;
@@ -428,6 +513,9 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     maps,
     activeLayerId,
     activeLayer,
+    imagesLayer,
+    selectedObjectId,
+    selectedObject,
     tool,
     toolSettings,
     dirty,
@@ -446,6 +534,12 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addPolygon,
     addPath,
     addWall,
+    addText,
+    addDoor,
+    addStairs,
+    selectObject,
+    moveSelectedObject,
+    removeSelectedObject,
     applyPreset,
     addDungeonLayer,
     renameLayer,

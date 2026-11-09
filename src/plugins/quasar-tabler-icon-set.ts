@@ -139,6 +139,9 @@ import svgPhotoPlus from '@tabler/icons/outline/photo-plus.svg?raw';
 import svgUndo from '@tabler/icons/outline/arrow-back-up.svg?raw';
 import svgRedo from '@tabler/icons/outline/arrow-forward-up.svg?raw';
 import svgPolygon from '@tabler/icons/outline/polygon.svg?raw';
+import svgPointer from '@tabler/icons/outline/pointer.svg?raw';
+import svgDoor from '@tabler/icons/outline/door.svg?raw';
+import svgStairs from '@tabler/icons/outline/stairs.svg?raw';
 import svgRoute from '@tabler/icons/outline/route.svg?raw';
 import svgLine from '@tabler/icons/outline/line.svg?raw';
 import svgMapPin from '@tabler/icons/outline/map-pin.svg?raw';
@@ -301,6 +304,9 @@ const icons: Record<string, string> = {
   undo: svgPath(svgUndo),
   redo: svgPath(svgRedo),
   polygon: svgPath(svgPolygon),
+  pointer: svgPath(svgPointer),
+  door: svgPath(svgDoor),
+  stairs: svgPath(svgStairs),
   route: svgPath(svgRoute),
   line: svgPath(svgLine),
   'map-pin': svgPath(svgMapPin),

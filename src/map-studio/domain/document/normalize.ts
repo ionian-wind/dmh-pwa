@@ -6,6 +6,7 @@ import {
   type GridSettings,
   type StudioLayer,
   type StudioMap,
+  type StudioObject,
   type StudioProject,
 } from './types';
 import {
@@ -157,6 +158,85 @@ function normalizeShape(value: unknown): DungeonShape | null {
   };
 }
 
+function normalizeObject(value: unknown): StudioObject | null {
+  if (!value || typeof value !== 'object') return null;
+  const object = value as Record<string, any>;
+  const type = String(object.type ?? '');
+  const base = {
+    id: typeof object.id === 'string' && object.id ? object.id : generateId(),
+    parentId: typeof object.parentId === 'string' ? object.parentId : null,
+    order: number(object.order, 0),
+    visible: object.visible !== false,
+    locked: object.locked === true,
+    opacity: clamp(number(object.opacity, 1), 0, 1),
+    blendMode: ['normal', 'add', 'multiply', 'screen'].includes(
+      String(object.blendMode),
+    )
+      ? (object.blendMode as StudioObject['blendMode'])
+      : ('normal' as const),
+  };
+  const transform = {
+    x: number(object.transform?.x, 0),
+    y: number(object.transform?.y, 0),
+    width: Math.max(0.1, number(object.transform?.width, 1)),
+    height: Math.max(0.1, number(object.transform?.height, 1)),
+    rotation: number(object.transform?.rotation, 0),
+    flipX: object.transform?.flipX === true,
+    flipY: object.transform?.flipY === true,
+  };
+  if (type === 'text') {
+    const text = typeof object.text === 'string' ? object.text : '';
+    if (!text) return null;
+    return {
+      ...base,
+      type: 'text',
+      text,
+      fontFamily:
+        typeof object.fontFamily === 'string'
+          ? object.fontFamily
+          : 'Georgia, serif',
+      fontSize: Math.max(0.01, number(object.fontSize, 0.32)),
+      color: typeof object.color === 'string' ? object.color : '#1f2933',
+      align: ['left', 'center', 'right'].includes(String(object.align))
+        ? object.align
+        : 'left',
+      transform,
+    };
+  }
+  if (type === 'door') {
+    const a = normalizePoint(object.a);
+    const b = normalizePoint(object.b);
+    if (!a || !b) return null;
+    return {
+      ...base,
+      type: 'door',
+      a,
+      b,
+      variant: object.variant === 1 ? 1 : 0,
+      fill: typeof object.fill === 'string' ? object.fill : '#f4efe4',
+      stroke: typeof object.stroke === 'string' ? object.stroke : '#1f2933',
+      transform,
+    };
+  }
+  if (type === 'stairs') {
+    const points = Array.isArray(object.points)
+      ? object.points
+          .map(normalizePoint)
+          .filter((point): point is [number, number] => point !== null)
+      : [];
+    if (points.length < 3) return null;
+    return {
+      ...base,
+      type: 'stairs',
+      points,
+      stepsPerCell: Math.max(1, number(object.stepsPerCell, 3)),
+      stroke: typeof object.stroke === 'string' ? object.stroke : '#1f2933',
+      transform,
+    };
+  }
+  return null;
+}
+
 function normalizeLayer(value: unknown, order: number): StudioLayer | null {
   if (!value || typeof value !== 'object') return null;
   const layer = value as Partial<StudioLayer> & Record<string, any>;
@@ -191,7 +271,9 @@ function normalizeLayer(value: unknown, order: number): StudioLayer | null {
       ...createImagesLayer(),
       ...base,
       type: 'images',
-      objects: Array.isArray(layer.objects) ? layer.objects : [],
+      objects: Array.isArray(layer.objects)
+        ? (layer.objects.map(normalizeObject).filter(Boolean) as StudioObject[])
+        : [],
     };
   }
   if (layer.type === 'dungeon') {

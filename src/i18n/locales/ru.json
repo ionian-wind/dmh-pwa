@@ -1180,6 +1180,11 @@
     "opacity": "Прозрачность",
     "floor": "Пол",
     "walls": "Стены",
-    "showLayerGrid": "Сетка слоя"
+    "showLayerGrid": "Сетка слоя",
+    "object": "Объект",
+    "text": "Текст",
+    "door": "Дверь",
+    "stairs": "Лестница",
+    "textPrompt": "Текст подписи"
   }
 }

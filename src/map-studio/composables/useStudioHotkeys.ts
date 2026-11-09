@@ -6,6 +6,7 @@ interface StudioHotkeyActions {
   undo: () => void;
   redo: () => void;
   setTool: (tool: StudioTool) => void;
+  deleteSelection?: () => void;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -34,6 +35,13 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
     if (modifier && event.key.toLowerCase() === 'y') {
       event.preventDefault();
       actions.redo();
+      return;
+    }
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      if (actions.deleteSelection) {
+        event.preventDefault();
+        actions.deleteSelection();
+      }
       return;
     }
     if (modifier || event.altKey) return;

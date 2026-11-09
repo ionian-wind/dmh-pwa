@@ -60,11 +60,12 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 
 - [ ] Layer create/rename/reorder/delete/folders
 - [ ] Full layer settings (floor/walls/grid/background)
-- [ ] Object tool selection/move/resize/rotate
+- [x] Object tool: selection and drag (resize/rotate pending)
 - [ ] Grouping, z-order, flip, duplicate, context menu
 - [ ] Images panel, upload, drag/drop, favorites
-- [ ] Text tool with inline editing overlay
-- [ ] Door and stairs tools
+- [x] Text tool: click + prompt placement (inline editing pending)
+- [x] Door tool: two-point placement (variants pending)
+- [x] Stairs tool: three-point placement (style editing pending)
 - [ ] Geometry select tool, copy/cut/paste, clipboard
 - [ ] Local library, autosave, recovery, multiple maps
 - [ ] `.ds` import/export baseline

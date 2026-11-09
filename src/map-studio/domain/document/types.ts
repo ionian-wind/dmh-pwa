@@ -200,9 +200,45 @@ export interface ObjectBase {
   blendMode: BlendMode;
 }
 
-export interface StudioObject extends ObjectBase {
-  type: string;
+export interface Transform {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  flipX: boolean;
+  flipY: boolean;
 }
+
+export interface TextObject extends ObjectBase {
+  type: 'text';
+  text: string;
+  fontFamily: string;
+  fontSize: number;
+  color: string;
+  align: 'left' | 'center' | 'right';
+  transform: Transform;
+}
+
+export interface DoorObject extends ObjectBase {
+  type: 'door';
+  a: Point;
+  b: Point;
+  variant: 0 | 1;
+  fill: string;
+  stroke: string;
+  transform: Transform;
+}
+
+export interface StairsObject extends ObjectBase {
+  type: 'stairs';
+  points: Point[];
+  stepsPerCell: number;
+  stroke: string;
+  transform: Transform;
+}
+
+export type StudioObject = TextObject | DoorObject | StairsObject;
 
 export interface ToolSettings {
   snap: boolean;
@@ -215,7 +251,16 @@ export interface ToolSettings {
 }
 
 export type StudioTool =
-  'pan' | 'rectangle' | 'circle' | 'polygon' | 'path' | 'wall';
+  | 'pan'
+  | 'object'
+  | 'text'
+  | 'door'
+  | 'stairs'
+  | 'rectangle'
+  | 'circle'
+  | 'polygon'
+  | 'path'
+  | 'wall';
 
 export interface StudioSelection {
   layerIds: string[];

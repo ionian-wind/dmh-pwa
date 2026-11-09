@@ -32,6 +32,7 @@ useStudioHotkeys({
   undo: () => store.undo(),
   redo: () => store.redo(),
   setTool: (tool) => store.setTool(tool),
+  deleteSelection: () => store.removeSelectedObject(),
 });
 
 const map = computed(() => store.map);
@@ -64,6 +65,26 @@ const toolbar = computed(() => [
     id: 'wall' as const,
     icon: 'tabler-line',
     label: t('mapStudio.wall'),
+  },
+  {
+    id: 'object' as const,
+    icon: 'tabler-pointer',
+    label: t('mapStudio.object'),
+  },
+  {
+    id: 'text' as const,
+    icon: 'tabler-text-size',
+    label: t('mapStudio.text'),
+  },
+  {
+    id: 'door' as const,
+    icon: 'tabler-door',
+    label: t('mapStudio.door'),
+  },
+  {
+    id: 'stairs' as const,
+    icon: 'tabler-stairs',
+    label: t('mapStudio.stairs'),
   },
 ]);
 const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
@@ -155,6 +176,11 @@ function toggleLayerGrid(): void {
       visible: !activeLayer.value.style.grid.visible,
     },
   });
+}
+
+async function addText(point: [number, number]): Promise<void> {
+  const text = await prompt(t('mapStudio.textPrompt'), { modelValue: '' });
+  if (text) store.addText(text, point);
 }
 
 function download(blob: Blob, filename: string): void {
@@ -373,11 +399,17 @@ async function applyToLocation(): Promise<void> {
           :map="map"
           :tool="store.tool"
           :settings="store.toolSettings"
+          :selected-object-id="store.selectedObjectId"
           @rectangle="addRectangle"
           @circle="store.addCircle"
           @polygon="store.addPolygon"
           @path="store.addPath"
           @wall="store.addWall"
+          @text="addText"
+          @door="([a, b]) => store.addDoor(a, b)"
+          @stairs="store.addStairs"
+          @select="store.selectObject"
+          @moveObject="store.moveSelectedObject($event.dx, $event.dy)"
           @ready="renderer = $event"
         />
 

@@ -317,3 +317,79 @@ describe('map studio path/wall normalization', () => {
     expect(shapes.map((shape) => shape.shape.kind)).toEqual(['path', 'wall']);
   });
 });
+
+describe('map studio object normalization', () => {
+  it('normalizes text, doors and stairs and drops invalid objects', () => {
+    const map = normalizeMap({
+      layers: [
+        {
+          type: 'images',
+          objects: [
+            { type: 'text', text: 'Hall', transform: { x: 1, y: 2 } },
+            { type: 'door', a: [0, 0], b: [1, 0] },
+            {
+              type: 'stairs',
+              points: [
+                [0, 0],
+                [1, 0],
+                [1, 1],
+              ],
+            },
+            { type: 'text', text: '' },
+            { type: 'door' },
+            { type: 'stairs', points: [[0, 0]] },
+            { type: 'unknown' },
+          ],
+        },
+      ],
+    });
+    const images = map.layers.find((layer) => layer.type === 'images');
+    expect(images && 'objects' in images ? images.objects : []).toHaveLength(3);
+  });
+});
+
+describe('map studio object variants', () => {
+  it('preserves object fields and drops malformed objects', () => {
+    const map = normalizeMap({
+      layers: [
+        {
+          type: 'images',
+          objects: [
+            {
+              type: 'text',
+              text: 'Right',
+              align: 'right',
+              fontFamily: 'Arial',
+              fontSize: 1,
+              color: '#000',
+              transform: {
+                x: 1,
+                y: 2,
+                width: 3,
+                height: 4,
+                rotation: 1,
+                flipX: true,
+                flipY: true,
+              },
+            },
+            { type: 'door', a: [0, 0], b: [2, 0], variant: 1 },
+            {
+              type: 'stairs',
+              points: [
+                [0, 0],
+                [1, 0],
+                [1, 2],
+              ],
+              stepsPerCell: 5,
+            },
+          ],
+        },
+      ],
+    });
+    const images = map.layers.find((layer) => layer.type === 'images');
+    const objects = images && 'objects' in images ? images.objects : [];
+    expect(objects[0]).toMatchObject({ type: 'text', align: 'right' });
+    expect(objects[1]).toMatchObject({ type: 'door', variant: 1 });
+    expect(objects[2]).toMatchObject({ type: 'stairs', stepsPerCell: 5 });
+  });
+});
