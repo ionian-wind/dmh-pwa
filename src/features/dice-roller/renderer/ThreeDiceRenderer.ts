@@ -193,7 +193,9 @@ export class ThreeDiceRenderer implements DiceRenderer {
     if (!this.assets || !this.materials || !this.renderer) return;
     this.settledNotified = false;
     this.wakeSettledDice();
-    for (const die of this.dice.values()) die.exploded = false;
+    // Existing pool dice may be knocked onto new faces, but only the new batch
+    // (and its explosion extras) is allowed to explode.
+    for (const die of this.dice.values()) die.exploded = true;
     const max = this.options?.maxDice ?? 80;
     for (const visual of dice) {
       const parts = visualDiceForSides(visual.sides, visual.kind);
@@ -368,7 +370,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
   endDrag(): void {
     if (!this.dragState) return;
     this.wakeSettledDice();
-    for (const die of this.dice.values()) die.exploded = false;
+    for (const die of this.dice.values()) die.exploded = true;
     const parts = this.dragState.parts;
     const release = computeTossRelease(
       this.dragState.samples,
@@ -409,6 +411,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
         0.1,
       );
       die.state = body ? 'physics' : 'done';
+      // The dragged die is a fresh throw and may explode again.
+      die.exploded = false;
       if (!body) {
         this.restOnFloor(die.mesh);
         die.result = this.readFaceValue(die);

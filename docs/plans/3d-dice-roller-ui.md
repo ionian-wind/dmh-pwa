@@ -288,7 +288,8 @@ roll emits one individual plus one pool event.
 - Explosion extras launch from the parent die with an animated scale pulse and
   an outward/upward physics velocity. Each physical die explodes at most once
   per throw; its extra can chain if that extra also rolls the maximum, up to the
-  per-pool cap.
+  per-pool cap. Adding dice to an existing pool only makes the new batch
+  explosion-eligible.
 - Boundary walls have high restitution and are 5 units tall so dice cannot fly
   over the tray; a position clamp catches tunneling. Every collision damps
   linear velocity by 5% and angular velocity by 10% (on top of Rapier
