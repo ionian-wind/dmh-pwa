@@ -41,6 +41,33 @@ The dice engine is a prerequisite for the chat engine, not a replacement for it.
   explicit limits.
 - **Start from the specification, not from a legacy engine.** Implement the
   passes and data contracts below directly.
+- **Use the existing Chevrotain dependency for grammar-based parsing.** Dice
+  notation, arithmetic, queries, tables, templates and buttons should be
+  implemented as Chevrotain lexers/parsers with explicit CST-to-AST conversion.
+  Do not add a second hand-written tokenizer/parser stack.
+
+## Parser technology
+
+The project already depends on **Chevrotain 13.2.0** (pinned in `package.json`).
+Use it for the parser/evaluator build:
+
+- Each grammar-based pass gets its own `Lexer` and parser class, with only the
+  tokens and rules that pass needs. Do not merge every syntax family into one
+  giant grammar.
+- Compose token vocabularies per pass (dice, arithmetic, roll queries, tables,
+  templates, buttons). Where a later pass needs tokens from an earlier pass,
+  pass structured AST/records instead of re-lexing the original text.
+- Convert Chevrotain CSTs to explicit typed AST nodes. Do not evaluate CSTs
+  directly.
+- Use Chevrotain token categories, recovery and error reporting, then wrap
+  parser failures in the engine's typed pass errors with source spans.
+- Text-expansion passes (ability/macro/attribute scanning, HTML entity
+  decoding, visibility delivery) may use small state machines/scanners because
+  they are not grammar-based. The dice/evaluator core must remain
+  Chevrotain-based.
+
+This avoids introducing a custom tokenizer/parser while still respecting the
+multi-pass architecture.
 
 ## Goals and requirements
 
@@ -458,8 +485,9 @@ Build the engine from scratch in this order:
    warnings.
 2. **Pass coordinator** — ordered expansion/query/inline/dice/math/template/
    delivery passes with per-pass limits.
-3. **Arithmetic + dice parser** — numbers, functions, precedence, dice types,
-   compare points, modifiers, groups.
+3. **Arithmetic + dice parser** — Chevrotain lexers/parsers, typed CST-to-AST
+   conversion, functions, precedence, dice types, compare points, modifiers and
+   groups.
 4. **Query, inline and table passes** — extraction, prompting, stable roll
    indexes and weighted tables.
 5. **Roll references and templates** — `$[[n]]` resolution and structured
@@ -479,19 +507,19 @@ The chat/macro/template/button layer is specified separately in
 
 Names are provisional; the boundaries matter more than the paths.
 
-| Module              | Responsibility                                         |
-| ------------------- | ------------------------------------------------------ |
-| `engine/pass`       | Pass coordinator, budget checks and pass ordering      |
-| `engine/dice`       | Dice notation tokenizer/parser/evaluator               |
-| `engine/arithmetic` | Math functions and precedence                          |
-| `engine/queries`    | Roll-query extraction, validation and substitution     |
-| `engine/inline`     | Inline-roll parsing, nesting and roll-index registry   |
-| `engine/tables`     | Table parsing and weighted selection                   |
-| `engine/references` | Roll reference resolution                              |
-| `engine/macros`     | Macro/ability/attribute expansion                      |
-| `engine/templates`  | Roll-template parsing and structured fields            |
-| `engine/formatting` | Markdown-lite, HTML entities and sanitisation          |
-| `engine/visualize`  | Visualization adapter contracts and built-in renderers |
+| Module              | Responsibility                                             |
+| ------------------- | ---------------------------------------------------------- |
+| `engine/pass`       | Pass coordinator, budget checks and pass ordering          |
+| `engine/dice`       | Chevrotain lexer/parser, AST conversion and dice evaluator |
+| `engine/arithmetic` | Math functions and precedence                              |
+| `engine/queries`    | Roll-query extraction, validation and substitution         |
+| `engine/inline`     | Inline-roll parsing, nesting and roll-index registry       |
+| `engine/tables`     | Table parsing and weighted selection                       |
+| `engine/references` | Roll reference resolution                                  |
+| `engine/macros`     | Macro/ability/attribute expansion                          |
+| `engine/templates`  | Roll-template parsing and structured fields                |
+| `engine/formatting` | Markdown-lite, HTML entities and sanitisation              |
+| `engine/visualize`  | Visualization adapter contracts and built-in renderers     |
 
 ## Roll visualization
 
@@ -528,7 +556,9 @@ Rules:
 ## Testing plan
 
 - Golden tests for the full 12-pass order of operations.
-- Parser unit tests per syntax family, not one monolithic parser suite.
+- Parser unit tests per syntax family, using the Chevrotain parser directly;
+  add recovery/error-span tests for malformed input.
+- CST-to-AST tests for every node type, independent of evaluation.
 - Cross-plugin integration tests: dice + arithmetic + queries + tables +
   inline rolls + templates.
 - Expansion-cycle, depth-limit and output-size tests.
@@ -539,8 +569,8 @@ Rules:
 
 ## Risks and open decisions
 
-- Parser technology choice is open; evaluate maintainability, error recovery and
-  performance before committing.
+- Chevrotain grammar composition is the main parser risk: keep one grammar per
+  pass and avoid token-vocabulary collisions between passes.
 - The expansion/query/pass coordinator is the highest-complexity part and should
   be designed before individual parsers.
 - Compatibility quirks (HTML entity stacking, leading-space template rules,
@@ -555,7 +585,8 @@ Rules:
 
 ## Definition of done
 
-- All passes and parsers exist behind a single documented entry point.
+- All grammar-based passes are Chevrotain lexers/parsers with typed CST-to-AST
+  conversion; no custom tokenizer/parser remains.
 - A complex Roll20-style macro produces the same structured result on repeated
   runs with a fixed RNG.
 - Every roll record can be rendered as text and optionally as 3D dice without

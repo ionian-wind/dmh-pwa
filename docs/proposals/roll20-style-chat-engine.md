@@ -63,6 +63,22 @@ chat message
 The dice engine must not perform macro, attribute, query or template parsing.
 The chat engine must not duplicate dice modifier parsing.
 
+## Parser technology
+
+Use the existing **Chevrotain 13.2.0** dependency for grammar-based chat
+parsers:
+
+- roll-query parser (`?{...}`);
+- roll-template parser (`&{template:...}`, `{{field=value}}`);
+- chat-button/chat-menu parser;
+- table/reference grammar where it is genuinely grammar-based.
+
+Ability/macro/attribute expansion, HTML entity decoding and visibility delivery
+are scanning/state-machine passes rather than grammars. Each Chevrotain parser
+uses only its own token vocabulary and emits typed AST/records for the pass
+coordinator; do not build one mega-grammar or a second hand-written parser
+stack.
+
 ## Architecture
 
 ### 1. Chat command parser
