@@ -24,7 +24,7 @@ import DiceRollerPanel from '@/components/DiceRollerPanel.vue';
 
 function mountPanel() {
   document
-    .querySelectorAll('#dice-roller-surface, .dice-roller-panel')
+    .querySelectorAll('#dice-roller-surface')
     .forEach((element) => element.remove());
   return mount(DiceRollerPanel, {
     attachTo: document.body,
@@ -32,11 +32,13 @@ function mountPanel() {
   });
 }
 
-function button(label: string): HTMLButtonElement {
+function button(label: string): HTMLElement {
   return Array.from(
-    document.querySelectorAll<HTMLButtonElement>('.dice-roller-button'),
+    document.querySelectorAll<HTMLElement>('.dice-roller-item'),
   ).find((element) => {
-    const first = element.querySelector('span')?.textContent?.trim();
+    const first = element
+      .querySelector('.dice-roller-label')
+      ?.textContent?.trim();
     return first === label || element.textContent?.trim() === label;
   })!;
 }
@@ -74,7 +76,7 @@ describe('DiceRollerPanel', () => {
     wrapper.unmount();
   });
 
-  it('clears dice and closes the panel', async () => {
+  it('clears dice and rerolls the current pool', async () => {
     const wrapper = mountPanel();
     await flushPromises();
 
@@ -93,8 +95,6 @@ describe('DiceRollerPanel', () => {
     button('Reroll').click();
     expect(mocks.diceBox.add).not.toHaveBeenCalled();
 
-    document.querySelector<HTMLButtonElement>('.dice-roller-close')!.click();
-    expect(wrapper.emitted('close')).toHaveLength(1);
     wrapper.unmount();
   });
 

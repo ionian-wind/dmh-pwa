@@ -285,6 +285,17 @@ const isSettingsOpen = ref(false);
             >
               <QItemSection side><IconIcosahedron /></QItemSection>
               <QItemSection>{{ t('navigation.diceRoller') }}</QItemSection>
+              <QMenu
+                v-model="diceRollerOpen"
+                anchor="center right"
+                self="center left"
+                :offset="[8, 0]"
+                :persistent="true"
+                :auto-close="false"
+                no-parent-event
+              >
+                <DiceRollerPanel />
+              </QMenu>
             </QItem>
             <template v-for="item in footerNavigation" :key="item.id">
               <component
@@ -366,7 +377,6 @@ const isSettingsOpen = ref(false);
         :key="index"
       />
       <SettingsDialog v-model="isSettingsOpen" />
-      <DiceRollerPanel v-if="diceRollerOpen" @close="diceRollerOpen = false" />
     </div>
   </div>
 </template>
