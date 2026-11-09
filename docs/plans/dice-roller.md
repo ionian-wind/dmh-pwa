@@ -71,6 +71,109 @@ Prior art to evaluate before finalizing grammar coverage:
   reference and source of edge cases; it likely does not implement the full
   syntax or pass order, so it is not automatically the implementation.
 
+### Grammar composition
+
+- Core token categories: whitespace, numbers, dice separator, compare operators,
+  parentheses, braces, brackets and separators.
+- Plugin tokens must have a unique `name`. Two plugins declaring the same token
+  name must declare identical patterns or the engine fails at registration.
+- Token order is explicit: longer keywords before identifiers, compare operators
+  before dice separators, and plugin tokens before catch-all identifiers.
+- Each plugin may expose a Chevrotain parser class or parser rules. The engine
+  creates one lexer/parser combination per grammar build, not per token.
+- Recovery is bounded to 10 parser errors; the first error is retained and later
+  ones become warnings with spans.
+- Lookahead is allowed only where required: computed dice `(expr)dX`, custom-dice
+  lists, grouped-roll separators and modifier arguments.
+- A plugin returning `null` means "not handled"; it must not throw for ordinary
+  non-matches. Throwing means a real plugin failure.
+
+### AST contract
+
+All nodes carry:
+
+```ts
+interface AstSpan {
+  start: number;
+  end: number;
+}
+
+interface AstNode {
+  type: string;
+  plugin: string;
+  span: AstSpan;
+}
+```
+
+Minimum core nodes:
+
+- `NumberLiteral`, `UnaryOp`, `BinaryOp`, `FunctionCall`;
+- `Dice`, `FudgeDice`, `CustomDice`, `ComputedDice`;
+- `DiceGroup`, `GroupedRoll`;
+- `Modifier` nodes owned by the dice plugin;
+- `Label`;
+- optional `TableRoll`, `MacroCall`, `AbilityCall`, `AttributeCall`,
+  `QueryNode`, `InlineRoll`, `RollReference`.
+
+Nodes are immutable after parsing. Evaluation returns new records; it never
+mutates AST nodes.
+
+### Plugin contract
+
+```ts
+interface DicePlugin {
+  name: string;
+  tokens: TokenType[];
+  /** Register Chevrotain rules on the pass parser. */
+  grammar?(parser: CstParser, tokens: TokenMap): void;
+  /** Convert plugin CST nodes to typed AST nodes. */
+  cstToAst: Record<
+    string,
+    (cst: CstNode, convert: (node: any) => AstNode) => AstNode
+  >;
+  /** Optional pre-evaluation extraction. */
+  extract?(ast: AstNode): Record<string, unknown[]>;
+  /** Evaluate plugin AST node; return null if not handled. */
+  evaluate(node: AstNode, context: EvalContext): EvalResult | null;
+  /** Optional validation before evaluation. */
+  validate?(ast: AstNode): RollError[];
+}
+```
+
+`EvalResult` is a record, not a string, so every plugin contributes to
+`RollResult` metadata:
+
+```ts
+interface EvalContext {
+  rng: Rng;
+  cache: Map<string, unknown>;
+  limits: Required<
+    Pick<
+      EngineOptions,
+      | 'maxExpansionDepth'
+      | 'maxQueryDepth'
+      | 'maxInlineDepth'
+      | 'maxExplosionRolls'
+      | 'maxTableDepth'
+      | 'maxOutputLength'
+      | 'maxPassTimeMs'
+    >
+  >;
+  warnings: RollWarning[];
+  signal?: AbortSignal;
+}
+
+interface EvalResult {
+  value: number | number[];
+  records: DieRecord[];
+  segments: RollSegment[];
+  warnings: RollWarning[];
+}
+```
+
+Plugin evaluation must be pure with respect to the AST and must not mutate
+`context`. Plugins share a per-call memo cache and RNG through `EvalContext`.
+
 ## Engine pipeline
 
 ```
@@ -89,7 +192,7 @@ answers and external data. Extraction should also be available separately so a
 UI can ask the user first:
 
 ```ts
-const extraction = engine.extract(input);
+const extraction = await engine.extract(input);
 const answers = await ui.ask(extraction.queries);
 const result = await engine.roll(input, {
   repositories,
@@ -98,12 +201,80 @@ const result = await engine.roll(input, {
 });
 ```
 
-## Async repositories
-
-External data is injected, not hard-coded. The macro source is a configurable
-async repository:
+### Engine API lifecycle
 
 ```ts
+type EngineOutcome =
+  | { status: 'complete'; result: RollResult }
+  | { status: 'needs-input'; extraction: ExtractionResult }
+  | { status: 'error'; errors: RollError[] };
+
+interface ExtractionResult {
+  expanded: string;
+  queries: RollQueryRequest[];
+  passes: PassRecord[];
+  warnings: RollWarning[];
+  errors: RollError[];
+}
+
+interface RollEngine {
+  extract(input: string, options: EngineOptions): Promise<ExtractionResult>;
+  roll(
+    input: string,
+    options: EngineOptions & { queryAnswers?: QueryAnswers },
+  ): Promise<EngineOutcome>;
+}
+```
+
+Rules:
+
+- `extract()` is async because expansion of macros/abilities/attributes is async.
+  It performs expansion and query extraction, but never rolls dice.
+- `roll()` performs expansion again unless the caller passes a previously
+  extracted value through `options.expanded`. This keeps the API stateless and
+  allows a UI to re-run after collecting answers.
+- Missing required query answers produce `needs-input` with the extraction
+  result, never a partial roll.
+- Syntax/validation errors fail the whole roll by default. `noerror` only
+  suppresses missing-data errors where explicitly allowed.
+- Cancellation is cooperative via `AbortSignal`; each async repository call and
+  pass checks the signal.
+- There are no automatic retries. The caller re-invokes after fixing data.
+- Passes fail fast; warnings never fail a roll.
+- A roll is evaluated once per call; re-rendering uses the returned metadata and
+  never re-rolls.
+
+## Async repositories
+
+External data is injected through async repositories. The macro source is a
+configurable option, not a hard-coded store.
+
+```ts
+interface Repositories {
+  macros: MacroRepository;
+  abilities: AbilityRepository;
+  attributes: AttributeRepository;
+  tables?: TableRepository;
+}
+
+interface MacroDefinition {
+  name: string;
+  command: string;
+  source: 'user' | 'pack' | 'import' | 'builtin';
+  sourceId?: string;
+}
+
+interface AbilityDefinition {
+  character: string;
+  name: string;
+  command: string;
+}
+
+interface AttributeValue {
+  value: string | number;
+  max?: string | number;
+}
+
 interface MacroRepository {
   get(name: string): Promise<MacroDefinition | undefined>;
 }
@@ -123,43 +294,120 @@ interface AttributeRepository {
   ): Promise<AttributeValue | undefined>;
 }
 
+interface TableDefinition {
+  name: string;
+  entries: Array<{
+    weight: number;
+    value: string;
+    inlineRoll?: string;
+  }>;
+}
+
 interface TableRepository {
   get(name: string): Promise<TableDefinition | undefined>;
 }
 ```
 
-`RollEngineOptions` should accept these repositories plus an optional
-`macroSource`/`abilitySource`/`attributeSource` override for tests, packs or
-remote providers. Reads are async so implementations can use IndexedDB, file
-packs, a network API or an in-memory test double without changing the parser.
+### Source precedence
+
+`macroSource` may be a single repository or an ordered list. A
+`CompositeMacroRepository` resolves in this default order:
+
+1. user macros;
+2. active campaign/pack macros;
+3. imported pack macros;
+4. built-in macros.
+
+The first async hit wins. Duplicate names from lower-priority sources are
+ignored with a `macro-shadowed` warning. The caller can supply a different order
+for tests or pack-only sessions.
+
+Abilities and attributes are scoped by character/keyword. The repository
+implementation owns resolution of `selected`/`target`; the engine passes the
+literal keyword through. No token model is assumed.
+
+### Lookup rules
+
+- Lookups are case-insensitive and keyed by normalized name.
+- Each `roll()` call has a per-call memo cache keyed by
+  `(repository, kind, source, name, options)`.
+- Repositories may add longer-lived caches; the engine never assumes them.
+- Missing data returns `undefined` to the engine, which raises
+  `MISSING_DATA` unless `noerror` semantics are enabled.
+- Expansion cycles are detected by an expansion stack keyed by
+  `kind:source:name`; a repeated key raises `EXPANSION_CYCLE`.
+- Repositories may return a synchronous value via `Promise.resolve`; the engine
+  always awaits.
+
+`EngineOptions` accepts `repositories`, `macroSource`, optional per-kind source
+overrides for tests/packs and an `AbortSignal`.
 
 ## Core contracts
 
-### RollContext
+### EngineOptions / RollContext
 
 ```ts
-interface RollContext {
-  rng: () => number;
-  macros: MacroRepository;
-  abilities: AbilityRepository;
-  attributes: AttributeRepository;
-  tables?: TableRepository;
-  queryAnswers?: Record<string, string>;
+interface EngineOptions {
+  repositories: Repositories;
+  macroSource?: MacroRepository | MacroRepository[];
+  rng?: Rng;
+  queryAnswers?: QueryAnswers;
+  expanded?: string;
   allowInfinite?: boolean;
   maxExpansionDepth?: number;
+  maxQueryDepth?: number;
+  maxInlineDepth?: number;
   maxExplosionRolls?: number;
+  maxTableDepth?: number;
+  maxOutputLength?: number;
+  maxPassTimeMs?: number;
+  signal?: AbortSignal;
+  collectWarnings?: boolean;
+}
+
+interface RollContext extends EngineOptions {
+  rng: Rng;
 }
 ```
+
+Defaults: expansion 99, queries 99, inline 99, explosion 99, table depth 16,
+output 256 KiB, pass time 1,000 ms, warnings collected.
+
+### RNG
+
+```ts
+interface Rng {
+  next(): number; // [0, 1)
+  snapshot?(): unknown;
+  restore?(state: unknown): void;
+}
+```
+
+Production uses a crypto-backed uniform RNG; tests inject deterministic
+sequences. If the RNG exposes snapshots, `RollResult.replay` records
+`rngStateBefore` and `rngStateAfter`. Otherwise replay is seed/context-based and
+the caller is responsible for retention.
 
 ### RollResult
 
 ```ts
 interface RollResult {
+  schemaVersion: 1;
   total: number;
   breakdown: RollBreakdown;
   process: RollProcess;
   warnings: RollWarning[];
   errors?: RollError[];
+  replay?: {
+    rngStateBefore?: unknown;
+    rngStateAfter?: unknown;
+    seed?: string;
+  };
+  snapshot?: RollResultSnapshot;
+}
+
+interface RollResultSnapshot extends Omit<RollResult, 'snapshot'> {
+  createdAt: number;
 }
 ```
 
@@ -266,6 +514,43 @@ interface RollProcess {
   inlineRolls: InlineRollRecord[];
   arithmetic: ArithmeticTrace[];
 }
+
+type RollErrorCode =
+  | 'PARSE_UNKNOWN_TOKEN'
+  | 'PARSE_UNEXPECTED_TOKEN'
+  | 'PARSE_INVALID_MODIFIER'
+  | 'PARSE_MISMATCHED_GROUP'
+  | 'VALIDATION_INVALID_DICE'
+  | 'VALIDATION_INVALID_MODIFIER'
+  | 'MISSING_DATA'
+  | 'EXPANSION_CYCLE'
+  | 'EXPANSION_DEPTH'
+  | 'QUERY_MISSING_ANSWER'
+  | 'QUERY_INVALID_ANSWER'
+  | 'INLINE_DEPTH'
+  | 'TABLE_MISSING'
+  | 'TABLE_CYCLE'
+  | 'LIMIT_EXPLOSION'
+  | 'LIMIT_OUTPUT'
+  | 'RNG_FAILURE'
+  | 'INTERNAL';
+
+interface RollError {
+  code: RollErrorCode;
+  message: string;
+  pass: string;
+  plugin?: string;
+  span?: { start: number; end: number };
+  cause?: unknown;
+}
+
+interface RollWarning {
+  code: string;
+  message: string;
+  pass: string;
+  plugin?: string;
+  span?: { start: number; end: number };
+}
 ```
 
 `RollSegment[]` is the primary UI contract: it describes the visible roll
@@ -311,6 +596,27 @@ below. Successes, failures, explosions, rerolls and matching use this convention
 - Two-phase order: roll-time (explode/reroll) then settled modifiers
   (keep/drop/success/failure/sort).
 
+Concrete modifier phases:
+
+| Phase | Modifiers                                                      | Effect                                                  |
+| ----- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| A     | reroll (`r`, `ro`), min/max (`mi`, `ma`)                       | transform each die value; rerolls can be rerolled again |
+| B     | explode (`!`, `!p`, `!!`, threshold variants)                  | add/merge dice until cap                                |
+| C     | keep/drop (`kh`, `kl`, `dh`, `dl`, `k`, `d`)                   | mark dice kept/dropped                                  |
+| D     | matching (`m`, `mt`)                                           | compute match groups; `mt` changes the reported count   |
+| E     | success/failure/critical (`>`, `<`, `=`, `s`, `f`, `cs`, `cf`) | count or replace the pool total                         |
+| F     | sort (`s`, `sa`, `sd`)                                         | display order only                                      |
+| G     | aggregate                                                      | sum/display total, emit records                         |
+
+Modifiers are applied in written order within each phase. Sorting is always
+last regardless of where it appears. `e` (exhaustive successes) runs after
+phase E and rerolls only successes, up to the explosion cap. Explosion and
+reroll limits produce warnings, not errors.
+
+Compatibility note: where Roll20's ordering is ambiguous for a chained modifier,
+the engine records `modifierOrder` on each group so the UI can explain the
+result. Ambiguous chains receive golden tests before release.
+
 ### Grouped rolls
 
 - Commas total each sub-expression before group modifiers; without commas,
@@ -344,6 +650,35 @@ the engine only requests/resolves them through the repositories.
 - Extraction returns `RollQueryRequest[]`; answers are validated and substituted.
 - UI prompts are deferred to the chat proposal.
 
+```ts
+interface RollQueryRequest {
+  id: string; // stable hash of prompt + option values
+  prompt: string;
+  defaultValue?: string;
+  options?: Array<{ label: string; value: string }>;
+  required: boolean;
+  children?: RollQueryRequest[];
+  span: { start: number; end: number };
+}
+
+type QueryAnswers = Record<
+  string, // request id or exact prompt text
+  string
+>;
+```
+
+Identity rules:
+
+- `id = hash(normalize(prompt) + '|' + normalizedOptionValues.join('|'))`.
+- Repeated identical requests are deduplicated and asked once.
+- Answers are matched by `id` first, then by exact prompt text for UI
+  convenience.
+- Missing required answers produce `QUERY_MISSING_ANSWER`; invalid option values
+  produce `QUERY_INVALID_ANSWER`.
+- Nested queries are resolved depth-first: inner requests are answered and
+  substituted before the enclosing query is finalized.
+- Extra answers for unknown requests are ignored with a warning, not an error.
+
 ### Inline rolls, labels and references
 
 - Inline rolls `[[expr]]`, innermost first, stable `$[[n]]` indexes.
@@ -355,26 +690,83 @@ the engine only requests/resolves them through the repositories.
 
 ### Optional table plugin
 
-`Nt[table]`/`t[table]` may be parsed/evaluated with `TableRepository`. Table
-management UI, permissions and chat commands belong to the chat proposal.
+`Nt[table]`/`t[table]` may be parsed/evaluated with `TableRepository`.
+
+- `N` defaults to 1; N must be a positive integer.
+- `TableDefinition.entries` weights may be counts or percentages. If every
+  weight is a percentage and the sum is 100 ±0.01, use percentage mode;
+  otherwise treat weights as relative counts.
+- Selection uses one RNG draw per roll. Entry values are strings; an entry may
+  contain a roll expression resolved by the engine.
+- Nested table references are allowed to a depth of 16. A table cycle
+  (`A -> B -> A`) raises `TABLE_CYCLE`.
+- Missing table raises `TABLE_MISSING` unless `noerror` is enabled.
+- Table results are recorded in `RollProcess` and as `RollSegment`s.
+- Table management UI, permissions and chat commands belong to the chat
+  proposal.
 
 ## Errors and limits
 
-- Parse errors: unknown tokens, malformed dice, invalid modifiers, mismatched
-  groups.
-- Validation errors: invalid counts/sides/keep/drop/modifier arguments.
-- Missing-data errors: unresolved macro/ability/attribute/table/reference.
-- Limits: expansion depth, query depth, inline nesting, explosion count,
-  table recursion, output size and pass time.
-- Explosion/reroll caps are warnings.
-- Errors carry plugin/pass and source span.
+### Error taxonomy
+
+- `PARSE_*` — lexer/parser failures: unknown token, unexpected token, invalid
+  modifier syntax, mismatched group.
+- `VALIDATION_*` — syntactically valid but invalid values: dice counts/sides,
+  keep/drop amounts, modifier arguments.
+- `MISSING_DATA` — unresolved macro, ability, attribute, table or roll
+  reference.
+- `EXPANSION_CYCLE`, `EXPANSION_DEPTH` — expansion recursion failures.
+- `QUERY_MISSING_ANSWER`, `QUERY_INVALID_ANSWER` — query resolution failures.
+- `INLINE_DEPTH` — inline-roll nesting limit.
+- `TABLE_MISSING`, `TABLE_CYCLE` — table failures.
+- `LIMIT_*` — output/time/explosion limits.
+- `RNG_FAILURE` — invalid RNG output or exception.
+- `INTERNAL` — plugin bug; includes the original cause.
+
+Every error carries `code`, `message`, `pass`, optional `plugin`, optional
+`span` and optional `cause`. Errors are fatal; warnings are non-fatal.
+
+### Limit defaults
+
+| Limit                  | Default | Behavior at limit                |
+| ---------------------- | ------- | -------------------------------- |
+| Expansion depth        | 99      | `EXPANSION_DEPTH` error          |
+| Query depth            | 99      | `QUERY_*` depth error            |
+| Inline nesting         | 99      | `INLINE_DEPTH` error             |
+| Explosion/reroll rolls | 99      | warning, stop rolling            |
+| Table recursion        | 16      | `TABLE_CYCLE`/depth error        |
+| Output length          | 256 KiB | `LIMIT_OUTPUT` error             |
+| Pass time              | 1,000ms | `LIMIT_TIME` error               |
+| Parser recovery errors | 10      | first error fatal, rest warnings |
+
+`noerror` suppresses only `MISSING_DATA` where explicitly enabled; it never
+suppresses parse, validation, cycle, table-cycle or limit errors.
+
+### Failure policy
+
+- Parse/validation/limit errors fail the whole roll.
+- Missing data may be downgraded to an empty string with `&{noerror}` and a
+  warning.
+- Warnings are always returned in order of the pass that produced them.
+- Fatal errors include the partially expanded text and pass records for
+  diagnostics.
 
 ## RNG and determinism
 
-- `RollContext.rng` is required for evaluation.
-- Same input + RNG sequence + repositories + query answers = same result.
-- Roll records retain original/final values for animation without re-rolling.
-- Replay IDs/seeds are caller concerns.
+- `Rng.next()` must return a finite number in `[0, 1)`; otherwise
+  `RNG_FAILURE`.
+- Production default: crypto-backed uniform RNG.
+- Tests inject a deterministic sequence; the engine never falls back silently to
+  `Math.random`.
+- Same input + same RNG sequence + same repositories + same query answers =
+  identical `RollResult` including metadata.
+- If the RNG implements `snapshot()`/`restore()`, `RollResult.replay` records the
+  before/after state. Otherwise callers may pass a seed through their own RNG
+  implementation and record it externally.
+- `RollResultSnapshot` is the persistable form (schema version, total,
+  breakdown, process, warnings, replay state if permitted). Re-rendering reads a
+  snapshot and never re-rolls.
+- 3D dice receive recorded values; they never call the RNG.
 
 ## Visualization
 
@@ -384,8 +776,59 @@ Engine returns data; presentation is separate:
 - 2D dice breakdown;
 - optional 3D dice animation.
 
-3D dice display supplied values, never choose results or consume RNG. Text must
-remain available; reduced motion and accessibility are required.
+3D dice use the existing `@3d-dice/dice-box` dependency. The adapter receives a
+`RollResult`/`RollSegment[]` and animates the recorded values; it never chooses
+results, consumes RNG or changes the total. If 3D rendering fails or is disabled
+(reduced motion, low-power device, unsupported WebGL), fall back to the text/2D
+breakdown. Text must remain accessible and must show the same values.
+
+Adapter contract:
+
+```ts
+interface RollVisualizer {
+  canRender(result: RollResult): boolean;
+  render(result: RollResult, host: VisualizerHost): Promise<void>;
+  dispose(): void;
+}
+```
+
+Visualizer adapters must not mutate the result and must tolerate missing 3D
+assets by reporting a fallback.
+
+## Non-functional requirements
+
+### Performance budgets
+
+Initial targets on a mid-range desktop:
+
+- parse a typical expression (< 100 tokens) in under 5 ms;
+- evaluate 100 dice in under 20 ms;
+- full expansion/query/inline/dice/math pipeline under 100 ms excluding async
+  repository latency;
+- hard maximum pass time 1,000 ms;
+- hard maximum output 256 KiB.
+
+Benchmarks run in CI for representative expressions, large dice pools and
+modifier chains. Regressions fail the benchmark job.
+
+### Localization
+
+The engine returns stable error codes and message parameters. It does not return
+translated user-facing strings. Chat/UI maps codes to localized messages using
+the normal i18n system.
+
+### Accessibility
+
+`RollSegment` and die/group records contain textual values suitable for screen
+readers and clipboard output. 3D animation is optional; reduced-motion and
+low-power modes use text/2D output. No information exists only in animation.
+
+### Snapshot persistence
+
+`RollResultSnapshot` is persisted with `schemaVersion`. Chat stores snapshots or
+snapshot references; reloading a message uses the snapshot and never re-rolls.
+Schema upgrades are versioned; unknown versions render a generic fallback
+instead of failing the chat.
 
 ## Implementation phases
 
@@ -451,53 +894,70 @@ delivery. The engine never reads chat state directly.
 - Process-metadata completeness tests.
 - Visualization tests: display data matches records without re-rolling.
 
-## Remaining gaps
+## Acceptance criteria
 
-### P0 — parser/evaluator contracts
+### Parser and AST
 
-- Finalize `extract()` / `roll()` lifecycle: async expansion, query-answer
-  injection, retries/cancellation and pass failure behavior.
-- Freeze concrete AST/plugin interfaces, token-composition rules and pass-record
-  schemas.
-- Define async repository semantics: selected/target context, ability/attribute
-  lookup, repeating rows, caching, cycle detection and missing-data behavior.
-- Define macro-source precedence and conflict rules (local, pack, import,
-  override).
-- Define query-answer identity and merging for repeated/nested prompts.
-- Freeze `RollResult` process metadata and the render-segment contract before UI
-  work begins.
-- Establish one error taxonomy with plugin/pass names, source spans and limits.
-- Define the RNG/replay contract (seed shape, crypto vs test RNG, snapshots).
+- All grammar-based passes use Chevrotain lexers/parsers and typed AST nodes.
+- Token collisions fail at registration with a clear error.
+- Malformed input returns `PARSE_*` with pass, plugin and source span.
+- Parser recovery is bounded and deterministic.
 
-### P1 — syntax and evaluation
+### Expansion
 
-- Build the modifier interaction matrix and golden tests for
-  reroll/explode/keep/drop/success/matching chains.
-- Resolve grammar edge cases: computed/custom dice, grouped-roll validation,
-  separator handling, token collisions and recovery.
-- Define optional table-plugin recursion, missing-table behavior and nested
-  inline entries.
-- Define macro/ability/attribute cycle and output-size limits, plus query HTML
-  entity handling for nested layers.
-- Specify integration tests between expansion, query, inline, dice and math
-  passes.
-- Define the 3D dice adapter contract and fallback, including deterministic
-  display of recorded values.
+- Macros, abilities and attributes resolve through async repositories.
+- Macro source precedence is configurable and deterministic.
+- Expansion cycles/depth limits fail with `EXPANSION_*`.
+- `noerror` only downgrades missing data, never syntax/validation failures.
+- Expansion records appear in `RollResult.process`.
 
-### P2 — quality and delivery
+### Queries and inline rolls
 
-- Set parser/evaluator performance targets and benchmark large macros/groups.
-- Add golden test corpus and per-phase acceptance criteria.
-- Decide snapshot/export shape for roll results and process metadata.
-- Define localization of engine errors and warnings.
-- Define accessibility requirements for roll metadata/visualizations.
+- `extract()` returns deduplicated `RollQueryRequest[]` without rolling.
+- Repeated identical prompts reuse one answer.
+- Missing/invalid answers produce `QUERY_*`.
+- Nested queries resolve depth-first.
+- Inline rolls get stable indexes; `$[[n]]` and `.computed` resolve from records.
+- Missing inline references produce `MISSING_DATA`.
 
-## Open decisions
+### Evaluation
 
-- Chevrotain grammar composition and token collisions.
-- Whether optional table/custom/computed syntax needs lookahead.
-- 3D dice library/fallback/mobile performance remain presentation decisions.
-- How much of the process metadata is persisted vs. recomputed on reload.
+- All dice types and modifiers in this plan are parsed/evaluated.
+- Modifier phases A–G are deterministic and recorded.
+- Grouped rolls validate sub-roll kind compatibility.
+- Table plugin follows the defined weight/cycle/missing rules.
+- Arithmetic/functions obey the documented precedence.
+
+### Metadata
+
+- `RollResult` contains total, segments, groups, per-die records, expansions,
+  queries, inline rolls and arithmetic trace.
+- A renderer can reproduce the full breakdown from metadata alone.
+- Snapshot persistence uses `schemaVersion` and never re-rolls on render.
+
+### External data and RNG
+
+- All external data comes through async repositories.
+- `selected`/`target` are passed through as keywords; no token model is assumed.
+- Same input + RNG sequence + repositories + answers produces identical results.
+- Production uses a crypto RNG; tests inject deterministic RNG.
+
+### Quality
+
+- Performance budgets and hard limits from this document pass.
+- Error codes/parameters are localization-ready; no translated engine strings.
+- Text/2D/3D adapters render identical values with accessible text fallback.
+- Golden tests cover modifier chains, expansions, queries, inline rolls, tables
+  and metadata completeness.
+
+## Non-blocking decisions
+
+These do not block the parser/evaluator build:
+
+- whether optional table/custom/computed plugins ship in v1;
+- whether 3D dice are enabled by default or opt-in;
+- snapshot retention policy in chat storage;
+- post-v1 custom roll parsing extension point.
 
 ## Definition of done
 
