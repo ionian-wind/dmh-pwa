@@ -1,6 +1,6 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 173 passing tests; three
+> **Status: in progress.** Core engine implemented with 187 passing tests; three
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
@@ -289,7 +289,7 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 173 passing tests across
+Implemented under `src/utils/bag-of-dice` with 187 passing tests across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 
@@ -325,6 +325,14 @@ introduced `{3d6>4 + 3d4>3, 2d8>7}` with expected value `4`. A later mass
 formatting/modernization commit changed only the expectation to `5`; the
 upstream suite currently fails it. The supplied draws correctly produce
 `2 + 1 + 1 = 4`, so the port keeps `4` and the full reference suite passes.
+
+### Coverage
+
+The new bag-of-dice files meet the configured per-file 87% statements/lines
+threshold (`engine` folder: 94.89% statements, 95.6% lines, 84.22% branches).
+`npm run test:coverage` still exits non-zero because of the existing global 87%
+branch threshold and unrelated pre-existing per-file failures elsewhere in the
+project.
 
 ### Decisions and deviations
 
@@ -362,6 +370,8 @@ upstream suite currently fails it. The supplied draws correctly produce
       grouped rolls.
 - [x] **DR-329** Document syntax and semantic differences from the reference
       `dice-roller-parser` implementation.
+- [x] **DR-330** Add coverage-gap tests for plugin registration, RNG helpers,
+      snapshots, text rendering and visualizer fallbacks.
 - [ ] **DR-327** Add comma-separated reroll/explode modifier clause support and
       golden tests.
 - [x] **DR-328** Implement `mtN`/`mtN>X` argument and threshold semantics; the
