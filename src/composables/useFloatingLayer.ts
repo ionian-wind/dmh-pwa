@@ -1,16 +1,22 @@
 import { ref } from 'vue';
 
-let nextLayer = 6000;
+const nextByBase = new Map<number, number>();
 
 /**
- * Shared z-index stack for floating panels/dialogs. Clicking or focusing a
- * layer raises it above the others without closing them.
+ * Shared z-index stack for floating panels. Use a lower base for panels and a
+ * higher base for dialogs so dialogs stay above panels without closing them.
  */
-export function useFloatingLayer() {
-  const zIndex = ref(++nextLayer);
+function nextZ(base: number): number {
+  const next = (nextByBase.get(base) ?? base) + 1;
+  nextByBase.set(base, next);
+  return next;
+}
+
+export function useFloatingLayer(base = 5000) {
+  const zIndex = ref(nextZ(base));
 
   function bringToFront(): void {
-    zIndex.value = ++nextLayer;
+    zIndex.value = nextZ(base);
   }
 
   return { zIndex, bringToFront };

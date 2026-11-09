@@ -218,6 +218,10 @@ assets without Babylon.
       velocity drops without spin.
 - [x] **3DDR-521** Contain dice inside tall bounce borders with a clamp fallback
       and a dev scene-order/bounds dump.
+- [x] **3DDR-522** Extract the draggable panel shell and use it for the dice tray
+      and calculator; panels stack above app content but below dialogs.
+- [x] **3DDR-523** Drag explosion extras individually while keeping d100 parts
+      grouped.
 
 **Gate:** the grid builds a pool, explosion extras settle separately, and every
 roll emits one individual plus one pool event.

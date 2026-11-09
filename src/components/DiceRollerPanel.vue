@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconX } from '@tabler/icons-vue';
 import type {
@@ -24,7 +17,7 @@ import {
   type DiceRollEvent,
   type RollEventDie,
 } from '@/utils/roll-events';
-import { useFloatingLayer } from '@/composables/useFloatingLayer';
+import DraggablePanel from '@/components/common/DraggablePanel.vue';
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
@@ -32,7 +25,6 @@ const emit = defineEmits<{
   (event: 'roll', value: DiceRollEvent): void;
 }>();
 const { t } = useI18n();
-const { zIndex, bringToFront } = useFloatingLayer();
 
 interface DiceRow {
   label: string;
@@ -67,8 +59,6 @@ const open = computed({
 });
 
 const surface = ref<HTMLDivElement | null>(null);
-const anchor = ref<HTMLDivElement | null>(null);
-const menu = ref<{ updatePosition?: () => void } | null>(null);
 const ready = ref(false);
 const rollError = ref(false);
 const total = ref<number | null>(null);
@@ -77,33 +67,10 @@ const pool = ref<
   Array<{ row: DiceRow; count: number; mode: ExplodeMode | null }>
 >([]);
 const hover = ref<{ result: DiceResult; x: number; y: number } | null>(null);
-const anchorStyle = ref({ left: '0px', top: '0px' });
 let renderer: DiceRenderer | null = null;
-let resizeObserver: ResizeObserver | undefined;
-let dragged = false;
 let dieDrag = false;
 let visualCounter = 0;
 let rollCounter = 0;
-let drag: {
-  startX: number;
-  startY: number;
-  left: number;
-  top: number;
-} | null = null;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
-
-function placeBesideMenu() {
-  const mainMenu = document.getElementById('main_menu');
-  const right = mainMenu?.getBoundingClientRect().right ?? 56;
-  anchorStyle.value = {
-    left: `${clamp(right + 12, 0, window.innerWidth)}px`,
-    top: `${Math.max(0, window.innerHeight - 16)}px`,
-  };
-  void nextTick(() => menu.value?.updatePosition?.());
-}
 
 function sizeSurface() {
   if (!surface.value) return;
@@ -114,57 +81,10 @@ function sizeSurface() {
 function onWindowResize() {
   sizeSurface();
   renderer?.resize(window.innerWidth, window.innerHeight);
-  if (!dragged) {
-    placeBesideMenu();
-  } else {
-    const left = Number.parseFloat(anchorStyle.value.left);
-    const top = Number.parseFloat(anchorStyle.value.top);
-    anchorStyle.value = {
-      left: `${clamp(left, 0, window.innerWidth)}px`,
-      top: `${clamp(top, 0, window.innerHeight)}px`,
-    };
-    void nextTick(() => menu.value?.updatePosition?.());
-  }
-}
-
-function onPointerDown(event: PointerEvent) {
-  if (event.button !== 0) return;
-  hover.value = null;
-  drag = {
-    startX: event.clientX,
-    startY: event.clientY,
-    left: Number.parseFloat(anchorStyle.value.left),
-    top: Number.parseFloat(anchorStyle.value.top),
-  };
-  dragged = true;
-  window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('pointerup', stopDragging, { once: true });
-}
-
-function onPointerMove(event: PointerEvent) {
-  if (!drag) return;
-  anchorStyle.value = {
-    left: `${clamp(
-      drag.left + event.clientX - drag.startX,
-      0,
-      window.innerWidth,
-    )}px`,
-    top: `${clamp(
-      drag.top + event.clientY - drag.startY,
-      0,
-      window.innerHeight,
-    )}px`,
-  };
-  void nextTick(() => menu.value?.updatePosition?.());
-}
-
-function stopDragging() {
-  drag = null;
-  window.removeEventListener('pointermove', onPointerMove);
 }
 
 function onHoverMove(event: PointerEvent) {
-  if (drag || dieDrag || !renderer) {
+  if (dieDrag || !renderer) {
     hover.value = null;
     return;
   }
@@ -182,7 +102,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   return Boolean(
     target.closest(
-      '.dice-roller-anchor, .dice-roller-menu, button, a, input, textarea, select, [role="button"], .q-item',
+      '.floating-panel, button, a, input, textarea, select, [role="button"], .q-item',
     ),
   );
 }
@@ -356,38 +276,15 @@ async function startRenderer(candidate: DiceRenderer): Promise<void> {
   });
 }
 
-watch(
-  () => props.modelValue,
-  (value) => {
-    if (value) {
-      void nextTick(() => {
-        placeBesideMenu();
-        menu.value?.updatePosition?.();
-      });
-    }
-  },
-);
-
 onMounted(async () => {
-  placeBesideMenu();
   sizeSurface();
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('pointermove', onHoverMove);
   window.addEventListener('pointerdown', onSurfacePointerDown, true);
   window.addEventListener('pointerleave', clearHover);
-  const mainMenu = document.getElementById('main_menu');
-  if (mainMenu && typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(() => {
-      if (!dragged) placeBesideMenu();
-    });
-    resizeObserver.observe(mainMenu);
-  }
 
   try {
     renderer = await createRenderer();
-    if (import.meta.env.DEV) {
-      (window as unknown as Record<string, unknown>).__diceRenderer = renderer;
-    }
     ready.value = true;
   } catch {
     rollError.value = true;
@@ -401,8 +298,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('pointerdown', onSurfacePointerDown, true);
   window.removeEventListener('pointerleave', clearHover);
   onDieDragEnd();
-  resizeObserver?.disconnect();
-  stopDragging();
   renderer?.dispose();
   renderer = null;
 });
@@ -416,121 +311,105 @@ onBeforeUnmount(() => {
       class="dice-roller-surface"
       aria-hidden="true"
     />
-    <div ref="anchor" class="dice-roller-anchor" :style="anchorStyle">
-      <QMenu
-        ref="menu"
-        v-model="open"
-        anchor="bottom left"
-        self="bottom left"
-        :offset="[0, 0]"
-        :persistent="true"
-        :auto-close="false"
-        :style="{ zIndex }"
-        no-parent-event
-        class="dice-roller-menu"
-      >
-        <div
-          class="dice-roller-sheet"
-          @pointerdown="bringToFront"
-          @focusin="bringToFront"
-        >
-          <div class="dice-roller-header" @pointerdown="onPointerDown">
-            <span>{{ t('diceRoller.title') }}</span>
-            <QBtn
-              flat
-              dense
-              round
-              :aria-label="t('diceRoller.close')"
-              @pointerdown.stop
-              @click.stop="open = false"
-            >
-              <IconX :size="16" />
-            </QBtn>
-          </div>
+    <DraggablePanel v-model="open" min-width="248px">
+      <template #header>
+        <div class="dice-roller-header">
+          <span>{{ t('diceRoller.title') }}</span>
+          <QBtn
+            flat
+            dense
+            round
+            :aria-label="t('diceRoller.close')"
+            @pointerdown.stop
+            @click.stop="open = false"
+          >
+            <IconX :size="16" />
+          </QBtn>
+        </div>
+      </template>
+      <div class="dice-roller-sheet">
+        <div class="dice-roller-summary">
+          <span class="dice-roller-sum">Σ {{ total ?? '—' }}</span>
+          <span class="dice-roller-count">
+            {{ pool.reduce((count, entry) => count + entry.count, 0) }} dice
+          </span>
+        </div>
 
-          <div class="dice-roller-summary">
-            <span class="dice-roller-sum">Σ {{ total ?? '—' }}</span>
-            <span class="dice-roller-count">
-              {{ pool.reduce((count, entry) => count + entry.count, 0) }} dice
-            </span>
-          </div>
+        <div class="dice-roller-modes" role="group">
+          <QBtn
+            v-for="option in explodeModes"
+            :key="option"
+            flat
+            dense
+            no-caps
+            class="dice-roller-mode"
+            :class="{ active: mode === option }"
+            :disable="!ready"
+            :label="option"
+            :title="t(explodeHints[option])"
+            :aria-label="`${option}: ${t(explodeHints[option])}`"
+            @click="toggleMode(option)"
+          />
+        </div>
 
-          <div class="dice-roller-modes" role="group">
+        <div class="dice-roller-grid" role="grid">
+          <div
+            v-for="row in diceRows"
+            :key="row.label"
+            class="dice-roller-grid-row"
+            role="row"
+          >
             <QBtn
-              v-for="option in explodeModes"
-              :key="option"
               flat
               dense
               no-caps
-              class="dice-roller-mode"
-              :class="{ active: mode === option }"
+              class="dice-roller-row-label"
               :disable="!ready"
-              :label="option"
-              :title="t(explodeHints[option])"
-              :aria-label="`${option}: ${t(explodeHints[option])}`"
-              @click="toggleMode(option)"
+              :label="row.label"
+              :aria-label="`${row.label} × 1`"
+              @click="roll(row, 1)"
             />
-          </div>
-
-          <div class="dice-roller-grid" role="grid">
-            <div
-              v-for="row in diceRows"
-              :key="row.label"
-              class="dice-roller-grid-row"
-              role="row"
-            >
-              <QBtn
-                flat
-                dense
-                no-caps
-                class="dice-roller-row-label"
-                :disable="!ready"
-                :label="row.label"
-                :aria-label="`${row.label} × 1`"
-                @click="roll(row, 1)"
-              />
-              <QBtn
-                v-for="count in counts"
-                :key="count"
-                flat
-                dense
-                no-caps
-                class="dice-roller-cell"
-                :disable="!ready"
-                :label="String(count)"
-                :aria-label="`${row.label} × ${count}`"
-                @click="roll(row, count)"
-              />
-            </div>
-          </div>
-
-          <div class="dice-roller-footer">
             <QBtn
+              v-for="count in counts"
+              :key="count"
               flat
               dense
               no-caps
-              class="dice-roller-footer-button"
-              :disable="!ready || pool.length === 0"
-              :label="t('diceRoller.reroll')"
-              @click="reroll"
+              class="dice-roller-cell"
+              :disable="!ready"
+              :label="String(count)"
+              :aria-label="`${row.label} × ${count}`"
+              @click="roll(row, count)"
             />
-            <QBtn
-              flat
-              dense
-              no-caps
-              class="dice-roller-footer-button"
-              :disable="!ready || pool.length === 0"
-              :label="t('diceRoller.clear')"
-              @click="clearDice"
-            />
-          </div>
-
-          <div v-if="rollError" class="dice-roller-error">
-            {{ t('diceRoller.rollError') }}
           </div>
         </div>
-      </QMenu>
-    </div>
+
+        <div class="dice-roller-footer">
+          <QBtn
+            flat
+            dense
+            no-caps
+            class="dice-roller-footer-button"
+            :disable="!ready || pool.length === 0"
+            :label="t('diceRoller.reroll')"
+            @click="reroll"
+          />
+          <QBtn
+            flat
+            dense
+            no-caps
+            class="dice-roller-footer-button"
+            :disable="!ready || pool.length === 0"
+            :label="t('diceRoller.clear')"
+            @click="clearDice"
+          />
+        </div>
+
+        <div v-if="rollError" class="dice-roller-error">
+          {{ t('diceRoller.rollError') }}
+        </div>
+      </div>
+    </DraggablePanel>
     <div
       v-if="hover"
       class="dice-roller-tooltip"
@@ -564,8 +443,14 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.dice-roller-menu {
+.dice-roller-panel {
+  position: absolute;
+  left: 0;
+  bottom: 0;
   min-width: 248px;
+  pointer-events: auto;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
 }
 
 .dice-roller-sheet {

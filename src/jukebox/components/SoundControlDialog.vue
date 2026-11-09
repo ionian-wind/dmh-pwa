@@ -46,7 +46,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { zIndex, bringToFront } = useFloatingLayer();
+const { zIndex, bringToFront } = useFloatingLayer(6000);
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();

@@ -49,7 +49,7 @@ const QBtnStub = defineComponent({
 function mountPanel() {
   document
     .querySelectorAll(
-      '#dice-roller-surface, .dice-roller-anchor, .dice-roller-menu',
+      '#dice-roller-surface, .floating-panel-anchor, .dice-roller-menu',
     )
     .forEach((element) => element.remove());
   return mount(DiceRollerPanel, {
@@ -178,7 +178,9 @@ describe('DiceRollerPanel', () => {
     await flushPromises();
     await nextTick();
 
-    const anchor = document.querySelector<HTMLElement>('.dice-roller-anchor')!;
+    const anchor = document.querySelector<HTMLElement>(
+      '.floating-panel-anchor',
+    )!;
     const beforeLeft = Number.parseFloat(anchor.style.left);
     const beforeTop = Number.parseFloat(anchor.style.top);
     const header = document.querySelector<HTMLElement>('.dice-roller-header')!;

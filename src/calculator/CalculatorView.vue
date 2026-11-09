@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { evaluate, create, all } from 'mathjs';
-import { useDragSnap } from '@/composables/useDragSnap';
-import { useFloatingLayer } from '@/composables/useFloatingLayer';
+import DraggablePanel from '@/components/common/DraggablePanel.vue';
 import {
   IconTransform,
   IconCalculator,
@@ -29,7 +28,6 @@ import {
 } from '@tabler/icons-vue';
 
 const { t } = useI18n();
-const { zIndex, bringToFront } = useFloatingLayer();
 const math = create(all);
 
 const props = defineProps<{
@@ -43,15 +41,6 @@ const model = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
 });
-
-const {
-  cardStyle,
-  transitionHide,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onHide,
-} = useDragSnap();
 
 const input = ref('');
 const result = ref('');
@@ -252,38 +241,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <QDialog
-    seamless
-    position="bottom"
-    class="q-pa-sm"
-    v-model="model"
-    :style="{ zIndex }"
-    :transition-hide="transitionHide"
-    @hide="onHide"
-  >
-    <QCard
-      :style="[cardStyle, { minWidth: '350px', minHeight: '410px' }]"
-      @pointerdown="bringToFront"
-      @focusin="bringToFront"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
-    >
-      <QToolbar
-        class="justify-between drag-handle"
-        @pointerdown="onPointerDown"
-      >
-        <QTabs class="q-mb-xs" v-model="tab">
-          <QTab name="calculate" :title="t('calculator.calculator')"
-            ><IconCalculator
-          /></QTab>
-          <QTab name="convert" :title="t('calculator.converter')"
-            ><IconTransform
-          /></QTab>
-        </QTabs>
+  <Teleport to="body">
+    <DraggablePanel v-model="model" min-width="360px">
+      <template #header>
+        <QToolbar class="justify-between drag-handle">
+          <QTabs class="q-mb-xs" v-model="tab">
+            <QTab name="calculate" :title="t('calculator.calculator')"
+              ><IconCalculator
+            /></QTab>
+            <QTab name="convert" :title="t('calculator.converter')"
+              ><IconTransform
+            /></QTab>
+          </QTabs>
 
-        <QBtn flat clickable @click="model = false"><IconX /></QBtn>
-      </QToolbar>
+          <QBtn flat clickable @click="model = false"><IconX /></QBtn>
+        </QToolbar>
+      </template>
       <QCardSection>
         <div class="calculator-view">
           <QCard flat class="calculator-display q-pa-xs q-mb-sm">
@@ -436,8 +409,8 @@ onUnmounted(() => {
           </QTabPanels>
         </div>
       </QCardSection>
-    </QCard>
-  </QDialog>
+    </DraggablePanel>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -469,6 +442,11 @@ onUnmounted(() => {
 .control {
   background-color: var(--color-misc-light);
 }
+.calculator-card {
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+
 .drag-handle {
   cursor: grab;
 }

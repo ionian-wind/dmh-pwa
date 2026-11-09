@@ -91,7 +91,7 @@ const global = {
 function mountPanel() {
   document
     .querySelectorAll(
-      '#dice-roller-surface, .dice-roller-anchor, .dice-roller-menu',
+      '#dice-roller-surface, .floating-panel-anchor, .dice-roller-menu',
     )
     .forEach((element) => element.remove());
   return mount(DiceRollerPanel, {

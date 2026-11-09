@@ -325,7 +325,9 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
     const parts: DragPart[] = [];
     for (const die of this.dice.values()) {
-      if (die.rootId !== primary.rootId) continue;
+      // d100 parts share a visualId and move together; explosion extras have
+      // their own visualId and are dragged individually.
+      if (die.visualId !== primary.visualId) continue;
       this.physics.remove(die.id);
       die.state = 'dragging';
       die.result = undefined;

@@ -863,6 +863,11 @@ The animation loop stops when every die is settled; resize redraws and
 never clears the scene. The camera looks straight down from the zenith and all
 dice rest on the same `y=0` scene floor.
 
+The tray and calculator use a shared draggable panel component
+(`src/components/common/DraggablePanel.vue`). Panels sit above app content
+(z-index 5000+), while dialogs (6000+) remain above them; clicking or focusing a
+panel raises it without closing the others.
+
 The tray UI is a Roll20-style grid: each row is a die type, the row label rolls
 one die, and the 2–5 columns add that many dice to the pool. Reroll replays the
 whole pool, Clear removes it, and `!`, `!!`, `!p` select explosion modes. FUDGE
