@@ -74,7 +74,7 @@ describe('toss release', () => {
       5,
     );
     expect(release.speed).toBeLessThanOrEqual(5);
-    expect(release.spin).toBeLessThanOrEqual(0.45);
+    expect(release.spin).toBeLessThanOrEqual(0.12);
   });
 
   it('trims samples outside the movement window', () => {

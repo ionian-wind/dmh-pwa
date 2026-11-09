@@ -55,8 +55,8 @@ export function computeTossRelease(
     vx,
     vz,
     speed,
-    // Faster tosses tumble more, but stay gentle at low speeds.
-    spin: Math.min(speed * 0.08, 0.45),
+    // Faster tosses tumble a little more, but stay gentle enough to read.
+    spin: Math.min(speed * 0.018, 0.12),
   };
 }
 
