@@ -26,7 +26,7 @@ import { loadDiceMaterials, type DiceMaterialSet } from './themeLoader';
 import { hasSimulationTimedOut } from './timing';
 import { computeTossRelease, trimTossSamples, type TossSample } from './toss';
 
-const DICE_SCALE = 1.7;
+const DICE_SCALE = 1.9;
 const MAX_EXPLOSIONS = 20;
 
 interface RenderedDie {

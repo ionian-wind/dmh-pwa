@@ -277,7 +277,7 @@ selected explosion state to every pooled batch.
 - Dice enter from different perimeter sides and heights, then are thrown inward
   with varied angles. A key light enters from the scene's left-top corner and
   targets the floor centre, with a soft fill from the opposite side.
-- Dice are rendered at 1.7× asset scale with low, inward throws, gentle initial
+- Dice are rendered at 1.9× asset scale with low, inward throws, gentle initial
   spin, invisible boundary walls and a 6s simulation cap. d100 tens/units share
   a nearby drop point. Physics runs
   naturally until every body sleeps; no rotation or value correction is applied.
