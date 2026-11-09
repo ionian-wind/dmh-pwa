@@ -23,6 +23,7 @@ import {
   createTextObject,
   createImageObject,
   moveObject,
+  objectBounds,
 } from '@/map-studio/domain/objects';
 import {
   listMaps,
@@ -507,6 +508,39 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     dirty.value = true;
   }
 
+  function rotateSelectedObject(rotation: number): void {
+    const object = selectedObject.value;
+    if (!object) return;
+    if (object.type === 'text' || object.type === 'image') {
+      patchSelectedObjectLive({
+        transform: { ...object.transform, rotation },
+      });
+      return;
+    }
+    const bounds = objectBounds(object);
+    const cx = bounds.x + bounds.width / 2;
+    const cy = bounds.y + bounds.height / 2;
+    const delta = rotation - object.transform.rotation;
+    const cos = Math.cos(delta);
+    const sin = Math.sin(delta);
+    const rotate = ([x, y]: [number, number]): [number, number] => [
+      cx + (x - cx) * cos - (y - cy) * sin,
+      cy + (x - cx) * sin + (y - cy) * cos,
+    ];
+    if (object.type === 'door') {
+      patchSelectedObjectLive({
+        a: rotate(object.a),
+        b: rotate(object.b),
+        transform: { ...object.transform, rotation },
+      });
+    } else if (object.type === 'stairs') {
+      patchSelectedObjectLive({
+        points: object.points.map(rotate),
+        transform: { ...object.transform, rotation },
+      });
+    }
+  }
+
   function patchSelectedObjectLive(patch: Record<string, any>): void {
     const current = map.value;
     const layer = imagesLayer.value;
@@ -739,6 +773,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     beginObjectDrag,
     moveSelectedObjectLive,
     patchSelectedObjectLive,
+    rotateSelectedObject,
     endObjectDrag,
     removeSelectedObject,
     updateObject,

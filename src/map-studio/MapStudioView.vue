@@ -252,11 +252,7 @@ function resizeSelected(size: {
 }
 
 function rotateSelected(rotation: number): void {
-  const object = selectedObject.value;
-  if (!object || (object.type !== 'text' && object.type !== 'image')) return;
-  store.patchSelectedObjectLive({
-    transform: { ...object.transform, rotation },
-  });
+  if (selectedObject.value) store.rotateSelectedObject(rotation);
 }
 
 function updateSelectedTransform(key: string, value: number): void {

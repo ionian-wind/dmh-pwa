@@ -112,7 +112,7 @@ function onPointerDown(event: PointerEvent): void {
       .filter((layer) => layer.type === 'images')
       .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
       .find((object) => object.id === props.selectedObjectId);
-    if (selected && (selected.type === 'text' || selected.type === 'image')) {
+    if (selected) {
       const bounds = objectBounds(selected);
       const vp = renderer.value.getViewport();
       const toScreen = (x: number, y: number): [number, number] => [
@@ -133,7 +133,9 @@ function onPointerDown(event: PointerEvent): void {
           y: bounds.y + bounds.height,
         },
       ];
-      for (const corner of corners) {
+      for (const corner of selected.type === 'text' || selected.type === 'image'
+        ? corners
+        : []) {
         const [hx, hy] = toScreen(corner.x, corner.y);
         if (Math.hypot(sx - hx, sy - hy) < 16) {
           drag = {

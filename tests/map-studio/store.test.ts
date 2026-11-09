@@ -469,3 +469,37 @@ describe('map studio folder guards', () => {
     ).toBe('dungeon');
   });
 });
+
+describe('map studio object rotation', () => {
+  it('rotates text, door and stairs objects', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.addDoor([0, 0], [2, 0]);
+    store.addStairs([
+      [0, 0],
+      [2, 0],
+      [2, 2],
+    ]);
+    const [text, door, stairs] = store.imagesLayer!.objects;
+    store.selectObject(text.id);
+    store.rotateSelectedObject(Math.PI / 2);
+    expect(store.selectedObject?.transform.rotation).toBeCloseTo(Math.PI / 2);
+    store.selectObject(door.id);
+    store.rotateSelectedObject(Math.PI / 2);
+    const rotatedDoor = store.imagesLayer!.objects.find(
+      (o) => o.id === door.id,
+    )!;
+    expect(rotatedDoor.type === 'door' && rotatedDoor.a[0]).toBeCloseTo(1.1);
+    store.selectObject(stairs.id);
+    store.rotateSelectedObject(Math.PI / 2);
+    const rotatedStairs = store.imagesLayer!.objects.find(
+      (o) => o.id === stairs.id,
+    )!;
+    expect(
+      rotatedStairs.type === 'stairs' && rotatedStairs.transform.rotation,
+    ).toBeCloseTo(Math.PI / 2);
+    store.selectObject(null);
+    store.rotateSelectedObject(1);
+  });
+});
