@@ -1,11 +1,12 @@
 # 3D Dice Roller UI — Implementation Plan
 
-> **Status: implemented.** First-party Three.js + Rapier renderer wired to
-> [`bag-of-dice`](../../src/utils/bag-of-dice/README.md); DiceBox remains only
-> as a no-WebGL fallback. Remaining work is cleanup, stress testing and pixel
-> golden checks.
+> **Status: implemented.** First-party Three.js + Rapier natural-physics dice
+> tray, independent of [`bag-of-dice`](../../src/utils/bag-of-dice/README.md).
+> DiceBox remains only as a no-WebGL fallback. Remaining work is cleanup,
+> stress testing and pixel golden checks.
 >
-> Engine design: [../features/dice-roller/README.md](../features/dice-roller/README.md).
+> Dice engine design (text/chat rolls, not the 3D tray):
+> [../features/dice-roller/README.md](../features/dice-roller/README.md).
 > Engine task tracker: [dice-roller-implementation.md](dice-roller-implementation.md).
 
 ## Goal
@@ -15,8 +16,8 @@ Build our own 3D dice renderer that:
 - uses the existing dice-box mesh and texture assets under
   `public/assets/dice-box`;
 - renders with **Three.js**;
-- simulates cosmetic tumbling with **Rapier**;
-- receives authoritative values from `bag-of-dice`;
+- simulates natural tumbling and collisions with **Rapier**;
+- reads the result from the face that lands up (down for d4);
 - keeps the current draggable dice menu, pool, clear and reroll behavior;
 - survives window resizes without blanking the canvas;
 - runs behind the existing `diceRoller` feature flag;
@@ -27,14 +28,15 @@ Build our own 3D dice renderer that:
 - Chat commands, chat cards, roll templates and message delivery.
 - Macro library/editor UI.
 - Replacing the dice parser/evaluator.
-- Physics determining roll results.
+- Using `bag-of-dice` values in the 3D tray.
 - Multiplayer/networked dice.
 - Importing third-party themes beyond the shipped `default` and
   `default-extras` themes.
 
 ## Current state
 
-- `bag-of-dice` engine is implemented with deterministic RNG and metadata.
+- `bag-of-dice` is implemented for text/chat rolls and is not imported by the
+  3D tray.
 - `src/features/dice-roller/NavItem.vue` owns the feature-gated menu entry.
 - `src/components/DiceRollerPanel.vue` owns the draggable QMenu, pool, clear,
   reroll and the current DiceBox surface.
@@ -54,21 +56,20 @@ public/assets/dice-box/themes/*/*.jpg
 
 ## Key decisions
 
-1. **Engine values are authoritative.** The renderer receives
-   `{ sides, value }` records. Physics may tumble dice, but the final face must
-   match the recorded value.
-2. **Physics is cosmetic.** Rapier steps only while dice are moving. When a die
-   settles on the wrong face, it is tweened/snapped to the required face.
+1. **Natural physics determines the result.** Dice are thrown with random
+   orientation/spin and read after they stop; the landed face is the result.
+2. **No result correction.** Dice are never rotated or snapped after landing.
+   The collider and mesh always share the same transform.
 3. **PixiJS is not used.** The assets are 3D meshes; Three.js renders them
    directly. Pixi would require a separate 3D layer or a 2.5D sprite rewrite.
 4. **Feature-gated and lazy-loaded.** Three.js and Rapier are only imported
    when `VITE_FEATURE_DICE_ROLLER` is enabled.
-5. **d100 is two d10 meshes.** The engine rolls `1d100`; the renderer displays a
-   percentile d10 plus a units d10. `100` renders as `00 + 0`.
+5. **d100 is two d10 meshes.** The renderer displays a percentile d10 plus a
+   units d10. Results are composed from both landed faces; `100` is `00 + 0`.
 6. **Resize renders; it never clears.** Renderer resize updates size/aspect and
    renders one frame while preserving the scene.
-7. **Reduced motion skips physics.** Static dice are placed directly on their
-   target faces.
+7. **Reduced motion skips physics.** A random value is generated locally and
+   a static die is placed on that face.
 
 ## Module layout
 
@@ -80,7 +81,7 @@ src/features/dice-roller/renderer/
   assetLoader.ts           # Babylon JSON -> Three geometry + colliders
   themeLoader.ts           # theme config -> Three materials
   faceOrientation.ts       # face value -> final quaternion / snap math
-  diceValues.ts            # d100 split, value validation, display records
+  diceValues.ts            # parts, d100 split/compose, reduced-motion values
 ```
 
 `src/components/DiceRollerPanel.vue` keeps the menu/pool shell and consumes the
@@ -159,37 +160,33 @@ assets without Babylon.
 
 **Gate:** dice tumble and settle, and the renderer leaves simulation idle.
 
-## Phase 4 — Deterministic face orientation
+## Phase 4 — Face reading and reduced-motion orientation
 
 - [x] **3DDR-401** Derive local face normals for each die value.
 - [x] **3DDR-402** Validate face conventions for d4/d6/d8/d10/d12/d20.
 - [x] **3DDR-403** Validate d100 tens/units mapping, including `100 = 00 + 0`.
-- [x] **3DDR-404** Compute target quaternions that point the required face up.
-- [x] **3DDR-405** Tween/snap a settled die to its target orientation when
-      physics lands on the wrong face.
-- [x] **3DDR-406** Ensure the same value always produces the same visible face.
-- [x] **3DDR-407** Add face-orientation unit tests for every supported die.
+- [x] **3DDR-404** Compute target quaternions for static/reduced-motion dice.
+- [x] **3DDR-405** Read the landed top face after sleep (bottom face for d4).
+- [x] **3DDR-406** Verify `getResults()` matches the visible landed faces.
+- [x] **3DDR-407** Add face-reading unit tests for every supported die.
 - [ ] **3DDR-408** Add visual golden checks for ambiguous dice (d4, d10, d100).
 
-**Gate:** rendered faces always match `bag-of-dice` values.
+**Gate:** reported results match the faces visible on the settled dice.
 
-## Phase 5 — bag-of-dice wiring
+## Phase 5 — 3D tray wiring (independent of `bag-of-dice`)
 
-- [x] **3DDR-501** Create the roll engine inside the dice-roller feature.
-- [x] **3DDR-502** Map pool entries to engine notation.
-- [x] **3DDR-503** On die click: add to pool, roll one die, pass the result to
-      the renderer.
-- [x] **3DDR-504** On reroll: reroll every pooled die and replace the rendered
-      set.
-- [x] **3DDR-505** On clear: clear pool and renderer.
-- [x] **3DDR-506** Split engine `1d100` results into two d10 visuals.
-- [x] **3DDR-507** Pass engine warnings/errors to the panel without letting
-      renderer failures break rolling.
-- [x] **3DDR-508** Add panel tests with mocked engine and renderer.
-- [x] **3DDR-509** Add deterministic integration tests for add/reroll/clear.
-- [x] **3DDR-510** Add a renderer-failure fallback that keeps the pool state.
+- [x] **3DDR-501** Build visuals from side counts only; no engine values.
+- [x] **3DDR-502** On die click: add to pool and throw one die.
+- [x] **3DDR-503** On reroll: replace every pooled die.
+- [x] **3DDR-504** On clear: clear pool and renderer.
+- [x] **3DDR-505** Split d100 into tens/units meshes and compose the landed result.
+- [x] **3DDR-506** Expose settled results through `getResults()`.
+- [x] **3DDR-507** Keep the pool state when renderer add/replace fails.
+- [x] **3DDR-508** Add panel tests with a mocked renderer.
+- [x] **3DDR-509** Add integration tests for add/reroll/clear.
+- [x] **3DDR-510** Ensure the 3D feature imports no `bag-of-dice` modules.
 
-**Gate:** every visible die value comes from the engine.
+**Gate:** the 3D feature has no engine dependency and reports landed faces.
 
 ## Phase 6 — Migration and cleanup
 
@@ -241,14 +238,13 @@ assets without Babylon.
 - Dice enter from different perimeter sides and heights, then are thrown inward
   with varied angles. A key light enters from the scene's left-top corner and
   targets the floor centre, with a soft fill from the opposite side.
-- Dice are rendered at 1.7× asset scale, with cosmetic impulses, invisible
-  boundary walls and a 6s simulation cap. After a short free tumble, each body
-  is steered to its target face while still airborne; the body is never lifted,
-  so settled dice do not float. The renderer still waits for every body to sleep before the final
-  floor/position check. Every die is placed on the same `y=0` floor by its world
-  bounding box, so physically different die sizes share one ground plane.
-- `bag-of-dice` rolls every die; d100 is split into tens (`d100` asset) and
-  units (`d10` asset), with `100 = 00 + 0`.
+- Dice are rendered at 1.7× asset scale with random throw positions, spins and
+  impulses, invisible boundary walls and a 6s simulation cap. Physics runs
+  naturally until every body sleeps; no rotation or value correction is applied.
+  Every die is placed on the same `y=0` floor by its world bounding box.
+- Results are read from the settled meshes: highest face normal for normal dice,
+  lowest for d4. d100 combines the tens (`d100` asset) and units (`d10` asset)
+  faces, with `100 = 00 + 0`.
 - The render loop stops when every die is settled. Resize updates the renderer,
   camera and draws one frame without clearing the scene.
 - `createDiceRenderer` prefers Three when WebGL is available and falls back to
@@ -256,29 +252,30 @@ assets without Babylon.
   does not download dice-box. The whole feature remains behind
   `VITE_FEATURE_DICE_ROLLER`.
 - The Rapier suite exercises a 30-body pool; browser smoke checks covered all
-  die types, deterministic face values, resize and idle-loop behavior.
-- Browser smoke checks: all die types render, deterministic faces, resize
-  preservation, idle loop and `100 = 00 + 0` verified in Chromium.
+  die types, natural landing, face reading, resize and idle-loop behavior.
+- Browser smoke checks: all die types render, settled faces match `getResults()`,
+  resize preserves the scene, the loop idles and `100 = 00 + 0` composes
+  correctly in Chromium.
 
 ## Test matrix
 
-| Suite         | Required cases                                                      |
-| ------------- | ------------------------------------------------------------------- |
-| Adapter       | add, replace, clear, resize, dispose, failure fallback              |
-| Assets        | mesh/collider counts, coordinate conversion, winding, UVs, themes   |
-| Three scene   | mesh lifecycle, idle loop, resize redraw, no clear on resize        |
-| Rapier        | body creation, settle, timeout, cleanup                             |
-| Faces         | every die value, d4/d10/d100 conventions, deterministic orientation |
-| Values        | d100 split, 100 = 00 + 0, invalid sides fallback                    |
-| bag-of-dice   | add, reroll, clear, deterministic values, metadata parity           |
-| Performance   | 1/10/30 dice, idle CPU, resize, reduced motion                      |
-| Feature flags | disabled bundle excludes renderer code                              |
+| Suite         | Required cases                                                    |
+| ------------- | ----------------------------------------------------------------- |
+| Adapter       | add, replace, clear, resize, dispose, failure fallback            |
+| Assets        | mesh/collider counts, coordinate conversion, winding, UVs, themes |
+| Three scene   | mesh lifecycle, idle loop, resize redraw, no clear on resize      |
+| Rapier        | body creation, settle, timeout, cleanup                           |
+| Faces         | every die value, d4/d10/d100 face-read conventions                |
+| Values        | d100 split/compose, 100 = 00 + 0, invalid sides fallback          |
+| Panel         | add, reroll, clear, renderer failure, pool persistence            |
+| Performance   | 1/10/30 dice, idle CPU, resize, reduced motion                    |
+| Feature flags | disabled bundle excludes renderer code                            |
 
 ## Acceptance criteria
 
 - Existing assets render in Three.js.
-- Rapier adds cosmetic tumbling but never determines values.
-- Every rendered face matches the engine result.
+- Rapier determines the landed faces naturally.
+- `getResults()` matches the visible settled faces.
 - Resize never clears or blanks settled dice.
 - The animation loop is idle when no dice move.
 - The feature-disabled build does not include Three.js, Rapier or dice UI.

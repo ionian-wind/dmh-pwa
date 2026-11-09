@@ -2,6 +2,7 @@ import DiceBox from '@3d-dice/dice-box';
 import type {
   DiceRenderer,
   DiceRendererOptions,
+  DiceResult,
   DiceVisual,
 } from './DiceRenderer';
 import { notationForVisual } from './DiceRenderer';
@@ -60,6 +61,12 @@ export class DiceBoxRenderer implements DiceRenderer {
     this.box?.clear();
   }
 
+  getResults(): DiceResult[] {
+    // DiceBox owns its physics/result callback; the temporary fallback does
+    // not expose those values through this adapter yet.
+    return [];
+  }
+
   resize(): void {
     // DiceBox stops rendering after dice settle; resizing would clear the
     // settled scene. The Three renderer owns real resize handling.
@@ -78,6 +85,9 @@ export class NoopDiceRenderer implements DiceRenderer {
   add(): void {}
   replace(): void {}
   clear(): void {}
+  getResults(): DiceResult[] {
+    return [];
+  }
   resize(): void {}
   dispose(): void {}
 }

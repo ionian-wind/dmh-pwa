@@ -1,9 +1,9 @@
 /**
  * Shared renderer contract.
  *
- * `bag-of-dice` is authoritative: renderers receive already-rolled values and
- * must never decide them. The same visuals can be rendered by the first-party
- * Three.js/Rapier renderer or by the temporary DiceBox adapter.
+ * The tray renderer runs natural physics and reports the face that lands up.
+ * `value` is only a hint for reduced-motion/static rendering and fallbacks; the
+ * settled result is returned by `getResults()`.
  */
 
 export type DieKind =
@@ -14,12 +14,20 @@ export interface DiceVisual {
   id: string;
   /** Dice sides from the engine result. */
   sides: number;
-  /** Authoritative value from the engine. */
-  value: number;
+  /** Optional value hint for reduced motion/static rendering. */
+  value?: number;
   /** Optional notation for adapters that only understand notation. */
   notation?: string;
   /** Optional display label, never interpreted by the renderer. */
   label?: string;
+}
+
+export interface DiceResult {
+  /** Id of the visual the result belongs to. */
+  id: string;
+  sides: number;
+  /** Value read from the die after physics settled. */
+  value: number;
 }
 
 export interface DiceRendererOptions {
@@ -41,6 +49,8 @@ export interface DiceRenderer {
   add(dice: readonly DiceVisual[]): void;
   replace(dice: readonly DiceVisual[]): void;
   clear(): void;
+  /** Results of the last settled throw, read from the visible top faces. */
+  getResults(): DiceResult[];
   resize(width: number, height: number): void;
   dispose(): void;
 }

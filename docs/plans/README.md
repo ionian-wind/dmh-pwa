@@ -10,7 +10,7 @@ For optional, exploratory ideas that may never be implemented, use
 ## Current plans
 
 Last reviewed against the code and test suite on **2026-11-09** (228 test files /
-1924 tests passing).
+1922 tests passing).
 
 | Plan                                                        | Status                                                                                              |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -20,7 +20,7 @@ Last reviewed against the code and test suite on **2026-11-09** (228 test files 
 | [Build-time feature flags](feature-flags.md)                | implemented; verification green (14 build configurations)                                           |
 | [Remove the Modules entity](remove-modules-entity.md)       | completed (historical; Modules removed, related proposals obsolete)                                 |
 | [Dice roller implementation](dice-roller-implementation.md) | engine complete — renderer/UI tracked separately                                                    |
-| [3D dice roller UI](3d-dice-roller-ui.md)                   | planned — Three.js + Rapier renderer wired to bag-of-dice                                           |
+| [3D dice roller UI](3d-dice-roller-ui.md)                   | implemented — natural-physics Three.js + Rapier tray (engine-independent)                           |
 
 ## Moved to feature docs
 

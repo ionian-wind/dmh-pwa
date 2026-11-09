@@ -805,28 +805,28 @@ Engine returns data; presentation is separate:
 - optional 3D dice animation.
 
 3D dice use the first-party Three.js + Rapier renderer under
-`src/features/dice-roller/renderer/`. The renderer receives authoritative
-`{ sides, value }` records from `bag-of-dice`; physics only provides cosmetic
-tumbling, and settled dice snap to the face matching the engine value. The
-shipped dice-box mesh/texture assets are reused.
+`src/features/dice-roller/renderer/`. The tray runs natural physics and reads
+the result from the face that lands up (the bottom face for d4). It is
+**independent of `bag-of-dice`**: the engine remains the source of truth for
+text/chat rolls, while the 3D tray owns its own physics result. The shipped
+dice-box mesh/texture assets are reused.
 
-`@3d-dice/dice-box` remains as a fallback only when WebGL is unavailable. It
-cannot force engine values, so the Three renderer is preferred. If 3D rendering
-fails or is disabled (reduced motion, unsupported WebGL), fall back to the
-text/2D breakdown. Text must remain accessible and must show the same values.
+`@3d-dice/dice-box` remains as a fallback only when WebGL is unavailable. If 3D
+rendering fails or is disabled (reduced motion, unsupported WebGL), fall back to
+the text/2D breakdown. Text must remain accessible and must show the same values.
 
 Renderer modules:
 
-| Module              | Responsibility                                         |
-| ------------------- | ------------------------------------------------------ |
-| `DiceRenderer`      | Adapter contract and visual record types               |
-| `ThreeDiceRenderer` | Scene, camera, lights, meshes, settle loop and resize  |
-| `RapierDiceWorld`   | Rapier world, bodies, fixed step and cleanup           |
-| `assetLoader`       | Babylon JSON → Three geometry and collider face data   |
-| `themeLoader`       | Atlas textures and the opaque die-atlas material       |
-| `faceOrientation`   | Face normal → target quaternion and deterministic spin |
-| `diceValues`        | d100 split, value validation and visual parts          |
-| `DiceBoxRenderer`   | Temporary no-WebGL fallback adapter                    |
+| Module              | Responsibility                                          |
+| ------------------- | ------------------------------------------------------- |
+| `DiceRenderer`      | Adapter contract, visual records and result records     |
+| `ThreeDiceRenderer` | Scene, camera, lights, meshes, physics loop and resize  |
+| `RapierDiceWorld`   | Rapier world, bodies, fixed step and cleanup            |
+| `assetLoader`       | Babylon JSON → Three geometry and collider face data    |
+| `themeLoader`       | Atlas textures and the opaque die-atlas material        |
+| `faceOrientation`   | Face normals, reduced-motion target quaternions         |
+| `diceValues`        | Visual parts, d100 split/compose, reduced-motion values |
+| `DiceBoxRenderer`   | Temporary no-WebGL fallback adapter                     |
 
 Adapter contract:
 
@@ -836,22 +836,23 @@ interface DiceRenderer {
   add(dice: readonly DiceVisual[]): void;
   replace(dice: readonly DiceVisual[]): void;
   clear(): void;
+  getResults(): DiceResult[];
   resize(width: number, height: number): void;
   dispose(): void;
 }
 ```
 
-Visualizer adapters must not mutate the result and must tolerate missing 3D
-assets by reporting a fallback. Dice are steered to their value faces while
-airborne; the animation loop then waits until every die has stopped bouncing,
-applies any final floor/position correction, and stops. Resize redraws and never
-clears the scene. The camera looks straight
-down from the zenith and all dice rest on the same `y=0` scene floor.
+Visuals only need `{ id, sides }`; values are optional hints for reduced motion.
+After the dice sleep, `getResults()` returns the values read from the visible
+faces. The renderer never mutates a `bag-of-dice` result and never imports the
+engine. The animation loop stops when every die is settled; resize redraws and
+never clears the scene. The camera looks straight down from the zenith and all
+dice rest on the same `y=0` scene floor.
 
-Face detection mirrors dice-box: the value face is the one a centre ray would
-hit (upward normally, downward for d4). Outward normals are derived from the
-collider face centroid rather than the smooth authored vertex normals, and the
-render geometry keeps its authored winding after the Babylon Z mirror.
+Face detection mirrors dice-box: the value face is the one facing up (down for
+d4). Outward normals are derived from the collider face centroid rather than the
+smooth authored vertex normals, and the render geometry keeps its authored
+winding after the Babylon Z mirror.
 
 ## Non-functional requirements
 

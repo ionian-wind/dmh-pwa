@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type {
   DiceRenderer,
   DiceRendererOptions,
+  DiceResult,
   DiceVisual,
 } from './DiceRenderer';
 import {
@@ -9,34 +10,30 @@ import {
   type DiceAsset,
   type DiceAssetSet,
 } from './assetLoader';
-import { visualDiceFor, type VisualDiePart } from './diceValues';
 import {
-  cosmeticSpin,
-  stepQuaternion,
-  targetQuaternion,
-} from './faceOrientation';
+  composeD100,
+  randomValueFor,
+  splitD100,
+  visualDiceForSides,
+  type VisualDiePart,
+} from './diceValues';
+import { cosmeticSpin, targetQuaternion } from './faceOrientation';
 import { RapierDiceWorld } from './RapierDiceWorld';
 import { loadDiceMaterials, type DiceMaterialSet } from './themeLoader';
-import { hasSimulationTimedOut, SETTLE_MS } from './timing';
+import { hasSimulationTimedOut } from './timing';
 
 const DICE_SCALE = 1.7;
 
 interface RenderedDie {
   id: string;
+  visualId: string;
   mesh: THREE.Mesh;
   asset: DiceAsset;
-  value: number;
-  faceValue: number;
-  spawnedAt: number;
-  target: THREE.Quaternion;
-  state: 'physics' | 'settling' | 'done';
-  settleFrom?: THREE.Quaternion;
-  settleFromY?: number;
-  settleStart?: number;
-}
-
-function deterministicUnit(id: string, salt: number): number {
-  return cosmeticSpin(`${id}:${salt}`, salt) / (Math.PI * 2);
+  sides: number;
+  part: VisualDiePart['part'];
+  kind: VisualDiePart['kind'];
+  state: 'physics' | 'done';
+  result?: number;
 }
 
 function scaledPoints(points: Float32Array, scale: number): Float32Array {
@@ -45,6 +42,10 @@ function scaledPoints(points: Float32Array, scale: number): Float32Array {
     result[index] = points[index] * scale;
   }
   return result;
+}
+
+function randomBetween(min: number, max: number): number {
+  return min + Math.random() * (max - min);
 }
 
 export class ThreeDiceRenderer implements DiceRenderer {
@@ -152,9 +153,9 @@ export class ThreeDiceRenderer implements DiceRenderer {
     if (!this.assets || !this.materials || !this.renderer) return;
     const max = this.options?.maxDice ?? 40;
     for (const visual of dice) {
-      for (const part of visualDiceFor(visual)) {
+      for (const part of visualDiceForSides(visual.sides)) {
         if (this.dice.size >= max) return;
-        this.addDie(part);
+        this.addDie(visual, part);
       }
     }
     this.startAnimation();
@@ -176,6 +177,34 @@ export class ThreeDiceRenderer implements DiceRenderer {
     this.dice.clear();
     this.physics.clear();
     this.renderFrame();
+  }
+
+  getResults(): DiceResult[] {
+    const groups = new Map<
+      string,
+      { sides: number; parts: Map<VisualDiePart['part'], number> }
+    >();
+    for (const die of this.dice.values()) {
+      if (die.result === undefined) continue;
+      let group = groups.get(die.visualId);
+      if (!group) {
+        group = { sides: die.sides, parts: new Map() };
+        groups.set(die.visualId, group);
+      }
+      group.parts.set(die.part, die.result);
+    }
+
+    return [...groups.entries()].map(([id, group]) => ({
+      id,
+      sides: group.sides,
+      value:
+        group.sides === 100
+          ? composeD100(
+              group.parts.get('tens') ?? 0,
+              group.parts.get('units') ?? 10,
+            )
+          : (group.parts.get('whole') ?? 1),
+    }));
   }
 
   resize(width: number, height: number): void {
@@ -212,7 +241,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
     this.container = null;
   }
 
-  private addDie(part: VisualDiePart): void {
+  private addDie(visual: DiceVisual, part: VisualDiePart): void {
     if (!this.assets || !this.materials) return;
     const asset = this.assets.assets.get(part.kind);
     if (!asset) return;
@@ -223,54 +252,56 @@ export class ThreeDiceRenderer implements DiceRenderer {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
-    const index = this.dice.size;
-    // Enter from a different side/height each time and throw inward, with a
-    // little angular deviation so paths cross naturally.
-    const angle = index * 2.399963 + deterministicUnit(part.id, 0) * 0.7;
-    const radiusX = 2.2 + deterministicUnit(part.id, 10) * 0.9;
-    const radiusZ = 1.55 + deterministicUnit(part.id, 11) * 0.65;
-    const x = Math.cos(angle) * radiusX;
-    const z = Math.sin(angle) * radiusZ;
-    const spawnHeight = 1.7 + deterministicUnit(part.id, 12) * 1.6;
-    const throwAngle =
-      angle + Math.PI + (deterministicUnit(part.id, 13) - 0.5) * (Math.PI / 3);
-    const throwSpeed = 0.09 + deterministicUnit(part.id, 14) * 0.08;
-    const target = targetQuaternion(
-      asset.faceNormals,
-      part.faceValue,
-      cosmeticSpin(`${part.id}:target`, part.faceValue),
-      part.kind === 'd4',
-    );
+    const id = `${visual.id}:${part.id}`;
+    const x = Math.cos(Math.random() * Math.PI * 2) * randomBetween(1.2, 3);
+    const z = Math.sin(Math.random() * Math.PI * 2) * randomBetween(0.9, 2.2);
+    const spawnHeight = randomBetween(1.8, 3.4);
 
     mesh.position.set(x, spawnHeight, z);
     this.scene.add(mesh);
 
+    const rendered: RenderedDie = {
+      id,
+      visualId: visual.id,
+      mesh,
+      asset,
+      sides: Math.round(visual.sides),
+      part: part.part,
+      kind: part.kind,
+      state: 'physics',
+    };
+
     if (this.options?.reducedMotion) {
-      mesh.quaternion.copy(target);
+      const value = randomValueFor(visual);
+      const { tens, units } = splitD100(value);
+      const faceValue =
+        part.part === 'tens' ? tens : part.part === 'units' ? units : value;
+      mesh.quaternion.copy(
+        targetQuaternion(
+          asset.faceNormals,
+          faceValue,
+          cosmeticSpin(`${id}:target`, faceValue),
+          part.kind === 'd4',
+        ),
+      );
       this.restOnFloor(mesh);
-      this.dice.set(part.id, {
-        id: part.id,
-        mesh,
-        asset,
-        value: part.value,
-        faceValue: part.faceValue,
-        spawnedAt: performance.now(),
-        target,
-        state: 'done',
-      });
+      rendered.state = 'done';
+      rendered.result = faceValue;
+      this.dice.set(id, rendered);
       return;
     }
 
-    const tilt = deterministicUnit(part.id, 1) * Math.PI;
     mesh.quaternion.setFromEuler(
       new THREE.Euler(
-        deterministicUnit(part.id, 2) * Math.PI,
-        tilt,
-        deterministicUnit(part.id, 3) * Math.PI,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
       ),
     );
+    const throwAngle = Math.random() * Math.PI * 2;
+    const throwSpeed = randomBetween(0.04, 0.14);
     const body = this.physics.add(
-      part.id,
+      id,
       scaledPoints(asset.colliderPoints, DICE_SCALE),
       {
         x,
@@ -284,37 +315,32 @@ export class ThreeDiceRenderer implements DiceRenderer {
         },
         impulse: {
           x: Math.cos(throwAngle) * throwSpeed,
-          y: 0.012 + deterministicUnit(part.id, 5) * 0.03,
+          y: randomBetween(0, 0.04),
           z: Math.sin(throwAngle) * throwSpeed,
         },
         torque: {
-          x: (deterministicUnit(part.id, 7) - 0.5) * 0.08,
-          y: (deterministicUnit(part.id, 8) - 0.5) * 0.08,
-          z: (deterministicUnit(part.id, 9) - 0.5) * 0.08,
+          x: randomBetween(-0.12, 0.12),
+          y: randomBetween(-0.12, 0.12),
+          z: randomBetween(-0.12, 0.12),
         },
       },
       0.1,
     );
 
-    this.dice.set(part.id, {
-      id: part.id,
-      mesh,
-      asset,
-      value: part.value,
-      faceValue: part.faceValue,
-      spawnedAt: performance.now(),
-      target,
-      state: body ? 'physics' : 'settling',
-      settleFrom: mesh.quaternion.clone(),
-      settleFromY: mesh.position.y,
-      settleStart: body ? undefined : performance.now(),
-    });
+    if (!body) {
+      this.restOnFloor(mesh);
+      rendered.state = 'done';
+      rendered.result = this.readFaceValue(rendered);
+    }
+    this.dice.set(id, rendered);
   }
 
   private startAnimation(): void {
     if (this.frame !== null) return;
     if (typeof requestAnimationFrame !== 'function') {
-      for (const die of this.dice.values()) this.finishDie(die);
+      for (const die of this.dice.values()) {
+        if (die.state === 'physics') this.finishDie(die);
+      }
       this.renderFrame();
       return;
     }
@@ -355,102 +381,46 @@ export class ThreeDiceRenderer implements DiceRenderer {
           );
         }
       }
-      for (const die of this.dice.values()) {
-        if (die.state === 'physics') this.alignDie(die, time, delta);
-      }
       const timedOut = hasSimulationTimedOut(this.animationStarted, time);
       if (timedOut || this.physics.settleReady) {
         for (const die of this.dice.values()) {
-          if (die.state === 'physics') this.beginSettle(die, time);
+          if (die.state === 'physics') this.finishDie(die);
         }
       }
     }
 
-    let settling = false;
-    for (const die of this.dice.values()) {
-      if (die.state !== 'settling') continue;
-      settling = true;
-      this.advanceSettle(die, time);
-    }
-
     this.renderFrame();
-    if (physicsActive || settling) {
+    if (physicsActive) {
       this.frame = requestAnimationFrame(this.tick);
     }
   };
 
-  /**
-   * After a short free tumble, steer the body toward its target face while it
-   * is still airborne. The collider rotates with the mesh, so the die lands on
-   * the authoritative face instead of flipping after it has stopped.
-   */
-  private alignDie(die: RenderedDie, time: number, delta: number): void {
-    // Start early and finish before touchdown. Never lift the body: raising it
-    // after it has landed makes settled dice appear to float.
-    if (time - die.spawnedAt < 180) return;
-    const transform = this.physics.transform(die.id);
-    if (!transform) return;
-    const current = new THREE.Quaternion(
-      transform.rotation.x,
-      transform.rotation.y,
-      transform.rotation.z,
-      transform.rotation.w,
-    );
-    const next = stepQuaternion(current, die.target, delta, 18);
-    this.physics.setTransform(die.id, transform.position, {
-      x: next.x,
-      y: next.y,
-      z: next.z,
-      w: next.w,
-    });
-    this.physics.setAngularVelocity(die.id, 0, 0, 0);
-  }
-
-  private beginSettle(die: RenderedDie, time: number): void {
-    const transform = this.physics.transform(die.id);
-    if (transform) {
-      die.mesh.position.set(
-        transform.position.x,
-        transform.position.y,
-        transform.position.z,
-      );
-    }
-    die.state = 'settling';
-    die.settleFrom = die.mesh.quaternion.clone();
-    die.settleFromY = die.mesh.position.y;
-    die.settleStart = time;
-  }
-
-  private advanceSettle(die: RenderedDie, time: number): void {
-    const start = die.settleStart ?? time;
-    const progress = Math.min(1, (time - start) / SETTLE_MS);
-    const eased = 1 - (1 - progress) ** 3;
-    if (die.settleFrom) {
-      die.mesh.quaternion.copy(die.settleFrom).slerp(die.target, eased);
-    } else {
-      die.mesh.quaternion.copy(die.target);
-    }
-    // The die has already stopped bouncing; only now correct its orientation
-    // and put it exactly on the shared floor.
-    die.mesh.position.y = die.settleFromY ?? die.mesh.position.y;
-    this.restOnFloor(die.mesh, 0, eased);
-    if (progress >= 1) this.finishDie(die);
-  }
-
   private finishDie(die: RenderedDie): void {
     die.state = 'done';
-    die.mesh.quaternion.copy(die.target);
     this.restOnFloor(die.mesh);
+    die.result = this.readFaceValue(die);
   }
 
-  private restOnFloor(mesh: THREE.Mesh, lift = 0.001, blend = 1): void {
-    const previous = mesh.position.y;
+  /** Read the upward face; d4 values live on the face touching the table. */
+  private readFaceValue(die: RenderedDie): number {
+    const faceDown = die.kind === 'd4';
+    let bestValue = faceDown ? 0 : 0;
+    let bestY = faceDown ? Infinity : -Infinity;
+    for (const [value, normal] of die.asset.faceNormals) {
+      const y = normal.clone().applyQuaternion(die.mesh.quaternion).y;
+      if (faceDown ? y < bestY : y > bestY) {
+        bestY = y;
+        bestValue = value;
+      }
+    }
+    return bestValue;
+  }
+
+  private restOnFloor(mesh: THREE.Mesh, lift = 0.001): void {
     mesh.position.y = 0;
     mesh.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(mesh);
-    const target = -box.min.y + lift;
-    mesh.position.y =
-      blend >= 1 ? target : previous + (target - previous) * blend;
+    mesh.position.y = -box.min.y + lift;
   }
 
   private renderFrame(): void {

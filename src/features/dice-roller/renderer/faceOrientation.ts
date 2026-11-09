@@ -44,17 +44,6 @@ export function targetQuaternion(
   return faceUpQuaternion(normal, spin, faceDown);
 }
 
-/** Smoothly move a quaternion toward a target over one physics step. */
-export function stepQuaternion(
-  current: THREE.Quaternion,
-  target: THREE.Quaternion,
-  deltaSeconds: number,
-  rate = 12,
-): THREE.Quaternion {
-  const factor = 1 - Math.exp(-Math.max(0, deltaSeconds) * rate);
-  return current.clone().slerp(target, factor);
-}
-
 /** Deterministic cosmetic spin in `[0, 2π)` derived from an id/value. */
 export function cosmeticSpin(id: string, value: number): number {
   let hash = 2166136261;

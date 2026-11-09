@@ -13,15 +13,15 @@ import {
   type BabylonSceneFile,
 } from '@/features/dice-roller/renderer/assetLoader';
 import {
+  composeD100,
   dieKindForSides,
   normalizeValue,
   splitD100,
-  visualDiceFor,
+  visualDiceForSides,
 } from '@/features/dice-roller/renderer/diceValues';
 import {
   cosmeticSpin,
   faceUpQuaternion,
-  stepQuaternion,
   targetQuaternion,
 } from '@/features/dice-roller/renderer/faceOrientation';
 import { DiceBoxRenderer } from '@/features/dice-roller/renderer/DiceBoxRenderer';
@@ -49,10 +49,12 @@ describe('dice value mapping', () => {
   });
 
   it('creates one mesh for normal dice and two for d100', () => {
-    expect(visualDiceFor({ id: 'a', sides: 6, value: 4 })).toHaveLength(1);
-    const parts = visualDiceFor({ id: 'b', sides: 100, value: 100 });
+    expect(visualDiceForSides(6)).toHaveLength(1);
+    const parts = visualDiceForSides(100);
     expect(parts.map((part) => part.kind)).toEqual(['d100', 'd10']);
-    expect(parts.map((part) => part.faceValue)).toEqual([0, 10]);
+    expect(parts.map((part) => part.part)).toEqual(['tens', 'units']);
+    expect(composeD100(0, 10)).toBe(100);
+    expect(composeD100(40, 9)).toBe(49);
   });
 
   it('normalizes values and rejects unsupported sides', () => {
@@ -181,20 +183,6 @@ describe('face orientation', () => {
       -1,
       5,
     );
-  });
-
-  it('converges toward the target without overshooting', () => {
-    const current = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(0.8, 1.1, -0.4),
-    );
-    const target = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(-0.3, 2.0, 0.5),
-    );
-    let quaternion = current;
-    for (let index = 0; index < 40; index += 1) {
-      quaternion = stepQuaternion(quaternion, target, 1 / 60);
-    }
-    expect(quaternion.angleTo(target)).toBeLessThan(0.01);
   });
 
   it('produces deterministic cosmetic spins', () => {

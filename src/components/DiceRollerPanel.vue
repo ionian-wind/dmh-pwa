@@ -9,11 +9,6 @@ import {
 } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IconX } from '@tabler/icons-vue';
-import {
-  createEmptyRepositories,
-  createRollEngine,
-  type RollResult,
-} from '@/utils/bag-of-dice';
 import type {
   DiceRenderer,
   DiceVisual,
@@ -38,9 +33,6 @@ const dice = [
   { label: 'd20', notation: '1d20', sides: 20 },
   { label: 'd100', notation: '1d100', sides: 100 },
 ];
-
-const ENGINE = createRollEngine();
-const EMPTY_REPOSITORIES = createEmptyRepositories();
 
 const open = computed({
   get: () => props.modelValue,
@@ -136,40 +128,21 @@ function stopDragging() {
   window.removeEventListener('pointermove', onPointerMove);
 }
 
-function valueFrom(result: RollResult): number {
-  return result.total;
+function makeVisual(die: (typeof dice)[number]): DiceVisual {
+  visualCounter += 1;
+  return {
+    id: `die-${visualCounter}`,
+    sides: die.sides,
+    notation: die.notation,
+    label: die.label,
+  };
 }
 
-async function rollOne(die: (typeof dice)[number]): Promise<DiceVisual | null> {
-  try {
-    const outcome = await ENGINE.roll(`1d${die.sides}`, {
-      repositories: EMPTY_REPOSITORIES,
-    });
-    if (outcome.status !== 'complete') {
-      rollError.value = true;
-      return null;
-    }
-    visualCounter += 1;
-    return {
-      id: `die-${visualCounter}`,
-      sides: die.sides,
-      value: valueFrom(outcome.result),
-      notation: die.notation,
-      label: die.label,
-    };
-  } catch {
-    rollError.value = true;
-    return null;
-  }
-}
-
-async function addDie(die: (typeof dice)[number]) {
+function addDie(die: (typeof dice)[number]) {
   if (!ready.value || !renderer) return;
   pool.value[die.label] = (pool.value[die.label] ?? 0) + 1;
-  const visual = await rollOne(die);
-  if (!visual) return;
   try {
-    renderer.add([visual]);
+    renderer.add([makeVisual(die)]);
     rollError.value = false;
   } catch {
     // Keep the pool so the next reroll can recover.
@@ -177,23 +150,21 @@ async function addDie(die: (typeof dice)[number]) {
   }
 }
 
-async function poolVisuals(): Promise<DiceVisual[]> {
+function poolVisuals(): DiceVisual[] {
   const visuals: DiceVisual[] = [];
   for (const die of dice) {
     const count = pool.value[die.label] ?? 0;
     for (let index = 0; index < count; index += 1) {
-      const visual = await rollOne(die);
-      if (visual) visuals.push(visual);
+      visuals.push(makeVisual(die));
     }
   }
   return visuals;
 }
 
-async function rollPool() {
+function rollPool() {
   if (!ready.value || !renderer) return;
-  const visuals = await poolVisuals();
   try {
-    renderer.replace(visuals);
+    renderer.replace(poolVisuals());
     rollError.value = false;
   } catch {
     rollError.value = true;

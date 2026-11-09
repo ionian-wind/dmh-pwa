@@ -163,7 +163,7 @@ Three facts materially affect how the code should be read:
    reports **0 errors**. CI runs the type check, regression suite, full test
    suite, feature build matrix, and production build. See
    [proposals/fixes-applied.md](proposals/fixes-applied.md).
-3. **The dice roller is planned from scratch.** The dice plan is a greenfield
-   design; 3D dice are one optional visualization for roll results, not a
-   requirement of the engine. All previously tracked UI/data defects have been
-   fixed; see [proposals/fixes-applied.md](proposals/fixes-applied.md).
+3. **The dice roller is implemented.** `bag-of-dice` powers text/chat rolls;
+   the 3D tray is a standalone natural-physics visualization and does not
+   import the engine. All previously tracked UI/data defects have been fixed;
+   see [proposals/fixes-applied.md](proposals/fixes-applied.md).

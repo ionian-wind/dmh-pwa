@@ -4,10 +4,6 @@ import type { DiceVisual, DieKind } from './DiceRenderer';
 export interface VisualDiePart {
   id: string;
   kind: DieKind;
-  /** Face value encoded by the asset's collider face map. */
-  faceValue: number;
-  /** Authoritative engine value for the whole visual. */
-  value: number;
   sides: number;
   part: 'whole' | 'tens' | 'units';
 }
@@ -53,41 +49,27 @@ export function splitD100(value: number): { tens: number; units: number } {
   };
 }
 
-export function visualDiceFor(visual: DiceVisual): VisualDiePart[] {
-  const sides = Math.round(visual.sides);
-  const kind = dieKindForSides(sides);
-  const value = normalizeValue(visual.value, sides);
+/** Compose a d100 result from the two landed d10 faces. */
+export function composeD100(tens: number, units: number): number {
+  const unit = units === 10 ? 0 : units;
+  const value = tens + unit;
+  return value === 0 ? 100 : value;
+}
 
+export function visualDiceForSides(sides: number): VisualDiePart[] {
+  const rounded = Math.round(sides);
+  const kind = dieKindForSides(rounded);
   if (kind === 'd100') {
-    const { tens, units } = splitD100(value);
     return [
-      {
-        id: `${visual.id}:tens`,
-        kind: 'd100',
-        faceValue: tens,
-        value,
-        sides,
-        part: 'tens',
-      },
-      {
-        id: `${visual.id}:units`,
-        kind: 'd10',
-        faceValue: units,
-        value,
-        sides,
-        part: 'units',
-      },
+      { id: 'tens', kind: 'd100', sides: rounded, part: 'tens' },
+      { id: 'units', kind: 'd10', sides: rounded, part: 'units' },
     ];
   }
+  return [{ id: 'whole', kind, sides: rounded, part: 'whole' }];
+}
 
-  return [
-    {
-      id: visual.id,
-      kind,
-      faceValue: value,
-      value,
-      sides,
-      part: 'whole',
-    },
-  ];
+/** Random result used only when physics is disabled (reduced motion). */
+export function randomValueFor(visual: DiceVisual): number {
+  const sides = Math.round(visual.sides);
+  return Math.floor(Math.random() * sides) + 1;
 }
