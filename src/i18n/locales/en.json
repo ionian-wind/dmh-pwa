@@ -1121,6 +1121,11 @@
     "clear": "Clear",
     "close": "Close dice roller",
     "reroll": "Reroll",
-    "rollError": "Could not roll dice. Try again."
+    "rollError": "Could not roll dice. Try again.",
+    "explodeHints": {
+      "exploding": "Exploding: roll an extra die when the maximum face is rolled",
+      "compounding": "Compounding: maximum rolls add extra dice to the total",
+      "penetrating": "Penetrating: extra dice subtract 1 from each additional roll"
+    }
   }
 }

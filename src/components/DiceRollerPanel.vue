@@ -52,6 +52,11 @@ const diceRows: DiceRow[] = [
 
 const counts = [2, 3, 4, 5];
 const explodeModes: ExplodeMode[] = ['!', '!!', '!p'];
+const explodeHints: Record<ExplodeMode, string> = {
+  '!': 'diceRoller.explodeHints.exploding',
+  '!!': 'diceRoller.explodeHints.compounding',
+  '!p': 'diceRoller.explodeHints.penetrating',
+};
 
 const open = computed({
   get: () => props.modelValue,
@@ -437,6 +442,8 @@ onBeforeUnmount(() => {
               :class="{ active: mode === option }"
               :disable="!ready"
               :label="option"
+              :title="t(explodeHints[option])"
+              :aria-label="`${option}: ${t(explodeHints[option])}`"
               @click="toggleMode(option)"
             />
           </div>

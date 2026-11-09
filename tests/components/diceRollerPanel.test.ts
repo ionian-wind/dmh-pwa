@@ -119,6 +119,9 @@ describe('DiceRollerPanel', () => {
       }),
     );
     expect(mocks.diceBox.init).toHaveBeenCalled();
+    expect(
+      document.querySelector('.dice-roller-mode')?.getAttribute('title'),
+    ).toContain('Exploding');
 
     cell('d6', 2).click();
     expect(mocks.diceBox.add.mock.calls).toEqual([['1d6'], ['1d6']]);
