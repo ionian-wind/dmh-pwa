@@ -308,19 +308,39 @@ backups.
 - Sanitiser tests with malicious HTML/Markdown.
 - End-to-end tests from a raw message to structured rendered output.
 
+## Deferred gaps
+
+These are intentionally deferred. They must not block the first local chat
+implementation, and no later phase should assume they are already solved.
+
+### 1. Chat identity and permission model
+
+- **Status:** deferred until the transport/identity decision.
+- **Open:** single-user local history vs. multi-user sessions, GM role, player
+  identity, whisper targets, blind rolls and message retention.
+- **First-phase rule:** store visibility metadata on each message, but do not
+  implement real GM/whisper/blind behavior until the identity model is settled.
+  Unsupported modes must fail explicitly, not silently leak content.
+
+### 2. Token and attribute model
+
+- **Status:** deferred until the token/tabletop model is defined.
+- **Open:** selected/target tokens, bars, default tokens, linked characters,
+  attributes/abilities storage and repeating sections.
+- **First-phase rule:** the chat engine may use a local character/attribute
+  adapter, but must not assume a canvas/token system exists. Selected/target
+  token calls should return a clear unsupported/missing-data error until the
+  model is defined.
+
 ## Open questions
 
-1. Should the first chat engine support multiple users/transport, or only local
-   single-user history with visibility metadata?
-2. Should character attributes/abilities be first-class child records or embedded
-   arrays on the character?
-3. Which Roll20-specific quirks should be preserved for compatibility, and which
+1. Which Roll20-specific quirks should be preserved for compatibility, and which
    should be replaced by clearer behavior?
-4. Should custom roll parsing be exposed to users, or reserved for built-in
+2. Should custom roll parsing be exposed to users, or reserved for built-in
    sheet integrations?
-5. Should chat menus use Roll20's hyperlink syntax or a safer first-class button
+3. Should chat menus use Roll20's hyperlink syntax or a safer first-class button
    model with optional Roll20 import?
-6. How much of Roll20's HTML/Markdown formatting should be allowed in a local
+4. How much of Roll20's HTML/Markdown formatting should be allowed in a local
    app with no server-side sanitisation?
 
 ## References
