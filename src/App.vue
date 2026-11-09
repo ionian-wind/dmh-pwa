@@ -27,6 +27,7 @@ import {
   IconTool,
   IconChevronDown,
   IconSettings,
+  IconIcosahedron,
 } from '@tabler/icons-vue';
 
 const configStore = useConfigStore();
@@ -270,6 +271,15 @@ const isSettingsOpen = ref(false);
         </div>
         <div>
           <QList>
+            <QItem
+              data-test="dice-roller-nav"
+              :active="false"
+              :title="t('navigation.diceRoller')"
+              :aria-label="t('navigation.diceRoller')"
+            >
+              <QItemSection side><IconIcosahedron /></QItemSection>
+              <QItemSection>{{ t('navigation.diceRoller') }}</QItemSection>
+            </QItem>
             <template v-for="item in footerNavigation" :key="item.id">
               <component
                 :is="item.component"
