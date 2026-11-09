@@ -15,7 +15,6 @@ import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
-import { IconHelp } from '@tabler/icons-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -30,7 +29,11 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'submit', character: PlayerCharacter): void;
+  (
+    e: 'submit',
+    character: PlayerCharacter,
+    meta?: { linkedPartyIds: string[] },
+  ): void;
   (e: 'delete', id: string): void;
   (e: 'cancel'): void;
 }>();
@@ -65,6 +68,14 @@ const characterPicture = computed({
 
 const tabs = useEntityEditorTabs();
 
+function initialPendingLinks(): MapEntityRef[] {
+  return !props.character?.id && props.partyId
+    ? [{ kind: 'party', id: props.partyId }]
+    : [];
+}
+
+const pendingLinks = ref<MapEntityRef[]>(initialPendingLinks());
+
 const characterNotes = computed({
   get: () => editedCharacter.value.notes ?? '',
   set: (value: string) => {
@@ -74,6 +85,7 @@ const characterNotes = computed({
 
 const characterLinks = computed<MapEntityRef[]>(() => {
   const id = editedCharacter.value.id;
+  if (!id) return pendingLinks.value;
   return [
     ...(id
       ? relations
@@ -97,7 +109,12 @@ async function setCharacterLinks(
   kind: 'note' | 'party' | 'location',
   links: MapEntityRef[],
 ) {
-  if (!editedCharacter.value.id) return;
+  if (!editedCharacter.value.id) {
+    // New characters have no id yet, so keep their links in the draft and let
+    // the list view persist them once the character record exists.
+    pendingLinks.value = links;
+    return;
+  }
   await relations.setLinkedIds(
     'character',
     editedCharacter.value.id,
@@ -115,6 +132,7 @@ watch(
   (newChar) => {
     editedCharacter.value = newChar ? { ...newChar } : blankCharacter();
     originalPictureId.value = newChar?.picture ?? '';
+    pendingLinks.value = initialPendingLinks();
   },
 );
 
@@ -127,6 +145,7 @@ watch(
 
 function resetForm() {
   editedCharacter.value = blankCharacter();
+  pendingLinks.value = initialPendingLinks();
   isWYSIWYGMode.value = true;
 }
 
@@ -145,7 +164,14 @@ async function handleSubmit() {
   if (markdownEditorRef.value?.getMarkdown) {
     editedCharacter.value.notes = markdownEditorRef.value.getMarkdown();
   }
-  emit('submit', { ...editedCharacter.value });
+  const linkedPartyIds = pendingLinks.value
+    .filter((link) => link.kind === 'party')
+    .map((link) => link.id);
+  emit(
+    'submit',
+    { ...editedCharacter.value },
+    isEditing.value ? undefined : { linkedPartyIds },
+  );
   resetForm();
 }
 
@@ -239,7 +265,7 @@ function handleDelete() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <IconHelp />
+          <QIcon name="tabler-help" />
         </QBtn>
       </div>
     </template>

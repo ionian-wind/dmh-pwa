@@ -40,6 +40,15 @@ const EditorStub = defineComponent({
         ),
         h(
           'button',
+          {
+            class: 'submit-meta',
+            onClick: () =>
+              emit('submit', { id: 'meta' }, { linkedPartyIds: ['p1'] }),
+          },
+          'submit with meta',
+        ),
+        h(
+          'button',
           { class: 'cancel', onClick: () => emit('cancel') },
           'cancel',
         ),
@@ -73,6 +82,21 @@ function mountList(overrides: Record<string, any> = {}) {
 describe('BaseListView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('forwards extra submit metadata from the editor', async () => {
+    const { wrapper, layout } = mountList();
+    layout.topMenuContent.value?.props?.onCreate();
+    await nextTick();
+
+    await wrapper.find('.submit-meta').trigger('click');
+    await nextTick();
+
+    expect(wrapper.emitted('submit')?.[0]).toEqual([
+      { id: 'meta' },
+      { linkedPartyIds: ['p1'] },
+    ]);
+    wrapper.unmount();
   });
 
   it('shows the empty state and opens/closes the editor', async () => {
@@ -294,7 +318,7 @@ describe('BaseListView', () => {
     const create = wrapper.find('.empty-state-create');
     expect(create.exists()).toBe(true);
     expect(create.text()).toContain('Create');
-    expect(create.find('svg').exists()).toBe(true);
+    expect(create.find('[data-stub="QIcon"]').exists()).toBe(true);
 
     await create.trigger('click');
     await nextTick();

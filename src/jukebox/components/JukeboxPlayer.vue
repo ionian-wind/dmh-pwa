@@ -12,16 +12,7 @@ import {
 import { formatTime } from '@/utils/formatTime';
 
 // Tabler icons
-import {
-  IconPlayerSkipBack,
-  IconPlayerPlay,
-  IconPlayerPause,
-  IconPlayerSkipForward,
-  IconArrowsShuffle as IconShuffle,
-  IconRepeat,
-  IconRepeatOnce,
-  IconSettingsAutomation,
-} from '@tabler/icons-vue';
+
 import { useConfigStore } from '@/utils/configStore';
 const props = defineProps<{
   animatedBackground?: boolean;
@@ -209,7 +200,7 @@ const handleProgressChange = (value: number | null) => {
               @click="playerStore.toggleShuffle"
               :title="t('jukebox.shuffle')"
             >
-              <IconShuffle />
+              <QIcon name="tabler-shuffle" />
             </QBtn>
             <QBtn
               flat
@@ -222,9 +213,15 @@ const handleProgressChange = (value: number | null) => {
               @click="playerStore.cycleRepeatMode"
               :title="t('jukebox.repeat')"
             >
-              <IconRepeat v-if="playerStore.repeatMode === 'off'" />
-              <IconRepeat v-else-if="playerStore.repeatMode === 'list'" />
-              <IconRepeatOnce v-else />
+              <QIcon
+                name="tabler-repeat"
+                v-if="playerStore.repeatMode === 'off'"
+              />
+              <QIcon
+                name="tabler-repeat"
+                v-else-if="playerStore.repeatMode === 'list'"
+              />
+              <QIcon name="tabler-repeat-once" v-else />
             </QBtn>
           </QBtnGroup>
 
@@ -237,7 +234,7 @@ const handleProgressChange = (value: number | null) => {
               "
               class="prev-track"
             >
-              <IconPlayerSkipBack />
+              <QIcon name="tabler-player-skip-back" />
             </QBtn>
             <QBtn
               flat
@@ -245,8 +242,8 @@ const handleProgressChange = (value: number | null) => {
               :disabled="!(playerStore.currentTrack && playerStore.canPlay)"
               class="play-pause"
             >
-              <IconPlayerPause v-if="playerStore.isPlaying" />
-              <IconPlayerPlay v-else />
+              <QIcon name="tabler-player-pause" v-if="playerStore.isPlaying" />
+              <QIcon name="tabler-player-play" v-else />
             </QBtn>
             <QBtn
               flat
@@ -254,7 +251,7 @@ const handleProgressChange = (value: number | null) => {
               :disabled="!playerStore.currentTrack || !playerStore.hasNextTrack"
               class="next-track"
             >
-              <IconPlayerSkipForward />
+              <QIcon name="tabler-player-skip-forward" />
             </QBtn>
           </QBtnGroup>
 
@@ -273,7 +270,7 @@ const handleProgressChange = (value: number | null) => {
               :title="t('jukebox.playerSettings')"
               :aria-label="t('jukebox.playerSettings')"
             >
-              <IconSettingsAutomation />
+              <QIcon name="tabler-settings-automation" />
               <QPopupProxy
                 v-model="isSettingsPopupOpen"
                 anchor="bottom right"

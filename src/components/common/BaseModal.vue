@@ -11,11 +11,6 @@ import {
 } from 'vue';
 import { useModalState } from '@/composables/useModalState';
 import { useI18n } from 'vue-i18n';
-import {
-  IconX,
-  IconArrowsMinimize,
-  IconArrowsMaximize,
-} from '@tabler/icons-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -185,8 +180,8 @@ function setExpanded(val: boolean) {
                 variant="light"
                 :title="isExpanded ? t('common.collapse') : t('common.expand')"
               >
-                <IconArrowsMinimize v-if="isExpanded" />
-                <IconArrowsMaximize v-else />
+                <QIcon name="tabler-arrows-minimize" v-if="isExpanded" />
+                <QIcon name="tabler-arrows-maximize" v-else />
               </QBtn>
 
               <slot name="header-left-actions" />
@@ -222,7 +217,7 @@ function setExpanded(val: boolean) {
                 :aria-label="t('common.close')"
                 class="btn-close-modal"
               >
-                <IconX />
+                <QIcon name="tabler-x" />
               </QBtn>
             </div>
           </QToolbar>

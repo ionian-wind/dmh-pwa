@@ -9,6 +9,7 @@ export type FeatureId =
   | 'encounters'
   | 'maps'
   | 'jukebox'
+  | 'diceRoller'
   | 'ambient'
   | 'timers'
   | 'calculator'
@@ -22,7 +23,7 @@ export interface FeatureNavRoute {
   path: string;
   icon: Component;
   kind: 'entity' | 'tool';
-  placement: 'primary' | 'tools' | 'footer';
+  placement: 'primary' | 'gameSessions' | 'scribe' | 'tools' | 'footer';
   /** Relative order within a placement; lower values come first. */
   order?: number;
   activePathPrefixes?: string[];
@@ -33,7 +34,7 @@ export interface FeatureNavComponent {
   id: string;
   component: Component;
   kind: 'tool';
-  placement: 'primary' | 'tools' | 'footer';
+  placement: 'primary' | 'gameSessions' | 'scribe' | 'tools' | 'footer';
   /** Relative order within a placement; lower values come first. */
   order?: number;
   activePathPrefixes?: string[];

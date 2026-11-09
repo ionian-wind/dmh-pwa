@@ -3,7 +3,8 @@
 ## Setup
 
 - Runner: **Vitest 5** (`vitest.config.ts`).
-- Environment: `jsdom` (`happy-dom` is installed but unused in the config).
+- Environment: `jsdom`, with `pool: 'vmThreads'` so one jsdom environment is
+  created per worker rather than per test file.
 - Globals enabled (`describe/it/expect` without imports).
 - Setup file: `tests/setup.ts`.
 - Coverage: V8, excludes `main.ts`, `router.ts`, i18n, types, schemas, tests,
@@ -51,12 +52,16 @@ jukebox playback, read-only Milkdown views and the probability calculator.
 `tests/setup.ts`:
 
 - Takes over `window.localStorage` with a mock object of `vi.fn()`s.
-- Mocks `matchMedia`, `crypto.randomUUID`, `ResizeObserver`,
-  `IntersectionObserver`.
+- Provides configurable `matchMedia` mocks, `crypto.randomUUID`, `ResizeObserver`
+  and `IntersectionObserver`.
+- Restores full Web Crypto when the pool exposes a partial jsdom crypto object.
+- Polyfills `ReadableStream` from `node:stream/web`.
+- Adds a `structuredClone` fallback for cross-realm plain data used by
+  `fake-indexeddb`, while still rejecting genuinely uncloneable values.
 - Replaces global `console` methods with `vi.fn()` (though
   `beforeAll(exposeConsole)` then swaps in Node's `Console`, so output is still
   printed).
-- Clears mocks before each test.
+- Clears mocks and resets IndexedDB state before each test.
 
 Each test gets a fresh Pinia, Vue I18n, Quasar component stubs, a layout-store
 provide and `fake-indexeddb`; tests only override these globals when they need
@@ -86,42 +91,43 @@ tests/
   regressions/  # bug-focused suite
   scripts/      # sound-pack archive helpers
   stores/       # one per domain store
-  utils/        # files, markdown, migrations, storage, dice helpers
+  coverage/     # branch-coverage additions for stores, audio and utilities
+  utils/        # files, markdown, migrations, storage, RNG and dice helpers
   views/        # home/list smoke tests
-src/utils/dice-roller/
-  __tests__/             # core + integration + per-plugin copies
-  plugins/*/__tests__/   # plugin unit tests
+src/utils/bag-of-dice/
+  __tests__/    # engine, reference compatibility, branch coverage
+  engine/       # parser, evaluator, plugins, shared-RNG re-export
+src/utils/dice-probability-calculator/
+  __tests__/    # parser, evaluator, sampling and official-doc fixtures
+src/utils/rng.ts
+                # shared RNG, replay and weighted-sampling library
 ```
 
-Total test files: 207. Total tests: 1615.
+Total test files: 223. Total tests: 1852.
 
 ## Current results (measured)
 
 ```
 npm test
-Test Files  207 passed (207)
-Tests       1615 passed (1615)
+Test Files  223 passed (223)
+Tests       1852 passed (1852)
 ```
 
-Coverage (V8, `npm run test:coverage`):
+Coverage (V8, `npm run test:coverage`, exit code 0):
 
 ```
-Statements  92.77%
-Branches    82.96%
-Functions   92.48%
-Lines       94.47%
+Statements  94.16%
+Branches    87.00%
+Functions   92.73%
+Lines       95.47%
 ```
 
-`vitest.config.ts` sets 87% statements, functions, branches and lines
-globally, plus 87% statements and lines for **every individual source file**.
-The current run fails those gates: branches are below 87%, and several files
-fall under the per-file threshold (for example `EntityInfoDialog.vue`,
-`CombatView.vue`, `EncounterViewSidebar.vue`, `DrawingEditorModal.vue`,
-`NoteCanvas.vue`, `useStoredFileUrl.ts` and two migrations), so
-`npm run test:coverage` exits non-zero even though all tests pass.
-Third-party integration wrappers, generated/copied components, the legacy
-dice-roller engine, thin adapters and the app shell are excluded. The full list
-and the documented unreachable defensive branches are in
+`vitest.config.ts` enforces 87% statements, functions, branches and lines
+globally. The per-file threshold is not enabled; UI-heavy, migration and
+generated modules are excluded where unit coverage is not meaningful.
+Third-party integration wrappers, generated/copied components, thin adapters
+and the app shell are excluded. The full list and the documented unreachable
+defensive branches are in
 [architecture/legacy-and-unreachable-code.md](../architecture/legacy-and-unreachable-code.md).
 
 The maintained regression suite is also green:
@@ -148,9 +154,9 @@ registered plugin pipeline.
    longer exist; the storage test now covers current helpers.
 4. **Missing test plugins.** i18n/Pinia/Quasar were not installed. A shared
    setup now installs Pinia + i18n and stubs Quasar components.
-5. **Dice plugin was WIP.** The plugin now has `parse`/`evaluate`/`register`,
-   roll references have a lexer token, nested inline rolls are balanced, and
-   the dice suites pass.
+5. **Dice plugin was WIP.** The maintained engine now lives in
+   `src/utils/bag-of-dice`, uses the shared RNG library, and has parser,
+   evaluator, reference-compatibility, metadata and branch-coverage suites.
 6. **Old templates.** Tests referenced removed components (`CombatTracker`,
    `GlobalMenu`, etc.); those files were replaced with current coverage.
 7. **Missing IndexedDB.** `fake-indexeddb` is now loaded globally and the
@@ -166,6 +172,8 @@ registered plugin pipeline.
   emit model updates.
 - `tests/helpers/mock-storage.ts` provides an in-memory base store for store
   unit tests.
+- `tests/helpers/mount.ts` mounts with a local i18n instance without also
+  installing the global test i18n, avoiding duplicate-plugin warnings.
 - `tests/regressions/` holds the bug-focused suite added during remediation.
 
 ## Coverage focus
@@ -182,7 +190,7 @@ The suite now includes direct tests for:
   sidebar and participant info dialogs,
 - markdown sanitizing/task lists and mention plugin helpers,
 - map canvas readback patching and the map-layers migration,
-- Monaco environment setup and the probability calculator page, code library,
+- the Editora code editor, probability calculator page, code library,
   syntax page, editor completions, sharing, chart zoom and syntax markers,
 - note Markdown/PNG downloads and the shared `SidebarItem` component,
 - drag-and-drop and ordering paths: `BaseListView` sort events and drop
@@ -199,8 +207,6 @@ The suite now includes direct tests for:
   the ambient store's playback/mood/weather actions, recursive pack/unpack
   archive helpers and the sound-pack selector,
 - localized completion labels/details for built-in snippets, program
-  variables, keywords and code-piece definitions.
-
-The remaining intentional low-coverage area is the large dice-roller AST/plugin
-implementation; it is exercised by parser, evaluator, macro, table, formatting
-and integration suites rather than line-by-line unit tests.
+  variables, keywords and code-piece definitions,
+- shared RNG determinism, weighted sampling, replay state and probability
+  calculator sampling through injected RNGs.

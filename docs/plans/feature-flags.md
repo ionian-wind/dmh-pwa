@@ -44,6 +44,7 @@ entries.
 | `pawns`       | `VITE_FEATURE_PAWNS`       | `src/pawns/**`, `src/stores/pawns.ts`, pawn schema                          | —                 |
 | `encounters`  | `VITE_FEATURE_ENCOUNTERS`  | `src/encounters/**`, encounter/combat stores and schemas                    | `pawns`           |
 | `maps`        | `VITE_FEATURE_MAPS`        | `src/maps/**`, map/location schemas                                         | —                 |
+| `diceRoller`  | `VITE_FEATURE_DICE_ROLLER` | `src/features/dice-roller/**`, `src/components/DiceRollerPanel.vue`         | —                 |
 | `jukebox`     | `VITE_FEATURE_JUKEBOX`     | `src/jukebox/**`                                                            | —                 |
 | `ambient`     | `VITE_FEATURE_AMBIENT`     | `src/ambient-sound/**`                                                      | —                 |
 | `timers`      | `VITE_FEATURE_TIMERS`      | `src/timers/**`, `src/stores/timers.ts`, timer schema                       | —                 |

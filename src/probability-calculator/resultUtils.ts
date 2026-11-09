@@ -1,7 +1,9 @@
-import type {
-  CalculationResult,
-  OutputResult,
+import {
+  sampleOutcomes,
+  type CalculationResult,
+  type OutputResult,
 } from '@/utils/dice-probability-calculator';
+import { cryptoRng, type Rng } from '@/utils/rng';
 
 export type DataMode = 'normal' | 'atLeast' | 'atMost';
 
@@ -191,27 +193,12 @@ export function summarizeOutput(
   };
 }
 
-export function rollOutput(output: OutputResult, amount: number): number[] {
-  if (output.outcomes.length === 0) return [];
-
-  const total = output.outcomes.reduce(
-    (sum, outcome) => sum + outcome.probability,
-    0,
-  );
-  const results: number[] = [];
-  for (let roll = 0; roll < amount; roll++) {
-    let target = Math.random() * total;
-    let selected = output.outcomes[output.outcomes.length - 1].value;
-    for (const outcome of output.outcomes) {
-      target -= outcome.probability;
-      if (target <= 0) {
-        selected = outcome.value;
-        break;
-      }
-    }
-    results.push(selected);
-  }
-  return results;
+export function rollOutput(
+  output: OutputResult,
+  amount: number,
+  rng: Rng = cryptoRng(),
+): number[] {
+  return sampleOutcomes(output.outcomes, amount, rng);
 }
 
 function csvEscape(value: string): string {

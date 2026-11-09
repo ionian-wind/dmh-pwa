@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconSwords } from '@tabler/icons-vue';
+
 import { useCombatStore } from '@/stores/combats';
 import { useVisibleActiveCombats } from '@/encounters/useVisibleActiveCombats';
 import ActiveCombatsPanel from '@/encounters/ActiveCombatsPanel.vue';
@@ -36,7 +36,7 @@ onMounted(() => {
     :aria-label="t('combat.activeEncounters')"
     @click="togglePanel"
   >
-    <IconSwords />
+    <QIcon name="tabler-swords" />
   </QBtn>
 
   <div v-if="isPanelOpen" class="active-combats-floating">

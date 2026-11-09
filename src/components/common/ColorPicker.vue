@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { IconX } from '@tabler/icons-vue';
 
 const props = defineProps<{
   modelValue?: string;
@@ -46,7 +45,7 @@ const color = computed({
         :aria-label="clearLabel"
         @click="color = ''"
       >
-        <IconX :size="16" />
+        <QIcon name="tabler-x" size="16px" />
       </QBtn>
     </div>
   </div>

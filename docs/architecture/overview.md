@@ -147,23 +147,25 @@ detail views use `useRightDrawer()` directly.
 
 Navigation is generated from `virtual:feature-navigation`, not from a
 hard-coded array. Each feature integration contributes entries with a
-`placement` (`primary`, `tools`, or `footer`) and an optional `order`.
+`placement` (`primary`, `footer`; the `gameSessions`, `scribe`, and `tools`
+placements remain available for future collapsible groups) and an optional
+`order`.
 
-- **Primary**: Notes, Pawns, Encounters, Maps, Characters, Parties
-  (the features without an explicit `order` sort first; Characters and Parties
-  share `order: 10`).
-- **Tools**: Timers, Calculator, Probability calculator. The Tools item expands
-  and collapses the group; it auto-expands when a tool route is active.
+- **Primary**: Characters, a divider, Notes/Pawns/Encounters/Maps, another
+  divider, then Timers/Calculator/Probability calculator.
 - **Footer**: Jukebox, Help, then the always-present Settings item.
   Settings opens `SettingsDialog` (language, theme, backup and storage options).
-  Jukebox opens `/jukebox` or the sound-control sheet depending on
-  `configStore.jukeboxUseMiniPlayer`.
+
+The collapsible group support and `navigationGroupsExpanded` config remain in
+place for future use, but no feature currently uses a group placement.
+Jukebox opens `/jukebox` or the sound-control sheet depending on
+`configStore.jukeboxUseMiniPlayer`.
 
 Active state for route entries uses `activePathPrefixes` when provided,
 otherwise the entry is active when `currentPath.startsWith(item.path)`. Detail
 routes therefore highlight their list section. Component entries manage their
-own active state: Jukebox highlights `/jukebox` and `/ambient`, Timers highlights
-`/timers`, and Help is an external anchor. The timers icon cycles through twelve
+own active state: Jukebox highlights `/jukebox` and `/ambient`, Timers tracks
+whether its floating panel is open, and Help is an external anchor. The timers icon cycles through twelve
 clock icons while `timerStore.running` is true. The `Section` enum in
 `src/types/index.ts` remains as a legacy domain list and is not used to build
 navigation.
@@ -172,10 +174,20 @@ navigation.
 
 - `PWAInstallPrompt`, `PWAStatus`, and `CommitBadge` are always mounted.
 - `SettingsDialog` is always mounted and opened from the footer nav.
-- Feature globals (`CalculatorGlobal`, `JukeboxGlobal`) mount the calculator and
-  sound-control bottom sheets.
+- Feature globals (`CalculatorGlobal`, `JukeboxGlobal`, `TimersGlobal`) mount the
+  calculator, sound-control bottom sheet, and timer panel.
 - `FeatureLinking` mounts `MentionModalStack` and the drag-linking overlay when
   at least one linking feature is enabled.
+
+### Icons
+
+Quasar uses a custom Tabler icon set from
+`src/plugins/quasar-tabler-icon-set.ts`. It maps Quasar's built-in icon slots to
+raw Tabler SVG paths and exposes `tabler-<name>` through `iconMapFn`, so Quasar
+icon props (including `QExpansionItem`'s `expand-icon`) can use names such as
+`tabler-plus`. Components generally render icons through `QIcon`; direct Tabler
+component imports remain only where a specific SVG variant is required, such as
+filled icons, icon pickers, or icons passed to custom components.
 
 ## Routing (`src/router.ts`)
 
@@ -203,11 +215,10 @@ catch-all. Feature routes are generated from the enabled integrations:
 | `/ambient`                | ambient-sound          | AmbientSoundView          | ambient     |
 | `/ambient/:sceneId`       | —                      | redirect `ambient-sound`  | ambient     |
 | `/jukebox`                | jukebox                | JukeboxView               | jukebox     |
-| `/timers`                 | timers                 | TimersView                | timers      |
 | `/probability-calculator` | probability-calculator | ProbabilityCalculatorView | probability |
 | `/:catchAll(.*)`          | —                      | NotFoundView              | shell       |
 
-Calculator and Help contribute navigation or globals but no routes. Disabled
+Calculator, Timers, and Help contribute navigation or globals but no routes. Disabled
 features contribute no routes, so their URLs fall through to `NotFoundView`.
 
 List routes carry `meta.exact: true`; this is metadata only and is not used by

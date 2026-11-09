@@ -15,7 +15,6 @@ import { useEntityLinkRelations } from '@/components/common/entityDragLinking/re
 import { useFeatureStores } from '@/composables/useFeatureStores';
 import type { MapEntityRef } from '@/maps/types';
 import { alert } from '@/dialogs';
-import { IconHelp } from '@tabler/icons-vue';
 
 const { t, locale } = useI18n();
 
@@ -239,7 +238,7 @@ onMounted(async () => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <IconHelp />
+          <QIcon name="tabler-help" />
         </QBtn>
       </div>
     </template>

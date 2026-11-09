@@ -1,31 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { evaluate, create, all } from 'mathjs';
-import { useDragSnap } from '@/composables/useDragSnap';
-import {
-  IconTransform,
-  IconCalculator,
-  IconParentheses,
-  IconPercentage,
-  IconDivide,
-  IconX,
-  IconMinus,
-  IconPlus,
-  IconBackspace,
-  IconEqual,
-  IconCopy,
-  IconNumber0,
-  IconNumber1,
-  IconNumber2,
-  IconNumber3,
-  IconNumber4,
-  IconNumber5,
-  IconNumber6,
-  IconNumber7,
-  IconNumber8,
-  IconNumber9,
-} from '@tabler/icons-vue';
+import DraggablePanel from '@/components/common/DraggablePanel.vue';
 
 const { t } = useI18n();
 const math = create(all);
@@ -41,15 +18,6 @@ const model = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
 });
-
-const {
-  cardStyle,
-  transitionHide,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onHide,
-} = useDragSnap();
 
 const input = ref('');
 const result = ref('');
@@ -250,35 +218,24 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <QDialog
-    seamless
-    position="bottom"
-    class="q-pa-sm"
-    v-model="model"
-    :transition-hide="transitionHide"
-    @hide="onHide"
-  >
-    <QCard
-      :style="[cardStyle, { minWidth: '350px', minHeight: '410px' }]"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
-    >
-      <QToolbar
-        class="justify-between drag-handle"
-        @pointerdown="onPointerDown"
-      >
-        <QTabs class="q-mb-xs" v-model="tab">
-          <QTab name="calculate" :title="t('calculator.calculator')"
-            ><IconCalculator
-          /></QTab>
-          <QTab name="convert" :title="t('calculator.converter')"
-            ><IconTransform
-          /></QTab>
-        </QTabs>
+  <Teleport to="body">
+    <DraggablePanel v-model="model" min-width="360px">
+      <template #header>
+        <QToolbar class="justify-between drag-handle">
+          <QTabs class="q-mb-xs" v-model="tab">
+            <QTab name="calculate" :title="t('calculator.calculator')"
+              ><QIcon name="tabler-calculator"
+            /></QTab>
+            <QTab name="convert" :title="t('calculator.converter')"
+              ><QIcon name="tabler-transform"
+            /></QTab>
+          </QTabs>
 
-        <QBtn flat clickable @click="model = false"><IconX /></QBtn>
-      </QToolbar>
+          <QBtn flat clickable @click="model = false"
+            ><QIcon name="tabler-x"
+          /></QBtn>
+        </QToolbar>
+      </template>
       <QCardSection>
         <div class="calculator-view">
           <QCard flat class="calculator-display q-pa-xs q-mb-sm">
@@ -306,64 +263,64 @@ onUnmounted(() => {
                   t('calculator.clear')
                 }}</QBtn>
                 <QBtn flat class="operation" @click="appendBrace"
-                  ><IconParentheses
+                  ><QIcon name="tabler-parentheses"
                 /></QBtn>
                 <QBtn flat class="operation" @click="append('%')"
-                  ><IconPercentage
+                  ><QIcon name="tabler-percentage"
                 /></QBtn>
                 <QBtn flat class="operation" @click="append('÷')"
-                  ><IconDivide
+                  ><QIcon name="tabler-divide"
                 /></QBtn>
 
                 <QBtn flat title="7" aria-label="7" @click="append('7')"
-                  ><IconNumber7
+                  ><QIcon name="tabler-number-7"
                 /></QBtn>
                 <QBtn flat title="8" aria-label="8" @click="append('8')"
-                  ><IconNumber8
+                  ><QIcon name="tabler-number-8"
                 /></QBtn>
                 <QBtn flat title="9" aria-label="9" @click="append('9')"
-                  ><IconNumber9
+                  ><QIcon name="tabler-number-9"
                 /></QBtn>
                 <QBtn flat class="operation" @click="append('×')"
-                  ><IconX />
+                  ><QIcon name="tabler-x" />
                 </QBtn>
 
                 <QBtn flat title="4" aria-label="4" @click="append('4')"
-                  ><IconNumber4
+                  ><QIcon name="tabler-number-4"
                 /></QBtn>
                 <QBtn flat title="5" aria-label="5" @click="append('5')"
-                  ><IconNumber5
+                  ><QIcon name="tabler-number-5"
                 /></QBtn>
                 <QBtn flat title="6" aria-label="6" @click="append('6')"
-                  ><IconNumber6
+                  ><QIcon name="tabler-number-6"
                 /></QBtn>
                 <QBtn flat class="operation" @click="append('-')"
-                  ><IconMinus
+                  ><QIcon name="tabler-minus"
                 /></QBtn>
 
                 <QBtn flat title="1" aria-label="1" @click="append('1')"
-                  ><IconNumber1
+                  ><QIcon name="tabler-number-1"
                 /></QBtn>
                 <QBtn flat title="2" aria-label="2" @click="append('2')"
-                  ><IconNumber2
+                  ><QIcon name="tabler-number-2"
                 /></QBtn>
                 <QBtn flat title="3" aria-label="3" @click="append('3')"
-                  ><IconNumber3
+                  ><QIcon name="tabler-number-3"
                 /></QBtn>
                 <QBtn flat class="operation" @click="append('+')"
-                  ><IconPlus
+                  ><QIcon name="tabler-plus"
                 /></QBtn>
 
                 <QBtn flat title="0" aria-label="0" @click="append('0')"
-                  ><IconNumber0
+                  ><QIcon name="tabler-number-0"
                 /></QBtn>
                 <QBtn flat @click="append('.')">.</QBtn>
 
                 <QBtn flat class="control" @click="backspace"
-                  ><IconBackspace
+                  ><QIcon name="tabler-backspace"
                 /></QBtn>
                 <QBtn flat class="control" @click="calculate"
-                  ><IconEqual
+                  ><QIcon name="tabler-equal"
                 /></QBtn>
               </div>
             </QTabPanel>
@@ -421,7 +378,7 @@ onUnmounted(() => {
                           )
                         "
                       >
-                        <IconCopy />
+                        <QIcon name="tabler-copy" />
                       </QBtn>
                     </QItemSection>
                   </QItem>
@@ -431,8 +388,8 @@ onUnmounted(() => {
           </QTabPanels>
         </div>
       </QCardSection>
-    </QCard>
-  </QDialog>
+    </DraggablePanel>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -464,6 +421,11 @@ onUnmounted(() => {
 .control {
   background-color: var(--color-misc-light);
 }
+.calculator-card {
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+
 .drag-handle {
   cursor: grab;
 }

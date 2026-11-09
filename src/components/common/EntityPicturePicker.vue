@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconPhoto, IconTrash } from '@tabler/icons-vue';
+
 import EntityPicture from '@/components/common/EntityPicture.vue';
 import { alert } from '@/dialogs';
 import { importFile, pickFiles } from '@/utils/files';
@@ -71,7 +71,7 @@ function removePicture() {
         :aria-label="t('common.selectPicture')"
         @click="choosePicture"
       >
-        <IconPhoto :size="18" class="q-mr-sm" />
+        <QIcon name="tabler-photo" size="18px" class="q-mr-sm" />
         {{ t('common.selectPicture') }}
       </QBtn>
       <QBtn
@@ -83,7 +83,7 @@ function removePicture() {
         :aria-label="t('common.removePicture')"
         @click="removePicture"
       >
-        <IconTrash :size="18" class="q-mr-sm" />
+        <QIcon name="tabler-trash" size="18px" class="q-mr-sm" />
         {{ t('common.removePicture') }}
       </QBtn>
     </div>

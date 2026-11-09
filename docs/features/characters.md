@@ -14,6 +14,8 @@ free-text notes; the README's "stats, equipment, and notes" are aspirational.
 | `src/characters/CharacterCard.vue`   | Card                                             |
 | `src/characters/CharacterEditor.vue` | Create/edit modal                                |
 | `src/characters/CharacterView.vue`   | Detail page                                      |
+| `src/parties/PartyList.vue`          | Characters right-drawer party management         |
+| `src/parties/useSelectedParty.ts`    | Shared character party filter                    |
 
 ## Data
 
@@ -38,6 +40,12 @@ reference on the character.
 
 - Loads characters on mount.
 - `BaseListView` with `CharacterCard` and `CharacterEditor`.
+- The right drawer hosts `PartyList`, similar to jukebox playlists. It contains
+  an **All characters** entry, party selection, create/edit/delete actions, and
+  filters the list to the selected party's `characters` ids.
+- With a party selected, **Create Character** pre-checks that party in the
+  linking tab and links the new character to it on save. Unchecking it in the
+  tab skips the link.
 - Create/edit/delete/copy.
 - Delete calls `confirm(t('common.confirmDelete', { title: character.name }))`
   and removes the portrait file when it is no longer referenced.

@@ -13,7 +13,6 @@ import { useFeatureStores } from '@/composables/useFeatureStores';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import type { MapEntityRef } from '@/maps/types';
 import { alert } from '@/dialogs';
-import { IconHelp } from '@tabler/icons-vue';
 
 const { t, locale } = useI18n();
 const featureStores = useFeatureStores();
@@ -212,7 +211,7 @@ function handleDelete() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <IconHelp />
+          <QIcon name="tabler-help" />
         </QBtn>
       </div>
     </template>

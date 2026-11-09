@@ -38,15 +38,18 @@
     "parties": "Parties",
     "pawns": "Pawns",
     "characters": "Characters",
+    "gameSessions": "Game Sessions",
     "encounters": "Encounters",
     "combats": "Combats",
     "configuration": "Configuration",
     "settings": "Settings",
     "timers": "Timers",
+    "scribe": "Scribe",
     "tools": "Tools",
     "ambientSound": "Ambient Sound",
     "maps": "Maps",
     "probabilityCalculator": "Probability Calculator",
+    "diceRoller": "Dice Roller",
     "help": "Help center"
   },
   "home": {
@@ -84,6 +87,7 @@
   "parties": {
     "title": "Parties",
     "create": "Create Party",
+    "createNew": "New party",
     "edit": "Edit Party",
     "delete": "Delete Party",
     "namePlaceholder": "Enter party name",
@@ -133,6 +137,7 @@
   },
   "characters": {
     "title": "Characters",
+    "all": "All characters",
     "create": "Create Character",
     "edit": "Edit Character",
     "delete": "Delete Character",
@@ -629,13 +634,9 @@
     "edit": "Edit Timer",
     "delete": "Delete Timer",
     "noTitle": "(no title)",
-    "duration": "Duration",
     "fields": {
       "title": "Title",
-      "titlePlaceholder": "Enter timer title",
-      "description": "Description",
-      "descriptionPlaceholder": "Enter timer description",
-      "duration": "Duration"
+      "titlePlaceholder": "Enter timer title"
     },
     "hours": "h",
     "minutes": "m",
@@ -644,12 +645,7 @@
     "finished": "Finished!",
     "start": "Start",
     "stop": "Stop",
-    "reset": "Reset",
-    "status": {
-      "inactive": "Inactive",
-      "running": "Running",
-      "finished": "Finished"
-    }
+    "reset": "Reset"
   },
   "pwa": {
     "updateAvailable": "Update Available",
@@ -1114,5 +1110,17 @@
     "title": "Help center",
     "notFound": "Help page not found.",
     "back": "Back to the help center"
+  },
+  "diceRoller": {
+    "title": "Dice Roller",
+    "clear": "Clear",
+    "close": "Close dice roller",
+    "reroll": "Reroll",
+    "rollError": "Could not roll dice. Try again.",
+    "explodeHints": {
+      "exploding": "Exploding: roll an extra die when the maximum face is rolled",
+      "compounding": "Compounding: maximum rolls add extra dice to the total",
+      "penetrating": "Penetrating: extra dice subtract 1 from each additional roll"
+    }
   }
 }

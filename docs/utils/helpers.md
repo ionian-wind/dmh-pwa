@@ -79,15 +79,33 @@ cropTitle(title, (max = 25));
 Returns the title unchanged if short, otherwise the first `max` characters plus
 `…`. No word-boundary awareness. Throws if `title` is not a string.
 
-## `src/utils/random.ts`
+## `src/utils/rng.ts` and `src/utils/random.ts`
+
+`src/utils/rng.ts` is the shared RNG and weighted-sampling library used by the
+dice roller and the dice probability calculator.
+
+```ts
+cryptoRng()                         // crypto-backed uniform RNG
+sequenceRng([0.1, 0.5, 0.9])        // deterministic test/replay RNG
+nextRandom(rng, context?)           // validated draw in [0, 1)
+rollDie(rng, sides, context?)       // uniform integer in [1, sides]
+randomInt(rng, maxExclusive)
+pickWeightedIndex(weights, rng)
+pickWeightedBigIntIndex(weights, rng)
+pickWeighted(items, weightOf, rng)
+sampleWeighted(items, weightOf, amount, rng)
+captureRngState(rng) / finishRngState(rng, state) / restoreRngState(rng, state)
+```
+
+`src/utils/random.ts` re-exports the shared API and keeps the legacy helpers:
 
 ```ts
 rng() => Math.random()
 getRandomInt(max) => Math.floor(rng() * max)
 ```
 
-Used for shuffle and table rolls (dice engine, WIP). No seedable RNG, so
-results are not reproducible and tests must mock randomness.
+New dice/probability code should inject an `Rng`; `cryptoRng()` is the default
+for production roll/sample paths.
 
 ## `src/utils/configStore.ts`
 
@@ -111,15 +129,17 @@ See [architecture/persistence-and-state.md](../architecture/persistence-and-stat
 
 See [utils/files.md](files.md).
 
-## `src/utils/dice-roller/*`
+## `src/utils/bag-of-dice/*`
 
-See [plans/dice-roller.md](../plans/dice-roller.md).
+See [features/dice-roller/README.md](../features/dice-roller/README.md) and the
+[bag-of-dice README](../../src/utils/bag-of-dice/README.md). The engine uses the
+shared `src/utils/rng.ts` library.
 
 ## `src/utils/dice-probability-calculator/*`
 
 See [features/dice-probability-calculator/](../features/dice-probability-calculator/README.md).
-This is the maintained AnyDice-compatible probability library. It is not yet
-connected to the UI.
+This is the maintained AnyDice-compatible probability library, connected to
+`src/probability-calculator/` and sampling through the shared RNG library.
 
 ## Composables
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconPlus, IconSearch, IconX } from '@tabler/icons-vue';
+
 import EntityGroup from '@/components/common/EntityGroup.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import EntityCreateDialog from '@/components/common/EntityCreateDialog.vue';
@@ -142,7 +142,7 @@ function removeLink(ref: MapEntityRef) {
           :aria-label="t('common.searchAndLink')"
           @click="isModalOpen = true"
         >
-          <IconSearch :size="18" />
+          <QIcon name="tabler-search" size="18px" />
         </QBtn>
         <QBtn
           v-if="!readonly"
@@ -153,7 +153,7 @@ function removeLink(ref: MapEntityRef) {
           :aria-label="t('common.addAndLink')"
           @click="isCreateOpen = true"
         >
-          <IconPlus :size="18" />
+          <QIcon name="tabler-plus" size="18px" />
         </QBtn>
       </template>
 
@@ -187,7 +187,7 @@ function removeLink(ref: MapEntityRef) {
                 :aria-label="t('common.remove')"
                 @click.stop="removeLink(ref)"
               >
-                <IconX :size="16" />
+                <QIcon name="tabler-x" size="16px" />
               </QBtn>
             </QItemSection>
           </QItem>

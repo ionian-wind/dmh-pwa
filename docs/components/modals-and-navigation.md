@@ -272,8 +272,10 @@ These notifications never auto-dismiss (`timeout: 0`).
 
 - **Header**: injected per route; Delete sits at the far left, while
   create/edit/custom actions stay on the right.
-- **Left drawer**: primary navigation + jukebox/calculator shortcuts.
-- **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists).
+- **Left drawer**: flat primary navigation with two item dividers, plus the
+  jukebox/dice shortcuts.
+- **Right drawer**: contextual sidebar (mentions, scene links, TOC, playlists,
+  character parties).
 - **Footer**: only the jukebox player.
 - **Overlays**: PWA status/install, mention modals, calculator, jukebox dialog.
 

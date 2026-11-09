@@ -11,12 +11,7 @@ import {
   type ComponentPublicInstance,
 } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconExternalLink,
-  IconHeadphones,
-  IconMusic,
-  IconX,
-} from '@tabler/icons-vue';
+
 import { useRouter } from 'vue-router';
 import JukeboxPlayer from '@/jukebox/components/JukeboxPlayer.vue';
 import { useJukeboxPlayerStore } from '@/jukebox/playerStore';
@@ -26,6 +21,7 @@ import {
   useAnimatedGradient,
 } from '@/jukebox/useAnimatedGradient';
 import { useDragSnap } from '@/composables/useDragSnap';
+import { useFloatingLayer } from '@/composables/useFloatingLayer';
 
 const props = withDefaults(
   defineProps<{
@@ -45,6 +41,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { zIndex, bringToFront } = useFloatingLayer(6000);
 const router = useRouter();
 const playerStore = useJukeboxPlayerStore();
 const configStore = useConfigStore();
@@ -380,6 +377,7 @@ function navigateToPage() {
     seamless
     position="bottom"
     v-model="model"
+    :style="{ zIndex }"
     :transition-hide="transitionHide"
     class="sound-control-dialog"
     @hide="handleHide"
@@ -400,6 +398,8 @@ function navigateToPage() {
           'with-animated-bg': isAnimatedBg,
         }"
         :style="[cardStyle, controlStyle]"
+        @pointerdown="bringToFront"
+        @focusin="bringToFront"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
         @pointercancel="onPointerUp"
@@ -428,7 +428,7 @@ function navigateToPage() {
               :aria-label="t('jukebox.openJukebox')"
               @click="navigateToPage"
             >
-              <IconExternalLink />
+              <QIcon name="tabler-external-link" />
             </QBtn>
           </div>
           <QTabs
@@ -443,7 +443,7 @@ function navigateToPage() {
               :title="t('app.jukebox')"
               :aria-label="t('app.jukebox')"
             >
-              <IconMusic />
+              <QIcon name="tabler-music" />
             </QTab>
             <QTab
               v-if="ambientEnabled"
@@ -451,7 +451,7 @@ function navigateToPage() {
               :title="t('navigation.ambientSound')"
               :aria-label="t('navigation.ambientSound')"
             >
-              <IconHeadphones />
+              <QIcon name="tabler-headphones" />
             </QTab>
           </QTabs>
           <QBtn
@@ -461,7 +461,7 @@ function navigateToPage() {
             :aria-label="t('common.close')"
             @click="model = false"
           >
-            <IconX />
+            <QIcon name="tabler-x" />
           </QBtn>
         </QToolbar>
         <div class="sound-control-body">

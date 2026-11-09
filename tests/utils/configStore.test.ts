@@ -34,6 +34,7 @@ describe('config store', () => {
     expect(config.expandMenu).toBe(true);
     expect(config.uiTheme).toBe('light');
     expect(config.savedLanguage).toBe('en');
+    expect(config.navigationGroupsExpanded).toEqual({});
   });
 
   it('reads persisted values and Russian browser defaults', () => {
@@ -62,6 +63,26 @@ describe('config store', () => {
     expect(useConfigStore().uiTheme).toBe('light');
   });
 
+  it('reads and validates saved navigation group state', () => {
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+      key === 'dmh-config:navigationGroupsExpanded'
+        ? JSON.stringify({ gameSessions: true, scribe: false, bad: 'yes' })
+        : null,
+    );
+    expect(useConfigStore().navigationGroupsExpanded).toEqual({
+      gameSessions: true,
+      scribe: false,
+    });
+
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+      key === 'dmh-config:navigationGroupsExpanded'
+        ? JSON.stringify(['scribe'])
+        : null,
+    );
+    setActivePinia(createPinia());
+    expect(useConfigStore().navigationGroupsExpanded).toEqual({});
+  });
+
   it('falls back to English for non-Russian or missing languages', () => {
     setLanguage(undefined);
     expect(useConfigStore().savedLanguage).toBe('en');
@@ -85,6 +106,13 @@ describe('config store', () => {
     await nextTick();
     expect(localStorage.removeItem).toHaveBeenCalledWith(
       'dmh-config:confirmDelete',
+    );
+
+    config.navigationGroupsExpanded = { scribe: false };
+    await nextTick();
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      'dmh-config:navigationGroupsExpanded',
+      '{"scribe":false}',
     );
   });
 });

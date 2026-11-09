@@ -56,6 +56,7 @@ vi.mock('@/jukebox/playerStore', () => ({
 vi.mock('@/stores/timers', () => ({
   useTimerStore: () => ({
     init: vi.fn().mockResolvedValue(undefined),
+    timers: [],
     now: 0,
     running: false,
   }),
@@ -121,7 +122,7 @@ describe('settings dialog', () => {
     const buttons = toggle.findAll('button');
     expect(buttons).toHaveLength(3);
     for (const button of buttons) {
-      expect(button.find('svg').exists()).toBe(true);
+      expect(button.find('[data-stub="QIcon"]').exists()).toBe(true);
     }
     expect(buttons[0].attributes('aria-label')).toBe('Light');
     expect(buttons[1].attributes('aria-label')).toBe('Dark');
@@ -380,9 +381,7 @@ describe('settings dialog', () => {
     wrapper.unmount();
   });
 
-  it('places characters and parties below locations in the primary menu', async () => {
-    const config = useConfigStore();
-    config.savedLanguage = 'en';
+  it('renders flat primary navigation items with separators', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [{ path: '/', component: { render: () => h('div') } }],
@@ -395,18 +394,54 @@ describe('settings dialog', () => {
     (wrapper.vm as any).$i18n.locale = 'en';
     await nextTick();
 
-    const titles = wrapper
-      .findAll('.left-sidebar [data-stub="QItem"]')
-      .map((item) => item.attributes('title'))
-      .filter((title): title is string => !!title);
+    const getTitles = () =>
+      wrapper
+        .findAll('.left-sidebar [data-stub="QItem"]')
+        .map((item) => item.attributes('title'))
+        .filter((title): title is string => !!title);
 
-    expect(titles.slice(0, 6)).toEqual([
+    expect(getTitles()).toEqual([
+      'Characters',
       'Notes',
       'Pawns',
       'Encounters',
       'Maps',
+      'Timers',
+      'Calculator',
+      'Probability Calculator',
+      'Dice Roller',
+      'Jukebox',
+      'Help center',
+      'Settings',
+    ]);
+    expect(getTitles()).not.toContain('Game Sessions');
+    expect(getTitles()).not.toContain('Scribe');
+    expect(getTitles()).not.toContain('Tools');
+    expect(
+      wrapper.findAll('.left-sidebar [data-stub="QSeparator"]'),
+    ).toHaveLength(2);
+
+    const sequence = wrapper
+      .findAll(
+        '.left-sidebar [data-stub="QItem"], .left-sidebar [data-stub="QSeparator"]',
+      )
+      .slice(0, 10)
+      .map((entry) =>
+        entry.attributes('data-stub') === 'QSeparator'
+          ? '|'
+          : entry.attributes('title'),
+      );
+    expect(sequence).toEqual([
       'Characters',
-      'Parties',
+      '|',
+      'Notes',
+      'Pawns',
+      'Encounters',
+      'Maps',
+      '|',
+      'Timers',
+      'Calculator',
+      'Probability Calculator',
     ]);
     wrapper.unmount();
   });
@@ -430,25 +465,18 @@ describe('settings dialog', () => {
     expect(
       wrapper.find('[data-test="open-settings"]').attributes('title'),
     ).toBeTruthy();
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(false);
-    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     await drawer.trigger('mouseenter');
     await nextTick();
     expect(drawer.attributes('mini')).not.toBe('true');
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(false);
-    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     config.expandMenu = false;
     await nextTick();
     expect(drawer.attributes('mini')).toBe('true');
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
-    expect(wrapper.find('.tools-caret').exists()).toBe(true);
 
     await drawer.trigger('mouseenter');
     await nextTick();
     expect(drawer.attributes('mini')).toBe('true');
-    expect(wrapper.find('.tools-caret--mini').exists()).toBe(true);
     wrapper.unmount();
   });
 

@@ -1,46 +1,55 @@
-import { describe, expect, it, vi } from 'vitest';
-
-const languages = vi.hoisted(() => {
-  const registered: string[] = [];
-  return {
-    registered,
-    getLanguages: vi.fn(() => registered.map((id) => ({ id }))),
-    register: vi.fn(({ id }: { id: string }) => {
-      registered.push(id);
-    }),
-    setLanguageConfiguration: vi.fn(),
-    setMonarchTokensProvider: vi.fn(),
-    registerCompletionItemProvider: vi.fn(),
-  };
-});
-
-vi.mock('@/components/common/monaco', () => ({
-  monaco: { languages },
-}));
-
+import { describe, expect, it } from 'vitest';
 import {
   ANYDICE_LANGUAGE_ID,
-  registerAnyDiceLanguage,
+  createAnyDiceHighlightMode,
+  highlightAnydice,
 } from '../anydiceLanguage';
 
-describe('AnyDice language registration', () => {
-  it('registers the language, configuration and Monarch tokenizer once', () => {
-    registerAnyDiceLanguage();
-    registerAnyDiceLanguage();
+const colors = {
+  text: '#111111',
+  comment: '#008000',
+  string: '#a31515',
+  number: '#0086b3',
+  variable: '#001080',
+  keyword: '#000080',
+};
 
+describe('AnyDice syntax highlighting', () => {
+  it('exposes the language id and a registered mode', () => {
     expect(ANYDICE_LANGUAGE_ID).toBe('anydice');
-    expect(languages.register).toHaveBeenCalledTimes(1);
-    expect(languages.setLanguageConfiguration).toHaveBeenCalledWith(
-      'anydice',
-      expect.objectContaining({
-        comments: { blockComment: ['\\', '\\'] },
-      }),
+    expect(createAnyDiceHighlightMode()).toMatchObject({
+      name: 'AnyDice',
+      highlight: highlightAnydice,
+    });
+  });
+
+  it('highlights comments, strings, numbers, variables and keywords', () => {
+    const html = highlightAnydice(
+      '\\ comment \\ output 3d6 named "roll" X: 1',
+      colors,
     );
-    expect(languages.setMonarchTokensProvider).toHaveBeenCalledWith(
-      'anydice',
-      expect.objectContaining({
-        keywords: expect.arrayContaining(['output', 'function', 'loop']),
-      }),
-    );
+
+    expect(html).toContain('color: #008000');
+    expect(html).toContain('color: #000080');
+    expect(html).toContain('color: #0086b3');
+    expect(html).toContain('color: #a31515');
+    expect(html).toContain('color: #001080');
+  });
+
+  it('falls back when theme colours are missing', () => {
+    const html = highlightAnydice('foo ! 1 "x" \\ comment \\', {
+      text: '#111111',
+    });
+    expect(html).toContain('color: #111111');
+    expect(html).toContain('foo');
+    expect(html).toContain('!');
+    expect(highlightAnydice('', colors)).toBe('');
+  });
+
+  it('escapes HTML in source text', () => {
+    const html = highlightAnydice('output <script>', colors);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;');
+    expect(html).toContain('&gt;');
   });
 });

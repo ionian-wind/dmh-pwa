@@ -48,6 +48,7 @@ declare const __FEATURE_PAWNS__: boolean;
 declare const __FEATURE_ENCOUNTERS__: boolean;
 declare const __FEATURE_MAPS__: boolean;
 declare const __FEATURE_JUKEBOX__: boolean;
+declare const __FEATURE_DICE_ROLLER__: boolean;
 declare const __FEATURE_AMBIENT__: boolean;
 declare const __FEATURE_TIMERS__: boolean;
 declare const __FEATURE_CALCULATOR__: boolean;

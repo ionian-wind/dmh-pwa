@@ -75,6 +75,8 @@ describe('CalculatorView', () => {
     await wrapper.setProps({ modelValue: false });
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '9' }));
     await nextTick();
+    await wrapper.setProps({ modelValue: true });
+    await nextTick();
     expect(wrapper.find('.calculator-input').text()).toBe('0');
     wrapper.unmount();
   });
@@ -126,7 +128,7 @@ describe('CalculatorView', () => {
         `.calculator-buttons button[title="${digit}"]`,
       );
       expect(button.exists()).toBe(true);
-      expect(button.find('svg').exists()).toBe(true);
+      expect(button.find('[data-stub="QIcon"]').exists()).toBe(true);
       expect(button.text()).toBe('');
     }
     wrapper.unmount();
@@ -175,9 +177,7 @@ describe('CalculatorView', () => {
     await copy.trigger('click');
     expect(navigator.clipboard.writeText).toHaveBeenCalled();
 
-    wrapper
-      .findComponent(quasarStubs.QDialog)
-      .vm.$emit('update:modelValue', false);
+    await wrapper.find('.drag-handle button').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
     wrapper.unmount();
   });

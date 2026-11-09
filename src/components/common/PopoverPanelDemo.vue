@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import PopoverPanel from './PopoverPanel.vue';
 import Button from '../form/Button.vue';
 import { useI18n } from 'vue-i18n';
-import { IconUser } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
@@ -78,7 +77,7 @@ const placements = [
       >
         <template #trigger>
           <Button @click="titleOpen = !titleOpen">
-            <IconUser />
+            <QIcon name="tabler-user" />
             {{ t('popoverDemo.profileMenu') }}
           </Button>
         </template>

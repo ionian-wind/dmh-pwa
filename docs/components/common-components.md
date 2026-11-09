@@ -80,9 +80,17 @@ Slots: `left`, default, `actions`.
 `actions` slots add icons or extra buttons. Used by the ambient scene panel and
 the jukebox playlist list.
 
-### `MonacoEditor.vue`
+### `DiceRollerPanel.vue`
 
-Thin Monaco wrapper used by the probability calculator.
+Draggable, closeable dice panel containing a vertical `QMenu`, anchored beside the main menu at the bottom-left corner. Its anchor follows the drag and the menu is repositioned during movement. DiceBox runs in on-screen mode, and its canvas keeps the size from creation: the Babylon render loop stops after dice settle, so resizing the canvas would clear the scene without drawing again. Buttons cover d2,
+d4, d6, d8, d10, d12, d20 and d100 (`2d10`), with a separator and a Clear
+action. It renders `@3d-dice/dice-box` on a fixed, pointer-events-free
+full-screen surface so dice animations are click-through. The surface is kept
+in viewport pixels on resize so the 3D canvas does not stretch.
+
+### `LightCodeEditor.vue`
+
+Thin `@editora/light-code-editor` wrapper used by the probability calculator. It supports custom syntax modes, completions and diagnostics.
 
 Props: `modelValue`, `language`, `theme`, `readonly`, `height`, `options`.
 Emits: `update:modelValue`, `ready`.

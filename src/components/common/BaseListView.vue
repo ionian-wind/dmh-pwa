@@ -13,7 +13,6 @@ import EmptyState from './EmptyState.vue';
 import SortableList from './SortableList.vue';
 import { useLayout } from '@/composables/useLayout';
 import { useI18n } from 'vue-i18n';
-import { IconPlus } from '@tabler/icons-vue';
 
 const { t } = useI18n();
 
@@ -238,7 +237,7 @@ onBeforeUnmount(() => {
         :loading="props.createLoading"
         @click="onCreate"
       >
-        <IconPlus :size="28" />
+        <QIcon name="tabler-plus" size="28px" />
         <span class="q-ml-sm">{{
           props.emptyActionTitle || t('common.create')
         }}</span>
@@ -349,9 +348,13 @@ onBeforeUnmount(() => {
       v-bind="editorProps(editingItem)"
       :is-open="showEditor"
       @submit="
-        (item: any) => {
+        (item: any, meta?: any) => {
           handleSubmit(item);
-          $emit('submit', item);
+          if (meta === undefined) {
+            $emit('submit', item);
+          } else {
+            $emit('submit', item, meta);
+          }
         }
       "
       @cancel="

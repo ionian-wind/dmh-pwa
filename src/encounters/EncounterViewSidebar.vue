@@ -11,14 +11,7 @@ import Mentions from '@/components/common/Mentions.vue';
 import EntityLinkingDialog from '@/components/common/EntityLinkingDialog.vue';
 import EntityInfoDialog from '@/components/common/EntityInfoDialog.vue';
 import { entityRoute } from '@/components/common/entityLinking/entityRefs';
-import {
-  IconAt,
-  IconGhost3,
-  IconHeadphones,
-  IconPlus,
-  IconSwords,
-  IconX,
-} from '@tabler/icons-vue';
+import { IconAt, IconGhost3, IconHeadphones } from '@tabler/icons-vue';
 import { prompt } from '@/dialogs';
 import { entityScenesPanel as EntityScenesPanel } from 'virtual:feature-entity-panels';
 
@@ -236,7 +229,7 @@ onMounted(async () => {
                       :aria-label="t('common.unlink')"
                       @click.stop="togglePawn(pawn, false)"
                     >
-                      <IconX :size="16" />
+                      <QIcon name="tabler-x" size="16px" />
                     </QBtn>
                   </QItemSection>
                 </QItem>
@@ -255,7 +248,7 @@ onMounted(async () => {
                 @click="showLinkModal = true"
               >
                 <QItemSection side>
-                  <IconPlus :size="18" />
+                  <QIcon name="tabler-plus" size="18px" />
                 </QItemSection>
                 <QItemSection>
                   {{ t('encounters.pawns.linkAction') }}
@@ -343,7 +336,7 @@ onMounted(async () => {
               :aria-label="t('common.runCombat')"
               @click="props.onRunCombat?.()"
             >
-              <IconSwords :size="18" class="q-mr-sm" />
+              <QIcon name="tabler-swords" size="18px" class="q-mr-sm" />
               {{ t('common.runCombat') }}
             </QBtn>
           </QItemSection>

@@ -156,6 +156,7 @@ const QDialog = defineComponent({
 const QMenu = defineComponent({
   name: 'QMenu',
   props: { modelValue: Boolean },
+  emits: ['update:modelValue'],
   setup(_, { slots }) {
     return () => h('div', { 'data-stub': 'QMenu' }, slots.default?.());
   },

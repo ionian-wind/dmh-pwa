@@ -945,7 +945,9 @@ describe('MapView', () => {
     expect(actionsControl.getElement().style.display).toBe('');
     expect(wrapper.find('.map-layer-add').exists()).toBe(true);
     expect(wrapper.find('.map-layer-add').text()).toContain('Add layer');
-    expect(wrapper.find('.map-layer-add svg').exists()).toBe(true);
+    expect(wrapper.find('.map-layer-add [data-stub="QIcon"]').exists()).toBe(
+      true,
+    );
     expect(wrapper.find('.map-marker-accessible').exists()).toBe(true);
 
     wrapper.unmount();

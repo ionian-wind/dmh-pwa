@@ -12,13 +12,6 @@ import type { JukeboxPlaylist } from '@/jukebox/types';
 import SortableList from '@/components/common/SortableList.vue';
 import SidebarActionItem from '@/components/common/SidebarActionItem.vue';
 
-import {
-  IconEdit,
-  IconGripVertical,
-  IconEye,
-  IconPlus,
-  IconPencil,
-} from '@tabler/icons-vue';
 import { debug } from '@/utils/debug';
 import { useI18n } from 'vue-i18n';
 
@@ -273,7 +266,7 @@ onMounted(async () => {
                 class="playlist-drag-handle"
                 @click.stop
               >
-                <IconGripVertical :size="16" />
+                <QIcon name="tabler-grip-vertical" size="16px" />
               </QItemSection>
               <QItemSection
                 v-if="isEditMode"
@@ -299,7 +292,7 @@ onMounted(async () => {
                   flat
                   @click.stop="openPlaylistModal(playlist)"
                 >
-                  <IconPencil :size="18" />
+                  <QIcon name="tabler-pencil" size="18px" />
                 </QBtn>
               </QBtnGroup>
             </template>
@@ -313,7 +306,7 @@ onMounted(async () => {
       <QItem clickable v-ripple @click="openPlaylistModal(null)">
         <QItemSection>{{ t('playlist.createNew') }}</QItemSection>
         <QItemSection side>
-          <IconPlus :size="18" />
+          <QIcon name="tabler-plus" size="18px" />
         </QItemSection>
       </QItem>
     </QList>
@@ -332,7 +325,7 @@ onMounted(async () => {
               :aria-pressed="!isEditMode"
               @click="isEditMode = false"
             >
-              <IconEye :size="18" />
+              <QIcon name="tabler-eye" size="18px" />
             </QBtn>
             <QBtn
               class="jukebox-edit-mode"
@@ -344,7 +337,7 @@ onMounted(async () => {
               :disable="isImporting"
               @click="isEditMode = true"
             >
-              <IconEdit :size="18" />
+              <QIcon name="tabler-edit" size="18px" />
             </QBtn>
           </QBtnGroup>
         </QItemSection>

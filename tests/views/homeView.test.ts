@@ -29,6 +29,10 @@ vi.mock('@/dialogs', () => ({
   prompt: vi.fn(),
 }));
 
+vi.mock('@/utils/reloadPage', () => ({
+  reloadPage: mocks.reload,
+}));
+
 async function mountHome() {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -59,10 +63,6 @@ describe('HomeView', () => {
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
       () => undefined,
     );
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { ...window.location, reload: mocks.reload },
-    });
   });
 
   afterEach(() => {

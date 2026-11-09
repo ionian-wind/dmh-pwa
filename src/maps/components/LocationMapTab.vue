@@ -9,16 +9,7 @@ import {
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-  IconEdit,
-  IconEye,
-  IconEyeOff,
-  IconLiveView,
-  IconPencil,
-  IconPlus,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-vue';
+
 import type { Item } from 'ol-contextmenu';
 import TabGroup from '@/components/common/TabGroup.vue';
 import { confirm, prompt } from '@/dialogs';
@@ -1066,7 +1057,7 @@ watch(isEditMode, (editing) => {
                     :aria-label="t('common.close')"
                     @click.stop="closeMapInfo"
                   >
-                    <IconX :size="18" />
+                    <QIcon name="tabler-x" size="18px" />
                   </QBtn>
                 </QCardSection>
 
@@ -1177,8 +1168,11 @@ watch(isEditMode, (editing) => {
                           "
                           @click="toggleLayerVisibility(layer.id)"
                         >
-                          <IconEyeOff v-if="isLayerHidden(layer.id)" />
-                          <IconEye v-else />
+                          <QIcon
+                            name="tabler-eye-off"
+                            v-if="isLayerHidden(layer.id)"
+                          />
+                          <QIcon name="tabler-eye" v-else />
                         </QBtn>
                       </template>
                       <template v-else>
@@ -1189,7 +1183,7 @@ watch(isEditMode, (editing) => {
                           :title="t('maps.editLayer')"
                           @click="editLayer(layer)"
                         >
-                          <IconPencil :size="16" />
+                          <QIcon name="tabler-pencil" size="16px" />
                         </QBtn>
                         <QBtn
                           v-if="layer.id !== MAP_BASE_LAYER_ID"
@@ -1199,7 +1193,7 @@ watch(isEditMode, (editing) => {
                           :title="t('maps.deleteLayer')"
                           @click="deleteLayer(layer)"
                         >
-                          <IconTrash :size="16" />
+                          <QIcon name="tabler-trash" size="16px" />
                         </QBtn>
                       </template>
                     </span>
@@ -1239,8 +1233,11 @@ watch(isEditMode, (editing) => {
                           "
                           @click="toggleLayerVisibility(layer.id)"
                         >
-                          <IconEyeOff v-if="isLayerHidden(layer.id)" />
-                          <IconEye v-else />
+                          <QIcon
+                            name="tabler-eye-off"
+                            v-if="isLayerHidden(layer.id)"
+                          />
+                          <QIcon name="tabler-eye" v-else />
                         </QBtn>
                       </template>
                       <template v-else>
@@ -1251,7 +1248,7 @@ watch(isEditMode, (editing) => {
                           :title="t('maps.editLayer')"
                           @click="editLayer(layer)"
                         >
-                          <IconPencil :size="16" />
+                          <QIcon name="tabler-pencil" size="16px" />
                         </QBtn>
                         <QBtn
                           v-if="layer.id !== MAP_BASE_LAYER_ID"
@@ -1261,7 +1258,7 @@ watch(isEditMode, (editing) => {
                           :title="t('maps.deleteLayer')"
                           @click="deleteLayer(layer)"
                         >
-                          <IconTrash :size="16" />
+                          <QIcon name="tabler-trash" size="16px" />
                         </QBtn>
                       </template>
                     </span>
@@ -1304,7 +1301,7 @@ watch(isEditMode, (editing) => {
                   {{ t('maps.addLayer') }}
                 </QItemSection>
                 <QItemSection side>
-                  <IconPlus :size="18" />
+                  <QIcon name="tabler-plus" size="18px" />
                 </QItemSection>
               </QItem>
 
@@ -1332,7 +1329,7 @@ watch(isEditMode, (editing) => {
                       :aria-pressed="!isEditMode"
                       @click="isEditMode = false"
                     >
-                      <IconLiveView :size="18" />
+                      <QIcon name="tabler-live-view" size="18px" />
                     </QBtn>
                     <QBtn
                       class="map-mode-edit"
@@ -1343,7 +1340,7 @@ watch(isEditMode, (editing) => {
                       :aria-pressed="isEditMode"
                       @click="isEditMode = true"
                     >
-                      <IconEdit :size="18" />
+                      <QIcon name="tabler-edit" size="18px" />
                     </QBtn>
                   </QBtnGroup>
                 </QItemSection>

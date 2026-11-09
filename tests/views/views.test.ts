@@ -10,7 +10,7 @@ import CharactersView from '@/characters/CharactersView.vue';
 import PartiesView from '@/parties/PartiesView.vue';
 import PawnsView from '@/pawns/PawnsView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
-import TimersView from '@/timers/TimersView.vue';
+import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 
@@ -24,7 +24,6 @@ function makeRouter() {
       { path: '/parties', component: { render: () => h('div') } },
       { path: '/pawns', component: { render: () => h('div') } },
       { path: '/encounters', component: { render: () => h('div') } },
-      { path: '/timers', component: { render: () => h('div') } },
     ],
   });
 }
@@ -34,7 +33,10 @@ async function mountView(component: any, path = '/') {
   await router.push(path);
   await router.isReady();
   const wrapper = mount(component, {
-    global: { plugins: [router] },
+    global: {
+      plugins: [router],
+      provide: { [LayoutKey]: createLayoutStore() },
+    },
   });
   await flushPromises();
   return wrapper;
@@ -80,7 +82,6 @@ describe('current views', () => {
     ['parties', PartiesView, '/parties'],
     ['pawns', PawnsView, '/pawns'],
     ['encounters', EncountersView, '/encounters'],
-    ['timers', TimersView, '/timers'],
   ])('smoke renders the %s list view', async (_name, component, path) => {
     const wrapper = await mountView(component as any, path as string);
     expect(wrapper.exists()).toBe(true);

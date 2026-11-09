@@ -82,7 +82,7 @@ const EntityMarkdownEditorStub = defineComponent({
 
 const baseTimer = {
   id: 't1',
-  title: 'Inactive',
+  title: 'Timer',
   duration: 60000,
   startedAt: null,
   status: 'inactive',
@@ -109,8 +109,10 @@ describe('coverage gaps: small components', () => {
     const inactive = mount(TimerListItem, {
       props: { timer: baseTimer as any },
     });
-    expect(inactive.text()).toContain('Inactive');
-    expect(inactive.text()).toContain('Duration');
+    expect(inactive.text()).toContain('Timer');
+    expect(inactive.text()).toContain('1:00');
+    expect(inactive.text()).not.toContain('Duration');
+    expect(inactive.text()).not.toContain('Inactive');
     await inactive.find('button[title="Start"]').trigger('click');
     expect(inactive.emitted('start')).toHaveLength(1);
     await inactive.find('button[title="Edit Timer"]').trigger('click');
@@ -137,7 +139,8 @@ describe('coverage gaps: small components', () => {
     const finished = mount(TimerListItem, {
       props: { timer: { ...baseTimer, status: 'finished' } as any },
     });
-    expect(finished.text()).toContain('Finished');
+    expect(finished.text()).toContain('1:00');
+    expect(finished.text()).not.toContain('Finished');
     await finished.find('button[title="Reset"]').trigger('click');
     expect(finished.emitted('reset')).toHaveLength(1);
 

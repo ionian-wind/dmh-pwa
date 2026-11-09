@@ -54,6 +54,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [ambient-sound-configurator.md](ambient-sound-configurator.md)                                     | Ambient sound packs, scenes, layers and playback                            |
 | [features/maps.md](features/maps.md)                                                               | Map images, locations, entity bindings, markers and icons                   |
 | [features/calculator.md](features/calculator.md)                                                   | Arithmetic and unit converter dialog                                        |
+| [features/dice-roller/README.md](features/dice-roller/README.md)                                   | Dice parser/evaluator engine, contracts and metadata                        |
 | [features/dice-probability-calculator/README.md](features/dice-probability-calculator/README.md)   | AnyDice-compatible probability library, specification and validation matrix |
 | [features/dice-probability-calculator/library.md](features/dice-probability-calculator/library.md) | Probability library API and usage                                           |
 | [features/dice-probability-calculator/spec.md](features/dice-probability-calculator/spec.md)       | Probability language specification                                          |
@@ -68,7 +69,7 @@ IndexedDB, with a small amount of configuration in `localStorage`.
 | [components/markdown-editor.md](components/markdown-editor.md)             | Milkdown wrapper and mention insertion popup           |
 | [components/modals-and-navigation.md](components/modals-and-navigation.md) | Modal stack, dialogs, drawer injection, layout regions |
 | [utils/files.md](utils/files.md)                                           | File System Access / Blob handlers and metadata worker |
-| [utils/helpers.md](utils/helpers.md)                                       | IDs, debug, unwrapping, scrolling, titles, random      |
+| [utils/helpers.md](utils/helpers.md)                                       | IDs, debug, unwrapping, scrolling, titles, RNG/random  |
 
 ### Tooling
 
@@ -92,8 +93,9 @@ implemented.
 | [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)                 | Manifest, install UX, safe-area and PWA audit plan |
 | [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md)         | Milkdown detail-view renderer plan and status      |
 | [plans/remove-modules-entity.md](plans/remove-modules-entity.md)           | Completed Modules removal and migration record     |
-| [plans/dice-roller.md](plans/dice-roller.md)                               | Extensible dice parser/evaluator plan              |
+| [features/dice-roller/README.md](features/dice-roller/README.md)           | Implemented dice parser/evaluator design           |
 | [plans/dice-roller-implementation.md](plans/dice-roller-implementation.md) | Checkbox task tracker for the dice engine          |
+| [plans/3d-dice-roller-ui.md](plans/3d-dice-roller-ui.md)                   | Three.js + Rapier dice UI implementation plan      |
 
 ### Cross-cutting analysis
 
@@ -102,7 +104,7 @@ implemented.
 | [integration/cross-part-behavior.md](integration/cross-part-behavior.md)                 | How parts call each other; end-to-end flows          |
 | [proposals/technical-proposals.md](proposals/technical-proposals.md)                     | Engineering improvements and refactors               |
 | [proposals/roll20-style-chat-engine.md](proposals/roll20-style-chat-engine.md)           | Local chat commands, rendering and delivery proposal |
-| [proposals/macro-library-editor.md](proposals/macro-library-editor.md)                   | Monaco macro library/editor proposal                 |
+| [proposals/macro-library-editor.md](proposals/macro-library-editor.md)                   | Code-editor macro library/editor proposal            |
 | [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index        |
 | [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass         |
 | [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture  |
@@ -136,7 +138,7 @@ src/
   utils/markdownParser.ts          markdown-it renderer + entity link parsing
   utils/files/                     File System Access / OPFS / Blob + audio worker
   utils/dice-probability-calculator/ AnyDice-compatible probability library
-  probability-calculator/          probability calculator page, Monaco + charts
+  probability-calculator/          probability calculator page, code editor + charts
   helpcenter/links.ts              static help-center URL helper
   features/                        feature catalog integrations (routes, nav, links)
   components/                      shared UI + PWA + dialogs
@@ -161,7 +163,7 @@ Three facts materially affect how the code should be read:
    reports **0 errors**. CI runs the type check, regression suite, full test
    suite, feature build matrix, and production build. See
    [proposals/fixes-applied.md](proposals/fixes-applied.md).
-3. **The dice roller is planned from scratch.** The dice plan is a greenfield
-   design; 3D dice are one optional visualization for roll results, not a
-   requirement of the engine. All previously tracked UI/data defects have been
-   fixed; see [proposals/fixes-applied.md](proposals/fixes-applied.md).
+3. **The dice roller is implemented.** `bag-of-dice` powers text/chat rolls;
+   the 3D tray is a standalone natural-physics visualization and does not
+   import the engine. All previously tracked UI/data defects have been fixed;
+   see [proposals/fixes-applied.md](proposals/fixes-applied.md).

@@ -64,7 +64,7 @@ describe('editor behavior', () => {
 
   it('converts timer duration from the three spinners', async () => {
     const wrapper = mount(TimerEditor, {
-      props: { timer: null, isOpen: true },
+      props: { timer: null },
     });
 
     const spinners = wrapper.findAllComponents(NumberSpinner);
@@ -74,7 +74,10 @@ describe('editor behavior', () => {
     spinners[2].vm.$emit('update:modelValue', 3);
     await nextTick();
 
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await wrapper
+      .findAll('button')
+      .find((entry) => entry.text() === 'Save')!
+      .trigger('click');
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       duration: 3_723_000,
     });
@@ -85,7 +88,6 @@ describe('editor behavior', () => {
     const timer = {
       id: 't1',
       title: 'Torch',
-      description: 'Burns',
       duration: 3_723_000,
       startedAt: null,
       status: 'inactive',
@@ -93,22 +95,25 @@ describe('editor behavior', () => {
       updatedAt: 1,
     };
     const wrapper = mount(TimerEditor, {
-      props: { timer, isOpen: true },
+      props: { timer },
     });
     const spinners = wrapper.findAllComponents(NumberSpinner);
     expect(spinners[0].props('modelValue')).toBe(1);
     expect(spinners[1].props('modelValue')).toBe(2);
     expect(spinners[2].props('modelValue')).toBe(3);
 
-    wrapper.findComponent(BaseModal).vm.$emit('cancel');
+    const button = (label: string) =>
+      wrapper.findAll('button').find((entry) => entry.text() === label)!;
+
+    await button('Cancel').trigger('click');
     expect(wrapper.emitted('cancel')).toHaveLength(1);
 
-    wrapper.findComponent(BaseModal).vm.$emit('delete');
+    await button('Delete').trigger('click');
     expect(wrapper.emitted('delete')?.[0]).toEqual(['t1']);
 
     await wrapper.setProps({ timer: null });
     await nextTick();
-    wrapper.findComponent(BaseModal).vm.$emit('submit');
+    await button('Save').trigger('click');
     expect(wrapper.emitted('submit')?.at(-1)?.[0]).toMatchObject({
       duration: 60_000,
     });

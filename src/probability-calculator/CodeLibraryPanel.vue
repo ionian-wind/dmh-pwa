@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconPencil, IconTrash } from '@tabler/icons-vue';
+
 import SidebarItem from '@/components/common/SidebarItem.vue';
 import type { CodeLibraryPanelState, CodePiece } from './codeLibrary';
 
@@ -61,7 +61,7 @@ function load(state: CodeLibraryPanelState, piece: CodePiece) {
             :aria-label="t('probabilityCalculator.library.rename')"
             @click.stop="state.onRename(piece)"
           >
-            <IconPencil :size="16" />
+            <QIcon name="tabler-pencil" size="16px" />
           </QBtn>
           <QBtn
             flat
@@ -73,7 +73,7 @@ function load(state: CodeLibraryPanelState, piece: CodePiece) {
             :aria-label="t('probabilityCalculator.library.delete')"
             @click.stop="state.onDelete(piece)"
           >
-            <IconTrash :size="16" />
+            <QIcon name="tabler-trash" size="16px" />
           </QBtn>
         </template>
       </SidebarItem>

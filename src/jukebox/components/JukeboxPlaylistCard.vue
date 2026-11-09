@@ -4,7 +4,6 @@ import type { JukeboxPlaylist } from '../types';
 import BaseCard from '@/components/common/BaseCard.vue';
 import Button from '@/components/form/Button.vue';
 import { useI18n } from 'vue-i18n';
-import { IconMusic } from '@tabler/icons-vue';
 
 const props = defineProps<{ playlist: JukeboxPlaylist }>();
 const emit = defineEmits(['edit', 'delete', 'view', 'play']);
@@ -45,7 +44,7 @@ const subtitle = computed(() => {
         size="small"
         :title="t('common.play')"
       >
-        <IconMusic />
+        <QIcon name="tabler-music" />
       </Button>
     </template>
   </BaseCard>

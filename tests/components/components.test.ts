@@ -721,7 +721,7 @@ describe('current shared components', () => {
       'two',
     ]);
 
-    const remove = wrapper.find('svg');
+    const remove = wrapper.find('[data-stub="QIcon"]');
     await remove.trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual([]);
   });

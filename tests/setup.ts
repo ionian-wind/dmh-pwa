@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom';
 import 'fake-indexeddb/auto';
+import { webcrypto } from 'node:crypto';
+import { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { config } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
+import { ref } from 'vue';
 import { vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { exposeConsole, debug } from '../src/utils/debug';
 import { resetStoreCache } from '../src/utils/storage';
@@ -23,7 +26,7 @@ vi.mock('quasar', () => {
   };
   const useDialogPluginComponent = Object.assign(
     () => ({
-      dialogRef: { value: null },
+      dialogRef: ref(null),
       onDialogHide: vi.fn(),
       onDialogOK: vi.fn(),
       onDialogCancel: vi.fn(),
@@ -56,6 +59,7 @@ if (typeof window !== 'undefined') {
   // Mock matchMedia
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
+    configurable: true,
     value: vi.fn().mockImplementation((query) => ({
       matches: false,
       media: query,
@@ -68,6 +72,47 @@ if (typeof window !== 'undefined') {
     })),
   });
 }
+
+// vmThreads can expose a partial jsdom crypto object. Restore the real Web
+// Crypto implementation when `subtle` is missing.
+if (!globalThis.crypto?.subtle) {
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: webcrypto,
+  });
+}
+
+// Some pools do not expose ReadableStream on the jsdom global.
+if (!globalThis.ReadableStream) {
+  globalThis.ReadableStream = NodeReadableStream as typeof ReadableStream;
+}
+
+// fake-indexeddb clones values with the global structuredClone. In vmThreads
+// values can originate from another realm and native cloning throws
+// DataCloneError for otherwise plain records; fall back to JSON for those.
+const nativeStructuredClone = globalThis.structuredClone;
+function containsFunction(
+  value: unknown,
+  seen = new WeakSet<object>(),
+): boolean {
+  if (typeof value === 'function') return true;
+  if (!value || typeof value !== 'object') return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  if (Array.isArray(value))
+    return value.some((item) => containsFunction(item, seen));
+  return Object.values(value as Record<string, unknown>).some((item) =>
+    containsFunction(item, seen),
+  );
+}
+globalThis.structuredClone = ((value: unknown) => {
+  try {
+    return nativeStructuredClone(value);
+  } catch (error) {
+    if (containsFunction(value)) throw error;
+    return JSON.parse(JSON.stringify(value));
+  }
+}) as typeof structuredClone;
 
 // Keep the real Web Crypto API (nanoid needs getRandomValues) and only
 // override randomUUID for stable test identifiers.

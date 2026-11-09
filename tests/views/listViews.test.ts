@@ -7,19 +7,30 @@ import CharactersView from '@/characters/CharactersView.vue';
 import PawnsView from '@/pawns/PawnsView.vue';
 import PartiesView from '@/parties/PartiesView.vue';
 import NotesView from '@/notes/NotesView.vue';
-import TimersView from '@/timers/TimersView.vue';
 import EncountersView from '@/encounters/EncountersView.vue';
 
 import { useCharacterStore } from '@/stores/characters';
 import { usePawnStore } from '@/stores/pawns';
 import { usePartyStore } from '@/stores/parties';
 import { useNoteStore } from '@/stores/notes';
-import { useTimerStore } from '@/stores/timers';
 import { useEncounterStore } from '@/stores/encounters';
 import { confirm } from '@/dialogs';
-import { resetMockStores } from '../helpers/mock-storage';
+import { deleteFileIfUnreferenced } from '@/utils/files';
+import { createLayoutStore, LayoutKey } from '@/composables/useLayout';
+import { resetMockStores, seedMockStore } from '../helpers/mock-storage';
+import { useSelectedParty } from '@/parties/useSelectedParty';
 
 vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
+vi.mock('@/utils/files', () => ({
+  deleteFileIfUnreferenced: vi.fn().mockResolvedValue(undefined),
+}));
+const relationMocks = vi.hoisted(() => ({
+  getLinkedIds: vi.fn(() => []),
+  setLinkedIds: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@/components/common/entityDragLinking/relations', () => ({
+  useEntityLinkRelations: () => relationMocks,
+}));
 vi.mock('@/dialogs', () => ({
   confirm: vi.fn().mockResolvedValue(true),
   alert: vi.fn().mockResolvedValue(undefined),
@@ -87,6 +98,7 @@ async function mountView(component: any, path = '/') {
   const wrapper = mount(component, {
     global: {
       plugins: [router],
+      provide: { [LayoutKey]: createLayoutStore() },
       stubs: {
         BaseListView: BaseListViewStub,
         PartySelector: PartySelectorStub,
@@ -108,6 +120,15 @@ describe('list views', () => {
   });
 
   it('handles character card actions, submit, copy and delete', async () => {
+    seedMockStore('characters', [
+      {
+        id: 'c1',
+        name: 'Aria',
+        picture: 'old.png',
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    ]);
     const { wrapper, router } = await mountView(CharactersView, '/');
     const store = useCharacterStore();
     vi.spyOn(store, 'create').mockResolvedValue({} as any);
@@ -117,6 +138,7 @@ describe('list views', () => {
     const character = {
       id: 'c1',
       name: 'Aria',
+      picture: 'new.png',
       createdAt: 0,
       updatedAt: 0,
     } as any;
@@ -127,12 +149,7 @@ describe('list views', () => {
     expect(router.currentRoute.value.path).toBe('/characters/c1');
     card.onEdit();
 
-    await expect(card.onDelete()).resolves.toBe(true);
-    expect(store.remove).toHaveBeenCalledWith('c1');
-
-    vi.mocked(confirm).mockResolvedValue(false);
-    await expect(card.onDelete()).resolves.toBe(false);
-
+    (list(wrapper).props('editorProps') as any)(character);
     const listVm = list(wrapper).vm;
     listVm.$emit('submit', character);
     listVm.$emit('submit', { name: 'New' });
@@ -140,7 +157,80 @@ describe('list views', () => {
     await flushPromises();
     expect(store.update).toHaveBeenCalled();
     expect(store.create).toHaveBeenCalledTimes(2);
+    expect(deleteFileIfUnreferenced).toHaveBeenCalledWith('old.png');
+
+    await expect(card.onDelete()).resolves.toBe(true);
+    expect(store.remove).toHaveBeenCalledWith('c1');
+    expect(deleteFileIfUnreferenced).toHaveBeenCalledWith('old.png');
+
+    vi.mocked(confirm).mockResolvedValue(false);
+    await expect(card.onDelete()).resolves.toBe(false);
     wrapper.unmount();
+  });
+
+  it('filters characters by the selected party', async () => {
+    seedMockStore('characters', [
+      { id: 'c1', name: 'Aria', updatedAt: 2 },
+      { id: 'c2', name: 'Bram', updatedAt: 1 },
+    ]);
+    seedMockStore('parties', [
+      { id: 'p1', name: 'Heroes', characters: ['c2'], updatedAt: 1 },
+    ]);
+    const { selectParty, clearSelection } = useSelectedParty();
+    clearSelection();
+    selectParty('p1');
+
+    const { wrapper } = await mountView(CharactersView, '/');
+    expect(
+      (list(wrapper).props('items') as any[]).map((item) => item.id),
+    ).toEqual(['c2']);
+
+    selectParty(null);
+    await nextTick();
+    expect(
+      (list(wrapper).props('items') as any[]).map((item) => item.id),
+    ).toEqual(['c1', 'c2']);
+    wrapper.unmount();
+    clearSelection();
+  });
+
+  it('links a new character to the selected party', async () => {
+    seedMockStore('characters', []);
+    seedMockStore('parties', [
+      { id: 'p1', name: 'Heroes', characters: [], updatedAt: 1 },
+    ]);
+    const { selectParty, clearSelection } = useSelectedParty();
+    selectParty('p1');
+
+    const { wrapper } = await mountView(CharactersView, '/');
+    const store = useCharacterStore();
+    const created = {
+      id: 'c-new',
+      name: 'New Hero',
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    vi.spyOn(store, 'create').mockResolvedValue(created as any);
+
+    const editorProps = (list(wrapper).props('editorProps') as any)(null);
+    expect(editorProps.partyId).toBe('p1');
+
+    list(wrapper).vm.$emit(
+      'submit',
+      { name: 'New Hero' },
+      { linkedPartyIds: ['p1'] },
+    );
+    await flushPromises();
+
+    expect(store.create).toHaveBeenCalled();
+    expect(relationMocks.setLinkedIds).toHaveBeenCalledWith(
+      'character',
+      'c-new',
+      'party',
+      ['p1'],
+    );
+    wrapper.unmount();
+    clearSelection();
   });
 
   it('handles pawn card actions and submit', async () => {
@@ -247,42 +337,6 @@ describe('list views', () => {
     await router.replace('/notes?tag=social');
     await flushPromises();
     expect(setTagFilter).toHaveBeenCalledWith('social');
-    wrapper.unmount();
-  });
-
-  it('handles timer actions and lifecycle callbacks', async () => {
-    const { wrapper } = await mountView(TimersView, '/');
-    const store = useTimerStore();
-    vi.spyOn(store, 'create').mockResolvedValue({} as any);
-    vi.spyOn(store, 'update').mockResolvedValue({} as any);
-    vi.spyOn(store, 'remove').mockResolvedValue(undefined);
-    vi.spyOn(store, 'start').mockResolvedValue(undefined);
-    vi.spyOn(store, 'stop').mockResolvedValue(undefined);
-    vi.spyOn(store, 'reset').mockResolvedValue(undefined);
-
-    const timer = { id: 't1', title: 'Round', duration: 60 } as any;
-    const card = (list(wrapper).props('cardProps') as any)(timer);
-    card.onEdit();
-    card.onStart();
-    card.onStop();
-    card.onReset();
-    expect(store.start).toHaveBeenCalledWith('t1');
-    expect(store.stop).toHaveBeenCalledWith('t1');
-    expect(store.reset).toHaveBeenCalledWith('t1');
-
-    (list(wrapper).props('editorProps') as any)(timer);
-    await expect(card.onDelete()).resolves.toBe(true);
-    vi.mocked(confirm).mockResolvedValue(false);
-    await expect(card.onDelete()).resolves.toBe(false);
-
-    list(wrapper).vm.$emit('submit', timer);
-    list(wrapper).vm.$emit('submit', { title: 'New timer' });
-    await flushPromises();
-    expect(store.update).toHaveBeenCalled();
-    expect(store.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'inactive', startedAt: null }),
-    );
-    expect(store.remove).toHaveBeenCalledWith('t1');
     wrapper.unmount();
   });
 

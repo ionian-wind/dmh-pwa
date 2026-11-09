@@ -17,7 +17,7 @@
           :aria-label="t('common.close')"
           @click="emit('update:modelValue', false)"
         >
-          <IconX :size="20" />
+          <QIcon name="tabler-x" size="20px" />
         </QBtn>
       </QCardSection>
 
@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconX } from '@tabler/icons-vue';
+
 import { useAmbientSoundStore } from '@/ambient-sound/stores/ambientSoundStore';
 
 defineProps<{ modelValue: boolean }>();

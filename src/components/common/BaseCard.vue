@@ -10,13 +10,7 @@ import {
   Comment,
   type PropType,
 } from 'vue';
-import {
-  IconEye,
-  IconPencil,
-  IconTrash,
-  IconCopy,
-  IconGripVertical,
-} from '@tabler/icons-vue';
+
 import {
   ENTITY_LINK_ICONS,
   type EntityDragData,
@@ -268,7 +262,7 @@ const hasContent = computed(() => {
           @dragstart.stop="onDragStart"
           @dragend.stop="onDragEnd"
         >
-          <IconGripVertical :size="18" />
+          <QIcon name="tabler-grip-vertical" size="18px" />
         </div>
       </QCardSection>
       <QCardSection v-if="hasContent" class="base-card-content q-pt-none">
@@ -319,7 +313,7 @@ const hasContent = computed(() => {
             @click="$emit('view')"
             :title="t('common.view')"
           >
-            <IconEye />
+            <QIcon name="tabler-eye" />
           </QBtn>
           <QBtn
             flat
@@ -329,7 +323,7 @@ const hasContent = computed(() => {
             @click="$emit('edit')"
             :title="t('common.edit')"
           >
-            <IconPencil />
+            <QIcon name="tabler-pencil" />
           </QBtn>
           <QBtn
             flat
@@ -339,7 +333,7 @@ const hasContent = computed(() => {
             @click="$emit('copy')"
             :title="t('common.copy')"
           >
-            <IconCopy />
+            <QIcon name="tabler-copy" />
           </QBtn>
           <QBtn
             flat
@@ -349,7 +343,7 @@ const hasContent = computed(() => {
             @click="$emit('delete')"
             :title="t('common.delete')"
           >
-            <IconTrash />
+            <QIcon name="tabler-trash" />
           </QBtn>
         </QBtnGroup>
       </QCardActions>

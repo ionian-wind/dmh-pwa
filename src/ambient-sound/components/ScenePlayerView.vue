@@ -10,7 +10,7 @@
         :aria-label="t('common.back')"
         @click="emit('back')"
       >
-        <IconArrowLeft :size="20" />
+        <QIcon name="tabler-arrow-left" size="20px" />
         <span class="q-ml-xs">{{ t('common.back') }}</span>
       </QBtn>
       <template v-if="entry">
@@ -26,8 +26,8 @@
             :aria-label="t(isPlaybackRunning ? 'common.pause' : 'common.play')"
             @click="store.togglePlayPause()"
           >
-            <IconPlayerPause v-if="isPlaybackRunning" />
-            <IconPlayerPlay v-else />
+            <QIcon name="tabler-player-pause" v-if="isPlaybackRunning" />
+            <QIcon name="tabler-player-play" v-else />
           </QBtn>
           <QBtn
             flat
@@ -36,7 +36,7 @@
             :aria-label="t('ambientSoundPage.volumeControls')"
             @click="isVolumeDialogOpen = true"
           >
-            <IconVolume />
+            <QIcon name="tabler-volume" />
           </QBtn>
         </QBtnGroup>
       </template>
@@ -149,15 +149,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconArrowLeft,
-  IconBell,
-  IconMusic,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconVolume,
-  IconWaveSine,
-} from '@tabler/icons-vue';
+import { IconBell, IconMusic, IconWaveSine } from '@tabler/icons-vue';
 import AmbienceItem from '@/ambient-sound/components/AmbienceItem.vue';
 import AmbientControls from '@/ambient-sound/components/AmbientControls.vue';
 import AmbientVolumeDialog from '@/ambient-sound/components/AmbientVolumeDialog.vue';

@@ -8,13 +8,15 @@ raise a Quasar notification when they finish.
 
 ## Key files
 
-| File                              | Role                                       |
-| --------------------------------- | ------------------------------------------ |
-| `src/stores/timers.ts`            | Timer store, start/stop/reset, global tick |
-| `src/timers/TimersView.vue`       | List page                                  |
-| `src/timers/TimerEditor.vue`      | Create/edit modal with H:M:S spinners      |
-| `src/timers/TimerListItem.vue`    | Row with controls and countdown            |
-| `src/features/timers/NavItem.vue` | Starts the store and animates the nav icon |
+| File                              | Role                                        |
+| --------------------------------- | ------------------------------------------- |
+| `src/stores/timers.ts`            | Timer store, start/stop/reset, global tick  |
+| `src/timers/TimersPanel.vue`      | Floating timer panel and list               |
+| `src/timers/TimerEditor.vue`      | Inline create/edit form with H:M:S spinners |
+| `src/timers/TimerListItem.vue`    | Row with controls and countdown             |
+| `src/features/timers/NavItem.vue` | Toggles the panel, starts the store         |
+| `src/features/timers/Global.vue`  | Mounts the panel at app level               |
+| `src/features/timers/state.ts`    | Shared panel open state                     |
 
 ## Data
 
@@ -24,7 +26,6 @@ interface Timer {
   createdAt: number;
   updatedAt: number;
   title?: string;
-  description?: string;
   duration: number; // milliseconds
   startedAt: number | null; // Date.now() when started
   status: 'inactive' | 'running' | 'finished';
@@ -32,8 +33,9 @@ interface Timer {
 ```
 
 Schema (`timer.schema.json`) requires `id`, `duration`, `startedAt`, `status`,
-timestamps and forbids additional properties. `title`/`description` are
-`string | null` in the schema and optional strings in TS.
+timestamps and forbids additional properties. `title` is `string | null` in the
+schema and an optional string in TS. Version 20 removes the former
+`description` field from stored timers.
 Timers are included in backup/restore through `MAIN_STORE_NAMES`.
 
 ## Lifecycle
@@ -89,20 +91,22 @@ Consequences:
 - The tick continues after the tab is hidden (browsers throttle timers, so a
   long-hidden tab may finish late).
 
-## List page (`TimersView.vue`)
+## Panel (`TimersPanel.vue`)
 
-- Loads timers.
-- `BaseListView` with `TimerListItem` and `TimerEditor`, using
-  `view-style="simple-list"` and `:show-search="false"`.
-- `cardProps` pass `onStart/onStop/onReset/onEdit/onDelete` as event listeners.
-- `@start`, `@stop`, `@reset` are bound on `BaseListView`, but it neither
-  declares nor emits them; the real wiring is the card props.
+- Opened from the Timers navigation item, like the calculator and dice roller.
+- Uses the shared `DraggablePanel` shell; there is no `/timers` page.
+- Loads timers and shows `TimerListItem` rows with start/stop/reset, edit, and
+  delete controls, plus a **Create Timer** footer action.
+- The create/edit form lives inside a `QExpansionItem` below the timer list.
+  It is collapsed by default; the **Create Timer** row expands it. Editing a
+  timer opens the same form with that timer's values.
 - Delete confirmation uses the timer title, or `timers.noTitle` when untitled.
 - Create forces `status: 'inactive'`, `startedAt: null`.
 
-## Editor (`TimerEditor.vue`)
+## Form (`TimerEditor.vue`)
 
-- Title, description.
+- Inline form rendered inside the panel's `QExpansionItem`; no modal.
+- Title only (no description, no duration heading).
 - Three `NumberSpinner`s for hours (0-99), minutes (0-59), seconds (0-59).
 - A watcher on the three refs recomputes `duration` in milliseconds.
 - A watcher on `props.timer` converts `duration` back to H:M:S.
@@ -117,16 +121,19 @@ Consequences:
   - running: `duration - (timerStore.now - startedAt)`
   - inactive/finished: full duration
 - Uses `formatTime` from `@/utils/formatTime`.
-- Shows a status label and remaining duration (or a finished label) alongside
-  the controls.
+- Inactive and finished timers show their time without a duration or status
+  label; finished rows show the timer time instead of a "Finished!" message.
+- Edit and delete actions are hidden until the row is hovered or focused.
 - `watch(timerStore.now)` updates only when the timer is running.
 
 ## Nav integration
 
-`src/features/timers/NavItem.vue` calls `timerStore.init()` on mount and watches
-`timerStore.now`; while `timerStore.running` is true it cycles the timers
-navigation icon through twelve clock icons (`hours` array). Because the poll
-updates `now` once per second, the icon advances one frame per second.
+`src/features/timers/NavItem.vue` toggles `timersOpen` from `state.ts`;
+`src/features/timers/Global.vue` mounts the panel at app level. It calls
+`timerStore.init()` on mount and watches `timerStore.now`; while
+`timerStore.running` is true it cycles the timers navigation icon through twelve
+clock icons (`hours` array). Because the poll updates `now` once per second, the
+icon advances one frame per second.
 
 ## Limitations
 

@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  IconArrowBarToDown,
-  IconArrowBarToUp,
-  IconDotsVertical,
-  IconGripVertical,
-  IconPlaylistAdd,
-  IconTrash,
-} from '@tabler/icons-vue';
 
 import type { JukeboxTrack } from '@/jukebox/types';
 
@@ -100,7 +92,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
     v-bind="draggable ? { 'data-draggable': true } : {}"
   >
     <QItemSection v-if="draggable" side class="track-drag-handle" @click.stop>
-      <IconGripVertical :size="18" />
+      <QIcon name="tabler-grip-vertical" size="18px" />
     </QItemSection>
     <QItemSection
       v-if="selectable"
@@ -153,7 +145,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
         :aria-label="t('common.actions')"
         @click.stop
       >
-        <IconDotsVertical />
+        <QIcon name="tabler-dots-vertical" />
         <QPopupProxy
           v-model="isMenuOpen"
           anchor="bottom right"
@@ -163,19 +155,19 @@ const trackColor = computed(() => props.track.color || 'transparent');
           <QList dense class="track-actions-menu">
             <QItem clickable @click.stop="handleAddToPlaylist">
               <QItemSection side>
-                <IconPlaylistAdd />
+                <QIcon name="tabler-playlist-add" />
               </QItemSection>
               <QItemSection>{{ t('common.addToPlaylist') }}</QItemSection>
             </QItem>
             <QItem clickable @click.stop="handlePlayNext">
               <QItemSection side>
-                <IconArrowBarToDown />
+                <QIcon name="tabler-arrow-bar-to-down" />
               </QItemSection>
               <QItemSection>{{ t('jukebox.playNext') }}</QItemSection>
             </QItem>
             <QItem clickable @click.stop="handlePlayLast">
               <QItemSection side>
-                <IconArrowBarToUp />
+                <QIcon name="tabler-arrow-bar-to-up" />
               </QItemSection>
               <QItemSection>{{ t('jukebox.playLast') }}</QItemSection>
             </QItem>
@@ -185,7 +177,7 @@ const trackColor = computed(() => props.track.color || 'transparent');
               @click.stop="handleRemove"
             >
               <QItemSection side>
-                <IconTrash />
+                <QIcon name="tabler-trash" />
               </QItemSection>
               <QItemSection>{{ t('common.remove') }}</QItemSection>
             </QItem>

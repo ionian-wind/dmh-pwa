@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconDownload, IconX } from '@tabler/icons-vue';
+
 import { debug, debugError } from '@/utils/debug';
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 import { features } from 'virtual:feature-flags';
@@ -109,11 +109,11 @@ onUnmounted(() => {
           {{ t('pwa.installHelp') }}
         </a>
         <QBtn @click="dismissPrompt" color="primary" size="small">
-          <IconX />
+          <QIcon name="tabler-x" />
           {{ t('pwa.notNow') }}
         </QBtn>
         <QBtn @click="installApp" color="positive" size="small">
-          <IconDownload />
+          <QIcon name="tabler-download" />
           {{ t('pwa.install') }}
         </QBtn>
       </template>

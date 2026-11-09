@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconHelpCircle } from '@tabler/icons-vue';
+
 import { getHelpLocale, helpHref } from '@/helpcenter/links';
 
 const { t, locale } = useI18n();
@@ -17,7 +17,7 @@ const { t, locale } = useI18n();
     :title="t('navigation.help')"
     :aria-label="t('navigation.help')"
   >
-    <QItemSection side><IconHelpCircle /></QItemSection>
+    <QItemSection side><QIcon name="tabler-help-circle" /></QItemSection>
     <QItemSection>{{ t('navigation.help') }}</QItemSection>
   </QItem>
 </template>

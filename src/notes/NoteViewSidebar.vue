@@ -12,13 +12,10 @@ import TableOfContents from '@/components/common/TableOfContents.vue';
 import EntityModeControls from '@/components/common/EntityModeControls.vue';
 import NoteOptions from '@/notes/NoteOptions.vue';
 import {
-  IconAlertTriangle,
   IconAt,
   IconBookmarks,
   IconHash,
   IconListTree,
-  IconPencil,
-  IconTrash,
 } from '@tabler/icons-vue';
 
 const { t } = useI18n();
@@ -215,7 +212,7 @@ onMounted(() => {
                 :title="t('common.removeMissingBookmarks')"
                 @click="removeMissingBookmarks"
               >
-                <IconAlertTriangle :size="14" />
+                <QIcon name="tabler-alert-triangle" size="14px" />
                 <span class="q-ml-xs">
                   {{ t('common.removeMissingBookmarks') }}
                 </span>
@@ -242,9 +239,10 @@ onMounted(() => {
                       scrollToAnchor(bookmark.anchorId ?? bookmark.noteId)
                     "
                   >
-                    <IconAlertTriangle
+                    <QIcon
+                      name="tabler-alert-triangle"
                       v-if="isBookmarkMissing(bookmark)"
-                      :size="14"
+                      size="14px"
                     />
                     <span>{{ bookmarkLabel(bookmark) }}</span>
                   </button>
@@ -257,7 +255,7 @@ onMounted(() => {
                     :aria-label="t('common.editBookmark')"
                     @click.stop="editBookmark(bookmark)"
                   >
-                    <IconPencil :size="14" />
+                    <QIcon name="tabler-pencil" size="14px" />
                   </QBtn>
                   <QBtn
                     flat
@@ -268,7 +266,7 @@ onMounted(() => {
                     :aria-label="t('common.deleteBookmark')"
                     @click.stop="removeBookmark(bookmark)"
                   >
-                    <IconTrash :size="14" />
+                    <QIcon name="tabler-trash" size="14px" />
                   </QBtn>
                 </li>
               </ul>

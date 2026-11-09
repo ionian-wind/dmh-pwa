@@ -12,7 +12,6 @@ import type { MapEntityRef } from '@/maps/types';
 import { useI18n } from 'vue-i18n';
 import { features } from 'virtual:feature-flags';
 import { alert } from '@/dialogs';
-import { IconHelp } from '@tabler/icons-vue';
 
 const props = defineProps<{
   encounter: Encounter | null;
@@ -204,7 +203,7 @@ function handleDelete() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <IconHelp />
+          <QIcon name="tabler-help" />
         </QBtn>
       </div>
     </template>

@@ -2,7 +2,7 @@
 
 > **Status: proposal — not implemented.** The chat engine sits around the roll
 > engine. Roll syntax and evaluation are specified in
-> [plans/dice-roller.md](../plans/dice-roller.md); this document covers commands,
+> [features/dice-roller/README.md](../features/dice-roller/README.md); this document covers commands,
 > UI, rendering, delivery and chat-specific behavior.
 
 ## Why a separate document
@@ -215,7 +215,7 @@ CSS.
 ## Macro library/editor
 
 A macro library and editor is proposed separately in
-[macro-library-editor.md](macro-library-editor.md). It uses Monaco for syntax
+[macro-library-editor.md](macro-library-editor.md). It uses the shared `@editora/light-code-editor` integration for syntax
 highlighting/completions and the roll engine's parser/AST for diagnostics. It is
 not part of the chat message pipeline.
 

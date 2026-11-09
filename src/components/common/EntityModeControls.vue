@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { IconEdit, IconEye, IconTrash } from '@tabler/icons-vue';
 
 defineProps<{
   isEditMode: boolean;
@@ -39,7 +38,7 @@ const { t } = useI18n();
           :aria-label="t('common.delete')"
           @click="onDelete?.()"
         >
-          <IconTrash :size="18" class="q-mr-sm" />
+          <QIcon name="tabler-trash" size="18px" class="q-mr-sm" />
           {{ t('common.delete') }}
         </QBtn>
       </QItemSection>
@@ -57,7 +56,7 @@ const { t } = useI18n();
             :aria-pressed="!isEditMode"
             @click="emit('update:isEditMode', false)"
           >
-            <IconEye :size="18" />
+            <QIcon name="tabler-eye" size="18px" />
           </QBtn>
           <QBtn
             class="entity-edit-mode"
@@ -68,7 +67,7 @@ const { t } = useI18n();
             :aria-pressed="isEditMode"
             @click="emit('update:isEditMode', true)"
           >
-            <IconEdit :size="18" />
+            <QIcon name="tabler-edit" size="18px" />
           </QBtn>
         </QBtnGroup>
       </QItemSection>

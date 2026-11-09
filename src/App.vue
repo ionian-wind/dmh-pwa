@@ -5,7 +5,6 @@ import {
   onMounted,
   onUnmounted,
   ref,
-  watch,
 } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -20,15 +19,6 @@ import { featureNavigation } from 'virtual:feature-navigation';
 import { featureGlobals } from 'virtual:feature-globals';
 import type { FeatureNavEntry } from '@/features/types';
 
-import {
-  IconMaximize,
-  IconMaximizeOff,
-  IconMenu2,
-  IconTool,
-  IconChevronDown,
-  IconSettings,
-} from '@tabler/icons-vue';
-
 const configStore = useConfigStore();
 const { t } = useI18n();
 const router = useRouter();
@@ -40,7 +30,6 @@ const ActiveCombatButton = __FEATURE_ENCOUNTERS__
   : null;
 
 const leftMenuMinimized = ref(false);
-const toolsExpanded = ref(false);
 
 function navigationFor(placement: FeatureNavEntry['placement']) {
   return featureNavigation
@@ -49,9 +38,8 @@ function navigationFor(placement: FeatureNavEntry['placement']) {
 }
 
 const primaryNavigation = computed(() => navigationFor('primary'));
-const toolsNavigation = computed(() => navigationFor('tools'));
 const footerNavigation = computed(() => navigationFor('footer'));
-const hasTools = computed(() => toolsNavigation.value.length > 0);
+const primarySeparatorAfter = new Set(['characters', 'maps']);
 
 function isNavActive(item: FeatureNavEntry): boolean {
   const currentPath = router.currentRoute.value.path;
@@ -62,17 +50,6 @@ function isNavActive(item: FeatureNavEntry): boolean {
   }
   return item.type === 'route' && currentPath.startsWith(item.path);
 }
-
-const toolsActive = computed(() =>
-  toolsNavigation.value.some((item) => isNavActive(item)),
-);
-watch(
-  () => router.currentRoute.value.path,
-  () => {
-    if (toolsActive.value) toolsExpanded.value = true;
-  },
-  { immediate: true },
-);
 
 const isFullscreen = ref(false);
 
@@ -165,7 +142,7 @@ const isSettingsOpen = ref(false);
             @click="toggleLeftDrawer"
             class="menu-toggle q-mr-sm"
           >
-            <IconMenu2 />
+            <QIcon name="tabler-menu-2" />
           </QBtn>
 
           <QSeparator vertical v-if="topMenuContent" class="q-mr-sm" />
@@ -193,9 +170,13 @@ const isSettingsOpen = ref(false);
       >
         <div>
           <QList>
-            <template v-for="item in primaryNavigation" :key="item.id">
+            <template v-for="(item, index) in primaryNavigation" :key="item.id">
+              <component
+                :is="item.component"
+                v-if="item.type === 'component'"
+              />
               <QItem
-                v-if="item.type === 'route'"
+                v-else
                 clickable
                 v-ripple
                 :active="isNavActive(item)"
@@ -207,65 +188,14 @@ const isSettingsOpen = ref(false);
                 <QItemSection side><component :is="item.icon" /></QItemSection>
                 <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
+              <QSeparator
+                v-if="
+                  index < primaryNavigation.length - 1 &&
+                  primarySeparatorAfter.has(item.id)
+                "
+                class="menu-item-separator"
+              />
             </template>
-            <QItem
-              v-if="hasTools"
-              clickable
-              v-ripple
-              :active="toolsActive"
-              :active-class="'bg-secondary'"
-              :title="t('navigation.tools')"
-              :aria-label="t('navigation.tools')"
-              @click="toolsExpanded = !toolsExpanded"
-            >
-              <QItemSection side>
-                <div
-                  class="tools-icon-stack"
-                  :class="{ 'tools-icon-stack--mini': menuLockedMini }"
-                >
-                  <IconTool />
-                  <IconChevronDown
-                    v-if="menuLockedMini"
-                    :size="14"
-                    class="tools-caret tools-caret--mini"
-                    :class="{ 'tools-caret--open': toolsExpanded }"
-                  />
-                </div>
-              </QItemSection>
-              <QItemSection>{{ t('navigation.tools') }}</QItemSection>
-              <QItemSection v-if="!menuLockedMini" side>
-                <IconChevronDown
-                  :size="18"
-                  class="tools-caret"
-                  :class="{ 'tools-caret--open': toolsExpanded }"
-                />
-              </QItemSection>
-            </QItem>
-            <QSlideTransition>
-              <div v-show="toolsExpanded && hasTools">
-                <template v-for="item in toolsNavigation" :key="item.id">
-                  <component
-                    :is="item.component"
-                    v-if="item.type === 'component'"
-                  />
-                  <QItem
-                    v-else
-                    clickable
-                    v-ripple
-                    :active="isNavActive(item)"
-                    active-class="bg-secondary"
-                    :to="item.path"
-                    :title="t(item.labelKey)"
-                    :aria-label="t(item.labelKey)"
-                  >
-                    <QItemSection side>
-                      <component :is="item.icon" />
-                    </QItemSection>
-                    <QItemSection>{{ t(item.labelKey) }}</QItemSection>
-                  </QItem>
-                </template>
-              </div>
-            </QSlideTransition>
           </QList>
         </div>
         <div>
@@ -298,7 +228,7 @@ const isSettingsOpen = ref(false);
               v-ripple
               @click="isSettingsOpen = true"
             >
-              <QItemSection side><IconSettings /></QItemSection>
+              <QItemSection side><QIcon name="tabler-settings" /></QItemSection>
               <QItemSection>{{ t('navigation.settings') }}</QItemSection>
             </QItem>
           </QList>
@@ -355,6 +285,15 @@ const isSettingsOpen = ref(false);
 </template>
 
 <style scoped>
+:global(.right-sidebar) {
+  z-index: 800;
+}
+
+:global(#main_menu),
+:global(#main_header) {
+  z-index: 2000;
+}
+
 @keyframes jukebox-sway {
   0%,
   100% {
@@ -436,27 +375,8 @@ const isSettingsOpen = ref(false);
     rgba(15, 23, 42, 0)
   );
 }
-.tools-caret {
-  transition: transform 0.2s ease;
-}
 
-.tools-caret--open {
-  transform: rotate(180deg);
-}
-
-.tools-icon-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.tools-icon-stack--mini {
-  gap: 0;
-}
-
-.tools-caret--mini {
-  margin-top: -1px;
+.menu-item-separator {
+  margin: 2px 0;
 }
 </style>
