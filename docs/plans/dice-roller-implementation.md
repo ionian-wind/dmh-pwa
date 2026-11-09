@@ -1,6 +1,6 @@
 # Dice Roller — Implementation Plan
 
-> **Status: in progress.** Core engine implemented with 1850 passing tests; three
+> **Status: in progress.** Core engine implemented with 1851 passing tests; three
 > original tasks and fifteen follow-ups remain. Check a task only when its
 > code, tests and documentation are complete.
 >
@@ -289,7 +289,7 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with 1850 passing tests across
+Implemented under `src/utils/bag-of-dice` with 1851 passing tests across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 

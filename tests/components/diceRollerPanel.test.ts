@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 
 const mocks = vi.hoisted(() => {
@@ -22,13 +23,23 @@ vi.mock('@3d-dice/dice-box', () => ({
 
 import DiceRollerPanel from '@/components/DiceRollerPanel.vue';
 
+const QMenuStub = defineComponent({
+  name: 'QMenu',
+  props: { modelValue: { type: Boolean, default: false } },
+  emits: ['update:modelValue'],
+  template: '<div class="q-menu-stub"><slot /></div>',
+});
+
 function mountPanel() {
   document
-    .querySelectorAll('#dice-roller-surface')
+    .querySelectorAll(
+      '#dice-roller-surface, .dice-roller-anchor, .dice-roller-menu',
+    )
     .forEach((element) => element.remove());
   return mount(DiceRollerPanel, {
     attachTo: document.body,
-    global: { stubs: { teleport: false } },
+    props: { modelValue: true },
+    global: { stubs: { teleport: false, QMenu: QMenuStub } },
   });
 }
 
@@ -95,6 +106,51 @@ describe('DiceRollerPanel', () => {
     button('Reroll').click();
     expect(mocks.diceBox.add).not.toHaveBeenCalled();
 
+    document.querySelector<HTMLElement>('.dice-roller-header button')!.click();
+    await nextTick();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+
+    wrapper.unmount();
+  });
+
+  it('drags the menu by its header', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 600,
+    });
+    const wrapper = mountPanel();
+    await flushPromises();
+    await nextTick();
+
+    const anchor = document.querySelector<HTMLElement>('.dice-roller-anchor')!;
+    const beforeLeft = Number.parseFloat(anchor.style.left);
+    const beforeTop = Number.parseFloat(anchor.style.top);
+    const header = document.querySelector<HTMLElement>('.dice-roller-header')!;
+
+    header.dispatchEvent(
+      new MouseEvent('pointerdown', {
+        bubbles: true,
+        button: 0,
+        clientX: 100,
+        clientY: 500,
+      }),
+    );
+    window.dispatchEvent(
+      new MouseEvent('pointermove', {
+        bubbles: true,
+        clientX: 150,
+        clientY: 450,
+      }),
+    );
+    window.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    await nextTick();
+
+    expect(Number.parseFloat(anchor.style.left)).toBe(beforeLeft + 50);
+    expect(Number.parseFloat(anchor.style.top)).toBe(beforeTop - 50);
     wrapper.unmount();
   });
 

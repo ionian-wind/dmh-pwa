@@ -82,7 +82,7 @@ the jukebox playlist list.
 
 ### `DiceRollerPanel.vue`
 
-Vertical `QMenu` dice panel anchored beside the main menu at the bottom-left corner. Buttons cover d2,
+Draggable, closeable dice panel containing a vertical `QMenu`, anchored beside the main menu at the bottom-left corner. Its anchor follows the drag and the menu is repositioned during movement. Buttons cover d2,
 d4, d6, d8, d10, d12, d20 and d100 (`2d10`), with a separator and a Clear
 action. It renders `@3d-dice/dice-box` on a fixed, pointer-events-free
 full-screen surface so dice animations are click-through. The surface is kept
