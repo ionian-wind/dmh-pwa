@@ -394,11 +394,10 @@ export class ThreeDiceRenderer implements DiceRenderer {
     } else {
       die.mesh.quaternion.copy(die.target);
     }
-    // Work out the resting height for the target orientation, with a tiny
-    // lift so the correction reads as a final nudge rather than a floor flip.
+    // The die has already stopped bouncing; only now correct its orientation
+    // and put it exactly on the shared floor.
     die.mesh.position.y = die.settleFromY ?? die.mesh.position.y;
     this.restOnFloor(die.mesh, 0, eased);
-    die.mesh.position.y += Math.sin(progress * Math.PI) * 0.035;
     if (progress >= 1) this.finishDie(die);
   }
 

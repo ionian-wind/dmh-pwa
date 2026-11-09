@@ -123,33 +123,11 @@ export class RapierDiceWorld {
   }
 
   /**
-   * True when every body is low and slow enough to begin the visual settle.
-   * This starts before Rapier fully sleeps the bodies, avoiding a visible
-   * rotation correction after the dice have already stopped.
+   * True only once every body has stopped bouncing and Rapier has slept it.
+   * The visual correction runs after this point, never while dice still move.
    */
   get settleReady(): boolean {
-    for (const { body } of this.bodies.values()) {
-      if (body.translation().y > 0.8) return false;
-    }
-    return !this.moving;
-  }
-
-  /** True while a body still has meaningful linear/angular velocity. */
-  get moving(): boolean {
-    const linear = 0.4 ** 2;
-    const angular = 1.5 ** 2;
-    for (const { body } of this.bodies.values()) {
-      if (body.isSleeping()) continue;
-      const velocity = body.linvel();
-      const spin = body.angvel();
-      if (
-        velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2 > linear ||
-        spin.x ** 2 + spin.y ** 2 + spin.z ** 2 > angular
-      ) {
-        return true;
-      }
-    }
-    return false;
+    return !this.active;
   }
 
   transform(id: string): DiceTransform | undefined {

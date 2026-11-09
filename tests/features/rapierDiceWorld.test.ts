@@ -23,6 +23,16 @@ describe('RapierDiceWorld', () => {
     expect(transform!.position.y).toBeLessThan(3);
     expect(Number.isFinite(transform!.rotation.w)).toBe(true);
 
+    // The renderer must wait for the body to stop bouncing/sleep before it
+    // applies the final value orientation.
+    let settleSteps = 0;
+    while (world.active && settleSteps < 1200) {
+      world.step(1 / 60);
+      settleSteps += 1;
+    }
+    expect(world.active).toBe(false);
+    expect(world.settleReady).toBe(true);
+
     world.remove('a');
     expect(world.transform('a')).toBeUndefined();
     expect(world.active).toBe(false);
