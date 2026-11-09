@@ -165,6 +165,10 @@ function onPointerDown(event: PointerEvent): void {
     const point = renderer.value.screenToWorld(sx, sy);
     const target = props.tool === 'door' ? doorPoints : stairPoints;
     target.value = [...target.value, [snap(point[0]), snap(point[1])]];
+    renderer.value.setPreview({
+      kind: 'line',
+      points: target.value,
+    });
     if (props.tool === 'door' && target.value.length === 2) {
       emit(
         'door',
@@ -247,7 +251,7 @@ function onPointerMove(event: PointerEvent): void {
   if (props.tool === 'door' && doorPoints.value.length === 1) {
     const current = renderer.value.screenToWorld(sx, sy);
     renderer.value.setPreview({
-      kind: 'polygon',
+      kind: 'line',
       points: [doorPoints.value[0], [snap(current[0]), snap(current[1])]],
     });
     return;
@@ -255,7 +259,7 @@ function onPointerMove(event: PointerEvent): void {
   if (props.tool === 'stairs' && stairPoints.value.length > 0) {
     const current = renderer.value.screenToWorld(sx, sy);
     renderer.value.setPreview({
-      kind: 'polygon',
+      kind: 'line',
       points: [...stairPoints.value, [snap(current[0]), snap(current[1])]],
     });
     return;

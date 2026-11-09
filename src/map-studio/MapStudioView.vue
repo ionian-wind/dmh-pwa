@@ -19,6 +19,9 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const store = useMapStudioStore();
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__mapStudioStore = store;
+}
 const renderer = ref<PixiStudioRenderer | null>(null);
 const creating = ref(false);
 const hasMaps = __FEATURE_MAPS__;
@@ -594,7 +597,9 @@ async function applyToLocation(): Promise<void> {
           @door="([a, b]) => store.addDoor(a, b)"
           @stairs="store.addStairs"
           @select="store.selectObject"
-          @moveObject="store.moveSelectedObject($event.dx, $event.dy)"
+          @beginObjectDrag="store.beginObjectDrag"
+          @moveObjectLive="store.moveSelectedObjectLive($event.dx, $event.dy)"
+          @endObjectDrag="store.endObjectDrag"
           @editText="editText"
           @image="addImage"
           @resizeObject="resizeSelected"
