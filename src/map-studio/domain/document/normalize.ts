@@ -97,6 +97,46 @@ function normalizeShape(value: unknown): DungeonShape | null {
       },
     };
   }
+  if (kind === 'path') {
+    const points = Array.isArray(data.points)
+      ? data.points
+          .map(normalizePoint)
+          .filter((point): point is [number, number] => point !== null)
+      : [];
+    const radius = number(data.radius, 0);
+    if (points.length < 2 || radius <= 0) return null;
+    return {
+      ...base,
+      shape: {
+        kind: 'path',
+        points,
+        radius,
+        closed: data.closed === true,
+        rough: ([0, 1, 2, 3] as const).includes(data.rough) ? data.rough : 0,
+        smooth: data.smooth === true,
+      },
+    };
+  }
+  if (kind === 'wall') {
+    const points = Array.isArray(data.points)
+      ? data.points
+          .map(normalizePoint)
+          .filter((point): point is [number, number] => point !== null)
+      : [];
+    const width = number(data.width, 0);
+    if (points.length < 2 || width <= 0) return null;
+    return {
+      ...base,
+      shape: {
+        kind: 'wall',
+        points,
+        width,
+        dash: data.dash === true,
+        rough: ([0, 1, 2, 3] as const).includes(data.rough) ? data.rough : 0,
+        smooth: data.smooth === true,
+      },
+    };
+  }
   if (kind !== 'rectangle') return null;
   const rect = data;
   const width = number(rect.width, 0);

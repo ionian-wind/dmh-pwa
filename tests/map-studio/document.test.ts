@@ -278,3 +278,42 @@ describe('map studio normalization defaults', () => {
     expect(project.settings.theme).toBeUndefined();
   });
 });
+
+describe('map studio path/wall normalization', () => {
+  it('normalizes path and wall shapes and rejects too few points', () => {
+    const map = normalizeMap({
+      layers: [
+        {
+          type: 'dungeon',
+          shapes: [
+            {
+              shape: {
+                kind: 'path',
+                points: [
+                  [0, 0],
+                  [1, 1],
+                ],
+                radius: 0.5,
+              },
+            },
+            {
+              shape: {
+                kind: 'wall',
+                points: [
+                  [0, 0],
+                  [1, 1],
+                ],
+                width: 0.1,
+              },
+            },
+            { shape: { kind: 'path', points: [[0, 0]], radius: 1 } },
+            { shape: { kind: 'wall', points: [[0, 0]], width: 1 } },
+          ],
+        },
+      ],
+    });
+    const dungeon = map.layers.find((layer) => layer.type === 'dungeon');
+    const shapes = dungeon && 'shapes' in dungeon ? dungeon.shapes : [];
+    expect(shapes.map((shape) => shape.shape.kind)).toEqual(['path', 'wall']);
+  });
+});

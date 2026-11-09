@@ -226,3 +226,66 @@ describe('map studio geometry edge branches', () => {
     expect(boundsOfGeometry([])).toBeNull();
   });
 });
+
+describe('map studio path, wall and roughness', () => {
+  it('expands paths and keeps wall annotations out of floor geometry', () => {
+    const path: DungeonShape = {
+      id: 'path',
+      operation: 'add',
+      shape: {
+        kind: 'path',
+        points: [
+          [0, 0],
+          [3, 0],
+        ],
+        radius: 0.5,
+        closed: false,
+        rough: 0,
+        smooth: false,
+      },
+    };
+    const wall: DungeonShape = {
+      id: 'wall',
+      operation: 'add',
+      shape: {
+        kind: 'wall',
+        points: [
+          [0, 2],
+          [2, 2],
+          [2, 4],
+        ],
+        width: 0.1,
+        dash: false,
+        rough: 0,
+        smooth: false,
+      },
+    };
+    const compiled = compileDungeonLayer(
+      createDungeonLayer({ shapes: [path, wall] }),
+    );
+    expect(compiled.polygons).toHaveLength(1);
+    expect(compiled.wallSegments.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('applies deterministic roughness', () => {
+    const shape: DungeonShape = {
+      id: 'rough',
+      operation: 'add',
+      seed: 42,
+      shape: {
+        kind: 'rectangle',
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 3,
+        cornerRadius: 0,
+        rough: 3,
+        smooth: false,
+      },
+    };
+    const first = shapeToPolygon(shape);
+    const second = shapeToPolygon({ ...shape });
+    expect(first).toEqual(second);
+    expect(first?.[0]?.length).toBeGreaterThan(4);
+  });
+});

@@ -164,7 +164,30 @@ export interface PolygonShape extends DungeonShapeBase {
   };
 }
 
-export type DungeonShape = RectangleShape | CircleShape | PolygonShape;
+export interface PathShape extends DungeonShapeBase {
+  shape: {
+    kind: 'path';
+    points: Point[];
+    radius: number;
+    closed: boolean;
+    rough: Roughness;
+    smooth: boolean;
+  };
+}
+
+export interface WallShape extends DungeonShapeBase {
+  shape: {
+    kind: 'wall';
+    points: Point[];
+    width: number;
+    dash: boolean;
+    rough: Roughness;
+    smooth: boolean;
+  };
+}
+
+export type DungeonShape =
+  RectangleShape | CircleShape | PolygonShape | PathShape | WallShape;
 
 export interface ObjectBase {
   id: string;
@@ -186,9 +209,13 @@ export interface ToolSettings {
   division: number;
   mode: 'draw' | 'erase';
   cornerRadius: number;
+  rough: Roughness;
+  pathRadius: number;
+  wallWidth: number;
 }
 
-export type StudioTool = 'pan' | 'rectangle' | 'circle' | 'polygon';
+export type StudioTool =
+  'pan' | 'rectangle' | 'circle' | 'polygon' | 'path' | 'wall';
 
 export interface StudioSelection {
   layerIds: string[];

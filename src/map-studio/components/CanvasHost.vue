@@ -21,6 +21,8 @@ const emit = defineEmits<{
   ): void;
   (event: 'circle', circle: { cx: number; cy: number; radius: number }): void;
   (event: 'polygon', points: Array<[number, number]>): void;
+  (event: 'path', points: Array<[number, number]>): void;
+  (event: 'wall', points: Array<[number, number]>): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
@@ -69,7 +71,7 @@ function onPointerDown(event: PointerEvent): void {
     return;
   }
   if (event.button !== 0) return;
-  if (props.tool === 'polygon') {
+  if (['polygon', 'path', 'wall'].includes(props.tool)) {
     const point = renderer.value.screenToWorld(sx, sy);
     polygonPoints.value = [
       ...polygonPoints.value,
@@ -130,7 +132,12 @@ function onPointerMove(event: PointerEvent): void {
 }
 
 function onPointerMovePolygon(event: PointerEvent): void {
-  if (!renderer.value || props.tool !== 'polygon' || drag) return;
+  if (
+    !renderer.value ||
+    !['polygon', 'path', 'wall'].includes(props.tool) ||
+    drag
+  )
+    return;
   if (polygonPoints.value.length === 0) return;
   const [sx, sy] = localPoint(event);
   const current = renderer.value.screenToWorld(sx, sy);
@@ -181,14 +188,18 @@ function onPointerUp(event: PointerEvent): void {
 
 function finishPolygon(): void {
   if (!renderer.value) return;
-  const points = polygonPoints.value;
+  const points = polygonPoints.value.map(
+    ([x, y]) => [x, y] as [number, number],
+  );
   polygonPoints.value = [];
   renderer.value.setPreview(null);
-  if (points.length >= 3) emit('polygon', points);
+  if (props.tool === 'path' && points.length >= 2) emit('path', points);
+  else if (props.tool === 'wall' && points.length >= 2) emit('wall', points);
+  else if (points.length >= 3) emit('polygon', points);
 }
 
 function onDoubleClick(): void {
-  if (props.tool === 'polygon') finishPolygon();
+  if (['polygon', 'path', 'wall'].includes(props.tool)) finishPolygon();
 }
 
 function cancelGesture(): void {

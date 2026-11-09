@@ -142,3 +142,25 @@ describe('map studio shape helpers', () => {
     expect(store.activeLayer?.shapes.at(-1)?.operation).toBe('subtract');
   });
 });
+
+describe('map studio path and wall helpers', () => {
+  it('adds paths and walls from tool settings', () => {
+    const store = useMapStudioStore();
+    const map = createMap(createProject().id);
+    store.setMap(map);
+    store.toolSettings.pathRadius = 0.4;
+    store.toolSettings.wallWidth = 0.2;
+    store.addPath([
+      [0, 0],
+      [1, 1],
+    ]);
+    store.addWall([
+      [0, 0],
+      [2, 2],
+    ]);
+    const shapes = store.activeLayer?.shapes ?? [];
+    expect(shapes.map((shape) => shape.shape.kind)).toEqual(['path', 'wall']);
+    expect(shapes[0].shape).toMatchObject({ radius: 0.4 });
+    expect(shapes[1].shape).toMatchObject({ width: 0.2 });
+  });
+});

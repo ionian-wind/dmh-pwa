@@ -34,6 +34,9 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     division: 1,
     mode: 'draw',
     cornerRadius: 0,
+    rough: 0,
+    pathRadius: 0.25,
+    wallWidth: 0.08,
   });
   const undoStack = shallowRef<StudioMap[]>([]);
   const redoStack = shallowRef<StudioMap[]>([]);
@@ -153,7 +156,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
                     width: rect.width,
                     height: rect.height,
                     cornerRadius: toolSettings.value.cornerRadius,
-                    rough: 0,
+                    rough: toolSettings.value.rough,
                     smooth: false,
                   },
                 },
@@ -186,7 +189,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
       shape: {
         kind: 'circle',
         ...circle,
-        rough: 0,
+        rough: toolSettings.value.rough,
         smooth: false,
       },
     });
@@ -197,7 +200,44 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addShape({
       id: generateId(),
       operation: toolSettings.value.mode === 'erase' ? 'subtract' : 'add',
-      shape: { kind: 'polygon', points, rough: 0, smooth: false },
+      shape: {
+        kind: 'polygon',
+        points,
+        rough: toolSettings.value.rough,
+        smooth: false,
+      },
+    });
+  }
+
+  function addPath(points: Array<[number, number]>): void {
+    if (points.length < 2) return;
+    addShape({
+      id: generateId(),
+      operation: toolSettings.value.mode === 'erase' ? 'subtract' : 'add',
+      shape: {
+        kind: 'path',
+        points,
+        radius: toolSettings.value.pathRadius,
+        closed: false,
+        rough: toolSettings.value.rough,
+        smooth: false,
+      },
+    });
+  }
+
+  function addWall(points: Array<[number, number]>): void {
+    if (points.length < 2) return;
+    addShape({
+      id: generateId(),
+      operation: 'add',
+      shape: {
+        kind: 'wall',
+        points,
+        width: toolSettings.value.wallWidth,
+        dash: false,
+        rough: toolSettings.value.rough,
+        smooth: false,
+      },
     });
   }
 
@@ -287,6 +327,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addShape,
     addCircle,
     addPolygon,
+    addPath,
+    addWall,
     undo,
     redo,
     setActiveLayer,

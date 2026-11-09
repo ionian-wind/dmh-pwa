@@ -1155,6 +1155,11 @@
     "location": "Location",
     "apply": "Apply",
     "applied": "Map applied to the location background",
-    "applyFailed": "Could not apply the map"
+    "applyFailed": "Could not apply the map",
+    "path": "Path",
+    "wall": "Wall",
+    "rough": "Rough",
+    "radius": "Radius",
+    "cornerRadius": "Corner"
   }
 }

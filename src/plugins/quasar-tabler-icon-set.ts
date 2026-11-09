@@ -139,6 +139,8 @@ import svgPhotoPlus from '@tabler/icons/outline/photo-plus.svg?raw';
 import svgUndo from '@tabler/icons/outline/arrow-back-up.svg?raw';
 import svgRedo from '@tabler/icons/outline/arrow-forward-up.svg?raw';
 import svgPolygon from '@tabler/icons/outline/polygon.svg?raw';
+import svgRoute from '@tabler/icons/outline/route.svg?raw';
+import svgLine from '@tabler/icons/outline/line.svg?raw';
 import svgMapPin from '@tabler/icons/outline/map-pin.svg?raw';
 import svgEraser from '@tabler/icons/outline/eraser.svg?raw';
 
@@ -299,6 +301,8 @@ const icons: Record<string, string> = {
   undo: svgPath(svgUndo),
   redo: svgPath(svgRedo),
   polygon: svgPath(svgPolygon),
+  route: svgPath(svgRoute),
+  line: svgPath(svgLine),
   'map-pin': svgPath(svgMapPin),
   eraser: svgPath(svgEraser),
 };

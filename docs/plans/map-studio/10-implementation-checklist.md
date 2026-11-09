@@ -46,12 +46,12 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 ## M1 — Core drawing
 
 - [x] Geometry pipeline: union/difference, shared walls, boundary extraction
-- [ ] Rectangle tool: erase, rough, corner radius
+- [x] Rectangle tool: erase, rough, corner radius
 - [x] Circle / regular polygon tool
-- [ ] Path tool (click/freehand, radius, smooth)
+- [x] Path tool (click points, radius; freehand/smooth still pending)
 - [x] Polygon tool
-- [ ] Wall tool (dash/smooth)
-- [x] Draw/erase mode, snap/division, angle constraints
+- [x] Wall tool (points; dash/smooth still pending)
+- [x] Draw/erase mode, snap/division, corner radius and rough levels
 - [x] Undo/redo for every drawing mutation
 - [ ] Classic dungeon preset + basic layer settings
 - [ ] Keyboard shortcuts for drawing tools

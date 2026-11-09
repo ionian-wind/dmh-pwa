@@ -44,9 +44,23 @@ const toolbar = computed(() => [
     icon: 'tabler-polygon',
     label: t('mapStudio.polygon'),
   },
+  {
+    id: 'path' as const,
+    icon: 'tabler-route',
+    label: t('mapStudio.path'),
+  },
+  {
+    id: 'wall' as const,
+    icon: 'tabler-line',
+    label: t('mapStudio.wall'),
+  },
 ]);
 const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
   label: `1/${value}`,
+  value,
+}));
+const roughnessOptions = [0, 1, 2, 3].map((value) => ({
+  label: String(value),
   value,
 }));
 
@@ -253,6 +267,34 @@ async function applyToLocation(): Promise<void> {
           :label="t('mapStudio.division')"
           class="studio-division"
         />
+        <QSelect
+          v-model="store.toolSettings.rough"
+          dense
+          outlined
+          emit-value
+          map-options
+          :options="roughnessOptions"
+          :label="t('mapStudio.rough')"
+          class="studio-division"
+        />
+        <QInput
+          v-if="store.tool === 'path'"
+          v-model.number="store.toolSettings.pathRadius"
+          dense
+          outlined
+          type="number"
+          :label="t('mapStudio.radius')"
+          class="studio-division"
+        />
+        <QInput
+          v-if="store.tool === 'rectangle'"
+          v-model.number="store.toolSettings.cornerRadius"
+          dense
+          outlined
+          type="number"
+          :label="t('mapStudio.cornerRadius')"
+          class="studio-division"
+        />
       </div>
 
       <div class="studio-body">
@@ -263,6 +305,8 @@ async function applyToLocation(): Promise<void> {
           @rectangle="addRectangle"
           @circle="store.addCircle"
           @polygon="store.addPolygon"
+          @path="store.addPath"
+          @wall="store.addWall"
           @ready="renderer = $event"
         />
 
