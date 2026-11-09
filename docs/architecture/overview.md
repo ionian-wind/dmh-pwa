@@ -147,11 +147,11 @@ detail views use `useRightDrawer()` directly.
 
 Navigation is generated from `virtual:feature-navigation`, not from a
 hard-coded array. Each feature integration contributes entries with a
-`placement` (`primary`, `tools`, or `footer`) and an optional `order`.
+`placement` (`primary`, `scribe`, `tools`, or `footer`) and an optional `order`.
 
-- **Primary**: Notes, Pawns, Encounters, Maps, Characters, Parties
-  (the features without an explicit `order` sort first; Characters and Parties
-  share `order: 10`).
+- **Primary**: Characters, Parties.
+- **Scribe**: Notes, Pawns, Encounters, Maps. The Scribe item expands and
+  collapses the group; it auto-expands when one of its routes is active.
 - **Tools**: Timers, Calculator, Probability calculator. The Tools item expands
   and collapses the group; it auto-expands when a tool route is active.
 - **Footer**: Jukebox, Help, then the always-present Settings item.

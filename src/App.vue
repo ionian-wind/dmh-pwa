@@ -6,6 +6,7 @@ import {
   onUnmounted,
   ref,
   watch,
+  type Component,
 } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -25,6 +26,7 @@ import {
   IconMaximizeOff,
   IconMenu2,
   IconTool,
+  IconScript,
   IconChevronDown,
   IconSettings,
 } from '@tabler/icons-vue';
@@ -40,7 +42,7 @@ const ActiveCombatButton = __FEATURE_ENCOUNTERS__
   : null;
 
 const leftMenuMinimized = ref(false);
-const toolsExpanded = ref(false);
+const expandedGroups = ref<Record<string, boolean>>({});
 
 function navigationFor(placement: FeatureNavEntry['placement']) {
   return featureNavigation
@@ -49,9 +51,31 @@ function navigationFor(placement: FeatureNavEntry['placement']) {
 }
 
 const primaryNavigation = computed(() => navigationFor('primary'));
-const toolsNavigation = computed(() => navigationFor('tools'));
 const footerNavigation = computed(() => navigationFor('footer'));
-const hasTools = computed(() => toolsNavigation.value.length > 0);
+
+interface NavGroup {
+  id: string;
+  labelKey: string;
+  icon: Component;
+  items: FeatureNavEntry[];
+}
+
+const navGroups = computed<NavGroup[]>(() =>
+  [
+    {
+      id: 'scribe',
+      labelKey: 'navigation.scribe',
+      icon: IconScript,
+      items: navigationFor('scribe'),
+    },
+    {
+      id: 'tools',
+      labelKey: 'navigation.tools',
+      icon: IconTool,
+      items: navigationFor('tools'),
+    },
+  ].filter((group) => group.items.length > 0),
+);
 
 function isNavActive(item: FeatureNavEntry): boolean {
   const currentPath = router.currentRoute.value.path;
@@ -63,13 +87,24 @@ function isNavActive(item: FeatureNavEntry): boolean {
   return item.type === 'route' && currentPath.startsWith(item.path);
 }
 
-const toolsActive = computed(() =>
-  toolsNavigation.value.some((item) => isNavActive(item)),
-);
+function isGroupActive(group: NavGroup): boolean {
+  return group.items.some((item) => isNavActive(item));
+}
+
+function isGroupExpanded(id: string): boolean {
+  return expandedGroups.value[id] === true;
+}
+
+function toggleGroup(id: string): void {
+  expandedGroups.value[id] = !isGroupExpanded(id);
+}
+
 watch(
   () => router.currentRoute.value.path,
   () => {
-    if (toolsActive.value) toolsExpanded.value = true;
+    for (const group of navGroups.value) {
+      if (isGroupActive(group)) expandedGroups.value[group.id] = true;
+    }
   },
   { immediate: true },
 );
@@ -208,64 +243,67 @@ const isSettingsOpen = ref(false);
                 <QItemSection>{{ t(item.labelKey) }}</QItemSection>
               </QItem>
             </template>
-            <QItem
-              v-if="hasTools"
-              clickable
-              v-ripple
-              :active="toolsActive"
-              :active-class="'bg-secondary'"
-              :title="t('navigation.tools')"
-              :aria-label="t('navigation.tools')"
-              @click="toolsExpanded = !toolsExpanded"
-            >
-              <QItemSection side>
-                <div
-                  class="tools-icon-stack"
-                  :class="{ 'tools-icon-stack--mini': menuLockedMini }"
-                >
-                  <IconTool />
-                  <IconChevronDown
-                    v-if="menuLockedMini"
-                    :size="14"
-                    class="tools-caret tools-caret--mini"
-                    :class="{ 'tools-caret--open': toolsExpanded }"
-                  />
-                </div>
-              </QItemSection>
-              <QItemSection>{{ t('navigation.tools') }}</QItemSection>
-              <QItemSection v-if="!menuLockedMini" side>
-                <IconChevronDown
-                  :size="18"
-                  class="tools-caret"
-                  :class="{ 'tools-caret--open': toolsExpanded }"
-                />
-              </QItemSection>
-            </QItem>
-            <QSlideTransition>
-              <div v-show="toolsExpanded && hasTools">
-                <template v-for="item in toolsNavigation" :key="item.id">
-                  <component
-                    :is="item.component"
-                    v-if="item.type === 'component'"
-                  />
-                  <QItem
-                    v-else
-                    clickable
-                    v-ripple
-                    :active="isNavActive(item)"
-                    active-class="bg-secondary"
-                    :to="item.path"
-                    :title="t(item.labelKey)"
-                    :aria-label="t(item.labelKey)"
+            <template v-for="group in navGroups" :key="group.id">
+              <QItem
+                clickable
+                v-ripple
+                :active="isGroupActive(group)"
+                :active-class="'bg-secondary'"
+                :title="t(group.labelKey)"
+                :aria-label="t(group.labelKey)"
+                @click="toggleGroup(group.id)"
+              >
+                <QItemSection side>
+                  <div
+                    class="tools-icon-stack"
+                    :class="{ 'tools-icon-stack--mini': menuLockedMini }"
                   >
-                    <QItemSection side>
-                      <component :is="item.icon" />
-                    </QItemSection>
-                    <QItemSection>{{ t(item.labelKey) }}</QItemSection>
-                  </QItem>
-                </template>
-              </div>
-            </QSlideTransition>
+                    <component :is="group.icon" />
+                    <IconChevronDown
+                      v-if="menuLockedMini"
+                      :size="14"
+                      class="tools-caret tools-caret--mini"
+                      :class="{
+                        'tools-caret--open': isGroupExpanded(group.id),
+                      }"
+                    />
+                  </div>
+                </QItemSection>
+                <QItemSection>{{ t(group.labelKey) }}</QItemSection>
+                <QItemSection v-if="!menuLockedMini" side>
+                  <IconChevronDown
+                    :size="18"
+                    class="tools-caret"
+                    :class="{ 'tools-caret--open': isGroupExpanded(group.id) }"
+                  />
+                </QItemSection>
+              </QItem>
+              <QSlideTransition>
+                <div v-show="isGroupExpanded(group.id)">
+                  <template v-for="item in group.items" :key="item.id">
+                    <component
+                      :is="item.component"
+                      v-if="item.type === 'component'"
+                    />
+                    <QItem
+                      v-else
+                      clickable
+                      v-ripple
+                      :active="isNavActive(item)"
+                      active-class="bg-secondary"
+                      :to="item.path"
+                      :title="t(item.labelKey)"
+                      :aria-label="t(item.labelKey)"
+                    >
+                      <QItemSection side>
+                        <component :is="item.icon" />
+                      </QItemSection>
+                      <QItemSection>{{ t(item.labelKey) }}</QItemSection>
+                    </QItem>
+                  </template>
+                </div>
+              </QSlideTransition>
+            </template>
           </QList>
         </div>
         <div>

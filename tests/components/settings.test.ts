@@ -380,7 +380,7 @@ describe('settings dialog', () => {
     wrapper.unmount();
   });
 
-  it('places characters and parties below locations in the primary menu', async () => {
+  it('groups notes, pawns, encounters, and maps under Scribe', async () => {
     const config = useConfigStore();
     config.savedLanguage = 'en';
     const router = createRouter({
@@ -400,14 +400,26 @@ describe('settings dialog', () => {
       .map((item) => item.attributes('title'))
       .filter((title): title is string => !!title);
 
-    expect(titles.slice(0, 6)).toEqual([
+    expect(titles.slice(0, 3)).toEqual(['Characters', 'Parties', 'Scribe']);
+    expect(titles.slice(3, 7)).toEqual([
       'Notes',
       'Pawns',
       'Encounters',
       'Maps',
-      'Characters',
-      'Parties',
     ]);
+    expect(titles.indexOf('Tools')).toBeGreaterThan(titles.indexOf('Scribe'));
+
+    const scribe = wrapper
+      .findAll('.left-sidebar [data-stub="QItem"]')
+      .find((item) => item.attributes('title') === 'Scribe')!;
+    const notes = wrapper
+      .findAll('.left-sidebar [data-stub="QItem"]')
+      .find((item) => item.attributes('title') === 'Notes')!;
+    const groupBody = notes.element.parentElement as HTMLElement;
+    expect(groupBody.style.display).toBe('none');
+    await scribe.trigger('click');
+    await nextTick();
+    expect(groupBody.style.display).toBe('');
     wrapper.unmount();
   });
 

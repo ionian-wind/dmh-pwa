@@ -29,7 +29,7 @@ export const notesFeature: FeatureIntegration = {
       path: '/notes',
       icon: IconNote,
       kind: 'entity',
-      placement: 'primary',
+      placement: 'scribe',
     },
   ],
   homeCard: {

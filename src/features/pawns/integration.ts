@@ -28,7 +28,7 @@ export const pawnsFeature: FeatureIntegration = {
       path: '/pawns',
       icon: IconGhost3,
       kind: 'entity',
-      placement: 'primary',
+      placement: 'scribe',
     },
   ],
   homeCard: {
