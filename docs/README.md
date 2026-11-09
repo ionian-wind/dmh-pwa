@@ -92,7 +92,7 @@ implemented.
 | [plans/pwa-hardening-plan.md](plans/pwa-hardening-plan.md)         | Manifest, install UX, safe-area and PWA audit plan |
 | [plans/milkdown-view-renderer.md](plans/milkdown-view-renderer.md) | Milkdown detail-view renderer plan and status      |
 | [plans/remove-modules-entity.md](plans/remove-modules-entity.md)   | Completed Modules removal and migration record     |
-| [plans/dice-roller.md](plans/dice-roller.md)                       | Greenfield multi-pass dice engine plan             |
+| [plans/dice-roller.md](plans/dice-roller.md)                       | Extensible dice parser/evaluator plan              |
 
 ### Cross-cutting analysis
 

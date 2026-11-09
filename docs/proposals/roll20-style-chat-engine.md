@@ -63,6 +63,74 @@ chat message
 The dice engine must not perform macro, attribute, query or template parsing.
 The chat engine must not duplicate dice modifier parsing.
 
+## Roll20 order of operations
+
+The chat engine is a **pass coordinator**, not a single parser:
+
+```
+ChatMessage
+  -> command parser              /roll, /w, /em, /gmroll, plain text, ...
+  -> expansion loop              abilities, macros, attributes (<=99)
+  -> roll-query parser           ?{prompt|default|option,value} (<=99)
+  -> HTML entity decode          inside each resolved query
+  -> inline-roll parser          [[...]], innermost first, stable ids
+  -> dice engine                 dice, modifiers, groups (plans/dice-roller.md)
+  -> function + arithmetic       floor/ceil/round/abs, then math precedence
+  -> optional custom roll parse
+  -> HTML entity decode          final output
+  -> roll-template renderer      default/custom templates
+  -> chat delivery/ACL           public/gm/whisper/self/blind
+```
+
+| #   | Pass                           | Input                | Output                               | Notes                                                                  |
+| --- | ------------------------------ | -------------------- | ------------------------------------ | ---------------------------------------------------------------------- |
+| 0   | Chat command detection         | raw chat message     | command + payload                    | `/r`, `/w`, `/em`, `/gmroll`, `/desc`, `/as`, `/emas`, plain text, ... |
+| 1   | Ability expansion              | payload              | payload with `%{character\|ability}` | recursive                                                              |
+| 2   | Macro expansion                | payload              | payload with `#macro`                | recursive                                                              |
+| 3   | Attribute expansion            | payload              | payload with `@{character\|attr}`    | selected/target tokens, bars, `max`, repeating sections                |
+| 4   | Repeat 1–3                     | expanded payload     | stable payload or limit error        | up to 99 levels or no expansions left                                  |
+| 5   | Roll-query expansion           | payload              | payload with `?{...}` replaced       | up to 99 levels; same prompt asked once                                |
+| 5b  | HTML decode inside queries     | query values         | decoded query values                 | one decode per query layer                                             |
+| 6   | Inline-roll expansion          | payload              | payload with `[[...]]` results       | innermost first; assign `$[[n]]` indexes                               |
+| 7   | Dice evaluation                | expanded roll        | dice results substituted             | delegated to the dice engine                                           |
+| 8   | Math functions                 | remaining expression | functions evaluated                  | `floor`, `ceil`, `round`, `abs`                                        |
+| 9   | Arithmetic evaluation          | remaining expression | scalar/roll result                   | parentheses, powers, mul/div/mod, add/sub                              |
+| 10  | Custom roll parsing (optional) | result object        | computed result                      | sheet/script extension                                                 |
+| 11  | HTML entity decode             | result text          | rendered text                        | once, after CRP                                                        |
+| 12  | Chat delivery                  | rendered message     | chat log / API event                 | recipients and permissions enforced here                               |
+
+Important consequences:
+
+- A macro/ability/attribute can contain another macro, query, inline roll or
+  template. Expansion must be iterative, not a single regex replacement.
+- Roll queries are resolved only after all ability/macro/attribute expansion.
+- Inline rolls are resolved before the surrounding `/roll`; nested inline rolls
+  resolve from the deepest level upward.
+- Dice are rolled before the remaining math is evaluated.
+- `[[...]]` results referenced through `$[[n]]` must have stable indexes and
+  raw/computed values.
+- Each pass needs its own recursion budget and typed errors.
+
+## Pass contracts and limits
+
+A pass should return a typed result with the transformed text, warnings, errors
+and source spans. Preserve at minimum:
+
+- raw text and each pass's expanded text;
+- expansion provenance (ability/macro/attribute source);
+- query answers and prompt keys;
+- stable inline/roll indexes;
+- warnings and their originating pass.
+
+Limits:
+
+- ability/macro/attribute expansion: 99 levels;
+- roll-query nesting: 99 levels;
+- inline-roll nesting: bounded with cycle detection;
+- explosion/reroll limits: owned by the dice engine (warning, not error);
+- total output size and pass time: bounded to prevent macro bombs;
+- missing attributes/macros/tables: missing-data error unless `&{noerror}`.
+
 ## Parser technology
 
 Use the existing **Chevrotain 13.2.0** dependency for grammar-based chat
@@ -219,6 +287,142 @@ interface ChatMessage {
 
 `RenderedMessage` should be structured (template name, fields, buttons, text)
 rather than an HTML string where possible.
+
+## Separate parsers/engines
+
+The following can share utilities but should not share one grammar:
+
+| Parser/engine            | Responsibility                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------- |
+| Chat command parser      | Slash commands, plain text, emotes, whispers, descriptions, hidden/GM messages  |
+| Ability/macro parser     | `%{character\|ability}`, `#macro`, nested calls and chaining                    |
+| Attribute parser         | `@{...}`, selected/target tokens, bars, `max`, repeating sections               |
+| Roll-query parser        | `?{prompt}`, defaults, labelled dropdowns, nested queries, HTML-entity stacking |
+| Inline-roll parser       | `[[...]]`, nesting, index assignment, roll-reference reuse                      |
+| Dice notation parser     | delegated to the dice engine                                                    |
+| Table-roll parser        | `Nt[table]`, weighted tables, entry-level rolls                                 |
+| Roll-template parser     | `&{template:...}`, `{{field=value}}`, helpers/conditionals, leading-space rules |
+| Chat-button parser       | `[label](~ability)`, embedded commands, API-style buttons and chat menus        |
+| Roll-reference parser    | `$[[n]]`, `$[[n.computed]]`, cross-line/reuse rules                             |
+| Formatting/entity parser | Markdown-lite, HTML entities, `%NEWLINE%`, images/links, final sanitisation     |
+
+## Roll20 syntax details
+
+### Macros, abilities and attributes
+
+- Macros: `#macro-name`; calls may be nested or chained with `;`.
+- Abilities: `%{character|ability}`; may be nested.
+- Attributes: `@{character|attribute}`, `@{selected|attribute}`,
+  `@{target|attribute}`, token bars (`bar1`–`bar3`) and optional `max`.
+- Repeating sections: `@{selected|repeating_section_$N_field}` (row index) or
+  RowID form. Row indexes start at 0.
+- Attribute/ability/macro names are case-insensitive.
+- An attribute containing a formula may return formula text; wrap it in an
+  inline roll to force evaluation.
+- Attributes/abilities/macros expand before roll queries. Do not HTML-escape
+  characters inside `@{}`, `%{}` or `#macro` calls.
+- Undefined calls are missing-data errors unless `&{noerror}` is present.
+
+### Roll queries
+
+- `?{Prompt}` asks for a value.
+- `?{Prompt|Default}` supplies a default.
+- `?{Prompt|Option1|Option2}` offers a dropdown.
+- `?{Prompt|Label 1,value1|Label 2,value2}` separates label/value.
+- Query defaults may contain inline rolls, e.g. `?{Dmg|[[1d8]]}`.
+- Multiple independent queries are allowed; the same exact prompt is asked only
+  once per message.
+- Nested queries require HTML-entity escaping: `|`, `}`, `,` become `&#124;`,
+  `&#125;`, `&#44;`; deeper levels stack the ampersand.
+- Query nesting is limited to 99 levels; exceeding it is a syntax error.
+- Answers must be validated against the query schema before evaluation.
+
+### Inline rolls, labels and formatting
+
+- Inline rolls: `[[expr]]`, evaluated deepest-first; chat display shows the
+  total with a breakdown on hover.
+- Inline labels: `[[3d6[fire]]]`; labels may contain attribute calls and
+  Markdown-lite.
+- Descriptive text after a roll is chat output, not dice notation. Escape
+  leading formula characters when needed.
+- Roll references: `$[[N]]`, `$[[N.computed]]`.
+- `%NEWLINE%` inserts a line break; multiline chat is interpreted line by line.
+- Markdown-lite emphasis, code, links and images are allowed in chat output.
+- HTML entities are decoded inside queries and once at final output.
+
+### Roll references and reuse
+
+- Inline rolls receive stable indexes: `$[[0]]`, `$[[1]]`, ...
+- `$[[0]]` resolves the first inline roll in the current message and cannot be
+  placed inside another inline roll in normal Roll20 parsing.
+- `$[[0.computed]]` refers to the computed/custom value and is less restrictive
+  inside nested rolls.
+- Cross-line reuse requires `%NEWLINE%` or roll-template fields.
+- Missing indexes are missing-data errors.
+- Keep raw, computed and rendered values for every index.
+
+### Roll tables
+
+- `Nt[table-name]` rolls N times; `t[table]` rolls once.
+- Weights may be repeated entries or percentages totaling 100.
+- Table entries may contain inline rolls, resolved after selection.
+- Table references are extracted before evaluation.
+- Inline-roll table syntax effectively rolls once per inline result in Roll20;
+  return an array even when the UI collapses it.
+- Table permissions and management UI are application concerns.
+
+### Roll templates
+
+- Syntax: `&{template:<name>} {{field=value}} {{field2=value}}`.
+- The `default` template is always available; others come from sheet packs.
+- Values may contain inline rolls, abilities, macros and Markdown-lite.
+- Leading spaces inside `{{...}}` break parsing: `{{name=X}}` works,
+  `{{ name=X}}` does not.
+- Templates cannot be used with `/roll`; use them as ordinary chat output with
+  inline rolls.
+- Template fields should be structured for rendering, including conditional
+  helpers (for example `rollGreater()` where supported).
+- Rendering must not inject raw HTML without sanitisation.
+
+### Roll options and chat commands
+
+- Initiative: `&{tracker}`, `&{tracker:+}`, `&{tracker:-}` send or adjust a
+  result in the turn tracker.
+- Error suppression: `&{noerror}` downgrades missing data to empty values.
+- `/r`/`/roll`: normal roll.
+- `/gmroll`/`/gr`: visible to the roller and GM.
+- `/w`: whisper; quote names with spaces.
+- `/em`/`/me`: emote; `/ooc`/`/o`: out-of-character.
+- `/desc`: GM description; `/as`/`/emas`: GM speech/emote as a named NPC.
+- `/talktomyself`: locally suppress output; not a security boundary.
+- `/fx`: visual effect command; outside the chat parser initially.
+- A leading backtick escapes a command and prevents parsing.
+- Markdown-lite is supported for emphasis, code, links and images.
+
+### Chat buttons and menus
+
+Buttons use hyperlink syntax:
+
+```
+[label](~ability)
+[label](~selected|ability)
+[label](`#macro)
+[label](`/r d20+4)
+```
+
+- `~...` invokes an ability/sheet button.
+- A backtick prefix invokes a saved macro or embedded roll command.
+- Buttons are parsed into `{ label, actionKind, target, payload }` and dispatched
+  through the same pipeline with recursion/cycle checks.
+- Chat menus are templates whose fields contain buttons.
+- API-style `!command` buttons are an extension registry, not arbitrary code.
+
+### Hidden rolls and visibility
+
+Roll20 has no simple player-hidden roll command; `/gmroll` is the closest normal
+feature. Truly blind rolls rely on API scripts or UI tricks. This proposal uses
+explicit visibility modes (`public`, `gm`, `self`, `blind`) instead of
+reproducing that limitation, with enforcement at storage/render time.
 
 ## Feature phases
 

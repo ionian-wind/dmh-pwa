@@ -19,7 +19,7 @@ Last reviewed against the code and test suite on **2026-11-09** (207 test files 
 | [PWA hardening](pwa-hardening-plan.md)                | phases 1–2 done in emulation, most of phase 3 done; device and Lighthouse/PWABuilder checks pending |
 | [Build-time feature flags](feature-flags.md)          | implemented; verification green (14 build configurations)                                           |
 | [Remove the Modules entity](remove-modules-entity.md) | completed (historical; Modules removed, related proposals obsolete)                                 |
-| [Dice roller](dice-roller.md)                         | planned — greenfield multi-pass engine; not started                                                 |
+| [Dice roller](dice-roller.md)                         | planned — greenfield extensible parser/evaluator; not started                                       |
 
 ## Conventions
 
