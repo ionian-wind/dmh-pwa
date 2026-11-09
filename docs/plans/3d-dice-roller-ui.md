@@ -18,7 +18,9 @@ Build our own 3D dice renderer that:
 - renders with **Three.js**;
 - simulates natural tumbling and collisions with **Rapier**;
 - reads the result from the face that lands up (down for d4);
-- keeps the current draggable dice menu, pool, clear and reroll behavior;
+- uses a Roll20-style grid with per-die-count cells and a dice pool;
+- supports FUDGE dice and `!`, `!!`, `!p` explosion modes;
+- emits unified roll events for history;
 - survives window resizes without blanking the canvas;
 - runs behind the existing `diceRoller` feature flag;
 - removes the runtime dependency on `@3d-dice/dice-box` / `@3d-dice/dice-ui`.
@@ -70,6 +72,12 @@ public/assets/dice-box/themes/*/*.jpg
    renders one frame while preserving the scene.
 7. **Reduced motion skips physics.** A random value is generated locally and
    a static die is placed on that face.
+8. **Grid presses build a pool.** Each cell adds dice to the existing tray;
+   Reroll replays the whole pool and Clear removes it.
+9. **Explosions are independent throws.** Max-face dice spawn extra dice with
+   separate random trajectories and a global cap, never stacked on the parent.
+10. **Unified events.** Every settled die and the whole pool emit a
+    `DiceRollEvent` whose core fields mirror `bag-of-dice` execution metadata.
 
 ## Module layout
 
@@ -197,6 +205,19 @@ assets without Babylon.
 
 **Gate:** dragging either d100 part moves the pair and updates one combined result.
 
+### Roll20-style tray
+
+- [x] **3DDR-515** Add the d4–d20/FUDGE grid with 2–5 dice cells; the row label
+      rolls one die.
+- [x] **3DDR-516** Add `!`, `!!` and `!p` explosion modes with extra-dice caps.
+- [x] **3DDR-517** Build a dice pool; grid presses add, Reroll replays, Clear empties.
+- [x] **3DDR-518** Emit per-die and combined-pool `DiceRollEvent` records with
+      `schemaVersion`, `total`, `breakdown`, `process`, `warnings` and dice.
+- [x] **3DDR-519** Give explosion extras independent random throw trajectories.
+
+**Gate:** the grid builds a pool, explosion extras settle separately, and every
+roll emits one individual plus one pool event.
+
 ## Phase 6 — Migration and cleanup
 
 - [x] **3DDR-601** Switch the panel to the Three/Rapier renderer.
@@ -256,8 +277,12 @@ assets without Babylon.
   lowest for d4. Hovering a settled die raycasts the meshes and shows a
   `dN: value` hint.
 - Dragging lifts a settled die, follows the pointer and drops it back into
-  physics. The result is recomputed after it settles. d100 tens/units move
-  together and report one combined value. d100 combines the tens (`d100` asset) and units (`d10` asset)
+  physics with no added spin. The result is recomputed after it settles. d100
+  tens/units move together and report one combined value.
+- Explosion extras are thrown from independent random perimeter positions with
+  their own way/force, so they do not stack or get stuck on the parent.
+- The tray cannot import `bag-of-dice`; `src/utils/roll-events.ts` defines the
+  shared history format instead. d100 combines the tens (`d100` asset) and units (`d10` asset)
   faces, with `100 = 00 + 0`.
 - The render loop stops when every die is settled. Resize updates the renderer,
   camera and draws one frame without clearing the scene.

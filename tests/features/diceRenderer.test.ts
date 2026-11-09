@@ -6,6 +6,7 @@ import {
   buildAssetSet,
   buildGeometry,
   colliderPoints,
+  computeFaceEntries,
   computeFaceNormals,
   convertPositions,
   loadDiceAssets,
@@ -87,7 +88,9 @@ describe('Babylon asset conversion', () => {
 
   it('derives six outward unit normals for a d6', () => {
     const mesh = merged.meshes.find((entry) => entry.name === 'd6_collider')!;
-    const normals = computeFaceNormals(mesh, base.colliderFaceMap.d6);
+    const normals = computeFaceNormals(
+      computeFaceEntries(mesh, base.colliderFaceMap.d6),
+    );
     expect(normals.size).toBe(6);
     for (const normal of normals.values()) {
       expect(normal.length()).toBeCloseTo(1, 5);
@@ -104,7 +107,9 @@ describe('Babylon asset conversion', () => {
 
   it('derives opposite outward normals for d20 faces', () => {
     const mesh = merged.meshes.find((entry) => entry.name === 'd20_collider')!;
-    const normals = computeFaceNormals(mesh, base.colliderFaceMap.d20);
+    const normals = computeFaceNormals(
+      computeFaceEntries(mesh, base.colliderFaceMap.d20),
+    );
     expect(normals.size).toBe(20);
     expect(normals.get(1)!.dot(normals.get(20)!)).toBeCloseTo(-1, 3);
     expect(normals.get(2)!.dot(normals.get(19)!)).toBeCloseTo(-1, 3);
@@ -113,11 +118,13 @@ describe('Babylon asset conversion', () => {
   it('builds every supported die from the shipped assets', () => {
     const set = buildAssetSet(merged);
     expect([...set.assets.keys()].sort()).toEqual(
-      ['d10', 'd100', 'd12', 'd2', 'd20', 'd4', 'd6', 'd8'].sort(),
+      ['d10', 'd100', 'd12', 'd2', 'd20', 'd4', 'd6', 'd8', 'fate'].sort(),
     );
     expect(set.assets.get('d20')?.faceNormals.size).toBe(20);
     expect(set.assets.get('d100')?.faceNormals.size).toBe(10);
     expect(set.assets.get('d4')?.faceNormals.size).toBe(4);
+    expect(set.assets.get('fate')?.faceNormals.size).toBe(3);
+    expect(set.assets.get('fate')?.faceEntries).toHaveLength(12);
     expect(set.assets.get('d6')?.colliderPoints.length).toBeGreaterThan(0);
   });
 
@@ -150,7 +157,7 @@ describe('Babylon asset conversion', () => {
       theme: 'default-extras',
       fetchImpl,
     });
-    expect(set.assets.size).toBe(8);
+    expect(set.assets.size).toBe(9);
     expect(fetchImpl).toHaveBeenCalledTimes(4);
   });
 });

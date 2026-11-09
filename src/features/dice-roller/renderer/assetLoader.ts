@@ -25,8 +25,10 @@ export interface DiceAsset {
   geometry: THREE.BufferGeometry;
   /** Unique-ish collider points in Three.js coordinates. */
   colliderPoints: Float32Array;
-  /** Face value -> outward normal in local space. */
+  /** Representative face value -> outward normal in local space. */
   faceNormals: Map<number, THREE.Vector3>;
+  /** One outward normal per collider triangle, used to read the landed face. */
+  faceEntries: Array<{ value: number; normal: THREE.Vector3 }>;
   /** Lowest local Y, used to rest the die on the floor. */
   restHeight: number;
 }
@@ -45,6 +47,7 @@ const SUPPORTED: readonly DieKind[] = [
   'd12',
   'd20',
   'd100',
+  'fate',
 ];
 
 /** Babylon is left-handed; Three.js is right-handed. */
@@ -122,13 +125,13 @@ export function colliderPoints(mesh: BabylonMeshData): Float32Array {
  * the normals of all triangles that map to the same face gives a stable
  * outward normal for that number.
  */
-export function computeFaceNormals(
+export function computeFaceEntries(
   collider: BabylonMeshData,
   faceMap: Record<string, number>,
-): Map<number, THREE.Vector3> {
+): Array<{ value: number; normal: THREE.Vector3 }> {
   const positions = convertPositions(collider.positions);
   const indices = collider.indices;
-  const sums = new Map<number, THREE.Vector3>();
+  const entries: Array<{ value: number; normal: THREE.Vector3 }> = [];
 
   for (let triangle = 0; triangle * 3 + 2 < indices.length; triangle += 1) {
     const faceValue = faceMap[String(triangle)];
@@ -156,20 +159,30 @@ export function computeFaceNormals(
       .cross(new THREE.Vector3().subVectors(c, a));
     if (normal.lengthSq() === 0) continue;
     normal.normalize();
-    // The collider shares smooth vertex normals, so sign-flipping against them
-    // makes opposite faces point the same way. Orient from the face centroid
-    // instead: outward is the side facing away from the die centre.
     const centroid = new THREE.Vector3().add(a).add(b).add(c).divideScalar(3);
     if (normal.dot(centroid) < 0) normal.negate();
-    const current = sums.get(faceValue) ?? new THREE.Vector3();
-    current.add(normal);
-    sums.set(faceValue, current);
+    entries.push({ value: faceValue, normal });
+  }
+  return entries;
+}
+
+export function computeFaceNormals(
+  entries: Array<{ value: number; normal: THREE.Vector3 }>,
+): Map<number, THREE.Vector3> {
+  const sums = new Map<number, THREE.Vector3>();
+  const first = new Map<number, THREE.Vector3>();
+  for (const entry of entries) {
+    const current = sums.get(entry.value) ?? new THREE.Vector3();
+    current.add(entry.normal);
+    sums.set(entry.value, current);
+    if (!first.has(entry.value)) first.set(entry.value, entry.normal.clone());
   }
 
   const result = new Map<number, THREE.Vector3>();
   for (const [value, sum] of sums) {
-    if (sum.lengthSq() === 0) continue;
-    result.set(value, sum.normalize());
+    // Some faces (for example FUDGE) appear on opposite sides and cancel out.
+    const normal = sum.lengthSq() === 0 ? first.get(value) : sum.normalize();
+    if (normal && normal.lengthSq() > 0) result.set(value, normal.clone());
   }
   return result;
 }
@@ -205,11 +218,13 @@ export function buildAssetSet(scene: BabylonSceneFile): DiceAssetSet {
     const geometry = buildGeometry(mesh);
     const points = colliderPoints(collider);
     const boundingBox = new THREE.Box3().setFromArray(points);
+    const faceEntries = computeFaceEntries(collider, faceMap);
     assets.set(kind, {
       kind,
       geometry,
       colliderPoints: points,
-      faceNormals: computeFaceNormals(collider, faceMap),
+      faceNormals: computeFaceNormals(faceEntries),
+      faceEntries,
       restHeight: Math.max(0, -boundingBox.min.y),
     });
   }

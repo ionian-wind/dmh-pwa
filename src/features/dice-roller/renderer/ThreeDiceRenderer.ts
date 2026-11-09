@@ -12,6 +12,7 @@ import {
 } from './assetLoader';
 import {
   composeD100,
+  maxFaceFor,
   randomValueFor,
   splitD100,
   visualDiceForSides,
@@ -23,10 +24,12 @@ import { loadDiceMaterials, type DiceMaterialSet } from './themeLoader';
 import { hasSimulationTimedOut } from './timing';
 
 const DICE_SCALE = 1.7;
+const MAX_EXPLOSIONS = 8;
 
 interface RenderedDie {
   id: string;
   visualId: string;
+  rootId: string;
   mesh: THREE.Mesh;
   asset: DiceAsset;
   sides: number;
@@ -34,6 +37,11 @@ interface RenderedDie {
   kind: VisualDiePart['kind'];
   state: 'physics' | 'done' | 'dragging';
   result?: number;
+  explode?: DiceVisual['explode'];
+  isExtra?: boolean;
+  penalty?: number;
+  label?: string;
+  notation?: string;
 }
 
 interface DragPart {
@@ -64,8 +72,10 @@ interface SpawnPlan {
   x: number;
   z: number;
   y: number;
-  throwAngle: number;
-  speed: number;
+  /** Horizontal throw direction in radians. */
+  way: number;
+  /** Horizontal impulse strength. */
+  force: number;
 }
 
 export class ThreeDiceRenderer implements DiceRenderer {
@@ -79,11 +89,13 @@ export class ThreeDiceRenderer implements DiceRenderer {
   private materials: DiceMaterialSet | null = null;
   private physics = new RapierDiceWorld();
   private dice = new Map<string, RenderedDie>();
-  private options: DiceRendererOptions | null = null;
+  private explosions = new Map<string, number>();
   private dragState: DragState | null = null;
+  private options: DiceRendererOptions | null = null;
   private frame: number | null = null;
   private lastFrame = 0;
   private animationStarted = 0;
+  private settledNotified = false;
   private disposed = false;
 
   private readonly onContextLost = (event: Event) => {
@@ -172,9 +184,10 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
   add(dice: readonly DiceVisual[]): void {
     if (!this.assets || !this.materials || !this.renderer) return;
+    this.settledNotified = false;
     const max = this.options?.maxDice ?? 40;
     for (const visual of dice) {
-      const parts = visualDiceForSides(visual.sides);
+      const parts = visualDiceForSides(visual.sides, visual.kind);
       const base = this.spawnPlan();
       for (let index = 0; index < parts.length; index += 1) {
         if (this.dice.size >= max) return;
@@ -195,6 +208,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
   clear(): void {
     this.dragState = null;
+    this.explosions.clear();
+    this.settledNotified = false;
     if (this.frame !== null && typeof cancelAnimationFrame === 'function') {
       cancelAnimationFrame(this.frame);
     }
@@ -210,29 +225,50 @@ export class ThreeDiceRenderer implements DiceRenderer {
   getResults(): DiceResult[] {
     const groups = new Map<
       string,
-      { sides: number; parts: Map<VisualDiePart['part'], number> }
+      {
+        sides: number;
+        kind: VisualDiePart['kind'];
+        parts: Map<VisualDiePart['part'], number>;
+        sample: RenderedDie;
+      }
     >();
     for (const die of this.dice.values()) {
       if (die.result === undefined) continue;
       let group = groups.get(die.visualId);
       if (!group) {
-        group = { sides: die.sides, parts: new Map() };
+        group = {
+          sides: die.sides,
+          kind: die.kind,
+          parts: new Map(),
+          sample: die,
+        };
         groups.set(die.visualId, group);
       }
       group.parts.set(die.part, die.result);
     }
 
-    return [...groups.entries()].map(([id, group]) => ({
-      id,
-      sides: group.sides,
-      value:
+    return [...groups.entries()].map(([id, group]) => {
+      const penalty = group.sample.penalty ?? 0;
+      const value =
         group.sides === 100
           ? composeD100(
               group.parts.get('tens') ?? 0,
               group.parts.get('units') ?? 10,
             )
-          : (group.parts.get('whole') ?? 1),
-    }));
+          : (group.parts.get('whole') ?? 0);
+      return {
+        id,
+        sides: group.sides,
+        kind: group.kind,
+        value: value - penalty,
+        ...(group.sample.label ? { label: group.sample.label } : {}),
+        ...(group.sample.notation ? { notation: group.sample.notation } : {}),
+        ...(group.sample.explode ? { explode: group.sample.explode } : {}),
+        ...(group.sample.isExtra ? { isExtra: true } : {}),
+        ...(penalty !== 0 ? { penalty } : {}),
+        rootId: group.sample.rootId,
+      };
+    });
   }
 
   pick(clientX: number, clientY: number): DiceResult | null {
@@ -252,7 +288,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
 
     const parts: DragPart[] = [];
     for (const die of this.dice.values()) {
-      if (die.visualId !== primary.visualId) continue;
+      if (die.rootId !== primary.rootId) continue;
       this.physics.remove(die.id);
       die.state = 'dragging';
       die.result = undefined;
@@ -290,6 +326,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
     this.dragState = null;
     for (const part of parts) {
       const die = part.die;
+      // A drop is just a drop: no spin or extra impulse.
       const body = this.physics.add(
         die.id,
         scaledPoints(die.asset.colliderPoints, DICE_SCALE),
@@ -303,11 +340,6 @@ export class ThreeDiceRenderer implements DiceRenderer {
             z: die.mesh.quaternion.z,
             w: die.mesh.quaternion.w,
           },
-          torque: {
-            x: randomBetween(-0.05, 0.05),
-            y: randomBetween(-0.05, 0.05),
-            z: randomBetween(-0.05, 0.05),
-          },
         },
         0.1,
       );
@@ -319,6 +351,7 @@ export class ThreeDiceRenderer implements DiceRenderer {
     }
     // A drop is a new simulation; do not inherit an old timeout.
     this.animationStarted = performance.now();
+    this.settledNotified = false;
     this.startAnimation();
   }
 
@@ -363,8 +396,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
       z: Math.sin(angle) * randomBetween(0.9, 2.2),
       // Flatter, lower throw with a bit more force toward the tray centre.
       y: randomBetween(1, 2),
-      throwAngle: angle + Math.PI + (Math.random() - 0.5) * (Math.PI / 3),
-      speed: randomBetween(0.1, 0.2),
+      way: angle + Math.PI + (Math.random() - 0.5) * (Math.PI / 3),
+      force: randomBetween(0.1, 0.2),
     };
   }
 
@@ -376,13 +409,13 @@ export class ThreeDiceRenderer implements DiceRenderer {
   ): SpawnPlan {
     if (count <= 1) return base;
     const offset = index === 0 ? -0.22 : 0.22;
-    const perpendicular = base.throwAngle + Math.PI / 2;
+    const perpendicular = base.way + Math.PI / 2;
     return {
       x: base.x + Math.cos(perpendicular) * offset,
       z: base.z + Math.sin(perpendicular) * offset,
       y: base.y + index * 0.12,
-      throwAngle: base.throwAngle + (index - 0.5) * 0.15,
-      speed: base.speed,
+      way: base.way + (index - 0.5) * 0.15,
+      force: base.force,
     };
   }
 
@@ -395,29 +428,34 @@ export class ThreeDiceRenderer implements DiceRenderer {
     const asset = this.assets.assets.get(part.kind);
     if (!asset) return;
     const material =
-      part.kind === 'd2' ? this.materials.extras : this.materials.standard;
+      part.kind === 'd2' || part.kind === 'fate'
+        ? this.materials.extras
+        : this.materials.standard;
     const mesh = new THREE.Mesh(asset.geometry, material);
     mesh.scale.setScalar(DICE_SCALE);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
     const id = `${visual.id}:${part.id}`;
-    const x = spawn.x;
-    const z = spawn.z;
-    const spawnHeight = spawn.y;
-
-    mesh.position.set(x, spawnHeight, z);
+    const rootId = visual.rootId ?? visual.id;
+    mesh.position.set(spawn.x, spawn.y, spawn.z);
     this.scene.add(mesh);
 
     const rendered: RenderedDie = {
       id,
       visualId: visual.id,
+      rootId,
       mesh,
       asset,
       sides: Math.round(visual.sides),
       part: part.part,
       kind: part.kind,
       state: 'physics',
+      ...(visual.explode ? { explode: visual.explode } : {}),
+      ...(visual.isExtra ? { isExtra: true } : {}),
+      ...(visual.penalty ? { penalty: visual.penalty } : {}),
+      ...(visual.label ? { label: visual.label } : {}),
+      ...(visual.notation ? { notation: visual.notation } : {}),
     };
 
     if (this.options?.reducedMotion) {
@@ -447,15 +485,15 @@ export class ThreeDiceRenderer implements DiceRenderer {
         Math.random() * Math.PI * 2,
       ),
     );
-    const throwAngle = spawn.throwAngle;
-    const throwSpeed = spawn.speed;
+    // Spin scales with throw force so harder tosses tumble a little faster.
+    const spin = spawn.force * randomBetween(0.3, 0.55);
     const body = this.physics.add(
       id,
       scaledPoints(asset.colliderPoints, DICE_SCALE),
       {
-        x,
-        y: spawnHeight,
-        z,
+        x: spawn.x,
+        y: spawn.y,
+        z: spawn.z,
         rotation: {
           x: mesh.quaternion.x,
           y: mesh.quaternion.y,
@@ -463,14 +501,14 @@ export class ThreeDiceRenderer implements DiceRenderer {
           w: mesh.quaternion.w,
         },
         impulse: {
-          x: Math.cos(throwAngle) * throwSpeed,
+          x: Math.cos(spawn.way) * spawn.force,
           y: randomBetween(-0.01, 0.015),
-          z: Math.sin(throwAngle) * throwSpeed,
+          z: Math.sin(spawn.way) * spawn.force,
         },
         torque: {
-          x: randomBetween(-0.035, 0.035),
-          y: randomBetween(-0.035, 0.035),
-          z: randomBetween(-0.035, 0.035),
+          x: randomBetween(-spin, spin),
+          y: randomBetween(-spin, spin),
+          z: randomBetween(-spin, spin),
         },
       },
       0.1,
@@ -490,6 +528,8 @@ export class ThreeDiceRenderer implements DiceRenderer {
       for (const die of this.dice.values()) {
         if (die.state === 'physics') this.finishDie(die);
       }
+      this.processExplosions();
+      this.notifySettled();
       this.renderFrame();
       return;
     }
@@ -535,6 +575,9 @@ export class ThreeDiceRenderer implements DiceRenderer {
         for (const die of this.dice.values()) {
           if (die.state === 'physics') this.finishDie(die);
         }
+        const spawned = this.processExplosions();
+        if (!spawned) this.notifySettled();
+        physicsActive = spawned;
       }
     }
 
@@ -543,6 +586,73 @@ export class ThreeDiceRenderer implements DiceRenderer {
       this.frame = requestAnimationFrame(this.tick);
     }
   };
+
+  private finishDie(die: RenderedDie): void {
+    die.state = 'done';
+    this.restOnFloor(die.mesh);
+    die.result = this.readFaceValue(die);
+  }
+
+  /** Read the upward face; d4 values live on the face touching the table. */
+  private readFaceValue(die: RenderedDie): number {
+    const faceDown = die.kind === 'd4';
+    let bestValue = 0;
+    let bestY = faceDown ? Infinity : -Infinity;
+    for (const entry of die.asset.faceEntries) {
+      const y = entry.normal.clone().applyQuaternion(die.mesh.quaternion).y;
+      if (faceDown ? y < bestY : y > bestY) {
+        bestY = y;
+        bestValue = entry.value;
+      }
+    }
+    return bestValue;
+  }
+
+  private processExplosions(): boolean {
+    let spawned = false;
+    const results = this.getResults();
+    for (const result of results) {
+      if (!result.explode) continue;
+      const max = maxFaceFor(result.sides, result.kind);
+      const faceValue = result.value + (result.penalty ?? 0);
+      if (faceValue !== max) continue;
+      const root = result.rootId ?? result.id;
+      const count = this.explosions.get(root) ?? 0;
+      if (count >= MAX_EXPLOSIONS) continue;
+      const extra: DiceVisual = {
+        id: `${root}:x${count + 1}`,
+        sides: result.sides,
+        ...(result.kind ? { kind: result.kind } : {}),
+        explode: result.explode,
+        isExtra: true,
+        rootId: root,
+        ...(result.explode === '!p' ? { penalty: 1 } : {}),
+        ...(result.label ? { label: result.label } : {}),
+        ...(result.notation ? { notation: result.notation } : {}),
+      };
+      // Explosions are independent throws, not stacked on the parent die.
+      const base = this.spawnPlan();
+      base.force = randomBetween(0.12, 0.2);
+      const parts = visualDiceForSides(extra.sides, extra.kind);
+      for (let index = 0; index < parts.length; index += 1) {
+        if ((this.options?.maxDice ?? 40) <= this.dice.size) break;
+        this.addDie(
+          extra,
+          parts[index],
+          this.offsetSpawn(base, parts.length, index),
+        );
+      }
+      this.explosions.set(root, count + 1);
+      spawned = true;
+    }
+    return spawned;
+  }
+
+  private notifySettled(): void {
+    if (this.settledNotified) return;
+    this.settledNotified = true;
+    this.options?.onSettled?.(this.getResults());
+  }
 
   private pointerRay(clientX: number, clientY: number): THREE.Raycaster | null {
     if (!this.renderer) return null;
@@ -577,27 +687,6 @@ export class ThreeDiceRenderer implements DiceRenderer {
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9);
     const point = new THREE.Vector3();
     return raycaster.ray.intersectPlane(plane, point) ? point : null;
-  }
-
-  private finishDie(die: RenderedDie): void {
-    die.state = 'done';
-    this.restOnFloor(die.mesh);
-    die.result = this.readFaceValue(die);
-  }
-
-  /** Read the upward face; d4 values live on the face touching the table. */
-  private readFaceValue(die: RenderedDie): number {
-    const faceDown = die.kind === 'd4';
-    let bestValue = faceDown ? 0 : 0;
-    let bestY = faceDown ? Infinity : -Infinity;
-    for (const [value, normal] of die.asset.faceNormals) {
-      const y = normal.clone().applyQuaternion(die.mesh.quaternion).y;
-      if (faceDown ? y < bestY : y > bestY) {
-        bestY = y;
-        bestValue = value;
-      }
-    }
-    return bestValue;
   }
 
   private restOnFloor(mesh: THREE.Mesh, lift = 0.001): void {

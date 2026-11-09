@@ -9,8 +9,8 @@ For optional, exploratory ideas that may never be implemented, use
 
 ## Current plans
 
-Last reviewed against the code and test suite on **2026-11-09** (228 test files /
-1924 tests passing).
+Last reviewed against the code and test suite on **2026-11-09** (229 test files /
+1929 tests passing).
 
 | Plan                                                        | Status                                                                                              |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |

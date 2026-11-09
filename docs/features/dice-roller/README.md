@@ -857,6 +857,19 @@ engine. The animation loop stops when every die is settled; resize redraws and
 never clears the scene. The camera looks straight down from the zenith and all
 dice rest on the same `y=0` scene floor.
 
+The tray UI is a Roll20-style grid: each row is a die type, the row label rolls
+one die, and the 2–5 columns add that many dice to the pool. Reroll replays the
+whole pool, Clear removes it, and `!`, `!!`, `!p` select explosion modes. FUDGE
+uses the shipped `fate` asset and values `-1/0/1`. Explosion extras are separate
+random throws.
+
+Every settled die and the whole pool emit a `DiceRollEvent` (window event
+`dice-roller:roll`). Its core fields (`schemaVersion`, `total`, `breakdown`,
+`process`, `warnings`) mirror `bag-of-dice` execution metadata so the same
+history/card pipeline can consume both sources; the tray adds `source`,
+`createdAt`, `pool` and per-die records. The 3D feature never imports the
+engine.
+
 Face detection mirrors dice-box: the value face is the one facing up (down for
 d4). Outward normals are derived from the collider face centroid rather than the
 smooth authored vertex normals, and the render geometry keeps its authored

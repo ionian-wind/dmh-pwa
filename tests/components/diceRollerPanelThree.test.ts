@@ -59,7 +59,19 @@ vi.mock('@/features/dice-roller/renderer/DiceBoxRenderer', () => ({
 
 import DiceRollerPanel from '@/components/DiceRollerPanel.vue';
 
+const QBtnStub = defineComponent({
+  name: 'QBtn',
+  props: {
+    label: { type: String, default: '' },
+    disable: { type: Boolean, default: false },
+  },
+  emits: ['click'],
+  template:
+    '<button :disabled="disable" @click="$emit(\'click\')">{{ label }}<slot /></button>',
+});
+
 const global = {
+  components: { QBtn: QBtnStub },
   stubs: {
     teleport: false,
     QMenu: defineComponent({
@@ -87,15 +99,18 @@ function mountPanel() {
   });
 }
 
-function button(label: string): HTMLElement {
-  return Array.from(
-    document.querySelectorAll<HTMLElement>('.dice-roller-item'),
-  ).find((element) => {
-    const first = element
-      .querySelector('.dice-roller-label')
-      ?.textContent?.trim();
-    return first === label || element.textContent?.trim() === label;
-  })!;
+function cell(label: string, count: number): HTMLElement {
+  const row = Array.from(
+    document.querySelectorAll<HTMLElement>('.dice-roller-grid-row'),
+  ).find(
+    (element) =>
+      element.querySelector('.dice-roller-row-label')?.textContent?.trim() ===
+      label,
+  );
+  const button =
+    row?.querySelectorAll<HTMLElement>('.dice-roller-cell')[count - 2];
+  if (!button) throw new Error(`missing cell ${label} x${count}`);
+  return button;
 }
 
 describe('DiceRollerPanel with the Three renderer', () => {
@@ -119,30 +134,23 @@ describe('DiceRollerPanel with the Three renderer', () => {
     mocks.failThreeInit.value = false;
   });
 
-  it('uses add, replace, clear and resize through the adapter', async () => {
+  it('adds grid selections to the pool and resizes', async () => {
     const wrapper = mountPanel();
     await flushPromises();
-    expect(mocks.ThreeDiceRenderer).toHaveBeenCalled();
-    expect(mocks.three.init).toHaveBeenCalled();
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
+    );
 
-    button('d6').click();
-    await flushPromises();
+    cell('d6', 2).click();
     expect(mocks.three.add).toHaveBeenCalledTimes(1);
-    expect(mocks.three.add.mock.calls[0][0][0]).toMatchObject({
-      sides: 6,
-    });
+    expect(mocks.three.add.mock.calls[0][0]).toHaveLength(2);
+    expect(mocks.three.add.mock.calls[0][0][0]).toMatchObject({ sides: 6 });
 
-    button('d100').click();
-    await flushPromises();
+    cell('d100', 3).click();
+    await nextTick();
     expect(mocks.three.add).toHaveBeenCalledTimes(2);
-
-    button('Reroll').click();
-    await flushPromises();
-    expect(mocks.three.replace).toHaveBeenCalledTimes(1);
-    expect(mocks.three.replace.mock.calls[0][0]).toHaveLength(2);
-
-    button('Clear').click();
-    expect(mocks.three.clear).toHaveBeenCalled();
+    expect(mocks.three.add.mock.calls[1][0]).toHaveLength(3);
 
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -159,62 +167,129 @@ describe('DiceRollerPanel with the Three renderer', () => {
     expect(mocks.three.dispose).toHaveBeenCalled();
   });
 
-  it('drags a settled die and lets physics recalculate on drop', async () => {
-    mocks.three.beginDrag.mockReturnValue(true);
+  it('emits individual and pool events in the unified format', async () => {
     const wrapper = mountPanel();
     await flushPromises();
-
-    window.dispatchEvent(
-      new MouseEvent('pointerdown', {
-        bubbles: true,
-        button: 0,
-        clientX: 200,
-        clientY: 150,
-      }),
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
     );
-    expect(mocks.three.beginDrag).toHaveBeenCalledWith(200, 150);
+    cell('d6', 2).click();
 
-    window.dispatchEvent(
-      new MouseEvent('pointermove', {
-        bubbles: true,
-        clientX: 260,
-        clientY: 190,
-      }),
+    const options = mocks.three.init.mock.calls[0][1] as {
+      onSettled: (results: unknown[]) => void;
+    };
+    options.onSettled([
+      { id: 'a', sides: 6, value: 3, label: 'd6', notation: '1d6' },
+      { id: 'b', sides: 6, value: 4, label: 'd6', notation: '1d6' },
+    ]);
+    await nextTick();
+
+    const events = (wrapper.emitted('roll') ?? []).map(
+      (entry) => entry[0] as Record<string, unknown>,
     );
-    expect(mocks.three.dragTo).toHaveBeenCalledWith(260, 190);
-
-    window.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
-    expect(mocks.three.endDrag).toHaveBeenCalled();
+    expect(events).toHaveLength(3);
+    expect(events[0]).toMatchObject({ pool: false, total: 3 });
+    expect(events[1]).toMatchObject({ pool: false, total: 4 });
+    expect(events[2]).toMatchObject({
+      pool: true,
+      total: 7,
+      process: expect.objectContaining({ raw: '2d6' }),
+    });
     wrapper.unmount();
   });
 
-  it('shows the settled result when hovering a die', async () => {
-    mocks.three.pick.mockReturnValue({ id: 'die-1', sides: 20, value: 14 });
+  it('handles mixed explosion modes and FUDGE pool metadata', async () => {
     const wrapper = mountPanel();
     await flushPromises();
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
+    );
+    const fudge = Array.from(
+      document.querySelectorAll<HTMLElement>('.dice-roller-grid-row'),
+    ).find(
+      (row) =>
+        row.querySelector('.dice-roller-row-label')?.textContent?.trim() ===
+        'FUDGE',
+    );
+    fudge!.querySelector<HTMLElement>('.dice-roller-row-label')!.click();
 
+    const options = mocks.three.init.mock.calls[0][1] as {
+      onSettled: (results: unknown[]) => void;
+    };
+    options.onSettled([
+      { id: 'a', sides: 6, value: 6, label: 'd6', explode: '!' },
+      {
+        id: 'b',
+        sides: 3,
+        kind: 'fate',
+        value: 0,
+        label: 'FUDGE',
+      },
+      {
+        id: 'c',
+        sides: 6,
+        value: 2,
+        label: 'd6',
+        explode: '!',
+        isExtra: true,
+        penalty: 1,
+        rootId: 'a',
+      },
+    ]);
+    await nextTick();
+    options.onSettled([]);
+    await nextTick();
+
+    const events = (wrapper.emitted('roll') ?? []).map(
+      (entry) => entry[0] as Record<string, unknown>,
+    );
+    expect(events).toHaveLength(4);
+    expect(events[3]).toMatchObject({ pool: true });
+    expect((events[3] as { mode?: string }).mode).toBeUndefined();
+    expect((events[3] as { process: { raw: string } }).process.raw).toContain(
+      '1dF',
+    );
+    wrapper.unmount();
+  });
+
+  it('toggles modes, ignores empty reroll and handles stray pointers', async () => {
+    const wrapper = mountPanel();
+    await flushPromises();
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
+    );
+
+    const modeButton =
+      document.querySelector<HTMLElement>('.dice-roller-mode')!;
+    modeButton.click();
+    await nextTick();
+    expect(modeButton.classList.contains('active')).toBe(true);
+    modeButton.click();
+    await nextTick();
+    expect(modeButton.classList.contains('active')).toBe(false);
+
+    const footer = document.querySelectorAll<HTMLElement>(
+      '.dice-roller-footer-button',
+    );
+    footer[0].click();
+    footer[1].click();
+    window.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, button: 2 }),
+    );
+    document.body.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, button: 0 }),
+    );
     window.dispatchEvent(
       new MouseEvent('pointermove', {
         bubbles: true,
-        clientX: 200,
-        clientY: 150,
+        clientX: 10,
+        clientY: 10,
       }),
     );
     await nextTick();
-    expect(
-      document.querySelector('.dice-roller-tooltip')?.textContent,
-    ).toContain('d20: 14');
-
-    mocks.three.pick.mockReturnValue(null);
-    window.dispatchEvent(
-      new MouseEvent('pointermove', {
-        bubbles: true,
-        clientX: 210,
-        clientY: 160,
-      }),
-    );
-    await nextTick();
-    expect(document.querySelector('.dice-roller-tooltip')).toBeNull();
     wrapper.unmount();
   });
 
@@ -222,6 +297,12 @@ describe('DiceRollerPanel with the Three renderer', () => {
     mocks.three.init.mockRejectedValue(new Error('no webgl'));
     const wrapper = mountPanel();
     await flushPromises();
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(
+        document.querySelector('.dice-roller-cell')?.hasAttribute('disabled'),
+      ).toBe(false),
+    );
     expect(mocks.three.dispose).toHaveBeenCalled();
     expect(mocks.diceBox.init).toHaveBeenCalled();
     wrapper.unmount();
@@ -233,10 +314,15 @@ describe('DiceRollerPanel with the Three renderer', () => {
     });
     const wrapper = mountPanel();
     await flushPromises();
-    button('d6').click();
+    await vi.waitFor(() => expect(mocks.three.init).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(
+        document.querySelector('.dice-roller-cell')?.hasAttribute('disabled'),
+      ).toBe(false),
+    );
+    cell('d6', 2).click();
     await flushPromises();
     expect(document.querySelector('.dice-roller-error')).not.toBeNull();
-    expect(button('d6').textContent).toContain('×1');
     wrapper.unmount();
   });
 });

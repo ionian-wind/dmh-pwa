@@ -31,7 +31,18 @@ const QMenuStub = defineComponent({
   name: 'QMenu',
   props: { modelValue: { type: Boolean, default: false } },
   emits: ['update:modelValue'],
+  methods: { updatePosition() {} },
   template: '<div class="q-menu-stub"><slot /></div>',
+});
+const QBtnStub = defineComponent({
+  name: 'QBtn',
+  props: {
+    label: { type: String, default: '' },
+    disable: { type: Boolean, default: false },
+  },
+  emits: ['click'],
+  template:
+    '<button :disabled="disable" @click="$emit(\'click\')">{{ label }}<slot /></button>',
 });
 
 function mountPanel() {
@@ -43,19 +54,38 @@ function mountPanel() {
   return mount(DiceRollerPanel, {
     attachTo: document.body,
     props: { modelValue: true },
-    global: { stubs: { teleport: false, QMenu: QMenuStub } },
+    global: {
+      components: { QBtn: QBtnStub },
+      stubs: { teleport: false, QMenu: QMenuStub },
+    },
   });
 }
 
-function button(label: string): HTMLElement {
-  return Array.from(
-    document.querySelectorAll<HTMLElement>('.dice-roller-item'),
-  ).find((element) => {
-    const first = element
-      .querySelector('.dice-roller-label')
-      ?.textContent?.trim();
-    return first === label || element.textContent?.trim() === label;
-  })!;
+function cell(label: string, count: number): HTMLElement {
+  const row = Array.from(
+    document.querySelectorAll<HTMLElement>('.dice-roller-grid-row'),
+  ).find(
+    (element) =>
+      element.querySelector('.dice-roller-row-label')?.textContent?.trim() ===
+      label,
+  );
+  const button =
+    row?.querySelectorAll<HTMLElement>('.dice-roller-cell')[count - 2];
+  if (!button) throw new Error(`missing cell ${label} x${count}`);
+  return button;
+}
+
+function rowButton(label: string): HTMLElement {
+  const row = Array.from(
+    document.querySelectorAll<HTMLElement>('.dice-roller-grid-row'),
+  ).find(
+    (element) =>
+      element.querySelector('.dice-roller-row-label')?.textContent?.trim() ===
+      label,
+  );
+  const button = row?.querySelector<HTMLElement>('.dice-roller-row-label');
+  if (!button) throw new Error(`missing row ${label}`);
+  return button;
 }
 
 describe('DiceRollerPanel', () => {
@@ -66,20 +96,20 @@ describe('DiceRollerPanel', () => {
   });
 
   beforeEach(() => {
-    mocks.diceBox.init.mockClear();
-    mocks.diceBox.add.mockClear();
-    mocks.diceBox.roll.mockClear();
-    mocks.diceBox.clear.mockClear();
-    mocks.diceBox.pick.mockClear();
-    mocks.diceBox.beginDrag.mockClear();
-    mocks.diceBox.dragTo.mockClear();
-    mocks.diceBox.endDrag.mockClear();
+    for (const mock of Object.values(mocks.diceBox)) {
+      mock.mockClear();
+    }
+    mocks.diceBox.init.mockResolvedValue(undefined);
     mocks.DiceBox.mockClear();
   });
 
-  it('initializes the 3D dice surface and rolls the requested die', async () => {
+  it('initializes the dice surface and rolls grid selections', async () => {
     const wrapper = mountPanel();
     await flushPromises();
+    await vi.waitFor(() => expect(mocks.DiceBox).toHaveBeenCalled());
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
+    );
 
     expect(mocks.DiceBox).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -90,49 +120,44 @@ describe('DiceRollerPanel', () => {
     );
     expect(mocks.diceBox.init).toHaveBeenCalled();
 
-    button('d6').click();
-    await flushPromises();
-    button('d6').click();
-    await flushPromises();
-    button('d100').click();
-    await flushPromises();
+    cell('d6', 2).click();
+    expect(mocks.diceBox.add.mock.calls).toEqual([['1d6'], ['1d6']]);
 
-    expect(mocks.diceBox.add).toHaveBeenNthCalledWith(1, '1d6');
-    expect(mocks.diceBox.add).toHaveBeenNthCalledWith(2, '1d6');
-    expect(mocks.diceBox.add).toHaveBeenNthCalledWith(3, '2d10');
-    expect(mocks.diceBox.roll).not.toHaveBeenCalled();
+    mocks.diceBox.add.mockClear();
+    rowButton('d100').click();
+    expect(mocks.diceBox.add).toHaveBeenCalledWith('2d10');
 
     wrapper.unmount();
   });
 
-  it('clears dice and rerolls the current pool', async () => {
+  it('rerolls the last grid selection and clears the tray', async () => {
     const wrapper = mountPanel();
     await flushPromises();
+    await vi.waitFor(() => expect(mocks.diceBox.init).toHaveBeenCalled());
 
-    button('d6').click();
-    await flushPromises();
-    button('d6').click();
-    await flushPromises();
-    button('d100').click();
-    await flushPromises();
+    await vi.waitFor(() =>
+      expect(cell('d6', 2).hasAttribute('disabled')).toBe(false),
+    );
+    cell('d6', 2).click();
+    await nextTick();
     mocks.diceBox.add.mockClear();
-    button('Reroll').click();
-    await flushPromises();
-
+    (
+      document.querySelector('.dice-roller-footer-button') as HTMLElement
+    ).click();
     expect(mocks.diceBox.clear).toHaveBeenCalled();
-    expect(mocks.diceBox.add.mock.calls).toEqual([['1d6'], ['1d6'], ['2d10']]);
+    expect(mocks.diceBox.add.mock.calls).toEqual([['1d6'], ['1d6']]);
 
     mocks.diceBox.add.mockClear();
-    button('Clear').click();
+    const clear = document.querySelectorAll<HTMLElement>(
+      '.dice-roller-footer-button',
+    )[1];
+    clear.click();
     expect(mocks.diceBox.clear).toHaveBeenCalledTimes(2);
-    button('Reroll').click();
-    await flushPromises();
     expect(mocks.diceBox.add).not.toHaveBeenCalled();
 
     document.querySelector<HTMLElement>('.dice-roller-header button')!.click();
     await nextTick();
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
-
     wrapper.unmount();
   });
 

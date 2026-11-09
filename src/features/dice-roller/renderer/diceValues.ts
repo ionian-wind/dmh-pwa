@@ -1,4 +1,4 @@
-import type { DiceVisual, DieKind } from './DiceRenderer';
+import type { DiceVisual, DieKind, ExplodeMode } from './DiceRenderer';
 
 /** A single mesh the renderer must display. d100 becomes two d10 meshes. */
 export interface VisualDiePart {
@@ -11,7 +11,8 @@ export interface VisualDiePart {
 /** d4 results are read from the face touching the table, like dice-box. */
 export const FACE_DOWN_DICE = new Set<DieKind>(['d4']);
 
-export function dieKindForSides(sides: number): DieKind {
+export function dieKindForSides(sides: number, kind?: DieKind): DieKind {
+  if (kind) return kind;
   const rounded = Math.round(sides);
   if (
     rounded === 2 ||
@@ -26,6 +27,12 @@ export function dieKindForSides(sides: number): DieKind {
     return `d${rounded}` as DieKind;
   }
   throw new Error(`unsupported die sides: ${sides}`);
+}
+
+export function maxFaceFor(sides: number, kind?: DieKind): number {
+  if (kind === 'fate') return 1;
+  if (Math.round(sides) === 100) return 100;
+  return Math.round(sides);
 }
 
 export function normalizeValue(value: number, sides: number): number {
@@ -56,20 +63,30 @@ export function composeD100(tens: number, units: number): number {
   return value === 0 ? 100 : value;
 }
 
-export function visualDiceForSides(sides: number): VisualDiePart[] {
+export function visualDiceForSides(
+  sides: number,
+  kind?: DieKind,
+): VisualDiePart[] {
   const rounded = Math.round(sides);
-  const kind = dieKindForSides(rounded);
-  if (kind === 'd100') {
+  const resolved = dieKindForSides(rounded, kind);
+  if (resolved === 'd100') {
     return [
       { id: 'tens', kind: 'd100', sides: rounded, part: 'tens' },
       { id: 'units', kind: 'd10', sides: rounded, part: 'units' },
     ];
   }
-  return [{ id: 'whole', kind, sides: rounded, part: 'whole' }];
+  return [{ id: 'whole', kind: resolved, sides: rounded, part: 'whole' }];
 }
 
 /** Random result used only when physics is disabled (reduced motion). */
 export function randomValueFor(visual: DiceVisual): number {
   const sides = Math.round(visual.sides);
+  if (visual.kind === 'fate') {
+    return Math.floor(Math.random() * 3) - 1;
+  }
   return Math.floor(Math.random() * sides) + 1;
+}
+
+export function isExplodeMode(value: string): value is ExplodeMode {
+  return value === '!' || value === '!!' || value === '!p';
 }

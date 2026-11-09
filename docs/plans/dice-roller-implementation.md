@@ -291,8 +291,8 @@ original/final state.
 
 ### Current status
 
-Implemented under `src/utils/bag-of-dice` with the full suite green (228
-files / 1924 tests) across
+Implemented under `src/utils/bag-of-dice` with the full suite green (229
+files / 1929 tests) across
 foundations, parser, arithmetic, dice/modifiers, expansion, queries, inline
 rolls, tables, metadata, RNG/replay, visualization, hardening and integration.
 

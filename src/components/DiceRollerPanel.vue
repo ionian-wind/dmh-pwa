@@ -13,27 +13,45 @@ import type {
   DiceRenderer,
   DiceResult,
   DiceVisual,
+  DieKind,
+  ExplodeMode,
 } from '@/features/dice-roller/renderer/DiceRenderer';
-import { DiceBoxRenderer } from '@/features/dice-roller/renderer/DiceBoxRenderer';
-import { ThreeDiceRenderer } from '@/features/dice-roller/renderer/ThreeDiceRenderer';
-import { supportsWebGL } from '@/features/dice-roller/renderer/factory';
+import {
+  createDieRollEvent,
+  createPoolRollEvent,
+  dispatchRollEvent,
+  type DiceRollEvent,
+  type RollEventDie,
+} from '@/utils/roll-events';
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{
   (event: 'update:modelValue', value: boolean): void;
+  (event: 'roll', value: DiceRollEvent): void;
 }>();
 const { t } = useI18n();
 
-const dice = [
-  { label: 'd2', notation: '1d2', sides: 2 },
-  { label: 'd4', notation: '1d4', sides: 4 },
-  { label: 'd6', notation: '1d6', sides: 6 },
-  { label: 'd8', notation: '1d8', sides: 8 },
-  { label: 'd10', notation: '1d10', sides: 10 },
-  { label: 'd12', notation: '1d12', sides: 12 },
-  { label: 'd20', notation: '1d20', sides: 20 },
-  { label: 'd100', notation: '1d100', sides: 100 },
+interface DiceRow {
+  label: string;
+  sides: number;
+  notation: string;
+  kind?: DieKind;
+}
+
+const diceRows: DiceRow[] = [
+  { label: 'd2', sides: 2, notation: '1d2' },
+  { label: 'd4', sides: 4, notation: '1d4' },
+  { label: 'd6', sides: 6, notation: '1d6' },
+  { label: 'd8', sides: 8, notation: '1d8' },
+  { label: 'd10', sides: 10, notation: '1d10' },
+  { label: 'd12', sides: 12, notation: '1d12' },
+  { label: 'd20', sides: 20, notation: '1d20' },
+  { label: 'd100', sides: 100, notation: '1d100' },
+  { label: 'FUDGE', sides: 3, notation: '1dF', kind: 'fate' },
 ];
+
+const counts = [2, 3, 4, 5];
+const explodeModes: ExplodeMode[] = ['!', '!!', '!p'];
 
 const open = computed({
   get: () => props.modelValue,
@@ -45,7 +63,11 @@ const anchor = ref<HTMLDivElement | null>(null);
 const menu = ref<{ updatePosition?: () => void } | null>(null);
 const ready = ref(false);
 const rollError = ref(false);
-const pool = ref<Record<string, number>>({});
+const total = ref<number | null>(null);
+const mode = ref<ExplodeMode | null>(null);
+const pool = ref<
+  Array<{ row: DiceRow; count: number; mode: ExplodeMode | null }>
+>([]);
 const hover = ref<{ result: DiceResult; x: number; y: number } | null>(null);
 const anchorStyle = ref({ left: '0px', top: '0px' });
 let renderer: DiceRenderer | null = null;
@@ -53,6 +75,7 @@ let resizeObserver: ResizeObserver | undefined;
 let dragged = false;
 let dieDrag = false;
 let visualCounter = 0;
+let rollCounter = 0;
 let drag: {
   startX: number;
   startY: number;
@@ -183,44 +206,53 @@ function onSurfacePointerDown(event: PointerEvent) {
   window.addEventListener('pointercancel', onDieDragEnd, { once: true });
 }
 
-function makeVisual(die: (typeof dice)[number]): DiceVisual {
-  visualCounter += 1;
-  return {
-    id: `die-${visualCounter}`,
-    sides: die.sides,
-    notation: die.notation,
-    label: die.label,
-  };
+function toggleMode(value: ExplodeMode) {
+  mode.value = mode.value === value ? null : value;
 }
 
-function addDie(die: (typeof dice)[number]) {
+function makeVisuals(
+  row: DiceRow,
+  count: number,
+  batchMode: ExplodeMode | null,
+): DiceVisual[] {
+  rollCounter += 1;
+  const prefix = `roll-${rollCounter}`;
+  return Array.from({ length: count }, (_, index) => {
+    visualCounter += 1;
+    return {
+      id: `${prefix}-${index}-${visualCounter}`,
+      sides: row.sides,
+      notation: row.notation,
+      label: row.label,
+      ...(row.kind ? { kind: row.kind } : {}),
+      ...(batchMode ? { explode: batchMode } : {}),
+    };
+  });
+}
+
+function roll(row: DiceRow, count: number) {
   if (!ready.value || !renderer) return;
-  pool.value[die.label] = (pool.value[die.label] ?? 0) + 1;
+  pool.value.push({ row, count, mode: mode.value });
+  total.value = null;
+  hover.value = null;
   try {
-    renderer.add([makeVisual(die)]);
+    // Add to the existing tray so several grid presses build a pool.
+    renderer.add(makeVisuals(row, count, mode.value));
     rollError.value = false;
   } catch {
-    // Keep the pool so the next reroll can recover.
     rollError.value = true;
   }
 }
 
-function poolVisuals(): DiceVisual[] {
-  const visuals: DiceVisual[] = [];
-  for (const die of dice) {
-    const count = pool.value[die.label] ?? 0;
-    for (let index = 0; index < count; index += 1) {
-      visuals.push(makeVisual(die));
-    }
-  }
-  return visuals;
-}
-
-function rollPool() {
-  if (!ready.value || !renderer) return;
+function reroll() {
+  if (!renderer || pool.value.length === 0) return;
+  total.value = null;
+  hover.value = null;
   try {
-    hover.value = null;
-    renderer.replace(poolVisuals());
+    renderer.clear();
+    for (const entry of pool.value) {
+      renderer.add(makeVisuals(entry.row, entry.count, entry.mode));
+    }
     rollError.value = false;
   } catch {
     rollError.value = true;
@@ -228,13 +260,16 @@ function rollPool() {
 }
 
 function clearDice() {
-  pool.value = {};
+  total.value = null;
+  pool.value = [];
   rollError.value = false;
   hover.value = null;
   renderer?.clear();
 }
 
 async function createRenderer(): Promise<DiceRenderer> {
+  const { supportsWebGL } =
+    await import('@/features/dice-roller/renderer/DiceRenderer');
   if (supportsWebGL()) {
     const { ThreeDiceRenderer } =
       await import('@/features/dice-roller/renderer/ThreeDiceRenderer');
@@ -262,6 +297,48 @@ async function startRenderer(candidate: DiceRenderer): Promise<void> {
     reducedMotion:
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    onSettled: (results) => {
+      total.value = results.reduce((sum, result) => sum + result.value, 0);
+      if (results.length === 0) return;
+
+      const createdAt = Date.now();
+      const dice: RollEventDie[] = results.map((result) => ({
+        id: result.id,
+        sides: result.sides,
+        ...(result.kind ? { kind: result.kind } : {}),
+        value: result.value,
+        ...(result.label ? { label: result.label } : {}),
+        ...(result.notation ? { notation: result.notation } : {}),
+        ...(result.explode ? { explode: result.explode } : {}),
+        ...(result.isExtra ? { isExtra: true } : {}),
+        ...(result.penalty !== undefined ? { penalty: result.penalty } : {}),
+        ...(result.rootId ? { rootId: result.rootId } : {}),
+      }));
+
+      for (const die of dice) {
+        const event = createDieRollEvent(die, { createdAt });
+        emit('roll', event);
+        dispatchRollEvent(event);
+      }
+
+      const modes = new Set(results.map((result) => result.explode ?? null));
+      const mode =
+        modes.size === 1 ? (results[0].explode ?? undefined) : undefined;
+      const raw = pool.value
+        .map((entry) => {
+          const sides =
+            entry.row.kind === 'fate' ? 'F' : String(entry.row.sides);
+          return `${entry.count}d${sides}${entry.mode ?? ''}`;
+        })
+        .join(' + ');
+      const poolEvent = createPoolRollEvent(dice, {
+        createdAt,
+        ...(raw ? { raw } : {}),
+        ...(mode ? { mode } : {}),
+      });
+      emit('roll', poolEvent);
+      dispatchRollEvent(poolEvent);
+    },
   });
 }
 
@@ -334,63 +411,102 @@ onBeforeUnmount(() => {
         no-parent-event
         class="dice-roller-menu"
       >
-        <QList dense>
-          <QItem class="dice-roller-header" @pointerdown="onPointerDown">
-            <QItemSection>{{ t('diceRoller.title') }}</QItemSection>
-            <QItemSection side>
+        <div class="dice-roller-sheet">
+          <div class="dice-roller-header" @pointerdown="onPointerDown">
+            <span>{{ t('diceRoller.title') }}</span>
+            <QBtn
+              flat
+              dense
+              round
+              :aria-label="t('diceRoller.close')"
+              @pointerdown.stop
+              @click.stop="open = false"
+            >
+              <IconX :size="16" />
+            </QBtn>
+          </div>
+
+          <div class="dice-roller-modes" role="group">
+            <QBtn
+              v-for="option in explodeModes"
+              :key="option"
+              flat
+              dense
+              no-caps
+              class="dice-roller-mode"
+              :class="{ active: mode === option }"
+              :disable="!ready"
+              :label="option"
+              @click="toggleMode(option)"
+            />
+          </div>
+
+          <div class="dice-roller-grid" role="grid">
+            <div
+              v-for="row in diceRows"
+              :key="row.label"
+              class="dice-roller-grid-row"
+              role="row"
+            >
               <QBtn
                 flat
                 dense
-                round
-                :aria-label="t('diceRoller.close')"
-                @pointerdown.stop
-                @click.stop="open = false"
+                no-caps
+                class="dice-roller-row-label"
+                :disable="!ready"
+                :label="row.label"
+                :aria-label="`${row.label} × 1`"
+                @click="roll(row, 1)"
+              />
+              <QBtn
+                v-for="count in counts"
+                :key="count"
+                flat
+                dense
+                no-caps
+                class="dice-roller-cell"
+                :disable="!ready"
+                :label="String(count)"
+                :aria-label="`${row.label} × ${count}`"
+                @click="roll(row, count)"
+              />
+            </div>
+          </div>
+
+          <div class="dice-roller-footer">
+            <span class="dice-roller-total">
+              <template v-if="total !== null">Σ {{ total }}</template>
+              <template v-else
+                >{{
+                  pool.reduce((count, entry) => count + entry.count, 0)
+                }}
+                dice</template
               >
-                <IconX :size="16" />
-              </QBtn>
-            </QItemSection>
-          </QItem>
-          <QSeparator />
+            </span>
+            <QBtn
+              flat
+              dense
+              no-caps
+              class="dice-roller-footer-button"
+              :disable="!ready || pool.length === 0"
+              :label="t('diceRoller.reroll')"
+              @click="reroll"
+            />
+            <QBtn
+              flat
+              dense
+              no-caps
+              class="dice-roller-footer-button"
+              :disable="!ready || pool.length === 0"
+              :label="t('diceRoller.clear')"
+              @click="clearDice"
+            />
+          </div>
 
-          <QItem
-            v-for="die in dice"
-            :key="die.label"
-            clickable
-            :disable="!ready"
-            class="dice-roller-item"
-            @click="addDie(die)"
-          >
-            <QItemSection class="dice-roller-label">{{
-              die.label
-            }}</QItemSection>
-            <QItemSection v-if="pool[die.label]" side>
-              <QBadge color="primary" rounded>×{{ pool[die.label] }}</QBadge>
-            </QItemSection>
-          </QItem>
-
-          <QSeparator />
-
-          <QItem v-if="rollError" class="dice-roller-error">
-            <QItemSection>{{ t('diceRoller.rollError') }}</QItemSection>
-          </QItem>
-
-          <QItem
-            clickable
-            :disable="!ready"
-            class="dice-roller-item"
-            @click="clearDice"
-          >
-            <QItemSection>{{ t('diceRoller.clear') }}</QItemSection>
-          </QItem>
-          <QItem
-            clickable
-            :disable="!ready"
-            class="dice-roller-item"
-            @click="rollPool"
-          >
-            <QItemSection>{{ t('diceRoller.reroll') }}</QItemSection>
-          </QItem>
-        </QList>
+          <div v-if="rollError" class="dice-roller-error">
+            {{ t('diceRoller.rollError') }}
+          </div>
+        </div>
       </QMenu>
     </div>
     <div
@@ -398,7 +514,8 @@ onBeforeUnmount(() => {
       class="dice-roller-tooltip"
       :style="{ left: `${hover.x}px`, top: `${hover.y}px` }"
     >
-      d{{ hover.result.sides }}: {{ hover.result.value }}
+      {{ hover.result.label ?? `d${hover.result.sides}` }}:
+      {{ hover.result.value }}
     </div>
   </Teleport>
 </template>
@@ -426,21 +543,100 @@ onBeforeUnmount(() => {
 }
 
 .dice-roller-menu {
-  min-width: 144px;
+  min-width: 248px;
+}
+
+.dice-roller-sheet {
+  padding: 8px;
 }
 
 .dice-roller-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
   cursor: grab;
   touch-action: none;
   user-select: none;
+  font-weight: 600;
 }
 
 .dice-roller-header:active {
   cursor: grabbing;
 }
 
-.dice-roller-label {
+.dice-roller-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.dice-roller-mode {
+  border: 1px solid #c7c7c7;
+  border-radius: 2px;
+  font-weight: 700;
+  min-height: 30px;
+}
+
+.dice-roller-mode.active {
+  background: #4bb8e8;
+  border-color: #2f9fd3;
+  color: #12313d;
+}
+
+.dice-roller-grid {
+  border-top: 1px solid #c7c7c7;
+  border-left: 1px solid #c7c7c7;
+}
+
+.dice-roller-grid-row {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, 1fr);
+}
+
+.dice-roller-row-label,
+.dice-roller-cell {
+  border-right: 1px solid #c7c7c7;
+  border-bottom: 1px solid #c7c7c7;
+  border-radius: 0;
+  min-height: 30px;
+}
+
+.dice-roller-row-label {
   font-weight: 600;
+  background: #faf9f7;
+}
+
+.dice-roller-cell:hover:not(:disabled),
+.dice-roller-row-label:hover:not(:disabled) {
+  background: #d9f2fd;
+}
+
+.dice-roller-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.dice-roller-total {
+  flex: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dice-roller-footer-button {
+  border: 1px solid #c7c7c7;
+  border-radius: 2px;
+  min-height: 28px;
+}
+
+.dice-roller-error {
+  padding-top: 6px;
+  color: #b3261e;
+  font-size: 12px;
 }
 
 .dice-roller-tooltip {
