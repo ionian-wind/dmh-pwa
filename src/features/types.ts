@@ -23,7 +23,7 @@ export interface FeatureNavRoute {
   path: string;
   icon: Component;
   kind: 'entity' | 'tool';
-  placement: 'primary' | 'scribe' | 'tools' | 'footer';
+  placement: 'primary' | 'gameSessions' | 'scribe' | 'tools' | 'footer';
   /** Relative order within a placement; lower values come first. */
   order?: number;
   activePathPrefixes?: string[];
@@ -34,7 +34,7 @@ export interface FeatureNavComponent {
   id: string;
   component: Component;
   kind: 'tool';
-  placement: 'primary' | 'scribe' | 'tools' | 'footer';
+  placement: 'primary' | 'gameSessions' | 'scribe' | 'tools' | 'footer';
   /** Relative order within a placement; lower values come first. */
   order?: number;
   activePathPrefixes?: string[];

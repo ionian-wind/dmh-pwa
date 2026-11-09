@@ -44,6 +44,18 @@ function readUiTheme(): UiTheme {
   return UI_THEMES.includes(stored) ? stored : 'light';
 }
 
+function readNavigationGroupsExpanded(): Record<string, boolean> {
+  const stored = getValue('navigationGroupsExpanded', {});
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(stored).filter(
+      ([, expanded]) => typeof expanded === 'boolean',
+    ),
+  ) as Record<string, boolean>;
+}
+
 export type ConfigStore = {
   uiTheme: Ref<UiTheme>;
   jukeboxLastTrackId: Ref<string | null>;
@@ -61,6 +73,7 @@ export type ConfigStore = {
   confirmDelete: Ref<boolean>;
   backupIncludeExternalFiles: Ref<boolean>;
   savedLanguage: Ref<string>;
+  navigationGroupsExpanded: Ref<Record<string, boolean>>;
 };
 
 export const useConfigStore = defineStore<'config', ConfigStore>(
@@ -109,6 +122,9 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
         browserLanguage.toLowerCase().startsWith('ru') ? 'ru' : 'en',
       ),
     );
+    const navigationGroupsExpanded = ref<Record<string, boolean>>(
+      readNavigationGroupsExpanded(),
+    );
 
     const config: ConfigStore = {
       uiTheme,
@@ -127,6 +143,7 @@ export const useConfigStore = defineStore<'config', ConfigStore>(
       confirmDelete,
       backupIncludeExternalFiles,
       savedLanguage,
+      navigationGroupsExpanded,
     };
 
     Object.keys(config).forEach((key: string) => {

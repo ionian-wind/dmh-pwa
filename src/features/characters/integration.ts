@@ -28,7 +28,7 @@ export const charactersFeature: FeatureIntegration = {
       path: '/characters',
       icon: IconUser,
       kind: 'entity',
-      placement: 'primary',
+      placement: 'gameSessions',
       order: 10,
     },
   ],

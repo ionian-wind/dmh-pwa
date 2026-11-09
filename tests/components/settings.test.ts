@@ -380,7 +380,7 @@ describe('settings dialog', () => {
     wrapper.unmount();
   });
 
-  it('groups notes, pawns, encounters, and maps under Scribe', async () => {
+  it('groups entities under Game Sessions and Scribe', async () => {
     const config = useConfigStore();
     config.savedLanguage = 'en';
     const router = createRouter({
@@ -400,14 +400,32 @@ describe('settings dialog', () => {
       .map((item) => item.attributes('title'))
       .filter((title): title is string => !!title);
 
-    expect(titles.slice(0, 3)).toEqual(['Characters', 'Parties', 'Scribe']);
-    expect(titles.slice(3, 7)).toEqual([
+    expect(titles.slice(0, 4)).toEqual([
+      'Game Sessions',
+      'Characters',
+      'Parties',
+      'Scribe',
+    ]);
+    expect(titles.slice(4, 8)).toEqual([
       'Notes',
       'Pawns',
       'Encounters',
       'Maps',
     ]);
     expect(titles.indexOf('Tools')).toBeGreaterThan(titles.indexOf('Scribe'));
+
+    const gameSessions = wrapper
+      .findAll('.left-sidebar [data-stub="QItem"]')
+      .find((item) => item.attributes('title') === 'Game Sessions')!;
+    const characters = wrapper
+      .findAll('.left-sidebar [data-stub="QItem"]')
+      .find((item) => item.attributes('title') === 'Characters')!;
+    const sessionsBody = characters.element.parentElement as HTMLElement;
+    expect(sessionsBody.style.display).toBe('none');
+    await gameSessions.trigger('click');
+    await nextTick();
+    expect(sessionsBody.style.display).toBe('');
+    expect(config.navigationGroupsExpanded.gameSessions).toBe(true);
 
     const scribe = wrapper
       .findAll('.left-sidebar [data-stub="QItem"]')
@@ -420,6 +438,39 @@ describe('settings dialog', () => {
     await scribe.trigger('click');
     await nextTick();
     expect(groupBody.style.display).toBe('');
+    expect(config.navigationGroupsExpanded.scribe).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('restores saved navigation group collapse state', async () => {
+    const config = useConfigStore();
+    config.savedLanguage = 'en';
+    config.navigationGroupsExpanded = {
+      gameSessions: true,
+      scribe: false,
+    };
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { render: () => h('div') } }],
+    });
+    await router.push('/');
+    await router.isReady();
+
+    const wrapper = mount(App, { global: { plugins: [router] } });
+    await flushPromises();
+    (wrapper.vm as any).$i18n.locale = 'en';
+    await nextTick();
+
+    const findItem = (title: string) =>
+      wrapper
+        .findAll('.left-sidebar [data-stub="QItem"]')
+        .find((item) => item.attributes('title') === title)!;
+
+    const sessionsBody = findItem('Characters').element
+      .parentElement as HTMLElement;
+    const scribeBody = findItem('Notes').element.parentElement as HTMLElement;
+    expect(sessionsBody.style.display).toBe('');
+    expect(scribeBody.style.display).toBe('none');
     wrapper.unmount();
   });
 

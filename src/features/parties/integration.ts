@@ -28,7 +28,7 @@ export const partiesFeature: FeatureIntegration = {
       path: '/parties',
       icon: IconUsers,
       kind: 'entity',
-      placement: 'primary',
+      placement: 'gameSessions',
       order: 10,
     },
   ],

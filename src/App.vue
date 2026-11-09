@@ -27,6 +27,7 @@ import {
   IconMenu2,
   IconTool,
   IconScript,
+  IconMasksTheater,
   IconChevronDown,
   IconSettings,
 } from '@tabler/icons-vue';
@@ -42,7 +43,6 @@ const ActiveCombatButton = __FEATURE_ENCOUNTERS__
   : null;
 
 const leftMenuMinimized = ref(false);
-const expandedGroups = ref<Record<string, boolean>>({});
 
 function navigationFor(placement: FeatureNavEntry['placement']) {
   return featureNavigation
@@ -62,6 +62,12 @@ interface NavGroup {
 
 const navGroups = computed<NavGroup[]>(() =>
   [
+    {
+      id: 'gameSessions',
+      labelKey: 'navigation.gameSessions',
+      icon: IconMasksTheater,
+      items: navigationFor('gameSessions'),
+    },
     {
       id: 'scribe',
       labelKey: 'navigation.scribe',
@@ -92,18 +98,30 @@ function isGroupActive(group: NavGroup): boolean {
 }
 
 function isGroupExpanded(id: string): boolean {
-  return expandedGroups.value[id] === true;
+  return configStore.navigationGroupsExpanded[id] === true;
+}
+
+function setGroupExpanded(id: string, expanded: boolean): void {
+  configStore.navigationGroupsExpanded = {
+    ...configStore.navigationGroupsExpanded,
+    [id]: expanded,
+  };
 }
 
 function toggleGroup(id: string): void {
-  expandedGroups.value[id] = !isGroupExpanded(id);
+  setGroupExpanded(id, !isGroupExpanded(id));
 }
 
 watch(
   () => router.currentRoute.value.path,
   () => {
     for (const group of navGroups.value) {
-      if (isGroupActive(group)) expandedGroups.value[group.id] = true;
+      if (!isGroupActive(group)) continue;
+      // Respect a saved collapse choice; only auto-open groups the user has
+      // never toggled so deep links are not hidden on first visit.
+      if (configStore.navigationGroupsExpanded[group.id] === undefined) {
+        setGroupExpanded(group.id, true);
+      }
     }
   },
   { immediate: true },
