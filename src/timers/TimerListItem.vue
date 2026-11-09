@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   IconPlayerPlay,
@@ -16,17 +16,6 @@ const timerStore = useTimerStore();
 const props = defineProps<{ timer: Timer }>();
 const emit = defineEmits(['edit', 'delete', 'start', 'stop', 'reset']);
 const { t } = useI18n();
-
-const statusLabel = computed(() => {
-  switch (props.timer.status) {
-    case 'running':
-      return t('timers.status.running');
-    case 'finished':
-      return t('timers.status.finished');
-    default:
-      return t('timers.status.inactive');
-  }
-});
 
 const time = (elapsed = 0) =>
   formatTime(Math.max(props.timer.duration - elapsed, 0) / 1000);
@@ -90,21 +79,12 @@ watch(
         <span v-if="props.timer.status === 'running'">
           {{ t('timers.remaining') }}: <b>{{ remaining }}</b>
         </span>
-        <span v-else-if="props.timer.status === 'finished'">
-          {{ t('timers.finished') }}
-        </span>
         <span v-else>
-          {{ t('timers.duration') }}:
           <b>{{ remaining }}</b>
         </span>
       </div>
     </QItemSection>
-    <QItemSection>
-      <span :class="'timer-status ' + props.timer.status">{{
-        statusLabel
-      }}</span>
-    </QItemSection>
-    <QItemSection side>
+    <QItemSection side class="timer-item-actions">
       <QBtnGroup flat>
         <QBtn
           flat
@@ -126,3 +106,21 @@ watch(
     </QItemSection>
   </QItem>
 </template>
+
+<style scoped>
+.timer-item-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.q-item:hover .timer-item-actions,
+.timer-item-actions:focus-within {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .timer-item-actions {
+    opacity: 1;
+  }
+}
+</style>

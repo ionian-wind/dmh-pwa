@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IconPlus, IconX } from '@tabler/icons-vue';
+import { IconPencil, IconPlus, IconX } from '@tabler/icons-vue';
 import DraggablePanel from '@/components/common/DraggablePanel.vue';
 import TimerEditor from '@/timers/TimerEditor.vue';
 import TimerListItem from '@/timers/TimerListItem.vue';
@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const timerStore = useTimerStore();
-const editorOpen = ref(false);
+const formExpanded = ref(false);
 const timerToEdit = ref<Timer | null>(null);
 
 const open = computed({
@@ -24,20 +24,25 @@ const open = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 });
 
-function openCreate(): void {
-  timerToEdit.value = null;
-  editorOpen.value = true;
-}
+const formLabel = computed(() =>
+  timerToEdit.value ? t('timers.edit') : t('timers.create'),
+);
+
+const formIcon = computed(() => (timerToEdit.value ? IconPencil : IconPlus));
 
 function openEdit(timer: Timer): void {
   timerToEdit.value = timer;
-  editorOpen.value = true;
+  formExpanded.value = true;
 }
 
-function closeEditor(): void {
-  editorOpen.value = false;
+function closeForm(): void {
+  formExpanded.value = false;
   timerToEdit.value = null;
 }
+
+watch(formExpanded, (expanded) => {
+  if (!expanded) timerToEdit.value = null;
+});
 
 async function handleSubmit(timer: Timer): Promise<void> {
   if (timer.id) {
@@ -45,7 +50,7 @@ async function handleSubmit(timer: Timer): Promise<void> {
   } else {
     await timerStore.create({ ...timer, status: 'inactive', startedAt: null });
   }
-  closeEditor();
+  closeForm();
 }
 
 async function removeTimer(timer: Timer): Promise<void> {
@@ -59,14 +64,13 @@ async function removeTimer(timer: Timer): Promise<void> {
     return;
   }
   await timerStore.remove(timer.id);
-  if (timerToEdit.value?.id === timer.id) closeEditor();
+  if (timerToEdit.value?.id === timer.id) closeForm();
 }
 
 async function handleDelete(id: string): Promise<void> {
   const timer = timerStore.getById(id);
   if (!timer) return;
   await removeTimer(timer);
-  closeEditor();
 }
 
 onMounted(async () => {
@@ -110,21 +114,23 @@ onMounted(async () => {
       </QList>
 
       <QSeparator />
-      <QItem clickable v-ripple class="timers-create" @click="openCreate">
-        <QItemSection>{{ t('timers.create') }}</QItemSection>
-        <QItemSection side>
-          <IconPlus :size="18" />
-        </QItemSection>
-      </QItem>
+      <QExpansionItem v-model="formExpanded" class="timers-form-expansion">
+        <template #header>
+          <QItemSection>{{ formLabel }}</QItemSection>
+          <QItemSection side>
+            <component :is="formIcon" :size="18" />
+          </QItemSection>
+        </template>
+        <div class="timers-form-body">
+          <TimerEditor
+            :timer="timerToEdit"
+            @submit="handleSubmit"
+            @cancel="closeForm"
+            @delete="handleDelete"
+          />
+        </div>
+      </QExpansionItem>
     </div>
-
-    <TimerEditor
-      :timer="timerToEdit"
-      :is-open="editorOpen"
-      @submit="handleSubmit"
-      @delete="handleDelete"
-      @cancel="closeEditor"
-    />
   </DraggablePanel>
 </template>
 
@@ -156,7 +162,7 @@ onMounted(async () => {
   overflow: auto;
 }
 
-.timers-create {
-  justify-content: space-between;
+.timers-form-body {
+  padding: 8px;
 }
 </style>

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
+import AnimatedHourglass from '@/components/common/AnimatedHourglass.vue';
 
-describe('CombatWaitIcon', () => {
+describe('AnimatedHourglass', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -12,7 +12,7 @@ describe('CombatWaitIcon', () => {
   });
 
   it('cycles hourglass icons, rotates, then reverses the sequence', async () => {
-    const wrapper = mount(CombatWaitIcon, {
+    const wrapper = mount(AnimatedHourglass, {
       props: { label: 'Waiting for turn' },
     });
 
@@ -26,7 +26,7 @@ describe('CombatWaitIcon', () => {
     expect(wrapper.find('.tabler-icon-hourglass-low').exists()).toBe(true);
 
     await vi.advanceTimersByTimeAsync(500);
-    expect(wrapper.classes()).toContain('combat-wait-icon--rotating');
+    expect(wrapper.classes()).toContain('animated-hourglass--rotating');
 
     await vi.advanceTimersByTimeAsync(600);
     expect(wrapper.find('svg.tabler-icon-hourglass').exists()).toBe(true);
@@ -35,7 +35,7 @@ describe('CombatWaitIcon', () => {
     expect(wrapper.find('.tabler-icon-hourglass-high').exists()).toBe(true);
 
     await vi.advanceTimersByTimeAsync(500);
-    expect(wrapper.classes()).toContain('combat-wait-icon--rotating');
+    expect(wrapper.classes()).toContain('animated-hourglass--rotating');
     wrapper.unmount();
   });
 });

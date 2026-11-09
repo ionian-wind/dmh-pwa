@@ -68,11 +68,9 @@ describe('editor submit identity', () => {
   it('keeps the timer id when editing', async () => {
     const wrapper = mount(TimerEditor, {
       props: {
-        isOpen: true,
         timer: {
           id: 't1',
           title: 'Torch',
-          description: '',
           duration: 60000,
           startedAt: null,
           status: 'inactive',
@@ -82,7 +80,11 @@ describe('editor submit identity', () => {
       },
     });
 
-    await submit(wrapper);
+    await wrapper
+      .findAll('button')
+      .find((entry) => entry.text() === 'Save')!
+      .trigger('click');
+    await nextTick();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({ id: 't1' });
   });
 });

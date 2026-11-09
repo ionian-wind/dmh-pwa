@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import BaseModal from '@/components/common/BaseModal.vue';
 import NumberSpinner from '@/components/common/NumberSpinner.vue';
 import type { Timer } from '@/types';
 
 const props = defineProps<{
   timer: Timer | null;
-  isOpen: boolean;
 }>();
 const emit = defineEmits(['submit', 'cancel', 'delete']);
 const { t } = useI18n();
 
 const editedTimer = ref({
   title: '',
-  description: '',
   duration: 60000,
 });
 
@@ -35,6 +32,24 @@ function hmsToMs(h: number, m: number, s: number) {
   return (h * 3600 + m * 60 + s) * 1000;
 }
 
+function resetForm() {
+  if (props.timer) {
+    const hms = msToHms(props.timer.duration);
+    hours.value = hms.hours;
+    minutes.value = hms.minutes;
+    seconds.value = hms.seconds;
+    editedTimer.value = {
+      title: props.timer.title || '',
+      duration: props.timer.duration,
+    };
+    return;
+  }
+  hours.value = 0;
+  minutes.value = 1;
+  seconds.value = 0;
+  editedTimer.value = { title: '', duration: 60000 };
+}
+
 watch([hours, minutes, seconds], () => {
   editedTimer.value.duration = hmsToMs(
     hours.value,
@@ -43,36 +58,18 @@ watch([hours, minutes, seconds], () => {
   );
 });
 
-watch(
-  () => props.timer,
-  (newTimer) => {
-    if (newTimer) {
-      const hms = msToHms(newTimer.duration);
-      hours.value = hms.hours;
-      minutes.value = hms.minutes;
-      seconds.value = hms.seconds;
-      editedTimer.value = {
-        title: newTimer.title || '',
-        description: newTimer.description || '',
-        duration: newTimer.duration,
-      };
-    } else {
-      hours.value = 0;
-      minutes.value = 1;
-      seconds.value = 0;
-      editedTimer.value = { title: '', description: '', duration: 60000 };
-    }
-  },
-  { immediate: true },
-);
+watch(() => props.timer, resetForm, { immediate: true });
 
 function handleSubmit() {
   emit('submit', {
     ...editedTimer.value,
     id: props.timer?.id ?? '',
   });
+  resetForm();
 }
+
 function handleCancel() {
+  resetForm();
   emit('cancel');
 }
 
@@ -82,41 +79,17 @@ function handleDelete() {
 </script>
 
 <template>
-  <BaseModal
-    :isOpen="isOpen"
-    :title="props.timer ? t('timers.edit') : t('timers.create')"
-    :showSubmit="true"
-    :showCancel="true"
-    :showDelete="!!timer"
-    @submit="handleSubmit"
-    @delete="handleDelete"
-    @cancel="handleCancel"
-    modalId="timer-editor-modal"
-  >
-    <div class="q-gutter-y-md">
-      <QInput
-        v-model="editedTimer.title"
-        :label="t('timers.fields.title')"
-        :placeholder="t('timers.fields.titlePlaceholder')"
-        type="text"
-        outlined
-      />
-      <QInput
-        v-model="editedTimer.description"
-        :label="t('timers.fields.description')"
-        :placeholder="t('timers.fields.descriptionPlaceholder')"
-        type="textarea"
-        autogrow
-        outlined
-      />
-    </div>
+  <div class="timer-form q-gutter-y-md">
+    <QInput
+      v-model="editedTimer.title"
+      :label="t('timers.fields.title')"
+      :placeholder="t('timers.fields.titlePlaceholder')"
+      type="text"
+      outlined
+      dense
+    />
 
-    <div class="q-mt-lg">
-      <div
-        class="text-center q-mb-sm text-primary text-weight-medium duration-label"
-      >
-        {{ t('timers.fields.duration') }}
-      </div>
+    <div>
       <div class="row items-center justify-center no-wrap">
         <div class="column items-center">
           <NumberSpinner v-model="hours" :min="0" :max="99" />
@@ -134,15 +107,22 @@ function handleDelete() {
         </div>
       </div>
     </div>
-  </BaseModal>
+
+    <div class="row justify-end q-gutter-sm timer-form-actions">
+      <QBtn
+        v-if="timer"
+        flat
+        color="negative"
+        :label="t('common.delete')"
+        @click="handleDelete"
+      />
+      <QBtn flat :label="t('common.cancel')" @click="handleCancel" />
+      <QBtn color="primary" :label="t('common.save')" @click="handleSubmit" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.duration-label {
-  font-size: 0.875rem;
-  opacity: 0.7;
-}
-
 .unit-label {
   font-size: 0.75rem;
   text-transform: uppercase;

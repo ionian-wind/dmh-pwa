@@ -29,7 +29,7 @@ import {
   IconRestore,
   IconX,
 } from '@tabler/icons-vue';
-import CombatWaitIcon from '@/encounters/CombatWaitIcon.vue';
+import AnimatedHourglass from '@/components/common/AnimatedHourglass.vue';
 import { advanceTurn, rewindTurn, type TurnResult } from '@/utils/combatTurn';
 
 const route = useRoute();
@@ -747,7 +747,9 @@ const validateInitiative = (val: unknown) =>
                   "
                   class="participant-wait"
                 >
-                  <CombatWaitIcon :label="t('combat.participantStatus.wait')" />
+                  <AnimatedHourglass
+                    :label="t('combat.participantStatus.wait')"
+                  />
                 </span>
               </QItemSection>
 
@@ -916,7 +918,7 @@ const validateInitiative = (val: unknown) =>
   height: 52px;
 }
 
-.participant-wait :deep(.combat-wait-icon) {
+.participant-wait :deep(.animated-hourglass) {
   align-items: center;
   justify-content: center;
   width: 100%;

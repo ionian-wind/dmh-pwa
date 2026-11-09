@@ -266,4 +266,31 @@ describe('database migrations', () => {
     expect(location).toMatchObject({ id: 'l1', name: 'Town' });
     reopened.close();
   });
+
+  it('removes timer descriptions', async () => {
+    await deleteDatabase();
+    const db = await openDB();
+    const now = Date.now();
+    await db.timers.put({
+      id: 'timer1',
+      title: 'Legacy',
+      description: 'Old field',
+      duration: 60_000,
+      startedAt: null,
+      status: 'inactive',
+      createdAt: now,
+      updatedAt: now,
+    });
+    const applied = await db.migrations.toArray();
+    const migration20 = applied.find((entry) => entry.version === 20);
+    expect(migration20).toBeTruthy();
+    await db.migrations.delete(migration20!.id);
+    db.close();
+
+    await resetStoreCache();
+    const reopened = await openDB();
+    const timer = await reopened.timers.get('timer1');
+    expect(timer.description).toBeUndefined();
+    reopened.close();
+  });
 });

@@ -142,7 +142,6 @@ export interface Bookmark extends WithMetadata {
 
 export interface Timer extends WithMetadata {
   title?: string;
-  description?: string;
   duration: number; // milliseconds
   startedAt: number | null;
   status: 'inactive' | 'running' | 'finished';

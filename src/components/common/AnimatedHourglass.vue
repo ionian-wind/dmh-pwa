@@ -53,8 +53,8 @@ onBeforeUnmount(() => {
 
 <template>
   <span
-    class="combat-wait-icon"
-    :class="{ 'combat-wait-icon--rotating': rotating }"
+    class="animated-hourglass"
+    :class="{ 'animated-hourglass--rotating': rotating }"
     role="img"
     :aria-label="label"
     :title="label"
@@ -64,15 +64,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.combat-wait-icon {
+.animated-hourglass {
   display: inline-flex;
 }
 
-.combat-wait-icon--rotating {
-  animation: combat-wait-icon-rotate 0.6s ease-in-out;
+.animated-hourglass--rotating {
+  animation: animated-hourglass-rotate 0.6s ease-in-out;
 }
 
-@keyframes combat-wait-icon-rotate {
+@keyframes animated-hourglass-rotate {
   from {
     transform: rotate(0deg);
   }
@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .combat-wait-icon--rotating {
+  .animated-hourglass--rotating {
     animation: none;
   }
 }

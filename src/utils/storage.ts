@@ -157,9 +157,9 @@ export class DmhDatabase extends Dexie {
     // modules store and its indexes. Version 15 removes note content types,
     // version 16 cleans escaped spaces before block anchors, version 17
     // removes encounter notes, version 18 renames the encounter participant
-    // field to pawns, and version 19 migrates the legacy pawn store and
-    // references. Legacy store names/key paths are kept and migrations remain
-    // recorded separately.
+    // field to pawns, version 19 migrates the legacy pawn store and
+    // references, and version 20 removes timer descriptions. Legacy store
+    // names/key paths are kept and migrations remain recorded separately.
     this.version(DB_VERSION).stores(SCHEMA);
     this.on('versionchange', () => this.close());
   }

@@ -635,13 +635,9 @@
     "edit": "Редактировать таймер",
     "delete": "Удалить таймер",
     "noTitle": "(без названия)",
-    "duration": "Длительность",
     "fields": {
       "title": "Название",
-      "titlePlaceholder": "Введите название таймера",
-      "description": "Описание",
-      "descriptionPlaceholder": "Введите описание таймера",
-      "duration": "Длительность"
+      "titlePlaceholder": "Введите название таймера"
     },
     "hours": "ч",
     "minutes": "м",
@@ -650,12 +646,7 @@
     "finished": "Завершён!",
     "start": "Старт",
     "stop": "Стоп",
-    "reset": "Сбросить",
-    "status": {
-      "inactive": "Неактивен",
-      "running": "Идёт",
-      "finished": "Завершён"
-    }
+    "reset": "Сбросить"
   },
   "pwa": {
     "updateAvailable": "Доступно обновление",

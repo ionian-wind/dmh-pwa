@@ -27,6 +27,33 @@ const DraggablePanelStub = defineComponent({
   },
 });
 
+const QExpansionItemStub = defineComponent({
+  name: 'QExpansionItem',
+  props: { modelValue: Boolean },
+  emits: ['update:modelValue'],
+  setup(props, { slots, emit }) {
+    return () =>
+      h(
+        'div',
+        {
+          'data-stub': 'QExpansionItem',
+          'data-expanded': String(props.modelValue),
+        },
+        [
+          h(
+            'div',
+            {
+              class: 'expansion-header',
+              onClick: () => emit('update:modelValue', !props.modelValue),
+            },
+            slots.header?.(),
+          ),
+          h('div', { class: 'expansion-content' }, slots.default?.()),
+        ],
+      );
+  },
+});
+
 const TimerListItemStub = defineComponent({
   name: 'TimerListItem',
   props: { timer: { type: Object, required: true } },
@@ -38,8 +65,8 @@ const TimerListItemStub = defineComponent({
 
 const TimerEditorStub = defineComponent({
   name: 'TimerEditor',
-  props: { timer: { type: Object, default: null }, isOpen: Boolean },
-  emits: ['submit', 'delete', 'cancel'],
+  props: { timer: { type: Object, default: null } },
+  emits: ['submit', 'cancel', 'delete'],
   setup() {
     return () => h('div', { 'data-stub': 'TimerEditor' });
   },
@@ -51,11 +78,16 @@ function mountPanel() {
     global: {
       stubs: {
         DraggablePanel: DraggablePanelStub,
+        QExpansionItem: QExpansionItemStub,
         TimerListItem: TimerListItemStub,
         TimerEditor: TimerEditorStub,
       },
     },
   });
+}
+
+function expansion(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findComponent(QExpansionItemStub);
 }
 
 describe('TimersPanel', () => {
@@ -64,7 +96,7 @@ describe('TimersPanel', () => {
     vi.mocked(confirm).mockResolvedValue(true);
   });
 
-  it('renders timers and creates one from the panel footer', async () => {
+  it('renders timers and creates one from the inline form', async () => {
     seedMockStore('timers', [
       {
         id: 't1',
@@ -79,20 +111,18 @@ describe('TimersPanel', () => {
     const store = useTimerStore();
 
     expect(wrapper.findAllComponents(TimerListItemStub)).toHaveLength(1);
+    expect(expansion(wrapper).props('modelValue')).toBe(false);
+    expect(wrapper.findComponent(TimerEditorStub).props('timer')).toBeNull();
 
-    const create = wrapper
-      .findAll('[data-stub="QItem"]')
-      .find((item) => item.text().includes('Create Timer'))!;
-    await create.trigger('click');
+    await wrapper.find('.expansion-header').trigger('click');
+    expect(expansion(wrapper).props('modelValue')).toBe(true);
+
     const editor = wrapper.findComponent(TimerEditorStub);
-    expect(editor.props('isOpen')).toBe(true);
-    expect(editor.props('timer')).toBeNull();
-
     editor.vm.$emit('submit', { id: '', title: 'New timer', duration: 30 });
     await flushPromises();
 
     expect(store.items.map((timer) => timer.title)).toContain('New timer');
-    expect(wrapper.findComponent(TimerEditorStub).props('isOpen')).toBe(false);
+    expect(expansion(wrapper).props('modelValue')).toBe(false);
     wrapper.unmount();
   });
 
@@ -124,15 +154,18 @@ describe('TimersPanel', () => {
 
     item.vm.$emit('edit');
     await flushPromises();
+    expect(expansion(wrapper).props('modelValue')).toBe(true);
     expect(wrapper.findComponent(TimerEditorStub).props('timer')).toMatchObject(
       {
         id: 't1',
       },
     );
+    expect(wrapper.find('.expansion-header').text()).toContain('Edit Timer');
 
     item.vm.$emit('delete');
     await flushPromises();
     expect(store.remove).toHaveBeenCalledWith('t1');
+    expect(expansion(wrapper).props('modelValue')).toBe(false);
     wrapper.unmount();
   });
 
@@ -151,25 +184,23 @@ describe('TimersPanel', () => {
     const store = useTimerStore();
     vi.spyOn(store, 'remove').mockResolvedValue(undefined);
 
-    await wrapper
-      .findAll('[data-stub="QItem"]')
-      .find((entry) => entry.text().includes('Create Timer'))!
-      .trigger('click');
+    wrapper.findComponent(TimerListItemStub).vm.$emit('edit');
+    await flushPromises();
     const editor = wrapper.findComponent(TimerEditorStub);
 
     editor.vm.$emit('delete', 'missing');
     await flushPromises();
     expect(store.remove).not.toHaveBeenCalled();
-    expect(wrapper.findComponent(TimerEditorStub).props('isOpen')).toBe(true);
+    expect(expansion(wrapper).props('modelValue')).toBe(true);
 
     editor.vm.$emit('delete', 't1');
     await flushPromises();
     expect(store.remove).toHaveBeenCalledWith('t1');
-    expect(wrapper.findComponent(TimerEditorStub).props('isOpen')).toBe(false);
+    expect(expansion(wrapper).props('modelValue')).toBe(false);
     wrapper.unmount();
   });
 
-  it('closes from its header', async () => {
+  it('closes from its panel header', async () => {
     const wrapper = mountPanel();
     await flushPromises();
 
