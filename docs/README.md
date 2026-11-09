@@ -100,6 +100,7 @@ implemented.
 | ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | [integration/cross-part-behavior.md](integration/cross-part-behavior.md)                 | How parts call each other; end-to-end flows         |
 | [proposals/technical-proposals.md](proposals/technical-proposals.md)                     | Engineering improvements and refactors              |
+| [proposals/roll20-style-chat-engine.md](proposals/roll20-style-chat-engine.md)           | Local chat/macro/template engine proposal           |
 | [proposals/bugs.md](proposals/bugs.md)                                                   | Current defect status and resolved-item index       |
 | [proposals/fixes-applied.md](proposals/fixes-applied.md)                                 | What was fixed in the first remediation pass        |
 | [proposals/feature-proposals.md](proposals/feature-proposals.md)                         | Product features that fit the existing architecture |

@@ -5,6 +5,11 @@
 > reference: it merges the old feature description, the notation
 > specification, the plugin requirements/proposal, and the differences between
 > `dice-roller-2` and `dice-roller-3`.
+>
+> **Critical architecture change:** the current one-shot parse/evaluate model is
+> not enough for Roll20 compatibility. The plan now requires a multi-pass
+> coordinator with a separate parser for each syntax family; see
+> [Roll20 order of operations](#roll20-order-of-operations).
 
 ## Purpose
 
@@ -34,6 +39,15 @@ The application still does not register the engine or call it from a view.
 `RollButton.vue` is a standalone `@3d-dice/dice-box` FAB and is not mounted in
 the app shell.
 
+The full Roll20 feature is split into two documents:
+
+| Scope                                                                        | Document                                                                          |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Dice notation, parsing and evaluation                                        | this plan                                                                         |
+| Chat commands, macros, attributes, roll templates, buttons and chat delivery | [proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md) |
+
+The dice plan is a prerequisite for the chat engine, not a replacement for it.
+
 ## Goals and requirements
 
 - The core provides an extendable parser, evaluator and error handler.
@@ -43,12 +57,11 @@ the app shell.
   that AST later.
 - Plugins are evaluated in the order supplied. Arithmetic is the built-in
   fallback and is always considered last.
-- Evaluation order:
-  1. roll queries (up to the nesting limit);
-  2. inline rolls, deepest first;
-  3. dice, including exploding/dropped/special dice;
-  4. `floor`/`ceil`/`round`/`abs`;
-  5. remaining arithmetic with normal precedence.
+- Evaluation follows Roll20's multi-pass order of operations rather than a
+  single monolithic parse. The authoritative pass list is in
+  [Roll20 order of operations](#roll20-order-of-operations).
+- Parentheses must never be expected to override macro, ability, attribute,
+  query or inline-roll expansion order.
 - The RNG may be overridden for tests or reproducible rolls.
 - Invalid syntax, invalid user input and missing data produce typed exceptions.
 - Reaching a dice explosion limit produces a warning, not an exception.
@@ -56,18 +69,133 @@ the app shell.
 
 ## Pipeline
 
+The engine must be a **pass coordinator**, not a single parser that tries to
+understand every syntax at once. Each pass may have its own tokenizer, grammar
+and output shape, and later passes consume the previous pass's text/AST.
+
 ```
-parse(text)
-  -> AST
-extractQueries / extractTables / extractRolls / extractMacros (plugins)
-  -> required input schemas, table names, roll ids, macro names
-evaluate(ast, { queries, tables, rolls, macros, rng })
-  -> { result, warnings }
+ChatMessage
+  -> command parser              /roll, /w, /em, /gmroll, plain text, ...
+  -> expansion loop              abilities, macros, attributes (<=99)
+  -> roll-query parser           ?{prompt|default|option,value} (<=99)
+  -> HTML entity decode          inside each resolved query
+  -> inline-roll parser          [[...]], innermost first, stable ids
+  -> dice parser                 NdX, modifiers, groups, tables
+  -> function parser             floor/ceil/round/abs
+  -> arithmetic parser           normal math precedence
+  -> custom roll parser          optional
+  -> HTML entity decode          final output
+  -> roll-template renderer      default/custom templates
+  -> chat delivery/ACL           public/gm/whisper/self
 ```
 
-The engine may also expose a single `processDiceExpression`-style helper that
-runs the pipeline and returns extraction details, but the current branches keep
-the stages separate.
+`parse(text)` alone is not enough for Roll20 compatibility. It is only the
+dice-notation parser used by step 4. The chat engine owns the outer passes.
+
+## Roll20 order of operations
+
+Roll20 applies these passes in strict order. The first four are text-expansion
+passes; the rest operate on the expanded roll text.
+
+| #   | Pass                           | Input                | Output                               | Notes                                                                  |
+| --- | ------------------------------ | -------------------- | ------------------------------------ | ---------------------------------------------------------------------- |
+| 0   | Chat command detection         | raw chat message     | command + payload                    | `/r`, `/w`, `/em`, `/gmroll`, `/desc`, `/as`, `/emas`, plain text, ... |
+| 1   | Ability expansion              | payload              | payload with `%{character\|ability}` | recursive                                                              |
+| 2   | Macro expansion                | payload              | payload with `#macro`                | recursive                                                              |
+| 3   | Attribute expansion            | payload              | payload with `@{character\|attr}`    | includes `selected`, `target`, token bars, `max`, repeating sections   |
+| 4   | Repeat 1–3                     | expanded payload     | stable payload or limit error        | up to 99 levels or no expansions left                                  |
+| 5   | Roll-query expansion           | payload              | payload with `?{...}` replaced       | up to 99 levels; same prompt asked once                                |
+| 5b  | HTML decode inside queries     | query values         | decoded query values                 | one decode per query layer                                             |
+| 6   | Inline-roll expansion          | payload              | payload with `[[...]]` results       | innermost first; assign `$[[n]]` indexes                               |
+| 7   | Dice evaluation                | expanded roll        | dice results substituted             | exploding/compounding/penetrating/reroll/keep/drop first               |
+| 8   | Math functions                 | remaining expression | functions evaluated                  | `floor`, `ceil`, `round`, `abs`                                        |
+| 9   | Arithmetic evaluation          | remaining expression | scalar/roll result                   | parentheses, powers, mul/div/mod, add/sub                              |
+| 10  | Custom roll parsing (optional) | result object        | computed result                      | character-sheet/script extension                                       |
+| 11  | HTML entity decode             | result text          | rendered text                        | once, after CRP                                                        |
+| 12  | Chat delivery                  | rendered message     | chat log / API event                 | recipients and permissions enforced here                               |
+
+Important consequences:
+
+- A macro/ability/attribute can contain another macro, query, inline roll or
+  template. Expansion must be iterative, not a single regex replacement.
+- Roll queries are resolved only after all ability/macro/attribute expansion.
+  This is why a query can build an attribute name but an attribute cannot depend
+  on a query.
+- Inline rolls are resolved before the surrounding `/roll`; nested inline rolls
+  are resolved from the deepest level upward.
+- Dice are rolled before the remaining math is evaluated. `floor()`/`ceil()` and
+  the final arithmetic happen after dice substitution.
+- `[[...]]` results referenced through `$[[n]]` must be recorded with stable
+  indexes and their raw/computed values.
+- Every pass needs its own recursion/expansion budget and a clear error type.
+  Do not let one recursive pass consume another pass's budget silently.
+
+### Separate parsers/engines
+
+The following can share low-level utilities but should not share one grammar:
+
+| Parser/engine            | Responsibility                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| Chat command parser      | Slash commands, plain text, emotes, whispers, descriptions, hidden/GM messages         |
+| Ability/macro parser     | `%{character\|ability}`, `#macro`, nested calls and chaining                           |
+| Attribute parser         | `@{...}`, `selected`/`target`, bars, `max`, repeating sections, undefined attributes   |
+| Roll-query parser        | `?{prompt}`, defaults, labelled dropdowns, nested queries, HTML-entity stacking        |
+| Inline-roll parser       | `[[...]]`, nesting, index assignment, `.computed`, roll-reference reuse                |
+| Dice notation parser     | `NdX`, Fudge/custom/computed dice, compare points, all dice modifiers, groups          |
+| Arithmetic parser        | Math precedence and `floor`/`ceil`/`round`/`abs`                                       |
+| Table-roll parser        | `Nt[table]`, weighted tables, table extraction                                         |
+| Roll-template parser     | `&{template:...}`, `{{field=value}}`, display-only helpers, leading-space sensitivity  |
+| Chat-button parser       | `[label](~ability)`, `[label](`/roll ...)`, API-style buttons and chat menus           |
+| Roll-reference parser    | `$[[n]]`, `$[[n.computed]]`, cross-line/roll reuse rules                               |
+| Formatting/entity parser | Markdown-lite formatting, HTML entities, `%NEWLINE%`, images/links, final sanitisation |
+
+### Shared intermediate representation
+
+A pass coordinator needs a small IR rather than repeatedly parsing strings:
+
+```ts
+interface PassContext {
+  text: string;
+  expansions: number;
+  queryDepth: number;
+  inlineDepth: number;
+  rollIndex: number;
+  warnings: Warning[];
+  errors: EngineError[];
+  rawMessage: string;
+}
+
+interface RollRecord {
+  id: string;
+  index: number;
+  raw: string;
+  computed?: string;
+  result: number | number[];
+  warnings: Warning[];
+}
+```
+
+At minimum preserve:
+
+- source spans for error messages;
+- the original raw text plus each pass's expanded text;
+- stable roll/inline indexes;
+- expansion provenance (ability/macro/attribute source);
+- query answers and prompt keys;
+- warnings and their originating pass.
+
+### Limits and failure policy
+
+- Ability/macro/attribute expansion: 99 levels.
+- Roll-query nesting: 99 levels.
+- Inline-roll nesting: bounded and cycle-detected.
+- Exploding/compounding/penetrating rolls: 99 additional rolls per expression
+  (warning when capped).
+- Undefined attributes/macros/tables: missing-data error unless `&{noerror}` is
+  present.
+- Output size and total pass time should also be bounded to avoid macro bombs.
+- A pass failure must identify the pass and the source span; never collapse all
+  failures into "unable to parse".
 
 ## Plugin architecture
 
@@ -129,52 +257,171 @@ modulus left-to-right, addition/subtraction left-to-right.
 - Labels: `2d6[fire]`; labels may contain Markdown.
 - Descriptive text after a roll is allowed, e.g. `1d20+5 for initiative`.
 
+### Compare points
+
+Roll20 modifiers use a **compare point** (`CP`): optional operator plus target
+number. If no operator is present, `=` is assumed. For most modifiers the whole
+CP may be omitted to use the default.
+
+- `3` → equal to 3
+- `>3` → greater than or equal to 3
+- `<3` → less than or equal to 3
+
+Successes, failures, explosions, rerolls and matching all use this convention.
+Dice modifiers state whether they apply to basic (`B`) and/or Fudge (`F`) dice.
+
 ### Dice modifiers
 
-- Keep/drop: `khN`, `klN`, `dhN`, `dlN`; custom `k>N`, `k<N`.
-- Rerolls: `rN`, `roN`, `r<3`; `raN` rerolls until success and requires the
-  `allowInfinite` context flag.
+- Successes: `CP`; e.g. `3d6>3`, `10d6<4`.
+- Failures: `fCP`; only valid alongside a success check. Each failure subtracts
+  one success, e.g. `3d6>3f1`, `10d6<4f>5`.
+- Keep/drop: `khN`, `klN`, `dhN`, `dlN`; shorthand `kN` keeps highest and `dN`
+  drops lowest. Optional `h`/`l` selects the high/low side.
+- Rerolls: `rCP` rerolls until outside the compare point; `roCP` rerolls once.
+  `r` with no CP rerolls 1s. Multiple reroll clauses are allowed.
 - Explosions:
   - `!` explode on maximum;
-  - `!p` penetrating;
-  - `!!` compound;
-  - `!N` custom threshold;
+  - `!CP` custom explosion threshold;
+  - `!p` penetrating (each extra die gets −1);
+  - `!!` compounding (extra rolls are added into the same die result);
   - `!<N`, `!>N`, `!=N` directional thresholds.
-  - Explosions are capped at 99 rolls and emit a warning at the limit.
-- Dice pools and counting: `=N`, `>N`, `<N`, `e`, `s`, `f`, `cs`, `cf`.
+  - Explosions are capped at 99 additional rolls per expression and emit a
+    warning at the limit.
+- Dice pools: `=N`, `>N`, `<N`, `e` (exhaustive successes), `s`, `f`, `cs`, `cf`.
+  Critical-success/failure markers affect display and counting, not the
+  explosion/reroll thresholds unless the same CP is applied to those modifiers.
 - Min/max per die: `miN`, `maN`.
-- Matching: `m`.
-- Sorting: `sa`, `sd`.
-- Roll once: `o`.
+- Matching:
+  - `m` groups/show matches without changing the total;
+  - `mt` returns the number of matching groups;
+  - `mtN` requires at least N matching dice;
+  - `mtN>X` requires N matching dice at or above X.
+- Sorting: `s`/`sa` ascending (default), `sd` descending.
+- Roll once: `o` rolls an entire group once.
 - Modifiers can be chained, e.g. `4d6kh3ro1!>5sd`.
 - Nested groups can receive modifiers, e.g. `{2d6kh1, 1d8}kh1`.
 - Advantage/disadvantage use `2d20kh1` / `2d20kl1`.
+
+Modifier application order (important):
+
+1. exploding, compounding, penetrating and rerolls, while dice are still being
+   rolled;
+2. keep/drop, success/failure counting and sorting, after all dice have settled.
+
+### Grouped rolls
+
+- `{...}` groups multiple sub-rolls. With a comma each sub-expression is totaled
+  before group modifiers; without a comma the group applies modifiers across
+  individual dice from all sub-rolls.
+- All sub-rolls in a group must be the same kind: sum rolls, success rolls, or
+  compatible nested groups. Bare numbers need to be made roll-like (for example
+  `5 + 0d0` or a nested inline roll).
+- Group modifiers include keep/drop, successes and failures.
+- `{5d6!!}>8` means “compound each die, then count successes against 8”, not
+  “explode on values greater than 8”.
 
 ### Tables
 
 `Nt[table-name]` rolls N times on a weighted table; `t[table]` rolls once.
 Weights may be expressed by repeating entries or by percentages that total 100.
-Table references can be extracted before evaluation.
+Table entries may contain inline rolls, which are resolved after selection.
+Table references are extracted before evaluation. Inline-roll table syntax
+effectively rolls once per inline result in Roll20; multiple-table display is a
+separate UI concern, so the engine should return an array even when the UI
+collapses it.
 
-### Macros and roll queries
+### Macros, abilities and attributes
 
 - Macros: `#macro-name`; calls may be nested or chained with `;`.
-- Roll queries:
-  - `?{Prompt}` asks for a value;
-  - `?{Prompt|Default}` supplies a default;
-  - `?{Prompt|Option1|Option2}` offers choices;
-  - labelled variants are supported;
-  - query defaults may themselves be inline rolls, e.g. `?{Dmg|[[1d8]]}`;
-  - multiple independent queries may appear in one expression;
-  - nesting is limited; exceeding the limit is a syntax error.
-- Escape `|`, `,` and `}` inside queries/macros with `\`.
+- Abilities: `%{character|ability}`; may be nested and are expanded before macro
+  expansion completes.
+- Attributes: `@{character|attribute}`, `@{selected|attribute}`,
+  `@{target|attribute}`, token bars (`bar1`–`bar3`), and the optional `max`
+  argument.
+- Repeating sections: `@{selected|repeating_section_$N_field}` (row index) or
+  the `RowID` form. Row indexes start at 0.
+- Attribute/ability/macro names are case-insensitive.
+- Calling an attribute that contains a formula may return the formula text; wrap
+  it in an inline roll to force evaluation.
+- Expansion order means attributes/abilities/macros are expanded before roll
+  queries. Do not HTML-escape characters inside `@{}`, `%{}` or `#macro` calls.
 
-### Inline rolls, references and formatting
+### Roll queries
 
-- Inline rolls: `[[expr]]`, evaluated deepest-first.
-- Roll references: `$[[N]]`, `$[[N]]-1`, `$[roll:id]`.
-- `%NEWLINE%` inserts a line break in output.
-- `//` starts a comment.
+- `?{Prompt}` asks for a value.
+- `?{Prompt|Default}` supplies a default.
+- `?{Prompt|Option1|Option2}` offers a dropdown.
+- `?{Prompt|Label 1,value1|Label 2,value2}` separates label from value.
+- Query defaults may themselves be inline rolls, e.g. `?{Dmg|[[1d8]]}`.
+- Multiple independent queries may appear in one expression.
+- The same exact prompt is asked only once per message.
+- Nested queries require HTML-entity escaping: `|`, `}`, `,` become `&#124;`,
+  `&#125;`, `&#44;`; deeper levels stack the ampersand (`&amp;#124;`, etc.).
+- Query nesting is limited to 99 levels; exceeding the limit is a syntax error.
+- Query values must be validated against the query schema before evaluation.
+
+### Roll references and reuse
+
+- Inline rolls get stable indexes: `$[[0]]`, `$[[1]]`, ...
+- `$[[0]]` resolves the first inline roll in the current message; it cannot be
+  placed inside another inline roll in Roll20's normal parser.
+- `$[[0.computed]]` refers to the computed/custom value and is less restrictive
+  inside nested rolls.
+- Cross-line reuse requires `%NEWLINE%` or roll-template fields.
+- Roll references to missing indexes are missing-data errors.
+- The engine should retain raw, computed and rendered values for every index.
+
+### Roll templates
+
+- Syntax: `&{template:<name>} {{field=value}} {{field2=value}}`.
+- The `default` template is always available; others come from sheet packs.
+- Values may contain inline rolls, abilities, macros and Markdown-lite.
+- Leading spaces inside `{{...}}` break parsing: `{{name=X}}` works,
+  `{{ name=X}}` does not.
+- Roll templates cannot be used with `/roll`; use them as ordinary chat output
+  with inline rolls.
+- The rendered message should expose structured fields so a UI can render them
+  without HTML injection.
+
+### Roll options and commands
+
+- Initiative: `&{tracker}`, `&{tracker:+}` and `&{tracker:-}` send or adjust a
+  result in the turn tracker.
+- Error suppression: `&{noerror}` downgrades missing attributes/abilities to
+  empty values instead of aborting the message.
+- `/r`/`/roll`: normal roll.
+- `/gmroll`/`/gr`: roll visible to the GM and roller.
+- `/w`: whisper; quote names with spaces.
+- `/em`/`/me`: emote; `/ooc`/`/o`: out-of-character.
+- `/desc`: GM description; `/as` and `/emas`: GM speech/emote as a named NPC.
+- `/talktomyself`: locally suppress chat output; not a security boundary.
+- `/fx`: visual effect command; outside the dice engine.
+- A leading backtick escapes a command and prevents parsing.
+- Multiline chat messages are interpreted line by line.
+- Markdown-lite is supported for emphasis, code, links and images; not full
+  Markdown.
+
+### Hidden rolls and chat commands
+
+Roll20 has no simple player-hidden roll command; `/gmroll` is the closest normal
+feature and is visible to the roller and GM. Truly blind rolls rely on API
+scripts or UI tricks. The DMH proposal should define explicit visibility modes
+(`public`, `gm`, `self`, `blind`) rather than reproducing that limitation.
+
+### Inline rolls, labels and formatting
+
+- Inline rolls: `[[expr]]`, evaluated deepest-first, total-only display.
+- Inline labels: `[[3d6[fire]]]`, `2d10+5[Fire Damage]`; labels are tooltips and
+  may contain attribute calls and Markdown.
+- Text after a roll is descriptive output, e.g. `1d20+5 Roll for Initiative`;
+  escape leading formula characters in that text if needed.
+- Roll references: `$[[N]]`, `$[[N.computed]]`.
+- `%NEWLINE%` inserts a line break in output; multiline chat and `%NEWLINE%`
+  have different ordering semantics.
+- `//` starts a comment where supported.
+- Markdown-lite emphasis, code, links and images are allowed in chat output.
+- HTML entities are decoded at defined points (inside queries and once at final
+  output); nested macros require entity stacking.
 - Invalid markup is a syntax error.
 
 ### Errors and limits
@@ -190,13 +437,52 @@ Table references can be extracted before evaluation.
 
 ## Evaluation details
 
-- Modifiers apply left-to-right.
+- Modifiers apply in two phases: roll-time (explode/compound/penetrate/reroll)
+  then settled (keep/drop/success/failure/sort).
 - The `e` modifier rerolls successes after other modifiers, up to 99 cycles.
 - Arithmetic combines scalar totals, concatenates roll arrays, and propagates
   warnings/details.
 - Generic plugin errors must not be silently mistaken for “plugin did not handle
   this node”; intentional typed errors are rethrown when no later plugin
   handles the node.
+- Inline rolls and table rolls are evaluated before the enclosing formula; their
+  results are substituted as numbers/values.
+- Roll queries are extracted first, prompted once per unique prompt, then
+  substituted before inline rolls.
+- Roll references are resolved from the message's roll table, not re-rolled.
+- Roll templates are rendered after evaluation; they do not evaluate their own
+  hidden dice unless those dice are inline rolls.
+- Custom roll parsing (sheet/API extension) runs after ordinary evaluation and
+  before the final HTML decode.
+- HTML entity decoding is deliberately late so nested macro/query layers can
+  use entities as syntax protection.
+- Chat delivery applies recipient/permission rules after rendering; hidden/GM
+  rolls must be filtered server/side before display.
+
+## Missing implementation work
+
+The current branches implement the dice core and some extraction, but not the
+full Roll20-compatible engine. Add these in order:
+
+1. **Pass coordinator** with separate expansion, query, inline, dice, math,
+   template and delivery parsers.
+2. **Ability/macro/attribute expansion** with a 99-level loop and provenance.
+3. **Query extraction/prompting** including dropdown labels, same-prompt reuse
+   and HTML-entity stacking.
+4. **Inline-roll index table** with raw/computed values and cross-reference
+   resolution.
+5. **Full modifier semantics**: compare points, failures, matching (`m`/`mt`),
+   roll-once, reroll-once, two-phase modifier ordering.
+6. **Grouped roll validation** for mixed sub-roll types and group modifiers.
+7. **Roll tables** with weighted entries and entry-level inline rolls.
+8. **Roll templates** with structured fields and leading-space validation.
+9. **Chat commands/visibility** and `&{tracker}`, `&{noerror}` options.
+10. **Chat-button/chat-menu** syntax and ability/roll invocation.
+11. **Custom roll parsing** as an optional post-evaluation extension point.
+12. **Final HTML decode and sanitisation** with a strict allow-list.
+
+The chat/macro/template/button layer is specified separately in
+[proposals/roll20-style-chat-engine.md](../proposals/roll20-style-chat-engine.md).
 
 ## Key files
 
@@ -225,19 +511,49 @@ been removed on both dice branches.
 Before shipping:
 
 1. Choose one implementation branch and delete the rejected one.
-2. Add a single registration/bootstrap module that loads the chosen plugins
-   once.
-3. Wire the engine to a UI entry point (or wrap `RollButton.vue`) and render
+2. Introduce the pass coordinator and split parsers described above; do not add
+   more syntax to a single monolithic parser.
+3. Add a single registration/bootstrap module that loads the chosen dice plugin
+   set once.
+4. Wire the engine to a UI entry point (or wrap `RollButton.vue`) and render
    results/warnings.
-4. Feed real table, macro and roll-reference data into evaluation.
-5. Add app-level tests for parse → extract → prompt → evaluate.
-6. Keep the notation specification and this document as the canonical feature
+5. Implement the chat-engine proposal's message/macro/query/template layers.
+6. Feed real tables, macros, abilities, attributes and roll references into
+   evaluation.
+7. Add app-level tests for expansion, prompting, inline rolls, dice, math,
+   templates and visibility.
+8. Keep the notation specification and this document as the canonical feature
    reference.
+
+## References
+
+Roll20 documentation used for this plan:
+
+- [Order of Operations](https://wiki.roll20.net/Order_of_Operations)
+- [Dice Reference](https://wiki.roll20.net/Dice_Reference)
+- [Inline Rolls](https://wiki.roll20.net/Inline_Rolls)
+- [Roll Query](https://wiki.roll20.net/Roll_Query)
+- [Reusing Rolls](https://wiki.roll20.net/Reusing_Rolls)
+- [Roll Templates](https://wiki.roll20.net/Roll_Templates)
+- [Roll Table](https://wiki.roll20.net/Roll_Table)
+- [Macros](https://wiki.roll20.net/Macros)
+- [Macros/Formatting](https://wiki.roll20.net/Macros/Formatting)
+- [Macros/Initiative](https://wiki.roll20.net/Macros/Initiative)
+- [Character attributes](https://wiki.roll20.net/Character#Attributes)
+- [Text Chat](https://wiki.roll20.net/Text_Chat)
+- [Hidden Rolls](https://wiki.roll20.net/Hidden_Rolls)
+- [Chat Menus](https://wiki.roll20.net/Chat_Menus)
+- [Button](https://wiki.roll20.net/Button)
+- [Link Token](https://wiki.roll20.net/Link_Token)
+- [Complete Guide to Macros & Rolls](https://wiki.roll20.net/Complete_Guide_to_Macros_%26_Rolls)
 
 ## Known gaps
 
 - No app registration or UI integration.
+- The pass coordinator and split parsers do not exist yet.
 - `dice-roller-3` parser/tokenizer is incomplete.
-- Formatting, macro and roll-reference plugins are not fully exercised end to
-  end.
+- Formatting, macro, table, query, template and roll-reference plugins are not
+  fully exercised end to end.
+- No custom-roll-parsing extension point.
+- No chat engine; see the separate proposal.
 - No final decision on whether to keep 3D dice, the engine, or both.
