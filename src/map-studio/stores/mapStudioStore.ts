@@ -19,7 +19,9 @@ import {
 const MAX_HISTORY = 80;
 
 function cloneMap(map: StudioMap): StudioMap {
-  return structuredClone(map);
+  // Documents are plain JSON. A JSON clone also strips Vue proxies passed
+  // from reactive tool state before they reach history/structuredClone.
+  return JSON.parse(JSON.stringify(map)) as StudioMap;
 }
 
 export const useMapStudioStore = defineStore('mapStudio', () => {
