@@ -174,7 +174,10 @@ export class PixiStudioRenderer {
     this.render();
   }
 
-  async exportImage(pixelsPerCell: number): Promise<Blob> {
+  async exportImage(
+    pixelsPerCell: number,
+    mimeType = 'image/png',
+  ): Promise<Blob> {
     if (!this.app || !this.map) {
       throw new Error('Renderer is not ready');
     }
@@ -195,7 +198,7 @@ export class PixiStudioRenderer {
       canvas.toBlob?.((blob: Blob | null) => {
         if (blob) resolve(blob);
         else reject(new Error('Could not encode the map image'));
-      }, 'image/png');
+      }, mimeType);
     });
   }
 

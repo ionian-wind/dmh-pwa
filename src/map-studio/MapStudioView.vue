@@ -214,10 +214,38 @@ function download(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function exportMap(): Promise<void> {
+async function exportMap(
+  format: 'png' | 'webp' | 'jpg' = 'png',
+): Promise<void> {
   if (!renderer.value || !map.value) return;
-  const blob = await renderer.value.exportImage(70);
-  download(blob, `${map.value.name || 'map'}.png`);
+  const mime = {
+    png: 'image/png',
+    webp: 'image/webp',
+    jpg: 'image/jpeg',
+  }[format];
+  const blob = await renderer.value.exportImage(70, mime);
+  download(blob, `${map.value.name || 'map'}.${format}`);
+}
+
+async function exportPdf(): Promise<void> {
+  if (!renderer.value || !map.value) return;
+  const blob = await renderer.value.exportImage(70, 'image/png');
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+  const width = map.value.width * 70;
+  const height = map.value.height * 70;
+  const { jsPDF } = await import('jspdf');
+  const pdf = new jsPDF({
+    orientation: width >= height ? 'landscape' : 'portrait',
+    unit: 'px',
+    format: [width, height],
+  });
+  pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+  download(pdf.output('blob'), `${map.value.name || 'map'}.pdf`);
 }
 
 async function openApplyDialog(): Promise<void> {
@@ -318,8 +346,25 @@ async function applyToLocation(): Promise<void> {
           no-caps
           icon="tabler-download"
           :label="t('mapStudio.export')"
-          @click="exportMap"
-        />
+          @click="exportMap('png')"
+        >
+          <QMenu>
+            <QList>
+              <QItem clickable @click="exportMap('png')"
+                ><QItemSection>PNG</QItemSection></QItem
+              >
+              <QItem clickable @click="exportMap('webp')"
+                ><QItemSection>WebP</QItemSection></QItem
+              >
+              <QItem clickable @click="exportMap('jpg')"
+                ><QItemSection>JPG</QItemSection></QItem
+              >
+              <QItem clickable @click="exportPdf"
+                ><QItemSection>PDF</QItemSection></QItem
+              >
+            </QList>
+          </QMenu>
+        </QBtn>
       </div>
     </header>
 

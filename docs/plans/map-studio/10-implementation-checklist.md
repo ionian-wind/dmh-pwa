@@ -90,7 +90,7 @@ Status: **in progress — M0 foundation + shared-wall geometry and core shape to
 - [ ] Random dungeon generator and settings
 - [ ] Seeded generation and reproducibility
 - [ ] Watabou and donjon imports
-- [ ] PDF and UVTT export
+- [x] PDF export (UVTT pending)
 - [ ] Multi-map projects and project bundles
 
 ## M6 — Touch, accessibility, polish
