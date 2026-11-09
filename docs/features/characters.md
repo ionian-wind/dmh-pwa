@@ -43,6 +43,9 @@ reference on the character.
 - The right drawer hosts `PartyList`, similar to jukebox playlists. It contains
   an **All characters** entry, party selection, create/edit/delete actions, and
   filters the list to the selected party's `characters` ids.
+- With a party selected, **Create Character** pre-checks that party in the
+  linking tab and links the new character to it on save. Unchecking it in the
+  tab skips the link.
 - Create/edit/delete/copy.
 - Delete calls `confirm(t('common.confirmDelete', { title: character.name }))`
   and removes the portrait file when it is no longer referenced.

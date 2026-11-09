@@ -349,9 +349,13 @@ onBeforeUnmount(() => {
       v-bind="editorProps(editingItem)"
       :is-open="showEditor"
       @submit="
-        (item: any) => {
+        (item: any, meta?: any) => {
           handleSubmit(item);
-          $emit('submit', item);
+          if (meta === undefined) {
+            $emit('submit', item);
+          } else {
+            $emit('submit', item, meta);
+          }
         }
       "
       @cancel="

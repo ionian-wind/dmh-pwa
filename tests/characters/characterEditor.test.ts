@@ -54,9 +54,12 @@ const character = {
   updatedAt: 1,
 };
 
-function mountEditor(item: typeof character | null = character) {
+function mountEditor(
+  item: typeof character | null = character,
+  extra: Record<string, unknown> = {},
+) {
   return mount(CharacterEditor, {
-    props: { isOpen: true, character: item },
+    props: { isOpen: true, character: item, ...extra },
     global: {
       stubs: {
         EntityMarkdownEditor: EntityMarkdownEditorStub,
@@ -90,6 +93,7 @@ describe('CharacterEditor', () => {
       name: 'Aria',
       notes: 'Latest notes',
     });
+    expect(wrapper.emitted('submit')?.[0]?.[1]).toBeUndefined();
     wrapper.unmount();
   });
 
@@ -140,11 +144,15 @@ describe('CharacterEditor', () => {
     wrapper.unmount();
   });
 
-  it('does not persist links for a new character', async () => {
-    const wrapper = mountEditor(null);
+  it('keeps new-character links in the draft until submit', async () => {
+    const wrapper = mountEditor(null, { partyId: 'p1' });
     await flushPromises();
 
     const groups = wrapper.findAllComponents(EntitiesLinkingStub);
+    expect(groups[1].props('modelValue')).toEqual([
+      { kind: 'party', id: 'p1' },
+    ]);
+
     groups[1].vm.$emit('update:modelValue', [{ kind: 'party', id: 'p2' }]);
     await flushPromises();
 
@@ -155,6 +163,9 @@ describe('CharacterEditor', () => {
     await flushPromises();
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       name: 'New Hero',
+    });
+    expect(wrapper.emitted('submit')?.[0]?.[1]).toEqual({
+      linkedPartyIds: ['p2'],
     });
     wrapper.unmount();
   });

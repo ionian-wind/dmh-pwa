@@ -13,13 +13,15 @@ import type { PlayerCharacter } from '@/types';
 import { useI18n } from 'vue-i18n';
 import { confirm } from '@/dialogs';
 import { deleteFileIfUnreferenced } from '@/utils/files';
+import { useEntityLinkRelations } from '@/components/common/entityDragLinking/relations';
 import { IconUsers } from '@tabler/icons-vue';
 
 const characterStore = useCharacterStore();
 const partyStore = usePartyStore();
 const router = useRouter();
 const rightDrawer = useRightDrawer();
-const { selectedParty, selectedCharacterIds, clearSelection } =
+const relations = useEntityLinkRelations();
+const { selectedPartyId, selectedParty, selectedCharacterIds, clearSelection } =
   useSelectedParty();
 const { t } = useI18n();
 
@@ -53,6 +55,9 @@ function editorProps(character: PlayerCharacter | null) {
   return {
     character,
     isOpen: true,
+    // Seed a new character's linking tab with the party currently filtering
+    // the list. The editor keeps this in its draft until the record exists.
+    partyId: character ? undefined : (selectedPartyId.value ?? undefined),
   };
 }
 
@@ -73,14 +78,21 @@ async function handleDelete(character: PlayerCharacter) {
   return false;
 }
 
-async function handleSubmit(character: PlayerCharacter) {
+async function handleSubmit(
+  character: PlayerCharacter,
+  meta?: { linkedPartyIds?: string[] },
+) {
   const previousPicture = character.id
     ? (characterStore.getById(character.id)?.picture ?? '')
     : '';
   if (character.id) {
     await characterStore.update(character.id, character);
   } else {
-    await characterStore.create(character);
+    const created = await characterStore.create(character);
+    const partyIds = meta?.linkedPartyIds ?? [];
+    if (partyIds.length) {
+      await relations.setLinkedIds('character', created.id, 'party', partyIds);
+    }
   }
   if (previousPicture && previousPicture !== (character.picture ?? '')) {
     await deleteFileIfUnreferenced(previousPicture);

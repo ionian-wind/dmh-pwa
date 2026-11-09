@@ -26,6 +26,13 @@ vi.mock('@/utils/storage', () => import('../helpers/mock-storage'));
 vi.mock('@/utils/files', () => ({
   deleteFileIfUnreferenced: vi.fn().mockResolvedValue(undefined),
 }));
+const relationMocks = vi.hoisted(() => ({
+  getLinkedIds: vi.fn(() => []),
+  setLinkedIds: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@/components/common/entityDragLinking/relations', () => ({
+  useEntityLinkRelations: () => relationMocks,
+}));
 vi.mock('@/dialogs', () => ({
   confirm: vi.fn().mockResolvedValue(true),
   alert: vi.fn().mockResolvedValue(undefined),
@@ -185,6 +192,45 @@ describe('list views', () => {
     expect(
       (list(wrapper).props('items') as any[]).map((item) => item.id),
     ).toEqual(['c1', 'c2']);
+    wrapper.unmount();
+    clearSelection();
+  });
+
+  it('links a new character to the selected party', async () => {
+    seedMockStore('characters', []);
+    seedMockStore('parties', [
+      { id: 'p1', name: 'Heroes', characters: [], updatedAt: 1 },
+    ]);
+    const { selectParty, clearSelection } = useSelectedParty();
+    selectParty('p1');
+
+    const { wrapper } = await mountView(CharactersView, '/');
+    const store = useCharacterStore();
+    const created = {
+      id: 'c-new',
+      name: 'New Hero',
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    vi.spyOn(store, 'create').mockResolvedValue(created as any);
+
+    const editorProps = (list(wrapper).props('editorProps') as any)(null);
+    expect(editorProps.partyId).toBe('p1');
+
+    list(wrapper).vm.$emit(
+      'submit',
+      { name: 'New Hero' },
+      { linkedPartyIds: ['p1'] },
+    );
+    await flushPromises();
+
+    expect(store.create).toHaveBeenCalled();
+    expect(relationMocks.setLinkedIds).toHaveBeenCalledWith(
+      'character',
+      'c-new',
+      'party',
+      ['p1'],
+    );
     wrapper.unmount();
     clearSelection();
   });
