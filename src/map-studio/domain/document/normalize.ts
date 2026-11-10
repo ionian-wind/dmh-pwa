@@ -2,6 +2,7 @@ import { generateId } from '@/utils/storage';
 import {
   STUDIO_SCHEMA_VERSION,
   type DungeonLayer,
+  type DungeonLayerStyle,
   type DungeonShape,
   type GridSettings,
   type StudioLayer,
@@ -12,6 +13,7 @@ import {
 import {
   createBackgroundLayer,
   createDungeonLayer,
+  createDungeonStyle,
   createGridSettings,
   createImagesLayer,
   createFolderLayer,
@@ -261,6 +263,99 @@ function normalizeObject(value: unknown): StudioObject | null {
   return null;
 }
 
+const BLEND_MODES = ['normal', 'add', 'multiply', 'screen'] as const;
+const HATCH_VARIANTS = [
+  'diagonal',
+  'cross',
+  'horizontal',
+  'vertical',
+  'dots',
+  'brick',
+] as const;
+
+function normalizeBlendMode(
+  value: unknown,
+): DungeonLayerStyle['shadow']['blendMode'] {
+  return BLEND_MODES.includes(String(value) as (typeof BLEND_MODES)[number])
+    ? (value as DungeonLayerStyle['shadow']['blendMode'])
+    : 'normal';
+}
+
+export function normalizeDungeonStyle(value: unknown): DungeonLayerStyle {
+  const defaults = createDungeonStyle();
+  const style =
+    value && typeof value === 'object'
+      ? (value as Partial<DungeonLayerStyle>)
+      : {};
+  const shadow = style.shadow ?? defaults.shadow;
+  const hatching = style.hatching ?? defaults.hatching;
+  const shading = style.shading ?? defaults.shading;
+  return {
+    floor: {
+      visible: style.floor?.visible !== false,
+      color:
+        typeof style.floor?.color === 'string'
+          ? style.floor.color
+          : defaults.floor.color,
+    },
+    walls: {
+      visible: style.walls?.visible !== false,
+      color:
+        typeof style.walls?.color === 'string'
+          ? style.walls.color
+          : defaults.walls.color,
+      width: Math.max(0.001, number(style.walls?.width, defaults.walls.width)),
+      blocksLight: style.walls?.blocksLight !== false,
+      dash: style.walls?.dash === true,
+    },
+    grid: {
+      visible: style.grid?.visible !== false,
+      color:
+        typeof style.grid?.color === 'string'
+          ? style.grid.color
+          : defaults.grid.color,
+      width: Math.max(0, number(style.grid?.width, defaults.grid.width)),
+    },
+    shadow: {
+      visible: shadow.visible === true,
+      opacity: clamp(number(shadow.opacity, defaults.shadow.opacity), 0, 1),
+      offsetX: number(shadow.offsetX, defaults.shadow.offsetX),
+      offsetY: number(shadow.offsetY, defaults.shadow.offsetY),
+      color:
+        typeof shadow.color === 'string' ? shadow.color : defaults.shadow.color,
+      blendMode: normalizeBlendMode(shadow.blendMode),
+    },
+    hatching: {
+      visible: hatching.visible === true,
+      variant: HATCH_VARIANTS.includes(
+        String(hatching.variant) as (typeof HATCH_VARIANTS)[number],
+      )
+        ? (hatching.variant as DungeonLayerStyle['hatching']['variant'])
+        : defaults.hatching.variant,
+      size: Math.max(0.02, number(hatching.size, defaults.hatching.size)),
+      color:
+        typeof hatching.color === 'string'
+          ? hatching.color
+          : defaults.hatching.color,
+      width: Math.max(0.001, number(hatching.width, defaults.hatching.width)),
+    },
+    shading: {
+      visible: shading.visible === true,
+      size: Math.max(0, number(shading.size, defaults.shading.size)),
+      roughness: ([0, 1, 2, 3] as const).includes(
+        shading.roughness as 0 | 1 | 2 | 3,
+      )
+        ? (shading.roughness as DungeonLayerStyle['shading']['roughness'])
+        : defaults.shading.roughness,
+      color:
+        typeof shading.color === 'string'
+          ? shading.color
+          : defaults.shading.color,
+      opacity: clamp(number(shading.opacity, defaults.shading.opacity), 0, 1),
+    },
+  };
+}
+
 function normalizeLayer(value: unknown, order: number): StudioLayer | null {
   if (!value || typeof value !== 'object') return null;
   const layer = value as Partial<StudioLayer> & Record<string, any>;
@@ -317,24 +412,7 @@ function normalizeLayer(value: unknown, order: number): StudioLayer | null {
       ...base,
       type: 'dungeon',
       shapes: shapes as DungeonShape[],
-      style: {
-        floor: {
-          visible: layer.style?.floor?.visible !== false,
-          color: layer.style?.floor?.color ?? '#f4efe4',
-        },
-        walls: {
-          visible: layer.style?.walls?.visible !== false,
-          color: layer.style?.walls?.color ?? '#1f2933',
-          width: Math.max(0.001, number(layer.style?.walls?.width, 0.08)),
-          blocksLight: layer.style?.walls?.blocksLight !== false,
-          dash: layer.style?.walls?.dash === true,
-        },
-        grid: {
-          visible: layer.style?.grid?.visible !== false,
-          color: layer.style?.grid?.color ?? '#00000018',
-          width: Math.max(0, number(layer.style?.grid?.width, 1)),
-        },
-      },
+      style: normalizeDungeonStyle(layer.style),
     };
   }
   return null;

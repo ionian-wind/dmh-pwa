@@ -386,6 +386,22 @@ function updateTransform(key: string, value: number): void {
       />
     </label>
     <label class="studio-field">
+      <span>{{ t('mapStudio.blendMode') }}</span>
+      <select
+        :value="object.blendMode"
+        @change="
+          updateSelected({
+            blendMode: ($event.target as HTMLSelectElement).value,
+          })
+        "
+      >
+        <option value="normal">Normal</option>
+        <option value="add">Add</option>
+        <option value="multiply">Multiply</option>
+        <option value="screen">Screen</option>
+      </select>
+    </label>
+    <label class="studio-field">
       <span>{{ t('mapStudio.rotation') }}</span>
       <input
         class="studio-number"

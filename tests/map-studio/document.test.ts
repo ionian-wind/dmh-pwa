@@ -4,6 +4,7 @@ import {
   createProject,
 } from '@/map-studio/domain/document/factories';
 import {
+  normalizeDungeonStyle,
   normalizeMap,
   normalizeProject,
 } from '@/map-studio/domain/document/normalize';
@@ -443,6 +444,119 @@ describe('map studio folder factory', () => {
     expect(createFolderLayer({ expanded: false, name: 'X' })).toMatchObject({
       expanded: false,
       name: 'X',
+    });
+  });
+});
+
+describe('dungeon style normalization', () => {
+  it('adds disabled style passes for older documents', () => {
+    const style = normalizeDungeonStyle({
+      floor: { visible: true, color: '#ffffff' },
+      walls: { visible: true, color: '#000000', width: 0.1 },
+      grid: { visible: false, color: '#cccccc', width: 2 },
+    });
+    expect(style.floor.color).toBe('#ffffff');
+    expect(style.shadow).toEqual({
+      visible: false,
+      opacity: 0.28,
+      offsetX: 0.08,
+      offsetY: 0.08,
+      color: '#000000',
+      blendMode: 'multiply',
+    });
+    expect(style.hatching.visible).toBe(false);
+    expect(style.hatching.variant).toBe('diagonal');
+    expect(style.shading.visible).toBe(false);
+  });
+
+  it('sanitizes invalid hatching, shading and shadow values', () => {
+    const style = normalizeDungeonStyle({
+      shadow: {
+        visible: true,
+        opacity: 4,
+        offsetX: 'nope',
+        offsetY: 0.2,
+        color: 12,
+        blendMode: 'invisible',
+      },
+      hatching: {
+        visible: true,
+        variant: 'zigzag',
+        size: -2,
+        color: '#112233',
+        width: 0,
+      },
+      shading: {
+        visible: true,
+        size: -1,
+        roughness: 9,
+        color: '#445566',
+        opacity: -1,
+      },
+    });
+    expect(style.shadow).toMatchObject({
+      visible: true,
+      opacity: 1,
+      offsetX: 0.08,
+      offsetY: 0.2,
+      color: '#000000',
+      blendMode: 'normal',
+    });
+    expect(style.hatching).toEqual({
+      visible: true,
+      variant: 'diagonal',
+      size: 0.02,
+      color: '#112233',
+      width: 0.001,
+    });
+    expect(style.shading).toEqual({
+      visible: true,
+      size: 0,
+      roughness: 1,
+      color: '#445566',
+      opacity: 0,
+    });
+  });
+
+  it('preserves valid style pass values', () => {
+    const style = normalizeDungeonStyle({
+      shadow: {
+        visible: true,
+        opacity: 0.5,
+        offsetX: 0.2,
+        offsetY: -0.1,
+        color: '#010203',
+        blendMode: 'screen',
+      },
+      hatching: {
+        visible: true,
+        variant: 'cross',
+        size: 0.8,
+        color: '#040506',
+        width: 0.02,
+      },
+      shading: {
+        visible: true,
+        size: 0.4,
+        roughness: 3,
+        color: '#070809',
+        opacity: 0.6,
+      },
+    });
+    expect(style.shadow.blendMode).toBe('screen');
+    expect(style.hatching).toEqual({
+      visible: true,
+      variant: 'cross',
+      size: 0.8,
+      color: '#040506',
+      width: 0.02,
+    });
+    expect(style.shading).toEqual({
+      visible: true,
+      size: 0.4,
+      roughness: 3,
+      color: '#070809',
+      opacity: 0.6,
     });
   });
 });

@@ -186,6 +186,26 @@ describe('StudioObjectSettings', () => {
     wrapper.unmount();
   });
 
+  it('updates the selected object blend mode', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addImage('data:image/png;base64,AA==', [1, 1], 2, 2);
+    const image = store.imagesLayer!.objects[0];
+    store.selectObject(image.id);
+    const wrapper = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    const blend = wrapper
+      .findAll('label')
+      .find((label) => label.find('span').text() === 'Blend mode')!
+      .find('select');
+    await blend.setValue('screen');
+    expect(store.imagesLayer!.objects[0].blendMode).toBe('screen');
+    wrapper.unmount();
+  });
+
   it('edits text style and shadow settings', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);

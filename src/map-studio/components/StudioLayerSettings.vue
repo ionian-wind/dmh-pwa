@@ -3,7 +3,10 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { confirm, prompt } from '@/dialogs';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
-import type { StudioLayer } from '@/map-studio/domain/document/types';
+import type {
+  DungeonLayerStyle,
+  StudioLayer,
+} from '@/map-studio/domain/document/types';
 
 const { t } = useI18n();
 const store = useMapStudioStore();
@@ -107,6 +110,33 @@ function toggleBlocksLight(): void {
       ...current.style.walls,
       blocksLight: !current.style.walls.blocksLight,
     },
+  });
+}
+
+function setShadow(patch: Partial<DungeonLayerStyle['shadow']>): void {
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    shadow: { ...current.style.shadow, ...patch },
+  });
+}
+
+function setHatching(patch: Partial<DungeonLayerStyle['hatching']>): void {
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    hatching: { ...current.style.hatching, ...patch },
+  });
+}
+
+function setShading(patch: Partial<DungeonLayerStyle['shading']>): void {
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    shading: { ...current.style.shading, ...patch },
   });
 }
 
@@ -261,6 +291,247 @@ function setParent(event: Event): void {
           @input="setWallGridWidth"
         />
       </label>
+
+      <QSeparator class="q-my-sm" />
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="layer.style.shadow.visible"
+          @change="
+            setShadow({
+              visible: ($event.target as HTMLInputElement).checked,
+            })
+          "
+        />
+        <span>{{ t('mapStudio.shadow') }}</span>
+      </label>
+      <template v-if="layer.style.shadow.visible">
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadowColor') }}</span>
+          <input
+            type="color"
+            :value="layer.style.shadow.color"
+            @input="
+              setShadow({ color: ($event.target as HTMLInputElement).value })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadowOpacity') }}</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            :value="layer.style.shadow.opacity"
+            @input="
+              setShadow({
+                opacity: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.offsetX') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            step="0.01"
+            :value="layer.style.shadow.offsetX"
+            @input="
+              setShadow({
+                offsetX: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.offsetY') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            step="0.01"
+            :value="layer.style.shadow.offsetY"
+            @input="
+              setShadow({
+                offsetY: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.blendMode') }}</span>
+          <select
+            :value="layer.style.shadow.blendMode"
+            @change="
+              setShadow({
+                blendMode: ($event.target as HTMLSelectElement)
+                  .value as DungeonLayerStyle['shadow']['blendMode'],
+              })
+            "
+          >
+            <option value="normal">Normal</option>
+            <option value="add">Add</option>
+            <option value="multiply">Multiply</option>
+            <option value="screen">Screen</option>
+          </select>
+        </label>
+      </template>
+
+      <QSeparator class="q-my-sm" />
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="layer.style.hatching.visible"
+          @change="
+            setHatching({
+              visible: ($event.target as HTMLInputElement).checked,
+            })
+          "
+        />
+        <span>{{ t('mapStudio.hatching') }}</span>
+      </label>
+      <template v-if="layer.style.hatching.visible">
+        <label class="studio-field">
+          <span>{{ t('mapStudio.hatchPattern') }}</span>
+          <select
+            :value="layer.style.hatching.variant"
+            @change="
+              setHatching({
+                variant: ($event.target as HTMLSelectElement)
+                  .value as DungeonLayerStyle['hatching']['variant'],
+              })
+            "
+          >
+            <option value="diagonal">
+              {{ t('mapStudio.hatchDiagonal') }}
+            </option>
+            <option value="cross">{{ t('mapStudio.hatchCross') }}</option>
+            <option value="horizontal">
+              {{ t('mapStudio.hatchHorizontal') }}
+            </option>
+            <option value="vertical">
+              {{ t('mapStudio.hatchVertical') }}
+            </option>
+            <option value="dots">{{ t('mapStudio.hatchDots') }}</option>
+            <option value="brick">{{ t('mapStudio.hatchBrick') }}</option>
+          </select>
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.hatchColour') }}</span>
+          <input
+            type="color"
+            :value="layer.style.hatching.color"
+            @input="
+              setHatching({ color: ($event.target as HTMLInputElement).value })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.hatchSize') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            min="0.02"
+            step="0.01"
+            :value="layer.style.hatching.size"
+            @input="
+              setHatching({
+                size: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.hatchWidth') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            min="0.001"
+            step="0.001"
+            :value="layer.style.hatching.width"
+            @input="
+              setHatching({
+                width: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+      </template>
+
+      <QSeparator class="q-my-sm" />
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="layer.style.shading.visible"
+          @change="
+            setShading({
+              visible: ($event.target as HTMLInputElement).checked,
+            })
+          "
+        />
+        <span>{{ t('mapStudio.shading') }}</span>
+      </label>
+      <template v-if="layer.style.shading.visible">
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadingColour') }}</span>
+          <input
+            type="color"
+            :value="layer.style.shading.color"
+            @input="
+              setShading({ color: ($event.target as HTMLInputElement).value })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadingSize') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            min="0"
+            step="0.01"
+            :value="layer.style.shading.size"
+            @input="
+              setShading({
+                size: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.roughness') }}</span>
+          <select
+            :value="layer.style.shading.roughness"
+            @change="
+              setShading({
+                roughness: Number(
+                  ($event.target as HTMLSelectElement).value,
+                ) as DungeonLayerStyle['shading']['roughness'],
+              })
+            "
+          >
+            <option :value="0">0</option>
+            <option :value="1">1</option>
+            <option :value="2">2</option>
+            <option :value="3">3</option>
+          </select>
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadingOpacity') }}</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            :value="layer.style.shading.opacity"
+            @input="
+              setShading({
+                opacity: Number(($event.target as HTMLInputElement).value),
+              })
+            "
+          />
+        </label>
+      </template>
     </template>
 
     <template v-if="layer.type === 'background'">

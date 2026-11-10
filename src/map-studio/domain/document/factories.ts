@@ -4,6 +4,7 @@ import {
   STUDIO_SCHEMA_VERSION,
   type BackgroundLayer,
   type DungeonLayer,
+  type DungeonLayerStyle,
   type ExportSettings,
   type GridSettings,
   type ImagesLayer,
@@ -32,7 +33,7 @@ export function createGridSettings(
   };
 }
 
-export function createDungeonStyle() {
+export function createDungeonStyle(): DungeonLayerStyle {
   return {
     floor: {
       visible: true,
@@ -49,6 +50,28 @@ export function createDungeonStyle() {
       visible: true,
       color: '#00000018',
       width: 1,
+    },
+    shadow: {
+      visible: false,
+      opacity: 0.28,
+      offsetX: 0.08,
+      offsetY: 0.08,
+      color: '#000000',
+      blendMode: 'multiply',
+    },
+    hatching: {
+      visible: false,
+      variant: 'diagonal',
+      size: 0.45,
+      color: '#1f2933',
+      width: 0.012,
+    },
+    shading: {
+      visible: false,
+      size: 0.16,
+      roughness: 1,
+      color: '#000000',
+      opacity: 0.28,
     },
   };
 }

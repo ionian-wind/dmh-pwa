@@ -77,7 +77,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 ## M3 — Styling
 
 - [ ] Dungeon, world-building and custom presets
-- [ ] Hatching, shading, shadows and blend modes
+- [x] Hatching, shading, shadows and blend modes: wall shadow pass with offset/opacity/blend, hatch patterns (diagonal, cross, horizontal, vertical, dots, brick), inner edge shading with roughness, and rendered layer/object blend modes
 - [ ] Floor/background textures and paper overlay
 - [ ] Static layer render textures and performance pass
 
@@ -137,3 +137,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Layer multi-select and canvas sync | Add Shift/Ctrl layer selection, bulk duplicate/delete/group/lock, resizable Layers panel, and canvas highlight for selected layer objects/geometry (2111 tests / 252 files; coverage branches 87.00%)                                                         |
 | 2026-11-10 | Scope cleanup                      | Move `.ds` import/export, Watabou/donjon imports and isometric/hex-grid work to deferred proposals; remove isometric from current UI/scope (2111 tests / 252 files; coverage branches 87.02%)                                                                 |
 | 2026-11-10 | Hotkey library migration           | Replace manual keyboard listeners with `hotkeys-js` scoped bindings; keep B-prefix/division chords, modifier shortcuts, editable-target guards and unmount cleanup (2120 tests / 252 files; coverage branches 87.03%)                                         |
+| 2026-11-10 | Hatching, shading and shadows      | Add dungeon wall shadows, hatch-pattern passes, inner-edge shading with roughness, style normalization/presets, layer/object blend-mode rendering and settings UI (2149 tests / 254 files; coverage branches 87.22%)                                          |

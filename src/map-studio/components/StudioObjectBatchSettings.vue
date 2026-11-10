@@ -26,6 +26,7 @@ function commonValue<T>(read: (object: StudioObject) => T): T | undefined {
 }
 
 const opacity = computed(() => commonValue((object) => object.opacity));
+const blendMode = computed(() => commonValue((object) => object.blendMode));
 const opacityAverage = computed(
   () =>
     objects.value.reduce((sum, object) => sum + object.opacity, 0) /
@@ -149,6 +150,25 @@ function setTypeProperty(key: string, value: unknown): void {
           })
         "
       />
+    </label>
+    <label class="studio-field">
+      <span>{{ t('mapStudio.blendMode') }}</span>
+      <span v-if="blendMode === undefined" class="studio-mixed">
+        {{ t('mapStudio.mixed') }}
+      </span>
+      <select
+        :value="blendMode ?? 'normal'"
+        @change="
+          store.updateSelectedObjects({
+            blendMode: ($event.target as HTMLSelectElement).value,
+          })
+        "
+      >
+        <option value="normal">Normal</option>
+        <option value="add">Add</option>
+        <option value="multiply">Multiply</option>
+        <option value="screen">Screen</option>
+      </select>
     </label>
     <label class="studio-field">
       <span>{{ t('mapStudio.rotation') }}</span>

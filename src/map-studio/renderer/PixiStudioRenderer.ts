@@ -10,12 +10,17 @@ import {
   compileDungeonLayer,
   shapeToPolygon,
 } from '@/map-studio/domain/geometry/compile';
+import {
+  createHatchPattern,
+  createShadingGeometry,
+} from '@/map-studio/domain/geometry/stylePasses';
 import type { Bounds } from '@/map-studio/domain/objects';
 import {
   contentBounds,
   visibleWorldRect,
 } from '@/map-studio/domain/canvasView';
 import type {
+  BlendMode,
   DungeonLayer,
   Point,
   DungeonShape,
@@ -166,6 +171,7 @@ export class PixiStudioRenderer {
     const map = this.map;
     if (!map) return;
     const ppc = BASE_PIXELS_PER_CELL;
+    this.backgroundLayer.blendMode = map.background.blendMode;
     this.backgroundLayer.clear();
     this.backgroundLayer
       .rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)
@@ -517,10 +523,16 @@ export class PixiStudioRenderer {
     }
     for (const layer of orderedLayers) {
       if (layer.type !== 'images' || !layer.visible) continue;
+      const layerContainer = new Container();
+      layerContainer.alpha = layer.opacity;
+      layerContainer.blendMode = layer.blendMode;
+      this.objectsContainer.addChild(layerContainer);
       for (const object of [...layer.objects].sort(
         (a, b) => a.order - b.order,
       )) {
         if (!object.visible) continue;
+        const blendMode: BlendMode =
+          object.blendMode === 'normal' ? layer.blendMode : object.blendMode;
         if (object.type === 'text') {
           const sprite = this.createTextSprite(object, ppc);
           sprite.scale.set(
@@ -534,7 +546,8 @@ export class PixiStudioRenderer {
               (object.transform.flipY ? sprite.height : 0),
           );
           sprite.alpha = object.opacity;
-          this.objectsContainer.addChild(sprite);
+          sprite.blendMode = blendMode;
+          layerContainer.addChild(sprite);
         } else if (object.type === 'image') {
           const texture = this.imageTextures.get(object.src);
           if (texture) {
@@ -546,7 +559,8 @@ export class PixiStudioRenderer {
               object.transform.y * ppc,
             );
             sprite.alpha = object.opacity;
-            this.objectsContainer.addChild(sprite);
+            sprite.blendMode = blendMode;
+            layerContainer.addChild(sprite);
           } else if (!this.loadingImages.has(object.src)) {
             this.loadingImages.add(object.src);
             const image = new Image();
@@ -598,7 +612,8 @@ export class PixiStudioRenderer {
                 .stroke({ color: object.stroke, width: 2 });
             }
           }
-          this.objectsContainer.addChild(graphics);
+          graphics.blendMode = blendMode;
+          layerContainer.addChild(graphics);
         } else if (object.type === 'stairs') {
           const graphics = new Graphics();
           const [a, b, c] = object.points;
@@ -622,7 +637,8 @@ export class PixiStudioRenderer {
               .lineTo(x2 * ppc, y2 * ppc)
               .stroke({ color: object.stroke, width: 2 });
           }
-          this.objectsContainer.addChild(graphics);
+          graphics.blendMode = blendMode;
+          layerContainer.addChild(graphics);
         }
       }
     }
@@ -676,19 +692,95 @@ export class PixiStudioRenderer {
 
   private drawDungeonLayer(layer: DungeonLayer): void {
     const ppc = BASE_PIXELS_PER_CELL;
-    const graphics = new Graphics();
-    graphics.alpha = layer.opacity;
+    const container = new Container();
+    container.alpha = layer.opacity;
     const compiled = compileDungeonLayer(layer);
 
+    if (layer.style.shadow.visible && compiled.wallSegments.length > 0) {
+      const shadow = new Graphics();
+      shadow.blendMode = layer.style.shadow.blendMode;
+      const offsetX = layer.style.shadow.offsetX * ppc;
+      const offsetY = layer.style.shadow.offsetY * ppc;
+      for (const segment of compiled.wallSegments) {
+        const width = Math.max(
+          1,
+          (segment.width ?? layer.style.walls.width) * ppc * 2.4,
+        );
+        shadow
+          .moveTo(segment.a[0] * ppc + offsetX, segment.a[1] * ppc + offsetY)
+          .lineTo(segment.b[0] * ppc + offsetX, segment.b[1] * ppc + offsetY)
+          .stroke({
+            color: layer.style.shadow.color,
+            width,
+            alpha: layer.style.shadow.opacity,
+          });
+      }
+      container.addChild(shadow);
+    }
+
     if (layer.style.floor.visible) {
+      const floor = new Graphics();
+      floor.blendMode = layer.blendMode;
       for (const polygon of compiled.polygons) {
         const outer = polygon[0];
         if (!outer || outer.length < 3) continue;
-        graphics.poly(outer.flat()).fill(layer.style.floor.color);
+        floor.poly(outer.flat()).fill(layer.style.floor.color);
+      }
+      container.addChild(floor);
+    }
+
+    if (layer.style.shading.visible) {
+      const shading = createShadingGeometry(
+        layer.style.shading,
+        compiled.polygons,
+        compiled.wallSegments,
+      );
+      if (shading.length > 0) {
+        const graphics = new Graphics();
+        graphics.blendMode = layer.blendMode;
+        for (const polygon of shading) {
+          const outer = polygon[0];
+          if (!outer || outer.length < 3) continue;
+          graphics.poly(outer.flat()).fill({
+            color: layer.style.shading.color,
+            alpha: layer.style.shading.opacity,
+          });
+        }
+        container.addChild(graphics);
+      }
+    }
+
+    if (layer.style.hatching.visible) {
+      const pattern = createHatchPattern(
+        layer.style.hatching,
+        compiled.polygons,
+      );
+      if (pattern.segments.length > 0 || pattern.dots.length > 0) {
+        const graphics = new Graphics();
+        graphics.blendMode = layer.blendMode;
+        const width = Math.max(1, layer.style.hatching.width * ppc);
+        for (const segment of pattern.segments) {
+          graphics
+            .moveTo(segment.a[0] * ppc, segment.a[1] * ppc)
+            .lineTo(segment.b[0] * ppc, segment.b[1] * ppc)
+            .stroke({
+              color: layer.style.hatching.color,
+              width,
+              alpha: 1,
+            });
+        }
+        for (const [x, y] of pattern.dots) {
+          graphics
+            .circle(x * ppc, y * ppc, Math.max(1, width * 1.6))
+            .fill(layer.style.hatching.color);
+        }
+        container.addChild(graphics);
       }
     }
 
     if (layer.style.walls.visible) {
+      const walls = new Graphics();
+      walls.blendMode = layer.blendMode;
       for (const segment of compiled.wallSegments) {
         const ax = segment.a[0] * ppc;
         const ay = segment.a[1] * ppc;
@@ -711,19 +803,21 @@ export class PixiStudioRenderer {
             if (end <= start) continue;
             const from = start / Math.max(1, length);
             const to = end / Math.max(1, length);
-            graphics
+            walls
               .moveTo(ax + (bx - ax) * from, ay + (by - ay) * from)
               .lineTo(ax + (bx - ax) * to, ay + (by - ay) * to)
               .stroke({ color, width, alpha: 1 });
           }
         } else {
-          graphics
+          walls
             .moveTo(ax, ay)
             .lineTo(bx, by)
             .stroke({ color, width, alpha: 1 });
         }
       }
+      container.addChild(walls);
     }
-    this.dungeonContainer.addChild(graphics);
+
+    this.dungeonContainer.addChild(container);
   }
 }

@@ -1256,6 +1256,24 @@
     "noFolder": "No folder",
     "toggleFolder": "Collapse or expand folder",
     "moveToRoot": "Move out of folder",
-    "dropToRoot": "Drop here to move out of folders"
+    "dropToRoot": "Drop here to move out of folders",
+    "shadow": "Shadow",
+    "hatching": "Hatching",
+    "shading": "Shading",
+    "size": "Size",
+    "roughness": "Roughness",
+    "hatchPattern": "Pattern",
+    "hatchDiagonal": "Diagonal",
+    "hatchCross": "Cross-hatch",
+    "hatchHorizontal": "Horizontal",
+    "hatchVertical": "Vertical",
+    "hatchDots": "Dots",
+    "hatchBrick": "Brick",
+    "hatchColour": "Hatch colour",
+    "hatchSize": "Hatch size",
+    "hatchWidth": "Hatch width",
+    "shadingColour": "Shading colour",
+    "shadingSize": "Shading size",
+    "shadingOpacity": "Shading opacity"
   }
 }

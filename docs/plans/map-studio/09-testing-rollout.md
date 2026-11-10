@@ -113,7 +113,7 @@
 
 ### 3.4 Rendering
 
-- [ ] Dungeon passes: floor/walls/grid/shadow/hatching/shading.
+- [x] Dungeon passes: floor/walls/shadow/hatching/shading (per-layer grid remains pending).
 - [ ] Background/grid.
 - [ ] Procedural textures + upload/cache.
 - [ ] Text rendering + editing overlay.

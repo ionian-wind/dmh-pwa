@@ -1257,6 +1257,24 @@
     "noFolder": "Без папки",
     "toggleFolder": "Свернуть или развернуть папку",
     "moveToRoot": "Убрать из папки",
-    "dropToRoot": "Перетащите сюда, чтобы убрать из папки"
+    "dropToRoot": "Перетащите сюда, чтобы убрать из папки",
+    "shadow": "Тень",
+    "hatching": "Штриховка",
+    "shading": "Затенение",
+    "size": "Размер",
+    "roughness": "Шероховатость",
+    "hatchPattern": "Узор",
+    "hatchDiagonal": "Диагональ",
+    "hatchCross": "Перекрёстная",
+    "hatchHorizontal": "Горизонтальная",
+    "hatchVertical": "Вертикальная",
+    "hatchDots": "Точки",
+    "hatchBrick": "Кирпич",
+    "hatchColour": "Цвет штриховки",
+    "hatchSize": "Размер штриховки",
+    "hatchWidth": "Ширина штриховки",
+    "shadingColour": "Цвет затенения",
+    "shadingSize": "Размер затенения",
+    "shadingOpacity": "Прозрачность затенения"
   }
 }

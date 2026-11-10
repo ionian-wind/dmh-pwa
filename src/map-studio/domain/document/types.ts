@@ -5,6 +5,8 @@ export const BASE_PIXELS_PER_CELL = 70;
 
 export type BlendMode = 'normal' | 'add' | 'multiply' | 'screen';
 export type Roughness = 0 | 1 | 2 | 3;
+export type HatchVariant =
+  'diagonal' | 'cross' | 'horizontal' | 'vertical' | 'dots' | 'brick';
 export type Point = [number, number];
 export type ShapeOperation = 'add' | 'subtract';
 
@@ -122,6 +124,28 @@ export interface DungeonLayerStyle {
     visible: boolean;
     color: string;
     width: number;
+  };
+  shadow: {
+    visible: boolean;
+    opacity: number;
+    offsetX: number;
+    offsetY: number;
+    color: string;
+    blendMode: BlendMode;
+  };
+  hatching: {
+    visible: boolean;
+    variant: HatchVariant;
+    size: number;
+    color: string;
+    width: number;
+  };
+  shading: {
+    visible: boolean;
+    size: number;
+    roughness: Roughness;
+    color: string;
+    opacity: number;
   };
 }
 

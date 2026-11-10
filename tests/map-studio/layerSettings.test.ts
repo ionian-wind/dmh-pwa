@@ -48,6 +48,9 @@ describe('StudioLayerSettings', () => {
     vm.setWallGridWidth({ target: { value: '1' } });
     vm.toggleLayerGrid();
     vm.toggleBlocksLight();
+    vm.setShadow({ visible: true });
+    vm.setHatching({ visible: true });
+    vm.setShading({ visible: true });
     vm.setParent({ target: { value: '' } });
     store.setMap(createMap(createProject().id));
     wrapper.unmount();
@@ -104,6 +107,63 @@ describe('StudioLayerSettings', () => {
     await wrapper.find('[title="Rename layer"]').trigger('click');
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(store.settingsLayer?.name).toBe('Renamed');
+    wrapper.unmount();
+  });
+
+  it('edits wall shadow, hatching and shading passes', async () => {
+    const { store, pinia } = setup();
+    const dungeon = store.map!.layers.find(
+      (layer) => layer.type === 'dungeon',
+    )!;
+    store.setSettingsLayer(dungeon.id);
+    const wrapper = mountSettings(pinia);
+    const field = (text: string) =>
+      wrapper
+        .findAll('label')
+        .filter((label) => label.find('span').text().trim() === text)
+        .at(-1)!;
+    const dungeonStyle = () => {
+      const layer = store.settingsLayer;
+      if (layer?.type !== 'dungeon') throw new Error('missing dungeon layer');
+      return layer.style;
+    };
+
+    await field('Shadow').find('input[type="checkbox"]').setValue(true);
+    expect(dungeonStyle().shadow.visible).toBe(true);
+    await field('Shadow color').find('input[type="color"]').setValue('#101010');
+    expect(dungeonStyle().shadow.color).toBe('#101010');
+    await field('Shadow opacity').find('input[type="range"]').setValue('0.6');
+    expect(dungeonStyle().shadow.opacity).toBe(0.6);
+    await field('Offset X').find('input[type="number"]').setValue('0.25');
+    expect(dungeonStyle().shadow.offsetX).toBe(0.25);
+    await field('Offset Y').find('input[type="number"]').setValue('-0.15');
+    expect(dungeonStyle().shadow.offsetY).toBe(-0.15);
+    await field('Blend mode').findAll('select').at(-1)!.setValue('screen');
+    expect(dungeonStyle().shadow.blendMode).toBe('screen');
+
+    await field('Hatching').find('input[type="checkbox"]').setValue(true);
+    expect(dungeonStyle().hatching.visible).toBe(true);
+    await field('Pattern').find('select').setValue('cross');
+    expect(dungeonStyle().hatching.variant).toBe('cross');
+    await field('Hatch colour').find('input[type="color"]').setValue('#223344');
+    expect(dungeonStyle().hatching.color).toBe('#223344');
+    await field('Hatch size').find('input[type="number"]').setValue('0.7');
+    expect(dungeonStyle().hatching.size).toBe(0.7);
+    await field('Hatch width').find('input[type="number"]').setValue('0.02');
+    expect(dungeonStyle().hatching.width).toBe(0.02);
+
+    await field('Shading').find('input[type="checkbox"]').setValue(true);
+    expect(dungeonStyle().shading.visible).toBe(true);
+    await field('Shading colour')
+      .find('input[type="color"]')
+      .setValue('#334455');
+    expect(dungeonStyle().shading.color).toBe('#334455');
+    await field('Shading size').find('input[type="number"]').setValue('0.4');
+    expect(dungeonStyle().shading.size).toBe(0.4);
+    await field('Roughness').find('select').setValue('3');
+    expect(dungeonStyle().shading.roughness).toBe(3);
+    await field('Shading opacity').find('input[type="range"]').setValue('0.5');
+    expect(dungeonStyle().shading.opacity).toBe(0.5);
     wrapper.unmount();
   });
 

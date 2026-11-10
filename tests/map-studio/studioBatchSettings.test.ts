@@ -95,6 +95,28 @@ describe('StudioObjectBatchSettings', () => {
     wrapper.unmount();
   });
 
+  it('shows mixed blend modes and applies a shared blend mode', async () => {
+    const { store, pinia } = setup();
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    const [a, b] = store.imagesLayer!.objects;
+    store.updateObject(a.id, { blendMode: 'add' });
+    store.updateObject(b.id, { blendMode: 'multiply' });
+    store.selectObjects([a.id, b.id]);
+    const wrapper = mountBatch(pinia);
+    const label = wrapper
+      .findAll('label')
+      .find((entry) => entry.find('span').text() === 'Blend mode')!;
+    expect(label.text()).toContain('Mixed');
+    await label.find('select').setValue('screen');
+    expect(
+      store.imagesLayer!.objects.every(
+        (object) => object.blendMode === 'screen',
+      ),
+    ).toBe(true);
+    wrapper.unmount();
+  });
+
   it('shows and edits shared door properties', async () => {
     const { store, pinia } = setup();
     store.addDoor([0, 0], [1, 0]);
