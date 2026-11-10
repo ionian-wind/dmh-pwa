@@ -10,6 +10,10 @@ import type {
   DungeonShape,
   PolygonShape,
 } from '@/map-studio/domain/document/types';
+import {
+  circleRing,
+  regularPolygonRing,
+} from '@/map-studio/domain/geometry/circle';
 
 function rectangle(
   id: string,
@@ -133,6 +137,8 @@ describe('map studio geometry', () => {
         cx: 2,
         cy: 2,
         radius: 1,
+        sides: 1,
+        drawTo: 'point',
         rough: 0,
         smooth: false,
       },
@@ -201,6 +207,8 @@ describe('map studio geometry edge branches', () => {
           cx: 0,
           cy: 0,
           radius: 0,
+          sides: 1,
+          drawTo: 'point',
           rough: 0,
           smooth: false,
         },
@@ -312,5 +320,37 @@ describe('map studio shape hit testing', () => {
     ];
     expect(pointInPolygon([1, 1], square)).toBe(true);
     expect(pointInPolygon([3, 3], square)).toBe(false);
+  });
+});
+
+describe('map studio circle and regular polygon geometry', () => {
+  it('builds circles and oriented regular polygons', () => {
+    const circle = circleRing(0, 0, 2);
+    expect(circle).toHaveLength(65);
+    const pointUp = regularPolygonRing(0, 0, 2, 6, 'point');
+    expect(pointUp).toHaveLength(7);
+    expect(pointUp[0][0]).toBeCloseTo(0);
+    expect(pointUp[0][1]).toBeCloseTo(-2);
+    const edgeUp = regularPolygonRing(0, 0, 2, 6, 'edge');
+    expect(edgeUp[0][0]).toBeGreaterThan(0);
+    expect(edgeUp[0][1]).toBeCloseTo(-1.732, 2);
+  });
+
+  it('renders sides greater than one as polygons', () => {
+    const hex: CircleShape = {
+      id: 'hex',
+      operation: 'add',
+      shape: {
+        kind: 'circle',
+        cx: 0,
+        cy: 0,
+        radius: 2,
+        sides: 6,
+        drawTo: 'edge',
+        rough: 0,
+        smooth: false,
+      },
+    };
+    expect(shapeToPolygon(hex)?.[0]).toHaveLength(7);
   });
 });

@@ -47,7 +47,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 
 - [x] Geometry pipeline: union/difference, shared walls, boundary extraction
 - [x] Rectangle tool: erase, rough, corner radius
-- [x] Circle / regular polygon tool
+- [x] Circle / regular polygon tool: sides slider/input, 1 = circle, point/edge orientation, live radius label, `[`/`]` and digit shortcuts
 - [x] Path tool (click points, radius; freehand/smooth still pending)
 - [x] Polygon tool
 - [x] Wall tool (points; dash/smooth still pending)
@@ -121,3 +121,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Folder icon UX + plan update | Remove folder chevron; open/closed folder icons and row-click toggling; document current implemented/partial/missing parity and UI behavior                                                                                                                   |
 | 2026-11-10 | Scope cleanup                | Moved random dungeon generation out of the implementation plan and milestones into `proposals/random-dungeon.md`; current scope is the editor, styling, lighting/fog and advanced IO                                                                          |
 | 2026-11-10 | Multi-select batch panel     | Show shared properties for a multi-selection, mark mixed values, and provide batch duplicate/order/flip/delete actions (2064 tests / 248 files; coverage branches 87.02%)                                                                                     |
+| 2026-11-10 | Circle tool parity           | Add sides (1 = circle, 3+ = regular polygon), point/edge orientation, snapped center/radius, live radius label, real polygon preview, and sides/rough shortcuts                                                                                               |

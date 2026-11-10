@@ -267,6 +267,7 @@ describe('map studio normalization defaults', () => {
     const dungeon = map.layers.find((layer) => layer.type === 'dungeon');
     const shapes = dungeon && 'shapes' in dungeon ? dungeon.shapes : [];
     expect(shapes).toHaveLength(2);
+    expect(shapes[0].shape).toMatchObject({ sides: 1, drawTo: 'point' });
     expect(shapes[1]).toMatchObject({
       shape: { kind: 'polygon', rough: 3, smooth: true },
     });

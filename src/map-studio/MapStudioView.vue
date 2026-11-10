@@ -49,6 +49,12 @@ useStudioHotkeys({
   redo: () => store.redo(),
   setTool: (tool) => store.setTool(tool),
   deleteSelection: () => store.removeSelectedObject(),
+  getTool: () => store.tool,
+  adjustSides: (delta) => setCircleSides(store.toolSettings.sides + delta),
+  setSides: setCircleSides,
+  cycleRough: () => {
+    store.toolSettings.rough = store.toolSettings.rough > 0 ? 0 : 2;
+  },
 });
 
 const map = computed(() => store.map);
@@ -114,6 +120,17 @@ const roughnessOptions = [0, 1, 2, 3].map((value) => ({
   label: String(value),
   value,
 }));
+const drawToOptions = computed(() => [
+  { label: t('mapStudio.point'), value: 'point' },
+  { label: t('mapStudio.edge'), value: 'edge' },
+]);
+
+function setCircleSides(value: number | string | null | undefined): void {
+  store.toolSettings.sides = Math.max(
+    1,
+    Math.min(12, Math.round(Number(value) || 1)),
+  );
+}
 
 onMounted(async () => {
   creating.value = true;
@@ -406,6 +423,38 @@ async function applyToLocation(): Promise<void> {
           :label="t('mapStudio.cornerRadius')"
           class="studio-division"
         />
+        <template v-if="store.tool === 'circle'">
+          <QSlider
+            :model-value="store.toolSettings.sides"
+            :min="1"
+            :max="12"
+            :step="1"
+            dense
+            class="studio-sides-slider"
+            @update:model-value="setCircleSides"
+          />
+          <QInput
+            :model-value="store.toolSettings.sides"
+            dense
+            outlined
+            type="number"
+            min="1"
+            max="12"
+            :label="t('mapStudio.sides')"
+            class="studio-sides-input"
+            @update:model-value="setCircleSides"
+          />
+          <QSelect
+            v-model="store.toolSettings.drawTo"
+            dense
+            outlined
+            emit-value
+            map-options
+            :options="drawToOptions"
+            :label="t('mapStudio.drawTo')"
+            class="studio-division"
+          />
+        </template>
       </div>
 
       <div class="studio-body">
@@ -531,6 +580,12 @@ async function applyToLocation(): Promise<void> {
 }
 .studio-division {
   width: 96px;
+}
+.studio-sides-slider {
+  width: 90px;
+}
+.studio-sides-input {
+  width: 76px;
 }
 .hidden-input {
   display: none;

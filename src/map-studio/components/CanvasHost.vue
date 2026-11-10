@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
+import { circleShapeRing } from '@/map-studio/domain/geometry/circle';
 import {
   hitTestObject,
   objectBounds,
@@ -18,6 +20,9 @@ import type {
   StudioTool,
   ToolSettings,
 } from '@/map-studio/domain/document/types';
+
+const { t } = useI18n();
+const radiusLabel = ref<{ x: number; y: number; text: string } | null>(null);
 
 const props = defineProps<{
   map: StudioMap;
@@ -287,7 +292,12 @@ function onPointerDown(event: PointerEvent): void {
     return;
   }
   if (props.tool === 'circle') {
-    drag = { kind: 'circle', center: renderer.value.screenToWorld(sx, sy) };
+    const point = renderer.value.screenToWorld(sx, sy);
+    drag = {
+      kind: 'circle',
+      center: [snap(point[0]), snap(point[1])],
+    };
+    radiusLabel.value = null;
     return;
   }
   if (props.tool !== 'rectangle') return;
@@ -387,15 +397,36 @@ function onPointerMove(event: PointerEvent): void {
     return;
   }
   if (drag.kind === 'circle') {
-    renderer.value.setPreview({
-      kind: 'circle',
-      cx: drag.center[0],
-      cy: drag.center[1],
-      radius: Math.hypot(
-        current[0] - drag.center[0],
-        current[1] - drag.center[1],
-      ),
-    });
+    const endpoint: Point = [snap(current[0]), snap(current[1])];
+    const radius = Math.hypot(
+      endpoint[0] - drag.center[0],
+      endpoint[1] - drag.center[1],
+    );
+    const sides = Math.max(1, Math.round(props.settings.sides ?? 1));
+    if (sides >= 3) {
+      renderer.value.setPreview({
+        kind: 'polygon',
+        points: circleShapeRing(
+          drag.center[0],
+          drag.center[1],
+          radius,
+          sides,
+          props.settings.drawTo ?? 'point',
+        ),
+      });
+    } else {
+      renderer.value.setPreview({
+        kind: 'circle',
+        cx: drag.center[0],
+        cy: drag.center[1],
+        radius,
+      });
+    }
+    radiusLabel.value = {
+      x: sx + 14,
+      y: sy - 14,
+      text: t('mapStudio.radiusCells', { radius: radius.toFixed(1) }),
+    };
     return;
   }
   const x1 = snap(Math.min(drag.start[0], current[0]));
@@ -463,11 +494,13 @@ function onPointerUp(event: PointerEvent): void {
   }
   if (drag.kind === 'circle') {
     const current = renderer.value.screenToWorld(sx, sy);
+    const endpoint: Point = [snap(current[0]), snap(current[1])];
     const radius = Math.hypot(
-      current[0] - drag.center[0],
-      current[1] - drag.center[1],
+      endpoint[0] - drag.center[0],
+      endpoint[1] - drag.center[1],
     );
     renderer.value.setPreview(null);
+    radiusLabel.value = null;
     if (radius >= 1 / 8) {
       emit('circle', {
         cx: drag.center[0],
@@ -623,7 +656,15 @@ onBeforeUnmount(() => {
     @pointercancel="onPointerUp"
     @dblclick="onDoubleClick"
     @contextmenu="onContextMenu"
-  />
+  >
+    <div
+      v-if="radiusLabel"
+      class="studio-radius-label"
+      :style="{ left: `${radiusLabel.x}px`, top: `${radiusLabel.y}px` }"
+    >
+      {{ radiusLabel.text }}
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -633,5 +674,18 @@ onBeforeUnmount(() => {
   overflow: hidden;
   touch-action: none;
   cursor: crosshair;
+}
+.studio-radius-label {
+  position: absolute;
+  z-index: 2;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text);
+  pointer-events: none;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
 </style>

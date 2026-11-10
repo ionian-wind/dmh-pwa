@@ -156,6 +156,8 @@ export interface CircleShape extends DungeonShapeBase {
     cx: number;
     cy: number;
     radius: number;
+    sides: number;
+    drawTo: 'point' | 'edge';
     rough: Roughness;
     smooth: boolean;
   };
@@ -260,6 +262,8 @@ export interface ToolSettings {
   rough: Roughness;
   pathRadius: number;
   wallWidth: number;
+  sides: number;
+  drawTo: 'point' | 'edge';
 }
 
 export type StudioTool =

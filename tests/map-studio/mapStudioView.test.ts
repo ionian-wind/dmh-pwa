@@ -441,6 +441,26 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('shows circle sides and draw-to controls', async () => {
+    const { wrapper, store } = await mountView();
+    store.setTool('circle');
+    await flushPromises();
+    expect(wrapper.find('.studio-sides-slider').exists()).toBe(true);
+    const sides = wrapper.find('.studio-sides-input');
+    await sides.setValue('99');
+    expect(store.toolSettings.sides).toBe(12);
+    const drawTo = wrapper
+      .findAll('select')
+      .find((select) =>
+        select
+          .findAll('option')
+          .some((option) => option.attributes('value') === 'edge'),
+      )!;
+    await drawTo.setValue('edge');
+    expect(store.toolSettings.drawTo).toBe('edge');
+    wrapper.unmount();
+  });
+
   it('activates a dungeon layer when its row is clicked', async () => {
     const { wrapper, store } = await mountView();
     store.addDungeonLayer('classic');

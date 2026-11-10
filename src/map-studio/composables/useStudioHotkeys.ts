@@ -7,6 +7,10 @@ interface StudioHotkeyActions {
   redo: () => void;
   setTool: (tool: StudioTool) => void;
   deleteSelection?: () => void;
+  getTool?: () => StudioTool;
+  adjustSides?: (delta: -1 | 1) => void;
+  setSides?: (sides: number) => void;
+  cycleRough?: () => void;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -45,6 +49,25 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
       return;
     }
     if (modifier || event.altKey) return;
+    if (event.shiftKey && event.key.toLowerCase() === 'r') {
+      if (actions.cycleRough) {
+        event.preventDefault();
+        actions.cycleRough();
+      }
+      return;
+    }
+    if (actions.getTool?.() === 'circle') {
+      if (event.key === '[' || event.key === ']') {
+        event.preventDefault();
+        actions.adjustSides?.(event.key === '[' ? -1 : 1);
+        return;
+      }
+      if (/^[1-9]$/.test(event.key)) {
+        event.preventDefault();
+        actions.setSides?.(Number(event.key));
+        return;
+      }
+    }
     const tool = {
       r: 'rectangle',
       c: 'circle',

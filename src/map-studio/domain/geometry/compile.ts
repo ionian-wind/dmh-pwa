@@ -5,6 +5,7 @@ import {
   type Pair,
   type Polygon,
 } from 'polygon-clipping';
+import { circleShapeRing } from '@/map-studio/domain/geometry/circle';
 import type {
   DungeonLayer,
   DungeonShape,
@@ -153,17 +154,18 @@ export function shapeToPolygon(shape: DungeonShape): Polygon | null {
   }
   if (data.kind === 'circle') {
     if (data.radius <= 0) return null;
-    const segments = 64;
-    const ring: Pair[] = [];
-    for (let index = 0; index < segments; index += 1) {
-      const angle = (index / segments) * Math.PI * 2;
-      ring.push([
-        data.cx + Math.cos(angle) * data.radius,
-        data.cy + Math.sin(angle) * data.radius,
-      ]);
-    }
-    ring.push(ring[0]);
-    return finish([ring], data.rough);
+    return finish(
+      [
+        circleShapeRing(
+          data.cx,
+          data.cy,
+          data.radius,
+          data.sides ?? 1,
+          data.drawTo ?? 'point',
+        ),
+      ],
+      data.rough,
+    );
   }
   if (data.kind === 'path') {
     if (data.points.length < 2 || data.radius <= 0) return null;

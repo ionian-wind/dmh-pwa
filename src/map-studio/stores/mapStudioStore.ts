@@ -64,6 +64,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     rough: 0,
     pathRadius: 0.25,
     wallWidth: 0.08,
+    sides: 1,
+    drawTo: 'point',
   });
   const undoStack = shallowRef<StudioMap[]>([]);
   const redoStack = shallowRef<StudioMap[]>([]);
@@ -245,6 +247,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
       shape: {
         kind: 'circle',
         ...circle,
+        sides: Math.max(1, Math.min(24, Math.round(toolSettings.value.sides))),
+        drawTo: toolSettings.value.drawTo,
         rough: toolSettings.value.rough,
         smooth: false,
       },

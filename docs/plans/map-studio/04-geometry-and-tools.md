@@ -14,10 +14,10 @@ All tool math uses document coordinates. Snapping is applied before geometry cre
 ```ts
 interface SnapState {
   enabled: boolean;
-  division: number;         // 1..9; snap step = 1 / division
-  angleSnap: boolean;       // Shift
+  division: number; // 1..9; snap step = 1 / division
+  angleSnap: boolean; // Shift
   gridType: 'square' | 'hex' | 'none';
-  cellSize: number;         // normally 1
+  cellSize: number; // normally 1
 }
 ```
 
@@ -32,15 +32,15 @@ interface SnapState {
 
 ### 3.1 Raw geometry
 
-| Kind | Sampling |
-| --- | --- |
-| Rectangle | 4 corners; optional rounded corners via arcs sampled at `max(4, ceil(radius * 32))` points per corner. |
+| Kind            | Sampling                                                                                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rectangle       | 4 corners; optional rounded corners via arcs sampled at `max(4, ceil(radius * 32))` points per corner.                                                                        |
 | Regular polygon | `sides === 1` → circle sampled adaptively; else vertices at radius and rotation; `drawTo: 'point'` places a vertex at the drag angle, `'edge'` places an edge midpoint at it. |
-| Polygon | input points, optionally closed. |
-| Path | input centerline, optionally closed; expanded by radius. |
-| Wall | input centerline; expanded by radius for fill? Walls are strokes, not fills; dashed segments generated at render/export. |
-| Door | rectangle/segment from two points plus variant decoration. |
-| Stairs | parallel step lines between `a-b` and `c` direction. |
+| Polygon         | input points, optionally closed.                                                                                                                                              |
+| Path            | input centerline, optionally closed; expanded by radius.                                                                                                                      |
+| Wall            | input centerline; expanded by radius for fill? Walls are strokes, not fills; dashed segments generated at render/export.                                                      |
+| Door            | rectangle/segment from two points plus variant decoration.                                                                                                                    |
+| Stairs          | parallel step lines between `a-b` and `c` direction.                                                                                                                          |
 
 ### 3.2 Smoothing
 
@@ -80,7 +80,7 @@ function compileDungeonLayer(layer: DungeonLayer): CompiledDungeonGeometry {
   return {
     polygons: current,
     wallSegments: extractBoundarySegments(current).concat(
-      layer.shapes.filter(isWall).flatMap(wallSegments)
+      layer.shapes.filter(isWall).flatMap(wallSegments),
     ),
     bounds: computeBounds(current),
   };
@@ -147,14 +147,15 @@ Adjacent rooms: separate adds union; touching edges merge, shared wall disappear
 
 ## 8. Circle / regular polygon tool
 
-1. Pointer down sets center (or first edge depending on draw-to? docs use drag radius; use center at down, radius to pointer).
-2. Drag sets radius; live label in cells.
-3. `sides` controls vertices; `sides = 1` renders a circle.
-4. `drawTo` rotates the polygon so a point or edge faces the drag direction.
-5. Shift constrains angle? radius is radial; Shift may toggle circle/square? Use Shift to lock rotation to 15° for point/edge orientation.
-6. Rough mode: same two-step strength behavior as rectangle.
-7. Snap: center and radius snap according to division.
+1. Pointer down sets the center, snapped with the current division.
+2. Drag sets the radius to the snapped pointer; a live label shows the radius in grid cells.
+3. `sides` controls vertices: `1` renders a circle sampled from 64 segments, `3+` renders a regular polygon, and `2` is treated as a circle.
+4. `drawTo: 'point'` places a vertex at the top; `'edge'` places a flat edge at the top. This gives vertical or horizontal hex-room orientation.
+5. `sides` can be changed from the toolbar slider/input, `[`/`]`, or a digit key while the circle tool is active.
+6. Shift+R toggles the shared rough level; rough outlines use the same geometry pipeline as other shapes.
+7. Snap applies to the center and radius endpoints.
 8. Erase mode subtracts.
+9. The preview uses the real polygon/circle ring and the committed shape stores `sides` and `drawTo` for later editing.
 
 ## 9. Path tool
 

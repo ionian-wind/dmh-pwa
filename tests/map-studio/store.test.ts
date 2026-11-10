@@ -126,7 +126,13 @@ describe('map studio shape helpers', () => {
     const map = createMap(project.id);
     store.setMap(map);
 
+    store.toolSettings.sides = 6;
+    store.toolSettings.drawTo = 'edge';
     store.addCircle({ cx: 2, cy: 2, radius: 1 });
+    expect(store.activeLayer?.shapes[0].shape).toMatchObject({
+      sides: 6,
+      drawTo: 'edge',
+    });
     store.addPolygon([
       [0, 0],
       [2, 0],

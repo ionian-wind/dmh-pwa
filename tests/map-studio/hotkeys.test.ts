@@ -8,6 +8,10 @@ const actions = {
   undo: vi.fn(),
   redo: vi.fn(),
   setTool: vi.fn(),
+  adjustSides: vi.fn(),
+  setSides: vi.fn(),
+  cycleRough: vi.fn(),
+  getTool: () => 'circle' as const,
 };
 
 const Harness = defineComponent({
@@ -44,6 +48,14 @@ describe('map studio hotkeys', () => {
     expect(actions.setTool).toHaveBeenCalledWith('wall');
     press('h');
     expect(actions.setTool).toHaveBeenCalledWith('pan');
+    press(']');
+    expect(actions.adjustSides).toHaveBeenCalledWith(1);
+    press('[');
+    expect(actions.adjustSides).toHaveBeenCalledWith(-1);
+    press('6');
+    expect(actions.setSides).toHaveBeenCalledWith(6);
+    press('R', { shiftKey: true });
+    expect(actions.cycleRough).toHaveBeenCalled();
     wrapper.unmount();
   });
 

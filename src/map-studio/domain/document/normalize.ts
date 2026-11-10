@@ -77,6 +77,8 @@ function normalizeShape(value: unknown): DungeonShape | null {
         cx: number(data.cx, 0),
         cy: number(data.cy, 0),
         radius,
+        sides: Math.max(1, Math.min(24, Math.round(number(data.sides, 1)))),
+        drawTo: data.drawTo === 'edge' ? 'edge' : 'point',
         rough: ([0, 1, 2, 3] as const).includes(data.rough) ? data.rough : 0,
         smooth: data.smooth === true,
       },
