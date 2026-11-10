@@ -88,10 +88,8 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [ ] Wall occlusion / blocks-light
 - [ ] Fog of war layer and preview/export
 
-## M5 — Random dungeon and advanced IO
+## M5 — Advanced IO
 
-- [ ] Random dungeon generator and settings
-- [ ] Seeded generation and reproducibility
 - [ ] Watabou and donjon imports
 - [x] PDF export (UVTT pending)
 - [x] Infinite canvas: viewport-driven background/grid, unlimited pan/zoom, content-bounds export and fit
@@ -120,3 +118,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Layer UX + split             | Add-folder button, per-row rename/move/delete menu, folder-aware tree sorting, wider shorter layer panel with only the tree scrolling, and split the editor into header/presets/layers/settings components (2043 tests / 246 files; coverage branches 87.01%) |
 | 2026-11-10 | Multi-select group bounds    | One outline and one handle set around all selected objects; group resize scales from the combined bounds and group rotate turns every object around the group centre                                                                                          |
 | 2026-11-10 | Folder icon UX + plan update | Remove folder chevron; open/closed folder icons and row-click toggling; document current implemented/partial/missing parity and UI behavior                                                                                                                   |
+| 2026-11-10 | Scope cleanup                | Moved random dungeon generation out of the implementation plan and milestones into `proposals/random-dungeon.md`; current scope is the editor, styling, lighting/fog and advanced IO                                                                          |

@@ -1,4 +1,11 @@
-# Map Studio — random dungeon generator and imports
+# Proposal — Map Studio random dungeon generator
+
+> **Status: deferred proposal, not in the current implementation scope.**
+>
+> This document is kept as a design reference for a future random dungeon
+> generator. It is not tracked as an implementation task and must not block the
+> current map-studio work. External generator imports remain a separate P3
+> advanced-IO item.
 
 ## 1. Goals
 
@@ -45,17 +52,17 @@ interface RandomDungeonSettings {
 
 Derived parameters:
 
-| Setting | Mapping |
-| --- | --- |
-| Size | small 24×24 cells; medium 40×40; large 64×48 (tunable). Ensure “small” fits a 50×50 Roll20 page. |
-| Room count | few 6–9; some 10–16; many 17–26; lots 27–40, scaled by size. |
-| Room size | cramped 3–5 cells; standard 4–8; spacious 7–12. Clamp to map. |
-| Corridor length | compact 0–2 cells; balanced 2–5; sprawling 5–10 between rooms. |
-| Corridor width | narrow 1 cell; wide 2 cells. |
-| Layout | controls graph topology: straight chain; forking tree with branches; balanced mix; winding long path with detours. |
-| Door density | probability per room connection: 0, 0.35, 0.7, 0.95. |
-| Room shapes | weighted selection; multi-select creates varied rooms. |
-| Roughness | maps to rough level 0–3 on room/corridor outlines, plus slight wall irregularity. |
+| Setting         | Mapping                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Size            | small 24×24 cells; medium 40×40; large 64×48 (tunable). Ensure “small” fits a 50×50 Roll20 page.                   |
+| Room count      | few 6–9; some 10–16; many 17–26; lots 27–40, scaled by size.                                                       |
+| Room size       | cramped 3–5 cells; standard 4–8; spacious 7–12. Clamp to map.                                                      |
+| Corridor length | compact 0–2 cells; balanced 2–5; sprawling 5–10 between rooms.                                                     |
+| Corridor width  | narrow 1 cell; wide 2 cells.                                                                                       |
+| Layout          | controls graph topology: straight chain; forking tree with branches; balanced mix; winding long path with detours. |
+| Door density    | probability per room connection: 0, 0.35, 0.7, 0.95.                                                               |
+| Room shapes     | weighted selection; multi-select creates varied rooms.                                                             |
+| Roughness       | maps to rough level 0–3 on room/corridor outlines, plus slight wall irregularity.                                  |
 
 Seed: string; if empty, generate a random slug and display it. Use a deterministic PRNG (e.g. splitmix32/xorshift) seeded from a hash of the seed string.
 

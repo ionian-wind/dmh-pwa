@@ -62,14 +62,13 @@
 
 **Gate:** a torch-lit room with lit/dim zones and wall shadows exports correctly.
 
-### M5 — Random generation and advanced IO (P2/P3)
+### M5 — Advanced IO (P2/P3)
 
-- Random dungeon generator with all settings + seed.
-- Watabou/donjon imports.
+- Watabou/donjon imports. Random dungeon generation is a deferred proposal and is not part of this milestone.
 - PDF and UVTT export.
 - Multi-map project import/export, project bundles.
 
-**Gate:** generate/import a dungeon, edit it, export PDF/UVTT; deterministic seeds.
+**Gate:** import a dungeon, edit it, export PDF/UVTT.
 
 ### M6 — Touch/mobile parity, accessibility and polish (P2/P3)
 
@@ -209,35 +208,35 @@ Performance:
 
 ## 5. Performance budgets
 
-| Operation | Desktop target | Mobile target |
-| --- | --- | --- |
-| Open 30×30 map | < 800 ms | < 1.5 s |
-| First draw paint | < 50 ms | < 100 ms |
-| Pan/zoom 500 shapes | 60 fps | 30+ fps |
-| Pan/zoom 5,000 shapes | 30+ fps | 20+ fps |
-| Compile 500 shapes | < 100 ms | < 300 ms |
-| Export 50×50 @70 PPC | < 2 s | < 5 s |
-| Export 50×50 @140 PPC | < 5 s | < 12 s / warn |
-| Autosave document | < 100 ms | < 250 ms |
+| Operation             | Desktop target | Mobile target |
+| --------------------- | -------------- | ------------- |
+| Open 30×30 map        | < 800 ms       | < 1.5 s       |
+| First draw paint      | < 50 ms        | < 100 ms      |
+| Pan/zoom 500 shapes   | 60 fps         | 30+ fps       |
+| Pan/zoom 5,000 shapes | 30+ fps        | 20+ fps       |
+| Compile 500 shapes    | < 100 ms       | < 300 ms      |
+| Export 50×50 @70 PPC  | < 2 s          | < 5 s         |
+| Export 50×50 @140 PPC | < 5 s          | < 12 s / warn |
+| Autosave document     | < 100 ms       | < 250 ms      |
 
 If budgets are exceeded: profile, cache static layers, reduce resolution, move geometry to a worker, simplify previews.
 
 ## 6. Risks and mitigations
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Boolean geometry performance | Jank on large maps | Incremental/static caches, chunked worker compile, lazy compile, spatial buckets, limits. |
-| Pixi v8 WebGPU differences | Rendering bugs on some devices | Force WebGL initially; test both; abstract renderer; feature-detect. |
-| Touch precision | Frustrating on phones | Large handles, undo-point, previews, settings sheets, touch e2e tests. |
-| Text/IME/Pixi mismatch | Bad text editing | HTML overlay editor; commit to Pixi Text; test IME/multiline. |
-| Font availability | Export differs | Bundle default fonts, font loading before export, fallback. |
-| `.ds` fidelity | User expectations | Document best-effort conversion and report; do not claim exact round-trip. |
-| Large assets/storage | Quota/performance | Asset size limits, OPFS via existing storage, cleanup, project size UI. |
-| Scope size | Long delivery | Milestones, feature flag, parity matrix, avoid cloud/VTT scope. |
-| Autosave conflicts/multi-tab | Data loss | Debounced saves, snapshot history, locking warning/takeover. |
-| Undo memory | Crashes | Limit count/memory; snapshots for huge ops; compress inverse commands. |
-| Lighting occlusion cost | Slow mobile | Resolution scaling, cached visibility, disable occlusion on low-end. |
-| Accessibility regressions | Exclusion | Layer-tree alternative, manual audits, automated axe checks where possible. |
+| Risk                         | Impact                         | Mitigation                                                                                |
+| ---------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
+| Boolean geometry performance | Jank on large maps             | Incremental/static caches, chunked worker compile, lazy compile, spatial buckets, limits. |
+| Pixi v8 WebGPU differences   | Rendering bugs on some devices | Force WebGL initially; test both; abstract renderer; feature-detect.                      |
+| Touch precision              | Frustrating on phones          | Large handles, undo-point, previews, settings sheets, touch e2e tests.                    |
+| Text/IME/Pixi mismatch       | Bad text editing               | HTML overlay editor; commit to Pixi Text; test IME/multiline.                             |
+| Font availability            | Export differs                 | Bundle default fonts, font loading before export, fallback.                               |
+| `.ds` fidelity               | User expectations              | Document best-effort conversion and report; do not claim exact round-trip.                |
+| Large assets/storage         | Quota/performance              | Asset size limits, OPFS via existing storage, cleanup, project size UI.                   |
+| Scope size                   | Long delivery                  | Milestones, feature flag, parity matrix, avoid cloud/VTT scope.                           |
+| Autosave conflicts/multi-tab | Data loss                      | Debounced saves, snapshot history, locking warning/takeover.                              |
+| Undo memory                  | Crashes                        | Limit count/memory; snapshots for huge ops; compress inverse commands.                    |
+| Lighting occlusion cost      | Slow mobile                    | Resolution scaling, cached visibility, disable occlusion on low-end.                      |
+| Accessibility regressions    | Exclusion                      | Layer-tree alternative, manual audits, automated axe checks where possible.               |
 
 ## 7. Rollout
 

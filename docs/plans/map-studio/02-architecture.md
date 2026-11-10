@@ -31,19 +31,19 @@ Hard rule: **Pixi objects never live in persisted state or Pinia**. The document
 
 ## 2. Technology choices
 
-| Concern | Choice | Rationale |
-| --- | --- | --- |
-| Renderer | **pixi.js 8.x** | WebGL/WebGPU abstraction, scene graph, filters, text, asset loader, extract-to-canvas. |
-| Vue integration | Manual `Application.init()` inside `CanvasHost.vue` | Avoid wrapper libraries that lag Pixi majors; explicit lifecycle. |
-| Geometry booleans | `polygon-clipping` | Well-tested union/difference/intersection for polygons; small. |
-| Curves | custom Catmull-Rom / quadratic sampling (shared utility) | No heavy dependency; deterministic sampling for rendering and export. |
-| Rough outlines | custom seeded midpoint displacement | Deterministic, resolution-independent, reusable in export. |
-| PDF | `jspdf` | Client-side PDF and tiled pages. |
-| ZIP / `.ds` | existing `jszip` | Already a project dependency. |
-| State | Pinia + `shallowReactive`/`shallowRef` document | Fine-grained commands, no deep Vue proxying of large documents. |
-| Persistence | Dexie dedicated tables | Existing project already uses Dexie; large documents and thumbnails fit. |
-| Feature flag | `VITE_FEATURE_MAP_STUDIO` | Build-level isolation like other features. |
-| Testing | Vitest for domain; Playwright for Pixi/touch | Renderer/WebGL is best validated in a browser. |
+| Concern           | Choice                                                   | Rationale                                                                              |
+| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Renderer          | **pixi.js 8.x**                                          | WebGL/WebGPU abstraction, scene graph, filters, text, asset loader, extract-to-canvas. |
+| Vue integration   | Manual `Application.init()` inside `CanvasHost.vue`      | Avoid wrapper libraries that lag Pixi majors; explicit lifecycle.                      |
+| Geometry booleans | `polygon-clipping`                                       | Well-tested union/difference/intersection for polygons; small.                         |
+| Curves            | custom Catmull-Rom / quadratic sampling (shared utility) | No heavy dependency; deterministic sampling for rendering and export.                  |
+| Rough outlines    | custom seeded midpoint displacement                      | Deterministic, resolution-independent, reusable in export.                             |
+| PDF               | `jspdf`                                                  | Client-side PDF and tiled pages.                                                       |
+| ZIP / `.ds`       | existing `jszip`                                         | Already a project dependency.                                                          |
+| State             | Pinia + `shallowReactive`/`shallowRef` document          | Fine-grained commands, no deep Vue proxying of large documents.                        |
+| Persistence       | Dexie dedicated tables                                   | Existing project already uses Dexie; large documents and thumbnails fit.               |
+| Feature flag      | `VITE_FEATURE_MAP_STUDIO`                                | Build-level isolation like other features.                                             |
+| Testing           | Vitest for domain; Playwright for Pixi/touch             | Renderer/WebGL is best validated in a browser.                                         |
 
 New dependencies to add: `pixi.js`, `polygon-clipping`, `jspdf`. (`jszip` already present.) Optional later: `bezier-js` only if custom curve code becomes unwieldy.
 
@@ -242,7 +242,7 @@ interface MapStudioState {
   selectedMapId: string | null;
   tool: ToolId;
   toolSettings: Record<ToolId, ToolSettings>;
-  selection: StudioSelection;         // objects, geometry ids, layer ids, mixed
+  selection: StudioSelection; // objects, geometry ids, layer ids, mixed
   hover: StudioHover;
   activeLayerId: string;
   editingTextId: string | null;
@@ -250,7 +250,7 @@ interface MapStudioState {
   history: HistoryState;
   dirty: boolean;
   autosave: 'idle' | 'saving' | 'saved' | 'error';
-  viewport: { zoom, x, y, isometric, showGrid, hideUi };
+  viewport: { zoom; x; y; isometric; showGrid; hideUi };
 }
 ```
 
@@ -323,7 +323,7 @@ Compiled geometry is cached per layer with a `geometryRevision`. Shapes store th
 ## 9. Workers and performance
 
 - Geometry compilation and random generation can run in a Web Worker. Start with main-thread compilation and a `requestIdleCallback`/chunked pipeline; add worker when profiling shows jank.
-- A worker is mandatory for large random dungeons and `.ds` import conversion.
+- A worker would be required for large random dungeons (deferred proposal) and `.ds` import conversion.
 - Pixi ticker is stopped when nothing animates; render-on-demand via `renderer.render()` for static frames.
 - Static dungeon layers render to `RenderTexture`; pan/zoom reuses textures.
 - Object textures are loaded through Pixi `Assets` with a bounded cache; thumbnails are generated at low resolution.

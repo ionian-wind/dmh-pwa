@@ -8,12 +8,12 @@ The studio is a **new feature**. It does not replace the current location map vi
 
 ## 2. Confirmed scope decisions
 
-| Decision | Choice | Consequence |
-| --- | --- | --- |
-| Viewer integration | **Studio only** | The existing `LocationMapTab` / OpenLayers viewer stays untouched. The studio exports an image and/or `.ds` file. |
-| Feature scope | **Everything local** | Include editor features that Dungeon Scrawl sells as Pro: textures, lighting, custom presets, PDF/UVTT export, random dungeon. Replace cloud behavior with local equivalents. |
-| Existing map data | **Drawings only** | Markers, areas and entity links are not shown or edited in the studio. |
-| Platforms | **Full touch/mobile parity** | Every tool, panel and gesture must work on phones/tablets as well as desktop. |
+| Decision           | Choice                       | Consequence                                                                                                                                                                                                                                      |
+| ------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Viewer integration | **Studio only**              | The existing `LocationMapTab` / OpenLayers viewer stays untouched. The studio exports an image and/or `.ds` file.                                                                                                                                |
+| Feature scope      | **Everything local**         | Include editor features that Dungeon Scrawl sells as Pro: textures, lighting, custom presets and PDF/UVTT export. Replace cloud behavior with local equivalents. Random dungeon generation is a deferred proposal, not part of the current task. |
+| Existing map data  | **Drawings only**            | Markers, areas and entity links are not shown or edited in the studio.                                                                                                                                                                           |
+| Platforms          | **Full touch/mobile parity** | Every tool, panel and gesture must work on phones/tablets as well as desktop.                                                                                                                                                                    |
 
 ## 3. Explicit non-goals
 
@@ -70,19 +70,19 @@ The studio also works standalone: users can create maps in the local library wit
 
 ## 7. Terminology
 
-| Term | Meaning |
-| --- | --- |
-| **Project** | A local library entry. May contain one or more maps (`.ds`-style multi-map file). |
-| **Map** | One canvas/document with grid, background, layers and objects. |
-| **Layer** | A dungeon layer, the background layer, the fog layer, or the images/folder tree. |
-| **Dungeon layer** | A vector drawing layer with floor, wall, grid, shadow, hatching, shading and texture passes. |
-| **Shape / dungeon geometry** | A drawing operation (rect, polygon, path, wall) compiled into polygons. |
-| **Object** | A non-geometry node: image, text, door, stairs, light, group/folder. |
-| **Asset** | An uploaded or built-in image/texture/font referenced by the document. |
-| **Preset** | A reusable layer style (dungeon, world-building, custom). |
-| **World** | The map coordinate space. Canonical units are grid cells. |
-| **Cell** | One grid square/hex. |
-| **Bake** | Rasterizing the studio map into an image file. |
+| Term                         | Meaning                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| **Project**                  | A local library entry. May contain one or more maps (`.ds`-style multi-map file).            |
+| **Map**                      | One canvas/document with grid, background, layers and objects.                               |
+| **Layer**                    | A dungeon layer, the background layer, the fog layer, or the images/folder tree.             |
+| **Dungeon layer**            | A vector drawing layer with floor, wall, grid, shadow, hatching, shading and texture passes. |
+| **Shape / dungeon geometry** | A drawing operation (rect, polygon, path, wall) compiled into polygons.                      |
+| **Object**                   | A non-geometry node: image, text, door, stairs, light, group/folder.                         |
+| **Asset**                    | An uploaded or built-in image/texture/font referenced by the document.                       |
+| **Preset**                   | A reusable layer style (dungeon, world-building, custom).                                    |
+| **World**                    | The map coordinate space. Canonical units are grid cells.                                    |
+| **Cell**                     | One grid square/hex.                                                                         |
+| **Bake**                     | Rasterizing the studio map into an image file.                                               |
 
 ## 8. Reference behavior
 

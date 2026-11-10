@@ -12,9 +12,15 @@ The feature is large enough that it is split into focused documents:
 6. [05-rendering-and-styles.md](05-rendering-and-styles.md) — Pixi render passes, dungeon styles, grids, textures, lighting, fog.
 7. [06-ui-ux-and-input.md](06-ui-ux-and-input.md) — desktop/tablet/mobile layouts, panels, keyboard, touch, accessibility.
 8. [07-persistence-library-export.md](07-persistence-library-export.md) — local library, autosave, `.ds`, PNG/PDF/UVTT, importers, location baking.
-9. [08-random-dungeon.md](08-random-dungeon.md) — procedural dungeon generator and external generator imports.
-10. [09-testing-rollout.md](09-testing-rollout.md) — test strategy, performance budgets, milestones, task breakdown, risks.
-11. [10-implementation-checklist.md](10-implementation-checklist.md) — live markable implementation checklist.
+9. [09-testing-rollout.md](09-testing-rollout.md) — test strategy, performance budgets, milestones, task breakdown, risks.
+10. [10-implementation-checklist.md](10-implementation-checklist.md) — live markable implementation checklist.
+
+## Deferred proposals
+
+These are intentionally outside the current implementation scope. They are kept
+for future consideration and are not tracked as active tasks.
+
+- [proposals/random-dungeon.md](proposals/random-dungeon.md) — procedural dungeon generator.
 
 ## Plan status
 
@@ -24,4 +30,4 @@ The feature is large enough that it is split into focused documents:
   - **All local editor features**, including local library/autosave and Pro-equivalent editor features.
   - **Drawings only**: the studio does not display or edit location markers, areas or entity links.
   - **Full touch/mobile parity**.
-- Implementation: not started. This is a design document, not a record of completed work.
+- Implementation: in progress. The live task state is tracked in [10-implementation-checklist.md](10-implementation-checklist.md); the other documents are design references.
