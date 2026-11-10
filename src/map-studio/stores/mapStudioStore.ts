@@ -851,12 +851,13 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     setObjects(next.map((object, order) => ({ ...object, order: order + 1 })));
   }
 
-  function flipObject(id: string, axis: 'x' | 'y'): void {
-    const objects = imagesLayer.value?.objects ?? [];
-    const object = objects.find((entry) => entry.id === id);
-    if (!object) return;
+  function flipObjectValue(
+    object: StudioObject,
+    axis: 'x' | 'y',
+  ): StudioObject {
     if (object.type === 'text' || object.type === 'image') {
-      updateObject(id, {
+      return {
+        ...object,
         transform: {
           ...object.transform,
           flipX:
@@ -864,8 +865,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
           flipY:
             axis === 'y' ? !object.transform.flipY : object.transform.flipY,
         },
-      });
-      return;
+      };
     }
     const points =
       object.type === 'door' ? [object.a, object.b] : object.points;
@@ -878,19 +878,154 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
       axis === 'y' ? centerY * 2 - y : y,
     ];
     if (object.type === 'door') {
-      updateObject(id, { a: mirror(object.a), b: mirror(object.b) });
-    } else {
-      updateObject(id, { points: object.points.map(mirror) });
+      return { ...object, a: mirror(object.a), b: mirror(object.b) };
     }
+    return { ...object, points: object.points.map(mirror) };
+  }
+
+  function flipObject(id: string, axis: 'x' | 'y'): void {
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) =>
+        object.id === id ? flipObjectValue(object, axis) : object,
+      ),
+    );
+  }
+
+  function flipSelectedObjects(axis: 'x' | 'y'): void {
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.size) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) =>
+        ids.has(object.id) ? flipObjectValue(object, axis) : object,
+      ),
+    );
+  }
+
+  function updateSelectedObjects(patch: Record<string, unknown>): void {
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.size) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) =>
+        ids.has(object.id) ? ({ ...object, ...patch } as StudioObject) : object,
+      ),
+    );
+  }
+
+  function setSelectedObjectsRotation(rotation: number): void {
+    if (!Number.isFinite(rotation)) return;
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.size) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) => {
+        if (!ids.has(object.id)) return object;
+        if (object.type === 'text' || object.type === 'image') {
+          return {
+            ...object,
+            transform: { ...object.transform, rotation },
+          };
+        }
+        const bounds = objectBounds(object);
+        const cx = bounds.x + bounds.width / 2;
+        const cy = bounds.y + bounds.height / 2;
+        const delta = rotation - object.transform.rotation;
+        const cos = Math.cos(delta);
+        const sin = Math.sin(delta);
+        const rotate = ([x, y]: [number, number]): [number, number] => [
+          cx + (x - cx) * cos - (y - cy) * sin,
+          cy + (x - cx) * sin + (y - cy) * cos,
+        ];
+        if (object.type === 'door') {
+          return {
+            ...object,
+            a: rotate(object.a),
+            b: rotate(object.b),
+            transform: { ...object.transform, rotation },
+          };
+        }
+        return {
+          ...object,
+          points: object.points.map(rotate),
+          transform: { ...object.transform, rotation },
+        };
+      }),
+    );
+  }
+
+  function duplicateSelectedObjects(): void {
+    const ids = new Set(selectedObjectIds.value);
+    const objects = imagesLayer.value?.objects ?? [];
+    if (!ids.size) return;
+    const copies = objects
+      .filter((object) => ids.has(object.id))
+      .map((source) => {
+        const copy = JSON.parse(JSON.stringify(source)) as StudioObject;
+        if (copy.type === 'text' || copy.type === 'image') {
+          copy.transform.x += 0.5;
+          copy.transform.y += 0.5;
+        } else if (copy.type === 'door') {
+          copy.a = [copy.a[0] + 0.5, copy.a[1] + 0.5];
+          copy.b = [copy.b[0] + 0.5, copy.b[1] + 0.5];
+          copy.transform.x += 0.5;
+          copy.transform.y += 0.5;
+        } else {
+          copy.points = copy.points.map(([x, y]) => [x + 0.5, y + 0.5]);
+          copy.transform.x += 0.5;
+          copy.transform.y += 0.5;
+        }
+        return { ...copy, id: generateId(), order: 0 };
+      });
+    const start = nextObjectOrder();
+    setObjects([
+      ...objects,
+      ...copies.map((copy, index) => ({ ...copy, order: start + index })),
+    ]);
+    selectObjects(copies.map((copy) => copy.id));
+  }
+
+  function reorderSelectedObjects(direction: -1 | 1): void {
+    const ids = new Set(selectedObjectIds.value);
+    const objects = [...(imagesLayer.value?.objects ?? [])].sort(
+      (a, b) => a.order - b.order,
+    );
+    if (!ids.size || objects.length < 2) return;
+    if (direction > 0) {
+      for (let index = objects.length - 2; index >= 0; index -= 1) {
+        if (ids.has(objects[index].id) && !ids.has(objects[index + 1].id)) {
+          [objects[index], objects[index + 1]] = [
+            objects[index + 1],
+            objects[index],
+          ];
+        }
+      }
+    } else {
+      for (let index = 1; index < objects.length; index += 1) {
+        if (ids.has(objects[index].id) && !ids.has(objects[index - 1].id)) {
+          [objects[index], objects[index - 1]] = [
+            objects[index - 1],
+            objects[index],
+          ];
+        }
+      }
+    }
+    setObjects(
+      objects.map((object, order) => ({ ...object, order: order + 1 })),
+    );
+  }
+
+  function removeSelectedObjects(): void {
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.size) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).filter(
+        (object) => !ids.has(object.id),
+      ),
+    );
+    selectedObjectId.value = null;
+    selectedObjectIds.value = [];
   }
 
   function removeSelectedObject(): void {
-    const id = selectedObjectId.value;
-    if (!id) return;
-    setObjects(
-      (imagesLayer.value?.objects ?? []).filter((object) => object.id !== id),
-    );
-    selectedObjectId.value = null;
+    removeSelectedObjects();
   }
 
   function undo(): void {
@@ -1004,6 +1139,12 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     rotateSelectedObjectsLive,
     endObjectDrag,
     removeSelectedObject,
+    removeSelectedObjects,
+    duplicateSelectedObjects,
+    flipSelectedObjects,
+    updateSelectedObjects,
+    setSelectedObjectsRotation,
+    reorderSelectedObjects,
     updateObject,
     duplicateObject,
     reorderObject,

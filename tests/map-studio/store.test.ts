@@ -605,3 +605,58 @@ describe('map studio group resize and rotate', () => {
     store.endObjectDrag();
   });
 });
+
+describe('map studio batch object actions', () => {
+  it('updates, flips, duplicates and removes selected objects', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    const ids = store.imagesLayer!.objects.map((object) => object.id);
+    store.selectObjects(ids);
+    store.updateSelectedObjects({ opacity: 0.5 });
+    expect(store.imagesLayer!.objects.map((object) => object.opacity)).toEqual([
+      0.5, 0.5,
+    ]);
+    store.setSelectedObjectsRotation(Math.PI / 2);
+    expect(
+      store.imagesLayer!.objects.map((object) => object.transform.rotation),
+    ).toEqual([Math.PI / 2, Math.PI / 2]);
+    store.flipSelectedObjects('x');
+    expect(
+      store.imagesLayer!.objects.every((object) => object.transform.flipX),
+    ).toBe(true);
+    store.duplicateSelectedObjects();
+    expect(store.imagesLayer!.objects).toHaveLength(4);
+    expect(store.selectedObjects).toHaveLength(2);
+    const before = store.imagesLayer!.objects.map((object) => object.id);
+    store.reorderSelectedObjects(-1);
+    expect(store.imagesLayer!.objects.map((object) => object.id)).not.toEqual(
+      before,
+    );
+    store.removeSelectedObjects();
+    expect(store.imagesLayer!.objects).toHaveLength(2);
+    expect(store.selectedObjectIds).toEqual([]);
+    store.removeSelectedObjects();
+    store.reorderSelectedObjects(1);
+    store.updateSelectedObjects({ opacity: 0.2 });
+  });
+
+  it('applies type-specific properties only when they are common', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addDoor([0, 0], [1, 0]);
+    store.addDoor([2, 0], [3, 0]);
+    const doors = store.imagesLayer!.objects;
+    store.selectObjects(doors.map((door) => door.id));
+    store.updateSelectedObjects({ variant: 1 });
+    expect(
+      store.imagesLayer!.objects.every(
+        (object) => object.type === 'door' && object.variant === 1,
+      ),
+    ).toBe(true);
+    store.flipSelectedObjects('y');
+    store.flipSelectedObjects('x');
+    expect(store.selectedObjects).toHaveLength(2);
+  });
+});

@@ -1186,6 +1186,8 @@
     "stairs": "Stairs",
     "textPrompt": "Label text",
     "objectSettings": "Object settings",
+    "objectsSelected": "{count} objects selected",
+    "mixed": "Mixed",
     "duplicate": "Duplicate",
     "bringForward": "Bring forward",
     "sendBackward": "Send backward",

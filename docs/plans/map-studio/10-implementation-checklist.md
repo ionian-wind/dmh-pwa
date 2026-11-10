@@ -65,6 +65,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Object tool: selection, live drag, resize/rotate handles for text/images, rotation for doors/stairs, shape selection, marquee and multi-object drag
 - [ ] Grouping, z-order, flip, duplicate, context menu (z-order/flip/duplicate done)
 - [x] Multi-object selection: combined selection bounds, group resize and group rotate
+- [x] Multi-object batch panel: common opacity/rotation/type fields and batch duplicate, z-order, flip and delete actions
 - [ ] Images panel, upload, drag/drop, favorites
 - [x] Text tool: click + prompt placement (inline editing pending)
 - [x] Door tool: two-point placement (variants pending)
@@ -119,3 +120,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Multi-select group bounds    | One outline and one handle set around all selected objects; group resize scales from the combined bounds and group rotate turns every object around the group centre                                                                                          |
 | 2026-11-10 | Folder icon UX + plan update | Remove folder chevron; open/closed folder icons and row-click toggling; document current implemented/partial/missing parity and UI behavior                                                                                                                   |
 | 2026-11-10 | Scope cleanup                | Moved random dungeon generation out of the implementation plan and milestones into `proposals/random-dungeon.md`; current scope is the editor, styling, lighting/fog and advanced IO                                                                          |
+| 2026-11-10 | Multi-select batch panel     | Show shared properties for a multi-selection, mark mixed values, and provide batch duplicate/order/flip/delete actions (2064 tests / 248 files; coverage branches 87.02%)                                                                                     |

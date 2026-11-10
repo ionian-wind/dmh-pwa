@@ -1187,6 +1187,8 @@
     "stairs": "Лестница",
     "textPrompt": "Текст подписи",
     "objectSettings": "Настройки объекта",
+    "objectsSelected": "Выбрано объектов: {count}",
+    "mixed": "Смешанное",
     "duplicate": "Дублировать",
     "bringForward": "Выше",
     "sendBackward": "Ниже",

@@ -1,10 +1,22 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
+
+const promptMock = vi.mocked(prompt);
+const confirmMock = vi.mocked(confirm);
 import { createPinia, setActivePinia } from 'pinia';
+vi.mock('@/dialogs', () => ({
+  alert: vi.fn().mockResolvedValue(undefined),
+  confirm: vi.fn().mockResolvedValue(true),
+  prompt: vi.fn().mockResolvedValue('Renamed'),
+}));
+
 import StudioHeader from '@/map-studio/components/StudioHeader.vue';
 import StudioPresetsPanel from '@/map-studio/components/StudioPresetsPanel.vue';
+import StudioLayerSettings from '@/map-studio/components/StudioLayerSettings.vue';
+import StudioObjectSettings from '@/map-studio/components/StudioObjectSettings.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
+import { confirm, prompt } from '@/dialogs';
 import {
   createMap,
   createProject,
@@ -38,6 +50,9 @@ describe('StudioHeader', () => {
     const idle = mountHeader();
     expect(idle.findComponent({ name: 'QBadge' }).exists()).toBe(false);
     idle.unmount();
+    const unnamed = mountHeader({ name: '' });
+    expect(unnamed.text()).toContain('Map Studio');
+    unnamed.unmount();
   });
 
   it('emits header actions', async () => {
@@ -100,22 +115,73 @@ describe('StudioPresetsPanel', () => {
     const count = store.map!.layers.filter(
       (layer) => layer.type === 'dungeon',
     ).length;
-    console.log(
-      count,
-      wrapper.findAll('.studio-preset-row').length,
-      wrapper.findAll('[title="Add layer"]').length,
-    );
     await wrapper
       .findAll('.studio-preset-row')[1]
       .find('[title="Add layer"]')
       .trigger('click');
     await nextTick();
-    console.log(
-      store.map!.layers.filter((layer) => layer.type === 'dungeon').length,
-    );
     expect(
       store.map!.layers.filter((layer) => layer.type === 'dungeon'),
     ).toHaveLength(count + 1);
+    wrapper.unmount();
+  });
+});
+
+describe('StudioLayerSettings', () => {
+  it('renders nothing without a map and edits the active layer', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    const empty = mount(StudioLayerSettings, {
+      global: { plugins: [pinia] },
+    });
+    expect(empty.text()).toBe('');
+    empty.unmount();
+
+    store.setMap(createMap(createProject().id));
+    store.addFolder('Folder');
+    const wrapper = mount(StudioLayerSettings, {
+      global: { plugins: [pinia] },
+    });
+    expect(wrapper.text()).toContain('Layer settings');
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const select = wrapper.find('select');
+    await select.setValue(folder.id);
+    expect(store.activeLayer?.parentId).toBe(folder.id);
+
+    promptMock.mockResolvedValueOnce(undefined);
+    await wrapper.find('[title="Rename layer"]').trigger('click');
+    await flushPromises();
+    confirmMock.mockResolvedValueOnce(false);
+    await wrapper.find('[title="Delete layer"]').trigger('click');
+    await flushPromises();
+    expect(store.activeLayer).toBeTruthy();
+    wrapper.unmount();
+  });
+});
+
+describe('StudioObjectSettings', () => {
+  it('renders nothing without a selected object and edits image position', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    const empty = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    expect(empty.text()).toBe('');
+    empty.unmount();
+
+    store.setMap(createMap(createProject().id));
+    store.addImage('data:image/png;base64,AA==', [1, 1], 2, 2);
+    const image = store.imagesLayer!.objects[0];
+    store.selectObject(image.id);
+    const wrapper = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    expect(wrapper.text()).toContain('X / Y');
+    const x = wrapper.findAll('input[type="number"]')[0];
+    await x.setValue('4');
+    expect(store.imagesLayer!.objects[0].transform.x).toBe(4);
     wrapper.unmount();
   });
 });

@@ -5,6 +5,7 @@ import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import LayerTree from '@/map-studio/components/LayerTree.vue';
 import StudioLayerSettings from '@/map-studio/components/StudioLayerSettings.vue';
 import StudioObjectSettings from '@/map-studio/components/StudioObjectSettings.vue';
+import StudioObjectBatchSettings from '@/map-studio/components/StudioObjectBatchSettings.vue';
 import { confirm, prompt } from '@/dialogs';
 import type { StudioLayer } from '@/map-studio/domain/document/types';
 
@@ -183,7 +184,8 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
     </div>
 
     <div class="studio-layer-settings">
-      <StudioObjectSettings v-if="store.selectedObject" />
+      <StudioObjectBatchSettings v-if="store.selectedObjectIds.length > 1" />
+      <StudioObjectSettings v-else-if="store.selectedObject" />
       <StudioLayerSettings v-else />
     </div>
   </aside>

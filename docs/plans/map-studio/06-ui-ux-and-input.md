@@ -197,6 +197,7 @@ Each panel is independent and remembers its scroll/expanded sections.
 
 - Single object: bounding box, 4 corner resize handles, rotate handle, quick action bar (duplicate, delete, front/back, more).
 - Multi-object: one combined bounding box around every selected object plus corner resize and rotate handles. Resizing scales all selected objects from the group bounds; rotating turns every selected object around the group center while preserving relative positions.
+- Multi-object settings panel: shows the shared properties (opacity, rotation, and type-specific fields only when every selected object has the same type) with mixed values marked “Mixed”. Batch actions: duplicate, bring forward/backward, flip horizontal/vertical and delete.
 - Mixed selections are transformed as one axis-aligned group; text/image boxes and door/stair geometry all participate.
 - Geometry selection: outline + mini menu above bounds (Copy/Cut/Delete).
 - Paste mode: preview follows pointer; action bar shows Confirm/Cancel; arrow keys nudge; Enter/Escape; touch buttons.

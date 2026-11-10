@@ -146,6 +146,32 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('ignores cancelled layer rename and delete', async () => {
+    const { wrapper, store } = await mountView();
+    await wrapper.find('[aria-label="Add folder"]').trigger('click');
+    await flushPromises();
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const row = rowFor(wrapper, 'Folder');
+    await row.findAll('button').at(-1)!.trigger('click');
+    mocks.prompt.mockResolvedValue(null);
+    const rename = row
+      .findAll('*')
+      .find((node) => node.text() === 'Rename layer')!;
+    await rename.trigger('click');
+    await flushPromises();
+    expect(
+      store.map!.layers.find((layer) => layer.id === folder.id)?.name,
+    ).toBe('Folder');
+    mocks.confirm.mockResolvedValue(false);
+    const remove = row.findAll('*').find((node) => node.text() === 'Delete')!;
+    await remove.trigger('click');
+    await flushPromises();
+    expect(store.map!.layers.some((layer) => layer.id === folder.id)).toBe(
+      true,
+    );
+    wrapper.unmount();
+  });
+
   it('renames and deletes layers from the row menu', async () => {
     const { wrapper, store } = await mountView();
     await wrapper.find('[aria-label="Add folder"]').trigger('click');
@@ -268,6 +294,52 @@ describe('MapStudioView UI', () => {
       .find((select) => select.findAll('option').length === 2)!;
     await folderSelect.setValue(folder.id);
     expect(store.activeLayer?.parentId).toBe(folder.id);
+    wrapper.unmount();
+  });
+
+  it('shows batch properties and actions for multiple objects', async () => {
+    const { wrapper, store } = await mountView();
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    await flushPromises();
+    store.selectObjects(store.imagesLayer!.objects.map((object) => object.id));
+    await flushPromises();
+    expect(wrapper.text()).toContain('2 objects selected');
+
+    const opacity = wrapper
+      .findAll('input[type="range"]')
+      .find((input) => input.attributes('max') === '1')!;
+    await opacity.setValue('0.4');
+    expect(store.imagesLayer!.objects.map((object) => object.opacity)).toEqual([
+      0.4, 0.4,
+    ]);
+
+    await wrapper.find('[title="Duplicate"]').trigger('click');
+    expect(store.imagesLayer!.objects).toHaveLength(4);
+    await wrapper.find('[title="Flip horizontal"]').trigger('click');
+    expect(
+      store.selectedObjects.every((object) => object.transform.flipX),
+    ).toBe(true);
+    await wrapper.find('[title="Delete"]').trigger('click');
+    expect(store.imagesLayer!.objects).toHaveLength(2);
+    wrapper.unmount();
+  });
+
+  it('shows only universal fields for mixed object selections', async () => {
+    const { wrapper, store } = await mountView();
+    store.addText('A', [1, 1]);
+    store.addDoor([2, 2], [3, 2]);
+    await flushPromises();
+    store.updateObject(store.imagesLayer!.objects[0].id, { opacity: 0.5 });
+    store.selectObjects(store.imagesLayer!.objects.map((object) => object.id));
+    await flushPromises();
+    expect(wrapper.text()).toContain('2 objects selected');
+    expect(
+      wrapper
+        .findAll('select')
+        .some((select) => select.findAll('option').length === 2),
+    ).toBe(false);
+    expect(wrapper.text()).toContain('Mixed');
     wrapper.unmount();
   });
 

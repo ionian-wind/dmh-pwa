@@ -65,6 +65,22 @@ function updateTransform(key: string, value: number): void {
           flat
           dense
           round
+          icon="tabler-flip-horizontal"
+          :title="t('mapStudio.flipHorizontal')"
+          @click="store.flipObject(object.id, 'x')"
+        />
+        <QBtn
+          flat
+          dense
+          round
+          icon="tabler-flip-vertical"
+          :title="t('mapStudio.flipVertical')"
+          @click="store.flipObject(object.id, 'y')"
+        />
+        <QBtn
+          flat
+          dense
+          round
           icon="tabler-trash"
           :title="t('common.delete')"
           @click="store.removeSelectedObject()"
