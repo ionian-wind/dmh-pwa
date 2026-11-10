@@ -11,6 +11,7 @@ import {
   shapeToPolygon,
 } from '@/map-studio/domain/geometry/compile';
 import {
+  createFloorGrid,
   createHatchPattern,
   createShadingGeometry,
 } from '@/map-studio/domain/geometry/stylePasses';
@@ -180,13 +181,25 @@ export class PixiStudioRenderer {
         alpha: map.background.style.opacity,
       });
     this.gridLayer.clear();
-    if (!map.settings.showGrid || map.grid.type !== 'square') return;
+    if (!map.settings.showGrid || map.grid.type === 'none') return;
     const step = ppc;
     const gridSize = step * zoom;
     if (gridSize < 4) return;
     const left = Math.floor(rect.left / step) * step;
     const top = Math.floor(rect.top / step) * step;
     const width = Math.max(1, map.grid.width / Math.max(0.05, zoom));
+    if (map.grid.type === 'dot') {
+      const radius = Math.max(1, map.grid.width);
+      for (let x = left; x <= rect.right; x += step) {
+        for (let y = top; y <= rect.bottom; y += step) {
+          this.gridLayer
+            .circle(x, y, radius)
+            .fill({ color: map.grid.color, alpha: 0.85 });
+        }
+      }
+      return;
+    }
+    if (map.grid.type !== 'square') return;
     for (let x = left; x <= rect.right; x += step) {
       this.gridLayer
         .moveTo(x, rect.top)
@@ -747,6 +760,22 @@ export class PixiStudioRenderer {
           });
         }
         container.addChild(graphics);
+      }
+    }
+
+    if (layer.style.grid.visible) {
+      const segments = createFloorGrid(compiled.polygons);
+      if (segments.length > 0) {
+        const grid = new Graphics();
+        grid.blendMode = layer.blendMode;
+        const width = Math.max(0.5, layer.style.grid.width);
+        for (const segment of segments) {
+          grid
+            .moveTo(segment.a[0] * ppc, segment.a[1] * ppc)
+            .lineTo(segment.b[0] * ppc, segment.b[1] * ppc)
+            .stroke({ color: layer.style.grid.color, width, alpha: 0.8 });
+        }
+        container.addChild(grid);
       }
     }
 

@@ -116,16 +116,16 @@ stage
 
 ### 6.4 Hatching
 
-- Patterned fill outside/inside walls depending on preset:
-  - Generate a tiling diagonal-line texture, apply with a mask (floor or inverse floor) and optional blend mode.
-  - Variants: diagonal, cross-hatch, dots, brick; size, stroke color, width.
-  - For patterns that must appear only outside walls, use an inverted mask built from layer bounds minus polygons.
-- Pre-render pattern texture once per style; use TilingSprite for scale.
+- Preset-driven short strokes are distributed in a band outside the floor boundary.
+- Each stroke is rejected if it intersects floor geometry or has an endpoint inside the floor, so the interior is cut out of the hatch pass.
+- Variants: diagonal, cross-hatch, horizontal, vertical, dots, brick; size, stroke color and width.
+- Hatching follows outer boundaries and hole boundaries; interior walls are not hatched.
 
 ### 6.5 Layer grid
 
 - Render the layer’s grid clipped to floor geometry when visible.
-- Same grid texture/pipeline as background, with per-layer style and alpha.
+- Grid lines are clipped with the same segment-intersection routine as hatching.
+- Background grids support square and dot modes; the studio exposes grid type, colour and width.
 
 ### 6.6 Walls
 

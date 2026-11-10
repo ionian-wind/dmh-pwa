@@ -7,6 +7,7 @@ import {
 } from 'polygon-clipping';
 import type {
   DungeonLayerStyle,
+  HatchVariant,
   Point,
 } from '@/map-studio/domain/document/types';
 import { boundsOfGeometry, pointInPolygon, type WallSegment } from './compile';
@@ -14,6 +15,12 @@ import { boundsOfGeometry, pointInPolygon, type WallSegment } from './compile';
 export interface HatchPattern {
   segments: Array<{ a: Point; b: Point }>;
   dots: Point[];
+}
+
+interface BoundaryEdge {
+  a: Point;
+  b: Point;
+  index: number;
 }
 
 const EMPTY_PATTERN: HatchPattern = { segments: [], dots: [] };
@@ -80,88 +87,166 @@ function clipSegment(
   return result;
 }
 
-function hatchLines(
-  angle: number,
-  spacing: number,
+function segmentTouchesPolygon(
+  a: Point,
+  b: Point,
   polygons: MultiPolygon,
-): Array<{ a: Point; b: Point }> {
-  const bounds = boundsOfGeometry(polygons);
-  if (!bounds) return [];
-  const { minX, minY, maxX, maxY } = bounds;
-  const center: Point = [(minX + maxX) / 2, (minY + maxY) / 2];
-  const direction: Point = [Math.cos(angle), Math.sin(angle)];
-  const normal: Point = [-direction[1], direction[0]];
-  const corners: Point[] = [
-    [minX, minY],
-    [maxX, minY],
-    [minX, maxY],
-    [maxX, maxY],
+): boolean {
+  if (pointInMultiPolygon(a, polygons) || pointInMultiPolygon(b, polygons)) {
+    return true;
+  }
+  for (const polygon of polygons) {
+    for (const ring of polygon) {
+      for (let index = 0; index + 1 < ring.length; index += 1) {
+        if (segmentIntersectionT(a, b, ring[index], ring[index + 1]) !== null) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function pointBoundaryDistance(point: Point, polygons: MultiPolygon): number {
+  let closest = Infinity;
+  for (const polygon of polygons) {
+    for (const ring of polygon) {
+      for (let index = 0; index + 1 < ring.length; index += 1) {
+        const [ax, ay] = ring[index];
+        const [bx, by] = ring[index + 1];
+        const dx = bx - ax;
+        const dy = by - ay;
+        const lengthSquared = dx * dx + dy * dy;
+        const t =
+          lengthSquared === 0
+            ? 0
+            : Math.max(
+                0,
+                Math.min(
+                  1,
+                  ((point[0] - ax) * dx + (point[1] - ay) * dy) / lengthSquared,
+                ),
+              );
+        closest = Math.min(
+          closest,
+          Math.hypot(point[0] - (ax + dx * t), point[1] - (ay + dy * t)),
+        );
+      }
+    }
+  }
+  return closest;
+}
+
+function random(seed: number, index: number): number {
+  const value = Math.sin(seed * 12.9898 + index * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function noise(seed: number, index: number): number {
+  return random(seed, index) - 0.5;
+}
+
+function boundaryEdges(polygons: MultiPolygon): BoundaryEdge[] {
+  const edges: BoundaryEdge[] = [];
+  let index = 0;
+  for (const polygon of polygons) {
+    for (const ring of polygon) {
+      for (let point = 0; point + 1 < ring.length; point += 1) {
+        const a = ring[point];
+        const b = ring[point + 1];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 1e-6) continue;
+        edges.push({ a: [a[0], a[1]], b: [b[0], b[1]], index });
+        index += 1;
+      }
+    }
+  }
+  return edges;
+}
+
+function outwardNormal(
+  edge: BoundaryEdge,
+  polygons: MultiPolygon,
+  probe: number,
+): Point | null {
+  const dx = edge.b[0] - edge.a[0];
+  const dy = edge.b[1] - edge.a[1];
+  const length = Math.hypot(dx, dy) || 1;
+  const nx = -dy / length;
+  const ny = dx / length;
+  const middle: Point = [
+    (edge.a[0] + edge.b[0]) / 2,
+    (edge.a[1] + edge.b[1]) / 2,
   ];
-  const projections = corners.map(
-    ([x, y]) => (x - center[0]) * normal[0] + (y - center[1]) * normal[1],
+  const plusInside = pointInMultiPolygon(
+    [middle[0] + nx * probe, middle[1] + ny * probe],
+    polygons,
   );
-  const minProjection = Math.min(...projections);
-  const maxProjection = Math.max(...projections);
-  const reach = Math.hypot(maxX - minX, maxY - minY) + spacing * 2;
-  const result: Array<{ a: Point; b: Point }> = [];
-  for (
-    let offset = minProjection;
-    offset <= maxProjection + spacing * 0.5;
-    offset += spacing
-  ) {
-    const origin: Point = [
-      center[0] + normal[0] * offset,
-      center[1] + normal[1] * offset,
-    ];
-    const a: Point = [
-      origin[0] - direction[0] * reach,
-      origin[1] - direction[1] * reach,
-    ];
-    const b: Point = [
-      origin[0] + direction[0] * reach,
-      origin[1] + direction[1] * reach,
-    ];
-    result.push(...clipSegment(a, b, polygons));
-  }
-  return result;
+  const minusInside = pointInMultiPolygon(
+    [middle[0] - nx * probe, middle[1] - ny * probe],
+    polygons,
+  );
+  if (plusInside === minusInside) return null;
+  return plusInside ? [-nx, -ny] : [nx, ny];
 }
 
-function hatchDots(spacing: number, polygons: MultiPolygon): Point[] {
-  const bounds = boundsOfGeometry(polygons);
-  if (!bounds) return [];
-  const dots: Point[] = [];
-  let row = 0;
-  for (let y = bounds.minY; y <= bounds.maxY; y += spacing) {
-    const offset = row % 2 === 0 ? 0 : spacing / 2;
-    for (let x = bounds.minX + offset; x <= bounds.maxX; x += spacing) {
-      const point: Point = [x, y];
-      if (pointInMultiPolygon(point, polygons)) dots.push(point);
-    }
-    row += 1;
+function strokeAngle(
+  variant: HatchVariant,
+  tangentAngle: number,
+  seed: number,
+): number {
+  const jitter = noise(seed, 3) * 0.8;
+  if (variant === 'cross') {
+    return (
+      tangentAngle + (seed % 2 === 0 ? Math.PI / 4 : -Math.PI / 4) + jitter
+    );
   }
-  return dots;
+  if (variant === 'horizontal') return jitter;
+  if (variant === 'vertical') return Math.PI / 2 + jitter;
+  if (variant === 'brick') return tangentAngle + jitter;
+  return tangentAngle + (seed % 3 === 0 ? Math.PI / 2 : 0) + jitter;
 }
 
-function brickLines(
-  spacing: number,
+function sampleOuterBand(
+  hatching: DungeonLayerStyle['hatching'],
   polygons: MultiPolygon,
-): Array<{ a: Point; b: Point }> {
-  const bounds = boundsOfGeometry(polygons);
-  if (!bounds) return [];
-  const result = hatchLines(0, spacing, polygons);
-  let row = 0;
-  for (let y = bounds.minY; y <= bounds.maxY; y += spacing) {
-    const offset = row % 2 === 0 ? 0 : spacing;
-    for (
-      let x = bounds.minX + offset;
-      x <= bounds.maxX + spacing * 0.5;
-      x += spacing * 2
-    ) {
-      result.push(...clipSegment([x, y], [x, y + spacing], polygons));
+  visit: (center: Point, angle: number, seed: number) => void,
+): void {
+  const size = Math.max(0.05, hatching.size);
+  const band = Math.max(0.05, size * 1.55);
+  const edges = boundaryEdges(polygons);
+  for (const edge of edges) {
+    const dx = edge.b[0] - edge.a[0];
+    const dy = edge.b[1] - edge.a[1];
+    const length = Math.hypot(dx, dy) || 1;
+    const tangent: Point = [dx / length, dy / length];
+    const tangentAngle = Math.atan2(dy, dx);
+    const normal = outwardNormal(edge, polygons, Math.max(0.005, size * 0.2));
+    if (!normal) continue;
+    const alongCount = Math.max(1, Math.ceil(length / (size * 0.55)));
+    const depthCount = 2;
+    for (let along = 0; along < alongCount; along += 1) {
+      for (let depth = 0; depth < depthCount; depth += 1) {
+        const seed = edge.index * 97 + along * 13 + depth * 7 + 1;
+        const t = (along + random(seed, 0) * 0.85) / Math.max(1, alongCount);
+        const offset = Math.max(
+          size * 0.18,
+          ((depth + random(seed, 1) * 0.9) / depthCount) * band,
+        );
+        const center: Point = [
+          edge.a[0] +
+            dx * t +
+            normal[0] * offset +
+            tangent[0] * noise(seed, 2) * size * 0.35,
+          edge.a[1] +
+            dy * t +
+            normal[1] * offset +
+            tangent[1] * noise(seed, 2) * size * 0.35,
+        ];
+        if (pointInMultiPolygon(center, polygons)) continue;
+        visit(center, strokeAngle(hatching.variant, tangentAngle, seed), seed);
+      }
     }
-    row += 1;
   }
-  return result;
 }
 
 export function createHatchPattern(
@@ -169,34 +254,64 @@ export function createHatchPattern(
   polygons: MultiPolygon,
 ): HatchPattern {
   if (!hatching.visible || polygons.length === 0) return EMPTY_PATTERN;
-  const spacing = Math.max(0.02, hatching.size);
+  const size = Math.max(0.05, hatching.size);
   if (hatching.variant === 'dots') {
-    return { segments: [], dots: hatchDots(spacing, polygons) };
+    const dots: Point[] = [];
+    const clearance = Math.max(0.015, hatching.width * 1.8);
+    sampleOuterBand(hatching, polygons, (center) => {
+      if (pointBoundaryDistance(center, polygons) > clearance) {
+        dots.push(center);
+      }
+    });
+    return { segments: [], dots };
   }
-  if (hatching.variant === 'cross') {
-    return {
-      segments: [
-        ...hatchLines(Math.PI / 4, spacing, polygons),
-        ...hatchLines(-Math.PI / 4, spacing, polygons),
-      ],
-      dots: [],
-    };
-  }
-  if (hatching.variant === 'horizontal') {
-    return { segments: hatchLines(0, spacing, polygons), dots: [] };
-  }
-  if (hatching.variant === 'vertical') {
-    return { segments: hatchLines(Math.PI / 2, spacing, polygons), dots: [] };
-  }
-  if (hatching.variant === 'brick') {
-    return { segments: brickLines(spacing, polygons), dots: [] };
-  }
-  return { segments: hatchLines(Math.PI / 4, spacing, polygons), dots: [] };
+  const segments: Array<{ a: Point; b: Point }> = [];
+  sampleOuterBand(hatching, polygons, (center, angle, seed) => {
+    const length = size * (0.45 + random(seed, 4) * 0.55);
+    const half = length / 2;
+    const a: Point = [
+      center[0] - Math.cos(angle) * half,
+      center[1] - Math.sin(angle) * half,
+    ];
+    const b: Point = [
+      center[0] + Math.cos(angle) * half,
+      center[1] + Math.sin(angle) * half,
+    ];
+    if (segmentTouchesPolygon(a, b, polygons)) return;
+    segments.push({ a, b });
+  });
+  return { segments, dots: [] };
 }
 
-function noise(seed: number, index: number): number {
-  const value = Math.sin(seed * 12.9898 + index * 78.233) * 43758.5453;
-  return value - Math.floor(value) - 0.5;
+export function createFloorGrid(
+  polygons: MultiPolygon,
+  spacing = 1,
+): Array<{ a: Point; b: Point }> {
+  const bounds = boundsOfGeometry(polygons);
+  if (!bounds) return [];
+  const step = Math.max(0.05, spacing);
+  const segments: Array<{ a: Point; b: Point }> = [];
+  const minX = Math.ceil(bounds.minX / step) * step;
+  const minY = Math.ceil(bounds.minY / step) * step;
+  for (let x = minX; x <= bounds.maxX + step * 0.5; x += step) {
+    segments.push(
+      ...clipSegment(
+        [x, bounds.minY - step],
+        [x, bounds.maxY + step],
+        polygons,
+      ),
+    );
+  }
+  for (let y = minY; y <= bounds.maxY + step * 0.5; y += step) {
+    segments.push(
+      ...clipSegment(
+        [bounds.minX - step, y],
+        [bounds.maxX + step, y],
+        polygons,
+      ),
+    );
+  }
+  return segments;
 }
 
 export function createShadingGeometry(

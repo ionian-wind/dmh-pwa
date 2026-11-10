@@ -5,6 +5,7 @@ import { confirm, prompt } from '@/dialogs';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import type {
   DungeonLayerStyle,
+  GridSettings,
   StudioLayer,
 } from '@/map-studio/domain/document/types';
 
@@ -535,6 +536,22 @@ function setParent(event: Event): void {
     </template>
 
     <template v-if="layer.type === 'background'">
+      <label class="studio-field">
+        <span>{{ t('mapStudio.gridType') }}</span>
+        <select
+          :value="store.map!.grid.type"
+          @change="
+            store.setGridType(
+              ($event.target as HTMLSelectElement)
+                .value as GridSettings['type'],
+            )
+          "
+        >
+          <option value="square">{{ t('mapStudio.gridSquare') }}</option>
+          <option value="dot">{{ t('mapStudio.gridDots') }}</option>
+          <option value="none">{{ t('mapStudio.gridNone') }}</option>
+        </select>
+      </label>
       <label class="studio-field">
         <span>{{ t('mapStudio.colour') }}</span>
         <input

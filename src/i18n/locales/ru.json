@@ -1275,6 +1275,10 @@
     "hatchWidth": "Ширина штриховки",
     "shadingColour": "Цвет затенения",
     "shadingSize": "Размер затенения",
-    "shadingOpacity": "Прозрачность затенения"
+    "shadingOpacity": "Прозрачность затенения",
+    "gridType": "Тип сетки",
+    "gridSquare": "Квадратная",
+    "gridDots": "Точки",
+    "gridNone": "Нет"
   }
 }

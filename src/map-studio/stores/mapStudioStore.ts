@@ -781,6 +781,15 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function setGridType(type: StudioMap['grid']['type']): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      grid: { ...current.grid, type },
+    });
+  }
+
   function setGridColor(color: string): void {
     const current = map.value;
     if (!current) return;
@@ -1858,6 +1867,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     setBackgroundColor,
     setBackgroundOpacity,
     setGridColor,
+    setGridType,
     setGridWidth,
     setLayerStyle,
     setLayerOpacity,

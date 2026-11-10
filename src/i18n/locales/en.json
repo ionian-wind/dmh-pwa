@@ -1274,6 +1274,10 @@
     "hatchWidth": "Hatch width",
     "shadingColour": "Shading colour",
     "shadingSize": "Shading size",
-    "shadingOpacity": "Shading opacity"
+    "shadingOpacity": "Shading opacity",
+    "gridType": "Grid type",
+    "gridSquare": "Square",
+    "gridDots": "Dots",
+    "gridNone": "None"
   }
 }

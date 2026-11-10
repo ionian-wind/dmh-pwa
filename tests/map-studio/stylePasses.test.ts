@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MultiPolygon } from 'polygon-clipping';
 import {
+  createFloorGrid,
   createHatchPattern,
   createShadingGeometry,
 } from '@/map-studio/domain/geometry/stylePasses';
@@ -62,56 +63,78 @@ function midpoint(segment: { a: Point; b: Point }): Point {
   return [(segment.a[0] + segment.b[0]) / 2, (segment.a[1] + segment.b[1]) / 2];
 }
 
+function samples(segment: { a: Point; b: Point }, count = 10): Point[] {
+  return Array.from({ length: count + 1 }, (_, index) => {
+    const t = index / count;
+    return [
+      segment.a[0] + (segment.b[0] - segment.a[0]) * t,
+      segment.a[1] + (segment.b[1] - segment.a[1]) * t,
+    ];
+  });
+}
+
+function insideFloor(point: Point, polygon: MultiPolygon[0]): boolean {
+  const [outer, ...holes] = polygon;
+  return (
+    pointInPolygon(point, outer) &&
+    !holes.some((hole) => pointInPolygon(point, hole))
+  );
+}
+
 describe('dungeon style passes', () => {
-  it('clips diagonal hatch lines to the floor geometry', () => {
+  it('places short diagonal hatch strokes outside the floor', () => {
     const pattern = createHatchPattern(style(), square);
     expect(pattern.segments.length).toBeGreaterThan(4);
     for (const segment of pattern.segments) {
-      expect(pointInPolygon(midpoint(segment), square[0][0])).toBe(true);
-      expect(segment.a[0]).toBeGreaterThanOrEqual(0);
-      expect(segment.a[0]).toBeLessThanOrEqual(4);
-      expect(segment.b[1]).toBeGreaterThanOrEqual(0);
-      expect(segment.b[1]).toBeLessThanOrEqual(4);
+      const point = midpoint(segment);
+      expect(insideFloor(point, square[0])).toBe(false);
+      expect(point[0]).toBeGreaterThanOrEqual(-2);
+      expect(point[0]).toBeLessThanOrEqual(6);
+      expect(point[1]).toBeGreaterThanOrEqual(-2);
+      expect(point[1]).toBeLessThanOrEqual(6);
+      expect(
+        Math.hypot(segment.b[0] - segment.a[0], segment.b[1] - segment.a[1]),
+      ).toBeLessThan(style().size);
+      for (const point of samples(segment)) {
+        expect(insideFloor(point, square[0])).toBe(false);
+      }
     }
   });
 
-  it('supports cross, horizontal, vertical, dots and brick variants', () => {
-    const diagonal = createHatchPattern(style(), square).segments.length;
-    const cross = createHatchPattern(style({ variant: 'cross' }), square);
-    expect(cross.segments.length).toBeGreaterThan(diagonal);
-    const horizontal = createHatchPattern(
-      style({ variant: 'horizontal' }),
-      square,
-    );
-    expect(horizontal.segments.length).toBeGreaterThan(0);
-    expect(
-      horizontal.segments.every(
-        (segment) => Math.abs(segment.a[1] - segment.b[1]) < 1e-7,
-      ),
-    ).toBe(true);
-    const vertical = createHatchPattern(style({ variant: 'vertical' }), square);
-    expect(vertical.segments.length).toBeGreaterThan(0);
-    expect(
-      vertical.segments.every(
-        (segment) => Math.abs(segment.a[0] - segment.b[0]) < 1e-7,
-      ),
-    ).toBe(true);
+  it('supports preset-driven cross, horizontal, vertical, dots and brick variants', () => {
+    for (const variant of [
+      'diagonal',
+      'cross',
+      'horizontal',
+      'vertical',
+      'brick',
+    ] as const) {
+      const pattern = createHatchPattern(style({ variant }), square);
+      expect(pattern.segments.length).toBeGreaterThan(0);
+      for (const segment of pattern.segments) {
+        for (const point of samples(segment)) {
+          expect(insideFloor(point, square[0])).toBe(false);
+        }
+      }
+    }
     const dots = createHatchPattern(style({ variant: 'dots' }), square);
     expect(dots.segments).toHaveLength(0);
     expect(dots.dots.length).toBeGreaterThan(0);
-    expect(
-      dots.dots.every((point) => pointInPolygon(point, square[0][0])),
-    ).toBe(true);
-    const brick = createHatchPattern(style({ variant: 'brick' }), square);
-    expect(brick.segments.length).toBeGreaterThan(horizontal.segments.length);
+    expect(dots.dots.every((point) => !insideFloor(point, square[0]))).toBe(
+      true,
+    );
   });
 
-  it('excludes holes and hidden hatching', () => {
+  it('places hatching outside holes and skips hidden or empty hatching', () => {
+    const pattern = createHatchPattern(style(), squareWithHole);
+    expect(pattern.segments.length).toBeGreaterThan(4);
+    for (const segment of pattern.segments) {
+      expect(insideFloor(midpoint(segment), squareWithHole[0])).toBe(false);
+    }
     const dots = createHatchPattern(style({ variant: 'dots' }), squareWithHole);
     expect(dots.dots.length).toBeGreaterThan(0);
     for (const point of dots.dots) {
-      expect(pointInPolygon(point, squareWithHole[0][0])).toBe(true);
-      expect(pointInPolygon(point, squareWithHole[0][1])).toBe(false);
+      expect(insideFloor(point, squareWithHole[0])).toBe(false);
     }
     expect(
       createHatchPattern(style({ visible: false }), square).segments,
@@ -124,15 +147,25 @@ describe('dungeon style passes', () => {
 
   it('handles empty geometry bounds for every hatch variant', () => {
     const emptyRings: MultiPolygon = [[[]]];
-    expect(
-      createHatchPattern(style({ variant: 'diagonal' }), emptyRings).segments,
-    ).toEqual([]);
-    expect(
-      createHatchPattern(style({ variant: 'dots' }), emptyRings).dots,
-    ).toEqual([]);
-    expect(
-      createHatchPattern(style({ variant: 'brick' }), emptyRings).segments,
-    ).toEqual([]);
+    for (const variant of ['diagonal', 'dots', 'brick'] as const) {
+      const pattern = createHatchPattern(style({ variant }), emptyRings);
+      expect(pattern.segments).toEqual([]);
+      expect(pattern.dots).toEqual([]);
+    }
+  });
+
+  it('clips the inner floor grid to the floor geometry', () => {
+    const segments = createFloorGrid(square);
+    expect(segments.length).toBeGreaterThanOrEqual(8);
+    for (const segment of segments) {
+      expect(insideFloor(midpoint(segment), square[0])).toBe(true);
+    }
+    const withHole = createFloorGrid(squareWithHole);
+    expect(withHole.length).toBeGreaterThan(0);
+    for (const segment of withHole) {
+      expect(insideFloor(midpoint(segment), squareWithHole[0])).toBe(true);
+    }
+    expect(createFloorGrid([])).toEqual([]);
   });
 
   it('builds clipped inner shading from wall segments', () => {

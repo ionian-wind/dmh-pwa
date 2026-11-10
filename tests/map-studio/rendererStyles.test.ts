@@ -26,6 +26,7 @@ const fake = vi.hoisted(() => {
   }
   class FakeGraphics extends FakeContainer {
     moves: number[] = [];
+    circles = 0;
     clear(): this {
       return this;
     }
@@ -39,6 +40,7 @@ const fake = vi.hoisted(() => {
       return this;
     }
     circle(): this {
+      this.circles += 1;
       return this;
     }
     moveTo(x: number): this {
@@ -164,14 +166,16 @@ describe('Pixi dungeon style passes', () => {
     const layer = styledLayer();
     const { container } = drawLayer(layer);
     expect(container.alpha).toBe(0.8);
-    expect(container.children).toHaveLength(5);
+    expect(container.children).toHaveLength(6);
     expect(container.children[0].blendMode).toBe('screen');
     expect(container.children[1].blendMode).toBe('multiply');
     expect(container.children[2].blendMode).toBe('multiply');
     expect(container.children[3].blendMode).toBe('multiply');
     expect(container.children[4].blendMode).toBe('multiply');
+    expect(container.children[5].blendMode).toBe('multiply');
     expect(container.children[0].moves.length).toBeGreaterThan(0);
     expect(container.children[3].moves.length).toBeGreaterThan(0);
+    expect(container.children[4].moves.length).toBeGreaterThan(0);
   });
 
   it('skips disabled style passes', () => {
@@ -180,9 +184,10 @@ describe('Pixi dungeon style passes', () => {
     layer.style.shading.visible = false;
     layer.style.hatching.visible = false;
     const { container } = drawLayer(layer);
-    expect(container.children).toHaveLength(2);
+    expect(container.children).toHaveLength(3);
     expect(container.children[0].blendMode).toBe('multiply');
     expect(container.children[1].blendMode).toBe('multiply');
+    expect(container.children[2].blendMode).toBe('multiply');
   });
 
   it('renders no dungeon container content for an empty layer', () => {
@@ -315,6 +320,13 @@ describe('Pixi renderer public operations', () => {
     map.grid.width = 2;
     renderer.setViewport({ x: 0, y: 0, zoom: 0.01 });
     renderer.setViewport({ x: 0, y: 0, zoom: 1 });
+    map.grid.type = 'dot';
+    renderer.setViewport({ x: 0, y: 0, zoom: 1 });
+    expect((renderer as any).gridLayer.circles).toBeGreaterThan(0);
+    map.grid.type = 'none';
+    (renderer as any).gridLayer.circles = 0;
+    renderer.setViewport({ x: 0, y: 0, zoom: 1 });
+    expect((renderer as any).gridLayer.circles).toBe(0);
   });
 
   it('renders shape, layer and geometry selections', () => {
@@ -602,8 +614,9 @@ describe('Pixi renderer style edge cases', () => {
     layer.style.shadow.visible = false;
     layer.style.shading.visible = false;
     const { container } = drawLayer(layer);
-    expect(container.children).toHaveLength(1);
+    expect(container.children).toHaveLength(2);
     expect(container.children[0].moves.length).toBeGreaterThan(0);
+    expect(container.children[1].moves.length).toBeGreaterThan(0);
 
     const emptyHatch = styledLayer({
       floor: { visible: false, color: '#ffffff' },
@@ -686,8 +699,9 @@ describe('Pixi renderer style edge cases', () => {
       },
     });
     const { container } = drawLayer(layer);
-    expect(container.children).toHaveLength(1);
+    expect(container.children).toHaveLength(2);
     expect(container.children[0].moves.length).toBeGreaterThan(0);
+    expect(container.children[1].moves.length).toBeGreaterThan(0);
 
     const map = createMap(createProject().id);
     const images = map.layers.find(

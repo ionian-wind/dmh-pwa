@@ -167,13 +167,18 @@ describe('StudioLayerSettings', () => {
     wrapper.unmount();
   });
 
-  it('edits background colour, opacity, grid and isometric settings', async () => {
+  it('edits background colour, opacity, grid and grid type settings', async () => {
     const { store, pinia } = setup();
     const background = store.map!.layers.find(
       (layer) => layer.type === 'background',
     )!;
     store.setSettingsLayer(background.id);
     const wrapper = mountSettings(pinia);
+    const gridType = wrapper
+      .findAll('select')
+      .find((select) => select.find('option[value="dot"]').exists())!;
+    await gridType.setValue('dot');
+    expect(store.map?.grid.type).toBe('dot');
     const ranges = wrapper.findAll('input[type="range"]');
     await ranges[0].setValue('0.4');
     expect(store.map?.background.style.opacity).toBe(0.4);

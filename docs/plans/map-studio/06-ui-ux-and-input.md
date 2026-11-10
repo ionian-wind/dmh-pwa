@@ -175,12 +175,12 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Header changes with selection: layer name or “N objects selected”.
 - Sections collapse independently; visibility eyes on sections.
 - Dungeon layer: Opacity, Floor texture, Walls, Floor, Grid, Shadow, Hatching, Shading, Advanced.
-- Background: Opacity, Colour, Background texture, Grid. Isometric is out of current scope.
+- Background: Opacity, Colour, Background texture, Grid type (square/dots/none), grid colour and width. Isometric is out of current scope.
 - Fog: Opacity, Fog color, Blend, Advanced.
 - Object: type-specific fields (image tint/shadow, text typography, door, stairs, light) plus opacity and blend mode.
 - Background: opacity, colour, isometric, grid colour/width.
 - Images/folder: opacity, blend mode and object count/folder membership.
-- Dungeon: opacity, blend mode, floor/wall colours, wall width, blocks-light, grid visibility/colour/width, wall shadow (colour/opacity/offset/blend), hatching (pattern/colour/size/width) and shading (colour/size/roughness/opacity).
+- Dungeon: opacity, blend mode, floor/wall colours, wall width, blocks-light, grid visibility/colour/width, wall shadow (colour/opacity/offset/blend), outer-wall hatching (pattern/colour/size/width) and shading (colour/size/roughness/opacity).
 - Multi-selection: only common fields shown; edit applies to all.
 - Live preview; values update canvas immediately; history coalesces slider drags.
 
