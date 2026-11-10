@@ -67,6 +67,13 @@ useStudioHotkeys({
       store.toolSettings.division = division;
     }
   },
+  adjustRadius: (delta) => {
+    const step = 1 / Math.max(1, store.toolSettings.division);
+    store.toolSettings.pathRadius = Math.max(
+      0.05,
+      Number((store.toolSettings.pathRadius + delta * step).toFixed(3)),
+    );
+  },
 });
 
 const map = computed(() => store.map);
@@ -409,7 +416,7 @@ async function applyToLocation(): Promise<void> {
           :label="t('mapStudio.rough')"
         />
         <QToggle
-          v-if="store.tool === 'polygon'"
+          v-if="store.tool === 'polygon' || store.tool === 'path'"
           v-model="store.toolSettings.smooth"
           dense
           :label="t('mapStudio.smooth')"

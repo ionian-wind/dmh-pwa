@@ -8,6 +8,7 @@ import { createDungeonLayer } from '@/map-studio/domain/document/factories';
 import type {
   CircleShape,
   DungeonShape,
+  PathShape,
   PolygonShape,
 } from '@/map-studio/domain/document/types';
 import {
@@ -373,5 +374,34 @@ describe('map studio smooth polygons', () => {
       },
     };
     expect(shapeToPolygon(smooth)?.[0]?.length).toBeGreaterThan(30);
+  });
+});
+
+describe('map studio smooth paths', () => {
+  it('subdivides path centre lines before expansion', () => {
+    const straight: PathShape = {
+      id: 'straight',
+      operation: 'add',
+      shape: {
+        kind: 'path',
+        points: [
+          [0, 0],
+          [3, 0],
+          [6, 3],
+        ],
+        radius: 0.5,
+        closed: false,
+        rough: 0,
+        smooth: false,
+      },
+    };
+    const smooth: PathShape = {
+      ...straight,
+      id: 'smooth',
+      shape: { ...straight.shape, smooth: true },
+    };
+    const straightRing = shapeToPolygon(straight)?.[0] ?? [];
+    const smoothRing = shapeToPolygon(smooth)?.[0] ?? [];
+    expect(smoothRing.length).toBeGreaterThan(straightRing.length * 4);
   });
 });

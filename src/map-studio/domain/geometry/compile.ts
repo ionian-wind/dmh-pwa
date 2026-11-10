@@ -132,6 +132,36 @@ function expandPath(points: Point[], radius: number, closed: boolean): Polygon {
   return [ring];
 }
 
+function smoothOpenPath(points: Pair[], samples = 10): Pair[] {
+  if (points.length < 2) return points;
+  const ring: Pair[] = [];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p0 = points[Math.max(0, index - 1)];
+    const p1 = points[index];
+    const p2 = points[index + 1];
+    const p3 = points[Math.min(points.length - 1, index + 2)];
+    for (let sample = 0; sample < samples; sample += 1) {
+      const t = sample / samples;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      ring.push([
+        0.5 *
+          (2 * p1[0] +
+            (-p0[0] + p2[0]) * t +
+            (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+            (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+        0.5 *
+          (2 * p1[1] +
+            (-p0[1] + p2[1]) * t +
+            (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+            (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3),
+      ]);
+    }
+  }
+  ring.push(points.at(-1)!);
+  return ring;
+}
+
 function smoothClosedRing(points: Pair[], samples = 10): Pair[] {
   const ring: Pair[] = [];
   const count = points.length;
@@ -199,10 +229,8 @@ export function shapeToPolygon(shape: DungeonShape): Polygon | null {
   }
   if (data.kind === 'path') {
     if (data.points.length < 2 || data.radius <= 0) return null;
-    return finish(
-      expandPath(data.points, data.radius, data.closed),
-      data.rough,
-    );
+    const points = data.smooth ? smoothOpenPath(data.points) : data.points;
+    return finish(expandPath(points, data.radius, data.closed), data.rough);
   }
   if (data.kind === 'wall') {
     return null;

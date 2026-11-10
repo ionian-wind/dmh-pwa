@@ -282,7 +282,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
         radius: toolSettings.value.pathRadius,
         closed: false,
         rough: toolSettings.value.rough,
-        smooth: false,
+        smooth: toolSettings.value.smooth,
       },
     });
   }

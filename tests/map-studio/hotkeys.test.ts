@@ -69,6 +69,9 @@ describe('map studio hotkeys', () => {
     press('b');
     press('6');
     expect(actions.setTool).toHaveBeenCalledWith('polygon');
+    press('b');
+    press('1');
+    expect(actions.setTool).toHaveBeenCalledWith('pan');
     wrapper.unmount();
   });
 
@@ -117,6 +120,28 @@ describe('map studio hotkey deletion', () => {
     expect(deleteSelection).toHaveBeenCalledTimes(1);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
     expect(deleteSelection).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+});
+
+describe('map studio path radius hotkeys', () => {
+  it('adjusts the path radius with bracket keys', () => {
+    const adjustRadius = vi.fn();
+    const HarnessPath = defineComponent({
+      setup() {
+        useStudioHotkeys({
+          ...actions,
+          getTool: () => 'path' as const,
+          adjustRadius,
+        });
+        return () => null;
+      },
+    });
+    const wrapper = mount(HarnessPath);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ']' }));
+    expect(adjustRadius).toHaveBeenCalledWith(1);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '[' }));
+    expect(adjustRadius).toHaveBeenCalledWith(-1);
     wrapper.unmount();
   });
 });

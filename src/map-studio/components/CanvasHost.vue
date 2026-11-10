@@ -76,7 +76,12 @@ let drag:
     }
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
-  | { kind: 'polygon-freehand'; points: Point[]; lastScreen: Point }
+  | {
+      kind: 'polygon-freehand';
+      points: Point[];
+      lastScreen: Point;
+      path?: boolean;
+    }
   | { kind: 'rough'; shape: DungeonShape; startScreen: Point }
   | { kind: 'object'; id: string; start: Point; last: Point }
   | { kind: 'marquee'; start: Point }
@@ -98,13 +103,19 @@ let drag:
 const doorPoints = ref<Point[]>([]);
 const stairPoints = ref<Point[]>([]);
 let resizeObserver: ResizeObserver | undefined;
+let spacePressed = false;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
 function snap(value: number): number {
-  if (!props.settings.snap) return value;
+  if (
+    !props.settings.snap ||
+    (props.tool === 'path' && props.settings.smooth)
+  ) {
+    return value;
+  }
   const division = Math.max(1, props.settings.division);
   return Math.round(value * division) / division;
 }
@@ -175,13 +186,18 @@ function commitShape(shape: DungeonShape): void {
       'polygon',
       data.points.map(([x, y]) => [x, y] as [number, number]),
     );
+  } else if (data.kind === 'path') {
+    emit(
+      'path',
+      data.points.map(([x, y]) => [x, y] as [number, number]),
+    );
   }
 }
 
 function onPointerDown(event: PointerEvent): void {
   if (!renderer.value || !host.value || drag?.kind === 'rough') return;
   const [sx, sy] = localPoint(event);
-  const shouldPan = props.tool === 'pan' || event.button === 1;
+  const shouldPan = props.tool === 'pan' || event.button === 1 || spacePressed;
   host.value.setPointerCapture?.(event.pointerId);
   if (shouldPan) {
     drag = {
@@ -342,24 +358,33 @@ function onPointerDown(event: PointerEvent): void {
         return;
       }
     }
-    if (props.tool === 'polygon' && !props.settings.snap) {
+    if (
+      (props.tool === 'polygon' || props.tool === 'path') &&
+      !props.settings.snap
+    ) {
       const freehand: Point[] = [[point[0], point[1]]];
       drag = {
         kind: 'polygon-freehand',
         points: freehand,
         lastScreen: [sx, sy],
+        path: props.tool === 'path',
       };
-      renderer.value.setPreview({ kind: 'polygon', points: freehand });
+      renderer.value.setPreview(
+        props.tool === 'path'
+          ? { kind: 'line', points: freehand }
+          : { kind: 'polygon', points: freehand },
+      );
       return;
     }
     polygonPoints.value = [
       ...polygonPoints.value,
       [snap(point[0]), snap(point[1])],
     ];
-    renderer.value.setPreview({
-      kind: 'polygon',
-      points: polygonPoints.value,
-    });
+    renderer.value.setPreview(
+      props.tool === 'polygon'
+        ? { kind: 'polygon', points: polygonPoints.value }
+        : { kind: 'line', points: polygonPoints.value },
+    );
     return;
   }
   if (props.tool === 'circle') {
@@ -404,7 +429,11 @@ function onPointerMove(event: PointerEvent): void {
     const point = renderer.value.screenToWorld(sx, sy);
     drag.points.push([point[0], point[1]]);
     drag.lastScreen = [sx, sy];
-    renderer.value.setPreview({ kind: 'polygon', points: drag.points });
+    renderer.value.setPreview(
+      drag.path
+        ? { kind: 'line', points: drag.points }
+        : { kind: 'polygon', points: drag.points },
+    );
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
@@ -542,10 +571,15 @@ function onPointerMovePolygon(event: PointerEvent): void {
   if (polygonPoints.value.length === 0) return;
   const [sx, sy] = localPoint(event);
   const current = renderer.value.screenToWorld(sx, sy);
-  renderer.value.setPreview({
-    kind: 'polygon',
-    points: [...polygonPoints.value, [snap(current[0]), snap(current[1])]],
-  });
+  const previewPoints = [
+    ...polygonPoints.value,
+    [snap(current[0]), snap(current[1])] as Point,
+  ];
+  renderer.value.setPreview(
+    props.tool === 'polygon'
+      ? { kind: 'polygon', points: previewPoints }
+      : { kind: 'line', points: previewPoints },
+  );
 }
 
 function onPointerUp(event: PointerEvent): void {
@@ -564,17 +598,28 @@ function onPointerUp(event: PointerEvent): void {
   if (drag.kind === 'polygon-freehand') {
     const current = renderer.value.screenToWorld(sx, sy);
     drag.points.push([current[0], current[1]]);
-    if (drag.points.length >= 3) {
-      const shape: DungeonShape = {
+    const points = drag.points.map(([x, y]) => [x, y] as [number, number]);
+    const minimum = drag.path ? 2 : 3;
+    if (points.length >= minimum) {
+      const shape = {
         id: roughShapeId(),
         operation: 'add',
-        shape: {
-          kind: 'polygon',
-          points: drag.points.map(([x, y]) => [x, y] as [number, number]),
-          rough: 0,
-          smooth: props.settings.smooth,
-        },
-      };
+        shape: drag.path
+          ? {
+              kind: 'path',
+              points,
+              radius: props.settings.pathRadius,
+              closed: false,
+              rough: 0,
+              smooth: props.settings.smooth,
+            }
+          : {
+              kind: 'polygon',
+              points,
+              rough: 0,
+              smooth: props.settings.smooth,
+            },
+      } as DungeonShape;
       if (beginRough(shape, sx, sy)) return;
       renderer.value.setPreview(null);
       commitShape(shape);
@@ -681,8 +726,32 @@ function finishPolygon(): void {
   );
   polygonPoints.value = [];
   renderer.value.setPreview(null);
-  if (props.tool === 'path' && points.length >= 2) emit('path', points);
-  else if (props.tool === 'wall' && points.length >= 2) emit('wall', points);
+  if (props.tool === 'path' && points.length >= 2) {
+    const shape: DungeonShape = {
+      id: roughShapeId(),
+      operation: 'add',
+      shape: {
+        kind: 'path',
+        points,
+        radius: props.settings.pathRadius,
+        closed: false,
+        rough: 0,
+        smooth: props.settings.smooth,
+      },
+    };
+    const last = points.at(-1) ?? [0, 0];
+    const vp = renderer.value.getViewport();
+    if (
+      beginRough(
+        shape,
+        last[0] * 70 * vp.zoom + vp.x,
+        last[1] * 70 * vp.zoom + vp.y,
+      )
+    ) {
+      return;
+    }
+    commitShape(shape);
+  } else if (props.tool === 'wall' && points.length >= 2) emit('wall', points);
   else if (points.length >= 3) {
     const shape: DungeonShape = {
       id: roughShapeId(),
@@ -740,7 +809,44 @@ watch(
   () => cancelGesture(),
 );
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    !!target.closest('input, textarea, select, [contenteditable="true"]')
+  );
+}
+
+function zoomAtCenter(factor: number): void {
+  if (!renderer.value || !host.value) return;
+  const viewport = renderer.value.getViewport();
+  const nextZoom = clamp(viewport.zoom * factor, 0.05, 8);
+  const cx = (host.value.clientWidth || 1) / 2;
+  const cy = (host.value.clientHeight || 1) / 2;
+  const ratio = nextZoom / viewport.zoom;
+  renderer.value.setViewport({
+    zoom: nextZoom,
+    x: cx - (cx - viewport.x) * ratio,
+    y: cy - (cy - viewport.y) * ratio,
+  });
+}
+
 function onKeyDown(event: KeyboardEvent): void {
+  if (event.code === 'Space' && !isEditableTarget(event.target)) {
+    event.preventDefault();
+    spacePressed = true;
+    return;
+  }
+  if (isEditableTarget(event.target)) return;
+  if (event.key === '=' || event.key === '+') {
+    event.preventDefault();
+    zoomAtCenter(1.25);
+    return;
+  }
+  if (event.key === '-' || event.key === '_') {
+    event.preventDefault();
+    zoomAtCenter(1 / 1.25);
+    return;
+  }
   if (event.key === 'Escape') {
     cancelGesture();
     return;
@@ -761,6 +867,10 @@ function onKeyDown(event: KeyboardEvent): void {
       );
     }
   }
+}
+
+function onKeyUp(event: KeyboardEvent): void {
+  if (event.code === 'Space') spacePressed = false;
 }
 
 function onWheel(event: WheelEvent): void {
@@ -801,6 +911,7 @@ onMounted(async () => {
   resizeObserver.observe(host.value);
   host.value.addEventListener('wheel', onWheel, { passive: false });
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
 });
 
 watch(
@@ -824,6 +935,7 @@ onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   host.value?.removeEventListener('wheel', onWheel);
   window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('keyup', onKeyUp);
   renderer.value?.destroy();
   renderer.value = null;
 });

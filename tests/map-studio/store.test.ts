@@ -144,9 +144,20 @@ describe('map studio shape helpers', () => {
       smooth: true,
     });
     store.addPolygon([[0, 0]]);
+    store.toolSettings.pathRadius = 0.5;
+    store.toolSettings.smooth = true;
+    store.addPath([
+      [0, 0],
+      [2, 2],
+    ]);
+    expect(store.activeLayer?.shapes.at(-1)?.shape).toMatchObject({
+      kind: 'path',
+      radius: 0.5,
+      smooth: true,
+    });
     expect(
       (store.activeLayer?.shapes ?? []).map((shape) => shape.shape.kind),
-    ).toEqual(['circle', 'polygon']);
+    ).toEqual(['circle', 'polygon', 'path']);
 
     store.toolSettings.mode = 'erase';
     store.addCircle({ cx: 4, cy: 4, radius: 1 });

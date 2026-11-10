@@ -441,9 +441,12 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
-  it('shows the polygon smooth toggle', async () => {
+  it('shows the smooth toggle for polygon and path', async () => {
     const { wrapper, store } = await mountView();
     store.setTool('polygon');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Smooth');
+    store.setTool('path');
     await flushPromises();
     expect(wrapper.text()).toContain('Smooth');
     wrapper.unmount();

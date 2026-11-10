@@ -14,6 +14,7 @@ interface StudioHotkeyActions {
   toggleMode?: () => void;
   toggleSnap?: () => void;
   setDivision?: (division: number) => void;
+  adjustRadius?: (delta: -1 | 1) => void;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -58,6 +59,7 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
     if (toolPrefixPending) {
       toolPrefixPending = false;
       const prefixed: Record<string, StudioTool> = {
+        '1': 'pan',
         '2': 'object',
         '3': 'rectangle',
         '4': 'circle',
@@ -121,6 +123,14 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
         actions.setSides?.(Number(event.key));
         return;
       }
+    }
+    if (
+      actions.getTool?.() === 'path' &&
+      (event.key === '[' || event.key === ']')
+    ) {
+      event.preventDefault();
+      actions.adjustRadius?.(event.key === '[' ? -1 : 1);
+      return;
     }
     const tool = {
       r: 'rectangle',

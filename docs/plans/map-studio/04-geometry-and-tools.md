@@ -162,11 +162,11 @@ Adjacent rooms: separate adds union; touching edges merge, shared wall disappear
 - Snap on: click to place points; double-click/Enter to finish; `Z` removes last point; Escape cancels.
 - Snap off: click points or press-drag freehand; pointer samples every ~3–5 px screen distance (simplified later).
 - `radius` controls stroke half-width; `[`/`]` adjust by one division step; typed value.
-- Smooth mode overrides snap; points are interpolated with Catmull-Rom.
-- Closed toggle (button or click near start) closes the path.
+- Smooth mode overrides snap; points are interpolated with Catmull-Rom before the radius expansion.
 - Path can cross itself; union handles overlaps.
 - Erase mode subtracts the expanded stroke.
-- Preview shows centerline plus outline.
+- Rough mode: after drawing, pointer distance sets the rough level and a second click commits.
+- Preview shows the centreline while points are placed.
 
 ## 10. Polygon tool
 
